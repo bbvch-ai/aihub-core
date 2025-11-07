@@ -2,7 +2,7 @@
 
 **Purpose**: Pulumi-based Azure infrastructure definitions. Deploy AI-Hub to Azure cloud with Terraform-like approach.
 
-Tech Stack & Paradigms: Pulumi Azure Native for infrastructure as code (IaC). pulumi-command for CLI integrations. Pydantic v2 + pydantic-settings for configuration. Python-based resource definitions. Azure cloud provider. Component-based design with reusable modules. Settings-driven configuration. Resource grouping by functional domain. Naming convention: {component}-{environment}-{region}. Supports dev, staging, production environments. Azure Container Registry, App Services, PostgreSQL Flexible Server, Azure OpenAI, Application Insights, Key Vault integration. pulumi up/destroy for deployment lifecycle. pytest for testing.
+Tech Stack & Paradigms: Pulumi Azure Native for infrastructure as code (IaC). pulumi-command for CLI integrations. Pydantic v2 + pydantic-settings for configuration. Python-based resource definitions. Azure cloud provider. Component-based design with reusable modules. Settings-driven configuration. Resource grouping by functional domain. Naming convention: \{component}-\{environment}-\{region}. Supports dev, staging, production environments. Azure Container Registry, App Services, PostgreSQL Flexible Server, Azure OpenAI, Application Insights, Key Vault integration. pulumi up/destroy for deployment lifecycle. pytest for testing.
 
 ## Scope Responsibility
 
@@ -37,16 +37,19 @@ aihub_iac/azure/
 ## Key Concepts
 
 **Component-Based Design**:
+
 - Each module = Pulumi `ComponentResource`
 - Encapsulates internal resources, exposes inputs/outputs
 - Composable into larger infrastructures
 
 **Provider Pattern**:
+
 - Abstracts resource creation (e.g., `NetworkProvider.create_subnet()`)
 - Standardizes naming conventions, tagging
 - Reduces duplication, enforces consistency
 
 **Configuration System** (Layered):
+
 1. **Settings**: Load env vars → typed properties (Pydantic)
 2. **Config**: Compose settings → business logic, defaults, validation
 3. **Module**: Consume configs → provision resources
@@ -61,6 +64,7 @@ aihub_iac/azure/
 ## Configuration Workflow
 
 **Settings** (e.g., `ProjectSettings.py`):
+
 ```python
 class ProjectSettings(BaseSettings):
     project_name: str = Field(alias="PROJECT_NAME")
@@ -72,6 +76,7 @@ class ProjectSettings(BaseSettings):
 ```
 
 **Config** (e.g., `ApiConfig.py`):
+
 ```python
 class ApiConfig(BaseModel):
     app_name: str
@@ -87,6 +92,7 @@ class ApiConfig(BaseModel):
 ```
 
 **Module** (e.g., `modules/api/`):
+
 ```python
 api_config = ApiConfig.from_env()
 web_app = WebAppCreator.create(
@@ -143,6 +149,7 @@ web_app = WebAppCreator.create(
 ## Quick Reference
 
 **Create new module**:
+
 1. Add settings: `settings/MyServiceSettings.py` (env vars)
 2. Add config: `settings/MyServiceConfig.py` (compose settings)
 3. Create module: `modules/my_service/__main__.py` (provision resources)

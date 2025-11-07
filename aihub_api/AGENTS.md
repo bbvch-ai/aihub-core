@@ -24,11 +24,12 @@ aihub_api/
 └── playground/testing/        # Test server with frontend
 ```
 
-## Key Pattern: Controller-Service-DTO
+## Key Pattern: Controller-Service-DTO-Entity
 
 **Controller**: HTTP endpoint definition, auth/validation, routing.
-**Service**: Business logic, external system integration (NATS, DB).
+**Service**: Business logic, external system integration (NATS, DB via Entities).
 **DTO**: Pydantic models for request/response validation + docs.
+**Entity**: MongoDB document schema + repository methods (lives in `aihub_lib/persistence/`, shared across services).
 
 ### Example Structure
 
@@ -37,25 +38,31 @@ aihub_api/
 class MyController(Controller):
     def create_resource(self, route: str = "/") -> "MyController":
         @self.router.post(route, tags=self.tags)
-        async def create_resource(
-            request: MyRequestDTO,
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.my-domain.create"))],
-            nc: Annotated[NATS, Depends(use_nats)],
-            t: Annotated[LocaleHandler, Depends(use_locale)]
-        ) -> MyResponseDTO:
-            return await MyService.create_resource(nc, request, t)
+        async def create_resource(request: MyRequestDTO, ...) -> MyResponseDTO:
+            return await MyService.create_resource(request, t)
         return self
 
 # Service (routes/my_domain/MyService.py)
 class MyService:
     @staticmethod
-    async def create_resource(nc: NATS, request: MyRequestDTO, t: LocaleHandler) -> MyResponseDTO:
-        # Business logic here
-        pass
+    async def create_resource(request: MyRequestDTO, t: LocaleHandler) -> MyResponseDTO:
+        entity = MyResourceEntity.create_resource(name=request.name)  # Use Entity
+        return MyResponseDTO(id=str(entity.id), name=entity.name)
 
-# DTO (routes/my_domain/dto/MyRequestDTO.py)
-class MyRequestDTO(BaseModel):
-    name: Annotated[str, Field(description="Resource name")]
+# Entity (aihub_lib/persistence/my_domain/MyResourceEntity.py) - Repository pattern
+class MyResourceEntity(Document):
+    meta = {"collection": "my_resources"}
+    name = StringField(required=True)
+
+    @classmethod  # Repository methods as classmethods
+    def create_resource(cls, name: str) -> "MyResourceEntity": ...
+```
+
+**CRITICAL**: Register controllers in `/home/user/aihub-core/aihub_api/app/main.py`:
+
+```python
+from aihub_api.routes.my_domain.MyController import MyController
+runner.mount(MyController(auth=auth).create_resource().get_resource())
 ```
 
 ## Authentication & Authorization
@@ -63,6 +70,7 @@ class MyRequestDTO(BaseModel):
 **Permission Format**: `aihub.[user|admin].<resource>.<subresource>.<id>`
 
 **Common Patterns**:
+
 - `aihub.user.?>`: General user access
 - `aihub.user.agent.{agent_class}.{agent_id}`: Specific agent
 - `aihub.admin.service.roles`: Admin service access
@@ -72,6 +80,7 @@ class MyRequestDTO(BaseModel):
 ## Pagination
 
 **Standard Pattern**:
+
 ```python
 def get_resources(
     page: PageNumber = 1,  # Defaults to 1
@@ -81,46 +90,96 @@ def get_resources(
     return PaginatedResourcesResponse(resources=resources, total=total, page=page, page_size=page_size)
 ```
 
-## Caching
+## Agent Communication Bridge
 
-**TTLCache Pattern**:
-```python
-from cachetools import TTLCache
+**Purpose**: Bridge between Swiss AI Agent Protocol (NATS events) and external protocols (OpenAI, WebSocket, SSE).
 
-CACHE = TTLCache(maxsize=100, ttl=300)  # 5 min, 100 items
+### How It Works
 
-async def get_resource(id: str):
-    if id in CACHE:
-        return CACHE[id]
-    resource = await fetch_resource(id)
-    CACHE[id] = resource
-    return resource
-```
+**Outbound (API → Agents)**:
 
-## WebSocket Integration
+- `ExternalAgentEventDistributor` publishes events to NATS via `AgentThreadTopicManager`
+- Agents subscribe to thread-specific subjects and process events
 
-**Purpose**: Real-time event streaming (chat, agent events, live updates).
+**Inbound (Agents → API)**:
 
-**Pattern**: `WebSocketManager` handles connection lifecycle, broadcasts to subscribed clients.
+- Agents publish `DisplayEvent`s to NATS
+- API subscribes with TWO parallel handlers:
+  - `EventPersister`: Persists ALL events to MongoDB (audit/history)
+  - `WebSocketSender`: Broadcasts to connected WebSocket clients in real-time
 
-## NATS Integration
+**Protocol Conversion**:
 
-**Agent Communication**: `AgentThreadTopicManager` for routing to agents.
-**Discovery**: Broadcast requests → collect responses → filter by user permissions.
+- **WebSocket**: Events wrapped in `ContextualizedAgentEvent` (adds agent_class, thread_id context), sent as JSON
+- **SSE (OpenAI streaming)**: Events queued, converted to `ChatCompletionChunk`, streamed as `data: {...}\n\n`
+- **Aggregated JSON**: Events collected, aggregated, returned as complete `ChatCompletion` response
+
+### Key Files
+
+- Discovery: `/home/user/aihub-core/aihub_api/aihub_api/routes/agent/AgentService.py` (L113-246, L447-551)
+- SSE streaming: `/home/user/aihub-core/aihub_api/aihub_api/routes/openai/OpenaiService.py` (L342-423)
+- WebSocket: `/home/user/aihub-core/aihub_api/aihub_api/sockets/manager/WebSocketManager.py`
+- Event wrapping: `/home/user/aihub-core/aihub_api/aihub_api/sockets/events/server_to_user/ContextualizedAgentEvent.py`
+- Lifecycle/wiring: `/home/user/aihub-core/aihub_api/aihub_api/runners/lifetime/lifetime_manager.py` (L84-111)
 
 ## Testing
 
-**Controller Tests**: HTTP-level (FastAPI TestClient). Focus on status codes, auth, response structure.
-**Service Tests**: Business logic with mocked dependencies.
+### Test Types
 
-**Test Client**:
+**1. Controller/API Tests** (HTTP-level with `AsyncClient`):
+
+- Test status codes, auth, response structure
+- Use `ApiTestRunner` or `SimulatedAgentApiTestRunner` (for agent interactions)
+- Location: `playground/testing/tests/<domain>/test_*_api.py`
+
+**2. Service Tests** (unit tests with mocked NATS/DB):
+
+- Test business logic in isolation
+- Mock `AgentEntity`, NATS subscribers, discovery responses
+- Location: `playground/testing/tests/<domain>/test_*_service_unit_tests.py`
+
+**3. Integration Tests** (with simulated agents):
+
+- Test full agent interaction flow (send event → receive response)
+- Use `SimulatedAgentApiTestRunner` to simulate agent behavior over NATS
+- Tests discovery, event distribution, response aggregation
+
+### Basic Setup
+
 ```python
-@pytest.fixture
-def client():
+# Simple controller test
+@pytest_asyncio.fixture
+async def client():
+    auth = DangerousDevelopmentOnlyAuthHandler()
     runner = ApiTestRunner()
-    runner.mount(MyController(auth=DangerousDevelopmentOnlyAuthHandler()).create_resource())
-    return TestClient(runner.create_app())
+    runner.mount(MyController(auth=auth).create_resource())
+    app = runner.create_app()
+    async with LifespanManager(app) as lifespan:
+        async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url="http://test") as client:
+            yield client
+
+# Test with simulated agent
+@pytest_asyncio.fixture
+async def agent_client():
+    runner = SimulatedAgentApiTestRunner(agent_class="TestAgent", agent_id="test_1")
+    runner.with_simple_chunk_events()  # Simulate agent responses
+    await runner.start_simulation()
+    # ... mount controllers, create app, yield client
 ```
+
+### Key Fixtures & Utilities
+
+- `DangerousDevelopmentOnlyAuthHandler`: Bypass auth for testing
+- `mock_role_entity_methods`: Mock role/permission checks
+- `enable_logging()`: Enable debug logs in tests
+- `AgentService._clear_cache()`: Clear discovery cache between tests
+
+### Example Test Files
+
+- API test: `playground/testing/tests/agent/test_agent_api.py`
+- Service test: `playground/testing/tests/agent/test_agent_service_unit_tests.py`
+- Integration test: `playground/testing/tests/agent/test_agent_api_with_custom_event.py`
+- Simulated runner: `aihub_api/runners/simulation/agent/SimulatedAgentApiTestRunner.py`
 
 ## Playground
 
@@ -146,6 +205,7 @@ make test      # Run tests
 ## Quick Reference
 
 **New endpoint workflow**:
+
 1. Create DTOs in `routes/my_domain/dto/`
 2. Create Service in `routes/my_domain/MyService.py` (`@staticmethod` methods)
 3. Create Controller in `routes/my_domain/MyController.py` (fluent API: `.create_resource().get_resource()`)

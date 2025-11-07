@@ -24,20 +24,24 @@ aihub_agent/
 ## Key Concepts
 
 **Agent = Dispatchable Workflow**:
+
 - `Agent` inherits from `DispatchableWorkflow`
 - Structured operations: `@step()` methods consume events → produce events
 - Transparent: Every step traceable in Phoenix
 
 **Step Decorator**:
+
 - `@step()`: Defines workflow building blocks
 - Parameters: `max_executions_per_run`, `stop_on_error`, `name`, `description`, `icon`, `precondition`
 - Example: `/home/user/aihub-core/aihub_agent/aihub_agent/workflow/decorators/step.py`
 
 **Context Management**:
+
 - **RunContext**: Ephemeral state within single run. Expires 30 days. Use for intermediate calculations.
 - **ThreadContext**: Persistent state across runs. Maintains conversation history. Expires 30 days.
 
 **Event Flow**:
+
 - Agents consume/produce events (from `aihub_lib.nats.events`)
 - `StartEvent` → workflow steps → `StopEvent`
 - Phoenix visualizes flow: http://localhost:6006
@@ -67,11 +71,13 @@ aihub_agent/
 ## Testing
 
 **BDD with pytest-bdd**:
+
 - Feature files: `tests/features/*.feature` (Gherkin)
 - Step implementations: `tests/test_*.py`
 - Runner: `AgentTestRunner` provides sandboxed env
 
 **Debug Tools**:
+
 - `trigger.py`: Focused one-shot testing
 - `run.py`: Interactive multi-run testing
 - Phoenix MCP: Programmatic trace access
@@ -89,11 +95,12 @@ make test      # pytest -k "not azure"
 - Step decorator: `/home/user/aihub-core/aihub_agent/aihub_agent/workflow/decorators/step.py`
 - Test runner: `/home/user/aihub-core/aihub_agent/aihub_agent/runners/AgentTestRunner.py`
 - Context: `/home/user/aihub-core/aihub_agent/aihub_agent/context/`
-- Playground: `/home/user/aihub-core/aihub_agent/playground/minimal_workflow/`
+- Playground: `/home/user/aihub-core/aihub_agent/playground/`
 
 ## Quick Reference
 
 **Create agent**:
+
 ```python
 class MyAgent(Agent):
     @step()
@@ -106,6 +113,7 @@ class MyAgent(Agent):
 ```
 
 **Access context**:
+
 ```python
 @step()
 async def my_step(self, event: MyEvent, run_context: RunContext, thread_context: ThreadContext):
@@ -114,6 +122,7 @@ async def my_step(self, event: MyEvent, run_context: RunContext, thread_context:
 ```
 
 **Enable logging**:
+
 ```python
 from aihub_lib.testing.logging.logger import enable_logging
 enable_logging()

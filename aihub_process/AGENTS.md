@@ -35,16 +35,19 @@ aihub_process/
 ## Key Concepts
 
 **Process = Orchestrator**:
+
 - Connects entities (agents, humans, programs)
 - Transforms outputs → inputs (light processing only)
 - Delegates work, NOT executes work
 
 **Process Step** (`@process_step()`):
+
 - Delegation point where work assigned to entity
 - Consumes WorkEvent from one entity
 - Produces WorkRequestEvent for next entity
 
 **Entity Types**:
+
 - **Agent**: AI agents (`Agent.In`, `Agent.Out` with `agent_class`, `agent_id`)
 - **Human**: Users (`Human.In`, `Human.Out` with `users` list, `route`, `method`)
 - **Program**: External systems (`Program.In`, `Program.Out` with `route`, `method`)
@@ -66,6 +69,7 @@ def cv_to_analysis(
 ```
 
 **Parameters**:
+
 - `name`: Localized step name (UI display)
 - `description`: Localized description
 - `icon`: PrimeIcons identifier
@@ -74,12 +78,14 @@ def cv_to_analysis(
 ## Work Events
 
 **WorkEvent**: Signals entity completed work.
+
 - `AgentWorkEvent`: Agent finished
 - `HumanWorkEvent`: Human responded
 - `ProgramWorkEvent`: Program returned
 - `ProcessWorkEvent`: Sub-process completed
 
 **WorkRequestEvent**: Delegates work to entity.
+
 - `AgentWorkRequestEvent`: Start agent run
 - `HumanWorkRequestEvent`: Request user input (forms)
 - `ProgramWorkRequestEvent`: Call external API
@@ -107,6 +113,7 @@ class ReviewRequest(HumanWorkRequestEvent):
 ```
 
 **Usage**:
+
 ```python
 @process_step()
 def request_review(...) -> Annotated[ReviewRequest, Human.Out(users=[])]:
@@ -143,6 +150,7 @@ def request_review(...) -> Annotated[ReviewRequest, Human.Out(users=[])]:
 ## Testing
 
 **BDD with pytest-bdd**:
+
 ```python
 @given("a MyProcess runner", target_fixture="process_runner")
 def process_runner_fixture():
@@ -192,6 +200,7 @@ make test      # Run tests
 ## Quick Reference
 
 **Create process**:
+
 ```python
 class MyProcess(AgenticProcess):
     @process_step()
@@ -210,6 +219,7 @@ class MyProcess(AgenticProcess):
 ```
 
 **Enable logging**:
+
 ```python
 from aihub_lib.testing.logging.logger import enable_logging
 enable_logging()

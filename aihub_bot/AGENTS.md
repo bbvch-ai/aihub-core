@@ -25,6 +25,7 @@ aihub_bot/
 ## Key Architecture
 
 **Bot Layers**:
+
 1. **BaseChatBot**: Common conversation lifecycle, routing, error handling
 2. **Specialized Bots**: `AgentChatBot` (NATS to agents), `OpenaiChatBot` (direct LLM)
 3. **Streaming Variants**: `StreamAgentChatBot`, `StreamOpenaiChatBot` (real-time responses)
@@ -34,16 +35,19 @@ aihub_bot/
 ## Channel-Specific Patterns
 
 **MS Teams**:
+
 - **Conversation Reuse**: Teams reuses conversation IDs. Detect fresh conversation via `on_conversation_update_activity` (bot re-added).
 - **Critical**: Delete `ConversationEntity` when bot added to reset history.
 
 **Slack** (Bot-in-the-Loop):
+
 - **Thread Detection**: Check `conversation.conversation_type == "channel"` + `thread_ts` in conversation ID.
 - **Formatting**: Convert markdown (`**text**` → `*text*`, `[text](url)` → `<url|text>`).
 
 ## Conversation Management
 
 **ConversationEntity**:
+
 - Stored in MongoDB with 30-day TTL (configurable)
 - Tracks: messages, channel, locale, metadata
 - Auto-refreshed on interaction, auto-deleted on expiry
@@ -53,6 +57,7 @@ aihub_bot/
 ## Streaming Responses
 
 **How it works**:
+
 1. Send empty message to establish activity
 2. Update incrementally as chunks arrive (throttled every 0.5s)
 3. Final message shows complete response
@@ -64,6 +69,7 @@ aihub_bot/
 **Purpose**: AI agents pause → request human input via Slack → resume with response.
 
 **Components**:
+
 - **Handler** (outbound): Sends agent questions to Slack channels
 - **Bot** (inbound): Captures human responses, returns to agents
 
@@ -74,6 +80,7 @@ aihub_bot/
 **Script**: `/home/user/aihub-core/aihub_bot/setup_azure_bot.py`
 
 **Creates**:
+
 - Azure AD app registration
 - Azure Bot resource
 - Credentials stored in MongoDB (`bot_paths` collection)
@@ -87,6 +94,7 @@ aihub_bot/
 **BotTestRunner**: Simulated agents for testing without real agent services.
 
 **Bot Framework Emulator**:
+
 - Desktop app for testing conversations
 - Connect to: `http://localhost:8000/api/v1/messages`
 - Leave App ID/Password empty for local testing
@@ -117,6 +125,7 @@ make test      # Run tests
 ## Quick Reference
 
 **Create custom bot**:
+
 ```python
 class MyBot(BaseChatBot):
     def __init__(self, path: str, completion_handler: CompletionHandler, **kwargs):
@@ -129,6 +138,7 @@ class MyBot(BaseChatBot):
 ```
 
 **Create completion handler**:
+
 ```python
 class MyCompletionHandler(CompletionHandler):
     async def complete(self, messages: list[ChatMessage], conversation_entity: ConversationEntity, t: LocaleHandler) -> ChatMessage:
@@ -137,6 +147,7 @@ class MyCompletionHandler(CompletionHandler):
 ```
 
 **Enable logging**:
+
 ```python
 from aihub_lib.testing.logging.logger import enable_logging
 enable_logging()

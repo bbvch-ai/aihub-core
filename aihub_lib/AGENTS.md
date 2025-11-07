@@ -31,27 +31,36 @@ aihub_lib/
 ## Key Concepts
 
 **Event Hierarchy** (CRITICAL):
+
+Used by agents:
+
 - **ControlEvent**: Drives workflow execution. Only type that can control flow.
 - **DisplayEvent**: UI/monitoring only. Never affects control flow.
+
+Used by agentic-processses:
+
 - **WorkEvent**: Signals work completion (AgentWorkEvent, HumanWorkEvent, etc.).
 - **WorkRequestEvent**: Delegates work to entities.
-- **SemanticEvent**: Reports to Phoenix tracing (`to_semantic_convention()` required).
 
 **Auth Pattern**:
+
 - **AuthHandler**: Extracts/validates credentials from requests → UserIdentity.
 - **IdentityProvider**: Retrieves user details from identity systems.
 - Examples: `/home/user/aihub-core/aihub_lib/aihub_lib/auth/dependencies/`, `/home/user/aihub-core/aihub_lib/aihub_lib/auth/identity/`
 
 **Permission System**:
+
 - Hierarchical: `aihub.[user|admin].<resource>.<subresource>.<id>`
 - Wildcards: `*` (single level), `>` (multi-level), `?*`, `?>`
 - Check: `AccessChecker.from_user(user).has_access_to_agent(agent_class, agent_id)`
 
 **Persistence Pattern**:
+
 - Entities = MongoEngine `Document` + repository methods as `@classmethod`
 - Example: `ResourceEntity.by_name(name)` combines schema + data access
 
 **i18n**:
+
 - Default locale: German (`de`). Required: `de`, `en`, `fr`, `it`.
 - `LocaleString` for multi-language, `LocaleHandler` for runtime resolution.
 - Translations: `/home/user/aihub-core/aihub_lib/aihub_lib/i18n/translations/`
@@ -59,11 +68,13 @@ aihub_lib/
 ## Adding Code
 
 **When to add here**:
+
 - Used by 2+ services
 - Core infrastructure (auth, events, config, testing)
 - Shared abstractions (base classes, interfaces)
 
 **When NOT to add**:
+
 - Service-specific logic
 - Single-use implementations
 
@@ -90,16 +101,19 @@ make test      # Run tests (exclude Azure: -k "not azure")
 ## Quick Reference
 
 **Create new event**:
+
 1. Inherit from appropriate base (`ControlEvent`, `DisplayEvent`, etc.)
 2. Place in `/home/user/aihub-core/aihub_lib/aihub_lib/nats/events/<category>/`
 3. Auto-registers on import
 
 **Create auth handler**:
+
 1. Inherit from `AuthHandler`
 2. Implement `__call__(self, request: Request) -> UserIdentity`
 3. Example: `/home/user/aihub-core/aihub_lib/aihub_lib/auth/dependencies/OAuth2AuthHandler/`
 
 **Create identity provider**:
+
 1. Inherit from `IdentityProvider`
 2. Implement `get_user_identity_by_oid()`, `get_user_identity_by_email()`
 3. Example: `/home/user/aihub-core/aihub_lib/aihub_lib/auth/identity/MicrosoftGraphIdentityProvider/`

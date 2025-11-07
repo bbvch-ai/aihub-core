@@ -28,6 +28,10 @@ aihub_pipeline/
 │   ├── nodes/
 │   └── share_point/
 ├── resources/                 # Resource definitions (LLM, parser, storage)
+├── sensors/                   # Event-driven triggers
+│   └── factory.py             # default_automation_sensor (auto-materialization)
+├── schedules/                 # Time-based triggers
+│   └── factory.py             # daily_schedule_at, default_daily_materialize_schedule
 ├── jobs/                      # Job definitions
 └── playground/                # Working example (START HERE)
     └── __init__.py            # Complete pipeline demo
@@ -36,16 +40,19 @@ aihub_pipeline/
 ## Key Concepts
 
 **Asset-Based Architecture** (NOT job-based):
+
 - **Asset**: Concrete data artifact (file, document, node, embedding)
 - **Materialization**: Producing an asset (runs computation)
 - **Asset Factory**: Reusable function creating parameterized assets
 
 **Observable Assets**:
+
 - Monitor external sources (data lake, SharePoint) for changes
 - Trigger runs only when new data detected (NOT on schedule)
 - Dynamic partitions: Each document = separate partition
 
 **Data Versions**:
+
 - Each asset has version reflecting source state
 - Version change → triggers downstream rematerialization
 - Ensures traceability: Which data produced which agent response?
@@ -99,6 +106,7 @@ def parse_document(context, file: DataLakeFile) -> RefDoc:
 **Purpose**: External dependencies (parsers, LLMs, storage). Injected into ops via `context.resources`.
 
 **Types**:
+
 - **DocumentParser**: Docling, PDF, Markdown parsers
 - **LLM/Embedding**: Azure OpenAI, OpenAI, Hugging Face
 - **Storage**: Milvus (primary vector store), MongoDB, Data Lake
@@ -110,11 +118,13 @@ def parse_document(context, file: DataLakeFile) -> RefDoc:
 **Purpose**: Handle asset storage/retrieval. Map asset keys to storage systems.
 
 **Examples**:
+
 - `DocStoreIOManager`: MongoDB (RefDocs)
 - `VectorStoreIOManager`: Milvus (embeddings)
 - `AzureDataLakeIOManager`: ADLS (raw files)
 
 **Custom I/O Manager**:
+
 ```python
 class MyIOManager(ConfigurableIOManager):
     def handle_output(self, context, obj):
@@ -146,6 +156,7 @@ class MyIOManager(ConfigurableIOManager):
 ## Testing
 
 **Unit Test Ops**:
+
 ```python
 from dagster import build_op_context
 
@@ -155,6 +166,7 @@ assert result.processed
 ```
 
 **Integration Test Assets**:
+
 ```python
 from dagster import materialize
 
@@ -190,6 +202,7 @@ make test      # Run tests
 ## Quick Reference
 
 **Create pipeline**:
+
 1. Define ops in `ops/my_domain/`
 2. Define resources in `resources/my_domain/`
 3. Create asset factory in `assets/factories/my_domain/`
@@ -197,6 +210,7 @@ make test      # Run tests
 5. Run: `make playground`, materialize in UI
 
 **Observable pattern**:
+
 ```python
 @observable_source_asset(key=AssetKey(["source"]), partitions_def=partitions)
 def source_observer(context):
