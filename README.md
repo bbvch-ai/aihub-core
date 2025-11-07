@@ -368,6 +368,7 @@ Once running, access the AI-Hub services at:
 - **LiteLLM**: https://litellm.127.0.0.1.nip.io
 - **Dagster**: https://dagster.127.0.0.1.nip.io
 - **SeaweedFS Console**: https://datalake.127.0.0.1.nip.io
+- **Attu (Milvus UI)**: https://attu.127.0.0.1.nip.io
 - **Traefik Dashboard**: https://traefik.localhost (admin credentials required)
 
 ::: tip :bulb: Local Development Tips
