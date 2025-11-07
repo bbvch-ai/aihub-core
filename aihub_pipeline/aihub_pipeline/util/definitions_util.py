@@ -150,7 +150,7 @@ def default_definitions(
                     source_type=INTERNAL_DATALAKE,
                     source_id=datalake_container_name,
                     target_type=INTERNAL_KNOWLEDGE_DB,
-                    target_id=datalake_container_name,
+                    target_id=store_name,
                 ),
             ),
         ],

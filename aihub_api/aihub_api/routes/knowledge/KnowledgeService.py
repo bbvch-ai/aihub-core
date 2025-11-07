@@ -501,6 +501,7 @@ class KnowledgeService:
 
         if exists:
             try:
+                KnowledgeService.invalidate_cache()
                 await KnowledgeService._publish_source_updated_event(
                     nc=nc,
                     database=database,
@@ -511,7 +512,6 @@ class KnowledgeService:
                 logger.exception(f"Failed to publish SourceUpdatedEvent for {object_key}: {e}")
                 # Don't fail the validation - file was successfully uploaded
 
-        KnowledgeService.invalidate_cache()
         return DocumentUploadValidationResponse(exists=exists, file_path=object_key, container=container)
 
     @staticmethod

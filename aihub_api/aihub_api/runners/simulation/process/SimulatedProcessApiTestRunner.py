@@ -95,7 +95,7 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
         super().__init__()
         self.process_class = process_class
         self.process_id = process_id
-        self.topic_manager = ProcessInstanceTopicManager(process_class, process_id)
+        self.topic_manager = ProcessInstanceTopicManager(process_class=process_class, process_id=process_id)
 
         self.nc: NATS | None = None
         self.js: JetStreamContext | None = None

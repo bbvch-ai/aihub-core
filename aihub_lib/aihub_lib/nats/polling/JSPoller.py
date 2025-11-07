@@ -3,7 +3,7 @@ from collections.abc import AsyncIterator
 from typing import Annotated
 
 from nats.js import JetStreamContext
-from nats.js.api import ConsumerConfig, DeliverPolicy
+from nats.js.api import ConsumerConfig, DeliverPolicy, AckPolicy
 from nats.js.errors import NotFoundError
 
 from aihub_lib.nats.events import BaseEvent
@@ -45,7 +45,7 @@ class JSPoller:
     async def ensure_consumer_exists(
         self,
         deliver_policy: DeliverPolicy = DeliverPolicy.ALL,
-        ack_policy: str = "explicit",
+        ack_policy: AckPolicy = AckPolicy.EXPLICIT,
         max_deliver: int = 3,
         filter_subject: Annotated[str | None, "Optional subject filter for the consumer"] = None,
     ):

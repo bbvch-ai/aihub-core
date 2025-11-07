@@ -7,12 +7,11 @@ from aihub_lib.nats.topics import Topic
 
 
 class PipelineTopic(Topic):
-    source_type: str
-    source_id: str
-    target_type: str
-    target_id: str
-    run_key: str
-
+    source_type: Annotated[str, "Pipeline source type, such as 'datalake'"]
+    source_id: Annotated[str, "Pipeline source id / container name"]
+    target_type: Annotated[str, "Pipeline target type, such as 'knowledge'"]
+    target_id: Annotated[str, "Pipeline target id / knowledge db name"]
+    run_key: Annotated[str, "Run key used by dagster to prevent duplicated runs"]
     event_name: Annotated[str | None, Field(description="Event name or None if unspecified.")] = None
     event_id: Annotated[str | None, Field(description="Event ID or None if unspecified.")] = None
 
