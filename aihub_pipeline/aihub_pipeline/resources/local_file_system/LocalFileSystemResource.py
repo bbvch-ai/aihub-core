@@ -1,0 +1,332 @@
+import mimetypes
+import re
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Annotated
+
+from dagster import ConfigurableResource, get_dagster_logger
+from pydantic import Field, PrivateAttr
+
+from aihub_pipeline.types.LocalFile import LocalFile, MinimalLocalFile
+
+
+@dataclass
+class ScanConfig:
+    """Compiled regex patterns for file scanning."""
+
+    folder_patterns: list[re.Pattern] | None
+    subfolder_patterns: list[re.Pattern] | None
+    exclude_folder_patterns: list[re.Pattern]
+    exclude_path_patterns: list[re.Pattern]
+    extension_patterns: list[re.Pattern] | None
+    exclude_file_patterns: list[re.Pattern]
+
+
+class LocalFileSystemResource(ConfigurableResource):
+    """
+    Scans local file systems using regex patterns for flexible filtering.
+
+    Tip: Use helper functions from aihub_pipeline.util.pattern_utils:
+    - exact_match_pattern(["A", "B"]) -> '^(A|B)$'
+    - extension_pattern([".pdf", ".docx"]) -> '\\.(pdf|docx)$'
+    - contains_pattern("archive") -> '.*archive.*'
+    """
+
+    base_path: Annotated[str, Field(description="Base path to start scanning from")]
+
+    target_folder_patterns: Annotated[
+        list[str] | None,
+        Field(
+            default=None,
+            description="Regex patterns for folders to scan. None = scan all folders recursively from base_path",
+        ),
+    ]
+
+    target_subfolder_patterns: Annotated[
+        list[str] | None,
+        Field(
+            default=None,
+            description="Regex patterns for subfolders within matched folders. "
+            "None = scan all subfolders recursively. "
+            "Only applies when target_folder_patterns is specified.",
+        ),
+    ]
+
+    exclude_folder_patterns: Annotated[
+        list[str] | None,
+        Field(
+            default_factory=lambda: [r".*archiv.*"],
+            description="Regex patterns to exclude folders (case-insensitive)",
+        ),
+    ]
+
+    exclude_path_patterns: Annotated[
+        list[str] | None,
+        Field(
+            default=None,
+            description="Regex patterns to exclude by full relative path",
+        ),
+    ]
+
+    file_extension_patterns: Annotated[
+        list[str] | None,
+        Field(
+            default=None,
+            description="Regex patterns for file extensions. None = all types",
+        ),
+    ]
+
+    exclude_file_patterns: Annotated[
+        list[str] | None,
+        Field(
+            default=None,
+            description="Regex patterns for file names to exclude",
+        ),
+    ]
+
+    _scan_config: ScanConfig | None = PrivateAttr(default=None)
+
+    def model_post_init(self, __context) -> None:
+        super().model_post_init(__context)
+        self._scan_config = self._compile_patterns()
+
+    def _compile_patterns(self) -> ScanConfig:
+        """Compile all regex patterns once during initialization."""
+
+        def compile_list(patterns: list[str] | None) -> list[re.Pattern]:
+            return [re.compile(p, re.IGNORECASE) for p in patterns] if patterns else []
+
+        def compile_optional(patterns: list[str] | None) -> list[re.Pattern] | None:
+            return [re.compile(p, re.IGNORECASE) for p in patterns] if patterns else None
+
+        return ScanConfig(
+            folder_patterns=compile_optional(self.target_folder_patterns),
+            subfolder_patterns=compile_optional(self.target_subfolder_patterns),
+            exclude_folder_patterns=compile_list(self.exclude_folder_patterns),
+            exclude_path_patterns=compile_list(self.exclude_path_patterns),
+            extension_patterns=compile_optional(self.file_extension_patterns),
+            exclude_file_patterns=compile_list(self.exclude_file_patterns),
+        )
+
+    def fetch_all_files(self) -> list[MinimalLocalFile]:
+        """Fetch all files matching configured patterns."""
+        logger = get_dagster_logger()
+        base = Path(self.base_path)
+
+        if not base.exists():
+            logger.error(f"Base path does not exist: {self.base_path}")
+            return []
+
+        if self._scan_config.folder_patterns is None:
+            return self._scan_recursively(base, "", None, logger)
+
+        return self._scan_targeted_folders(base, logger)
+
+    def _scan_targeted_folders(self, base: Path, logger) -> list[MinimalLocalFile]:
+        """Scan specific folders matching patterns."""
+        all_files = []
+
+        for item in base.iterdir():
+            if not item.is_dir():
+                continue
+
+            if not self._matches_any(item.name, self._scan_config.folder_patterns):
+                continue
+
+            if self._is_excluded_folder(item.name):
+                logger.debug(f"Excluding folder: {item.name}")
+                continue
+
+            logger.info(f"Processing folder: {item.name}")
+            all_files.extend(self._process_folder(item, item.name, logger))
+
+        logger.info(f"Total files found: {len(all_files)}")
+        return all_files
+
+    def _process_folder(self, folder: Path, folder_name: str, logger) -> list[MinimalLocalFile]:
+        """Process a folder based on subfolder patterns."""
+        if self._scan_config.subfolder_patterns is None:
+            return self._scan_recursively(folder, folder_name, None, logger)
+
+        return self._scan_targeted_subfolders(folder, folder_name, logger)
+
+    def _scan_targeted_subfolders(self, folder: Path, folder_name: str, logger) -> list[MinimalLocalFile]:
+        """Scan specific subfolders within a folder."""
+        all_files = []
+
+        for subfolder in folder.iterdir():
+            if not subfolder.is_dir():
+                continue
+
+            if not self._matches_any(subfolder.name, self._scan_config.subfolder_patterns):
+                continue
+
+            if self._is_excluded_folder(subfolder.name):
+                logger.debug(f"Excluding subfolder: {folder_name}/{subfolder.name}")
+                continue
+
+            logger.info(f"Scanning: {folder_name}/{subfolder.name}")
+            files = self._scan_recursively(subfolder, folder_name, subfolder.name, logger)
+            all_files.extend(files)
+            logger.info(f"Found {len(files)} files in {folder_name}/{subfolder.name}")
+
+        return all_files
+
+    def _scan_recursively(
+        self, directory: Path, source_folder: str, subfolder: str | None, logger
+    ) -> list[MinimalLocalFile]:
+        """Recursively scan directory for matching files."""
+        files = []
+
+        try:
+            for item in directory.rglob("*"):
+                if item.is_file() and (file := self._process_file(item, source_folder, subfolder, logger)):
+                    files.append(file)
+        except PermissionError as e:
+            logger.error(f"Permission denied: {directory}: {e}")
+        except Exception as e:
+            logger.error(f"Error scanning {directory}: {e}")
+
+        return files
+
+    def _process_file(
+        self, file_path: Path, source_folder: str, subfolder: str | None, logger
+    ) -> MinimalLocalFile | None:
+        """Process a single file if it passes all filters."""
+        try:
+            relative_path = file_path.relative_to(self.base_path).as_posix()
+
+            if not self._should_include_file(file_path, relative_path, logger):
+                return None
+
+            stat = file_path.stat()
+            return MinimalLocalFile(
+                name=file_path.name,
+                file_path=relative_path,
+                full_path=str(file_path),
+                size=stat.st_size,
+                modified=stat.st_mtime,
+                created=stat.st_ctime,
+                source_folder=source_folder,
+                subfolder=subfolder,
+            )
+        except Exception as e:
+            logger.warning(f"Error processing file {file_path}: {e}")
+            return None
+
+    def _should_include_file(self, file_path: Path, relative_path: str, logger) -> bool:
+        """Check if file passes all inclusion filters."""
+        if self._matches_any(relative_path, self._scan_config.exclude_path_patterns):
+            logger.debug(f"Excluding path: {relative_path}")
+            return False
+
+        if self._has_excluded_parent(file_path):
+            return False
+
+        if self._matches_any(file_path.name, self._scan_config.exclude_file_patterns):
+            logger.debug(f"Excluding file: {file_path.name}")
+            return False
+
+        if not self._matches_extension(file_path.name):
+            return False
+
+        return True
+
+    def _has_excluded_parent(self, file_path: Path) -> bool:
+        """Check if any parent folder is excluded."""
+        base = Path(self.base_path)
+        for parent in file_path.parents:
+            if parent == base:
+                break
+            if self._is_excluded_folder(parent.name):
+                return True
+        return False
+
+    def _is_excluded_folder(self, folder_name: str) -> bool:
+        """Check if folder matches exclusion patterns."""
+        return self._matches_any(folder_name, self._scan_config.exclude_folder_patterns)
+
+    def _matches_extension(self, filename: str) -> bool:
+        """Check if file extension matches patterns."""
+        if self._scan_config.extension_patterns is None:
+            return True
+        return self._matches_any(filename, self._scan_config.extension_patterns)
+
+    @staticmethod
+    def _matches_any(text: str, patterns: list[re.Pattern] | None) -> bool:
+        """Check if text matches any pattern in the list."""
+        if patterns is None:
+            return True
+        if not patterns:
+            return False
+        return any(pattern.search(text) for pattern in patterns)
+
+    def get_local_file(self, file_path: str) -> LocalFile:
+        """Get a single file with content by relative path."""
+        logger = get_dagster_logger()
+        full_path = Path(self.base_path) / file_path
+
+        if not full_path.exists():
+            raise FileNotFoundError(f"File not found: {full_path}")
+
+        if not full_path.is_file():
+            raise ValueError(f"Path is not a file: {full_path}")
+
+        logger.info(f"Reading file: {full_path}")
+
+        with open(full_path, "rb") as f:
+            content = f.read()
+
+        stat = full_path.stat()
+        content_type, _ = mimetypes.guess_type(full_path.name)
+
+        path_parts = Path(file_path).parts
+        source_folder = path_parts[0] if path_parts else ""
+        subfolder = path_parts[1] if len(path_parts) > 1 else None
+
+        return LocalFile(
+            file_name=full_path.name,
+            file_path=file_path,
+            file_content=content,
+            file_size=stat.st_size,
+            modified=datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat(),
+            created=datetime.fromtimestamp(stat.st_ctime, tz=timezone.utc).isoformat(),
+            content_type=content_type,
+            full_path=str(full_path),
+            source_folder=source_folder,
+            subfolder=subfolder,
+        )
+
+    async def get_minimal_local_files(self, file_paths: list[str]) -> list[MinimalLocalFile]:
+        """Get multiple files' metadata without content."""
+        logger = get_dagster_logger()
+        files = []
+
+        for file_path in file_paths:
+            if file := self._get_file_metadata(file_path, logger):
+                files.append(file)
+
+        logger.info(f"Retrieved metadata for {len(files)} files")
+        return files
+
+    def _get_file_metadata(self, file_path: str, logger) -> MinimalLocalFile:
+        """Get metadata for a single file."""
+        try:
+            full_path = Path(self.base_path) / file_path
+
+            stat = full_path.stat()
+            path_parts = Path(file_path).parts
+
+            return MinimalLocalFile(
+                name=full_path.name,
+                file_path=file_path,
+                full_path=str(full_path),
+                size=stat.st_size,
+                modified=stat.st_mtime,
+                created=stat.st_ctime,
+                source_folder=path_parts[0] if path_parts else "",
+                subfolder=path_parts[1] if len(path_parts) > 1 else "",
+            )
+        except Exception as e:
+            logger.error(f"Error processing file {file_path}: {e}")

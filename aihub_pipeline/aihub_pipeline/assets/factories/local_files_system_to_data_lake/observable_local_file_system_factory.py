@@ -9,7 +9,7 @@ from dagster import (
 from aihub_pipeline.ops.local_file_system.data_version_by_partition_for_local_files import (
     data_version_by_partition_for_local_files,
 )
-from aihub_pipeline.resources.file_system.LocalFileSystemResource import LocalFileSystemResource
+from aihub_pipeline.resources.local_file_system.LocalFileSystemResource import LocalFileSystemResource
 from aihub_pipeline.util.key_utils import group_name_from_asset_key
 
 

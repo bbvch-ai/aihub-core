@@ -48,7 +48,7 @@ from aihub_pipeline.resources.llm.LanguageModelResource import LanguageModelReso
 from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource
 from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
 from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
-from aihub_pipeline.resources.file_system.LocalFileSystemResource import LocalFileSystemResource
+from aihub_pipeline.resources.local_file_system.LocalFileSystemResource import LocalFileSystemResource
 from aihub_pipeline.resources.share_point.SharePointResource import SharePointResource
 from aihub_pipeline.schedules.factory import daily_schedule_at
 from aihub_pipeline.sensors.factory import default_automation_sensor
@@ -122,6 +122,9 @@ def default_definitions(
 
     store_name = get_db_name_from_bucket_name(bucket_name=datalake_container_name, auto_sync=False)
     llm_config = LLMConfig(model_name=llm_model_name)
+    embedding_config = EmbeddingModelConfig(model_name=embedding_model_name)
+    model_dimension = embedding_config.default_parameter.dimensions
+    dimensions = model_dimension if model_dimension is not None else 1024
     return Definitions(
         assets=assets,
         resources={
@@ -130,14 +133,13 @@ def default_definitions(
             "summary_parser": RecursiveSummaryParserResource(),
             **default_io_manager_s3_datalake_resources(container_name=datalake_container_name),
             **local_mongo_milvus_storage_context_resource(
-                vector_store_uri=MilvusSettings().URL,
-                store_name=store_name,
+                vector_store_uri=MilvusSettings().URL, store_name=store_name, dimensions=dimensions
             ),
             **s3_data_lake_resources(
                 container_name=datalake_container_name,
             ),
             "embedding_model": EmbeddingModelResource(
-                embedding_config=EmbeddingModelConfig(model_name=embedding_model_name),
+                embedding_config=embedding_config,
             ),
             "language_model": LanguageModelResource(llm_config=llm_config),
         },
@@ -237,11 +239,13 @@ def default_sharepoint_to_datalake_definitions(
 def default_local_filesystem_to_datalake_definitions(
     datalake_container_name: str,
     base_path: str,
-    target_folders: list[str],
-    target_subfolders: list[str],
+    target_folder_patterns: list[str] | None = None,
+    target_subfolder_patterns: list[str] | None = None,
     datalake_directory_name: str | None = None,
-    exclude_folders: list[str] | None = None,
-    supported_filetypes: list[str] | None = None,
+    exclude_folder_patterns: list[str] | None = None,
+    exclude_path_patterns: list[str] | None = None,
+    file_extension_patterns: list[str] | None = None,
+    exclude_file_patterns: list[str] | None = None,
     observe_job_hour: int = 0,
     observe_job_minute: int = 0,
     remove_job_hour: int = 1,
@@ -252,16 +256,23 @@ def default_local_filesystem_to_datalake_definitions(
 
     Use this when you need to sync files from a local or network file system to your data lake.
     The pipeline monitors specified directories for changes and automatically uploads new/updated files
-    to your S3 storage. It handles file filtering, folder organization, and cleanup of deleted files.
+    to your S3 storage. It handles flexible pattern-based file filtering, folder organization,
+    and cleanup of deleted files.
+
+    All filtering uses regex patterns for maximum flexibility. Use helper functions from
+    aihub_pipeline.util.pattern_utils to convert lists to patterns:
+    - exact_match_pattern(["A", "B"]) for exact folder names
+    - extension_pattern([".pdf", ".docx"]) for file extensions
+    - contains_pattern("archive") for substring matching
 
     Pipeline: Local File System → S3
 
     This is the first step - combine with default_definitions() to process files into
     embeddings for RAG applications.
     """
-    filesystem_partitions = DynamicPartitionsDefinition(name="filesystem_partitions")
+    filesystem_partitions = DynamicPartitionsDefinition(name="local_fs_partitions")
 
-    filesystem_key = AssetKey([datalake_container_name, "filesystem"])
+    filesystem_key = AssetKey([datalake_container_name, "local_fs"])
     data_lake_files_key = AssetKey([datalake_container_name, "data_lake_files"])
     removed_data_lake_files_key = AssetKey([datalake_container_name, "removed_data_lake_files"])
 
@@ -293,10 +304,12 @@ def default_local_filesystem_to_datalake_definitions(
 
     filesystem_client = LocalFileSystemResource(
         base_path=base_path,
-        target_folders=target_folders,
-        target_subfolders=target_subfolders,
-        exclude_folders=exclude_folders,
-        supported_filetypes=supported_filetypes,
+        target_folder_patterns=target_folder_patterns,
+        target_subfolder_patterns=target_subfolder_patterns,
+        exclude_folder_patterns=exclude_folder_patterns,
+        exclude_path_patterns=exclude_path_patterns,
+        file_extension_patterns=file_extension_patterns,
+        exclude_file_patterns=exclude_file_patterns,
     )
 
     filesystem_io_manager = LocalFileSystemIOManager(local_file_system_client=filesystem_client)

@@ -1,7 +1,6 @@
 from dagster import OpExecutionContext, ResourceParam, op
 
 from aihub_pipeline.resources.data_lake.base.AbstractDataLakeClient import AbstractDataLakeClient
-from aihub_pipeline.resources.data_lake.DataLakeResource import DataLakeResource
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
 from aihub_pipeline.types.SourceFile import MinimalSourceFile
 
@@ -10,7 +9,6 @@ from aihub_pipeline.types.SourceFile import MinimalSourceFile
 def fetch_data_lake_files_to_remove(
     context: OpExecutionContext,
     source_files: list[MinimalSourceFile],
-    data_lake_resource: DataLakeResource,
     data_lake_client: ResourceParam[AbstractDataLakeClient],
 ) -> list[DataLakeFile]:
     """
@@ -22,10 +20,9 @@ def fetch_data_lake_files_to_remove(
     and should be removed from the data lake.
 
     """
-    uris_to_exclude = [
-        f"{data_lake_resource.container_name}/{data_lake_resource.directory_name}/{file.path.lstrip('/')}"
-        for file in source_files
-    ]
+    # Build URIs using the client's build_uri method to ensure format consistency
+    # This ensures S3 URIs use "s3://" prefix and Azure URIs use container prefix
+    uris_to_exclude = [data_lake_client.build_uri(file.path) for file in source_files]
 
     context.log.info(f"Excluding {len(uris_to_exclude)} URIs from removal")
 
@@ -39,7 +36,7 @@ def fetch_data_lake_files_to_remove(
 
 def fetch_data_lake_files_without_excluded_uris(
     data_lake_client: ResourceParam[AbstractDataLakeClient],
-    excluded_uris: list[str] | None = None,
+    excluded_uris: list[str],
 ) -> list[DataLakeFile]:
     if excluded_uris is None:
         excluded_uris = []
