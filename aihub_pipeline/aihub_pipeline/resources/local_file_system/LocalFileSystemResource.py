@@ -1,11 +1,11 @@
 import mimetypes
 import re
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated
 
-from dagster import ConfigurableResource, get_dagster_logger
+from dagster import ConfigurableResource
 from pydantic import Field, PrivateAttr
 
 from aihub_pipeline.types.LocalFile import LocalFile, MinimalLocalFile
@@ -111,19 +111,17 @@ class LocalFileSystemResource(ConfigurableResource):
 
     def fetch_all_files(self) -> list[MinimalLocalFile]:
         """Fetch all files matching configured patterns."""
-        logger = get_dagster_logger()
         base = Path(self.base_path)
 
         if not base.exists():
-            logger.error(f"Base path does not exist: {self.base_path}")
-            return []
+            raise FileNotFoundError(f"Base path does not exist: {self.base_path}")
 
         if self._scan_config.folder_patterns is None:
-            return self._scan_recursively(base, "", None, logger)
+            return self._scan_recursively(directory=base, source_folder="", subfolder=None)
 
-        return self._scan_targeted_folders(base, logger)
+        return self._scan_targeted_folders(base=base)
 
-    def _scan_targeted_folders(self, base: Path, logger) -> list[MinimalLocalFile]:
+    def _scan_targeted_folders(self, base: Path) -> list[MinimalLocalFile]:
         """Scan specific folders matching patterns."""
         all_files = []
 
@@ -131,27 +129,24 @@ class LocalFileSystemResource(ConfigurableResource):
             if not item.is_dir():
                 continue
 
-            if not self._matches_any(item.name, self._scan_config.folder_patterns):
+            if not self._matches_any(text=item.name, patterns=self._scan_config.folder_patterns):
                 continue
 
-            if self._is_excluded_folder(item.name):
-                logger.debug(f"Excluding folder: {item.name}")
+            if self._is_excluded_folder(folder_name=item.name):
                 continue
 
-            logger.info(f"Processing folder: {item.name}")
-            all_files.extend(self._process_folder(item, item.name, logger))
+            all_files.extend(self._process_folder(folder=item, folder_name=item.name))
 
-        logger.info(f"Total files found: {len(all_files)}")
         return all_files
 
-    def _process_folder(self, folder: Path, folder_name: str, logger) -> list[MinimalLocalFile]:
+    def _process_folder(self, folder: Path, folder_name: str) -> list[MinimalLocalFile]:
         """Process a folder based on subfolder patterns."""
         if self._scan_config.subfolder_patterns is None:
-            return self._scan_recursively(folder, folder_name, None, logger)
+            return self._scan_recursively(directory=folder, source_folder=folder_name, subfolder=None)
 
-        return self._scan_targeted_subfolders(folder, folder_name, logger)
+        return self._scan_targeted_subfolders(folder=folder, folder_name=folder_name)
 
-    def _scan_targeted_subfolders(self, folder: Path, folder_name: str, logger) -> list[MinimalLocalFile]:
+    def _scan_targeted_subfolders(self, folder: Path, folder_name: str) -> list[MinimalLocalFile]:
         """Scan specific subfolders within a folder."""
         all_files = []
 
@@ -159,76 +154,59 @@ class LocalFileSystemResource(ConfigurableResource):
             if not subfolder.is_dir():
                 continue
 
-            if not self._matches_any(subfolder.name, self._scan_config.subfolder_patterns):
+            if not self._matches_any(text=subfolder.name, patterns=self._scan_config.subfolder_patterns):
                 continue
 
-            if self._is_excluded_folder(subfolder.name):
-                logger.debug(f"Excluding subfolder: {folder_name}/{subfolder.name}")
+            if self._is_excluded_folder(folder_name=subfolder.name):
                 continue
 
-            logger.info(f"Scanning: {folder_name}/{subfolder.name}")
-            files = self._scan_recursively(subfolder, folder_name, subfolder.name, logger)
+            files = self._scan_recursively(directory=subfolder, source_folder=folder_name, subfolder=subfolder.name)
             all_files.extend(files)
-            logger.info(f"Found {len(files)} files in {folder_name}/{subfolder.name}")
 
         return all_files
 
-    def _scan_recursively(
-        self, directory: Path, source_folder: str, subfolder: str | None, logger
-    ) -> list[MinimalLocalFile]:
+    def _scan_recursively(self, directory: Path, source_folder: str, subfolder: str | None) -> list[MinimalLocalFile]:
         """Recursively scan directory for matching files."""
         files = []
 
-        try:
-            for item in directory.rglob("*"):
-                if item.is_file() and (file := self._process_file(item, source_folder, subfolder, logger)):
+        for item in directory.rglob("*"):
+            if item.is_file():
+                if file := self._process_file(file_path=item, source_folder=source_folder, subfolder=subfolder):
                     files.append(file)
-        except PermissionError as e:
-            logger.error(f"Permission denied: {directory}: {e}")
-        except Exception as e:
-            logger.error(f"Error scanning {directory}: {e}")
 
         return files
 
-    def _process_file(
-        self, file_path: Path, source_folder: str, subfolder: str | None, logger
-    ) -> MinimalLocalFile | None:
+    def _process_file(self, file_path: Path, source_folder: str, subfolder: str | None) -> MinimalLocalFile | None:
         """Process a single file if it passes all filters."""
-        try:
-            relative_path = file_path.relative_to(self.base_path).as_posix()
+        relative_path = file_path.relative_to(self.base_path).as_posix()
 
-            if not self._should_include_file(file_path, relative_path, logger):
-                return None
-
-            stat = file_path.stat()
-            return MinimalLocalFile(
-                name=file_path.name,
-                file_path=relative_path,
-                full_path=str(file_path),
-                size=stat.st_size,
-                modified=stat.st_mtime,
-                created=stat.st_ctime,
-                source_folder=source_folder,
-                subfolder=subfolder,
-            )
-        except Exception as e:
-            logger.warning(f"Error processing file {file_path}: {e}")
+        if not self._should_include_file(file_path=file_path, relative_path=relative_path):
             return None
 
-    def _should_include_file(self, file_path: Path, relative_path: str, logger) -> bool:
+        stat = file_path.stat()
+        return MinimalLocalFile(
+            name=file_path.name,
+            file_path=relative_path,
+            full_path=str(file_path),
+            size=stat.st_size,
+            modified=stat.st_mtime,
+            created=stat.st_ctime,
+            source_folder=source_folder,
+            subfolder=subfolder,
+        )
+
+    def _should_include_file(self, file_path: Path, relative_path: str) -> bool:
         """Check if file passes all inclusion filters."""
-        if self._matches_any(relative_path, self._scan_config.exclude_path_patterns):
-            logger.debug(f"Excluding path: {relative_path}")
+        if self._matches_any(text=relative_path, patterns=self._scan_config.exclude_path_patterns):
             return False
 
-        if self._has_excluded_parent(file_path):
+        if self._has_excluded_parent(file_path=file_path):
             return False
 
-        if self._matches_any(file_path.name, self._scan_config.exclude_file_patterns):
-            logger.debug(f"Excluding file: {file_path.name}")
+        if self._matches_any(text=file_path.name, patterns=self._scan_config.exclude_file_patterns):
             return False
 
-        if not self._matches_extension(file_path.name):
+        if not self._matches_extension(filename=file_path.name):
             return False
 
         return True
@@ -239,19 +217,19 @@ class LocalFileSystemResource(ConfigurableResource):
         for parent in file_path.parents:
             if parent == base:
                 break
-            if self._is_excluded_folder(parent.name):
+            if self._is_excluded_folder(folder_name=parent.name):
                 return True
         return False
 
     def _is_excluded_folder(self, folder_name: str) -> bool:
         """Check if folder matches exclusion patterns."""
-        return self._matches_any(folder_name, self._scan_config.exclude_folder_patterns)
+        return self._matches_any(text=folder_name, patterns=self._scan_config.exclude_folder_patterns)
 
     def _matches_extension(self, filename: str) -> bool:
         """Check if file extension matches patterns."""
         if self._scan_config.extension_patterns is None:
             return True
-        return self._matches_any(filename, self._scan_config.extension_patterns)
+        return self._matches_any(text=filename, patterns=self._scan_config.extension_patterns)
 
     @staticmethod
     def _matches_any(text: str, patterns: list[re.Pattern] | None) -> bool:
@@ -264,7 +242,6 @@ class LocalFileSystemResource(ConfigurableResource):
 
     def get_local_file(self, file_path: str) -> LocalFile:
         """Get a single file with content by relative path."""
-        logger = get_dagster_logger()
         full_path = Path(self.base_path) / file_path
 
         if not full_path.exists():
@@ -272,8 +249,6 @@ class LocalFileSystemResource(ConfigurableResource):
 
         if not full_path.is_file():
             raise ValueError(f"Path is not a file: {full_path}")
-
-        logger.info(f"Reading file: {full_path}")
 
         with open(full_path, "rb") as f:
             content = f.read()
@@ -290,8 +265,8 @@ class LocalFileSystemResource(ConfigurableResource):
             file_path=file_path,
             file_content=content,
             file_size=stat.st_size,
-            modified=datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat(),
-            created=datetime.fromtimestamp(stat.st_ctime, tz=timezone.utc).isoformat(),
+            modified=datetime.fromtimestamp(stat.st_mtime, tz=UTC).isoformat(),
+            created=datetime.fromtimestamp(stat.st_ctime, tz=UTC).isoformat(),
             content_type=content_type,
             full_path=str(full_path),
             source_folder=source_folder,
@@ -300,33 +275,22 @@ class LocalFileSystemResource(ConfigurableResource):
 
     async def get_minimal_local_files(self, file_paths: list[str]) -> list[MinimalLocalFile]:
         """Get multiple files' metadata without content."""
-        logger = get_dagster_logger()
-        files = []
+        return [self._get_file_metadata(file_path=fp) for fp in file_paths]
 
-        for file_path in file_paths:
-            if file := self._get_file_metadata(file_path, logger):
-                files.append(file)
-
-        logger.info(f"Retrieved metadata for {len(files)} files")
-        return files
-
-    def _get_file_metadata(self, file_path: str, logger) -> MinimalLocalFile:
+    def _get_file_metadata(self, file_path: str) -> MinimalLocalFile:
         """Get metadata for a single file."""
-        try:
-            full_path = Path(self.base_path) / file_path
+        full_path = Path(self.base_path) / file_path
 
-            stat = full_path.stat()
-            path_parts = Path(file_path).parts
+        stat = full_path.stat()
+        path_parts = Path(file_path).parts
 
-            return MinimalLocalFile(
-                name=full_path.name,
-                file_path=file_path,
-                full_path=str(full_path),
-                size=stat.st_size,
-                modified=stat.st_mtime,
-                created=stat.st_ctime,
-                source_folder=path_parts[0] if path_parts else "",
-                subfolder=path_parts[1] if len(path_parts) > 1 else "",
-            )
-        except Exception as e:
-            logger.error(f"Error processing file {file_path}: {e}")
+        return MinimalLocalFile(
+            name=full_path.name,
+            file_path=file_path,
+            full_path=str(full_path),
+            size=stat.st_size,
+            modified=stat.st_mtime,
+            created=stat.st_ctime,
+            source_folder=path_parts[0] if path_parts else "",
+            subfolder=path_parts[1] if len(path_parts) > 1 else "",
+        )

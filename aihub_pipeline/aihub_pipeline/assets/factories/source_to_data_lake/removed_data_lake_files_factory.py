@@ -18,28 +18,6 @@ def removed_data_lake_files_factory(key: AssetKey, source_key: str | AssetKey) -
 
     This is useful for cleanup operations to ensure the data lake stays in sync with the
     source system and doesn't accumulate orphaned files.
-
-    Args:
-        key: The asset key for the removed files tracking asset.
-        source_key: The asset key of the upstream source files (e.g., SharePoint, file system).
-
-    Returns:
-        A graph_asset that identifies and removes orphaned data lake files.
-
-    Example:
-        ```python
-        # Remove orphaned files from SharePoint sync
-        removed_sharepoint_files = removed_data_lake_files_factory(
-            key=AssetKey(["removed_data_lake_files"]),
-            source_key=AssetKey(["sharepoint_files"]),
-        )
-
-        # Remove orphaned files from file system sync
-        removed_filesystem_files = removed_data_lake_files_factory(
-            key=AssetKey(["removed_data_lake_files"]),
-            source_key=AssetKey(["filesystem_files"]),
-        )
-        ```
     """
 
     @graph_asset(
@@ -49,12 +27,6 @@ def removed_data_lake_files_factory(key: AssetKey, source_key: str | AssetKey) -
         description="Removes documents from the data lake that are no longer present in the source system.",
     )
     def removed_datalake_files(source_files: list[MinimalSourceFile]) -> Output[list[DataLakeFile]]:
-        """
-        Identify and remove orphaned data lake files.
-
-        Compares source files with data lake files and removes any files
-        that exist in the data lake but not in the source system.
-        """
         return delete_data_lake_files_from_data_lake(fetch_data_lake_files_to_remove(source_files))
 
     return removed_datalake_files

@@ -30,10 +30,10 @@ from aihub_pipeline.assets.factories.local_files_system_to_data_lake.observable_
 from aihub_pipeline.assets.factories.share_point_to_data_lake.observable_share_point_factory import (
     observable_share_point_factory,
 )
+from aihub_pipeline.assets.factories.source_to_data_lake.data_lake_file_factory import data_lake_file_factory
 from aihub_pipeline.assets.factories.source_to_data_lake.removed_data_lake_files_factory import (
     removed_data_lake_files_factory,
 )
-from aihub_pipeline.assets.factories.source_to_data_lake.source_to_data_lake_factory import source_to_data_lake_factory
 from aihub_pipeline.executors.factory import default_process_executor
 from aihub_pipeline.io.LocalFileSystemIOManager import LocalFileSystemIOManager
 from aihub_pipeline.io.SharePointIOManager import SharePointIoManager
@@ -45,10 +45,10 @@ from aihub_pipeline.resources.factory import (
 )
 from aihub_pipeline.resources.llm.EmbeddingModelResource import EmbeddingModelResource
 from aihub_pipeline.resources.llm.LanguageModelResource import LanguageModelResource
+from aihub_pipeline.resources.local_file_system.LocalFileSystemResource import LocalFileSystemResource
 from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource
 from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
 from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
-from aihub_pipeline.resources.local_file_system.LocalFileSystemResource import LocalFileSystemResource
 from aihub_pipeline.resources.share_point.SharePointResource import SharePointResource
 from aihub_pipeline.schedules.factory import daily_schedule_at
 from aihub_pipeline.sensors.factory import default_automation_sensor
@@ -186,7 +186,7 @@ def default_sharepoint_to_datalake_definitions(
 
     assets = [
         observable_sharepoint_asset,
-        source_to_data_lake_factory(
+        data_lake_file_factory(
             key=data_lake_files_key,
             source_key=sharepoint_key,
             partitions=sharepoint_partitions,
@@ -280,7 +280,7 @@ def default_local_filesystem_to_datalake_definitions(
 
     assets = [
         observable_filesystem_asset,
-        source_to_data_lake_factory(
+        data_lake_file_factory(
             key=data_lake_files_key,
             source_key=filesystem_key,
             partitions=filesystem_partitions,

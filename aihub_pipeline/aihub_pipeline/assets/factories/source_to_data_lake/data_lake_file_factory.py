@@ -9,7 +9,7 @@ from aihub_pipeline.types.SourceFile import SourceFile
 from aihub_pipeline.util.key_utils import group_name_from_asset_key
 
 
-def source_to_data_lake_factory(
+def data_lake_file_factory(
     key: AssetKey,
     source_key: str | AssetKey,
     partitions: DynamicPartitionsDefinition,
@@ -24,23 +24,6 @@ def source_to_data_lake_factory(
 
     This is a generic, reusable factory that works with any source system that implements
     the SourceFile interface, eliminating the need for source-specific transformation logic.
-
-    Example:
-        ```python
-        # Create data lake files from SharePoint
-        sharepoint_to_datalake = source_to_data_lake_factory(
-            key=AssetKey(["data_lake_files"]),
-            source_key=AssetKey(["sharepoint_files"]),
-            partitions=document_partitions,
-        )
-
-        # Create data lake files from local file system
-        filesystem_to_datalake = source_to_data_lake_factory(
-            key=AssetKey(["data_lake_files"]),
-            source_key=AssetKey(["filesystem_files"]),
-            partitions=document_partitions,
-        )
-        ```
     """
 
     @graph_asset(
