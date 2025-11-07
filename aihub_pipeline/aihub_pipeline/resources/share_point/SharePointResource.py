@@ -231,7 +231,7 @@ class SharePointResource(ConfigurableResource):
             created=file_metadata["createdDateTime"],
             content_type=file_metadata.get("file", {}).get("mimeType"),
             download_url=file_metadata.get("@microsoft.graph.downloadUrl"),
-            web_url=file_metadata.get("webUrl", ""),
+            full_url=file_metadata.get("webUrl", ""),
         )
 
     async def _make_async_request(self, session: aiohttp.ClientSession, url: str) -> dict:

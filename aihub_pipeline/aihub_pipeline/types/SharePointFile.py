@@ -34,9 +34,9 @@ class SharePointFile(SourceFile):
     model_config = ConfigDict(populate_by_name=True)
 
     download_url: Annotated[str | None, Field(description="Direct download URL from Graph API")] = None
-    web_url: Annotated[str, Field(description="Full SharePoint web URL to the file")]
+    full_url: Annotated[str, Field(description="Full SharePoint web URL to the file")]
 
     @property
     def source_url(self) -> str:
         """Returns the full SharePoint web URL as the source URL."""
-        return self.web_url
+        return self.full_url
