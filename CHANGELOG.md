@@ -5,6 +5,66 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.250.1] - 2025-11-07 - Streamlined Deployment and Core Service Upgrades
+
+### Added
+
+- ✨ **Milvus UI Integration**: Introduced **Attu (Milvus UI)**, making vector database management more accessible via a
+  dedicated subdomain (`attu.your-domain.com`).
+- 🦾 **New RAG Agent**: Added a dedicated `rag_agent` service for enhanced Retrieval Augmented Generation capabilities,
+  integrated with core platform services.
+- 📄 **Dagster Workspace Configuration**: Introduced `workspace.yaml` files for Dagster, enabling dynamic pipeline
+  loading from the `default_rag_pipeline` service.
+- 🛡️ **Default Security Headers**: Implemented a new `security-headers` middleware in Traefik to enhance platform
+  security by default.
+
+### Changed
+
+- ⚙️ **Refined Deployment Documentation**: Significantly updated and expanded the English prerequisites and one-command
+  deployment guides, including detailed DNS, Azure Entra ID token version 2 requirement, and comprehensive app role
+  setup instructions.
+- 🚀 **Standardized Azure OpenAI Configuration**: Consolidated Azure OpenAI API key management and base URL configuration
+  within LiteLLM, simplifying environment setup by using a single `AZURE_OPENAI_BASE_URL` and `AZURE_OPENAI_KEY`.
+- 📊 **Updated OpenWebUI**: Upgraded OpenWebUI to `v0.6.28`, bringing various improvements and bug fixes, and updated its
+  internal API endpoints to align with the platform's authentication and data access patterns.
+- 🧹 **Improved Core Service Health Checks**: Adjusted Docker Compose healthcheck configurations for Phoenix, NATS,
+  Valkey, and Milvus UI (Attu) to prevent false-negative restarts and improve startup reliability.
+- 🔑 **Updated Authentication Configuration**: Enhanced authentication parameters within the API and Bot services,
+  ensuring consistent propagation of OAuth and superuser credentials.
+- ⚙️ **Enhanced Pipeline Configuration**: Explicitly passed numerous environment variables to the `default_rag_pipeline`
+  service, improving its configurability and robustness.
+- 🖼️ **Jupyter Lab Data Volume**: Changed the default data volume for Jupyter Lab from `llama-data` to `jupyter-data`
+  for clearer separation of concerns.
+- 🔐 **Traefik Dashboard Domain**: Switched the Traefik dashboard host rule from `traefik.localhost` to
+  `traefik.${DOMAIN}` for consistent domain usage across the platform.
+- 🛠️ **LiteLLM Guardrail Defaults**: Changed default `presidio-mask-guard` and `presidio-block-guard` settings to
+  `default_on: false` in LiteLLM configurations, allowing for explicit enablement.
+- 📦 **Docling Service Configuration**: Updated the Docling image to `v1.3.1` and refined its configuration with explicit
+  artifact paths and model settings.
+
+### Fixed
+
+- 🐛 **Robust Makefile Sourcing**: Modified `aihub_bot/Makefile` to optionally include `.env` files, preventing build
+  failures when the file is absent.
+- 🩹 **Websocket Endpoint Correction**: Corrected the WebSocket endpoint URL for frontend services from
+  `/api/v1/event/ws` to `/api/v1/events/ws` (plural).
+- 🔒 **Docling Model Permissions**: Introduced a new `docling-model-permission` service to correctly set ownership for
+  model volumes, resolving potential permission issues.
+- 🛠️ **PostgreSQL Healthcheck User**: Updated the PostgreSQL healthcheck to use the configured `POSTGRES_USER` variable
+  for improved flexibility and consistency.
+
+### Removed
+
+- 🗑️ **German Documentation**: Removed the German versions of the "Prerequisites" and "One-Command Deployment"
+  documentation pages to streamline content.
+
+### Refactor
+
+- 🔄 **Centralized Traefik Configuration**: Streamlined Traefik configuration by moving some parameters directly into the
+  `command` section and standardizing SSL certificate resolution with Let's Encrypt.
+
+---
+
 ## [v0.250.0] - 2025-11-06 - Next-Gen Bot Framework: Microsoft Agents SDK Integration and Multi-Bot Capabilities
 
 ### Added
