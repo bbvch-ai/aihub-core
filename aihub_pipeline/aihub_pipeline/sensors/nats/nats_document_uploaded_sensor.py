@@ -21,7 +21,7 @@ def nats_document_uploaded_sensor(
     Creates a Dagster sensor that polls NATS JetStream for SourceUpdatedEvent messages.
 
     When documents are uploaded and validated, SourceUpdatedEvents are published to NATS.
-    This sensor polls for these events and triggers pipeline runs to process the documents.
+    This sensor polls for these events and triggers a single pipeline run to process all documents.
     """
 
     @sensor(
@@ -29,10 +29,10 @@ def nats_document_uploaded_sensor(
         minimum_interval_seconds=60,
         default_status=DefaultSensorStatus.RUNNING,
         name=f"NATSDocumentUploadedSensorFor_{job.name}",
-        description="Polls NATS JetStream for SourceUpdatedEvent messages and triggers pipeline runs.",
+        description="Polls NATS JetStream for SourceUpdatedEvent messages and triggers a single pipeline run.",
     )
     def _nats_document_uploaded_sensor(context: SensorEvaluationContext):
-        """Poll NATS JetStream for SourceUpdatedEvent messages and trigger pipeline runs."""
+        """Poll NATS JetStream for SourceUpdatedEvent messages and trigger a single pipeline run."""
 
         async def check_for_events():
             nc = NATS()
@@ -50,7 +50,8 @@ def nats_document_uploaded_sensor(
                 await poller.ensure_stream_exists()
                 await poller.ensure_consumer_exists()
 
-                run_requests = []
+                latest_event: SourceUpdatedEvent | None = None
+
                 async for event, ack, nak in poller.poll(batch_size=10, timeout=1.0):
                     if not isinstance(event, SourceUpdatedEvent):
                         logger.warning(f"Unexpected event type: {type(event)}")
@@ -58,15 +59,21 @@ def nats_document_uploaded_sensor(
                         continue
 
                     try:
-                        logger.info(f"Processing SourceUpdatedEvent for {event.path}")
-                        run_key = event.path.replace("/", "_").replace(".", "_")
-                        run_requests.append(RunRequest(run_key=run_key))
+                        latest_event = event
                         await ack()
                     except Exception as e:
                         logger.exception(f"Failed to process event: {e}")
                         await nak()
 
-                return run_requests
+                if latest_event:
+                    run_key = (
+                        f"{topic_manager.source_id}_to_{topic_manager.target_id}"
+                        f"_{context.last_tick_completion_time or 0}"
+                    )
+                    # As an observation request will find ALL uploaded/modified documents, we only need to request 1 run
+                    return [RunRequest(run_key=run_key)]
+
+                return []
 
             except Exception as e:
                 logger.exception(f"Error in NATS sensor: {e}")
