@@ -106,6 +106,7 @@ litellm_settings:
   default_fallbacks: [ "text-generation/nano" ]
   telemetry: true
   json_logs: true
+  drop_params: true
 
 router_settings:
   routing_strategy: "usage-based-routing-v2"

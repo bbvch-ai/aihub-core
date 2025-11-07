@@ -1005,6 +1005,24 @@ services:
     environment:
       NATS_ENDPOINT: "nats://nats:4222"
       REDIS_URL: "redis://valkey:6379"
+      PHOENIX_ENDPOINT: "http://phoenix:6006"
+      LITE_LLM_PROXY_BASE_URL: "http://litellm:4000"
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+  rag_agent:
+    build:
+      context: .
+      dockerfile: ./aihub_agent/app/rag_agent/Dockerfile
+    container_name: rag-agent
+    restart: always
+    environment:
+      NATS_ENDPOINT: "nats://nats:4222"
+      REDIS_URL: "redis://valkey:6379"
+      PHOENIX_ENDPOINT: "http://phoenix:6006"
+      LITE_LLM_PROXY_BASE_URL: "http://litellm:4000"
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+      MILVUS_URL: "http://milvus-standalone"
+      MILVUS_DIMENSION: "3072"
   # </editor-fold>
 
   # === Common Pipelines ===
