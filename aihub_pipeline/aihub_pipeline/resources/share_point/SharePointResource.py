@@ -187,7 +187,6 @@ class SharePointResource(ConfigurableResource):
                     )
                     files.extend(self._get_files_from_url(subfolder_url))
 
-                break
             url = data.get("@odata.nextLink")
         return files
 
@@ -205,7 +204,7 @@ class SharePointResource(ConfigurableResource):
                 files = self._get_files_from_folder(folder_id)
                 all_files.extend(files)
 
-        return all_files[:10]
+        return all_files
 
     def download_file(self, file_id: str) -> SharePointFile:
         site_id = self._get_site_id()
