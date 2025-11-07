@@ -78,6 +78,7 @@ def default_definitions(
     observe_job_minute: int = 0,
     remove_job_hour: int = 3,
     remove_job_minute: int = 0,
+    vector_store_dimensions: int = 3072,
 ) -> Definitions:
     """
     Creates a complete DataLake to vector store pipeline using local resources.
@@ -123,17 +124,16 @@ def default_definitions(
     store_name = get_db_name_from_bucket_name(bucket_name=datalake_container_name, auto_sync=False)
     llm_config = LLMConfig(model_name=llm_model_name)
     embedding_config = EmbeddingModelConfig(model_name=embedding_model_name)
-    model_dimension = embedding_config.default_parameter.dimensions
-    dimensions = model_dimension if model_dimension is not None else 1024
+
     return Definitions(
         assets=assets,
         resources={
-            "document_parser": DocumentParserResource(),
+            "document_parser": DocumentParserResource(include_images=False),
             "node_parser": MarkdownStructuralNodeParserResource(llm_config=llm_config),
             "summary_parser": RecursiveSummaryParserResource(),
             **default_io_manager_s3_datalake_resources(container_name=datalake_container_name),
             **local_mongo_milvus_storage_context_resource(
-                vector_store_uri=MilvusSettings().URL, store_name=store_name, dimensions=dimensions
+                vector_store_uri=MilvusSettings().URL, store_name=store_name, dimensions=vector_store_dimensions
             ),
             **s3_data_lake_resources(
                 container_name=datalake_container_name,

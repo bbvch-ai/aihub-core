@@ -1,4 +1,3 @@
-import re
 import time
 
 from bson import ObjectId
@@ -35,11 +34,6 @@ class NamespaceEntity(Document):
     def _validate_name(name: str, field_name: str) -> None:
         if not name:
             raise ValidationError(f"{field_name} cannot be empty")
-
-        if not re.match(r"^[a-zA-Z0-9_-]+$", name):
-            raise ValidationError(
-                f"{field_name} '{name}' can only contain alphanumeric characters, hyphens (-), and underscores (_)"
-            )
 
     @classmethod
     def create_namespace(

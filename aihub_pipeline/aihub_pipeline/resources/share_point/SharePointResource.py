@@ -177,6 +177,7 @@ class SharePointResource(ConfigurableResource):
                             modified=item.get("lastModifiedDateTime", ""),
                             content_type=item.get("file", {}).get("mimeType"),
                             etag=item.get("eTag"),
+                            created=item.get("createdDateTime", ""),
                         )
                     )
                 elif "folder" in item and not self._is_folder_excluded(item["name"]):
@@ -186,8 +187,8 @@ class SharePointResource(ConfigurableResource):
                     )
                     files.extend(self._get_files_from_url(subfolder_url))
 
+                break
             url = data.get("@odata.nextLink")
-
         return files
 
     def _get_files_from_folder(self, folder_id: str) -> list[MinimalSharePointFile]:
@@ -204,7 +205,7 @@ class SharePointResource(ConfigurableResource):
                 files = self._get_files_from_folder(folder_id)
                 all_files.extend(files)
 
-        return all_files
+        return all_files[:10]
 
     def download_file(self, file_id: str) -> SharePointFile:
         site_id = self._get_site_id()
@@ -231,7 +232,7 @@ class SharePointResource(ConfigurableResource):
             created=file_metadata["createdDateTime"],
             content_type=file_metadata.get("file", {}).get("mimeType"),
             download_url=file_metadata.get("@microsoft.graph.downloadUrl"),
-            full_url=file_metadata.get("webUrl", ""),
+            web_url=file_metadata.get("webUrl", ""),
         )
 
     async def _make_async_request(self, session: aiohttp.ClientSession, url: str) -> dict:
@@ -275,6 +276,7 @@ class SharePointResource(ConfigurableResource):
             content_type=file_metadata.get("file", {}).get("mimeType"),
             etag=file_metadata.get("eTag"),
             id=file_metadata["id"],
+            created=file_metadata["createdDateTime"],
         )
 
     async def get_multiple_minimal_share_point_files(self, file_ids: list[str]) -> list[MinimalSharePointFile]:

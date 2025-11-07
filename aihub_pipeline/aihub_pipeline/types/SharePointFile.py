@@ -17,7 +17,7 @@ class MinimalSharePointFile(MinimalSourceFile):
     model_config = ConfigDict(populate_by_name=True)
 
     etag: Annotated[str, Field(description="ETag for change detection")]
-    file_id: Annotated[str, Field(description="SharePoint file ID")]
+    id: Annotated[str, Field(description="SharePoint file ID")]
     created: Annotated[datetime, Field(description="Creation timestamp")]
     content_type: Annotated[str | None, Field(description="MIME type of the file")] = None
 
@@ -33,8 +33,6 @@ class SharePointFile(SourceFile):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    etag: Annotated[str, Field(description="ETag for change detection")]
-    file_id: Annotated[str, Field(description="SharePoint file ID")]
     download_url: Annotated[str | None, Field(description="Direct download URL from Graph API")] = None
     web_url: Annotated[str, Field(description="Full SharePoint web URL to the file")]
 
