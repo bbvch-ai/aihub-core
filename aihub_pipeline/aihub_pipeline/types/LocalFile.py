@@ -1,14 +1,14 @@
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
 
 from aihub_pipeline.types.SourceFile import MinimalSourceFile, SourceFile
 
 
-class MinimalLocalFile(BaseModel, MinimalSourceFile):
+class MinimalLocalFile(MinimalSourceFile):
     """
-    Minimal file metadata without content - used for scanning and versioning.
+    Minimal local file metadata without content.
 
     This lightweight representation is used by observable assets that scan the local
     file system for changes without reading full file contents. It provides just enough
@@ -17,32 +17,13 @@ class MinimalLocalFile(BaseModel, MinimalSourceFile):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    name: Annotated[str, Field(description="File name")]
-    file_path: Annotated[str, Field(alias="path", description="Relative path to the file")]
-    full_path: Annotated[str, Field(description="Absolute path to the file")]
-    size: Annotated[int, Field(description="File size in bytes")]
-    modified: Annotated[float, Field(description="Unix timestamp when file was last modified")]
-    created: Annotated[float, Field(description="Unix timestamp when file was created")]
+    full_path: Annotated[str, Field(description="Absolute file system path")]
+    created: Annotated[datetime, Field(description="Creation timestamp")]
     source_folder: Annotated[str, Field(description="Source folder name")]
-    subfolder: Annotated[str | None, Field(description="Subfolder name")] = None
-
-    @property
-    def path(self) -> str:
-        """Relative path within the source system (implements MinimalSourceFile.path)."""
-        return self.file_path
-
-    @property
-    def modified_datetime(self) -> datetime:
-        """Convert Unix timestamp to datetime."""
-        return datetime.fromtimestamp(self.modified)
-
-    @property
-    def created_datetime(self) -> datetime:
-        """Convert Unix timestamp to datetime."""
-        return datetime.fromtimestamp(self.created)
+    subfolder: Annotated[str | None, Field(description="Subfolder name within source folder")] = None
 
 
-class LocalFile(BaseModel, SourceFile):
+class LocalFile(SourceFile):
     """
     Local file system file implementation of the SourceFile interface.
 
@@ -52,50 +33,13 @@ class LocalFile(BaseModel, SourceFile):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    file_path: Annotated[str, Field(alias="path", description="Relative path to the file")]
-    file_content: Annotated[bytes, Field(alias="content", description="File content as bytes")]
-    file_name: Annotated[str, Field(alias="name", description="File name")]
-    file_size: Annotated[int, Field(alias="size", description="File size in bytes")]
-    modified: Annotated[str, Field(description="ISO datetime string when file was last modified")]
-    created: Annotated[str, Field(description="ISO datetime string when file was created")]
-    content_type: Annotated[str | None, Field(description="MIME type of the file")] = None
     full_path: Annotated[str, Field(description="Absolute file system path")]
     source_folder: Annotated[str, Field(description="Source folder name")]
-    subfolder: Annotated[str | None, Field(description="Subfolder name")] = None
-
-    @property
-    def path(self) -> str:
-        """Relative path within the source system (implements SourceFile.path)."""
-        return self.file_path
-
-    @property
-    def content(self) -> bytes:
-        """File content as raw bytes (implements SourceFile.content)."""
-        return self.file_content
-
-    @property
-    def name(self) -> str:
-        """File name including extension (implements SourceFile.name)."""
-        return self.file_name
-
-    @property
-    def size(self) -> int:
-        """File size in bytes (implements SourceFile.size)."""
-        return self.file_size
-
-    @property
-    def modified_datetime(self) -> datetime:
-        """Parse ISO datetime string to datetime object."""
-        return datetime.fromisoformat(self.modified.replace("Z", "+00:00"))
-
-    @property
-    def created_datetime(self) -> datetime:
-        """Parse ISO datetime string to datetime object."""
-        return datetime.fromisoformat(self.created.replace("Z", "+00:00"))
+    subfolder: Annotated[str | None, Field(description="Subfolder name within source folder")] = None
 
     @property
     def source_url(self) -> str:
-        """Returns the URL as the source URL with forward slashes."""
+        """Returns the absolute path as POSIX-style URL."""
         from pathlib import Path
 
         return Path(self.full_path).as_posix()

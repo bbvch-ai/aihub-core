@@ -215,7 +215,7 @@ def local_file_table_row(file: MinimalLocalFile) -> dict:
         "source_folder": file.source_folder,
         "subfolder": file.subfolder or "",
         "name": file.name,
-        "modified": file.modified_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+        "modified": file.modified.strftime("%Y-%m-%d %H:%M:%S"),
         "size": readable_size(file.size),
         "path": file.path,
     }

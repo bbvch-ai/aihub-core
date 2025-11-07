@@ -1,12 +1,14 @@
-from abc import ABC, abstractmethod
 from datetime import datetime
+from typing import Annotated
+
+from pydantic import BaseModel, Field
 
 
-class MinimalSourceFile(ABC):
+class MinimalSourceFile(BaseModel):
     """
-    Minimal interface for source file metadata without content.
+    Minimal base model for source file metadata without content.
 
-    This lightweight interface is used when only metadata is needed (e.g., for
+    This lightweight base model is used when only metadata is needed (e.g., for
     comparing source files with data lake files to determine which files to remove).
     It excludes the potentially large file content to improve performance when
     processing large numbers of files.
@@ -15,21 +17,18 @@ class MinimalSourceFile(ABC):
     without downloading full file contents.
     """
 
-    @property
-    @abstractmethod
-    def path(self) -> str:
-        """
-        Relative path within the source system.
-        """
-        pass
+    name: Annotated[str, Field(description="File name including extension")]
+    path: Annotated[str, Field(description="Relative path within the source system")]
+    size: Annotated[int, Field(description="File size in bytes")]
+    modified: Annotated[datetime, Field(description="Last modified timestamp")]
 
 
-class SourceFile(ABC):
+class SourceFile(BaseModel):
     """
-    Generic interface for files from any source system.
+    Generic base model for files from any source system.
 
-    This abstract base class defines the common interface that all source file types
-    (SharePoint, local file system, cloud storage, etc.) must implement. It ensures
+    This base model defines the common interface that all source file types
+    (SharePoint, local file system, cloud storage, etc.) should extend. It ensures
     that downstream pipeline operations can work with files from any source without
     needing source-specific logic.
 
@@ -40,69 +39,23 @@ class SourceFile(ABC):
 
     Example implementations:
         - SharePointFile: Files retrieved from Microsoft SharePoint
-        - FileSystemFile: Files from local or network file systems
+        - LocalFile: Files from local or network file systems
         - S3File: Files from AWS S3 buckets
     """
 
-    @property
-    @abstractmethod
-    def content(self) -> bytes:
-        """
-        File content as raw bytes.
-        """
-        pass
+    name: Annotated[str, Field(description="File name including extension")]
+    path: Annotated[str, Field(description="Relative path within the source system")]
+    content: Annotated[bytes, Field(description="File content as bytes")]
+    size: Annotated[int, Field(description="File size in bytes")]
+    modified: Annotated[datetime, Field(description="Last modified timestamp")]
+    created: Annotated[datetime, Field(description="Creation timestamp")]
+    content_type: Annotated[str | None, Field(description="MIME type of the file")] = None
 
     @property
-    @abstractmethod
-    def name(self) -> str:
-        """
-        File name including extension.
-        """
-        pass
-
-    @property
-    @abstractmethod
-    def path(self) -> str:
-        """
-        Relative path within the source system.
-
-        This should be the path relative to the source system's root or
-        configured base directory. Used to maintain directory structure
-        when ingesting into the data lake.
-        """
-        pass
-
-    @property
-    @abstractmethod
     def source_url(self) -> str:
         """
         Full URL or path in the source system.
 
-        This is the canonical reference to the file in its source system,
-        used for tracking file origin and providing links back to the source.
+        Subclasses should override this to provide the appropriate source URL.
         """
-        pass
-
-    @property
-    @abstractmethod
-    def modified_datetime(self) -> datetime:
-        """
-        Last modified timestamp.
-        """
-        pass
-
-    @property
-    @abstractmethod
-    def created_datetime(self) -> datetime:
-        """
-        Creation timestamp.
-        """
-        pass
-
-    @property
-    @abstractmethod
-    def size(self) -> int:
-        """
-        File size in bytes.
-        """
-        pass
+        return self.path

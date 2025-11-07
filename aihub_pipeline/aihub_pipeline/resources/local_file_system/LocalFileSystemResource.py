@@ -186,7 +186,7 @@ class LocalFileSystemResource(ConfigurableResource):
         stat = file_path.stat()
         return MinimalLocalFile(
             name=file_path.name,
-            file_path=relative_path,
+            path=relative_path,
             full_path=str(file_path),
             size=stat.st_size,
             modified=stat.st_mtime,
@@ -261,10 +261,10 @@ class LocalFileSystemResource(ConfigurableResource):
         subfolder = path_parts[1] if len(path_parts) > 1 else None
 
         return LocalFile(
-            file_name=full_path.name,
-            file_path=file_path,
-            file_content=content,
-            file_size=stat.st_size,
+            name=full_path.name,
+            path=file_path,
+            content=content,
+            size=stat.st_size,
             modified=datetime.fromtimestamp(stat.st_mtime, tz=UTC).isoformat(),
             created=datetime.fromtimestamp(stat.st_ctime, tz=UTC).isoformat(),
             content_type=content_type,
@@ -286,7 +286,7 @@ class LocalFileSystemResource(ConfigurableResource):
 
         return MinimalLocalFile(
             name=full_path.name,
-            file_path=file_path,
+            path=file_path,
             full_path=str(full_path),
             size=stat.st_size,
             modified=stat.st_mtime,
