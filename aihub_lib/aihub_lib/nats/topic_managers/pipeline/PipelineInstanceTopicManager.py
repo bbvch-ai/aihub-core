@@ -7,6 +7,15 @@ from aihub_lib.nats.topic_managers.pipeline.PipelineTopicManager import Pipeline
 
 
 class PipelineInstanceTopicManager(PipelineTopicManager, AbstractStreamTopicManager):
+    """
+    Topic manager bound to a specific pipeline instance with pre-configured source and target endpoints.
+
+    Simplifies event routing for a particular pipeline by maintaining the source/target context,
+    eliminating the need to repeatedly specify these parameters for each operation. This is particularly
+    useful for long-running pipelines or sensors that continuously monitor a specific data flow, ensuring
+    events are consistently routed to the correct JetStream subjects and consumers.
+    """
+
     source_type: Annotated[str, Field(description="The pipeline source type, such as 'datalake'")]
     source_id: Annotated[str, Field(description="The pipeline source identifier")]
     target_type: Annotated[str, Field(description="The pipeline target type, such as 'datalake'")]

@@ -4,6 +4,17 @@ from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 
 
 class PipelineTopicManager(TopicManager):
+    """
+    Manages NATS subject patterns for pipeline-related events and discovery operations.
+
+    Provides standardized subject naming conventions for pipeline events flowing between data sources
+    and targets (e.g., datalake to knowledge database). This ensures consistent routing of pipeline
+    lifecycle events, discovery requests, and processing notifications across the distributed system.
+
+    The subject pattern encodes source/target pairs and run keys, enabling precise event filtering and
+    subscription management for observability tools, monitoring dashboards, and reactive processing components.
+    """
+
     PIPELINE_TOPIC: ClassVar[str] = "pipeline"
 
     def get_pipeline_discovery_subject_request(

@@ -7,6 +7,15 @@ from aihub_lib.nats.topics import Topic
 
 
 class PipelineTopic(Topic):
+    """
+    Structured representation of pipeline event subjects, encoding data flow metadata within NATS topics.
+
+    Captures the complete context of a pipeline event including source and target systems, run identifiers,
+    and specific event information. Provides bidirectional conversion between structured topic objects and
+    NATS subject strings, enabling type-safe topic handling while maintaining compatibility with NATS
+    wildcard subscriptions for monitoring and debugging workflows.
+    """
+
     source_type: Annotated[str, "Pipeline source type, such as 'datalake'"]
     source_id: Annotated[str, "Pipeline source id / container name"]
     target_type: Annotated[str, "Pipeline target type, such as 'knowledge'"]
