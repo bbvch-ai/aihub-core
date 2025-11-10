@@ -38,9 +38,6 @@ def fetch_data_lake_files_without_excluded_uris(
     data_lake_client: ResourceParam[AbstractDataLakeClient],
     excluded_uris: list[str],
 ) -> list[DataLakeFile]:
-    if excluded_uris is None:
-        excluded_uris = []
-
     excluded_uris_set = set(excluded_uris)
 
     all_files = data_lake_client.get_all_files()
