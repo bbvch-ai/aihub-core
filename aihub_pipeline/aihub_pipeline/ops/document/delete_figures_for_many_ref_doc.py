@@ -13,15 +13,15 @@ def delete_figures_for_many_ref_doc(
 ) -> list[RefDocDocument]:
     """Deletes figures associated with each RefDocDocument from the data lake."""
     for ref_doc in ref_docs:
-        figures_folder = create_figures_folder_name(ref_doc.uri)
-        if data_lake_client.directory_exists(figures_folder):
-            paths = data_lake_client.list_directory_contents(figures_folder)
+        figures_folder = create_figures_folder_name(uri=ref_doc.uri)
+        if data_lake_client.directory_exists(directory_path=figures_folder):
+            paths = data_lake_client.list_directory_contents(directory_path=figures_folder)
             for path in paths:
                 if not path.endswith("/"):
-                    file_uri = data_lake_client.build_uri(path)
-                    data_lake_client.delete_file(file_uri)
+                    file_uri = data_lake_client.build_uri(path=path)
+                    data_lake_client.delete_file(uri=file_uri)
 
-            data_lake_client.delete_directory(figures_folder)
+            data_lake_client.delete_directory(directory_path=figures_folder)
         else:
             context.log.info(f"Figures directory '{figures_folder}' for {ref_doc.uri} not found, skipping deletion.")
 
