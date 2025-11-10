@@ -1030,6 +1030,7 @@ services:
       DAGSTER_HOME: /dagster_home
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      NATS_ENDPOINT: "nats://nats:4222"
       DOCLING_API_ENDPOINT: ${DOCLING_API_ENDPOINT}
       AIHUB_API_VERSION: ${AIHUB_API_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${AIHUB_FRONTEND_ORIGIN}
@@ -1068,7 +1069,7 @@ services:
       - "443:443"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "./traefik/middlewares.yml:/etc/traefik/middlewares.yml:ro"
+      - "./configs/traefik/middlewares.latest.yml:/etc/traefik/middlewares.yml:ro"
       - "/srv/app/traefik/acme.json:/srv/app/traefik/acme.json"
     labels:
       - "traefik.enable=true"

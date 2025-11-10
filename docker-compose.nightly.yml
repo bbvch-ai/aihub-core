@@ -1028,6 +1028,7 @@ services:
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
+      NATS_ENDPOINT: "nats://nats:4222"
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       DOCLING_API_ENDPOINT: ${DOCLING_API_ENDPOINT}
@@ -1068,7 +1069,7 @@ services:
       - "443:443"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "./traefik/middlewares.yml:/etc/traefik/middlewares.yml:ro"
+      - "./configs/traefik/middlewares.nightly.yml:/etc/traefik/middlewares.yml:ro"
       - "/srv/app/traefik/acme.json:/srv/app/traefik/acme.json"
     labels:
       - "traefik.enable=true"

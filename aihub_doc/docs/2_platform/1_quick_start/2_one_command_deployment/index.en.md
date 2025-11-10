@@ -9,42 +9,65 @@ infrastructure running in minutes, not hours.
 
 ## Deployment Overview
 
-The deployment consists of three simple steps:
+::: tip Two Deployment Options
+The Swiss AI Hub supports two deployment modes. Follow the same steps for both, using the appropriate commands for your deployment type:
 
-1. **Download** the deployment configuration
-2. **Configure** environment variables with your settings
-3. **Deploy** with one command
+- **Production Deployment**: Deploy to a server with a real domain name (e.g., `aihub.yourcompany.com`)
+  - Uses `docker-compose.latest.yml`
+  - Uses Let's Encrypt for automatic SSL certificates
+  - Requires DNS configuration pointing to your server
 
-The entire platform runs as containerized services, automatically handling service discovery, networking, and startup
-orchestration.
+- **Local Deployment**: Run on your local machine for development/testing
+  - Uses `docker-compose.local.yml`
+  - Uses self-signed SSL certificates (mkcert)
+  - Uses `127.0.0.1.nip.io` domain (automatically resolves to localhost)
 
-## Step 1: Download Deployment Files
+Each step below shows commands for both deployment types. Simply follow the commands that match your chosen deployment mode.
+:::
 
-### Get the Docker Compose Configuration
+---
 
-Download the latest deployment configuration:
+## Step 1: Get Deployment Files
+
+**For Production:**
 
 ```bash
 # Create deployment directory
 mkdir swiss-ai-hub-deployment
 cd swiss-ai-hub-deployment
 
-# Download the latest deployment configuration
+# Download the production deployment configuration
 curl -O https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/docker-compose.latest.yml
+
+# Download the configs directory
+curl -L https://github.com/bbvch-ai/aihub-core/tarball/main | tar -xz --strip=2 "*/configs"
 ```
 
-Alternatively, navigate to the [aihub-core repository](https://github.com/bbvch-ai/aihub-core) and download
-`docker-compose.latest.yml` manually.
-
-### Verify Download
-
-Check that you have the deployment file:
+**For Local Deployment:**
 
 ```bash
-ls -la docker-compose.latest.yml
+# Create deployment directory
+mkdir swiss-ai-hub-deployment
+cd swiss-ai-hub-deployment
+
+# Download the local deployment configuration
+curl -O https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/docker-compose.local.yml
+
+# Download the configs directory
+curl -L https://github.com/bbvch-ai/aihub-core/tarball/main | tar -xz --strip=2 "*/configs"
+
+# Generate SSL certificates with mkcert
+mkcert -install  # Install local CA (only needed once)
+mkcert -key-file configs/traefik/certs/dev-key.pem -cert-file configs/traefik/certs/dev-cert.pem \
+  "localhost" "*.localhost" \
+  "127.0.0.1.nip.io" "*.127.0.0.1.nip.io"
 ```
 
-You should see the compose file in your deployment directory.
+::: tip What is nip.io?
+The `*.127.0.0.1.nip.io` domain automatically resolves to your localhost (127.0.0.1), providing wildcard DNS resolution without needing to modify your hosts file. This allows subdomain-based routing in local development.
+:::
+
+---
 
 ## Step 2: Configure Environment Variables
 
@@ -311,3 +334,16 @@ docker compose -f docker-compose.latest.yml ps --format "table {{.Name}}\t{{.Sta
    - Redirects to Azure authentication
    - After login, returns to AI-Hub interface
    - Should see the main dashboard
+
+## Summary: Key Differences Between Deployments
+
+| Feature | Production (`docker-compose.latest.yml`) | Local (`docker-compose.local.yml`) |
+|---------|------------------------------------------|-------------------------------------------|
+| **SSL Certificates** | Let's Encrypt (automatic) | mkcert (manual generation) |
+| **Domain** | Your production domain | `127.0.0.1.nip.io` |
+| **Configuration Files** | `*.latest.*` configs | `*.local.*` configs |
+| **Purpose** | Production deployments | Local deployment and development |
+
+::: warning
+Never use self-signed SSL certificates in production. The local deployment configuration is designed exclusively for development and testing on your local machine.
+:::

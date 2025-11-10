@@ -77,7 +77,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         super().__init__(conversation_ttl_days=conversation_ttl_days)
         self.agent_class = agent_class
         self.agent_id = agent_id
-        self.topic_manager = AgentInstanceTopicManager(agent_class, agent_id)
+        self.topic_manager = AgentInstanceTopicManager(agent_class=agent_class, agent_id=agent_id)
 
         self.nc: NATS | None = None
         self.js: JetStreamContext | None = None

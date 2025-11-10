@@ -13,17 +13,17 @@ class SuperuserIdentityProvider(IdentityProvider):
 
     async def get_user_identity_by_oid(self, user_oid: str) -> UserIdentity:
         if user_oid != self.config.OID:
-            raise ValueError(f"SuperuserIdentityProvider: oid '{user_oid}' " f"does not match the superuser oid.")
+            raise ValueError(f"SuperuserIdentityProvider: oid '{user_oid}' does not match the superuser oid.")
         return self.config.get_user_identity()
 
     async def get_user_identity_by_email(self, email: str) -> UserIdentity:
         if email != self.config.EMAIL:
-            raise ValueError(f"SuperuserIdentityProvider: email '{email}' " f"does not match the superuser email.")
+            raise ValueError(f"SuperuserIdentityProvider: email '{email}' does not match the superuser email.")
         return self.config.get_user_identity()
 
     async def get_user_roles(self, user_oid: str) -> list[str]:
         if user_oid != self.config.OID:
-            raise ValueError(f"SuperuserIdentityProvider: oid '{user_oid}' " f"does not match the superuser oid.")
+            raise ValueError(f"SuperuserIdentityProvider: oid '{user_oid}' does not match the superuser oid.")
         return self.config.ROLES
 
     async def get_user_profile_image_data_url(self, user_oid: str) -> str | None:
