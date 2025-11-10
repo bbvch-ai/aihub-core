@@ -4,7 +4,6 @@
 # To make changes, edit the following files and then run the generator script:
 #   - deployment/compose-config.yml (for changing values and versions)
 #   - deployment/templates/docker-compose.yml.j2 (for changing structure and logic)
-
 # ===================================================================
 # TRAEFIK PRIORITY RULES
 # ===================================================================
@@ -938,7 +937,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
       - ./configs/dagster/dagster-config.nightly.yml:/dagster_home/dagster.yml:ro
-      - ./configs/dagster/workspace.nightly.yml:/dagster_home/dagster.yml:ro
+      - ./configs/dagster/workspace.nightly.yml:/dagster_home/workspace.yml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -960,7 +959,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
       - ./configs/dagster/dagster-config.nightly.yml:/dagster_home/dagster.yml:ro
-      - ./configs/dagster/workspace.nightly.yml:/dagster_home/dagster.yml:ro
+      - ./configs/dagster/workspace.nightly.yml:/dagster_home/workspace.yml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -989,20 +988,19 @@ services:
     command:
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
-      - "--providers.file.filename=/etc/traefik/middlewares.yml"
+      - "--providers.file.directory=/etc/traefik/dynamic"
       - "--providers.docker=true"
       - "--providers.docker.watch=true"
       - "--providers.docker.exposedbydefault=false"
-      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
-      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/srv/app/traefik/acme.json"
       - "--api=true"
       - "--api.dashboard=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme.json"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "./traefik/traefik.yml:/etc/traefik/traefik.yml:ro"
-      - "./traefik/middlewares.yml:/etc/traefik/middlewares.yml:ro"
-      - "/srv/app/traefik/acme.json:/srv/app/traefik/acme.json"
+      - "./configs/traefik/middlewares.nightly.yml:/etc/traefik/dynamic/middlewares.yml:ro"
+      - "/srv/app/traefik/acme.json:/etc/traefik/acme.json"
     labels:
       - "traefik.enable=true"
       # --- HTTP to HTTPS Redirect and ACME Challenge ---
@@ -1015,8 +1013,8 @@ services:
       - "traefik.http.routers.http-catch.middlewares=https-redirect"
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
       # --- Dashboard ---
-      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
       - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
       - "traefik.http.routers.traefik.entrypoints=websecure"
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:${ADMIN_PASSWORD_HASH}"

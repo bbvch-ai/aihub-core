@@ -4,7 +4,6 @@
 # To make changes, edit the following files and then run the generator script:
 #   - deployment/compose-config.yml (for changing values and versions)
 #   - deployment/templates/docker-compose.yml.j2 (for changing structure and logic)
-
 # ===================================================================
 # TRAEFIK PRIORITY RULES
 # ===================================================================
@@ -938,7 +937,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
       - ./configs/dagster/dagster-config.local.yml:/dagster_home/dagster.yml:ro
-      - ./configs/dagster/workspace.local.yml:/dagster_home/dagster.yml:ro
+      - ./configs/dagster/workspace.local.yml:/dagster_home/workspace.yml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -960,7 +959,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
       - ./configs/dagster/dagster-config.local.yml:/dagster_home/dagster.yml:ro
-      - ./configs/dagster/workspace.local.yml:/dagster_home/dagster.yml:ro
+      - ./configs/dagster/workspace.local.yml:/dagster_home/workspace.yml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -989,35 +988,32 @@ services:
     command:
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
-      - "--entrypoints.websecure.http.tls=true"
-      - "--providers.file.directory=/etc/traefik"
+      - "--providers.file.directory=/etc/traefik/dynamic"
       - "--providers.docker=true"
       - "--providers.docker.watch=true"
       - "--providers.docker.exposedbydefault=false"
       - "--api=true"
       - "--api.dashboard=true"
+      - "--entrypoints.websecure.http.tls=true"
       - "--api.insecure=true"
       - "--log.level=DEBUG"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "./configs/traefik/middlewares.local.yml:/etc/traefik/middlewares.yml:ro"
-      - "./configs/traefik/tls.local.yml:/etc/traefik/tls.yml:ro"
+      - "./configs/traefik/middlewares.local.yml:/etc/traefik/dynamic/middlewares.yml:ro"
+      - "./configs/traefik/tls.local.yml:/etc/traefik/dynamic/tls.yml:ro"
       - "./configs/traefik/certs/dev-cert.pem:/certs/dev-cert.pem:ro"
       - "./configs/traefik/certs/dev-key.pem:/certs/dev-key.pem:ro"
     labels:
       - "traefik.enable=true"
       # --- HTTP to HTTPS Redirect and ACME Challenge ---
-      - ${ACME_EMAIL:+traefik.http.routers.acme-challenge.rule=PathPrefix(`/.well-known/acme-challenge/`)}
-      - ${ACME_EMAIL:+traefik.http.routers.acme-challenge.entrypoints=web}
-      - ${ACME_EMAIL:+traefik.http.routers.acme-challenge.priority=9000}
       - "traefik.http.routers.http-catch.rule=HostRegexp(`{host:.+}`) && !PathPrefix(`/.well-known/acme-challenge/`)"
       - "traefik.http.routers.http-catch.entrypoints=web"
       - "traefik.http.routers.http-catch.priority=10"
       - "traefik.http.routers.http-catch.middlewares=https-redirect"
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
       # --- Dashboard ---
-      - "traefik.http.routers.traefik.rule=Host(`traefik.localhost`)"
       - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
       - "traefik.http.routers.traefik.entrypoints=websecure"
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:${ADMIN_PASSWORD_HASH}"

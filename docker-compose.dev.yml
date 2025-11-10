@@ -5,7 +5,6 @@
 #   - deployment/compose-config.yml (for changing values and versions)
 #   - deployment/templates/docker-compose.yml.j2 (for changing structure and logic)
 
-
 services:
   # ===================================================================
   # SeaweedFS Stack (Distributed Object Storage)
