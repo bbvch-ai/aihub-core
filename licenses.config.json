@@ -75,6 +75,7 @@
     "llama-index-vector-stores-milvus": "MIT",
     "llama-index-workflows": "MIT",
     "mdformat": "MIT",
+    "matplotlib-inline": "BSD-3-Clause",
     "milvus-lite": "Apache-2.0",
     "mypy_extensions": "MIT",
     "pillow": "MIT-CMU",

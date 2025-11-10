@@ -8,12 +8,12 @@ from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributo
 )
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.routes.Controller import Controller
-from botbuilder.integration.aiohttp import CloudAdapter
 from fastapi import Body, Depends, Request, Response
+from microsoft_agents.activity import Activity
+from microsoft_agents.hosting.aiohttp import CloudAdapter
 from nats.aio.client import Client as NATS
 
 from aihub_bot.bots.bot_in_the_loop.BotInTheLoopBot import BotInTheLoopBot
-from aihub_bot.routes.activity_model import ActivityModel
 from aihub_bot.routes.bot_in_the_loop.BotInTheLoopHandler import BotInTheLoopHandler
 from aihub_bot.routes.RoutesService import RoutesService
 
@@ -35,7 +35,7 @@ class BotInTheLoopController(Controller):
         @self.router.post(route, tags=self.tags)
         async def bot_in_the_loop_chat(
             request: Request,
-            _: Annotated[ActivityModel, Body],  # openapi request body
+            _: Annotated[Activity, Body],  # openapi request body
             nc: Annotated[NATS, Depends(use_nats)],
             external_agent_event_distributor: Annotated[
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)

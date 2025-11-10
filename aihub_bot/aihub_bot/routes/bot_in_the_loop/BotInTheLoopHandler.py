@@ -1,15 +1,15 @@
 from collections.abc import Callable
-from typing import Annotated
+from typing import Annotated, cast
 
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoopRequestEvent
 from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import TeamsConfig
 from aihub_lib.nats.topics import AgentInstanceTopic
-from botbuilder.core import TurnContext
-from botbuilder.schema import ChannelAccount, ConversationAccount, ConversationReference
-from botframework.connector import Channels
 from cachetools import TTLCache
 from fastapi import Request
+from microsoft_agents.activity import ChannelAccount, Channels, ConversationAccount, ConversationReference
+from microsoft_agents.hosting.core import TeamsConnectorClient, TurnContext
+from microsoft_agents.hosting.core.connector.client.connector_client import ConversationsOperations
 from pydantic import BaseModel, Field
 
 from aihub_bot.persistence.entities.PathEntity import PathEntity
@@ -22,7 +22,10 @@ class BotInTheLoopThread(BaseModel):
     conversation_id: Annotated[
         str,
         Field(
-            description="The conversation ID where messages are sent to. For Slack: BotID:TeamID:ChannelID. For Teams: the channel (thread) conversation ID (e.g., 19:...@thread.tacv2)."
+            description=(
+                "The conversation ID where messages are sent to. For Slack: BotID:TeamID:ChannelID. "
+                "For Teams: the channel (thread) conversation ID (e.g., 19:...@thread.tacv2)."
+            )
         ),
     ]
     thread_identifier: Annotated[
@@ -51,6 +54,7 @@ class BotInTheLoopHandler:
 
     async def handle_event(self, event: BaseEvent, _: AgentInstanceTopic):
         if event.is_bitl_request_event:
+            event = cast(BotInTheLoopRequestEvent, event)
             await self._handle_bot_in_the_loop_request(event)
         else:
             return
@@ -81,7 +85,7 @@ class BotInTheLoopHandler:
         thread_id = event.topic.thread_id
         question = event.question
 
-        if event.slack_channel_id is not None:
+        if event.slack_config is not None:
             await self._handle_bot_in_the_loop_request_in_slack(event, thread_id, question)
 
         elif event.teams_config is not None:
@@ -119,9 +123,16 @@ class BotInTheLoopHandler:
         thread: BotInTheLoopThread,
     ):
         adapter = RoutesService.get_adapter(self.path)
+        credentials = RoutesService.get_credentials(self.path)
+        if credentials is None:
+            raise ValueError(f"No credentials found for path: {self.path}")
+
+        # Convert ConversationReference to Activity for the new SDK
+        continuation_activity = conversation_reference.get_continuation_activity()
+
         await adapter.continue_conversation(
-            bot_app_id=RoutesService.get_credentials(self.path).APP_ID,
-            reference=conversation_reference,
+            agent_app_id=credentials.APP_ID,
+            continuation_activity=continuation_activity,
             callback=self._bot_in_the_loop_callback(question, thread),
         )
 
@@ -138,14 +149,17 @@ class BotInTheLoopHandler:
         conversation_id = self._build_conversation_id_with_thread_identifier(thread, Channels.ms_teams)
 
         conversation = ConversationReference(
-            channel_id=Channels.ms_teams.value,
+            channel_id=Channels.ms_teams,  # type: ignore
             conversation=ConversationAccount(
                 id=conversation_id,
                 conversation_type="channel",
             ),
             service_url=f"https://smba.trafficmanager.net/emea/{teams_config.tenant_id}/",
             bot=ChannelAccount(
-                id=teams_config.bot_id,
+                id=teams_config.bot_framework_id,
+            ),
+            user=ChannelAccount(
+                id="bot-in-the-loop",  # Placeholder user for bot-initiated proactive messages
             ),
         )
 
@@ -158,7 +172,7 @@ class BotInTheLoopHandler:
         question: str,
     ):
         slack_ids = await self._get_slack_ids(self.path)
-        base_conversation_id = f"{slack_ids.bot_id}:{slack_ids.team_id}:{event.slack_channel_id}"
+        base_conversation_id = f"{slack_ids.bot_id}:{slack_ids.team_id}:{event.slack_config.channel_id}"
 
         thread = self._update_or_create_thread(thread_id, base_conversation_id, event)
 
@@ -167,12 +181,15 @@ class BotInTheLoopHandler:
         bot_team_id = f"{slack_ids.bot_id}:{slack_ids.team_id}"
 
         conversation = ConversationReference(
-            channel_id=Channels.slack.value,
+            channel_id=Channels.slack,  # type: ignore
             conversation=ConversationAccount(
                 id=conversation_id,
             ),
-            service_url="https://europe.slack.botframework.com",
+            service_url=event.slack_config.service_url,
             bot=ChannelAccount(id=bot_team_id),
+            user=ChannelAccount(
+                id="bot-in-the-loop",  # Placeholder user for bot-initiated proactive messages
+            ),
         )
 
         await self._send_bot_in_the_loop_message(conversation, question, thread)
@@ -180,9 +197,39 @@ class BotInTheLoopHandler:
     @staticmethod
     def _bot_in_the_loop_callback(question: str, thread: BotInTheLoopThread) -> Callable:
         async def callback(turn_context: TurnContext):
-            response = await turn_context.send_activity(question)
-            if response and hasattr(response, "id") and thread.thread_identifier is None:
-                thread.thread_identifier = response.id
+            from typing import cast
+
+            from microsoft_agents.activity import Activity, ActivityTypes
+
+            connector_client = cast(
+                TeamsConnectorClient,  # for unknown reasons, this is always a TeamsConnectorClient
+                turn_context.turn_state.get("ConnectorClient"),
+            )
+
+            if not connector_client:
+                raise ValueError("Unable to extract ConnectorClient from turn context")
+
+            bot: ChannelAccount = turn_context.activity.recipient
+
+            activity = Activity(
+                type=ActivityTypes.message,
+                text=question,
+                conversation=turn_context.activity.conversation,
+                from_property=bot,  # type: ignore (alias: "from")
+            )  # type: ignore (alias: "from")
+
+            conv: ConversationsOperations = cast(ConversationsOperations, connector_client.conversations)
+
+            response = await conv.send_to_conversation(
+                conversation_id=activity.conversation.id,
+                body=activity,
+            )
+
+            if thread.thread_identifier is None:
+                if response and hasattr(response, "id"):
+                    thread.thread_identifier = response.id
+                else:
+                    raise ValueError("Unable to get thread identifier from response")
 
         return callback
 

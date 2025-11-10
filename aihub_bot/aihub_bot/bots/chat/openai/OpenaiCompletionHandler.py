@@ -10,10 +10,9 @@ import openai
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
-from botbuilder.core import TurnContext
-from botbuilder.core.teams import TeamsInfo
-from botbuilder.schema.teams import TeamsChannelAccount
-from botframework.connector import Channels
+from microsoft_agents.activity import Channels
+from microsoft_agents.activity.teams import TeamsChannelAccount
+from microsoft_agents.hosting.core import TeamsConnectorClient, TurnContext
 from openai import APIStatusError, AsyncStream
 from openai.types.chat import (
     ChatCompletion,
@@ -98,7 +97,8 @@ class OpenaiCompletionHandler(CompletionHandler):
         - The context is needed to generate the completion.
         """
         persisted_messages: list[Message] = CompletionHandler.get_messages_by_conversation_id(
-            conversation_id=turn_context.activity.conversation.id
+            conversation_id=turn_context.activity.conversation.id,
+            bot_id=turn_context.activity.recipient.id,
         )
         system_message: Message = CompletionHandler.get_system_message(
             turn_context=turn_context,
@@ -110,24 +110,31 @@ class OpenaiCompletionHandler(CompletionHandler):
             OpenaiCompletionHandler._message_to_chat_completion_message_param(message) for message in persisted_messages
         ]
 
+        user_id = turn_context.activity.from_property.id or "UNKNOWN"
+        user_name = turn_context.activity.from_property.name or "UNKNOWN"
+        user_email = f"{user_id}@unknown.bot"
+        user_roles = []
+
+        connector_client = turn_context.turn_state.get("ConnectorClient")
+
+        if isinstance(connector_client, TeamsConnectorClient):
+            teams_account: TeamsChannelAccount = await connector_client.get_conversation_member(
+                turn_context.activity.conversation.id, user_id
+            )
+            if teams_account.email is not None:
+                user_email = teams_account.email
+            if teams_account.user_role is not None:
+                user_roles = [teams_account.user_role]
+
         if turn_context.activity.channel_id == Channels.ms_teams:
-            member: TeamsChannelAccount = await TeamsInfo.get_member(
-                turn_context,
-                turn_context.activity.from_property.id,
-            )
-            user: UserIdentity = UserIdentity(
-                id=member.aad_object_id,
-                name=member.name,
-                email=member.email,
-                roles=["TestOnlyFullAdminAccess"],
-            )
-        else:
-            user: UserIdentity = UserIdentity(
-                id=turn_context.activity.from_property.id or "UNKNOWN",
-                name=turn_context.activity.from_property.name or "UNKNOWN",
-                email="UNKNOWN",
-                roles=["TestOnlyFullAdminAccess"],
-            )
+            user_id = turn_context.activity.from_property.aad_object_id or user_id
+
+        user: UserIdentity = UserIdentity(
+            id=user_id,
+            name=user_name,
+            email=user_email,
+            roles=user_roles,
+        )
 
         logger.debug(f"Using user identity: {user}")
 

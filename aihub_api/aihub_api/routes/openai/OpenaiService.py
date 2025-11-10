@@ -474,7 +474,9 @@ class OpenaiService:
         for i, audio_chunk in enumerate(audio_chunks):
             buffer = io.BytesIO()
             audio_chunk.export(buffer, format="wav")
-            file_tuple = (file.filename, buffer, "audio/wav")
+            filename_without_ext = file.filename.rsplit(".", 1)[0] if "." in file.filename else file.filename
+            wav_filename = f"{filename_without_ext}_chunk{i}.wav"
+            file_tuple = (wav_filename, buffer, "audio/wav")
 
             result: TranscriptionChunk = await client.audio.transcriptions.create(
                 model=model_name,

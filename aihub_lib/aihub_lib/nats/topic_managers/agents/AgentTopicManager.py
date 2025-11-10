@@ -1,13 +1,13 @@
-from typing import Annotated
+from typing import Annotated, ClassVar
 
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 
 
 class AgentTopicManager(TopicManager):
-    AGENT_TOPIC = "agent"
+    AGENT_TOPIC: ClassVar[str] = "agent"
 
-    DISPLAY_EVENT = "display_event"
-    CONTROL_EVENT = "control_event"
+    DISPLAY_EVENT: ClassVar[str] = "display_event"
+    CONTROL_EVENT: ClassVar[str] = "control_event"
 
     def get_agent_instance_discovery_subject_request(
         self,
@@ -32,7 +32,14 @@ class AgentTopicManager(TopicManager):
         agent_id: Annotated[str, "Agent ID filter or '*'"] = "*",
     ) -> str:
         """Returns a subject for receiving agent discovery responses."""
-        return f"{self.INSTANCE_DISCOVERY_TOPIC}.{self.AGENT_TOPIC}.{agent_class}.{agent_id}.response.{call_id}"
+        return (
+            f"{self.INSTANCE_DISCOVERY_TOPIC}."
+            f"{self.AGENT_TOPIC}."
+            f"{agent_class}."
+            f"{agent_id}."
+            f"response."
+            f"{call_id}"
+        )
 
     def get_agent_class_discovery_subject_response(
         self,
@@ -55,8 +62,15 @@ class AgentTopicManager(TopicManager):
     ) -> str:
         """Returns a subject pinpointing a specific event in a given agent run."""
         return (
-            f"{self.AGENT_TOPIC}.{agent_class}.{agent_id}"
-            f".{thread_id}.{display_id}.{run_id}.{event_type}.{event_name}.{event_id}"
+            f"{self.AGENT_TOPIC}."
+            f"{agent_class}."
+            f"{agent_id}."
+            f"{thread_id}."
+            f"{display_id}."
+            f"{run_id}."
+            f"{event_type}."
+            f"{event_name}."
+            f"{event_id}"
         )
 
     def get_subject_for_all_events_in_agent(self) -> str:

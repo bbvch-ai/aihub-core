@@ -5,6 +5,252 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.251.0] - 2025-11-10 - NATS-Powered Eventing for Smarter Data Pipelines
+
+### Added
+
+- ✨ **Introduced Event-Driven Document Pipelines:** Implemented new capabilities to automatically trigger data ingestion
+  pipelines via NATS events when documents are uploaded and validated.
+- 🚀 **New NATS Poller Utility (`JSPoller`):** Added a robust and generic JetStream poller, simplifying asynchronous
+  event processing and message acknowledgment from NATS.
+- 📄 **`SourceUpdatedEvent` for Data Lake Changes:** Introduced a dedicated NATS event type to signal when a file has
+  been updated or uploaded in the data lake, enabling reactive workflows.
+- 📦 **Structured Pipeline Topic Managers:** Added `PipelineTopicManager` and `PipelineInstanceTopicManager` to
+  standardize NATS subject naming conventions for pipeline-related events, enhancing routing and observability.
+- 🚦 **NATS Document Upload Sensor for Dagster:** Integrated a new Dagster sensor that listens for `SourceUpdatedEvent`
+  messages on NATS, automatically initiating pipeline runs for newly uploaded documents.
+- 🏷️ **Customizable Dagster Schedule Names:** Enabled the ability to assign explicit names to Dagster schedules,
+  improving identification and management of periodic tasks.
+- 🔗 **NATS Endpoint Configuration for Dagster:** Configured Dagster services to connect to NATS, enabling seamless event
+  communication within the pipeline ecosystem.
+
+### Changed
+
+- ⚡️ **Knowledge Document Upload Validation:** The API endpoint for validating document uploads now publishes a
+  `SourceUpdatedEvent` to NATS upon successful verification, integrating with event-driven pipelines.
+
+### Refactor
+
+- 🧹 **Unified NATS Topic Manager Design:** Refactored all `TopicManager` classes to inherit from Pydantic's `BaseModel`,
+  enhancing type safety, consistency, and data validation across NATS subject generation.
+- 🔄 **Standardized Topic Manager Instantiation:** Updated constructors for `AgentClassTopicManager`,
+  `AgentInstanceTopicManager`, `ProcessClassTopicManager`, and related classes to use keyword arguments, improving code
+  clarity.
+- 🦾 **Simplified JetStream Event Replay:** Replaced manual JetStream consumer creation and pull subscription logic in
+  `JetStreamEventStore` with the new `JSPoller` utility, streamlining historical event replay.
+- 🛡️ **Improved NATS Stream Management for Publishers:** Enhanced `JSPublisher` with a new `ensure_stream_exists`
+  method, allowing publishers to proactively verify and create necessary JetStream streams.
+- ⚙️ **Cleanup of `observable_data_lake_factory`:** Removed an unused `DataLakeResource` parameter from the
+  `observable_data_lake_factory` asset, simplifying its signature.
+- 📚 **Centralized Pipeline Constants:** Moved internal pipeline source and target names (e.g., 'datalake', 'knowledge')
+  into dedicated constant files for better maintainability and consistency.
+- 💬 **Clarified Process Topic Descriptions:** Updated comments for process-related NATS topics to accurately reflect
+  their purpose, improving documentation.
+
+---
+
+## [v0.250.2] - 2025-11-07 - Streamlined Local Development and Documentation Clarity
+
+### Added
+
+- ✨ **New Local Development Option (Build from Source):** Introduced `docker-compose.build.yml` to allow developers to
+  build and run the entire platform locally directly from source code, facilitating active development and debugging.
+- 🎤 **Microphone Access for Open Web UI:** Enabled microphone permissions within the Open Web UI iframe, supporting
+  voice-based interactions and features.
+- 📄 **macOS mkcert Instructions:** Added specific installation instructions for `mkcert` on macOS to the local
+  development prerequisites, improving setup guidance.
+- 📊 **Deployment Comparison Summary:** Included a new summary table highlighting the key differences between production
+  and local deployment configurations and purposes, enhancing clarity for users.
+
+### Changed
+
+- 🔄 **Refined Local Deployment Strategy:** Reworked local development guidance, clearly separating the use of
+  `docker-compose.local.yml` for running with pre-built images (recommended for testing) from the new
+  `docker-compose.build.yml` for building from source (for active development).
+- 📄 **Enhanced Documentation Structure:** Significantly reorganized and updated the Prerequisites and One-Command
+  Deployment documentation, providing clearer, distinct instructions and sections for production versus local
+  deployments.
+- 🔑 **Local Traefik SSL Configuration:** Modified the local Traefik setup (`docker-compose.local.yml`) to exclusively
+  use self-signed SSL certificates via `tls=true` and dynamic file providers, removing the dependency on Let's Encrypt
+  for local environments.
+- 📋 **Version-Specific Traefik Middlewares:** Updated Traefik configurations for production and nightly builds to load
+  middlewares from version-specific files, allowing for more granular control.
+- 🛠️ **Improved Audio Transcription Filenaming:** Enhanced the internal logic for naming audio chunks during
+  transcription to ensure more unique and descriptive filenames.
+- 📝 **Updated Architecture Decisions:** The containerized deployment architecture documentation has been updated to
+  reflect the new local development options and their corresponding Docker Compose files.
+
+### Removed
+
+- 🗑️ **Deprecated Central Traefik Middleware File:** The standalone `traefik/middlewares.yml` file has been removed, as
+  middleware configurations are now dynamically loaded from specific `configs` directories for better modularity.
+
+---
+
+## [v0.250.1] - 2025-11-07 - Streamlined Deployment and Core Service Upgrades
+
+### Added
+
+- ✨ **Milvus UI Integration**: Introduced **Attu (Milvus UI)**, making vector database management more accessible via a
+  dedicated subdomain (`attu.your-domain.com`).
+- 🦾 **New RAG Agent**: Added a dedicated `rag_agent` service for enhanced Retrieval Augmented Generation capabilities,
+  integrated with core platform services.
+- 📄 **Dagster Workspace Configuration**: Introduced `workspace.yaml` files for Dagster, enabling dynamic pipeline
+  loading from the `default_rag_pipeline` service.
+- 🛡️ **Default Security Headers**: Implemented a new `security-headers` middleware in Traefik to enhance platform
+  security by default.
+
+### Changed
+
+- ⚙️ **Refined Deployment Documentation**: Significantly updated and expanded the English prerequisites and one-command
+  deployment guides, including detailed DNS, Azure Entra ID token version 2 requirement, and comprehensive app role
+  setup instructions.
+- 🚀 **Standardized Azure OpenAI Configuration**: Consolidated Azure OpenAI API key management and base URL configuration
+  within LiteLLM, simplifying environment setup by using a single `AZURE_OPENAI_BASE_URL` and `AZURE_OPENAI_KEY`.
+- 📊 **Updated OpenWebUI**: Upgraded OpenWebUI to `v0.6.28`, bringing various improvements and bug fixes, and updated its
+  internal API endpoints to align with the platform's authentication and data access patterns.
+- 🧹 **Improved Core Service Health Checks**: Adjusted Docker Compose healthcheck configurations for Phoenix, NATS,
+  Valkey, and Milvus UI (Attu) to prevent false-negative restarts and improve startup reliability.
+- 🔑 **Updated Authentication Configuration**: Enhanced authentication parameters within the API and Bot services,
+  ensuring consistent propagation of OAuth and superuser credentials.
+- ⚙️ **Enhanced Pipeline Configuration**: Explicitly passed numerous environment variables to the `default_rag_pipeline`
+  service, improving its configurability and robustness.
+- 🖼️ **Jupyter Lab Data Volume**: Changed the default data volume for Jupyter Lab from `llama-data` to `jupyter-data`
+  for clearer separation of concerns.
+- 🔐 **Traefik Dashboard Domain**: Switched the Traefik dashboard host rule from `traefik.localhost` to
+  `traefik.${DOMAIN}` for consistent domain usage across the platform.
+- 🛠️ **LiteLLM Guardrail Defaults**: Changed default `presidio-mask-guard` and `presidio-block-guard` settings to
+  `default_on: false` in LiteLLM configurations, allowing for explicit enablement.
+- 📦 **Docling Service Configuration**: Updated the Docling image to `v1.3.1` and refined its configuration with explicit
+  artifact paths and model settings.
+
+### Fixed
+
+- 🐛 **Robust Makefile Sourcing**: Modified `aihub_bot/Makefile` to optionally include `.env` files, preventing build
+  failures when the file is absent.
+- 🩹 **Websocket Endpoint Correction**: Corrected the WebSocket endpoint URL for frontend services from
+  `/api/v1/event/ws` to `/api/v1/events/ws` (plural).
+- 🔒 **Docling Model Permissions**: Introduced a new `docling-model-permission` service to correctly set ownership for
+  model volumes, resolving potential permission issues.
+- 🛠️ **PostgreSQL Healthcheck User**: Updated the PostgreSQL healthcheck to use the configured `POSTGRES_USER` variable
+  for improved flexibility and consistency.
+
+### Removed
+
+- 🗑️ **German Documentation**: Removed the German versions of the "Prerequisites" and "One-Command Deployment"
+  documentation pages to streamline content.
+
+### Refactor
+
+- 🔄 **Centralized Traefik Configuration**: Streamlined Traefik configuration by moving some parameters directly into the
+  `command` section and standardizing SSL certificate resolution with Let's Encrypt.
+
+---
+
+## [v0.250.0] - 2025-11-06 - Next-Gen Bot Framework: Microsoft Agents SDK Integration and Multi-Bot Capabilities
+
+### Added
+
+- ✨ **New Bot-in-the-Loop Start Event:** Introduced `BotInTheLoopAgentStartEvent` to provide a more flexible and
+  validated way to initiate Bot-in-the-Loop workflows, supporting explicit Teams or Slack configurations from the agent.
+- ⚙️ **Structured Slack Configuration:** Added `SlackConfig` within `BotInTheLoopRequestEvent` to enable robust and
+  explicit configuration details when initiating Slack interactions.
+- 🧪 **Comprehensive Testing Utilities:** Introduced new testing fixtures for mocking MSAL authentication and `aiohttp`
+  requests, significantly enhancing test isolation and reliability for `aihub_bot` components.
+
+### Changed
+
+- 🚀 **Upgraded Bot Framework SDK:** Migrated `aihub_bot` components from the legacy `botbuilder` library to the new
+  `microsoft-agents` SDK. This fundamental upgrade impacts bot hosting, authentication, activity handling, and overall
+  integration with Microsoft Bot Framework channels.
+- 🤝 **Enhanced Multi-Bot Conversation Management:** Conversation tracking and persistence (in `ConversationEntity` and
+  `ConversationTracker`) now explicitly incorporate `bot_id`. This ensures robust data isolation and prevents collisions
+  when multiple bot instances operate across various channels or environments.
+- 👤 **Improved Teams User Identity Handling:** Enhanced the process of extracting user identity for Teams interactions,
+  leading to more accurate retrieval of `aad_object_id`, email, and roles.
+- 🤖 **Refined Bot-in-the-Loop Logic:** Updated the core logic for the `BotInTheLoopAgent` and its handler to seamlessly
+  support multi-channel configurations (Teams and Slack) and streamline the sending of proactive messages using the new
+  SDK.
+- 📄 **Documentation Updates:** Minor updates to documentation `source_sha` values.
+
+### Fixed
+
+- 🐛 **NATS BaseEvent Serialization:** Corrected an issue in `BaseEvent` serialization to ensure all model fields are
+  properly dumped during the process.
+
+### Refactor
+
+- 🧹 **Streamlined Bot Activity Models:** Removed the custom `ActivityModel` as the new `microsoft-agents` SDK provides
+  direct, improved activity handling, simplifying controller definitions.
+- 🔄 **Centralized Bot Message Handling:** Refactored common bot message processing logic into a shared `_handle_message`
+  method, simplifying the distinction between direct and channel interactions for Teams and Slack.
+
+---
+
+## [v0.249.4] - 2025-11-06 - Refined Document Metadata for Clearer Source Tracking
+
+### Added
+
+- ✨ **Introduced `source_origin` field:** Documents and nodes now include a new `source_origin` field to explicitly
+  store the original external URI (e.g., SharePoint URL) distinct from the data lake URI.
+
+### Changed
+
+- 🔄 **Clarified `source` field definition:** The `source` metadata field for ingested documents and nodes is now
+  explicitly defined as the data lake URI.
+- 🚀 **Improved document ingestion:** Pipelines for ingesting documents (e.g., from SharePoint, data lake) have been
+  updated to correctly capture and differentiate between the data lake URI (now `source`) and the new `source_origin`.
+
+### Removed
+
+- 🗑️ **Deprecated `DATA_LAKE_URI` metadata field:** The `DATA_LAKE_URI` field has been removed to streamline and
+  simplify document metadata, with its functionality now handled by the `source` field.
+
+---
+
+## [v0.249.3] - 2025-11-05 - Streamlined LiteLLM API Parameter Handling
+
+### Changed
+
+- 🔄 **Improved LiteLLM Model Parameter Handling:** Configured various LiteLLM models (e.g., `text-generation/mini`,
+  `text-generation/small`, `text-generation/large`) across all environments (`dev`, `latest`, `local`, `nightly`) to
+  automatically **drop extraneous parameters** from API requests, enhancing compatibility and robustness with underlying
+  services.
+
+---
+
+## [v0.249.2] - 2025-11-05 - Enhanced Model Agnosticism and New Azure GPT-5 Series Integration
+
+### Added
+
+- ✨ **New Azure OpenAI GPT-5 Nano Integration**: Introduced direct support for Azure OpenAI GPT-5 Nano via the
+  `text-generation/nano` alias, including a dedicated environment variable (`AZURE_OPENAI_KEY_NANO`) and specific
+  default temperature settings for optimal performance.
+- 🚀 **New Azure OpenAI GPT-5 Series Integration**: Expanded LLM capabilities with support for Azure OpenAI GPT-5 via the
+  `text-generation/large` alias, providing access to more powerful generative models.
+
+### Changed
+
+- ⚙️ **Updated LiteLLM Proxy**: The internal LiteLLM dependency has been updated to `v1.77.7-stable`, bringing general
+  improvements and stability fixes to the model proxy layer.
+- 🤖 **Adjusted Default Fallback and Safety LLM Configuration**: The system's default fallback LLM and the prompt
+  injection detection LLM now leverage the newly introduced `text-generation/nano` model alias.
+
+### Refactor
+
+- 🧹 **Standardized Model Aliases Across the Platform**: Implemented a consistent, provider-agnostic model naming scheme,
+  replacing previous explicit model names (e.g., `azure/gpt-4o-mini`, `local/qwen-embedding`, `local/reranker`) with
+  simplified aliases like `text-generation/mini`, `embedding/small`, `reranker`, `transcription`, `speech`, and
+  `image-generation`. This refactoring significantly simplifies model configuration and enhances platform flexibility.
+- 🔄 **Unified Model Configuration**: All agent definitions, API endpoints, infrastructure-as-code (IaC), and data
+  pipeline configurations have been updated to utilize the new standardized model aliases, ensuring consistency and ease
+  of maintenance.
+- 📈 **Enhanced LLM Parameter Configuration**: Introduced capabilities for defining default parameters within
+  `LLMConfig`, allowing for fine-grained control over model behavior for specific aliases, such as setting a default
+  temperature for `text-generation/nano`.
+
+---
+
 ## [v0.249.1] - 2025-11-04 - Enhanced Authentication Service Robustness
 
 ### Fixed
