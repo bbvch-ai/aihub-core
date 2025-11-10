@@ -15,5 +15,3 @@ Dieser Abschnitt bietet einen tiefen Einblick in die AI-Hub-Codebasis, einschlie
 - **Package-Dokumentation**: Detaillierte README-Dateien aus jedem Package
 - **Changelog**: Vollständige Änderungshistorie
 - **Licenses**: Software-Lizenzen und Zuschreibungen
-
-Diese Dateien werden direkt aus der Codebasis synchronisiert und bieten die aktuellste technische Dokumentation.
