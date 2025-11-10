@@ -1222,7 +1222,7 @@ services:
       traefik:
         condition: service_started
       ferretdb:
-        condition: service_healthy
+        condition: service_started
     environment:
       # Log Level
       LOG_LEVEL: ${LOG_LEVEL}
