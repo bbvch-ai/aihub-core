@@ -186,7 +186,6 @@ class SharePointResource(ConfigurableResource):
                             created=_parse_sharepoint_datetime(item.get("createdDateTime", "")),
                         )
                     )
-                    break
                 elif "folder" in item and not self._is_folder_excluded(item["name"]):
                     subfolder_url = (
                         f"https://graph.microsoft.com/v1.0/sites/{self._get_site_id()}/drives/"
@@ -195,7 +194,7 @@ class SharePointResource(ConfigurableResource):
                     files.extend(self._get_files_from_url(subfolder_url))
 
             url = data.get("@odata.nextLink")
-        return files[:1]
+        return files
 
     def _get_files_from_folder(self, folder_id: str) -> list[MinimalSharePointFile]:
         url = f"https://graph.microsoft.com/v1.0/sites/{self._get_site_id()}/drives/{self._get_drive_id()}/items/{folder_id}/children"
