@@ -67,7 +67,7 @@ class ProcessRunner:
         self._loop_task: asyncio.Task | None = None
 
         self.process_class = self.process_type.__name__
-        self.topic_manager = ProcessClassTopicManager(self.process_class)
+        self.topic_manager = ProcessClassTopicManager(process_class=self.process_class)
 
         self.nc: NATS | None = None
         self.js: JetStreamContext | None = None

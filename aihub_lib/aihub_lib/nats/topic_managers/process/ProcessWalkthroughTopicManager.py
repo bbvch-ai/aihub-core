@@ -1,20 +1,15 @@
 from typing import Annotated
 
+from pydantic import Field
+
 from aihub_lib.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from aihub_lib.nats.topics.process.ProcessInstanceTopic import ProcessInstanceTopic
 
 
 class ProcessWalkthroughTopicManager(ProcessClassTopicManager):
-    def __init__(
-        self,
-        process_class: Annotated[str, "The processes class identifier."],
-        process_id: Annotated[str | None, "Unique identifier for the specific process instance."],
-        process_walkthrough_id: Annotated[str, "Unique identifier for the specific process walkthrough."],
-    ):
-        super().__init__(process_class)
-        self.process_id: str | None = process_id
-        self.process_walkthrough_id: str = process_walkthrough_id
+    process_id: Annotated[str | None, Field(description="Unique identifier for the specific process instance.")]
+    process_walkthrough_id: Annotated[str, Field(description="Unique identifier for the specific process walkthrough.")]
 
     def get_subject_for_work_request_event_in_walkthrough(
         self,

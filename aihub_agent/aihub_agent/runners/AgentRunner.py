@@ -60,7 +60,7 @@ class AgentRunner:
         self._loop_task: asyncio.Task | None = None
 
         self.agent_class = self.agent_type.__name__
-        self.topic_manager = AgentClassTopicManager(self.agent_class)
+        self.topic_manager = AgentClassTopicManager(agent_class=self.agent_class)
 
         self.nc: NATS | None = None
         self.js: JetStreamContext | None = None
