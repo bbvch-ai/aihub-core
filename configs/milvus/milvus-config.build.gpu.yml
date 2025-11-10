@@ -50,12 +50,12 @@ etcd:
   # It is recommended not to change this parameter if there is no specific reason.
   kvSubPath: kv
   log:
-    level: info   # Standard logging for production
+    level: debug  # Verbose logging for development
     file:
       rootPath:
-      maxSize: 300     # 300MB per log file (prod)
-      maxAge: 10       # 10 days retention (prod)
-      maxBackups: 20   # 20 backup files (prod)
+      maxSize: 100     # 100MB per log file (dev)
+      maxAge: 3        # 3 days retention (dev)
+      maxBackups: 5    # 5 backup files (dev)
     format: text
     stdout: true
   ssl:
@@ -311,10 +311,10 @@ rootCoord:
   ip:  # TCP/IP address of rootCoord. If not specified, use the first unicastable address
   port: 53100 # TCP port of rootCoord
   grpc:
-    serverMaxSendSize: 536870912    # 512MB for production
-    serverMaxRecvSize: 268435456    # 256MB for production
-    clientMaxSendSize: 268435456    # 256MB for production
-    clientMaxRecvSize: 536870912    # 512MB for production
+    serverMaxSendSize: 268435456    # 256MB for dev
+    serverMaxRecvSize: 134217728    # 128MB for dev
+    clientMaxSendSize: 134217728    # 128MB for dev
+    clientMaxRecvSize: 268435456    # 256MB for dev
 # Related configuration of proxy, used to validate client requests and reduce the returned results.
 proxy:
   timeTickInterval: 200 # The interval at which proxy synchronizes the time tick, unit: ms.
@@ -335,7 +335,7 @@ proxy:
     allowedChars: $ # Additional characters allowed in names beyond underscores, letters and numbers. To allow hyphens in names, add '-' here.
   roleNameValidation:
     allowedChars: $ # Additional characters allowed in role names beyond underscores, letters and numbers. Add '-' to allow hyphens in role names.
-  maxTaskNum: 1024  # Larger queue for production
+  maxTaskNum: 512   # Smaller queue for dev
   ddlConcurrency: 16 # The concurrent execution number of DDL at proxy.
   dclConcurrency: 16 # The concurrent execution number of DCL at proxy.
   mustUsePartitionKey: false # switch for whether proxy must use partition key for the collection
@@ -386,10 +386,10 @@ proxy:
   port: 19530 # TCP port of proxy
   internalPort: 19529
   grpc:
-    serverMaxSendSize: 536870912    # 512MB for production
-    serverMaxRecvSize: 268435456    # 256MB for production
-    clientMaxSendSize: 268435456    # 256MB for production
-    clientMaxRecvSize: 536870912    # 512MB for production
+    serverMaxSendSize: 268435456    # 256MB for dev
+    serverMaxRecvSize: 134217728    # 128MB for dev
+    clientMaxSendSize: 134217728    # 128MB for dev
+    clientMaxRecvSize: 268435456    # 256MB for dev
 # Related configuration of queryCoord, used to manage topology and load balancing for the query nodes, and handoff from growing segments to sealed segments.
 queryCoord:
   taskMergeCap: 1
@@ -450,10 +450,10 @@ queryCoord:
   ip:  # TCP/IP address of queryCoord. If not specified, use the first unicastable address
   port: 19531 # TCP port of queryCoord
   grpc:
-    serverMaxSendSize: 536870912    # 512MB for production
-    serverMaxRecvSize: 268435456    # 256MB for production
-    clientMaxSendSize: 268435456    # 256MB for production
-    clientMaxRecvSize: 536870912    # 512MB for production
+    serverMaxSendSize: 268435456    # 256MB for dev
+    serverMaxRecvSize: 134217728    # 128MB for dev
+    clientMaxSendSize: 134217728    # 128MB for dev
+    clientMaxRecvSize: 268435456    # 256MB for dev
 # Related configuration of queryNode, used to run hybrid search between vector and scalar data.
 queryNode:
   stats:
@@ -515,7 +515,7 @@ queryNode:
   enableDisk: false # enable querynode load disk index, and search on disk index
   maxDiskUsagePercentage: 95
   cache:
-    memoryLimit: 4294967296  # 4GB cache for prod
+    memoryLimit: 1073741824  # 1GB cache for dev/local
     readAheadPolicy: willneed
   mmap:
     vectorField: true # Enable mmap for loading vector data
@@ -545,7 +545,7 @@ queryNode:
     # It defaults to 2.0, which means max read concurrency would be the value of hardware.GetCPUNum * 2.
     # Max read concurrency must greater than or equal to 1, and less than or equal to hardware.GetCPUNum * 100.
     # (0, 100]
-    maxReadConcurrentRatio: 2    # Aggressive for prod
+    maxReadConcurrentRatio: 1    # Conservative for dev
     cpuRatio: 10 # ratio used to estimate read task cpu usage.
     maxTimestampLag: 86400
     scheduleReadPolicy:
@@ -612,8 +612,8 @@ dataCoord:
     checkInterval: 1 # The interval in seconds with which the channel manager advances channel states
     notifyChannelOperationTimeout: 5 # Timeout notifing channel operations (in seconds).
   segment:
-    maxSize: 1024               # 1GB segments for production
-    diskSegmentMaxSize: 2048    # 2GB disk segments for production
+    maxSize: 512                # 512MB segments for dev
+    diskSegmentMaxSize: 1024    # 1GB disk segments for dev
     sealProportion: 0.12 # The minimum proportion to datacoord.segment.maxSize to seal a segment. datacoord.segment.maxSize and datacoord.segment.sealProportion together determine if a segment can be sealed.
     sealProportionJitter: 0.1 # segment seal proportion jitter ratio, default value 0.1(10%), if seal proportion is 12%, with jitter=0.1, the actuall applied ratio will be 10.8~12%
     assignmentExpiration: 2000 # Expiration time of the segment assignment, unit: ms
@@ -639,7 +639,7 @@ dataCoord:
     channel:
       # The size threshold in MB, if the total size of growing segments of each shard
       # exceeds this threshold, the largest growing segment will be sealed.
-      growingSegmentsMemSize: 4096    # 4GB for production
+      growingSegmentsMemSize: 2048    # 2GB for dev
       # If the total entry number of l0 logs of each shard
       # exceeds this threshold, the earliest growing segments will be sealed.
       blockingL0EntryNum: 5000000
@@ -767,8 +767,8 @@ dataNode:
     # The maximum size of each binlog file in a segment buffered in memory. Binlog files whose size exceeds this value are then flushed to MinIO or S3 service.
     # Unit: Byte
     # Setting this parameter too small causes the system to store a small amount of data too frequently. Setting it too large increases the system's demand for memory.
-    insertBufSize: 16777216     # 16MB buffer for production
-    deleteBufBytes: 16777216    # 16MB buffer for production
+    insertBufSize: 8388608      # 8MB buffer for dev
+    deleteBufBytes: 8388608     # 8MB buffer for dev
     syncPeriod: 600 # The period to sync segments if buffer is not empty.
   memory:
     forceSyncEnable: true # Set true to force sync if memory usage is too high
