@@ -8,10 +8,12 @@ from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
+from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.persistence.rag.vectors import VectorStoreFactory
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Path, Security
 from mongoengine import connect
+from nats.aio.client import Client as NATS
 from pymongo import MongoClient
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
@@ -254,6 +256,7 @@ class KnowledgeController(Controller):
             database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
             namespace: Annotated[str, Path(title="Namespace", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
             request: DocumentUploadValidationRequest,
+            nc: Annotated[NATS, Depends(use_nats)],
             _: Annotated[
                 UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}.{namespace}"))
             ],
@@ -262,9 +265,10 @@ class KnowledgeController(Controller):
             Validates whether a file was successfully uploaded to the datalake.
 
             This endpoint checks if a file exists in the configured datalake storage
-            (S3/MinIO or Azure Blob Storage) after a presigned URL upload.
+            (S3/MinIO or Azure Blob Storage) after a presigned URL upload, and publishes
+            a SourceUpdatedEvent to NATS to trigger downstream pipeline processing.
             """
-            return await KnowledgeService.validate_document_upload(database, namespace, request)
+            return await KnowledgeService.validate_document_upload(nc, database, namespace, request)
 
         return self
 
