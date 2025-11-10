@@ -1,4 +1,6 @@
-from aihub_lib.infrastructure.azure.data_lake.DataLakeAccess import DataLakeAccess
+from azure.storage.filedatalake import DataLakeServiceClient
+
+from aihub_lib.infrastructure.azure_data_lake import AzureDataLakeSettings
 from dagster import InitResourceContext
 
 from aihub_pipeline.resources.data_lake.azure.AzureDataLakeClient import AzureDataLakeClient
@@ -98,6 +100,7 @@ class AzureDataLakeClientResource(AbstractDataLakeClientResource[AzureDataLakeCl
     """
 
     def create_resource(self, context: InitResourceContext) -> AzureDataLakeClient:
-        data_lake_client = DataLakeAccess().get_client()
+        conn_str = AzureDataLakeSettings().CONNECTION_STRING.get_secret_value()
+        data_lake_client = DataLakeServiceClient.from_connection_string(conn_str=conn_str)
         filesystem_client = data_lake_client.get_file_system_client(file_system=self.container_name)
         return AzureDataLakeClient(self.container_name, filesystem_client)

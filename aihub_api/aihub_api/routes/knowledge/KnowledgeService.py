@@ -4,7 +4,7 @@ import uuid
 from functools import lru_cache, wraps
 
 import mongoengine
-from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessSettings import AnonymousFileAccessSettings
+from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
 from aihub_lib.generative_ai.document.types.FileTypeConfig import FileTypeConfig
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
@@ -85,15 +85,10 @@ class KnowledgeService:
         """
         Get all files from datalake in a specific namespace using the global file access configuration.
 
-        This method supports both S3/MinIO and Azure Blob Storage based on the
-        ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND environment variable.
-
         Files in the __figures__ directory are excluded as they are generated artifacts
         from document processing and should not be displayed in the knowledge interface.
         """
-        file_access_config = AnonymousFileAccessSettings()
-
-        files_info = file_access_config.service.list_files(container=bucket_name, prefix=f"{namespace}/")
+        files_info = S3AnonymousFileAccessService().list_files(container=bucket_name, prefix=f"{namespace}/")
 
         all_files = []
         for file_info in files_info:
@@ -105,9 +100,7 @@ class KnowledgeService:
             filename = key.split("/")[-1]
             file_namespace = key.split("/")[0]
 
-            storage_backend = file_access_config.STORAGE_BACKEND
-            protocol = "azure" if storage_backend == "azure" else "s3"
-            document_uri = f"{protocol}://{bucket_name}/{key}"
+            document_uri = f"s3://{bucket_name}/{key}"
 
             all_files.append(
                 DocumentDTO(
@@ -419,8 +412,7 @@ class KnowledgeService:
         upload_id = str(uuid.uuid4())
         object_key = f"{folder}/{request.filename}"
 
-        file_access_config = AnonymousFileAccessSettings()
-        presigned_url = file_access_config.service.generate_upload_url(
+        presigned_url = S3AnonymousFileAccessService().generate_upload_url(
             container=container,
             file_path=object_key,
             content_type=request.content_type,
@@ -443,7 +435,7 @@ class KnowledgeService:
         """
         Validates whether a file was successfully uploaded to the globally configured datalake.
 
-        This method uses the same global AnonymousFileAccessSettings as upload and download URLs
+        This method uses the same global S3AnonymousFileAccessService as upload and download URLs
         to verify that the uploaded file exists in the datalake storage.
         """
         try:
@@ -457,8 +449,7 @@ class KnowledgeService:
         container = bucket_entity.bucket_name
         object_key = request.file_path
 
-        file_access_config = AnonymousFileAccessSettings()
-        exists = file_access_config.service.verify_file_exists(container=container, file_path=object_key)
+        exists = S3AnonymousFileAccessService().verify_file_exists(container=container, file_path=object_key)
         return DocumentUploadValidationResponse(exists=exists, file_path=object_key, container=container)
 
     @staticmethod

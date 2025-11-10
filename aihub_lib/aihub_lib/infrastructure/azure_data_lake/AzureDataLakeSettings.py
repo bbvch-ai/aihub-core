@@ -17,11 +17,10 @@ class AzureDataLakeSettings(EnvironmentSettings):
     model_config = EnvironmentSettings.create_settings_config("AZURE_DATA_LAKE_")
 
     CONNECTION_STRING: Annotated[
-        SecretStr | None,
+        SecretStr,
         Field(
             description="Azure Data Lake connection string for explicit authentication. "
             "Recommended over implicit authentication."
         ),
-    ] = None
-    NAME: Annotated[str, Field(description="Overwrite the datalake name")]
-    ENDPOINT: Annotated[str, Field(description="Overwrite the datalake API endpoint")]
+    ]
+    ENDPOINT: Annotated[str, Field(description="Datalake API endpoint")]
