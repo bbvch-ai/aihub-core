@@ -345,10 +345,12 @@ services:
     image: ghcr.io/bbvch-ai/aihub-core/ferretdb:2.5.0
     restart: always
     environment:
-      - FERRETDB_POSTGRESQL_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/ferretdb
+      - FERRETDB_POSTGRESQL_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/ferretdb?sslmode=disable
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["NONE"]
     logging:
       driver: json-file
       options:
