@@ -24,7 +24,7 @@ class LocalFileSystemIOManager(ConfigurableIOManager):
 
             if partitions_def is not None:
                 all_partition_keys = partitions_def.get_partition_keys(dynamic_partitions_store=context.instance)
-                return asyncio.run(self.local_file_system_client.get_minimal_local_files(list(all_partition_keys)))
+                return self.local_file_system_client.get_minimal_local_files(list(all_partition_keys))
             else:
                 context.log.error("No partition definition found for the upstream asset.")
                 raise ValueError("No partition keys found in upstream output")

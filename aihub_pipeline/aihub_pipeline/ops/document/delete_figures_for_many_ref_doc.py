@@ -18,7 +18,7 @@ def delete_figures_for_many_ref_doc(
             paths = data_lake_client.list_directory_contents(directory_path=figures_folder)
             for path in paths:
                 if not path.endswith("/"):
-                    file_uri = data_lake_client.build_uri(path=path)
+                    file_uri = data_lake_client.build_uri(file_path=path)
                     data_lake_client.delete_file(uri=file_uri)
 
             data_lake_client.delete_directory(directory_path=figures_folder)
