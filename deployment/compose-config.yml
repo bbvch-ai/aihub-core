@@ -47,9 +47,13 @@ image_tags:
   open_webui: open-webui:v0.6.22
   playwright: playwright:v1.54.1-jammy
 
-  # --- GPU-Specific Services (only exist in 'dev' for now) ---
+  # --- GPU-Specific Services (hardware-dependent) ---
   llama_cpp:
     dev:
+      cpu: llama.cpp:server-b6894
+      gpu: llama.cpp:server-cuda-b6894
+
+    build:
       cpu: llama.cpp:server-b6894
       gpu: llama.cpp:server-cuda-b6894
 
@@ -68,6 +72,10 @@ image_tags:
       cpu: llama.cpp:server-b6894
       gpu: llama.cpp:server-cuda-b6894
 
+    build:
+      cpu: llama.cpp:server-b6894
+      gpu: llama.cpp:server-cuda-b6894
+
     local:
       cpu: llama.cpp:server-b6894
       gpu: llama.cpp:server-cuda-b6894
@@ -80,6 +88,10 @@ image_tags:
 
   llama_cpp_reranking:
     dev:
+      cpu: llama.cpp:server-b6894
+      gpu: llama.cpp:server-cuda-b6894
+
+    build:
       cpu: llama.cpp:server-b6894
       gpu: llama.cpp:server-cuda-b6894
 
@@ -98,6 +110,10 @@ image_tags:
       cpu: llama.cpp:server-b6894
       gpu: llama.cpp:server-cuda-b6894
 
+    build:
+      cpu: llama.cpp:server-b6894
+      gpu: llama.cpp:server-cuda-b6894
+
     local:
       cpu: llama.cpp:server-b6894
       gpu: llama.cpp:server-cuda-b6894
@@ -110,6 +126,10 @@ image_tags:
 
   speaches:
     dev:
+      cpu: speaches:0.8.3-cpu
+      gpu: speaches:0.8.3-cuda-12.6.3
+
+    build:
       cpu: speaches:0.8.3-cpu
       gpu: speaches:0.8.3-cuda-12.6.3
 

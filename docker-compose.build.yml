@@ -439,14 +439,175 @@ services:
         max-file: 2
 
   
+  # ===================================================================
+  # AI Model Serving (Local Inference)
+  # ===================================================================
+  # These services are only rendered if an image tag is defined for
+  # the current stage and hardware target in compose-config.yml.
+  # ===================================================================
+  llama-cpp:
+    container_name: llama-cpp
+    platform: "linux/amd64"
+    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b6894
+    restart: always
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-data:/data
+      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-cache:/root/.cache/llama.cpp
+    environment:
+      HF_HOME: /root/.cache/huggingface
+    command: >
+      -hf google/gemma-3-12b-it-qat-q4_0-gguf
+      --hf-token ${HUGGINGFACE_API_KEY}
+      --alias gemma-3-12b
+      --port 128000
+      --host 0.0.0.0
+      -c 8196
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
 
   
+  llama-cpp-embedding:
+    container_name: llama-cpp-embedding
+    platform: "linux/amd64"
+    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b6894
+    restart: always
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-data:/data
+      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-cache:/root/.cache/llama.cpp
+    environment:
+      HF_HOME: /root/.cache/huggingface
+    command: >
+      -hf Qwen/Qwen3-Embedding-0.6B-GGUF
+      --hf-token ${HUGGINGFACE_API_KEY}
+      --alias qwen-3-embedding
+      --port 8182
+      --host 0.0.0.0
+      --embedding
+      --pooling last
+      -ub 8192
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
 
   
+  llama-cpp-reranking:
+    container_name: llama-cpp-reranking
+    platform: "linux/amd64"
+    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b6894
+    restart: always
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-data:/data
+      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-cache:/root/.cache/llama.cpp
+    environment:
+      HF_HOME: /root/.cache/huggingface
+    command: >
+      -hf ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF
+      --hf-token ${HUGGINGFACE_API_KEY}
+      --alias qwen-3-reranking
+      --port 8182
+      --host 0.0.0.0
+      -c 8192
+      --reranking
+      --no-context-shift
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
 
   
+  llama-cpp-docling:
+    container_name: llama-cpp-docling
+    platform: "linux/amd64"
+    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b6894
+    restart: always
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-data:/data
+      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-cache:/root/.cache/llama.cpp
+    environment:
+      HF_HOME: /root/.cache/huggingface
+    command: >
+      -hf ggml-org/granite-docling-258M-GGUF
+      --hf-token ${HUGGINGFACE_API_KEY}
+      --alias granite-docling
+      --port 8182
+      --host 0.0.0.0
+      -c 8192
+      --special
+      --jinja
+      --repeat-penalty 1.0
+      --temp 0.0
+      --min-p 0
+      --mlock
+      --seed -1
+      --swa-full
+      --no-escape
+      --no-mmap
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
 
   
+  # ===================================================================
+  # Audio Model Serving (SST/TTS)
+  # ===================================================================
+  # We are using speaches to serve audio models in an openai
+  # compatible format.
+  # ===================================================================
+  speaches:
+    container_name: speaches
+    image: ghcr.io/bbvch-ai/aihub-core/speaches:0.8.3-cpu
+    restart: unless-stopped
+    volumes:
+      - ./configs/speaches/speaches-download-models.sh:/etc/speaches/speaches-download-models.sh
+      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
+    environment:
+      HF_HOME: /root/.cache/huggingface
+      HF_TOKEN: ${HUGGINGFACE_API_KEY}
+      ENABLE_UI: False
+    healthcheck:
+      test: [ "CMD", "curl", "--fail", "http://0.0.0.0:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    post_start:
+      - command: [ "sh", "/etc/speaches/speaches-download-models.sh" ]
 
 
   # ===================================================================
