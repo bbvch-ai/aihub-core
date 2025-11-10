@@ -1043,6 +1043,7 @@ services:
       # Log Level
       LOG_LEVEL: ${LOG_LEVEL}
       ENV: ${ENV}
+      NUM_WORKERS: 1
 
       # General Auth settings
       AUTH_ENABLE_API_ACCESS: True
