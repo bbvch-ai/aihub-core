@@ -464,7 +464,6 @@ services:
       --host 0.0.0.0
       -c 8196
       -ngl -1
-
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
       timeout: 10s

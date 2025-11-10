@@ -463,7 +463,6 @@ services:
       --port 8182
       --host 0.0.0.0
       -c 8196
-
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
       timeout: 10s
