@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.250.2] - 2025-11-07 - Streamlined Local Development and Documentation Clarity
+
+### Added
+
+- ✨ **New Local Development Option (Build from Source):** Introduced `docker-compose.build.yml` to allow developers to
+  build and run the entire platform locally directly from source code, facilitating active development and debugging.
+- 🎤 **Microphone Access for Open Web UI:** Enabled microphone permissions within the Open Web UI iframe, supporting
+  voice-based interactions and features.
+- 📄 **macOS mkcert Instructions:** Added specific installation instructions for `mkcert` on macOS to the local
+  development prerequisites, improving setup guidance.
+- 📊 **Deployment Comparison Summary:** Included a new summary table highlighting the key differences between production
+  and local deployment configurations and purposes, enhancing clarity for users.
+
+### Changed
+
+- 🔄 **Refined Local Deployment Strategy:** Reworked local development guidance, clearly separating the use of
+  `docker-compose.local.yml` for running with pre-built images (recommended for testing) from the new
+  `docker-compose.build.yml` for building from source (for active development).
+- 📄 **Enhanced Documentation Structure:** Significantly reorganized and updated the Prerequisites and One-Command
+  Deployment documentation, providing clearer, distinct instructions and sections for production versus local
+  deployments.
+- 🔑 **Local Traefik SSL Configuration:** Modified the local Traefik setup (`docker-compose.local.yml`) to exclusively
+  use self-signed SSL certificates via `tls=true` and dynamic file providers, removing the dependency on Let's Encrypt
+  for local environments.
+- 📋 **Version-Specific Traefik Middlewares:** Updated Traefik configurations for production and nightly builds to load
+  middlewares from version-specific files, allowing for more granular control.
+- 🛠️ **Improved Audio Transcription Filenaming:** Enhanced the internal logic for naming audio chunks during
+  transcription to ensure more unique and descriptive filenames.
+- 📝 **Updated Architecture Decisions:** The containerized deployment architecture documentation has been updated to
+  reflect the new local development options and their corresponding Docker Compose files.
+
+### Removed
+
+- 🗑️ **Deprecated Central Traefik Middleware File:** The standalone `traefik/middlewares.yml` file has been removed, as
+  middleware configurations are now dynamically loaded from specific `configs` directories for better modularity.
+
+---
+
 ## [v0.250.1] - 2025-11-07 - Streamlined Deployment and Core Service Upgrades
 
 ### Added

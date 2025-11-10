@@ -315,9 +315,13 @@ Wait for all services to become healthy (you can check with `docker ps`) before 
 Only use self-signed SSL certificates for local development. Never use them in production or public environments.
 :::
 
-For local development with SSL support and custom domain routing, use the `docker-compose.local.yml` configuration:
+For local development with SSL support and custom domain routing, we provide two deployment options:
 
-#### Prerequisites
+#### Option 1: Using Pre-built Images (Recommended for Testing)
+
+Use `docker-compose.local.yml` to run with pre-built images from the registry:
+
+**Prerequisites:**
 
 1. **mkcert**: Install mkcert for generating local SSL certificates
 
@@ -337,6 +341,10 @@ For local development with SSL support and custom domain routing, use the `docke
      scoop bucket add extras
      scoop install mkcert
      ```
+   - **macOS**:
+     ```bash
+     brew install mkcert
+     ```
 
 2. **Generate SSL Certificates**:
 
@@ -349,15 +357,38 @@ For local development with SSL support and custom domain routing, use the `docke
    - Copy `.env.dev` to `.env` and configure with your settings
    - The default domain `127.0.0.1.nip.io` provides wildcard DNS resolution to localhost
 
-#### Start the Local Stack
+**Start the Stack:**
 
 ```bash
-# Start all services with local configuration
+# Start all services with pre-built images
 docker compose -f docker-compose.local.yml up -d
 
 # Check service health
 docker compose -f docker-compose.local.yml ps
 ```
+
+#### Option 2: Building from Source (For Development)
+
+Use `docker-compose.build.yml` to build images from source code:
+
+**Prerequisites:**
+
+Same as Option 1, plus ensure you have cloned the repository and have the required build tools.
+
+**Start the Stack:**
+
+```bash
+# Build and start all services from source
+docker compose -f docker-compose.build.yml up -d --build
+
+# Check service health
+docker compose -f docker-compose.build.yml ps
+```
+
+::: tip :bulb: When to Use Which Option
+- **Pre-built images** (`docker-compose.local.yml`): Fast startup, testing platform features, no code changes needed
+- **Build from source** (`docker-compose.build.yml`): Active development, testing code changes, debugging
+:::
 
 #### Access Points
 

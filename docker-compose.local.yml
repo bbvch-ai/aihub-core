@@ -203,7 +203,7 @@ services:
       - "traefik.http.routers.seaweedfs-filer.rule=Host(`datalake.${DOMAIN}`)"
       - "traefik.http.routers.seaweedfs-filer.priority=4000"
       - "traefik.http.routers.seaweedfs-filer.entrypoints=websecure"
-      - "traefik.http.routers.seaweedfs-filer.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.seaweedfs-filer.tls=true"
       - "traefik.http.routers.seaweedfs-filer.middlewares=security-headers@file"
       - "traefik.http.services.seaweedfs-filer.loadbalancer.server.port=4181"
 
@@ -270,7 +270,7 @@ services:
       - "traefik.http.routers.attu.rule=Host(`attu.${DOMAIN}`)"
       - "traefik.http.routers.attu.priority=4000"
       - "traefik.http.routers.attu.entrypoints=websecure"
-      - "traefik.http.routers.attu.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.attu.tls=true"
       - "traefik.http.routers.attu.middlewares=security-headers@file"
       - "traefik.http.services.attu.loadbalancer.server.port=3000"
   # </editor-fold>
@@ -417,7 +417,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.litellm.rule=Host(`litellm.${DOMAIN}`)"
       - "traefik.http.routers.litellm.entrypoints=websecure"
-      - "traefik.http.routers.litellm.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.litellm.tls=true"
       - "traefik.http.routers.litellm.middlewares=security-headers@file"
       - "traefik.http.services.litellm.loadbalancer.server.port=4000"
 
@@ -649,35 +649,35 @@ services:
       - "traefik.http.routers.openwebui-api-auth.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/api/v1/auths`)"
       - "traefik.http.routers.openwebui-api-auth.priority=7000"
       - "traefik.http.routers.openwebui-api-auth.entrypoints=websecure"
-      - "traefik.http.routers.openwebui-api-auth.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.openwebui-api-auth.tls=true"
       - "traefik.http.routers.openwebui-api-auth.middlewares=openwebui-api-middleware"
 
       # General API routes (priority 6000 - Specific API endpoints)
       - "traefik.http.routers.openwebui-api.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/api`)"
       - "traefik.http.routers.openwebui-api.priority=6000"
       - "traefik.http.routers.openwebui-api.entrypoints=websecure"
-      - "traefik.http.routers.openwebui-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.openwebui-api.tls=true"
       - "traefik.http.routers.openwebui-api.middlewares=openwebui-api-middleware"
 
       # Static assets (priority 2000 - Static files)
       - "traefik.http.routers.openwebui-static.rule=Host(`openwebui.${DOMAIN}`) && (PathPrefix(`/oauth`) || PathPrefix(`/assets`) || PathPrefix(`/_app`) || PathPrefix(`/static`))"
       - "traefik.http.routers.openwebui-static.priority=2000"
       - "traefik.http.routers.openwebui-static.entrypoints=websecure"
-      - "traefik.http.routers.openwebui-static.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.openwebui-static.tls=true"
       - "traefik.http.routers.openwebui-static.middlewares=openwebui-static-middleware"
 
       # OpenWebUI path with prefix stripping (priority 3000 - Feature-specific paths)
       - "traefik.http.routers.openwebui-path.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/openwebui`)"
       - "traefik.http.routers.openwebui-path.priority=3000"
       - "traefik.http.routers.openwebui-path.entrypoints=websecure"
-      - "traefik.http.routers.openwebui-path.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.openwebui-path.tls=true"
       - "traefik.http.routers.openwebui-path.middlewares=openwebui-strip-middleware"
 
       # Default catch-all (priority 500 - Subdomain routing)
       - "traefik.http.routers.openwebui-default.rule=Host(`openwebui.${DOMAIN}`)"
       - "traefik.http.routers.openwebui-default.priority=500"
       - "traefik.http.routers.openwebui-default.entrypoints=websecure"
-      - "traefik.http.routers.openwebui-default.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.openwebui-default.tls=true"
       - "traefik.http.routers.openwebui-default.middlewares=openwebui-default-middleware"
 
       # === SERVICE ===
@@ -764,14 +764,12 @@ services:
       # --- dagster Subdomain ---
       - "traefik.http.routers.dagster.rule=Host(`dagster.${DOMAIN}`)"
       - "traefik.http.routers.dagster.entrypoints=websecure"
-      - "traefik.http.routers.dagster.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.dagster.tls=true"
       - "traefik.http.routers.dagster.middlewares=security-headers@file"
       - "traefik.http.services.dagster.loadbalancer.server.port=4180"
 
   dagster-webserver:
-    build:
-      context: .
-      dockerfile: ./aihub_pipeline/Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/dagster:latest
     container_name: dagster-webserver
     <<: *restart-policy
     entrypoint:
@@ -796,9 +794,7 @@ services:
     logging: *default-logging
 
   dagster-daemon:
-    build:
-      context: .
-      dockerfile: ./aihub_pipeline/Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/dagster:latest
     container_name: dagster-daemon
     <<: *restart-policy
     entrypoint:
@@ -827,9 +823,7 @@ services:
   # === API Stack ===
   # <editor-fold desc="API Stack">
   api:
-    build:
-      context: .
-      dockerfile: ./aihub_api/Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/api:latest
     container_name: api
     <<: *restart-policy
     depends_on:
@@ -868,7 +862,7 @@ services:
       - "traefik.http.routers.api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/v1`)"
       - "traefik.http.routers.api.priority=6000"
       - "traefik.http.routers.api.entrypoints=websecure"
-      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.api.tls=true"
       - "traefik.http.routers.api.middlewares=security-headers@file"
       - "traefik.http.services.api.loadbalancer.server.port=8000"
   # </editor-fold>
@@ -876,9 +870,7 @@ services:
   # === Bot Stack ===
   # <editor-fold desc="Bot Stack">
   bot:
-    build:
-      context: .
-      dockerfile: ./aihub_bot/Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/bot:latest
     container_name: bot
     <<: *restart-policy
     depends_on:
@@ -909,7 +901,7 @@ services:
       - "traefik.http.routers.bot.rule=Host(`bot.${DOMAIN}`) && PathPrefix(`/api/v1`)"
       - "traefik.http.routers.bot.priority=6000"
       - "traefik.http.routers.bot.entrypoints=websecure"
-      - "traefik.http.routers.bot.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.bot.tls=true"
       - "traefik.http.routers.bot.middlewares=security-headers@file"
       - "traefik.http.services.bot.loadbalancer.server.port=8001"
   # </editor-fold>
@@ -948,9 +940,7 @@ services:
   # === SUITE UI Stack ===
   # <editor-fold desc="SUITE UI Stack">
   web:
-    build:
-      context: ./aihub_web/aihub_web
-      dockerfile: ./Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/web:latest
     container_name: web
     <<: *restart-policy
     environment:
@@ -968,28 +958,28 @@ services:
       - "traefik.http.routers.web-static.rule=Host(`${DOMAIN}`) && PathPrefix(`/_nuxt`)"
       - "traefik.http.routers.web-static.priority=2000"
       - "traefik.http.routers.web-static.entrypoints=websecure"
-      - "traefik.http.routers.web-static.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.web-static.tls=true"
       - "traefik.http.routers.web-static.middlewares=web-standard-middleware"
 
       # Authentication routes (priority 750 - Language/locale routing)
       - "traefik.http.routers.web-auth.rule=Host(`${DOMAIN}`) && (PathPrefix(`/en/auth`) || PathPrefix(`/de/auth`) || PathPrefix(`/fr/auth`) || PathPrefix(`/it/auth`))"
       - "traefik.http.routers.web-auth.priority=750"
       - "traefik.http.routers.web-auth.entrypoints=websecure"
-      - "traefik.http.routers.web-auth.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.web-auth.tls=true"
       - "traefik.http.routers.web-auth.middlewares=web-standard-middleware"
 
       # Specific index pages (priority 400 - Domain catch-all with path restrictions)
       - "traefik.http.routers.web-index.rule=Host(`${DOMAIN}`) && (Path(`/`) || Path(`/index.html`) || Path(`/config.json`))"
       - "traefik.http.routers.web-index.priority=400"
       - "traefik.http.routers.web-index.entrypoints=websecure"
-      - "traefik.http.routers.web-index.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.web-index.tls=true"
       - "traefik.http.routers.web-index.middlewares=web-standard-middleware"
 
       # Default catch-all (priority 100)
       - "traefik.http.routers.web-default.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.web-default.priority=100"
       - "traefik.http.routers.web-default.entrypoints=websecure"
-      - "traefik.http.routers.web-default.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.web-default.tls=true"
       - "traefik.http.routers.web-default.middlewares=web-standard-middleware"
 
       # === SERVICE ===
@@ -1004,9 +994,7 @@ services:
   # === Common Agents ===
   # <editor-fold desc="Common Agents">
   llm_wrapping_agent:
-    build:
-      context: .
-      dockerfile: ./aihub_agent/app/llm_wrapping_agent/Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:latest
     container_name: llm-wrapping-agent
     restart: always
     environment:
@@ -1017,9 +1005,7 @@ services:
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
   rag_agent:
-    build:
-      context: .
-      dockerfile: ./aihub_agent/app/rag_agent/Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/rag_agent:latest
     container_name: rag-agent
     restart: always
     environment:
@@ -1034,9 +1020,7 @@ services:
 
   # === Common Pipelines ===
   default_rag_pipeline:
-    build:
-      context: .
-      dockerfile: ./aihub_pipeline/app/default_rag_pipeline/Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:latest
     container_name: default-rag-pipeline
     restart: always
     volumes:
@@ -1070,32 +1054,28 @@ services:
     command:
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
-      - "--providers.file.filename=/etc/traefik/middlewares.yml"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
       - "--providers.docker=true"
       - "--providers.docker.watch=true"
       - "--providers.docker.exposedbydefault=false"
-      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
-      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/srv/app/traefik/acme.json"
       - "--api=true"
       - "--api.dashboard=true"
+      - "--log.level=DEBUG"
+      - "--accesslog=true"
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "./traefik/middlewares.yml:/etc/traefik/middlewares.yml:ro"
-      - "/srv/app/traefik/acme.json:/srv/app/traefik/acme.json"
+      - "./configs/traefik/middlewares.local.yml:/etc/traefik/dynamic/middlewares.yml:ro"
+      - "./configs/traefik/tls.local.yml:/etc/traefik/dynamic/tls.yml:ro"
+      - "./configs/traefik/certs:/certs:ro"
     labels:
       - "traefik.enable=true"
 
-      # ACME Challenge router (higher priority)
-      - "traefik.http.routers.acme-challenge.rule=PathPrefix(`/.well-known/acme-challenge/`)"
-      - "traefik.http.routers.acme-challenge.entrypoints=web"
-      - "traefik.http.routers.acme-challenge.priority=9000"
-
-      # HTTP to HTTPS redirect (lower priority, excludes ACME)
-      - "traefik.http.routers.http-catch.rule=HostRegexp(`{host:.+}`) && !PathPrefix(`/.well-known/acme-challenge/`)"
+      # HTTP to HTTPS redirect
+      - "traefik.http.routers.http-catch.rule=HostRegexp(`{host:.+}`)"
       - "traefik.http.routers.http-catch.entrypoints=web"
       - "traefik.http.routers.http-catch.priority=10"
       - "traefik.http.routers.http-catch.middlewares=https-redirect"
@@ -1104,7 +1084,7 @@ services:
       # Dashboard
       - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
       - "traefik.http.routers.traefik.entrypoints=websecure"
-      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik.tls=true"
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:${ADMIN_PASSWORD_HASH}"
       - "traefik.http.routers.traefik.middlewares=traefik-auth"
