@@ -29,6 +29,11 @@ CONFIG_SPECS = [
     ("templates/configs/otel-config.yml.j2", "configs/otel", "otel-config.{stage}{hardware}.yml"),
     ("templates/configs/traefik-middlewares.yml.j2", "configs/traefik", "middlewares.{stage}{hardware}.yml"),
     ("templates/configs/traefik-tls.yml.j2", "configs/traefik", "tls.{stage}{hardware}.yml"),
+    # Static scripts - no stage/hardware variations
+    ("templates/configs/s3-entrypoint.sh.j2", "configs/seaweedfs", "s3-entrypoint.sh"),
+    ("templates/configs/init-buckets.sh.j2", "configs/seaweedfs", "init-buckets.sh"),
+    ("templates/configs/init-multiple-dbs.sh.j2", "configs/postgres", "init-multiple-dbs.sh"),
+    ("templates/configs/init-models.sh.j2", "configs/docling", "init-models.sh"),
 ]
 
 
@@ -77,15 +82,26 @@ def main():
         # Determine output directory
         out_dir = ROOT_DIR / output_dir if isinstance(output_dir, str) else output_dir
 
-        # Generate for each stage × hardware combination
-        for gpu_enabled, hardware in GPU_MODES.items():
-            for stage in STAGES:
-                context = {"stage": stage, "gpu_enabled": gpu_enabled, **config_data}
-                filename = name_pattern.format(hardware=hardware, stage=stage)
-                output_path = out_dir / filename
+        # Check if pattern has stage/hardware variables
+        needs_stage_hardware = "{stage}" in name_pattern or "{hardware}" in name_pattern
 
-                generate_config(template, context, output_path)
-                stats[config_name] += 1
+        if needs_stage_hardware:
+            # Generate for each stage × hardware combination
+            for gpu_enabled, hardware in GPU_MODES.items():
+                for stage in STAGES:
+                    context = {"stage": stage, "gpu_enabled": gpu_enabled, **config_data}
+                    filename = name_pattern.format(hardware=hardware, stage=stage)
+                    output_path = out_dir / filename
+
+                    generate_config(template, context, output_path)
+                    stats[config_name] += 1
+        else:
+            # Generate single file (no stage/hardware variations)
+            context = {"stage": "default", "gpu_enabled": False, **config_data}
+            output_path = out_dir / name_pattern
+
+            generate_config(template, context, output_path)
+            stats[config_name] += 1
 
     # Print summary
     print(f"\n✨ Generation complete!")
