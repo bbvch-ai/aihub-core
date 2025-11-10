@@ -15,7 +15,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.19.0",
+  "packageManager": "pnpm@10.20.0",
   "devDependencies": {
     "@braintree/sanitize-url": "^7.1.1",
     "@types/glob": "^9.0.0",

@@ -10,7 +10,7 @@ class ProcessInstanceTopic(ProcessClassTopic):
     process_id: Annotated[str, Field(description="Unique identifier for the specific process instance.")]
 
     def __str__(self) -> str:
-        """Returns the full subject string for this agent topic."""
+        """Returns the full subject string for this process instance topic."""
         return (
             f"{ProcessTopicManager.PROCESS_TOPIC}."
             f"{self.process_class}."

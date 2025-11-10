@@ -179,7 +179,7 @@ async def run_system_test(process_count: int, n_events: int, payload_kb: int) ->
         _stop_signal = asyncio.Event()
 
         # Create topic managers
-        topic_manager = AgentInstanceTopicManager(agent_type.__name__, agent_config.agent_id)
+        topic_manager = AgentInstanceTopicManager(agent_class=agent_type.__name__, agent_id=agent_config.agent_id)
         thread_topic_manager = AgentThreadTopicManager.from_agent_instance_topic_manager(
             topic_manager,
             thread_id=thread_id,

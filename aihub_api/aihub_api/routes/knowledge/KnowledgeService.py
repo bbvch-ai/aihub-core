@@ -1,15 +1,22 @@
 import logging
 import time
+import uuid
 from functools import lru_cache, wraps
+from typing import Annotated
 
 import mongoengine
 from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessSettings import AnonymousFileAccessSettings
+from aihub_lib.generative_ai.document.types.FileTypeConfig import FileTypeConfig
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from aihub_lib.generative_ai.utils.path_utils import FIGURES_DIRECTORY_NAME
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+from aihub_lib.nats.events.pipeline.SourceUpdatedEvent import SourceUpdatedEvent
+from aihub_lib.nats.publishers.NCPublisher import NCPublisher
+from aihub_lib.nats.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
 from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
@@ -26,10 +33,16 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
 from fastapi import HTTPException
 from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
 from mongoengine import DoesNotExist, register_connection
+from nats.aio.client import Client as NATS
+from pydantic import Field
 
 from aihub_api.routes.knowledge.dto.CreateNamespaceRequest import CreateNamespaceRequest
 from aihub_api.routes.knowledge.dto.DatabaseDTO import DatabaseDTO
 from aihub_api.routes.knowledge.dto.DocumentDTO import DocumentDTO
+from aihub_api.routes.knowledge.dto.DocumentUploadRequest import DocumentUploadRequest
+from aihub_api.routes.knowledge.dto.DocumentUploadResponse import DocumentUploadResponse
+from aihub_api.routes.knowledge.dto.DocumentUploadValidationRequest import DocumentUploadValidationRequest
+from aihub_api.routes.knowledge.dto.DocumentUploadValidationResponse import DocumentUploadValidationResponse
 from aihub_api.routes.knowledge.dto.NamespaceDTO import NamespaceDTO
 from aihub_api.routes.knowledge.dto.NamespaceResponse import NamespaceResponse
 from aihub_api.routes.knowledge.dto.NodeSummaryDTO import NodeSummaryDTO
@@ -80,6 +93,9 @@ class KnowledgeService:
 
         This method supports both S3/MinIO and Azure Blob Storage based on the
         ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND environment variable.
+
+        Files in the __figures__ directory are excluded as they are generated artifacts
+        from document processing and should not be displayed in the knowledge interface.
         """
         file_access_config = AnonymousFileAccessSettings()
 
@@ -88,6 +104,10 @@ class KnowledgeService:
         all_files = []
         for file_info in files_info:
             key = file_info["key"]
+
+            if f"/{FIGURES_DIRECTORY_NAME}/" in key:
+                continue
+
             filename = key.split("/")[-1]
             file_namespace = key.split("/")[0]
 
@@ -294,18 +314,22 @@ class KnowledgeService:
 
     @staticmethod
     async def create_namespace(
-        request: CreateNamespaceRequest, t: LocaleHandler, llm_config: LLMConfig | None = None
+        database: str,
+        namespace: str,
+        request: CreateNamespaceRequest,
+        t: LocaleHandler,
+        llm_config: LLMConfig | None = None,
     ) -> NamespaceResponse:
         """
         Creates a new namespace (folder) in the specified database.
         """
-        bucket = BucketEntity.get_bucket_by_db_name(request.database_name)
+        bucket = BucketEntity.get_bucket_by_db_name(database)
 
         try:
-            NamespaceEntity.get_namespace_by_bucket_and_name(str(bucket.id), request.namespace_name)
+            NamespaceEntity.get_namespace_by_bucket_and_name(str(bucket.id), namespace)
             raise HTTPException(
                 status_code=409,
-                detail=f"Folder '{request.namespace_name}' already exists in database '{request.database_name}'.",
+                detail=f"Folder '{namespace}' already exists in database '{database}'.",
             )
         except DoesNotExist:
             pass
@@ -319,7 +343,7 @@ class KnowledgeService:
 
         namespace_entity = NamespaceEntity.create_namespace(
             bucket_id=str(bucket.id),
-            namespace_name=request.namespace_name,
+            namespace_name=namespace,
             folder_name=request.folder_name,
             display_name=display_name_entity,
             description=description_entity,
@@ -371,3 +395,125 @@ class KnowledgeService:
             display_name=KnowledgeService._safe_extract_locale_string(updated_entity.display_name, t),
             description=KnowledgeService._safe_extract_locale_string(updated_entity.description, t),
         )
+
+    @staticmethod
+    async def initiate_document_upload(
+        database: str, namespace: str, request: DocumentUploadRequest
+    ) -> DocumentUploadResponse:
+        """
+        Initiates document upload by generating a presigned URL for the globally configured datalake.
+
+        This method resolves logical database/namespace names to physical storage locations,
+        validates the upload request, generates a unique object key, and creates a presigned URL
+        for direct upload to the configured datalake storage.
+        """
+
+        try:
+            bucket_entity = BucketEntity.get_bucket_by_db_name(database)
+            namespace_entity = NamespaceEntity.get_namespace_by_bucket_and_name(
+                bucket_id=str(bucket_entity.id), namespace_name=namespace
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Database '{database}' or namespace '{namespace}' not found",
+            ) from e
+
+        container = bucket_entity.bucket_name
+        folder = namespace_entity.folder_name
+
+        upload_id = str(uuid.uuid4())
+        object_key = f"{folder}/{request.filename}"
+
+        file_access_config = AnonymousFileAccessSettings()
+        presigned_url = file_access_config.service.generate_upload_url(
+            container=container,
+            file_path=object_key,
+            content_type=request.content_type,
+            lifetime_hours=1,  # 1 hour expiration
+        )
+
+        return DocumentUploadResponse(
+            upload_url=presigned_url,
+            upload_id=upload_id,
+            container=container,
+            object_key=object_key,
+            expires_in=3600,  # 1 hour in seconds
+            folder=folder,
+        )
+
+    @staticmethod
+    @trace_fn
+    async def _publish_source_updated_event(
+        nc: Annotated[NATS, Field(description="NATS client connection")],
+        database: Annotated[str, Field(description="Target knowledge database name")],
+        container: Annotated[str, Field(description="Container/bucket name")],
+        file_path: Annotated[str, Field(description="Path to the uploaded file")],
+    ) -> None:
+        """
+        Publishes a SourceUpdatedEvent to NATS when a file is successfully uploaded.
+
+        This event triggers downstream pipeline processing via Dagster sensors that
+        listen for file upload events on the pipeline stream.
+        """
+        topic_manager = PipelineInstanceTopicManager(
+            source_type="datalake",
+            source_id=container,
+            target_type="knowledge",
+            target_id=database,
+        )
+
+        event = SourceUpdatedEvent(path=file_path)
+        subject = topic_manager.get_subject_for_specific_event_in_pipeline_instance(
+            run_key=event.event_id,
+            event_name=event.event_name,
+            event_id=event.event_id,
+        )
+
+        publisher = NCPublisher(name="KnowledgeService", nc=nc)
+        await publisher.publish_event(event, subject)
+
+        logger.info(f"Published SourceUpdatedEvent for file {file_path} to subject {subject}")
+
+    @staticmethod
+    async def validate_document_upload(
+        nc: NATS, database: str, namespace: str, request: DocumentUploadValidationRequest
+    ) -> DocumentUploadValidationResponse:
+        """
+        Validates whether a file was successfully uploaded to the globally configured datalake.
+
+        This method verifies that the uploaded file exists in the datalake storage and publishes
+        a SourceUpdatedEvent to NATS to trigger downstream pipeline processing via Dagster sensors.
+        """
+        try:
+            bucket_entity = BucketEntity.get_bucket_by_db_name(database)
+        except Exception as e:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Database '{database}' or namespace '{namespace}' not found",
+            ) from e
+
+        container = bucket_entity.bucket_name
+        object_key = request.file_path
+
+        file_access_config = AnonymousFileAccessSettings()
+        exists = file_access_config.service.verify_file_exists(container=container, file_path=object_key)
+
+        if exists:
+            try:
+                KnowledgeService.invalidate_cache()
+                await KnowledgeService._publish_source_updated_event(
+                    nc=nc,
+                    database=database,
+                    container=container,
+                    file_path=object_key,
+                )
+            except Exception as e:
+                logger.exception(f"Failed to publish SourceUpdatedEvent for {object_key}: {e}")
+                # Don't fail the validation - file was successfully uploaded
+
+        return DocumentUploadValidationResponse(exists=exists, file_path=object_key, container=container)
+
+    @staticmethod
+    def get_supported_file_types() -> list[str]:
+        return FileTypeConfig().get_unique_extensions()

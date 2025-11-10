@@ -1,6 +1,7 @@
 import base64
 import os
 
+from aihub_lib.generative_ai.utils.path_utils import FIGURES_DIRECTORY_NAME
 from azure.storage.filedatalake import FileSystemClient
 
 from aihub_pipeline.resources.data_lake.base.AbstractDataLakeClient import AbstractDataLakeClient
@@ -18,10 +19,7 @@ class AzureDataLakeClient(AbstractDataLakeClient):
         super().__init__(container_name)
         self._client = filesystem_client
 
-    def get_all_files(
-        self,
-        figures_directory_name: str,
-    ) -> list[DataLakeFile]:
+    def get_all_files(self) -> list[DataLakeFile]:
         """Get all files using Azure FileSystemClient.get_paths()"""
         paths = self._client.get_paths(recursive=True)
         data_lake_files: list[DataLakeFile] = []
@@ -33,7 +31,7 @@ class AzureDataLakeClient(AbstractDataLakeClient):
             path_parts = path.name.split("/")
 
             is_root_folder = len(path_parts) == 1
-            is_figure_folder = figures_directory_name in path_parts
+            is_figure_folder = FIGURES_DIRECTORY_NAME in path_parts
             is_dagster_folder = any(part.startswith(".") and part.endswith("dagster") for part in path_parts)
             if is_root_folder or is_figure_folder or is_dagster_folder:
                 continue

@@ -1,6 +1,7 @@
 from aihub_lib.generative_ai.document.parsers.MarkdownStructuralNodeParser import MarkdownStructuralNodeParser
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_STORE_NAME
-from dagster import ConfigurableResource
+from dagster import ConfigurableResource, ResourceDependency
 
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
 
@@ -31,14 +32,18 @@ class MarkdownStructuralNodeParserResource(ConfigurableResource):
         defs = Definitions(
             assets=[asset1],
             resources={
-                "node_parser": MarkdownStructuralNodeParserResource(),
+                "node_parser": MarkdownStructuralNodeParserResource(
+                    llm_config=my_llm_config
+                ),
             }
         )
     """  # noqa: E501
+
+    llm_config: ResourceDependency[LLMConfig]
 
     def get_node_parser_for_ref_doc(
         self, ref_doc: RefDocDocument, document_store_name: str
     ) -> MarkdownStructuralNodeParser:
         metadata = ref_doc.metadata
         metadata[DOCUMENT_STORE_NAME] = document_store_name
-        return MarkdownStructuralNodeParser(metadata=metadata)
+        return MarkdownStructuralNodeParser(metadata=metadata, llm_config=self.llm_config)

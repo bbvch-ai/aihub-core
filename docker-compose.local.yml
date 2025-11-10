@@ -63,9 +63,6 @@ x-logging: &default-logging
 x-restart-policy: &restart-policy
   restart: always
 
-x-common-entrypoint: &common-entrypoint "web"
-x-common-cert-resolver: &common-cert-resolver "letsencrypt"
-
 
 services:
   # === SeaweedFS Stack ===
@@ -173,9 +170,9 @@ services:
     restart: "no"
     logging: *default-logging
 
-  oauth2proxy-seaweedfs:
+  oauth2proxy-seaweed:
     image: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
-    container_name: oauth2proxy-seaweedfs
+    container_name: oauth2proxy-seaweed
     <<: *restart-policy
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: "0.0.0.0:4181"
@@ -192,6 +189,7 @@ services:
       OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET}
       OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
       OAUTH2_PROXY_EMAIL_DOMAINS: "*"
+      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: "https://aiagentsstpublicblobs.blob.core.windows.net/logos/Bbv-Logo_farbig.png"
       OAUTH2_PROXY_REVERSE_PROXY: true
       OAUTH2_PROXY_REDIRECT_URL: "https://datalake.${DOMAIN}"
     depends_on:
@@ -208,6 +206,7 @@ services:
       - "traefik.http.routers.seaweedfs-filer.tls=true"
       - "traefik.http.routers.seaweedfs-filer.middlewares=security-headers@file"
       - "traefik.http.services.seaweedfs-filer.loadbalancer.server.port=4181"
+
   # </editor-fold>
 
   # === Milvus Stack ===
@@ -225,14 +224,14 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/etcd-data:/etcd
     command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
     healthcheck:
-      test: ["CMD", "etcdctl", "endpoint", "health"]
+      test: [ "CMD", "etcdctl", "endpoint", "health" ]
     logging: *default-logging
 
   milvus-standalone:
     image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.5.15
     container_name: milvus
     <<: *restart-policy
-    command: ["milvus", "run", "standalone"]
+    command: [ "milvus", "run", "standalone" ]
     security_opt:
       - seccomp:unconfined
     environment:
@@ -242,9 +241,9 @@ services:
       MINIO_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/milvus-data:/var/lib/milvus
-      - ./configs/milvus/milvus.nightly.yaml:/milvus/configs/milvus.yaml
+      - ./configs/milvus/milvus.local.yaml:/milvus/configs/milvus.yaml
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      test: [ "CMD", "curl", "-f", "http://localhost:9091/healthz" ]
       start_period: 90s
     depends_on:
       etcd:
@@ -261,7 +260,19 @@ services:
       - "milvus-standalone"
     environment:
       MILVUS_URL: milvus-standalone:19530
+    healthcheck:
+      test: [ "NONE" ]
     logging: *default-logging
+    labels:
+      - "traefik.enable=true"
+
+      # --- attu Subdomain (priority 4000 - Admin interfaces) ---
+      - "traefik.http.routers.attu.rule=Host(`attu.${DOMAIN}`)"
+      - "traefik.http.routers.attu.priority=4000"
+      - "traefik.http.routers.attu.entrypoints=websecure"
+      - "traefik.http.routers.attu.tls=true"
+      - "traefik.http.routers.attu.middlewares=security-headers@file"
+      - "traefik.http.services.attu.loadbalancer.server.port=3000"
   # </editor-fold>
 
   # === Postgres Stack ===
@@ -295,19 +306,23 @@ services:
       PHOENIX_SQL_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/phoenix"
       PHOENIX_ENABLE_AUTH: "False"
       VERSION: ""
+    healthcheck:
+      test: [ "NONE" ]
     logging: *default-logging
   # </editor-fold>
 
   # === Nats & Redis Stack ===
-  # <editor-fold desc="NATS & Redis Stack">
+  # <editor-fold desc="NATS & Valkey Stack">
   nats:
     image: ghcr.io/bbvch-ai/aihub-core/nats:2.11.4
     container_name: nats
     <<: *restart-policy
     command: -c /etc/nats/nats.conf
     volumes:
-      - ./configs/nats/nats.nightly.conf:/etc/nats/nats.conf
+      - ./configs/nats/nats.local.conf:/etc/nats/nats.conf
       - ${VOLUME_ROOT:-./.docker-volumes}/nats-data:/data
+    healthcheck:
+      test: [ "NONE" ]
     logging: *default-logging
 
   valkey:
@@ -336,7 +351,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/ferretdb-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${MONGO_USERNAME}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${MONGO_USERNAME}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -371,7 +386,7 @@ services:
     logging: *default-logging
 
   litellm:
-    image: ghcr.io/bbvch-ai/aihub-core/litellm:main-v1.74.8-nightly
+    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.77.7-stable
     container_name: litellm
     <<: *restart-policy
     environment:
@@ -380,14 +395,13 @@ services:
       UI_USERNAME: ${LITELLM_UI_USERNAME}
       UI_PASSWORD: ${LITELLM_UI_PASSWORD}
       AZURE_OPENAI_KEY: ${AZURE_OPENAI_KEY}
-      AZURE_OPENAI_KEY_IMAGE: ${AZURE_OPENAI_KEY_IMAGE}
-      AZURE_OPENAI_KEY_AUDIO: ${AZURE_OPENAI_KEY_AUDIO}
+      AZURE_OPENAI_BASE_URL: ${AZURE_OPENAI_BASE_URL}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       PRESIDIO_ANALYZER_API_BASE: "http://presidio-analyzer:3000"
       PRESIDIO_ANONYMIZER_API_BASE: "http://presidio-anonymizer:3000"
       SET_VERBOSE: "false"
     volumes:
-      - ./configs/litellm/config.nightly.yaml:/app/config.yaml
+      - ./configs/litellm/config.local.yaml:/app/config.yaml
     command: --config /app/config.yaml --detailed_debug
     depends_on:
       postgres:
@@ -412,11 +426,13 @@ services:
   # === OpenWebUI Stack ===
   # <editor-fold desc="OpenWebUI Stack">
   open-webui:
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.22
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.28
     container_name: open-webui
     <<: *restart-policy
     depends_on:
       postgres:
+        condition: service_healthy
+      milvus-standalone:
         condition: service_healthy
       seaweedfs-s3:
         condition: service_healthy
@@ -479,6 +495,13 @@ services:
       OAUTH_EMAIL_CLAIM: 'email'
       OAUTH_GROUP_CLAIM: 'email'
 
+      # AI-Hub Connection
+      AIHUB_BASE_URL: http://localhost:8000
+      AIHUB_SUPERUSER_API_KEY: ${SUPERUSER_TOKEN}
+      OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
+      AIHUB_PIPELINE_PREFIX: "aihub/"
+      AIHUB_REQUEST_TIMEOUT: 60
+
       # Data storage
       STORAGE_PROVIDER: "s3"
       S3_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
@@ -488,28 +511,20 @@ services:
       S3_ENDPOINT_URL: 'http://seaweedfs-s3:9000'
 
       # Model config
-      OPENAI_API_BASE_URL: ""
-      OPENAI_API_KEY: ""
-      RAG_OPENAI_API_BASE_URL: "http://api:8000/api/v1"
+      OPENAI_API_BASE_URL: "http://api:8000/api/v1/openai"
+      OPENAI_API_KEY: ${SUPERUSER_TOKEN}
+      RAG_OPENAI_API_BASE_URL: "http://api:8000/api/v1/openai"
       RAG_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
-      AUDIO_STT_OPENAI_API_BASE_URL: "http://api:8000/api/v1"
+      AUDIO_STT_OPENAI_API_BASE_URL: "http://api:8000/api/v1/openai"
       AUDIO_STT_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
-      AUDIO_TTS_OPENAI_API_BASE_URL: "http://api:8000/api/v1"
+      AUDIO_TTS_OPENAI_API_BASE_URL: "http://api:8000/api/v1/openai"
       AUDIO_TTS_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       ENABLE_IMAGE_GENERATION: True
-      IMAGES_OPENAI_API_BASE_URL: "http://api:8000/api/v1"
+      IMAGES_OPENAI_API_BASE_URL: "http://api:8000/api/v1/openai"
       IMAGES_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       MODELS_CACHE_TTL: 60
-      TASK_MODEL: 'azure/gpt-4o-mini'
-      TASK_MODEL_EXTERNAL: 'azure/gpt-4o-mini'
-
-      # AI-Hub Connection
-      AIHUB_BASE_URL: http://api:8000
-      AIHUB_SUPERUSER_API_KEY: ${SUPERUSER_TOKEN}
-      OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
-      AIHUB_PIPELINE_PREFIX: "aihub/"
-      AIHUB_OPENAI_PIPELINE_PREFIX: "openai/"
-      AIHUB_REQUEST_TIMEOUT: 60
+      TASK_MODEL: 'text-generation/mini'
+      TASK_MODEL_EXTERNAL: 'text-generation/mini'
 
       # Database
       DATABASE_TYPE: 'postgres'
@@ -552,7 +567,7 @@ services:
       # Vector DB
       VECTOR_DB: 'milvus'
       MILVUS_DB: 'default'
-      MILVUS_URI: 'http://milvus:19530'
+      MILVUS_URI: 'http://milvus-standalone:19530'
       MILVUS_INDEX_TYPE: 'HNSW'
       MILVUS_METRIC_TYPE: 'COSINE'
       MILVUS_HNSW_M: '16'
@@ -578,7 +593,7 @@ services:
       WEB_SEARCH_CONCURRENT_REQUESTS: 6
       BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: True
       WEB_LOADER_ENGINE: 'playwright'
-      PLAYWRIGHT_WS_URL: 'ws://playwright:3000'
+      PLAYWRIGHT_WS_URL: 'ws://playwright:3000/ws'
       FILE_IMAGE_COMPRESSION_WIDTH: 796
       FILE_IMAGE_COMPRESSION_HEIGHT: 796
 
@@ -589,8 +604,8 @@ services:
       # Audio
       AUDIO_STT_ENGINE: 'openai'
       AUDIO_TTS_ENGINE: 'openai'
-      AUDIO_STT_MODEL: 'azure/gpt-4o-mini-transcribe'
-      AUDIO_TTS_MODEL: 'azure/gpt-4o-mini-tts'
+      AUDIO_STT_MODEL: 'transcription'
+      AUDIO_TTS_MODEL: 'speech'
       AUDIO_TTS_VOICE: 'alloy'
 
       # User Permissions
@@ -703,10 +718,10 @@ services:
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
 
   playwright:
-    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.49.0-jammy
+    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.54.1-jammy
     container_name: playwright-server
     <<: *restart-policy
-    command: npx playwright@v1.49.0 run-server --port 3000 --host 0.0.0.0
+    command: npx playwright run-server --port 3000 --host 0.0.0.0
     environment:
       NODE_ENV: production
     healthcheck:
@@ -739,6 +754,7 @@ services:
       OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET}
       OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
       OAUTH2_PROXY_EMAIL_DOMAINS: "*"
+      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: "https://aiagentsstpublicblobs.blob.core.windows.net/logos/Bbv-Logo_farbig.png"
       OAUTH2_PROXY_REVERSE_PROXY: true
       OAUTH2_PROXY_REDIRECT_URL: "https://dagster.${DOMAIN}"
     logging: *default-logging
@@ -753,10 +769,8 @@ services:
       - "traefik.http.services.dagster.loadbalancer.server.port=4180"
 
   dagster-webserver:
-    build:
-      context: .
-      dockerfile: ./aihub_pipeline/Dockerfile
-    container_name:  dagster-webserver
+    image: ghcr.io/bbvch-ai/aihub-core/dagster:latest
+    container_name: dagster-webserver
     <<: *restart-policy
     entrypoint:
       - dagster-webserver
@@ -780,9 +794,7 @@ services:
     logging: *default-logging
 
   dagster-daemon:
-    build:
-      context: .
-      dockerfile: ./aihub_pipeline/Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/dagster:latest
     container_name: dagster-daemon
     <<: *restart-policy
     entrypoint:
@@ -799,49 +811,47 @@ services:
       DAGSTER_HOME: /dagster_home
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: [ "CMD-SHELL", "grep -q dagster-daemon /proc/1/cmdline || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     logging: *default-logging
   # </editor-fold>
 
   # === API Stack ===
   # <editor-fold desc="API Stack">
   api:
-    build:
-      context: .
-      dockerfile: ./aihub_api/Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/api:latest
     container_name: api
     <<: *restart-policy
     depends_on:
       - "ferretdb"
       - "nats"
       - "traefik"
+    volumes:
+      - api-venv:/app/.venv
+      - api-api-venv:/app/aihub_api/.venv
     environment:
       NATS_ENDPOINT: "nats://nats:4222"
       MONGO_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017"
       NUM_WORKERS: 1
       LOG_LEVEL: ${LOG_LEVEL}
-      AUTH_ENABLE_API_ACCESS: True
-      AUTH_OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
-      AUTH_IDENTITY_PROVIDER: ${AUTH_IDENTITY_PROVIDER}
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
-      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
-      OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
-      SUPERUSER_ENABLED: true
-      SUPERUSER_NAME: ${SUPERUSER_NAME}
-      SUPERUSER_EMAIL: ${SUPERUSER_EMAIL}
-      SUPERUSER_OID: ${SUPERUSER_OID}
-      SUPERUSER_ROLE: "AIHubSuperuser"
-      SUPERUSER_TOKEN: ${SUPERUSER_TOKEN}
-      AIHUB_API_VERSION: "dev"
-      AIHUB_FRONTEND_ORIGIN: "${DOMAIN}"
-      AIHUB_CREATE_DEFAULT_ROLES: True
-      LITE_LLM_PROXY_BASE_URL: "http://litellm:4000"
-      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
       AZURE_CLIENT_ID: ${OAUTH_CLIENT_ID}
       AZURE_TENANT_ID: ${OAUTH_TENANT_ID}
       AZURE_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
-      PHOENIX_ENDPOINT: "http://phoenix:6006"
-      MILVUS_URL: "http://milvus-standalone"
-      MILVUS_DIMENSION: "3072"
+      OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: "${DOMAIN}"
+      LITE_LLM_PROXY_BASE_URL: "http://litellm:4000/"
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+      AUTH_OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
+      SUPERUSER_NAME: ${SUPERUSER_NAME}
+      SUPERUSER_EMAIL: ${SUPERUSER_EMAIL}
+      SUPERUSER_OID: ${SUPERUSER_OID}
+      SUPERUSER_TOKEN: ${SUPERUSER_TOKEN}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
     logging: *default-logging
@@ -860,26 +870,27 @@ services:
   # === Bot Stack ===
   # <editor-fold desc="Bot Stack">
   bot:
-    build:
-      context: .
-      dockerfile: ./aihub_bot/Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/bot:latest
     container_name: bot
     <<: *restart-policy
     depends_on:
       - "ferretdb"
       - "nats"
       - "traefik"
+    volumes:
+      - bot-venv:/app/.venv
+      - bot-bot-venv:/app/aihub_bot/.venv
     environment:
       NATS_ENDPOINT: "nats://nats:4222"
       MONGO_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017"
       LOG_LEVEL: ${LOG_LEVEL}
       NUM_WORKERS: 1
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: "${DOMAIN}"
       DANGEROUS_DEV_ONLY_AUTH_FAKE_NAME: ${BOT_AUTH_FAKE_NAME}
       DANGEROUS_DEV_ONLY_AUTH_FAKE_EMAIL: ${BOT_AUTH_FAKE_EMAIL}
       DANGEROUS_DEV_ONLY_AUTH_FAKE_OID: ${BOT_AUTH_FAKE_OID}
       DANGEROUS_DEV_ONLY_AUTH_FAKE_ROLES: ${BOT_AUTH_FAKE_ROLES}
-      AIHUB_API_VERSION: "dev"
-      AIHUB_FRONTEND_ORIGIN: "${DOMAIN}"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8001/api/v1/health" ]
     logging: *default-logging
@@ -897,16 +908,28 @@ services:
 
   # === Docling ===
   # <editor-fold desc="Docling Stack">
+  docling-model-permission:
+    container_name: docling-model-permission
+    image: alpine
+    command: [ "sh", "-c", "chown -R 1001:1001 /models" ]
+    restart: "no"
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/docling-data:/models
+
   docling:
     image: ghcr.io/bbvch-ai/aihub-core/docling-serve:v1.3.1
     container_name: docling
     <<: *restart-policy
+    depends_on:
+      docling-model-permission:
+        condition: service_completed_successfully
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/docling-data:/models:rw
+      - ${VOLUME_ROOT:-./.docker-volumes}/docling-data:/models
       - ./configs/docling/init-models.sh:/docker-entrypoint.sh:ro
     entrypoint: [ "/docker-entrypoint.sh" ]
     environment:
       DOCLING_SERVE_ARTIFACTS_PATH: "/models"
+      DOCLING_SERVE_ENABLE_UI: false
       DOCLING_SERVE_MAX_SYNC_WAIT: 600
       DOCLING_MODELS: "layout tableformer code_formula easyocr"
     healthcheck:
@@ -917,16 +940,14 @@ services:
   # === SUITE UI Stack ===
   # <editor-fold desc="SUITE UI Stack">
   web:
-    build:
-      context: ./aihub_web/aihub_web
-      dockerfile: ./Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/web:latest
     container_name: web
     <<: *restart-policy
     environment:
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
       WEBUI_URL: "https://openwebui.${DOMAIN}"
-      WS_ENDPOINT: "wss://${DOMAIN}/api/v1/event/ws"
+      WS_ENDPOINT: "wss://${DOMAIN}/api/v1/events/ws"
     logging: *default-logging
     labels:
       - "traefik.enable=true"
@@ -966,14 +987,14 @@ services:
 
       # === MIDDLEWARE ===
       - "traefik.http.middlewares.web-standard-middleware.chain.middlewares=security-headers@file"
+
   # </editor-fold>
+
 
   # === Common Agents ===
   # <editor-fold desc="Common Agents">
   llm_wrapping_agent:
-    build:
-      context: .
-      dockerfile: ./aihub_agent/app/llm_wrapping_agent/Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:latest
     container_name: llm-wrapping-agent
     restart: always
     environment:
@@ -984,9 +1005,7 @@ services:
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
   rag_agent:
-    build:
-      context: .
-      dockerfile: ./aihub_agent/app/rag_agent/Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/rag_agent:latest
     container_name: rag-agent
     restart: always
     environment:
@@ -999,28 +1018,33 @@ services:
       MILVUS_DIMENSION: "3072"
   # </editor-fold>
 
+  # === Common Pipelines ===
   default_rag_pipeline:
-    build:
-      context: .
-      dockerfile: ./aihub_pipeline/app/default_rag_pipeline/Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:latest
     container_name: default-rag-pipeline
     restart: always
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
-      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      NATS_ENDPOINT: "nats://nats:4222"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DOCLING_API_ENDPOINT: ${DOCLING_API_ENDPOINT}
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${AIHUB_FRONTEND_ORIGIN}
+      MONGO_CONNECTION_STRING: ${MONGO_CONNECTION_STRING}
+      S3_STORAGE_ENDPOINT: ${S3_STORAGE_ENDPOINT}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_URL_SIGNING_SECRET}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      MONGO_CONNECTION_STRING: "mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017"
-      DOCLING_API_ENDPOINT: http://docling:5001/v1alpha/convert/source
-      DOCLING_API_TIMEOUT: 600
-      MILVUS_URL: "http://milvus-standalone"
-      MILVUS_DIMENSION: "3072"
-      LITE_LLM_PROXY_BASE_URL: "http://litellm:4000"
-      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+      MILVUS_URL: milvus-standalone:19530
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+  # </editor-fold>
+
+  # <editor-fold desc="Common Pipelines">
+  # </editor-fold>
 
   # === Traefik ===
   # <editor-fold desc="Traefik">
@@ -1031,42 +1055,35 @@ services:
     command:
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
-      - "--entrypoints.websecure.http.tls=true"
-      - "--providers.file.directory=/etc/traefik"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
       - "--providers.docker=true"
       - "--providers.docker.watch=true"
       - "--providers.docker.exposedbydefault=false"
       - "--api=true"
       - "--api.dashboard=true"
-      - "--api.insecure=true"
       - "--log.level=DEBUG"
+      - "--accesslog=true"
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "./configs/traefik/middlewares.local.yml:/etc/traefik/middlewares.yml:ro"
-      - "./configs/traefik/tls.local.yml:/etc/traefik/tls.yml:ro"
-      - "./configs/traefik/certs/dev-cert.pem:/certs/dev-cert.pem:ro"
-      - "./configs/traefik/certs/dev-key.pem:/certs/dev-key.pem:ro"
-      # - "/srv/app/traefik/acme.json:/srv/app/traefik/acme.json"
+      - "./configs/traefik/middlewares.local.yml:/etc/traefik/dynamic/middlewares.yml:ro"
+      - "./configs/traefik/tls.local.yml:/etc/traefik/dynamic/tls.yml:ro"
+      - "./configs/traefik/certs:/certs:ro"
     labels:
       - "traefik.enable=true"
 
-      # ACME Challenge router (higher priority) - only for production
-      - ${ACME_EMAIL:+traefik.http.routers.acme-challenge.rule=PathPrefix(`/.well-known/acme-challenge/`)}
-      - ${ACME_EMAIL:+traefik.http.routers.acme-challenge.entrypoints=web}
-      - ${ACME_EMAIL:+traefik.http.routers.acme-challenge.priority=9000}
-
-      # HTTP to HTTPS redirect (lower priority, excludes ACME)
-      - "traefik.http.routers.http-catch.rule=HostRegexp(`{host:.+}`) && !PathPrefix(`/.well-known/acme-challenge/`)"
+      # HTTP to HTTPS redirect
+      - "traefik.http.routers.http-catch.rule=HostRegexp(`{host:.+}`)"
       - "traefik.http.routers.http-catch.entrypoints=web"
       - "traefik.http.routers.http-catch.priority=10"
       - "traefik.http.routers.http-catch.middlewares=https-redirect"
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
 
       # Dashboard
-      - "traefik.http.routers.traefik.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
       - "traefik.http.routers.traefik.entrypoints=websecure"
       - "traefik.http.routers.traefik.tls=true"
       - "traefik.http.routers.traefik.service=api@internal"
@@ -1078,5 +1095,7 @@ services:
 volumes:
   api-venv:
   api-api-venv:
+  bot-venv:
+  bot-bot-venv:
   dagster-venv:
   dagster-pipeline-venv:
