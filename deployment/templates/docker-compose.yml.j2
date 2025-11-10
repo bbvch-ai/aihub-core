@@ -400,7 +400,6 @@ services:
   # FerretDB provides MongoDB-compatible API backed by PostgreSQL.
   # ===================================================================
 
-  {%- if stage != 'dev' %}
   postgres-ferretdb:
     container_name: postgres-ferretdb
     image: {{ global.registry_prefix }}{{ image_tags.postgres_ferretdb }}
@@ -421,7 +420,6 @@ services:
       options:
         max-size: 10m
         max-file: 2
-  {%- endif %}
 
   ferretdb:
     container_name: ferretdb
@@ -430,18 +428,12 @@ services:
     {%- if stage == 'dev' %}
     ports:
       - "27017:27017"
-    environment:
-      - FERRETDB_POSTGRESQL_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/ferretdb
-    depends_on:
-      postgres:
-        condition: service_healthy
-    {%- else %}
+    {%- endif %}
     environment:
       - FERRETDB_POSTGRESQL_URL=postgres://${MONGO_USERNAME}:${MONGO_PASSWORD}@postgres-ferretdb:5432/postgres
     depends_on:
       postgres-ferretdb:
         condition: service_healthy
-    {%- endif %}
     logging:
       driver: json-file
       options:

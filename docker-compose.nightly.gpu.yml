@@ -339,6 +339,7 @@ services:
   # ===================================================================
   # FerretDB provides MongoDB-compatible API backed by PostgreSQL.
   # ===================================================================
+
   postgres-ferretdb:
     container_name: postgres-ferretdb
     image: ghcr.io/bbvch-ai/aihub-core/postgres-documentdb:17.0.106.0-ferretdb-2.5.0
