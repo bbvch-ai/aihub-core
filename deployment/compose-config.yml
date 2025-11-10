@@ -37,22 +37,15 @@ image_tags:
   jupyter: minimal-notebook:notebook-7.0.6
   otel_collector: opentelemetry-collector-contrib:latest
   oauth2_proxy: oauth2-proxy:latest
-
   traefik: traefik:v3.4.4
-
-  # --- Stage-Dependent Core Services ---
-  open_webui:
-    dev: open-webui:v0.6.22
-    local: open-webui:v0.6.22
-    nightly: open-webui:v0.6.22
-    latest: open-webui:v0.6.13
-
-  playwright:
-    dev: playwright:v1.49.0-jammy
-    local: playwright:v1.49.0-jammy
-    nightly: playwright:v1.49.0-jammy
-    latest: playwright:v1.54.1-jammy
-
+  postgres_ferretdb: postgres-documentdb:17.0.106.0-ferretdb-2.5.0
+  docling_model_permission: alpine  # Init container
+  huggingface_tei: text-embeddings-inference:cpu-ipex-sha-c8ff435
+  llama_cpp_reranker: llama.cpp:server-b6710
+  oauth2proxy_dagster: bbvch-ai/oauth2-proxy:latest
+  oauth2proxy_seaweed: bbvch-ai/oauth2-proxy:latest
+  open_webui: open-webui:v0.6.22
+  playwright: playwright:v1.54.1-jammy
 
   # --- GPU-Specific Services (only exist in 'dev' for now) ---
   llama_cpp:
@@ -132,34 +125,46 @@ image_tags:
 
   # --- Custom Application Services ---
   api:
-    local: localbuild
+    build: localbuild
+    local: api:latest
     nightly: api:nightly
     latest: api:latest
 
   web:
-    local: localbuild
+    build: localbuild
+    local: web:latest
     nightly: web:nightly
     latest: web:latest
 
   dagster:
-    local: localbuild
+    build: localbuild
+    local: dagster:latest
     nightly: dagster:nightly
     latest: dagster:latest
 
   llm_wrapping_agent:
-    local: localbuild
+    build: localbuild
+    local: llm_wrapping_agent:latest
     nightly: llm_wrapping_agent:nightly
     latest: llm_wrapping_agent:latest
 
   rag_agent:
-    local: localbuild
+    build: localbuild
+    local: rag_agent:latest
     nightly: rag_agent:nightly
     latest: rag_agent:latest
 
   default_rag_pipeline:
-    local: localbuild
+    build: localbuild
+    local: default_rag_pipeline:latest
     nightly: default_rag_pipeline:nightly
     latest: default_rag_pipeline:latest
+
+  bot:
+    build: localbuild
+    local: bot:latest
+    nightly: bot:nightly
+    latest: bot:latest
 
 # -------------------------------------------------------------------
 # Service-Specific Configurations

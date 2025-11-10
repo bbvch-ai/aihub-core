@@ -281,57 +281,6 @@ services:
       retries: 3
       start_period: 60s
 
-  huggingface-text-embedding-inference:
-    image: ghcr.io/bbvch-ai/aihub-core/text-embeddings-inference:cpu-ipex-sha-c8ff435
-    container_name: huggingface-text-embedding-inference
-    volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/hf-tei-data:/data
-      - ${HF_HOME:-~/.cache/huggingface}:/root/.cache/huggingface
-    ports:
-      - "8183:8183"
-    environment:
-      HF_HOME: /root/.cache/huggingface
-    command: >
-      --port 8183
-      --model-id Qwen/Qwen3-Embedding-0.6B
-    restart: always
-    healthcheck:
-      test: [ "CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8183/health" ]
-      timeout: 10s
-      interval: 30s
-      retries: 3
-      start_period: 60s
-
-  llama-cpp-reranker:
-    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b6710
-    container_name: llama-cpp-reranker
-    platform: linux/amd64
-    volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-reranker-data:/data
-      - ${HF_HOME:-~/.cache/huggingface}:/root/.cache/huggingface
-      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-reranker-cache:/root/.cache/llama.cpp
-    ports:
-      - "8184:8184"
-    environment:
-      HF_HOME: /root/.cache/huggingface
-    command: >
-      -hf mradermacher/Qwen3-Reranker-0.6B-GGUF
-      --alias Qwen3-Reranker-0.6B
-      --port 8184
-      -c 2048
-      -b 2048
-      -ub 2048
-      --reranking
-      -ngl 99
-      --no-context-shift
-    restart: always
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8184/health" ]
-      timeout: 10s
-      interval: 30s
-      retries: 3
-      start_period: 60s
-
   presidio-analyzer:
     image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359
     container_name: presidio-analyzer
