@@ -65,8 +65,7 @@ def build_rag_agent_config(
     query_mode: VectorStoreQueryMode,
 ) -> RAGAgentConfig:
     """
-    Build a fully populated RAGAgentConfig, substituting in the LLM/Embedding config
-    and vector store that differ between Azure vs. Self-Hosted.
+    Build a fully populated RAGAgentConfig with the specified LLM, embedding, and vector store configuration.
 
     We keep the entire parameter list intact to avoid partial Pydantic construction.
     """
@@ -91,28 +90,6 @@ def build_rag_agent_config(
         number_of_input_tokens=8192,
         check_context_sufficiency=False,
         reranking_config=RerankingConfig(enabled=False, reranking_model=reranking_config),
-    )
-
-
-@pytest.fixture
-def azure_agent_config():
-    """
-    Return a RAGAgentConfig that uses LiteLLM for both the LLM and embeddings with Milvus vector store.
-    """
-    llm_config = LLMConfig(model_name="text-generation/large")
-    reranking_config = RerankingModelConfig(model_name="")
-    embedding_config = EmbeddingModelConfig(model_name="embedding/large")
-    vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
-        collection_name="test_rag_agent",
-        dim=1536,
-    )
-
-    return build_rag_agent_config(
-        llm_config=llm_config,
-        reranking_config=reranking_config,
-        embedding_config=embedding_config,
-        vector_store=vector_store,
-        query_mode=VectorStoreQueryMode.DEFAULT,
     )
 
 
@@ -162,18 +139,6 @@ def self_hosted_agent_config(test_collection):
         embedding_config=embedding_config,
         vector_store=vector_store,
         query_mode=VectorStoreQueryMode.HYBRID,
-    )
-
-
-@pytest.mark.usefixtures("azure_agent_config")
-@given("a RAGAgent runner with a valid azure configuration", target_fixture="agent_runner")
-def _(azure_agent_config):
-    """
-    Given a RAGAgent runner with a valid Azure configuration.
-    """
-    return AgentTestRunner(
-        agent_type=RAGAgent,
-        default_agent_config=azure_agent_config,
     )
 
 

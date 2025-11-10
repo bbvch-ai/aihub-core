@@ -24,8 +24,6 @@ class AzureBlobStorageSettings(EnvironmentSettings):
             "Recommended over implicit authentication."
         ),
     ] = None
-    NAME: Annotated[str | None, Field(description="The name of the Azure Blob Storage account.")] = None
-    ENDPOINT: Annotated[str | None, Field(description="The Blob service endpoint for the storage account.")] = None
 
     # This secret key is used to sign our own internal URLs, not for Azure.
     URL_SIGNING_SECRET: Annotated[
