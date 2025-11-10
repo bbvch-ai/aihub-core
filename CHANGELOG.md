@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.251.1] - 2025-11-10 - Streamlined AI Assistant Integration via AGENTS.md Documentation
+
+### Added
+
+- 🦾 **Introduced Comprehensive AI Agent Developer Guides (`AGENTS.md`):** New, in-depth documentation files have been
+  added at the project root and within each core Python package (e.g., `aihub_action`, `aihub_agent`, `aihub_api`).
+  These guides provide detailed context for AI assistants and developers on package purpose, tech stack, architecture,
+  and development workflows.
+- ⚙️ **Configured Gemini AI Assistant Context:** A new `.gemini/settings.json` file has been added to explicitly
+  instruct the Gemini AI assistant to use the new `AGENTS.md` files for codebase context, ensuring more relevant
+  assistance.
+
+### Changed
+
+- 🔄 **Updated Claude AI Assistant Context References:** Existing `CLAUDE.md` configuration files across the repository
+  have been updated to reference the new, more specific `AGENTS.md` documentation, enhancing Claude's understanding of
+  each package's role and structure.
+
+### Removed
+
+- 🗑️ **Deprecated Generic Gemini Context Files:** The `GEMINI.md` files, which previously pointed to generic `README.md`
+  documentation, have been removed from the root and all packages. Their functionality is now superseded by the new
+  `.gemini/settings.json` and dedicated `AGENTS.md` files.
+
+---
+
 ## [v0.251.0] - 2025-11-10 - NATS-Powered Eventing for Smarter Data Pipelines
 
 ### Added
