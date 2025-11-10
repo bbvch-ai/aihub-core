@@ -13,20 +13,20 @@ ROOT_DIR = Path(__file__).parent.parent.resolve()
 DEPLOYMENT_DIR = Path(__file__).parent.resolve()
 
 # Stages and hardware variants
-STAGES = ["dev", "local", "latest", "nightly"]
+STAGES = ["dev", "local", "latest", "nightly", "build"]
 GPU_MODES = {False: "", True: "gpu."}
 
-# Configuration specs: (template_path, output_dir, output_name_pattern, gpu_dependent)
+# Configuration specs: (template_path, output_dir, output_name_pattern)
 CONFIG_SPECS = [
     # Docker Compose - always required
-    ("templates/docker-compose.yml.j2", ROOT_DIR, "docker-compose.{prefix}{stage}.yml", True),
+    ("templates/docker-compose.yml.j2", ROOT_DIR, "docker-compose.{prefix}{stage}.yml"),
     # Service configs - optional, skipped if template missing
-    ("templates/configs/litellm-config.yml.j2", "configs/litellm", "litellm-config.{prefix}{stage}.yml", True),
-    ("templates/configs/milvus-config.yml.j2", "configs/milvus", "milvus-config.{stage}.yml", False),
-    ("templates/configs/nats-config.conf.j2", "configs/nats", "nats-config.{stage}.conf", False),
-    ("templates/configs/dagster-config.yml.j2", "configs/dagster", "dagster-config.{stage}.yml", False),
-    ("templates/configs/workspace.yml.j2", "configs/dagster", "workspace.{stage}.yml", False),
-    ("templates/configs/otel-config.yml.j2", "configs/otel", "otel-config.{stage}.yml", False),
+    ("templates/configs/litellm-config.yml.j2", "configs/litellm", "litellm-config.{prefix}{stage}.yml"),
+    ("templates/configs/milvus-config.yml.j2", "configs/milvus", "milvus-config.{prefix}{stage}.yml"),
+    ("templates/configs/nats-config.conf.j2", "configs/nats", "nats-config.{prefix}{stage}.conf"),
+    ("templates/configs/dagster-config.yml.j2", "configs/dagster", "dagster-config.{prefix}{stage}.yml"),
+    ("templates/configs/workspace.yml.j2", "configs/dagster", "workspace.{prefix}{stage}.yml"),
+    ("templates/configs/otel-config.yml.j2", "configs/otel", "otel-config.{prefix}{stage}.yml"),
 ]
 
 
@@ -75,22 +75,11 @@ def main():
         # Determine output directory
         out_dir = ROOT_DIR / output_dir if isinstance(output_dir, str) else output_dir
 
-        # Generate files
-        if gpu_dependent:
-            # Generate for each stage × hardware combination
-            for gpu_enabled, prefix in GPU_MODES.items():
-                for stage in STAGES:
-                    context = {"stage": stage, "gpu_enabled": gpu_enabled, **config_data}
-                    filename = name_pattern.format(prefix=prefix, stage=stage)
-                    output_path = out_dir / filename
-
-                    generate_config(template, context, output_path)
-                    stats[config_name] += 1
-        else:
-            # Generate once per stage (GPU-independent)
+        # Generate for each stage × hardware combination
+        for gpu_enabled, prefix in GPU_MODES.items():
             for stage in STAGES:
-                context = {"stage": stage, "gpu_enabled": False, **config_data}
-                filename = name_pattern.format(stage=stage, prefix="")
+                context = {"stage": stage, "gpu_enabled": gpu_enabled, **config_data}
+                filename = name_pattern.format(prefix=prefix, stage=stage)
                 output_path = out_dir / filename
 
                 generate_config(template, context, output_path)
