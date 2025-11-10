@@ -2,6 +2,7 @@ import logging
 import time
 import uuid
 from functools import lru_cache, wraps
+from typing import Annotated
 
 import mongoengine
 from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
@@ -13,6 +14,9 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+from aihub_lib.nats.events.pipeline.SourceUpdatedEvent import SourceUpdatedEvent
+from aihub_lib.nats.publishers.NCPublisher import NCPublisher
+from aihub_lib.nats.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
 from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
@@ -29,6 +33,8 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
 from fastapi import HTTPException
 from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
 from mongoengine import DoesNotExist, register_connection
+from nats.aio.client import Client as NATS
+from pydantic import Field
 
 from aihub_api.routes.knowledge.dto.CreateNamespaceRequest import CreateNamespaceRequest
 from aihub_api.routes.knowledge.dto.DatabaseDTO import DatabaseDTO
@@ -429,14 +435,47 @@ class KnowledgeService:
         )
 
     @staticmethod
+    @trace_fn
+    async def _publish_source_updated_event(
+        nc: Annotated[NATS, Field(description="NATS client connection")],
+        database: Annotated[str, Field(description="Target knowledge database name")],
+        container: Annotated[str, Field(description="Container/bucket name")],
+        file_path: Annotated[str, Field(description="Path to the uploaded file")],
+    ) -> None:
+        """
+        Publishes a SourceUpdatedEvent to NATS when a file is successfully uploaded.
+
+        This event triggers downstream pipeline processing via Dagster sensors that
+        listen for file upload events on the pipeline stream.
+        """
+        topic_manager = PipelineInstanceTopicManager(
+            source_type="datalake",
+            source_id=container,
+            target_type="knowledge",
+            target_id=database,
+        )
+
+        event = SourceUpdatedEvent(path=file_path)
+        subject = topic_manager.get_subject_for_specific_event_in_pipeline_instance(
+            run_key=event.event_id,
+            event_name=event.event_name,
+            event_id=event.event_id,
+        )
+
+        publisher = NCPublisher(name="KnowledgeService", nc=nc)
+        await publisher.publish_event(event, subject)
+
+        logger.info(f"Published SourceUpdatedEvent for file {file_path} to subject {subject}")
+
+    @staticmethod
     async def validate_document_upload(
-        database: str, namespace: str, request: DocumentUploadValidationRequest
+        nc: NATS, database: str, namespace: str, request: DocumentUploadValidationRequest
     ) -> DocumentUploadValidationResponse:
         """
         Validates whether a file was successfully uploaded to the globally configured datalake.
 
-        This method uses the same global S3AnonymousFileAccessService as upload and download URLs
-        to verify that the uploaded file exists in the datalake storage.
+        This method verifies that the uploaded file exists in the datalake storage and publishes
+        a SourceUpdatedEvent to NATS to trigger downstream pipeline processing via Dagster sensors.
         """
         try:
             bucket_entity = BucketEntity.get_bucket_by_db_name(database)
@@ -450,6 +489,19 @@ class KnowledgeService:
         object_key = request.file_path
 
         exists = S3AnonymousFileAccessService().verify_file_exists(container=container, file_path=object_key)
+
+        if exists:
+            try:
+                KnowledgeService.invalidate_cache()
+                await KnowledgeService._publish_source_updated_event(
+                    nc=nc,
+                    database=database,
+                    container=container,
+                    file_path=object_key,
+                )
+            except Exception as e:
+                logger.exception(f"Failed to publish SourceUpdatedEvent for {object_key}: {e}")
+                # Don't fail the validation - file was successfully uploaded
         return DocumentUploadValidationResponse(exists=exists, file_path=object_key, container=container)
 
     @staticmethod
