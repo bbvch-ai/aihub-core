@@ -83,7 +83,7 @@ services:
       -ip=seaweedfs-master
       -ip.bind=0.0.0.0
       -defaultReplication=000
-      {%- if stage in ['dev', 'local'] %}
+      {%- if stage in ['dev', 'local', 'build'] %}
       -volumeSizeLimitMB=1024     # 1GB
       {%- else %}
       -volumeSizeLimitMB=1048576  # TB
@@ -551,7 +551,7 @@ services:
     environment:
       HF_HOME: /root/.cache/huggingface
     command: >
-      {%- if stage in ['dev', 'local'] %}
+      {%- if stage in ['dev', 'local', 'build'] %}
       -hf google/gemma-3-4b-it-qat-q4_0-gguf
       --hf-token ${HUGGINGFACE_API_KEY}
       --alias gemma-3-4b
@@ -1412,7 +1412,7 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--api=true"
       - "--api.dashboard=true"
-      {%- if stage == 'local' or stage == 'build' %}
+      {%- if stage in ['local', 'build'] %}
       - "--entrypoints.websecure.http.tls=true"
       - "--api.insecure=true"
       - "--log.level=DEBUG"
@@ -1424,7 +1424,7 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./configs/traefik/middlewares.{{ stage }}{{ hardware }}.yml:/etc/traefik/dynamic/middlewares.yml:ro"
-      {%- if stage == 'local' or stage == 'build' %}
+      {%- if stage in ['local', 'build'] %}
       - "./configs/traefik/tls.{{ stage }}{{ hardware }}.yml:/etc/traefik/dynamic/tls.yml:ro"
       - "./configs/traefik/certs/dev-cert.pem:/certs/dev-cert.pem:ro"
       - "./configs/traefik/certs/dev-key.pem:/certs/dev-key.pem:ro"
@@ -1434,7 +1434,7 @@ services:
     labels:
       - "traefik.enable=true"
       # --- HTTP to HTTPS Redirect and ACME Challenge ---
-      {%- if stage == 'latest' or stage == 'nightly' %}
+      {%- if stage in ['latest', 'nightly'] %}
       - "traefik.http.routers.acme-challenge.rule=PathPrefix(`/.well-known/acme-challenge/`)"
       - "traefik.http.routers.acme-challenge.entrypoints=web"
       - "traefik.http.routers.acme-challenge.priority=9000"
@@ -1445,7 +1445,7 @@ services:
       - "traefik.http.routers.http-catch.middlewares=https-redirect"
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
       # --- Dashboard ---
-      {%- if stage == 'local' or stage == 'build' %}
+      {%- if stage in ['local', 'build'] %}
       - "traefik.http.routers.traefik.tls=true"
       {%- else %}
       - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"

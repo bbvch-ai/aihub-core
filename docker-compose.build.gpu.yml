@@ -75,7 +75,7 @@ services:
       -ip=seaweedfs-master
       -ip.bind=0.0.0.0
       -defaultReplication=000
-      -volumeSizeLimitMB=1048576  # TB
+      -volumeSizeLimitMB=1024     # 1GB
       -volumePreallocate=false
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-master:/data
@@ -456,10 +456,10 @@ services:
     environment:
       HF_HOME: /root/.cache/huggingface
     command: >
-      -hf google/gemma-3-12b-it-qat-q4_0-gguf
+      -hf google/gemma-3-4b-it-qat-q4_0-gguf
       --hf-token ${HUGGINGFACE_API_KEY}
-      --alias gemma-3-12b
-      --port 128000
+      --alias gemma-3-4b
+      --port 8182
       --host 0.0.0.0
       -c 8196
       -ngl -1
