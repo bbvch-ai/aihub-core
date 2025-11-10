@@ -907,7 +907,7 @@ services:
 
   playwright:
     container_name: playwright-server
-    image: {{ global.registry_prefix }}{{ image_tags.playwright[stage] }}
+    image: {{ global.registry_prefix }}{{ image_tags.playwright }}
     restart: always
     {%- if stage == 'dev' %}
     ports:
@@ -1018,7 +1018,7 @@ services:
 
   open-webui:
     container_name: open-webui
-    image: {{ global.registry_prefix }}{{ image_tags.open_webui[stage] }}
+    image: {{ global.registry_prefix }}{{ image_tags.open_webui }}
     restart: always
     {%- if stage == 'dev' %}
     network_mode: "host"

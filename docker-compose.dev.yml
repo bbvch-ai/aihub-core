@@ -624,7 +624,7 @@ services:
 
   playwright:
     container_name: playwright-server
-    image: ghcr.io/bbvch-ai/aihub-core/
+    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.54.1-jammy
     restart: always
     ports:
       - "3036:3000"
@@ -715,7 +715,7 @@ services:
 
   open-webui:
     container_name: open-webui
-    image: ghcr.io/bbvch-ai/aihub-core/
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.22
     restart: always
     network_mode: "host"
     volumes:
