@@ -220,7 +220,7 @@ services:
   {%- if stage != 'dev' %}
   oauth2proxy-seaweed:
     container_name: oauth2proxy-seaweed
-    image: {{ global.registry_prefix }}{{ image_tags.oauth2proxy_seaweed }}
+    image: {{ global.registry_prefix }}{{ image_tags.oauth2proxy }}
     restart: always
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4181
@@ -1294,7 +1294,7 @@ services:
   # ===================================================================
   oauth2proxy-dagster:
     container_name: oauth2proxy-dagster
-    image: {{ global.registry_prefix }}{{ image_tags.oauth2proxy_dagster }}
+    image: {{ global.registry_prefix }}{{ image_tags.oauth2proxy }}
     restart: always
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180

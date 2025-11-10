@@ -194,7 +194,7 @@ services:
         max-file: 2
   oauth2proxy-seaweed:
     container_name: oauth2proxy-seaweed
-    image: ghcr.io/bbvch-ai/aihub-core/bbvch-ai/oauth2-proxy:latest
+    image: ghcr.io/bbvch-ai/aihub-core/oauth2-proxy:v7.7.1
     restart: always
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4181
@@ -1093,7 +1093,7 @@ services:
   # ===================================================================
   oauth2proxy-dagster:
     container_name: oauth2proxy-dagster
-    image: ghcr.io/bbvch-ai/aihub-core/bbvch-ai/oauth2-proxy:latest
+    image: ghcr.io/bbvch-ai/aihub-core/oauth2-proxy:v7.7.1
     restart: always
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180

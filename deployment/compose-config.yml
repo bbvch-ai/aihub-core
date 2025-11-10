@@ -36,14 +36,12 @@ image_tags:
   docling: docling-serve-cpu:v1.7.2
   jupyter: minimal-notebook:notebook-7.0.6
   otel_collector: opentelemetry-collector-contrib:latest
-  oauth2_proxy: oauth2-proxy:latest
   traefik: traefik:v3.4.4
   postgres_ferretdb: postgres-documentdb:17.0.106.0-ferretdb-2.5.0
   docling_model_permission: alpine  # Init container
   huggingface_tei: text-embeddings-inference:cpu-ipex-sha-c8ff435
   llama_cpp_reranker: llama.cpp:server-b6710
-  oauth2proxy_dagster: bbvch-ai/oauth2-proxy:latest
-  oauth2proxy_seaweed: bbvch-ai/oauth2-proxy:latest
+  oauth2proxy: oauth2-proxy:v7.7.1
   open_webui: open-webui:v0.6.22
   playwright: playwright:v1.54.1-jammy
 
