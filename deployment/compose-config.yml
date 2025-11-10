@@ -33,9 +33,9 @@ image_tags:
   ferretdb: ferretdb:2.5.0
   presidio: presidio-analyzer:2.2.359 # Analyzer and Anonymizer use same tag
   litellm: litellm:main-v1.74.8-nightly
-  docling: docling-serve-cpu:v1.7.2
+  docling: docling-serve:v1.3.1
   jupyter: minimal-notebook:notebook-7.0.6
-  otel_collector: opentelemetry-collector-contrib:latest
+  otel_collector: otel/opentelemetry-collector-contrib:latest
   traefik: traefik:v3.4.4
   postgres_ferretdb: postgres-documentdb:17.0.106.0-ferretdb-2.5.0
   docling_model_permission: alpine  # Init container
