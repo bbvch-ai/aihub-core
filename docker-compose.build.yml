@@ -151,10 +151,12 @@ services:
       SEAWEEDFS_S3_PASSWORD: ${S3_STORAGE_SECRET_KEY}
 
       # S3 Service Configuration
-      S3_PORT: 9000
-      S3_FILER: seaweedfs-filer:8888
-      S3_BIND_IP: 0.0.0.0
-      S3_ALLOW_EMPTY_FOLDER: True
+      S3_PORT: "9000"
+      S3_FILER: "seaweedfs-filer:8888"
+      S3_BIND_IP: "0.0.0.0"
+      S3_ALLOW_EMPTY_FOLDER: true
+      S3_DOMAIN_NAME: ${S3_DOMAIN_NAME:-}
+      S3_DATACENTER: ${S3_DATACENTER:-}
     depends_on:
       seaweedfs-filer:
         condition: service_healthy
@@ -180,9 +182,6 @@ services:
     environment:
       AWS_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
       AWS_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
-      AWS_DEFAULT_REGION: us-east-1
-      S3_ENDPOINT: http://seaweedfs-s3:9000
-      DEFAULT_BUCKETS: open-webui milvus playground
     volumes:
       - ./configs/seaweedfs/init-buckets.sh:/usr/local/bin/init-buckets.sh:ro
     entrypoint: [ "/bin/sh", "/usr/local/bin/init-buckets.sh" ]
