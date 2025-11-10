@@ -269,7 +269,7 @@ class LocalFileSystemResource(ConfigurableResource):
             subfolder=subfolder,
         )
 
-    async def get_minimal_local_files(self, file_paths: list[str]) -> list[MinimalLocalFile]:
+    def get_minimal_local_files(self, file_paths: list[str]) -> list[MinimalLocalFile]:
         """Get multiple files' metadata without content."""
         return [self._get_file_metadata(file_path=fp) for fp in file_paths]
 
@@ -286,5 +286,5 @@ class LocalFileSystemResource(ConfigurableResource):
             size=stat.st_size,
             modified=int(stat.st_mtime),
             source_folder=path_parts[0] if path_parts else "",
-            subfolder=path_parts[1] if len(path_parts) > 1 else "",
+            subfolder=path_parts[1] if len(path_parts) > 1 else None,
         )
