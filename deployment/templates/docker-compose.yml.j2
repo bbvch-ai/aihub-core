@@ -938,7 +938,7 @@ services:
   {%- if stage != 'dev' %}
   docling-model-permission:
     container_name: docling-model-permission
-    image: {{ global.registry_prefix }}{{ image_tags.docling_model_permission }}
+    image: {{ image_tags.docling_model_permission }}
     restart: no
     command: ["sh", "-c", "chown -R 1001:1001 /models"]
     volumes:

@@ -573,7 +573,7 @@ services:
   # ===================================================================
   docling-model-permission:
     container_name: docling-model-permission
-    image: ghcr.io/bbvch-ai/aihub-core/alpine
+    image: alpine
     restart: no
     command: ["sh", "-c", "chown -R 1001:1001 /models"]
     volumes:
