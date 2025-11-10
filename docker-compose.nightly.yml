@@ -616,7 +616,7 @@ services:
     volumes:
       - ./configs/otel/otel-config.nightly.yml:/etc/otel-config.yml
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:13133/" ]
+      test: [ "NONE" ]
     logging:
       driver: json-file
       options:

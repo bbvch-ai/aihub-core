@@ -717,7 +717,7 @@ services:
       - "13133:13133"
       - "55679:55679"
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:13133/" ]
+      test: [ "NONE" ]
     logging:
       driver: json-file
       options:

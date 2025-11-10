@@ -989,7 +989,7 @@ services:
       - "55679:55679"
     {%- endif %}
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:13133/" ]
+      test: [ "NONE" ]
     logging:
       driver: json-file
       options:
