@@ -423,6 +423,30 @@ services:
 
   # </editor-fold>
 
+  # === Observability Stack ===
+  # <editor-fold desc="Observability Stack">
+  otel-collector:
+    image: opentelemetry-collector-contrib:latest
+    command: [ "--config=/etc/otel-config.yml" ]
+    environment:
+      - OTEL_CLOUD_ENDPOINT=${OTEL_CLOUD_ENDPOINT}
+      - OTEL_CLOUD_HEADERS=${OTEL_CLOUD_HEADERS}
+    volumes:
+      - ./configs/otel/otel-config.latest.yml:/etc/otel-config.yml
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:13133/" ]
+    logging: *default-logging
+
+  # ===================================================================
+  # Open WebUI Stack (Primary User Interface)
+  # ===================================================================
+  # This is the main frontend application for the AI Hub. Its
+  # configuration is the most complex, with many stage-specific
+  # environment variables for connecting to other services.
+  # ===================================================================
+
+  # </editor-fold>
+
   # === OpenWebUI Stack ===
   # <editor-fold desc="OpenWebUI Stack">
   open-webui:

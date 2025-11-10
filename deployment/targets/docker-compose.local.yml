@@ -371,6 +371,174 @@ services:
     logging: *default-logging
   # </editor-fold>
 
+  # === AI Model Serving ===
+  # <editor-fold desc="AI Model Serving Stack">
+  llama-cpp:
+    container_name: llama-cpp
+    platform: "linux/amd64"
+    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b6894
+    <<: *restart-policy
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-data:/data
+      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-cache:/root/.cache/llama.cpp
+    environment:
+      HF_HOME: /root/.cache/huggingface
+    command: >
+      -hf google/gemma-3-4b-it-qat-q4_0-gguf
+      --hf-token ${HUGGINGFACE_API_KEY}
+      --alias gemma-3-4b
+      --port 8182
+      --host 0.0.0.0
+      -c 8196
+
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 60s
+    logging: *default-logging
+
+  
+
+  llama-cpp-embedding:
+    container_name: llama-cpp-embedding
+    platform: "linux/amd64"
+    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b6894
+    <<: *restart-policy
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-data:/data
+      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-cache:/root/.cache/llama.cpp
+    environment:
+      HF_HOME: /root/.cache/huggingface
+    command: >
+      -hf Qwen/Qwen3-Embedding-0.6B-GGUF
+      --hf-token ${HUGGINGFACE_API_KEY}
+      --alias qwen-3-embedding
+      --port 8182
+      --host 0.0.0.0
+      --embedding
+      --pooling last
+      -ub 8192
+
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 60s
+    logging: *default-logging
+
+  
+
+  llama-cpp-reranking:
+    container_name: llama-cpp-reranking
+    platform: "linux/amd64"
+    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b6894
+    <<: *restart-policy
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-data:/data
+      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-cache:/root/.cache/llama.cpp
+    environment:
+      HF_HOME: /root/.cache/huggingface
+    command: >
+      -hf ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF
+      --hf-token ${HUGGINGFACE_API_KEY}
+      --alias qwen-3-reranking
+      --port 8182
+      --host 0.0.0.0
+      -c 8192
+      --reranking
+      --no-context-shift
+
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 60s
+    logging: *default-logging
+
+  
+
+  llama-cpp-docling:
+    container_name: llama-cpp-docling
+    platform: "linux/amd64"
+    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b6894
+    <<: *restart-policy
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-data:/data
+      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
+      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-cache:/root/.cache/llama.cpp
+    environment:
+      HF_HOME: /root/.cache/huggingface
+    command: >
+      -hf ggml-org/granite-docling-258M-GGUF
+      --hf-token ${HUGGINGFACE_API_KEY}
+      --alias granite-docling
+      --port 8182
+      --host 0.0.0.0
+       --special
+      --jinja
+      --repeat-penalty 1.0
+      --temp 0.0
+      --min-p 0
+      -c 8192
+      --mlock
+      --seed -1
+      --swa-full
+      --no-escape
+      --no-mmap
+
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 60s
+    logging: *default-logging
+
+  
+  # ===================================================================
+  # Audio Model Serving (SST/TTS)
+  # ===================================================================
+  # We are using speaches to serve audio models in an openai
+  # compatible format.
+  # ===================================================================
+
+  speaches:
+    container_name: speaches
+    image: ghcr.io/bbvch-ai/aihub-core/speaches:0.8.3-cpu
+    restart: unless-stopped
+    volumes:
+      - ./configs/speaches/speaches-download-models.sh:/etc/speaches/speaches-download-models.sh
+      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
+    environment:
+      HF_HOME: /root/.cache/huggingface
+      HF_TOKEN: ${HUGGINGFACE_API_KEY}
+      ENABLE_UI: False
+    healthcheck:
+      test: [ "CMD", "curl", "--fail", "http://0.0.0.0:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    post_start:
+      - command: [ "sh", "/etc/speaches/speaches-download-models.sh" ]
+
+
+  # ===================================================================
+  # LiteLLM Stack (Model Proxy and Guardrails)
+  # ===================================================================
+  # This stack provides a unified interface to various LLMs,
+  # handles PII filtering, and manages API keys.
+  # ===================================================================
+
+  # </editor-fold>
+
   # === LiteLLM Stack ===
   # <editor-fold desc="LiteLLM Stack">
   presidio-analyzer:
@@ -420,6 +588,30 @@ services:
       - "traefik.http.routers.litellm.tls=true"
       - "traefik.http.routers.litellm.middlewares=security-headers@file"
       - "traefik.http.services.litellm.loadbalancer.server.port=4000"
+
+  # </editor-fold>
+
+  # === Observability Stack ===
+  # <editor-fold desc="Observability Stack">
+  otel-collector:
+    image: opentelemetry-collector-contrib:latest
+    command: [ "--config=/etc/otel-config.yml" ]
+    environment:
+      - OTEL_CLOUD_ENDPOINT=${OTEL_CLOUD_ENDPOINT}
+      - OTEL_CLOUD_HEADERS=${OTEL_CLOUD_HEADERS}
+    volumes:
+      - ./configs/otel/otel-config.local.yml:/etc/otel-config.yml
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:13133/" ]
+    logging: *default-logging
+
+  # ===================================================================
+  # Open WebUI Stack (Primary User Interface)
+  # ===================================================================
+  # This is the main frontend application for the AI Hub. Its
+  # configuration is the most complex, with many stage-specific
+  # environment variables for connecting to other services.
+  # ===================================================================
 
   # </editor-fold>
 
