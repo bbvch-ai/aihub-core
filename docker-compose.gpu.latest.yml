@@ -1463,6 +1463,9 @@ services:
     environment:
       PYTHONUNBUFFERED: 1
 
+      # NATS
+      NATS_ENDPOINT: "nats://nats:4222"
+
       # LiteLLM Proxy Server Settings
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
