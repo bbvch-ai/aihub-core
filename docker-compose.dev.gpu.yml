@@ -318,6 +318,8 @@ services:
     volumes:
       - ./configs/nats/nats-config.dev.gpu.conf:/etc/nats/nats-server.conf
       - ${VOLUME_ROOT:-./.docker-volumes}/nats:/data/nats
+    healthcheck:
+      test: [ "NONE" ]
     ports:
       - "4222:4222"
       - "8222:8222"

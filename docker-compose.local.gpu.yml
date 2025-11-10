@@ -415,6 +415,8 @@ services:
     volumes:
       - ./configs/nats/nats-config.local.gpu.conf:/etc/nats/nats-server.conf
       - ${VOLUME_ROOT:-./.docker-volumes}/nats:/data/nats
+    healthcheck:
+      test: [ "NONE" ]
     logging:
       driver: json-file
       options:
@@ -1138,8 +1140,8 @@ services:
       - /dagster_home/workspace.yml
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
-      - ./configs/dagster/dagster-config.local.gpu.yml:/dagster_home/dagster.yml:ro
-      - ./configs/dagster/workspace.local.gpu.yml:/dagster_home/workspace.yml:ro
+      - ./configs/dagster/dagster-config.local.gpu.yml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/workspace.local.gpu.yml:/dagster_home/workspace.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -1160,8 +1162,8 @@ services:
       - run
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
-      - ./configs/dagster/dagster-config.local.gpu.yml:/dagster_home/dagster.yml:ro
-      - ./configs/dagster/workspace.local.gpu.yml:/dagster_home/workspace.yml:ro
+      - ./configs/dagster/dagster-config.local.gpu.yml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/workspace.local.gpu.yml:/dagster_home/workspace.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -1184,6 +1186,8 @@ services:
     container_name: traefik
     image: "ghcr.io/bbvch-ai/aihub-core/traefik:v3.4.4"
     restart: always
+    healthcheck:
+      test: [ "NONE" ]
     ports:
       - "80:80"
       - "443:443"
@@ -1234,9 +1238,9 @@ services:
     image: ghcr.io/bbvch-ai/aihub-core/api:latest
     depends_on:
       nats:
-        condition: service_healthy
+        condition: service_started
       traefik:
-        condition: service_healthy
+        condition: service_started
       ferretdb:
         condition: service_healthy
     environment:

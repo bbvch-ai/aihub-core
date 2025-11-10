@@ -493,6 +493,8 @@ services:
     volumes:
       - ./configs/nats/nats-config.{{ stage }}{{ hardware }}.conf:/etc/nats/nats-server.conf
       - {{ global.volume_root }}/nats:/data/nats
+    healthcheck:
+      test: [ "NONE" ]
     {%- if stage == 'dev' %}
     ports:
       - "4222:4222"
@@ -1347,8 +1349,8 @@ services:
       - /dagster_home/workspace.yml
     volumes:
       - {{ global.volume_root }}/dagster-data:/dagster_home
-      - ./configs/dagster/dagster-config.{{ stage }}{{ hardware }}.yml:/dagster_home/dagster.yml:ro
-      - ./configs/dagster/workspace.{{ stage }}{{ hardware }}.yml:/dagster_home/workspace.yml:ro
+      - ./configs/dagster/dagster-config.{{ stage }}{{ hardware }}.yml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/workspace.{{ stage }}{{ hardware }}.yml:/dagster_home/workspace.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -1375,8 +1377,8 @@ services:
       - run
     volumes:
       - {{ global.volume_root }}/dagster-data:/dagster_home
-      - ./configs/dagster/dagster-config.{{ stage }}{{ hardware }}.yml:/dagster_home/dagster.yml:ro
-      - ./configs/dagster/workspace.{{ stage }}{{ hardware }}.yml:/dagster_home/workspace.yml:ro
+      - ./configs/dagster/dagster-config.{{ stage }}{{ hardware }}.yml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/workspace.{{ stage }}{{ hardware }}.yml:/dagster_home/workspace.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -1400,6 +1402,8 @@ services:
     container_name: traefik
     image: "{{ global.registry_prefix }}{{ image_tags.traefik }}"
     restart: always
+    healthcheck:
+      test: [ "NONE" ]
     ports:
       - "80:80"
       - "443:443"
@@ -1476,9 +1480,9 @@ services:
     {%- endif %}
     depends_on:
       nats:
-        condition: service_healthy
+        condition: service_started
       traefik:
-        condition: service_healthy
+        condition: service_started
       ferretdb:
         condition: service_healthy
     environment:
