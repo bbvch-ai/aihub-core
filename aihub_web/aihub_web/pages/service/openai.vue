@@ -6,6 +6,7 @@
         width="100%"
         height="100%"
         title="Open Web UI"
+        allow="microphone"
       />
     </div>
     <NuxtPage />
