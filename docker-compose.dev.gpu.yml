@@ -265,12 +265,10 @@ services:
     ports:
       - "27017:27017"
     environment:
-      - FERRETDB_POSTGRESQL_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/ferretdb?sslmode=disable
+      - FERRETDB_POSTGRESQL_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/ferretdb
     depends_on:
       postgres:
         condition: service_healthy
-    healthcheck:
-      test: ["NONE"]
     logging:
       driver: json-file
       options:
