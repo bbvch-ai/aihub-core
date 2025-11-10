@@ -23,4 +23,3 @@ class AzureDataLakeSettings(EnvironmentSettings):
             "Recommended over implicit authentication."
         ),
     ]
-    ENDPOINT: Annotated[str, Field(description="Datalake API endpoint")]

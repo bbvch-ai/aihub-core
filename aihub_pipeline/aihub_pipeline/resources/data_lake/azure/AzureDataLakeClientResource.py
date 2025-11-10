@@ -1,6 +1,6 @@
 from azure.storage.filedatalake import DataLakeServiceClient
 
-from aihub_lib.infrastructure.azure_data_lake import AzureDataLakeSettings
+from aihub_lib.infrastructure.azure_data_lake.AzureDataLakeSettings import AzureDataLakeSettings
 from dagster import InitResourceContext
 
 from aihub_pipeline.resources.data_lake.azure.AzureDataLakeClient import AzureDataLakeClient
