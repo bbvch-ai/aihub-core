@@ -141,6 +141,9 @@ AZURE_OPENAI_KEY="REPLACE_WITH_AZURE_OPENAI_KEY"
 # Google Gemini (Alternative)
 GEMINI_API_KEY="REPLACE_WITH_GEMINI_KEY"
 
+# Hugging Face (Optional)
+HUGGINGFACE_API_KEY=""                    # Optional: For Hugging Face model access
+
 # =============================================================================
 # LITELLM PROXY CONFIGURATION
 # =============================================================================
@@ -189,6 +192,7 @@ PHOENIX_SECRET="REPLACE_WITH_RANDOM_STRING"
 PHOENIX_ENDPOINT="http://phoenix:6006"
 NATS_ENDPOINT="nats://localhost:4222"
 DAGSTER_HOME="~/.dagster_home"
+DAGSTER_OAUTH_ALLOWED_GROUPS="AIHubDeveloper"
 JUPYTER_TOKEN="REPLACE_WITH_RANDOM_STRING"
 MILVUS_DIMENSION="3072"
 
@@ -207,6 +211,12 @@ BOT_AUTH_FAKE_ROLES="AIHubBot"
 
 # Jina AI Search (Optional)
 JINA_API_KEY=""
+
+# OpenTelemetry Configuration (Optional)
+OTEL_ENABLED="False"
+OTEL_EXPORTER_OTLP_PROTOCOL=""
+OTEL_CLOUD_ENDPOINT=""
+OTEL_CLOUD_HEADERS=""
 
 # Signoz Telemetry (Optional)
 SIGNOZ_INGESTION_CLOUD_ENDPOINT=""
