@@ -57,15 +57,19 @@ aihub_pipeline/
 - Version change → triggers downstream rematerialization
 - Ensures traceability: Which data produced which agent response?
 
-## Pipeline Stages
+## Pipeline Architecture
 
-**Standard Flow**: SharePoint → Data Lake → RefDoc → Nodes → Embeddings → Vector Store
+**Two-Stage Split**: Source-specific ingestion, then unified processing.
 
-1. **Ingestion**: SharePoint files → Data Lake (metadata extraction)
-2. **Parsing**: Raw files → RefDoc (structured documents, Docling/PDF parsers)
-3. **Chunking**: RefDoc → Nodes (semantic/structural chunking)
-4. **Embedding**: Nodes → Vectors (text-embedding-ada-002, etc.)
-5. **Indexing**: Vectors → Milvus/Azure AI Search
+**Stage 1 (Per-Source)**: `Enterprise Source` → `DataLakeFile`
+- Multiple independent pipelines (SharePoint, S3, ADLS, filesystem, databases)
+- Each source has dedicated connector (e.g., SharePointIOManager)
+- Output: Unified DataLakeFile in S3-compatible storage
+
+**Stage 2 (Unified)**: `DataLakeFile` → `RefDocDocument` → `TextNode[]`
+- Single pipeline processes all data lake files regardless of origin
+- Parsing (Docling/PDF) → Chunking (semantic/structural) → Embedding → Vector Store
+- Storage: MongoDB (documents via DocStoreIOManager), Milvus (vectors via VectorStoreIOManager)
 
 ## Asset Factory Pattern
 
@@ -113,7 +117,7 @@ def parse_document(context, file: DataLakeFile) -> RefDoc:
 
 **Pattern**: `ConfigurableResource` subclass.
 
-## I/O Managers (CRITICAL)
+## I/O Managers
 
 **Purpose**: Handle asset storage/retrieval. Map asset keys to storage systems.
 
