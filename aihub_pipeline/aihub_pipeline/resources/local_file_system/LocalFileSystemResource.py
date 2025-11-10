@@ -1,7 +1,6 @@
 import mimetypes
 import re
 from dataclasses import dataclass
-from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated
 
@@ -187,10 +186,8 @@ class LocalFileSystemResource(ConfigurableResource):
         return MinimalLocalFile(
             name=file_path.name,
             path=relative_path,
-            full_path=str(file_path),
             size=stat.st_size,
-            modified=stat.st_mtime,
-            created=stat.st_ctime,
+            modified=int(stat.st_mtime),
             source_folder=source_folder,
             subfolder=subfolder,
         )
@@ -265,10 +262,9 @@ class LocalFileSystemResource(ConfigurableResource):
             path=file_path,
             content=content,
             size=stat.st_size,
-            modified=datetime.fromtimestamp(stat.st_mtime, tz=UTC).isoformat(),
-            created=datetime.fromtimestamp(stat.st_ctime, tz=UTC).isoformat(),
+            modified=int(stat.st_mtime),
+            created=int(stat.st_ctime),
             content_type=content_type,
-            full_path=str(full_path),
             source_folder=source_folder,
             subfolder=subfolder,
         )
@@ -287,10 +283,8 @@ class LocalFileSystemResource(ConfigurableResource):
         return MinimalLocalFile(
             name=full_path.name,
             path=file_path,
-            full_path=str(full_path),
             size=stat.st_size,
-            modified=stat.st_mtime,
-            created=stat.st_ctime,
+            modified=int(stat.st_mtime),
             source_folder=path_parts[0] if path_parts else "",
             subfolder=path_parts[1] if len(path_parts) > 1 else "",
         )

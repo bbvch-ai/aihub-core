@@ -27,8 +27,8 @@ def extract_metadata_from_source_file(source_file: SourceFile) -> dict[str, Any]
     metadata: dict[str, Any] = {
         SOURCE_ORIGIN: source_file.source_url,
         INSERTED_AT: int(time.time()),
-        UPDATED_AT: int(source_file.modified.timestamp()),
-        CREATED_AT: int(source_file.created.timestamp()),
+        UPDATED_AT: source_file.modified,
+        CREATED_AT: source_file.created,
         DOCUMENT_TITLE: source_file.name,
         HASH: hashlib.sha256(source_file.content).hexdigest(),
     }

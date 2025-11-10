@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Annotated
 
 from pydantic import ConfigDict, Field
@@ -17,8 +16,6 @@ class MinimalLocalFile(MinimalSourceFile):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    full_path: Annotated[str, Field(description="Absolute file system path")]
-    created: Annotated[datetime, Field(description="Creation timestamp")]
     source_folder: Annotated[str, Field(description="Source folder name")]
     subfolder: Annotated[str | None, Field(description="Subfolder name within source folder")] = None
 
@@ -28,18 +25,10 @@ class LocalFile(SourceFile):
     Local file system file implementation of the SourceFile interface.
 
     Represents a file from the local or network file system, including content,
-    metadata, and file system-specific attributes like absolute paths and folder structure.
+    metadata, and file system-specific attributes like folder structure.
     """
 
     model_config = ConfigDict(populate_by_name=True)
 
-    full_path: Annotated[str, Field(description="Absolute file system path")]
     source_folder: Annotated[str, Field(description="Source folder name")]
     subfolder: Annotated[str | None, Field(description="Subfolder name within source folder")] = None
-
-    @property
-    def source_url(self) -> str:
-        """Returns the absolute path as POSIX-style URL."""
-        from pathlib import Path
-
-        return Path(self.full_path).as_posix()

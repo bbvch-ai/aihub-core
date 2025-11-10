@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Annotated
 
 from pydantic import BaseModel, Field
@@ -20,7 +19,7 @@ class MinimalSourceFile(BaseModel):
     name: Annotated[str, Field(description="File name including extension")]
     path: Annotated[str, Field(description="Relative path within the source system")]
     size: Annotated[int, Field(description="File size in bytes")]
-    modified: Annotated[datetime, Field(description="Last modified timestamp")]
+    modified: Annotated[int, Field(description="The UNIX timestamp when the file was last modified")]
 
 
 class SourceFile(BaseModel):
@@ -34,7 +33,7 @@ class SourceFile(BaseModel):
 
     The interface provides access to:
     - File content and metadata (name, path, size)
-    - Temporal information (created, modified timestamps)
+    - Temporal information (created, modified timestamps as Unix timestamps)
     - Source origin information (URL or path in the source system)
 
     Example implementations:
@@ -47,8 +46,8 @@ class SourceFile(BaseModel):
     path: Annotated[str, Field(description="Relative path within the source system")]
     content: Annotated[bytes, Field(description="File content as bytes")]
     size: Annotated[int, Field(description="File size in bytes")]
-    modified: Annotated[datetime, Field(description="Last modified timestamp")]
-    created: Annotated[datetime, Field(description="Creation timestamp")]
+    modified: Annotated[int, Field(description="The UNIX timestamp when the file was last modified")]
+    created: Annotated[int, Field(description="The UNIX timestamp when the file was created")]
     content_type: Annotated[str | None, Field(description="MIME type of the file")] = None
 
     @property

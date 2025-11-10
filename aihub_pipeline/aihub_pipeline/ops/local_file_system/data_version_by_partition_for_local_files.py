@@ -47,7 +47,8 @@ def data_version_by_partition_for_local_files(
             )
         )
 
-    # Use version (mtime_size) to detect changes
+    # Use version (timestamp-size) to detect changes
     # This ensures that if a file is deleted and re-uploaded with the same content,
     # it will be detected as a new version and trigger reprocessing
-    return DataVersionsByPartition({file.path: f"{file.modified}_{file.size}" for file in local_files})
+    # Using Unix timestamp (int) for consistent string representation, matching DataLake pipeline pattern
+    return DataVersionsByPartition({file.path: f"{file.modified}-{file.size}" for file in local_files})

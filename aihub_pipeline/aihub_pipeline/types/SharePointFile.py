@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Annotated
 
 from pydantic import ConfigDict, Field
@@ -18,7 +17,7 @@ class MinimalSharePointFile(MinimalSourceFile):
 
     etag: Annotated[str, Field(description="ETag for change detection")]
     id: Annotated[str, Field(description="SharePoint file ID")]
-    created: Annotated[datetime, Field(description="Creation timestamp")]
+    created: Annotated[int, Field(description="The UNIX timestamp when the file was created")]
     content_type: Annotated[str | None, Field(description="MIME type of the file")] = None
 
 
