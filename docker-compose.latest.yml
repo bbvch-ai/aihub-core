@@ -593,8 +593,6 @@ services:
       DOCLING_SERVE_MAX_SYNC_WAIT: 600
       DOCLING_SERVE_ENABLE_REMOTE_SERVICES: 1
     depends_on:
-      llama-cpp-docling:
-        condition: service_healthy
       litellm:
         condition: service_healthy
     logging:
