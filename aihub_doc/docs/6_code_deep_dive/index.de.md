@@ -1,15 +1,19 @@
 ---
 title: Code Deep Dive
-description: In-depth exploration of the AI-Hub codebase, including package READMEs, changelogs, and licenses
+description: Ausführliche Erkundung der AI-Hub-Codebasis, einschließlich Package-READMEs, Changelogs und Lizenzen
 ---
 
 # Code Deep Dive
 
-This section provides a deep dive into the AI-Hub codebase, including:
+:::info Automatisch generierter Inhalt
+Dieser Abschnitt wird automatisch aus den README.md-Dateien im Quellcode-Repository generiert. Der Inhalt wird während des Dokumentations-Build-Prozesses synchronisiert und spiegelt den aktuellen Stand der Codebasis wider.
+:::
 
-- **Introduction**: Overview from the root README
-- **Package Documentation**: Detailed README files from each package
-- **Changelog**: Complete change history
-- **Licenses**: Software licenses and attributions
+Dieser Abschnitt bietet einen tiefen Einblick in die AI-Hub-Codebasis, einschließlich:
 
-These files are synchronized directly from the codebase and provide the most up-to-date technical documentation.
+- **Introduction**: Übersicht aus dem Root-README
+- **Package-Dokumentation**: Detaillierte README-Dateien aus jedem Package
+- **Changelog**: Vollständige Änderungshistorie
+- **Licenses**: Software-Lizenzen und Zuschreibungen
+
+Diese Dateien werden direkt aus der Codebasis synchronisiert und bieten die aktuellste technische Dokumentation.

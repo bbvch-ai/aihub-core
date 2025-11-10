@@ -5,6 +5,10 @@ description: In-depth exploration of the AI-Hub codebase, including package READ
 
 # Code Deep Dive
 
+:::info Auto-Generated Content
+This section is automatically generated from README.md files in the source code repository. The content is synchronized during the documentation build process and reflects the current state of the codebase.
+:::
+
 This section provides a deep dive into the AI-Hub codebase, including:
 
 - **Introduction**: Overview from the root README
