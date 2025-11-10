@@ -5,13 +5,13 @@ from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
-from botbuilder.integration.aiohttp import CloudAdapter
 from fastapi import Body, Query, Request, Response
 from llama_index.llms.openai import OpenAI
+from microsoft_agents.activity import Activity
+from microsoft_agents.hosting.aiohttp import CloudAdapter
 
 from aihub_bot.bots.chat.openai.OpenaiChatBot import OpenaiChatBot
 from aihub_bot.bots.chat.openai.StreamOpenaiChatBot import StreamOpenaiChatBot
-from aihub_bot.routes.activity_model import ActivityModel
 from aihub_bot.routes.RoutesService import RoutesService
 
 logger = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ class OpenaiChatController(Controller):
         @self.router.post(route, tags=self.tags)
         async def json_chat_completion(
             request: Request,
-            body: Annotated[ActivityModel, Body],
+            _: Annotated[Activity, Body],
             model_name: Annotated[str, Query(title="Model Name")],
         ) -> Response:
             return await self._process_chat_request(
@@ -82,7 +82,7 @@ class OpenaiChatController(Controller):
         @self.router.post(route, tags=self.tags)
         async def stream_chat_completion(
             request: Request,
-            _: Annotated[ActivityModel, Body],
+            _: Annotated[Activity, Body],
             model_name: Annotated[str, Query(title="Model Name")],
         ) -> Response:
             return await self._process_chat_request(

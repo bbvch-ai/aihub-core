@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_pipeline"
-version = "v0.249.2"
+version = "v0.250.2"
 description = "pipeline core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",

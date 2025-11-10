@@ -346,7 +346,7 @@ class BaseEvent(BaseModel):
 
         data = super().model_dump(**kwargs)
 
-        for field_name in self.model_fields.keys():
+        for field_name in self.__class__.model_fields.keys():
             if field_name in data:
                 value = getattr(self, field_name)
                 if isinstance(value, ChatMessage):
