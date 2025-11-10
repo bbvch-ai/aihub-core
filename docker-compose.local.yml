@@ -939,8 +939,6 @@ services:
       - /dagster_home/workspace.yml
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
-      - dagster-venv:/app/.venv
-      - dagster-pipeline-venv:/app/aihub_pipeline/.venv
       - ./configs/dagster/dagster-config.local.yml:/dagster_home/dagster.yml:ro
       - ./configs/dagster/workspace.local.yml:/dagster_home/dagster.yml:ro
     environment:
@@ -963,8 +961,6 @@ services:
       - run
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
-      - dagster-venv:/app/.venv
-      - dagster-pipeline-venv:/app/aihub_pipeline/.venv
       - ./configs/dagster/dagster-config.local.yml:/dagster_home/dagster.yml:ro
       - ./configs/dagster/workspace.local.yml:/dagster_home/dagster.yml:ro
     environment:
@@ -1040,9 +1036,6 @@ services:
     container_name: api
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/api:latest
-    volumes:
-      - api-venv:/app/.venv
-      - api-api-venv:/app/aihub_api/.venv
     depends_on:
       nats:
         condition: service_healthy
@@ -1308,9 +1301,6 @@ services:
     container_name: bot
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/bot:latest
-    volumes:
-      - bot-venv:/app/.venv
-      - bot-bot-venv:/app/aihub_bot/.venv
     depends_on:
       - ferretdb
       - nats
@@ -1330,11 +1320,3 @@ services:
       options:
         max-size: 10m
         max-file: 2
-
-volumes:
-  api-venv:
-  api-api-venv:
-  bot-venv:
-  bot-bot-venv:
-  dagster-venv:
-  dagster-pipeline-venv:

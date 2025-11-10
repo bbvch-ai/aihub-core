@@ -1141,8 +1141,6 @@ services:
       - /dagster_home/workspace.yml
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
-      - dagster-venv:/app/.venv
-      - dagster-pipeline-venv:/app/aihub_pipeline/.venv
       - ./configs/dagster/dagster-config.build.yml:/dagster_home/dagster.yml:ro
       - ./configs/dagster/workspace.build.yml:/dagster_home/dagster.yml:ro
     environment:
@@ -1167,8 +1165,6 @@ services:
       - run
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
-      - dagster-venv:/app/.venv
-      - dagster-pipeline-venv:/app/aihub_pipeline/.venv
       - ./configs/dagster/dagster-config.build.yml:/dagster_home/dagster.yml:ro
       - ./configs/dagster/workspace.build.yml:/dagster_home/dagster.yml:ro
     environment:
@@ -1537,5 +1533,3 @@ services:
       options:
         max-size: 10m
         max-file: 2
-
-volumes:

@@ -1348,8 +1348,6 @@ services:
       - /dagster_home/workspace.yml
     volumes:
       - {{ global.volume_root }}/dagster-data:/dagster_home
-      - dagster-venv:/app/.venv
-      - dagster-pipeline-venv:/app/aihub_pipeline/.venv
       - ./configs/dagster/dagster-config.{{ stage }}.yml:/dagster_home/dagster.yml:ro
       - ./configs/dagster/workspace.{{ stage }}.yml:/dagster_home/dagster.yml:ro
     environment:
@@ -1378,8 +1376,6 @@ services:
       - run
     volumes:
       - {{ global.volume_root }}/dagster-data:/dagster_home
-      - dagster-venv:/app/.venv
-      - dagster-pipeline-venv:/app/aihub_pipeline/.venv
       - ./configs/dagster/dagster-config.{{ stage }}.yml:/dagster_home/dagster.yml:ro
       - ./configs/dagster/workspace.{{ stage }}.yml:/dagster_home/dagster.yml:ro
     environment:
@@ -1493,9 +1489,6 @@ services:
       dockerfile: ./aihub_api/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.api[stage] }}
-    volumes:
-      - api-venv:/app/.venv
-      - api-api-venv:/app/aihub_api/.venv
     {%- endif %}
     depends_on:
       nats:
@@ -1809,9 +1802,6 @@ services:
       dockerfile: ./aihub_bot/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.bot[stage] }}
-    volumes:
-      - bot-venv:/app/.venv
-      - bot-bot-venv:/app/aihub_bot/.venv
     {%- endif %}
     depends_on:
       - ferretdb
@@ -1833,20 +1823,3 @@ services:
         max-size: 10m
         max-file: 2
   {%- endif %}
-
-{%- if stage != 'dev' %}
-
-volumes:
-  {%- if image_tags.api[stage] and image_tags.api[stage] != 'localbuild' %}
-  api-venv:
-  api-api-venv:
-  {%- endif %}
-  {%- if image_tags.bot[stage] and image_tags.bot[stage] != 'localbuild' %}
-  bot-venv:
-  bot-bot-venv:
-  {%- endif %}
-  {%- if image_tags.dagster[stage] and image_tags.dagster[stage] != 'localbuild' %}
-  dagster-venv:
-  dagster-pipeline-venv:
-  {%- endif %}
-{%- endif %}
