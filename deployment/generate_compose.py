@@ -60,7 +60,7 @@ def main():
     stats = {}
 
     # Process each config spec
-    for template_path, output_dir, name_pattern, gpu_dependent in CONFIG_SPECS:
+    for template_path, output_dir, name_pattern in CONFIG_SPECS:
         template = load_template(env, template_path)
 
         if not template:
