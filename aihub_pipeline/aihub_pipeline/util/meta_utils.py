@@ -185,9 +185,10 @@ def ref_doc_metadata_table(ref_docs: list[RefDocDocument]):
 
 
 def share_point_file_table_row(share_point_file: MinimalSharePointFile) -> dict:
+    modified_dt = datetime.fromtimestamp(share_point_file.modified)
     return {
         "name": share_point_file.name,
-        "modified": share_point_file.modified.strftime("%Y-%m-%d %H:%M:%S"),
+        "modified": modified_dt.strftime("%Y-%m-%d %H:%M:%S"),
         "size": str(share_point_file.size),
         "id": share_point_file.id,
         "etag": share_point_file.etag or "",
@@ -211,11 +212,12 @@ def share_point_metadata_table(share_point_files: list[MinimalSharePointFile]):
 
 def local_file_table_row(file: MinimalLocalFile) -> dict:
     """Convert MinimalLocalFile to table row dict."""
+    modified_dt = datetime.fromtimestamp(file.modified)
     return {
         "source_folder": file.source_folder,
         "subfolder": file.subfolder or "",
         "name": file.name,
-        "modified": file.modified.strftime("%Y-%m-%d %H:%M:%S"),
+        "modified": modified_dt.strftime("%Y-%m-%d %H:%M:%S"),
         "size": readable_size(file.size),
         "path": file.path,
     }
