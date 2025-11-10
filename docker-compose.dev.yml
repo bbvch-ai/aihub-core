@@ -212,16 +212,24 @@ services:
     container_name: attu
     image: ghcr.io/bbvch-ai/aihub-core/attu:v2.5.12
     restart: always
+    depends_on:
+      - milvus-standalone
     ports:
       - "3003:3000"
     environment:
       MILVUS_URL: http://milvus-standalone:19530
+    healthcheck:
+      test: ["NONE"]
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
 
   # ===================================================================
-  # Postgres & FerretDB Stack (SQL and Document Databases)
+  # Postgres Stack (SQL Database)
   # ===================================================================
-  # A single consolidated PostgreSQL instance serves both relational
-  # data and as a backend for the FerretDB (MongoDB compatibility) service.
+  # PostgreSQL instance for application relational data.
   # ===================================================================
 
   postgres:
@@ -231,7 +239,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_MULTIPLE_DATABASES: openwebui,phoenix,dagster,litellm,ferretdb
+      POSTGRES_MULTIPLE_DATABASES: openwebui,phoenix,dagster,litellm
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/postgres-data:/var/lib/postgresql/data
       - ./configs/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
@@ -245,6 +253,12 @@ services:
       options:
         max-size: 10m
         max-file: 2
+
+  # ===================================================================
+  # FerretDB Stack (MongoDB Compatibility)
+  # ===================================================================
+  # FerretDB provides MongoDB-compatible API backed by PostgreSQL.
+  # ===================================================================
 
   ferretdb:
     container_name: ferretdb
@@ -262,7 +276,7 @@ services:
       options:
         max-size: 10m
         max-file: 2
-        
+
   # ===================================================================
   # Phoenix Stack (ML Observability)
   # ===================================================================
@@ -614,7 +628,7 @@ services:
 
   playwright:
     container_name: playwright-server
-    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.49.0-jammy
+    image: ghcr.io/bbvch-ai/aihub-core/
     restart: always
     ports:
       - "3036:3000"
@@ -705,7 +719,7 @@ services:
 
   open-webui:
     container_name: open-webui
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.22
+    image: ghcr.io/bbvch-ai/aihub-core/
     restart: always
     network_mode: "host"
     volumes:
@@ -926,6 +940,8 @@ services:
   # These are the background workers and data processing pipelines
   # that power the platform's AI capabilities.
   # ===================================================================
+
+  
 
   
 
