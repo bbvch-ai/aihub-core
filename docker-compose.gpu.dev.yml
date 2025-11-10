@@ -411,14 +411,13 @@ services:
     command: >
       -hf Qwen/Qwen3-Embedding-0.6B-GGUF
       --hf-token ${HUGGINGFACE_API_KEY}
-      --alias qwen-3-embedding \
+      --alias qwen-3-embedding
       --port 8182
       --host 0.0.0.0
       --embedding
       --pooling last
       -ub 8192
       -ngl -1
-
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
       timeout: 10s
@@ -462,7 +461,6 @@ services:
       --reranking
       --no-context-shift
       -ngl 10
-
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
       timeout: 10s
@@ -503,7 +501,7 @@ services:
       --port 8182
       --host 0.0.0.0
       -c 8192
-       --special
+      --special
       --jinja
       --repeat-penalty 1.0
       --temp 0.0
@@ -514,7 +512,6 @@ services:
       --swa-full
       --no-escape
       --no-mmap
-
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
       timeout: 10s

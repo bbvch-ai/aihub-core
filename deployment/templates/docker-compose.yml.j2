@@ -590,7 +590,17 @@ services:
     environment:
       HF_HOME: /root/.cache/huggingface
     command: >
-      {{ service_configs.llama_cpp_embedding[hardware].command | indent(6) }}
+      -hf Qwen/Qwen3-Embedding-0.6B-GGUF
+      --hf-token ${HUGGINGFACE_API_KEY}
+      --alias qwen-3-embedding
+      --port 8182
+      --host 0.0.0.0
+      --embedding
+      --pooling last
+      -ub 8192
+      {%- if gpu_enabled %}
+      -ngl -1
+      {%- endif %}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
       timeout: 10s
@@ -630,7 +640,17 @@ services:
     environment:
       HF_HOME: /root/.cache/huggingface
     command: >
-      {{ service_configs.llama_cpp_reranking[hardware].command | indent(6) }}
+      -hf ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF
+      --hf-token ${HUGGINGFACE_API_KEY}
+      --alias qwen-3-reranking
+      --port 8182
+      --host 0.0.0.0
+      -c 8192
+      --reranking
+      --no-context-shift
+      {%- if gpu_enabled %}
+      -ngl 10
+      {%- endif %}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
       timeout: 10s
@@ -670,7 +690,25 @@ services:
     environment:
       HF_HOME: /root/.cache/huggingface
     command: >
-      {{ service_configs.llama_cpp_docling[hardware].command | indent(6) }}
+      -hf ggml-org/granite-docling-258M-GGUF
+      --hf-token ${HUGGINGFACE_API_KEY}
+      --alias granite-docling
+      --port 8182
+      --host 0.0.0.0
+      -c 8192
+      --special
+      --jinja
+      --repeat-penalty 1.0
+      --temp 0.0
+      --min-p 0
+      {%- if gpu_enabled %}
+      -ngl -1
+      {%- endif %}
+      --mlock
+      --seed -1
+      --swa-full
+      --no-escape
+      --no-mmap
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
       timeout: 10s

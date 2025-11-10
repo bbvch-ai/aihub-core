@@ -497,7 +497,6 @@ services:
       --embedding
       --pooling last
       -ub 8192
-
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
       timeout: 10s
@@ -531,7 +530,6 @@ services:
       -c 8192
       --reranking
       --no-context-shift
-
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
       timeout: 10s
@@ -562,18 +560,17 @@ services:
       --alias granite-docling
       --port 8182
       --host 0.0.0.0
-       --special
+      -c 8192
+      --special
       --jinja
       --repeat-penalty 1.0
       --temp 0.0
       --min-p 0
-      -c 8192
       --mlock
       --seed -1
       --swa-full
       --no-escape
       --no-mmap
-
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
       timeout: 10s
