@@ -914,7 +914,7 @@ services:
       - -p
       - '3000'
       - -w
-      - /dagster_home/workspace.yml
+      - /dagster_home/workspace.yaml
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
       - ./configs/dagster/dagster-config.local.yml:/dagster_home/dagster.yaml:ro
