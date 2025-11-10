@@ -614,7 +614,7 @@ services:
 
   open-webui:
     container_name: open-webui
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.22
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.28
     restart: always
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data
