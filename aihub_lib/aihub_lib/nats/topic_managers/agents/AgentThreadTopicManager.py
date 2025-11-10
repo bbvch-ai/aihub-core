@@ -1,5 +1,7 @@
 from typing import Annotated
 
+from pydantic import Field
+
 from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
@@ -34,18 +36,9 @@ class AgentThreadTopicManager(AgentInstanceTopicManager):
       particular state.
     """
 
-    def __init__(
-        self,
-        agent_class: Annotated[str, "Agent class identifier"],
-        agent_id: Annotated[str, "Specific agent ID"],
-        thread_id: Annotated[str, "Unique conversation/workflow identifier within the agent instance"],
-        display_id: Annotated[str, "UI-facing grouping ID for events within a thread and run"],
-        run_id: Annotated[str, "Unique run identifier within the thread"],
-    ):
-        super().__init__(agent_class=agent_class, agent_id=agent_id)
-        self.thread_id = thread_id
-        self.display_id = display_id
-        self.run_id = run_id
+    thread_id: Annotated[str, Field(description="Unique conversation/workflow identifier within the agent instance")]
+    display_id: Annotated[str, Field(description="UI-facing grouping ID for events within a thread and run")]
+    run_id: Annotated[str, Field(description="Unique run identifier within the thread")]
 
     def get_subject_for_all_event_in_thread(
         self,

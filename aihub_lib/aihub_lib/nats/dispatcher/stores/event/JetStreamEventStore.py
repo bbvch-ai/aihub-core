@@ -6,10 +6,11 @@ from typing import Annotated
 from cachetools import TTLCache
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
-from nats.js.api import AckPolicy, ConsumerConfig, DeliverPolicy
+from nats.js.api import AckPolicy, DeliverPolicy
 
 from aihub_lib.nats.dispatcher.stores.event.ExecutionContextEventStore import ExecutionContextEventStore
 from aihub_lib.nats.events import BaseEvent
+from aihub_lib.nats.polling.JSPoller import JSPoller
 from aihub_lib.nats.streams.StreamManager import StreamManager
 from aihub_lib.nats.topic_managers.AbstractStreamTopicManager import AbstractStreamTopicManager
 from aihub_lib.nats.topics import Topic
@@ -124,51 +125,38 @@ class JetStreamEventStore:
 
             # Step 3: Replay historical events
             try:
-                # Create a pull subscription for historical replay
-                replay_config = ConsumerConfig(
-                    name=self.replay_durable_name,
-                    filter_subject=self.control_subject,
-                    ack_policy=AckPolicy.NONE,
+                poller = JSPoller(
+                    js=self.js,
+                    stream_name=self.stream_name,
+                    stream_subject=self.control_subject,
+                    consumer_name=self.replay_durable_name,
+                )
+
+                await poller.ensure_consumer_exists(
                     deliver_policy=DeliverPolicy.ALL,
+                    ack_policy=AckPolicy.NONE,
+                    filter_subject=self.control_subject,
                 )
 
-                # Create the consumer for replay
-                await self.js.add_consumer(self.stream_name, config=replay_config)
-
-                # Create a pull subscription
-                pull_sub = await self.js.pull_subscribe(
-                    subject=self.control_subject,
-                    durable=self.replay_durable_name,
-                    stream=self.stream_name,
-                )
-
-                # Fetch and process all historical events
                 msg_count = 0
                 while True:
-                    try:
-                        # Fetch a batch of messages
-                        messages = await pull_sub.fetch(batch=100, timeout=1)
-                        if not messages:
-                            break  # No more messages
+                    batch_had_messages = False
+                    async for polled_msg in poller.poll(batch_size=100, timeout=1.0):
+                        batch_had_messages = True
+                        try:
+                            topic = self.topic.from_subject(polled_msg.subject)
+                            event = polled_msg.event
+                            event._jetstream_sequence = polled_msg.sequence
+                            self._add_event_to_store(topic.execution_context_id, event)
+                            msg_count += 1
+                        except Exception as e:
+                            logger.exception(f"Error processing replayed message: {e}")
 
-                        for msg in messages:
-                            try:
-                                topic = self.topic.from_subject(msg.subject)
-                                event = BaseEvent.deserialize_event(msg.data)
-                                event._jetstream_sequence = msg.metadata.sequence.stream
-                                self._add_event_to_store(topic.execution_context_id, event)
-                                msg_count += 1
-                            except Exception as e:
-                                logger.exception(f"Error processing replayed message: {e}")
-                    except Exception as e:
-                        if "timeout" in str(e).lower():
-                            break  # No more messages
-                        logger.exception(f"Error fetching messages: {e}")
+                    if not batch_had_messages:
                         break
 
                 logger.info(f"Replayed {msg_count} historical events")
 
-                # Clean up the temporary consumer
                 try:
                     await self.js.delete_consumer(self.stream_name, self.replay_durable_name)
                 except Exception as e:

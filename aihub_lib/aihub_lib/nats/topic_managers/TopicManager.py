@@ -1,4 +1,9 @@
-class TopicManager:
+from typing import ClassVar
+
+from pydantic import BaseModel
+
+
+class TopicManager(BaseModel):
     """
     The TopicManager provides a consistent, structured naming scheme for NATS subjects related to agent events
     and discovery operations. By defining conventions for subject strings, it ensures that all components
@@ -38,5 +43,5 @@ class TopicManager:
     of event-driven architectures by standardizing how events are named and accessed.
     """
 
-    INSTANCE_DISCOVERY_TOPIC = "instance_discovery"
-    CLASS_DISCOVERY_TOPIC = "class_discovery"
+    INSTANCE_DISCOVERY_TOPIC: ClassVar[str] = "instance_discovery"
+    CLASS_DISCOVERY_TOPIC: ClassVar[str] = "class_discovery"

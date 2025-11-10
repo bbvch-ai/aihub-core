@@ -1,5 +1,7 @@
 from typing import Annotated, override
 
+from pydantic import Field
+
 from aihub_lib.nats.topic_managers.AbstractStreamTopicManager import AbstractStreamTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 
@@ -30,12 +32,7 @@ class AgentClassTopicManager(AgentTopicManager, AbstractStreamTopicManager):
       or receive responses only from a known agent instance.
     """
 
-    def __init__(
-        self,
-        agent_class: Annotated[str, "Agent class identifier"],
-    ):
-        super().__init__()
-        self.agent_class = agent_class
+    agent_class: Annotated[str, Field(description="Agent class identifier")]
 
     def get_agent_instance_discovery_subject_request(
         self,
@@ -159,6 +156,7 @@ class AgentClassTopicManager(AgentTopicManager, AbstractStreamTopicManager):
             event_id="*",
         )
 
+    @override
     def get_stream(self) -> tuple[str, str]:
         return self._get_stream_name_for_all_events(), self._get_subject_for_all_events_in_agent_class()
 

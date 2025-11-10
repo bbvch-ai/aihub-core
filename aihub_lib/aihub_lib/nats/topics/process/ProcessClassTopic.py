@@ -20,7 +20,7 @@ class ProcessClassTopic(PartialProcessTopic):
     event_id: Annotated[str, Field(description="Unique identifier for this particular event instance.")]
 
     def __str__(self) -> str:
-        """Returns the full subject string for this agent topic."""
+        """Returns the full subject string for this process topic."""
         return (
             f"{ProcessTopicManager.PROCESS_TOPIC}."
             f"{self.process_class}."
