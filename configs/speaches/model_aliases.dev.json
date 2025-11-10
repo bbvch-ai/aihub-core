@@ -1,0 +1,4 @@
+{
+  "whisper-small": "Systran/faster-whisper-small",
+  "kokoro-82m": "speaches-ai/Kokoro-82M-v1.0-ONNX"
+}

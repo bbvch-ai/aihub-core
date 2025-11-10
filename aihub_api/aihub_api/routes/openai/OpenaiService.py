@@ -156,7 +156,7 @@ class OpenaiService:
         Generate text embeddings using the specified embedding model.
         Identifies the model, prepares parameters, and returns embeddings for the input text.
         """
-        embedding_model_names = await OpenaiService._model_names_by_type("embedding", model_name)
+        embedding_model_names = await OpenaiService._model_names_by_type("embedding/small", model_name)
 
         if len(embedding_model_names) == 0:
             raise HTTPException(status_code=404, detail=f"Model {model_name} not found.")
