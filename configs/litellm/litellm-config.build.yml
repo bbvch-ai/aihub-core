@@ -19,25 +19,25 @@ model_list:
 
   - model_name: text-generation/nano
     litellm_params:
-      model: openai/gemma-3-4b
-      api_base: http://llama-cpp:8182/
-      api_key: XXX
+      model: openai/gpt-4o-mini
+      api_base: os.environ/SWISS_LLM_CLOUD_API_URL
+      api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
     model_info:
       mode: chat
 
   - model_name: text-generation/mini
     litellm_params:
-      model: openai/gemma-3-4b
-      api_base: http://llama-cpp:8182/
-      api_key: XXX
+      model: openai/gpt-4o-mini
+      api_base: os.environ/SWISS_LLM_CLOUD_API_URL
+      api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
     model_info:
       mode: chat
 
   - model_name: text-generation/ocr
     litellm_params:
-      model: openai/granite-docling
-      api_base: http://llama-cpp-docling:8182/
-      api_key: XXX
+      model: openai/gpt-4o-mini
+      api_base: os.environ/SWISS_LLM_CLOUD_API_URL
+      api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
     model_info:
       mode: chat
 
@@ -47,9 +47,9 @@ model_list:
 
   - model_name: embedding/small
     litellm_params:
-      model: openai/qwen-3-embedding
-      api_base: http://llama-cpp-embedding:8182/
-      api_key: XXX
+      model: openai/text-embedding-3-small
+      api_base: os.environ/SWISS_LLM_CLOUD_API_URL
+      api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
     model_info:
       mode: embedding
 
@@ -59,9 +59,9 @@ model_list:
 
   - model_name: reranking
     litellm_params:
-      model: jina_ai/qwen-3-reranking
-      api_base: http://llama-cpp-reranking:8182/
-      api_key: XXX
+      model: cohere/rerank-english-v3.0
+      api_base: os.environ/COHERE_API_BASE
+      api_key: os.environ/COHERE_API_KEY
     model_info:
       mode: rerank
 
@@ -71,18 +71,18 @@ model_list:
 
   - model_name: transcription
     litellm_params:
-      model: openai/whisper-small
-      api_base: http://speaches:8000/
-      api_key: XXX
+      model: openai/whisper-1
+      api_base: os.environ/SWISS_LLM_CLOUD_API_URL
+      api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
     model_info:
       mode: audio_transcription
       base_model: openai/whisper-1
 
   - model_name: speech
     litellm_params:
-      model: openai/kokoro-82m
-      api_base: http://speaches:8000/
-      api_key: XXX
+      model: openai/tts-1
+      api_base: os.environ/SWISS_LLM_CLOUD_API_URL
+      api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
     model_info:
       mode: audio_speech
       base_model: openai/tts-1

@@ -54,11 +54,9 @@ image_tags:
       gpu: llama.cpp:server-cuda-b6894
 
     build:
-      cpu: llama.cpp:server-b6894
       gpu: llama.cpp:server-cuda-b6894
 
     local:
-      cpu: llama.cpp:server-b6894
       gpu: llama.cpp:server-cuda-b6894
 
     nightly:
@@ -73,11 +71,9 @@ image_tags:
       gpu: llama.cpp:server-cuda-b6894
 
     build:
-      cpu: llama.cpp:server-b6894
       gpu: llama.cpp:server-cuda-b6894
 
     local:
-      cpu: llama.cpp:server-b6894
       gpu: llama.cpp:server-cuda-b6894
 
     nightly:
@@ -92,11 +88,9 @@ image_tags:
       gpu: llama.cpp:server-cuda-b6894
 
     build:
-      cpu: llama.cpp:server-b6894
       gpu: llama.cpp:server-cuda-b6894
 
     local:
-      cpu: llama.cpp:server-b6894
       gpu: llama.cpp:server-cuda-b6894
 
     nightly:
@@ -111,11 +105,9 @@ image_tags:
       gpu: llama.cpp:server-cuda-b6894
 
     build:
-      cpu: llama.cpp:server-b6894
       gpu: llama.cpp:server-cuda-b6894
 
     local:
-      cpu: llama.cpp:server-b6894
       gpu: llama.cpp:server-cuda-b6894
 
     nightly:
@@ -130,11 +122,9 @@ image_tags:
       gpu: speaches:0.8.3-cuda-12.6.3
 
     build:
-      cpu: speaches:0.8.3-cpu
       gpu: speaches:0.8.3-cuda-12.6.3
 
     local:
-      cpu: speaches:0.8.3-cpu
       gpu: speaches:0.8.3-cuda-12.6.3
 
     nightly:
