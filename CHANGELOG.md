@@ -5,6 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.251.0] - 2025-11-10 - NATS-Powered Eventing for Smarter Data Pipelines
+
+### Added
+
+- ✨ **Introduced Event-Driven Document Pipelines:** Implemented new capabilities to automatically trigger data ingestion
+  pipelines via NATS events when documents are uploaded and validated.
+- 🚀 **New NATS Poller Utility (`JSPoller`):** Added a robust and generic JetStream poller, simplifying asynchronous
+  event processing and message acknowledgment from NATS.
+- 📄 **`SourceUpdatedEvent` for Data Lake Changes:** Introduced a dedicated NATS event type to signal when a file has
+  been updated or uploaded in the data lake, enabling reactive workflows.
+- 📦 **Structured Pipeline Topic Managers:** Added `PipelineTopicManager` and `PipelineInstanceTopicManager` to
+  standardize NATS subject naming conventions for pipeline-related events, enhancing routing and observability.
+- 🚦 **NATS Document Upload Sensor for Dagster:** Integrated a new Dagster sensor that listens for `SourceUpdatedEvent`
+  messages on NATS, automatically initiating pipeline runs for newly uploaded documents.
+- 🏷️ **Customizable Dagster Schedule Names:** Enabled the ability to assign explicit names to Dagster schedules,
+  improving identification and management of periodic tasks.
+- 🔗 **NATS Endpoint Configuration for Dagster:** Configured Dagster services to connect to NATS, enabling seamless event
+  communication within the pipeline ecosystem.
+
+### Changed
+
+- ⚡️ **Knowledge Document Upload Validation:** The API endpoint for validating document uploads now publishes a
+  `SourceUpdatedEvent` to NATS upon successful verification, integrating with event-driven pipelines.
+
+### Refactor
+
+- 🧹 **Unified NATS Topic Manager Design:** Refactored all `TopicManager` classes to inherit from Pydantic's `BaseModel`,
+  enhancing type safety, consistency, and data validation across NATS subject generation.
+- 🔄 **Standardized Topic Manager Instantiation:** Updated constructors for `AgentClassTopicManager`,
+  `AgentInstanceTopicManager`, `ProcessClassTopicManager`, and related classes to use keyword arguments, improving code
+  clarity.
+- 🦾 **Simplified JetStream Event Replay:** Replaced manual JetStream consumer creation and pull subscription logic in
+  `JetStreamEventStore` with the new `JSPoller` utility, streamlining historical event replay.
+- 🛡️ **Improved NATS Stream Management for Publishers:** Enhanced `JSPublisher` with a new `ensure_stream_exists`
+  method, allowing publishers to proactively verify and create necessary JetStream streams.
+- ⚙️ **Cleanup of `observable_data_lake_factory`:** Removed an unused `DataLakeResource` parameter from the
+  `observable_data_lake_factory` asset, simplifying its signature.
+- 📚 **Centralized Pipeline Constants:** Moved internal pipeline source and target names (e.g., 'datalake', 'knowledge')
+  into dedicated constant files for better maintainability and consistency.
+- 💬 **Clarified Process Topic Descriptions:** Updated comments for process-related NATS topics to accurately reflect
+  their purpose, improving documentation.
+
+---
+
 ## [v0.250.2] - 2025-11-07 - Streamlined Local Development and Documentation Clarity
 
 ### Added

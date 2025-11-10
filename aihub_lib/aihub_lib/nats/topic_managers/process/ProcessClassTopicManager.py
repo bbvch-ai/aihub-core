@@ -1,16 +1,13 @@
 from typing import Annotated, override
 
+from pydantic import Field
+
 from aihub_lib.nats.topic_managers.AbstractStreamTopicManager import AbstractStreamTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
 
 
 class ProcessClassTopicManager(ProcessTopicManager, AbstractStreamTopicManager):
-    def __init__(
-        self,
-        process_class: Annotated[str, "The processes class identifier."],
-    ):
-        super().__init__()
-        self.process_class = process_class
+    process_class: Annotated[str, Field(description="The processes class identifier.")]
 
     def get_subject_for_specific_event_in_process_class(
         self,
