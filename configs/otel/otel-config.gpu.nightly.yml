@@ -1,0 +1,113 @@
+# ===================================================================
+# OpenTelemetry Collector Configuration - Stage: nightly
+# ===================================================================
+# Generated from template. Do not edit directly.
+# Collects traces, metrics, and logs for observability.
+# ===================================================================
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    send_batch_size: 1000
+    timeout: 10s
+
+  filter/noise:
+    error_mode: ignore
+    traces:
+      span:
+        - 'attributes["http.route"] == "/health"'
+        - 'attributes["http.route"] == "/metrics"'
+        - 'attributes["db.system"] == "redis"'
+        - 'attributes["db.system"] == "postgresql"'
+        - 'attributes["db.system"] == "mongodb"'
+        - 'resource.attributes["service.name"] == "litellm" and attributes["service"] == "postgres"'
+        - 'resource.attributes["service.name"] == "litellm" and attributes["service"] == "auth"'
+
+  # Filter to identify ONLY OpenInference spans for Phoenix
+  filter/phoenix:
+    error_mode: ignore
+    traces:
+      span:
+        # DROP spans that DON'T have OpenInference semantic conventions
+        - 'attributes["openinference.span.kind"] == nil'
+
+  # Transform processor for Phoenix-specific modifications
+  transform/phoenix:
+    error_mode: ignore
+    trace_statements:
+      - context: span
+        statements:
+          # Remove parent span ID for spans marked as Phoenix roots
+          - set(parent_span_id, SpanID(0x0000000000000000)) where attributes["phoenix.is_root"] == true
+          # Clean up the marker attribute
+          - delete_key(attributes, "phoenix.is_root")
+      - context: resource
+        statements:
+          # Add project name as a resource attribute
+          - set(attributes["openinference.project.name"], attributes["service.name"])
+
+exporters:
+  # Generic cloud exporter with configurable headers
+  # Controlled via environment variables:
+  #   - OTEL_CLOUD_ENDPOINT: Target endpoint URL
+  #   - OTEL_CLOUD_HEADERS: Authentication headers (e.g., "api-key=xxx")
+  otlp/cloud:
+    endpoint: "${OTEL_CLOUD_ENDPOINT}"
+    headers: "${OTEL_CLOUD_HEADERS}"
+    tls:
+      insecure: false
+    compression: gzip
+    timeout: 30s
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+
+  # Local Phoenix for development and debugging
+  otlp/phoenix:
+    endpoint: "phoenix:6007"
+    tls:
+      insecure: true
+    timeout: 10s
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+
+service:
+  extensions: [ health_check ]
+  pipelines:
+    # Send filtered traces to cloud backend
+    traces/cloud:
+      receivers: [otlp]
+      processors: [filter/noise, batch]
+      exporters: [otlp/cloud]
+
+    # Send OpenInference traces to local Phoenix for development/debugging
+    traces/phoenix:
+      receivers: [otlp]
+      processors: [filter/phoenix, transform/phoenix, batch]
+      exporters: [otlp/phoenix]
+
+    # Send metrics to cloud backend
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/cloud]
+
+    # Send logs to cloud backend
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/cloud]
