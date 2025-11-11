@@ -17,4 +17,4 @@ aihub_doc/aihub
 .mypy_cache/
 
 docker-compose.*.yml
-configs
+/configs

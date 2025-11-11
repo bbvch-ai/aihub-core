@@ -31,9 +31,8 @@ CONFIG_SPECS = [
     ("templates/configs/traefik-tls.yml.j2", "configs/traefik", "tls.{stage}{hardware}.yml"),
     # Static scripts - no stage/hardware variations
     ("templates/configs/s3-entrypoint.sh.j2", "configs/seaweedfs", "s3-entrypoint.sh"),
-    ("templates/configs/init-buckets.sh.j2", "configs/seaweedfs", "init-buckets.sh"),
-    ("templates/configs/init-multiple-dbs.sh.j2", "configs/postgres", "init-multiple-dbs.sh"),
-    ("templates/configs/init-models.sh.j2", "configs/docling", "init-models.sh"),
+    ("templates/configs/s3-init-buckets.sh.j2", "configs/seaweedfs", "init-buckets.sh"),
+    ("templates/configs/pg-init-multiple-dbs.sh.j2", "configs/postgres", "init-multiple-dbs.sh"),
 ]
 
 
