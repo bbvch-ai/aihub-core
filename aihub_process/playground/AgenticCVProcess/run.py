@@ -13,8 +13,9 @@ enable_logging()
 async def main():
     process_runner = ProcessTestRunner(
         process_type=AgenticCVProcess,
-        process_config=ProcessConfig(
+        default_process_config=ProcessConfig(
             process_id="agentic_cv_process",
+            process_class=AgenticCVProcess.__name__,
             name=LocaleString(en="Agentic CV Process"),
             description=LocaleString(en="Models the process of reviewing and accepting a CV"),
         ),

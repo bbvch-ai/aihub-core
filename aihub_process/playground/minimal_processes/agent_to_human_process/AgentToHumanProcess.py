@@ -19,7 +19,7 @@ class AgentToHumanProcess(AgenticProcess):
     async def start_with_agent_a_and_request_human_input(
         self,
         work_from_agent_a: Annotated[AgentAWork, Agent.In(agent_class="AgentA", agent_id="agent_a")],
-    ) -> Annotated[HumanBWorkRequest, Human.Out(user_roles=["AllAgents"])]:
+    ) -> Annotated[HumanBWorkRequest, Human.Out(user_roles=["AIHubAdmin"])]:
         agent_payload = work_from_agent_a.agent_stop_event.payload
         print(f"[AgentToHumanProcess.start_with_agent_a] Received from AgentA: {agent_payload}")
         return HumanBWorkRequest(

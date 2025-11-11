@@ -87,6 +87,7 @@ async def test_walk_through_process_std_methods(process_api_client):
     assert response.status_code == 200, f"Response: {response.text}"
 
     data = response.json()
+    print(data)
     assert len(data) == 1
     assert data[0].get("name") == "HumanStartEvent"
     assert data[0].get("description") == "HumanStartEvent description"

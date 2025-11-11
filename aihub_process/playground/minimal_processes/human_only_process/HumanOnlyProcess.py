@@ -25,7 +25,7 @@ class HumanOnlyProcess(AgenticProcess):
                 start_form=HumanAWork(payload=InputText(label=LocaleString(en="Input text A"))),
             ),
         ],
-    ) -> Annotated[HumanBWorkRequest, Human.Out(user_roles=["AllAgents"])]:
+    ) -> Annotated[HumanBWorkRequest, Human.Out(user_roles=["AIHubAdmin"])]:
         print(f"[AgentOnlyProcess.start_with_output_from_human_a] {work_from_human_a.payload}")
         return HumanBWorkRequest(
             forms=[

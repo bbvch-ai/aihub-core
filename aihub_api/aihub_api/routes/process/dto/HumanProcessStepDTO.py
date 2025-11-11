@@ -14,7 +14,6 @@ class HumanProcessStepDTO(BaseProcessStepDTO):
     """DTO representing a human process step with human-specific work request and response information."""
 
     step_type: Annotated[str, Field(description="Type of entity involved in this step.")] = "human"
-
     work_request: Annotated[HumanWorkRequestDTO | None, Field(description="The human work request for this step.")] = (
         None
     )
