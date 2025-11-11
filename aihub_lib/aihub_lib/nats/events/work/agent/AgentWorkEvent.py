@@ -6,8 +6,7 @@ from pydantic import Field
 from aihub_lib.nats.events import StopEvent
 from aihub_lib.nats.events.utils import get_base_type
 from aihub_lib.nats.events.work.WorkEvent import WorkEvent
-from aihub_lib.nats.topics.agents import AgentInstanceTopic
-from aihub_lib.nats.topics.agents import PartialAgentTopic
+from aihub_lib.nats.topics.agents import AgentInstanceTopic, PartialAgentTopic
 
 TEvent = TypeVar("TEvent", bound=StopEvent)
 

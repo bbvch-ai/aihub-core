@@ -31,7 +31,6 @@ import type { ProcessWalkthroughDto } from '@core/sdk/client'
 import { useLocalePath } from '#i18n'
 
 const router = useRouter()
-const route = useRoute()
 const localePath = useLocalePath()
 const { t } = useI18n()
 

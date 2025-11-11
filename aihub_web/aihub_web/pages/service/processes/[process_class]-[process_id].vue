@@ -21,7 +21,7 @@ const route = useRoute()
 const localePath = useLocalePath()
 const { t } = useI18n()
 
-const { process } = useProcess()
+// We could get the process like this: const { process } = useProcess()
 
 const subPath = (path: string) => {
   return `/service/processes/${route.params.process_class}-${route.params.process_id}/${path}`

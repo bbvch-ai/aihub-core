@@ -107,6 +107,8 @@ import type {
   ProgramProcessStepDto,
 } from '@core/sdk/client'
 
+type ProcessStepDto = AgentProcessStepDto | ProgramProcessStepDto | HumanProcessStepDto
+
 const props = defineProps<{
   walkthroughs: ProcessWalkthroughDto[]
 }>()
@@ -119,7 +121,7 @@ const { t } = useI18n()
 const route = useRoute()
 const { getTimeAgo } = useTimeAgo()
 
-const iconForStep = (process_step: AgentProcessStepDto | ProgramProcessStepDto | HumanProcessStepDto) => {
+const iconForStep = (process_step: ProcessStepDto) => {
   if (process_step.step_type === 'human') {
     return 'mdi:user'
   }
@@ -130,7 +132,7 @@ const iconForStep = (process_step: AgentProcessStepDto | ProgramProcessStepDto |
     return process_step.work_request?.agent_info?.agent_config?.icon ?? process_step.work_response?.agent_info?.agent_config?.icon ?? 'meteor-icons:robot'
   }
 }
-const tooltipForStep = (process_step: AgentProcessStepDto | ProgramProcessStepDto | HumanProcessStepDto) => {
+const tooltipForStep = (process_step: ProcessStepDto) => {
   if (process_step.step_type === 'human' && process_step.work_response) {
     return process_step.work_response.data.submitted_by.email
   }
@@ -144,7 +146,7 @@ const tooltipForStep = (process_step: AgentProcessStepDto | ProgramProcessStepDt
     return process_step.work_response?.agent_info?.agent_config?.name
   }
 }
-const nameForStep = (process_step: AgentProcessStepDto | ProgramProcessStepDto | HumanProcessStepDto) => {
+const nameForStep = (process_step: ProcessStepDto) => {
   return process_step.work_response?.event_name ?? process_step.work_request?.event_name
 }
 
