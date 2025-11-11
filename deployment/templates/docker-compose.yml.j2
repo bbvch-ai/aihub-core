@@ -927,16 +927,6 @@ services:
   # uploaded documents for the RAG pipeline.
   # ===================================================================
 
-  {%- if stage != 'dev' %}
-  docling-model-permission:
-    container_name: docling-model-permission
-    image: {{ image_tags.docling_model_permission }}
-    restart: no
-    command: ["sh", "-c", "chown -R 1001:1001 /models"]
-    volumes:
-      - {{ global.volume_root }}/docling-data:/models
-  {%- endif %}
-
   docling:
     container_name: docling
     image: {{ global.registry_prefix }}{{ image_tags.docling }}
