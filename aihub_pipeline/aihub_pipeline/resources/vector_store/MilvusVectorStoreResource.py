@@ -1,4 +1,7 @@
-from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
+from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import (
+    MilvusIndexType,
+    create_milvus_vector_store,
+)
 from dagster import ConfigurableResource, InitResourceContext
 from llama_index.vector_stores.milvus import MilvusVectorStore
 
@@ -75,6 +78,16 @@ class MilvusVectorStoreResource(ConfigurableResource[MilvusVectorStore]):
     uri: str
     collection_name: str
     embedding_vector_dimension: int
+    num_partitions: int = 1023  # 1024 - 1 reserved
+    index_type: MilvusIndexType = MilvusIndexType.HNSW
+    enable_mmap: bool = True  # Reduces RAM by 50-70% for HNSW (disable only if latency variance unacceptable)
 
     def create_resource(self, context: InitResourceContext) -> MilvusVectorStore:
-        return create_milvus_vector_store(self.uri, self.collection_name, self.embedding_vector_dimension)
+        return create_milvus_vector_store(
+            uri=self.uri,
+            collection_name=self.collection_name,
+            embedding_vector_dimension=self.embedding_vector_dimension,
+            num_partitions=self.num_partitions,
+            index_type=self.index_type,
+            enable_mmap=self.enable_mmap,
+        )
