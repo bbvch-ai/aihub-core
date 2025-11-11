@@ -4,8 +4,11 @@
 # To make changes, edit the following files and then run the generator script:
 #   - deployment/compose-config.yml (for changing values and versions)
 #   - deployment/templates/docker-compose.yml.j2 (for changing structure and logic)
-{%- set hardware = '.gpu' if gpu_enabled else '' -%}
-{% if stage != 'dev' %}
+
+{%- set gpu_postfix = '.gpu' if gpu_enabled else '' -%}
+{%- set hardware = 'gpu' if gpu_enabled else 'cpu' %}
+{%- if stage != 'dev' %}
+
 # ===================================================================
 # TRAEFIK PRIORITY RULES
 # ===================================================================
@@ -217,7 +220,7 @@ services:
         max-size: 10m
         max-file: 2
 
-  {%- if stage != 'dev' %}
+  {% if stage != 'dev' -%}
   oauth2proxy-seaweed:
     container_name: oauth2proxy-seaweed
     image: {{ image_tags.oauth2proxy }}
@@ -260,7 +263,7 @@ services:
       {%- endif %}
       - "traefik.http.routers.seaweedfs-filer.middlewares=security-headers@file"
       - "traefik.http.services.seaweedfs-filer.loadbalancer.server.port=4181"
-  {%- endif %}
+  {% endif %}
 
   # ===================================================================
   # Milvus Stack (Vector Database)
@@ -306,7 +309,7 @@ services:
       MINIO_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
     volumes:
       - {{ global.volume_root }}/milvus-data:/var/lib/milvus
-      - ./configs/milvus/milvus-config.{{ stage }}{{ hardware }}.yml:/milvus/configs/milvus.yaml
+      - ./configs/milvus/milvus-config.{{ stage }}{{ gpu_postfix }}.yml:/milvus/configs/milvus.yaml
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9091/healthz" ]
       start_period: 90s
@@ -482,7 +485,7 @@ services:
     restart: always
     command: -c /etc/nats/nats-server.conf
     volumes:
-      - ./configs/nats/nats-config.{{ stage }}{{ hardware }}.conf:/etc/nats/nats-server.conf
+      - ./configs/nats/nats-config.{{ stage }}{{ gpu_postfix }}.conf:/etc/nats/nats-server.conf
       - {{ global.volume_root }}/nats:/data/nats
     healthcheck:
       test: [ "NONE" ]
@@ -517,8 +520,7 @@ services:
         max-size: 10m
         max-file: 2
 
-  {% set model_hardware = 'gpu' if gpu_enabled else 'cpu' %}
-  {%- if image_tags.llama_cpp[stage] and image_tags.llama_cpp[stage][model_hardware] %}
+  {%- if image_tags.llama_cpp[stage] and image_tags.llama_cpp[stage][hardware] %}
   # ===================================================================
   # AI Model Serving (Local Inference)
   # ===================================================================
@@ -527,11 +529,11 @@ services:
   # ===================================================================
   {%- endif %}
 
-  {%- if image_tags.llama_cpp[stage] and image_tags.llama_cpp[stage][model_hardware] %}
+  {%- if image_tags.llama_cpp[stage] and image_tags.llama_cpp[stage][hardware] %}
   llama-cpp:
     container_name: llama-cpp
     platform: "linux/amd64"
-    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp[stage][model_hardware] }}
+    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp[stage][hardware] }}
     restart: always
     {%- if stage == 'dev' %}
     ports:
@@ -584,11 +586,11 @@ services:
     {%- endif %}
   {%- endif %}
 
-  {% if image_tags.llama_cpp_embedding[stage] and image_tags.llama_cpp_embedding[stage][model_hardware] %}
+  {% if image_tags.llama_cpp_embedding[stage] and image_tags.llama_cpp_embedding[stage][hardware] %}
   llama-cpp-embedding:
     container_name: llama-cpp-embedding
     platform: "linux/amd64"
-    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_embedding[stage][model_hardware] }}
+    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_embedding[stage][hardware] }}
     restart: always
     {%- if stage == 'dev' %}
     ports:
@@ -634,11 +636,11 @@ services:
     {%- endif %}
   {%- endif %}
 
-  {% if image_tags.llama_cpp_reranking[stage] and image_tags.llama_cpp_reranking[stage][model_hardware] %}
+  {% if image_tags.llama_cpp_reranking[stage] and image_tags.llama_cpp_reranking[stage][hardware] %}
   llama-cpp-reranking:
     container_name: llama-cpp-reranking
     platform: "linux/amd64"
-    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_reranking[stage][model_hardware] }}
+    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_reranking[stage][hardware] }}
     restart: always
     {%- if stage == 'dev' %}
     ports:
@@ -684,11 +686,11 @@ services:
     {%- endif %}
   {%- endif %}
 
-  {% if image_tags.llama_cpp_docling[stage] and image_tags.llama_cpp_docling[stage][model_hardware] %}
+  {% if image_tags.llama_cpp_docling[stage] and image_tags.llama_cpp_docling[stage][hardware] %}
   llama-cpp-docling:
     container_name: llama-cpp-docling
     platform: "linux/amd64"
-    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_docling[stage][model_hardware] }}
+    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_docling[stage][hardware] }}
     restart: always
     {%- if stage == 'dev' %}
     ports:
@@ -742,7 +744,7 @@ services:
     {%- endif %}
   {%- endif %}
 
-  {% if image_tags.speaches[stage] and image_tags.speaches[stage][model_hardware] %}
+  {% if image_tags.speaches[stage] and image_tags.speaches[stage][hardware] %}
   # ===================================================================
   # Audio Model Serving (SST/TTS)
   # ===================================================================
@@ -751,7 +753,7 @@ services:
   # ===================================================================
   speaches:
     container_name: speaches
-    image: {{ global.registry_prefix }}{{ image_tags.speaches[stage][model_hardware] }}
+    image: {{ global.registry_prefix }}{{ image_tags.speaches[stage][hardware] }}
     restart: unless-stopped
     {%- if stage == 'dev' %}
     ports:
@@ -782,7 +784,6 @@ services:
               capabilities: [ gpu ]
     {%- endif %}
   {%- endif %}
-
 
   # ===================================================================
   # LiteLLM Stack (Model Proxy and Guardrails)
@@ -838,7 +839,7 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: False
     volumes:
-      - ./configs/litellm/litellm-config.{{ stage }}{{ hardware }}.yml:/app/config.yml
+      - ./configs/litellm/litellm-config.{{ stage }}{{ gpu_postfix }}.yml:/app/config.yml
     command: --config /app/config.yml
     depends_on:
       postgres:
@@ -959,7 +960,7 @@ services:
       DOCLING_SERVE_ENABLE_UI: 1
       {%- endif %}
     depends_on:
-      {%- if image_tags.llama_cpp_docling[stage] and image_tags.llama_cpp_docling[stage][model_hardware] %}
+      {%- if image_tags.llama_cpp_docling[stage] and image_tags.llama_cpp_docling[stage][hardware] %}
       llama-cpp-docling:
         condition: service_healthy
       {%- endif %}
@@ -985,7 +986,7 @@ services:
       - OTEL_CLOUD_ENDPOINT=${OTEL_CLOUD_ENDPOINT}
       - OTEL_CLOUD_HEADERS=${OTEL_CLOUD_HEADERS}
     volumes:
-      - ./configs/otel/otel-config.{{ stage }}{{ hardware }}.yml:/etc/otel-config.yml
+      - ./configs/otel/otel-config.{{ stage }}{{ gpu_postfix }}.yml:/etc/otel-config.yml
     {%- if stage == 'dev' %}
     ports:
       - "4317:4317"
@@ -1118,7 +1119,6 @@ services:
       AUDIO_TTS_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/openai
       AUDIO_TTS_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       AUDIO_TTS_VOICE: alloy
-
 
       # --- AI-Hub Internal Connection ---
       AIHUB_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000
@@ -1343,8 +1343,8 @@ services:
       - /dagster_home/workspace.yaml
     volumes:
       - {{ global.volume_root }}/dagster-data:/dagster_home
-      - ./configs/dagster/dagster-config.{{ stage }}{{ hardware }}.yml:/dagster_home/dagster.yaml:ro
-      - ./configs/dagster/workspace.{{ stage }}{{ hardware }}.yml:/dagster_home/workspace.yaml:ro
+      - ./configs/dagster/dagster-config.{{ stage }}{{ gpu_postfix }}.yml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/workspace.{{ stage }}{{ gpu_postfix }}.yml:/dagster_home/workspace.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -1371,8 +1371,8 @@ services:
       - run
     volumes:
       - {{ global.volume_root }}/dagster-data:/dagster_home
-      - ./configs/dagster/dagster-config.{{ stage }}{{ hardware }}.yml:/dagster_home/dagster.yaml:ro
-      - ./configs/dagster/workspace.{{ stage }}{{ hardware }}.yml:/dagster_home/workspace.yaml:ro
+      - ./configs/dagster/dagster-config.{{ stage }}{{ gpu_postfix }}.yml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/workspace.{{ stage }}{{ gpu_postfix }}.yml:/dagster_home/workspace.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -1421,9 +1421,9 @@ services:
       {%- endif %}
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "./configs/traefik/middlewares.{{ stage }}{{ hardware }}.yml:/etc/traefik/dynamic/middlewares.yml:ro"
+      - "./configs/traefik/middlewares.{{ stage }}{{ gpu_postfix }}.yml:/etc/traefik/dynamic/middlewares.yml:ro"
       {%- if stage in ['local', 'build'] %}
-      - "./configs/traefik/tls.{{ stage }}{{ hardware }}.yml:/etc/traefik/dynamic/tls.yml:ro"
+      - "./configs/traefik/tls.{{ stage }}{{ gpu_postfix }}.yml:/etc/traefik/dynamic/tls.yml:ro"
       - "./configs/traefik/certs/dev-cert.pem:/certs/dev-cert.pem:ro"
       - "./configs/traefik/certs/dev-key.pem:/certs/dev-key.pem:ro"
       {%- else %}
@@ -1634,7 +1634,6 @@ services:
       - "traefik.http.services.web.loadbalancer.server.port=80"
       - "traefik.http.middlewares.web-standard-middleware.chain.middlewares=security-headers@file"
   {%- endif %}
-
 
   # ===================================================================
   # Common Agents & Pipelines
