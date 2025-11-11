@@ -8,6 +8,7 @@ This guide covers prerequisites for deploying the AI-Hub platform.
 
 ::: tip Choose Your Deployment Type
 The prerequisites differ based on your deployment type:
+
 - **Production Deployment**: Deploy to a server with a real domain name and automatic SSL certificates
 - **Local Deployment**: Run on your local machine with `127.0.0.1.nip.io` and self-signed certificates
 
@@ -35,7 +36,8 @@ These requirements apply to both production and local deployments.
 - **Network**: High-bandwidth connection for faster initial setup
 
 ::: warning
-The platform runs multiple services simultaneously (databases, vector stores, LLM proxies, web interfaces, processing engines). Systems below minimum specifications will experience service failures or degraded performance.
+The platform runs multiple services simultaneously (databases, vector stores, LLM proxies, web interfaces, processing
+engines). Systems below minimum specifications will experience service failures or degraded performance.
 :::
 
 ### Software requirements
@@ -70,7 +72,8 @@ All commands must complete successfully.
 
 ### Authentication Provider Setup
 
-The platform requires an OAuth2/OpenID Connect identity provider for both production and local deployments. This guide documents Azure Entra ID setup. Other providers (Google, Okta, Auth0) can be configured using similar patterns.
+The platform requires an OAuth2/OpenID Connect identity provider for both production and local deployments. This guide
+documents Azure Entra ID setup. Other providers (Google, Okta, Auth0) can be configured using similar patterns.
 
 #### Azure Entra ID setup
 
@@ -100,7 +103,8 @@ The platform requires access token version 2 for proper authentication.
 4. Click **"Save"** at the top of the manifest editor
 
 ::: warning
-Access token version 2 is required for the platform to function correctly. Version 1 tokens are not supported and will cause authentication failures.
+Access token version 2 is required for the platform to function correctly. Version 1 tokens are not supported and will
+cause authentication failures.
 :::
 
 **Step 3: Configure API permissions**
@@ -123,7 +127,8 @@ Access token version 2 is required for the platform to function correctly. Versi
 7. Verify all permissions display **"Granted for [Your Organization]"** status
 
 ::: warning
-All listed permissions are required for platform functionality. Missing permissions will cause authentication or authorization failures during deployment.
+All listed permissions are required for platform functionality. Missing permissions will cause authentication or
+authorization failures during deployment.
 :::
 
 **Step 4: Create client secret**
@@ -137,7 +142,8 @@ All listed permissions are required for platform functionality. Missing permissi
 5. Record this value as `[CLIENT_SECRET]` for deployment configuration
 
 ::: danger
-The client secret value is displayed only once immediately after creation. If the value is lost, a new secret must be created. Store in a password manager or secure vault.
+The client secret value is displayed only once immediately after creation. If the value is lost, a new secret must be
+created. Store in a password manager or secure vault.
 :::
 
 **Step 5: Configure app roles**
@@ -150,25 +156,29 @@ Create three app roles following this process:
 2. Create each of the following roles:
 
 **Administrator role:**
+
 - **Display name**: `AIHubAdmin`
 - **Allowed member types**: `Users/Groups`
 - **Value**: `AIHubAdmin`
 - **Description**: `Administrator access to AI-Hub platform`
 
 **User role:**
+
 - **Display name**: `AIHubUser`
 - **Allowed member types**: `Users/Groups`
 - **Value**: `AIHubUser`
 - **Description**: `Standard user access to AI-Hub platform`
 
 **Developer role:**
+
 - **Display name**: `AIHubDeveloper`
 - **Allowed member types**: `Users/Groups`
 - **Value**: `AIHubDeveloper`
 - **Description**: `Developer access to AI-Hub platform services (Dagster, Data Lake)`
 
 ::: tip
-The `AIHubDeveloper` role is required to access the Dagster pipeline orchestration dashboard and the SeaweedFS data lake console. Users without this role can still use the main AI-Hub interface and OpenWebUI.
+The `AIHubDeveloper` role is required to access the Dagster pipeline orchestration dashboard and the SeaweedFS data lake
+console. Users without this role can still use the main AI-Hub interface and OpenWebUI.
 :::
 
 **Step 6: Configure SPA redirect URIs**
@@ -176,9 +186,11 @@ The `AIHubDeveloper` role is required to access the Dagster pipeline orchestrati
 Single-Page Application (SPA) redirect URIs are required for the main web interface with multilingual support.
 
 1. Navigate to **"Authentication"** → **"Add a platform"** → **"Single-page application"**
+
 2. Add redirect URIs based on your deployment type:
 
    **For Production:** Replace `your-domain.com` with your actual domain
+
    ```
    https://your-domain.com/de/auth/callback
    https://your-domain.com/en/auth/callback
@@ -187,6 +199,7 @@ Single-Page Application (SPA) redirect URIs are required for the main web interf
    ```
 
    **For Local Deployment:** Use `127.0.0.1.nip.io`
+
    ```
    https://127.0.0.1.nip.io/de/auth/callback
    https://127.0.0.1.nip.io/en/auth/callback
@@ -195,7 +208,7 @@ Single-Page Application (SPA) redirect URIs are required for the main web interf
    ```
 
    ::: tip
-   You can add both production and local URIs to the same app registration for testing purposes.
+You can add both production and local URIs to the same app registration for testing purposes.
    :::
 
 3. Configure token settings:
@@ -208,9 +221,11 @@ Single-Page Application (SPA) redirect URIs are required for the main web interf
 Web application redirect URIs are required for integrated services (OpenWebUI, Dagster, Data Lake).
 
 1. Navigate to **"Authentication"** → **"Add a platform"** → **"Web"**
+
 2. Add redirect URIs based on your deployment type:
 
    **For Production:** Replace `your-domain.com` with your actual domain
+
    ```
    https://openwebui.your-domain.com/oauth/oidc/callback
    https://dagster.your-domain.com/oauth2/callback
@@ -218,6 +233,7 @@ Web application redirect URIs are required for integrated services (OpenWebUI, D
    ```
 
    **For Local Deployment:** Use `127.0.0.1.nip.io`
+
    ```
    https://openwebui.127.0.0.1.nip.io/oauth/oidc/callback
    https://dagster.127.0.0.1.nip.io/oauth2/callback
@@ -225,15 +241,21 @@ Web application redirect URIs are required for integrated services (OpenWebUI, D
    ```
 
 3. Configure token settings:
+
    - Enable **ID tokens** (used for hybrid flows)
+
 4. Click **"Configure"**
 
 ::: warning Platform Type Distinction
 The platform type configuration (SPA vs Web) is critical for OAuth2 flow selection:
-- **SPA platform**: Language-specific callbacks (`/de/`, `/en/`, `/fr/`, `/it/`) use PKCE flow without client secret
-- **Web platform**: Service callbacks (`openwebui`, `dagster`, `datalake`) use authorization code flow with client secret
 
-Misconfigured platform types will cause authentication error `AADSTS9002326: Cross-origin token redemption is permitted only for the 'Single-Page Application' client-type`. Ensure redirect URIs are registered under the correct platform type.
+- **SPA platform**: Language-specific callbacks (`/de/`, `/en/`, `/fr/`, `/it/`) use PKCE flow without client secret
+- **Web platform**: Service callbacks (`openwebui`, `dagster`, `datalake`) use authorization code flow with client
+  secret
+
+Misconfigured platform types will cause authentication error
+`AADSTS9002326: Cross-origin token redemption is permitted only for the 'Single-Page Application' client-type`. Ensure
+redirect URIs are registered under the correct platform type.
 :::
 
 **Required Authentication Information**
@@ -251,7 +273,8 @@ You'll need these values during platform deployment configuration.
 ## Production Deployment Prerequisites
 
 ::: danger Only for Production Deployments
-**Skip this entire section if you're testing locally.** These steps are only required when deploying to a server with a real domain name.
+**Skip this entire section if you're testing locally.** These steps are only required when deploying to a server with a
+real domain name.
 :::
 
 ### DNS Configuration
@@ -266,14 +289,16 @@ Configure DNS records for your domain. The platform requires **seven subdomains*
 - `attu.aihub.example.com` - Milvus vector database UI
 - `traefik.aihub.example.com` - reverse proxy dashboard
 
-Replace `aihub.example.com` with your actual domain. Create A records or CNAMEs for all seven subdomains pointing to your server's IP address.
+Replace `aihub.example.com` with your actual domain. Create A records or CNAMEs for all seven subdomains pointing to
+your server's IP address.
 
 ::: warning DNS Requirements for SSL
 - DNS records must be globally accessible for Let's Encrypt SSL certificate provisioning
 - The VM must be able to resolve its own domain names (internal DNS resolution)
 - Configure nameservers correctly to avoid OAuth authentication timeouts
 
-See [network requirements](../../3_deployment_guide/7_network_requirements/) for detailed DNS configuration and troubleshooting.
+See [network requirements](../../3_deployment_guide/7_network_requirements/) for detailed DNS configuration and
+troubleshooting.
 :::
 
 ---
@@ -281,18 +306,21 @@ See [network requirements](../../3_deployment_guide/7_network_requirements/) for
 ## Local Deployment Prerequisites
 
 ::: danger Only for Local Deployment
-**Skip this entire section if you're deploying to production.** These steps are only required when deploying the platform on your local machine.
+**Skip this entire section if you're deploying to production.** These steps are only required when deploying the
+platform on your local machine.
 :::
 
 ### Install mkcert
 
-For local deployment with HTTPS support, you need to install **mkcert** to generate self-signed SSL certificates that are trusted by your browser.
+For local deployment with HTTPS support, you need to install **mkcert** to generate self-signed SSL certificates that
+are trusted by your browser.
 
 ::: warning
 Only use self-signed SSL certificates for local development. Never use them in production or public environments.
 :::
 
 **Linux (Ubuntu/Debian):**
+
 ```bash
 sudo apt install libnss3-tools
 wget -O mkcert https://dl.filippo.io/mkcert/latest?for=linux/amd64
@@ -301,6 +329,7 @@ sudo mv mkcert /usr/local/bin/
 ```
 
 **Windows:**
+
 ```powershell
 # Using Chocolatey
 choco install mkcert
@@ -311,21 +340,26 @@ scoop install mkcert
 ```
 
 **macOS:**
+
 ```bash
 brew install mkcert
 ```
 
 **Verify Installation:**
+
 ```bash
 mkcert -version
 ```
 
 ::: tip What is mkcert?
-**mkcert** is a tool that generates locally-trusted SSL certificates without complex configuration. It automatically installs a local Certificate Authority (CA) in your system trust store, so certificates it generates are trusted by your browser.
+**mkcert** is a tool that generates locally-trusted SSL certificates without complex configuration. It automatically
+installs a local Certificate Authority (CA) in your system trust store, so certificates it generates are trusted by your
+browser.
 :::
 
 ---
 
 ## Next steps
 
-Proceed to [one-command deployment](../2_one_command_deployment/) to deploy the platform using the recorded configuration values.
+Proceed to [one-command deployment](../2_one_command_deployment/) to deploy the platform using the recorded
+configuration values.

@@ -6,7 +6,8 @@ description: Ausführliche Erkundung der AI-Hub-Codebasis, einschließlich Packa
 # Code Deep Dive
 
 :::info Automatisch generierter Inhalt
-Dieser Abschnitt wird automatisch aus den README.md-Dateien im Quellcode-Repository generiert. Der Inhalt wird während des Dokumentations-Build-Prozesses synchronisiert und spiegelt den aktuellen Stand der Codebasis wider.
+Dieser Abschnitt wird automatisch aus den README.md-Dateien im Quellcode-Repository generiert. Der Inhalt wird während
+des Dokumentations-Build-Prozesses synchronisiert und spiegelt den aktuellen Stand der Codebasis wider.
 :::
 
 Dieser Abschnitt bietet einen tiefen Einblick in die AI-Hub-Codebasis, einschließlich:
