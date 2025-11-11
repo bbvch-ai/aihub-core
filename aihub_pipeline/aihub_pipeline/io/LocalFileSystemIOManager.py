@@ -1,5 +1,3 @@
-import asyncio
-
 from dagster import ConfigurableIOManager, InputContext, OutputContext, ResourceDependency
 
 from aihub_pipeline.resources.local_file_system.LocalFileSystemResource import LocalFileSystemResource
@@ -7,6 +5,28 @@ from aihub_pipeline.types.LocalFile import LocalFile, MinimalLocalFile
 
 
 class LocalFileSystemIOManager(ConfigurableIOManager):
+    """Local File System IO Manager for loading files from local or network file systems.
+
+    **Why this exists**: This IO Manager loads external user files from the filesystem and returns domain objects
+    (LocalFile/MinimalLocalFile).
+
+    **Two loading patterns**:
+
+    1. **Partitioned asset** (standard): Returns single ``LocalFile`` with full content.
+       Used for: Processing files individually (parsing, uploading, transformation).
+       Enables parallel execution and incremental updates.
+
+    2. **Non-partitioned asset** (cleanup only): Returns ``list[MinimalLocalFile]`` with metadata only.
+       Used for: Comparing all source files vs storage to find orphans for deletion.
+       Why metadata-only: Cleanup only needs paths/timestamps, not content. Loading all file
+       content would waste memory and time.
+
+    **Usage**: Always use resource key ``"local_file_system_io_manager"``, never ``"io_manager"``.
+    Requires LocalFileSystemResource dependency for file scanning and loading.
+
+    Does not support writing outputs back to the file system.
+    """
+
     local_file_system_client: ResourceDependency[LocalFileSystemResource]
 
     def handle_output(self, context: OutputContext, obj: bytes | LocalFile):

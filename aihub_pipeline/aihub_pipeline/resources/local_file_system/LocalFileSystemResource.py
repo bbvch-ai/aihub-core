@@ -34,7 +34,7 @@ class LocalFileSystemResource(ConfigurableResource):
 
     base_path: Annotated[str, Field(description="Base path to start scanning from")]
 
-    target_folder_patterns: Annotated[
+    include_folders: Annotated[
         list[str] | None,
         Field(
             default=None,
@@ -42,17 +42,17 @@ class LocalFileSystemResource(ConfigurableResource):
         ),
     ]
 
-    target_subfolder_patterns: Annotated[
+    include_subfolders: Annotated[
         list[str] | None,
         Field(
             default=None,
             description="Regex patterns for subfolders within matched folders. "
             "None = scan all subfolders recursively. "
-            "Only applies when target_folder_patterns is specified.",
+            "Only applies when include_folders is specified.",
         ),
     ]
 
-    exclude_folder_patterns: Annotated[
+    exclude_folders: Annotated[
         list[str] | None,
         Field(
             default_factory=lambda: [r".*archiv.*"],
@@ -60,7 +60,7 @@ class LocalFileSystemResource(ConfigurableResource):
         ),
     ]
 
-    exclude_path_patterns: Annotated[
+    exclude_paths: Annotated[
         list[str] | None,
         Field(
             default=None,
@@ -68,7 +68,7 @@ class LocalFileSystemResource(ConfigurableResource):
         ),
     ]
 
-    file_extension_patterns: Annotated[
+    include_extensions: Annotated[
         list[str] | None,
         Field(
             default=None,
@@ -76,7 +76,7 @@ class LocalFileSystemResource(ConfigurableResource):
         ),
     ]
 
-    exclude_file_patterns: Annotated[
+    exclude_files: Annotated[
         list[str] | None,
         Field(
             default=None,
@@ -100,12 +100,12 @@ class LocalFileSystemResource(ConfigurableResource):
             return [re.compile(p, re.IGNORECASE) for p in patterns] if patterns else None
 
         return ScanConfig(
-            folder_patterns=compile_optional(self.target_folder_patterns),
-            subfolder_patterns=compile_optional(self.target_subfolder_patterns),
-            exclude_folder_patterns=compile_list(self.exclude_folder_patterns),
-            exclude_path_patterns=compile_list(self.exclude_path_patterns),
-            extension_patterns=compile_optional(self.file_extension_patterns),
-            exclude_file_patterns=compile_list(self.exclude_file_patterns),
+            folder_patterns=compile_optional(self.include_folders),
+            subfolder_patterns=compile_optional(self.include_subfolders),
+            exclude_folder_patterns=compile_list(self.exclude_folders),
+            exclude_path_patterns=compile_list(self.exclude_paths),
+            extension_patterns=compile_optional(self.include_extensions),
+            exclude_file_patterns=compile_list(self.exclude_files),
         )
 
     def fetch_all_files(self) -> list[MinimalLocalFile]:

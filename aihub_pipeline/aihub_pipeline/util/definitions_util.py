@@ -251,15 +251,16 @@ def default_sharepoint_to_datalake_definitions(
 
 
 def default_local_filesystem_to_datalake_definitions(
+    *,
     datalake_container_name: str,
     base_path: str,
-    target_folder_patterns: list[str] | None = None,
-    target_subfolder_patterns: list[str] | None = None,
+    include_folders: list[str] | None = None,
+    include_subfolders: list[str] | None = None,
     datalake_directory_name: str | None = None,
-    exclude_folder_patterns: list[str] | None = None,
-    exclude_path_patterns: list[str] | None = None,
-    file_extension_patterns: list[str] | None = None,
-    exclude_file_patterns: list[str] | None = None,
+    exclude_folders: list[str] | None = None,
+    exclude_paths: list[str] | None = None,
+    include_extensions: list[str] | None = None,
+    exclude_files: list[str] | None = None,
     observe_job_hour: int = 0,
     observe_job_minute: int = 0,
     remove_job_hour: int = 1,
@@ -318,12 +319,12 @@ def default_local_filesystem_to_datalake_definitions(
 
     filesystem_client = LocalFileSystemResource(
         base_path=base_path,
-        target_folder_patterns=target_folder_patterns,
-        target_subfolder_patterns=target_subfolder_patterns,
-        exclude_folder_patterns=exclude_folder_patterns,
-        exclude_path_patterns=exclude_path_patterns,
-        file_extension_patterns=file_extension_patterns,
-        exclude_file_patterns=exclude_file_patterns,
+        include_folders=include_folders,
+        include_subfolders=include_subfolders,
+        exclude_folders=exclude_folders,
+        exclude_paths=exclude_paths,
+        include_extensions=include_extensions,
+        exclude_files=exclude_files,
     )
 
     filesystem_io_manager = LocalFileSystemIOManager(local_file_system_client=filesystem_client)

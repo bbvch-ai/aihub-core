@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from pydantic import ConfigDict, Field
+from pydantic import Field
 
 from aihub_pipeline.types.SourceFile import MinimalSourceFile, SourceFile
 
@@ -12,8 +12,6 @@ class MinimalSharePointFile(MinimalSourceFile):
     Used for scanning SharePoint for changes without downloading full file contents.
     Includes SharePoint-specific fields like ETag and file ID for change detection.
     """
-
-    model_config = ConfigDict(populate_by_name=True)
 
     etag: Annotated[str, Field(description="ETag for change detection")]
     id: Annotated[str, Field(description="SharePoint file ID")]
@@ -29,8 +27,6 @@ class SharePointFile(SourceFile):
     including content, metadata, and SharePoint-specific attributes like ETags
     and download URLs.
     """
-
-    model_config = ConfigDict(populate_by_name=True)
 
     download_url: Annotated[str | None, Field(description="Direct download URL from Graph API")] = None
     full_url: Annotated[str, Field(description="Full SharePoint web URL to the file")]

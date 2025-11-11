@@ -22,7 +22,7 @@ class MinimalSourceFile(BaseModel):
     modified: Annotated[int, Field(description="The UNIX timestamp when the file was last modified")]
 
 
-class SourceFile(BaseModel):
+class SourceFile(MinimalSourceFile):
     """
     Generic base model for files from any source system.
 
@@ -42,11 +42,7 @@ class SourceFile(BaseModel):
         - S3File: Files from AWS S3 buckets
     """
 
-    name: Annotated[str, Field(description="File name including extension")]
-    path: Annotated[str, Field(description="Relative path within the source system")]
     content: Annotated[bytes, Field(description="File content as bytes")]
-    size: Annotated[int, Field(description="File size in bytes")]
-    modified: Annotated[int, Field(description="The UNIX timestamp when the file was last modified")]
     created: Annotated[int, Field(description="The UNIX timestamp when the file was created")]
     content_type: Annotated[str | None, Field(description="MIME type of the file")] = None
 
