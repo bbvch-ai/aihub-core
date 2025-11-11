@@ -119,7 +119,7 @@ services:
       seaweedfs-master:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/"]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -140,7 +140,7 @@ services:
     <<: *restart-policy
     volumes:
       - ./configs/seaweedfs/s3-entrypoint.sh:/usr/local/bin/s3-entrypoint.sh:ro
-    entrypoint: ["/bin/sh", "/usr/local/bin/s3-entrypoint.sh"]
+    entrypoint: [ "/bin/sh", "/usr/local/bin/s3-entrypoint.sh" ]
     environment:
       # S3 Authentication
       SEAWEEDFS_S3_USER: ${S3_STORAGE_ACCESS_KEY}
@@ -156,7 +156,7 @@ services:
       seaweedfs-filer:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/status"]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/status" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -201,14 +201,14 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/etcd-data:/etcd
     command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
     healthcheck:
-      test: ["CMD", "etcdctl", "endpoint", "health"]
+      test: [ "CMD", "etcdctl", "endpoint", "health" ]
     logging: *default-logging
 
   milvus-standalone:
     image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.5.15
     container_name: milvus
     <<: *restart-policy
-    command: ["milvus", "run", "standalone"]
+    command: [ "milvus", "run", "standalone" ]
     security_opt:
       - seccomp:unconfined
     environment:
@@ -220,7 +220,7 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/milvus-data:/var/lib/milvus
       - ./configs/milvus/milvus.latest.yaml:/milvus/configs/milvus.yaml
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      test: [ "CMD", "curl", "-f", "http://localhost:9091/healthz" ]
       start_period: 90s
     depends_on:
       etcd:
@@ -238,7 +238,7 @@ services:
     environment:
       MILVUS_URL: milvus-standalone:19530
     healthcheck:
-      test: ["NONE"] # minimal image, no healthcheck available within the image
+      test: [ "NONE" ] # minimal image, no healthcheck available within the image
     logging: *default-logging
   # </editor-fold>
 
@@ -274,7 +274,7 @@ services:
       PHOENIX_ENABLE_AUTH: "False"
       VERSION: ""
     healthcheck:
-      test: ["NONE"] # minimal image, no healthcheck available within the image
+      test: [ "NONE" ] # minimal image, no healthcheck available within the image
     logging: *default-logging
   # </editor-fold>
 
@@ -318,7 +318,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/ferretdb-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${MONGO_USERNAME}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${MONGO_USERNAME}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -738,7 +738,7 @@ services:
 
   dagster-webserver:
     image: ghcr.io/bbvch-ai/aihub-core/dagster:latest
-    container_name:  dagster-webserver
+    container_name: dagster-webserver
     <<: *restart-policy
     entrypoint:
       - dagster-webserver
@@ -1007,31 +1007,31 @@ services:
       - "443:443"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "./traefik/traefik.yml:/etc/traefik/traefik.yml:ro"
-      - "./traefik/middlewares.yml:/etc/traefik/middlewares.yml:ro"
+      - "/srv/app/traefik/traefik.yml:/etc/traefik/traefik.yml:ro"
+      - "/srv/app/traefik/middlewares.yml:/etc/traefik/middlewares.yml:ro"
       - "/srv/app/traefik/acme.json:/srv/app/traefik/acme.json"
     labels:
-    - "traefik.enable=true"
+      - "traefik.enable=true"
 
-    # ACME Challenge router (higher priority)
-    - "traefik.http.routers.acme-challenge.rule=PathPrefix(`/.well-known/acme-challenge/`)"
-    - "traefik.http.routers.acme-challenge.entrypoints=web"
-    - "traefik.http.routers.acme-challenge.priority=9000"
+      # ACME Challenge router (higher priority)
+      - "traefik.http.routers.acme-challenge.rule=PathPrefix(`/.well-known/acme-challenge/`)"
+      - "traefik.http.routers.acme-challenge.entrypoints=web"
+      - "traefik.http.routers.acme-challenge.priority=9000"
 
-    # HTTP to HTTPS redirect (lower priority, excludes ACME)
-    - "traefik.http.routers.http-catch.rule=HostRegexp(`{host:.+}`) && !PathPrefix(`/.well-known/acme-challenge/`)"
-    - "traefik.http.routers.http-catch.entrypoints=web"
-    - "traefik.http.routers.http-catch.priority=10"
-    - "traefik.http.routers.http-catch.middlewares=https-redirect"
-    - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+      # HTTP to HTTPS redirect (lower priority, excludes ACME)
+      - "traefik.http.routers.http-catch.rule=HostRegexp(`{host:.+}`) && !PathPrefix(`/.well-known/acme-challenge/`)"
+      - "traefik.http.routers.http-catch.entrypoints=web"
+      - "traefik.http.routers.http-catch.priority=10"
+      - "traefik.http.routers.http-catch.middlewares=https-redirect"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
 
-    # Dashboard
-    - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
-    - "traefik.http.routers.traefik.entrypoints=websecure"
-    - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
-    - "traefik.http.routers.traefik.service=api@internal"
-    - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:${ADMIN_PASSWORD_HASH}"
-    - "traefik.http.routers.traefik.middlewares=traefik-auth"
+      # Dashboard
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:${ADMIN_PASSWORD_HASH}"
+      - "traefik.http.routers.traefik.middlewares=traefik-auth"
   # </editor-fold>
 
   otel-collector:
@@ -1094,50 +1094,50 @@ services:
       - -c
       - |
         apk add --no-cache wget curl
-  
+        
         # Download grpc_health_probe
         wget -qO /usr/local/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/v0.4.24/grpc_health_probe-linux-amd64
         chmod +x /usr/local/bin/grpc_health_probe
-  
+        
         # Get hostname
         HOST_NAME=$${HOSTNAME:-$$(hostname)}
-  
+        
         while true; do
           # HTTP endpoints
           echo "$$ENDPOINTS" | while IFS= read -r endpoint; do
             [ -z "$$endpoint" ] && continue
-  
+        
             ts=$$(date +%s)
             tsn=$$(date +%s%N)
             name=$$(echo "$$endpoint" | cut -d: -f1)
             url="http://$$endpoint"
-  
+        
             if wget -q --spider "$$url" 2>/dev/null; then
               status="health_status: healthy"
             else
               status="health_status: unhealthy"
             fi
-  
+        
             echo "{\"Type\":\"container\",\"Action\":\"$$status\",\"Actor\":{\"Attributes\":{\"name\":\"$$name\",\"host.name\":\"$$HOST_NAME\"}},\"id\":\"$$name\",\"from\":\"$$url\",\"time\":$$ts,\"timeNano\":$$tsn}" >> /var/log/docker-health/events.ndjson
           done
-  
+        
           # gRPC endpoints
           echo "$$GRPC_ENDPOINTS" | while IFS= read -r endpoint; do
             [ -z "$$endpoint" ] && continue
-  
+        
             ts=$$(date +%s)
             tsn=$$(date +%s%N)
             name=$$(echo "$$endpoint" | cut -d: -f1)
-  
+        
             if /usr/local/bin/grpc_health_probe -addr="$$endpoint" 2>/dev/null; then
               status="health_status: healthy"
             else
               status="health_status: unhealthy"
             fi
-  
+        
             echo "{\"Type\":\"container\",\"Action\":\"$$status\",\"Actor\":{\"Attributes\":{\"name\":\"$$name\",\"host.name\":\"$$HOST_NAME\"}},\"id\":\"$$name\",\"from\":\"grpc://$$endpoint\",\"time\":$$ts,\"timeNano\":$$tsn}" >> /var/log/docker-health/events.ndjson
           done
-          
+        
           sleep 60
         done
     restart: unless-stopped
