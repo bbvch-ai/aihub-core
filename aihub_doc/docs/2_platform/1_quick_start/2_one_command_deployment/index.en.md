@@ -141,6 +141,17 @@ AZURE_OPENAI_KEY="REPLACE_WITH_AZURE_OPENAI_KEY"
 # Google Gemini (Alternative)
 GEMINI_API_KEY="REPLACE_WITH_GEMINI_KEY"
 
+# Swiss LLM Cloud (Optional)
+SWISS_LLM_CLOUD_API_URL=""                # Optional: Swiss LLM Cloud endpoint URL
+SWISS_LLM_CLOUD_API_KEY=""                # Optional: Swiss LLM Cloud API key
+
+# Cohere (Optional)
+COHERE_API_BASE=""                        # Optional: Cohere API base URL
+COHERE_API_KEY=""                         # Optional: Cohere API key
+
+# Hugging Face (Optional)
+HUGGINGFACE_API_KEY=""                    # Optional: For Hugging Face model access
+
 # =============================================================================
 # LITELLM PROXY CONFIGURATION
 # =============================================================================
@@ -189,8 +200,20 @@ PHOENIX_SECRET="REPLACE_WITH_RANDOM_STRING"
 PHOENIX_ENDPOINT="http://phoenix:6006"
 NATS_ENDPOINT="nats://localhost:4222"
 DAGSTER_HOME="~/.dagster_home"
+DAGSTER_OAUTH_ALLOWED_GROUPS="AIHubDeveloper"
+SEAWEEDFS_OAUTH_ALLOWED_GROUPS="AIHubDeveloper"
 JUPYTER_TOKEN="REPLACE_WITH_RANDOM_STRING"
 MILVUS_DIMENSION="3072"
+
+# =============================================================================
+# OBSERVABILITY CONFIGURATION
+# =============================================================================
+
+# OpenTelemetry Cloud Exporter (Optional - for production monitoring)
+OTEL_ENABLED="true"                           # Enable/disable OTEL collection
+OTEL_EXPORTER_OTLP_PROTOCOL="grpc"           # Protocol for OTEL export
+OTEL_CLOUD_ENDPOINT="localhost:4317"         # Cloud OTEL endpoint (e.g., Grafana Cloud: "otlp.grafana.net:443")
+OTEL_CLOUD_HEADERS=""                         # Authentication headers (e.g., "Authorization=Bearer YOUR_TOKEN")
 
 # =============================================================================
 # BOT DEVELOPMENT CONFIGURATION
@@ -207,6 +230,12 @@ BOT_AUTH_FAKE_ROLES="AIHubBot"
 
 # Jina AI Search (Optional)
 JINA_API_KEY=""
+
+# OpenTelemetry Configuration (Optional)
+OTEL_ENABLED="False"
+OTEL_EXPORTER_OTLP_PROTOCOL="grpc"
+OTEL_CLOUD_ENDPOINT=""
+OTEL_CLOUD_HEADERS=""
 
 # Signoz Telemetry (Optional)
 SIGNOZ_INGESTION_CLOUD_ENDPOINT=""

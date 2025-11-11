@@ -50,14 +50,14 @@ etcd:
   # It is recommended not to change this parameter if there is no specific reason.
   kvSubPath: kv
   log:
-  {%- if stage in ['dev', 'local'] %}
+  {%- if stage in ['dev', 'local', 'build'] %}
     level: debug  # Verbose logging for development
   {%- else %}
     level: info   # Standard logging for production
   {%- endif %}
     file:
       rootPath:
-  {%- if stage in ['dev', 'local'] %}
+  {%- if stage in ['dev', 'local', 'build'] %}
       maxSize: 100     # 100MB per log file (dev)
       maxAge: 3        # 3 days retention (dev)
       maxBackups: 5    # 5 backup files (dev)
@@ -321,7 +321,7 @@ rootCoord:
   ip:  # TCP/IP address of rootCoord. If not specified, use the first unicastable address
   port: 53100 # TCP port of rootCoord
   grpc:
-{%- if stage in ['dev', 'local'] %}
+{%- if stage in ['dev', 'local', 'build'] %}
     serverMaxSendSize: 268435456    # 256MB for dev
     serverMaxRecvSize: 134217728    # 128MB for dev
     clientMaxSendSize: 134217728    # 128MB for dev
@@ -352,7 +352,7 @@ proxy:
     allowedChars: $ # Additional characters allowed in names beyond underscores, letters and numbers. To allow hyphens in names, add '-' here.
   roleNameValidation:
     allowedChars: $ # Additional characters allowed in role names beyond underscores, letters and numbers. Add '-' to allow hyphens in role names.
-{%- if stage in ['dev', 'local'] %}
+{%- if stage in ['dev', 'local', 'build'] %}
   maxTaskNum: 512   # Smaller queue for dev
 {%- else %}
   maxTaskNum: 1024  # Larger queue for production
@@ -407,7 +407,7 @@ proxy:
   port: 19530 # TCP port of proxy
   internalPort: 19529
   grpc:
-{%- if stage in ['dev', 'local'] %}
+{%- if stage in ['dev', 'local', 'build'] %}
     serverMaxSendSize: 268435456    # 256MB for dev
     serverMaxRecvSize: 134217728    # 128MB for dev
     clientMaxSendSize: 134217728    # 128MB for dev
@@ -478,7 +478,7 @@ queryCoord:
   ip:  # TCP/IP address of queryCoord. If not specified, use the first unicastable address
   port: 19531 # TCP port of queryCoord
   grpc:
-{%- if stage in ['dev', 'local'] %}
+{%- if stage in ['dev', 'local', 'build'] %}
     serverMaxSendSize: 268435456    # 256MB for dev
     serverMaxRecvSize: 134217728    # 128MB for dev
     clientMaxSendSize: 134217728    # 128MB for dev
@@ -550,7 +550,7 @@ queryNode:
   enableDisk: false # enable querynode load disk index, and search on disk index
   maxDiskUsagePercentage: 95
   cache:
-  {%- if stage in ['dev', 'local'] %}
+  {%- if stage in ['dev', 'local', 'build'] %}
     memoryLimit: 1073741824  # 1GB cache for dev/local
   {%- else %}
     memoryLimit: 4294967296  # 4GB cache for prod
@@ -584,7 +584,7 @@ queryNode:
     # It defaults to 2.0, which means max read concurrency would be the value of hardware.GetCPUNum * 2.
     # Max read concurrency must greater than or equal to 1, and less than or equal to hardware.GetCPUNum * 100.
     # (0, 100]
-  {%- if stage in ['dev', 'local'] %}
+  {%- if stage in ['dev', 'local', 'build'] %}
     maxReadConcurrentRatio: 1    # Conservative for dev
   {%- else %}
     maxReadConcurrentRatio: 2    # Aggressive for prod
@@ -645,6 +645,13 @@ indexCoord:
 indexNode:
   scheduler:
     buildParallel: 1
+  ip:
+  port: 21121
+  grpc:
+    serverMaxSendSize: 536870912
+    serverMaxRecvSize: 268435456
+    clientMaxSendSize: 268435456
+    clientMaxRecvSize: 536870912
 
 dataCoord:
   channel:
@@ -655,7 +662,7 @@ dataCoord:
     checkInterval: 1 # The interval in seconds with which the channel manager advances channel states
     notifyChannelOperationTimeout: 5 # Timeout notifing channel operations (in seconds).
   segment:
-{%- if stage in ['dev', 'local'] %}
+{%- if stage in ['dev', 'local', 'build'] %}
     maxSize: 512                # 512MB segments for dev
     diskSegmentMaxSize: 1024    # 1GB disk segments for dev
 {%- else %}
@@ -687,7 +694,7 @@ dataCoord:
     channel:
       # The size threshold in MB, if the total size of growing segments of each shard
       # exceeds this threshold, the largest growing segment will be sealed.
-{%- if stage in ['dev', 'local'] %}
+{%- if stage in ['dev', 'local', 'build'] %}
       growingSegmentsMemSize: 2048    # 2GB for dev
 {%- else %}
       growingSegmentsMemSize: 4096    # 4GB for production
@@ -819,7 +826,7 @@ dataNode:
     # The maximum size of each binlog file in a segment buffered in memory. Binlog files whose size exceeds this value are then flushed to MinIO or S3 service.
     # Unit: Byte
     # Setting this parameter too small causes the system to store a small amount of data too frequently. Setting it too large increases the system's demand for memory.
-{%- if stage in ['dev', 'local'] %}
+{%- if stage in ['dev', 'local', 'build'] %}
     insertBufSize: 8388608      # 8MB buffer for dev
     deleteBufBytes: 8388608     # 8MB buffer for dev
 {%- else %}

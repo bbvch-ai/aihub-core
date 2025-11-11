@@ -19,7 +19,7 @@ receivers:
 
 processors:
   batch:
-{%- if stage == "dev" or stage == "local" %}
+{%- if stage in ['dev', 'local', 'build'] %}
     send_batch_size: 500
     timeout: 5s
 {%- elif stage == "nightly" %}
@@ -41,8 +41,6 @@ processors:
         - 'attributes["db.system"] == "mongodb"'
         - 'resource.attributes["service.name"] == "litellm" and attributes["service"] == "postgres"'
         - 'resource.attributes["service.name"] == "litellm" and attributes["service"] == "auth"'
-
-{%- if stage in ["dev", "local", "nightly"] %}
 
   # Filter to identify ONLY OpenInference spans for Phoenix
   filter/phoenix:
@@ -66,7 +64,6 @@ processors:
         statements:
           # Add project name as a resource attribute
           - set(attributes["openinference.project.name"], attributes["service.name"])
-{%- endif %}
 
 exporters:
   # Generic cloud exporter with configurable headers
@@ -79,23 +76,11 @@ exporters:
     tls:
       insecure: false
     compression: gzip
-{%- if stage == "dev" or stage == "local" %}
-    timeout: 10s
-{%- elif stage == "nightly" %}
-    timeout: 30s
-{%- elif stage == "latest" %}
     timeout: 60s
-{%- endif %}
     retry_on_failure:
       enabled: true
       initial_interval: 5s
-{%- if stage == "latest" %}
       max_interval: 60s
-{%- else %}
-      max_interval: 30s
-{%- endif %}
-
-{%- if stage in ["dev", "local", "nightly"] %}
 
   # Local Phoenix for development and debugging
   otlp/phoenix:
@@ -107,30 +92,22 @@ exporters:
       enabled: true
       initial_interval: 5s
       max_interval: 30s
-{%- endif %}
 
 service:
   extensions: [ health_check ]
   pipelines:
-{%- if stage == "latest" %}
-    # Production: Send all traces to cloud only
-    traces:
-      receivers: [otlp]
-      processors: [filter/noise, batch]
-      exporters: [otlp/cloud]
-{%- else %}
-    # Send filtered traces to cloud backend
+    # Always send OpenInference traces to local Phoenix for development
+    traces/phoenix:
+      receivers: [ otlp ]
+      processors: [ filter/phoenix, transform/phoenix, batch ]
+      exporters: [ otlp/phoenix ]
+
+    {%- if stage != 'dev' %}
+    # Send traces to cloud backend
     traces/cloud:
       receivers: [otlp]
       processors: [filter/noise, batch]
       exporters: [otlp/cloud]
-
-    # Send OpenInference traces to local Phoenix for development/debugging
-    traces/phoenix:
-      receivers: [otlp]
-      processors: [filter/phoenix, transform/phoenix, batch]
-      exporters: [otlp/phoenix]
-{%- endif %}
 
     # Send metrics to cloud backend
     metrics:
@@ -143,3 +120,4 @@ service:
       receivers: [otlp]
       processors: [batch]
       exporters: [otlp/cloud]
+    {%- endif %}

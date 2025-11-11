@@ -35,7 +35,13 @@ model_list:
 
   - model_name: text-generation/nano
     litellm_params:
-{%- if has_llama_cpp %}
+{%- if stage in ['latest', 'local', 'build'] %}
+      model: azure/gpt-5-nano
+      api_base: os.environ/AZURE_OPENAI_BASE_URL
+      api_key: os.environ/AZURE_OPENAI_KEY
+      api_version: "2025-01-01-preview"
+      drop_params: true
+{%- elif has_llama_cpp %}
       model: openai/{{ llama_cpp_alias }}
       api_base: http://llama-cpp:8182/
       api_key: XXX
@@ -49,7 +55,13 @@ model_list:
 
   - model_name: text-generation/mini
     litellm_params:
-{%- if has_llama_cpp %}
+{%- if stage in ['latest', 'local', 'build'] %}
+      model: azure/gpt-5-mini
+      api_base: os.environ/AZURE_OPENAI_BASE_URL
+      api_key: os.environ/AZURE_OPENAI_KEY
+      api_version: "2025-04-01-preview"
+      drop_params: true
+{%- elif has_llama_cpp %}
       model: openai/{{ llama_cpp_alias }}
       api_base: http://llama-cpp:8182/
       api_key: XXX
@@ -60,6 +72,19 @@ model_list:
 {%- endif %}
     model_info:
       mode: chat
+
+{%- if stage in ['latest', 'local', 'build'] %}
+
+  - model_name: text-generation/large
+    litellm_params:
+      model: azure/gpt-5
+      api_base: os.environ/AZURE_OPENAI_BASE_URL
+      api_key: os.environ/AZURE_OPENAI_KEY
+      api_version: "2025-01-01-preview"
+      drop_params: true
+    model_info:
+      mode: chat
+{%- endif %}
 
   - model_name: text-generation/ocr
     litellm_params:
@@ -93,6 +118,18 @@ model_list:
     model_info:
       mode: embedding
 
+{%- if stage in ['latest', 'local', 'build'] %}
+
+  - model_name: embedding/large
+    litellm_params:
+      model: azure/text-embedding-3-large
+      api_base: os.environ/AZURE_OPENAI_BASE_URL
+      api_key: os.environ/AZURE_OPENAI_KEY
+      api_version: "2024-02-01"
+    model_info:
+      mode: embedding
+{%- endif %}
+
   # ===================================================================
   # Reranking Models
   # ===================================================================
@@ -112,12 +149,34 @@ model_list:
       mode: rerank
 
   # ===================================================================
+  # Image Generation Models
+  # ===================================================================
+
+{%- if stage in ['latest', 'local', 'build'] %}
+
+  - model_name: image-generation
+    litellm_params:
+      model: azure/dall-e-3
+      api_base: os.environ/AZURE_OPENAI_BASE_URL
+      api_key: os.environ/AZURE_OPENAI_KEY
+      api_version: "2024-02-01"
+    model_info:
+      mode: image_generation
+      base_model: azure/dall-e-3
+{%- endif %}
+
+  # ===================================================================
   # Audio Models (Transcription & Speech)
   # ===================================================================
 
   - model_name: transcription
     litellm_params:
-{%- if has_speaches %}
+{%- if stage in ['latest', 'local', 'build'] %}
+      model: azure/gpt-4o-mini-transcribe
+      api_base: os.environ/AZURE_OPENAI_BASE_URL
+      api_key: os.environ/AZURE_OPENAI_KEY
+      api_version: "2025-03-01-preview"
+{%- elif has_speaches %}
       model: openai/whisper-small
       api_base: http://speaches:8000/
       api_key: XXX
@@ -128,11 +187,16 @@ model_list:
 {%- endif %}
     model_info:
       mode: audio_transcription
-      base_model: openai/whisper-1
+      base_model: {% if stage in ['latest', 'local', 'build'] %}azure/gpt-4o-mini-transcribe{% else %}openai/whisper-1{% endif %}
 
   - model_name: speech
     litellm_params:
-{%- if has_speaches %}
+{%- if stage in ['latest', 'local', 'build'] %}
+      model: azure/gpt-4o-mini-tts
+      api_base: os.environ/AZURE_OPENAI_BASE_URL
+      api_key: os.environ/AZURE_OPENAI_KEY
+      api_version: "2025-03-01-preview"
+{%- elif has_speaches %}
       model: openai/kokoro-82m
       api_base: http://speaches:8000/
       api_key: XXX
@@ -143,36 +207,36 @@ model_list:
 {%- endif %}
     model_info:
       mode: audio_speech
-      base_model: openai/tts-1
+      base_model: {% if stage in ['latest', 'local', 'build'] %}azure/gpt-4o-mini-tts{% else %}openai/tts-1{% endif %}
 
 # ===================================================================
 # Guardrails Configuration
 # ===================================================================
-{#guardrails:#}
-{#  - guardrail_name: presidio-mask-guard#}
-{#    litellm_params:#}
-{#      guardrail: presidio#}
-{#      default_on: true#}
-{#      mode: pre_call#}
-{#      presidio_language: de#}
-{#      presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE#}
-{#      presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE#}
-{#      output_parse_pii: true#}
-{#      pii_entities_config:#}
-{#        PERSON: MASK#}
-{#        EMAIL_ADDRESS: MASK#}
-{##}
-{#  - guardrail_name: presidio-block-guard#}
-{#    litellm_params:#}
-{#      guardrail: presidio#}
-{#      default_on: true#}
-{#      mode: pre_call#}
-{#      presidio_language: de#}
-{#      presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE#}
-{#      presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE#}
-{#      output_parse_pii: true#}
-{#      pii_entities_config:#}
-{#        CREDIT_CARD: BLOCK#}
+guardrails:
+  - guardrail_name: "presidio-mask-guard"
+    litellm_params:
+      guardrail: presidio
+      default_on: false
+      mode: "pre_call"
+      presidio_language: "de"
+      presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
+      presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
+      output_parse_pii: true
+      pii_entities_config:
+        PERSON: "MASK"
+        EMAIL_ADDRESS: "MASK"
+
+  - guardrail_name: "presidio-block-guard"
+    litellm_params:
+      guardrail: presidio
+      default_on: false
+      mode: "pre_call"
+      presidio_language: "de"
+      presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
+      presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
+      output_parse_pii: true
+      pii_entities_config:
+        CREDIT_CARD: "BLOCK"
 
 # ===================================================================
 # General Settings
@@ -180,7 +244,7 @@ model_list:
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
   database_url: os.environ/DATABASE_URL
-  store_model_in_db: true
+  store_model_in_db: false
   store_prompts_in_spend_logs: true
   maximum_spend_logs_retention_period: 365d
   maximum_spend_logs_retention_interval: 30d
@@ -190,9 +254,10 @@ general_settings:
 # ===================================================================
 litellm_settings:
   callbacks: ["detect_prompt_injection", "otel"]
-  default_fallbacks: ["text-generation/mini"]
+  default_fallbacks: ["text-generation/nano", "text-generation/mini"]
   telemetry: true
   json_logs: true
+  drop_params: true
 
 # ===================================================================
 # Router Settings

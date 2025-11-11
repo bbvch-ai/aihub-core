@@ -14,7 +14,7 @@
 
 # Debug and Tracing
 # Verbose logging for development, minimal for production
-{%- if stage in ['dev', 'local'] %}
+{%- if stage in ['dev', 'local', 'build'] %}
 debug: true
 trace: true
 trace_verbose: false
@@ -39,7 +39,7 @@ http: 8222
 # Conservative for dev, aggressive for production
 max_control_line: 4KB
 
-{%- if stage in ['dev', 'local'] %}
+{%- if stage in ['dev', 'local', 'build'] %}
 # Development: Smaller limits for faster feedback
 max_payload: 1MB
 max_pending: 512MB
@@ -66,14 +66,14 @@ jetstream {
   domain: "{{ stage }}"
 
   # Sync interval for durability
-{%- if stage in ['dev', 'local'] %}
+{%- if stage in ['dev', 'local', 'build'] %}
   sync_interval: "1m"  # More frequent sync for dev (data safety)
 {%- else %}
   sync_interval: "2m"  # Less frequent for production (performance)
 {%- endif %}
 
   # Max memory and storage
-{%- if stage in ['dev', 'local'] %}
+{%- if stage in ['dev', 'local', 'build'] %}
   max_memory_store: 512MB    # Dev: 512MB memory limit
   max_file_store: 10GB       # Dev: 10GB disk limit
 {%- else %}
@@ -83,7 +83,7 @@ jetstream {
 }
 
 # Limits per account
-{%- if stage in ['dev', 'local'] %}
+{%- if stage in ['dev', 'local', 'build'] %}
 # Development: Relaxed limits
 max_subscriptions: 1000
 max_payload: 1MB

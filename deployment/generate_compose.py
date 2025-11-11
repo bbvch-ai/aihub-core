@@ -13,20 +13,26 @@ ROOT_DIR = Path(__file__).parent.parent.resolve()
 DEPLOYMENT_DIR = Path(__file__).parent.resolve()
 
 # Stages and hardware variants
-STAGES = ["dev", "local", "latest", "nightly"]
-GPU_MODES = {False: "", True: "gpu."}
+STAGES = ["dev", "local", "latest", "nightly", "build"]
+GPU_MODES = {False: "", True: ".gpu"}
 
-# Configuration specs: (template_path, output_dir, output_name_pattern, gpu_dependent)
+# Configuration specs: (template_path, output_dir, output_name_pattern)
 CONFIG_SPECS = [
     # Docker Compose - always required
-    ("templates/docker-compose.yml.j2", ROOT_DIR, "docker-compose.{prefix}{stage}.yml", True),
+    ("templates/docker-compose.yml.j2", ROOT_DIR, "docker-compose.{stage}{hardware}.yml"),
     # Service configs - optional, skipped if template missing
-    ("templates/configs/litellm-config.yml.j2", "configs/litellm", "litellm-config.{prefix}{stage}.yml", True),
-    ("templates/configs/milvus-config.yml.j2", "configs/milvus", "milvus-config.{stage}.yml", False),
-    ("templates/configs/nats-config.conf.j2", "configs/nats", "nats-config.{stage}.conf", False),
-    ("templates/configs/dagster-config.yml.j2", "configs/dagster", "dagster-config.{stage}.yml", False),
-    ("templates/configs/workspace.yml.j2", "configs/dagster", "workspace.{stage}.yml", False),
-    ("templates/configs/otel-config.yml.j2", "configs/otel", "otel-config.{stage}.yml", False),
+    ("templates/configs/litellm-config.yml.j2", "configs/litellm", "litellm-config.{stage}{hardware}.yml"),
+    ("templates/configs/milvus-config.yml.j2", "configs/milvus", "milvus-config.{stage}{hardware}.yml"),
+    ("templates/configs/nats-config.conf.j2", "configs/nats", "nats-config.{stage}{hardware}.conf"),
+    ("templates/configs/dagster-config.yml.j2", "configs/dagster", "dagster-config.{stage}{hardware}.yml"),
+    ("templates/configs/workspace.yml.j2", "configs/dagster", "workspace.{stage}{hardware}.yml"),
+    ("templates/configs/otel-config.yml.j2", "configs/otel", "otel-config.{stage}{hardware}.yml"),
+    ("templates/configs/traefik-middlewares.yml.j2", "configs/traefik", "middlewares.{stage}{hardware}.yml"),
+    ("templates/configs/traefik-tls.yml.j2", "configs/traefik", "tls.{stage}{hardware}.yml"),
+    # Static scripts - no stage/hardware variations
+    ("templates/configs/s3-entrypoint.sh.j2", "configs/seaweedfs", "s3-entrypoint.sh"),
+    ("templates/configs/s3-init-buckets.sh.j2", "configs/seaweedfs", "init-buckets.sh"),
+    ("templates/configs/pg-init-multiple-dbs.sh.j2", "configs/postgres", "init-multiple-dbs.sh"),
 ]
 
 
@@ -60,7 +66,7 @@ def main():
     stats = {}
 
     # Process each config spec
-    for template_path, output_dir, name_pattern, gpu_dependent in CONFIG_SPECS:
+    for template_path, output_dir, name_pattern in CONFIG_SPECS:
         template = load_template(env, template_path)
 
         if not template:
@@ -75,26 +81,26 @@ def main():
         # Determine output directory
         out_dir = ROOT_DIR / output_dir if isinstance(output_dir, str) else output_dir
 
-        # Generate files
-        if gpu_dependent:
+        # Check if pattern has stage/hardware variables
+        needs_stage_hardware = "{stage}" in name_pattern or "{hardware}" in name_pattern
+
+        if needs_stage_hardware:
             # Generate for each stage × hardware combination
-            for gpu_enabled, prefix in GPU_MODES.items():
+            for gpu_enabled, hardware in GPU_MODES.items():
                 for stage in STAGES:
                     context = {"stage": stage, "gpu_enabled": gpu_enabled, **config_data}
-                    filename = name_pattern.format(prefix=prefix, stage=stage)
+                    filename = name_pattern.format(hardware=hardware, stage=stage)
                     output_path = out_dir / filename
 
                     generate_config(template, context, output_path)
                     stats[config_name] += 1
         else:
-            # Generate once per stage (GPU-independent)
-            for stage in STAGES:
-                context = {"stage": stage, "gpu_enabled": False, **config_data}
-                filename = name_pattern.format(stage=stage, prefix="")
-                output_path = out_dir / filename
+            # Generate single file (no stage/hardware variations)
+            context = {"stage": "default", "gpu_enabled": False, **config_data}
+            output_path = out_dir / name_pattern
 
-                generate_config(template, context, output_path)
-                stats[config_name] += 1
+            generate_config(template, context, output_path)
+            stats[config_name] += 1
 
     # Print summary
     print(f"\n✨ Generation complete!")
