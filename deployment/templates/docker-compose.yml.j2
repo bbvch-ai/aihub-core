@@ -980,7 +980,9 @@ services:
   # ===================================================================
 
   otel-collector:
+    container_name: otel-collector
     image: {{ image_tags.otel_collector }}
+    restart: always
     command: [ "--config=/etc/otel-config.yml" ]
     environment:
       - OTEL_CLOUD_ENDPOINT=${OTEL_CLOUD_ENDPOINT}

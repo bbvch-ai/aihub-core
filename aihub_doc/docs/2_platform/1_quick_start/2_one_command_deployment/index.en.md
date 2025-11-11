@@ -206,6 +206,16 @@ JUPYTER_TOKEN="REPLACE_WITH_RANDOM_STRING"
 MILVUS_DIMENSION="3072"
 
 # =============================================================================
+# OBSERVABILITY CONFIGURATION
+# =============================================================================
+
+# OpenTelemetry Cloud Exporter (Optional - for production monitoring)
+OTEL_ENABLED="true"                           # Enable/disable OTEL collection
+OTEL_EXPORTER_OTLP_PROTOCOL="grpc"           # Protocol for OTEL export
+OTEL_CLOUD_ENDPOINT="localhost:4317"         # Cloud OTEL endpoint (e.g., Grafana Cloud: "otlp.grafana.net:443")
+OTEL_CLOUD_HEADERS=""                         # Authentication headers (e.g., "Authorization=Bearer YOUR_TOKEN")
+
+# =============================================================================
 # BOT DEVELOPMENT CONFIGURATION
 # =============================================================================
 

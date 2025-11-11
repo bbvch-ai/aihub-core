@@ -42,8 +42,6 @@ processors:
         - 'resource.attributes["service.name"] == "litellm" and attributes["service"] == "postgres"'
         - 'resource.attributes["service.name"] == "litellm" and attributes["service"] == "auth"'
 
-{%- if stage in ["dev", "local", "nightly", "build"] %}
-
   # Filter to identify ONLY OpenInference spans for Phoenix
   filter/phoenix:
     error_mode: ignore
@@ -66,10 +64,8 @@ processors:
         statements:
           # Add project name as a resource attribute
           - set(attributes["openinference.project.name"], attributes["service.name"])
-{%- endif %}
 
 exporters:
-{%- if stage == "latest" %}
   # Generic cloud exporter with configurable headers
   # Controlled via environment variables:
   #   - OTEL_CLOUD_ENDPOINT: Target endpoint URL
@@ -85,9 +81,6 @@ exporters:
       enabled: true
       initial_interval: 5s
       max_interval: 60s
-{%- endif %}
-
-{%- if stage in ["dev", "local", "nightly", "build"] %}
 
   # Local Phoenix for development and debugging
   otlp/phoenix:
@@ -99,14 +92,19 @@ exporters:
       enabled: true
       initial_interval: 5s
       max_interval: 30s
-{%- endif %}
 
 service:
   extensions: [ health_check ]
   pipelines:
-{%- if stage == "latest" %}
-    # Production: Send all traces to cloud only
-    traces:
+    # Always send OpenInference traces to local Phoenix for development
+    traces/phoenix:
+      receivers: [ otlp ]
+      processors: [ filter/phoenix, transform/phoenix, batch ]
+      exporters: [ otlp/phoenix ]
+
+    {%- if stage != 'dev' %}
+    # Send traces to cloud backend
+    traces/cloud:
       receivers: [otlp]
       processors: [filter/noise, batch]
       exporters: [otlp/cloud]
@@ -122,10 +120,4 @@ service:
       receivers: [otlp]
       processors: [batch]
       exporters: [otlp/cloud]
-{%- else %}
-    # Send OpenInference traces to local Phoenix for development/debugging
-    traces:
-      receivers: [otlp]
-      processors: [filter/phoenix, transform/phoenix, batch]
-      exporters: [otlp/phoenix]
-{%- endif %}
+    {%- endif %}
