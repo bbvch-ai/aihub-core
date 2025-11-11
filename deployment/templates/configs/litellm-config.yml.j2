@@ -35,45 +35,35 @@ model_list:
 
   - model_name: text-generation/nano
     litellm_params:
-{%- if stage in ['latest', 'local', 'build'] %}
+{%- if has_llama_cpp %}
+      model: openai/{{ llama_cpp_alias }}
+      api_base: http://llama-cpp:8182/
+      api_key: XXX
+{%- else %}
       model: azure/gpt-5-nano
       api_base: os.environ/AZURE_OPENAI_BASE_URL
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2025-01-01-preview"
       drop_params: true
-{%- elif has_llama_cpp %}
-      model: openai/{{ llama_cpp_alias }}
-      api_base: http://llama-cpp:8182/
-      api_key: XXX
-{%- else %}
-      model: openai/gpt-4o-mini
-      api_base: os.environ/SWISS_LLM_CLOUD_API_URL
-      api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
 {%- endif %}
     model_info:
       mode: chat
 
   - model_name: text-generation/mini
     litellm_params:
-{%- if stage in ['latest', 'local', 'build'] %}
-      model: azure/gpt-5-mini
-      api_base: os.environ/AZURE_OPENAI_BASE_URL
-      api_key: os.environ/AZURE_OPENAI_KEY
-      api_version: "2025-04-01-preview"
-      drop_params: true
-{%- elif has_llama_cpp %}
+{%- if has_llama_cpp %}
       model: openai/{{ llama_cpp_alias }}
       api_base: http://llama-cpp:8182/
       api_key: XXX
 {%- else %}
-      model: openai/gpt-4o-mini
-      api_base: os.environ/SWISS_LLM_CLOUD_API_URL
-      api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
+      model: azure/gpt-5-mini
+      api_base: os.environ/AZURE_OPENAI_BASE_URL
+      api_key: os.environ/AZURE_OPENAI_KEY
+      api_version: "2025-01-01-preview"
+      drop_params: true
 {%- endif %}
     model_info:
       mode: chat
-
-{%- if stage in ['latest', 'local', 'build'] %}
 
   - model_name: text-generation/large
     litellm_params:
@@ -84,7 +74,6 @@ model_list:
       drop_params: true
     model_info:
       mode: chat
-{%- endif %}
 
   - model_name: text-generation/ocr
     litellm_params:
@@ -94,8 +83,9 @@ model_list:
       api_key: XXX
 {%- else %}
       model: openai/gpt-4o-mini
-      api_base: os.environ/SWISS_LLM_CLOUD_API_URL
-      api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
+      api_base: os.environ/AZURE_OPENAI_BASE_URL
+      api_key: os.environ/AZURE_OPENAI_KEY
+      api_version: "2025-01-01-preview"
 {%- endif %}
     model_info:
       mode: chat
@@ -112,13 +102,12 @@ model_list:
       api_key: XXX
 {%- else %}
       model: openai/text-embedding-3-small
-      api_base: os.environ/SWISS_LLM_CLOUD_API_URL
-      api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
+      api_base: os.environ/AZURE_OPENAI_BASE_URL
+      api_key: os.environ/AZURE_OPENAI_KEY
+      api_version: "2025-01-01-preview"
 {%- endif %}
     model_info:
       mode: embedding
-
-{%- if stage in ['latest', 'local', 'build'] %}
 
   - model_name: embedding/large
     litellm_params:
@@ -128,7 +117,6 @@ model_list:
       api_version: "2024-02-01"
     model_info:
       mode: embedding
-{%- endif %}
 
   # ===================================================================
   # Reranking Models
@@ -152,8 +140,6 @@ model_list:
   # Image Generation Models
   # ===================================================================
 
-{%- if stage in ['latest', 'local', 'build'] %}
-
   - model_name: image-generation
     litellm_params:
       model: azure/dall-e-3
@@ -163,7 +149,6 @@ model_list:
     model_info:
       mode: image_generation
       base_model: azure/dall-e-3
-{%- endif %}
 
   # ===================================================================
   # Audio Models (Transcription & Speech)
@@ -171,43 +156,35 @@ model_list:
 
   - model_name: transcription
     litellm_params:
-{%- if stage in ['latest', 'local', 'build'] %}
-      model: azure/gpt-4o-mini-transcribe
-      api_base: os.environ/AZURE_OPENAI_BASE_URL
-      api_key: os.environ/AZURE_OPENAI_KEY
-      api_version: "2025-03-01-preview"
-{%- elif has_speaches %}
+{%- if has_speaches %}
       model: openai/whisper-small
       api_base: http://speaches:8000/
       api_key: XXX
 {%- else %}
-      model: openai/whisper-1
-      api_base: os.environ/SWISS_LLM_CLOUD_API_URL
-      api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
-{%- endif %}
-    model_info:
-      mode: audio_transcription
-      base_model: {% if stage in ['latest', 'local', 'build'] %}azure/gpt-4o-mini-transcribe{% else %}openai/whisper-1{% endif %}
-
-  - model_name: speech
-    litellm_params:
-{%- if stage in ['latest', 'local', 'build'] %}
-      model: azure/gpt-4o-mini-tts
+      model: azure/gpt-4o-mini-transcribe
       api_base: os.environ/AZURE_OPENAI_BASE_URL
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2025-03-01-preview"
-{%- elif has_speaches %}
+{%- endif %}
+    model_info:
+      mode: audio_transcription
+      base_model: {% if has_speaches %}openai/whisper-1{% else %}azure/gpt-4o-mini-transcribe{% endif %}
+
+  - model_name: speech
+    litellm_params:
+{%- if has_speaches %}
       model: openai/kokoro-82m
       api_base: http://speaches:8000/
       api_key: XXX
 {%- else %}
-      model: openai/tts-1
-      api_base: os.environ/SWISS_LLM_CLOUD_API_URL
-      api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
+      model: azure/gpt-4o-mini-tts
+      api_base: os.environ/AZURE_OPENAI_BASE_URL
+      api_key: os.environ/AZURE_OPENAI_KEY
+      api_version: "2025-03-01-preview"
 {%- endif %}
     model_info:
       mode: audio_speech
-      base_model: {% if stage in ['latest', 'local', 'build'] %}azure/gpt-4o-mini-tts{% else %}openai/tts-1{% endif %}
+      base_model: {% if has_speaches %}openai/tts-1{% else %}azure/gpt-4o-mini-tts{% endif %}
 
 # ===================================================================
 # Guardrails Configuration
