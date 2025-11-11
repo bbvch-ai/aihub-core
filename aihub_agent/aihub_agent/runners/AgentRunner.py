@@ -60,7 +60,7 @@ class AgentRunner:
         self._loop_task: asyncio.Task | None = None
 
         self.agent_class = self.agent_type.__name__
-        self.topic_manager = AgentClassTopicManager(self.agent_class)
+        self.topic_manager = AgentClassTopicManager(agent_class=self.agent_class)
 
         self.nc: NATS | None = None
         self.js: JetStreamContext | None = None
@@ -147,9 +147,12 @@ class AgentRunner:
         )
         await self.dispatcher.start()
 
-        self.nc_publisher = NCPublisher(self.nc)
+        self.nc_publisher = NCPublisher(f"{self.agent_class}RunnerDiscoveryResponse", self.nc)
         self.discovery_event_subscriber = AgentNCSubscriber.for_agent_class_discovery_request_events(
-            self.nc, AgentTopicManager(), self.discovery_handler
+            self.nc,
+            AgentTopicManager(),
+            self.discovery_handler,
+            subscriber_name=f"{self.agent_class}RunnerDiscoveryRequest",
         )
         await self.discovery_event_subscriber.start()
 
@@ -160,6 +163,7 @@ class AgentRunner:
             handler=self.dispatcher.handle_event,
             js=self.js,
             queue_group=f"agent_runner_{self.agent_class}",
+            subscriber_name=f"{self.agent_class}RunnerControlEvents",
         )
         await self.control_event_subscriber.start()
 

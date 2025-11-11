@@ -3,15 +3,11 @@ from typing import Annotated
 from llama_index.core import PromptTemplate
 from llama_index.core.llms import LLM
 from openai import NOT_GIVEN
-from pydantic import BaseModel, Field
+from pydantic import Field
 
+from aihub_lib.generative_ai.guards.GuardResult import GuardResult
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-
-
-class GuardResult(BaseModel):
-    reasoning: str
-    success: bool
 
 
 def guard_result_factory(t: LocaleHandler) -> type[GuardResult]:

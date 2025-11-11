@@ -7,6 +7,7 @@ from aihub_lib.generative_ai.document.accessor.AbstractAnonymousFileAccessServic
     AbstractAnonymousFileAccessService,
 )
 from aihub_lib.infrastructure.azure.blob_storage.BlobStorageAccess import BlobStorageAccess
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,7 @@ class AzureAnonymousFileAccessService(AbstractAnonymousFileAccessService):
     def __init__(self):
         self._blob_storage_access = BlobStorageAccess()
 
+    @trace_fn
     def generate_sas_url(self, container: str, file_path: str, lifetime_hours: int = 24) -> str:
         """Generates a temporary read-only SAS URL for a specific blob."""
         account_name = self._blob_storage_access.get_account_name()
@@ -41,6 +43,7 @@ class AzureAnonymousFileAccessService(AbstractAnonymousFileAccessService):
 
         return f"{service_endpoint}/{container}/{file_path}?{sas_token}"
 
+    @trace_fn
     def get_url_signing_secret(self) -> str:
         """Gets the URL signing secret from Azure Blob Storage configuration."""
         return self._blob_storage_access.get_url_signing_secret()

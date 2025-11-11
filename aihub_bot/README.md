@@ -207,7 +207,7 @@ Follow this three-part process to implement a new bot integration. Each part bui
    # my_bot/MyCustomBot.py
    from aihub_bot.bots.chat.BaseChatBot import BaseChatBot
    from aihub_bot.bots.chat.CompletionHandler import CompletionHandler
-   from botbuilder.core import TurnContext
+   from microsoft_agents.hosting.core import TurnContext
    from typing_extensions import override
 
    class MyCustomBot(BaseChatBot):
@@ -611,6 +611,55 @@ The Bot-in-the-Loop pattern enables AI agents to pause their execution and reque
 6. The agent continues execution with the human input
 
 This pattern enables seamless human-AI collaboration within automated workflows.
+
+#### 🔄 Handler vs Bot: Separation of Concerns
+
+::: info Architectural Pattern
+The Bot-in-the-Loop implementation demonstrates a clear separation of concerns between two complementary components: the **Handler** (outbound message delivery) and the **Bot** (inbound message processing). Understanding this separation is crucial when working with or extending the bot-in-the-loop functionality.
+:::
+
+**Handler - Outbound Message Delivery:**
+
+The Handler is responsible for **sending** bot-in-the-loop requests from AI agents to human users via communication channels:
+
+- **Purpose**: Delivers questions from AI agents to Slack/Teams channels
+- **Trigger**: AI agent requests human input during workflow execution
+- **Responsibilities**:
+  - Manages thread state and conversation tracking
+  - Builds channel-specific conversation references
+  - Formats and sends outbound messages
+  - Stores thread identifiers for matching future responses
+
+**Bot - Inbound Message Processing:**
+
+The Bot is responsible for **receiving** human responses from Slack/Teams and routing them back to waiting AI agents:
+
+- **Purpose**: Captures human responses and returns them to AI agents
+- **Trigger**: Human replies in Slack/Teams thread
+- **Responsibilities**:
+  - Parses incoming messages to identify the thread
+  - Matches responses to original request threads
+  - Extracts responder information (user identity, metadata)
+  - Publishes response events back to waiting agents
+
+**Why This Separation Matters:**
+
+1. **Distinct Data Flow**: Handler manages agent→human flow; Bot manages human→agent flow
+2. **Different Event Sources**: Handler consumes internal agent events; Bot consumes external channel activities
+3. **Inverse Operations**: Handler **builds** channel-specific references; Bot **parses** them back
+4. **Clear Boundaries**: Each component has a single, well-defined responsibility
+5. **Independent Evolution**: Changes to outbound logic don't affect inbound processing and vice versa
+
+**Shared Concepts:**
+
+While the components are separate, they share domain concepts:
+
+- Both reference the same thread tracking data
+- Both use channel-specific identifiers (Slack thread timestamps, Teams message IDs)
+- Both operate on the same conversation lifecycle
+- They communicate through a shared thread registry
+
+This architectural pattern ensures maintainability and makes it easy to extend bot-in-the-loop functionality to new channels by implementing channel-specific logic in each component independently.
 
 ### 🛡️ Error Handling and Testing
 

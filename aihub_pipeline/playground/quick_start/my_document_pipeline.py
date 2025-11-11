@@ -1,5 +1,6 @@
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from aihub_lib.nats.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
 from dagster import AssetKey, Definitions, DynamicPartitionsDefinition
 
 # Import AI-Hub pipeline factories
@@ -8,6 +9,7 @@ from aihub_pipeline.assets.factories.data_lake_to_vector_store.nodes_factory imp
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (
     observable_data_lake_factory,
 )
+from aihub_pipeline.const.pipeline_names import INTERNAL_DATALAKE, INTERNAL_KNOWLEDGE_DB
 from aihub_pipeline.jobs.factory import observe_source_job
 
 # Import AI-Hub resources and utilities
@@ -23,6 +25,8 @@ from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import
 from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
 from aihub_pipeline.schedules.factory import daily_schedule_at
 from aihub_pipeline.sensors.factory import default_automation_sensor
+from aihub_pipeline.sensors.nats.nats_document_uploaded_sensor import nats_document_uploaded_sensor
+from aihub_pipeline.util.bucket_utils import get_db_name_from_bucket_name
 
 # Pipeline configuration
 DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])
@@ -30,9 +34,6 @@ DOCUMENT_KEY = AssetKey(["playground", "documents"])
 NODES_KEY = AssetKey(["playground", "nodes"])
 
 CONTAINER_NAME = "playground"
-DIRECTORY_NAME = "quick_start"
-NAMESPACE_NAME = DIRECTORY_NAME
-STORE_NAME = CONTAINER_NAME
 
 # Dynamic partitions for scalable document processing
 document_partitions = DynamicPartitionsDefinition(name="document_partitions")
@@ -51,7 +52,7 @@ assets = [
 # Define the job to observe the data lake and trigger processing
 observe_job = observe_source_job(
     observable_asset=observable_asset,
-    namespace_name=NAMESPACE_NAME,
+    source_location_name=CONTAINER_NAME,
 )
 
 # Define the complete pipeline
@@ -59,7 +60,7 @@ defs = Definitions(
     assets=assets,
     resources={
         # Data lake I/O managers for S3-compatible storage
-        **default_io_manager_s3_datalake_resources(container_name=CONTAINER_NAME, directory_name=DIRECTORY_NAME),
+        **default_io_manager_s3_datalake_resources(container_name=CONTAINER_NAME),
         # Document processing resources
         "document_parser": DocumentParserResource(loader_type=LoaderType.DOCLING),
         "node_parser": MarkdownStructuralNodeParserResource(),
@@ -67,25 +68,33 @@ defs = Definitions(
         # Vector store and document store (MongoDB + Milvus)
         **local_mongo_milvus_storage_context_resource(
             vector_store_uri="http://localhost:19530",
-            store_name=STORE_NAME,
-            namespace_name=NAMESPACE_NAME,
+            store_name=get_db_name_from_bucket_name(bucket_name=CONTAINER_NAME, auto_sync=False),
         ),
         # Data lake resources for file management
         **s3_data_lake_resources(
             container_name=CONTAINER_NAME,
-            directory_name=DIRECTORY_NAME,
-            figures_directory_name="__figures__",
         ),
         # AI models for embeddings and summaries
         "embedding_model": EmbeddingModelResource(
-            embedding_config=EmbeddingModelConfig(model_name="azure/text-embedding-3-large"),
+            embedding_config=EmbeddingModelConfig(model_name="embedding/large"),
         ),
-        "language_model": LanguageModelResource(llm_config=LLMConfig(model_name="azure/gpt-4o-mini")),
+        "language_model": LanguageModelResource(llm_config=LLMConfig(model_name="text-generation/nano")),
     },
     # Add jobs for pipeline operations
     jobs=[observe_job],
     # Add scheduling - observe daily at midnight
     schedules=[daily_schedule_at(observe_job, hour=0, minute=0)],
-    # Add sensors for automation
-    sensors=[default_automation_sensor(assets)],
+    # Add sensors for automation and nats observation
+    sensors=[
+        default_automation_sensor(assets),
+        nats_document_uploaded_sensor(
+            job=observe_job,
+            topic_manager=PipelineInstanceTopicManager(
+                source_type=INTERNAL_DATALAKE,
+                source_id=CONTAINER_NAME,
+                target_type=INTERNAL_KNOWLEDGE_DB,
+                target_id=CONTAINER_NAME,
+            ),
+        ),
+    ],
 )

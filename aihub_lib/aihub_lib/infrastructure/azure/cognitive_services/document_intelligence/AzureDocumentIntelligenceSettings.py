@@ -21,13 +21,7 @@ class AzureDocumentIntelligenceSettings(EnvironmentSettings):
             description="",
         ),
     ] = [
-        "jpg",
-        "jpeg",
-        "png",
-        "bmp",
-        "tiff",
         "pdf",
-        "heif",
         "docx",
         "xlsx",
         "pptx",

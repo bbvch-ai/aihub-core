@@ -73,7 +73,12 @@ Time to write! Create your feature documentation file:
 
 ```bash
 # Navigate to the features directory
-cd aihub_doc/docs/features/
+
+# Platform feature (visible in the UI)
+cd aihub_doc/docs/2_platform/5_feature_overview/ 
+# OR
+# SDK features, primarily important for extending or maintaining the platform
+cd aihub_doc/docs/3_sdk/1_feature_overview/ 
 ```
 
 - Create a new directory for your feature
@@ -82,7 +87,7 @@ cd aihub_doc/docs/features/
 ### Step 5: Follow Our Feature Documentation Structure
 
 Your feature documentation MUST follow this exact structure. Use the MCP Integration documentation
-(`aihub_doc/docs/features/mcp/index.md`) as your template reference.
+(`aihub_doc/docs/2_platform/5_feature_overview/mcp/index.md`) as your template reference.
 
 **Required Front Matter:**
 
@@ -229,7 +234,7 @@ Ensure your feature documentation integrates well:
 ls -la aihub_doc/docs/features/
 
 # Look at the structure of similar features
-head -50 aihub_doc/docs/features/*/index.md
+head -50 aihub_doc/docs/features/*/index.en.md
 ```
 
 **Integration Checklist:**

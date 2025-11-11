@@ -1,10 +1,15 @@
 from collections.abc import Sequence
 from pathlib import Path
 
+from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
+from aihub_lib.nats.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
 from dagster import (
     AnchorBasedFilePathMapping,
     AssetKey,
     AssetsDefinition,
+    AssetSelection,
     Definitions,
     DynamicPartitionsDefinition,
     link_code_references_to_git,
@@ -19,22 +24,39 @@ from aihub_pipeline.assets.factories.data_lake_to_vector_store.observable_data_l
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.removed_documents_factory import (
     removed_documents_factory,
 )
-from aihub_pipeline.executors.factory import default_process_executor
-from aihub_pipeline.jobs.factory import observe_source_job
-from aihub_pipeline.resources.factory import (
-    azure_data_lake_resources,
-    default_io_manager_azure_datalake_resources,
-    default_llm_resources,
-    mongo_aisearch_storage_context_resources,
+from aihub_pipeline.assets.factories.data_lake_to_vector_store.summary_nodes_factory import summary_nodes_factory
+from aihub_pipeline.assets.factories.share_point_to_data_lake.observable_share_point_factory import (
+    observable_share_point_factory,
 )
+from aihub_pipeline.assets.factories.share_point_to_data_lake.removed_data_lake_files_factory import (
+    removed_data_lake_files_factory,
+)
+from aihub_pipeline.assets.factories.share_point_to_data_lake.sharepoint_files_to_data_lake_files_factory import (
+    share_point_files_to_data_lake_files_factory,
+)
+from aihub_pipeline.const.pipeline_names import INTERNAL_DATALAKE, INTERNAL_KNOWLEDGE_DB
+from aihub_pipeline.executors.factory import default_process_executor
+from aihub_pipeline.io.SharePointIOManager import SharePointIoManager
+from aihub_pipeline.jobs.factory import materialize_asset_job, observe_source_job
+from aihub_pipeline.resources.factory import (
+    default_io_manager_s3_datalake_resources,
+    local_mongo_milvus_storage_context_resource,
+    s3_data_lake_resources,
+)
+from aihub_pipeline.resources.llm.EmbeddingModelResource import EmbeddingModelResource
+from aihub_pipeline.resources.llm.LanguageModelResource import LanguageModelResource
 from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource
 from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
-from aihub_pipeline.schedules.factory import default_daily_materialize_schedule
+from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
+from aihub_pipeline.resources.share_point.SharePointResource import SharePointResource
+from aihub_pipeline.schedules.factory import daily_schedule_at
 from aihub_pipeline.sensors.factory import default_automation_sensor
+from aihub_pipeline.sensors.nats.nats_document_uploaded_sensor import nats_document_uploaded_sensor
+from aihub_pipeline.util.bucket_utils import get_db_name_from_bucket_name
 
 
 def asset_definition_with_code_link(
-    assets: Sequence[AssetsDefinition], customer_name: str, namespace_name: str
+    assets: Sequence[AssetsDefinition], customer_name: str, datalake_container_name: str
 ) -> Sequence[AssetsDefinition]:
     return link_code_references_to_git(
         assets_defs=with_source_code_references(assets),
@@ -42,58 +64,183 @@ def asset_definition_with_code_link(
         git_branch="main",
         file_path_mapping=AnchorBasedFilePathMapping(
             local_file_anchor=Path(__file__),
-            file_anchor_path_in_repository=f"pipelines/{namespace_name}/__init__.py",
+            file_anchor_path_in_repository=f"pipelines/{datalake_container_name}/__init__.py",
         ),
     )
 
 
 def default_definitions(
     datalake_container_name: str,
-    namespace_name: str,
-    datalake_directory_name: str,
-    vector_store_name: str,
-    document_store_name: str,
-    dimensions: int = 3072,
+    embedding_model_name: str = "embedding/small",
+    llm_model_name: str = "text-generation/mini",
+    figures_directory_name: str = "__figures__",
+    with_summary_nodes: bool = True,
+    observe_job_hour: int = 2,
+    observe_job_minute: int = 0,
+    remove_job_hour: int = 3,
+    remove_job_minute: int = 0,
 ) -> Definitions:
+    """
+    Creates a complete DataLake to vector store pipeline using local resources.
+
+    Use this when you have documents in S3 and want to prepare them for RAG applications.
+    The pipeline processes raw files into searchable embeddings stored in local Mongo and Milvus.
+
+    Pipeline: S3 → Document Processing → Mongo → Node Chunking → Summary Generation → Milvus
+    """
     document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 
-    DATA_LAKE_KEY = AssetKey([namespace_name, "data_lake"])
-    DOCUMENT_KEY = AssetKey([namespace_name, "documents"])
-    NODES_KEY = AssetKey([namespace_name, "nodes"])
-    REMOVED_DOCUMENTS_KEY = AssetKey([namespace_name, "removed_documents"])
+    data_lake_key = AssetKey([datalake_container_name, "data_lake"])
+    document_key = AssetKey([datalake_container_name, "documents"])
+    nodes_key = AssetKey([datalake_container_name, "nodes"])
+    removed_documents_key = AssetKey([datalake_container_name, "removed_documents"])
 
-    observable_asset = observable_data_lake_factory(DATA_LAKE_KEY, document_partitions)
+    observable_asset = observable_data_lake_factory(data_lake_key, document_partitions)
     assets = [
         observable_asset,
-        removed_documents_factory(REMOVED_DOCUMENTS_KEY, data_lake_key=DATA_LAKE_KEY),
-        documents_factory(DOCUMENT_KEY, data_lake_key=DATA_LAKE_KEY, partitions=document_partitions),
-        nodes_factory(NODES_KEY, document_key=DOCUMENT_KEY, partitions=document_partitions),
+        removed_documents_factory(removed_documents_key, data_lake_key=data_lake_key),
+        documents_factory(document_key, data_lake_key=data_lake_key, partitions=document_partitions),
+        nodes_factory(nodes_key, document_key=document_key, partitions=document_partitions),
     ]
+    if with_summary_nodes:
+        summary_nodes_key = AssetKey([datalake_container_name, "summary_nodes"])
+        assets.append(
+            summary_nodes_factory(
+                summary_nodes_key, document_key=document_key, nodes_key=nodes_key, partitions=document_partitions
+            )
+        )
 
     job = observe_source_job(
         observable_asset=observable_asset,
-        namespace_name=namespace_name,
+        source_location_name=datalake_container_name,
     )
 
+    remove_job = materialize_asset_job(
+        source_location_name=datalake_container_name,
+        job_name="remove_documents",
+        asset_selection=AssetSelection.keys(removed_documents_key),
+    )
+
+    store_name = get_db_name_from_bucket_name(bucket_name=datalake_container_name, auto_sync=False)
+    llm_config = LLMConfig(model_name=llm_model_name)
     return Definitions(
         assets=assets,
         resources={
             "document_parser": DocumentParserResource(),
-            "node_parser": MarkdownStructuralNodeParserResource(),
-            **default_llm_resources(),
-            **default_io_manager_azure_datalake_resources(
-                container_name=datalake_container_name, directory_name=datalake_directory_name
+            "node_parser": MarkdownStructuralNodeParserResource(llm_config=llm_config),
+            "summary_parser": RecursiveSummaryParserResource(),
+            **default_io_manager_s3_datalake_resources(container_name=datalake_container_name),
+            **local_mongo_milvus_storage_context_resource(
+                vector_store_uri=MilvusSettings().URL,
+                store_name=store_name,
             ),
-            **mongo_aisearch_storage_context_resources(
-                vector_store_name=vector_store_name,
-                document_store_name=document_store_name,
-                namespace_name=namespace_name,
-                dimensions=dimensions,
+            **s3_data_lake_resources(
+                container_name=datalake_container_name,
             ),
-            **azure_data_lake_resources(container_name=datalake_container_name, directory_name=datalake_directory_name),
+            "embedding_model": EmbeddingModelResource(
+                embedding_config=EmbeddingModelConfig(model_name=embedding_model_name),
+            ),
+            "language_model": LanguageModelResource(llm_config=llm_config),
+        },
+        sensors=[
+            default_automation_sensor(assets),
+            nats_document_uploaded_sensor(
+                job=job,
+                topic_manager=PipelineInstanceTopicManager(
+                    source_type=INTERNAL_DATALAKE,
+                    source_id=datalake_container_name,
+                    target_type=INTERNAL_KNOWLEDGE_DB,
+                    target_id=store_name,
+                ),
+            ),
+        ],
+        executor=default_process_executor(),
+        jobs=[job, remove_job],
+        schedules=[
+            daily_schedule_at(job, hour=observe_job_hour, minute=observe_job_minute),
+            daily_schedule_at(remove_job, hour=remove_job_hour, minute=remove_job_minute),
+        ],
+    )
+
+
+def default_sharepoint_to_datalake_definitions(
+    datalake_container_name: str,
+    datalake_directory_name: str | None = None,
+    target_folders: list[str] | None = None,
+    exclude_folders: list[str] | None = None,
+    supported_filetypes: list[str] | None = None,
+    observe_job_hour: int = 0,
+    observe_job_minute: int = 0,
+    remove_job_hour: int = 1,
+    remove_job_minute: int = 0,
+) -> Definitions:
+    """
+    Creates a SharePoint to DataLake pipeline using local S3-compatible storage.
+
+    Use this when you need to sync corporate documents from SharePoint to your local data lake.
+    The pipeline monitors SharePoint for changes and automatically downloads new/updated files
+    to your local S3 storage. It handles authentication, filtering, and cleanup of deleted files.
+
+    Pipeline: SharePoint → S3
+
+    This is the first step - combine with default_definitions() to process files into
+    embeddings for RAG applications.
+    """
+    sharepoint_partitions = DynamicPartitionsDefinition(name="sharepoint_partitions")
+
+    sharepoint_key = AssetKey([datalake_container_name, "sharepoint"])
+    data_lake_files_key = AssetKey([datalake_container_name, "data_lake_files"])
+    removed_data_lake_files_key = AssetKey([datalake_container_name, "removed_data_lake_files"])
+
+    observable_sharepoint_asset = observable_share_point_factory(sharepoint_key, sharepoint_partitions)
+
+    assets = [
+        observable_sharepoint_asset,
+        share_point_files_to_data_lake_files_factory(
+            key=data_lake_files_key,
+            share_point_key=sharepoint_key,
+            partitions=sharepoint_partitions,
+        ),
+        removed_data_lake_files_factory(
+            key=removed_data_lake_files_key,
+            share_point_key=sharepoint_key,
+        ),
+    ]
+
+    observe_job = observe_source_job(
+        observable_asset=observable_sharepoint_asset,
+        source_location_name=datalake_container_name,
+    )
+
+    remove_job = materialize_asset_job(
+        source_location_name=datalake_container_name,
+        job_name="remove_sharepoint_files",
+        asset_selection=AssetSelection.keys(removed_data_lake_files_key),
+    )
+
+    sharepoint_client = SharePointResource(
+        target_folders=target_folders,
+        exclude_folders=exclude_folders,
+        supported_filetypes=supported_filetypes,
+    )
+
+    sharepoint_io_manager = SharePointIoManager(share_point_client=sharepoint_client)
+
+    return Definitions(
+        assets=assets,
+        resources={
+            "share_point_client": sharepoint_client,
+            "sharepoint_io_manager": sharepoint_io_manager,
+            **s3_data_lake_resources(
+                container_name=datalake_container_name,
+                directory_name=datalake_directory_name,
+            ),
         },
         sensors=[default_automation_sensor(assets)],
         executor=default_process_executor(),
-        jobs=[job],
-        schedules=[default_daily_materialize_schedule(job)],
+        jobs=[observe_job, remove_job],
+        schedules=[
+            daily_schedule_at(observe_job, hour=observe_job_hour, minute=observe_job_minute),
+            daily_schedule_at(remove_job, hour=remove_job_hour, minute=remove_job_minute),
+        ],
     )

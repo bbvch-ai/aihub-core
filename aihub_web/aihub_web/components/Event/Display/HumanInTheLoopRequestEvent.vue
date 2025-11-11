@@ -19,14 +19,14 @@
 
 <script setup lang="ts">
 import type {
-  AssistantChatMessageOutput,
-  HumanInTheLoopRequestEvent,
+  ChatMessageOutput,
+  HumanInTheLoopRequestEventOutputReadable,
   ThreadDto,
   AgentEventReadable,
 } from '@core/sdk/client'
 
 const props = defineProps<{
-  event: AgentEventReadable & { event: HumanInTheLoopRequestEvent }
+  event: AgentEventReadable & { event: HumanInTheLoopRequestEventOutputReadable }
   thread: ThreadDto
 }>()
 
@@ -37,7 +37,7 @@ const isOpen = computed<boolean>(() => {
   return runForEvent(props.thread, props.event)?.open_hitl ?? false
 })
 
-const message = computed<AssistantChatMessageOutput>(() => {
+const message = computed<ChatMessageOutput>(() => {
   return {
     role: 'assistant',
     agent_class: props.event.agent_class,

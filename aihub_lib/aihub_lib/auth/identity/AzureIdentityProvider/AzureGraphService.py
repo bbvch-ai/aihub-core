@@ -75,7 +75,9 @@ class AzureGraphService:
             **kwargs.pop("headers", {}),
         }
 
-        async with httpx.AsyncClient() as client:
+        # Increased connect timeout to 30s to allow IPv6 failures to fall back to IPv4
+        timeout = httpx.Timeout(30.0, connect=30.0, read=10.0)
+        async with httpx.AsyncClient(timeout=timeout) as client:
             response = await client.request(method, url, headers=headers, **kwargs)
 
         # Handle binary content (e.g., images) separately

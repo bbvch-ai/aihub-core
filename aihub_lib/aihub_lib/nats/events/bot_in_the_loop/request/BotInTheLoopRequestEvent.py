@@ -1,12 +1,54 @@
 from typing import Annotated, ClassVar
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import ControlEvent
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
+
+
+class TeamsConfig(BaseModel):
+    channel_id: Annotated[
+        str,
+        Field(
+            description="The ID of the Teams channel where the request is sent to.",
+            pattern=r"^[0-9]+:[a-zA-Z0-9_-]+@thread\.(tacv2|skype)$",
+        ),
+    ]
+    tenant_id: Annotated[
+        str,
+        Field(
+            description="The ID of the Teams tenant where the channel resides (Azure AD tenant ID).",
+            pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+        ),
+    ]
+    bot_id: Annotated[
+        str,
+        Field(
+            description="The UUID of the Teams bot (will be prefixed with '28:' when used in Bot Framework).",
+            pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+        ),
+    ]
+
+    @property
+    def bot_framework_id(self) -> str:
+        """Get the bot ID in Bot Framework format (28:{UUID})."""
+        return f"28:{self.bot_id}"
+
+
+class SlackConfig(BaseModel):
+    channel_id: Annotated[
+        str, Field(description="The ID of the Slack channel where the request is sent to.", pattern=r"^C[0-9A-Z]+$")
+    ]
+    service_url: Annotated[
+        str,
+        Field(
+            description="The Bot Framework service URL for Slack (OAuth & Permissions Redirect URL). "
+            "Common values: 'https://slack.botframework.com' (global) or 'https://europe.slack.botframework.com' (EU).",
+        ),
+    ] = "https://slack.botframework.com"
 
 
 class BotInTheLoopRequestEvent(ControlEvent):
@@ -30,9 +72,14 @@ class BotInTheLoopRequestEvent(ControlEvent):
         ),
     ]
     question: Annotated[str, Field(description="The query or prompt presented to the human operator.")]
-    slack_channel_id: Annotated[
-        str, Field(description="The ID of the Slack channel where the request is sent to.", pattern=r"^C[0-9A-Z]+$")
-    ]
+    slack_config: Annotated[
+        SlackConfig | None,
+        Field(description="Configuration details for sending the request via Slack."),
+    ] = None
+    teams_config: Annotated[
+        TeamsConfig | None,
+        Field(description="Configuration details for sending the request via Microsoft Teams."),
+    ] = None
     topic: Annotated[
         PartialAgentTopic | AgentInstanceTopic,
         Field(

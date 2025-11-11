@@ -1,3 +1,8 @@
+# ruff: noqa: E402
+from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
+
+AihubInstrumentor().instrument()
+
 import asyncio
 
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
@@ -23,7 +28,7 @@ async def main():
             open_webui_knowledge_id="c49fd8bb-8e6b-4ed5-ba31-5e97b55bcbe8",
             open_webui_api_key="sk-acb200cc04414a84867ad239471549cb",
             open_webui_api_url="http://localhost:8080",
-            llm=LLMConfig(model_name="azure/gpt-4o-mini"),
+            llm=LLMConfig(model_name="text-generation/mini"),
         ),
     )
 

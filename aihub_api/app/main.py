@@ -63,7 +63,7 @@ runner.mount(
     .tts(),
     EvaluationController(
         auth=auth,
-        judge=LLMConfig(model_name="azure/gpt-4o"),
+        judge=LLMConfig(model_name="text-generation/large"),
     )
     .create_dataset()
     .get_datasets()
@@ -77,7 +77,7 @@ runner.mount(
         vector_store_factory=lambda collection: create_milvus_vector_store(
             MilvusSettings().URL, collection, MilvusSettings().DIMENSION
         ),
-        translation_llm_config=LLMConfig(model_name="azure/gpt-4o-mini"),
+        translation_llm_config=LLMConfig(model_name="text-generation/mini"),
     )
     .create_namespace()
     .update_namespace()
@@ -85,17 +85,11 @@ runner.mount(
     .get_documents_for_namespace()
     .get_document_by_id()
     .get_nodes_for_document()
-    .get_summary_nodes_for_document(),
-    FileController(auth=auth)
-    .get_file_url()
-    .get_file_redirect()
-    .get_anonymous_file_url()
-    .get_anonymous_file_redirect()
-    .get_supported_file_types()
-    .initiate_file_upload()
-    .validate_file_upload()
+    .get_summary_nodes_for_document()
+    .initiate_document_upload()
+    .validate_document_upload()
     .get_supported_file_types(),
-    NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
+    FileController(auth=auth).get_file_url().get_file_redirect().get_anonymous_file_url().get_anonymous_file_redirect(),
     NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
 )
 

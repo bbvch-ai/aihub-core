@@ -11,6 +11,7 @@ from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
 from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.persistence.utils import str_to_object_id
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
@@ -22,6 +23,7 @@ from openai.types.audio import Transcription, TranscriptionVerbose
 from openai.types.chat import ChatCompletion, ChatCompletionChunk, ChatCompletionMessage, ChatCompletionMessageParam
 from openai.types.chat.chat_completion import Choice as JsonChoice
 from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
+from opentelemetry.propagate import inject
 from pydantic import BaseModel
 from pydub import AudioSegment
 from starlette.responses import StreamingResponse
@@ -56,6 +58,7 @@ class OpenaiService:
     """
 
     @staticmethod
+    @trace_fn
     async def get_models() -> ModelResponse:
         """
         Retrieve the list of available chat models.
@@ -66,6 +69,7 @@ class OpenaiService:
         return ModelResponse(data=models)
 
     @staticmethod
+    @trace_fn
     async def get_models_with_assistants(
         *,
         nc: NATS,
@@ -97,6 +101,7 @@ class OpenaiService:
         return ModelResponse(data=[*chat_models, *assistants])
 
     @staticmethod
+    @trace_fn
     async def get_model(model_name: str) -> ModelDetails:
         """
         Fetch details for a specific chat model by name.
@@ -109,6 +114,7 @@ class OpenaiService:
         return models[0]
 
     @staticmethod
+    @trace_fn
     async def get_model_with_assistants(
         *,
         model_name: str,
@@ -137,6 +143,7 @@ class OpenaiService:
         )
 
     @staticmethod
+    @trace_fn
     async def get_embeddings(
         *,
         model_name: str,
@@ -169,6 +176,7 @@ class OpenaiService:
         )
 
     @staticmethod
+    @trace_fn
     async def chat_completion(
         *,
         model_name: str,
@@ -216,6 +224,7 @@ class OpenaiService:
             return await client.chat.completions.create(**kwargs)
 
     @staticmethod
+    @trace_fn
     async def chat_completion_with_assistants(
         *,
         model_name: str,
@@ -267,6 +276,7 @@ class OpenaiService:
         )
 
     @staticmethod
+    @trace_fn
     async def json_assistant(
         *,
         agent_class: str,
@@ -328,6 +338,7 @@ class OpenaiService:
         )
 
     @staticmethod
+    @trace_fn
     async def stream_assistant(
         *,
         agent_class: str,
@@ -412,6 +423,7 @@ class OpenaiService:
         )
 
     @staticmethod
+    @trace_fn
     async def generate_image(
         *,
         model_name: str,
@@ -431,6 +443,7 @@ class OpenaiService:
         return await client.images.generate(**kwargs)
 
     @staticmethod
+    @trace_fn
     async def stt(
         *,
         model_name: str,
@@ -461,7 +474,9 @@ class OpenaiService:
         for i, audio_chunk in enumerate(audio_chunks):
             buffer = io.BytesIO()
             audio_chunk.export(buffer, format="wav")
-            file_tuple = (file.filename, buffer, "audio/wav")
+            filename_without_ext = file.filename.rsplit(".", 1)[0] if "." in file.filename else file.filename
+            wav_filename = f"{filename_without_ext}_chunk{i}.wav"
+            file_tuple = (wav_filename, buffer, "audio/wav")
 
             result: TranscriptionChunk = await client.audio.transcriptions.create(
                 model=model_name,
@@ -494,6 +509,7 @@ class OpenaiService:
             return Transcription(text=merged_text)
 
     @staticmethod
+    @trace_fn
     async def tts(
         *,
         model_name: str,
@@ -571,6 +587,8 @@ class OpenaiService:
             "guardrail_config": {"language": locale},
             "metadata": {"tags": metadata_tags},
         }
+        sdk_call_kwargs["extra_headers"] = {}
+        inject(sdk_call_kwargs)
 
         return sdk_call_kwargs
 

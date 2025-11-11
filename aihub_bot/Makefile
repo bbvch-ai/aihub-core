@@ -1,3 +1,6 @@
+-include .env
+export
+
 lint:
 	@echo "Running linter..."
 	poetry run ruff check --fix
@@ -38,4 +41,8 @@ run-prod:
 		--timeout=300 \
 		-b 0.0.0.0:8001 \
 		--forwarded-allow-ips=* \
-		app/main:app
+		app.main:app
+
+agents-playground:
+	@echo "Starting Agents Playground with Azure OpenAI configuration (using secret)..."
+	~/agentsplayground -e "http://localhost:8001/api/v1/openai/chat/completions/json?model_name=azure/gpt-4o-mini" -c "emulator" --client-id "aed8ad1c-a393-4cfe-a296-7468914e2151" --client-secret "${CLIENT_SECRET}"

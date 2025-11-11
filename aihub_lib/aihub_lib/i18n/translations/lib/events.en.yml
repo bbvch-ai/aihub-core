@@ -50,9 +50,53 @@ thought_event:
   name: "Thought Process"
   description: "The agent shares its internal thought process, which helps it understand and solve the task."
 
+guard_accept_event:
+  name: "Request Accepted"
+  description: "The request passed all guard checks and is allowed to proceed."
+
 guard_rejection_event:
   name: "Request Rejected"
   description: "The request was rejected for security reasons or due to policy violations."
+
+few_shot_guard_accept_event:
+  name: "Few-Shot Guard Accepted"
+  description: "The request matches the patterns from few-shot examples and is allowed to proceed."
+
+few_shot_guard_reject_event:
+  name: "Few-Shot Guard Rejected"
+  description: "The request does not match the patterns from few-shot examples and is blocked."
+
+right_agent_accept_event:
+  name: "Right Agent Selected"
+  description: "The correct agent has been identified for handling this specific task."
+
+wrong_agent_reject_event:
+  name: "Wrong Agent Selected"
+  description: "The selected agent is not appropriate for handling this specific task."
+
+agent_suitability_accept_event:
+  name: "Agent Suitable for Task"
+  description: "The agent's capabilities match the user's request and can handle the task."
+
+agent_suitability_reject_event:
+  name: "Agent Unsuitable for Task"
+  description: "The agent's capabilities do not match the user's request and cannot handle the task."
+
+context_sufficient_accept_event:
+  name: "Sufficient Context Available"
+  description: "There is enough context available to answer the user's query without additional retrieval."
+
+context_insufficient_reject_event:
+  name: "Insufficient Context Available"
+  description: "More context is needed to properly answer the user's query."
+
+sensitive_info_accept_event:
+  name: "Response Safe to Share"
+  description: "The response does not contain sensitive information and can be safely shared."
+
+sensitive_info_reject_event:
+  name: "Sensitive Information Detected"
+  description: "The response contained sensitive information that has been removed or redacted."
 
 hitl_request_event:
   name: "User Query"
@@ -109,3 +153,7 @@ exception_event:
 user_message_event:
   name: "User Request"
   description: "The agent has received a message from the user and is processing it, taking into account the previous chat history."
+
+standalone_question_condenser_event:
+  name: "Question Condensed"
+  description: "The user's request has been condensed to a standalone question for better retrieval."

@@ -1,8 +1,14 @@
+# ruff: noqa: E402
+from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
+
+AihubInstrumentor().instrument()
+
 import asyncio
 
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
-from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig, LLMParameter
+from aihub_lib.generative_ai.resources.models.llm.RerankingModelConfig import RerankingModelConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
@@ -12,6 +18,7 @@ from aihub_lib.testing.logging.logger import enable_logging
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
+from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
 from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.agents.RagAgent.configs.RetrieveSummariesConfig import RetrieveSummariesConfig
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
@@ -34,9 +41,10 @@ async def main():
                 fr="Ceci est l'agent RAG par défaut",
                 it="Questo è l'agente RAG predefinito",
             ),
-            llm=LLMConfig(model_name="local/qwen3-small"),
-            check_context_sufficiency=True,
-            number_of_input_tokens=12000,
+            # when using nano temp needs to be 1.0 and nothing else
+            llm=LLMConfig(model_name="text-generation/nano", default_parameter=LLMParameter(temperature=1.0)),
+            check_context_sufficiency=False,
+            number_of_input_tokens=16384,
             system_prompt=LocaleString(
                 en="""
                 <persona>
@@ -131,10 +139,10 @@ async def main():
                 """,
             ),
             retrieve_step_config=RetrieveStepConfig(
-                embed_model=EmbeddingModelConfig(model_name="azure/text-embedding-3-large"),
-                index_namespaces=["test"],
+                embed_model=EmbeddingModelConfig(model_name="embedding/large"),
+                index_namespaces=["simple"],
                 retrieve_k=20,
-                query_mode=VectorStoreQueryMode.DEFAULT,
+                query_mode=VectorStoreQueryMode.HYBRID,
                 node_types=["content", "summary"],
                 vector_store=MilvusVectorStoreConfig(
                     uri=MilvusSettings().URL,
@@ -142,12 +150,16 @@ async def main():
                     collection_name="playground",
                 ),
                 retrieve_prev_next=RetrievePrevNextConfig(
-                    num_nodes=10,
+                    num_nodes=5,
                     mode="both",
                 ),
                 retrieve_summaries=RetrieveSummariesConfig(
                     max_parent_levels=2,
                 ),
+            ),
+            reranking_config=RerankingConfig(
+                enabled=True,
+                reranking_model=RerankingModelConfig(model_name="reranker", top_n=5),
             ),
         ),
         redis_url=RedisSettings().URL,

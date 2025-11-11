@@ -75,7 +75,9 @@ class AgentDelegator(AbstractEntityDelegator):
         queue_group: str,
     ):
         super().__init__(process_type, nc, js, topic_manager, queue_group)
-        self.external_agent_event_distributor = ExternalAgentEventDistributor(nc=self.nc, js=self.js)
+        self.external_agent_event_distributor = ExternalAgentEventDistributor(
+            nc=self.nc, js=self.js, name="ProcessAgentDelegatorExternalAgentEventDistributor"
+        )
 
     async def start(self):
         """
@@ -105,6 +107,7 @@ class AgentDelegator(AbstractEntityDelegator):
                     topic_manager=agent_instance_topic_manager,
                     handler=handler,
                     event=stop_event,
+                    subscriber_name=f"{self.process_class.__name__}AgentDelegator",
                 )
                 await subscription.start()
                 self.subscriptions.append(subscription)

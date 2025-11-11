@@ -19,10 +19,12 @@ class AgentNCSubscriber(NCSubscriber[BaseEvent]):
         nc: NATS,
         topic_manager: AgentTopicManager,
         handler: Callable[[DisplayEvent, AgentInstanceTopic], Awaitable[None]],
+        subscriber_name: str = "Unnamed",
     ):
         """Subscribe to all display events from all agents."""
         subject = topic_manager.get_subject_for_all_display_events_in_agent()
         return cls(
+            name=subscriber_name,
             nc=nc,
             subject=subject,
             event_cls=DisplayEvent,
@@ -35,10 +37,12 @@ class AgentNCSubscriber(NCSubscriber[BaseEvent]):
         nc: NATS,
         topic_manager: AgentThreadTopicManager,
         handler: Callable[[DisplayEvent, AgentInstanceTopic], Awaitable[None]],
+        subscriber_name: str = "Unnamed",
     ):
         """Subscribe to all display events within a specific thread."""
         subject = topic_manager.get_subject_for_display_event_in_thread("*", "*")
         return cls(
+            name=subscriber_name,
             nc=nc,
             subject=subject,
             event_cls=DisplayEvent,
@@ -51,10 +55,12 @@ class AgentNCSubscriber(NCSubscriber[BaseEvent]):
         nc: NATS,
         topic_manager: AgentThreadTopicManager,
         handler: Callable[[ControlEvent, AgentInstanceTopic], Awaitable[None]],
+        subscriber_name: str = "Unnamed",
     ):
         """Subscribe to all events (display, control, etc.) within a specific thread."""
         subject = topic_manager.get_subject_for_all_event_in_thread("*", "*")
         return cls(
+            name=subscriber_name,
             nc=nc,
             subject=subject,
             event_cls=BaseEvent,
@@ -68,10 +74,12 @@ class AgentNCSubscriber(NCSubscriber[BaseEvent]):
         topic_manager: AgentTopicManager,
         handler: Callable[[InstanceDiscoveryRequestEvent, AgentInstanceTopic], Awaitable[None]],
         call_id: str = "*",
+        subscriber_name: str = "Unnamed",
     ):
         """Subscribe to discovery request events for agents, optionally filtered by a specific call_id."""
         subject = topic_manager.get_agent_instance_discovery_subject_request(call_id)
         return cls(
+            name=subscriber_name,
             nc=nc,
             subject=subject,
             event_cls=InstanceDiscoveryRequestEvent,
@@ -85,10 +93,12 @@ class AgentNCSubscriber(NCSubscriber[BaseEvent]):
         topic_manager: AgentTopicManager,
         handler: Callable[[ClassDiscoveryRequestEvent, AgentClassDiscoveryTopic], Awaitable[None]],
         call_id: str = "*",
+        subscriber_name: str = "Unnamed",
     ):
         """Subscribe to discovery request events for agent classes, optionally filtered by a specific call_id."""
         subject = topic_manager.get_agent_class_discovery_subject_request(call_id)
         return cls(
+            name=subscriber_name,
             nc=nc,
             subject=subject,
             event_cls=ClassDiscoveryRequestEvent,
@@ -102,10 +112,12 @@ class AgentNCSubscriber(NCSubscriber[BaseEvent]):
         topic_manager: AgentTopicManager,
         handler: Callable[[BaseEvent, AgentInstanceTopic], Awaitable[None]],
         call_id: str = "*",
+        subscriber_name: str = "Unnamed",
     ):
         """Subscribe to discovery response events for agents, optionally filtered by a specific call_id."""
         subject = topic_manager.get_agent_instance_discovery_subject_response(call_id)
         return cls(
+            name=subscriber_name,
             nc=nc,
             subject=subject,
             event_cls=BaseEvent,
@@ -119,10 +131,12 @@ class AgentNCSubscriber(NCSubscriber[BaseEvent]):
         topic_manager: AgentTopicManager,
         handler: Callable[[BaseEvent, AgentInstanceTopic], Awaitable[None]],
         call_id: str = "*",
+        subscriber_name: str = "Unnamed",
     ):
         """Subscribe to discovery response events for agent classes, optionally filtered by a specific call_id."""
         subject = topic_manager.get_agent_class_discovery_subject_response(call_id)
         return cls(
+            name=subscriber_name,
             nc=nc,
             subject=subject,
             event_cls=BaseEvent,
@@ -135,6 +149,7 @@ class AgentNCSubscriber(NCSubscriber[BaseEvent]):
         nc: NATS,
         topic_manager: AgentTopicManager,
         handler: Callable[[BaseEvent, AgentInstanceTopic], Awaitable[None]],
+        subscriber_name: str = "Unnamed",
     ):
         """
         Creates a NCSubscriber for all agent events.
@@ -143,6 +158,7 @@ class AgentNCSubscriber(NCSubscriber[BaseEvent]):
         subject = topic_manager.get_subject_for_all_events_in_agent()
 
         return cls(
+            name=subscriber_name,
             nc=nc,
             subject=subject,
             event_cls=BaseEvent,
@@ -156,6 +172,7 @@ class AgentNCSubscriber(NCSubscriber[BaseEvent]):
         topic_manager: AgentInstanceTopicManager,
         handler: Callable[[ControlEvent, AgentInstanceTopic], Awaitable[None]],
         event: type[ControlEvent],
+        subscriber_name: str = "Unnamed",
     ):
         """
         Creates a NCSubscriber for all agent events.
@@ -171,6 +188,7 @@ class AgentNCSubscriber(NCSubscriber[BaseEvent]):
         )
 
         return cls(
+            name=subscriber_name,
             nc=nc,
             subject=subject,
             event_cls=BaseEvent,

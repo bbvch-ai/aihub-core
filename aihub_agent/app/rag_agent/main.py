@@ -34,7 +34,7 @@ async def main():
                 fr="Ceci est l'agent RAG par défaut",
                 it="Questo è l'agente RAG predefinito",
             ),
-            llm=LLMConfig(model_name="azure/gpt-4o-mini"),
+            llm=LLMConfig(model_name="text-generation/mini"),
             check_context_sufficiency=True,
             number_of_input_tokens=100_000,
             system_prompt=LocaleString(
@@ -132,13 +132,13 @@ async def main():
             ),
             retrieve_step_config=RetrieveStepConfig(
                 embed_model=EmbeddingModelConfig(model_name="azure/text-embedding-3-large"),
-                index_namespaces=["test"],
+                index_namespaces=["default"],
                 retrieve_k=10,
-                query_mode=VectorStoreQueryMode.DEFAULT,
+                query_mode=VectorStoreQueryMode.HYBRID,
                 node_types=["content"],
                 vector_store=MilvusVectorStoreConfig(
                     uri=MilvusSettings().URL,
-                    collection_name="playground",
+                    collection_name="defaultknowledge",
                 ),
                 retrieve_prev_next=RetrievePrevNextConfig(
                     num_nodes=10,

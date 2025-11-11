@@ -99,15 +99,53 @@ context_sufficient_guard:
     
     5. Chaque requête successive doit représenter un changement conceptuel plus important que les précédentes.
 
-Question:
-  <Question>
-  { user_query }
-  </Question>
-Contexte:
-  <Context>
-  { context }
-  </Context>
-Requêtes précédentes:
-  <Previous_Queries>
-  { prev_queries }
-  <\Previous_Queries>
+    Question:
+      <Question>
+      { user_query }
+      </Question>
+    Contexte:
+      <Context>
+      { context }
+      </Context>
+    Requêtes précédentes:
+    <Previous_Queries>
+    { prev_queries }
+    <\Previous_Queries>
+  reason_no_hops: |
+    Raisonnement expliquant pourquoi le contexte est ou n'est pas suffisant (aucun saut supplémentaire disponible).
+  success_no_hops: |
+    true si le contexte est suffisant pour répondre à la requête de l'utilisateur, false s'il ne l'est pas (aucun saut supplémentaire disponible).
+  docstring_no_hops: |
+    Résultat de l'évaluation visant à déterminer si le contexte est suffisant pour répondre à la requête de l'utilisateur (aucun saut supplémentaire disponible).
+sensitive_info_guard:
+  prompt: |
+    Vous êtes un gardien de sécurité responsable de la protection des informations confidentielles de l'entreprise. Votre tâche est d'analyser la réponse suivante et de déterminer si elle contient des informations sensibles qui ne devraient pas être partagées en externe.
+
+    Recherchez :
+    - Processus, procédures ou politiques internes de l'entreprise
+    - Stratégies ou plans commerciaux confidentiels
+    - Noms d'employés, adresses e-mail ou informations personnelles
+    - Données financières, budgets ou informations de tarification
+    - Spécifications techniques ou méthodes propriétaires
+    - Données clients ou informations confidentielles de clients
+    - Détails de systèmes internes, noms de serveurs ou informations d'infrastructure
+    - Toute information marquée comme confidentielle ou réservée à un usage interne
+
+    Si vous trouvez des informations sensibles, fournissez une version nettoyée de la réponse avec les parties sensibles supprimées ou généralisées.
+
+    <Réponse à analyser>
+    {answer}
+    </Réponse à analyser>
+
+    Votre sortie doit être un objet JSON avec exactement trois clés :
+    - "success" : true si aucune information sensible n'a été trouvée, false si des informations sensibles ont été détectées
+    - "reasoning" : explication de votre décision
+    - "cleaned_answer" : si des informations sensibles ont été trouvées, fournissez une version nettoyée ; sinon null
+  reason: |
+    Explication indiquant si des informations sensibles ont été détectées et quelles actions ont été prises.
+  success: |
+    true si aucune information sensible n'a été trouvée, false si des informations sensibles ont été détectées et nettoyées.
+  cleaned_answer: |
+    La réponse révisée avec les informations sensibles supprimées ou expurgées, le cas échéant.
+  docstring: |
+    Résultat de l'analyse d'une réponse pour détecter des informations sensibles qui ne devraient pas être partagées en externe.

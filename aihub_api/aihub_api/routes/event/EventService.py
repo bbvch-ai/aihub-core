@@ -2,6 +2,7 @@ import logging
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity, TimeRange
 from bson import ObjectId
 from starlette.websockets import WebSocket, WebSocketDisconnect
@@ -27,6 +28,7 @@ class EventService:
     """
 
     @staticmethod
+    @trace_fn
     def get_events_in_thread(
         thread_id: ObjectId,
         locale: str | None = None,
@@ -42,11 +44,13 @@ class EventService:
         return [ContextualizedAgentEvent.from_persisted_event(event, locale=locale) for event in persisted_events]
 
     @staticmethod
+    @trace_fn
     def get_all_thread_display_events(thread_id: str) -> list[PersistedAgentEventEntity]:
         """Retrieves all display events for a thread."""
         return PersistedAgentEventEntity.display_events_for_thread(thread_id)
 
     @staticmethod
+    @trace_fn
     async def event_websocket_connection(
         websocket: WebSocket,
         ws_manager: WebSocketManager,
@@ -68,6 +72,7 @@ class EventService:
             await ws_manager.disconnect(websocket, user.id)
 
     @staticmethod
+    @trace_fn
     def get_event_timeseries(
         time_range: TimeRange,
         thread_id: ObjectId | None = None,

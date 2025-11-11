@@ -28,6 +28,7 @@ import json
 import logging
 import os
 import time
+import urllib.parse
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Annotated, Optional, Protocol, Self, Callable
@@ -39,6 +40,8 @@ from bson import ObjectId
 import boto3
 from botocore.client import Config
 from open_webui.models.files import Files
+from opentelemetry.propagate import inject
+from opentelemetry import trace
 
 logger = logging.getLogger(__name__)
 
@@ -279,12 +282,8 @@ class AuthenticationService:
         user_email: Annotated[str, "User's email address"],
     ) -> Annotated[dict[str, str], "HTTP headers with authentication"]:
         """Prepare authenticated request headers"""
-        signature = self.sign_user_headers(user_name, user_email)
-        clean_username = (
-            base64.b64encode(user_name.encode("utf-8")).decode("ascii")
-            if user_name
-            else ""
-        )
+        clean_username = urllib.parse.quote(user_name, safe="") if user_name else ""
+        signature = self.sign_user_headers(clean_username, user_email)
 
         return {
             "Authorization": f"Bearer {self._api_key}",
@@ -1510,94 +1509,109 @@ class Pipe:
         **kwargs,
     ) -> Annotated[str, "Response (always empty for streaming)"]:
         """Main pipeline entry point"""
-        try:
-            # Extract agent information
-            agent_class, agent_id = self._extract_agent_info(body["model"])
+        # Extract agent information
+        agent_class, agent_id = self._extract_agent_info(body["model"])
 
-            # Generate IDs
-            thread_id, display_id = self._generate_ids(
-                __metadata__.get("chat_id"), __metadata__.get("message_id")
-            )
+        # Generate IDs
+        thread_id, display_id = self._generate_ids(
+            __metadata__.get("chat_id"), __metadata__.get("message_id")
+        )
 
-            logger.debug(f"Processing request for {agent_class}.{agent_id}")
-            logger.debug(f"Thread ID: {thread_id}, Display ID: {display_id}")
+        tracer = trace.get_tracer(__name__)
+        with tracer.start_as_current_span(
+            f"Pipeline {agent_class}.{agent_id}",
+            attributes={
+                "agent.class": agent_class,
+                "agent.id": agent_id,
+                "thread.id": thread_id,
+                "user.email": __user__["email"],
+            },
+        ) as span:
+            try:
+                logger.debug(f"Processing request for {agent_class}.{agent_id}")
+                logger.debug(f"Thread ID: {thread_id}, Display ID: {display_id}")
 
-            # Prepare authentication
-            headers = self._auth_service.prepare_headers(
-                __user__["name"], __user__["email"]
-            )
+                # Prepare authentication
+                headers = self._auth_service.prepare_headers(
+                    __user__["name"], __user__["email"]
+                )
+                inject(headers)
 
-            # Convert messages
-            messages = self._message_converter.convert_to_event_format(body["messages"])
+                # Convert messages
+                messages = self._message_converter.convert_to_event_format(
+                    body["messages"]
+                )
 
-            # Process files
-            files = await self._file_service.prepare_files_for_event(__files__)
+                # Process files
+                files = await self._file_service.prepare_files_for_event(__files__)
 
-            # Build event payload
-            event_payload: dict[str, Any] = {"messages": messages}
-            if files:
-                event_payload["files"] = files
-                logger.debug(f"Attached {len(files)} file(s) to UserMessageEvent")
+                # Build event payload
+                event_payload: dict[str, Any] = {"messages": messages}
+                if files:
+                    event_payload["files"] = files
+                    logger.debug(f"Attached {len(files)} file(s) to UserMessageEvent")
 
-            # Emit initial status
-            await __event_emitter__(
-                {
-                    "type": "status",
-                    "data": {
-                        "action": None,
-                        "description": f"Connecting to agent {agent_class}.{agent_id}...",
-                        "done": False,
-                    },
-                }
-            )
+                # Emit initial status
+                await __event_emitter__(
+                    {
+                        "type": "status",
+                        "data": {
+                            "action": None,
+                            "description": f"Connecting to agent {agent_class}.{agent_id}...",
+                            "done": False,
+                        },
+                    }
+                )
 
-            # Create state manager for this stream
-            state_manager = StreamingStateManager()
+                # Create state manager for this stream
+                state_manager = StreamingStateManager()
 
-            async def stream_start_callback():
-                await self._set_ui_context(thread_id, display_id, __event_call__)
+                async def stream_start_callback():
+                    await self._set_ui_context(thread_id, display_id, __event_call__)
 
-            # Stream the conversation
-            await self._streaming_service.stream_response(
-                agent_class,
-                agent_id,
-                "UserMessageEvent",
-                event_payload,
-                headers,
-                thread_id,
-                display_id,
-                __event_emitter__,
-                __event_call__,
-                state_manager,
-                stream_start_callback,
-            )
+                # Stream the conversation
+                await self._streaming_service.stream_response(
+                    agent_class,
+                    agent_id,
+                    "UserMessageEvent",
+                    event_payload,
+                    headers,
+                    thread_id,
+                    display_id,
+                    __event_emitter__,
+                    __event_call__,
+                    state_manager,
+                    stream_start_callback,
+                )
 
-            # Emit completion status
-            await __event_emitter__(
-                {
-                    "type": "status",
-                    "data": {
-                        "action": None,
-                        "description": "Response completed",
-                        "done": True,
-                    },
-                }
-            )
+                # Emit completion status
+                await __event_emitter__(
+                    {
+                        "type": "status",
+                        "data": {
+                            "action": None,
+                            "description": "Response completed",
+                            "done": True,
+                        },
+                    }
+                )
 
-            logger.debug("Request processing completed")
-            return ""
+                logger.debug("Request processing completed")
+                return ""
 
-        except Exception as e:
-            logger.exception(f"Error in pipe: {e}")
-            await __event_emitter__(
-                {
-                    "type": "status",
-                    "data": {
-                        "action": None,
-                        "description": f"Pipeline error: {str(e)}",
-                        "done": True,
-                        "error": True,
-                    },
-                }
-            )
-            return f"Error: {str(e)}"
+            except Exception as e:
+                logger.exception(f"Error in pipe: {e}")
+                await __event_emitter__(
+                    {
+                        "type": "status",
+                        "data": {
+                            "action": None,
+                            "description": f"Pipeline error: {str(e)}",
+                            "done": True,
+                            "error": True,
+                        },
+                    }
+                )
+                span.record_exception(e)
+                span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
+                return f"Error: {str(e)}"

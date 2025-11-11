@@ -1,3 +1,8 @@
+# ruff: noqa: E402
+from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
+
+AihubInstrumentor().instrument()
+
 import asyncio
 
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
@@ -23,7 +28,7 @@ async def main():
             agent_class=FrontendTestingAgent.__name__,
             name=LocaleString(en="Frontend Testing Agent"),
             description=LocaleString(en="This is an agent that can be used to develop the frontend"),
-            llm=LLMConfig(model_name="azure/gpt-4o-mini"),
+            llm=LLMConfig(model_name="text-generation/mini"),
         ),
     )
 

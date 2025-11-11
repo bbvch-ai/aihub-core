@@ -9,6 +9,7 @@ from aihub_lib.runners.Runner import Runner
 from fastapi import FastAPI
 from fastmcp import FastMCP
 from fastmcp.server.openapi import MCPType, RouteMap
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Mount
@@ -107,6 +108,8 @@ class ApiRunner(Runner):
         self._api_app.state = app.state
         mcp_app.state = app.state
 
+        self._configure_opentelemetry()
+
         return app
 
     def _get_api_app(self) -> FastAPI:
@@ -150,3 +153,24 @@ class ApiRunner(Runner):
         ]
 
         return self
+
+    def _configure_opentelemetry(self) -> None:
+        """
+        Configure FastAPI-specific OpenTelemetry instrumentation.
+        """
+        from aihub_lib.infrastructure.opentelemetry.OpenTelemetrySettings import OpenTelemetrySettings
+
+        otel_settings = OpenTelemetrySettings()
+
+        if not otel_settings.ENABLED:
+            logger.info("OpenTelemetry instrumentation disabled: OTEL_ENABLED=False")
+            return
+
+        FastAPIInstrumentor.instrument_app(
+            self._api_app,
+            exclude_spans=["receive", "send"],
+            http_capture_headers_server_request=[".*"],
+            http_capture_headers_sanitize_fields=["authorization"],
+        )
+        logger.info("FastAPI application instrumented with OpenTelemetry")
+        logger.info("Note: Core OpenTelemetry, MongoDB, and HTTP client configuration handled in lifetime_manager")

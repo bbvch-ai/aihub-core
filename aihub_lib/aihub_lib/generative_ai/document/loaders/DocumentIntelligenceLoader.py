@@ -1,9 +1,7 @@
 import html
 import os
-from io import StringIO
 from typing import Any
 
-import pandas as pd
 from azure.ai.documentintelligence.models import AnalyzeOutputOption, AnalyzeResult, DocumentContentFormat
 from bs4 import BeautifulSoup
 from fsspec import AbstractFileSystem
@@ -15,9 +13,9 @@ from aihub_lib.generative_ai.utils.path_utils import create_figures_folder_name
 from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.DocumentIntelligenceAccess import (
     DocumentIntelligenceAccess,
 )
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     NODE_CONTENT_TYPE_FIGURE,
-    NODE_CONTENT_TYPE_TABLE,
     NUMBER_OF_PAGES,
 )
 
@@ -30,6 +28,7 @@ class DocumentIntelligenceLoader(BaseReader):
 
         self.document_intelligence_client = DocumentIntelligenceAccess().get_client()
 
+    @trace_fn
     def load_data(
         self,
         file: str,
@@ -58,32 +57,6 @@ class DocumentIntelligenceLoader(BaseReader):
             result, poller, file, extra_info, fs, figures_directory_name, include_images
         )
 
-    async def aload_data(
-        self,
-        file: str,
-        extra_info: dict | None = None,
-        fs: AbstractFileSystem | None = None,
-        figures_directory_name: str | None = None,
-        include_images: bool | None = None,
-    ) -> list[Document]:
-        """Load and process documents asynchronously using the Document Intelligence service."""
-        include_images = include_images if include_images is not None else True
-
-        fs = fs or get_default_fs()
-        with fs.open(file, "rb") as pdf_file:
-            poller = self.document_intelligence_client.begin_analyze_document(
-                "prebuilt-layout",
-                body=pdf_file,
-                content_type="application/octet-stream",
-                output_content_format=DocumentContentFormat.MARKDOWN,
-                output=[AnalyzeOutputOption.FIGURES],
-            )
-
-        result: AnalyzeResult = poller.result()
-        return self._process_document_intelligence_response(
-            result, poller, file, extra_info, fs, figures_directory_name, include_images
-        )
-
     def _process_document_intelligence_response(
         self,
         result: AnalyzeResult,
@@ -97,7 +70,7 @@ class DocumentIntelligenceLoader(BaseReader):
         """Process the Document Intelligence API response into Document objects."""
         metadata = {NUMBER_OF_PAGES: len(result.pages)}
 
-        text = reformat_tables(result.content)
+        text = result.content
 
         if not include_images:
             text = remove_figure_tags_keep_content(text)
@@ -127,7 +100,7 @@ class DocumentIntelligenceLoader(BaseReader):
                 f"and number of <figure> tags in the document ({len(figure_tags)})."
             )
 
-        figures_dir = create_figures_folder_name(file, figures_directory_name)
+        figures_dir = create_figures_folder_name(file)
         for idx, (figure, figure_tag) in enumerate(zip(result.figures, figure_tags)):
             response = self.document_intelligence_client.get_analyze_result_figure(
                 model_id="prebuilt-layout",
@@ -149,21 +122,6 @@ class DocumentIntelligenceLoader(BaseReader):
                 extra_info={**extra_info, **metadata} if extra_info else metadata,
             )
         ]
-
-
-def reformat_tables(document_text: str) -> str:
-    """Convert HTML tables in the document to Markdown tables."""
-
-    soup = BeautifulSoup(document_text, "html.parser")
-
-    table_tags = soup.find_all("table")
-
-    for table in table_tags:
-        # TODO if table is very long split into smaller tables with copied headers
-        markdown_table = pd.read_html(StringIO(str(table)))[0].fillna("").to_markdown()
-        table.replace_with(f"<{NODE_CONTENT_TYPE_TABLE}>{markdown_table}</{NODE_CONTENT_TYPE_TABLE}>")
-
-    return html.unescape(str(soup))
 
 
 def remove_figure_tags_keep_content(document_text: str) -> str:

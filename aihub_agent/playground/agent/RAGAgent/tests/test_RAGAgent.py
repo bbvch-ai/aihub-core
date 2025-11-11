@@ -1,3 +1,8 @@
+# ruff: noqa: E402
+from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
+
+AihubInstrumentor().instrument()
+
 import asyncio
 from pathlib import Path
 
@@ -10,10 +15,14 @@ from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeO
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from aihub_lib.generative_ai.resources.models.llm.RerankingModelConfig import RerankingModelConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_lib.nats.events.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
+from aihub_lib.nats.events.guard.FewShotAcceptEvent import FewShotAcceptEvent
+from aihub_lib.nats.events.guard.FewShotRejectEvent import FewShotRejectEvent
+from aihub_lib.nats.events.semantic.reranker import RerankerEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.persistence.rag.documents.stores.docstore import create_mongo_document_store
 from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreConfig import AzureAISearchVectorStoreConfig
@@ -27,9 +36,8 @@ from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
+from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
 from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
-from aihub_agent.agents.RagAgent.events.FewShotAcceptEvent import FewShotAcceptEvent
-from aihub_agent.agents.RagAgent.events.FewShotRejectEvent import FewShotRejectEvent
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
@@ -38,7 +46,6 @@ from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 enable_logging()
 
 
-# Set up an event loop for the test session
 @pytest.fixture(scope="session")
 def event_loop():
     """Create an instance of the default event loop for the test session."""
@@ -53,6 +60,7 @@ load_dotenv(Path(__file__).parent / ".env")
 
 def build_rag_agent_config(
     llm_config,
+    reranking_config,
     embedding_config,
     vector_store,
     query_mode: VectorStoreQueryMode,
@@ -83,6 +91,7 @@ def build_rag_agent_config(
         ),
         number_of_input_tokens=8192,
         check_context_sufficiency=False,
+        reranking_config=RerankingConfig(enabled=False, reranking_model=reranking_config),
     )
 
 
@@ -91,8 +100,9 @@ def azure_agent_config():
     """
     Return a RAGAgentConfig that uses Azure OpenAI for both the LLM and embeddings.
     """
-    llm_config = LLMConfig(model_name="azure/gpt-4o-mini")
-    embedding_config = EmbeddingModelConfig(model_name="azure/text-embedding-3-large")
+    llm_config = LLMConfig(model_name="text-generation/large")
+    reranking_config = RerankingModelConfig(model_name="")
+    embedding_config = EmbeddingModelConfig(model_name="embedding/large")
     vector_store: AzureAISearchVectorStoreConfig = AzureAISearchVectorStoreConfig(
         # needed for embedding field
         vector_store_name="development",
@@ -101,6 +111,7 @@ def azure_agent_config():
 
     return build_rag_agent_config(
         llm_config=llm_config,
+        reranking_config=reranking_config,
         embedding_config=embedding_config,
         vector_store=vector_store,
         query_mode=VectorStoreQueryMode.HYBRID,
@@ -108,15 +119,13 @@ def azure_agent_config():
 
 
 @pytest.fixture(scope="session")
-def self_hosted_agent_config(event_loop):
+def test_collection(event_loop):
     """
-    Return a RAGAgentConfig that uses a self-hosted LLM and self-hosted embeddings.
+    Set up and tear down the test collection for all tests.
     """
-    # Set the event loop for this function
     asyncio.set_event_loop(event_loop)
 
-    llm_config = LLMConfig(model_name="local/qwen3-small")
-    embedding_config = EmbeddingModelConfig(model_name="local/qwen-embedding")
+    embedding_config = EmbeddingModelConfig(model_name="embedding/small")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="development",
@@ -130,14 +139,32 @@ def self_hosted_agent_config(event_loop):
         doc_store,
     )
 
-    yield build_rag_agent_config(
-        llm_config=llm_config,
-        embedding_config=embedding_config,
-        vector_store=vector_store,
-        query_mode=VectorStoreQueryMode.DEFAULT,
-    )
+    yield
 
     drop_collection()
+
+
+@pytest.fixture(scope="session")
+def self_hosted_agent_config(test_collection):
+    """
+    Return a RAGAgentConfig that uses a self-hosted LLM and self-hosted embeddings.
+    """
+    llm_config = LLMConfig(model_name="text-generation/mini")
+    reranking_config = RerankingModelConfig(model_name="reranker")
+    embedding_config = EmbeddingModelConfig(model_name="embedding/small")
+    vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
+        uri="http://localhost",
+        collection_name="development",
+        dimensions=1024,
+    )
+
+    return build_rag_agent_config(
+        llm_config=llm_config,
+        reranking_config=reranking_config,
+        embedding_config=embedding_config,
+        vector_store=vector_store,
+        query_mode=VectorStoreQueryMode.HYBRID,
+    )
 
 
 @pytest.mark.usefixtures("azure_agent_config")
@@ -204,6 +231,13 @@ def _(agent_runner: AgentTestRunner):
 def _(agent_runner: AgentTestRunner):
     retriever_event = agent_runner.get_event_of_class(RetrieverEvent)
     assert retriever_event.nodes, "RetrieverEvent did not produce nodes"
+
+
+@then(parsers.parse('a RetrieverEvent is present with more than "{node_count:d}" retrieved nodes'))
+def _(agent_runner: AgentTestRunner, node_count: int):
+    retriever_event = agent_runner.get_event_of_class(RetrieverEvent)
+    nodes = len(retriever_event.nodes)
+    assert nodes > node_count, f"Expected more than {node_count} nodes, got {nodes}"
 
 
 @then(parsers.parse('"{count:d}" RetrieverEvent are present'))
@@ -328,9 +362,6 @@ def _(agent_runner: AgentTestRunner, locale: str, prompt: str):
 
 @then(parsers.parse('the LLM received the system prompt "{expected_prompt}"'))
 def _(agent_runner: AgentTestRunner, expected_prompt: str):
-    """
-    Verify that the LLM received the expected system prompt.
-    """
     config = agent_runner.default_agent_config
     assert config.system_prompt is not None, "System prompt was not configured"
 
@@ -339,3 +370,67 @@ def _(agent_runner: AgentTestRunner, expected_prompt: str):
 
     actual_prompt = config.system_prompt.in_locale(locale)
     assert actual_prompt == expected_prompt, f"Expected system prompt '{expected_prompt}', got '{actual_prompt}'"
+
+
+@given(parsers.parse('with reranking enabled and top_n of "{top_n:d}"'))
+def _(agent_runner: AgentTestRunner, top_n: int):
+    agent_runner.default_agent_config.reranking_config = RerankingConfig(
+        enabled=True, reranking_model=RerankingModelConfig(model_name="reranker", top_n=top_n)
+    )
+    return agent_runner
+
+
+@given("with reranking disabled")
+def _(agent_runner: AgentTestRunner):
+    agent_runner.default_agent_config.reranking_config = RerankingConfig(
+        enabled=False,
+    )
+    return agent_runner
+
+
+@then("a RerankerEvent is present with reranked nodes")
+def _(agent_runner: AgentTestRunner):
+    reranker_event = agent_runner.get_event_of_class(RerankerEvent)
+    assert reranker_event, "RerankerEvent was not produced"
+    assert reranker_event.output_nodes, "RerankerEvent did not contain reranked nodes"
+
+
+@then("a RerankerEvent is present without reranking")
+def _(agent_runner: AgentTestRunner):
+    reranker_event = agent_runner.get_event_of_class(RerankerEvent)
+    assert reranker_event, "RerankerEvent was not produced"
+    assert len(reranker_event.input_nodes) == len(
+        reranker_event.output_nodes
+    ), "Pass-through mode should preserve all nodes"
+
+
+@then("the RerankerEvent contains the original nodes from the RetrieverEvent")
+def _(agent_runner: AgentTestRunner):
+    retriever_event = agent_runner.get_event_of_class(RetrieverEvent)
+    reranker_event = agent_runner.get_event_of_class(RerankerEvent)
+
+    assert retriever_event, "RetrieverEvent was not found"
+    assert reranker_event, "RerankerEvent was not found"
+
+    retriever_node_ids = [node.node.node_id for node in retriever_event.nodes]
+    reranker_node_ids = [node.node.node_id for node in reranker_event.output_nodes]
+
+    assert retriever_node_ids == reranker_node_ids, "Node IDs should match in pass-through mode"
+
+
+@then(parsers.parse('the RerankerEvent should limit results to "{top_n:d}" nodes'))
+def _(agent_runner: AgentTestRunner, top_n: int):
+    reranker_event = agent_runner.get_event_of_class(RerankerEvent)
+    assert reranker_event, "RerankerEvent was not found"
+    assert (
+        len(reranker_event.output_nodes) <= top_n
+    ), f"Expected at most {top_n} nodes, got {len(reranker_event.output_nodes)}"
+
+
+@then(parsers.parse('the RerankerEvent model name should be "{model_name}"'))
+def _(agent_runner: AgentTestRunner, model_name: str):
+    reranker_event = agent_runner.get_event_of_class(RerankerEvent)
+    assert reranker_event, "RerankerEvent was not found"
+    assert (
+        reranker_event.rerank_model_name == model_name
+    ), f"Expected model {model_name}, got {reranker_event.rerank_model_name}"

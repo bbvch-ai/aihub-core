@@ -1,6 +1,11 @@
+# ruff: noqa: E402
+from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
+
+AihubInstrumentor().instrument()
+
 import asyncio
 
-from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig, LLMParameter
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.testing.logging.logger import enable_logging
 
@@ -19,7 +24,8 @@ async def main():
             agent_id="dev_agent",
             name=LocaleString(en="Dev Agent"),
             description=LocaleString(en="This is the default Dev Agent config"),
-            llm=LLMConfig(model_name="local/qwen3-small"),
+            # when using nano temp needs to be 1.0 and nothing else
+            llm=LLMConfig(model_name="text-generation/nano", default_parameter=LLMParameter(temperature=1.0)),
         ),
     )
 

@@ -63,7 +63,8 @@ class OAuth2AuthHandler(AuthHandler):
 
         try:
             logger.debug("JWKS cache miss, fetching from %s", OAuth2Settings().JWKS_URL)
-            async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0, read=10.0)) as client:
+            # Increased connect timeout to 30s to allow IPv6 failures to fall back to IPv4
+            async with httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=30.0, read=10.0)) as client:
                 jwks_response = await client.get(OAuth2Settings().JWKS_URL)
                 jwks_response.raise_for_status()
                 jwks = jwks_response.json()

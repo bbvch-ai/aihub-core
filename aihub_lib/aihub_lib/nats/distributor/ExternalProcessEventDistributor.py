@@ -27,8 +27,8 @@ class ExternalProcessEventDistributor:
     """
 
     def __init__(self, nc: NATS, js: JetStreamContext):
-        self.nc_publisher = NCPublisher(nc)
-        self.js_publisher = JSPublisher(js)
+        self.nc_publisher = NCPublisher("ExternalProcessEventDistributor", nc)
+        self.js_publisher = JSPublisher("ExternalProcessEventDistributor", js)
 
     async def distribute_event(self, external_event: ExternalProcessEvent, user: UserIdentity):
         """

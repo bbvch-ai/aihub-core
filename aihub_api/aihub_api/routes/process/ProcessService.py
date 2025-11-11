@@ -5,6 +5,7 @@ from typing import Any
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.nats.distributor.events.ExternalProcessEvent import ExternalProcessEvent
 from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
 from aihub_lib.nats.events import ProcessStartEvent, WorkEvent
@@ -55,6 +56,7 @@ class ProcessService:
     """
 
     @staticmethod
+    @trace_fn
     async def get_process(nc: NATS, process_class: str, process_id: str, t: LocaleHandler) -> ProcessDTO:
         """
         Returns details for a given process. If process is online, use live information reported by the process,
@@ -70,6 +72,7 @@ class ProcessService:
             return ProcessDTO.from_entity(process, t, is_online=False)
 
     @staticmethod
+    @trace_fn
     async def get_processes(nc: NATS, t: LocaleHandler) -> list[ProcessDTO]:
         """
         Returns both processes that are online (answer to a discovery broadcast) and processes
@@ -98,6 +101,7 @@ class ProcessService:
         return all_processes
 
     @staticmethod
+    @trace_fn
     async def discover_process_instance(nc: NATS, process_class: str, process_id: str) -> ProcessInstanceDTO:
         cache_key = (process_class, process_id)
 
@@ -128,6 +132,7 @@ class ProcessService:
         raise HTTPException(status_code=404, detail=f"Process {process_class}.{process_id} not found.")
 
     @staticmethod
+    @trace_fn
     async def discover_process_instances_by_class(nc: NATS, process_class: str) -> list[ProcessInstanceDTO]:
         cache_key = (process_class, "*")
 
@@ -180,9 +185,13 @@ class ProcessService:
             process_found_event.set()
 
         topic_manager = ProcessClassTopicManager(process_class=process_class)
-        nc_publisher = NCPublisher(nc)
+        nc_publisher = NCPublisher(f"ProcessService{process_class}DiscoveryRequest", nc)
         nc_subscriber = ProcessNCSubscriber.for_process_class_discovery_response_events(
-            nc, topic_manager, discovery_handler, call_id=call_id
+            nc,
+            topic_manager,
+            discovery_handler,
+            call_id=call_id,
+            subscriber_name=f"ProcessService{process_class}DiscoveryResponse",
         )
         await nc_subscriber.start()
 
@@ -206,6 +215,7 @@ class ProcessService:
         raise HTTPException(status_code=404, detail=f"Process {process_class} not found.")
 
     @staticmethod
+    @trace_fn
     async def discover_process_instances(nc: NATS) -> list[ProcessInstanceDTO]:
         cache_key = "all_process_instances"
 
@@ -258,9 +268,13 @@ class ProcessService:
             discovery_responses.append(event)
 
         topic_manager = ProcessTopicManager()
-        nc_publisher = NCPublisher(nc)
+        nc_publisher = NCPublisher("ProcessServiceClassDiscoveryRequest", nc)
         nc_subscriber = ProcessNCSubscriber.for_process_class_discovery_response_events(
-            nc, topic_manager, discovery_handler, call_id=call_id
+            nc,
+            topic_manager,
+            discovery_handler,
+            call_id=call_id,
+            subscriber_name="ProcessServiceClassDiscoveryResponse",
         )
         await nc_subscriber.start()
 
@@ -291,6 +305,7 @@ class ProcessService:
         return processes
 
     @staticmethod
+    @trace_fn
     async def discover_processes(nc: NATS, t: LocaleHandler) -> list[ProcessDTO]:
         discovered_processes = await ProcessService.discover_process_instances(nc)
         return [
@@ -317,6 +332,7 @@ class ProcessService:
         return external_event
 
     @staticmethod
+    @trace_fn
     async def get_process_start_forms(
         nc: NATS, process_class: str, process_id: str, t: LocaleHandler
     ) -> list[HumanInDTO]:
@@ -325,6 +341,7 @@ class ProcessService:
         return process.human_inputs
 
     @staticmethod
+    @trace_fn
     async def get_process_open_forms(
         nc: NATS, process_class: str, process_id: str, process_walkthrough_id: str, t: LocaleHandler
     ) -> list[HumanInDTO]:
@@ -374,6 +391,7 @@ class ProcessService:
         return process_human_input_dtos
 
     @staticmethod
+    @trace_fn
     async def submit_process_start_form(
         nc: NATS,
         process_class: str,
@@ -414,6 +432,7 @@ class ProcessService:
         )
 
     @staticmethod
+    @trace_fn
     async def submit_process_open_form(
         nc: NATS,
         process_class: str,

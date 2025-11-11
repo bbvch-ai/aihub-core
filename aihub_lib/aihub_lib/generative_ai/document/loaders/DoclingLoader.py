@@ -8,7 +8,7 @@ from typing import Any
 import httpx
 from bs4 import BeautifulSoup
 from docling_core.types import DoclingDocument
-from docling_core.types.doc import ImageRefMode
+from docling_core.types.doc import ImageRefMode, TableItem
 from fsspec import AbstractFileSystem
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
@@ -16,9 +16,9 @@ from llama_index.core.schema import Document
 
 from aihub_lib.generative_ai.utils.path_utils import create_figures_folder_name
 from aihub_lib.infrastructure.docling.DoclingSettings import DoclingSettings
+from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     NODE_CONTENT_TYPE_FIGURE,
-    NODE_CONTENT_TYPE_TABLE,
     NUMBER_OF_PAGES,
 )
 
@@ -28,6 +28,7 @@ class DoclingLoader(BaseReader):
         super().__init__(*args, **kwargs)
         self.config = DoclingSettings()
 
+    @trace_fn
     def load_data(
         self,
         file: str,
@@ -40,8 +41,7 @@ class DoclingLoader(BaseReader):
         include_images = include_images if include_images is not None else True
 
         fs = fs or get_default_fs()
-        with fs.open(file, "rb") as pdf_file:
-            encoded_string = base64.b64encode(pdf_file.read()).decode("utf-8")
+        encoded_string = self._read_file_sync(fs, file)
         file_name = os.path.basename(file)
 
         answer = self.convert_document(encoded_string, file_name, include_images)
@@ -59,12 +59,17 @@ class DoclingLoader(BaseReader):
         include_images = include_images if include_images is not None else True
 
         fs = fs or get_default_fs()
-        with fs.open(file, "rb") as pdf_file:
-            encoded_string = base64.b64encode(pdf_file.read()).decode("utf-8")
+        encoded_string = await asyncio.to_thread(self._read_file_sync, fs, file)
         file_name = os.path.basename(file)
 
         answer = await self.convert_document_async(encoded_string, file_name, include_images)
-        return self._process_docling_response(answer, file, extra_info, fs, figures_directory_name)
+        return await asyncio.to_thread(
+            self._process_docling_response, answer, file, extra_info, fs, figures_directory_name
+        )
+
+    def _read_file_sync(self, fs: AbstractFileSystem, file: str) -> str:
+        file_content = fs.cat_file(file)
+        return base64.b64encode(file_content).decode("utf-8")
 
     def _process_docling_response(
         self,
@@ -80,16 +85,17 @@ class DoclingLoader(BaseReader):
 
         if len(doc.pictures) > 0:
             img_strs = [picture.export_to_markdown(doc) for picture in doc.pictures]
-            markdown_content = inject_table_tags(inject_figure_tags(markdown_content, img_strs))
+            markdown_text = inject_figure_tags(markdown_text=markdown_content, img_strs=img_strs)
+            markdown_content = convert_tables_to_html(markdown_text=markdown_text, tables=doc.tables)
         else:
-            markdown_content = inject_table_tags(markdown_content)
+            markdown_content = convert_tables_to_html(markdown_text=markdown_content, tables=doc.tables)
 
         metadata = {NUMBER_OF_PAGES: len(answer["document"]["json_content"]["pages"])}
 
         soup = BeautifulSoup(markdown_content, "html.parser")
         figure_tags = soup.find_all("figure")
 
-        figures_dir = create_figures_folder_name(file, figures_directory_name)
+        figures_dir = create_figures_folder_name(file)
         for idx, figure_tag in enumerate(figure_tags):
             encoded_figure = figure_tag.text.split("](")[1][:-1]
             encoded_figure = encoded_figure.replace("data:image/png;base64,", "")
@@ -109,6 +115,7 @@ class DoclingLoader(BaseReader):
             )
         ]
 
+    @trace_fn
     def _build_request_body(self, file_content: str, filename: str, include_images: bool) -> dict:
         """Build the request body for Docling API calls."""
         return {
@@ -227,9 +234,11 @@ def inject_figure_tags(markdown_text: str, img_strs: list[str]):
     return markdown_text
 
 
-def inject_table_tags(markdown_text: str):
-    """Inject html <table> tags around Markdown tables."""
+def convert_tables_to_html(markdown_text: str, tables: list[TableItem]):
+    """Replace Markdown tables with HTML tables."""
     pattern = r"(\|[^\n]+\|\r?\n\|[:\-| ]+\|\r?(?:\n\|[^\n]+\|\r?)*)"
-    markdown_text = re.sub(pattern, f"<{NODE_CONTENT_TYPE_TABLE}>\\1</{NODE_CONTENT_TYPE_TABLE}>", markdown_text)
-
+    md_tables = re.findall(pattern, markdown_text)
+    for md_table, table in zip(md_tables, tables):
+        html_table = table.export_to_dataframe().to_html(index=False)
+        markdown_text = markdown_text.replace(md_table, html_table, 1)
     return markdown_text

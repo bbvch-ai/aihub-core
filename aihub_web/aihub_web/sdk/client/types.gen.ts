@@ -580,6 +580,166 @@ export type AgentInstanceTopic = {
 };
 
 /**
+ * AgentSuitabilityAcceptEvent
+ * Event indicating that the agent suitability guard accepted the request.
+ *
+ * This event is triggered when the agent suitability guard determines that
+ * the user query matches the agent's capabilities and description.
+ * It signifies that this agent is appropriate for handling the user's request.
+ */
+export type AgentSuitabilityAcceptEventReadable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the guard accepted the request.
+     */
+    reason: string;
+    /**
+     * Event Name
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+};
+
+/**
+ * AgentSuitabilityAcceptEvent
+ * Event indicating that the agent suitability guard accepted the request.
+ *
+ * This event is triggered when the agent suitability guard determines that
+ * the user query matches the agent's capabilities and description.
+ * It signifies that this agent is appropriate for handling the user's request.
+ */
+export type AgentSuitabilityAcceptEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the guard accepted the request.
+     */
+    reason: string;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+};
+
+/**
+ * AgentSuitabilityRejectEvent
+ * Event indicating that the agent suitability guard rejected the request.
+ *
+ * This event is triggered when the agent suitability guard determines that
+ * the user query does not match the agent's capabilities and description.
+ * It signifies that this agent is not appropriate for handling the user's request
+ * and the request should be routed to a different agent.
+ */
+export type AgentSuitabilityRejectEventReadable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the Guard rejected the request.
+     */
+    reason: string;
+    /**
+     * Event Name
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+};
+
+/**
+ * AgentSuitabilityRejectEvent
+ * Event indicating that the agent suitability guard rejected the request.
+ *
+ * This event is triggered when the agent suitability guard determines that
+ * the user query does not match the agent's capabilities and description.
+ * It signifies that this agent is not appropriate for handling the user's request
+ * and the request should be routed to a different agent.
+ */
+export type AgentSuitabilityRejectEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the Guard rejected the request.
+     */
+    reason: string;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+};
+
+/**
  * Annotation
  */
 export type Annotation = {
@@ -868,6 +1028,33 @@ export type ChatCompletion = {
 };
 
 /**
+ * ChatCompletionAllowedToolChoiceParam
+ */
+export type ChatCompletionAllowedToolChoiceParam = {
+    allowed_tools: ChatCompletionAllowedToolsParam;
+    /**
+     * Type
+     */
+    type: 'allowed_tools';
+};
+
+/**
+ * ChatCompletionAllowedToolsParam
+ */
+export type ChatCompletionAllowedToolsParam = {
+    /**
+     * Mode
+     */
+    mode: 'auto' | 'required';
+    /**
+     * Tools
+     */
+    tools: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
+/**
  * ChatCompletionAssistantMessageParam
  */
 export type ChatCompletionAssistantMessageParam = {
@@ -892,7 +1079,7 @@ export type ChatCompletionAssistantMessageParam = {
     /**
      * Tool Calls
      */
-    tool_calls?: Array<ChatCompletionMessageToolCallParam>;
+    tool_calls?: Array<ChatCompletionMessageFunctionToolCallParam | ChatCompletionMessageCustomToolCallParam>;
 };
 
 /**
@@ -1029,6 +1216,17 @@ export type ChatCompletionFunctionMessageParam = {
 };
 
 /**
+ * ChatCompletionFunctionToolParam
+ */
+export type ChatCompletionFunctionToolParam = {
+    function: FunctionDefinition;
+    /**
+     * Type
+     */
+    type: 'function';
+};
+
+/**
  * ChatCompletionMessage
  */
 export type ChatCompletionMessage = {
@@ -1053,14 +1251,45 @@ export type ChatCompletionMessage = {
     /**
      * Tool Calls
      */
-    tool_calls?: Array<ChatCompletionMessageToolCall> | null;
-    [key: string]: unknown | (string | null) | (string | null) | 'assistant' | (Array<Annotation> | null) | (ChatCompletionAudio | null) | (FunctionCallOutput | null) | (Array<ChatCompletionMessageToolCall> | null) | undefined;
+    tool_calls?: Array<ChatCompletionMessageFunctionToolCall | ChatCompletionMessageCustomToolCall> | null;
+    [key: string]: unknown | (string | null) | (string | null) | 'assistant' | (Array<Annotation> | null) | (ChatCompletionAudio | null) | (FunctionCallOutput | null) | (Array<ChatCompletionMessageFunctionToolCall | ChatCompletionMessageCustomToolCall> | null) | undefined;
 };
 
 /**
- * ChatCompletionMessageToolCall
+ * ChatCompletionMessageCustomToolCall
  */
-export type ChatCompletionMessageToolCall = {
+export type ChatCompletionMessageCustomToolCall = {
+    /**
+     * Id
+     */
+    id: string;
+    custom: CustomOutput;
+    /**
+     * Type
+     */
+    type: 'custom';
+    [key: string]: unknown | string | CustomOutput | 'custom';
+};
+
+/**
+ * ChatCompletionMessageCustomToolCallParam
+ */
+export type ChatCompletionMessageCustomToolCallParam = {
+    /**
+     * Id
+     */
+    id: string;
+    custom: OpenaiTypesChatChatCompletionMessageCustomToolCallParamCustom;
+    /**
+     * Type
+     */
+    type: 'custom';
+};
+
+/**
+ * ChatCompletionMessageFunctionToolCall
+ */
+export type ChatCompletionMessageFunctionToolCall = {
     /**
      * Id
      */
@@ -1074,18 +1303,29 @@ export type ChatCompletionMessageToolCall = {
 };
 
 /**
- * ChatCompletionMessageToolCallParam
+ * ChatCompletionMessageFunctionToolCallParam
  */
-export type ChatCompletionMessageToolCallParam = {
+export type ChatCompletionMessageFunctionToolCallParam = {
     /**
      * Id
      */
     id: string;
-    function: OpenaiTypesChatChatCompletionMessageToolCallParamFunction;
+    function: OpenaiTypesChatChatCompletionMessageFunctionToolCallParamFunction;
     /**
      * Type
      */
     type: 'function';
+};
+
+/**
+ * ChatCompletionNamedToolChoiceCustomParam
+ */
+export type ChatCompletionNamedToolChoiceCustomParam = {
+    custom: OpenaiTypesChatChatCompletionNamedToolChoiceCustomParamCustom;
+    /**
+     * Type
+     */
+    type: 'custom';
 };
 
 /**
@@ -1126,7 +1366,7 @@ export type ChatCompletionRequest = {
      * Model
      * ID of the model to use for the chat completion.
      */
-    model: string | ('gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613');
+    model: string | ('gpt-5' | 'gpt-5-mini' | 'gpt-5-nano' | 'gpt-5-2025-08-07' | 'gpt-5-mini-2025-08-07' | 'gpt-5-nano-2025-08-07' | 'gpt-5-chat-latest' | 'gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613');
     /**
      * Stream
      * Enable streaming response.
@@ -1188,7 +1428,7 @@ export type ChatCompletionRequest = {
     /**
      * Reasoning Effort
      */
-    reasoning_effort?: ('low' | 'medium' | 'high') | null;
+    reasoning_effort?: ('minimal' | 'low' | 'medium' | 'high') | null;
     /**
      * Response Format
      */
@@ -1217,11 +1457,11 @@ export type ChatCompletionRequest = {
     /**
      * Tool Choice
      */
-    tool_choice?: ('none' | 'auto' | 'required') | ChatCompletionNamedToolChoiceParam | null;
+    tool_choice?: ('none' | 'auto' | 'required') | ChatCompletionAllowedToolChoiceParam | ChatCompletionNamedToolChoiceParam | ChatCompletionNamedToolChoiceCustomParam | null;
     /**
      * Tools
      */
-    tools?: Array<ChatCompletionToolParam> | null;
+    tools?: Array<ChatCompletionFunctionToolParam> | null;
     /**
      * Top Logprobs
      */
@@ -1230,15 +1470,19 @@ export type ChatCompletionRequest = {
      * Top P
      */
     top_p?: number | null;
-    [key: string]: unknown | (Array<ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam | ChatCompletionFunctionMessageParam> | null) | (string | ('gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613')) | boolean | (string | null) | (ChatCompletionAudioParam | null) | (number | null) | (('none' | 'auto') | ChatCompletionFunctionCallOptionParam | null) | (Array<OpenaiTypesChatCompletionCreateParamsFunction> | null) | ({
+    [key: string]: unknown | (Array<ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam | ChatCompletionFunctionMessageParam> | null) | (string | ('gpt-5' | 'gpt-5-mini' | 'gpt-5-nano' | 'gpt-5-2025-08-07' | 'gpt-5-mini-2025-08-07' | 'gpt-5-nano-2025-08-07' | 'gpt-5-chat-latest' | 'gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613')) | boolean | (string | null) | (ChatCompletionAudioParam | null) | (number | null) | (('none' | 'auto') | ChatCompletionFunctionCallOptionParam | null) | (Array<OpenaiTypesChatCompletionCreateParamsFunction> | null) | ({
         [key: string]: number;
-    } | null) | (boolean | null) | (number | null) | (number | null) | (Metadata | null) | (Array<'text' | 'audio'> | null) | (number | null) | (boolean | null) | (ChatCompletionPredictionContentParam | null) | (number | null) | (('low' | 'medium' | 'high') | null) | (ResponseFormatText | ResponseFormatJsonSchema | ResponseFormatJsonObject | null) | (number | null) | (('auto' | 'default') | null) | (string | Array<string> | null) | (boolean | null) | (ChatCompletionStreamOptionsParam | null) | (number | null) | (('none' | 'auto' | 'required') | ChatCompletionNamedToolChoiceParam | null) | (Array<ChatCompletionToolParam> | null) | (number | null) | (number | null) | undefined;
+    } | null) | (boolean | null) | (number | null) | (number | null) | (Metadata | null) | (Array<'text' | 'audio'> | null) | (number | null) | (boolean | null) | (ChatCompletionPredictionContentParam | null) | (number | null) | (('minimal' | 'low' | 'medium' | 'high') | null) | (ResponseFormatText | ResponseFormatJsonSchema | ResponseFormatJsonObject | null) | (number | null) | (('auto' | 'default') | null) | (string | Array<string> | null) | (boolean | null) | (ChatCompletionStreamOptionsParam | null) | (number | null) | (('none' | 'auto' | 'required') | ChatCompletionAllowedToolChoiceParam | ChatCompletionNamedToolChoiceParam | ChatCompletionNamedToolChoiceCustomParam | null) | (Array<ChatCompletionFunctionToolParam> | null) | (number | null) | (number | null) | undefined;
 };
 
 /**
  * ChatCompletionStreamOptionsParam
  */
 export type ChatCompletionStreamOptionsParam = {
+    /**
+     * Include Obfuscation
+     */
+    include_obfuscation?: boolean;
     /**
      * Include Usage
      */
@@ -1302,17 +1546,6 @@ export type ChatCompletionToolMessageParam = {
      * Tool Call Id
      */
     tool_call_id: string;
-};
-
-/**
- * ChatCompletionToolParam
- */
-export type ChatCompletionToolParam = {
-    function: FunctionDefinition;
-    /**
-     * Type
-     */
-    type: 'function';
 };
 
 /**
@@ -1599,6 +1832,166 @@ export type CompletionUsage = {
 };
 
 /**
+ * ContextInsufficientRejectEvent
+ * Event indicating that the context sufficiency guard rejected the request.
+ *
+ * This event is triggered when the context sufficiency guard determines that
+ * there is insufficient context available to answer the user's query and
+ * additional information retrieval or processing is required. The event includes
+ * a new query suggestion for additional context retrieval.
+ */
+export type ContextInsufficientRejectEventReadable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the Guard rejected the request.
+     */
+    reason: string;
+    /**
+     * Event Name
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+};
+
+/**
+ * ContextInsufficientRejectEvent
+ * Event indicating that the context sufficiency guard rejected the request.
+ *
+ * This event is triggered when the context sufficiency guard determines that
+ * there is insufficient context available to answer the user's query and
+ * additional information retrieval or processing is required. The event includes
+ * a new query suggestion for additional context retrieval.
+ */
+export type ContextInsufficientRejectEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the Guard rejected the request.
+     */
+    reason: string;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+};
+
+/**
+ * ContextSufficientAcceptEvent
+ * Event indicating that the context sufficiency guard accepted the request.
+ *
+ * This event is triggered when the context sufficiency guard determines that
+ * there is sufficient context available to answer the user's query without
+ * requiring additional information retrieval or processing.
+ */
+export type ContextSufficientAcceptEventReadable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the guard accepted the request.
+     */
+    reason: string;
+    /**
+     * Event Name
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+};
+
+/**
+ * ContextSufficientAcceptEvent
+ * Event indicating that the context sufficiency guard accepted the request.
+ *
+ * This event is triggered when the context sufficiency guard determines that
+ * there is sufficient context available to answer the user's query without
+ * requiring additional information retrieval or processing.
+ */
+export type ContextSufficientAcceptEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the guard accepted the request.
+     */
+    reason: string;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+};
+
+/**
  * ContextualizedAgentEvent
  * Wraps an agent event with context information like the agent's class, ID, and thread ID.
  * This is necessary as the event payload itself is independent of the topic context through
@@ -1666,7 +2059,7 @@ export type ContextualizedAgentEventReadable = {
      * Event
      * Data of the event itself.
      */
-    event: StartEventReadable | AgentInTheLoopResponseEventReadable | HumanInTheLoopRequestEventReadable | AgentInTheLoopRequestEventReadable | AgentInTheLoopExceptionEventReadable | HumanInTheLoopResponseEventReadable | LimitChatHistoryEventReadable | StandaloneQuestionCondenserEventReadable | LlmCostEventReadable | ChunkEventReadable | ThoughtEventReadable | GuardEventReadable | RouterEventReadable | GuardRejectionEventReadable | SemanticEventReadable | AgentEventReadable | ChainEventReadable | EmbeddingEventReadable | LlmEventReadable | LlmStopEventReadable | RerankerEventReadable | RetrieverEventReadable | ToolEventReadable | UserMessageEventReadable | ExceptionEventReadable | StopEventReadable | DisplayEventReadable;
+    event: StartEventReadable | AgentInTheLoopResponseEventReadable | HumanInTheLoopRequestEventReadable | AgentInTheLoopRequestEventReadable | AgentInTheLoopExceptionEventReadable | HumanInTheLoopResponseEventReadable | LimitChatHistoryEventReadable | StandaloneQuestionCondenserEventReadable | LlmCostEventReadable | ChunkEventReadable | ThoughtEventReadable | GuardEventReadable | RouterEventReadable | GuardRejectionEventReadable | SemanticEventReadable | AgentEventReadable | ChainEventReadable | EmbeddingEventReadable | LlmEventReadable | LlmStopEventReadable | RerankerEventReadable | RetrieverEventReadable | ToolEventReadable | UserMessageEventReadable | ExceptionEventReadable | StopEventReadable | DisplayEventReadable | GuardAcceptEventReadable | AgentSuitabilityAcceptEventReadable | AgentSuitabilityRejectEventReadable | ContextSufficientAcceptEventReadable | ContextInsufficientRejectEventReadable | FewShotAcceptEventReadable | FewShotRejectEventReadable | SensitiveInfoAcceptEventReadable | SensitiveInfoRejectEventReadable;
 };
 
 /**
@@ -1737,7 +2130,7 @@ export type ContextualizedAgentEventWritable = {
      * Event
      * Data of the event itself.
      */
-    event: StartEventWritable | AgentInTheLoopResponseEventWritable | HumanInTheLoopRequestEventWritable | AgentInTheLoopRequestEventWritable | AgentInTheLoopExceptionEventWritable | HumanInTheLoopResponseEventWritable | LimitChatHistoryEventWritable | StandaloneQuestionCondenserEventWritable | LlmCostEventWritable | ChunkEventWritable | ThoughtEventWritable | GuardEventWritable | RouterEventWritable | GuardRejectionEventWritable | SemanticEventWritable | AgentEventWritable | ChainEventWritable | EmbeddingEventWritable | LlmEventWritable | LlmStopEventWritable | RerankerEventWritable | RetrieverEventWritable | ToolEventWritable | UserMessageEventWritable | ExceptionEventWritable | StopEventWritable | DisplayEventWritable;
+    event: StartEventWritable | AgentInTheLoopResponseEventWritable | HumanInTheLoopRequestEventWritable | AgentInTheLoopRequestEventWritable | AgentInTheLoopExceptionEventWritable | HumanInTheLoopResponseEventWritable | LimitChatHistoryEventWritable | StandaloneQuestionCondenserEventWritable | LlmCostEventWritable | ChunkEventWritable | ThoughtEventWritable | GuardEventWritable | RouterEventWritable | GuardRejectionEventWritable | SemanticEventWritable | AgentEventWritable | ChainEventWritable | EmbeddingEventWritable | LlmEventWritable | LlmStopEventWritable | RerankerEventWritable | RetrieverEventWritable | ToolEventWritable | UserMessageEventWritable | ExceptionEventWritable | StopEventWritable | DisplayEventWritable | GuardAcceptEventWritable | AgentSuitabilityAcceptEventWritable | AgentSuitabilityRejectEventWritable | ContextSufficientAcceptEventWritable | ContextInsufficientRejectEventWritable | FewShotAcceptEventWritable | FewShotRejectEventWritable | SensitiveInfoAcceptEventWritable | SensitiveInfoRejectEventWritable;
 };
 
 /**
@@ -1809,16 +2202,6 @@ export type ControlEventWritable = {
  * CreateNamespaceRequest
  */
 export type CreateNamespaceRequest = {
-    /**
-     * Database Name
-     * The name of the database to which the namespace belongs.
-     */
-    database_name: string;
-    /**
-     * Namespace Name
-     * The name of the namespace to create.
-     */
-    namespace_name: string;
     /**
      * Folder Name
      * The name of the folder to which the namespace belongs.
@@ -1918,6 +2301,21 @@ export type CreateTokenResponse = {
      * The generated API token, only returned at creation
      */
     token: string;
+};
+
+/**
+ * Custom
+ */
+export type CustomOutput = {
+    /**
+     * Input
+     */
+    input: string;
+    /**
+     * Name
+     */
+    name: string;
+    [key: string]: unknown | string;
 };
 
 /**
@@ -2387,6 +2785,111 @@ export type DocumentDto = {
      * Document title.
      */
     document_title?: string | null;
+};
+
+/**
+ * DocumentUploadRequest
+ * Request payload for initiating file upload to knowledge base.
+ *
+ * This request is used to get presigned URLs for direct S3/MinIO upload
+ * of files that will be processed and indexed in the knowledge base.
+ */
+export type DocumentUploadRequest = {
+    /**
+     * Filename
+     * Original filename of the file
+     */
+    filename: string;
+    /**
+     * Content Type
+     * MIME type of the file
+     */
+    content_type: string;
+    /**
+     * Content Length
+     * Size of the file in bytes
+     */
+    content_length: number;
+};
+
+/**
+ * DocumentUploadResponse
+ * Response payload for file upload initialization.
+ *
+ * Contains the presigned URL for direct datalake upload and metadata
+ * needed to complete the upload process.
+ */
+export type DocumentUploadResponse = {
+    /**
+     * Upload Url
+     * Presigned URL for uploading the file to a datalake
+     */
+    upload_url: string;
+    /**
+     * Upload Id
+     * Unique identifier for this upload session
+     */
+    upload_id: string;
+    /**
+     * Container
+     * The bucket/container name where file will be stored
+     */
+    container: string;
+    /**
+     * Folder
+     * The folder name within the bucket/container
+     */
+    folder: string;
+    /**
+     * Object Key
+     * The object key/path for the uploaded file
+     */
+    object_key: string;
+    /**
+     * Expires In
+     * Upload URL expiration time in seconds
+     */
+    expires_in: number;
+};
+
+/**
+ * DocumentUploadValidationRequest
+ * Request for validating whether a file was successfully uploaded to cloud storage.
+ *
+ * This request contains the information needed to verify that a file upload completed
+ * successfully in the globally configured datalake (S3, MinIO, or Azure Blob Storage).
+ */
+export type DocumentUploadValidationRequest = {
+    /**
+     * File Path
+     * Path/key of the uploaded file within the container
+     */
+    file_path: string;
+};
+
+/**
+ * DocumentUploadValidationResponse
+ * Response containing the validation result of a file upload.
+ *
+ * This response indicates whether the uploaded file exists in the globally
+ * configured datalake and provides information about the validation process.
+ */
+export type DocumentUploadValidationResponse = {
+    /**
+     * Exists
+     * Whether the file exists in the datalake
+     */
+    exists: boolean;
+    /**
+     * File Path
+     * Path/key of the file that was validated
+     */
+    file_path: string;
+    /**
+     * Container
+     * Name of the container/bucket
+     */
+    container: string;
 };
 
 /**
@@ -3087,6 +3590,168 @@ export type ExperimentRunRecord = {
 };
 
 /**
+ * FewShotAcceptEvent
+ * Event indicating that the few-shot guard accepted the request.
+ *
+ * This event is triggered when the few-shot guard determines that
+ * the user query is appropriate based on analysis of provided examples.
+ * It signifies that the request matches the patterns of acceptable queries
+ * demonstrated in the few-shot examples.
+ */
+export type FewShotAcceptEventReadable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the guard accepted the request.
+     */
+    reason: string;
+    /**
+     * Event Name
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+};
+
+/**
+ * FewShotAcceptEvent
+ * Event indicating that the few-shot guard accepted the request.
+ *
+ * This event is triggered when the few-shot guard determines that
+ * the user query is appropriate based on analysis of provided examples.
+ * It signifies that the request matches the patterns of acceptable queries
+ * demonstrated in the few-shot examples.
+ */
+export type FewShotAcceptEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the guard accepted the request.
+     */
+    reason: string;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+};
+
+/**
+ * FewShotRejectEvent
+ * Event indicating that the few-shot guard rejected the request.
+ *
+ * This event is triggered when the few-shot guard determines that
+ * the user query is inappropriate based on analysis of provided examples.
+ * It signifies that the request does not match the patterns of acceptable queries
+ * demonstrated in the few-shot examples and should be blocked.
+ */
+export type FewShotRejectEventReadable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the Guard rejected the request.
+     */
+    reason: string;
+    /**
+     * Event Name
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+};
+
+/**
+ * FewShotRejectEvent
+ * Event indicating that the few-shot guard rejected the request.
+ *
+ * This event is triggered when the few-shot guard determines that
+ * the user query is inappropriate based on analysis of provided examples.
+ * It signifies that the request does not match the patterns of acceptable queries
+ * demonstrated in the few-shot examples and should be blocked.
+ */
+export type FewShotRejectEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the Guard rejected the request.
+     */
+    reason: string;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+};
+
+/**
  * File
  */
 export type File = {
@@ -3113,126 +3778,6 @@ export type FileFile = {
      * Filename
      */
     filename?: string;
-};
-
-/**
- * FileUploadRequest
- * Request payload for initiating file upload to knowledge base.
- *
- * This request is used to get presigned URLs for direct S3/MinIO upload
- * of files that will be processed and indexed in the knowledge base.
- */
-export type FileUploadRequest = {
-    /**
-     * Filename
-     * Original filename of the file
-     */
-    filename: string;
-    /**
-     * Content Type
-     * MIME type of the file
-     */
-    content_type: string;
-    /**
-     * Content Length
-     * Size of the file in bytes
-     */
-    content_length: number;
-    /**
-     * Namespace Name
-     * Target namespace name
-     */
-    namespace_name: string;
-    /**
-     * Database Name
-     * Target database name
-     */
-    database_name: string;
-};
-
-/**
- * FileUploadResponse
- * Response payload for file upload initialization.
- *
- * Contains the presigned URL for direct datalake upload and metadata
- * needed to complete the upload process.
- */
-export type FileUploadResponse = {
-    /**
-     * Upload Url
-     * Presigned URL for uploading the file to a datalake
-     */
-    upload_url: string;
-    /**
-     * Upload Id
-     * Unique identifier for this upload session
-     */
-    upload_id: string;
-    /**
-     * Container
-     * The bucket/container name where file will be stored
-     */
-    container: string;
-    /**
-     * Folder
-     * The folder name within the bucket/container
-     */
-    folder: string;
-    /**
-     * Object Key
-     * The object key/path for the uploaded file
-     */
-    object_key: string;
-    /**
-     * Expires In
-     * Upload URL expiration time in seconds
-     */
-    expires_in: number;
-};
-
-/**
- * FileUploadValidationRequest
- * Request for validating whether a file was successfully uploaded to cloud storage.
- *
- * This request contains the information needed to verify that a file upload completed
- * successfully in the globally configured datalake (S3, MinIO, or Azure Blob Storage).
- */
-export type FileUploadValidationRequest = {
-    /**
-     * Container
-     * Name of the container/bucket where the file was uploaded
-     */
-    container: string;
-    /**
-     * File Path
-     * Path/key of the uploaded file within the container
-     */
-    file_path: string;
-};
-
-/**
- * FileUploadValidationResponse
- * Response containing the validation result of a file upload.
- *
- * This response indicates whether the uploaded file exists in the globally
- * configured datalake and provides information about the validation process.
- */
-export type FileUploadValidationResponse = {
-    /**
-     * Exists
-     * Whether the file exists in the datalake
-     */
-    exists: boolean;
-    /**
-     * File Path
-     * Path/key of the file that was validated
-     */
-    file_path: string;
-    /**
-     * Container
-     * Name of the container/bucket
-     */
-    container: string;
 };
 
 /**
@@ -3304,6 +3849,93 @@ export type FunctionDefinition = {
 };
 
 /**
+ * GuardAcceptEvent
+ * Base class for all guard acceptance events.
+ *
+ * This event is triggered when a guard mechanism determines that a request
+ * meets all security, policy, and validation requirements and can proceed.
+ * Guard events are critical for maintaining system security and ensuring
+ * proper workflow control.
+ *
+ * All specific guard acceptance events should inherit from this base class
+ * to ensure consistent behavior and proper event handling throughout the system.
+ */
+export type GuardAcceptEventReadable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the guard accepted the request.
+     */
+    reason: string;
+    /**
+     * Event Name
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+};
+
+/**
+ * GuardAcceptEvent
+ * Base class for all guard acceptance events.
+ *
+ * This event is triggered when a guard mechanism determines that a request
+ * meets all security, policy, and validation requirements and can proceed.
+ * Guard events are critical for maintaining system security and ensuring
+ * proper workflow control.
+ *
+ * All specific guard acceptance events should inherit from this base class
+ * to ensure consistent behavior and proper event handling throughout the system.
+ */
+export type GuardAcceptEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the guard accepted the request.
+     */
+    reason: string;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+};
+
+/**
  * GuardEvent
  */
 export type GuardEventReadable = {
@@ -3364,13 +3996,20 @@ export type GuardEventWritable = {
 
 /**
  * GuardRejectionEvent
- * A class representing a guard rejection event.
- * This event is used to communicate the reason for the rejection to the client.
+ * Base class for all guard rejection events.
  *
+ * This event is triggered when a guard mechanism determines that a request
+ * does not meet security, policy, or validation requirements and must be blocked.
+ * Guard rejection events are critical for maintaining system security and ensuring
+ * only authorized and valid requests proceed through the workflow.
  *
  * ### Why GuardRejectionEvent?
  * Safeguarding the system from invalid requests is a critical part of any system. This event
- * is used to communicate the reason for the rejection to the client.
+ * is used to communicate the reason for the rejection to the client and halt processing
+ * of potentially harmful or invalid requests.
+ *
+ * All specific guard rejection events should inherit from this base class
+ * to ensure consistent behavior and proper event handling throughout the system.
  */
 export type GuardRejectionEventReadable = {
     /**
@@ -3411,13 +4050,20 @@ export type GuardRejectionEventReadable = {
 
 /**
  * GuardRejectionEvent
- * A class representing a guard rejection event.
- * This event is used to communicate the reason for the rejection to the client.
+ * Base class for all guard rejection events.
  *
+ * This event is triggered when a guard mechanism determines that a request
+ * does not meet security, policy, or validation requirements and must be blocked.
+ * Guard rejection events are critical for maintaining system security and ensuring
+ * only authorized and valid requests proceed through the workflow.
  *
  * ### Why GuardRejectionEvent?
  * Safeguarding the system from invalid requests is a critical part of any system. This event
- * is used to communicate the reason for the rejection to the client.
+ * is used to communicate the reason for the rejection to the client and halt processing
+ * of potentially harmful or invalid requests.
+ *
+ * All specific guard rejection events should inherit from this base class
+ * to ensure consistent behavior and proper event handling throughout the system.
  */
 export type GuardRejectionEventWritable = {
     /**
@@ -5476,6 +6122,11 @@ export type NamespaceDto = {
      */
     name: string;
     /**
+     * Database Id
+     * ID of the database containing the namespace
+     */
+    database_id: string;
+    /**
      * Display Name
      * Display name of namespace, can be localized
      */
@@ -6062,10 +6713,15 @@ export type RerankerEventReadable = {
      */
     rerank_model_name?: string | null;
     /**
-     * Top K
-     * The top K parameter, representing the number of results to be reranked.
+     * Top N
+     * The top N parameter, representing the number of results to be reranked.
      */
-    top_k?: number | null;
+    top_n?: number | null;
+    /**
+     * Reranked
+     * Whether the nodes were reranked or not.
+     */
+    reranked?: boolean | null;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -6077,7 +6733,7 @@ export type RerankerEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<IngestedNode> | null) | (Array<IngestedNode> | null) | (string | null) | (string | null) | (number | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<IngestedNode> | null) | (Array<IngestedNode> | null) | (string | null) | (string | null) | (number | null) | (boolean | null) | Array<string> | undefined;
 };
 
 /**
@@ -6122,11 +6778,16 @@ export type RerankerEventWritable = {
      */
     rerank_model_name?: string | null;
     /**
-     * Top K
-     * The top K parameter, representing the number of results to be reranked.
+     * Top N
+     * The top N parameter, representing the number of results to be reranked.
      */
-    top_k?: number | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<IngestedNode> | null) | (Array<IngestedNode> | null) | (string | null) | (string | null) | (number | null) | undefined;
+    top_n?: number | null;
+    /**
+     * Reranked
+     * Whether the nodes were reranked or not.
+     */
+    reranked?: boolean | null;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<IngestedNode> | null) | (Array<IngestedNode> | null) | (string | null) | (string | null) | (number | null) | (boolean | null) | undefined;
 };
 
 /**
@@ -6652,6 +7313,174 @@ export type SemanticEventWritable = {
      * Display description for the event
      */
     display_description?: LocaleString | null;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+};
+
+/**
+ * SensitiveInfoAcceptEvent
+ * Event indicating that the sensitive information guard accepted the response.
+ *
+ * This event is triggered when the sensitive information guard determines that
+ * the response does not contain any sensitive or confidential information and
+ * can be safely presented to the user without modifications.
+ */
+export type SensitiveInfoAcceptEventReadable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the guard accepted the request.
+     */
+    reason: string;
+    /**
+     * Event Name
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+};
+
+/**
+ * SensitiveInfoAcceptEvent
+ * Event indicating that the sensitive information guard accepted the response.
+ *
+ * This event is triggered when the sensitive information guard determines that
+ * the response does not contain any sensitive or confidential information and
+ * can be safely presented to the user without modifications.
+ */
+export type SensitiveInfoAcceptEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the guard accepted the request.
+     */
+    reason: string;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+};
+
+/**
+ * SensitiveInfoRejectEvent
+ * Event indicating that the sensitive information guard rejected the response.
+ *
+ * This event is triggered when the sensitive information guard determines that
+ * the response contains sensitive or confidential information. The event includes
+ * a cleaned version of the response with the sensitive information removed.
+ */
+export type SensitiveInfoRejectEventReadable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the Guard rejected the request.
+     */
+    reason: string;
+    /**
+     * Cleaned Answer
+     * The revised response with sensitive information removed.
+     */
+    cleaned_answer: string;
+    /**
+     * Event Name
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | undefined;
+};
+
+/**
+ * SensitiveInfoRejectEvent
+ * Event indicating that the sensitive information guard rejected the response.
+ *
+ * This event is triggered when the sensitive information guard determines that
+ * the response contains sensitive or confidential information. The event includes
+ * a cleaned version of the response with the sensitive information removed.
+ */
+export type SensitiveInfoRejectEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Reason
+     * Reason why the Guard rejected the request.
+     */
+    reason: string;
+    /**
+     * Cleaned Answer
+     * The revised response with sensitive information removed.
+     */
+    cleaned_answer: string;
     [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
 };
 
@@ -8076,13 +8905,37 @@ export type OpenaiTypesAudioTranscriptionVerboseUsage = {
 };
 
 /**
+ * Custom
+ */
+export type OpenaiTypesChatChatCompletionMessageCustomToolCallParamCustom = {
+    /**
+     * Input
+     */
+    input: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
  * Function
  */
-export type OpenaiTypesChatChatCompletionMessageToolCallParamFunction = {
+export type OpenaiTypesChatChatCompletionMessageFunctionToolCallParamFunction = {
     /**
      * Arguments
      */
     arguments: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
+ * Custom
+ */
+export type OpenaiTypesChatChatCompletionNamedToolChoiceCustomParamCustom = {
     /**
      * Name
      */
@@ -9574,9 +10427,18 @@ export type RunExperimentResponse = RunExperimentResponses[keyof RunExperimentRe
 
 export type CreateNamespaceData = {
     body: CreateNamespaceRequest;
-    path?: never;
+    path: {
+        /**
+         * Database name
+         */
+        database: string;
+        /**
+         * Namespace
+         */
+        namespace: string;
+    };
     query?: never;
-    url: '/knowledge/namespaces';
+    url: '/knowledge/databases/{database}/namespaces/{namespace}';
 };
 
 export type CreateNamespaceErrors = {
@@ -9601,12 +10463,16 @@ export type UpdateNamespaceData = {
     body: UpdateNamespaceRequest;
     path: {
         /**
-         * Namespace ID
+         * Database name
          */
-        namespace_id: string;
+        database: string;
+        /**
+         * Namespace
+         */
+        namespace: string;
     };
     query?: never;
-    url: '/knowledge/namespaces/{namespace_id}';
+    url: '/knowledge/databases/{database}/namespaces/{namespace}';
 };
 
 export type UpdateNamespaceErrors = {
@@ -9696,6 +10562,10 @@ export type GetDocumentByIdData = {
          * Database name
          */
         database: string;
+        /**
+         * Namespace
+         */
+        namespace: string;
         /**
          * Document ID
          */
@@ -9800,6 +10670,91 @@ export type GetSummaryNodesForDocumentResponses = {
 };
 
 export type GetSummaryNodesForDocumentResponse = GetSummaryNodesForDocumentResponses[keyof GetSummaryNodesForDocumentResponses];
+
+export type InitiateDocumentUploadData = {
+    body: DocumentUploadRequest;
+    path: {
+        /**
+         * Database name
+         */
+        database: string;
+        /**
+         * Namespace
+         */
+        namespace: string;
+    };
+    query?: never;
+    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/upload/initiate';
+};
+
+export type InitiateDocumentUploadErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type InitiateDocumentUploadError = InitiateDocumentUploadErrors[keyof InitiateDocumentUploadErrors];
+
+export type InitiateDocumentUploadResponses = {
+    /**
+     * Successful Response
+     */
+    200: DocumentUploadResponse;
+};
+
+export type InitiateDocumentUploadResponse = InitiateDocumentUploadResponses[keyof InitiateDocumentUploadResponses];
+
+export type ValidateDocumentUploadData = {
+    body: DocumentUploadValidationRequest;
+    path: {
+        /**
+         * Database name
+         */
+        database: string;
+        /**
+         * Namespace
+         */
+        namespace: string;
+    };
+    query?: never;
+    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/upload/validate';
+};
+
+export type ValidateDocumentUploadErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ValidateDocumentUploadError = ValidateDocumentUploadErrors[keyof ValidateDocumentUploadErrors];
+
+export type ValidateDocumentUploadResponses = {
+    /**
+     * Successful Response
+     */
+    200: DocumentUploadValidationResponse;
+};
+
+export type ValidateDocumentUploadResponse = ValidateDocumentUploadResponses[keyof ValidateDocumentUploadResponses];
+
+export type GetSupportedFileTypesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/knowledge/supported-types';
+};
+
+export type GetSupportedFileTypesResponses = {
+    /**
+     * Response Get Supported File Types Knowledge Supported Types Get
+     * Successful Response
+     */
+    200: Array<string>;
+};
+
+export type GetSupportedFileTypesResponse = GetSupportedFileTypesResponses[keyof GetSupportedFileTypesResponses];
 
 export type GetFileUrlData = {
     body?: never;
@@ -9952,73 +10907,6 @@ export type GetAnonymousFileRedirectResponses = {
      */
     200: unknown;
 };
-
-export type InitiateFileUploadData = {
-    body: FileUploadRequest;
-    path?: never;
-    query?: never;
-    url: '/files/upload/initiate';
-};
-
-export type InitiateFileUploadErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type InitiateFileUploadError = InitiateFileUploadErrors[keyof InitiateFileUploadErrors];
-
-export type InitiateFileUploadResponses = {
-    /**
-     * Successful Response
-     */
-    200: FileUploadResponse;
-};
-
-export type InitiateFileUploadResponse = InitiateFileUploadResponses[keyof InitiateFileUploadResponses];
-
-export type ValidateFileUploadData = {
-    body: FileUploadValidationRequest;
-    path?: never;
-    query?: never;
-    url: '/files/upload/validate';
-};
-
-export type ValidateFileUploadErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type ValidateFileUploadError = ValidateFileUploadErrors[keyof ValidateFileUploadErrors];
-
-export type ValidateFileUploadResponses = {
-    /**
-     * Successful Response
-     */
-    200: FileUploadValidationResponse;
-};
-
-export type ValidateFileUploadResponse = ValidateFileUploadResponses[keyof ValidateFileUploadResponses];
-
-export type GetSupportedFileTypesData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/files/upload/supported-types';
-};
-
-export type GetSupportedFileTypesResponses = {
-    /**
-     * Response Get Supported File Types Files Upload Supported Types Get
-     * Successful Response
-     */
-    200: Array<string>;
-};
-
-export type GetSupportedFileTypesResponse = GetSupportedFileTypesResponses[keyof GetSupportedFileTypesResponses];
 
 export type GetNotificationsData = {
     body?: never;

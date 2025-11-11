@@ -154,6 +154,39 @@ event:
     successful: "Successful"
     chat: "Chat"
     agents: "Agents:"
+  base:
+    view_raw_data: "View raw event data"
+    view_formatted: "View formatted event"
+    event_data: "Event Data"
+  limitChatHistory:
+    summary: "Chat history limited to {count} messages"
+    assistant: "Assistant"
+    system: "System"
+    user: "User"
+    description: "Chat history was truncated based on token limits to stay within model constraints"
+  reranker:
+    topDocuments: "Top {count} most relevant documents:"
+    query: "Search Query"
+  retriever:
+    foundDocuments: "Found {count} relevant documents"
+    query: "Search Query"
+    chunksFound: "{count} chunks found"
+    documentsSpanning: "Spanning {count} documents"
+    avgScore: "Avg relevance: {score}%"
+    chunksFromDoc: "{count} chunk | {count} chunks"
+    chunk: "Chunk"
+    position: "Pos: {pos}"
+    lines: "Lines {start}-{end}"
+    chars: "{count} chars"
+    sourceDocument: "{count} source document | {count} source documents"
+    contentChunk: "{count} content chunk | {count} content chunks"
+    noChunksFound: "No chunks found"
+    noChunksFoundDescription: "The retrieval search didn't find any relevant content chunks."
+  standaloneQuestionCondenser:
+    summary: "Question refined and condensed"
+    condensedQuestion: "Condensed Question"
+    user: "User"
+    description: "The original question was reformulated to be more specific and context-aware for better search results"
   statistics:
     charts:
       agentInvocations: "Agent Invocations"

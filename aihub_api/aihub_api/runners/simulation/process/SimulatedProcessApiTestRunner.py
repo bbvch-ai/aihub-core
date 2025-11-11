@@ -95,7 +95,7 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
         super().__init__()
         self.process_class = process_class
         self.process_id = process_id
-        self.topic_manager = ProcessInstanceTopicManager(process_class, process_id)
+        self.topic_manager = ProcessInstanceTopicManager(process_class=process_class, process_id=process_id)
 
         self.nc: NATS | None = None
         self.js: JetStreamContext | None = None
@@ -226,9 +226,12 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
                 )
                 program_endpoints += 1
 
-        self.nc_publisher = NCPublisher(self.nc)
+        self.nc_publisher = NCPublisher(f"Simulated{self.process_class}ApiTestRunnerDiscoveryResponse", self.nc)
         self.discovery_subscriber = ProcessNCSubscriber.for_process_class_discovery_request_events(
-            self.nc, ProcessTopicManager(), self.discovery_handler
+            self.nc,
+            ProcessTopicManager(),
+            self.discovery_handler,
+            subscriber_name=f"Simulated{self.process_class}ApiTestRunnerDiscoveryRequest",
         )
         await self.discovery_subscriber.start()
 
@@ -239,10 +242,11 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
             js=self.js,
             handler=self.simulate_process,
             queue_group="simulated-process-runner-queue-group",
+            subscriber_name=f"Simulated{self.process_class}ApiTestRunnerWorkEvents",
         )
         await self.process_work_event_subscriber.start()
 
-        self.js_publisher = JSPublisher(self.js)
+        self.js_publisher = JSPublisher(f"Simulated{self.process_class}ApiTestRunner", self.js)
 
         if hasattr(self._api_app.state, "process_controller"):
             discovery_service = ProcessEndpointsDiscoveryService(

@@ -57,10 +57,10 @@ Feature: RAG Agent
     * a StopEvent is present
 
     Examples:
-    | locale | prompt                                                                                         | query        |
-    | en     | You are a helpful AI assistant. Always respond in English.              | What is AI?          |
-    | de     | Sie sind ein hilfreicher KI-Assistent. Antworten Sie immer auf Deutsch. | Was ist AI?          |
-    | fr     | Vous êtes un assistant IA utile. Répondez toujours en français.         | Qu'est-ce que l'IA?  |
+      | locale | prompt                                                                  | query               |
+      | en     | You are a helpful AI assistant. Always respond in English.              | What is AI?         |
+      | de     | Sie sind ein hilfreicher KI-Assistent. Antworten Sie immer auf Deutsch. | Was ist AI?         |
+      | fr     | Vous êtes un assistant IA utile. Répondez toujours en français.         | Qu'est-ce que l'IA? |
 
   @self_hosted
   Scenario: Test RAGAgent with valid self hosted configuration
@@ -72,5 +72,17 @@ Feature: RAG Agent
     * a RetrieverEvent is present with retrieved nodes
     * an InOrderNodeCombinerEvent is present with ordered context message
     * a LimitChatHistoryWithContextEvent is present with limited history and context
+    * an LLMEvent is present with a generated response
+    * a StopEvent is present
+
+  @self_hosted
+  Scenario: Test RAGAgent with reranking enabled
+    Given a RAGAgent runner with a valid self hosted configuration
+    * with reranking enabled and top_n of "2"
+    When the start event is sent with a user query "What is AI Hub?"
+    Then a RetrieverEvent is present with more than "2" retrieved nodes
+    * a RerankerEvent is present with reranked nodes
+    * the RerankerEvent model name should be "reranker"
+    * the RerankerEvent should limit results to "2" nodes
     * an LLMEvent is present with a generated response
     * a StopEvent is present

@@ -12,3 +12,6 @@ aihub_doc/.vitepress/dist
 aihub_doc/aihub
 /configs/traefik/certs/dev-cert.pem
 /configs/traefik/certs/dev-key.pem
+.idea/copilot*
+*.log
+.mypy_cache/

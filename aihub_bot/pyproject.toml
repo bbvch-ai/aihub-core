@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_bot"
-version = "v0.244.0"
+version = "v0.251.2"
 description = "bots core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -26,7 +26,10 @@ uvicorn = "^0.34.0"
 httpx = "^0.28.1"
 cryptography = "^44.0.0"
 pyjwt = "^2.10.1"
-botbuilder-integration-aiohttp = "^4.16.2"
+microsoft-agents-hosting-core = "^0.5.0"
+microsoft-agents-hosting-aiohttp = "^0.5.0"
+microsoft-agents-activity = "^0.5.0"
+microsoft-agents-authentication-msal = "^0.5.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
@@ -42,7 +45,7 @@ pip-licenses = "^5.0.0"
 
 [tool.poetry.dependencies.aihub_lib]
 git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.244.0"
+tag = "v0.251.2"
 subdirectory = "aihub_lib"
 
 [build-system]

@@ -4,9 +4,8 @@ from typing import Any, override
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.utils import str_to_object_id
-from botbuilder.core import ActivityHandler, TurnContext
-from botbuilder.schema import Activity, ActivityTypes
-from botframework.connector import Channels
+from microsoft_agents.activity import Activity, ActivityTypes, Channels
+from microsoft_agents.hosting.core import ActivityHandler, TurnContext
 
 from aihub_bot.bots.chat.CompletionHandler import CompletionHandler
 from aihub_bot.persistence.entities.ConversationEntity import ConversationTracker
@@ -49,9 +48,11 @@ class BaseChatBot(ActivityHandler):
             turn_context.activity.channel_id == Channels.ms_teams
             and turn_context.activity.members_added is not None
             and turn_context.activity.recipient.id in [member.id for member in turn_context.activity.members_added]
+            and turn_context.activity.channel_data.get("team") is None
         ):
             conversation_id = turn_context.activity.conversation.id
-            ConversationTracker.mark_explicitly_deleted(conversation_id)
+            bot_id = turn_context.activity.recipient.id
+            ConversationTracker.mark_explicitly_deleted(conversation_id, bot_id)
 
             self.completion_handler.delete_conversation_if_exists(turn_context=turn_context)
 
@@ -72,10 +73,11 @@ class BaseChatBot(ActivityHandler):
     async def _process_message(self, turn_context: TurnContext, is_streaming: bool = False):
         locale_handler = self._get_locale_handler(turn_context)
         conversation_id = turn_context.activity.conversation.id
+        bot_id = turn_context.activity.recipient.id
 
         # Check if we should show an expiration message
         if (
-            ConversationTracker.should_show_expiration_message(conversation_id)
+            ConversationTracker.should_show_expiration_message(conversation_id, bot_id)
             and turn_context.activity.type == "message"
         ):
             await turn_context.send_activity(
@@ -87,7 +89,7 @@ class BaseChatBot(ActivityHandler):
             )
 
         # Always track this conversation ID
-        ConversationTracker.track_conversation(conversation_id)
+        ConversationTracker.track_conversation(conversation_id, bot_id)
 
         # Persist user message
         self.completion_handler.add_user_message_to_conversation(
@@ -96,13 +98,17 @@ class BaseChatBot(ActivityHandler):
         )
 
         # Handle Slack-specific message formatting
-        if turn_context.activity.channel_id == "slack":
+        if turn_context.activity.channel_id == Channels.slack:
             turn_context = self.completion_handler.handle_slack_message(turn_context)
             if turn_context is None:
                 return
 
-        # Typing must be sent after the Slack message is processed such that no typing indicator is sent
-        # when the bot should not respond to the message.
+        # Handle Teams-specific message formatting
+        if turn_context.activity.channel_id == Channels.ms_teams:
+            turn_context = self.completion_handler.handle_teams_message(turn_context)
+            if turn_context is None:
+                return
+
         typing_stop_signal = Event()
         typing_task: Task = asyncio.create_task(
             self.completion_handler.send_typing_activity(

@@ -23,7 +23,7 @@ from aihub_pipeline.resources.vector_store.MilvusVectorStoreResource import Milv
 
 
 def azure_data_lake_resources(
-    container_name: str, figures_directory_name: str
+    container_name: str, directory_name: str | None = None
 ) -> dict[str, ConfigurableResourceFactory]:
     """Factory function for Azure Data Lake resources."""
     data_lake_client = AzureDataLakeClientResource(container_name=container_name)
@@ -32,7 +32,7 @@ def azure_data_lake_resources(
         data_lake_client=data_lake_client,
         data_lake_file_system=data_lake_file_system,
     )
-    data_lake_resource = DataLakeResource(container_name=container_name, figures_directory_name=figures_directory_name)
+    data_lake_resource = DataLakeResource(container_name=container_name, directory_name=directory_name)
     return {
         "data_lake_client": data_lake_client,
         "data_lake_file_system": data_lake_file_system,
@@ -41,7 +41,9 @@ def azure_data_lake_resources(
     }
 
 
-def s3_data_lake_resources(container_name: str, figures_directory_name: str) -> dict[str, ConfigurableResourceFactory]:
+def s3_data_lake_resources(
+    container_name: str, directory_name: str | None = None
+) -> dict[str, ConfigurableResourceFactory]:
     """Factory function for S3 Data Lake resources (MinIO)."""
     data_lake_client = S3DataLakeClientResource(container_name=container_name)
     data_lake_file_system = S3DataLakeFileSystemResource()
@@ -49,7 +51,7 @@ def s3_data_lake_resources(container_name: str, figures_directory_name: str) -> 
         data_lake_client=data_lake_client,
         data_lake_file_system=data_lake_file_system,
     )
-    data_lake_resource = DataLakeResource(container_name=container_name, figures_directory_name=figures_directory_name)
+    data_lake_resource = DataLakeResource(container_name=container_name, directory_name=directory_name)
     return {
         "data_lake_client": data_lake_client,
         "data_lake_file_system": data_lake_file_system,
@@ -99,9 +101,7 @@ def local_mongo_milvus_storage_context_resource(
     }
 
 
-def default_io_manager_azure_datalake_resources(
-    container_name: str, directory_name: str
-) -> dict[str, ConfigurableResourceFactory]:
+def default_io_manager_azure_datalake_resources(container_name: str) -> dict[str, ConfigurableResourceFactory]:
     """Factory function for Azure default IO manager resources."""
     adls2 = ADLS2Resource(
         storage_account=DataLakeAccess().get_storage_account_name(),
@@ -109,7 +109,7 @@ def default_io_manager_azure_datalake_resources(
     )
     adls2_pickle_io_manager = ADLS2PickleIOManager(
         adls2_file_system=container_name,
-        adls2_prefix=f".{directory_name}-dagster/",
+        adls2_prefix=f".{container_name}-dagster/",
         adls2=adls2,
     )
 
@@ -143,9 +143,9 @@ def default_io_manager_s3_datalake_resources(container_name: str) -> dict[str, C
 
 def default_llm_resources() -> dict[str, ConfigurableResourceFactory]:
     embedding_model_resource = EmbeddingModelResource(
-        embedding_config=EmbeddingModelConfig(model_name="azure/text-embedding-ada-002")
+        embedding_config=EmbeddingModelConfig(model_name="embedding/small")
     )
-    language_model = LanguageModelResource(llm_config=LLMConfig(model_name="azure/gpt-4o-mini"))
+    language_model = LanguageModelResource(llm_config=LLMConfig(model_name="text-generation/mini"))
     return {
         "embedding_model": embedding_model_resource,
         "language_model": language_model,

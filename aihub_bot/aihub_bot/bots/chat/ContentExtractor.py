@@ -4,8 +4,7 @@ from enum import Enum
 from typing import Annotated
 
 import httpx
-from botbuilder.schema import Activity, Attachment
-from botframework.connector import Channels
+from microsoft_agents.activity import Activity, Attachment, Channels
 from pydantic import BaseModel, Field
 
 from aihub_bot.persistence.entities.ConversationEntity import Content
@@ -56,9 +55,21 @@ class ContentExtractor:
     @staticmethod
     def _extract_text_content(activity: Activity) -> list[Content]:
         """Extract text content from activity."""
-        if activity.text:
-            return [Content(text=activity.text, type="text")]
-        return []
+        text = activity.text or ""
+
+        # For Teams, use HTML content if available (contains emojis in correct positions)
+        if activity.channel_id == Channels.ms_teams and activity.attachments:
+            for attachment in activity.attachments:
+                if attachment.content_type == "text/html" and attachment.content:
+                    # Use the HTML directly - LLMs can parse it and extract emojis from alt attributes
+                    text = attachment.content
+                    break
+
+        if not text:
+            return []
+
+        logger.debug(f"Text content (repr): {repr(text)}")
+        return [Content(text=text, type="text")]
 
     @staticmethod
     def _extract_slack_files(path: str, activity: Activity) -> list[Content]:
@@ -94,15 +105,23 @@ class ContentExtractor:
             return content
 
         for attachment in activity.attachments:
-            try:
-                # Skip Teams HTML content that's not a real file
-                if (
-                    activity.channel_id == Channels.ms_teams
-                    and attachment.content_url is None
-                    and attachment.content_type == "text/html"
-                ):
-                    continue
+            # Skip Teams HTML content that's not a real file (already extracted from activity.text)
+            if (
+                activity.channel_id == Channels.ms_teams
+                and attachment.content_url is None
+                and attachment.content_type == "text/html"
+            ):
+                continue
 
+            # Skip emoji image attachments without names (unicode is already in activity.text)
+            if not attachment.name or not attachment.content_url:
+                logger.debug(
+                    f"Skipping attachment without name or URL (likely emoji): "
+                    f"name={attachment.name}, url={attachment.content_url}, type={attachment.content_type}"
+                )
+                continue
+
+            try:
                 # Process based on attachment type
                 if attachment.content_type == "application/vnd.microsoft.teams.file.download.info":
                     file_info = ContentExtractor._from_teams_file(attachment)
@@ -146,6 +165,9 @@ class ContentExtractor:
     @staticmethod
     def _from_generic_attachment(attachment: Attachment) -> FileInfo:
         """Create FileInfo from a generic attachment."""
+        if not attachment.name or not attachment.content_url:
+            raise ValueError("Invalid generic attachment: missing name or URL")
+
         return FileInfo(
             name=attachment.name,
             url=attachment.content_url,
