@@ -184,8 +184,6 @@ services:
       S3_FILER: "seaweedfs-filer:8888"
       S3_BIND_IP: "0.0.0.0"
       S3_ALLOW_EMPTY_FOLDER: true
-      S3_DOMAIN_NAME: ${S3_DOMAIN_NAME:-}
-      S3_DATACENTER: ${S3_DATACENTER:-}
     depends_on:
       seaweedfs-filer:
         condition: service_healthy
@@ -256,7 +254,7 @@ services:
       - "traefik.http.routers.seaweedfs-filer.rule=Host(`datalake.${DOMAIN}`)"
       - "traefik.http.routers.seaweedfs-filer.priority=4000"
       - "traefik.http.routers.seaweedfs-filer.entrypoints=websecure"
-      {%- if stage != 'local' %}
+      {%- if stage not in ['local', 'build'] %}
       - "traefik.http.routers.seaweedfs-filer.tls.certresolver=letsencrypt"
       {%- else %}
       - "traefik.http.routers.seaweedfs-filer.tls=true"
@@ -358,7 +356,7 @@ services:
       - "traefik.http.routers.attu.rule=Host(`attu.${DOMAIN}`)"
       - "traefik.http.routers.attu.priority=4000"
       - "traefik.http.routers.attu.entrypoints=websecure"
-      {%- if stage != 'local' %}
+      {%- if stage not in ['local', 'build'] %}
       - "traefik.http.routers.attu.tls.certresolver=letsencrypt"
       {%- else %}
       - "traefik.http.routers.attu.tls=true"
@@ -866,7 +864,7 @@ services:
       - "traefik.http.routers.litellm.entrypoints=websecure"
       - "traefik.http.routers.litellm.middlewares=security-headers@file"
       - "traefik.http.services.litellm.loadbalancer.server.port=4000"
-      {%- if stage != 'local' %}
+      {%- if stage not in ['local', 'build'] %}
       - "traefik.http.routers.litellm.tls.certresolver=letsencrypt"
       {%- else %}
       - "traefik.http.routers.litellm.tls=true"
@@ -1251,7 +1249,7 @@ services:
       - "traefik.http.routers.openwebui-default.entrypoints=websecure"
       - "traefik.http.routers.openwebui-default.middlewares=openwebui-default-middleware"
       # --- TLS Resolver Logic ---
-      {%- if stage != 'local' %}
+      {%- if stage not in ['local', 'build'] %}
       - "traefik.http.routers.openwebui-api-auth.tls.certresolver=letsencrypt"
       - "traefik.http.routers.openwebui-api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.openwebui-static.tls.certresolver=letsencrypt"
@@ -1319,7 +1317,7 @@ services:
       - "traefik.http.routers.dagster.entrypoints=websecure"
       - "traefik.http.routers.dagster.middlewares=security-headers@file"
       - "traefik.http.services.dagster.loadbalancer.server.port=4180"
-      {%- if stage != 'local' %}
+      {%- if stage not in ['local', 'build'] %}
       - "traefik.http.routers.dagster.tls.certresolver=letsencrypt"
       {%- else %}
       - "traefik.http.routers.dagster.tls=true"
@@ -1445,10 +1443,10 @@ services:
       - "traefik.http.routers.http-catch.middlewares=https-redirect"
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
       # --- Dashboard ---
-      {%- if stage in ['local', 'build'] %}
-      - "traefik.http.routers.traefik.tls=true"
-      {%- else %}
+      {%- if stage not in ['local', 'build'] %}
       - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      {%- else %}
+      - "traefik.http.routers.traefik.tls=true"
       {%- endif %}
       - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
       - "traefik.http.routers.traefik.entrypoints=websecure"
@@ -1567,7 +1565,7 @@ services:
       - "traefik.http.routers.api.entrypoints=websecure"
       - "traefik.http.routers.api.middlewares=security-headers@file"
       - "traefik.http.services.api.loadbalancer.server.port=8000"
-      {%- if stage != 'local' %}
+      {%- if stage not in ['local', 'build'] %}
       - "traefik.http.routers.api.tls.certresolver=letsencrypt"
       {%- else %}
       - "traefik.http.routers.api.tls=true"
@@ -1621,7 +1619,7 @@ services:
       - "traefik.http.routers.web-default.entrypoints=websecure"
       - "traefik.http.routers.web-default.middlewares=web-standard-middleware"
       # --- TLS Resolver Logic ---
-      {%- if stage != 'local' %}
+      {%- if stage not in ['local', 'build'] %}
       - "traefik.http.routers.web-static.tls.certresolver=letsencrypt"
       - "traefik.http.routers.web-auth.tls.certresolver=letsencrypt"
       - "traefik.http.routers.web-index.tls.certresolver=letsencrypt"
