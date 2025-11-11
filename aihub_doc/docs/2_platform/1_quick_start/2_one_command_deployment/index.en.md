@@ -141,6 +141,14 @@ AZURE_OPENAI_KEY="REPLACE_WITH_AZURE_OPENAI_KEY"
 # Google Gemini (Alternative)
 GEMINI_API_KEY="REPLACE_WITH_GEMINI_KEY"
 
+# Swiss LLM Cloud (Optional)
+SWISS_LLM_CLOUD_API_URL=""                # Optional: Swiss LLM Cloud endpoint URL
+SWISS_LLM_CLOUD_API_KEY=""                # Optional: Swiss LLM Cloud API key
+
+# Cohere (Optional)
+COHERE_API_BASE=""                        # Optional: Cohere API base URL
+COHERE_API_KEY=""                         # Optional: Cohere API key
+
 # Hugging Face (Optional)
 HUGGINGFACE_API_KEY=""                    # Optional: For Hugging Face model access
 
