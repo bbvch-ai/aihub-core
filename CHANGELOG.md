@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.251.2] - 2025-11-11 - Quick Start Guide Enhancements: Clearer Conversations and Deeper Insights
+
+### Added
+
+- 🎬 **New Video Tutorials:** Introduced two new video tutorials in the "Your First Conversation" guide, visually
+  demonstrating how to initiate conversations via the main chat interface and directly through an agent.
+
+### Changed
+
+- 📄 **Revamped "Your First Conversation" Guide:** Significantly expanded and clarified the guide on starting
+  conversations with agents, detailing two primary methods and highlighting key features of the chat interface (Open
+  WebUI), along with options for model and agent selection.
+- 📖 **Enhanced "Your First Insights" Documentation:** Updated the guide to provide comprehensive explanations of
+  "Traceability" and "Document Retrieval (RAG)" features, illustrating how users can gain deeper insights into agent
+  interactions directly from the chat interface.
+- 📝 **Refined "What Just Happened?" Section:** Improved the introductory text and streamlined descriptions for
+  navigation options in the quick start summary, enhancing overall readability and guidance.
+
+---
+
 ## [v0.251.1] - 2025-11-10 - Streamlined AI Assistant Integration via AGENTS.md Documentation
 
 ### Added
