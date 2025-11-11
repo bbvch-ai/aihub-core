@@ -5,10 +5,10 @@
 #   - deployment/compose-config.yml (for changing values and versions)
 #   - deployment/templates/docker-compose.yml.j2 (for changing structure and logic)
 
-{%- set gpu_postfix = '.gpu' if gpu_enabled else '' -%}
+{%- set stage_postfix = stage + ".gpu" if gpu_enabled else stage %}
 {%- set hardware = 'gpu' if gpu_enabled else 'cpu' %}
-{%- if stage != 'dev' %}
 
+{% if stage != 'dev' %}
 # ===================================================================
 # TRAEFIK PRIORITY RULES
 # ===================================================================
@@ -309,7 +309,7 @@ services:
       MINIO_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
     volumes:
       - {{ global.volume_root }}/milvus-data:/var/lib/milvus
-      - ./configs/milvus/milvus-config.{{ stage }}{{ gpu_postfix }}.yml:/milvus/configs/milvus.yaml
+      - ./configs/milvus/milvus-config.{{ stage_postfix }}.yml:/milvus/configs/milvus.yaml
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9091/healthz" ]
       start_period: 90s
@@ -485,7 +485,7 @@ services:
     restart: always
     command: -c /etc/nats/nats-server.conf
     volumes:
-      - ./configs/nats/nats-config.{{ stage }}{{ gpu_postfix }}.conf:/etc/nats/nats-server.conf
+      - ./configs/nats/nats-config.{{ stage_postfix }}.conf:/etc/nats/nats-server.conf
       - {{ global.volume_root }}/nats:/data/nats
     healthcheck:
       test: [ "NONE" ]
@@ -839,7 +839,7 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: False
     volumes:
-      - ./configs/litellm/litellm-config.{{ stage }}{{ gpu_postfix }}.yml:/app/config.yml
+      - ./configs/litellm/litellm-config.{{ stage_postfix }}.yml:/app/config.yml
     command: --config /app/config.yml
     depends_on:
       postgres:
@@ -986,7 +986,7 @@ services:
       - OTEL_CLOUD_ENDPOINT=${OTEL_CLOUD_ENDPOINT}
       - OTEL_CLOUD_HEADERS=${OTEL_CLOUD_HEADERS}
     volumes:
-      - ./configs/otel/otel-config.{{ stage }}{{ gpu_postfix }}.yml:/etc/otel-config.yml
+      - ./configs/otel/otel-config.{{ stage_postfix }}.yml:/etc/otel-config.yml
     {%- if stage == 'dev' %}
     ports:
       - "4317:4317"
@@ -1343,8 +1343,8 @@ services:
       - /dagster_home/workspace.yaml
     volumes:
       - {{ global.volume_root }}/dagster-data:/dagster_home
-      - ./configs/dagster/dagster-config.{{ stage }}{{ gpu_postfix }}.yml:/dagster_home/dagster.yaml:ro
-      - ./configs/dagster/workspace.{{ stage }}{{ gpu_postfix }}.yml:/dagster_home/workspace.yaml:ro
+      - ./configs/dagster/dagster-config.{{ stage_postfix }}.yml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/workspace.{{ stage_postfix }}.yml:/dagster_home/workspace.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -1371,8 +1371,8 @@ services:
       - run
     volumes:
       - {{ global.volume_root }}/dagster-data:/dagster_home
-      - ./configs/dagster/dagster-config.{{ stage }}{{ gpu_postfix }}.yml:/dagster_home/dagster.yaml:ro
-      - ./configs/dagster/workspace.{{ stage }}{{ gpu_postfix }}.yml:/dagster_home/workspace.yaml:ro
+      - ./configs/dagster/dagster-config.{{ stage_postfix }}.yml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/workspace.{{ stage_postfix }}.yml:/dagster_home/workspace.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -1421,9 +1421,9 @@ services:
       {%- endif %}
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "./configs/traefik/middlewares.{{ stage }}{{ gpu_postfix }}.yml:/etc/traefik/dynamic/middlewares.yml:ro"
+      - "./configs/traefik/middlewares.{{ stage_postfix }}.yml:/etc/traefik/dynamic/middlewares.yml:ro"
       {%- if stage in ['local', 'build'] %}
-      - "./configs/traefik/tls.{{ stage }}{{ gpu_postfix }}.yml:/etc/traefik/dynamic/tls.yml:ro"
+      - "./configs/traefik/tls.{{ stage_postfix }}.yml:/etc/traefik/dynamic/tls.yml:ro"
       - "./configs/traefik/certs/dev-cert.pem:/certs/dev-cert.pem:ro"
       - "./configs/traefik/certs/dev-key.pem:/certs/dev-key.pem:ro"
       {%- else %}
