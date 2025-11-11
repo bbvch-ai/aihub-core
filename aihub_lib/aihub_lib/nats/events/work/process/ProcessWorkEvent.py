@@ -49,6 +49,6 @@ class ProcessWorkEvent(ProcessStartEvent, Generic[TEvent]):
 
         for t in base_types:
             if not inspect.isclass(t):
-                raise TypeError(f"Extracted type '{t}' is not a class. " f"Full annotation was '{field_annotation}'.")
+                raise TypeError(f"Extracted type '{t}' is not a class. Full annotation was '{field_annotation}'.")
 
         return cast(tuple[type[ProcessStopEvent], ...], base_types)

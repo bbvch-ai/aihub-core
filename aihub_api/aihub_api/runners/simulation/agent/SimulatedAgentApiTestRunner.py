@@ -95,7 +95,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         super().__init__()
         self.agent_class = agent_class
         self.agent_id = agent_id
-        self.topic_manager = AgentInstanceTopicManager(agent_class, agent_id)
+        self.topic_manager = AgentInstanceTopicManager(agent_class=agent_class, agent_id=agent_id)
 
         self.nc: NATS | None = None
         self.js: JetStreamContext | None = None

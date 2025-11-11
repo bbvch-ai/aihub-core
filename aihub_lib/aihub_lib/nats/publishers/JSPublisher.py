@@ -7,6 +7,7 @@ from nats.js import JetStreamContext
 
 from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
 from aihub_lib.nats.publishers.AbstractPublisher import AbstractPublisher, TEvent
+from aihub_lib.nats.streams.StreamManager import StreamManager
 from aihub_lib.nats.tracing.NATSMessageHeaders import NATSMessageHeaders
 
 logger = logging.getLogger(__name__)
@@ -35,6 +36,14 @@ class JSPublisher(AbstractPublisher[TEvent]):
     ):
         super().__init__(name, protocol="JetStream")
         self.js = js
+        self._ensured_streams: set[str] = set()
+
+    async def ensure_stream_exists(self, stream_name: str, stream_subject: str):
+        """Ensure a JetStream stream exists before publishing."""
+        if stream_name not in self._ensured_streams:
+            stream_manager = StreamManager(self.js, stream_name, stream_subject)
+            await stream_manager.ensure_stream_exists()
+            self._ensured_streams.add(stream_name)
 
     async def publish_event(self, event: TEvent, subject: str, retries=10):
         """
