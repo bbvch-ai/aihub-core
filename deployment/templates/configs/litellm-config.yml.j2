@@ -212,7 +212,6 @@ model_list:
 # ===================================================================
 # Guardrails Configuration
 # ===================================================================
-{%- if stage in ['latest', 'local', 'build'] %}
 guardrails:
   - guardrail_name: "presidio-mask-guard"
     litellm_params:
@@ -238,7 +237,6 @@ guardrails:
       output_parse_pii: true
       pii_entities_config:
         CREDIT_CARD: "BLOCK"
-{%- endif %}
 
 # ===================================================================
 # General Settings
@@ -246,7 +244,7 @@ guardrails:
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
   database_url: os.environ/DATABASE_URL
-  store_model_in_db: {% if stage in ['latest', 'local', 'build'] %}false{% else %}true{% endif %}
+  store_model_in_db: false
   store_prompts_in_spend_logs: true
   maximum_spend_logs_retention_period: 365d
   maximum_spend_logs_retention_interval: 30d
@@ -256,12 +254,10 @@ general_settings:
 # ===================================================================
 litellm_settings:
   callbacks: ["detect_prompt_injection", "otel"]
-  default_fallbacks: ["text-generation/{% if stage in ['latest', 'local', 'build'] %}nano{% else %}mini{% endif %}"]
+  default_fallbacks: ["text-generation/nano", "text-generation/mini"]
   telemetry: true
   json_logs: true
-{%- if stage in ['latest', 'local', 'build'] %}
   drop_params: true
-{%- endif %}
 
 # ===================================================================
 # Router Settings
