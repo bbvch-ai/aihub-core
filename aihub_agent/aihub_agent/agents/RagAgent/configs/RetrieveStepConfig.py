@@ -3,7 +3,6 @@ from typing import Annotated, Literal
 from aihub_lib.agents.AgentConfig import StepConfig
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
-from aihub_lib.persistence.rag.vectors.stores.AzureAISearchVectorStoreConfig import AzureAISearchVectorStoreConfig
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from pydantic import Field
@@ -28,7 +27,7 @@ class RetrieveStepConfig(StepConfig):
         Field(description="The types of nodes to retrieve (options: 'summary' or 'content').", min_length=1),
     ]
     vector_store: Annotated[
-        AzureAISearchVectorStoreConfig | MilvusVectorStoreConfig,
+        MilvusVectorStoreConfig,
         Field(description="The vector store to retrieve from."),
     ]
     retrieve_prev_next: Annotated[

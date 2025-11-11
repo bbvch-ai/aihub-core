@@ -1,9 +1,9 @@
-from typing import Annotated, Generic, TypeVar
+from typing import Annotated, TypeVar
 
 T = TypeVar("T")
 
 
-class ListOfSize(Generic[T]):
+class ListOfSize[T]:
     """
     A generic container that enforces a fixed size on a list of items.
 
@@ -41,7 +41,7 @@ class ListOfSize(Generic[T]):
         return f"ListOfSize<{self.required_size}, {self.items}>"
 
 
-def FixedList(
+def FixedList[T](
     type_: Annotated[type[T], "The type of items in the fixed-size list"],
     size: Annotated[int, "The fixed size of the list"],
 ) -> type[ListOfSize[T]]:

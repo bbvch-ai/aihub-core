@@ -45,7 +45,7 @@ class VectorStoreIOManager(ConfigurableIOManager):
     .. code-block:: python
 
         from aihub_pipeline.io.VectorStoreIOManager import VectorStoreIOManager
-        from aihub_pipeline.resources.vector_store.AzureAISearchVectorStoreResource import AzureAISearchVectorStoreResource
+        from aihub_pipeline.resources.vector_store.MilvusVectorStoreResource import MilvusVectorStoreResource
 
         from dagster import Definitions, asset
 
@@ -59,7 +59,7 @@ class VectorStoreIOManager(ConfigurableIOManager):
             # TextNodes loaded from the vector store
             ...
 
-        vector_store = AzureAISearchVectorStoreResource(vector_store_name="my_vector_store")
+        vector_store = MilvusVectorStoreResource(collection_name="my_vector_store")
         vector_store_io_manager = VectorStoreIOManager(vector_store=vector_store)
 
         defs = Definitions(

@@ -332,7 +332,7 @@ class WorkflowVisualizer:
                 for producer in producers:
                     for consumer in consumers:
                         edge_attrs = {
-                            "event_name": f"{req_name[:req_name.rfind('Request')]}",
+                            "event_name": f"{req_name[: req_name.rfind('Request')]}",
                             "event_full_name": f"{req_class.__module__}.{req_name} → "
                             f"{resp_class.__module__}.{expected_resp_name}",
                             "is_start_event": False,
