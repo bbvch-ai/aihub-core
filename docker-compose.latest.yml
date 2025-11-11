@@ -993,10 +993,6 @@ services:
     command:
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
-      - "--providers.file.filename=/etc/traefik/middlewares.yml"
-      - "--providers.docker=true"
-      - "--providers.docker.watch=true"
-      - "--providers.docker.exposedbydefault=false"
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
       - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
       - "--certificatesresolvers.letsencrypt.acme.storage=/srv/app/traefik/acme.json"
@@ -1008,7 +1004,7 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "/srv/app/traefik/traefik.yml:/etc/traefik/traefik.yml:ro"
-      - "/srv/app/traefik/middlewares.yml:/etc/traefik/middlewares.yml:ro"
+      - "/srv/app/traefik/middlewares.yml:/srv/app/traefik/middlewares.yml:ro"
       - "/srv/app/traefik/acme.json:/srv/app/traefik/acme.json"
     labels:
       - "traefik.enable=true"
