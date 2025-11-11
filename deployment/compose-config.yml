@@ -32,7 +32,7 @@ image_tags:
   valkey: valkey:8.0.5
   ferretdb: ferretdb:2.5.0
   presidio: presidio-analyzer:2.2.359 # Analyzer and Anonymizer use same tag
-  litellm: litellm:main-v1.74.8-nightly
+  litellm: litellm:v1.77.7-stable
   docling: docling-serve-cpu:v1.7.2
   jupyter: minimal-notebook:notebook-7.0.6
   otel_collector: otel/opentelemetry-collector-contrib:latest
