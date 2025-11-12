@@ -1394,33 +1394,21 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    command:
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--providers.file.directory=/etc/traefik/dynamic"
-      - "--providers.docker=true"
-      - "--providers.docker.watch=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--api=true"
-      - "--api.dashboard=true"
-      {%- if stage in ['local', 'build'] %}
-      - "--entrypoints.websecure.http.tls=true"
-      - "--api.insecure=true"
-      - "--log.level=DEBUG"
-      {%- else %}
-      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
-      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme.json"
-      {%- endif %}
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./configs/traefik/traefik-config.{{ stage_postfix }}.yml:/etc/traefik/traefik.yml:ro"
       - "./configs/traefik/middlewares.{{ stage_postfix }}.yml:/etc/traefik/dynamic/middlewares.yml:ro"
-      {%- if stage in ['local', 'build'] %}
+      {%- if stage in ['dev', 'local', 'build'] %}
       - "./configs/traefik/tls.{{ stage_postfix }}.yml:/etc/traefik/dynamic/tls.yml:ro"
       - "./configs/traefik/certs/dev-cert.pem:/certs/dev-cert.pem:ro"
       - "./configs/traefik/certs/dev-key.pem:/certs/dev-key.pem:ro"
       {%- else %}
       - "/srv/app/traefik/acme.json:/etc/traefik/acme.json"
+      {%- endif %}
+    environment:
+      TRAEFIK_LOG_LEVEL: ${LOG_LEVEL}
+      {%- if stage not in ['dev', 'local', 'build'] %}
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL: ${ACME_EMAIL}
       {%- endif %}
     labels:
       - "traefik.enable=true"
@@ -1436,7 +1424,7 @@ services:
       - "traefik.http.routers.http-catch.middlewares=https-redirect"
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
       # --- Dashboard ---
-      {%- if stage not in ['local', 'build'] %}
+      {%- if stage not in ['dev', 'local', 'build'] %}
       - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
       {%- else %}
       - "traefik.http.routers.traefik.tls=true"
