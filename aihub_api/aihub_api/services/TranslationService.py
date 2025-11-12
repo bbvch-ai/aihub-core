@@ -1,6 +1,6 @@
 import logging
 
-from aihub_lib.generative_ai.resources.models.llm.LiteLLMBase import OpenAILike
+from llama_index.llms.openai_like import OpenAILike
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
