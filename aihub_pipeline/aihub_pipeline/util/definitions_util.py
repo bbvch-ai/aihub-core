@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Annotated
 
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
@@ -25,17 +26,19 @@ from aihub_pipeline.assets.factories.data_lake_to_vector_store.removed_documents
     removed_documents_factory,
 )
 from aihub_pipeline.assets.factories.data_lake_to_vector_store.summary_nodes_factory import summary_nodes_factory
+from aihub_pipeline.assets.factories.local_files_system_to_data_lake.observable_local_file_system_factory import (
+    observable_local_file_system_factory,
+)
 from aihub_pipeline.assets.factories.share_point_to_data_lake.observable_share_point_factory import (
     observable_share_point_factory,
 )
-from aihub_pipeline.assets.factories.share_point_to_data_lake.removed_data_lake_files_factory import (
+from aihub_pipeline.assets.factories.source_to_data_lake.data_lake_file_factory import data_lake_file_factory
+from aihub_pipeline.assets.factories.source_to_data_lake.removed_data_lake_files_factory import (
     removed_data_lake_files_factory,
-)
-from aihub_pipeline.assets.factories.share_point_to_data_lake.sharepoint_files_to_data_lake_files_factory import (
-    share_point_files_to_data_lake_files_factory,
 )
 from aihub_pipeline.const.pipeline_names import INTERNAL_DATALAKE, INTERNAL_KNOWLEDGE_DB
 from aihub_pipeline.executors.factory import default_process_executor
+from aihub_pipeline.io.LocalFileSystemIOManager import LocalFileSystemIOManager
 from aihub_pipeline.io.SharePointIOManager import SharePointIoManager
 from aihub_pipeline.jobs.factory import materialize_asset_job, observe_source_job
 from aihub_pipeline.resources.factory import (
@@ -45,6 +48,7 @@ from aihub_pipeline.resources.factory import (
 )
 from aihub_pipeline.resources.llm.EmbeddingModelResource import EmbeddingModelResource
 from aihub_pipeline.resources.llm.LanguageModelResource import LanguageModelResource
+from aihub_pipeline.resources.local_file_system.LocalFileSystemResource import LocalFileSystemResource
 from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource
 from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
 from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
@@ -70,15 +74,17 @@ def asset_definition_with_code_link(
 
 
 def default_definitions(
-    datalake_container_name: str,
-    embedding_model_name: str = "embedding/small",
-    llm_model_name: str = "text-generation/mini",
-    figures_directory_name: str = "__figures__",
-    with_summary_nodes: bool = True,
-    observe_job_hour: int = 2,
-    observe_job_minute: int = 0,
-    remove_job_hour: int = 3,
-    remove_job_minute: int = 0,
+    *,
+    datalake_container_name: Annotated[str, "S3 bucket/container name where raw documents are stored"],
+    embedding_model_name: Annotated[str, "LiteLLM model name for embeddings"] = "embedding/small",
+    llm_model_name: Annotated[str, "LiteLLM model name for text generation"] = "text-generation/mini",
+    with_summary_nodes: Annotated[bool, "Generate recursive summaries for hierarchical RAG"] = True,
+    auto_sync: Annotated[bool, "Whether the S3 bucket is auto-synced (i.e. with local fs pipeline)"] = False,
+    observe_job_hour: Annotated[int, "Hour to run daily data lake observation job"] = 2,
+    observe_job_minute: Annotated[int, "Minute to run daily data lake observation job"] = 0,
+    remove_job_hour: Annotated[int, "Hour to run daily removed documents cleanup job"] = 3,
+    remove_job_minute: Annotated[int, "Minute to run daily removed documents cleanup job"] = 0,
+    vector_store_dimensions: Annotated[int, "Embedding vector dimensions must match model"] = 3072,
 ) -> Definitions:
     """
     Creates a complete DataLake to vector store pipeline using local resources.
@@ -121,8 +127,10 @@ def default_definitions(
         asset_selection=AssetSelection.keys(removed_documents_key),
     )
 
-    store_name = get_db_name_from_bucket_name(bucket_name=datalake_container_name, auto_sync=False)
+    store_name = get_db_name_from_bucket_name(bucket_name=datalake_container_name, auto_sync=auto_sync)
     llm_config = LLMConfig(model_name=llm_model_name)
+    embedding_config = EmbeddingModelConfig(model_name=embedding_model_name)
+
     return Definitions(
         assets=assets,
         resources={
@@ -131,14 +139,13 @@ def default_definitions(
             "summary_parser": RecursiveSummaryParserResource(),
             **default_io_manager_s3_datalake_resources(container_name=datalake_container_name),
             **local_mongo_milvus_storage_context_resource(
-                vector_store_uri=MilvusSettings().URL,
-                store_name=store_name,
+                vector_store_uri=MilvusSettings().URL, store_name=store_name, dimensions=vector_store_dimensions
             ),
             **s3_data_lake_resources(
                 container_name=datalake_container_name,
             ),
             "embedding_model": EmbeddingModelResource(
-                embedding_config=EmbeddingModelConfig(model_name=embedding_model_name),
+                embedding_config=embedding_config,
             ),
             "language_model": LanguageModelResource(llm_config=llm_config),
         },
@@ -164,15 +171,16 @@ def default_definitions(
 
 
 def default_sharepoint_to_datalake_definitions(
-    datalake_container_name: str,
-    datalake_directory_name: str | None = None,
-    target_folders: list[str] | None = None,
-    exclude_folders: list[str] | None = None,
-    supported_filetypes: list[str] | None = None,
-    observe_job_hour: int = 0,
-    observe_job_minute: int = 0,
-    remove_job_hour: int = 1,
-    remove_job_minute: int = 0,
+    *,
+    datalake_container_name: Annotated[str, "S3 bucket/container name where SharePoint files will be uploaded"],
+    datalake_directory_name: Annotated[str | None, "Optional subdirectory within container"] = None,
+    target_folders: Annotated[list[str] | None, "List of SharePoint folder paths to sync"] = None,
+    exclude_folders: Annotated[list[str] | None, "List of SharePoint folder paths to exclude"] = None,
+    supported_filetypes: Annotated[list[str] | None, "List of file extensions to sync"] = None,
+    observe_job_hour: Annotated[int, "Hour to run daily SharePoint observation job"] = 0,
+    observe_job_minute: Annotated[int, "Minute to run daily SharePoint observation job"] = 0,
+    remove_job_hour: Annotated[int, "Hour to run daily removed files cleanup job"] = 1,
+    remove_job_minute: Annotated[int, "Minute to run daily removed files cleanup job"] = 0,
 ) -> Definitions:
     """
     Creates a SharePoint to DataLake pipeline using local S3-compatible storage.
@@ -196,14 +204,14 @@ def default_sharepoint_to_datalake_definitions(
 
     assets = [
         observable_sharepoint_asset,
-        share_point_files_to_data_lake_files_factory(
+        data_lake_file_factory(
             key=data_lake_files_key,
-            share_point_key=sharepoint_key,
+            source_key=sharepoint_key,
             partitions=sharepoint_partitions,
         ),
         removed_data_lake_files_factory(
             key=removed_data_lake_files_key,
-            share_point_key=sharepoint_key,
+            source_key=sharepoint_key,
         ),
     ]
 
@@ -231,6 +239,105 @@ def default_sharepoint_to_datalake_definitions(
         resources={
             "share_point_client": sharepoint_client,
             "sharepoint_io_manager": sharepoint_io_manager,
+            **s3_data_lake_resources(
+                container_name=datalake_container_name,
+                directory_name=datalake_directory_name,
+            ),
+        },
+        sensors=[default_automation_sensor(assets)],
+        executor=default_process_executor(),
+        jobs=[observe_job, remove_job],
+        schedules=[
+            daily_schedule_at(observe_job, hour=observe_job_hour, minute=observe_job_minute),
+            daily_schedule_at(remove_job, hour=remove_job_hour, minute=remove_job_minute),
+        ],
+    )
+
+
+def default_local_filesystem_to_datalake_definitions(
+    *,
+    datalake_container_name: Annotated[str, "S3 bucket/container name where local filesystem files will be uploaded"],
+    base_path: Annotated[str, "Root directory path to scan for files"],
+    include_folders: Annotated[list[str] | None, "List of folder name patterns to include"] = None,
+    include_subfolders: Annotated[list[str] | None, "List of subfolder name patterns to include recursively"] = None,
+    datalake_directory_name: Annotated[str | None, "Optional subdirectory within container"] = None,
+    exclude_folders: Annotated[list[str] | None, "List of folder name patterns to exclude"] = None,
+    exclude_paths: Annotated[list[str] | None, "List of full path patterns to exclude"] = None,
+    include_extensions: Annotated[list[str] | None, "List of file extensions to include"] = None,
+    exclude_files: Annotated[list[str] | None, "List of filename patterns to exclude"] = None,
+    observe_job_hour: Annotated[int, "Hour to run daily filesystem observation job"] = 0,
+    observe_job_minute: Annotated[int, "Minute to run daily filesystem observation job"] = 0,
+    remove_job_hour: Annotated[int, "Hour to run daily removed files cleanup job"] = 1,
+    remove_job_minute: Annotated[int, "Minute to run daily removed files cleanup job"] = 0,
+) -> Definitions:
+    """
+    Creates a Local File System to DataLake pipeline using S3-compatible storage.
+
+    Use this when you need to sync files from a local or network file system to your data lake.
+    The pipeline monitors specified directories for changes and automatically uploads new/updated files
+    to your S3 storage. It handles flexible pattern-based file filtering, folder organization,
+    and cleanup of deleted files.
+
+    All filtering uses regex patterns for maximum flexibility. Use helper functions from
+    aihub_pipeline.util.pattern_utils to convert lists to patterns:
+    - exact_match_pattern(["A", "B"]) for exact folder names
+    - extension_pattern([".pdf", ".docx"]) for file extensions
+    - contains_pattern("archive") for substring matching
+
+    Pipeline: Local File System → S3
+
+    This is the first step - combine with default_definitions() to process files into
+    embeddings for RAG applications.
+    """
+    filesystem_partitions = DynamicPartitionsDefinition(name="local_fs_partitions")
+
+    filesystem_key = AssetKey([datalake_container_name, "local_fs"])
+    data_lake_files_key = AssetKey([datalake_container_name, "data_lake_files"])
+    removed_data_lake_files_key = AssetKey([datalake_container_name, "removed_data_lake_files"])
+
+    observable_filesystem_asset = observable_local_file_system_factory(filesystem_key, filesystem_partitions)
+
+    assets = [
+        observable_filesystem_asset,
+        data_lake_file_factory(
+            key=data_lake_files_key,
+            source_key=filesystem_key,
+            partitions=filesystem_partitions,
+        ),
+        removed_data_lake_files_factory(
+            key=removed_data_lake_files_key,
+            source_key=filesystem_key,
+        ),
+    ]
+
+    observe_job = observe_source_job(
+        observable_asset=observable_filesystem_asset,
+        source_location_name=datalake_container_name,
+    )
+
+    remove_job = materialize_asset_job(
+        source_location_name=datalake_container_name,
+        job_name="remove_filesystem_files",
+        asset_selection=AssetSelection.keys(removed_data_lake_files_key),
+    )
+
+    filesystem_client = LocalFileSystemResource(
+        base_path=base_path,
+        include_folders=include_folders,
+        include_subfolders=include_subfolders,
+        exclude_folders=exclude_folders,
+        exclude_paths=exclude_paths,
+        include_extensions=include_extensions,
+        exclude_files=exclude_files,
+    )
+
+    filesystem_io_manager = LocalFileSystemIOManager(local_file_system_client=filesystem_client)
+
+    return Definitions(
+        assets=assets,
+        resources={
+            "local_file_system_client": filesystem_client,
+            "local_file_system_io_manager": filesystem_io_manager,
             **s3_data_lake_resources(
                 container_name=datalake_container_name,
                 directory_name=datalake_directory_name,

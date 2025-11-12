@@ -61,7 +61,7 @@ use-local-core-without-install:
 	@echo "Switching to local cores without poetry install..."
 	poetry run python switch_dependencies.py local
 
-TAG ?= v0.251.4
+TAG ?= v0.252.0
 
 # Use remote cores (with poetry install)
 use-remote-core:

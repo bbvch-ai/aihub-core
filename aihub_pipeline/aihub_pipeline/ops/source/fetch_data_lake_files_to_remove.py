@@ -1,23 +1,28 @@
 from dagster import OpExecutionContext, ResourceParam, op
 
 from aihub_pipeline.resources.data_lake.base.AbstractDataLakeClient import AbstractDataLakeClient
-from aihub_pipeline.resources.data_lake.DataLakeResource import DataLakeResource
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
-from aihub_pipeline.types.SharePointFile import MinimalSharePointFile
+from aihub_pipeline.types.SourceFile import MinimalSourceFile
 
 
 @op(code_version="v1")
 def fetch_data_lake_files_to_remove(
     context: OpExecutionContext,
-    share_point_files: list[MinimalSharePointFile],
-    data_lake_resource: DataLakeResource,
+    source_files: list[MinimalSourceFile],
     data_lake_client: ResourceParam[AbstractDataLakeClient],
 ) -> list[DataLakeFile]:
-    """Fetches all DataLakeFiles that are in the DataLake but no longer in SharePoint."""
-    uris_to_exclude = [
-        f"{data_lake_resource.container_name}/{data_lake_resource.directory_name}/{file.path.lstrip('/')}"
-        for file in share_point_files
-    ]
+    """
+    Fetch data lake files that should be removed because they no longer exist in the source.
+
+    This generic operation works with any source file type (SharePoint, local file system, etc.)
+    that implements the MinimalSourceFile interface. It compares files in the data lake with
+    files from the source system and identifies files that have been deleted from the source
+    and should be removed from the data lake.
+
+    """
+    # Build URIs using the client's build_uri method to ensure format consistency
+    # This ensures S3 URIs use "s3://" prefix and Azure URIs use container prefix
+    uris_to_exclude = [data_lake_client.build_uri(path=file.path) for file in source_files]
 
     context.log.info(f"Excluding {len(uris_to_exclude)} URIs from removal")
 
@@ -31,11 +36,8 @@ def fetch_data_lake_files_to_remove(
 
 def fetch_data_lake_files_without_excluded_uris(
     data_lake_client: ResourceParam[AbstractDataLakeClient],
-    excluded_uris: list[str] | None = None,
+    excluded_uris: list[str],
 ) -> list[DataLakeFile]:
-    if excluded_uris is None:
-        excluded_uris = []
-
     excluded_uris_set = set(excluded_uris)
 
     all_files = data_lake_client.get_all_files()

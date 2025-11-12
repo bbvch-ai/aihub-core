@@ -1,34 +1,37 @@
-from datetime import datetime
 from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from aihub_pipeline.types.SourceFile import MinimalSourceFile, SourceFile
 
 
-class MinimalSharePointFile(BaseModel):
-    path: Annotated[str, Field(description="Relative path to the file in SharePoint")]
+class MinimalSharePointFile(MinimalSourceFile):
+    """
+    Minimal SharePoint file metadata without content.
+
+    Used for scanning SharePoint for changes without downloading full file contents.
+    Includes SharePoint-specific fields like ETag and file ID for change detection.
+    """
+
     etag: Annotated[str, Field(description="ETag for change detection")]
-    name: Annotated[str, Field(description="File name")]
     id: Annotated[str, Field(description="SharePoint file ID")]
-    size: Annotated[int, Field(description="File size in bytes")]
-    modified: Annotated[str, Field(description="ISO datetime string when file was last modified")]
+    created: Annotated[int, Field(description="The UNIX timestamp when the file was created")]
     content_type: Annotated[str | None, Field(description="MIME type of the file")] = None
 
 
-class SharePointFile(BaseModel):
-    path: Annotated[str, Field(description="Relative path to the file in SharePoint")]
-    content: Annotated[bytes, Field(description="File content as bytes")]
-    name: Annotated[str, Field(description="File name")]
-    size: Annotated[int, Field(description="File size in bytes")]
-    modified: Annotated[str, Field(description="ISO datetime string when file was last modified")]
-    created: Annotated[str, Field(description="ISO datetime string when file was created")]
-    content_type: Annotated[str | None, Field(description="MIME type of the file")] = None
+class SharePointFile(SourceFile):
+    """
+    SharePoint file implementation of the SourceFile interface.
+
+    Represents a file retrieved from Microsoft SharePoint via the Graph API,
+    including content, metadata, and SharePoint-specific attributes like ETags
+    and download URLs.
+    """
+
     download_url: Annotated[str | None, Field(description="Direct download URL from Graph API")] = None
-    full_url: Annotated[str, Field(description="Full SharePoint URL to the file")]
+    full_url: Annotated[str, Field(description="Full SharePoint web URL to the file")]
 
     @property
-    def modified_datetime(self) -> datetime:
-        return datetime.fromisoformat(self.modified.replace("Z", "+00:00"))
-
-    @property
-    def created_datetime(self) -> datetime:
-        return datetime.fromisoformat(self.created.replace("Z", "+00:00"))
+    def source_url(self) -> str:
+        """Returns the full SharePoint web URL as the source URL."""
+        return self.full_url

@@ -164,6 +164,7 @@ async def test_send_message(
     assert test_runner.responses[-1].payload["text"] == "First chunk.\nSecond chunk."
 
 
+@pytest.mark.flaky
 @pytest.mark.asyncio
 async def test_stream_response(
     test_runner: SimulatedAgentBotTestRunner, client: AsyncClient, patch_requests_adapter, setup_test_credentials

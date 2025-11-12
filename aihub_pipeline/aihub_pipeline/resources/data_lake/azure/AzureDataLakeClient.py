@@ -19,6 +19,16 @@ class AzureDataLakeClient(AbstractDataLakeClient):
         super().__init__(container_name)
         self._client = filesystem_client
 
+    def build_uri(self, file_path: str) -> str:
+        """Build Azure Data Lake URI in format: container/path"""
+        clean_path = file_path.lstrip("/")
+        return f"{self.container_name}/{clean_path}"
+
+    def _extract_storage_key(self, uri: str) -> str:
+        """Extract storage key from Azure URI by removing container prefix."""
+        parts = uri.split("/", 1)
+        return parts[1]
+
     def get_all_files(self) -> list[DataLakeFile]:
         """Get all files using Azure FileSystemClient.get_paths()"""
         paths = self._client.get_paths(recursive=True)
@@ -36,8 +46,7 @@ class AzureDataLakeClient(AbstractDataLakeClient):
             if is_root_folder or is_figure_folder or is_dagster_folder:
                 continue
 
-            # Azure URI format: container/path
-            document_uri = f"{self.container_name}/{path.name.lstrip('/')}"
+            document_uri = self.build_uri(path.name)
             data_lake_file = self._create_data_lake_file_from_fs_uri(document_uri)
             data_lake_files.append(data_lake_file)
 
@@ -117,9 +126,10 @@ class AzureDataLakeClient(AbstractDataLakeClient):
         except Exception:
             return []
 
-    def delete_file(self, file_path: str) -> None:
-        """Delete a file using Azure client."""
-        self._client.delete_file(file_path)
+    def delete_file(self, uri: str) -> None:
+        """Delete a file using Azure client and its URI."""
+        storage_key = self._extract_storage_key(uri)
+        self._client.delete_file(storage_key)
 
     def delete_directory(self, directory_path: str) -> None:
         """Delete a directory and all its contents using Azure client."""
