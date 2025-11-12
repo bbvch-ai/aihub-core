@@ -40,15 +40,7 @@ def agent_config_data():
 @pytest.fixture
 def self_hosted_llm_config():
     """
-    Return a RAGAgentConfig that uses a self-hosted LLM and self-hosted embeddings.
-    """
-    return LLMConfig(model_name="text-generation/mini")
-
-
-@pytest.fixture
-def azure_llm_config():
-    """
-    Return a RAGAgentConfig that uses Azure OpenAI for both the LLM and embeddings.
+    Return an LLM config for testing with LiteLLM.
     """
     return LLMConfig(model_name="text-generation/mini")
 
@@ -84,41 +76,6 @@ def given_few_shot_examples(agent_config_data, datatable):
     for row in datatable[1:]:
         user_text, agent_text = row
         agent_config_data["few_shot_examples"].append({"user": user_text, "agent": agent_text})
-
-
-@pytest.mark.usefixtures("azure_agent_config")
-@given("I create a FewShotAgent runner with the config with valid azure configuration", target_fixture="agent_runner")
-def _(agent_config_data, azure_llm_config):
-    """
-    Finally build the actual AgentTestRunner now that we have
-    description, system prompt, and examples in scenario_data.
-    """
-    examples = [
-        FewShotExample(user=LocaleString(en=example["user"]), agent=LocaleString(en=example["agent"]))
-        for example in agent_config_data["few_shot_examples"]
-    ]
-
-    config = FewShotAgentConfig(
-        agent_id="few_shot_agent",
-        agent_class=FewShotAgent.__name__,
-        name=LocaleString(en="FewShotAgent"),
-        description=LocaleString(en=agent_config_data["description"]),
-        llm=azure_llm_config,
-        number_of_input_tokens=100000,
-        condense_question_prompt=LocaleString(
-            en="""
-        Return the original user message noting a movie title.
-        The original user message was:
-        {question}
-        """
-        ),
-        few_shot=FewShotStepConfig(
-            few_shot_examples=examples,
-            few_shot_system_prompt=LocaleString(en=agent_config_data["few_shot_system_prompt"]),
-        ),
-    )
-
-    return AgentTestRunner(agent_type=FewShotAgent, default_agent_config=config)
 
 
 @pytest.mark.usefixtures("self_hosted_agent_config")

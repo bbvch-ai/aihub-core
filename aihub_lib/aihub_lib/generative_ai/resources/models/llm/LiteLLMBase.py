@@ -2,7 +2,7 @@ import abc
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from functools import lru_cache
-from typing import TYPE_CHECKING, Annotated, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Annotated, Any
 
 from llama_index.core.utils import Tokenizer
 from pydantic import BaseModel, Field
@@ -14,16 +14,13 @@ if TYPE_CHECKING:
     from aihub_lib.displayers.EventDisplayer import EventDisplayer
 
 
-OpenAILike = TypeVar("OpenAILike")
-
-
 @lru_cache(maxsize=1)
 def _fetch_all_model_info_cached() -> dict[str, Any]:
     client = LiteLLMProxySettings().httpx_client
     return client.get("/v1/model/info").json()
 
 
-class LiteLLMBase(BaseModel, Generic[OpenAILike], abc.ABC):
+class LiteLLMBase[OpenAILike](BaseModel, abc.ABC):
     model_name: Annotated[str, Field(description="Name of the model.")]
 
     @property

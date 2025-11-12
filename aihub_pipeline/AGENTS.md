@@ -62,11 +62,13 @@ aihub_pipeline/
 **Two-Stage Split**: Source-specific ingestion, then unified processing.
 
 **Stage 1 (Per-Source)**: `Enterprise Source` → `DataLakeFile`
+
 - Multiple independent pipelines (SharePoint, S3, ADLS, filesystem, databases)
 - Each source has dedicated connector (e.g., SharePointIOManager)
 - Output: Unified DataLakeFile in S3-compatible storage
 
 **Stage 2 (Unified)**: `DataLakeFile` → `RefDocDocument` → `TextNode[]`
+
 - Single pipeline processes all data lake files regardless of origin
 - Parsing (Docling/PDF) → Chunking (semantic/structural) → Embedding → Vector Store
 - Storage: MongoDB (documents via DocStoreIOManager), Milvus (vectors via VectorStoreIOManager)

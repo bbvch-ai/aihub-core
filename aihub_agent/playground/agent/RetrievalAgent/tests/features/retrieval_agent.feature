@@ -1,7 +1,6 @@
 Feature: Retrieval Agent
   Testing the RetrievalAgent
 
-  @self_hosted
   Scenario: Test RetrievalAgent to ensure it retrieves relevant documents and combines them
     Given a RetrievalAgent and a vector store with 3 documents about AI
     When the user asks "What is AI?"

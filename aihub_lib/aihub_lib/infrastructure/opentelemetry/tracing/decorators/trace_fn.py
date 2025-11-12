@@ -58,7 +58,7 @@ def _is_optional_dependency_dangerous(type_name: str) -> bool:
     return type_name in optional_dangerous_types
 
 
-def trace_fn(func: Callable[P, T]) -> Callable[P, T]:
+def trace_fn[**P, T](func: Callable[P, T]) -> Callable[P, T]:
     """
     A completely generic decorator that traces any function with its inputs and outputs.
 
@@ -355,7 +355,7 @@ def _get_concise_repr(value: Any) -> str:
             return str(value)
         if isinstance(value, str):
             if len(value) > TracingConfig.CONCISE_REPR_LENGTH:
-                return f"'{value[:TracingConfig.CONCISE_REPR_LENGTH]}...'"
+                return f"'{value[: TracingConfig.CONCISE_REPR_LENGTH]}...'"
             return f"'{value}'"
 
         if _is_dangerous_type(value):

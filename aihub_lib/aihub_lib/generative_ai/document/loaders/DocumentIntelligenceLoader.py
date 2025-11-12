@@ -2,7 +2,9 @@ import html
 import os
 from typing import Any
 
+from azure.ai.documentintelligence import DocumentIntelligenceClient
 from azure.ai.documentintelligence.models import AnalyzeOutputOption, AnalyzeResult, DocumentContentFormat
+from azure.core.credentials import AzureKeyCredential
 from bs4 import BeautifulSoup
 from fsspec import AbstractFileSystem
 from llama_index.core.readers.base import BaseReader
@@ -10,8 +12,8 @@ from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
 
 from aihub_lib.generative_ai.utils.path_utils import FIGURES_DIRECTORY_NAME, create_figures_folder_name
-from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.DocumentIntelligenceAccess import (
-    DocumentIntelligenceAccess,
+from aihub_lib.infrastructure.azure_cognitive_services.AzureDocumentIntelligenceSettings import (
+    AzureDocumentIntelligenceSettings,
 )
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.rag.vectors.node_metadata import (
@@ -26,7 +28,12 @@ class DocumentIntelligenceLoader(BaseReader):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
-        self.document_intelligence_client = DocumentIntelligenceAccess().get_client()
+        settings = AzureDocumentIntelligenceSettings()
+        self.document_intelligence_client = DocumentIntelligenceClient(
+            endpoint=settings.ENDPOINT,
+            credential=AzureKeyCredential(settings.API_KEY.get_secret_value()),
+            api_version=settings.API_VERSION,
+        )
 
     @trace_fn
     def load_data(
