@@ -5,6 +5,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.252.0] - 2025-11-12 - Broadening Horizons: Local Filesystem Integration and Generalized Data Sources
+
+### Added
+
+- 🚀 **New Local Filesystem Ingestion Pipeline**: Introduced a complete pipeline, resource, and I/O manager for
+  seamlessly integrating and syncing files from local or network file systems to the data lake, supporting flexible
+  regex-based filtering.
+- ⚙️ **Generic Source File Abstraction**: Implemented a new `SourceFile` interface and generic factories/operations,
+  enabling the pipeline to ingest data from any source system that adheres to this standard, making it highly
+  extensible.
+- 🏷️ **Pytest `flaky` Marker**: Added official `flaky` marker definition to `pyproject.toml` and applied it to
+  unreliable tests, improving test suite clarity and stability by allowing flaky tests to be excluded from CI.
+- ➕ **Regex Pattern Utilities**: Introduced helper functions for generating powerful regex patterns, used by the new
+  local filesystem resource for flexible file and folder filtering.
+
+### Changed
+
+- 🗓️ **Standardized Source File Timestamps**: Converted all file creation and modification timestamps in source file
+  models (e.g., SharePoint) to Unix timestamps (`int`) for consistency and easier processing.
+- 🔓 **Relaxed Namespace Naming Constraints**: Removed restrictive regex validation for NamespaceEntity names, allowing
+  more flexibility in naming conventions.
+- 📈 **Enhanced Metadata Display**: Updated metadata tables to reflect new data structures and added detailed metadata
+  display for local filesystem files in the Dagster UI.
+- 🔧 **Pipeline Definition Parameters**: Adjusted `default_definitions` to remove the explicit `figures_directory_name`
+  parameter and introduced `vector_store_dimensions` and `auto_sync` for more flexible configuration.
+
+### Refactor
+
+- 🗄️ **Abstracted Data Lake Client Operations**: Replaced specific data lake client implementations (Azure, S3) with an
+  `AbstractDataLakeClient` interface, standardizing URI construction, file deletion, and directory operations across
+  different storage backends.
+- ♻️ **Consolidated Source-to-Data Lake Logic**: Replaced SharePoint-specific data lake transformation and cleanup
+  factories/operations with new generic `source_to_data_lake` counterparts, reducing code duplication and improving
+  maintainability.
+- 🖼️ **Simplified Document Loader Configuration**: Streamlined `DoclingLoader` and `DocumentIntelligenceLoader` by
+  removing the explicit `figures_directory_name` parameter, making figure directory handling internal and consistent.
+- 🔗 **Decoupled Azure Search Metadata Definitions**: Removed Azure Search specific metadata field definitions,
+  decoupling the core metadata handling from particular vector store implementations.
+
+### Removed
+
+- 🗑️ **Deprecated SharePoint-Specific Factories**: Eliminated older factories dedicated solely to SharePoint-to-Data
+  Lake transformations, superseded by the new generic source ingestion framework.
+- ❌ **Legacy SharePoint-Specific Operations**: Removed individual operations for extracting content, metadata, and URIs
+  specific to SharePoint files, which are now replaced by their generic `SourceFile` counterparts.
+
+---
+
 ## [v0.251.4] - 2025-11-11 - Azure Integration Overhaul and Infrastructure Simplification
 
 ### Removed
