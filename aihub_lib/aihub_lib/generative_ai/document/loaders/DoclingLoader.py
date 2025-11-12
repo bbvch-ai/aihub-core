@@ -116,13 +116,11 @@ class DoclingLoader(BaseReader):
         ]
 
     @trace_fn
-    def _build_request_body(
-        self, file_content: str, filename: str, include_images: bool, to_formats: list[str] | None = None
-    ) -> dict:
+    def _build_request_body(self, file_content: str, filename: str, include_images: bool) -> dict:
         """Build the request body for the Docling VLM Pipeline."""
         return {
             "options": {
-                "to_formats": to_formats if to_formats is not None else self.config.TO_FORMATS,
+                "to_formats": self.config.TO_FORMATS,
                 "include_images": include_images,
                 "pipeline": "vlm",
                 "vlm_pipeline_model_api": {
@@ -139,10 +137,8 @@ class DoclingLoader(BaseReader):
             "sources": [{"base64_string": file_content, "filename": filename, "kind": "file"}],
         }
 
-    def convert_document(
-        self, file_content: str, filename: str, include_images: bool, to_formats: list[str] | None = None
-    ) -> dict:
-        request_body = self._build_request_body(file_content, filename, include_images, to_formats)
+    def convert_document(self, file_content: str, filename: str, include_images: bool) -> dict:
+        request_body = self._build_request_body(file_content, filename, include_images)
 
         response = httpx.post(
             f"{self.config.API_ENDPOINT}/v1/convert/source",
@@ -158,10 +154,8 @@ class DoclingLoader(BaseReader):
 
         return response.json()
 
-    async def convert_document_async(
-        self, file_content: str, filename: str, include_images: bool, to_formats: list[str] | None = None
-    ) -> dict:
-        request_body = self._build_request_body(file_content, filename, include_images, to_formats)
+    async def convert_document_async(self, file_content: str, filename: str, include_images: bool) -> dict:
+        request_body = self._build_request_body(file_content, filename, include_images)
 
         async with httpx.AsyncClient(timeout=self.config.API_TIMEOUT) as client:
             response = await client.post(

@@ -1,5 +1,4 @@
 # ruff: noqa: E402
-from aihub_api.routes.docling.DoclingController import DoclingController
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
 
 AihubInstrumentor().instrument()
@@ -109,7 +108,6 @@ async def main():
         .get_anonymous_file_url()
         .get_anonymous_file_redirect(),
         NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
-        DoclingController(auth=auth).process_endpoint(),
     )
 
     await runner.run()
