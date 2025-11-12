@@ -1,4 +1,4 @@
-from typing import Annotated, Generic, TypeVar
+from typing import Annotated, TypeVar
 
 from pydantic import Field
 
@@ -8,7 +8,7 @@ from aihub_lib.nats.events.work_request.WorkRequestEvent import WorkRequestEvent
 TEvent = TypeVar("TEvent", bound=StartEvent)
 
 
-class AgentWorkRequestEvent(WorkRequestEvent, Generic[TEvent]):
+class AgentWorkRequestEvent[TEvent: StartEvent](WorkRequestEvent):
     """
     Requests an agent to do some work to bring the process one step further. To delegate the work to an agent,
     the agent class and agent id must be specified, as well as the start_event.
@@ -25,8 +25,7 @@ class AgentWorkRequestEvent(WorkRequestEvent, Generic[TEvent]):
     agent_id: Annotated[
         str | None,
         Field(
-            description="ID of agent to which work shall be delegated."
-            "Automatically injected by the process dispatcher."
+            description="ID of agent to which work shall be delegated.Automatically injected by the process dispatcher."
         ),
     ] = None
     start_event: Annotated[TEvent, Field(description="Start event that shall be sent to the agent")]

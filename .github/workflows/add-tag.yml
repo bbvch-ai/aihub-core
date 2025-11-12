@@ -332,7 +332,7 @@ jobs:
       - name: Define directories
         id: define-directories
         run: |
-          echo "directories=aihub_pipeline aihub_agent aihub_api aihub_bot aihub_iac aihub_process" >> $GITHUB_OUTPUT
+          echo "directories=aihub_pipeline aihub_agent aihub_api aihub_bot aihub_process" >> $GITHUB_OUTPUT
 
       - name: Set up Python 3.13 and Poetry
         uses: actions/setup-python@v5

@@ -91,7 +91,12 @@ const generateDocumentationSet = (locale) => {
   const tree = generateSidebar(locale);
   const rootItem = tree.find(item => item.sortOrder === 0);
 
-  const { contents, tocEntries } = processSidebarItems(tree, locale);
+  // For llms.txt (TOC): include all sections
+  const { tocEntries } = processSidebarItems(tree, locale);
+
+  // For llms-full.txt: exclude section 6 (Code Deep Dive)
+  const treeWithoutSection6 = tree.filter(item => item.sortOrder !== 6);
+  const { contents } = processSidebarItems(treeWithoutSection6, locale);
 
   const title = rootItem?.frontmatter.hero?.name || rootItem?.text || 'Documentation';
   const heroMarkdown = rootItem ? convertHeroToMarkdown(rootItem.frontmatter) : '';

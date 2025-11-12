@@ -5,7 +5,7 @@ from aihub_lib.generative_ai.document.loaders.DoclingLoader import DoclingLoader
 from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import DocumentIntelligenceLoader
 from aihub_lib.generative_ai.document.loaders.ImageLoader import ImageLoader
 from aihub_lib.generative_ai.document.loaders.RawLoader import RawLoader
-from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.AzureDocumentIntelligenceSettings import (
+from aihub_lib.infrastructure.azure_cognitive_services.AzureDocumentIntelligenceSettings import (
     AzureDocumentIntelligenceSettings,
 )
 from aihub_lib.infrastructure.docling.DoclingSettings import DoclingSettings

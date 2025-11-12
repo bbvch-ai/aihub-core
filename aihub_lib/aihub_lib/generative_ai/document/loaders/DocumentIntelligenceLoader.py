@@ -2,16 +2,18 @@ import html
 import os
 from typing import Any
 
+from azure.ai.documentintelligence import DocumentIntelligenceClient
 from azure.ai.documentintelligence.models import AnalyzeOutputOption, AnalyzeResult, DocumentContentFormat
+from azure.core.credentials import AzureKeyCredential
 from bs4 import BeautifulSoup
 from fsspec import AbstractFileSystem
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
 
-from aihub_lib.generative_ai.utils.path_utils import create_figures_folder_name
-from aihub_lib.infrastructure.azure.cognitive_services.document_intelligence.DocumentIntelligenceAccess import (
-    DocumentIntelligenceAccess,
+from aihub_lib.generative_ai.utils.path_utils import FIGURES_DIRECTORY_NAME, create_figures_folder_name
+from aihub_lib.infrastructure.azure_cognitive_services.AzureDocumentIntelligenceSettings import (
+    AzureDocumentIntelligenceSettings,
 )
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.rag.vectors.node_metadata import (
@@ -26,7 +28,12 @@ class DocumentIntelligenceLoader(BaseReader):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
-        self.document_intelligence_client = DocumentIntelligenceAccess().get_client()
+        settings = AzureDocumentIntelligenceSettings()
+        self.document_intelligence_client = DocumentIntelligenceClient(
+            endpoint=settings.ENDPOINT,
+            credential=AzureKeyCredential(settings.API_KEY.get_secret_value()),
+            api_version=settings.API_VERSION,
+        )
 
     @trace_fn
     def load_data(
@@ -34,7 +41,6 @@ class DocumentIntelligenceLoader(BaseReader):
         file: str,
         extra_info: dict | None = None,
         fs: AbstractFileSystem | None = None,
-        figures_directory_name: str | None = None,
         include_images: bool | None = None,
     ) -> list[Document]:
         """Load and process documents synchronously using the Document Intelligence service."""
@@ -53,9 +59,7 @@ class DocumentIntelligenceLoader(BaseReader):
             )
 
         result: AnalyzeResult = poller.result()
-        return self._process_document_intelligence_response(
-            result, poller, file, extra_info, fs, figures_directory_name, include_images
-        )
+        return self._process_document_intelligence_response(result, poller, file, extra_info, fs, include_images)
 
     def _process_document_intelligence_response(
         self,
@@ -64,7 +68,6 @@ class DocumentIntelligenceLoader(BaseReader):
         file: str,
         extra_info: dict | None = None,
         fs: AbstractFileSystem | None = None,
-        figures_directory_name: str | None = None,
         include_images: bool | None = None,
     ) -> list[Document]:
         """Process the Document Intelligence API response into Document objects."""
@@ -81,7 +84,7 @@ class DocumentIntelligenceLoader(BaseReader):
                 )
             ]
 
-        if not figures_directory_name or not result.figures:
+        if not FIGURES_DIRECTORY_NAME or not result.figures:
             return [
                 Document(
                     text=text,

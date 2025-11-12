@@ -14,6 +14,8 @@ from aihub_pipeline.util.bucket_utils import get_or_create_namespace_for_directo
 
 logger = logging.getLogger(__name__)
 
+S3_PROTOCOL_PREFIX = "s3://"
+
 
 class S3DataLakeClient(AbstractDataLakeClient):
     """
@@ -33,6 +35,19 @@ class S3DataLakeClient(AbstractDataLakeClient):
         super().__init__(container_name)
         self._client = s3_client
         self._ensure_bucket_with_cors()
+
+    def build_uri(self, file_path: str) -> str:
+        """Build S3 URI in format: s3://bucket/key"""
+        clean_path = file_path.lstrip("/")
+        return f"{S3_PROTOCOL_PREFIX}{self.container_name}/{clean_path}"
+
+    def _extract_storage_key(self, uri: str) -> str:
+        """Extract storage key from S3 URI by removing s3:// protocol and bucket prefix."""
+        if uri.startswith(S3_PROTOCOL_PREFIX):
+            without_protocol = uri.removeprefix(S3_PROTOCOL_PREFIX)
+            return without_protocol.split("/", 1)[1]
+        # If no s3:// prefix, treat as bucket/key format
+        return uri.split("/", 1)[1]
 
     def get_all_files(self) -> list[DataLakeFile]:
         """
@@ -64,8 +79,7 @@ class S3DataLakeClient(AbstractDataLakeClient):
                 if is_root_folder or is_figure_folder or is_dagster_folder:
                     continue
 
-                # S3 URI format: s3://bucket/key
-                document_uri = f"s3://{self.container_name}/{key}"
+                document_uri = self.build_uri(key)
                 data_lake_file = self._create_data_lake_file_from_s3_object(document_uri, obj, key)
                 data_lake_files.append(data_lake_file)
 
@@ -78,19 +92,18 @@ class S3DataLakeClient(AbstractDataLakeClient):
 
     def create_data_lake_file_from_uri(self, document_uri: str) -> DataLakeFile:
         """Create a DataLakeFile from S3 URI by fetching object metadata."""
-        if not document_uri.startswith("s3://"):
+        if not document_uri.startswith(S3_PROTOCOL_PREFIX):
             if document_uri.startswith(f"{self.container_name}/"):
-                logger.warning(f"URI missing 's3://' prefix: {document_uri}. Auto-correcting.")
-                document_uri = f"s3://{document_uri}"
+                logger.warning(f"URI missing '{S3_PROTOCOL_PREFIX}' prefix: {document_uri}. Auto-correcting.")
+                document_uri = f"{S3_PROTOCOL_PREFIX}{document_uri}"
             else:
                 raise ValueError(
                     f"Invalid S3 URI format or bucket mismatch: {document_uri}. "
-                    f"Expected format: 's3://{self.container_name}/path/to/file' or "
+                    f"Expected format: '{S3_PROTOCOL_PREFIX}{self.container_name}/path/to/file' or "
                     f"'{self.container_name}/path/to/file'"
                 )
 
-        # Extract key from s3://bucket/key format
-        uri_parts = document_uri.removeprefix("s3://").split("/", 1)
+        uri_parts = document_uri.removeprefix(S3_PROTOCOL_PREFIX).split("/", 1)
         if len(uri_parts) != 2:
             raise ValueError(f"Invalid S3 URI format: {document_uri}")
 
@@ -209,9 +222,10 @@ class S3DataLakeClient(AbstractDataLakeClient):
             logger.error(f"Failed to list directory contents for {directory_path}: {e}")
             return []
 
-    def delete_file(self, file_path: str) -> None:
-        """Delete a file from S3."""
-        self._client.delete_object(Bucket=self.container_name, Key=file_path)
+    def delete_file(self, uri: str) -> None:
+        """Delete a file from S3 using its URI."""
+        storage_key = self._extract_storage_key(uri)
+        self._client.delete_object(Bucket=self.container_name, Key=storage_key)
 
     def delete_directory(self, directory_path: str) -> None:
         """Delete a directory (prefix) and all its contents from S3."""

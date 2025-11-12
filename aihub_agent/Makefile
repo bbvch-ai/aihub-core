@@ -21,12 +21,11 @@ test-cov:
 	poetry run pytest --cov=. \
 	                  --cov-report=xml:coverage.xml \
 	                  --cov-report=term-missing \
-	                  --junitxml=pytest.xml \
-	                  -k "not azure"
+	                  --junitxml=pytest.xml
 
 test:
 	@echo "Running tests in aihub_agent..."
-	poetry run pytest -k "not azure"
+	poetry run pytest
 
 pr-ready: format lint
 	@echo "Running full check (format, sort)..."

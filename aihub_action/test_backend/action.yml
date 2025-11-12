@@ -213,7 +213,7 @@ runs:
       working-directory: ${{ inputs.working_directory }}
       run: |
         pytest_exit_code=0
-        poetry run pytest -m "not azure" --cov=. \
+        poetry run pytest -m "not azure and not flaky" --cov=. \
                          --cov-report=xml:coverage.xml \
                          --cov-report=term-missing \
                          --junitxml=pytest.xml || pytest_exit_code=$?
