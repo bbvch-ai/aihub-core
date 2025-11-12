@@ -1,10 +1,10 @@
 import logging
 
-from llama_index.llms.openai_like import OpenAILike
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from llama_index.core import PromptTemplate
+from llama_index.llms.openai_like import OpenAILike
 
 logger = logging.getLogger(__name__)
 
