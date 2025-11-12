@@ -94,6 +94,11 @@ runs:
         chmod 777 ./.docker-volumes/hf-tei-data
         chmod 777 ./.docker-volumes/llamacpp-data
 
+    - name: Generate Docker Compose files
+      if: inputs.docker_compose_services != ''
+      shell: bash
+      run: make generate-compose
+
     - name: Pre-pull Docker images (if services needed)
       if: inputs.docker_compose_services != ''
       shell: bash
