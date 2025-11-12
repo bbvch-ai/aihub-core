@@ -65,7 +65,6 @@ runs:
       uses: actions/cache@v4
       with:
         path: |
-          ./.docker-volumes/hf-tei-data
           ./.docker-volumes/llamacpp-data
         key: ${{ runner.os }}-hf-models-${{ hashFiles('docker-compose.dev.yml') }}
         restore-keys: |
@@ -89,9 +88,7 @@ runs:
       if: inputs.docker_compose_services != ''
       shell: bash
       run: |
-        mkdir -p ./.docker-volumes/hf-tei-data
         mkdir -p ./.docker-volumes/llamacpp-data
-        chmod 777 ./.docker-volumes/hf-tei-data
         chmod 777 ./.docker-volumes/llamacpp-data
 
     - name: Generate Docker Compose files
