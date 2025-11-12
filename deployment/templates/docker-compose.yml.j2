@@ -792,7 +792,7 @@ services:
 
   presidio-analyzer:
     container_name: presidio-analyzer
-    image: {{ global.registry_prefix }}{{ image_tags.presidio }}
+    image: {{ global.registry_prefix }}{{ image_tags.presidio_analyzer }}
     restart: always
     logging:
       driver: json-file
@@ -802,7 +802,7 @@ services:
 
   presidio-anonymizer:
     container_name: presidio-anonymizer
-    image: {{ global.registry_prefix }}{{ image_tags.presidio }}
+    image: {{ global.registry_prefix }}{{ image_tags.presidio_anonymizer }}
     restart: always
     logging:
       driver: json-file
