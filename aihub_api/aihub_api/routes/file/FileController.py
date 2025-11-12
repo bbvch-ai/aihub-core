@@ -2,7 +2,7 @@ from typing import Annotated
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.generative_ai.document.accessor.AnonymousFileAccessSettings import AnonymousFileAccessSettings
+from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
 from fastapi import Query, Security
@@ -38,8 +38,7 @@ class FileController(Controller):
             """
             Generates a short-lived secure link to the blob resource, and returns the URL.
             """
-            file_access_config = AnonymousFileAccessSettings()
-            sas_url = file_access_config.service.generate_sas_url(container, file_path)
+            sas_url = S3AnonymousFileAccessService().generate_sas_url(container, file_path)
             return SignedUrlDto(url=sas_url)
 
         return self
