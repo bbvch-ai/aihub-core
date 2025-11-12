@@ -1,0 +1,11 @@
+# Source Documentation for Chapter 3: User Experience and Interaction
+# List paths relative to aihub_doc/docs/
+
+2_platform/10_chat_ui/index.en.md
+2_platform/10_chat_ui/1_feature_overview/index.en.md
+2_platform/10_chat_ui/2_chat_messages/index.en.md
+2_platform/10_chat_ui/3_chat_with_your_data/index.en.md
+2_platform/10_chat_ui/4_chat_with_company_knowledge/index.en.md
+2_platform/10_chat_ui/8_voice_input/index.en.md
+2_platform/10_chat_ui/9_feedback/index.en.md
+2_platform/19_compliance/5_internationalization/index.en.md

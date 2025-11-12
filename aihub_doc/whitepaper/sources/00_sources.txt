@@ -1,0 +1,9 @@
+# Source Documentation for Executive Summary
+# List paths relative to aihub_doc/docs/
+
+1_vision_and_positioning/1_introduction/index.en.md
+1_vision_and_positioning/1_introduction/1_the_problem_we_solve/index.en.md
+1_vision_and_positioning/1_introduction/2_our_solution/index.en.md
+1_vision_and_positioning/1_introduction/3_the_swiss_way/index.en.md
+1_vision_and_positioning/2_why_swiss_ai_hub/1_comparison_matrix_light/index.en.md
+1_vision_and_positioning/2_why_swiss_ai_hub/2_the_day_2_advantage/index.en.md
