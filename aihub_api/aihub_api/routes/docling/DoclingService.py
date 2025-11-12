@@ -1,0 +1,61 @@
+import base64
+import logging
+
+from aihub_lib.generative_ai.document.loaders.DoclingLoader import DoclingLoader
+
+logger = logging.getLogger(__name__)
+
+
+class DoclingService:
+    """Service for converting documents using DoclingLoader."""
+
+    @staticmethod
+    async def convert_from_bytes(content: bytes, filename: str) -> dict:
+        """
+        Convert a document from raw bytes using DoclingLoader.
+
+        Args:
+            content: File content as bytes
+            filename: Original filename
+
+        Returns:
+            dict: OpenWebUI-compatible response with page_content and metadata
+        """
+        logger.info(f"Converting document: {filename} ({len(content)} bytes)")
+
+        # Encode content as base64 for DoclingLoader
+        file_content = base64.b64encode(content).decode("utf-8")
+
+        # Use DoclingLoader with VLM pipeline - explicitly request markdown format
+        loader = DoclingLoader()
+        result = await loader.convert_document_async(
+            file_content=file_content,
+            filename=filename,
+            include_images=True,
+            to_formats=["md"],
+        )
+
+        logger.info(f"Docling response keys: {result.keys() if result else 'None'}")
+
+        if not result or "document" not in result:
+            logger.error(f"Invalid Docling response: {result}")
+            raise ValueError("Invalid response from Docling service")
+
+        document = result["document"]
+        logger.info(f"Document keys: {document.keys()}")
+
+        # Extract markdown content - Docling returns md_content when to_formats=["md"]
+        markdown_content = document.get("md_content")
+        if not markdown_content:
+            logger.error(f"No md_content in response: {document.keys()}")
+            raise ValueError("No md_content in Docling response")
+
+        logger.info(f"Document converted: {len(markdown_content)} chars")
+
+        # Return in OpenWebUI expected format
+        return {
+            "page_content": markdown_content,
+            "metadata": {
+                "filename": filename,
+            },
+        }

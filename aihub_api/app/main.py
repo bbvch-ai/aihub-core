@@ -6,6 +6,7 @@ from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.logging.logger import enable_logging
 
 from aihub_api.routes.agent.AgentController import AgentController
+from aihub_api.routes.docling.DoclingController import DoclingController
 from aihub_api.routes.evaluation.EvaluationController import EvaluationController
 from aihub_api.routes.event.EventController import EventController
 from aihub_api.routes.file.FileController import FileController
@@ -91,6 +92,7 @@ runner.mount(
     .get_supported_file_types(),
     FileController(auth=auth).get_file_url().get_file_redirect().get_anonymous_file_url().get_anonymous_file_redirect(),
     NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
+    DoclingController(auth=auth).process_endpoint(),
 )
 
 
