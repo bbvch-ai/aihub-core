@@ -70,39 +70,67 @@ get_source_files() {
     grep -v '^\s*#' "$source_file" | grep -v '^\s*$' || true
 }
 
-# Concatenate source documentation files
-collect_source_docs() {
+# Build combined prompt with source docs
+build_combined_prompt() {
     local chapter_id="$1"
-    local temp_file="$2"
+    local prompt_file="$PROMPTS_DIR/${chapter_id}_prompt.md"
 
-    echo "# Source Documentation" > "$temp_file"
-    echo "" >> "$temp_file"
+    # Start with clear structure
+    echo "# WHITEPAPER CHAPTER GENERATION"
+    echo ""
+    echo "You are writing a whitepaper chapter for the Swiss AI-Hub platform."
+    echo "Below you will find:"
+    echo "1. Chapter instructions and requirements"
+    echo "2. Source documentation from technical docs"
+    echo ""
+    echo "Your task: Generate the chapter content based on the instructions, using the source documentation as factual input."
+    echo "Write in business-focused language accessible to non-technical decision makers while maintaining technical accuracy."
+    echo ""
+    echo "═══════════════════════════════════════════════════════════════"
+    echo ""
+
+    # Add chapter instructions
+    echo "## CHAPTER INSTRUCTIONS"
+    echo ""
+    cat "$prompt_file"
+    echo ""
+    echo "═══════════════════════════════════════════════════════════════"
+    echo ""
+
+    # Add source documentation
+    echo "## SOURCE DOCUMENTATION"
+    echo ""
+    echo "Below is the technical documentation you should use as source material:"
+    echo ""
 
     local file_count=0
     while IFS= read -r doc_path; do
         # Remove leading/trailing whitespace
         doc_path=$(echo "$doc_path" | xargs)
-
         local full_path="$DOCS_ROOT/$doc_path"
 
         if [ -f "$full_path" ]; then
-            echo -e "${BLUE}  📄 Including: $doc_path${NC}"
-            echo "## Source: $doc_path" >> "$temp_file"
-            echo "" >> "$temp_file"
-            cat "$full_path" >> "$temp_file"
-            echo -e "\n---\n" >> "$temp_file"
+            echo "### Source File: $doc_path"
+            echo ""
+            cat "$full_path"
+            echo ""
+            echo "---"
+            echo ""
             ((file_count++))
-        else
-            echo -e "${YELLOW}  ⚠️  Source file not found: $full_path${NC}" >&2
         fi
     done < <(get_source_files "$chapter_id")
 
     if [ $file_count -eq 0 ]; then
-        echo -e "${YELLOW}  ⚠️  No source documents found for chapter $chapter_id${NC}"
-        echo "No source documentation was provided." >> "$temp_file"
-    else
-        echo -e "${GREEN}  ✓ Collected $file_count source document(s)${NC}"
+        echo "*(No source documentation provided)*"
+        echo ""
     fi
+
+    echo "═══════════════════════════════════════════════════════════════"
+    echo ""
+    echo "## YOUR TASK"
+    echo ""
+    echo "Now generate the chapter content according to the instructions above,"
+    echo "using the source documentation as your factual basis."
 }
 
 # Generate a single chapter using LLM
@@ -122,21 +150,31 @@ generate_chapter() {
 
     echo -e "${BLUE}📝 Using prompt: $prompt_file${NC}"
     echo -e "${BLUE}🤖 Using model: $LLM_MODEL${NC}"
-
-    # Collect source documentation
-    local sources_file=$(mktemp)
-    trap "rm -f $sources_file" RETURN
-
     echo -e "${BLUE}📚 Collecting source documentation...${NC}"
-    collect_source_docs "$chapter_id" "$sources_file"
 
-    # Read prompt content
-    local prompt_content
-    prompt_content=$(cat "$prompt_file")
+    # Show which source files are being collected
+    local file_count=0
+    while IFS= read -r doc_path; do
+        doc_path=$(echo "$doc_path" | xargs)
+        local full_path="$DOCS_ROOT/$doc_path"
+        if [ -f "$full_path" ]; then
+            echo -e "${BLUE}  📄 $doc_path${NC}"
+            ((file_count++))
+        else
+            echo -e "${YELLOW}  ⚠️  Not found: $doc_path${NC}" >&2
+        fi
+    done < <(get_source_files "$chapter_id")
 
-    # Read source documentation
-    local source_docs
-    source_docs=$(cat "$sources_file")
+    echo -e "${GREEN}  ✓ Collected $file_count source document(s)${NC}"
+
+    # Build the complete combined prompt
+    echo -e "${BLUE}🔨 Building combined prompt...${NC}"
+    local combined_prompt
+    combined_prompt=$(build_combined_prompt "$chapter_id")
+
+    # Show size of combined prompt
+    local prompt_size=$(echo "$combined_prompt" | wc -c)
+    echo -e "${BLUE}  📊 Combined prompt size: $(numfmt --to=iec-i --suffix=B $prompt_size)${NC}"
 
     # Generate with retry logic
     local attempt=1
@@ -145,18 +183,8 @@ generate_chapter() {
     while [ $attempt -le $MAX_RETRIES ]; do
         echo -e "${BLUE}🔄 Attempt $attempt/$MAX_RETRIES: Calling LLM...${NC}"
 
-        # Call LLM with prompt and source docs
-        if llm_output=$(llm --no-stream -m "$LLM_MODEL" --system "$prompt_content" <<EOF
-You are writing a whitepaper chapter for the Swiss AI-Hub platform.
-
-Below is the source documentation from the technical documentation that you should use as input for writing this chapter:
-
-$source_docs
-
-Please generate the chapter content based on the prompt instructions and the source documentation provided above.
-Write in business-focused language accessible to non-technical decision makers while maintaining technical accuracy.
-EOF
-        ); then
+        # Call LLM with the combined prompt (simple, single input)
+        if llm_output=$(echo "$combined_prompt" | llm --no-stream -m "$LLM_MODEL"); then
             success=true
             break
         else

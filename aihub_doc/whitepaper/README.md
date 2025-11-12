@@ -4,11 +4,76 @@ Automated LLM-based whitepaper generation system for creating business-focused d
 
 ## Overview
 
-This system generates whitepaper chapters by:
-1. Reading chapter-specific prompts with instructions
-2. Collecting relevant technical documentation as source material
-3. Using an LLM to transform technical content into business-focused narrative
-4. Outputting polished markdown chapters ready for review
+This system generates whitepaper chapters by building a single combined prompt that contains:
+
+1. **Chapter Instructions** - From `prompts/NN_prompt.md` (what to write, how to write it)
+2. **Source Documentation** - From technical docs listed in `sources/NN_sources.txt` (factual content)
+3. **Task Instruction** - Clear directive to generate the chapter
+
+This combined prompt is sent to an LLM which outputs a polished business-focused chapter.
+
+### How Prompts Are Combined
+
+The script builds a single text prompt like this:
+
+```
+# WHITEPAPER CHAPTER GENERATION
+
+You are writing a whitepaper chapter for the Swiss AI-Hub platform.
+Below you will find:
+1. Chapter instructions and requirements
+2. Source documentation from technical docs
+
+═══════════════════════════════════════════════════════════════
+
+## CHAPTER INSTRUCTIONS
+
+[Content from prompts/07_prompt.md]
+# Chapter 7: Administration and Governance
+## Chapter Objective
+Describe the administrative and governance capabilities...
+[... full prompt file ...]
+
+═══════════════════════════════════════════════════════════════
+
+## SOURCE DOCUMENTATION
+
+Below is the technical documentation you should use as source material:
+
+### Source File: 2_platform/11_access_management/1_authentication_setup/index.en.md
+
+[Full content of authentication_setup doc]
+
+---
+
+### Source File: 2_platform/11_access_management/2_permissions/index.en.md
+
+[Full content of permissions doc]
+
+---
+
+### Source File: 2_platform/14_cost_control/index.en.md
+
+[Full content of cost_control doc]
+
+---
+
+[... all source files concatenated ...]
+
+═══════════════════════════════════════════════════════════════
+
+## YOUR TASK
+
+Now generate the chapter content according to the instructions above,
+using the source documentation as your factual basis.
+```
+
+Then this entire combined prompt is piped to the LLM:
+```bash
+echo "$combined_prompt" | llm --no-stream -m claude-3-7-sonnet-20250219
+```
+
+Simple and readable!
 
 ## Directory Structure
 
