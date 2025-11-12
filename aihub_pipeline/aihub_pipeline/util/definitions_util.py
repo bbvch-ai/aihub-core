@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Annotated
 
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
@@ -73,15 +74,17 @@ def asset_definition_with_code_link(
 
 
 def default_definitions(
-    datalake_container_name: str,
-    embedding_model_name: str = "embedding/small",
-    llm_model_name: str = "text-generation/mini",
-    with_summary_nodes: bool = True,
-    observe_job_hour: int = 2,
-    observe_job_minute: int = 0,
-    remove_job_hour: int = 3,
-    remove_job_minute: int = 0,
-    vector_store_dimensions: int = 3072,
+    *,
+    datalake_container_name: Annotated[str, "S3 bucket/container name where raw documents are stored"],
+    embedding_model_name: Annotated[str, "LiteLLM model name for embeddings"] = "embedding/small",
+    llm_model_name: Annotated[str, "LiteLLM model name for text generation"] = "text-generation/mini",
+    with_summary_nodes: Annotated[bool, "Generate recursive summaries for hierarchical RAG"] = True,
+    auto_sync: Annotated[bool, "Whether the S3 bucket is auto-synced (i.e. with local fs pipeline)"] = False,
+    observe_job_hour: Annotated[int, "Hour to run daily data lake observation job"] = 2,
+    observe_job_minute: Annotated[int, "Minute to run daily data lake observation job"] = 0,
+    remove_job_hour: Annotated[int, "Hour to run daily removed documents cleanup job"] = 3,
+    remove_job_minute: Annotated[int, "Minute to run daily removed documents cleanup job"] = 0,
+    vector_store_dimensions: Annotated[int, "Embedding vector dimensions must match model"] = 3072,
 ) -> Definitions:
     """
     Creates a complete DataLake to vector store pipeline using local resources.
@@ -124,14 +127,14 @@ def default_definitions(
         asset_selection=AssetSelection.keys(removed_documents_key),
     )
 
-    store_name = get_db_name_from_bucket_name(bucket_name=datalake_container_name, auto_sync=False)
+    store_name = get_db_name_from_bucket_name(bucket_name=datalake_container_name, auto_sync=auto_sync)
     llm_config = LLMConfig(model_name=llm_model_name)
     embedding_config = EmbeddingModelConfig(model_name=embedding_model_name)
 
     return Definitions(
         assets=assets,
         resources={
-            "document_parser": DocumentParserResource(include_images=False),
+            "document_parser": DocumentParserResource(),
             "node_parser": MarkdownStructuralNodeParserResource(llm_config=llm_config),
             "summary_parser": RecursiveSummaryParserResource(),
             **default_io_manager_s3_datalake_resources(container_name=datalake_container_name),
@@ -168,15 +171,16 @@ def default_definitions(
 
 
 def default_sharepoint_to_datalake_definitions(
-    datalake_container_name: str,
-    datalake_directory_name: str | None = None,
-    target_folders: list[str] | None = None,
-    exclude_folders: list[str] | None = None,
-    supported_filetypes: list[str] | None = None,
-    observe_job_hour: int = 0,
-    observe_job_minute: int = 0,
-    remove_job_hour: int = 1,
-    remove_job_minute: int = 0,
+    *,
+    datalake_container_name: Annotated[str, "S3 bucket/container name where SharePoint files will be uploaded"],
+    datalake_directory_name: Annotated[str | None, "Optional subdirectory within container"] = None,
+    target_folders: Annotated[list[str] | None, "List of SharePoint folder paths to sync"] = None,
+    exclude_folders: Annotated[list[str] | None, "List of SharePoint folder paths to exclude"] = None,
+    supported_filetypes: Annotated[list[str] | None, "List of file extensions to sync"] = None,
+    observe_job_hour: Annotated[int, "Hour to run daily SharePoint observation job"] = 0,
+    observe_job_minute: Annotated[int, "Minute to run daily SharePoint observation job"] = 0,
+    remove_job_hour: Annotated[int, "Hour to run daily removed files cleanup job"] = 1,
+    remove_job_minute: Annotated[int, "Minute to run daily removed files cleanup job"] = 0,
 ) -> Definitions:
     """
     Creates a SharePoint to DataLake pipeline using local S3-compatible storage.
@@ -252,19 +256,19 @@ def default_sharepoint_to_datalake_definitions(
 
 def default_local_filesystem_to_datalake_definitions(
     *,
-    datalake_container_name: str,
-    base_path: str,
-    include_folders: list[str] | None = None,
-    include_subfolders: list[str] | None = None,
-    datalake_directory_name: str | None = None,
-    exclude_folders: list[str] | None = None,
-    exclude_paths: list[str] | None = None,
-    include_extensions: list[str] | None = None,
-    exclude_files: list[str] | None = None,
-    observe_job_hour: int = 0,
-    observe_job_minute: int = 0,
-    remove_job_hour: int = 1,
-    remove_job_minute: int = 0,
+    datalake_container_name: Annotated[str, "S3 bucket/container name where local filesystem files will be uploaded"],
+    base_path: Annotated[str, "Root directory path to scan for files"],
+    include_folders: Annotated[list[str] | None, "List of folder name patterns to include"] = None,
+    include_subfolders: Annotated[list[str] | None, "List of subfolder name patterns to include recursively"] = None,
+    datalake_directory_name: Annotated[str | None, "Optional subdirectory within container"] = None,
+    exclude_folders: Annotated[list[str] | None, "List of folder name patterns to exclude"] = None,
+    exclude_paths: Annotated[list[str] | None, "List of full path patterns to exclude"] = None,
+    include_extensions: Annotated[list[str] | None, "List of file extensions to include"] = None,
+    exclude_files: Annotated[list[str] | None, "List of filename patterns to exclude"] = None,
+    observe_job_hour: Annotated[int, "Hour to run daily filesystem observation job"] = 0,
+    observe_job_minute: Annotated[int, "Minute to run daily filesystem observation job"] = 0,
+    remove_job_hour: Annotated[int, "Hour to run daily removed files cleanup job"] = 1,
+    remove_job_minute: Annotated[int, "Minute to run daily removed files cleanup job"] = 0,
 ) -> Definitions:
     """
     Creates a Local File System to DataLake pipeline using S3-compatible storage.
