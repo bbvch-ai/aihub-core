@@ -692,7 +692,7 @@ services:
     restart: always
     {%- if stage == 'dev' %}
     ports:
-      - "8185:8182"
+      - "8186:8182"
     {%- endif %}
     volumes:
       - {{ global.volume_root }}/llamacpp-data:/data
@@ -927,14 +927,6 @@ services:
   # uploaded documents for the RAG pipeline.
   # ===================================================================
 
-  docling-model-permission:
-    container_name: docling-model-permission
-    image: alpine
-    command: [ "sh", "-c", "chown -R 1001:1001 /models" ]
-    restart: "no"
-    volumes:
-      - {{ global.volume_root }}/docling-data:/models
-
   docling:
     container_name: docling
     image: {{ global.registry_prefix }}{{ image_tags.docling }}
@@ -945,8 +937,6 @@ services:
     {%- endif %}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
-    volumes:
-      - {{ global.volume_root }}/docling-data:/models
     environment:
       DOCLING_SERVE_ARTIFACTS_PATH: "/models"
       DOCLING_SERVE_LOAD_MODELS_AT_BOOT: 0
@@ -956,8 +946,6 @@ services:
       DOCLING_SERVE_ENABLE_UI: 1
       {%- endif %}
     depends_on:
-      docling-model-permission:
-        condition: service_completed_successfully
       {%- if image_tags.llama_cpp_docling[stage] and image_tags.llama_cpp_docling[stage][hardware] %}
       llama-cpp-docling:
         condition: service_healthy
