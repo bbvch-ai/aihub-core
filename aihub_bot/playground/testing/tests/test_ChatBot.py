@@ -193,8 +193,7 @@ async def test_stream_response(
     for i, resp in enumerate(test_runner.responses):
         print(f"  Response {i}: path={resp.path}, text={resp.payload.get('text', 'N/A')}")
 
-    # Check for the expected chunks (reduced wait time for debugging)
-    for _ in range(5):
+    for _ in range(60):
         if len(test_runner.responses) >= 2:
             if (
                 test_runner.responses[-1].payload["text"] == "First chunk.\nSecond chunk."
