@@ -634,11 +634,11 @@ services:
     {%- endif %}
   {%- endif %}
 
-  {% if image_tags.llama_cpp_reranking[stage] and image_tags.llama_cpp_reranking[stage][hardware] %}
-  llama-cpp-reranking:
-    container_name: llama-cpp-reranking
+  {% if image_tags.llama_cpp_reranker[stage] and image_tags.llama_cpp_reranker[stage][hardware] %}
+  llama-cpp-reranker:
+    container_name: llama-cpp-reranker
     platform: "linux/amd64"
-    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_reranking[stage][hardware] }}
+    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_reranker[stage][hardware] }}
     restart: always
     {%- if stage == 'dev' %}
     ports:

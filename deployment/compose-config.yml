@@ -40,7 +40,6 @@ image_tags:
   postgres_ferretdb: postgres-documentdb:17.0.106.0-ferretdb-2.5.0
   docling_model_permission: alpine  # Init container
   huggingface_tei: text-embeddings-inference:cpu-ipex-sha-c8ff435
-  llama_cpp_reranker: llama.cpp:server-b6710
   oauth2proxy: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
   open_webui: open-webui:v0.6.28
   playwright: playwright:v1.54.1-jammy
@@ -80,7 +79,7 @@ image_tags:
     latest:
       gpu: llama.cpp:server-cuda-b6894
 
-  llama_cpp_reranking:
+  llama_cpp_reranker:
     dev:
       cpu: llama.cpp:server-b6894
       gpu: llama.cpp:server-cuda-b6894

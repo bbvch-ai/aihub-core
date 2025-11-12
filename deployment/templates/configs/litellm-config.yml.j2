@@ -17,7 +17,7 @@
 {# Check if we have local GPU services for this stage/hardware combo #}
 {%- set has_llama_cpp = image_tags.llama_cpp.get(stage, {}).get(hardware) -%}
 {%- set has_llama_cpp_embedding = image_tags.llama_cpp_embedding.get(stage, {}).get(hardware) -%}
-{%- set has_llama_cpp_reranking = image_tags.llama_cpp_reranking.get(stage, {}).get(hardware) -%}
+{%- set has_llama_cpp_reranker = image_tags.llama_cpp_reranker.get(stage, {}).get(hardware) -%}
 {%- set has_llama_cpp_docling = image_tags.llama_cpp_docling.get(stage, {}).get(hardware) -%}
 {%- set has_speaches = image_tags.speaches.get(stage, {}).get(hardware) -%}
 
@@ -124,9 +124,9 @@ model_list:
 
   - model_name: reranking
     litellm_params:
-{%- if has_llama_cpp_reranking %}
+{%- if has_llama_cpp_reranker %}
       model: jina_ai/qwen-3-reranking
-      api_base: http://llama-cpp-reranking:8182/
+      api_base: http://llama-cpp-reranker:8182/
       api_key: XXX
 {%- else %}
       model: cohere/rerank-english-v3.0
