@@ -255,12 +255,12 @@ class CompletionHandler:
                 return _activity, _sent_text
             if _activity is None:
                 _response = await _turn_context.send_activity(_buffer)
-                return Activity(id=_response.id, text=_buffer, type=ActivityTypes.message), _buffer
+                return Activity(id=_response.id, text=_buffer, type=ActivityTypes.message), ""
 
             _activity.text = _buffer
             try:
                 await _turn_context.update_activity(_activity)
-                return _activity, _buffer
+                return _activity, ""
             except Exception as e:
                 # Handle message too long error (e.g., Slack's msg_too_long error)
                 if "msg_too_long" in str(e):
