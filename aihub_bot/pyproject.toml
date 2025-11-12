@@ -77,3 +77,9 @@ extend-exclude = '''
 )/
 '''
 
+[tool.pytest.ini_options]
+markers = [
+    "flaky: Tests that are unreliable or timing-dependent (skipped in CI)",
+    "azure: Tests requiring Azure credentials",
+]
+

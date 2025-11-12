@@ -34,7 +34,6 @@ class DoclingLoader(BaseReader):
         file: str,
         extra_info: dict | None = None,
         fs: AbstractFileSystem | None = None,
-        figures_directory_name: str | None = None,
         include_images: bool | None = None,
     ) -> list[Document]:
         """Load and process documents synchronously using the Docling service."""
@@ -45,14 +44,13 @@ class DoclingLoader(BaseReader):
         file_name = os.path.basename(file)
 
         answer = self.convert_document(encoded_string, file_name, include_images)
-        return self._process_docling_response(answer, file, extra_info, fs, figures_directory_name)
+        return self._process_docling_response(answer=answer, file=file, extra_info=extra_info, fs=fs)
 
     async def aload_data(
         self,
         file: str,
         extra_info: dict | None = None,
         fs: AbstractFileSystem | None = None,
-        figures_directory_name: str | None = None,
         include_images: bool | None = None,
     ) -> list[Document]:
         """Load and process documents asynchronously using the Docling service."""
@@ -64,7 +62,7 @@ class DoclingLoader(BaseReader):
 
         answer = await self.convert_document_async(encoded_string, file_name, include_images)
         return await asyncio.to_thread(
-            self._process_docling_response, answer, file, extra_info, fs, figures_directory_name
+            self._process_docling_response, answer=answer, file=file, fs=fs, extra_info=extra_info
         )
 
     def _read_file_sync(self, fs: AbstractFileSystem, file: str) -> str:
@@ -75,9 +73,8 @@ class DoclingLoader(BaseReader):
         self,
         answer: dict,
         file: str,
+        fs: AbstractFileSystem,
         extra_info: dict | None = None,
-        fs: AbstractFileSystem | None = None,
-        figures_directory_name: str | None = None,
     ) -> list[Document]:
         """Process the Docling API response into Document objects."""
         doc = DoclingDocument(**answer["document"]["json_content"])

@@ -41,6 +41,27 @@ class AbstractDataLakeClient(ABC):
         self.container_name = container_name
 
     @abstractmethod
+    def build_uri(self, file_path: str) -> str:
+        """
+        Build a complete URI for a file path in this data lake.
+
+        This method constructs a URI using the same format that get_all_files()
+        returns, ensuring consistency across URI construction and comparison.
+        """
+        pass
+
+    @abstractmethod
+    def _extract_storage_key(self, uri: str) -> str:
+        """
+        Extract the storage key from a data lake URI.
+
+        Converts a full data lake URI to a storage-relative key by removing
+        the protocol and container/bucket prefix. This is an internal method
+        used to normalize URIs for backend storage operations.
+        """
+        pass
+
+    @abstractmethod
     def get_all_files(self) -> list[DataLakeFile]:
         """
         Retrieve all files from a directory, excluding figures subdirectory.
@@ -86,9 +107,9 @@ class AbstractDataLakeClient(ABC):
         pass
 
     @abstractmethod
-    def delete_file(self, file_path: str) -> None:
+    def delete_file(self, uri: str) -> None:
         """
-        Delete a specific file from the data lake.
+        Delete a specific file from the data lake using its URI.
 
         Permanently removes the file from storage. This operation
         cannot be undone, so implementations should consider adding
