@@ -1,100 +1,207 @@
-# Kapitel 05: Transparente und Auditierbare AI-Agents
+# Kapitel 05: Administration und Governance
 
 ## Kapitelziel
-Erklären Sie, wie sich Swiss AI-Hub Agents von "Black-Box-AI" unterscheiden und warum Transparenz und Nachvollziehbarkeit für Unternehmen wichtig sind (1300-1800 Wörter).
+Erklären Sie, wie die Plattform Enterprise-Administrationsfunktionen, rollenbasierte Zugriffskontrolle, Kostenmanagement und AI-Qualitätsüberwachung bereitstellt (1200 Wörter, 4 Seiten).
 
-**WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **lang** (1300-1800 Wörter).
-
+**WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **lang** (1200 Wörter).
 
 ## Business-Dimensionen (Priorität für dieses Kapitel)
-1. **DATENSCHUTZ** - SEHR WICHTIG: Transparenz, Auditierbarkeit (revDSG)
-2. **SICHERHEIT** - Wichtig: Workflow-Kontrolle, Nachvollziehbarkeit
-3. **ZUKUNFTSSICHERHEIT** - Wichtig: Erweiterbarkeit, Custom Workflows
+1. **MANAGEMENT** - SEHR WICHTIG: Benutzer, Rollen, Policies, Budgets, Administrativer Aufwand
+2. **KOSTEN** - Sehr wichtig: Cost Control, Budget-Limits, Tracking, TCO
+3. **DATENSCHUTZ** - Sehr wichtig: RBAC, granulare Zugriffskontrolle, Consent-Management
+4. **SICHERHEIT** - Wichtig: SSO/Azure AD, Session Management, Authentifizierung
 
 **Behandeln Sie diese Dimensionen explizit** mit konkreten Antworten auf Business-Fragen.
 
-## Hauptthemen
+## Themen und Inhalte
 
-### 5.1 Workflow-basierte Agent-Architektur
-- Strukturierte Workflows statt autonomer Tool-Auswahl
-- Transparente Ausführung: Jeder Schritt sichtbar und auditierbar
-- Nachvollziehbares Reasoning: "Denkprozess" der KI einsehbar
-- Deterministische Schritte: Viele Operationen ohne LLM (Datenvalidierung, Formatierung)
-- Workflow kontrolliert Ausführung: Agent kann nicht auf unautorisierten Zugriff oder Aktionen zugreifen
+### 5.1 RBAC-basiertes Rollen- und Berechtigungsmanagement
+**Kernaussage**: Klare Rollentrennung ermöglicht sichere Delegation ohne Kontrollverlust
 
-**Geschäftlicher Nutzen**: Vertrauen, Compliance, Audit-Bereitschaft, Risikominderung
+**Inhalte**:
+- **Drei Rollenebenen**:
+  - **Endbenutzer**: Zugriff auf Chat, zugewiesene Collections, keine Admin-Rechte
+  - **Kundenseitige Administratoren**: Verwaltung von Benutzern, Datenquellen, Modellen innerhalb ihrer Organisation
+  - **Plattform-Administratoren**: Technischer Betrieb, Infrastruktur, übergreifende Konfiguration
+- **Granulare Zugriffskontrolle**:
+  - Pro User, Gruppe oder Organisation
+  - Auf Datenquellen-Ebene (Collections, Databases)
+  - Auf Feature-Ebene (AI-Modelle, Agents, Workflows)
+- **Organisationshierarchien**: Mehrere Organisationseinheiten, Abteilungen, Projekte
+- **Dynamische Berechtigungen**: Zeitbasierte, kontextabhängige Zugriffskontrolle
 
-### 5.2 Eingebaute Agent-Fähigkeiten
-- RAG Agents: Frage-Antwort mit Unternehmenswissen und Quellenangaben
-- Expert-Asking Agents: Multi-Agent-Kollaboration
-- Conversational Agents: Natürlichsprachige Interaktion mit Kontext
-- Tool-Using Agents: Zugriff auf externe Systeme und APIs
+**Geschäftlicher Nutzen**:
+- Sichere Delegation administrativer Aufgaben ohne Plattform-Provider-Abhängigkeit
+- Minimierung von Risiken durch Principle of Least Privilege
+- Skalierbarkeit für große Organisationen mit komplexen Strukturen
+- Compliance mit Segregation of Duties (SoD)-Anforderungen
 
-**Geschäftlicher Nutzen**: Sofortige Produktivität, keine Custom-Entwicklung für gängige Szenarien
+### 5.2 Enterprise-Authentifizierungs-Integration
+**Fokus**: Nahtlose Integration in bestehende Identity-Management-Systeme
 
-### 5.3 Human-in-the-Loop (HITL)
-- Approval-Workflows: Agent pausiert und fordert menschliche Genehmigung an
-- Kontext-Erhaltung: Workflow setzt sich mit vollem Gedächtnis fort
-- Flexible Wartezeiten: Sekunden, Minuten, Stunden oder Tage
-- Vollständiger Audit-Trail: Jede Interaktion protokolliert
-- Use Cases: Regulatorische Genehmigungen, Qualitätsprüfungen, Consent-Workflows
+**Inhalte**:
+- **SSO/OAuth-Integration**: Single Sign-On über bestehende Identitätssysteme
+- **Azure AD / Microsoft Entra ID**: Native Integration für Microsoft-Umgebungen
+- **Keycloak**: Open-Source Identity- und Access-Management
+- **OIDC/SAML**: Standardprotokolle für beliebige IdP-Anbindung
+- **Multi-Faktor-Authentifizierung (MFA)**: Unterstützung für Authenticator-Apps, SMS, Hardware-Token
+- **Passkeys**: FIDO2-basierte passwortlose Authentifizierung
+- **Conditional Access**: Kontextbasierte Zugriffsrichtlinien (Standort, Gerät, Risiko)
+- **Session Management**: Konfigurierbare Session-Timeouts, automatische Logout-Policies
 
-**Geschäftlicher Nutzen**: Schrittweise Automatisierung, Risikomanagement, Compliance, menschliche Kontrolle
+**Geschäftlicher Nutzen**:
+- Keine zusätzlichen Credentials: Nutzer verwenden bestehende Unternehmensidentitäten
+- Zentrale Benutzerverwaltung: Änderungen in Azure AD/Keycloak automatisch synchronisiert
+- Erhöhte Sicherheit durch MFA und Conditional Access
+- Compliance mit Identity-Management-Richtlinien
 
-### 5.4 Responsible AI Features
-- Halluzinations-Minderung: Quellenangaben, Retrieval-Grounding, Confidence Scores
-- Confidence-Indikatoren: KI zeigt Unsicherheitslevel
-- Datenqualität-Handling: Erkennt und managt fehlende, widersprüchliche oder fehlerhafte Daten
-- Rückfragen-Fähigkeit: Agent stellt klärende Fragen bei Unsicherheit
-- Fehlererkennung: Hebt potenzielle Probleme in Eingabedaten hervor
+### 5.3 Disclaimer- und Consent-Management
+**Fokus**: Transparenz und Einwilligungsverwaltung für rechtskonforme AI-Nutzung
 
-**Geschäftlicher Nutzen**: Vertrauenswürdige KI, Risikoreduktion, Qualitätssicherung
+**Inhalte**:
+- **Konfigurierbare Disclaimer**: Organisationsspezifische Nutzungsbedingungen und Warnungen
+- **Consent-Workflows**: Granulare Einwilligungen für verschiedene Datenverarbeitungszwecke
+- **Versionierung**: Nachverfolgung von Einwilligungsänderungen über Zeit
+- **Widerrufsmechanismen**: Einfache Möglichkeit für Nutzer, Einwilligungen zurückzuziehen
+- **Dokumentation**: Vollständige Audit-Trails für Compliance-Nachweise
 
-### 5.5 Agent Governance
-- Vordefinierte Antworten: Konfigurierbare Antworten auf spezifische Fragen/Keywords
-- Prompt Engineering: Domänenspezifische Anpassung (z.B. Schweizer Rechtssprache, Behördenterminologie)
-- Input-Validierung: Guards verhindern bösartige oder unangemessene Eingaben
-- Output-Qualitätsprüfung: Validierung der Agent-Antworten vor Auslieferung
-- Versionierung: Alle Agent-Versionen nachvollziehbar
+**Geschäftlicher Nutzen**:
+- Erfüllung von revDSG- und GDPR-Einwilligungsanforderungen
+- Transparenz für Nutzer über Datenverarbeitung
+- Rechtssicherheit durch dokumentierte Einwilligungen
+- Flexibilität bei sich ändernden regulatorischen Anforderungen
 
-**Geschäftlicher Nutzen**: Konsistente Antworten, Domänen-Expertise, Qualitätskontrolle
+### 5.4 Echtzeit-Kostentracking mit Budgetlimits
+**Fokus**: Vollständige Kostenkontrolle und -transparenz
 
-## Kernfragen, die Leser beantworten möchten
+**Inhalte**:
+- **Granulare Kostenerfassung**:
+  - Pro User: Individuelle Nutzung und Kosten
+  - Pro Abteilung/Organisation: Kostenstellen-Zuordnung
+  - Pro AI-Modell: Welche Modelle verursachen welche Kosten?
+  - Pro Request: Token-Nutzung, Latenz, Kosten jeder einzelnen Anfrage
+- **Budget-Limits**:
+  - Soft-Limits: Warnung bei Überschreitung
+  - Hard-Limits: Automatische Blockierung bei Budget-Erschöpfung
+  - Zeitbasierte Budgets: Täglich, wöchentlich, monatlich
+- **Dashboards und Reports**: Echtzeit-Übersicht und historische Auswertungen
+- **Cost-Allocation**: Automatische Kostenverteilung auf Kostenstellen
 
-### Transparenz und Nachvollziehbarkeit
-1. Wie kann ich nachvollziehen, was ein AI-Agent tut und warum?
-2. Was unterscheidet transparente Agents von "Black-Box"-KI?
-3. Kann ich jeden Schritt eines Agent-Workflows einsehen und auditieren?
-4. Wie dokumentiert die Plattform KI-Entscheidungen für Compliance und Audits?
+**Geschäftlicher Nutzen**:
+- Vermeidung unkontrollierter AI-Kosten
+- Transparenz über Kostenverursacher
+- Optimierungspotenzial durch detaillierte Analyse
+- Chargeback-Fähigkeit für interne Verrechnung
 
-### Agent-Fähigkeiten
-5. Welche Arten von Agents sind out-of-the-box verfügbar?
-6. Kann ein Agent Fragen mit Bezug auf Unternehmenswissen beantworten?
-7. Können mehrere spezialisierte Agents zusammenarbeiten?
-8. Wie integrieren sich Agents mit externen Systemen?
+### 5.5 System-Monitoring, Observability und Logging
+**Fokus**: Vollständige Sichtbarkeit und Integration in bestehende Monitoring-Landschaft
 
-### Human-in-the-Loop
-9. Wie stelle ich sicher, dass kritische Entscheidungen von Menschen überprüft werden?
-10. Kann ein Agent pausieren und auf menschliche Genehmigung warten?
-11. Wie lange kann ein Workflow auf menschliches Feedback warten?
-12. Wird jede menschliche Interaktion protokolliert?
-13. Für welche Use Cases ist Human-in-the-Loop sinnvoll?
+**Inhalte**:
+- **System-Monitoring**: CPU, Speicher, Disk, Netzwerk aller Komponenten
+- **Application-Monitoring**: Request-Latenz, Error-Rates, Throughput
+- **Business-Metriken**: Nutzer-Aktivität, Antwortqualität, Feature-Nutzung
+- **Umfassendes Logging**:
+  - Strukturierte Logs (JSON, OpenTelemetry-Format)
+  - Konfigurierbare Log-Rotation (Größe, Zeit)
+  - Automatische Archivierung und Retention gemäß Compliance-Anforderungen
+- **Export zu Kundensystemen**:
+  - ELK-Stack (Elasticsearch, Logstash, Kibana)
+  - Grafana / Prometheus
+  - Splunk
+  - Datadog
+  - Azure Monitor / Application Insights
 
-### Responsible AI
-14. Wie verhindert die Plattform, dass die KI falsche Informationen ("Halluzinationen") generiert?
-15. Kann die KI ihren Unsicherheitsgrad mitteilen?
-16. Wie geht die KI mit fehlenden, fehlerhaften oder widersprüchlichen Daten um?
-17. Stellt die KI Rückfragen, wenn sie sich unsicher ist?
-18. Wie wird erkannt, ob Eingabedaten Probleme enthalten?
+**Geschäftlicher Nutzen**:
+- Integration in bestehende IT-Monitoring-Landschaft
+- Proaktive Problemerkennung und -behebung
+- Compliance mit Logging-Anforderungen
+- Langfristige Auswertbarkeit und Forensik
 
-### Governance und Kontrolle
-19. Kann ich vordefinierte Antworten auf häufige Fragen hinterlegen?
-20. Wie kann ich die KI an unsere Fachsprache (z.B. Schweizer Rechtssprache) anpassen?
-21. Wie verhindere ich, dass Benutzer unangemessene Eingaben machen?
-22. Wie stelle ich die Qualität der Agent-Antworten sicher?
-23. Kann ich verschiedene Versionen eines Agents verwalten und zurückrollen?
+### 5.6 AI-Qualitätsmanagement
+**Fokus**: Kontinuierliche Überwachung und Verbesserung der AI-Qualität
 
-### Anpassung und Erweiterung
-24. Kann ich domänenspezifische Agents für meine Branche erstellen?
-25. Wie kombiniere ich KI mit regelbasierten Systemen (z.B. für Compliance)?
-26. Kann die KI plausible nächste Schritte in Prozessen vorschlagen?
+**Inhalte**:
+- **User-Feedback-System**: Thumbs-up/down, Kommentare, Qualitätsbewertungen
+- **Quality-Metrics**: Antwortgenauigkeit, Relevanz, Vollständigkeit
+- **Bias-Monitoring**: Automatische Erkennung von Verzerrungen in AI-Antworten
+- **Model-Drift-Detection**: Überwachung von Modell-Leistung über Zeit
+- **A/B-Testing**: Vergleichstests verschiedener Prompts, Modelle, Retrieval-Strategien
+- **Automatisches Retraining**: Trigger basierend auf Qualitätsmetriken
+
+**Geschäftlicher Nutzen**:
+- Kontinuierliche Qualitätsverbesserung
+- Früherkennung von Qualitätsproblemen
+- Compliance mit AI Act Quality Management Anforderungen
+- Datenbasierte Optimierung statt Bauchgefühl
+
+## Business-Fragen, die das Kapitel beantwortet
+
+### Rollen und Berechtigungen
+1. Welche Rollen und Berechtigungsebenen bietet die Plattform?
+2. Können wir kundenseitige Administratoren definieren, ohne Plattform-Provider-Abhängigkeit?
+3. Wie funktioniert die granulare Zugriffskontrolle auf Datenquellen und Features?
+4. Unterstützt die Plattform komplexe Organisationshierarchien mit mehreren Abteilungen?
+5. Wie stelle ich sicher, dass Nutzer nur auf autorisierte Daten zugreifen können?
+6. Ist das Prinzip der minimalen Berechtigung (Least Privilege) umsetzbar?
+
+### Authentifizierung und Identity Management
+7. Wie integriert sich die Plattform mit unserer bestehenden Identitätsverwaltung (Azure AD, Keycloak)?
+8. Wird Single Sign-On (SSO) unterstützt?
+9. Können wir Multi-Faktor-Authentifizierung (MFA) erzwingen?
+10. Unterstützt die Plattform passwortlose Authentifizierung (Passkeys)?
+11. Wie werden Sessions verwaltet und können wir Timeouts konfigurieren?
+12. Unterstützt die Plattform Conditional Access (kontextbasierte Zugriffsrichtlinien)?
+
+### Consent und Compliance
+13. Wie verwalten wir Nutzer-Einwilligungen für AI-Datenverarbeitung?
+14. Können wir organisationsspezifische Disclaimer und Nutzungsbedingungen konfigurieren?
+15. Wie dokumentieren wir Einwilligungen für Compliance-Nachweise?
+16. Können Nutzer ihre Einwilligungen einfach widerrufen?
+
+### Kostenmanagement
+17. Wie werden AI-Kosten erfasst und aufgeschlüsselt (User, Abteilung, Modell)?
+18. Können wir Budget-Limits pro User oder Abteilung setzen?
+19. Was passiert, wenn ein Budget-Limit erreicht wird?
+20. Wie transparent sind die Kosten in Echtzeit?
+21. Können wir Kosten intern verrechnen (Chargeback)?
+22. Wie identifizieren wir Optimierungspotenziale?
+
+### Monitoring und Logging
+23. Welche Monitoring-Fähigkeiten sind eingebaut?
+24. Können wir Logs in unsere bestehenden Systeme (ELK, Splunk, Grafana) exportieren?
+25. Wie lange werden Logs aufbewahrt und ist dies konfigurierbar?
+26. Werden strukturierte Logs (JSON, OpenTelemetry) unterstützt?
+27. Wie überwachen wir die Gesundheit der Plattform-Komponenten?
+
+### AI-Qualität und Governance
+28. Wie überwachen wir die Qualität der AI-Antworten?
+29. Wie integrieren wir Nutzer-Feedback zur Verbesserung?
+30. Unterstützt die Plattform Bias-Monitoring?
+31. Wie erkennen wir Model-Drift und Qualitätsverschlechterung?
+32. Können wir A/B-Tests für verschiedene AI-Konfigurationen durchführen?
+
+### Administrativer Aufwand
+33. Wie hoch ist der administrative Aufwand für den täglichen Betrieb?
+34. Welche Aufgaben können automatisiert werden?
+35. Wie skaliert die Administration bei wachsender Nutzerzahl?
+
+## Relevante RFP-Anforderungen
+
+Während des natürlichen Schreibens sicherstellen, dass das Kapitel diese Anforderungen addressiert:
+
+- **"RBAC-basierte Zugriffskontrolle und Berechtigungsmanagement"** ✓
+- **"Kundenseitige Administrationsrollen ohne Provider-Abhängigkeit"** ✓
+- **"Granulare Zugriffskontrolle auf Datenquellen, Modelle, Features"** ✓
+- **"SSO/OAuth-Integration (Azure AD, Keycloak, OIDC, SAML)"** ✓
+- **"Multi-Faktor-Authentifizierung (MFA)"** ✓
+- **"Passkeys / FIDO2-Authentifizierung"** ✓
+- **"Conditional Access und kontextbasierte Zugriffsrichtlinien"** ✓
+- **"Disclaimer- und Consent-Management"** ✓
+- **"Echtzeit-Kostentracking mit Budget-Limits"** ✓
+- **"Granulare Kostenerfassung (User, Abteilung, Modell, Request)"** ✓
+- **"System-Monitoring und Observability"** ✓
+- **"Log-Export zu Kundensystemen (ELK, Grafana, Splunk, Datadog)"** ✓
+- **"User-Feedback-System für AI-Qualität"** ✓
+- **"Bias-Monitoring und Model-Drift-Detection"** ✓
+- **"A/B-Testing für AI-Konfigurationen"** ✓
+- **"Organisationshierarchien mit mehreren Abteilungen"** ✓
