@@ -126,7 +126,7 @@ class DoclingLoader(BaseReader):
                     "url": f"{self.config.HOSTED_VLM_API_ENDPOINT}/v1/chat/completions",
                     "params": {
                         "model": self.config.VLM_MODEL_NAME,
-                        "max_tokens": 8196,
+                        "max_tokens": 8176,  # 8192 (max tokens) - 16 (for docling)
                         "skip_special_tokens": False,
                     },
                     "response_format": "doctags",
