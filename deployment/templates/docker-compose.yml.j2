@@ -684,11 +684,11 @@ services:
     {%- endif %}
   {%- endif %}
 
-  {% if image_tags.vllm_docling[stage] and image_tags.vllm_docling[stage][hardware] %}
+  {% if gpu_enabled %}
   vllm-docling:
     container_name: vllm-docling
     platform: "linux/amd64"
-    image: {{ image_tags.vllm_docling[stage][hardware] }}
+    image: {{ global.registry_prefix }}{{ image_tags.vllm }}
     restart: always
     {%- if stage == 'dev' %}
     ports:
@@ -719,7 +719,6 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    {%- if gpu_enabled %}
     deploy:
       resources:
         reservations:
@@ -727,7 +726,6 @@ services:
             - driver: nvidia
               device_ids: [ '0' ]
               capabilities: [ gpu ]
-    {%- endif %}
   {%- endif %}
 
   {% if image_tags.speaches[stage] and image_tags.speaches[stage][hardware] %}
@@ -934,7 +932,7 @@ services:
       DOCLING_SERVE_ENABLE_UI: 1
       {%- endif %}
     depends_on:
-      {%- if image_tags.vllm_docling[stage] and image_tags.vllm_docling[stage][hardware] %}
+      {%- if gpu_enabled %}
       vllm-docling:
         condition: service_healthy
       {%- endif %}

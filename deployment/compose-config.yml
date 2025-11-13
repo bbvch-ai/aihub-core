@@ -43,11 +43,12 @@ image_tags:
   oauth2proxy: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
   open_webui: open-webui:v0.6.28
   playwright: playwright:v1.54.1-jammy
+  vllm: vllm-openai:v0.11.0
 
   # --- GPU-Specific Services (hardware-dependent) ---
   llama_cpp:
     dev:
-      cpu: llama.cpp:server-b6894
+      cpu: llama.cpp:server-b7003
       gpu: llama.cpp:server-cuda-b7003
 
     build:
@@ -64,7 +65,7 @@ image_tags:
 
   llama_cpp_embedding:
     dev:
-      cpu: llama.cpp:server-b6894
+      cpu: llama.cpp:server-b7003
       gpu: llama.cpp:server-cuda-b7003
 
     build:
@@ -81,7 +82,7 @@ image_tags:
 
   llama_cpp_reranker:
     dev:
-      cpu: llama.cpp:server-b6894
+      cpu: llama.cpp:server-b7003
       gpu: llama.cpp:server-cuda-b7003
 
     build:
@@ -95,22 +96,6 @@ image_tags:
 
     latest:
       gpu: llama.cpp:server-cuda-b7003
-
-  vllm_docling:
-    dev:
-      gpu: vllm/vllm-openai:latest
-
-    build:
-      gpu: vllm/vllm-openai:latest
-
-    local:
-      gpu: vllm/vllm-openai:latest
-
-    nightly:
-      gpu: vllm/vllm-openai:latest
-
-    latest:
-      gpu: vllm/vllm-openai:latest
 
   speaches:
     dev:

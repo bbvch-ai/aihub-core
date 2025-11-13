@@ -18,7 +18,6 @@
 {%- set has_llama_cpp = image_tags.llama_cpp.get(stage, {}).get(hardware) -%}
 {%- set has_llama_cpp_embedding = image_tags.llama_cpp_embedding.get(stage, {}).get(hardware) -%}
 {%- set has_llama_cpp_reranker = image_tags.llama_cpp_reranker.get(stage, {}).get(hardware) -%}
-{%- set has_vllm_docling = image_tags.vllm_docling.get(stage, {}).get(hardware) -%}
 {%- set has_speaches = image_tags.speaches.get(stage, {}).get(hardware) -%}
 
 {# Extract model aliases from service configs #}
@@ -77,7 +76,7 @@ model_list:
 
   - model_name: text-generation/ocr
     litellm_params:
-{%- if has_vllm_docling %}
+{%- if gpu_enabled %}
       model: openai/{{ vllm_docling_alias }}
       api_base: http://vllm-docling:8182/
       api_key: XXX
