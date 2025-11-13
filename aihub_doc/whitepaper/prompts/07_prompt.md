@@ -15,147 +15,19 @@ Erklären Sie, wie Daten während ihres gesamten Lebenszyklus in der Plattform u
 
 ## Themen und Inhalte
 
-### 7.1 Dateneingangspunkte und Sicherheitsmechanismen
-**Kernaussage**: Jeder Punkt, an dem Daten in die Plattform gelangen, ist abgesichert
+Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 
-**Inhalte**:
-- **User-Input-Validierung**:
-  - Schutz vor SQL-Injection, XSS, Command-Injection-Attacks
-  - Prompt-Injection-Defense: Schutz vor manipulativen Prompts
-  - Input-Sanitization: Automatische Bereinigung schädlicher Eingaben
-- **Dokument-Upload-Security**:
-  - Malware-Scanning: Automatische Virenprüfung bei jedem Upload
-  - APT-Detection und -Prevention: Erkennung komplexer Bedrohungen
-  - Format-Verifikation: Validierung, dass Dateien wirklich das deklarierte Format haben
-- **Externe Datenquellen-Integration-Security**:
-  - Authentifizierte Verbindungen: Kein ungeschützter Datenzugriff
-  - Verschlüsselte Übertragung: SSL/TLS für alle externen Verbindungen
-- **API-Ingestion-Security**:
-  - Authentifizierung via API-Keys, JWT, OAuth2, OIDC, mTLS
-  - Rate-Limiting: Schutz vor Überlastung und DoS-Angriffen
-  - Request-Validierung: Schemabasierte Validierung aller API-Requests
+- **Dateneingangspunkte und Sicherheitsmechanismen**: User-Input-Validierung (Schutz vor SQL-Injection/XSS/Command-Injection-Attacks, Prompt-Injection-Defense gegen manipulative Prompts, Input-Sanitization mit automatischer Bereinigung schädlicher Eingaben), Dokument-Upload-Security (Malware-Scanning automatische Virenprüfung bei jedem Upload, APT-Detection und -Prevention für komplexe Bedrohungen, Format-Verifikation dass Dateien wirklich das deklarierte Format haben), externe Datenquellen-Integration-Security (authentifizierte Verbindungen kein ungeschützter Datenzugriff, verschlüsselte Übertragung SSL/TLS für alle externen Verbindungen), API-Ingestion-Security (Authentifizierung via API-Keys/JWT/OAuth2/OIDC/mTLS, Rate-Limiting gegen Überlastung und DoS-Angriffe, Request-Validierung schemabasiert für alle API-Requests); Geschäftlicher Nutzen: Defense-in-Depth mehrschichtige Sicherheit an jedem Eingangspunkt, Schutz vor gängigen Angriffsszenarien, Compliance mit Secure Development Standards, Risikominderung durch präventive Sicherheitskontrollen
 
-**Geschäftlicher Nutzen**:
-- Defense-in-Depth: Mehrschichtige Sicherheit an jedem Eingangspunkt
-- Schutz vor gängigen Angriffsszenarien
-- Compliance mit Secure Development Standards
-- Risikominderung durch präventive Sicherheitskontrollen
+- **Datenverarbeitungs-Sicherheit**: PII-Detection und Anonymisierung (Presidio-Integration automatische Erkennung personenbezogener Daten, Anonymisierung vor LLM-Processing PII wird vor AI-Verarbeitung anonymisiert, Verhinderung sensibler Informationen in Prompts, Redaction Schwärzung sensibler Daten in Logs und Outputs), sichere Transformations-Pipelines (isolierte Pipeline-Ausführung keine unautorisierten Zugriffe während Verarbeitung, Audit-Trails für alle Transformationen), Vector-Database-Security (verschlüsselte Speicherung von Embeddings, Zugriffskontrolle auf Collection-Ebene), Context-Data-Security (Verschlüsselung von Chat-Kontexten und Session-Daten, automatische Löschung nach konfigurierbaren Zeiträumen); Geschäftlicher Nutzen: Erfüllung GDPR/revDSG-Anforderungen an Datenminimierung, Schutz sensibler Informationen vor unbeabsichtigter Exposition, Compliance mit Privacy-by-Design-Prinzipien, Risikominimierung bei Datenlecks
 
-### 7.2 Datenverarbeitungs-Sicherheit
-**Fokus**: Schutz sensibler Daten während Verarbeitung und Speicherung
+- **Datenausgangspunkte und Kontrolle**: LLM-Provider-Kommunikation (verschlüsselte Übertragung SSL/TLS mit Perfect Forward Secrecy, keine Datenretention bei isolierten Deployments, Air-Gap-Option komplett offline nutzbar mit lokalen Modellen, Provider-Datenlokalitäts-Anforderungen durchsetzbar), User-Outputs (Quellenangaben mit DSGVO-konformen Link-Warnungen, Content-Filtering Verhinderung sensibler Daten in Antworten, Redaction automatische Schwärzung von PII in AI-Antworten), API-Responses (sichere Serialisierung keine Daten-Leakage, Rate-Limiting und Output-Validierung), Export-Funktionen (verschlüsselte Exports von Daten/Logs/Audit-Trails, Zugriffsprotokollierung für alle Exports), Log-Aggregations-Exports (sichere Übertragung zu externen SIEM-Systemen ELK/Splunk, optional Anonymisierung von Logs vor Export); Geschäftlicher Nutzen: Vollständige Kontrolle über Daten-Exits, Nachweis dass Daten niemals unkontrolliert das System verlassen, Compliance mit Data-Residency-Anforderungen, Vertrauen durch Transparenz über Datenflüsse
 
-**Inhalte**:
-- **PII-Detection und Anonymisierung**:
-  - Presidio-Integration: Automatische Erkennung personenbezogener Daten
-  - Anonymisierung vor LLM-Processing: PII wird vor AI-Verarbeitung anonymisiert
-  - Verhinderung sensibler Informationen in Prompts
-  - Redaction: Schwärzung sensibler Daten in Logs und Outputs
-- **Sichere Transformations-Pipelines**:
-  - Isolierte Pipeline-Ausführung: Keine unautorisierten Zugriffe während Verarbeitung
-  - Audit-Trails für alle Transformationen
-- **Vector-Database-Security**:
-  - Verschlüsselte Speicherung von Embeddings
-  - Zugriffskontrolle auf Collection-Ebene
-- **Context-Data-Security**:
-  - Verschlüsselung von Chat-Kontexten und Session-Daten
-  - Automatische Löschung nach konfigurierbaren Zeiträumen
+- **Data-at-Rest und Data-in-Transit Security**: Data-at-Rest-Security (TDE Transparent Data Encryption für Datenbanken, verschlüsselte Filesysteme LUKS/dm-crypt, Key-Management HSM-basiert Hardware Security Module oder KMS-Integration, verschlüsselte Backups), Data-in-Transit-Security (SSL/TLS für alle Netzwerk-Kommunikation, Perfect Forward Secrecy PFS vergangene Sessions bleiben sicher bei Key-Kompromittierung, Mutual TLS mTLS für Service-to-Service-Kommunikation, VPN-Integration für Remote-Zugriffe); Geschäftlicher Nutzen: Erfüllung von Compliance-Anforderungen revDSG/ISO 27001/PCI-DSS, Schutz vor Datendiebstahl bei physischem Zugriff auf Server, Schutz vor Man-in-the-Middle-Angriffen, langfristige Datensicherheit
 
-**Geschäftlicher Nutzen**:
-- Erfüllung von GDPR/revDSG-Anforderungen an Datenminimierung
-- Schutz sensibler Informationen vor unbeabsichtigter Exposition
-- Compliance mit Privacy-by-Design-Prinzipien
-- Risikominimierung bei Datenlecks
+- **Multi-Tenant-Isolation und Data-Deletion**: Multi-Tenant-Isolation (logische Isolation strikte Datenbanktrennung pro Organisation, physische Isolation Option für dedizierte Infrastruktur, Network-Isolation getrennte Netzwerk-Segmente pro Tenant, Storage-Isolation dedizierte Vector-Stores und Object-Storage pro Tenant), Data-Deletion-Security (Secure-Delete Überschreiben gelöschter Daten vs nur Markierung, kaskadierte Löschung alle abhängigen Daten Chunks/Embeddings/Logs werden mitgelöscht, Audit-Trail für Löschungen Nachweis für Compliance Right to be Forgotten, automatische Retention-Policies Daten werden nach Ablauf automatisch gelöscht); Geschäftlicher Nutzen: Compliance mit revDSG/GDPR Right to be Forgotten, Vertrauen durch garantierte Datentrennung zwischen Organisationen, Schutz vor Cross-Tenant-Data-Leakage, rechtliche Absicherung durch nachweisbare Löschung
 
-### 7.3 Datenausgangspunkte und Kontrolle
-**Fokus**: Sichere Datenausgabe mit vollständiger Kontrolle
-
-**Inhalte**:
-- **LLM-Provider-Kommunikation**:
-  - Verschlüsselte Übertragung (SSL/TLS mit Perfect Forward Secrecy)
-  - Keine Datenretention bei isolierten Deployments
-  - Air-Gap-Option: Komplett offline nutzbar mit lokalen Modellen
-  - Provider-Datenlokalitäts-Anforderungen durchsetzbar
-- **User-Outputs**:
-  - Quellenangaben mit DSGVO-konformen Link-Warnungen
-  - Content-Filtering: Verhinderung sensibler Daten in Antworten
-  - Redaction: Automatische Schwärzung von PII in AI-Antworten
-- **API-Responses**:
-  - Sichere Serialisierung (keine Daten-Leakage durch Serialization)
-  - Rate-Limiting und Output-Validierung
-- **Export-Funktionen**:
-  - Verschlüsselte Exports (Daten, Logs, Audit-Trails)
-  - Zugriffsprotokollierung für alle Exports
-- **Log-Aggregations-Exports**:
-  - Sichere Übertragung zu externen SIEM-Systemen (ELK, Splunk)
-  - Anonymisierung von Logs vor Export (Optional)
-
-**Geschäftlicher Nutzen**:
-- Vollständige Kontrolle über Daten-Exits
-- Nachweis, dass Daten niemals unkontrolliert das System verlassen
-- Compliance mit Data-Residency-Anforderungen
-- Vertrauen durch Transparenz über Datenflüsse
-
-### 7.4 Data-at-Rest und Data-in-Transit Security
-**Fokus**: Verschlüsselung über den gesamten Datenlebenszyklus
-
-**Inhalte**:
-- **Data-at-Rest-Security**:
-  - TDE (Transparent Data Encryption) für Datenbanken
-  - Verschlüsselte Filesysteme (LUKS, dm-crypt)
-  - Key-Management: HSM-basiert (Hardware Security Module) oder KMS-Integration
-  - Verschlüsselte Backups
-- **Data-in-Transit-Security**:
-  - SSL/TLS für alle Netzwerk-Kommunikation
-  - Perfect Forward Secrecy (PFS): Vergangene Sessions bleiben sicher bei Key-Kompromittierung
-  - Mutual TLS (mTLS) für Service-to-Service-Kommunikation
-  - VPN-Integration für Remote-Zugriffe
-
-**Geschäftlicher Nutzen**:
-- Erfüllung von Compliance-Anforderungen (revDSG, ISO 27001, PCI-DSS)
-- Schutz vor Datendiebstahl bei physischem Zugriff auf Server
-- Schutz vor Man-in-the-Middle-Angriffen
-- Langfristige Datensicherheit
-
-### 7.5 Multi-Tenant-Isolation und Data-Deletion
-**Fokus**: Sichere Trennung zwischen Organisationen und vollständige Datenlöschung
-
-**Inhalte**:
-- **Multi-Tenant-Isolation**:
-  - Logische Isolation: Strikte Datenbanktrennung pro Organisation
-  - Physische Isolation: Option für dedizierte Infrastruktur
-  - Network-Isolation: Getrennte Netzwerk-Segmente pro Tenant
-  - Storage-Isolation: Dedizierte Vector-Stores und Object-Storage pro Tenant
-- **Data-Deletion-Security**:
-  - Secure-Delete: Überschreiben gelöschter Daten (vs. nur Markierung)
-  - Kaskadierte Löschung: Alle abhängigen Daten (Chunks, Embeddings, Logs) werden mitgelöscht
-  - Audit-Trail für Löschungen: Nachweis für Compliance (Right to be Forgotten)
-  - Automatische Retention-Policies: Daten werden nach Ablauf automatisch gelöscht
-
-**Geschäftlicher Nutzen**:
-- Compliance mit revDSG/GDPR Right to be Forgotten
-- Vertrauen durch garantierte Datentrennung zwischen Organisationen
-- Schutz vor Cross-Tenant-Data-Leakage
-- Rechtliche Absicherung durch nachweisbare Löschung
-
-### 7.6 Dataflow-Monitoring und Security-Operations
-**Fokus**: Kontinuierliche Überwachung und Incident-Response
-
-**Inhalte**:
-- **Dataflow-Monitoring**:
-  - Echtzeit-Visualisierung aller Datenflüsse
-  - Anomalie-Erkennung: Ungewöhnliche Datentransfers werden gemeldet
-  - Data Exfiltration Prevention (DLP): Automatische Blockierung verdächtiger Datentransfers
-- **Security-Operations**:
-  - Penetration-Testing: Regelmäßige externe Sicherheitsüberprüfungen
-  - Vulnerability-Management: Systematisches Patching und Updates
-  - Incident-Response: Vordefinierte Prozesse für Security-Incidents
-  - Security-Logging: Unveränderliche Logs aller sicherheitsrelevanten Ereignisse
-
-**Geschäftlicher Nutzen**:
-- Früherkennung von Sicherheitsvorfällen
-- Schnelle Response bei Incidents
-- Kontinuierliche Verbesserung der Sicherheitslage
-- Compliance mit Security-Operations-Standards
+- **Dataflow-Monitoring und Security-Operations**: Dataflow-Monitoring (Echtzeit-Visualisierung aller Datenflüsse, Anomalie-Erkennung ungewöhnliche Datentransfers werden gemeldet, Data Exfiltration Prevention DLP automatische Blockierung verdächtiger Datentransfers), Security-Operations (Penetration-Testing regelmäßige externe Sicherheitsüberprüfungen, Vulnerability-Management systematisches Patching und Updates, Incident-Response vordefinierte Prozesse für Security-Incidents, Security-Logging unveränderliche Logs aller sicherheitsrelevanten Ereignisse); Geschäftlicher Nutzen: Früherkennung von Sicherheitsvorfällen, schnelle Response bei Incidents, kontinuierliche Verbesserung der Sicherheitslage, Compliance mit Security-Operations-Standards
 
 ## Business-Fragen, die das Kapitel beantwortet
 

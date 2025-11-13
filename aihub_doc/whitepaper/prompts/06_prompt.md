@@ -15,111 +15,19 @@ Erklären Sie, wie die Plattform Daten aus verschiedenen Quellen verwaltet, inte
 
 ## Themen und Inhalte
 
-### 6.1 Dreistufige Datenorganisation mit granularer Zugriffskontrolle
-**Kernaussage**: Strukturierte Datenhierarchie ermöglicht klare Governance und sichere Zugriffssteuerung
+Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 
-**Inhalte**:
-- **Datenbanken (Top-Level)**: Organisation-weite oder abteilungsspezifische Wissensbasen
-- **Collections (Mid-Level)**: Thematische oder projekt-spezifische Dokumentensammlungen
-- **Dokumente (Document-Level)**: Einzelne Dateien mit Metadaten und Versionierung
-- **Granulare Zugriffskontrolle**: Berechtigungen auf jeder Ebene (Datenbank, Collection, Dokument)
-- **Collection-Scoping für RAG**: Nutzer erhalten nur Antworten basierend auf autorisierten Collections
+- **Dreistufige Datenorganisation mit granularer Zugriffskontrolle**: Datenbanken als Top-Level (organisation-weite oder abteilungsspezifische Wissensbasen), Collections als Mid-Level (thematische oder projekt-spezifische Dokumentensammlungen), Dokumente als Document-Level (einzelne Dateien mit Metadaten und Versionierung), granulare Zugriffskontrolle (Berechtigungen auf jeder Ebene Datenbank/Collection/Dokument), Collection-Scoping für RAG (Nutzer erhalten nur Antworten basierend auf autorisierten Collections); Geschäftlicher Nutzen: Klare Struktur für Wissensorganisation, sichere Trennung zwischen Abteilungen und Projekten, Compliance mit Data-Access-Governance, Vermeidung von Daten-Leakage zwischen Nutzergruppen
 
-**Geschäftlicher Nutzen**:
-- Klare Struktur für Wissensorganisation
-- Sichere Trennung zwischen Abteilungen und Projekten
-- Compliance mit Data-Access-Governance
-- Vermeidung von Daten-Leakage zwischen Nutzergruppen
+- **Vielfältige Integrationsmethoden für bestehende Datenquellen**: Manueller Upload (Drag-and-Drop über Web-Interface für Ad-hoc-Dokumente), automatische Synchronisation (SharePoint-Integration mit automatischem Crawling, Netzwerk-Shares für File-Server und Netzlaufwerke, S3-Storage für S3-kompatible Object-Stores SeaweedFS/MinIO/AWS S3), Administrator-initiiertes Web-Crawling (öffentliche oder interne Webseiten indexieren), geplante Pipeline-Verarbeitung (nächtliche oder zeitbasierte Durchläufe für kontinuierliche Updates); Geschäftlicher Nutzen: Bestehende Investitionen in Content-Management nutzen, minimaler manueller Aufwand nach initialer Konfiguration, lebendige Wissensbasis durch automatische Updates, Skalierbarkeit für Tausende bis Millionen Dokumente
 
-### 6.2 Vielfältige Integrationsmethoden für bestehende Datenquellen
-**Fokus**: Nahtlose Anbindung bestehender Content-Repositories ohne manuelle Migration
+- **Intelligente Dokumentverarbeitung und Format-Unterstützung**: OCR für gescannte Dokumente (Texterkennung in gescannten PDFs/TIFF/JPEG), semantisches Chunking (intelligente Segmentierung basierend auf Inhalt und Struktur nicht nur Zeichenzahl), automatische Metadaten-Extraktion (Titel/Autor/Datum/Abteilung/Tags), umfassende Format-Unterstützung (Office-Dokumente DOCX/XLSX/PPTX/ODT/ODS/ODP, PDF alle Versionen 1.x/2.x/PDF/A-1/PDF/A-2, Text TXT/CSV/Markdown/HTML/XML, Bilder JPEG/PNG/TIFF/SVG/EPS, Archive ZIP/TAR/GZ mit automatischem Entpacken, Email EML/MSG mit Anhängen), Tabellen- und Grafik-Extraktion (Inhalte aus Tabellen und Diagrammen verstehen); Geschäftlicher Nutzen: Keine Dokument-Konvertierung vor Upload notwendig, maximale Informationsextraktion aus komplexen Dokumenten, Verarbeitung historischer gescannter Archive, präzises Retrieval durch semantisches Chunking
 
-**Inhalte**:
-- **Manueller Upload**: Drag-and-Drop über Web-Interface für Ad-hoc-Dokumente
-- **Automatische Synchronisation**:
-  - **SharePoint-Integration**: Automatisches Crawling und Synchronisation von SharePoint-Bibliotheken
-  - **Netzwerk-Shares**: Anbindung von File-Servern und Netzlaufwerken
-  - **S3-Storage**: Integration mit S3-kompatiblen Object-Stores (SeaweedFS, MinIO, AWS S3)
-- **Administrator-initiiertes Web-Crawling**: Öffentliche oder interne Webseiten indexieren
-- **Geplante Pipeline-Verarbeitung**: Nächtliche oder zeitbasierte Durchläufe für kontinuierliche Updates
+- **Ingestion-Pipelines und Indexierung**: Dagster-basierte Pipelines (asset-basierte nachvollziehbare Datenverarbeitung), nächtliche Durchläufe (automatische Verarbeitung neuer Dokumente außerhalb Geschäftszeiten), Full-Text-Search-Indexierung (Elasticsearch-ähnliche Volltextsuche), Vector-Embedding-Generierung (semantische Vektordarstellungen für konzeptbasierte Suche), Metadaten-Management (automatische Extraktion/Anreicherung/Versionierung), Parallelisierung und Skalierung (Verarbeitung Tausender Dokumente gleichzeitig); Geschäftlicher Nutzen: Kein Performance-Impact während Geschäftszeiten, Skalierbarkeit für große Dokumentenmengen, schnelle Suche durch optimierte Indizes, Nachvollziehbarkeit durch Asset-basierte Pipelines
 
-**Geschäftlicher Nutzen**:
-- Bestehende Investitionen in Content-Management nutzen
-- Minimaler manueller Aufwand nach initialer Konfiguration
-- Lebendige Wissensbasis durch automatische Updates
-- Skalierbarkeit für Tausende bis Millionen Dokumente
+- **RAG mit Quellenangaben und Dokument-Lineage**: RAG Retrieval-Augmented Generation (AI-Antworten immer basierend auf echten Dokumenten), Quellenangaben bei jeder Antwort (Links zu Ursprungsdokumenten/Seitenzahlen/Absätze), Dokument-Lineage-Tracking (vom Upload über Chunking/Vektorisierung bis zur Nutzung in Antworten), Versions-Verfolgung (Historisierung von Dokumentenänderungen kritisch für Gesetze/Verordnungen), Confidence-Scores (Relevanz-Bewertung jedes verwendeten Dokument-Chunks), Citation-Transparency (exakte Quellenverweise für Compliance und Qualitätssicherung); Geschäftlicher Nutzen: Vertrauenswürdige Antworten durch Quellenverweise, Compliance mit Nachweispflichten, Audits durch Dokument-Lineage möglich, Qualitätssicherung durch Transparenz
 
-### 6.3 Intelligente Dokumentverarbeitung und Format-Unterstützung
-**Fokus**: Umfassende Verarbeitung aller Dokumenttypen mit maximaler Informationsextraktion
-
-**Inhalte**:
-- **OCR für gescannte Dokumente**: Texterkennung in gescannten PDFs, TIFF, JPEG
-- **Semantisches Chunking**: Intelligente Segmentierung basierend auf Inhalt und Struktur (nicht nur Zeichenzahl)
-- **Automatische Metadaten-Extraktion**: Titel, Autor, Datum, Abteilung, Tags aus Dokumenten
-- **Umfassende Format-Unterstützung**:
-  - **Office-Dokumente**: DOCX, XLSX, PPTX, ODT, ODS, ODP
-  - **PDF**: Alle Versionen (PDF 1.x, 2.x, PDF/A-1, PDF/A-2)
-  - **Text**: TXT, CSV, Markdown, HTML, XML
-  - **Bilder**: JPEG, PNG, TIFF, SVG, EPS
-  - **Archive**: ZIP, TAR, GZ (automatisches Entpacken)
-  - **Email**: EML, MSG mit Anhängen
-- **Tabellen- und Grafik-Extraktion**: Inhalte aus Tabellen und Diagrammen verstehen
-
-**Geschäftlicher Nutzen**:
-- Keine Dokument-Konvertierung vor Upload notwendig
-- Maximale Informationsextraktion auch aus komplexen Dokumenten
-- Verarbeitung historischer gescannter Archive
-- Präzises Retrieval durch semantisches Chunking
-
-### 6.4 Ingestion-Pipelines und Indexierung
-**Fokus**: Automatisierte, skalierbare Datenverarbeitung
-
-**Inhalte**:
-- **Dagster-basierte Pipelines**: Asset-basierte, nachvollziehbare Datenverarbeitung
-- **Nächtliche Durchläufe**: Automatische Verarbeitung neuer Dokumente außerhalb Geschäftszeiten
-- **Full-Text-Search-Indexierung**: Elasticsearch-ähnliche Volltextsuche über alle Dokumente
-- **Vector-Embedding-Generierung**: Semantische Vektordarstellungen für konzeptbasierte Suche
-- **Metadaten-Management**: Automatische Extraktion, Anreicherung, Versionierung
-- **Parallelisierung und Skalierung**: Verarbeitung Tausender Dokumente gleichzeitig
-
-**Geschäftlicher Nutzen**:
-- Kein Performance-Impact während Geschäftszeiten
-- Skalierbarkeit für große Dokumentenmengen
-- Schnelle Suche durch optimierte Indizes
-- Nachvollziehbarkeit durch Asset-basierte Pipelines
-
-### 6.5 RAG mit Quellenangaben und Dokument-Lineage
-**Fokus**: Vertrauenswürdige AI-Antworten mit vollständiger Nachvollziehbarkeit
-
-**Inhalte**:
-- **RAG (Retrieval-Augmented Generation)**: AI-Antworten immer basierend auf echten Dokumenten
-- **Quellenangaben bei jeder Antwort**: Links zu Ursprungsdokumenten, Seitenzahlen, Absätze
-- **Dokument-Lineage-Tracking**: Vom Upload über Chunking, Vektorisierung bis zur Nutzung in Antworten
-- **Versions-Verfolgung**: Historisierung von Dokumentenänderungen (kritisch für Gesetze, Verordnungen)
-- **Confidence-Scores**: Relevanz-Bewertung jedes verwendeten Dokument-Chunks
-- **Citation-Transparency**: Exakte Quellenverweise für Compliance und Qualitätssicherung
-
-**Geschäftlicher Nutzen**:
-- Vertrauenswürdige Antworten durch Quellenverweise
-- Compliance mit Nachweispflichten
-- Audits durch Dokument-Lineage möglich
-- Qualitätssicherung durch Transparenz
-
-### 6.6 Datenvalidierung und Sicherheit während Ingestion
-**Fokus**: Schutz vor Malware und schädlichen Inhalten
-
-**Inhalte**:
-- **Malware-Scanning**: Automatische Virenprüfung aller hochgeladenen Dokumente
-- **APT-Prevention (Advanced Persistent Threats)**: Erkennung komplexer Bedrohungen
-- **Format-Verifikation**: Validierung, dass Dateien tatsächlich das deklarierte Format haben
-- **Size-Limits**: Konfigurierbare Größenbeschränkungen pro Datei und pro User
-- **Content-Filtering**: Optional: Filterung sensibler oder unangemessener Inhalte
-
-**Geschäftlicher Nutzen**:
-- Schutz vor Malware-Einschleusung über Dokumente
-- Compliance mit Security-Policies
-- Verhinderung von DoS durch übergroße Dateien
-- Sichere Integration externer Datenquellen
+- **Datenvalidierung und Sicherheit während Ingestion**: Malware-Scanning (automatische Virenprüfung aller hochgeladenen Dokumente), APT-Prevention Advanced Persistent Threats (Erkennung komplexer Bedrohungen), Format-Verifikation (Validierung dass Dateien tatsächlich das deklarierte Format haben), Size-Limits (konfigurierbare Größenbeschränkungen pro Datei und pro User), Content-Filtering optional (Filterung sensibler oder unangemessener Inhalte); Geschäftlicher Nutzen: Schutz vor Malware-Einschleusung über Dokumente, Compliance mit Security-Policies, Verhinderung von DoS durch übergroße Dateien, sichere Integration externer Datenquellen
 
 ## Business-Fragen, die das Kapitel beantwortet
 
