@@ -30,7 +30,6 @@ COPY Makefile switch_dependencies.py pyproject.toml ./
 COPY aihub_pipeline ./aihub_pipeline
 COPY aihub_lib ./aihub_lib
 
-# Install dependencies and clean up in single layer
 RUN poetry install --without dev && \
     make use-local-core && \
     rm Makefile switch_dependencies.py pyproject.toml
@@ -61,7 +60,7 @@ ARG USERNAME=user
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
-# Create user group, install runtime dependencies, setup Dagster home in single layer
+# Create user group and user
 RUN groupadd --gid "$USER_GID" "$USERNAME" && \
     useradd --uid "$USER_UID" --gid "$USER_GID" -m -s /bin/bash "$USERNAME" && \
     apt-get update && \
