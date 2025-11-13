@@ -78,7 +78,7 @@ def milvus_vector_store_resource(
     vector_store_uri: str,
     vector_store_name: str,
     dimensions: int = 3072,
-    index_type: MilvusIndexType = MilvusIndexType.AUTO,
+    index_type: MilvusIndexType = MilvusIndexType.HNSW,
     num_partitions: int = 1023,
 ) -> dict[str, ConfigurableResourceFactory]:
     vector_store = MilvusVectorStoreResource(
