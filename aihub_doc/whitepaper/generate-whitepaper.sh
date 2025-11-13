@@ -16,10 +16,12 @@ PROMPTS_DIR="$SCRIPT_DIR/prompts"
 SOURCES_DIR="$SCRIPT_DIR/sources"
 OUTPUT_DIR="$SCRIPT_DIR/output"
 DOCS_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)/docs"
+GENERAL_PROMPT="$SCRIPT_DIR/general_prompt.md"
 
 LLM_MODEL="gemini-2.5-flash"  # Can override via environment variable
 MAX_RETRIES=3
 RETRY_DELAY=5
+LANG_SUFFIX=".de.md"  # Use German documentation (.de.md)
 
 # Colors for output
 RED='\033[0;31m'
@@ -33,6 +35,11 @@ check_requirements() {
     if ! command -v llm &> /dev/null; then
         echo -e "${RED}Error: 'llm' command not found. Please install using 'pipx install llm'${NC}" >&2
         echo "See: https://github.com/simonw/llm" >&2
+        exit 1
+    fi
+
+    if [ ! -f "$GENERAL_PROMPT" ]; then
+        echo -e "${RED}Error: General prompt file not found: $GENERAL_PROMPT${NC}" >&2
         exit 1
     fi
 
@@ -76,21 +83,29 @@ build_combined_prompt() {
     local prompt_file="$PROMPTS_DIR/${chapter_id}_prompt.md"
 
     # Start with clear structure
-    echo "# WHITEPAPER CHAPTER GENERATION"
+    echo "# WHITEPAPER-KAPITEL GENERIERUNG"
     echo ""
-    echo "You are writing a whitepaper chapter for the Swiss AI-Hub platform."
-    echo "Below you will find:"
-    echo "1. Chapter instructions and requirements"
-    echo "2. Source documentation from technical docs"
+    echo "Sie schreiben ein Whitepaper-Kapitel für die Swiss AI-Hub Plattform."
+    echo "Unten finden Sie:"
+    echo "1. Allgemeine Schreibanweisungen für alle Kapitel"
+    echo "2. Spezifische Kapitelanweisungen und -anforderungen"
+    echo "3. Quelldokumentation aus der technischen Dokumentation"
     echo ""
-    echo "Your task: Generate the chapter content based on the instructions, using the source documentation as factual input."
-    echo "Write in business-focused language accessible to non-technical decision makers while maintaining technical accuracy."
+    echo "Ihre Aufgabe: Generieren Sie den Kapitelinhalt gemäss den Anweisungen und verwenden Sie die Quelldokumentation als faktische Grundlage."
     echo ""
     echo "═══════════════════════════════════════════════════════════════"
     echo ""
 
-    # Add chapter instructions
-    echo "## CHAPTER INSTRUCTIONS"
+    # Add general instructions (common for all chapters)
+    echo "## ALLGEMEINE ANWEISUNGEN"
+    echo ""
+    cat "$GENERAL_PROMPT"
+    echo ""
+    echo "═══════════════════════════════════════════════════════════════"
+    echo ""
+
+    # Add chapter-specific instructions
+    echo "## KAPITEL-SPEZIFISCHE ANWEISUNGEN"
     echo ""
     cat "$prompt_file"
     echo ""
@@ -98,39 +113,56 @@ build_combined_prompt() {
     echo ""
 
     # Add source documentation
-    echo "## SOURCE DOCUMENTATION"
+    echo "## QUELLDOKUMENTATION"
     echo ""
-    echo "Below is the technical documentation you should use as source material:"
+    echo "Nachfolgend die technische Dokumentation, die Sie als Quellenmaterial verwenden sollen:"
     echo ""
 
     local file_count=0
     while IFS= read -r doc_path; do
         # Strip whitespace and carriage returns (handles both LF and CRLF line endings)
         doc_path=$(echo "$doc_path" | tr -d '\r' | xargs)
-        local full_path="$DOCS_ROOT/$doc_path"
+
+        # Convert to German documentation path if it has .en.md suffix
+        local de_doc_path="${doc_path//.en.md/$LANG_SUFFIX}"
+        local full_path="$DOCS_ROOT/$de_doc_path"
 
         if [ -f "$full_path" ]; then
-            echo "### Source File: $doc_path"
+            echo "### Quelldatei: $de_doc_path"
             echo ""
             cat "$full_path"
             echo ""
             echo "---"
             echo ""
             ((file_count++))
+        else
+            # Fallback: try original path if German version doesn't exist
+            full_path="$DOCS_ROOT/$doc_path"
+            if [ -f "$full_path" ]; then
+                echo "### Quelldatei: $doc_path"
+                echo ""
+                cat "$full_path"
+                echo ""
+                echo "---"
+                echo ""
+                ((file_count++))
+            fi
         fi
     done < <(get_source_files "$chapter_id")
 
     if [ $file_count -eq 0 ]; then
-        echo "*(No source documentation provided)*"
+        echo "*(Keine Quelldokumentation bereitgestellt)*"
         echo ""
     fi
 
     echo "═══════════════════════════════════════════════════════════════"
     echo ""
-    echo "## YOUR TASK"
+    echo "## IHRE AUFGABE"
     echo ""
-    echo "Now generate the chapter content according to the instructions above,"
-    echo "using the source documentation as your factual basis."
+    echo "Generieren Sie nun den Kapitelinhalt gemäss den obigen Anweisungen,"
+    echo "wobei Sie die Quelldokumentation als faktische Grundlage verwenden."
+    echo ""
+    echo "Schreiben Sie auf Deutsch (Schweizer Hochdeutsch) in einem geschäftsorientierten Stil."
 }
 
 # Generate a single chapter using LLM
