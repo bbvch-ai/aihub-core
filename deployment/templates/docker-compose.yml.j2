@@ -684,48 +684,36 @@ services:
     {%- endif %}
   {%- endif %}
 
-  {% if image_tags.llama_cpp_docling[stage] and image_tags.llama_cpp_docling[stage][hardware] %}
-  llama-cpp-docling:
-    container_name: llama-cpp-docling
+  {% if image_tags.vllm_docling[stage] and image_tags.vllm_docling[stage][hardware] %}
+  vllm-docling:
+    container_name: vllm-docling
     platform: "linux/amd64"
-    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_docling[stage][hardware] }}
+    image: {{ image_tags.vllm_docling[stage][hardware] }}
     restart: always
     {%- if stage == 'dev' %}
     ports:
       - "8186:8182"
     {%- endif %}
     volumes:
-      - {{ global.volume_root }}/llamacpp-data:/data
       - {{ global.volume_root }}/huggingface:/root/.cache/huggingface
-      - {{ global.volume_root }}/llamacpp-cache:/root/.cache/llama.cpp
     environment:
       HF_HOME: /root/.cache/huggingface
+      HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
     command: >
-      -hf ggml-org/granite-docling-258M-GGUF
-      --hf-token ${HUGGINGFACE_API_KEY}
-      --alias granite-docling
+      --model ibm-granite/granite-docling-258M
+      --served-model-name granite-docling
       --port 8182
       --host 0.0.0.0
-      -c 8192
-      --special
-      --jinja
-      --repeat-penalty 1.0
-      --temp 0.0
-      --min-p 0
-      {%- if gpu_enabled %}
-      -ngl -1
-      {%- endif %}
-      --mlock
-      --seed -1
-      --swa-full
-      --no-escape
-      --no-mmap
+      --max-model-len 8192
+      --trust-remote-code
+      --gpu-memory-utilization 0.4
+      --tensor-parallel-size 1
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
       timeout: 10s
       interval: 30s
       retries: 3
-      start_period: 60s
+      start_period: 120s
     logging:
       driver: json-file
       options:
@@ -946,8 +934,8 @@ services:
       DOCLING_SERVE_ENABLE_UI: 1
       {%- endif %}
     depends_on:
-      {%- if image_tags.llama_cpp_docling[stage] and image_tags.llama_cpp_docling[stage][hardware] %}
-      llama-cpp-docling:
+      {%- if image_tags.vllm_docling[stage] and image_tags.vllm_docling[stage][hardware] %}
+      vllm-docling:
         condition: service_healthy
       {%- endif %}
       litellm:

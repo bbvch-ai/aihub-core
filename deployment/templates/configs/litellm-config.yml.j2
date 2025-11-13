@@ -18,12 +18,12 @@
 {%- set has_llama_cpp = image_tags.llama_cpp.get(stage, {}).get(hardware) -%}
 {%- set has_llama_cpp_embedding = image_tags.llama_cpp_embedding.get(stage, {}).get(hardware) -%}
 {%- set has_llama_cpp_reranker = image_tags.llama_cpp_reranker.get(stage, {}).get(hardware) -%}
-{%- set has_llama_cpp_docling = image_tags.llama_cpp_docling.get(stage, {}).get(hardware) -%}
+{%- set has_vllm_docling = image_tags.vllm_docling.get(stage, {}).get(hardware) -%}
 {%- set has_speaches = image_tags.speaches.get(stage, {}).get(hardware) -%}
 
 {# Extract model aliases from service configs #}
 {%- set llama_cpp_alias = 'gemma-3-4b' -%}
-{%- set llama_cpp_docling_alias = 'granite-docling' -%}
+{%- set vllm_docling_alias = 'granite-docling' -%}
 {%- if stage in ['nightly', 'latest'] -%}
 {%- set llama_cpp_alias = 'gemma-3-12b' -%}
 {%- endif %}
@@ -77,9 +77,9 @@ model_list:
 
   - model_name: text-generation/ocr
     litellm_params:
-{%- if has_llama_cpp_docling %}
-      model: openai/{{ llama_cpp_docling_alias }}
-      api_base: http://llama-cpp-docling:8182/
+{%- if has_vllm_docling %}
+      model: openai/{{ vllm_docling_alias }}
+      api_base: http://vllm-docling:8182/
       api_key: XXX
 {%- else %}
       model: azure/gpt-4o-mini

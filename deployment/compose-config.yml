@@ -96,21 +96,21 @@ image_tags:
     latest:
       gpu: llama.cpp:server-cuda-b7003
 
-  llama_cpp_docling:
+  vllm_docling:
     dev:
-      gpu: llama.cpp:server-cuda-b7003
+      gpu: vllm/vllm-openai:latest
 
     build:
-      gpu: llama.cpp:server-cuda-b7003
+      gpu: vllm/vllm-openai:latest
 
     local:
-      gpu: llama.cpp:server-cuda-b7003
+      gpu: vllm/vllm-openai:latest
 
     nightly:
-      gpu: llama.cpp:server-cuda-b7003
+      gpu: vllm/vllm-openai:latest
 
     latest:
-      gpu: llama.cpp:server-cuda-b7003
+      gpu: vllm/vllm-openai:latest
 
   speaches:
     dev:
