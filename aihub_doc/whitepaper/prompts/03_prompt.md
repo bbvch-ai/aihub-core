@@ -15,70 +15,15 @@ Erklären Sie, wie die Plattform vollständige Kontrolle über Daten und AI-Syst
 
 ## Themen und Inhalte
 
-### 3.1 Deployment-Optionen für vollständige Datensouveränität
-**Kernaussage**: Flexibles Deployment garantiert, dass Daten nie unkontrollierte Grenzen überschreiten
+Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 
-**Inhalte**:
-- **Schweizer Hosting**: Dedizierte Cloud-Infrastruktur in Schweizer Rechenzentren (ISO-zertifiziert)
-- **On-Premise-Deployment**: Integration mit bestehenden Datenbanken (MSSQL, Oracle, PostgreSQL)
-- **Isolierte Infrastruktur**: Keine Shared-Tenancy, vollständige Netzwerk-Isolation
-- **Air-Gap-Betrieb**: Betrieb ohne Internetverbindung für höchste Sicherheitsanforderungen
-- **Hybrid-Szenarien**: Kombination verschiedener Deployment-Modelle je nach Datensensitivität
+- **Deployment-Optionen für vollständige Datensouveränität**: Schweizer Hosting (dedizierte Cloud-Infrastruktur in ISO-zertifizierten Schweizer Rechenzentren), On-Premise-Deployment (Integration mit bestehenden Datenbanken MSSQL/Oracle/PostgreSQL), Isolierte Infrastruktur (keine Shared-Tenancy, vollständige Netzwerk-Isolation), Air-Gap-Betrieb (ohne Internetverbindung für höchste Sicherheit), Hybrid-Szenarien (Kombination verschiedener Deployment-Modelle je nach Datensensitivität); Geschäftlicher Nutzen: Vollständige Compliance mit revDSG und Data-Residency-Anforderungen, keine Abhängigkeit von externen Cloud-Providern, Anpassung an organisatorische Sicherheitsrichtlinien, Vertrauensbildung bei regulierten Branchen und öffentlicher Verwaltung
 
-**Geschäftlicher Nutzen**:
-- Vollständige Compliance mit revDSG und Data-Residency-Anforderungen
-- Keine Abhängigkeit von externen Cloud-Providern
-- Anpassung an organisatorische Sicherheitsrichtlinien
-- Vertrauensbildung bei regulierten Branchen und öffentlicher Verwaltung
+- **Kundenkontrolle über Administration und Konfiguration**: RBAC-basierte Administration (kundenseitige Administrationsrollen mit granularen Berechtigungen), Datenquellen-Kontrolle (volle Steuerung über Datenfluss und -nutzung), RAG-Konfiguration (Kontrolle über Vector-Stores, Chunking-Strategien, Retrieval-Parameter), AI-Modell-Kontrolle (Entscheidung über eingesetzte Modelle, Training, Fine-Tuning, Versionierung), Governance-Mechanismen (Feedback-Systeme, Bias-Monitoring, Human-in-the-Loop-Prozesse); Geschäftlicher Nutzen: Keine Black-Box mit voller Transparenz und Steuerung, Anpassung an interne Governance-Anforderungen, Risikominimierung durch menschliche Aufsicht über kritische AI-Entscheidungen, kontinuierliche Qualitätssicherung
 
-### 3.2 Kundenkontrolle über Administration und Konfiguration
-**Fokus**: Organisation behält vollständige Kontrolle über alle System-Aspekte
+- **Compliance-Funktionen und Datenschutz-Mechanismen**: Anonymisierung (automatische PII-Erkennung und Pseudonymisierung vor AI-Verarbeitung), Consent-Management (granulare Einwilligungsverwaltung), Lösch-Workflows (vollständige Datenentfernung/Right to be Forgotten über alle Systemkomponenten), Audit-Trails (unveränderliche zeitgestempelte Logs aller Datenverarbeitungsaktivitäten), Data Lineage (Nachverfolgung von Daten vom Ursprung bis zur Nutzung), eGov-Integration (Anbindung an staatliche Identitätssysteme und Compliance-Plattformen); Geschäftlicher Nutzen: Erfüllung von revDSG/GDPR/AI Act Anforderungen, Reduzierung von Compliance-Risiken und rechtlicher Exposition, Erleichterung von Audits, Vertrauen von Bürgern und Kunden
 
-**Inhalte**:
-- **RBAC-basierte Administration**: Kundenseitige Administrationsrollen mit granularen Berechtigungen
-- **Datenquellen-Kontrolle**: Volle Steuerung, welche Daten in die Plattform fließen und wie sie genutzt werden
-- **RAG-Konfiguration**: Kontrolle über Vector-Stores, Chunking-Strategien, Retrieval-Parameter
-- **AI-Modell-Kontrolle**: Entscheidung über eingesetzte Modelle, Training, Fine-Tuning, Versionierung
-- **Governance-Mechanismen**: Feedback-Systeme, Bias-Monitoring, Human-in-the-Loop-Prozesse
-
-**Geschäftlicher Nutzen**:
-- Keine Black-Box: Volle Transparenz und Steuerung aller Plattform-Operationen
-- Anpassung an interne Governance-Anforderungen
-- Risikominimierung durch menschliche Aufsicht über kritische AI-Entscheidungen
-- Kontinuierliche Qualitätssicherung durch Feedback und Monitoring
-
-### 3.3 Compliance-Funktionen und Datenschutz-Mechanismen
-**Fokus**: Eingebaute Funktionen zur Erfüllung regulatorischer Anforderungen
-
-**Inhalte**:
-- **Anonymisierung**: Automatische PII-Erkennung und Pseudonymisierung vor AI-Verarbeitung
-- **Consent-Management**: Granulare Einwilligungsverwaltung für Datennutzung
-- **Lösch-Workflows**: Vollständige Datenentfernung (Right to be Forgotten) über alle Systemkomponenten
-- **Audit-Trails**: Unveränderliche, zeitgestempelte Logs aller Datenverarbeitungsaktivitäten
-- **Data Lineage**: Nachverfolgung von Daten vom Ursprung bis zur Nutzung
-- **eGov-Integration**: Anbindung an staatliche Identitätssysteme und Compliance-Plattformen
-
-**Geschäftlicher Nutzen**:
-- Erfüllung von revDSG, GDPR und kommenden AI Act Anforderungen
-- Reduzierung von Compliance-Risiken und rechtlicher Exposition
-- Erleichterung von Audits durch vollständige Dokumentation
-- Vertrauen von Bürgern und Kunden durch transparente Datenschutz-Praktiken
-
-### 3.4 Vendor-Unabhängigkeit durch modulare Architektur
-**Fokus**: Offene Standards verhindern Lock-in und ermöglichen freie Komponentenwahl
-
-**Inhalte**:
-- **Open-Source-Basis**: Apache 2.0 Lizenzierung, transparenter Code
-- **Standardbasierte Schnittstellen**: REST APIs, OpenTelemetry, OAuth/OIDC
-- **Komponentenaustauschbarkeit**: Datenbanken, Vector-Stores, LLM-Provider, Authentifizierungssysteme austauschbar
-- **Multi-Provider-Support**: Gleichzeitige Nutzung verschiedener LLM-Anbieter möglich
-- **Keine proprietären Formate**: Daten jederzeit exportierbar und in anderen Systemen nutzbar
-
-**Geschäftlicher Nutzen**:
-- Langfristige Investitionssicherheit ohne Abhängigkeit von einzelnen Anbietern
-- Flexibilität bei Technologiewechsel ohne System-Neubau
-- Verhandlungsstärke gegenüber Lieferanten
-- Anpassung an sich ändernde regulatorische oder technische Anforderungen
+- **Vendor-Unabhängigkeit durch modulare Architektur**: Open-Source-Basis (Apache 2.0 Lizenzierung, transparenter Code), Standardbasierte Schnittstellen (REST APIs, OpenTelemetry, OAuth/OIDC), Komponentenaustauschbarkeit (Datenbanken, Vector-Stores, LLM-Provider, Authentifizierungssysteme austauschbar), Multi-Provider-Support (gleichzeitige Nutzung verschiedener LLM-Anbieter), keine proprietären Formate (Daten jederzeit exportierbar); Geschäftlicher Nutzen: Langfristige Investitionssicherheit ohne Abhängigkeit von einzelnen Anbietern, Flexibilität bei Technologiewechsel ohne System-Neubau, Verhandlungsstärke gegenüber Lieferanten, Anpassung an sich ändernde regulatorische/technische Anforderungen
 
 ## Business-Fragen, die das Kapitel beantwortet
 

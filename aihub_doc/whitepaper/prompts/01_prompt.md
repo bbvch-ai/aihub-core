@@ -14,54 +14,13 @@ Erklären Sie die "Last-Mile"-Problematik beim AI-Einsatz und warum Schweizer Or
 
 ## Themen und Inhalte
 
-### 1.1 Die Infrastruktur-Lücke
-**Fokus**: Das "Last-Mile"-Problem beim AI-Deployment
+Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 
-**Inhalte**:
-- Der Weg vom AI-Prototyp zum produktiven System
-- Welche Infrastruktur-Komponenten fehlen: Authentifizierung, Monitoring, Kostenkontrolle, Governance, UIs, Integrationen
-- Versteckte Komplexität bei produktionsreifen AI-Lösungen
-- Zeitverlust und Opportunitätskosten bei experimentellen AI-Projekten
-- Fragmentierte Einzellösungen, die nicht zusammenarbeiten
+- **Die Infrastruktur-Lücke ("Last-Mile"-Problem)**: Der Weg vom AI-Prototyp zum produktiven System; Fehlende Infrastruktur-Komponenten (Authentifizierung, Monitoring, Kostenkontrolle, Governance, UIs, Integrationen); Versteckte Komplexität bei produktionsreifen AI-Lösungen; Zeitverlust und Opportunitätskosten bei experimentellen AI-Projekten; Fragmentierte Einzellösungen; Geschäftlicher Nutzen: Verzögerte Time-to-Value (Monate/Jahre im Pilot-Stadium), verschwendete Investitionen in nicht-produktive Prototypen, Unfähigkeit AI-Experimente zu skalieren, Compliance- und Sicherheitsrisiken
 
-**Geschäftlicher Nutzen betonen**:
-- Verzögerte Time-to-Value (Monate oder Jahre im Pilot-Stadium)
-- Verschwendete Investitionen in Prototypen, die nie Benutzer erreichen
-- Unfähigkeit, erfolgreiche AI-Experimente zu skalieren
-- Compliance- und Sicherheitsrisiken durch Ad-hoc-Lösungen
+- **Die Schweizer Datensouveränitäts-Herausforderung**: Spezifische Schweizer Regulierungsanforderungen (revDSG, Datenresidenz); Einschränkungen öffentlicher Cloud-AI-Services (OpenAI, Azure AI) für sensible Daten; Vendor-Lock-in-Bedenken bei proprietären Plattformen; Wettbewerbsnachteil (Schweizer Organisationen von AI-Vorteilen ausgeschlossen); Shadow-IT-Risiken durch unautorisierte AI-Tools; Geschäftlicher Nutzen: Blockierte AI-Initiativen (Compliance-Bedenken), Wettbewerbsnachteil, Compliance-Exposition und rechtliche Risiken, Produktivitätsverlust
 
-### 1.2 Die Schweizer Datensouveränitäts-Herausforderung
-**Fokus**: Warum Schweizer Organisationen vor einzigartigen Einschränkungen stehen
-
-**Inhalte**:
-- Spezifische Schweizer Regulierungsanforderungen (revDSG, Datenresidenz)
-- Einschränkungen öffentlicher Cloud-AI-Services (OpenAI, Azure AI) für sensible Daten
-- Vendor-Lock-in-Bedenken bei proprietären Plattformen
-- Wettbewerbsnachteil: Schweizer Organisationen von AI-Vorteilen ausgeschlossen
-- Shadow-IT-Risiken, wenn Mitarbeitende unautorisierte AI-Tools nutzen
-
-**Geschäftlicher Nutzen betonen**:
-- Blockierte AI-Initiativen aufgrund von Compliance-Bedenken
-- Wettbewerbsnachteil gegenüber Organisationen ohne Souveränitäts-Einschränkungen
-- Compliance-Exposition und rechtliche Risiken
-- Produktivitätsverlust der Mitarbeitenden oder Entstehung von Shadow IT
-
-### 1.3 Die Kosten der Fragmentierung
-**Fokus**: Was passiert ohne einheitlichen Plattform-Ansatz
-
-**Inhalte**:
-- Isolierte AI-Lösungen über Abteilungen hinweg (jede löst Authentifizierung, Monitoring separat)
-- Doppelte Ausgaben für Infrastruktur-Komponenten
-- Keine Governance oder Aufsicht über AI-Initiativen
-- Sicherheitslücken und Compliance-Blindspots
-- Nicht tragbare Wartungslast
-- Unfähigkeit, Synergien zu nutzen (gemeinsames Wissen, gemeinsame Infrastruktur)
-
-**Geschäftlicher Nutzen betonen**:
-- Versteckte Kosten, die sich im Laufe der Zeit summieren
-- Technische Schulden durch fragmentierte Lösungen
-- Unfähigkeit, ROI oder Compliance zu demonstrieren
-- Verpasste Chancen für funktionsübergreifende Vorteile
+- **Die Kosten der Fragmentierung**: Isolierte AI-Lösungen über Abteilungen hinweg (jede löst Authentifizierung, Monitoring separat); Doppelte Ausgaben für Infrastruktur-Komponenten; Keine Governance oder Aufsicht über AI-Initiativen; Sicherheitslücken und Compliance-Blindspots; Nicht tragbare Wartungslast; Unfähigkeit Synergien zu nutzen; Geschäftlicher Nutzen: Versteckte Kosten, technische Schulden, Unfähigkeit ROI/Compliance zu demonstrieren, verpasste Chancen für funktionsübergreifende Vorteile
 
 ## Business-Fragen, die das Kapitel beantwortet
 

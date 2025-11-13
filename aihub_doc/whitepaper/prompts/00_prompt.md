@@ -22,45 +22,17 @@ Dieses Kapitel spricht ALLE 6 Dimensionen an (High-Level-Überblick):
 
 ## Themen und Inhalte
 
-### Einleitung
-Die Herausforderung: Warum die meisten Organisationen Schwierigkeiten haben, AI vom Prototyp in die Produktion zu bringen. Der Schweizer Kontext: Datensouveränität, regulatorische Anforderungen, Vendor-Lock-in-Bedenken.
+Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 
-### Was ist Swiss AI-Hub?
-**Kernaussage**: Komplette Enterprise-AI-Plattform, die Organisationen selbst betreiben.
+- **Einleitung - Die Herausforderung**: Warum die meisten Organisationen Schwierigkeiten haben, AI vom Prototyp in die Produktion zu bringen; Der Schweizer Kontext mit Datensouveränität, regulatorischen Anforderungen und Vendor-Lock-in-Bedenken
 
-Erklären Sie:
-- Nicht ein SaaS-Abonnement oder Framework, sondern produktionsreife Infrastruktur
-- Drei-Stufen-Architektur (Tier 1: AI-Zugang, Tier 1+: Tool-Integration, Tier 2: Unternehmenswissen, Tier 3: Prozessautomatisierung)
-- Alle Komponenten enthalten: LLM-Gateway, Wissenssysteme, Authentifizierung, Monitoring, UIs
-- Open Source (Apache 2.0) - keine Lizenzgebühren, kein Vendor Lock-in
+- **Was ist Swiss AI-Hub**: Komplette Enterprise-AI-Plattform, die Organisationen selbst betreiben (nicht SaaS oder Framework); Drei-Stufen-Architektur (Tier 1: AI-Zugang, Tier 1+: Tool-Integration, Tier 2: Unternehmenswissen, Tier 3: Prozessautomatisierung); Alle Komponenten enthalten (LLM-Gateway, Wissenssysteme, Authentifizierung, Monitoring, UIs); Open Source (Apache 2.0) ohne Lizenzgebühren oder Vendor Lock-in; Geschäftlicher Nutzen: Schnelle Wertschöpfung (30 Minuten Deployment), Kostenkontrolle (keine Per-User-Gebühren), Datensouveränität (Schweizer Hosting), Zukunftssicherheit (Open Source, vendor-neutral)
 
-**Geschäftlicher Nutzen**:
-- Schnelle Wertschöpfung (30 Minuten Deployment statt Monate)
-- Kostenkontrolle (keine Per-User-Gebühren, volle Transparenz)
-- Datensouveränität (Schweizer Hosting, vollständige Kontrolle)
-- Zukunftssicher (Open Source, vendor-neutral)
+- **Schlüsselfähigkeiten**: Chat-Interface (moderne Benutzeroberfläche für Mitarbeiter), Knowledge Management (RAG-basiertes Fragen-Antworten mit Quellenangaben), Transparente AI-Agents (nachvollziehbare, auditierbare Workflows), Prozessautomatisierung (Koordination von AI, Menschen und Systemen), Enterprise Security (SSO, Verschlüsselung, RBAC), Compliance (revDSG, GDPR, AI Act Vorbereitung), Flexible Bereitstellung (On-Premise, Private Cloud, Swiss Cloud)
 
-### Schlüsselfähigkeiten
-Kurzübersicht der wichtigsten Fähigkeiten:
-- **Chat-Interface**: Moderne Benutzeroberfläche für Mitarbeiter
-- **Knowledge Management**: RAG-basiertes Fragen-Antworten mit Quellenangaben
-- **Transparente AI-Agents**: Nachvollziehbare, auditierbare Workflows
-- **Prozessautomatisierung**: Koordination von AI, Menschen und Systemen
-- **Enterprise Security**: SSO, Verschlüsselung, RBAC
-- **Compliance**: revDSG, GDPR, AI Act Vorbereitung
-- **Flexible Bereitstellung**: On-Premise, Private Cloud, oder Swiss Cloud
+- **Differenzierung von Alternativen**: vs. Cloud AI Services (Datensouveränität, keine laufenden API-Kosten); vs. Frameworks (produktionsreif, nicht nur Code); vs. Eigenentwicklung (schneller, bewährt, wartbar)
 
-### Warum Swiss AI-Hub anders ist
-Differenzierung von Alternativen:
-- vs. **Cloud AI Services**: Datensouveränität, keine laufenden API-Kosten
-- vs. **Frameworks**: Produktionsreif, nicht nur Code
-- vs. **Eigenentwicklung**: Schneller, bewährt, wartbar
-
-### Nächste Schritte
-Wie man anfängt:
-1. Proof of Concept (30 Tage)
-2. Pilot-Deployment (kleine Gruppe, konkreter Use Case)
-3. Produktions-Rollout
+- **Nächste Schritte**: Wie man anfängt mit Proof of Concept (30 Tage), Pilot-Deployment (kleine Gruppe, konkreter Use Case), und Produktions-Rollout
 
 ## Fragen zum Beantworten
 1. Was ist Swiss AI-Hub in einem Satz?
