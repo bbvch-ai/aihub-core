@@ -15,10 +15,10 @@
 {%- set hardware = 'gpu' if gpu_enabled else 'cpu' -%}
 
 {# Check if we have local GPU services for this stage/hardware combo #}
-{%- set has_llama_cpp = image_tags.llama_cpp.get(stage, {}).get(hardware) -%}
-{%- set has_llama_cpp_embedding = image_tags.llama_cpp_embedding.get(stage, {}).get(hardware) -%}
-{%- set has_llama_cpp_reranker = image_tags.llama_cpp_reranker.get(stage, {}).get(hardware) -%}
-{%- set has_speaches = image_tags.speaches.get(stage, {}).get(hardware) -%}
+{%- set has_llama_cpp = gpu_enabled or stage == 'dev' -%}
+{%- set has_llama_cpp_embedding = gpu_enabled or stage == 'dev' -%}
+{%- set has_llama_cpp_reranker = gpu_enabled or stage == 'dev' -%}
+{%- set has_speaches = gpu_enabled or stage == 'dev' -%}
 
 {# Extract model aliases from service configs #}
 {%- set llama_cpp_alias = 'gemma-3-4b' -%}

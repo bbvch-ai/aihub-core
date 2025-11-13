@@ -518,20 +518,19 @@ services:
         max-size: 10m
         max-file: 2
 
-  {%- if image_tags.llama_cpp[stage] and image_tags.llama_cpp[stage][hardware] %}
+  {%- if gpu_enabled or stage == 'dev' %}
   # ===================================================================
   # AI Model Serving (Local Inference)
   # ===================================================================
-  # These services are only rendered if an image tag is defined for
-  # the current stage and hardware target in compose-config.yml.
+  # GPU variants are only used for 'nightly' and 'latest' stages when
+  # GPU is enabled. All other configurations use CPU variants.
   # ===================================================================
-  {%- endif %}
 
-  {%- if image_tags.llama_cpp[stage] and image_tags.llama_cpp[stage][hardware] %}
+  {%- set llama_cpp_use_gpu = gpu_enabled and stage in ['nightly', 'latest'] %}
   llama-cpp:
     container_name: llama-cpp
     platform: "linux/amd64"
-    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp[stage][hardware] }}
+    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_gpu if llama_cpp_use_gpu else image_tags.llama_cpp_cpu }}
     restart: always
     {%- if stage == 'dev' %}
     ports:
@@ -559,7 +558,7 @@ services:
       --host 0.0.0.0
       -c 4096
       {%- endif %}
-      {%- if gpu_enabled %}
+      {%- if llama_cpp_use_gpu %}
       -ngl 24
       {%- endif %}
     healthcheck:
@@ -573,7 +572,7 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    {%- if gpu_enabled %}
+    {%- if llama_cpp_use_gpu %}
     deploy:
       resources:
         reservations:
@@ -582,13 +581,11 @@ services:
               device_ids: [ '0' ]
               capabilities: [ gpu ]
     {%- endif %}
-  {%- endif %}
 
-  {% if image_tags.llama_cpp_embedding[stage] and image_tags.llama_cpp_embedding[stage][hardware] %}
   llama-cpp-embedding:
     container_name: llama-cpp-embedding
     platform: "linux/amd64"
-    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_embedding[stage][hardware] }}
+    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_gpu if llama_cpp_use_gpu else image_tags.llama_cpp_cpu }}
     restart: always
     {%- if stage == 'dev' %}
     ports:
@@ -610,7 +607,7 @@ services:
       --pooling last
       -c 1024
       -ub 256
-      {%- if gpu_enabled %}
+      {%- if llama_cpp_use_gpu %}
       -ngl 6
       {%- endif %}
     healthcheck:
@@ -624,7 +621,7 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    {%- if gpu_enabled %}
+    {%- if llama_cpp_use_gpu %}
     deploy:
       resources:
         reservations:
@@ -633,13 +630,11 @@ services:
               device_ids: [ '0' ]
               capabilities: [ gpu ]
     {%- endif %}
-  {%- endif %}
 
-  {% if image_tags.llama_cpp_reranker[stage] and image_tags.llama_cpp_reranker[stage][hardware] %}
   llama-cpp-reranker:
     container_name: llama-cpp-reranker
     platform: "linux/amd64"
-    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_reranker[stage][hardware] }}
+    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_gpu if llama_cpp_use_gpu else image_tags.llama_cpp_cpu }}
     restart: always
     {%- if stage == 'dev' %}
     ports:
@@ -660,7 +655,7 @@ services:
       -c 4096
       --reranking
       --no-context-shift
-      {%- if gpu_enabled %}
+      {%- if llama_cpp_use_gpu %}
       -ngl 4
       {%- endif %}
     healthcheck:
@@ -674,7 +669,7 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    {%- if gpu_enabled %}
+    {%- if llama_cpp_use_gpu %}
     deploy:
       resources:
         reservations:
@@ -683,7 +678,6 @@ services:
               device_ids: [ '0' ]
               capabilities: [ gpu ]
     {%- endif %}
-  {%- endif %}
 
   {% if gpu_enabled %}
   vllm-docling:
@@ -729,16 +723,18 @@ services:
               capabilities: [ gpu ]
   {%- endif %}
 
-  {% if image_tags.speaches[stage] and image_tags.speaches[stage][hardware] %}
   # ===================================================================
   # Audio Model Serving (SST/TTS)
   # ===================================================================
   # We are using speaches to serve audio models in an openai
-  # compatible format.
+  # compatible format. GPU variants are only used for 'nightly' and
+  # 'latest' stages when GPU is enabled.
   # ===================================================================
+
+  {%- set speaches_use_gpu = gpu_enabled and stage in ['nightly', 'latest'] %}
   speaches:
     container_name: speaches
-    image: {{ global.registry_prefix }}{{ image_tags.speaches[stage][hardware] }}
+    image: {{ global.registry_prefix }}{{ image_tags.speaches_gpu if speaches_use_gpu else image_tags.speaches_cpu }}
     restart: unless-stopped
     {%- if stage == 'dev' %}
     ports:
@@ -759,7 +755,7 @@ services:
       start_period: 5s
     post_start:
       - command: [ "sh", "/etc/speaches/speaches-download-models.sh" ]
-    {%- if gpu_enabled %}
+    {%- if speaches_use_gpu %}
     deploy:
       resources:
         reservations:
@@ -1073,8 +1069,6 @@ services:
       OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       TASK_MODEL: text-generation/nano
       TASK_MODEL_EXTERNAL: text-generation/nano
-      RAG_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/openai
-      RAG_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       ENABLE_OLLAMA_API: False
       ENABLE_OPENAI_API: True
 
@@ -1153,10 +1147,13 @@ services:
       RAG_EMBEDDING_BATCH_SIZE: 64
       PDF_EXTRACT_IMAGES: True
       RAG_FILE_MAX_COUNT: 4
-      CONTENT_EXTRACTION_ENGINE: docling
-      DOCLING_SERVER_URL: http://{{ 'localhost' if stage == 'dev' else 'docling' }}:5001
-      DOCLING_OCR_ENGINE: easyocr
-      DOCLING_OCR_LANG: en,de,fr,it
+      CONTENT_EXTRACTION_ENGINE: external
+      EXTERNAL_DOCUMENT_LOADER_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/docling
+      EXTERNAL_DOCUMENT_LOADER_API_KEY: ${SUPERUSER_TOKEN}
+      RAG_EMBEDDING_ENGINE: openai
+      RAG_EMBEDDING_MODEL: embedding/small
+      RAG_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/openai
+      RAG_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
 
       # --- Web Search ---
       ENABLE_WEB_SEARCH: True
