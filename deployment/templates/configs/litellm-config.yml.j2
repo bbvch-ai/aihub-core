@@ -47,6 +47,11 @@ model_list:
 {%- endif %}
     model_info:
       mode: chat
+{%- if has_llama_cpp %}
+      max_input_tokens: 8196
+      max_output_tokens: 8196
+      supports_function_calling: false
+{%- endif %}
 
   - model_name: text-generation/mini
     litellm_params:
@@ -63,6 +68,11 @@ model_list:
 {%- endif %}
     model_info:
       mode: chat
+{%- if has_llama_cpp %}
+      max_input_tokens: 8196
+      max_output_tokens: 8196
+      supports_function_calling: false
+{%- endif %}
 
   - model_name: text-generation/large
     litellm_params:
@@ -88,6 +98,11 @@ model_list:
 {%- endif %}
     model_info:
       mode: chat
+{%- if gpu_enabled %}
+      max_input_tokens: 8192
+      max_output_tokens: 8192
+      supports_function_calling: false
+{%- endif %}
 
   # ===================================================================
   # Embedding Models
