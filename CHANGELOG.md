@@ -5,6 +5,147 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.252.0] - 2025-11-12 - Broadening Horizons: Local Filesystem Integration and Generalized Data Sources
+
+### Added
+
+- 🚀 **New Local Filesystem Ingestion Pipeline**: Introduced a complete pipeline, resource, and I/O manager for
+  seamlessly integrating and syncing files from local or network file systems to the data lake, supporting flexible
+  regex-based filtering.
+- ⚙️ **Generic Source File Abstraction**: Implemented a new `SourceFile` interface and generic factories/operations,
+  enabling the pipeline to ingest data from any source system that adheres to this standard, making it highly
+  extensible.
+- 🏷️ **Pytest `flaky` Marker**: Added official `flaky` marker definition to `pyproject.toml` and applied it to
+  unreliable tests, improving test suite clarity and stability by allowing flaky tests to be excluded from CI.
+- ➕ **Regex Pattern Utilities**: Introduced helper functions for generating powerful regex patterns, used by the new
+  local filesystem resource for flexible file and folder filtering.
+
+### Changed
+
+- 🗓️ **Standardized Source File Timestamps**: Converted all file creation and modification timestamps in source file
+  models (e.g., SharePoint) to Unix timestamps (`int`) for consistency and easier processing.
+- 🔓 **Relaxed Namespace Naming Constraints**: Removed restrictive regex validation for NamespaceEntity names, allowing
+  more flexibility in naming conventions.
+- 📈 **Enhanced Metadata Display**: Updated metadata tables to reflect new data structures and added detailed metadata
+  display for local filesystem files in the Dagster UI.
+- 🔧 **Pipeline Definition Parameters**: Adjusted `default_definitions` to remove the explicit `figures_directory_name`
+  parameter and introduced `vector_store_dimensions` and `auto_sync` for more flexible configuration.
+
+### Refactor
+
+- 🗄️ **Abstracted Data Lake Client Operations**: Replaced specific data lake client implementations (Azure, S3) with an
+  `AbstractDataLakeClient` interface, standardizing URI construction, file deletion, and directory operations across
+  different storage backends.
+- ♻️ **Consolidated Source-to-Data Lake Logic**: Replaced SharePoint-specific data lake transformation and cleanup
+  factories/operations with new generic `source_to_data_lake` counterparts, reducing code duplication and improving
+  maintainability.
+- 🖼️ **Simplified Document Loader Configuration**: Streamlined `DoclingLoader` and `DocumentIntelligenceLoader` by
+  removing the explicit `figures_directory_name` parameter, making figure directory handling internal and consistent.
+- 🔗 **Decoupled Azure Search Metadata Definitions**: Removed Azure Search specific metadata field definitions,
+  decoupling the core metadata handling from particular vector store implementations.
+
+### Removed
+
+- 🗑️ **Deprecated SharePoint-Specific Factories**: Eliminated older factories dedicated solely to SharePoint-to-Data
+  Lake transformations, superseded by the new generic source ingestion framework.
+- ❌ **Legacy SharePoint-Specific Operations**: Removed individual operations for extracting content, metadata, and URIs
+  specific to SharePoint files, which are now replaced by their generic `SourceFile` counterparts.
+
+---
+
+## [v0.251.4] - 2025-11-11 - Azure Integration Overhaul and Infrastructure Simplification
+
+### Removed
+
+- 🗑️ **Infrastructure-as-Code (IaC) Module:** The `aihub_iac` module, which provided Pulumi-based Azure infrastructure
+  definitions, has been entirely removed from the project, streamlining deployment and management.
+- 🗑️ **Azure AI Search Vector Store Integration:** Direct support for Azure AI Search as a vector store option for the
+  RAG agent has been removed, simplifying the vector store ecosystem and reducing dependencies.
+- 🗑️ **Azure Blob Storage for Anonymous File Access:** The Azure Blob Storage implementation for anonymous file access
+  has been removed, standardizing anonymous file access across the platform to S3-compatible services.
+- 🗑️ **Azure Cosmos DB for Bot Credentials Setup:** The setup process for Azure Bots no longer supports saving
+  credentials to Azure Cosmos DB, exclusively using MongoDB-compatible storage (e.g., FerretDB).
+- 🗑️ **Legacy Azure Data Lake (ADLS2) Integration:** Older integration components for Azure Data Lake (ADLS2) and
+  associated Dagster resources have been removed, transitioning to a modern, connection string-based approach.
+- 🗑️ **Direct Azure Service Integration Clients:** Several direct integration clients and settings for Azure services
+  (e.g., Azure Cognitive Search, Blob Storage, Speech Service) have been removed from `aihub_lib/infrastructure/azure`,
+  simplifying the core library.
+- 🗑️ **Azure-Specific Test Tags and Scenarios:** `@azure` pytest markers and associated test scenarios have been removed
+  from agent tests, decoupling the test suite from specific Azure infrastructure components.
+
+### Changed
+
+- 🔄 **Azure Document Intelligence Configuration:** The configuration for Azure Document Intelligence now explicitly
+  requires a service endpoint URL and an API key, providing more direct and transparent authentication.
+- 🔄 **Azure Data Lake Storage Authentication:** Azure Data Lake Storage integration within pipelines now exclusively
+  uses an explicit connection string for authentication, enhancing configuration clarity and security.
+- 🔄 **Default Vector Store in Pipeline Examples:** The default and recommended vector store resource used in pipeline
+  examples has shifted from Azure AI Search to Milvus, reflecting updated recommendations.
+- 🔄 **S3 Anonymous File Access Service Clarification:** The S3 anonymous file access service now explicitly mentions
+  SeaweedFS as a compatible backend, clarifying its S3-compatible nature.
+
+### Refactor
+
+- 🧹 **Python Generics Syntax Modernization:** Updated generic type hint syntax across several NATS event and
+  publisher/subscriber classes to align with Python 3.12+ features, improving type safety and code readability.
+- 🧹 **Centralized Azure Document Intelligence Client Access:** Simplified the method for accessing the Document
+  Intelligence client, replacing a custom singleton with direct instantiation using new explicit settings.
+- 🧹 **Unified Anonymous File Access Implementation:** The internal implementation of the anonymous file access service
+  has been unified to solely rely on S3-compatible storage, removing conditional logic for multiple cloud providers.
+- 🧹 **Agent Testing Infrastructure:** The testing setup for agents has been refactored to remove Azure-specific
+  configurations and dependencies, making tests more portable and less coupled to particular cloud providers.
+- 🧹 **Azure Configuration Reorganization:** Azure-related settings (e.g., Document Intelligence, Data Lake) have been
+  reorganized into more specific top-level modules within `aihub_lib/infrastructure/`, improving module clarity.
+- 🧹 **Workflow Visualizer Event Naming:** Minor adjustment to the string slicing logic in the workflow visualizer for
+  more accurate extraction of event names.
+
+---
+
+## [v0.251.3] - 2025-11-11 - Enhanced Multilingual Documentation and Content Synchronization
+
+### Added
+
+- 📄 **Introduced Multilingual Code Deep Dive**: Added dedicated English and German index pages for the new "Code Deep
+  Dive" documentation section, which dynamically pulls READMEs, changelogs, and licenses directly from the codebase.
+- 🌍 **Expanded Multilingual Support for Core Documentation**: Implemented automatic generation of both English and
+  German versions for the changelog and license documentation, improving accessibility for diverse audiences.
+
+### Changed
+
+- ⚡️ **Optimized LLM Documentation Generation**: Adjusted the process for generating documentation used by Large
+  Language Models to exclude the "Code Deep Dive" section from the full content output (`llms-full.txt`), while
+  retaining it within the table of contents.
+- 🖼️ **Improved Documentation Readability**: Applied minor formatting and line break adjustments across several
+  quick-start and architectural decision documents for enhanced clarity.
+
+### Refactor
+
+- 🔄 **Refined Documentation Synchronization Script**: Updated the `sync-docs.sh` script to intelligently manage
+  multilingual documentation, ensuring correct cleanup of synced files and automatic duplication of English content to
+  German for the "Code Deep Dive" section.
+
+---
+
+## [v0.251.2] - 2025-11-11 - Quick Start Guide Enhancements: Clearer Conversations and Deeper Insights
+
+### Added
+
+- 🎬 **New Video Tutorials:** Introduced two new video tutorials in the "Your First Conversation" guide, visually
+  demonstrating how to initiate conversations via the main chat interface and directly through an agent.
+
+### Changed
+
+- 📄 **Revamped "Your First Conversation" Guide:** Significantly expanded and clarified the guide on starting
+  conversations with agents, detailing two primary methods and highlighting key features of the chat interface (Open
+  WebUI), along with options for model and agent selection.
+- 📖 **Enhanced "Your First Insights" Documentation:** Updated the guide to provide comprehensive explanations of
+  "Traceability" and "Document Retrieval (RAG)" features, illustrating how users can gain deeper insights into agent
+  interactions directly from the chat interface.
+- 📝 **Refined "What Just Happened?" Section:** Improved the introductory text and streamlined descriptions for
+  navigation options in the quick start summary, enhancing overall readability and guidance.
+
+---
+
 ## [v0.251.1] - 2025-11-10 - Streamlined AI Assistant Integration via AGENTS.md Documentation
 
 ### Added

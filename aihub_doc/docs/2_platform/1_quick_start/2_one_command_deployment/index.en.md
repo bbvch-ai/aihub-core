@@ -10,19 +10,23 @@ infrastructure running in minutes, not hours.
 ## Deployment Overview
 
 ::: tip Two Deployment Options
-The Swiss AI Hub supports two deployment modes. Follow the same steps for both, using the appropriate commands for your deployment type:
+The Swiss AI Hub supports two deployment modes. Follow the same steps for both, using the appropriate commands for your
+deployment type:
 
 - **Production Deployment**: Deploy to a server with a real domain name (e.g., `aihub.yourcompany.com`)
+
   - Uses `docker-compose.latest.yml`
   - Uses Let's Encrypt for automatic SSL certificates
   - Requires DNS configuration pointing to your server
 
 - **Local Deployment**: Run on your local machine for development/testing
+
   - Uses `docker-compose.local.yml`
   - Uses self-signed SSL certificates (mkcert)
   - Uses `127.0.0.1.nip.io` domain (automatically resolves to localhost)
 
-Each step below shows commands for both deployment types. Simply follow the commands that match your chosen deployment mode.
+Each step below shows commands for both deployment types. Simply follow the commands that match your chosen deployment
+mode.
 :::
 
 ---
@@ -64,7 +68,8 @@ mkcert -key-file configs/traefik/certs/dev-key.pem -cert-file configs/traefik/ce
 ```
 
 ::: tip What is nip.io?
-The `*.127.0.0.1.nip.io` domain automatically resolves to your localhost (127.0.0.1), providing wildcard DNS resolution without needing to modify your hosts file. This allows subdomain-based routing in local development.
+The `*.127.0.0.1.nip.io` domain automatically resolves to your localhost (127.0.0.1), providing wildcard DNS resolution
+without needing to modify your hosts file. This allows subdomain-based routing in local development.
 :::
 
 ---
@@ -337,13 +342,14 @@ docker compose -f docker-compose.latest.yml ps --format "table {{.Name}}\t{{.Sta
 
 ## Summary: Key Differences Between Deployments
 
-| Feature | Production (`docker-compose.latest.yml`) | Local (`docker-compose.local.yml`) |
-|---------|------------------------------------------|-------------------------------------------|
-| **SSL Certificates** | Let's Encrypt (automatic) | mkcert (manual generation) |
-| **Domain** | Your production domain | `127.0.0.1.nip.io` |
-| **Configuration Files** | `*.latest.*` configs | `*.local.*` configs |
-| **Purpose** | Production deployments | Local deployment and development |
+| Feature                 | Production (`docker-compose.latest.yml`) | Local (`docker-compose.local.yml`) |
+| ----------------------- | ---------------------------------------- | ---------------------------------- |
+| **SSL Certificates**    | Let's Encrypt (automatic)                | mkcert (manual generation)         |
+| **Domain**              | Your production domain                   | `127.0.0.1.nip.io`                 |
+| **Configuration Files** | `*.latest.*` configs                     | `*.local.*` configs                |
+| **Purpose**             | Production deployments                   | Local deployment and development   |
 
 ::: warning
-Never use self-signed SSL certificates in production. The local deployment configuration is designed exclusively for development and testing on your local machine.
+Never use self-signed SSL certificates in production. The local deployment configuration is designed exclusively for
+development and testing on your local machine.
 :::

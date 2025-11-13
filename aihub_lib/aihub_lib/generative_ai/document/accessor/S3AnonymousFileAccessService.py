@@ -3,21 +3,18 @@ import logging
 import boto3
 from botocore.exceptions import ClientError
 
-from aihub_lib.generative_ai.document.accessor.AbstractAnonymousFileAccessService import (
-    AbstractAnonymousFileAccessService,
-)
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.infrastructure.s3.S3StorageSettings import S3StorageSettings
 
 logger = logging.getLogger(__name__)
 
 
-class S3AnonymousFileAccessService(AbstractAnonymousFileAccessService):
+class S3AnonymousFileAccessService:
     """
-    S3/MinIO-specific implementation for generating presigned URLs for anonymous file access.
+    S3 implementation for generating presigned URLs for anonymous file access.
 
     This service provides secure, temporary access to S3 objects through presigned URLs.
-    It supports both AWS S3 and MinIO (S3-compatible) storage backends.
+    It supports both AWS S3 and SeaweedFS (S3-compatible) storage backends.
 
     The service uses boto3 for S3 interactions and relies on S3StorageSettings for
     connection parameters including endpoint URL, access keys, and region.

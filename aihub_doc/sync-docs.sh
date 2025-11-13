@@ -12,14 +12,18 @@ rm -rf aihub
 rm -f LICENSES.md
 rm -f CHANGELOG.md
 
-# Remove old synced documentation from 6_code_deep_dive
+# Remove old synced documentation from 6_code_deep_dive (except the index files)
 # This ensures no duplicate index.md/index.en.md files exist
-rm -rf docs/6_code_deep_dive/*
+find docs/6_code_deep_dive -mindepth 1 -maxdepth 1 ! -name 'index.*.md' -exec rm -rf {} +
 
 mkdir -p "licenses"
 mkdir -p "changelog"
-cp "../LICENSES.md" "./licenses/index.md"
-cp "../CHANGELOG.md" "./changelog/index.md"
+# Copy LICENSES.md as both .en.md and .de.md (no translation needed)
+cp "../LICENSES.md" "./licenses/index.en.md"
+cp "../LICENSES.md" "./licenses/index.de.md"
+# Copy CHANGELOG.md as both .en.md and .de.md (no translation needed)
+cp "../CHANGELOG.md" "./changelog/index.en.md"
+cp "../CHANGELOG.md" "./changelog/index.de.md"
 
 # Find all 'README.md' files in the parent directory (../),
 # while excluding 'node_modules', '.pytest_cache', '.docker-volumes', and the current 'aihub_doc' directory.
@@ -63,6 +67,13 @@ find ../ \( -path '*/node_modules' -o -path '../aihub_doc' -o -path '*/.docker-v
     cp "$source_file" "$dest_file"
 
     echo "  -> Copied '$source_file' to '$dest_file'"
+
+    # For files in 6_code_deep_dive, also create a .de.md copy (no translation needed)
+    if [[ "$dest_file" == *"6_code_deep_dive"* ]]; then
+        dest_file_de="${dest_file/.en.md/.de.md}"
+        cp "$source_file" "$dest_file_de"
+        echo "  -> Duplicated to '$dest_file_de' (no translation)"
+    fi
 done
 
 echo "✅ Sync complete."

@@ -13,6 +13,12 @@ from pydantic import Field, PrivateAttr
 from aihub_pipeline.types.SharePointFile import MinimalSharePointFile, SharePointFile
 
 
+def _parse_sharepoint_datetime(dt_str: str) -> int:
+    """Convert SharePoint ISO datetime string to Unix timestamp."""
+    dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+    return int(dt.timestamp())
+
+
 class SharePointResource(ConfigurableResource):
     target_folders: Annotated[
         list[str] | None,
@@ -174,9 +180,10 @@ class SharePointResource(ConfigurableResource):
                             path=relative_path,
                             id=item["id"],
                             size=item.get("size", 0),
-                            modified=item.get("lastModifiedDateTime", ""),
+                            modified=_parse_sharepoint_datetime(item.get("lastModifiedDateTime", "")),
                             content_type=item.get("file", {}).get("mimeType"),
                             etag=item.get("eTag"),
+                            created=_parse_sharepoint_datetime(item.get("createdDateTime", "")),
                         )
                     )
                 elif "folder" in item and not self._is_folder_excluded(item["name"]):
@@ -187,7 +194,6 @@ class SharePointResource(ConfigurableResource):
                     files.extend(self._get_files_from_url(subfolder_url))
 
             url = data.get("@odata.nextLink")
-
         return files
 
     def _get_files_from_folder(self, folder_id: str) -> list[MinimalSharePointFile]:
@@ -227,8 +233,8 @@ class SharePointResource(ConfigurableResource):
             path=relative_path,
             content=content_response.content,
             size=file_metadata["size"],
-            modified=file_metadata["lastModifiedDateTime"],
-            created=file_metadata["createdDateTime"],
+            modified=_parse_sharepoint_datetime(file_metadata["lastModifiedDateTime"]),
+            created=_parse_sharepoint_datetime(file_metadata["createdDateTime"]),
             content_type=file_metadata.get("file", {}).get("mimeType"),
             download_url=file_metadata.get("@microsoft.graph.downloadUrl"),
             full_url=file_metadata.get("webUrl", ""),
@@ -271,10 +277,11 @@ class SharePointResource(ConfigurableResource):
             name=file_metadata["name"],
             path=relative_path,
             size=file_metadata["size"],
-            modified=file_metadata["lastModifiedDateTime"],
+            modified=_parse_sharepoint_datetime(file_metadata["lastModifiedDateTime"]),
             content_type=file_metadata.get("file", {}).get("mimeType"),
             etag=file_metadata.get("eTag"),
             id=file_metadata["id"],
+            created=_parse_sharepoint_datetime(file_metadata["createdDateTime"]),
         )
 
     async def get_multiple_minimal_share_point_files(self, file_ids: list[str]) -> list[MinimalSharePointFile]:
