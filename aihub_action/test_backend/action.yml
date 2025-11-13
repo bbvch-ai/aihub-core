@@ -23,6 +23,10 @@ inputs:
     description: 'Python version to install'
     required: false
     default: '3.13'
+  huggingface_api_key:
+    description: 'HuggingFace API key for model downloads'
+    required: false
+    default: ''
 
 runs:
   using: "composite"
@@ -107,9 +111,10 @@ runs:
         docker compose -f docker-compose.dev.yml --env-file .env.dev pull --quiet ${{ inputs.docker_compose_services }} || true
 
     - name: Add HuggingFace token to environment variables
+      if: inputs.huggingface_api_key != ''
       shell: bash
       run: |
-        echo "HUGGINGFACE_API_KEY=${{ secrets.HUGGINGFACE_API_KEY }}" >> .env.dev
+        echo "HUGGINGFACE_API_KEY=${{ inputs.huggingface_api_key }}" >> .env.dev
 
     - name: Start Docker services (if needed)
       if: inputs.docker_compose_services != ''
