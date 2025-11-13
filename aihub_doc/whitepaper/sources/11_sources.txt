@@ -1,0 +1,25 @@
+# Source Documentation for Chapter 11: Integration und Interoperabilität
+# List paths relative to aihub_doc/docs/
+
+# API-Optionen
+2_platform/16_api/index.en.md
+2_platform/16_api/1_openai_compatible_api/index.en.md
+2_platform/16_api/2_agent_interaction_api/index.en.md
+2_platform/16_api/3_websocket_api/index.en.md
+2_platform/17_mcp/index.en.md
+
+# Kollaborations-Plattformen
+2_platform/15_slack_teams_integrations/index.en.md
+2_platform/15_slack_teams_integrations/1_setup/index.en.md
+
+# Externe Integrationen
+2_platform/20_external_integrations/index.en.md
+
+# User Interface & Chat Widget
+2_platform/4_user_interface/index.en.md
+2_platform/10_chat_ui/index.en.md
+
+# Enterprise-Identity-Integration & Authentication
+2_platform/11_access_management/index.en.md
+2_platform/11_access_management/1_authentication_setup/index.en.md
+2_platform/18_security/1_authentication/index.en.md

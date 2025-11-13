@@ -1,0 +1,30 @@
+# Source Documentation for Chapter 14: Business-Prozessautomatisierung
+# List paths relative to aihub_doc/docs/
+
+# Process Fundamentals
+2_platform/7_processes/index.en.md
+3_sdk/4_building_processes/index.en.md
+3_sdk/4_building_processes/1_process_fundamentals/index.en.md
+
+# Process Patterns & Delegation
+3_sdk/4_building_processes/2_delegation_patterns/index.en.md
+3_sdk/4_building_processes/3_external_process_tools/index.en.md
+
+# Process Observation & Monitoring
+3_sdk/4_building_processes/6_process_observation/index.en.md
+
+# External System Integration
+2_platform/20_external_integrations/index.en.md
+2_platform/16_api/index.en.md
+2_platform/16_api/4_dynamic_endpoints/index.en.md
+
+# Multi-Agent Systems for Processes
+3_sdk/2_building_agents/4_multi_agent_systems/index.en.md
+2_platform/5_agents/3_expert_asking_agent/index.en.md
+
+# Human-in-the-Loop for Processes
+3_sdk/2_building_agents/3_human_in_the_loop/index.en.md
+
+# Testing & Production
+3_sdk/4_building_processes/4_testing_processes/index.en.md
+3_sdk/4_building_processes/5_production_deployment/index.en.md
