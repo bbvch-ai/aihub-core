@@ -48,70 +48,69 @@ image_tags:
   llama_cpp:
     dev:
       cpu: llama.cpp:server-b6894
-      gpu: llama.cpp:server-cuda-b6894
+      gpu: llama.cpp:server-cuda-b7003
 
     build:
-      gpu: llama.cpp:server-cuda-b6894
+      gpu: llama.cpp:server-cuda-b7003
 
     local:
-      gpu: llama.cpp:server-cuda-b6894
+      gpu: llama.cpp:server-cuda-b7003
 
     nightly:
-      gpu: llama.cpp:server-cuda-b6894
+      gpu: llama.cpp:server-cuda-b7003
 
     latest:
-      gpu: llama.cpp:server-cuda-b6894
+      gpu: llama.cpp:server-cuda-b7003
 
   llama_cpp_embedding:
     dev:
       cpu: llama.cpp:server-b6894
-      gpu: llama.cpp:server-cuda-b6894
+      gpu: llama.cpp:server-cuda-b7003
 
     build:
-      gpu: llama.cpp:server-cuda-b6894
+      gpu: llama.cpp:server-cuda-b7003
 
     local:
-      gpu: llama.cpp:server-cuda-b6894
+      gpu: llama.cpp:server-cuda-b7003
 
     nightly:
-      gpu: llama.cpp:server-cuda-b6894
+      gpu: llama.cpp:server-cuda-b7003
 
     latest:
-      gpu: llama.cpp:server-cuda-b6894
+      gpu: llama.cpp:server-cuda-b7003
 
   llama_cpp_reranker:
     dev:
       cpu: llama.cpp:server-b6894
-      gpu: llama.cpp:server-cuda-b6894
+      gpu: llama.cpp:server-cuda-b7003
 
     build:
-      gpu: llama.cpp:server-cuda-b6894
+      gpu: llama.cpp:server-cuda-b7003
 
     local:
-      gpu: llama.cpp:server-cuda-b6894
+      gpu: llama.cpp:server-cuda-b7003
 
     nightly:
-      gpu: llama.cpp:server-cuda-b6894
+      gpu: llama.cpp:server-cuda-b7003
 
     latest:
-      gpu: llama.cpp:server-cuda-b6894
+      gpu: llama.cpp:server-cuda-b7003
 
   llama_cpp_docling:
     dev:
-      cpu: llama.cpp:server-b6894
-      gpu: llama.cpp:server-cuda-b6894
+      gpu: llama.cpp:server-cuda-b7003
 
     build:
-      gpu: llama.cpp:server-cuda-b6894
+      gpu: llama.cpp:server-cuda-b7003
 
     local:
-      gpu: llama.cpp:server-cuda-b6894
+      gpu: llama.cpp:server-cuda-b7003
 
     nightly:
-      gpu: llama.cpp:server-cuda-b6894
+      gpu: llama.cpp:server-cuda-b7003
 
     latest:
-      gpu: llama.cpp:server-cuda-b6894
+      gpu: llama.cpp:server-cuda-b7003
 
   speaches:
     dev:
