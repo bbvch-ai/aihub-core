@@ -78,10 +78,8 @@ ENV DAGSTER_HOME=/dagster_home
 # Set the working directory
 WORKDIR /app
 
-# Copy application code and configuration files (with correct ownership)
 COPY --from=builder --chown="$USERNAME:$USERNAME" /app /app
 
-# Switch to non-root user
 USER $USERNAME
 
 WORKDIR "$DAGSTER_HOME"
