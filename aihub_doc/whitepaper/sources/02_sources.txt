@@ -1,0 +1,6 @@
+# Source Documentation for Chapter 02: Platform Overview
+# List paths relative to aihub_doc/docs/
+
+1_vision_and_positioning/1_introduction/2_our_solution/index.en.md
+2_platform/2_architecture/1_core_components/index.en.md
+2_platform/2_architecture/2_infrastructure_layers/index.en.md
