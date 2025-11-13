@@ -22,7 +22,7 @@ RUN apt-get update && \
     git \
     make \
     openssh-client && \
-    curl -sSL https://install.python-poetry.org | python3 - --version ${POETRY_VERSION} && \
+    curl -sSL https://install.python-poetry.org | python3 - --version "${POETRY_VERSION}" && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -38,16 +38,16 @@ COPY aihub_lib ./aihub_lib
 
 COPY Makefile switch_dependencies.py pyproject.toml ./
 
-RUN poetry install
-RUN make use-local-core
-RUN rm Makefile switch_dependencies.py pyproject.toml
-
+# Install dependencies and clean up in single layer
+RUN poetry install --without dev && \
+    make use-local-core && \
+    rm Makefile switch_dependencies.py pyproject.toml && \
+    cd /app/aihub_agent && \
+    poetry install && \
+    rm -rf ~/.cache/pypoetry ~/.cache/pip /tmp/poetry_cache
 
 # Set the working directory
 WORKDIR /app/aihub_agent
-RUN poetry install
-
-RUN rm -rf ~/.cache/pypoetry ~/.cache/pip /tmp/poetry_cache
 
 
 # Runtime stage
@@ -75,40 +75,28 @@ ARG USERNAME=user
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
-# Create user group and user
+# Create user group, install runtime dependencies in single layer
 RUN groupadd --gid "$USER_GID" "$USERNAME" && \
-    useradd --uid "$USER_UID" --gid "$USER_GID" -m -s /bin/bash "$USERNAME"
-
-# Install system dependencies
-RUN apt-get update && \
+    useradd --uid "$USER_UID" --gid "$USER_GID" -m -s /bin/bash "$USERNAME" && \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
     ca-certificates \
-    curl \
-    iputils-ping \
-    libasound2 \
-    make \
-    sudo \
-    tree \
-    vim && \
-    curl -sSL https://install.python-poetry.org | python3 - --version ${POETRY_VERSION} && \
+    curl && \
+    curl -sSL https://install.python-poetry.org | python3 - --version "${POETRY_VERSION}" && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
-# Give sudo access to the user
-RUN echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/"$USERNAME" && \
-    chmod 0440 /etc/sudoers.d/"$USERNAME"
 
 # Set the working directory
 WORKDIR /app
 
 # Copy only the necessary code from the builder stage
-COPY --from=builder /app /app
+COPY --from=builder --chown="$USERNAME:$USERNAME" /app /app
 
 # Switch to non-root user
-USER $USERNAME
+USER "$USERNAME"
 
 # Set the working directory
 WORKDIR /app/aihub_agent
 
 # Start the server using Makefile
-ENTRYPOINT exec poetry run python -m app.$AGENT_NAME.main
+ENTRYPOINT ["sh", "-c", "exec poetry run python -m \"app.${AGENT_NAME}.main\""]
