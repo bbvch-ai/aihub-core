@@ -5,7 +5,7 @@ from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
-from fastapi import Request, Security
+from fastapi import Request, Security, HTTPException
 
 from aihub_api.routes.docling.DoclingService import DoclingService
 
@@ -53,6 +53,6 @@ class DoclingController(Controller):
                 return await DoclingService.convert_from_bytes(content=body, filename=filename)
             except Exception as e:
                 logger.error(f"Error processing document: {e}", exc_info=True)
-                return {"error": str(e)}
+                raise HTTPException(status_code=500, detail="Error processing document")
 
         return self
