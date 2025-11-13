@@ -1,15 +1,15 @@
-# Chapter 02: Platform Overview - The Swiss AI-Hub Solution
+# Kapitel 02: Plattform-Überblick - Die Swiss AI-Hub-Lösung
 
-## Chapter Objective
-Write a comprehensive platform introduction (400-600 words) that answers "What is Swiss AI-Hub?" for business decision makers. This chapter provides the high-level solution overview and establishes the platform's core value proposition.
+## Kapitelziel
+Erklären Sie, was Swiss AI-Hub ist und wie es die in Kapitel 01 genannten Herausforderungen löst (600 Wörter, 2 Seiten).
 
-**IMPORTANT**: Follow the guidelines in `general_prompt.md` for text flow, structure, and business questions. This chapter is **very short** (400-600 words).
+**WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **kurz** (600 Wörter).
 
-## Business Dimensions (Priority for this chapter)
-1. **ALL DIMENSIONS** - Brief mention as solution overview
-2. Focus: How the platform solves the problems mentioned in Chapter 01
+## Business-Dimensionen (Priorität für dieses Kapitel)
+1. **ALLE DIMENSIONEN** - Kurze Erwähnung als Lösungsüberblick
+2. Fokus: Wie die Plattform die in Kap. 01 genannten Probleme löst
 
-**Address these dimensions explicitly** with concrete answers to business questions.
+**Behandeln Sie diese Dimensionen explizit** mit konkreten Antworten auf Business-Fragen.
 
 ## Target Audience
 - Business executives evaluating the platform
