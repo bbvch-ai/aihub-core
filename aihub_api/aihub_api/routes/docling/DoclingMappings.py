@@ -1,5 +1,6 @@
 """
-These mappings are copied from docling.datamodel.base_models
+These mappings are copied from docling.datamodel.base_models.
+We do not want to import docling here because it is very heavy.
 """
 
 from enum import Enum
