@@ -1,0 +1,8 @@
+# Source Documentation for Chapter 05: Transparent Agents
+# List paths relative to aihub_doc/docs/
+
+2_platform/5_agents/1_fundamentals/index.en.md
+2_platform/5_agents/2_rag_agent/index.en.md
+2_platform/5_agents/3_expert_asking_agent/index.en.md
+3_sdk/2_building_agents/3_human_in_the_loop/index.en.md
+2_platform/10_chat_ui/9_feedback/index.en.md

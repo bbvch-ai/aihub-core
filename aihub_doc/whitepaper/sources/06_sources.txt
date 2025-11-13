@@ -1,0 +1,6 @@
+# Source Documentation for Chapter 06: Process Automation
+# List paths relative to aihub_doc/docs/
+
+2_platform/7_processes/index.en.md
+3_sdk/4_building_processes/index.en.md
+2_platform/20_external_integrations/index.en.md

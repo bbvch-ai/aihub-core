@@ -1,0 +1,7 @@
+# Source Documentation for Chapter 04: Knowledge Management
+# List paths relative to aihub_doc/docs/
+
+2_platform/8_knowledges/index.en.md
+2_platform/6_pipelines/1_fundamentals/index.en.md
+2_platform/6_pipelines/2_rag_ingestion_pipeline/index.en.md
+2_platform/5_agents/2_rag_agent/index.en.md
