@@ -243,7 +243,7 @@ generate_chapter() {
                 echo -e "${YELLOW}⏳ Waiting ${RETRY_DELAY}s before retry...${NC}"
                 sleep $RETRY_DELAY
             fi
-            ((attempt++))
+            attempt=$((attempt + 1))
         fi
     done
 
@@ -326,10 +326,10 @@ main() {
         echo ""
 
         if generate_chapter "$chapter_id"; then
-            ((success_count++))
+            success_count=$((success_count + 1))
             echo -e "${GREEN}✓ Chapter $chapter_id completed successfully${NC}"
         else
-            ((fail_count++))
+            fail_count=$((fail_count + 1))
             failed_chapters+=("$chapter_id")
             echo -e "${RED}✗ Chapter $chapter_id failed${NC}"
         fi
