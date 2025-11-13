@@ -1,77 +1,31 @@
 # Kapitel 08: Sicherheitsarchitektur
 
 ## Kapitelziel
-Erklären Sie die mehrschichtige Sicherheitsarchitektur der Plattform (1300-1800 Wörter). Fokus auf konkrete Schutzmechanismen und wie sie Schweizer Organisationen vor Bedrohungen schützen.
+Erklären Sie die mehrschichtige Sicherheitsarchitektur der Plattform mit Fokus auf konkrete Schutzmechanismen und wie sie Schweizer Organisationen vor Bedrohungen schützen (900 Wörter, 3 Seiten).
 
-**WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **lang** (1300-1800 Wörter).
-
+**WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **mittel** (900 Wörter).
 
 ## Business-Dimensionen (Priorität für dieses Kapitel)
-1. **SICHERHEIT** - SEHR WICHTIG: E2E-Verschlüsselung, Zero-Trust, Network Security
-2. **DATENSCHUTZ** - Sehr wichtig: Data-at-Rest, Data-in-Transit, Key Management
-3. **INTEGRATION** - Wichtig: Enterprise SSO, Security Monitoring
+1. **SICHERHEIT** - SEHR WICHTIG: E2E-Verschlüsselung, Zero-Trust, Network Security, Angriffsprävention
+2. **DATENSCHUTZ** - Sehr wichtig: Data-at-Rest, Data-in-Transit, Key Management, PII-Protection
+3. **INTEGRATION** - Wichtig: Enterprise SSO, Security Monitoring, API-Security
 
 **Behandeln Sie diese Dimensionen explizit** mit konkreten Antworten auf Business-Fragen.
 
-## Hauptthemen
+## Themen und Inhalte
 
-### 8.1 Authentifizierung und Autorisierung
-- Enterprise SSO: OAuth2/OIDC-Integration mit Azure AD und anderen Providern
-- Multi-Faktor-Authentifizierung: Via integriertem Identity Provider
-- API-Token-Management: Sichere programmatische Zugriffe
-- Session-Management: Sichere Session-Handhabung mit Tokens
-- Autorisierung: Feinkörnige Berechtigungsprüfung bei jedem Zugriff
+Beschreiben Sie folgende Sicherheitsthemen und deren geschäftlichen Nutzen:
 
-**Geschäftlicher Nutzen**: Enterprise-Grade-Sicherheit, zentrale Identity, Compliance
+- **Authentifizierung und Autorisierung**: Enterprise SSO (OAuth2/OIDC mit Azure AD, Keycloak), Multi-Faktor-Authentifizierung, API-Token-Management, Session-Management, feinkörnige Berechtigungsprüfung
+- **Datenschutz und Verschlüsselung**: SSL/TLS für Datenübertragung, Data-at-Rest-Encryption, Transparent Data Encryption (TDE), Disk Encryption, Key Management (Azure Key Vault, HSM)
+- **Input-Validierung und Angriffsprävention**: Schutz gegen Injection-Angriffe (SQL, Command, XSS), Malware-Scanning bei Dokument-Upload, APT-Detection, Prompt-Injection-Defense, Rate-Limiting, Security Guards für Agent-Validierung
+- **Netzwerksicherheit**: Container-Isolation, Network Policies, Firewall-Regeln (Ingress/Egress), Reverse Proxy (Traefik), Air-Gapped Deployment für sensible Umgebungen
+- **Datenschutz und Anonymisierung**: PII-Detection mit Presidio-Integration, Anonymisierung vor LLM-Verarbeitung, Prompt-Privacy-Mechanismen, Multi-Tenant-Architektur mit strikter Tenant-Trennung
+- **Security Operations**: Regelmäßige Penetrationstests durch Drittanbieter, Sicherheitsaudits, Vulnerability Management, Security Monitoring, Incident-Response-Prozesse
 
-### 8.2 Datenschutz und Verschlüsselung
-- SSL/TLS: Ende-zu-Ende-Verschlüsselung während Datenübertragung
-- Data at Rest Encryption: Verschlüsselte Speicherung für alle persistenten Daten
-- Transparent Data Encryption (TDE): Datenbank-Ebene Verschlüsselung
-- Disk Encryption: Verschlüsselte Dateisysteme
-- Key Management: Sichere Schlüsselspeicherung (Azure Key Vault, Docker Secrets)
+Fokussieren Sie auf Defense-in-Depth-Ansatz, konkrete Schutzmechanismen und wie diese Schweizer Compliance-Anforderungen (revDSG, ISO 27001) erfüllen.
 
-**Geschäftlicher Nutzen**: Datenvertraulichkeit, Compliance mit Verschlüsselungsanforderungen
-
-### 8.3 Input-Validierung und Angriffsprävention
-- Input-Validierung: Schutz gegen Injection-Angriffe (SQL, Command, XSS)
-- Malware-Scanning: Während Ingest-Prozess, Dokumente auf Bedrohungen prüfen (Malware, APT)
-- Malware-Upload-Prevention: Mechanismen zur Verhinderung bösartiger Datei-Uploads
-- Prompt Injection Defense: Verhindert Benutzer-Instruktionen zu bösartigem Verhalten
-- Rate Limiting: Verhindert Missbrauch und DoS-Angriffe
-- Security Guards: Agent-Level-Validierung von Inputs und Outputs
-
-**Geschäftlicher Nutzen**: Angriffsprävention, Systemintegrität, Benutzerschutz
-
-### 8.4 Netzwerksicherheit
-- Container-Isolation: Netzwerk-Segmentierung zwischen Services
-- Network Policies: Kubernetes Network Policies für Traffic-Kontrolle
-- Firewall-Regeln: Ingress/Egress-Traffic-Kontrolle
-- Reverse Proxy: Traefik für sicheren externen Zugriff
-- Air-Gapped Deployment: Komplette Netzwerk-Isolation-Option für sensible Umgebungen
-
-**Geschäftlicher Nutzen**: Defense in Depth, reduzierte Angriffsfläche, Compliance mit Netzwerksicherheitsanforderungen
-
-### 8.5 Datenschutz und Anonymisierung
-- PII-Detection: Presidio-Integration für automatische Erkennung sensibler Daten
-- Anonymisierung vor Verarbeitung: Scannen und Schwärzen sensibler Daten vor LLM-Verarbeitung
-- Prompt-Privacy-Mechanismen: Verhinderung sensibler Daten in Prompts
-- Anonymisierbarkeit: Keine Rückschlüsse auf interne Benutzer möglich
-- Sicherstellung: Nutzerdaten können nicht für Modellverbesserung missbraucht werden
-- Daten-Isolation: Multi-Tenant-Architektur mit strikter Tenant-Trennung
-
-**Geschäftlicher Nutzen**: Privacy-Schutz, GDPR-Compliance, Risikominderung
-
-### 8.6 Security Operations
-- Regelmässige Penetrationstests: Unabhängige Drittanbieter-Security-Audits
-- Sicherheitsaudits: Regelmässige Überprüfung durch unabhängige Dritte
-- Vulnerability Management: Patch-Management und Security-Updates
-- Security Monitoring: Kontinuierliche Bedrohungserkennung
-- Incident Response: Definierte Verfahren für Sicherheitsvorfälle
-
-**Geschäftlicher Nutzen**: Proaktive Sicherheit, kontinuierliche Verbesserung, Incident-Bereitschaft
-
-## Kernfragen, die Leser beantworten möchten
+## Business-Fragen, die das Kapitel beantwortet
 
 ### Authentifizierung und Zugriff
 1. Wie schützt die Plattform vor unbefugtem Zugriff?
@@ -82,7 +36,7 @@ Erklären Sie die mehrschichtige Sicherheitsarchitektur der Plattform (1300-1800
 
 ### Verschlüsselung
 6. Sind Daten während der Übertragung verschlüsselt (SSL/TLS)?
-7. Werden gespeicherte Daten verschlüsselt (Data at Rest)?
+7. Werden gespeicherte Daten verschlüsselt (Data-at-Rest)?
 8. Wie werden Verschlüsselungsschlüssel verwaltet?
 9. Wird Verschlüsselung auf Datenbank-Ebene unterstützt (TDE)?
 
@@ -114,9 +68,33 @@ Erklären Sie die mehrschichtige Sicherheitsarchitektur der Plattform (1300-1800
 28. Welche Netzwerk-Isolation gibt es zwischen Komponenten?
 
 ### Security Operations
-29. Werden regelmässige Penetrationstests durchgeführt?
+29. Werden regelmäßige Penetrationstests durchgeführt?
 30. Wer führt Sicherheitsaudits durch (intern oder Dritte)?
 31. Wie werden Sicherheitslücken identifiziert und behoben?
 32. Wie wird kontinuierlich auf Bedrohungen überwacht?
 33. Gibt es definierte Incident-Response-Prozesse?
 34. Wie werden Security-Updates eingespielt?
+
+## Relevante RFP-Anforderungen
+
+Während des natürlichen Schreibens sicherstellen, dass das Kapitel diese Anforderungen addressiert:
+
+- **"Enterprise SSO (OAuth2/OIDC, Azure AD, Keycloak)"** ✓
+- **"Multi-Faktor-Authentifizierung (MFA)"** ✓
+- **"SSL/TLS-Verschlüsselung für Datenübertragung"** ✓
+- **"Data-at-Rest-Encryption"** ✓
+- **"Transparent Data Encryption (TDE)"** ✓
+- **"Key Management (Azure Key Vault, HSM)"** ✓
+- **"Schutz gegen Injection-Angriffe (SQL, XSS, Command)"** ✓
+- **"Malware-Scanning und APT-Detection"** ✓
+- **"Prompt-Injection-Defense"** ✓
+- **"Rate-Limiting gegen DoS/DDoS"** ✓
+- **"Container-Isolation und Network Policies"** ✓
+- **"Firewall-Regeln (Ingress/Egress)"** ✓
+- **"Air-Gapped Deployment-Option"** ✓
+- **"PII-Detection und Anonymisierung (Presidio)"** ✓
+- **"Multi-Tenant-Isolation"** ✓
+- **"LLM auf isolierter und sicherer Infrastruktur"** ✓
+- **"Regelmäßige Penetrationstests durch Drittanbieter"** ✓
+- **"Vulnerability Management und Patch-Management"** ✓
+- **"Security Monitoring und Incident Response"** ✓
