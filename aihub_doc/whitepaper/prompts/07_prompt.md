@@ -1,11 +1,22 @@
 # Kapitel 07: Administration und Governance
 
 ## Kapitelziel
-Erklären Sie, wie Administratoren die Plattform verwalten, überwachen und steuern (6-8 Seiten, 2400-3200 Wörter). Dies ist ein umfangreiches Kapitel, das alle administrativen Aspekte abdeckt.
+Erklären Sie, wie Administratoren die Plattform verwalten, überwachen und steuern (1300-1800 Wörter). Dies ist ein umfangreiches Kapitel, das alle administrativen Aspekte abdeckt.
+
+**WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **lang** (1300-1800 Wörter).
+
+
+## Business-Dimensionen (Priorität für dieses Kapitel)
+1. **MANAGEMENT** - SEHR WICHTIG: Benutzer, Rollen, Policies, Budgets
+2. **KOSTEN** - Sehr wichtig: Cost Control, Budget-Limits, Tracking
+3. **DATENSCHUTZ** - Sehr wichtig: RBAC, granulare Zugriffskontrolle
+4. **SICHERHEIT** - Wichtig: SSO/Azure AD, Session Management
+
+**Behandeln Sie diese Dimensionen explizit** mit konkreten Antworten auf Business-Fragen.
 
 ## Hauptthemen
 
-### 7.1 Benutzer- und Zugriffsverwaltung (1-1.5 Seiten)
+### 7.1 Benutzer- und Zugriffsverwaltung
 - SSO/OAuth Integration: Azure AD, Keycloak, andere OIDC/SAML-Provider
 - Protokoll-Unterstützung:
   - Backend Admins (On-Prem): Kerberos, SAML, OIDC
@@ -19,7 +30,7 @@ Erklären Sie, wie Administratoren die Plattform verwalten, überwachen und steu
 
 **Geschäftlicher Nutzen**: Enterprise-Authentifizierung, Sicherheit, zentrale Identitätsverwaltung
 
-### 7.2 Rollenbasierte Zugriffskontrolle (RBAC) (1-1.5 Seiten)
+### 7.2 Rollenbasierte Zugriffskontrolle (RBAC)
 - RBAC-Prinzip: Rollenbasierte Zugriffskontrolle für sichere Aufgabenverteilung
 - Kundenseitiger Admin: Customer-side Admin-Rolle (nicht nur Platform-Admin)
 - Datenquellen-Zugriffskontrolle: Berechtigungen steuern Zugriff auf RAG-Quellen
@@ -29,7 +40,7 @@ Erklären Sie, wie Administratoren die Plattform verwalten, überwachen und steu
 
 **Geschäftlicher Nutzen**: Sicherheit, Compliance, Least-Privilege-Access, effiziente Administration
 
-### 7.3 Disclaimer und Consent-Management (0.5 Seiten)
+### 7.3 Disclaimer und Consent-Management
 - Custom Disclaimer-Ausgabe: Individuell erstellte und verwaltete Disclaimer
 - Session-spezifische Speicherung: Nutzerantwort wird per Session getrackt
 - Compliance-Tracking: Vollständiger Audit-Trail der Nutzer-Einwilligung
@@ -37,7 +48,7 @@ Erklären Sie, wie Administratoren die Plattform verwalten, überwachen und steu
 
 **Geschäftlicher Nutzen**: Rechtliche Compliance, Risikominderung, Informed Consent
 
-### 7.4 Cost Tracking und Budget-Management (1 Seite)
+### 7.4 Cost Tracking und Budget-Management
 - Echtzeit-Kostentracking: LiteLLM-basiertes Tracking über alle Modell-Provider
 - Token-Usage-Visibility: Prompt, Completion, Embedding Tokens getrackt
 - Per-User-Budgets: Ausgabelimits pro Benutzer oder Team setzen
@@ -48,7 +59,7 @@ Erklären Sie, wie Administratoren die Plattform verwalten, überwachen und steu
 
 **Geschäftlicher Nutzen**: Budgetkontrolle, Kostenvorhersagbarkeit, informierte Entscheidungen
 
-### 7.5 System-Monitoring und Observability (0.5-1 Seite)
+### 7.5 System-Monitoring und Observability
 - Health Dashboards: Komponentenstatus, Performance-Metriken
 - Performance Monitoring: Response Times, Throughput, Error Rates
 - Ressourcen-Monitoring: CPU, Memory, Storage-Auslastung
@@ -57,7 +68,7 @@ Erklären Sie, wie Administratoren die Plattform verwalten, überwachen und steu
 
 **Geschäftlicher Nutzen**: Proaktive Problemerkennung, Kapazitätsplanung, Service-Qualität
 
-### 7.6 Umfassende Protokollierung und Audit-Trails (1.5-2 Seiten)
+### 7.6 Umfassende Protokollierung und Audit-Trails (1300-1800 Wörter)
 - Log-Rotation: Konfigurierbare Rotationsintervalle, Speichergrössen, Aufbewahrungszeiträume
 - Log-Kategorien:
   - Infrastruktur-Logs (Syslog, Container Logs, K8s Events, Ressourcenverbrauch)
@@ -76,7 +87,7 @@ Erklären Sie, wie Administratoren die Plattform verwalten, überwachen und steu
 
 **Geschäftlicher Nutzen**: Compliance, Debugging, Security-Analyse, Betriebsintelligenz
 
-### 7.7 Content und Qualitätsmanagement (0.5-1 Seite)
+### 7.7 Content und Qualitätsmanagement
 - Feedback-Sammlung: Eingebaute Feedback-Mechanismen (Thumbs Up/Down, Kommentare)
 - Qualitätsmetriken: Tracking von Antwortqualität und Nutzerzufriedenheit
 - Bias-Monitoring: Erkennung und Tracking von Biases in AI-Antworten
@@ -86,7 +97,7 @@ Erklären Sie, wie Administratoren die Plattform verwalten, überwachen und steu
 
 **Geschäftlicher Nutzen**: Kontinuierliche Verbesserung, Qualitätssicherung, Responsible AI
 
-### 7.8 Modell- und Retraining-Management (0.5-1 Seite)
+### 7.8 Modell- und Retraining-Management
 - Automatisiertes Retraining: Basierend auf neuen Daten und Nutzerfeedback
 - Schwachstellen-Erkennung: Verbesserungsbereiche identifizieren
 - Datenqualitäts-Enforcement: Integration nur hochwertiger Daten

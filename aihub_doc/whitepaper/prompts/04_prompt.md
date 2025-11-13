@@ -1,11 +1,22 @@
 # Kapitel 04: Wissensmanagement und RAG
 
 ## Kapitelziel
-Erklären Sie, wie Organisationen ihr bestehendes Wissen in die Plattform integrieren und wie die KI darauf zugreift (5-6 Seiten, 2000-2400 Wörter). Fokus auf RAG (Retrieval-Augmented Generation) als Kernfähigkeit.
+Erklären Sie, wie Organisationen ihr bestehendes Wissen in die Plattform integrieren und wie die KI darauf zugreift (1300-1800 Wörter). Fokus auf RAG (Retrieval-Augmented Generation) als Kernfähigkeit.
+
+**WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **lang** (1300-1800 Wörter).
+
+
+## Business-Dimensionen (Priorität für dieses Kapitel)
+1. **DATENSCHUTZ** - SEHR WICHTIG: Zugriffskontrolle, Collection-Scoping
+2. **SICHERHEIT** - Wichtig: Document-Level Security
+3. **INTEGRATION** - Wichtig: SharePoint-Sync, Auto-Crawling
+4. **MANAGEMENT** - Wichtig: Automatische Pipelines, minimaler Aufwand
+
+**Behandeln Sie diese Dimensionen explizit** mit konkreten Antworten auf Business-Fragen.
 
 ## Hauptthemen
 
-### 4.1 Wissensorganisation (1 Seite)
+### 4.1 Wissensorganisation
 - Dreistufige Hierarchie: Knowledge Databases → Namespaces (Collections) → Documents
 - Isolationsgrenzen zwischen Abteilungen/Projekten
 - Mehrsprachige Unterstützung
@@ -13,7 +24,7 @@ Erklären Sie, wie Organisationen ihr bestehendes Wissen in die Plattform integr
 
 **Geschäftlicher Nutzen**: Strukturiertes Wissen, klare Verantwortlichkeiten, Data Governance
 
-### 4.2 Content-Erfassung und -Verwaltung (1 Seite)
+### 4.2 Content-Erfassung und -Verwaltung
 - Manuelle Uploads via Web-Interface
 - Automatische Synchronisation (SharePoint, Dateifreigaben)
 - Geplante Verarbeitung (nächtliche Pipelines)
@@ -21,7 +32,7 @@ Erklären Sie, wie Organisationen ihr bestehendes Wissen in die Plattform integr
 
 **Geschäftlicher Nutzen**: Bestehendes Wissen nutzen, lebendige Wissensbasis, minimaler manueller Aufwand
 
-### 4.3 Intelligente Dokumentenverarbeitung (1-1.5 Seiten)
+### 4.3 Intelligente Dokumentenverarbeitung
 - Parsing mit Docling (Text, Tabellen, Grafiken)
 - OCR-Fähigkeit für gescannte Dokumente und Bilder
 - Semantische Chunking-Strategien
@@ -31,7 +42,7 @@ Erklären Sie, wie Organisationen ihr bestehendes Wissen in die Plattform integr
 
 **Geschäftlicher Nutzen**: Umfassendes Dokumentenverständnis, präzises Retrieval, Zeitersparnis
 
-### 4.4 Retrieval und Frage-Antwort (1-1.5 Seiten)
+### 4.4 Retrieval und Frage-Antwort
 - RAG (Retrieval-Augmented Generation): KI-Antworten basierend auf Unternehmensdokumenten
 - Quellenangaben bei jeder Antwort
 - Collection-scoped Retrieval (nur autorisierte Dokumente)
@@ -40,7 +51,7 @@ Erklären Sie, wie Organisationen ihr bestehendes Wissen in die Plattform integr
 
 **Geschäftlicher Nutzen**: Vertrauenswürdige Antworten, Compliance, Nachvollziehbarkeit
 
-### 4.5 Kontinuierliche Updates und Qualität (0.5-1 Seite)
+### 4.5 Kontinuierliche Updates und Qualität
 - Versionstracking für sich ändernde Dokumente (Gesetze, Verordnungen)
 - Automatische Neuindexierung bei Updates
 - Feedback-Integration zur Verbesserung

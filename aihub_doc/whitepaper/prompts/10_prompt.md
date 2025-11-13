@@ -1,11 +1,22 @@
 # Kapitel 10: Deployment und Betrieb
 
 ## Kapitelziel
-Erklären Sie Deployment-Optionen, Skalierbarkeit, Hochverfügbarkeit und Wartung (6-7 Seiten, 2400-2800 Wörter). Zeigen Sie, dass die Plattform produktionsreif und enterprise-grade ist.
+Erklären Sie Deployment-Optionen, Skalierbarkeit, Hochverfügbarkeit und Wartung (900-1300 Wörter). Zeigen Sie, dass die Plattform produktionsreif und enterprise-grade ist.
+
+**WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **mittel** (900-1300 Wörter).
+
+
+## Business-Dimensionen (Priorität für dieses Kapitel)
+1. **MANAGEMENT** - Sehr wichtig: Einfacher Betrieb, Wartungsaufwand
+2. **KOSTEN** - Wichtig: Infrastrukturkosten, TCO verschiedener Deployment-Modelle
+3. **ZUKUNFTSSICHERHEIT** - Wichtig: Upgrade-Pfade, Langzeit-Wartbarkeit
+4. **INTEGRATION** - Wichtig: Enterprise-Infrastruktur-Anbindung
+
+**Behandeln Sie diese Dimensionen explizit** mit konkreten Antworten auf Business-Fragen.
 
 ## Hauptthemen
 
-### 10.1 Deployment-Optionen (1-1.5 Seiten)
+### 10.1 Deployment-Optionen
 - On-Premise: Deployment im Kundendatencenter mit vollständiger Kontrolle
 - Private Cloud: Deployment im Azure/AWS/GCP-Tenant des Kunden (Bring Your Own Cloud)
 - Swiss Cloud: Gehostet von Schweizer Provider (bbv) in Schweizer Rechenzentren
@@ -14,7 +25,7 @@ Erklären Sie Deployment-Optionen, Skalierbarkeit, Hochverfügbarkeit und Wartun
 
 **Geschäftlicher Nutzen**: Flexibilität, Regulatory Compliance, Infrastrukturwahl
 
-### 10.2 Schnelles Deployment (1 Seite)
+### 10.2 Schnelles Deployment
 - One-Command-Deployment: `docker compose up` startet gesamte Plattform (30 Minuten)
 - Vorkonfigurierte Komponenten: Alle Services integriert und ready
 - Batteries Included: Databases, LLM-Gateway, Pipelines, UI alles enthalten
@@ -23,7 +34,7 @@ Erklären Sie Deployment-Optionen, Skalierbarkeit, Hochverfügbarkeit und Wartun
 
 **Geschäftlicher Nutzen**: Schnelle Time-to-Value, niedrige technische Hürde, reduziertes Risiko
 
-### 10.3 Infrastruktur-Komponenten (1-1.5 Seiten)
+### 10.3 Infrastruktur-Komponenten
 - Container-Orchestrierung: Kubernetes-Support für Produktion (skalierbare Container-Orchestrierung)
 - Multi-Tenant-Architektur: Isolation für verschiedene Nutzergruppen/Organisationen
 - Datenbank-Support:
@@ -35,7 +46,7 @@ Erklären Sie Deployment-Optionen, Skalierbarkeit, Hochverfügbarkeit und Wartun
 
 **Geschäftlicher Nutzen**: Enterprise-Grade-Architektur, bewährte Technologie, Skalierbarkeit
 
-### 10.4 Skalierbarkeit und Performance (1-1.5 Seiten)
+### 10.4 Skalierbarkeit und Performance
 - Horizontal Scaling: Server hinzufügen wenn Nutzung wächst
 - Komponenten-Unabhängigkeit: AI-Processing unabhängig von UI skalieren
 - Performance SLA: 99.5% Uptime (Systemverfügbarkeit)
@@ -46,7 +57,7 @@ Erklären Sie Deployment-Optionen, Skalierbarkeit, Hochverfügbarkeit und Wartun
 
 **Geschäftlicher Nutzen**: Zukunftssichere Investition, vorhersagbare Performance, Business Continuity
 
-### 10.5 High Availability und Disaster Recovery (1 Seite)
+### 10.5 High Availability und Disaster Recovery
 - Robuste Disaster-Recovery-Strategien: Umfassende DR-Planung
 - Backup and Recovery: Automatisierte Backups für alle Data Stores
 - Datenbank-Backup: PostgreSQL, FerretDB, Valkey
@@ -58,7 +69,7 @@ Erklären Sie Deployment-Optionen, Skalierbarkeit, Hochverfügbarkeit und Wartun
 
 **Geschäftlicher Nutzen**: Business Continuity, Datenschutz, Betriebliche Resilienz
 
-### 10.6 Wartung und Updates (1 Seite)
+### 10.6 Wartung und Updates
 - Einfache Wartung: Leicht wartbar, ermöglicht einfache Updates
 - Security Patches: Regelmässige Security-Updates ohne Betriebsunterbrechung
 - Feature-Updates: Neue Fähigkeiten kontinuierlich hinzugefügt
@@ -71,7 +82,7 @@ Erklären Sie Deployment-Optionen, Skalierbarkeit, Hochverfügbarkeit und Wartun
 
 **Geschäftlicher Nutzen**: Aktuelle Technologie, Sicherheit, Feature-Zugriff, kontrollierter Wandel
 
-### 10.7 Netzwerk und Konnektivität (0.5 Seite)
+### 10.7 Netzwerk und Konnektivität
 - Outbound HTTPS: Für Cloud-LLM-Services (OpenAI, Azure, etc.)
 - Air-Gapped Option: Komplette Isolation möglich mit lokalen Modellen
 - Internes Networking: Service-to-Service-Kommunikation innerhalb Platform
@@ -80,7 +91,7 @@ Erklären Sie Deployment-Optionen, Skalierbarkeit, Hochverfügbarkeit und Wartun
 
 **Geschäftlicher Nutzen**: Flexible Netzwerk-Optionen, Sicherheit, Air-Gap-Fähigkeit
 
-### 10.8 Monitoring und Observability (0.5-1 Seite)
+### 10.8 Monitoring und Observability
 - OpenTelemetry: End-to-End Distributed Tracing
 - Phoenix AI Observability: LLM-spezifisches Monitoring (http://localhost:6006)
 - Metriken-Sammlung: Prometheus-kompatible Metriken

@@ -1,11 +1,21 @@
 # Kapitel 05: Transparente und Auditierbare AI-Agents
 
 ## Kapitelziel
-Erklären Sie, wie sich Swiss AI-Hub Agents von "Black-Box-AI" unterscheiden und warum Transparenz und Nachvollziehbarkeit für Unternehmen wichtig sind (5-6 Seiten, 2000-2400 Wörter).
+Erklären Sie, wie sich Swiss AI-Hub Agents von "Black-Box-AI" unterscheiden und warum Transparenz und Nachvollziehbarkeit für Unternehmen wichtig sind (1300-1800 Wörter).
+
+**WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **lang** (1300-1800 Wörter).
+
+
+## Business-Dimensionen (Priorität für dieses Kapitel)
+1. **DATENSCHUTZ** - SEHR WICHTIG: Transparenz, Auditierbarkeit (revDSG)
+2. **SICHERHEIT** - Wichtig: Workflow-Kontrolle, Nachvollziehbarkeit
+3. **ZUKUNFTSSICHERHEIT** - Wichtig: Erweiterbarkeit, Custom Workflows
+
+**Behandeln Sie diese Dimensionen explizit** mit konkreten Antworten auf Business-Fragen.
 
 ## Hauptthemen
 
-### 5.1 Workflow-basierte Agent-Architektur (1-1.5 Seiten)
+### 5.1 Workflow-basierte Agent-Architektur
 - Strukturierte Workflows statt autonomer Tool-Auswahl
 - Transparente Ausführung: Jeder Schritt sichtbar und auditierbar
 - Nachvollziehbares Reasoning: "Denkprozess" der KI einsehbar
@@ -14,7 +24,7 @@ Erklären Sie, wie sich Swiss AI-Hub Agents von "Black-Box-AI" unterscheiden und
 
 **Geschäftlicher Nutzen**: Vertrauen, Compliance, Audit-Bereitschaft, Risikominderung
 
-### 5.2 Eingebaute Agent-Fähigkeiten (1 Seite)
+### 5.2 Eingebaute Agent-Fähigkeiten
 - RAG Agents: Frage-Antwort mit Unternehmenswissen und Quellenangaben
 - Expert-Asking Agents: Multi-Agent-Kollaboration
 - Conversational Agents: Natürlichsprachige Interaktion mit Kontext
@@ -22,7 +32,7 @@ Erklären Sie, wie sich Swiss AI-Hub Agents von "Black-Box-AI" unterscheiden und
 
 **Geschäftlicher Nutzen**: Sofortige Produktivität, keine Custom-Entwicklung für gängige Szenarien
 
-### 5.3 Human-in-the-Loop (HITL) (1-1.5 Seiten)
+### 5.3 Human-in-the-Loop (HITL)
 - Approval-Workflows: Agent pausiert und fordert menschliche Genehmigung an
 - Kontext-Erhaltung: Workflow setzt sich mit vollem Gedächtnis fort
 - Flexible Wartezeiten: Sekunden, Minuten, Stunden oder Tage
@@ -31,7 +41,7 @@ Erklären Sie, wie sich Swiss AI-Hub Agents von "Black-Box-AI" unterscheiden und
 
 **Geschäftlicher Nutzen**: Schrittweise Automatisierung, Risikomanagement, Compliance, menschliche Kontrolle
 
-### 5.4 Responsible AI Features (1 Seite)
+### 5.4 Responsible AI Features
 - Halluzinations-Minderung: Quellenangaben, Retrieval-Grounding, Confidence Scores
 - Confidence-Indikatoren: KI zeigt Unsicherheitslevel
 - Datenqualität-Handling: Erkennt und managt fehlende, widersprüchliche oder fehlerhafte Daten
@@ -40,7 +50,7 @@ Erklären Sie, wie sich Swiss AI-Hub Agents von "Black-Box-AI" unterscheiden und
 
 **Geschäftlicher Nutzen**: Vertrauenswürdige KI, Risikoreduktion, Qualitätssicherung
 
-### 5.5 Agent Governance (0.5-1 Seite)
+### 5.5 Agent Governance
 - Vordefinierte Antworten: Konfigurierbare Antworten auf spezifische Fragen/Keywords
 - Prompt Engineering: Domänenspezifische Anpassung (z.B. Schweizer Rechtssprache, Behördenterminologie)
 - Input-Validierung: Guards verhindern bösartige oder unangemessene Eingaben

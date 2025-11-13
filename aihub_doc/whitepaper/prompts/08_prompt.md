@@ -1,11 +1,21 @@
 # Kapitel 08: Sicherheitsarchitektur
 
 ## Kapitelziel
-Erklären Sie die mehrschichtige Sicherheitsarchitektur der Plattform (5-6 Seiten, 2000-2400 Wörter). Fokus auf konkrete Schutzmechanismen und wie sie Schweizer Organisationen vor Bedrohungen schützen.
+Erklären Sie die mehrschichtige Sicherheitsarchitektur der Plattform (1300-1800 Wörter). Fokus auf konkrete Schutzmechanismen und wie sie Schweizer Organisationen vor Bedrohungen schützen.
+
+**WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **lang** (1300-1800 Wörter).
+
+
+## Business-Dimensionen (Priorität für dieses Kapitel)
+1. **SICHERHEIT** - SEHR WICHTIG: E2E-Verschlüsselung, Zero-Trust, Network Security
+2. **DATENSCHUTZ** - Sehr wichtig: Data-at-Rest, Data-in-Transit, Key Management
+3. **INTEGRATION** - Wichtig: Enterprise SSO, Security Monitoring
+
+**Behandeln Sie diese Dimensionen explizit** mit konkreten Antworten auf Business-Fragen.
 
 ## Hauptthemen
 
-### 8.1 Authentifizierung und Autorisierung (1 Seite)
+### 8.1 Authentifizierung und Autorisierung
 - Enterprise SSO: OAuth2/OIDC-Integration mit Azure AD und anderen Providern
 - Multi-Faktor-Authentifizierung: Via integriertem Identity Provider
 - API-Token-Management: Sichere programmatische Zugriffe
@@ -14,7 +24,7 @@ Erklären Sie die mehrschichtige Sicherheitsarchitektur der Plattform (5-6 Seite
 
 **Geschäftlicher Nutzen**: Enterprise-Grade-Sicherheit, zentrale Identity, Compliance
 
-### 8.2 Datenschutz und Verschlüsselung (1 Seite)
+### 8.2 Datenschutz und Verschlüsselung
 - SSL/TLS: Ende-zu-Ende-Verschlüsselung während Datenübertragung
 - Data at Rest Encryption: Verschlüsselte Speicherung für alle persistenten Daten
 - Transparent Data Encryption (TDE): Datenbank-Ebene Verschlüsselung
@@ -23,7 +33,7 @@ Erklären Sie die mehrschichtige Sicherheitsarchitektur der Plattform (5-6 Seite
 
 **Geschäftlicher Nutzen**: Datenvertraulichkeit, Compliance mit Verschlüsselungsanforderungen
 
-### 8.3 Input-Validierung und Angriffsprävention (1-1.5 Seiten)
+### 8.3 Input-Validierung und Angriffsprävention
 - Input-Validierung: Schutz gegen Injection-Angriffe (SQL, Command, XSS)
 - Malware-Scanning: Während Ingest-Prozess, Dokumente auf Bedrohungen prüfen (Malware, APT)
 - Malware-Upload-Prevention: Mechanismen zur Verhinderung bösartiger Datei-Uploads
@@ -33,7 +43,7 @@ Erklären Sie die mehrschichtige Sicherheitsarchitektur der Plattform (5-6 Seite
 
 **Geschäftlicher Nutzen**: Angriffsprävention, Systemintegrität, Benutzerschutz
 
-### 8.4 Netzwerksicherheit (0.5-1 Seite)
+### 8.4 Netzwerksicherheit
 - Container-Isolation: Netzwerk-Segmentierung zwischen Services
 - Network Policies: Kubernetes Network Policies für Traffic-Kontrolle
 - Firewall-Regeln: Ingress/Egress-Traffic-Kontrolle
@@ -42,7 +52,7 @@ Erklären Sie die mehrschichtige Sicherheitsarchitektur der Plattform (5-6 Seite
 
 **Geschäftlicher Nutzen**: Defense in Depth, reduzierte Angriffsfläche, Compliance mit Netzwerksicherheitsanforderungen
 
-### 8.5 Datenschutz und Anonymisierung (1 Seite)
+### 8.5 Datenschutz und Anonymisierung
 - PII-Detection: Presidio-Integration für automatische Erkennung sensibler Daten
 - Anonymisierung vor Verarbeitung: Scannen und Schwärzen sensibler Daten vor LLM-Verarbeitung
 - Prompt-Privacy-Mechanismen: Verhinderung sensibler Daten in Prompts
@@ -52,7 +62,7 @@ Erklären Sie die mehrschichtige Sicherheitsarchitektur der Plattform (5-6 Seite
 
 **Geschäftlicher Nutzen**: Privacy-Schutz, GDPR-Compliance, Risikominderung
 
-### 8.6 Security Operations (0.5-1 Seite)
+### 8.6 Security Operations
 - Regelmässige Penetrationstests: Unabhängige Drittanbieter-Security-Audits
 - Sicherheitsaudits: Regelmässige Überprüfung durch unabhängige Dritte
 - Vulnerability Management: Patch-Management und Security-Updates

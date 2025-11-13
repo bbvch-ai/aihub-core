@@ -1,11 +1,21 @@
 # Kapitel 03: Benutzererfahrung und Interaktion
 
 ## Kapitelziel
-Beschreiben Sie die Benutzererfahrung der Plattform (6-8 Seiten, 2400-3200 Wörter): Was erleben Mitarbeiter bei der Nutzung? Fokus auf benutzerfreundliche Funktionen, multi-modale Eingaben, und konversationelle Features.
+Beschreiben Sie die Benutzererfahrung der Plattform (900-1300 Wörter): Was erleben Mitarbeiter bei der Nutzung? Fokus auf benutzerfreundliche Funktionen, multi-modale Eingaben, und konversationelle Features.
+
+**WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **mittel** (900-1300 Wörter).
+
+
+## Business-Dimensionen (Priorität für dieses Kapitel)
+1. **MANAGEMENT** - Sehr wichtig: Benutzerakzeptanz, Change Management
+2. **INTEGRATION** - Wichtig: Multi-Kanal-Zugriff (Teams, Slack, Web)
+3. **DATENSCHUTZ** - Wichtig: Transparenz über Datennutzung für Benutzer
+
+**Behandeln Sie diese Dimensionen explizit** mit konkreten Antworten auf Business-Fragen.
 
 ## Hauptthemen
 
-### 3.1 Intelligentes Chat-Interface für Endbenutzer (1-1.5 Seiten)
+### 3.1 Intelligentes Chat-Interface für Endbenutzer
 - Moderne ChatGPT-ähnliche Weboberfläche
 - Multi-Kanal-Zugang: Web, Microsoft Teams, Slack, E-Mail
 - Kontext-Erhaltung über Sitzungen hinweg
@@ -13,7 +23,7 @@ Beschreiben Sie die Benutzererfahrung der Plattform (6-8 Seiten, 2400-3200 Wört
 
 **Geschäftlicher Nutzen**: Niedrige Einstiegshürde, hohe Akzeptanz, Produktivitätssteigerung
 
-### 3.2 Multi-Modale Eingabe und Interaktion (1-1.5 Seiten)
+### 3.2 Multi-Modale Eingabe und Interaktion
 - **Texteingabe**: Freitext-Fragen mit Intent Recognition
 - **Spracheingabe**: Archivtaugliche Formate (WAV, MP3, AIFF, FLAC, ALAC)
 - **Dokument-Upload**: Drag-and-Drop für Dokumente
@@ -21,7 +31,7 @@ Beschreiben Sie die Benutzererfahrung der Plattform (6-8 Seiten, 2400-3200 Wört
 
 **Geschäftlicher Nutzen**: Barrierefreiheit, verschiedene Arbeitsstile unterstützt
 
-### 3.3 Konversationelle Features (1-1.5 Seiten)
+### 3.3 Konversationelle Features
 - Kontextbewusstsein über mehrere Gesprächsrunden
 - Letzte Eingabe nachträglich anpassen und neu generieren
 - Konfigurierbare Aufbewahrungszeiträume (kundendefiniert)
@@ -31,7 +41,7 @@ Beschreiben Sie die Benutzererfahrung der Plattform (6-8 Seiten, 2400-3200 Wört
 
 **Geschäftlicher Nutzen**: Natürliche Interaktion, Fehlerkorrektur, Datenschutz-Compliance
 
-### 3.4 Wissensintegration und Quellenangaben (1-1.5 Seiten)
+### 3.4 Wissensintegration und Quellenangaben
 - Fragen zu Unternehmensdokumenten stellen
 - Antworten mit direkten Quellverweisen erhalten
 - Quellverweise direkt aufrufbar
@@ -41,7 +51,7 @@ Beschreiben Sie die Benutzererfahrung der Plattform (6-8 Seiten, 2400-3200 Wört
 
 **Geschäftlicher Nutzen**: Vertrauenswürdige Antworten, nachprüfbare Informationen
 
-### 3.5 Mehrsprachigkeit und Lokalisierung (1-1.5 Seiten)
+### 3.5 Mehrsprachigkeit und Lokalisierung
 - Benutzeroberfläche in Deutsch, Englisch, Französisch, Italienisch
 - Fragen und Antworten in verschiedenen Sprachen
 - Übersetzungsqualität vergleichbar mit DeepL

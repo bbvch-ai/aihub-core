@@ -1,11 +1,21 @@
 # Kapitel 06: Geschäftsprozess-Automatisierung
 
 ## Kapitelziel
-Erklären Sie, wie die Plattform End-to-End-Geschäftsprozesse orchestriert, bei denen KI, Menschen und externe Systeme zusammenarbeiten (3-4 Seiten, 1200-1600 Wörter).
+Erklären Sie, wie die Plattform End-to-End-Geschäftsprozesse orchestriert, bei denen KI, Menschen und externe Systeme zusammenarbeiten (600-900 Wörter).
+
+**WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **kurz** (600-900 Wörter).
+
+
+## Business-Dimensionen (Priorität für dieses Kapitel)
+1. **KOSTEN** - Wichtig: Effizienzgewinne durch Automatisierung
+2. **INTEGRATION** - Sehr wichtig: Orchestrierung AI + Menschen + Systeme
+3. **MANAGEMENT** - Wichtig: Prozessüberwachung, Governance
+
+**Behandeln Sie diese Dimensionen explizit** mit konkreten Antworten auf Business-Fragen.
 
 ## Hauptthemen
 
-### 6.1 Prozess-Orchestrierung (1-1.5 Seiten)
+### 6.1 Prozess-Orchestrierung
 - Multi-Participant Processes: Agents + Menschen + externe Systeme arbeiten zusammen
 - Prozess-Templates: Vorgefertigte Workflows für gängige Szenarien
 - Prozess-Monitoring: Echtzeit-Einblick in Workflow-Status
@@ -14,7 +24,7 @@ Erklären Sie, wie die Plattform End-to-End-Geschäftsprozesse orchestriert, bei
 
 **Geschäftlicher Nutzen**: End-to-End-Automatisierung, reduzierte manuelle Arbeit, konsistente Ausführung
 
-### 6.2 Integration mit Geschäftssystemen (1-1.5 Seiten)
+### 6.2 Integration mit Geschäftssystemen
 - RPA-Integration: Power Automate, n8n, UiPath-Konnektivität
 - API-Integrationen: REST APIs, Webhooks für externe Systeme
 - ERP/CRM-Anbindung: Integration mit Geschäftsanwendungen
@@ -23,7 +33,7 @@ Erklären Sie, wie die Plattform End-to-End-Geschäftsprozesse orchestriert, bei
 
 **Geschäftlicher Nutzen**: Bestehende Investitionen nutzen, nahtloser Datenfluss, ganzheitliche Automatisierung
 
-### 6.3 Regelbasierte und KI-Hybrid-Systeme (0.5-1 Seite)
+### 6.3 Regelbasierte und KI-Hybrid-Systeme
 - Regelbasierte Systeme: Komplexe rechtliche und regulatorische Logik
 - KI-Augmentierung: KI schlägt Entscheidungen innerhalb von Regel-Frameworks vor
 - Compliance-Sicherstellung: Harte Regeln werden durchgesetzt, KI liefert Empfehlungen

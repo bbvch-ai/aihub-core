@@ -1,7 +1,16 @@
 # Chapter 01: The Business Challenge - AI in the Enterprise
 
 ## Chapter Objective
-Write a compelling problem statement (3-4 pages, 1200-1600 words) that resonates with business decision makers by explaining why implementing enterprise AI is difficult and why Swiss organizations face unique challenges. This chapter sets up the problem that Swiss AI-Hub solves.
+Write a compelling problem statement (400-600 words) that resonates with business decision makers by explaining why implementing enterprise AI is difficult and why Swiss organizations face unique challenges. This chapter sets up the problem that Swiss AI-Hub solves.
+
+**IMPORTANT**: Follow the guidelines in `general_prompt.md` for text flow, structure, and business questions. This chapter is **very short** (400-600 words).
+
+## Business Dimensions (Priority for this chapter)
+1. **KOSTEN** - Important: Hidden costs in fragmented solutions
+2. **MANAGEMENT** - Very important: Complexity of current AI landscapes
+3. **ZUKUNFTSSICHERHEIT** - Important: Vendor lock-in risks
+
+**Address these dimensions explicitly** with concrete answers to business questions.
 
 ## Target Audience
 - Business executives evaluating AI initiatives

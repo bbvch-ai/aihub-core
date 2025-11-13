@@ -1,7 +1,18 @@
 # Kapitel 00: Executive Summary
 
 ## Kapitelziel
-Schreiben Sie eine prägnante, hochrangige Zusammenfassung (2-3 Seiten, 800-1200 Wörter), die das Wesentliche von Swiss AI-Hub für C-Level-Führungskräfte erfasst.
+Schreiben Sie eine prägnante, hochrangige Zusammenfassung (600-900 Wörter), die das Wesentliche von Swiss AI-Hub für C-Level-Führungskräfte erfasst.
+
+**WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **kurz** und fokussiert.
+
+## Business-Dimensionen (Priorität für dieses Kapitel)
+Dieses Kapitel spricht ALLE 6 Dimensionen an (High-Level-Überblick):
+1. **KOSTEN** - Kurze Erwähnung: TCO-Vorteil, keine Per-User-Fees
+2. **DATENSCHUTZ** - Sehr wichtig: Schweizer Datensouveränität betonen
+3. **SICHERHEIT** - Kurze Erwähnung: Enterprise-Grade
+4. **MANAGEMENT** - Kurze Erwähnung: 30-Minuten-Deployment
+5. **ZUKUNFTSSICHERHEIT** - Wichtig: Open Source, Vendor-Neutralität
+6. **INTEGRATION** - Kurze Erwähnung: Produktionsreif, komplett
 
 ## Hauptbotschaften
 1. **Vollständige Plattform**: Produktionsreife Enterprise-AI-Infrastruktur, die Organisationen besitzen und kontrollieren
@@ -9,12 +20,12 @@ Schreiben Sie eine prägnante, hochrangige Zusammenfassung (2-3 Seiten, 800-1200
 3. **Open Source**: Apache 2.0 Lizenz, kein Vendor Lock-in, transparenter Betrieb
 4. **30 Minuten bis Produktion**: Schnelle Bereitstellung, sofort einsatzbereit
 
-## Inhaltsstruktur
+## Themen und Inhalte
 
-### Einleitung (0.5 Seiten)
+### Einleitung
 Die Herausforderung: Warum die meisten Organisationen Schwierigkeiten haben, AI vom Prototyp in die Produktion zu bringen. Der Schweizer Kontext: Datensouveränität, regulatorische Anforderungen, Vendor-Lock-in-Bedenken.
 
-### Was ist Swiss AI-Hub? (1 Seite)
+### Was ist Swiss AI-Hub?
 **Kernaussage**: Komplette Enterprise-AI-Plattform, die Organisationen selbst betreiben.
 
 Erklären Sie:
@@ -29,7 +40,7 @@ Erklären Sie:
 - Datensouveränität (Schweizer Hosting, vollständige Kontrolle)
 - Zukunftssicher (Open Source, vendor-neutral)
 
-### Schlüsselfähigkeiten (0.5-1 Seite)
+### Schlüsselfähigkeiten
 Kurzübersicht der wichtigsten Fähigkeiten:
 - **Chat-Interface**: Moderne Benutzeroberfläche für Mitarbeiter
 - **Knowledge Management**: RAG-basiertes Fragen-Antworten mit Quellenangaben
@@ -39,13 +50,13 @@ Kurzübersicht der wichtigsten Fähigkeiten:
 - **Compliance**: revDSG, GDPR, AI Act Vorbereitung
 - **Flexible Bereitstellung**: On-Premise, Private Cloud, oder Swiss Cloud
 
-### Warum Swiss AI-Hub anders ist (0.5 Seiten)
+### Warum Swiss AI-Hub anders ist
 Differenzierung von Alternativen:
 - vs. **Cloud AI Services**: Datensouveränität, keine laufenden API-Kosten
 - vs. **Frameworks**: Produktionsreif, nicht nur Code
 - vs. **Eigenentwicklung**: Schneller, bewährt, wartbar
 
-### Nächste Schritte (0.5 Seiten)
+### Nächste Schritte
 Wie man anfängt:
 1. Proof of Concept (30 Tage)
 2. Pilot-Deployment (kleine Gruppe, konkreter Use Case)

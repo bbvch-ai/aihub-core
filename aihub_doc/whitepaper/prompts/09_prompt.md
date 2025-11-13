@@ -1,11 +1,23 @@
 # Kapitel 09: Regulatorische Compliance und Datensouveränität
 
 ## Kapitelziel
-Erklären Sie, wie die Plattform Schweizer und europäische regulatorische Anforderungen erfüllt (6-7 Seiten, 2400-2800 Wörter). Dies ist ein kritisches Kapitel für Schweizer Organisationen.
+Erklären Sie, wie die Plattform Schweizer und europäische regulatorische Anforderungen erfüllt (1800-2100 Wörter). Dies ist ein kritisches Kapitel für Schweizer Organisationen.
+
+**WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **sehr lang** (1800-2100 Wörter).
+
+
+## Business-Dimensionen (Priorität für dieses Kapitel)
+1. **DATENSCHUTZ** - ABSOLUT KRITISCH: revDSG, FADP, DSGVO, AI Act
+2.   Dieser Dimension **30-50% mehr Raum** geben als anderen Kapiteln!
+3.   Schweizer Organisationen bewerten Datenschutz als Top-Priorität.
+4. **SICHERHEIT** - Sehr wichtig: Compliance-relevante Sicherheitskontrollen
+5. **ZUKUNFTSSICHERHEIT** - Wichtig: Regulatory Roadmap, AI Act Preparedness
+
+**Behandeln Sie diese Dimensionen explizit** mit konkreten Antworten auf Business-Fragen.
 
 ## Hauptthemen
 
-### 9.1 Schweizer Datensouveränität (1-1.5 Seiten)
+### 9.1 Schweizer Datensouveränität
 - Deployment-Flexibilität: On-Premise, Private Cloud (Schweiz), oder Swiss-hosted SaaS
 - Data Residency Guarantees: Vollständige Kontrolle über Datenstandort
 - Isolierte Infrastruktur: LLM und alle Komponenten auf isolierter Infrastruktur
@@ -14,7 +26,7 @@ Erklären Sie, wie die Plattform Schweizer und europäische regulatorische Anfor
 
 **Geschäftlicher Nutzen**: Schweizer Rechtskonformität, Risikominderung, regulatorisches Vertrauen
 
-### 9.2 Schweizerisches Datenschutzgesetz (revDSG) (1.5-2 Seiten)
+### 9.2 Schweizerisches Datenschutzgesetz (revDSG) (1800-2100 Wörter)
 - Datenschutzkonformer Betrieb: Plattform ermöglicht revDSG-konformen Betrieb
 - Privacy-by-Design: Datenschutz in Architektur von Grund auf verankert
 - Transparenzanforderungen: Klare Informationen über Datenverarbeitung
@@ -24,7 +36,7 @@ Erklären Sie, wie die Plattform Schweizer und europäische regulatorische Anfor
 
 **Geschäftlicher Nutzen**: Schweizer Regulatory Compliance, reduziertes rechtliches Risiko, Stakeholder-Vertrauen
 
-### 9.3 GDPR-Compliance (1-1.5 Seiten)
+### 9.3 GDPR-Compliance
 - Data Subject Access Requests: Handhabung von Anfragen auf Datenzugriff, Portabilität, Löschung
 - Right to be Forgotten: Komplette Nutzerdaten-Löschungs-Workflows
 - Data Portability: Export von Nutzerdaten in maschinenlesbaren Formaten
@@ -34,7 +46,7 @@ Erklären Sie, wie die Plattform Schweizer und europäische regulatorische Anfor
 
 **Geschäftlicher Nutzen**: EU-Marktzugang, Regulatory Compliance, reduzierte Haftung
 
-### 9.4 EU AI Act Überlegungen (1 Seite)
+### 9.4 EU AI Act Überlegungen
 - Transparenz: Workflow-basierte Agents mit nachvollziehbaren Schritten
 - Human Oversight: Human-in-the-Loop-Mechanismen eingebaut
 - Accuracy and Robustness: Testing-Frameworks, Qualitätsmonitoring
@@ -43,7 +55,7 @@ Erklären Sie, wie die Plattform Schweizer und europäische regulatorische Anfor
 
 **Geschäftlicher Nutzen**: Zukunftssicher, Regulatory Readiness, Wettbewerbsvorteil
 
-### 9.5 Ethische AI-Richtlinien (0.5-1 Seite)
+### 9.5 Ethische AI-Richtlinien
 - AI-Konvention Europarat: Ausrichtung an Council of Europe AI-Prinzipien
 - Schweizerische AI-Leitlinien: Berücksichtigung Schweizer AI-Richtlinien
 - AI Act der EU: Vorbereitung auf EU AI Act Anforderungen
@@ -51,7 +63,7 @@ Erklären Sie, wie die Plattform Schweizer und europäische regulatorische Anfor
 
 **Geschäftlicher Nutzen**: Ethische Compliance, Stakeholder-Vertrauen, öffentliches Vertrauen
 
-### 9.6 Datenaufbewahrung und Löschung (0.5-1 Seite)
+### 9.6 Datenaufbewahrung und Löschung
 - Konfigurierbare Retention Policies: Aufbewahrungsfristen pro Datentyp definieren
 - Automatische Ablauf: Thread Context (30 Tage), Run Context (30 Tage)
 - Manuelle Löschung: Benutzer können Sessions und Profil löschen
@@ -60,7 +72,7 @@ Erklären Sie, wie die Plattform Schweizer und europäische regulatorische Anfor
 
 **Geschäftlicher Nutzen**: Compliance, Speicheroptimierung, Privacy-Schutz
 
-### 9.7 Mehrsprachigkeit und Internationalisierung (0.5 Seite)
+### 9.7 Mehrsprachigkeit und Internationalisierung
 - UI-Sprachen: Deutsch, Englisch, Französisch, Italienisch
 - Multi-Language-Support: Nutzer-präferenz-basierte Interface-Sprache
 - Dokumentenverarbeitung: Multi-Language-Dokumentenverständnis
@@ -68,7 +80,7 @@ Erklären Sie, wie die Plattform Schweizer und europäische regulatorische Anfor
 
 **Geschäftlicher Nutzen**: Schweizer Marktanpassung, inklusiver Zugang, Regulatory Alignment
 
-### 9.8 Audit und Accountability (0.5-1 Seite)
+### 9.8 Audit und Accountability
 - Komplette Audit-Trails: Alle Nutzeraktionen und AI-Entscheidungen protokolliert
 - Timestamped Records: Jede Interaktion mit präzisen Zeitstempeln
 - Immutable Logs: Manipulationssichere Protokollierung für Compliance
