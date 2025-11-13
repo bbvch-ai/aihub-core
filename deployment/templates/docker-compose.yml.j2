@@ -550,7 +550,7 @@ services:
       --alias gemma-3-4b
       --port 8182
       --host 0.0.0.0
-      -c 4096
+      -c 2048
       {%- else %}
       -hf google/gemma-3-12b-it-qat-q4_0-gguf
       --hf-token ${HUGGINGFACE_API_KEY}
@@ -707,7 +707,7 @@ services:
       --host 0.0.0.0
       --max-model-len 8192
       --trust-remote-code
-      --gpu-memory-utilization 0.18
+      --gpu-memory-utilization 0.2
       --tensor-parallel-size 1
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
