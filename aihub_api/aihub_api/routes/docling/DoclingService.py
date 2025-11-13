@@ -3,13 +3,18 @@ import logging
 
 from aihub_lib.generative_ai.document.loaders.DoclingLoader import DoclingLoader
 
+from aihub_api.routes.docling.dto.DocumentConversionResponse import (
+    DocumentConversionMetadata,
+    DocumentConversionResponse,
+)
+
 logger = logging.getLogger(__name__)
 
 
 class DoclingService:
 
     @staticmethod
-    async def convert_from_bytes(content: bytes, filename: str) -> dict:
+    async def convert_from_bytes(content: bytes, filename: str) -> DocumentConversionResponse:
         logger.info(f"Converting document: {filename} ({len(content)} bytes)")
 
         file_content = base64.b64encode(content).decode("utf-8")
@@ -38,9 +43,7 @@ class DoclingService:
 
         logger.info(f"Document converted: {len(markdown_content)} chars")
 
-        return {
-            "page_content": markdown_content,
-            "metadata": {
-                "filename": filename,
-            },
-        }
+        return DocumentConversionResponse(
+            page_content=markdown_content,
+            metadata=DocumentConversionMetadata(filename=filename),
+        )

@@ -8,6 +8,7 @@ from aihub_lib.routes.Controller import Controller
 from fastapi import Request, Security, HTTPException
 
 from aihub_api.routes.docling.DoclingService import DoclingService
+from aihub_api.routes.docling.dto.DocumentConversionResponse import DocumentConversionResponse
 
 logger = logging.getLogger(__name__)
 
@@ -24,11 +25,13 @@ class DoclingController(Controller):
 
     def parse_document(self, route: str = "/process") -> "DoclingController":
 
-        @self.router.put(route, tags=self.tags, summary="Process document (OpenWebUI)")
+        @self.router.put(
+            route, tags=self.tags, summary="Process document (OpenWebUI)", response_model=DocumentConversionResponse
+        )
         async def process_document(
             request: Request,
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
-        ):
+        ) -> DocumentConversionResponse:
             content_type = request.headers.get("content-type", "")
             body = await request.body()
 
