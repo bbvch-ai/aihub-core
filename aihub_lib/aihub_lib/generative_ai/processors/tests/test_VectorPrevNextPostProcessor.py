@@ -8,8 +8,9 @@ from pytest_bdd import given, parsers, scenarios, then, when
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import VectorPrevNextPostProcessor
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.persistence.rag.documents.stores.docstore import create_mongo_document_store
+from aihub_lib.persistence.rag.vectors.node_metadata import NAMESPACE
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
-from aihub_lib.testing.milvus_vector_store_content import fill_collection
+from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_collection
 
 
 # Set up an event loop for the test session
@@ -36,7 +37,7 @@ def get_node_ids(result):
 def _(datatable):
     nodes = []
     for row in datatable[1:]:
-        nodes.append(TextNode(id_=row[0], text=row[1], metadata={}))
+        nodes.append(TextNode(id_=row[0], text=row[1], metadata={NAMESPACE: "test"}))
     return nodes
 
 
@@ -56,10 +57,15 @@ def milvus_vector_store(nodes_with_relationships, event_loop):
     # Use event_loop fixture to ensure there's an active event loop
     asyncio.set_event_loop(event_loop)
 
+    collection_name = "prev_next_test"
+
+    # Drop existing collection to ensure clean schema
+    drop_collection(collection_name=collection_name)
+
     embedding_config = EmbeddingModelConfig(model_name="embedding/small")
     vector_store = MilvusVectorStoreConfig(
         uri="http://localhost",
-        collection_name="prev_next_test",
+        collection_name=collection_name,
         dimensions=1024,
     )
     doc_store = create_mongo_document_store(document_store_name="development")

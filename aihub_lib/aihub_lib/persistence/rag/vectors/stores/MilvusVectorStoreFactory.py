@@ -16,7 +16,7 @@ from pymilvus import (
 
 from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_ID, NAMESPACE
 
-_MMAP_ENABLED = "mmap.enabled"
+_MMAP_ENABLED = "mmap.enable"
 
 
 class MilvusIndexType(str, Enum):
@@ -32,8 +32,10 @@ def create_milvus_vector_store(
     uri: Annotated[str, Field(description="Milvus connection URI")],
     collection_name: Annotated[str, Field(description="Name of the collection to create or use")],
     embedding_vector_dimension: Annotated[int, Field(gt=0, description="Dimension of dense embedding vectors")],
-    index_type: MilvusIndexType = MilvusIndexType.HNSW,
-    enable_mmap: Annotated[bool, Field(description="Whether memory mapping is enabled ")] = True,
+    index_type: Annotated[MilvusIndexType, Field(description="Vector index type for the embedding field")] = (
+        MilvusIndexType.HNSW
+    ),
+    enable_mmap: Annotated[bool, Field(description="Enable memory mapping to reduce RAM usage")] = True,
     num_partitions: Annotated[
         int, Field(ge=1, le=1023, description="Hash partitions for distributing namespaces across physical storage")
     ] = 1023,
