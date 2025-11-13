@@ -1,165 +1,230 @@
-# Kapitel 07: Administration und Governance
+# Kapitel 07: Datensicherheit und Datenfluss
 
 ## Kapitelziel
-Erklären Sie, wie Administratoren die Plattform verwalten, überwachen und steuern (1300-1800 Wörter). Dies ist ein umfangreiches Kapitel, das alle administrativen Aspekte abdeckt.
+Erklären Sie, wie Daten während ihres gesamten Lebenszyklus in der Plattform und an allen Ein- und Austrittspunkten gesichert werden (1200 Wörter, 4 Seiten).
 
-**WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **lang** (1300-1800 Wörter).
-
+**WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **lang** (1200 Wörter).
 
 ## Business-Dimensionen (Priorität für dieses Kapitel)
-1. **MANAGEMENT** - SEHR WICHTIG: Benutzer, Rollen, Policies, Budgets
-2. **KOSTEN** - Sehr wichtig: Cost Control, Budget-Limits, Tracking
-3. **DATENSCHUTZ** - Sehr wichtig: RBAC, granulare Zugriffskontrolle
-4. **SICHERHEIT** - Wichtig: SSO/Azure AD, Session Management
+1. **SICHERHEIT** - SEHR WICHTIG: Input-Validierung, Encryption, Malware-Scanning, Multi-Tenant-Isolation
+2. **DATENSCHUTZ** - SEHR WICHTIG: PII-Detection, Anonymisierung, Data-Deletion, DSGVO-Compliance
+3. **MANAGEMENT** - Wichtig: Dataflow-Monitoring, Security-Operations, Incident-Response
+4. **INTEGRATION** - Wichtig: Sichere API-Integrationen, verschlüsselte Datenübertragung
 
 **Behandeln Sie diese Dimensionen explizit** mit konkreten Antworten auf Business-Fragen.
 
-## Hauptthemen
+## Themen und Inhalte
 
-### 7.1 Benutzer- und Zugriffsverwaltung
-- SSO/OAuth Integration: Azure AD, Keycloak, andere OIDC/SAML-Provider
-- Protokoll-Unterstützung:
-  - Backend Admins (On-Prem): Kerberos, SAML, OIDC
-  - Backend Admins (Cloud): OIDC, SAML
-  - Frontend Benutzer (Cloud & On-Prem): OIDC, SAML
-  - eGOV Portal (Cloud & On-Prem): OIDC via IdP und AGOV, später eID
-- Keine Legacy-Protokolle: LDAP/LDAPS, NTLMv2 nicht verwendet
-- MFA-Unterstützung: Multi-Faktor-Authentifizierung via Dritt-IdP
-- Passkeys und Conditional Access: Volle Unterstützung via IdP-Integration
-- Benutzerverwaltung: Erstellen, Ändern, Deaktivieren von Konten via Admin UI
+### 7.1 Dateneingangspunkte und Sicherheitsmechanismen
+**Kernaussage**: Jeder Punkt, an dem Daten in die Plattform gelangen, ist abgesichert
 
-**Geschäftlicher Nutzen**: Enterprise-Authentifizierung, Sicherheit, zentrale Identitätsverwaltung
+**Inhalte**:
+- **User-Input-Validierung**:
+  - Schutz vor SQL-Injection, XSS, Command-Injection-Attacks
+  - Prompt-Injection-Defense: Schutz vor manipulativen Prompts
+  - Input-Sanitization: Automatische Bereinigung schädlicher Eingaben
+- **Dokument-Upload-Security**:
+  - Malware-Scanning: Automatische Virenprüfung bei jedem Upload
+  - APT-Detection und -Prevention: Erkennung komplexer Bedrohungen
+  - Format-Verifikation: Validierung, dass Dateien wirklich das deklarierte Format haben
+- **Externe Datenquellen-Integration-Security**:
+  - Authentifizierte Verbindungen: Kein ungeschützter Datenzugriff
+  - Verschlüsselte Übertragung: SSL/TLS für alle externen Verbindungen
+- **API-Ingestion-Security**:
+  - Authentifizierung via API-Keys, JWT, OAuth2, OIDC, mTLS
+  - Rate-Limiting: Schutz vor Überlastung und DoS-Angriffen
+  - Request-Validierung: Schemabasierte Validierung aller API-Requests
 
-### 7.2 Rollenbasierte Zugriffskontrolle (RBAC)
-- RBAC-Prinzip: Rollenbasierte Zugriffskontrolle für sichere Aufgabenverteilung
-- Kundenseitiger Admin: Customer-side Admin-Rolle (nicht nur Platform-Admin)
-- Datenquellen-Zugriffskontrolle: Berechtigungen steuern Zugriff auf RAG-Quellen
-- Modell-Zugriffskontrolle: Konfigurieren welche Benutzer welche AI-Modelle nutzen können
-- Feature-Zugriffskontrolle: Plattform-Features nach Rolle einschränken
-- Collection-scoped Permissions: Granulare Kontrolle auf Knowledge-Collection-Ebene
+**Geschäftlicher Nutzen**:
+- Defense-in-Depth: Mehrschichtige Sicherheit an jedem Eingangspunkt
+- Schutz vor gängigen Angriffsszenarien
+- Compliance mit Secure Development Standards
+- Risikominderung durch präventive Sicherheitskontrollen
 
-**Geschäftlicher Nutzen**: Sicherheit, Compliance, Least-Privilege-Access, effiziente Administration
+### 7.2 Datenverarbeitungs-Sicherheit
+**Fokus**: Schutz sensibler Daten während Verarbeitung und Speicherung
 
-### 7.3 Disclaimer und Consent-Management
-- Custom Disclaimer-Ausgabe: Individuell erstellte und verwaltete Disclaimer
-- Session-spezifische Speicherung: Nutzerantwort wird per Session getrackt
-- Compliance-Tracking: Vollständiger Audit-Trail der Nutzer-Einwilligung
-- Konfigurierbare Anzeige: Kontrolle wann und wie Disclaimer erscheinen
+**Inhalte**:
+- **PII-Detection und Anonymisierung**:
+  - Presidio-Integration: Automatische Erkennung personenbezogener Daten
+  - Anonymisierung vor LLM-Processing: PII wird vor AI-Verarbeitung anonymisiert
+  - Verhinderung sensibler Informationen in Prompts
+  - Redaction: Schwärzung sensibler Daten in Logs und Outputs
+- **Sichere Transformations-Pipelines**:
+  - Isolierte Pipeline-Ausführung: Keine unautorisierten Zugriffe während Verarbeitung
+  - Audit-Trails für alle Transformationen
+- **Vector-Database-Security**:
+  - Verschlüsselte Speicherung von Embeddings
+  - Zugriffskontrolle auf Collection-Ebene
+- **Context-Data-Security**:
+  - Verschlüsselung von Chat-Kontexten und Session-Daten
+  - Automatische Löschung nach konfigurierbaren Zeiträumen
 
-**Geschäftlicher Nutzen**: Rechtliche Compliance, Risikominderung, Informed Consent
+**Geschäftlicher Nutzen**:
+- Erfüllung von GDPR/revDSG-Anforderungen an Datenminimierung
+- Schutz sensibler Informationen vor unbeabsichtigter Exposition
+- Compliance mit Privacy-by-Design-Prinzipien
+- Risikominimierung bei Datenlecks
 
-### 7.4 Cost Tracking und Budget-Management
-- Echtzeit-Kostentracking: LiteLLM-basiertes Tracking über alle Modell-Provider
-- Token-Usage-Visibility: Prompt, Completion, Embedding Tokens getrackt
-- Per-User-Budgets: Ausgabelimits pro Benutzer oder Team setzen
-- Rate Limiting: Anfrage-Raten pro Benutzer/Modell kontrollieren
-- Kostenzuordnung: Chargebacks an Abteilungen oder Projekte
-- Modell-Tier-Auswahl: Wahl zwischen Flagship, Balanced, Efficient Models
-- Kosten-Dashboards: Echtzeit-Einblick in AI-Ausgaben
+### 7.3 Datenausgangspunkte und Kontrolle
+**Fokus**: Sichere Datenausgabe mit vollständiger Kontrolle
 
-**Geschäftlicher Nutzen**: Budgetkontrolle, Kostenvorhersagbarkeit, informierte Entscheidungen
+**Inhalte**:
+- **LLM-Provider-Kommunikation**:
+  - Verschlüsselte Übertragung (SSL/TLS mit Perfect Forward Secrecy)
+  - Keine Datenretention bei isolierten Deployments
+  - Air-Gap-Option: Komplett offline nutzbar mit lokalen Modellen
+  - Provider-Datenlokalitäts-Anforderungen durchsetzbar
+- **User-Outputs**:
+  - Quellenangaben mit DSGVO-konformen Link-Warnungen
+  - Content-Filtering: Verhinderung sensibler Daten in Antworten
+  - Redaction: Automatische Schwärzung von PII in AI-Antworten
+- **API-Responses**:
+  - Sichere Serialisierung (keine Daten-Leakage durch Serialization)
+  - Rate-Limiting und Output-Validierung
+- **Export-Funktionen**:
+  - Verschlüsselte Exports (Daten, Logs, Audit-Trails)
+  - Zugriffsprotokollierung für alle Exports
+- **Log-Aggregations-Exports**:
+  - Sichere Übertragung zu externen SIEM-Systemen (ELK, Splunk)
+  - Anonymisierung von Logs vor Export (Optional)
 
-### 7.5 System-Monitoring und Observability
-- Health Dashboards: Komponentenstatus, Performance-Metriken
-- Performance Monitoring: Response Times, Throughput, Error Rates
-- Ressourcen-Monitoring: CPU, Memory, Storage-Auslastung
-- Alerting: Automatische Benachrichtigungen bei Problemen
-- Tools für Monitoring: Plattformleistung, AI-Modelle, Ressourcennutzung
+**Geschäftlicher Nutzen**:
+- Vollständige Kontrolle über Daten-Exits
+- Nachweis, dass Daten niemals unkontrolliert das System verlassen
+- Compliance mit Data-Residency-Anforderungen
+- Vertrauen durch Transparenz über Datenflüsse
 
-**Geschäftlicher Nutzen**: Proaktive Problemerkennung, Kapazitätsplanung, Service-Qualität
+### 7.4 Data-at-Rest und Data-in-Transit Security
+**Fokus**: Verschlüsselung über den gesamten Datenlebenszyklus
 
-### 7.6 Umfassende Protokollierung und Audit-Trails (1300-1800 Wörter)
-- Log-Rotation: Konfigurierbare Rotationsintervalle, Speichergrössen, Aufbewahrungszeiträume
-- Log-Kategorien:
-  - Infrastruktur-Logs (Syslog, Container Logs, K8s Events, Ressourcenverbrauch)
-  - Application Logs (Request/Response, Latenz, Fehler, Rate-Limiting)
-  - Security/Audit Logs (Authentication, Authorization, IAM Actions, Session tracking)
-  - Modellausführungs-Logs (Prompt, Token usage, Batch Processing, Timeouts)
-  - Benutzerinteraktionslogs (anonymisiert: Session Start/Ende, Fehlermeldungen, Feedback)
-  - Datenpipeline-Logs (Ingestion, Transformation, Training)
-- Log-Aggregation-Integration: Export an Kundensysteme
-  - ELK Stack (Elasticsearch, Logstash, Kibana)
-  - Grafana mit Loki und Promtail
-  - Fluent Bit/Fluentd mit Elasticsearch
-  - Splunk
-  - Datadog
-- Query-Interface: Abfrage über mitgeliefertes System
+**Inhalte**:
+- **Data-at-Rest-Security**:
+  - TDE (Transparent Data Encryption) für Datenbanken
+  - Verschlüsselte Filesysteme (LUKS, dm-crypt)
+  - Key-Management: HSM-basiert (Hardware Security Module) oder KMS-Integration
+  - Verschlüsselte Backups
+- **Data-in-Transit-Security**:
+  - SSL/TLS für alle Netzwerk-Kommunikation
+  - Perfect Forward Secrecy (PFS): Vergangene Sessions bleiben sicher bei Key-Kompromittierung
+  - Mutual TLS (mTLS) für Service-to-Service-Kommunikation
+  - VPN-Integration für Remote-Zugriffe
 
-**Geschäftlicher Nutzen**: Compliance, Debugging, Security-Analyse, Betriebsintelligenz
+**Geschäftlicher Nutzen**:
+- Erfüllung von Compliance-Anforderungen (revDSG, ISO 27001, PCI-DSS)
+- Schutz vor Datendiebstahl bei physischem Zugriff auf Server
+- Schutz vor Man-in-the-Middle-Angriffen
+- Langfristige Datensicherheit
 
-### 7.7 Content und Qualitätsmanagement
-- Feedback-Sammlung: Eingebaute Feedback-Mechanismen (Thumbs Up/Down, Kommentare)
-- Qualitätsmetriken: Tracking von Antwortqualität und Nutzerzufriedenheit
-- Bias-Monitoring: Erkennung und Tracking von Biases in AI-Antworten
-- Model-Drift-Detection: Änderungen im Modellverhalten identifizieren
-- Datenkuratierung: Management von Training- und Wissensdaten-Qualität
-- A/B-Testing: Verschiedene Modellversionen oder Konfigurationen testen
+### 7.5 Multi-Tenant-Isolation und Data-Deletion
+**Fokus**: Sichere Trennung zwischen Organisationen und vollständige Datenlöschung
 
-**Geschäftlicher Nutzen**: Kontinuierliche Verbesserung, Qualitätssicherung, Responsible AI
+**Inhalte**:
+- **Multi-Tenant-Isolation**:
+  - Logische Isolation: Strikte Datenbanktrennung pro Organisation
+  - Physische Isolation: Option für dedizierte Infrastruktur
+  - Network-Isolation: Getrennte Netzwerk-Segmente pro Tenant
+  - Storage-Isolation: Dedizierte Vector-Stores und Object-Storage pro Tenant
+- **Data-Deletion-Security**:
+  - Secure-Delete: Überschreiben gelöschter Daten (vs. nur Markierung)
+  - Kaskadierte Löschung: Alle abhängigen Daten (Chunks, Embeddings, Logs) werden mitgelöscht
+  - Audit-Trail für Löschungen: Nachweis für Compliance (Right to be Forgotten)
+  - Automatische Retention-Policies: Daten werden nach Ablauf automatisch gelöscht
 
-### 7.8 Modell- und Retraining-Management
-- Automatisiertes Retraining: Basierend auf neuen Daten und Nutzerfeedback
-- Schwachstellen-Erkennung: Verbesserungsbereiche identifizieren
-- Datenqualitäts-Enforcement: Integration nur hochwertiger Daten
-- Privacy Compliance: Datenschutzbestimmungen während Retraining
-- Skalierbar und effizient: Ressourceneffizientes Retraining
-- Versionierung: Alle Retrainings versioniert mit Metadaten (Trainingsdaten, Hyperparameter, Metriken)
-- Rollback-Mechanismen: Rückkehr zu vorherigen Modellversionen bei Bedarf
+**Geschäftlicher Nutzen**:
+- Compliance mit revDSG/GDPR Right to be Forgotten
+- Vertrauen durch garantierte Datentrennung zwischen Organisationen
+- Schutz vor Cross-Tenant-Data-Leakage
+- Rechtliche Absicherung durch nachweisbare Löschung
 
-**Geschäftlicher Nutzen**: Kontinuierliche Verbesserung, Modellqualität, Betriebssicherheit
+### 7.6 Dataflow-Monitoring und Security-Operations
+**Fokus**: Kontinuierliche Überwachung und Incident-Response
 
-## Kernfragen, die Leser beantworten möchten
+**Inhalte**:
+- **Dataflow-Monitoring**:
+  - Echtzeit-Visualisierung aller Datenflüsse
+  - Anomalie-Erkennung: Ungewöhnliche Datentransfers werden gemeldet
+  - Data Exfiltration Prevention (DLP): Automatische Blockierung verdächtiger Datentransfers
+- **Security-Operations**:
+  - Penetration-Testing: Regelmäßige externe Sicherheitsüberprüfungen
+  - Vulnerability-Management: Systematisches Patching und Updates
+  - Incident-Response: Vordefinierte Prozesse für Security-Incidents
+  - Security-Logging: Unveränderliche Logs aller sicherheitsrelevanten Ereignisse
 
-### Benutzer- und Zugriffsverwaltung
-1. Wie integriere ich die Plattform mit unserem bestehenden Active Directory / Azure AD?
-2. Welche Authentifizierungsprotokolle werden unterstützt?
-3. Werden Legacy-Protokolle wie LDAP unterstützt?
-4. Wie funktioniert Multi-Faktor-Authentifizierung (MFA)?
-5. Können wir Passkeys und Conditional Access nutzen?
-6. Wie verwalte ich Benutzerkonten (erstellen, ändern, löschen)?
-7. Wie funktioniert die Integration mit eGovernment-Portalen (AGOV, eID)?
+**Geschäftlicher Nutzen**:
+- Früherkennung von Sicherheitsvorfällen
+- Schnelle Response bei Incidents
+- Kontinuierliche Verbesserung der Sicherheitslage
+- Compliance mit Security-Operations-Standards
 
-### Rollenbasierte Zugriffskontrolle (RBAC)
-8. Wie richte ich rollenbasierte Zugriffskontrolle (RBAC) ein?
-9. Kann ich einen kundenseitigen Admin-Zugang einrichten (nicht nur Platform-Admin)?
-10. Wie kontrolliere ich, wer auf welche Datenquellen (RAG) zugreifen kann?
-11. Kann ich einschränken, welche Benutzer welche AI-Modelle nutzen dürfen?
-12. Wie definiere ich granulare Berechtigungen auf Wissens-Collection-Ebene?
+## Business-Fragen, die das Kapitel beantwortet
 
-### Disclaimer und Consent
-13. Kann ich eigene Disclaimer erstellen und verwalten?
-14. Wie wird die Nutzerakzeptanz von Disclaimern nachverfolgt?
-15. Werden Einwilligungen für Audits protokolliert?
+### Dateneingangspunkte
+1. Wie werden User-Eingaben gegen Injection-Attacks geschützt?
+2. Was ist Prompt-Injection und wie wird dagegen geschützt?
+3. Wie werden hochgeladene Dokumente auf Malware geprüft?
+4. Schützt die Plattform vor Advanced Persistent Threats (APTs)?
+5. Wie werden externe Datenquellen sicher angebunden?
+6. Welche Authentifizierungsmethoden werden für API-Integrationen unterstützt?
+7. Wie wird vor API-Missbrauch und DoS geschützt (Rate-Limiting)?
 
-### Kostenmanagement
-16. Wie behalte ich die Kosten für AI-Nutzung im Überblick?
-17. Kann ich Budgetlimits pro Benutzer oder Team setzen?
-18. Wie werden Token-Nutzung und Kosten transparent dargestellt?
-19. Kann ich Kosten bestimmten Abteilungen oder Projekten zuordnen?
-20. Wie verhindere ich übermässige Ausgaben?
+### Datenverarbeitung
+8. Wie erkennt die Plattform personenbezogene Daten (PII)?
+9. Wird PII automatisch anonymisiert oder geschwärzt?
+10. Wie wird verhindert, dass sensible Daten an LLM-Provider gesendet werden?
+11. Sind Transformations-Pipelines isoliert und auditiert?
+12. Wie werden Embeddings in Vector-Datenbanken geschützt?
+13. Wie wird Chat-Kontext verschlüsselt und wann wird er gelöscht?
 
-### Monitoring und Observability
-21. Welche Tools stehen für System-Monitoring zur Verfügung?
-22. Wie überwache ich die Performance der Plattform und der AI-Modelle?
-23. Wie werde ich bei Problemen automatisch benachrichtigt?
-24. Kann ich Ressourcenverbrauch (CPU, Memory, Storage) überwachen?
+### Datenausgangspunkte
+14. Wie wird die Kommunikation mit LLM-Providern gesichert?
+15. Werden Daten bei LLM-Providern gespeichert (Retention)?
+16. Kann die Plattform komplett offline betrieben werden (Air-Gap)?
+17. Wie werden Quellenangaben DSGVO-konform dargestellt?
+18. Werden sensible Daten automatisch aus AI-Antworten gefiltert?
+19. Wie werden Daten-Exports gesichert?
+20. Wie werden Logs an externe SIEM-Systeme sicher übertragen?
 
-### Logging und Audit
-25. Welche Arten von Logs werden erfasst?
-26. Wie konfiguriere ich Log-Rotation und Aufbewahrungszeiträume?
-27. Kann ich Logs an unsere bestehenden Logging-Systeme (ELK, Splunk, Datadog) exportieren?
-28. Werden Benutzerinteraktionen protokolliert (und anonymisiert)?
-29. Wie kann ich Logs für Compliance-Audits abfragen?
-30. Werden alle Systemereignisse mit Zeitstempeln protokolliert?
+### Verschlüsselung
+21. Sind Daten im Ruhezustand verschlüsselt (Data-at-Rest)?
+22. Wie funktioniert Key-Management (HSM, KMS)?
+23. Ist alle Netzwerk-Kommunikation verschlüsselt (SSL/TLS)?
+24. Wird Perfect Forward Secrecy (PFS) unterstützt?
+25. Wird Mutual TLS (mTLS) für Service-to-Service-Kommunikation verwendet?
 
-### Qualitätsmanagement
-31. Wie sammle ich Nutzerfeedback zur Verbesserung der Plattform?
-32. Kann ich Bias-Monitoring und Model-Drift-Detection nutzen?
-33. Wie teste ich verschiedene Modell- oder Prompt-Versionen (A/B-Testing)?
-34. Welche Qualitätsmetriken werden getrackt?
+### Multi-Tenancy und Datenlöschung
+26. Wie werden Daten verschiedener Organisationen getrennt (Multi-Tenant-Isolation)?
+27. Ist physische Isolation für besonders sensible Organisationen möglich?
+28. Wie werden Daten vollständig gelöscht (Right to be Forgotten)?
+29. Werden gelöschte Daten wirklich überschrieben (Secure-Delete)?
+30. Wie kann ich nachweisen, dass Daten gelöscht wurden (Audit-Trail)?
 
-### Modell- und Retraining
-35. Unterstützt die Plattform automatisiertes Retraining basierend auf Feedback?
-36. Wie werden Retraining-Versionen dokumentiert und versioniert?
-37. Kann ich zu einer früheren Modellversion zurückkehren (Rollback)?
-38. Wie wird Datenschutz während des Retrainings sichergestellt?
+### Monitoring und Incident Response
+31. Wie werden Datenflüsse überwacht?
+32. Erkennt die Plattform Anomalien und verdächtige Datentransfers?
+33. Gibt es Data Exfiltration Prevention (DLP)?
+34. Wie funktioniert Incident-Response bei Sicherheitsvorfällen?
+35. Werden regelmäßig Penetration-Tests durchgeführt?
+
+## Relevante RFP-Anforderungen
+
+Während des natürlichen Schreibens sicherstellen, dass das Kapitel diese Anforderungen addressiert:
+
+- **"Input-Validierung gegen Injection-Attacks"** ✓
+- **"Prompt-Injection-Defense"** ✓
+- **"Malware-Scanning und APT-Prevention"** ✓
+- **"PII-Detection und Anonymisierung (Presidio-Integration)"** ✓
+- **"Verschlüsselte Datenübertragung (SSL/TLS)"** ✓
+- **"Data-at-Rest-Encryption (TDE, verschlüsselte Filesysteme)"** ✓
+- **"Key-Management (HSM, KMS)"** ✓
+- **"Perfect Forward Secrecy (PFS)"** ✓
+- **"Mutual TLS (mTLS)"** ✓
+- **"Multi-Tenant-Isolation"** ✓
+- **"Physische Isolation-Option"** ✓
+- **"Secure-Delete und Right to be Forgotten"** ✓
+- **"Dataflow-Monitoring und Anomalie-Erkennung"** ✓
+- **"Data Exfiltration Prevention (DLP)"** ✓
+- **"Penetration-Testing und Vulnerability-Management"** ✓
+- **"Incident-Response-Prozesse"** ✓
+- **"Air-Gap-Deployment-Option"** ✓
+- **"Keine Datenretention bei LLM-Providern (isolierte Deployments)"** ✓
