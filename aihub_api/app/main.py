@@ -92,7 +92,7 @@ runner.mount(
     .get_supported_file_types(),
     FileController(auth=auth).get_file_url().get_file_redirect().get_anonymous_file_url().get_anonymous_file_redirect(),
     NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
-    DoclingController(auth=auth).process_endpoint(),
+    DoclingController(auth=auth).parse_document(),
 )
 
 

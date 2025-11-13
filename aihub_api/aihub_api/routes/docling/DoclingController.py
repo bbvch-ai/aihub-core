@@ -22,7 +22,7 @@ class DoclingController(Controller):
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
-    def process_endpoint(self, route: str = "/process") -> "DoclingController":
+    def parse_document(self, route: str = "/process") -> "DoclingController":
 
         @self.router.put(route, tags=self.tags, summary="Process document (OpenWebUI)")
         async def process_document(
