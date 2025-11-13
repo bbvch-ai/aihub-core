@@ -308,7 +308,7 @@ Usage:
   $0 --help              Show this help
 
 Environment Variables:
-  LLM_MODEL              LLM model to use (default: claude-3-7-sonnet-20250219)
+  LLM_MODEL              LLM model to use (default: gemini-2.5-flash)
 
 Examples:
   $0                     # Generate all chapters

@@ -118,13 +118,15 @@ whitepaper/
    llm keys set gemini
    ```
 
-3. **Set default model** (optional):
+3. **Set model** (optional - default is gemini-2.5-flash):
    ```bash
+   # Default model (already set in script):
+   # LLM_MODEL=gemini-2.5-flash
+
+   # Override with different model:
    export LLM_MODEL=claude-3-7-sonnet-20250219
    # or
    export LLM_MODEL=gpt-4-turbo
-   # or
-   export LLM_MODEL=gemini-2.5-flash
    ```
 
 ## Usage
