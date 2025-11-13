@@ -13,17 +13,6 @@ logger = logging.getLogger(__name__)
 
 
 class DoclingController(Controller):
-    """
-    Controller for document conversion using Docling.
-
-    This endpoint acts as a proxy for OpenWebUI when configured with
-    CONTENT_EXTRACTION_ENGINE: external and DOCLING_SERVER_URL pointing
-    to this API service.
-
-    The controller forwards requests to the internal Docling service
-    and returns the conversion results.
-    """
-
     name = LocaleString(en="Document Conversion")
     description = LocaleString(en="Convert documents using Docling service")
     icon = "line-md:document"
@@ -34,24 +23,17 @@ class DoclingController(Controller):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def process_endpoint(self, route: str = "/process") -> "DoclingController":
-        """Process endpoint that OpenWebUI calls for document extraction."""
 
         @self.router.put(route, tags=self.tags, summary="Process document (OpenWebUI)")
         async def process_document(
             request: Request,
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ):
-            """
-            Process document for OpenWebUI.
-
-            OpenWebUI sends raw file bytes with Content-Type header indicating file type.
-            """
             content_type = request.headers.get("content-type", "")
             body = await request.body()
 
             logger.info(f"Processing document: {len(body)} bytes, content-type: {content_type}")
 
-            # Extract filename from headers or infer from content-type
             filename = request.headers.get("x-filename") or request.headers.get("x-file-name") or "document"
 
             if "." not in filename:
