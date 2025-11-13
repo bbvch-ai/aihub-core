@@ -1,0 +1,11 @@
+# Source Documentation for Chapter 10: Deployment and Operations
+# List paths relative to aihub_doc/docs/
+
+2_platform/1_quick_start/2_one_command_deployment/index.en.md
+2_platform/3_deployment_guide/1_deployment_options/index.en.md
+2_platform/3_deployment_guide/2_production_configuration/index.en.md
+2_platform/3_deployment_guide/3_scaling_considerations/index.en.md
+2_platform/3_deployment_guide/4_backup_and_recovery/index.en.md
+2_platform/3_deployment_guide/5_monitoring_and_alerting/index.en.md
+2_platform/3_deployment_guide/6_updates_and_maintenance/index.en.md
+2_platform/3_deployment_guide/7_network_requirements/index.en.md
