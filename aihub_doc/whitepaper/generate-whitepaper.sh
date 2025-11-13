@@ -218,12 +218,27 @@ generate_chapter() {
     while [ $attempt -le $MAX_RETRIES ]; do
         echo -e "${BLUE}🔄 Attempt $attempt/$MAX_RETRIES: Calling LLM...${NC}"
 
-        # Call LLM with the combined prompt (simple, single input)
-        if llm_output=$(echo "$combined_prompt" | llm --no-stream -m "$LLM_MODEL"); then
+        # Call LLM with the combined prompt using temp file (more robust for large prompts)
+        # Using temp file to avoid shell argument length limits and special character issues
+        local temp_prompt_file=$(mktemp)
+        echo "$combined_prompt" > "$temp_prompt_file"
+
+        # Run LLM and capture both stdout and exit code
+        set +e  # Temporarily disable exit on error
+        llm_output=$(llm --no-stream -m "$LLM_MODEL" < "$temp_prompt_file" 2>&1)
+        local exit_code=$?
+        set -e  # Re-enable exit on error
+
+        rm -f "$temp_prompt_file"
+
+        if [ $exit_code -eq 0 ]; then
             success=true
             break
         else
-            echo -e "${YELLOW}⚠️  LLM call failed on attempt $attempt${NC}" >&2
+            echo -e "${YELLOW}⚠️  LLM call failed on attempt $attempt (exit code: $exit_code)${NC}" >&2
+            if [ -n "$llm_output" ]; then
+                echo -e "${YELLOW}     Error output: ${llm_output:0:300}${NC}" >&2
+            fi
             if [ $attempt -lt $MAX_RETRIES ]; then
                 echo -e "${YELLOW}⏳ Waiting ${RETRY_DELAY}s before retry...${NC}"
                 sleep $RETRY_DELAY
@@ -305,12 +320,21 @@ main() {
     local failed_chapters=()
 
     for chapter_id in "${chapters_to_generate[@]}"; do
+        echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${BLUE}Processing chapter $chapter_id ($(( success_count + fail_count + 1 ))/${#chapters_to_generate[@]})${NC}"
+        echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+
         if generate_chapter "$chapter_id"; then
             ((success_count++))
+            echo -e "${GREEN}✓ Chapter $chapter_id completed successfully${NC}"
         else
             ((fail_count++))
             failed_chapters+=("$chapter_id")
+            echo -e "${RED}✗ Chapter $chapter_id failed${NC}"
         fi
+        echo ""
+        echo -e "${BLUE}Progress: ✓ $success_count successful, ✗ $fail_count failed${NC}"
         echo ""
     done
 
