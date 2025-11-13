@@ -1,6 +1,7 @@
 import logging
 from typing import Annotated
 
+from aihub_api.routes.docling.DoclingMappings import MimeTypeToFormat, FormatToExtensions
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -40,17 +41,13 @@ class DoclingController(Controller):
             filename = request.headers.get("x-filename") or request.headers.get("x-file-name") or "document"
 
             if "." not in filename:
-                extension_map = {
-                    "application/pdf": ".pdf",
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
-                    "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".pptx",
-                    "text/html": ".html",
-                    "text/plain": ".txt",
-                    "image/png": ".png",
-                    "image/jpeg": ".jpg",
-                }
-                filename += extension_map.get(content_type, ".pdf")
+                formats = MimeTypeToFormat.get(content_type, [])
+                if formats:
+                    extensions = FormatToExtensions.get(formats[0], [])
+                    extension = f".{extensions[0]}" if extensions else ".pdf"
+                else:
+                    extension = ".pdf"
+                filename += extension
 
             try:
                 return await DoclingService.convert_from_bytes(content=body, filename=filename)
