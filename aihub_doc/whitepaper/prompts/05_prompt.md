@@ -15,124 +15,19 @@ Erklären Sie, wie die Plattform Enterprise-Administrationsfunktionen, rollenbas
 
 ## Themen und Inhalte
 
-### 5.1 RBAC-basiertes Rollen- und Berechtigungsmanagement
-**Kernaussage**: Klare Rollentrennung ermöglicht sichere Delegation ohne Kontrollverlust
+Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 
-**Inhalte**:
-- **Drei Rollenebenen**:
-  - **Endbenutzer**: Zugriff auf Chat, zugewiesene Collections, keine Admin-Rechte
-  - **Kundenseitige Administratoren**: Verwaltung von Benutzern, Datenquellen, Modellen innerhalb ihrer Organisation
-  - **Plattform-Administratoren**: Technischer Betrieb, Infrastruktur, übergreifende Konfiguration
-- **Granulare Zugriffskontrolle**:
-  - Pro User, Gruppe oder Organisation
-  - Auf Datenquellen-Ebene (Collections, Databases)
-  - Auf Feature-Ebene (AI-Modelle, Agents, Workflows)
-- **Organisationshierarchien**: Mehrere Organisationseinheiten, Abteilungen, Projekte
-- **Dynamische Berechtigungen**: Zeitbasierte, kontextabhängige Zugriffskontrolle
+- **RBAC-basiertes Rollen- und Berechtigungsmanagement**: Drei Rollenebenen (Endbenutzer mit Chat-Zugriff, kundenseitige Administratoren für Benutzer/Datenquellen/Modelle-Verwaltung, Plattform-Administratoren für technischen Betrieb), granulare Zugriffskontrolle (pro User/Gruppe/Organisation, auf Datenquellen-Ebene Collections/Databases, auf Feature-Ebene AI-Modelle/Agents/Workflows), Organisationshierarchien (mehrere Organisationseinheiten/Abteilungen/Projekte), dynamische Berechtigungen (zeitbasiert, kontextabhängig); Geschäftlicher Nutzen: Sichere Delegation ohne Provider-Abhängigkeit, Minimierung von Risiken durch Principle of Least Privilege, Skalierbarkeit für große Organisationen, Compliance mit Segregation of Duties
 
-**Geschäftlicher Nutzen**:
-- Sichere Delegation administrativer Aufgaben ohne Plattform-Provider-Abhängigkeit
-- Minimierung von Risiken durch Principle of Least Privilege
-- Skalierbarkeit für große Organisationen mit komplexen Strukturen
-- Compliance mit Segregation of Duties (SoD)-Anforderungen
+- **Enterprise-Authentifizierungs-Integration**: SSO/OAuth-Integration (Single Sign-On über bestehende Identitätssysteme), Azure AD/Microsoft Entra ID (native Integration), Keycloak (Open-Source Identity- und Access-Management), OIDC/SAML (Standardprotokolle für beliebige IdP-Anbindung), Multi-Faktor-Authentifizierung (Authenticator-Apps, SMS, Hardware-Token), Passkeys (FIDO2-basierte passwortlose Authentifizierung), Conditional Access (kontextbasierte Zugriffsrichtlinien nach Standort/Gerät/Risiko), Session Management (konfigurierbare Timeouts, automatische Logout-Policies); Geschäftlicher Nutzen: Keine zusätzlichen Credentials, zentrale Benutzerverwaltung, erhöhte Sicherheit durch MFA, Compliance mit Identity-Management-Richtlinien
 
-### 5.2 Enterprise-Authentifizierungs-Integration
-**Fokus**: Nahtlose Integration in bestehende Identity-Management-Systeme
+- **Disclaimer- und Consent-Management**: Konfigurierbare Disclaimer (organisationsspezifische Nutzungsbedingungen und Warnungen), Consent-Workflows (granulare Einwilligungen für verschiedene Datenverarbeitungszwecke), Versionierung (Nachverfolgung von Einwilligungsänderungen), Widerrufsmechanismen (einfache Möglichkeit Einwilligungen zurückzuziehen), Dokumentation (vollständige Audit-Trails für Compliance-Nachweise); Geschäftlicher Nutzen: Erfüllung revDSG/GDPR-Einwilligungsanforderungen, Transparenz für Nutzer, Rechtssicherheit durch dokumentierte Einwilligungen, Flexibilität bei sich ändernden regulatorischen Anforderungen
 
-**Inhalte**:
-- **SSO/OAuth-Integration**: Single Sign-On über bestehende Identitätssysteme
-- **Azure AD / Microsoft Entra ID**: Native Integration für Microsoft-Umgebungen
-- **Keycloak**: Open-Source Identity- und Access-Management
-- **OIDC/SAML**: Standardprotokolle für beliebige IdP-Anbindung
-- **Multi-Faktor-Authentifizierung (MFA)**: Unterstützung für Authenticator-Apps, SMS, Hardware-Token
-- **Passkeys**: FIDO2-basierte passwortlose Authentifizierung
-- **Conditional Access**: Kontextbasierte Zugriffsrichtlinien (Standort, Gerät, Risiko)
-- **Session Management**: Konfigurierbare Session-Timeouts, automatische Logout-Policies
+- **Echtzeit-Kostentracking mit Budgetlimits**: Granulare Kostenerfassung (pro User individuelle Nutzung, pro Abteilung/Organisation Kostenstellen-Zuordnung, pro AI-Modell Kostenverursacher, pro Request Token-Nutzung/Latenz/Kosten), Budget-Limits (Soft-Limits mit Warnung, Hard-Limits mit automatischer Blockierung, zeitbasierte Budgets täglich/wöchentlich/monatlich), Dashboards und Reports (Echtzeit-Übersicht und historische Auswertungen), Cost-Allocation (automatische Kostenverteilung auf Kostenstellen); Geschäftlicher Nutzen: Vermeidung unkontrollierter AI-Kosten, Transparenz über Kostenverursacher, Optimierungspotenzial durch detaillierte Analyse, Chargeback-Fähigkeit für interne Verrechnung
 
-**Geschäftlicher Nutzen**:
-- Keine zusätzlichen Credentials: Nutzer verwenden bestehende Unternehmensidentitäten
-- Zentrale Benutzerverwaltung: Änderungen in Azure AD/Keycloak automatisch synchronisiert
-- Erhöhte Sicherheit durch MFA und Conditional Access
-- Compliance mit Identity-Management-Richtlinien
+- **System-Monitoring, Observability und Logging**: System-Monitoring (CPU/Speicher/Disk/Netzwerk aller Komponenten), Application-Monitoring (Request-Latenz, Error-Rates, Throughput), Business-Metriken (Nutzer-Aktivität, Antwortqualität, Feature-Nutzung), umfassendes Logging (strukturierte Logs JSON/OpenTelemetry-Format, konfigurierbare Log-Rotation, automatische Archivierung gemäß Compliance), Export zu Kundensystemen (ELK-Stack, Grafana/Prometheus, Splunk, Datadog, Azure Monitor/Application Insights); Geschäftlicher Nutzen: Integration in bestehende IT-Monitoring-Landschaft, proaktive Problemerkennung, Compliance mit Logging-Anforderungen, langfristige Auswertbarkeit und Forensik
 
-### 5.3 Disclaimer- und Consent-Management
-**Fokus**: Transparenz und Einwilligungsverwaltung für rechtskonforme AI-Nutzung
-
-**Inhalte**:
-- **Konfigurierbare Disclaimer**: Organisationsspezifische Nutzungsbedingungen und Warnungen
-- **Consent-Workflows**: Granulare Einwilligungen für verschiedene Datenverarbeitungszwecke
-- **Versionierung**: Nachverfolgung von Einwilligungsänderungen über Zeit
-- **Widerrufsmechanismen**: Einfache Möglichkeit für Nutzer, Einwilligungen zurückzuziehen
-- **Dokumentation**: Vollständige Audit-Trails für Compliance-Nachweise
-
-**Geschäftlicher Nutzen**:
-- Erfüllung von revDSG- und GDPR-Einwilligungsanforderungen
-- Transparenz für Nutzer über Datenverarbeitung
-- Rechtssicherheit durch dokumentierte Einwilligungen
-- Flexibilität bei sich ändernden regulatorischen Anforderungen
-
-### 5.4 Echtzeit-Kostentracking mit Budgetlimits
-**Fokus**: Vollständige Kostenkontrolle und -transparenz
-
-**Inhalte**:
-- **Granulare Kostenerfassung**:
-  - Pro User: Individuelle Nutzung und Kosten
-  - Pro Abteilung/Organisation: Kostenstellen-Zuordnung
-  - Pro AI-Modell: Welche Modelle verursachen welche Kosten?
-  - Pro Request: Token-Nutzung, Latenz, Kosten jeder einzelnen Anfrage
-- **Budget-Limits**:
-  - Soft-Limits: Warnung bei Überschreitung
-  - Hard-Limits: Automatische Blockierung bei Budget-Erschöpfung
-  - Zeitbasierte Budgets: Täglich, wöchentlich, monatlich
-- **Dashboards und Reports**: Echtzeit-Übersicht und historische Auswertungen
-- **Cost-Allocation**: Automatische Kostenverteilung auf Kostenstellen
-
-**Geschäftlicher Nutzen**:
-- Vermeidung unkontrollierter AI-Kosten
-- Transparenz über Kostenverursacher
-- Optimierungspotenzial durch detaillierte Analyse
-- Chargeback-Fähigkeit für interne Verrechnung
-
-### 5.5 System-Monitoring, Observability und Logging
-**Fokus**: Vollständige Sichtbarkeit und Integration in bestehende Monitoring-Landschaft
-
-**Inhalte**:
-- **System-Monitoring**: CPU, Speicher, Disk, Netzwerk aller Komponenten
-- **Application-Monitoring**: Request-Latenz, Error-Rates, Throughput
-- **Business-Metriken**: Nutzer-Aktivität, Antwortqualität, Feature-Nutzung
-- **Umfassendes Logging**:
-  - Strukturierte Logs (JSON, OpenTelemetry-Format)
-  - Konfigurierbare Log-Rotation (Größe, Zeit)
-  - Automatische Archivierung und Retention gemäß Compliance-Anforderungen
-- **Export zu Kundensystemen**:
-  - ELK-Stack (Elasticsearch, Logstash, Kibana)
-  - Grafana / Prometheus
-  - Splunk
-  - Datadog
-  - Azure Monitor / Application Insights
-
-**Geschäftlicher Nutzen**:
-- Integration in bestehende IT-Monitoring-Landschaft
-- Proaktive Problemerkennung und -behebung
-- Compliance mit Logging-Anforderungen
-- Langfristige Auswertbarkeit und Forensik
-
-### 5.6 AI-Qualitätsmanagement
-**Fokus**: Kontinuierliche Überwachung und Verbesserung der AI-Qualität
-
-**Inhalte**:
-- **User-Feedback-System**: Thumbs-up/down, Kommentare, Qualitätsbewertungen
-- **Quality-Metrics**: Antwortgenauigkeit, Relevanz, Vollständigkeit
-- **Bias-Monitoring**: Automatische Erkennung von Verzerrungen in AI-Antworten
-- **Model-Drift-Detection**: Überwachung von Modell-Leistung über Zeit
-- **A/B-Testing**: Vergleichstests verschiedener Prompts, Modelle, Retrieval-Strategien
-- **Automatisches Retraining**: Trigger basierend auf Qualitätsmetriken
-
-**Geschäftlicher Nutzen**:
-- Kontinuierliche Qualitätsverbesserung
-- Früherkennung von Qualitätsproblemen
-- Compliance mit AI Act Quality Management Anforderungen
-- Datenbasierte Optimierung statt Bauchgefühl
+- **AI-Qualitätsmanagement**: User-Feedback-System (Thumbs-up/down, Kommentare, Qualitätsbewertungen), Quality-Metrics (Antwortgenauigkeit, Relevanz, Vollständigkeit), Bias-Monitoring (automatische Erkennung von Verzerrungen), Model-Drift-Detection (Überwachung Modell-Leistung über Zeit), A/B-Testing (Vergleichstests verschiedener Prompts/Modelle/Retrieval-Strategien), automatisches Retraining (Trigger basierend auf Qualitätsmetriken); Geschäftlicher Nutzen: Kontinuierliche Qualitätsverbesserung, Früherkennung von Qualitätsproblemen, Compliance mit AI Act Quality Management Anforderungen, datenbasierte Optimierung
 
 ## Business-Fragen, die das Kapitel beantwortet
 
