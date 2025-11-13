@@ -15,7 +15,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROMPTS_DIR="$SCRIPT_DIR/prompts"
 SOURCES_DIR="$SCRIPT_DIR/sources"
 OUTPUT_DIR="$SCRIPT_DIR/output"
-DOCS_ROOT="$SCRIPT_DIR/../docs"
+DOCS_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)/docs"
 
 LLM_MODEL="gemini-2.5-flash"  # Can override via environment variable
 MAX_RETRIES=3
