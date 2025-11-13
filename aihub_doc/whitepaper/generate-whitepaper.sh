@@ -150,6 +150,7 @@ generate_chapter() {
 
     echo -e "${BLUE}📝 Using prompt: $prompt_file${NC}"
     echo -e "${BLUE}🤖 Using model: $LLM_MODEL${NC}"
+    echo -e "${BLUE}📂 DOCS_ROOT: $DOCS_ROOT${NC}"
     echo -e "${BLUE}📚 Collecting source documentation...${NC}"
 
     # Show which source files are being collected
@@ -162,6 +163,7 @@ generate_chapter() {
             ((file_count++))
         else
             echo -e "${YELLOW}  ⚠️  Not found: $doc_path${NC}" >&2
+            echo -e "${YELLOW}      (Looking for: $full_path)${NC}" >&2
         fi
     done < <(get_source_files "$chapter_id")
 
