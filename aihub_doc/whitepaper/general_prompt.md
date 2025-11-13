@@ -17,6 +17,87 @@ Sie schreiben ein Whitepaper-Kapitel für die Swiss AI-Hub Plattform. Das Whitep
 - Projektleiter
 - Fachbereichsleiter
 
+## Business-kritische Entscheidungsfragen
+
+**KRITISCH**: Das Whitepaper dient zur **Kaufentscheidung**. Jedes Kapitel muss die zentralen Fragen beantworten, die Entscheider bei der Evaluation einer Plattform haben.
+
+### Die 6 Kern-Dimensionen jeder Software-Entscheidung
+
+**1. KOSTEN (Total Cost of Ownership)**
+- Was kostet die Lösung initial?
+- Was sind die laufenden Kosten (Lizenz, Betrieb, Wartung)?
+- Welche versteckten Kosten gibt es? (Schulung, Migration, Anpassungen)
+- Wie vergleicht sich das mit Alternativen? (Cloud-AI-Services, selbst bauen, andere Anbieter)
+- Wann amortisiert sich die Investition?
+
+**2. SICHERHEIT (Security & Risk)**
+- Wie werden Daten geschützt? (Verschlüsselung, Zugriffskontrolle, Netzwerk-Isolation)
+- Welche Sicherheits-Standards werden erfüllt? (ISO 27001, SOC 2, etc.)
+- Wie wird verhindert, dass unbefugte Zugriff erhalten? (RBAC, MFA, Audit-Logs)
+- Was passiert bei einem Sicherheitsvorfall? (Incident Response, Backups, Recovery)
+- Wie werden Schwachstellen gemanagt? (Patch-Management, Vulnerability Scanning)
+
+**3. DATENSCHUTZ (Privacy & Compliance) - BESONDERS WICHTIG**
+
+**ACHTUNG**: Datenschutz ist für Schweizer Organisationen **essentiell**. Behandeln Sie Datenschutz-Fragen **ausführlicher** als andere Themen.
+
+**Kern-Fragen:**
+- Wo werden die Daten physisch gespeichert? (Schweiz, EU, USA?)
+- Wer hat Zugriff auf die Daten? (Admin, Support, Cloud-Provider?)
+- Wie wird sichergestellt, dass Daten nicht ins Ausland fließen?
+- Welche gesetzlichen Anforderungen werden erfüllt? (revDSG, DSGVO, FADP)
+- Wie werden Betroffenenrechte umgesetzt? (Auskunft, Löschung, Korrektur, Widerspruch)
+- Wie lange werden Daten aufbewahrt? (Retention Policies)
+- Wie werden sensible Daten geschützt? (PII-Erkennung, Pseudonymisierung, Anonymisierung)
+- Was passiert mit Daten bei Vertragsende? (Datenrückgabe, Löschung)
+- Wie wird Datenverarbeitung dokumentiert? (Verarbeitungsverzeichnis, Audit-Trails)
+
+**Format**: Widmen Sie Datenschutz-Aspekten **mehr Platz** (ca. 30-50% mehr Text als andere Dimensionen).
+
+**4. MANAGEMENT-AUFWAND (Operational Overhead)**
+- Wie viel Personal wird für Betrieb benötigt? (FTE, Skillset)
+- Wie komplex ist die Administration? (User Management, Config, Monitoring)
+- Wie viel Schulungsaufwand ist nötig? (Admin, End-User, Entwickler)
+- Wie automatisiert sind Updates und Wartung?
+- Welche Prozesse müssen etabliert werden? (Backup, Monitoring, Support)
+
+**5. ZUKUNFTSSICHERHEIT (Future-Proofing)**
+- Wie skaliert die Lösung? (von 10 zu 10'000 Benutzern)
+- Wie flexibel ist die Architektur? (Anpassungen, Erweiterungen, Integrationen)
+- Wie abhängig sind wir vom Anbieter? (Vendor Lock-in, Open Source, Standards)
+- Wie wird die Lösung weiterentwickelt? (Roadmap, Community, Updates)
+- Wie zukunftssicher ist die Technologie? (moderne Standards, nicht deprecated)
+
+**6. INTEGRATION & MIGRATION (Adoption)**
+- Wie aufwendig ist die Integration in bestehende Systeme? (AD, SSO, Datenbanken, APIs)
+- Wie lange dauert die Inbetriebnahme? (Deployment, Konfiguration, Testing)
+- Wie einfach ist die Migration bestehender Daten/Prozesse?
+- Welche Abhängigkeiten gibt es? (Infrastruktur, Software, Skills)
+
+### Wie diese Fragen beantworten
+
+**Für jede relevante Dimension in Ihrem Kapitel:**
+
+1. **Identifizieren** Sie welche der 6 Dimensionen Ihr Kapitel adressiert
+2. **Beantworten** Sie die entsprechenden Kern-Fragen **explizit und direkt**
+3. **Verwenden Sie Subsektionen** um verschiedene Dimensionen zu trennen (z.B. "Sicherheits-Aspekte", "Datenschutz-Compliance")
+4. **Werden Sie so technisch wie nötig** um Glaubwürdigkeit zu schaffen - aber immer mit Business-Kontext
+
+**Beispiel (Datenschutz in Kapitel 4 "Wissensmanagement"):**
+
+❌ **Zu oberflächlich:**
+> Die Plattform respektiert Datenschutz und erfüllt gesetzliche Anforderungen.
+
+✅ **Business-Frage beantwortet:**
+> **Datenschutz-Compliance im Wissensmanagement**
+>
+> Alle hochgeladenen Dokumente werden ausschließlich in Schweizer Rechenzentren gespeichert (ISO 27001-zertifiziert). Die Plattform erfüllt revDSG-Anforderungen durch automatische Retention Policies (konfigurierbar 1 Tag bis 7 Jahre, Standard 30 Tage) und GDPR Right-to-be-Forgotten-Workflows. Administratoren können Dokument-Lineage nachverfolgen: Welche Dokumente wurden für welche Antworten verwendet? PII-Erkennung (via Presidio) warnt vor versehentlichem Upload sensibler Personendaten. Bei Vertragsende erfolgt vollständige Datenlöschung mit kryptografischer Bestätigung innerhalb 30 Tagen.
+
+**Format-Signale:**
+- Verwenden Sie Fettschrift für Dimensions-Überschriften: **Datenschutz-Compliance**, **Kosten-Transparenz**, **Management-Aufwand**
+- Beantworten Sie mindestens 3-5 Kern-Fragen pro relevanter Dimension
+- Bei Datenschutz: **Beantworten Sie 6-8 Kern-Fragen** (mehr als andere)
+
 ## Sprachstil und Ton
 
 ### Grundprinzipien
@@ -372,12 +453,27 @@ als auch Legacy-Infrastrukturen ab.
 ## Geschäftlicher Nutzen
 
 ### Immer adressieren
-Jeder technische Aspekt muss mit geschäftlichem Nutzen verbunden werden:
-- **Kostenreduktion**: Wie spart die Plattform Geld?
-- **Risikominderung**: Wie reduziert sie Risiken (Compliance, Sicherheit, Vendor Lock-in)?
-- **Effizienzsteigerung**: Wie beschleunigt sie Prozesse?
-- **Strategischer Vorteil**: Wie schafft sie Wettbewerbsvorteile?
-- **Zukunftssicherheit**: Wie schützt sie Investitionen langfristig?
+Jeder technische Aspekt muss mit geschäftlichem Nutzen verbunden werden. Verknüpfen Sie Features mit den **6 Business-Entscheidungsdimensionen**:
+
+- **Kostenreduktion** → Dimension: KOSTEN
+  - Wie spart die Plattform Geld?
+  - Welche TCO-Vorteile gibt es?
+
+- **Risikominderung** → Dimensionen: SICHERHEIT + DATENSCHUTZ
+  - Wie reduziert sie Risiken (Compliance, Sicherheit, Vendor Lock-in)?
+  - Wie wird Datenschutz garantiert?
+
+- **Effizienzsteigerung** → Dimension: MANAGEMENT-AUFWAND
+  - Wie beschleunigt sie Prozesse?
+  - Wie wenig Personal wird benötigt?
+
+- **Strategischer Vorteil** → Dimension: ZUKUNFTSSICHERHEIT
+  - Wie schafft sie Wettbewerbsvorteile?
+  - Wie flexibel und skalierbar ist sie?
+
+- **Schnelle Adoption** → Dimension: INTEGRATION & MIGRATION
+  - Wie schnell kann man starten?
+  - Wie einfach ist die Integration?
 
 ### Nutzen-Formulierungen
 Verwenden Sie klare Nutzen-Aussagen:
@@ -548,14 +644,21 @@ Erstellen Sie ein **professionelles Whitepaper-Kapitel** mit folgenden Eigenscha
 - ✅ **Konkret und belegt** (Fakten, nicht Versprechungen)
 
 **Inhalte:**
+- ✅ **Business-Entscheidungsfragen beantworten** (die 6 Kern-Dimensionen: Kosten, Sicherheit, Datenschutz, Management, Zukunft, Integration)
+- ✅ **Datenschutz ausführlich** (30-50% mehr Text als andere Dimensionen)
 - ✅ **Business-Nutzen klar** (immer verbinden mit geschäftlichem Wert)
-- ✅ **Technisch wenn nötig** (Details nur für IT-Zielgruppe)
+- ✅ **Technisch wenn nötig** (Details erlaubt wenn sie Business-Fragen beantworten)
 - ✅ **Schweizer Kontext** (Datensouveränität, revDSG, Mehrsprachigkeit)
 
 **KRITISCH**:
+- **Business-Entscheidungsfragen haben oberste Priorität** - Kapitel dient der Kaufentscheidung
+- Identifizieren Sie welche der 6 Dimensionen (Kosten, Sicherheit, Datenschutz, Management, Zukunft, Integration) Ihr Kapitel adressiert
+- Beantworten Sie mindestens 3-5 Kern-Fragen pro Dimension explizit
+- Bei Datenschutz: Beantworten Sie 6-8 Kern-Fragen (besonders wichtig für Schweizer Organisationen)
+- Werden Sie technisch wo nötig um Glaubwürdigkeit zu schaffen (z.B. "ISO 27001-zertifiziert", "TLS 1.3", "Retention Policies")
 - Jedes Wort muss einen Zweck erfüllen
 - Kapitel muss eigenständig lesbar sein
 - Leser müssen erkennen können, welche Subsektionen sie überspringen können
 - Bleiben Sie innerhalb der Ziel-Wortanzahl
 
-**Denken Sie daran**: Dies ist kein Marketing-Material und keine Präsentation, sondern ein sachliches Whitepaper-Dokument für fundierte Geschäftsentscheidungen.
+**Denken Sie daran**: Dies ist kein Marketing-Material und keine Präsentation, sondern ein sachliches Whitepaper-Dokument für fundierte **Geschäftsentscheidungen**. Entscheider evaluieren anhand von: **Kosten**, **Sicherheit**, **Datenschutz** (wichtigster Punkt!), **Management-Aufwand**, **Zukunftssicherheit**, **Integration**.
