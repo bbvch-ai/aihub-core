@@ -106,6 +106,11 @@ runs:
         echo "Pre-pulling Docker images for faster startup..."
         docker compose -f docker-compose.dev.yml --env-file .env.dev pull --quiet ${{ inputs.docker_compose_services }} || true
 
+    - name: Add HuggingFace token to environment variables
+      shell: bash
+      run: |
+        echo "HUGGINGFACE_API_KEY=${{ secrets.HUGGINGFACE_API_KEY }}" >> .env.dev
+
     - name: Start Docker services (if needed)
       if: inputs.docker_compose_services != ''
       shell: bash
