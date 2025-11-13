@@ -230,11 +230,130 @@ Statt abstrakte Beschreibungen, zeigen Sie konkrete Beispiele:
 
 ## Struktur und Format
 
-### Kapitelaufbau
-1. **Einleitung** (1-2 Absätze Fließtext): Kontext und Relevanz des Kapitels
-2. **Hauptinhalt** (primär Fließtext): Unterabschnitte mit klaren Übergängen
-3. **Geschäftlicher Nutzen** (in Text integriert): Nicht als separate Bulletpoint-Liste
-4. **Übergänge** (Verbindungssätze): Fließende Brücken zwischen Themen
+### Kapitelaufbau für Standalone-Lesbarkeit
+
+**KRITISCH**: Jedes Kapitel muss **eigenständig lesbar** sein, aber auch im Gesamtkontext funktionieren.
+
+**Kapitelstruktur:**
+
+1. **Einleitung** (1 Absatz, max. 150 Wörter):
+   - Was behandelt dieses Kapitel?
+   - Warum ist es wichtig? (Business-Relevanz)
+   - Für wen ist es relevant? (Zielgruppe signalisieren)
+   - **Keine Verweise auf andere Kapitel** - Kapitel muss standalone verständlich sein
+
+2. **Hauptinhalt** (strukturiert in klar getrennte Subsektionen):
+   - Verwenden Sie die 3-Typ-Struktur (siehe unten)
+   - Jede Subsektion beginnt mit Zweck-Statement
+   - Klare Überschriften die Inhalt signalisieren
+
+3. **Zusammenfassung** (optional, 1 Absatz, max. 100 Wörter):
+   - Nur wenn Kapitel besonders komplex oder lang
+   - Wiederhole nur die 3-5 wichtigsten Punkte
+   - Keine neuen Informationen
+
+### Subsektion-Typen: Konzept, Prozess, Technik
+
+**WICHTIG**: Strukturieren Sie Hauptinhalt nach **Informationstypen**, damit Leser erkennen können, was sie überspringen können.
+
+**Typ 1: KONZEPT (Business-orientiert)**
+- Überschriften wie: "Was ist...", "Überblick", "Grundprinzipien", "Architektur-Konzept"
+- **Zielgruppe**: C-Level, Beschaffung, Compliance Officers
+- **Inhalt**: Geschäftlicher Nutzen, Problemlösung, strategischer Wert
+- **Stil**: Nicht-technisch, Analogien verwenden
+- **Beispiel-Überschrift**: "4.1 Konzept: Wie AI auf Unternehmenswissen zugreift"
+
+**Typ 2: PROZESS (Anwender-orientiert)**
+- Überschriften wie: "Wie funktioniert...", "Workflow", "Ablauf", "In der Praxis"
+- **Zielgruppe**: Projektleiter, Fachabteilungen, End-User
+- **Inhalt**: Benutzererfahrung, Schritt-für-Schritt, Use Cases
+- **Stil**: Praktisch, nachvollziehbar, mit Beispielen
+- **Beispiel-Überschrift**: "4.2 Prozess: Von Upload bis zur KI-Antwort"
+
+**Typ 3: TECHNIK (IT-orientiert)**
+- Überschriften wie: "Technische Umsetzung", "Architektur", "Integration", "Spezifikationen"
+- **Zielgruppe**: IT-Architekten, CTO, Sicherheitsteams
+- **Inhalt**: Komponenten, Protokolle, Standards, Skalierung
+- **Stil**: Technisch präzise, konkrete Werte
+- **Beispiel-Überschrift**: "4.3 Technik: Milvus, Docling und RAG-Pipeline"
+
+**Format-Beispiel:**
+```markdown
+## 4. Wissensmanagement und RAG
+
+[Einleitung: 1 Absatz standalone]
+
+### 4.1 Konzept: Organisationswissen als KI-Grundlage
+[Business-orientiert, nicht-technisch]
+
+### 4.2 Prozess: Dokumenten-Upload bis intelligente Antwort
+[Anwender-orientiert, praktisch]
+
+### 4.3 Technik: RAG-Architektur und Komponenten
+[IT-orientiert, technisch]
+```
+
+### Signalisierung für selektives Lesen
+
+**Leser sollen erkennen können, was sie brauchen und was sie überspringen können.**
+
+**Methoden:**
+
+1. **Überschriften explizit machen:**
+   - ✅ "5.3 Technik: LlamaIndex Workflows und Event-Architektur"
+   - ❌ "5.3 Agent-Architektur" (unklar ob Konzept oder Technik)
+
+2. **Einleitungssatz pro Subsektion:**
+   - "Dieser Abschnitt erklärt das Konzept der Workflow-basierten Agents aus Business-Perspektive."
+   - "Dieser Abschnitt beschreibt den technischen Aufbau mit konkreten Komponenten."
+
+3. **Zielgruppen-Hinweise (bei Bedarf):**
+   - *Für IT-Architekten*: Details zu Kubernetes HPA, Pod-Limits...
+   - *Für Compliance Officers*: Retention Policies, GDPR-Workflows...
+
+4. **Visuelle Trennung:**
+   - Verwenden Sie `###` Überschriften konsequent für Subsektionen
+   - Mindestens 1 Leerzeile vor neuer Subsektion
+
+### Prägnanz und Kompaktheit
+
+**Das Whitepaper ist zu lang geworden. Seien Sie kompakter:**
+
+❌ **Vermeiden Sie Redundanz:**
+- Wiederholen Sie nicht, was in anderen Subsektionen steht
+- Keine mehrfache Erklärung desselben Konzepts
+- Nicht jeden Satz mit "Die Plattform..." beginnen
+
+❌ **Vermeiden Sie Füllwörter:**
+- "Es ist wichtig zu betonen, dass..."
+- "In diesem Zusammenhang sollte erwähnt werden..."
+- "Wie bereits erwähnt..."
+
+✅ **Direkter Stil:**
+- Gehen Sie direkt zum Punkt
+- Ein Konzept = Ein Absatz (wenn möglich)
+- Fassen Sie sich kurz, aber bleiben Sie präzise
+
+**Beispiel Vorher (zu ausschweifend, 120 Wörter):**
+```
+Die Plattform bietet umfassende Authentifizierungsmöglichkeiten, die es Organisationen
+ermöglichen, ihre bestehenden Identity-Management-Systeme nahtlos zu integrieren. Für
+Cloud-basierte Organisationen stehen moderne Standards wie OIDC und SAML zur Verfügung.
+Diese ermöglichen Single Sign-On und zentralisierte Benutzerverwaltung. Für On-Premise-
+Installationen unterstützt die Plattform auch Kerberos sowie mTLS-basierte Authentifizierung.
+Dies gewährleistet, dass auch Organisationen mit Legacy-Systemen die Plattform nutzen können.
+Die Vielfalt dieser Authentifizierungsoptionen ermöglicht es jeder Organisation, unabhängig
+von ihrer bestehenden Infrastruktur, die Plattform sicher zu nutzen.
+```
+
+**Beispiel Nachher (kompakt, 65 Wörter):**
+```
+Für die Authentifizierung unterstützt die Plattform moderne Standards (OIDC, SAML, OAuth2)
+für Cloud-Umgebungen sowie Kerberos und mTLS für On-Premise-Installationen. Single Sign-On
+ermöglicht nahtlose Integration in bestehende Identity-Management-Systeme – ohne dass
+Benutzer separate Credentials verwalten müssen. Diese Flexibilität deckt sowohl moderne
+als auch Legacy-Infrastrukturen ab.
+```
 
 ### Absätze als Fließtext
 - **Länge**: 3-6 Sätze pro Absatz (80-150 Wörter)
@@ -368,12 +487,26 @@ Ein gutes Kapitel erfüllt diese Kriterien:
 
 ## Längen-Richtlinien
 
-Die Kapitel haben unterschiedliche Ziel-Längen:
-- **Kurze Kapitel** (2-3 Seiten): ~800-1200 Wörter
-- **Mittlere Kapitel** (3-5 Seiten): ~1200-2000 Wörter
-- **Lange Kapitel** (6-8 Seiten): ~2400-3200 Wörter
+**WICHTIG**: Das Whitepaper ist zu lang geworden. Seien Sie **prägnant und kompakt**.
 
-Eine Seite entspricht etwa 400 Wörtern im fertigen Layout.
+**Neue, reduzierte Ziel-Längen:**
+- **Kurze Kapitel** (2-3 Seiten): ~**600-900 Wörter** (nicht mehr als 1000)
+- **Mittlere Kapitel** (3-5 Seiten): ~**900-1500 Wörter** (nicht mehr als 1600)
+- **Lange Kapitel** (5-7 Seiten): ~**1500-2100 Wörter** (nicht mehr als 2200)
+
+Eine Seite entspricht etwa 300 Wörtern im fertigen Layout.
+
+**Faustregel**:
+- Wenn Kapitelprompt "3-5 Seiten" sagt → Ziele auf **1200 Wörter**
+- Wenn Kapitelprompt "5-7 Seiten" sagt → Ziele auf **1800 Wörter**
+- **Nie mehr als 2200 Wörter** pro Kapitel
+
+**Wie kürzen:**
+- Redundanz eliminieren
+- Ein Konzept = Ein Absatz
+- Füllwörter streichen
+- Direkt zum Punkt kommen
+- Beispiele kompakt halten (max. 2-3 Sätze)
 
 ## Technische Konzepte erklären
 
@@ -395,15 +528,34 @@ Schreiben Sie für **Geschäftsentscheider in Schweizer Organisationen**, die:
 - Nicht unbedingt technischen Hintergrund haben
 - Wert auf Schweizer Qualität, Datensouveränität und Transparenz legen
 - Konkrete Informationen für fundierte Entscheidungen benötigen
+- **Selektiv lesen** (nur relevante Subsektionen)
 
 ### Ihr Schreibauftrag
-Erstellen Sie ein **professionelles Whitepaper-Kapitel in Fließtext-Form**:
-- **Primär vollständige Sätze und Absätze** (nicht Bulletpoint-Folie)
-- **Kompakt aber lesbar** (jedes Wort zählt, aber nicht telegrafisch)
-- **Natürlicher Rhythmus** (variieren Sie Satzlänge und -struktur)
-- **Menschlich wirkend** (vermeiden Sie typische AI-Schreibmuster)
-- **Konkret und belegt** (Fakten statt Versprechungen)
 
-Jedes Wort sollte einem Zweck dienen: Verständnis schaffen, Vertrauen aufbauen, Nutzen demonstrieren.
+Erstellen Sie ein **professionelles Whitepaper-Kapitel** mit folgenden Eigenschaften:
 
-**Denken Sie daran**: Dies ist kein Marketing-Material und keine Präsentation, sondern ein sachliches Whitepaper-Dokument, das fundierte Entscheidungen ermöglichen soll.
+**Struktur:**
+- ✅ **Standalone lesbar** - Kapitel funktioniert ohne andere Kapitel
+- ✅ **Klar strukturiert** - Konzept/Prozess/Technik-Subsektionen mit expliziten Überschriften
+- ✅ **Signalisierend** - Leser erkennen sofort, was für sie relevant ist
+- ✅ **Kompakt** - Ziel-Wortanzahl einhalten (siehe Längen-Richtlinien)
+
+**Stil:**
+- ✅ **Primär Fließtext** (nicht Bulletpoint-Folie)
+- ✅ **Kompakt und prägnant** (keine Redundanz, keine Füllwörter)
+- ✅ **Natürlicher Rhythmus** (variieren Sie Satzlänge und -struktur)
+- ✅ **Menschlich wirkend** (vermeiden Sie typische AI-Schreibmuster)
+- ✅ **Konkret und belegt** (Fakten, nicht Versprechungen)
+
+**Inhalte:**
+- ✅ **Business-Nutzen klar** (immer verbinden mit geschäftlichem Wert)
+- ✅ **Technisch wenn nötig** (Details nur für IT-Zielgruppe)
+- ✅ **Schweizer Kontext** (Datensouveränität, revDSG, Mehrsprachigkeit)
+
+**KRITISCH**:
+- Jedes Wort muss einen Zweck erfüllen
+- Kapitel muss eigenständig lesbar sein
+- Leser müssen erkennen können, welche Subsektionen sie überspringen können
+- Bleiben Sie innerhalb der Ziel-Wortanzahl
+
+**Denken Sie daran**: Dies ist kein Marketing-Material und keine Präsentation, sondern ein sachliches Whitepaper-Dokument für fundierte Geschäftsentscheidungen.
