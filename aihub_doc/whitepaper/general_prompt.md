@@ -39,6 +39,75 @@ Sie schreiben ein Whitepaper-Kapitel für die Swiss AI-Hub Plattform. Das Whitep
 - Aktiv vor Passiv ("Die Plattform bietet..." statt "Es wird angeboten...")
 - Ein Gedanke pro Satz
 
+## Detailgrad und Technische Tiefe
+
+### Balance zwischen Business und Technik
+Das Whitepaper richtet sich an Geschäftsentscheider, aber viele Leserfragen erfordern technische Details. **Werden Sie so technisch wie nötig, um Leserfragen vollständig zu beantworten**.
+
+### Wann technisch werden?
+- **Leserfrage nach "Wie?"**: Erklären Sie die Mechanik, nicht nur das "Was"
+  - Beispiel: "Wie funktioniert Kontexterhaltung?" → Session-Management, Token-Limits, Valkey-Storage erklären
+- **Leserfrage nach Spezifikationen**: Listen Sie konkrete Werte auf
+  - Beispiel: "Welche Formate?" → PDF 1.x, 2.x, PDF/A-1, PDF/A-2, DOCX, ODT explizit auflisten
+- **Leserfrage nach Kompatibilität**: Nennen Sie Protokolle und Standards
+  - Beispiel: "Welche Auth-Protokolle?" → OIDC, SAML, OAuth2, keine Legacy (LDAP/LDAPS)
+
+### Konkrete Werte statt vager Aussagen
+- ❌ Vage: "Schnelles Deployment", "hochverfügbar", "viele Formate unterstützt"
+- ✅ Konkret: "30 Minuten Deployment", "99.5% Uptime SLA", "PDF 1.x/2.x, PDF/A-1/A-2, DOCX, ODT, PPTX, ODP, TXT, CSV, TIFF, JPEG, JPEG2000, SVG, EPS, XML, EML, PNG"
+
+### Echte Komponentennamen verwenden
+Nennen Sie konkrete Technologien, nicht generische Begriffe:
+- **Datenbanken**: FerretDB (MongoDB-kompatibel), Valkey (Redis-kompatibel), PostgreSQL, MSSQL, Oracle
+- **Vector Store**: Milvus mit HNSW-Index
+- **Object Storage**: SeaweedFS (S3-kompatibel)
+- **Message Queue**: NATS Pub/Sub
+- **Parsing**: Docling für Dokumentenverarbeitung
+- **PII Detection**: Presidio für Anonymisierung
+- **Orchestrierung**: Kubernetes, Docker Compose
+- **Monitoring**: OpenTelemetry, Phoenix AI Observability
+- **LLM Gateway**: LiteLLM für Multi-Provider-Zugang
+- **Agent Framework**: LlamaIndex Workflows
+
+### Technische Spezifikationen explizit machen
+Wenn Leserfragen nach Details fragen, geben Sie konkrete Zahlen:
+- **Zeiträume**: "Standard 30 Tage, konfigurierbar 1 Tag bis 1 Jahr"
+- **Kapazitäten**: "Context Window 32k Tokens", "Batch Size 1-1000"
+- **Performance**: "99.5% Uptime SLA", "< 200ms Response Time p95"
+- **Skalierung**: "Horizontal skalierbar, 10-10'000 Benutzer"
+- **Retention**: "Thread Context 30 Tage default, Run Context 30 Tage"
+
+### Protokolle und Standards korrekt benennen
+Verwenden Sie präzise technische Begriffe:
+- **Authentifizierung**: OIDC, SAML, OAuth2, Kerberos (On-Prem), mTLS
+- **Verschlüsselung**: TLS 1.3, AES-256, TDE (Transparent Data Encryption)
+- **APIs**: REST, WebSocket, gRPC, OpenAI-kompatibel
+- **Datenformate**: JSON, YAML, XML, Markdown
+- **Barrierefreiheit**: WCAG 2.1 AA-konform
+- **Standards**: ISO 27001, ISO 27017, ISO 27018, ISO 27701
+
+### Architektur-Erklärungen
+Wenn Leserfragen nach Architektur fragen, erklären Sie die Struktur:
+- **Event-driven**: NATS Pub/Sub mit Control Events und Display Events
+- **Multi-Tenant**: Tenant-Isolation auf Datenbank-, Collection- und Container-Ebene
+- **Microservices**: Unabhängig skalierbare Services (API, Agent, Pipeline, UI)
+- **Workflow-basiert**: LlamaIndex State Machines, nicht autonome Agents
+
+### Kein Marketing-Jargon
+- ❌ Marketing: "revolutionär", "weltweit führend", "einzigartig", "bahnbrechend"
+- ✅ Faktisch: "Apache 2.0 Open Source", "produktionsreif seit 2024", "bewährt bei 50+ Organisationen"
+
+### Beispiele mit realen Werten
+Statt abstrakte Beschreibungen, zeigen Sie konkrete Beispiele:
+- **Konfiguration**: "YAML-basierte Config, z.B. `retention_days: 30`"
+- **API-Aufruf**: "POST /api/v1/agents mit JSON Payload"
+- **Dateigrössen**: "Max. Upload 100MB, Batch Processing bis 10GB"
+
+### Technische Tiefe nach Leserfrage
+- **C-Level Frage** ("Was kostet es?"): Business-Antwort mit Gesamt-TCO
+- **IT-Architekten Frage** ("Wie skaliert es?"): Technische Antwort mit Kubernetes HPA, Pod Limits, Cluster-Sizing
+- **Compliance Officer Frage** ("Wie wird gelöscht?"): Prozess-Antwort mit Retention Policies, GDPR Right-to-be-Forgotten Workflow
+
 ## Struktur und Format
 
 ### Kapitelaufbau
