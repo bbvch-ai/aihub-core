@@ -105,8 +105,8 @@ build_combined_prompt() {
 
     local file_count=0
     while IFS= read -r doc_path; do
-        # Remove leading/trailing whitespace
-        doc_path=$(echo "$doc_path" | xargs)
+        # Strip whitespace and carriage returns (handles both LF and CRLF line endings)
+        doc_path=$(echo "$doc_path" | tr -d '\r' | xargs)
         local full_path="$DOCS_ROOT/$doc_path"
 
         if [ -f "$full_path" ]; then
@@ -156,7 +156,8 @@ generate_chapter() {
     # Show which source files are being collected
     local file_count=0
     while IFS= read -r doc_path; do
-        doc_path=$(echo "$doc_path" | xargs)
+        # Strip whitespace and carriage returns (handles both LF and CRLF line endings)
+        doc_path=$(echo "$doc_path" | tr -d '\r' | xargs)
         local full_path="$DOCS_ROOT/$doc_path"
         if [ -f "$full_path" ]; then
             echo -e "${BLUE}  📄 $doc_path${NC}"
