@@ -550,17 +550,17 @@ services:
       --alias gemma-3-4b
       --port 8182
       --host 0.0.0.0
-      -c 8196
+      -c 4096
       {%- else %}
       -hf google/gemma-3-12b-it-qat-q4_0-gguf
       --hf-token ${HUGGINGFACE_API_KEY}
       --alias gemma-3-12b
       --port 128000
       --host 0.0.0.0
-      -c 8196
+      -c 4096
       {%- endif %}
       {%- if gpu_enabled %}
-      -ngl -1
+      -ngl 24
       {%- endif %}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
@@ -608,10 +608,10 @@ services:
       --host 0.0.0.0
       --embedding
       --pooling last
-      -c 2048
-      -ub 512
+      -c 1024
+      -ub 256
       {%- if gpu_enabled %}
-      -ngl 15
+      -ngl 6
       {%- endif %}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
@@ -657,11 +657,11 @@ services:
       --alias qwen-3-reranking
       --port 8182
       --host 0.0.0.0
-      -c 8192
+      -c 4096
       --reranking
       --no-context-shift
       {%- if gpu_enabled %}
-      -ngl 10
+      -ngl 4
       {%- endif %}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
@@ -707,7 +707,7 @@ services:
       --host 0.0.0.0
       --max-model-len 8192
       --trust-remote-code
-      --gpu-memory-utilization 0.2
+      --gpu-memory-utilization 0.18
       --tensor-parallel-size 1
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
