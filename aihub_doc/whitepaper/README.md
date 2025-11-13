@@ -2,6 +2,44 @@
 
 Automated LLM-based whitepaper generation system for creating business-focused documentation from technical docs.
 
+## Table of Contents
+
+- [Overview](#overview)
+  - [How Prompts Are Combined](#how-prompts-are-combined)
+- [Directory Structure](#directory-structure)
+- [Prerequisites](#prerequisites)
+- [Usage](#usage)
+  - [Generate All Chapters](#generate-all-chapters)
+  - [Generate Specific Chapters](#generate-specific-chapters)
+  - [List Available Chapters](#list-available-chapters)
+  - [Use Different Model](#use-different-model)
+  - [Help](#help)
+- [Creating a New Chapter](#creating-a-new-chapter)
+- [Prompt Writing Guidelines](#prompt-writing-guidelines)
+  - [Structure Your Prompts With](#structure-your-prompts-with)
+  - [Best Practices](#best-practices)
+- [Source File Guidelines](#source-file-guidelines)
+  - [Format](#format)
+  - [Selection Criteria](#selection-criteria)
+  - [Finding Source Docs](#finding-source-docs)
+- [Tips for Quality Output](#tips-for-quality-output)
+- [Chapter Numbering Convention](#chapter-numbering-convention)
+- [Troubleshooting](#troubleshooting)
+  - [Error: "llm command not found"](#error-llm-command-not-found)
+  - [Error: "API key not set"](#error-api-key-not-set)
+  - [Output is too technical](#output-is-too-technical)
+  - [Output doesn't cover all requirements](#output-doesnt-cover-all-requirements)
+  - [Generation fails](#generation-fails)
+- [Advanced Usage](#advanced-usage)
+  - [Custom System Prompt for All Chapters](#custom-system-prompt-for-all-chapters)
+  - [Parallel Generation](#parallel-generation)
+  - [Post-Processing](#post-processing)
+- [Best Practices for Production](#best-practices-for-production)
+- [Example Workflow](#example-workflow)
+- [Support](#support)
+
+---
+
 ## Overview
 
 This system generates whitepaper chapters by building a single combined prompt that contains:
