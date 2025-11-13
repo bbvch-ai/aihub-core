@@ -2,6 +2,43 @@
 
 This document describes the complete workflow for generating, measuring, and iteratively refining the Swiss AI-Hub whitepaper until it meets quality and length targets.
 
+## Table of Contents
+
+- [🎯 Quality Targets](#-quality-targets)
+- [📊 Current Word Distribution](#-current-word-distribution)
+- [🔄 Iterative Workflow](#-iterative-workflow)
+  - [Iteration Cycle](#iteration-cycle)
+  - [Step-by-Step Instructions](#step-by-step-instructions)
+    - [1. Generate Chapters](#1-generate-chapters)
+    - [2. Combine Chapters](#2-combine-chapters)
+    - [3. Measure Quality & Length](#3-measure-quality--length)
+    - [4. Analyze Results](#4-analyze-results)
+    - [5. Refine Prompts (if needed)](#5-refine-prompts-if-needed)
+- [🎯 Convergence Criteria](#-convergence-criteria)
+- [🛠️ Tool Reference](#️-tool-reference)
+  - [generate-whitepaper.sh](#generate-whitepapersh)
+  - [combine-whitepaper.sh](#combine-whitepapersh)
+  - [measure-whitepaper.sh](#measure-whitepapersh)
+- [📁 File Structure Reference](#-file-structure-reference)
+- [💡 Tips for Quality](#-tips-for-quality)
+  - [For Natural Writing (Not AI-like)](#for-natural-writing-not-ai-like)
+  - [For Business Focus](#for-business-focus)
+  - [For Datenschutz Emphasis (Swiss Context)](#for-datenschutz-emphasis-swiss-context)
+  - [For Standalone Chapters](#for-standalone-chapters)
+- [🔧 Troubleshooting](#-troubleshooting)
+  - ["llm command not found"](#llm-command-not-found)
+  - ["pypandoc not installed" (DOCX conversion)](#pypandoc-not-installed-docx-conversion)
+  - [Chapter generation fails](#chapter-generation-fails)
+  - [Word document page count different from estimate](#word-document-page-count-different-from-estimate)
+  - [Chapter too long despite reduced target](#chapter-too-long-despite-reduced-target)
+  - [Quality issues persist after prompt refinement](#quality-issues-persist-after-prompt-refinement)
+- [📚 Additional Documentation](#-additional-documentation)
+- [🎓 Best Practices](#-best-practices)
+- [📈 Expected Timeline](#-expected-timeline)
+- [✅ Success Checklist](#-success-checklist)
+
+---
+
 ## 🎯 Quality Targets
 
 - **Length**: Maximum 40 Word pages (~12,000 words @ 300 words/page)
