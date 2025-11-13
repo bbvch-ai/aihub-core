@@ -98,7 +98,7 @@ model_list:
     litellm_params:
 {%- if has_llama_cpp_embedding %}
       model: openai/qwen-3-embedding
-      api_base: http://llama-cpp-embedding:8182/
+      api_base: http://llama-cpp-embedding:8182/v1
       api_key: XXX
 {%- else %}
       model: azure/text-embedding-3-small
