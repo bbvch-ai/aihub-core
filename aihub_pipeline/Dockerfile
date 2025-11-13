@@ -71,7 +71,8 @@ RUN groupadd --gid "$USER_GID" "$USERNAME" && \
     curl -sSL https://install.python-poetry.org | python3 - --version "${POETRY_VERSION}" && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
-    mkdir -p /dagster_home
+    mkdir -p /dagster_home && \
+    chown "$USERNAME:$USERNAME" /dagster_home
 
 ENV DAGSTER_HOME=/dagster_home
 
