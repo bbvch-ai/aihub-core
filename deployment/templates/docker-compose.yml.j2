@@ -608,9 +608,10 @@ services:
       --host 0.0.0.0
       --embedding
       --pooling last
-      -ub 8192
+      -c 2048
+      -ub 512
       {%- if gpu_enabled %}
-      -ngl -1
+      -ngl 15
       {%- endif %}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
@@ -706,7 +707,7 @@ services:
       --host 0.0.0.0
       --max-model-len 8192
       --trust-remote-code
-      --gpu-memory-utilization 0.4
+      --gpu-memory-utilization 0.2
       --tensor-parallel-size 1
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
