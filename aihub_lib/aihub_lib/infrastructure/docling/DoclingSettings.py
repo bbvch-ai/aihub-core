@@ -14,7 +14,7 @@ class DoclingSettings(EnvironmentSettings):
 
     # --- VLM Pipeline Settings (Permanent) ---
     HOSTED_VLM_API_ENDPOINT: Annotated[str, Field(description="The API endpoint for the self-hosted VLM")] = (
-        "http://vllm:8000/v1/chat/completions"
+        "http://litellm:4000"
     )
     HOSTED_VLM_API_KEY: Annotated[str, Field(description="The API key for the self-hosted VLM")] = ""
     VLM_MODEL_NAME: Annotated[str, Field(description="The model name for the VLM")] = "text-generation/ocr"

@@ -78,7 +78,7 @@ model_list:
     litellm_params:
 {%- if gpu_enabled %}
       model: openai/{{ vllm_docling_alias }}
-      api_base: http://vllm-docling:8182/
+      api_base: http://vllm-docling:8182/v1
       api_key: XXX
 {%- else %}
       model: azure/gpt-4o-mini
@@ -230,7 +230,9 @@ general_settings:
 # ===================================================================
 litellm_settings:
   callbacks: ["detect_prompt_injection", "otel"]
+  {%- if stage != "dev" %}
   default_fallbacks: ["text-generation/nano", "text-generation/mini"]
+  {%- endif %}
   telemetry: true
   json_logs: true
   drop_params: true
