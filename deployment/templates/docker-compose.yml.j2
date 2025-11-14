@@ -87,9 +87,9 @@ services:
       -ip.bind=0.0.0.0
       -defaultReplication=000
       {%- if stage in ['dev', 'local', 'build'] %}
-      -volumeSizeLimitMB=1024     # 1GB
+      -volumeSizeLimitMB=1024
       {%- else %}
-      -volumeSizeLimitMB=29000  # Max per volume (SeaweedFS will create multiple volumes as needed for total TB+ storage)
+      -volumeSizeLimitMB=29000
       {%- endif %}
       -volumePreallocate=false
     volumes:
