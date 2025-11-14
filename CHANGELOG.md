@@ -5,6 +5,58 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.252.2] - 2025-11-14 - Streamlined Docker Builds with Enhanced Security
+
+### Security
+
+- 🔑 **Enhanced Runtime Security:** Significantly improved container security across all services by removing `sudo`
+  installation and privileges for the non-root user, minimizing potential attack vectors.
+- 🔒 **Refined File Ownership:** Configured Docker builds to ensure all application files copied to the runtime image are
+  explicitly owned by the non-root user, preventing permission issues and strengthening security best practices.
+
+### Refactor
+
+- ⚡️ **Optimized Docker Image Layers:** Consolidated multiple `RUN` commands into single instructions across all
+  Dockerfiles, reducing the number of image layers for smaller image sizes and faster build times.
+- 🧹 **Trimmed Runtime Dependencies:** Removed unnecessary system packages (`tree`, `vim`, `iputils-ping`, `libasound2`)
+  from service runtime images, creating leaner and more efficient deployments.
+- ⚙️ **Standardized Entrypoint Configuration:** Updated `ENTRYPOINT` definitions to the more robust "exec" form
+  (`["sh", "-c", "..."]`) in Dockerfiles, enhancing command execution reliability and variable handling.
+- 🎯 **Improved Variable Quoting:** Applied proper quoting for the `POETRY_VERSION` environment variable during Poetry
+  installation commands, ensuring robustness and preventing potential parsing issues.
+- 📁 **Centralized Dagster Home Management:** Standardized the `DAGSTER_HOME` directory for pipeline services to a
+  dedicated, securely-owned location (`/dagster_home`), improving consistency and non-root user compatibility.
+- 🛠️ **Adjusted Build Tool Availability:** Strategically included the `make` utility in the runtime images for
+  `aihub_api`, `aihub_bot`, and `aihub_pipeline` services, ensuring necessary build tools are available only where
+  required.
+- 📦 **Precise Environment PATH:** Adjusted the `PATH` environment variable for the `default_rag_pipeline` to more
+  accurately reference its virtual environment, enhancing environment isolation and reliability.
+
+---
+
+## [v0.252.1] - 2025-11-14 - Strengthened Data Integrity and Pipeline Organization
+
+### Fixed
+
+- 🐛 Corrected the description for the **AIHubUser role**, clarifying that it grants global user access instead of
+  administrative access within AI-Hub.
+
+### Changed
+
+- 🛡️ Implemented stricter validation and automatic sanitization for **Namespace and Folder names** in the RAG datalake.
+  Names will now be restricted to alphanumeric characters, hyphens, and underscores, enhancing data integrity and system
+  compatibility.
+- 🔄 Restructured **data pipeline asset keys** by introducing clearer intermediate path segments (e.g.,
+  `datalake_to_vectorstore`, `sharepoint_to_datalake`), improving the organization and clarity of data ingestion and
+  processing workflows.
+
+### Refactor
+
+- 🧹 Streamlined internal dependencies by updating the import path for **OpenAILike** to directly reference
+  `llama_index.llms.openai_like`.
+
+---
+
 ## [v0.252.0] - 2025-11-12 - Broadening Horizons: Local Filesystem Integration and Generalized Data Sources
 
 ### Added
