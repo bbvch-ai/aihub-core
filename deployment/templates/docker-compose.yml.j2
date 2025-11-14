@@ -740,7 +740,6 @@ services:
       - "8185:8000"
     {%- endif %}
     volumes:
-      - ./configs/speaches/speaches-download-models.sh:/etc/speaches/speaches-download-models.sh
       - {{ global.volume_root }}/huggingface:/root/.cache/huggingface
     environment:
       HF_HOME: /root/.cache/huggingface
@@ -752,8 +751,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 5s
-    post_start:
-      - command: [ "sh", "/etc/speaches/speaches-download-models.sh" ]
     {%- if speaches_use_gpu %}
     deploy:
       resources:
