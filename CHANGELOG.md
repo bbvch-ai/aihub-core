@@ -5,6 +5,66 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.253.0] - 2025-11-14 - Unified Deployment, Local AI Power, and Docling VLM Integration
+
+### Added
+
+- ✨ **Dynamic Deployment System**: Introduced a new Jinja2-based templating system to generate Docker Compose and
+  service configuration files dynamically across various stages (dev, local, build, nightly, latest) and hardware (CPU,
+  GPU), replacing manual configurations for enhanced flexibility and maintainability.
+- 🦾 **Local Inference Services**: Integrated new Docker services (`llama-cpp`, `llama-cpp-embedding`,
+  `llama-cpp-reranker`, `vllm-docling`, `speaches`) to enable on-premise inference for Large Language Models, embedding
+  models, reranker models, and audio models (SST/TTS), dynamically selected based on hardware and deployment stage.
+- 🖼️ **Docling VLM Integration**: Implemented new API endpoints and a dedicated controller within `aihub_api` to support
+  advanced document conversion to Markdown using Docling's Visual Language Model (VLM) capabilities.
+- ⚙️ **IntelliJ Run Configurations**: Added new IntelliJ IDEA run configurations for Docker Compose (Build, Dev, Local
+  with CPU/GPU options) to streamline local development setup and execution.
+- 📄 **Deployment Documentation**: Created a new `README.md` within the `deployment` directory, providing comprehensive
+  documentation for the different deployment configurations and Traefik setup.
+- 🔑 **Hugging Face API Key Management**: Integrated Hugging Face API key support into CI workflows and LiteLLM
+  configurations, enabling seamless access to models requiring authentication from Hugging Face Hub.
+
+### Changed
+
+- 🛠️ **Centralized Configuration**: Refactored core infrastructure service configurations (LiteLLM, Milvus, NATS,
+  Dagster, OpenTelemetry, Traefik) into a centralized `compose-config.yml` for consistent and dynamic generation.
+- 🚀 **LiteLLM Model Definitions**: Updated LiteLLM proxy to dynamically route to local inference services (llama-cpp,
+  speaches) based on hardware availability and deployment stage, optimizing resource utilization.
+- 🛡️ **LiteLLM Prompt Injection Detection**: Enhanced LiteLLM's prompt injection detection by disabling simple heuristic
+  checks and enabling more robust similarity and LLM-based API checks with a refined system prompt.
+- 📊 **OpenTelemetry Configuration**: Implemented conditional activation of OpenTelemetry exporters and processors,
+  ensuring full observability pipelines are enabled only in non-development stages for optimized resource usage.
+- 📦 **Milvus Configuration Tuning**: Adjusted Milvus logging levels, segment sizes, GPU memory pool settings, and
+  default data handling policies for improved performance and consistency across environments.
+- ⚡️ **NATS Performance Tuning**: Dynamically configured NATS server settings (payload limits, connections, JetStream
+  storage) to align with specific stage requirements, optimizing performance for both development and production.
+- 🌐 **Traefik Configuration**: Enhanced Traefik setup for dynamic TLS certificate resolution (Let's Encrypt for
+  production, self-signed for local/build) and dashboard access based on the deployment stage.
+- 📜 **Docling Loader Settings**: Simplified the `DoclingLoader` configuration by removing numerous granular settings,
+  streamlining its integration into the document processing pipeline.
+- 🧑‍💻 **OpenWebUI Image Generation Model**: Changed the default image generation model in OpenWebUI to a generic
+  `"image-generation"` identifier for broader compatibility with various image generation services.
+
+### Fixed
+
+- 🐛 **Agent Test Reliability**: Improved the `AgentTestRunner` by introducing a `StopEvent` mechanism, allowing tests to
+  complete more rapidly and reliably without relying solely on fixed delays.
+- 🧪 **Removed Flaky Test Mark**: Removed the `@pytest.mark.flaky` decorator from a chatbot streaming test, indicating
+  increased confidence in its stability and reliability.
+
+### Removed
+
+- 🗑️ **Deprecated API Keys**: Cleaned up the `.env.dev` file by removing `AZURE_OPENAI_KEY_IMAGE`,
+  `AZURE_OPENAI_KEY_AUDIO`, and `HUGGINGFACE_API_KEY`, as these are now managed centrally or dynamically within the new
+  configuration system.
+- 🧹 **Legacy Docker Compose Files**: Eliminated redundant and outdated Docker Compose files, which are now replaced by
+  the new dynamically generated configurations for improved maintainability.
+- 📜 **Unused License Entries**: Updated `licenses.config.json` by removing entries for services no longer in use (e.g.,
+  `rabbitmq`, `kafka`, `airflow`, `grafana`, `prometheus`, and various base image references), ensuring an accurate and
+  up-to-date record of third-party licenses.
+
+---
+
 ## [v0.252.2] - 2025-11-14 - Streamlined Docker Builds with Enhanced Security
 
 ### Security
