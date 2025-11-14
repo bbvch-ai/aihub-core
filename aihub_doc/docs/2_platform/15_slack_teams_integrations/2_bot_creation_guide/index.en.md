@@ -269,7 +269,7 @@ The Messages Tab is typically disabled when using Bot Framework, as the bot comm
 2. Go to your bot's channels page:
    - URL format: `https://dev.botframework.com/bots/channels?id={APP_ID}&channelId=slack`
    - Replace `{APP_ID}` with your Teams app ID (from Step 6)
-   - Example: `https://dev.botframework.com/bots/channels?id=aea34319-6452-4881-9872-cd4cc22c6f66&channelId=slack`
+   - Example: `https://dev.botframework.com/bots/channels?id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx&channelId=slack`
 3. Click **"Slack"** channel or **"Configure"** if already added
 4. Copy the app credentials from your Slack app (from Step 8):
    - **Client ID** (from Slack App Credentials)
@@ -378,17 +378,17 @@ Update the bot path document in MongoDB to include the Slack OAuth token from St
 ```json
 {
   "_id": {
-    "$oid": "6908ab1edc4c571fff1d46e2"
+    "$oid": "xxxxxxxxxxxxxxxxxxxxxxxx"
   },
   "path": "/api/v1/agent/chat/completions/LLMWrappingAgent/dev_agent/json",
   "credentials": {
     "APP_TYPE": "SingleTenant",
-    "APP_ID": "aea34319-6452-4881-9872-cd4cc22c6f66",
-    "APP_PASSWORD": "rWc8Q~retZ0QjVc4QW5qLFauauB-4XoHQu_JPbIK",
-    "APP_TENANTID": "37314c94-c755-48ab-85bb-acb83e492c42"
+    "APP_ID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "APP_PASSWORD": "xxx~xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "APP_TENANTID": "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
   },
   "system_message": "You are a helpful AI assistant powered by Azure OpenAI.",
-  "slack_token": "xoxb-8373804641105-9833930643140-UFZqwD4D1vk3dGC6dTZo0jaT"
+  "slack_token": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx"
 }
 ```
 
@@ -403,7 +403,7 @@ Update the bot path document in MongoDB to include the Slack OAuth token from St
 ```javascript
 db.bot_paths.updateOne(
   { "path": "/api/v1/agent/chat/completions/LLMWrappingAgent/dev_agent/json" },
-  { $set: { "slack_token": "xoxb-8373804641105-9833930643140-UFZqwD4D1vk3dGC6dTZo0jaT" } }
+  { $set: { "slack_token": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx" } }
 )
 ```
 
@@ -411,8 +411,8 @@ db.bot_paths.updateOne(
 
 ```javascript
 db.bot_paths.updateOne(
-  { "_id": ObjectId("6908ab1edc4c571fff1d46e2") },
-  { $set: { "slack_token": "xoxb-8373804641105-9833930643140-UFZqwD4D1vk3dGC6dTZo0jaT" } }
+  { "_id": ObjectId("xxxxxxxxxxxxxxxxxxxxxxxx") },
+  { $set: { "slack_token": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx" } }
 )
 ```
 
@@ -457,7 +457,7 @@ These manifests show the complete configuration for both Slack and Teams apps. Y
     },
     "settings": {
         "event_subscriptions": {
-            "request_url": "https://slack.botframework.com/api/Events/aea34319-6452-4881-9872-cd4cc22c6f66",
+            "request_url": "https://slack.botframework.com/api/Events/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
             "bot_events": [
                 "assistant_thread_context_changed",
                 "assistant_thread_started",
@@ -481,7 +481,7 @@ These manifests show the complete configuration for both Slack and Teams apps. Y
   - **messages_tab_read_only_enabled**: Set to `false`
 - **always_online**: Set to `true` to show bot as always online
 - **redirect_urls**: Always `https://slack.botframework.com` for Bot Framework integration
-- **request_url**: Format is `https://slack.botframework.com/api/Events/{APP_ID}` where `{APP_ID}` is your Teams app client ID (e.g., `aea34319-6452-4881-9872-cd4cc22c6f66`)
+- **request_url**: Format is `https://slack.botframework.com/api/Events/{APP_ID}` where `{APP_ID}` is your Teams app client ID
 - **bot scopes**: All 6 scopes are required for full functionality (including `chat:write` and `assistant:write`)
 - **bot_events**: All 6 events enable the bot to receive messages across all conversation types
 
@@ -492,16 +492,16 @@ These manifests show the complete configuration for both Slack and Teams apps. Y
     "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.23/MicrosoftTeams.schema.json",
     "version": "1.0.0",
     "manifestVersion": "1.23",
-    "id": "c872309b-a920-4c99-8362-477453200cf3",
+    "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
     "name": {
         "short": "LLM Agent",
         "full": "LLM Wrapping Agent"
     },
     "developer": {
-        "name": "bbv Software Services AG",
-        "websiteUrl": "https://bbv.ch",
-        "privacyUrl": "https://bbv.ch",
-        "termsOfUseUrl": "https://bbv.ch"
+        "name": "Your Organization Name",
+        "websiteUrl": "https://your-domain.com",
+        "privacyUrl": "https://your-domain.com/privacy",
+        "termsOfUseUrl": "https://your-domain.com/terms"
     },
     "description": {
         "short": "LLMWrappingAgent",
@@ -514,7 +514,7 @@ These manifests show the complete configuration for both Slack and Teams apps. Y
     "accentColor": "#ffffff",
     "bots": [
         {
-            "botId": "aea34319-6452-4881-9872-cd4cc22c6f66",
+            "botId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
             "scopes": [
                 "personal",
                 "team",
@@ -528,7 +528,7 @@ These manifests show the complete configuration for both Slack and Teams apps. Y
     ],
     "validDomains": [],
     "webApplicationInfo": {
-        "id": "aea34319-6452-4881-9872-cd4cc22c6f66"
+        "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
     },
     "authorization": {
         "permissions": {
