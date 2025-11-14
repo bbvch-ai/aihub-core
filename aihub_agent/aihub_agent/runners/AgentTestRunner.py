@@ -114,18 +114,28 @@ class AgentTestRunner(AgentRunner):
         A context manager that:
         1. Starts the agent runner.
         2. Sets up a subscription to observe all events for a newly generated run/thread/display IDs.
-        3. Yields a PartialAgentTopic that identifies the run’s context for sending events.
-        4. After the context block ends, waits `delay_before_stop` seconds before stopping the agent runner.
+        3. Yields a PartialAgentTopic that identifies the run's context for sending events.
+        4. After the context block ends, waits for a StopEvent or until `delay_before_stop` timeout is reached.
 
         This is useful for integration tests where you:
         - Need a clean environment (fresh thread/run).
         - Want to observe all events produced during the test scenario.
         - Want automatic teardown after tests complete.
+
+        The `delay_before_stop` parameter acts as a maximum timeout, but the method will exit early
+        if a StopEvent is detected, significantly speeding up tests that complete quickly.
         """
         yield await self.test_run_start(thread_id)
-        # After leaving the context, wait a bit before stopping to allow
-        # the agent to finish processing any last events.
-        await sleep(delay_before_stop)
+        # After leaving the context, wait for StopEvent or timeout
+        # Poll every 100ms to detect StopEvent early and avoid unnecessary waiting
+        interval = 0.1
+        max_attempts = int(delay_before_stop / interval)
+        attempts = 0
+
+        while not self.has_stop_event and attempts < max_attempts:
+            await sleep(interval)
+            attempts += 1
+
         await self.test_run_stop()
 
     async def test_run_start(self, thread_id: str | None = None) -> PartialAgentTopic:
