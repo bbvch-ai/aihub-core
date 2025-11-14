@@ -285,6 +285,12 @@
       "license": "Apache-2.0",
       "status": "✅",
       "notes": "Permissive license"
+    },
+    {
+      "service": "speaches",
+      "license": "MIT",
+      "status": "✅",
+      "notes": "Permissive license"
     }
   ]
 }
