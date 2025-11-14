@@ -1,0 +1,23 @@
+clouds:
+  PCP-AALAZWD-dc3-a:
+    auth:
+      auth_url: https://api.pub1.infomaniak.cloud/identity/v3
+      password: ''
+      project_domain_name: default
+      project_name: PCP-AALAZWD
+      user_domain_name: default
+      username: PCU-AALAZWD
+    identity_api_version: 3
+    interface: public
+    region_name: dc3-a
+  PCP-AALAZWD-dc4-a:
+    auth:
+      auth_url: https://api.pub1.infomaniak.cloud/identity/v3
+      password: ''
+      project_domain_name: default
+      project_name: PCP-AALAZWD
+      user_domain_name: default
+      username: PCU-AALAZWD
+    identity_api_version: 3
+    interface: public
+    region_name: dc4-a
