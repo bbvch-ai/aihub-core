@@ -94,9 +94,10 @@ Sie schreiben ein Whitepaper-Kapitel für die Swiss AI-Hub Plattform. Das Whitep
 > Alle hochgeladenen Dokumente werden ausschließlich in Schweizer Rechenzentren gespeichert (ISO 27001-zertifiziert). Die Plattform erfüllt revDSG-Anforderungen durch automatische Retention Policies (konfigurierbar 1 Tag bis 7 Jahre, Standard 30 Tage) und GDPR Right-to-be-Forgotten-Workflows. Administratoren können Dokument-Lineage nachverfolgen: Welche Dokumente wurden für welche Antworten verwendet? PII-Erkennung (via Presidio) warnt vor versehentlichem Upload sensibler Personendaten. Bei Vertragsende erfolgt vollständige Datenlöschung mit kryptografischer Bestätigung innerhalb 30 Tagen.
 
 **Format-Signale:**
-- Verwenden Sie Fettschrift für Dimensions-Überschriften: **Datenschutz-Compliance**, **Kosten-Transparenz**, **Management-Aufwand**
-- Beantworten Sie mindestens 3-5 Kern-Fragen pro relevanter Dimension
-- Bei Datenschutz: **Beantworten Sie 6-8 Kern-Fragen** (mehr als andere)
+- **WICHTIG**: Verwenden Sie NIEMALS die Dimensions-Namen (DATENSCHUTZ, SICHERHEIT, KOSTEN, MANAGEMENT, ZUKUNFTSSICHERHEIT, INTEGRATION) als Fettdruck-Überschriften im Fließtext
+- Integrieren Sie diese Aspekte natürlich in den Text ohne explizite Dimensionen-Labels
+- Beantworten Sie mindestens 3-5 Kern-Fragen pro relevanter Dimension (implizit, ohne die Dimension beim Namen zu nennen)
+- Bei Datenschutz: **Beantworten Sie 6-8 Kern-Fragen** (mehr als andere, aber ohne "DATENSCHUTZ" als Überschrift)
 
 ## Sprachstil und Ton
 
@@ -122,8 +123,14 @@ Sie schreiben ein Whitepaper-Kapitel für die Swiss AI-Hub Plattform. Das Whitep
 
 ## Textfluss und Whitepaper-Charakteristik
 
+**🚨 KRITISCHSTE REGEL: FLIESSTEXT, NICHT BULLETPOINTS! 🚨**
+
+**Ein Whitepaper ist KEIN Foliensatz!** Schreiben Sie zusammenhängende Prosa, nicht Listen!
+
 ### Vollständige Sätze bevorzugen
 **WICHTIG**: Ein Whitepaper ist ein Fließtext-Dokument, kein Präsentations-Foliensatz. Schreiben Sie in vollständigen, zusammenhängenden Sätzen statt Stichpunkten.
+
+**Das größte Problem bisheriger Generierungen**: Zu viele Bulletpoints! LLMs neigen dazu, Listen zu schreiben. Sie müssen dagegen ankämpfen und Fließtext produzieren!
 
 **❌ Vermeiden Sie inflationäre Bulletpoints**:
 ```
@@ -140,13 +147,23 @@ Die Plattform bietet Mitarbeitern eine moderne, ChatGPT-ähnliche Benutzeroberfl
 ```
 
 ### Wann Bulletpoints verwenden
-Setzen Sie Aufzählungen **nur gezielt** ein für:
-- **Technische Spezifikationen**: Unterstützte Formate, Protokolle, Standards
-- **Feature-Listen**: Wenn 5+ ähnliche Punkte aufgelistet werden müssen
-- **Checklisten**: RFP-Anforderungen, Compliance-Kriterien
-- **Vergleichstabellen**: Deployment-Optionen, Lizenzmodelle
 
-**Faustregel**: Maximum 1-2 Bulletpoint-Listen pro Unterabschnitt. Alles andere in Fließtext.
+**KRITISCH**: Bulletpoints sind das **LETZTE Mittel**, nicht das Standard-Format!
+
+Setzen Sie Aufzählungen **nur in diesen seltenen Fällen** ein:
+- **Technische Spezifikationen**: Lange Listen unterstützter Formate/Protokolle (8+ Items)
+- **Compliance-Checklisten**: Wenn explizite Checkmarks verlangt sind
+
+**NIEMALS Bulletpoints für:**
+- ❌ Feature-Beschreibungen (schreiben Sie Fließtext!)
+- ❌ Vorteile/Nutzen (integrieren Sie in Absätze!)
+- ❌ Prozess-Schritte (schreiben Sie narrative Beschreibung!)
+- ❌ Konzept-Erklärungen (schreiben Sie Fließtext!)
+
+**STRIKTE Faustregel**:
+- **Maximum 1 Bulletpoint-Liste pro Kapitel** (nur für technische Specs)
+- Wenn < 5 Items: **IMMER Fließtext**, niemals Bulletpoints
+- Jede Bulletpoint-Liste maximal 5-8 Zeilen
 
 ### Natürlicher Textfluss
 **Verbinden Sie Gedanken durch Übergänge**:
@@ -317,62 +334,76 @@ Statt abstrakte Beschreibungen, zeigen Sie konkrete Beispiele:
 
 **Kapitelstruktur:**
 
-1. **Einleitung** (1 Absatz, max. 150 Wörter):
-   - Was behandelt dieses Kapitel?
-   - Warum ist es wichtig? (Business-Relevanz)
-   - Für wen ist es relevant? (Zielgruppe signalisieren)
+1. **TLDR-Einleitung** (1 kompakter Absatz, max. 120 Wörter):
+   - **NICHT** schreiben "Dieses Kapitel erklärt..." oder "Dieses Kapitel behandelt..."
+   - **STATTDESSEN**: Direkt die Kernaussagen des Kapitels als prägnante Zusammenfassung
+   - Fokus auf Business-Relevanz und Kernbotschaften
+   - Für wen ist es relevant? (Zielgruppe subtil signalisieren)
    - **Keine Verweise auf andere Kapitel** - Kapitel muss standalone verständlich sein
 
-2. **Hauptinhalt** (strukturiert in klar getrennte Subsektionen):
-   - Verwenden Sie die 3-Typ-Struktur (siehe unten)
-   - Jede Subsektion beginnt mit Zweck-Statement
-   - Klare Überschriften die Inhalt signalisieren
+   **Beispiel TLDR-Stil (GUT):**
+   > Workflow-basierte AI-Agenten bieten Transparenz und Kontrolle statt Black-Box-Systeme. Jeder Verarbeitungsschritt ist nachvollziehbar und auditierbar – entscheidend für Compliance und Vertrauen. Human-in-the-Loop-Mechanismen ermöglichen menschliche Aufsicht bei kritischen Entscheidungen, während tiefe Observability den vollständigen "Denkprozess" der AI sichtbar macht.
 
-3. **Zusammenfassung** (optional, 1 Absatz, max. 100 Wörter):
-   - Nur wenn Kapitel besonders komplex oder lang
-   - Wiederhole nur die 3-5 wichtigsten Punkte
-   - Keine neuen Informationen
+2. **Hauptinhalt** (strukturiert nach Konzept → Prozess → Technik):
+   - **Konzept- und prozessfokussierte Abschnitte ZUERST** (Business-orientiert, verständlich)
+   - **Technische Details am ENDE** (als klar gekennzeichnete technische Vertiefung)
+   - Jede Subsektion beginnt mit Zweck-Statement
+   - Klare, beschreibende Überschriften (nicht "### Integration" sondern "### Integration in bestehende Systeme")
+   - **NIEMALS nummerierten Subsektionen** (NICHT "### 4.1 Übersicht" oder "### 13.3 Technik", sondern nur "### Übersicht" oder "### Technischer Exkurs")
+
+3. **KEINE Zusammenfassung am Ende**:
+   - **WICHTIG**: Kapitel enden OHNE "Zusammenfassung"-Abschnitt
+   - Der letzte inhaltliche Abschnitt schließt direkt ab
+   - Keine Wiederholungen am Ende
 
 ### Subsektion-Typen: Konzept, Prozess, Technik
 
 **WICHTIG**: Strukturieren Sie Hauptinhalt nach **Informationstypen**, damit Leser erkennen können, was sie überspringen können.
 
-**Typ 1: KONZEPT (Business-orientiert)**
-- Überschriften wie: "Was ist...", "Überblick", "Grundprinzipien", "Architektur-Konzept"
+**KRITISCHE Reihenfolge: Konzept und Prozess ZUERST, Technik am ENDE**
+
+**Typ 1: KONZEPT (Business-orientiert) - ZUERST**
+- Überschriften wie: "Überblick", "Grundprinzipien", "Das Konzept"
 - **Zielgruppe**: C-Level, Beschaffung, Compliance Officers
 - **Inhalt**: Geschäftlicher Nutzen, Problemlösung, strategischer Wert
 - **Stil**: Nicht-technisch, Analogien verwenden
-- **Beispiel-Überschrift**: "4.1 Konzept: Wie AI auf Unternehmenswissen zugreift"
+- **Beispiel-Überschrift**: "### Workflow-basierte Agenten statt Black Box"
 
-**Typ 2: PROZESS (Anwender-orientiert)**
-- Überschriften wie: "Wie funktioniert...", "Workflow", "Ablauf", "In der Praxis"
+**Typ 2: PROZESS (Anwender-orientiert) - DANACH**
+- Überschriften wie: "Wie es funktioniert", "Der Workflow", "In der Praxis"
 - **Zielgruppe**: Projektleiter, Fachabteilungen, End-User
 - **Inhalt**: Benutzererfahrung, Schritt-für-Schritt, Use Cases
 - **Stil**: Praktisch, nachvollziehbar, mit Beispielen
-- **Beispiel-Überschrift**: "4.2 Prozess: Von Upload bis zur KI-Antwort"
+- **Beispiel-Überschrift**: "### Governance und menschliche Aufsicht"
 
-**Typ 3: TECHNIK (IT-orientiert)**
-- Überschriften wie: "Technische Umsetzung", "Architektur", "Integration", "Spezifikationen"
+**Typ 3: TECHNIK (IT-orientiert) - AM ENDE**
+- Überschriften wie: "Technische Umsetzung", "Technischer Exkurs:", "Unter der Haube"
 - **Zielgruppe**: IT-Architekten, CTO, Sicherheitsteams
 - **Inhalt**: Komponenten, Protokolle, Standards, Skalierung
 - **Stil**: Technisch präzise, konkrete Werte
-- **Beispiel-Überschrift**: "4.3 Technik: Milvus, Docling und RAG-Pipeline"
+- **Kann als "Exkurs" formatiert werden** für klare Abgrenzung
+- **Beispiel-Überschrift**: "### Technischer Exkurs: OpenTelemetry und Observability-Stack"
 
 **Format-Beispiel:**
 ```markdown
 ## 4. Wissensmanagement und RAG
 
-[Einleitung: 1 Absatz standalone]
+[TLDR-Absatz: Direkte Kernaussagen, NICHT "Dieses Kapitel behandelt..."]
 
-### 4.1 Konzept: Organisationswissen als KI-Grundlage
-[Business-orientiert, nicht-technisch]
+### Organisationswissen als KI-Grundlage
+[Konzept: Business-orientiert, nicht-technisch]
 
-### 4.2 Prozess: Dokumenten-Upload bis intelligente Antwort
-[Anwender-orientiert, praktisch]
+### Von Upload bis zur intelligenten Antwort
+[Prozess: Anwender-orientiert, praktisch]
 
-### 4.3 Technik: RAG-Architektur und Komponenten
-[IT-orientiert, technisch]
+### Technischer Exkurs: RAG-Pipeline und Komponenten
+[Technik: IT-orientiert, technisch - AM ENDE]
 ```
+
+**WICHTIG**:
+- **KEINE** nummerierten Subsektionen (nicht "### 4.1", "### 4.2")
+- **NUR** einfache Überschriften (### Titel)
+- Technische Details **immer am Ende**, klar als "Technischer Exkurs" oder ähnlich gekennzeichnet
 
 ### Signalisierung für selektives Lesen
 
@@ -381,19 +412,22 @@ Statt abstrakte Beschreibungen, zeigen Sie konkrete Beispiele:
 **Methoden:**
 
 1. **Überschriften explizit machen:**
-   - ✅ "5.3 Technik: LlamaIndex Workflows und Event-Architektur"
-   - ❌ "5.3 Agent-Architektur" (unklar ob Konzept oder Technik)
+   - ✅ "### Technischer Exkurs: LlamaIndex Workflows und Event-Architektur"
+   - ✅ "### Workflow-basierte Agenten: Das Konzept"
+   - ❌ "### Agent-Architektur" (unklar ob Konzept oder Technik)
 
-2. **Einleitungssatz pro Subsektion:**
-   - "Dieser Abschnitt erklärt das Konzept der Workflow-basierten Agents aus Business-Perspektive."
-   - "Dieser Abschnitt beschreibt den technischen Aufbau mit konkreten Komponenten."
+2. **Einleitungssatz pro Subsektion (optional):**
+   - Nur wenn der Titel nicht selbsterklärend ist
+   - Kurz und prägnant, kein "Meta-Kommentar"
 
-3. **Zielgruppen-Hinweise (bei Bedarf):**
+3. **Zielgruppen-Hinweise (sparsam verwenden):**
+   - Nur bei hochspezialisierten technischen Abschnitten
    - *Für IT-Architekten*: Details zu Kubernetes HPA, Pod-Limits...
    - *Für Compliance Officers*: Retention Policies, GDPR-Workflows...
 
 4. **Visuelle Trennung:**
    - Verwenden Sie `###` Überschriften konsequent für Subsektionen
+   - **NIEMALS** nummerierte Subsektionen (### 4.1, ### 4.2)
    - Mindestens 1 Leerzeile vor neuer Subsektion
 
 ### Prägnanz und Kompaktheit
@@ -443,12 +477,12 @@ als auch Legacy-Infrastrukturen ab.
 - **Rhythmus**: Wechseln Sie zwischen kurzen (3 Sätze) und längeren (5-6 Sätze) Absätzen
 
 ### Wann Formatierung verwenden
-- **Fettschrift**: Sparsam nur für kritische Konzepte beim ersten Auftreten
-- **Bulletpoints**: Nur für technische Specs, Feature-Listen (5+ Punkte), Compliance-Checklisten
-- **Nummerierung**: Nur für sequenzielle Prozesse oder Schritte
+- **Fettschrift**: Äußerst sparsam, nur für 2-3 kritische Konzepte beim ersten Auftreten
+- **Bulletpoints**: **NUR für technische Specs (8+ Items)** oder explizite Checklisten. NIEMALS für Features, Vorteile, Prozesse!
+- **Nummerierung**: Nur für sequenzielle Prozesse (3+ Schritte), sonst Fließtext
 - **Code/Konfiguration**: Nur wenn technische Details explizit verlangt sind
 
-**Grundregel**: Wenn es in einem Satz oder kurzen Absatz ausgedrückt werden kann, schreiben Sie keinen Bulletpoint!
+**ABSOLUTE Grundregel**: Wenn es in 1-2 Sätzen oder einem kurzen Absatz ausgedrückt werden kann, schreiben Sie **NIEMALS** Bulletpoints! Schreiben Sie immer Fließtext.
 
 ## Geschäftlicher Nutzen
 
@@ -566,8 +600,8 @@ Ein gutes Kapitel erfüllt diese Kriterien:
 - ✅ Konkrete Beispiele und Szenarien
 - ✅ RFP-Anforderungen natürlich integriert
 - ✅ Schweizer Kontext angemessen berücksichtigt
-- ✅ **Primär Fließtext** mit gezielten Bulletpoints (max. 1-2 Listen pro Unterabschnitt)
-- ✅ **Natürlicher Schreibstil** ohne typische AI-Muster (keine Repetition, keine generischen Übergänge)
+- ✅ **Fast ausschließlich Fließtext** - Bulletpoints nur für technische Specs (max. 1 Liste pro Kapitel)
+- ✅ **Natürlicher Schreibstil** ohne typische AI-Muster (keine Repetition, keine generischen Übergänge, KEINE Bulletpoint-Inflation!)
 - ✅ **Variierter Satzbau** (kurze, mittlere und lange Sätze gemischt)
 - ✅ Flüssig lesbar, logischer Aufbau
 - ✅ Professioneller, vertrauenswürdiger Ton
@@ -637,10 +671,10 @@ Erstellen Sie ein **professionelles Whitepaper-Kapitel** mit folgenden Eigenscha
 - ✅ **Kompakt** - Ziel-Wortanzahl einhalten (siehe Längen-Richtlinien)
 
 **Stil:**
-- ✅ **Primär Fließtext** (nicht Bulletpoint-Folie)
+- ✅ **FLIESSTEXT, nicht Bulletpoints!** (Maximum 1 Bulletpoint-Liste pro Kapitel, nur für technische Specs)
 - ✅ **Kompakt und prägnant** (keine Redundanz, keine Füllwörter)
 - ✅ **Natürlicher Rhythmus** (variieren Sie Satzlänge und -struktur)
-- ✅ **Menschlich wirkend** (vermeiden Sie typische AI-Schreibmuster)
+- ✅ **Menschlich wirkend** (vermeiden Sie typische AI-Schreibmuster wie Bulletpoint-Inflation!)
 - ✅ **Konkret und belegt** (Fakten, nicht Versprechungen)
 
 **Inhalte:**
@@ -651,6 +685,7 @@ Erstellen Sie ein **professionelles Whitepaper-Kapitel** mit folgenden Eigenscha
 - ✅ **Schweizer Kontext** (Datensouveränität, revDSG, Mehrsprachigkeit)
 
 **KRITISCH**:
+- **FLIESSTEXT schreiben, nicht Bulletpoints!** Maximum 1 Bulletpoint-Liste pro Kapitel (nur technische Specs)
 - **Business-Entscheidungsfragen haben oberste Priorität** - Kapitel dient der Kaufentscheidung
 - Identifizieren Sie welche der 6 Dimensionen (Kosten, Sicherheit, Datenschutz, Management, Zukunft, Integration) Ihr Kapitel adressiert
 - Beantworten Sie mindestens 3-5 Kern-Fragen pro Dimension explizit
