@@ -8,6 +8,59 @@ title: Bot Creation Manual Setup Guide
 This comprehensive manual provides **step-by-step instructions for manually creating and configuring bots** with Microsoft Teams and Slack integration. Use this guide when you need to create new bots from scratch, configure Azure Bot Framework channels, or troubleshoot existing bot deployments. It covers everything from Teams Developer Portal setup to MongoDB configuration and Slack OAuth integration.
 :::
 
+::: tip Automated Setup Available
+Before proceeding with manual setup, consider using the **automated setup script** which handles most of these steps for you:
+
+```bash
+python aihub_bot/setup_azure_bot.py \
+    --resource-group "my-resource-group" \
+    --bot-name "my-ai-hub-bot" \
+    --token-url "https://my-domain.com" \
+    --token-path "/api/v1/messages" \
+    --mongo-connection-string "mongodb://localhost:27017"
+```
+
+**When to use the automated script:**
+- Creating new bots for production deployment
+- Standard single-bot or multi-bot configurations
+- Quick setup without customization
+
+**When to use this manual guide:**
+- Troubleshooting automated setup failures
+- Understanding bot configuration in detail
+- Creating custom or non-standard configurations
+- Learning how bot integration works
+
+For automated setup details, see the [Azure Bot Service Integration guide](../1_setup/).
+:::
+
+## Related Documentation :books:
+
+- **[Slack & Teams Integrations Overview](../)** - High-level concepts and business value
+- **[Azure Bot Service Integration](../1_setup/)** - Automated setup guide
+- **[AI-Hub Bot Developer's Guide](../../../6_code_deep_dive/aihub_bot/)** - Technical implementation details
+- **[Bot-in-the-Loop Documentation](../../../3_sdk/6_feature_overview/bot-in-the-loop/)** - Human-AI collaboration workflows
+
+## Key Terminology :book:
+
+Understanding these terms is crucial for successful bot configuration:
+
+| Term | Definition |
+|------|------------|
+| **Bot Framework Messaging Endpoint** | The single public URL where Azure Bot Service sends ALL bot messages. Always `/api/v1/messages`. Configured in Teams Developer Portal (Step 3). |
+| **MongoDB `path` Field** | Internal routing path that determines which bot implementation handles a conversation. Examples: `/api/v1/agent/chat/completions/...` or `/api/v1/openai/chat/completions`. Configured in MongoDB `bot_paths` collection (Step 7). |
+| **App ID / Client ID** | Azure AD application identifier (UUID format). Same value used as Bot ID and in MongoDB `credentials.APP_ID`. |
+| **Client Secret / App Password** | Azure AD application secret. Stored in MongoDB as `credentials.APP_PASSWORD`. Expires and must be rotated. |
+| **Tenant ID** | Microsoft 365 tenant identifier. Required for SingleTenant bots, stored as `credentials.APP_TENANTID`. |
+| **Bot-in-the-Loop** | Pattern where AI agents request human input via Slack channels during workflow execution. |
+| **Slack Bot OAuth Token** | Token for Slack integration (format: `xoxb-...`). Stored in MongoDB as `slack_token`. |
+
+::: warning Critical Distinction
+**Bot Framework Messaging Endpoint** (`/api/v1/messages`) ≠ **MongoDB `path` Field** (e.g., `/api/v1/agent/chat/completions/...`)
+
+These are two different concepts that serve different purposes. The messaging endpoint is where Azure Bot Service sends messages. The `path` field determines how those messages are processed internally.
+:::
+
 ## Prerequisites :clipboard:
 
 Before starting, ensure you have access to:
@@ -45,16 +98,44 @@ Before starting, ensure you have access to:
 
 1. In the app, navigate to **"Bot"** section
 2. Click **"Set up"** or **"Create new bot"**
-3. Enter the messaging endpoint URL:
-   - Format: `https://your-domain.com/api/v1/agent/chat/completions/LLMWrappingAgent/dev_agent/json`
-   - Or other paths like:
-     - `https://your-domain.com/api/v1/openai/chat/completions`
-     - `https://your-domain.com/api/v1/bitl/chat/completions`
-   - This must exactly match the `path` field you'll add to MongoDB in Step 7
+3. Enter the **Bot Framework messaging endpoint URL**:
+   - Format: `https://your-domain.com/api/v1/messages`
+   - This is the standard Azure Bot Service endpoint
+   - Must be publicly accessible from the internet
+   - For local development, use Azure DevTunnel or ngrok
 4. **Write down the Bot ID** for later use
 
-::: warning Important
-The messaging endpoint URL must be accessible from the internet and must exactly match the `path` field in your MongoDB configuration. Mismatches will cause bot authentication failures.
+::: warning Bot Framework Endpoint vs MongoDB Path
+**IMPORTANT DISTINCTION:**
+
+- **Bot Framework Messaging Endpoint** (`/api/v1/messages`): The single entry point where Azure Bot Service sends ALL bot messages. This is configured here in Teams Developer Portal.
+
+- **MongoDB `path` Field** (e.g., `/api/v1/agent/chat/completions/LLMWrappingAgent/dev_agent/json`): Internal routing path that determines which bot implementation handles the conversation. This is configured in MongoDB (Step 7) and allows multiple bots to coexist.
+
+**How it works:**
+1. Azure Bot Service sends message to `/api/v1/messages`
+2. AI-Hub looks up the conversation's `path` in MongoDB `bot_paths` collection
+3. Request is routed to the specific bot implementation
+
+**Example:**
+- Teams Developer Portal endpoint: `https://my-domain.com/api/v1/messages`
+- MongoDB path for Agent Bot: `/api/v1/agent/chat/completions/LLMWrappingAgent/dev_agent/json`
+- MongoDB path for OpenAI Bot: `/api/v1/openai/chat/completions`
+
+These do NOT need to match! The messaging endpoint is always `/api/v1/messages`.
+:::
+
+::: tip Local Development
+For local development, expose your bot server using Azure DevTunnel:
+
+```bash
+devtunnel create --allow-anonymous
+devtunnel port create -p 8000
+devtunnel host
+# Use the https URL (e.g., https://abc123-8000.devtunnels.ms/api/v1/messages)
+```
+
+See the [Developer's Guide](../../../6_code_deep_dive/aihub_bot/) for detailed local development setup.
 :::
 
 ### Step 4: Create Client Secret
@@ -108,18 +189,44 @@ Add a new document to the `bot_paths` collection with the following structure:
 
 **Required Fields:**
 
-- `path`: The full API endpoint path (must match messaging endpoint URL in Step 3)
+- `path`: The **internal routing path** for this specific bot implementation
+  - **This is NOT the Bot Framework messaging endpoint** (which is always `/api/v1/messages`)
+  - This determines which bot handler processes conversations
   - Examples:
-    - `/api/v1/agent/chat/completions/LLMWrappingAgent/dev_agent/json`
-    - `/api/v1/openai/chat/completions`
-    - `/api/v1/bitl/chat/completions`
-- `credentials`: Object containing Azure bot authentication
-  - `APP_TYPE`: Authentication type (typically `"SingleTenant"`)
+    - `/api/v1/agent/chat/completions/LLMWrappingAgent/dev_agent/json` - Agent-based bot
+    - `/api/v1/openai/chat/completions` - Direct OpenAI bot
+    - `/api/v1/bitl/chat/completions` - Bot-in-the-Loop bot
+- `credentials`: Object containing Azure Bot authentication
+  - `APP_TYPE`: Authentication type (`"SingleTenant"` or `"MultiTenant"`)
   - `APP_ID`: Teams app client ID from Step 6
   - `APP_PASSWORD`: Client secret from Step 4
-  - `APP_TENANTID`: Microsoft 365 tenant ID from Step 6
-- `system_message`: Default system message for the bot
-- `slack_token`: Empty string initially (populated in Step 14)
+  - `APP_TENANTID`: Microsoft 365 tenant ID from Step 6 (required for SingleTenant)
+- `system_message`: Default system message/instructions for the bot
+- `slack_token`: Empty string initially (populated in Step 14 for Slack integration)
+
+::: tip Multi-Bot Configuration
+You can have **multiple bot implementations** with different `path` values, all sharing the same Bot Framework messaging endpoint (`/api/v1/messages`):
+
+**Agent-based bot for customer support:**
+```json
+{
+  "path": "/api/v1/agent/chat/completions/CustomerSupportAgent/prod/json",
+  "credentials": { "APP_ID": "xxx", "APP_PASSWORD": "xxx", "APP_TENANTID": "xxx", "APP_TYPE": "SingleTenant" },
+  "system_message": "You are a customer support assistant."
+}
+```
+
+**OpenAI-based bot for general queries:**
+```json
+{
+  "path": "/api/v1/openai/chat/completions",
+  "credentials": { "APP_ID": "xxx", "APP_PASSWORD": "xxx", "APP_TENANTID": "xxx", "APP_TYPE": "SingleTenant" },
+  "system_message": "You are a helpful AI assistant."
+}
+```
+
+Each conversation is associated with one `path`, which determines its bot implementation and behavior.
+:::
 
 ::: tip Configuration Tip
 Use descriptive path names that indicate the agent or functionality, making it easier to manage multiple bots. For example, `/api/v1/agent/chat/completions/CustomerSupportAgent/production/json` clearly identifies the bot's purpose.
@@ -485,16 +592,18 @@ After completing all steps, verify:
 
 **Teams Configuration:**
 - [ ] Teams app is published and approved
+- [ ] Bot Framework messaging endpoint is set to `/api/v1/messages`
+- [ ] Bot Framework messaging endpoint URL is publicly accessible
 - [ ] Bot responds to messages in Teams
-- [ ] Bot permissions are correctly set (Message Read/Send)
-- [ ] Messaging endpoint URL is accessible
+- [ ] Bot permissions are correctly set (Message Read/Send in Chat/Team)
 
 **MongoDB Configuration:**
 - [ ] `bot_paths` entry exists with all required fields
-- [ ] `credentials` object contains all four fields (APP_TYPE, APP_ID, APP_PASSWORD, APP_TENANTID)
-- [ ] `path` field matches Teams messaging endpoint
-- [ ] `system_message` is configured
-- [ ] Client secret (APP_PASSWORD) is stored securely
+- [ ] `credentials` object contains APP_TYPE, APP_ID, APP_PASSWORD, and APP_TENANTID (for SingleTenant)
+- [ ] `path` field contains internal routing path (e.g., `/api/v1/agent/chat/completions/...`)
+- [ ] `path` field is DIFFERENT from Bot Framework messaging endpoint (`/api/v1/messages`)
+- [ ] `system_message` is configured appropriately for bot's purpose
+- [ ] Client secret (APP_PASSWORD) is stored securely and hasn't expired
 
 **Slack Configuration:**
 - [ ] Slack app is created with correct name
@@ -519,11 +628,19 @@ After completing all steps, verify:
 
 ### Bot Not Responding in Teams
 
-- Verify messaging endpoint URL is correct and accessible
-- Check `APP_PASSWORD` (client secret) is correct and hasn't expired
-- Confirm `APP_TENANTID` and `APP_ID` are correct
-- Review app permissions in Teams Developer Portal
-- Ensure `path` field in MongoDB matches the messaging endpoint exactly
+- **Messaging Endpoint Issues:**
+  - Verify Bot Framework messaging endpoint is set to `/api/v1/messages` in Teams Developer Portal
+  - Ensure the endpoint URL is publicly accessible (test with curl or browser)
+  - For local development, confirm Azure DevTunnel or ngrok is running
+- **Authentication Issues:**
+  - Check `APP_PASSWORD` (client secret) is correct and hasn't expired
+  - Confirm `APP_TENANTID` and `APP_ID` match the values from Step 6
+  - Verify `APP_TYPE` is set correctly (`SingleTenant` or `MultiTenant`)
+- **Configuration Issues:**
+  - Review app permissions in Teams Developer Portal (Message Read/Send in Chat/Team)
+  - Verify MongoDB `bot_paths` entry exists with correct credentials
+  - Check that `path` field in MongoDB contains a valid internal routing path
+  - Ensure conversation was created with the correct `path` value
 
 ### Slack Integration Issues
 
@@ -576,4 +693,16 @@ For issues or questions:
 
 ---
 
-*Last Updated: November 3, 2025*
+## Next Steps :rocket:
+
+After completing the manual bot setup:
+
+1. **Test Your Bot**: Send a message in Teams or Slack to verify the bot responds correctly
+2. **Review Logs**: Check application logs for any errors or warnings during bot interactions
+3. **Configure Additional Features**: Explore [Bot-in-the-Loop](../../../3_sdk/6_feature_overview/bot-in-the-loop/) for human-AI collaboration
+4. **Implement Custom Logic**: See the [Developer's Guide](../../../6_code_deep_dive/aihub_bot/) for custom bot implementations
+5. **Monitor Performance**: Set up observability and monitoring for production deployments
+
+---
+
+*Last Updated: November 14, 2025*
