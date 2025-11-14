@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from llama_index.core.vector_stores.types import BasePydanticVectorStore
+from llama_index.vector_stores.milvus import MilvusVectorStore
 from pydantic import Field
 
 from aihub_lib.persistence.rag.vectors.stores import MilvusVectorStoreFactory
@@ -11,7 +11,7 @@ class MilvusVectorStoreConfig(BasePydanticVectorStoreConfig):
     uri: Annotated[str, Field(description="Milvus URI")]
     collection_name: Annotated[str, Field(description="Milvus collection name")]
 
-    def to_llama_index(self) -> BasePydanticVectorStore:
+    def to_llama_index(self) -> MilvusVectorStore:
         return MilvusVectorStoreFactory.create_milvus_vector_store(
             uri=self.uri,
             collection_name=self.collection_name,

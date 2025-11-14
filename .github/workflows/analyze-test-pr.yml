@@ -72,6 +72,7 @@ jobs:
           use_local_core: "true"
           install_ffmpeg: ${{ matrix.module == 'aihub_api' }}
           huggingface_api_key: ${{ secrets.HUGGINGFACE_API_KEY }}
+          regenerate_compose: "true"
 
       - name: Clean up SSH keys
         run: |

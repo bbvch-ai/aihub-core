@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.253.1] - 2025-11-14 - Robust Milvus Vector Store Configuration and CI/CD Streamlining
+
+### Added
+
+- ✨ **Introduced Advanced Milvus Vector Store Configuration:** The Milvus vector store factory now supports configurable
+  index types (HNSW, DISKANN, IVF_FLAT, FLAT), enabling tailored performance and memory usage for different RAG
+  workloads.
+- 🚀 **Enabled Hybrid Search with BM25:** Milvus collections now support hybrid search by automatically creating sparse
+  vector indexes (BM25) alongside dense embedding indexes, significantly improving retrieval relevance.
+- 🔑 **Implemented Milvus Partition Keys:** Vector stores are now partitioned by namespace, enhancing data isolation and
+  query performance for multi-tenant or multi-document RAG applications.
+- ⚙️ **Added Memory Mapping (mmap) Option for HNSW:** Users can now enable mmap for HNSW indexes in Milvus to reduce RAM
+  consumption, offloading data to the OS page cache for memory-constrained environments.
+- 📄 **Added `regenerate_compose` CI/CD Input:** A new input allows explicit control over Docker Compose file
+  regeneration in CI/CD workflows, optimizing build times when regeneration is not needed.
+
+### Changed
+
+- ⚙️ **Exposed Milvus Configuration in Dagster Resources:** Milvus vector store parameters like index type, mmap, and
+  partitions are now exposed as configurable options in Dagster resources, allowing pipeline authors to fine-tune their
+  RAG infrastructure.
+- 🧪 **Improved Milvus Test Isolation:** Milvus test fixtures now ensure a clean state by dropping collections and
+  clearing the Milvus vector store factory cache before each test run, enhancing test reliability.
+- 🔄 **Optimized CI/CD Dependency Installation:** The order of global dependency installation in CI/CD has been adjusted
+  to precede Docker Compose file generation, ensuring all prerequisites are met for a more robust build process.
+
+### Refactor
+
+- 🧹 **Refined Milvus Type Hints:** Updated internal type hints for Milvus vector store configurations, improving
+  codebase clarity and maintainability.
+
+---
+
 ## [v0.253.0] - 2025-11-14 - Unified Deployment, Local AI Power, and Docling VLM Integration
 
 ### Added
