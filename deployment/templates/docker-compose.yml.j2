@@ -89,7 +89,7 @@ services:
       {%- if stage in ['dev', 'local', 'build'] %}
       -volumeSizeLimitMB=1024     # 1GB
       {%- else %}
-      -volumeSizeLimitMB=1048576  # TB
+      -volumeSizeLimitMB=29000  # Max per volume (SeaweedFS will create multiple volumes as needed for total TB+ storage)
       {%- endif %}
       -volumePreallocate=false
     volumes:

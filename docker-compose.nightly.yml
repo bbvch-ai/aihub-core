@@ -77,7 +77,7 @@ services:
       -ip=seaweedfs-master
       -ip.bind=0.0.0.0
       -defaultReplication=000
-      -volumeSizeLimitMB=1048576  # TB
+      -volumeSizeLimitMB=29000  # Max per volume (SeaweedFS will create multiple volumes as needed for total TB+ storage)
       -volumePreallocate=false
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-master:/data
@@ -1054,7 +1054,7 @@ services:
       SUPERUSER_TOKEN: ${SUPERUSER_TOKEN}
 
       # AI-Hub Settings
-      AIHUB_API_VERSION: api:nightly
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
       AIHUB_CREATE_DEFAULT_ROLES: True
 
@@ -1094,7 +1094,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
       OTEL_RESOURCE_SERVICE_NAME: api
-      OTEL_RESOURCE_SERVICE_VERSION: api:nightly
+      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
@@ -1187,7 +1187,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
       OTEL_RESOURCE_SERVICE_NAME: api
-      OTEL_RESOURCE_SERVICE_VERSION: api:nightly
+      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     logging:
       driver: json-file
@@ -1230,7 +1230,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
       OTEL_RESOURCE_SERVICE_NAME: api
-      OTEL_RESOURCE_SERVICE_VERSION: api:nightly
+      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
 
   
