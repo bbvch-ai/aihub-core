@@ -167,18 +167,6 @@
       "notes": "Permissive license"
     },
     {
-      "service": "rabbitmq",
-      "license": "MPL-2.0",
-      "status": "⚠️",
-      "notes": "Weak copyleft - modified source files must be shared"
-    },
-    {
-      "service": "kafka",
-      "license": "Apache-2.0",
-      "status": "✅",
-      "notes": "Permissive license"
-    },
-    {
       "service": "llama.cpp",
       "license": "MIT",
       "status": "✅",
@@ -275,54 +263,6 @@
       "notes": "Permissive license"
     },
     {
-      "service": "airflow",
-      "license": "Apache-2.0",
-      "status": "✅",
-      "notes": "Permissive license"
-    },
-    {
-      "service": "grafana",
-      "license": "AGPL-3.0",
-      "status": "⚠️",
-      "notes": "Copyleft - modifications must be open sourced"
-    },
-    {
-      "service": "prometheus",
-      "license": "Apache-2.0",
-      "status": "✅",
-      "notes": "Permissive license"
-    },
-    {
-      "service": "alpine",
-      "license": "Various (GPL-2.0 and permissive)",
-      "status": "⚠️",
-      "notes": "Primarily permissive, some copyleft components (e.g., BusyBox)"
-    },
-    {
-      "service": "ubuntu",
-      "license": "Various",
-      "status": "✅",
-      "notes": "Mix of permissive and copyleft licenses (GPL, LGPL, etc.)"
-    },
-    {
-      "service": "debian",
-      "license": "Various",
-      "status": "✅",
-      "notes": "Mix of permissive and copyleft licenses (GPL, LGPL, etc.)"
-    },
-    {
-      "service": "python",
-      "license": "PSF-2.0",
-      "status": "✅",
-      "notes": "Permissive license"
-    },
-    {
-      "service": "node",
-      "license": "MIT",
-      "status": "✅",
-      "notes": "Permissive license"
-    },
-    {
       "service": "minimal-notebook",
       "license": "BSD-3-Clause",
       "status": "✅",
@@ -343,6 +283,12 @@
     {
       "service": "aws-cli-alpine",
       "license": "Apache-2.0",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "speaches",
+      "license": "MIT",
       "status": "✅",
       "notes": "Permissive license"
     }
