@@ -24,35 +24,18 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 
 ## Business-Fragen, die das Kapitel beantwortet
 
-### Kosten und ROI
 1. Warum können Organisationen nicht einfach ChatGPT oder Azure OpenAI für Enterprise-AI nutzen?
 2. Welche versteckten Kosten entstehen, wenn jede Abteilung ihre eigene AI-Lösung baut?
 3. Was sind die Total Cost of Ownership bei fragmentierten AI-Ansätzen vs. integrierter Plattform?
 4. Wie lange dauert es typischerweise, bis AI-Projekte produktiv werden, und warum?
-
-### Management und Komplexität
 5. Was macht AI-Produktions-Deployment anders als andere Software-Deployments?
 6. Warum ist der "Selber-Bauen"-Ansatz für die meisten Organisationen problematisch?
 7. Welcher administrative Aufwand entsteht bei dezentralen AI-Lösungen?
 8. Wie kann man AI-Governance sicherstellen, wenn Lösungen über die Organisation verstreut sind?
-
-### Compliance und Datensouveränität
 9. Welche spezifischen Schweizer Regulierungs-Einschränkungen schaffen Barrieren für AI-Adoption?
 10. Warum können Schweizer Organisationen sensible Daten nicht einfach in Cloud-AI-Services geben?
 11. Was passiert mit Compliance, wenn AI-Initiativen fragmentiert bleiben?
 12. Wie geht man mit dem Risiko von Shadow IT um, wenn offizielle AI-Lösungen zu restriktiv sind?
-
-### Zukunftssicherheit
 13. Welche Vendor-Lock-in-Risiken existieren bei aktuellen AI-Services?
 14. Was sind die langfristigen Risiken fragmentierter AI-Ansätze?
 15. Wie stellt man sicher, dass AI-Investitionen nicht zu technologischen Sackgassen werden?
-
-## Relevante RFP-Anforderungen
-
-Während des natürlichen Schreibens sicherstellen, dass das Kapitel Kontext für diese Anforderungen bietet:
-
-- **"Plattform soll modular aufgebaut sein, um verschiedene KI-Modelle und Use Cases zu unterstützen"** - Kontext: Warum integrierte Plattform besser ist als fragmentierte Tools
-- **"Kontinuierliche Wartung, Updates und Weiterentwicklung"** - Kontext: Wartungslast bei fragmentierten Lösungen
-- **"Vermeidung von Doppelspurigkeiten"** - Kontext: Was passiert ohne zentrale Koordination
-- **"Datenschutzkonformer Betrieb nach revDSG"** - Kontext: Schweizer Regulierungs-Herausforderungen
-- **"LLM auf isolierter und sicherer Infrastruktur"** - Kontext: Warum Public Cloud AI Services für viele nicht geeignet sind
