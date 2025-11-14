@@ -186,8 +186,6 @@ def save_credentials_in_mongo(
     print("Credentials successfully saved in MongoDB.")
 
 
-
-
 def main():
     parser = argparse.ArgumentParser(
         description="Set up an Azure Bot using the Azure CLI by creating an Azure AD app "
