@@ -27,7 +27,6 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 
 ## Business-Fragen, die das Kapitel beantwortet
 
-### Deployment und Datensouveränität
 1. Welche Deployment-Optionen bietet die Plattform zur Sicherstellung der Datensouveränität?
 2. Kann die Plattform vollständig in der Schweiz betrieben werden, ohne dass Daten ins Ausland übertragen werden?
 3. Unterstützt die Plattform On-Premise-Deployment mit unseren bestehenden Datenbanken (MSSQL, Oracle, PostgreSQL)?
@@ -35,7 +34,6 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 5. Wie stellt die Plattform sicher, dass keine Daten unkontrolliert die Schweiz verlassen?
 6. Können wir verschiedene Deployment-Modelle für unterschiedliche Datensensitivitäten kombinieren?
 
-### Kontrolle und Governance
 7. Wer kontrolliert die Administration der Plattform – wir oder der Anbieter?
 8. Wie funktioniert die rollenbasierte Zugriffskontrolle (RBAC) und welche Rollen sind verfügbar?
 9. Welche Kontrolle habe ich über Datenquellen und RAG-Konfigurationen?
@@ -43,7 +41,6 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 11. Wie stelle ich sicher, dass AI-Entscheidungen von Menschen überprüft werden können (Human-in-the-Loop)?
 12. Welche Governance-Mechanismen sind eingebaut (Feedback, Bias-Monitoring)?
 
-### Compliance und Datenschutz
 13. Wie erfüllt die Plattform revDSG-Anforderungen?
 14. Unterstützt die Plattform Anonymisierung sensibler Daten (PII-Erkennung)?
 15. Wie wird Consent-Management gehandhabt?
@@ -52,31 +49,8 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 18. Unterstützt die Plattform Data Lineage für regulatorische Audits?
 19. Wie integriert sich die Plattform mit eGov-Portalen und staatlichen Identitätssystemen?
 
-### Vendor Lock-in und Erweiterbarkeit
 20. Verhindert die Architektur Vendor Lock-in?
 21. Können einzelne Komponenten (Datenbank, Vector-Store, LLM-Provider) ausgetauscht werden?
 22. Basiert die Plattform auf offenen Standards oder proprietären Technologien?
 23. Sind unsere Daten jederzeit exportierbar und in anderen Systemen nutzbar?
 24. Kann ich mehrere LLM-Anbieter gleichzeitig nutzen?
-
-## Relevante RFP-Anforderungen
-
-Während des natürlichen Schreibens sicherstellen, dass das Kapitel diese Anforderungen addressiert:
-
-- **"Swiss Hosting / Swiss cloud"** ✓
-- **"Hosting in der Schweiz, Datenresidenz Schweiz"** ✓
-- **"On-Premise-Deployment, Installation auf unseren Servern"** ✓
-- **"Air-Gap-Betrieb ohne Internetverbindung"** ✓
-- **"Datenschutzkonformer Betrieb nach revDSG"** ✓
-- **"RBAC-basierte Zugriffskontrolle und Administration"** ✓
-- **"Kontrolle über Datenquellen und Konfiguration"** ✓
-- **"Human-in-the-Loop-Mechanismen"** ✓
-- **"Bias-Monitoring und Feedback-Systeme"** ✓
-- **"Anonymisierung sensibler Daten"** ✓
-- **"Consent-Management für Datennutzung"** ✓
-- **"Right to be Forgotten / Vollständige Lösch-Workflows"** ✓
-- **"Audit-Trails und Data Lineage"** ✓
-- **"Nicht rein proprietäre Lösung, offene Standards"** ✓
-- **"Austausch einzelner Systembausteine ohne Herstellerbindung"** ✓
-- **"Integration von Open-Source-Modulen"** ✓
-- **"Integration mit eGov-Portalen"** ✓

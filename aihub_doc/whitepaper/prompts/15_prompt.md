@@ -28,65 +28,39 @@ Fokussieren Sie auf Vertrauen durch Qualität, kontinuierliche Verbesserung, dat
 
 ## Business-Fragen, die das Kapitel beantwortet
 
-### Halluzination-Prevention
 1. Wie verhindert die Plattform, dass AI falsche Informationen erfindet (Halluzinationen)?
 2. Werden alle Antworten mit Quellenangaben belegt?
 3. Basieren Antworten immer auf echten Dokumenten (Retrieval-Grounding)?
 4. Zeigt die AI ihren Konfidenzgrad an?
 5. Kann die AI zugeben, wenn sie etwas nicht weiß?
 
-### User-Feedback
 6. Können Nutzer Feedback zu AI-Antworten geben?
 7. Wie funktioniert das Feedback-System (Thumbs-up/down, Kommentare)?
 8. Wird Feedback analysiert und zur Verbesserung genutzt?
 9. Gibt es automatische Trigger bei schlechtem Feedback?
 
-### Quality-Metrics
 10. Welche Quality-Metriken werden getrackt?
 11. Wie wird Antwortgenauigkeit gemessen?
 12. Gibt es Dashboards für Quality-Monitoring?
 13. Wie werden Error-Rates überwacht?
 14. Können Admins Quality-Reports einsehen?
 
-### Bias-Detection
 15. Wie erkennt die Plattform Bias in AI-Antworten?
 16. Gibt es Fairness-Metriken?
 17. Werden Bias-Reports für Admins bereitgestellt?
 18. Wie wird Bias mitigiert (Prompt-Tuning, Model-Fine-Tuning)?
 
-### Model-Drift
 19. Was ist Model-Drift und warum ist es ein Problem?
 20. Wie überwacht die Plattform Modell-Leistung über Zeit?
 21. Werden Admins bei Qualitätsverschlechterung alarmiert?
 22. Gibt es automatisches oder manuelles Retraining?
 
-### A/B-Testing
 23. Unterstützt die Plattform A/B-Testing?
 24. Können verschiedene Prompts verglichen werden?
 25. Können verschiedene AI-Modelle (GPT-4, Claude, Gemini) getestet werden?
 26. Können Retrieval-Strategien verglichen werden?
 
-### Continuous Improvement
 27. Wie funktioniert der Continuous-Improvement-Loop?
 28. Sind Prompt-Templates versioniert?
 29. Werden Änderungen dokumentiert?
 30. Gibt es Rollback bei Qualitätsverschlechterung?
-
-## Relevante RFP-Anforderungen
-
-Während des natürlichen Schreibens sicherstellen, dass das Kapitel diese Anforderungen addressiert:
-
-- **"Halluzination-Mitigation durch Quellenangaben"** ✓
-- **"Retrieval-Grounding (Antworten basierend auf echten Dokumenten)"** ✓
-- **"Confidence-Scores"** ✓
-- **"User-Feedback-System (Thumbs-up/down, Kommentare)"** ✓
-- **"Quality-Metrics (Genauigkeit, Relevanz, Vollständigkeit)"** ✓
-- **"Quality-Dashboards für Admins"** ✓
-- **"Bias-Detection und -Mitigation"** ✓
-- **"Fairness-Metriken"** ✓
-- **"Model-Drift-Detection"** ✓
-- **"Automatische Alerts bei Qualitätsverschlechterung"** ✓
-- **"A/B-Testing (Prompts, Modelle, Retrieval-Strategien)"** ✓
-- **"Continuous Improvement Loop"** ✓
-- **"Versionierte Prompt-Templates"** ✓
-- **"Rollback bei Qualitätsverschlechterung"** ✓

@@ -31,7 +31,6 @@ Fokussieren Sie auf Flexibilität, einfachen Betrieb, schnellen Time-to-Value un
 
 ## Business-Fragen, die das Kapitel beantwortet
 
-### Deployment-Optionen
 1. Welche Deployment-Optionen bietet die Plattform?
 2. Kann die Plattform On-Premise betrieben werden?
 3. Unterstützt die Plattform Private Cloud (BYOC - Bring Your Own Cloud)?
@@ -39,27 +38,23 @@ Fokussieren Sie auf Flexibilität, einfachen Betrieb, schnellen Time-to-Value un
 5. Kann die Plattform komplett ohne Internetverbindung betrieben werden (Air-Gapped)?
 6. Sind Hybrid-Deployments möglich (Teil On-Premise, Teil Cloud)?
 
-### Zeit und Aufwand
 7. Wie lange dauert das Deployment der Plattform?
 8. Wie kompliziert ist die initiale Einrichtung?
 9. Welche technischen Skills werden für Deployment benötigt?
 10. Gibt es Deployment-Dokumentation und Guides?
 
-### Infrastruktur
 11. Welche Infrastruktur-Komponenten sind enthalten?
 12. Wird Kubernetes unterstützt?
 13. Welche Datenbanken werden für On-Premise unterstützt (MSSQL, Oracle, PostgreSQL)?
 14. Wie funktioniert Multi-Tenancy?
 15. Welche Message-Queue- und Storage-Technologien werden verwendet?
 
-### Skalierbarkeit
 16. Wie skaliert die Plattform bei wachsender Nutzung?
 17. Unterstützt die Plattform Auto-Scaling?
 18. Welche Uptime-SLA wird geboten?
 19. Wie ist die Performance im Vergleich zu anderen LLM-Plattformen?
 20. Können Resource-Limits pro Tenant gesetzt werden?
 
-### AI-Modell-Flexibilität
 21. Bin ich an einen bestimmten AI-Provider gebunden (z.B. OpenAI)?
 22. Welche AI-Modell-Provider werden unterstützt?
 23. Kann ich selbst-gehostete Modelle (vLLM, llama.cpp) verwenden?
@@ -69,7 +64,6 @@ Fokussieren Sie auf Flexibilität, einfachen Betrieb, schnellen Time-to-Value un
 27. Wie einfach ist es, AI-Provider zu wechseln?
 28. Gibt es Synergien mit Microsoft 365 Copilot?
 
-### High Availability und Wartung
 29. Wie wird High Availability sichergestellt?
 30. Wie funktionieren Backups und Disaster Recovery?
 31. Welche RPO/RTO-Garantien gibt es?
@@ -77,33 +71,7 @@ Fokussieren Sie auf Flexibilität, einfachen Betrieb, schnellen Time-to-Value un
 33. Wie funktioniert Rollback bei fehlerhaften Updates?
 34. Wie oft gibt es Updates und Patches?
 
-### Monitoring
 35. Welche Monitoring-Tools sind integriert?
 36. Kann ich Logs in meine bestehenden Systeme exportieren?
 37. Gibt es Performance-Dashboards?
 38. Wie werden Alerts bei Problemen gehandhabt?
-
-## Relevante RFP-Anforderungen
-
-Während des natürlichen Schreibens sicherstellen, dass das Kapitel diese Anforderungen addressiert:
-
-- **"On-Premise-Deployment"** ✓
-- **"Private Cloud (BYOC)"** ✓
-- **"Swiss Cloud Hosting"** ✓
-- **"Air-Gapped Deployment"** ✓
-- **"Schnelles 30-Minuten-Deployment"** ✓
-- **"Kubernetes-Support"** ✓
-- **"Datenbank-Support: MSSQL, Oracle, PostgreSQL"** ✓
-- **"Multi-Tenant-Architektur"** ✓
-- **"Horizontale Skalierung und Auto-Scaling"** ✓
-- **"99.5% Uptime-SLA"** ✓
-- **"LLM-agnostisch / LiteLLM Universal Gateway"** ✓
-- **"Unterstützung 100+ AI-Provider"** ✓
-- **"Selbst-gehostete Modelle (vLLM, llama.cpp)"** ✓
-- **"Air-Gap-Betrieb mit lokalen Modellen"** ✓
-- **"Automatisches Failover zwischen AI-Providern"** ✓
-- **"Microsoft 365 Copilot Synergien"** ✓
-- **"Zero-Downtime-Updates"** ✓
-- **"Automatische Backups und Disaster Recovery"** ✓
-- **"OpenTelemetry und Phoenix AI Monitoring"** ✓
-- **"Log-Aggregation zu Kundensystemen"** ✓

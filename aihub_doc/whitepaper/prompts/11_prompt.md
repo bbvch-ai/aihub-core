@@ -27,38 +27,32 @@ Fokussieren Sie auf nahtlose Integration, minimalen Integrationsaufwand, Nutzung
 
 ## Business-Fragen, die das Kapitel beantwortet
 
-### API-Integration
 1. Welche API-Optionen bietet die Plattform?
 2. Ist die API OpenAI-kompatibel für einfache Migration?
 3. Gibt es eine native Swiss AI-Hub API mit erweiterten Funktionen?
 4. Wird WebSocket für Echtzeit-Streaming unterstützt?
 5. Unterstützt die Plattform MCP (Model Context Protocol) für AI-Coding-Assistenten?
 
-### Kollaborationstools
 6. Kann die Plattform in Microsoft Teams integriert werden?
 7. Gibt es eine Slack-Integration?
 8. Funktioniert die Plattform mit Email/Outlook?
 9. Haben Nutzer eine einheitliche Experience über alle Kanäle?
 
-### Content-Systeme
 10. Kann die Plattform automatisch mit SharePoint synchronisieren?
 11. Werden File-Shares und Netzlaufwerke unterstützt?
 12. Funktioniert die Integration mit S3-kompatiblen Object Stores?
 13. Können öffentliche und interne Webseiten gecrawlt werden?
 
-### Business-Systeme
 14. Unterstützt die Plattform eGov-Portale (CMI Axioma, RMS Gever)?
 15. Kann die Plattform mit RPA-Tools integriert werden (Power Automate, n8n, UiPath)?
 16. Gibt es Webhook-Unterstützung für Event-Driven-Integration?
 17. Können Custom-Integrationen über REST API gebaut werden?
 
-### Chat-Widget
 18. Kann ich das Chat-Interface in meine Website einbetten?
 19. Ist das Chat-Widget barrierefrei (WCAG 2.1 AA)?
 20. Kann das Widget gebrandedwerden (White Label)?
 21. Funktioniert das Widget auf allen Geräten (responsive)?
 
-### Identity Management
 22. Integriert sich die Plattform mit Active Directory?
 23. Wird Azure AD / Microsoft Entra ID unterstützt?
 24. Gibt es Keycloak-Unterstützung?
@@ -66,34 +60,6 @@ Fokussieren Sie auf nahtlose Integration, minimalen Integrationsaufwand, Nutzung
 26. Welche Authentifizierungs-Protokolle werden unterstützt (OAuth2, OIDC, SAML)?
 27. Werden Legacy-Protokolle wie LDAP unterstützt?
 
-### Integrationsaufwand
 28. Wie komplex ist die Integration in bestehende Systeme?
 29. Gibt es vorgefertigte Integrationen oder Konnektoren?
 30. Welche Dokumentation und Support gibt es für Integrationen?
-
-## Relevante RFP-Anforderungen
-
-Während des natürlichen Schreibens sicherstellen, dass das Kapitel diese Anforderungen addressiert:
-
-- **"OpenAI-kompatible API"** ✓
-- **"Native Swiss AI-Hub API"** ✓
-- **"WebSocket für Echtzeit-Streaming"** ✓
-- **"MCP (Model Context Protocol)"** ✓
-- **"Microsoft Teams Integration"** ✓
-- **"Slack Integration"** ✓
-- **"Email/Outlook Integration"** ✓
-- **"SharePoint-Synchronisation"** ✓
-- **"File-Share-Integration"** ✓
-- **"S3-kompatible Object Stores"** ✓
-- **"Web-Crawling"** ✓
-- **"eGov-Portal-Integration (CMI Axioma, RMS Gever)"** ✓
-- **"RPA-Tool-Integration (Power Automate, n8n, UiPath)"** ✓
-- **"Webhooks"** ✓
-- **"WCAG 2.1 AA-konformes Chat-Widget"** ✓
-- **"White Label / Branding"** ✓
-- **"Active Directory Integration"** ✓
-- **"Azure AD / Microsoft Entra ID"** ✓
-- **"Keycloak"** ✓
-- **"AGOV und eID"** ✓
-- **"OAuth2, OIDC, SAML"** ✓
-- **"Keine Legacy-Protokolle (LDAP/NTLMv2)"** ✓

@@ -27,7 +27,6 @@ Fokussieren Sie auf Investitionsschutz, Flexibilität, keine Lock-ins, langfrist
 
 ## Business-Fragen, die das Kapitel beantwortet
 
-### Open Source und Vendor-Unabhängigkeit
 1. Ist die Plattform Open Source?
 2. Welche Lizenz wird verwendet (Apache 2.0)?
 3. Kann ich den Code inspizieren und modifizieren?
@@ -35,56 +34,30 @@ Fokussieren Sie auf Investitionsschutz, Flexibilität, keine Lock-ins, langfrist
 5. Was passiert, wenn der Plattform-Anbieter das Geschäft einstellt?
 6. Kann ich die Plattform forken wenn nötig?
 
-### Modulare Architektur
 7. Können einzelne Komponenten ausgetauscht werden?
 8. Welche Komponenten sind austauschbar (Datenbanken, Vector-Stores, LLM-Provider)?
 9. Basiert die Plattform auf offenen Standards?
 10. Sind Daten jederzeit exportierbar?
 11. Gibt es proprietäre Formate, die Lock-in erzeugen?
 
-### AI-Provider-Flexibilität
 12. Bin ich an einen bestimmten AI-Provider gebunden?
 13. Wie einfach ist der Wechsel zwischen AI-Providern?
 14. Werden selbst-gehostete Modelle unterstützt?
 15. Kann ich lokale Modelle für Air-Gap-Betrieb nutzen?
 
-### Erweiterbarkeit
 16. Kann ich Custom-Integrationen entwickeln?
 17. Gibt es APIs und SDKs für Entwickler?
 18. Kann ich Custom-Agents und -Workflows erstellen?
 19. Gibt es eine Plugin-Architektur?
 20. Kann die Community Erweiterungen beitragen?
 
-### Zukunftssicherheit
 21. Wie zukunftssicher ist die Technologie-Basis?
 22. Ist die Plattform Kubernetes-ready?
 23. Folgt die Plattform Cloud-native-Prinzipien?
 24. Gibt es eine aktive Roadmap und regelmäßige Updates?
 25. Wie wird Backward-Kompatibilität sichergestellt?
 
-### Wartbarkeit
 26. Können Updates ohne Downtime eingespielt werden?
 27. Gibt es Rollback-Fähigkeit bei Problemen?
 28. Wie funktionieren Major-Upgrades?
 29. Gibt es professionellen Support?
-
-## Relevante RFP-Anforderungen
-
-Während des natürlichen Schreibens sicherstellen, dass das Kapitel diese Anforderungen addressiert:
-
-- **"Open Source (Apache 2.0)"** ✓
-- **"Keine Lizenzgebühren"** ✓
-- **"Inspizier- und modifizierbarer Code"** ✓
-- **"Modulare, austauschbare Komponenten"** ✓
-- **"Standard-basierte Schnittstellen"** ✓
-- **"Keine proprietären Formate"** ✓
-- **"AI-Provider-Unabhängigkeit (LiteLLM)"** ✓
-- **"Support für selbst-gehostete Modelle"** ✓
-- **"Entwickler-freundliche APIs und SDKs"** ✓
-- **"Custom-Agents und -Workflows"** ✓
-- **"Container-basiert / Kubernetes-ready"** ✓
-- **"Cloud-native-Prinzipien"** ✓
-- **"Aktive Entwicklung und Roadmap"** ✓
-- **"Zero-Downtime-Updates"** ✓
-- **"Rollback-Fähigkeit"** ✓
-- **"Backward-Kompatibilität"** ✓

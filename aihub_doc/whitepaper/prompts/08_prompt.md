@@ -27,20 +27,17 @@ Fokussieren Sie auf Defense-in-Depth-Ansatz, konkrete Schutzmechanismen und wie 
 
 ## Business-Fragen, die das Kapitel beantwortet
 
-### Authentifizierung und Zugriff
 1. Wie schützt die Plattform vor unbefugtem Zugriff?
 2. Unterstützt die Plattform Enterprise-SSO (Azure AD, Keycloak)?
 3. Wie funktioniert Multi-Faktor-Authentifizierung?
 4. Wie werden API-Token sicher verwaltet?
 5. Wie granular sind Berechtigungsprüfungen?
 
-### Verschlüsselung
 6. Sind Daten während der Übertragung verschlüsselt (SSL/TLS)?
 7. Werden gespeicherte Daten verschlüsselt (Data-at-Rest)?
 8. Wie werden Verschlüsselungsschlüssel verwaltet?
 9. Wird Verschlüsselung auf Datenbank-Ebene unterstützt (TDE)?
 
-### Angriffsprävention
 10. Wie schützt die Plattform vor Injection-Angriffen (SQL, XSS, Command)?
 11. Werden hochgeladene Dokumente auf Malware gescannt?
 12. Wie wird verhindert, dass Benutzer Malware hochladen oder verbreiten?
@@ -48,13 +45,11 @@ Fokussieren Sie auf Defense-in-Depth-Ansatz, konkrete Schutzmechanismen und wie 
 14. Wie wird die Plattform vor DoS/DDoS-Angriffen geschützt?
 15. Was sind "Security Guards" und wie funktionieren sie?
 
-### Netzwerksicherheit
 16. Wie sind Services untereinander isoliert?
 17. Welche Firewall-Mechanismen sind implementiert?
 18. Kann die Plattform komplett vom Internet isoliert betrieben werden (Air-Gapped)?
 19. Wie wird externer Zugriff gesichert?
 
-### Datenschutz und Anonymisierung
 20. Wie erkennt die Plattform persönliche Informationen (PII) in Dokumenten?
 21. Werden sensible Daten vor LLM-Verarbeitung anonymisiert?
 22. Wie wird verhindert, dass Benutzer sensible Informationen in Prompts eingeben?
@@ -62,39 +57,13 @@ Fokussieren Sie auf Defense-in-Depth-Ansatz, konkrete Schutzmechanismen und wie 
 24. Wie wird sichergestellt, dass Nutzerdaten nicht für Modellverbesserung missbraucht werden?
 25. Wie ist die Daten-Isolation zwischen verschiedenen Mandanten (Multi-Tenancy)?
 
-### Isolierte Infrastruktur
 26. Läuft das LLM auf isolierter und sicherer Infrastruktur?
 27. Können Daten an Dritte gelangen?
 28. Welche Netzwerk-Isolation gibt es zwischen Komponenten?
 
-### Security Operations
 29. Werden regelmäßige Penetrationstests durchgeführt?
 30. Wer führt Sicherheitsaudits durch (intern oder Dritte)?
 31. Wie werden Sicherheitslücken identifiziert und behoben?
 32. Wie wird kontinuierlich auf Bedrohungen überwacht?
 33. Gibt es definierte Incident-Response-Prozesse?
 34. Wie werden Security-Updates eingespielt?
-
-## Relevante RFP-Anforderungen
-
-Während des natürlichen Schreibens sicherstellen, dass das Kapitel diese Anforderungen addressiert:
-
-- **"Enterprise SSO (OAuth2/OIDC, Azure AD, Keycloak)"** ✓
-- **"Multi-Faktor-Authentifizierung (MFA)"** ✓
-- **"SSL/TLS-Verschlüsselung für Datenübertragung"** ✓
-- **"Data-at-Rest-Encryption"** ✓
-- **"Transparent Data Encryption (TDE)"** ✓
-- **"Key Management (Azure Key Vault, HSM)"** ✓
-- **"Schutz gegen Injection-Angriffe (SQL, XSS, Command)"** ✓
-- **"Malware-Scanning und APT-Detection"** ✓
-- **"Prompt-Injection-Defense"** ✓
-- **"Rate-Limiting gegen DoS/DDoS"** ✓
-- **"Container-Isolation und Network Policies"** ✓
-- **"Firewall-Regeln (Ingress/Egress)"** ✓
-- **"Air-Gapped Deployment-Option"** ✓
-- **"PII-Detection und Anonymisierung (Presidio)"** ✓
-- **"Multi-Tenant-Isolation"** ✓
-- **"LLM auf isolierter und sicherer Infrastruktur"** ✓
-- **"Regelmäßige Penetrationstests durch Drittanbieter"** ✓
-- **"Vulnerability Management und Patch-Management"** ✓
-- **"Security Monitoring und Incident Response"** ✓

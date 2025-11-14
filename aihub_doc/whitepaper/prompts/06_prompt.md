@@ -31,14 +31,12 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 
 ## Business-Fragen, die das Kapitel beantwortet
 
-### Datenorganisation und Zugriff
 1. Wie organisiere ich meine Unternehmensdokumente strukturiert in der Plattform?
 2. Was ist der Unterschied zwischen Datenbanken, Collections und Dokumenten?
 3. Wie stelle ich sicher, dass Nutzer nur auf autorisierte Dokumente zugreifen?
 4. Kann ich Dokumente nach Abteilung, Projekt oder Thema trennen?
 5. Wie funktioniert Collection-Scoping für RAG-Antworten?
 
-### Datenquellen-Integration
 6. Welche Möglichkeiten habe ich, bestehende Dokumente in die Plattform zu bringen?
 7. Kann die Plattform automatisch mit SharePoint synchronisieren?
 8. Unterstützt die Plattform Netzwerk-Shares und File-Server?
@@ -46,7 +44,6 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 10. Kann ich öffentliche Webseiten automatisch crawlen und indexieren?
 11. Wie oft werden neue Dokumente automatisch verarbeitet?
 
-### Dokumentverarbeitung
 12. Welche Dokumentformate werden unterstützt?
 13. Kann die Plattform gescannte PDFs und Bilder verarbeiten (OCR)?
 14. Wie funktioniert semantisches Chunking?
@@ -54,44 +51,18 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 16. Kann die Plattform Tabellen und Grafiken aus Dokumenten verstehen?
 17. Wie werden große Dokumente (z.B. 500-seitige PDFs) verarbeitet?
 
-### Pipelines und Skalierung
 18. Wie werden Tausende von Dokumenten effizient verarbeitet?
 19. Wann finden Ingestion-Durchläufe statt (Echtzeit vs. nächtlich)?
 20. Wie lange dauert die Verarbeitung eines Dokuments?
 21. Kann die Plattform Millionen von Dokumenten verwalten?
 
-### RAG und Quellenangaben
 22. Wie greift die AI auf Dokumente zu, um Fragen zu beantworten?
 23. Woher weiss ich, dass AI-Antworten auf echten Dokumenten basieren?
 24. Wie werden Quellenangaben bereitgestellt?
 25. Kann ich nachvollziehen, welche Dokument-Chunks für eine Antwort verwendet wurden?
 26. Wie funktioniert Versions-Verfolgung für regulatorische Dokumente?
 
-### Sicherheit
 27. Wie werden hochgeladene Dokumente auf Malware geprüft?
 28. Schützt die Plattform vor Advanced Persistent Threats (APTs)?
 29. Gibt es Größenbeschränkungen für Dokument-Uploads?
 30. Wie wird verhindert, dass bösartige Dateien das System kompromittieren?
-
-## Relevante RFP-Anforderungen
-
-Während des natürlichen Schreibens sicherstellen, dass das Kapitel diese Anforderungen addressiert:
-
-- **"Dreistufige Datenorganisation (Datenbanken, Collections, Dokumente)"** ✓
-- **"Granulare Zugriffskontrolle auf Collection- und Dokument-Ebene"** ✓
-- **"SharePoint-Synchronisation"** ✓
-- **"Integration mit Netzwerk-Shares und File-Servern"** ✓
-- **"S3-kompatible Object-Store-Integration"** ✓
-- **"Web-Crawling öffentlicher und interner Webseiten"** ✓
-- **"Geplante Pipeline-Verarbeitung (nächtliche Durchläufe)"** ✓
-- **"OCR für gescannte Dokumente"** ✓
-- **"Semantisches Chunking"** ✓
-- **"Automatische Metadaten-Extraktion"** ✓
-- **"Umfassende Format-Unterstützung (Office, PDF, Bilder, Archive)"** ✓
-- **"Full-Text-Search-Indexierung"** ✓
-- **"Vector-Embedding-Generierung"** ✓
-- **"RAG mit Quellenangaben"** ✓
-- **"Dokument-Lineage-Tracking"** ✓
-- **"Versions-Verfolgung für regulatorische Dokumente"** ✓
-- **"Malware-Scanning und APT-Prevention"** ✓
-- **"Format-Verifikation"** ✓

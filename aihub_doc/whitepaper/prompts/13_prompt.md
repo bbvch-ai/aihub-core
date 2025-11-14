@@ -27,28 +27,24 @@ Fokussieren Sie auf den fundamentalen Unterschied zu Black-Box-AI: Transparenz, 
 
 ## Business-Fragen, die das Kapitel beantwortet
 
-### Agenten-Architektur
 1. Was unterscheidet Swiss AI-Hub Agents von Black-Box-AI-Systemen?
 2. Was bedeutet "Workflow-basierte Architektur"?
 3. Warum ist das sicherer als autonome Tool-Auswahl?
 4. Wie wird verhindert, dass Agenten unautorisierte Aktionen durchführen?
 5. Was sind deterministische Schritte und warum sind sie wichtig?
 
-### Agententypen
 6. Welche Agententypen sind integriert?
 7. Was sind RAG-Agenten?
 8. Wie funktioniert Multi-Agenten-Kollaboration?
 9. Können Agenten auf externe Systeme zugreifen?
 10. Sind Agenten konversationsfähig mit Kontext?
 
-### Human-in-the-Loop
 11. Wie funktionieren Human-in-the-Loop-Mechanismen?
 12. Können Agenten auf menschliche Genehmigung warten?
 13. Wird der Kontext bei Wartezeiten bewahrt?
 14. Wie lange können Wartezeiten sein (Sekunden, Stunden, Tage)?
 15. Werden alle menschlichen Interaktionen protokolliert?
 
-### Governance und Kontrolle
 16. Wie werden Agenten gesteuert und kontrolliert?
 17. Können vordefinierte Antworten konfiguriert werden?
 18. Wie funktioniert Prompt-Engineering für Domänen (z.B. Schweizer Recht)?
@@ -56,40 +52,14 @@ Fokussieren Sie auf den fundamentalen Unterschied zu Black-Box-AI: Transparenz, 
 20. Wie wird Output-Qualität geprüft?
 21. Sind Agenten versioniert?
 
-### Transparenz
 22. Kann ich nachvollziehen, wie ein Agent zu einer Entscheidung kam?
 23. Werden LLM-Aufrufe mit Prompts und Responses geloggt?
 24. Kann ich sehen, welche Dokumente durchsucht wurden?
 25. Wird Tool-Nutzung getrackt?
 26. Werden Kosten pro Agent-Execution erfasst?
 
-### Responsible AI
 27. Wie wird gegen Halluzinationen vorgegangen?
 28. Gibt es Confidence-Scores für Agent-Antworten?
 29. Wird Bias erkannt und gemeldet?
 30. Wie wird Model-Drift überwacht?
 31. Wie wird Nutzer-Feedback zur Verbesserung genutzt?
-
-## Relevante RFP-Anforderungen
-
-Während des natürlichen Schreibens sicherstellen, dass das Kapitel diese Anforderungen addressiert:
-
-- **"Workflow-basierte Architektur (keine Black-Box)"** ✓
-- **"Transparente, nachvollziehbare Agent-Operationen"** ✓
-- **"Vollständige Audit-Trails für Agent-Aktionen"** ✓
-- **"Human-in-the-Loop-Mechanismen"** ✓
-- **"RAG-Agenten mit Quellenangaben"** ✓
-- **"Multi-Agenten-Kollaboration"** ✓
-- **"Tool-Using-Agenten für externe Systeme"** ✓
-- **"Agenten-Governance (vordefinierte Antworten, Prompt-Engineering)"** ✓
-- **"Input-Validierung und Output-Qualitätsprüfung"** ✓
-- **"Versionierung von Agenten"** ✓
-- **"LLM-Call-Logging mit Prompts und Responses"** ✓
-- **"Retriever-Event-Tracking"** ✓
-- **"Tool-Usage-Tracking"** ✓
-- **"Kosten-Tracking pro Agent-Execution"** ✓
-- **"Hallucination-Mitigation"** ✓
-- **"Confidence-Scores"** ✓
-- **"Bias-Detection"** ✓
-- **"Model-Drift-Tracking"** ✓
-- **"Quality-Feedback-Loops"** ✓

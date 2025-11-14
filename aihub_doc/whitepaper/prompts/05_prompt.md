@@ -31,7 +31,6 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 
 ## Business-Fragen, die das Kapitel beantwortet
 
-### Rollen und Berechtigungen
 1. Welche Rollen und Berechtigungsebenen bietet die Plattform?
 2. Können wir kundenseitige Administratoren definieren, ohne Plattform-Provider-Abhängigkeit?
 3. Wie funktioniert die granulare Zugriffskontrolle auf Datenquellen und Features?
@@ -39,7 +38,6 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 5. Wie stelle ich sicher, dass Nutzer nur auf autorisierte Daten zugreifen können?
 6. Ist das Prinzip der minimalen Berechtigung (Least Privilege) umsetzbar?
 
-### Authentifizierung und Identity Management
 7. Wie integriert sich die Plattform mit unserer bestehenden Identitätsverwaltung (Azure AD, Keycloak)?
 8. Wird Single Sign-On (SSO) unterstützt?
 9. Können wir Multi-Faktor-Authentifizierung (MFA) erzwingen?
@@ -47,13 +45,11 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 11. Wie werden Sessions verwaltet und können wir Timeouts konfigurieren?
 12. Unterstützt die Plattform Conditional Access (kontextbasierte Zugriffsrichtlinien)?
 
-### Consent und Compliance
 13. Wie verwalten wir Nutzer-Einwilligungen für AI-Datenverarbeitung?
 14. Können wir organisationsspezifische Disclaimer und Nutzungsbedingungen konfigurieren?
 15. Wie dokumentieren wir Einwilligungen für Compliance-Nachweise?
 16. Können Nutzer ihre Einwilligungen einfach widerrufen?
 
-### Kostenmanagement
 17. Wie werden AI-Kosten erfasst und aufgeschlüsselt (User, Abteilung, Modell)?
 18. Können wir Budget-Limits pro User oder Abteilung setzen?
 19. Was passiert, wenn ein Budget-Limit erreicht wird?
@@ -61,42 +57,18 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 21. Können wir Kosten intern verrechnen (Chargeback)?
 22. Wie identifizieren wir Optimierungspotenziale?
 
-### Monitoring und Logging
 23. Welche Monitoring-Fähigkeiten sind eingebaut?
 24. Können wir Logs in unsere bestehenden Systeme (ELK, Splunk, Grafana) exportieren?
 25. Wie lange werden Logs aufbewahrt und ist dies konfigurierbar?
 26. Werden strukturierte Logs (JSON, OpenTelemetry) unterstützt?
 27. Wie überwachen wir die Gesundheit der Plattform-Komponenten?
 
-### AI-Qualität und Governance
 28. Wie überwachen wir die Qualität der AI-Antworten?
 29. Wie integrieren wir Nutzer-Feedback zur Verbesserung?
 30. Unterstützt die Plattform Bias-Monitoring?
 31. Wie erkennen wir Model-Drift und Qualitätsverschlechterung?
 32. Können wir A/B-Tests für verschiedene AI-Konfigurationen durchführen?
 
-### Administrativer Aufwand
 33. Wie hoch ist der administrative Aufwand für den täglichen Betrieb?
 34. Welche Aufgaben können automatisiert werden?
 35. Wie skaliert die Administration bei wachsender Nutzerzahl?
-
-## Relevante RFP-Anforderungen
-
-Während des natürlichen Schreibens sicherstellen, dass das Kapitel diese Anforderungen addressiert:
-
-- **"RBAC-basierte Zugriffskontrolle und Berechtigungsmanagement"** ✓
-- **"Kundenseitige Administrationsrollen ohne Provider-Abhängigkeit"** ✓
-- **"Granulare Zugriffskontrolle auf Datenquellen, Modelle, Features"** ✓
-- **"SSO/OAuth-Integration (Azure AD, Keycloak, OIDC, SAML)"** ✓
-- **"Multi-Faktor-Authentifizierung (MFA)"** ✓
-- **"Passkeys / FIDO2-Authentifizierung"** ✓
-- **"Conditional Access und kontextbasierte Zugriffsrichtlinien"** ✓
-- **"Disclaimer- und Consent-Management"** ✓
-- **"Echtzeit-Kostentracking mit Budget-Limits"** ✓
-- **"Granulare Kostenerfassung (User, Abteilung, Modell, Request)"** ✓
-- **"System-Monitoring und Observability"** ✓
-- **"Log-Export zu Kundensystemen (ELK, Grafana, Splunk, Datadog)"** ✓
-- **"User-Feedback-System für AI-Qualität"** ✓
-- **"Bias-Monitoring und Model-Drift-Detection"** ✓
-- **"A/B-Testing für AI-Konfigurationen"** ✓
-- **"Organisationshierarchien mit mehreren Abteilungen"** ✓

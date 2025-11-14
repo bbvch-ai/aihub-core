@@ -31,7 +31,6 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 
 ## Business-Fragen, die das Kapitel beantwortet
 
-### Dateneingangspunkte
 1. Wie werden User-Eingaben gegen Injection-Attacks geschützt?
 2. Was ist Prompt-Injection und wie wird dagegen geschützt?
 3. Wie werden hochgeladene Dokumente auf Malware geprüft?
@@ -40,7 +39,6 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 6. Welche Authentifizierungsmethoden werden für API-Integrationen unterstützt?
 7. Wie wird vor API-Missbrauch und DoS geschützt (Rate-Limiting)?
 
-### Datenverarbeitung
 8. Wie erkennt die Plattform personenbezogene Daten (PII)?
 9. Wird PII automatisch anonymisiert oder geschwärzt?
 10. Wie wird verhindert, dass sensible Daten an LLM-Provider gesendet werden?
@@ -48,7 +46,6 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 12. Wie werden Embeddings in Vector-Datenbanken geschützt?
 13. Wie wird Chat-Kontext verschlüsselt und wann wird er gelöscht?
 
-### Datenausgangspunkte
 14. Wie wird die Kommunikation mit LLM-Providern gesichert?
 15. Werden Daten bei LLM-Providern gespeichert (Retention)?
 16. Kann die Plattform komplett offline betrieben werden (Air-Gap)?
@@ -57,46 +54,20 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 19. Wie werden Daten-Exports gesichert?
 20. Wie werden Logs an externe SIEM-Systeme sicher übertragen?
 
-### Verschlüsselung
 21. Sind Daten im Ruhezustand verschlüsselt (Data-at-Rest)?
 22. Wie funktioniert Key-Management (HSM, KMS)?
 23. Ist alle Netzwerk-Kommunikation verschlüsselt (SSL/TLS)?
 24. Wird Perfect Forward Secrecy (PFS) unterstützt?
 25. Wird Mutual TLS (mTLS) für Service-to-Service-Kommunikation verwendet?
 
-### Multi-Tenancy und Datenlöschung
 26. Wie werden Daten verschiedener Organisationen getrennt (Multi-Tenant-Isolation)?
 27. Ist physische Isolation für besonders sensible Organisationen möglich?
 28. Wie werden Daten vollständig gelöscht (Right to be Forgotten)?
 29. Werden gelöschte Daten wirklich überschrieben (Secure-Delete)?
 30. Wie kann ich nachweisen, dass Daten gelöscht wurden (Audit-Trail)?
 
-### Monitoring und Incident Response
 31. Wie werden Datenflüsse überwacht?
 32. Erkennt die Plattform Anomalien und verdächtige Datentransfers?
 33. Gibt es Data Exfiltration Prevention (DLP)?
 34. Wie funktioniert Incident-Response bei Sicherheitsvorfällen?
 35. Werden regelmäßig Penetration-Tests durchgeführt?
-
-## Relevante RFP-Anforderungen
-
-Während des natürlichen Schreibens sicherstellen, dass das Kapitel diese Anforderungen addressiert:
-
-- **"Input-Validierung gegen Injection-Attacks"** ✓
-- **"Prompt-Injection-Defense"** ✓
-- **"Malware-Scanning und APT-Prevention"** ✓
-- **"PII-Detection und Anonymisierung (Presidio-Integration)"** ✓
-- **"Verschlüsselte Datenübertragung (SSL/TLS)"** ✓
-- **"Data-at-Rest-Encryption (TDE, verschlüsselte Filesysteme)"** ✓
-- **"Key-Management (HSM, KMS)"** ✓
-- **"Perfect Forward Secrecy (PFS)"** ✓
-- **"Mutual TLS (mTLS)"** ✓
-- **"Multi-Tenant-Isolation"** ✓
-- **"Physische Isolation-Option"** ✓
-- **"Secure-Delete und Right to be Forgotten"** ✓
-- **"Dataflow-Monitoring und Anomalie-Erkennung"** ✓
-- **"Data Exfiltration Prevention (DLP)"** ✓
-- **"Penetration-Testing und Vulnerability-Management"** ✓
-- **"Incident-Response-Prozesse"** ✓
-- **"Air-Gap-Deployment-Option"** ✓
-- **"Keine Datenretention bei LLM-Providern (isolierte Deployments)"** ✓

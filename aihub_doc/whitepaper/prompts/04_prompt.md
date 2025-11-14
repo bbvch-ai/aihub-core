@@ -31,7 +31,6 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 
 ## Business-Fragen, die das Kapitel beantwortet
 
-### Transparenz und Erklärbarkeit
 1. Wie kann ich nachvollziehen, wie die AI zu einer bestimmten Antwort gekommen ist?
 2. Werden alle AI-Entscheidungen protokolliert und sind diese Protokolle einsehbar?
 3. Was unterscheidet die Workflow-basierte Architektur von Black-Box-AI-Systemen?
@@ -39,7 +38,6 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 5. Wie transparent sind LLM-Aufrufe (Prompts, Responses)?
 6. Welche Tools und externe Systeme ruft die AI auf?
 
-### Audit-Trails und Compliance
 7. Wie erfüllt die Plattform Audit-Trail-Anforderungen für regulierte Branchen?
 8. Sind Logs unveränderlich und manipulationssicher?
 9. Wie lange werden Audit-Trails aufbewahrt?
@@ -47,45 +45,22 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 11. Wie weise ich nach, dass Datenverarbeitung rechtmäßig erfolgt ist?
 12. Unterstützt die Plattform Auskunftsrechte nach revDSG (Art. 25)?
 
-### Dokument-Lineage und Datenherkunft
 13. Wie kann ich nachvollziehen, welche Dokumente für eine AI-Antwort verwendet wurden?
 14. Wird die Herkunft und Verarbeitung von Dokumenten lückenlos dokumentiert?
 15. Wie werden Dokumentversionen verfolgt?
 16. Kann ich sehen, welche Dokument-Chunks in welchen Antworten verwendet wurden?
 
-### Monitoring und Observability
 17. Welche Monitoring-Tools sind in die Plattform integriert?
 18. Wie überwache ich die Performance und Kosten der AI-Nutzung?
 19. Kann ich Dashboards und Alerts für kritische Metriken konfigurieren?
 20. Werden moderne Standards wie OpenTelemetry unterstützt?
 21. Kann ich Logs in unsere bestehenden Monitoring-Systeme exportieren?
 
-### Human-in-the-Loop und Kontrolle
 22. Wie stelle ich sicher, dass kritische AI-Entscheidungen von Menschen überprüft werden?
 23. Werden menschliche Überprüfungen und Overrides dokumentiert?
 24. Wie integriere ich Nutzer-Feedback zur Qualitätsverbesserung?
 25. Gibt es Eskalationsmechanismen bei problematischen AI-Outputs?
 
-### Kostentracking und Optimierung
 26. Wie werden AI-Kosten (Token-Nutzung, LLM-Aufrufe) nachverfolgt?
 27. Kann ich Kosten pro User, Abteilung oder Projekt aufschlüsseln?
 28. Wie identifiziere ich teure Queries zur Optimierung?
-
-## Relevante RFP-Anforderungen
-
-Während des natürlichen Schreibens sicherstellen, dass das Kapitel diese Anforderungen addressiert:
-
-- **"Vollständige Transparenz und Nachvollziehbarkeit aller AI-Operationen"** ✓
-- **"End-to-End-Observability mit OpenTelemetry und Phoenix AI Monitoring"** ✓
-- **"Workflow-basierte Architektur (keine Black-Box-Systeme)"** ✓
-- **"AI-Entscheidungen vollständig tracierbar"** ✓
-- **"LLM-Aufrufe mit Prompts und Responses protokolliert"** ✓
-- **"Dokument-Lineage vom Ursprung bis zur Nutzung"** ✓
-- **"Anonymisierte User-Interaction-Auditierung"** ✓
-- **"Human-in-the-Loop-Mechanismen mit Audit-Trails"** ✓
-- **"Unveränderliche, zeitgestempelte Logs"** ✓
-- **"Log-Export zu Kundensystemen (ELK, Grafana, Splunk)"** ✓
-- **"Kostentracking (Token-Nutzung, LLM-Calls)"** ✓
-- **"Compliance mit revDSG Auskunftsrecht (Art. 25)"** ✓
-- **"Audit-Readiness für regulierte Branchen"** ✓
-- **"Reasoning-Prozesse sichtbar und nachvollziehbar"** ✓

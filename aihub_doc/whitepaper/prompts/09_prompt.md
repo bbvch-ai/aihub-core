@@ -30,13 +30,11 @@ Fokussieren Sie auf konkrete Compliance-Mechanismen, wie die Plattform regulator
 
 ## Business-Fragen, die das Kapitel beantwortet
 
-### Schweizer Datensouveränität
 1. Wie stellt die Plattform sicher, dass Daten die Schweiz nicht verlassen?
 2. Welche Deployment-Optionen gibt es für Schweizer Datensouveränität?
 3. Kann die Plattform komplett vom Internet isoliert betrieben werden (Air-Gap)?
 4. Wo werden Daten physisch gespeichert und verarbeitet?
 
-### revDSG / FADP Compliance
 5. Erfüllt die Plattform die Anforderungen des revidierten Schweizer Datenschutzgesetzes?
 6. Wie ist Privacy-by-Design in der Architektur verankert?
 7. Wie werden Transparenzanforderungen (Art. 19 revDSG) erfüllt?
@@ -44,7 +42,6 @@ Fokussieren Sie auf konkrete Compliance-Mechanismen, wie die Plattform regulator
 9. Wie funktioniert Consent-Management für revDSG-Compliance?
 10. Welche Audit-Trails existieren für Compliance-Nachweise?
 
-### GDPR Compliance
 11. Erfüllt die Plattform GDPR-Anforderungen?
 12. Wie werden Data Subject Access Requests (DSAR) gehandhabt?
 13. Wie funktioniert "Right to be Forgotten" (Art. 17 DSGVO)?
@@ -52,7 +49,6 @@ Fokussieren Sie auf konkrete Compliance-Mechanismen, wie die Plattform regulator
 15. Wie wird Consent gemäß GDPR getrackt und verwaltet?
 16. Wie unterstützt die Plattform Data Protection Impact Assessments (DPIA)?
 
-### EU AI Act Vorbereitung
 17. Ist die Plattform auf den EU AI Act vorbereitet?
 18. Wie erfüllt die Plattform Transparenzanforderungen des AI Act?
 19. Wie sind Human-in-the-Loop-Mechanismen implementiert?
@@ -60,39 +56,16 @@ Fokussieren Sie auf konkrete Compliance-Mechanismen, wie die Plattform regulator
 21. Welche Risk-Management-Mechanismen sind eingebaut?
 22. Wie wird Accuracy und Robustness sichergestellt?
 
-### Ethische AI und Best Practices
 23. Folgt die Plattform ethischen AI-Richtlinien (Council of Europe, Schweiz)?
 24. Wie werden Responsible AI Principles (Transparenz, Fairness, Accountability) umgesetzt?
 25. Gibt es Mechanismen gegen AI-Bias?
 
-### Datenaufbewahrung und Löschung
 26. Welche Datenaufbewahrungsfristen gelten?
 27. Können Aufbewahrungsfristen konfiguriert werden?
 28. Wie werden Daten automatisch gelöscht nach Ablauf?
 29. Können Benutzer ihre Daten manuell löschen?
 30. Wie wird ordnungsgemäße Datenlöschung bei Kontolöschung sichergestellt?
 
-### Internationalisierung
 31. In welchen Sprachen ist die Plattform verfügbar?
 32. Können mehrsprachige Dokumente verarbeitet werden?
 33. Ist Compliance-Dokumentation in Schweizer Sprachen verfügbar?
-
-## Relevante RFP-Anforderungen
-
-Während des natürlichen Schreibens sicherstellen, dass das Kapitel diese Anforderungen addressiert:
-
-- **"Datenschutzkonformer Betrieb nach revDSG / FADP"** ✓
-- **"Swiss Hosting / Swiss Cloud / On-Premise in der Schweiz"** ✓
-- **"Data Residency Schweiz, keine Daten ins Ausland"** ✓
-- **"Air-Gap-Betrieb ohne Internetverbindung"** ✓
-- **"Privacy-by-Design-Architektur"** ✓
-- **"Betroffenenrechte: Auskunft, Berichtigung, Löschung"** ✓
-- **"Consent-Management"** ✓
-- **"GDPR-Compliance (DSAR, Right to be Forgotten, Data Portability)"** ✓
-- **"DPIA-Support"** ✓
-- **"EU AI Act Vorbereitung (Transparenz, Human Oversight, Dokumentation)"** ✓
-- **"Ethische AI-Richtlinien (Council of Europe, Schweiz)"** ✓
-- **"Konfigurierbare Datenaufbewahrungsfristen"** ✓
-- **"Automatische und manuelle Datenlöschung"** ✓
-- **"Mehrsprachigkeit (DE, EN, FR, IT)"** ✓
-- **"Vollständige Audit-Trails für Compliance"** ✓

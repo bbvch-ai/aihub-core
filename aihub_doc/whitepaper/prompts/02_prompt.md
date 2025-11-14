@@ -23,40 +23,21 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 
 ## Business-Fragen, die das Kapitel beantwortet
 
-### Lösungsvollständigkeit
 1. Was ist Swiss AI-Hub in einem Satz?
 2. Wie unterscheidet sich das von direkter Nutzung von ChatGPT oder Azure OpenAI?
 3. Was macht dies zu einer "Plattform" vs. "Framework" oder "Service"?
 4. Warum ist "batteries included" für Business wichtig?
 5. Welche Komponenten sind enthalten, welche erfordern zusätzliche Beschaffung?
 6. Können wir wirklich in 30 Minuten deployen und produktionsreif sein?
-
-### Kosten und Lizenzierung
 7. Welches Lizenzmodell verwendet die Plattform?
 8. Was bedeutet "Open Source" praktisch für unsere Organisation?
 9. Gibt es laufende Lizenzgebühren oder Per-User-Fees?
 10. Wie unterscheiden sich die Kosten von Cloud-AI-Services?
-
-### Modularität und Erweiterbarkeit
 11. Unterstützt die Plattform verschiedene AI-Modelle und Use Cases?
 12. Sind spätere Erweiterungen möglich?
 13. Können einzelne Komponenten ausgetauscht werden?
 14. Wie modular ist die Architektur?
 15. Bin ich an einen bestimmten AI-Provider gebunden?
-
-### Zukunftssicherheit
 16. Was passiert, wenn der Plattform-Anbieter das Geschäft einstellt?
 17. Kann ich die Plattform nach meinen Bedürfnissen anpassen?
 18. Wie zukunftssicher ist die Investition?
-
-## Relevante RFP-Anforderungen
-
-Während des natürlichen Schreibens sicherstellen, dass das Kapitel diese Anforderungen addressiert:
-
-- **"Plattform soll modular aufgebaut sein, um verschiedene KI-Modelle und Use Cases zu unterstützen"** ✓
-- **"Spätere Erweiterungen ermöglichen"** ✓
-- **"LLM-agnostisch"** ✓
-- **"Nicht rein proprietäre Lösung, offene Standards"** ✓
-- **"Austausch einzelner Systembausteine ohne Herstellerbindung"** ✓
-- **"Integration von Open-Source-Modulen"** ✓
-- **"Kontinuierliche Wartung, Updates und Weiterentwicklung"** ✓
