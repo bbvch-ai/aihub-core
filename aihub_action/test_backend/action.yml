@@ -23,6 +23,10 @@ inputs:
     description: 'Python version to install'
     required: false
     default: '3.13'
+  huggingface_api_key:
+    description: 'HuggingFace API key for model downloads'
+    required: false
+    default: ''
 
 runs:
   using: "composite"
@@ -65,7 +69,6 @@ runs:
       uses: actions/cache@v4
       with:
         path: |
-          ./.docker-volumes/hf-tei-data
           ./.docker-volumes/llamacpp-data
         key: ${{ runner.os }}-hf-models-${{ hashFiles('docker-compose.dev.yml') }}
         restore-keys: |
@@ -89,10 +92,13 @@ runs:
       if: inputs.docker_compose_services != ''
       shell: bash
       run: |
-        mkdir -p ./.docker-volumes/hf-tei-data
         mkdir -p ./.docker-volumes/llamacpp-data
-        chmod 777 ./.docker-volumes/hf-tei-data
         chmod 777 ./.docker-volumes/llamacpp-data
+
+    - name: Generate Docker Compose files
+      if: inputs.docker_compose_services != ''
+      shell: bash
+      run: make generate-compose
 
     - name: Pre-pull Docker images (if services needed)
       if: inputs.docker_compose_services != ''
@@ -103,6 +109,12 @@ runs:
         # Pre-pull images in parallel to use cache effectively
         echo "Pre-pulling Docker images for faster startup..."
         docker compose -f docker-compose.dev.yml --env-file .env.dev pull --quiet ${{ inputs.docker_compose_services }} || true
+
+    - name: Add HuggingFace token to environment variables
+      if: inputs.huggingface_api_key != ''
+      shell: bash
+      run: |
+        echo "HUGGINGFACE_API_KEY=${{ inputs.huggingface_api_key }}" >> .env.dev
 
     - name: Start Docker services (if needed)
       if: inputs.docker_compose_services != ''
