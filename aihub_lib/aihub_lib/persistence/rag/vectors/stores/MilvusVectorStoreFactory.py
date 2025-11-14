@@ -62,7 +62,6 @@ def create_milvus_vector_store(
             FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=embedding_vector_dimension),
             FieldSchema(name="sparse_embedding", dtype=DataType.SPARSE_FLOAT_VECTOR),
             FieldSchema(name="text", dtype=DataType.VARCHAR, max_length=65535, enable_analyzer=True),
-            FieldSchema(name="metadata", dtype=DataType.VARCHAR, max_length=65535),
         ]
         schema = CollectionSchema(fields=fields, enable_dynamic_field=True)
 

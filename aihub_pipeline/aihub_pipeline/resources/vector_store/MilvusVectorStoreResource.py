@@ -1,13 +1,12 @@
 from typing import Annotated
 
-from pydantic import Field
-
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import (
     MilvusIndexType,
     create_milvus_vector_store,
 )
 from dagster import ConfigurableResource, InitResourceContext
 from llama_index.vector_stores.milvus import MilvusVectorStore
+from pydantic import Field
 
 
 class MilvusVectorStoreResource(ConfigurableResource[MilvusVectorStore]):

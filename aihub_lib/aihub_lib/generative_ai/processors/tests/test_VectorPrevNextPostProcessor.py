@@ -1,14 +1,14 @@
 import asyncio
-from time import sleep
+from time import sleep, time
 
 import pytest
-from llama_index.core.schema import NodeRelationship, NodeWithScore, RelatedNodeInfo, TextNode
+from llama_index.core.schema import Document, NodeRelationship, NodeWithScore, RelatedNodeInfo
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import VectorPrevNextPostProcessor
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.persistence.rag.documents.stores.docstore import create_mongo_document_store
-from aihub_lib.persistence.rag.vectors.node_metadata import NAMESPACE
+from aihub_lib.persistence.rag.vectors.node_metadata import CREATED_AT, DOCUMENT_ID, INSERTED_AT, NAMESPACE, UPDATED_AT
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_collection
 
@@ -37,7 +37,14 @@ def get_node_ids(result):
 def _(datatable):
     nodes = []
     for row in datatable[1:]:
-        nodes.append(TextNode(id_=row[0], text=row[1], metadata={NAMESPACE: "test"}))
+        metadata = {
+            NAMESPACE: "test",
+            DOCUMENT_ID: row[0],
+            CREATED_AT: int(time()),
+            UPDATED_AT: int(time()),
+            INSERTED_AT: int(time()),
+        }
+        nodes.append(Document(id_=row[0], text=row[1], metadata=metadata))
     return nodes
 
 
@@ -64,7 +71,7 @@ def milvus_vector_store(nodes_with_relationships, event_loop):
 
     embedding_config = EmbeddingModelConfig(model_name="embedding/small")
     vector_store = MilvusVectorStoreConfig(
-        uri="http://localhost",
+        uri="http://localhost:19530",
         collection_name=collection_name,
         dimensions=1024,
     )
@@ -78,6 +85,7 @@ def milvus_vector_store(nodes_with_relationships, event_loop):
     )
     sleep(1)
     yield vector_store
+    drop_collection(collection_name=collection_name)
 
 
 @given("a valid vector store with all nodes", target_fixture="vector_store")
