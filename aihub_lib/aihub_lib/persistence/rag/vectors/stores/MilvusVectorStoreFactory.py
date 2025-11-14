@@ -16,7 +16,7 @@ from pymilvus import (
 
 from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_ID, NAMESPACE
 
-_MMAP_ENABLED = "mmap.enablec"
+_MMAP_ENABLED = "mmap.enabled"
 
 
 class MilvusIndexType(str, Enum):
