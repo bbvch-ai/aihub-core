@@ -13,13 +13,13 @@ Let's walk through a realistic deployment to see how the pieces fit together.
 
 ### The scenario
 
-Your company has five departments (Legal, Finance, HR, Operations, Sales). You want everyone to access information about Swiss law, but each department should only see their own internal guidelines.
+Your company has five departments (Legal, Finance, HR, Operations, Sales). You want everyone to access information about the company's vision and identity, but each department should only see their own internal guidelines.
 
 ### Step 1: System administrators prepare the data
 
 The platform's system administrators (sysadmins) set up data pipelines:
 
-- One pipeline ingests the public Swiss law book into a knowledge database called `swiss-law`
+- One pipeline ingests the company vision, mission, and identity documents into a knowledge database called `company-vision`
 - Five separate pipelines process each department's internal guidelines into their own databases: `legal-guidelines`, `finance-guidelines`, `hr-guidelines`, `operations-guidelines`, `sales-guidelines`
 
 You now have six knowledge databases containing parsed, searchable documents.
@@ -34,30 +34,30 @@ The agent class itself doesn't contain any data or know which database to use. I
 
 People in the management tenant can't deploy agent code, but they can create instances from deployed classes. They create six agent instances:
 
-- **Law Agent**: Configured to search only `swiss-law`
+- **Company Vision Agent**: Configured to search only `company-vision`
 - **Legal Guidelines Agent**: Configured to search only `legal-guidelines`
 - **Finance Guidelines Agent**: Configured to search only `finance-guidelines`
 - **HR Guidelines Agent**: Configured to search only `hr-guidelines`
 - **Operations Guidelines Agent**: Configured to search only `operations-guidelines`
 - **Sales Guidelines Agent**: Configured to search only `sales-guidelines`
 
-Each agent instance has its data access baked into its configuration. The Law Agent can only search Swiss law. The Finance Guidelines Agent can only search finance guidelines. This isn't determined by who's chatting with the agent - it's configured when the instance is created.
+Each agent instance has its data access baked into its configuration. The Company Vision Agent can only search company vision documents. The Finance Guidelines Agent can only search finance guidelines. This isn't determined by who's chatting with the agent - it's configured when the instance is created.
 
 ### Step 4: Managers configure tenant access
 
 The managers have already created five department tenants. Now they configure which agents each tenant can see:
 
-- Legal tenant: Can use Law Agent and Legal Guidelines Agent
-- Finance tenant: Can use Law Agent and Finance Guidelines Agent
-- HR tenant: Can use Law Agent and HR Guidelines Agent
-- Operations tenant: Can use Law Agent and Operations Guidelines Agent
-- Sales tenant: Can use Law Agent and Sales Guidelines Agent
+- Legal tenant: Can use Company Vision Agent and Legal Guidelines Agent
+- Finance tenant: Can use Company Vision Agent and Finance Guidelines Agent
+- HR tenant: Can use Company Vision Agent and HR Guidelines Agent
+- Operations tenant: Can use Company Vision Agent and Operations Guidelines Agent
+- Sales tenant: Can use Company Vision Agent and Sales Guidelines Agent
 
-All tenants can use the Law Agent (public information). Each tenant can only use their own guidelines agent.
+All tenants can use the Company Vision Agent (company-wide information). Each tenant can only use their own guidelines agent.
 
 ### What this creates
 
-A user in the Finance tenant sees two agents in their interface: Law Agent and Finance Guidelines Agent. They can chat with either one. They cannot see that the Legal Guidelines Agent exists.
+A user in the Finance tenant sees two agents in their interface: Company Vision Agent and Finance Guidelines Agent. They can chat with either one. They cannot see that the Legal Guidelines Agent exists.
 
 The Finance Guidelines Agent will only answer questions from the finance guidelines database. Even though the user in Finance tenant can use this agent, they still can't access HR or Legal guidelines - because the agent itself can't access those databases.
 
