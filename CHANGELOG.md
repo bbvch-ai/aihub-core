@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.253.2] - 2025-11-14 - Comprehensive Bot Setup Documentation
+
+### Added
+
+- 📄 **New Bot Creation Manual Setup Guide**: Introduced a comprehensive, step-by-step guide for manually creating and
+  configuring bots with Microsoft Teams and Slack. This detailed resource covers everything from Azure Bot Framework and
+  Teams Developer Portal setup to MongoDB configuration and Slack OAuth integration, complete with app manifest
+  examples, key terminology, and troubleshooting tips.
+
+### Changed
+
+- 🔗 **Updated Chat Interface Documentation Link**: Corrected and updated an internal documentation link pointing to the
+  chat interface feature overview, ensuring users are directed to the most current information.
+
+---
+
 ## [v0.253.1] - 2025-11-14 - Robust Milvus Vector Store Configuration and CI/CD Streamlining
 
 ### Added
