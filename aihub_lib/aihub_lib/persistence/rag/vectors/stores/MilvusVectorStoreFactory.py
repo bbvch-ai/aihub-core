@@ -16,7 +16,7 @@ from pymilvus import (
 
 from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_ID, NAMESPACE
 
-_MMAP_ENABLED = "mmap.enable"
+_MMAP_ENABLED = "mmap.enablec"
 
 
 class MilvusIndexType(str, Enum):
@@ -82,8 +82,6 @@ def create_milvus_vector_store(
                 index_type="HNSW",
                 metric_type="IP",
                 params={
-                    "M": 16,  # Links per node: higher = better recall, more memory (8-64 range)
-                    "efConstruction": 200,  # Build quality: higher = better recall, slower build (64-512 range)
                     _MMAP_ENABLED: "true" if enable_mmap else "false",
                 },
             )
@@ -93,7 +91,6 @@ def create_milvus_vector_store(
                 index_type="IVF_FLAT",
                 metric_type="IP",
                 params={
-                    "nlist": 1024,  # Clusters: sqrt(N) typically optimal
                     _MMAP_ENABLED: "true" if enable_mmap else "false",
                 },
             )
