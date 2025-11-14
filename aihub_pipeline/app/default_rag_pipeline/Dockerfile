@@ -23,7 +23,7 @@ RUN apt-get update && \
     curl \
     git \
     make && \
-    curl -sSL https://install.python-poetry.org | python3 - --version ${POETRY_VERSION} && \
+    curl -sSL https://install.python-poetry.org | python3 - --version "${POETRY_VERSION}" && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -38,15 +38,15 @@ COPY aihub_lib ./aihub_lib
 
 COPY Makefile switch_dependencies.py pyproject.toml ./
 
-RUN poetry install --without dev
-RUN make use-local-core
-RUN rm Makefile switch_dependencies.py pyproject.toml
+RUN poetry install --without dev && \
+    make use-local-core && \
+    rm Makefile switch_dependencies.py pyproject.toml
 
 # Set the working directory
 WORKDIR /app/aihub_pipeline
-RUN poetry install
 
-RUN rm -rf ~/.cache/pypoetry ~/.cache/pip /tmp/poetry_cache
+RUN poetry install && \
+    rm -rf ~/.cache/pypoetry ~/.cache/pip /tmp/poetry_cache
 
 
 # --- Runtime stage ---
@@ -65,8 +65,7 @@ ENV PYTHONUNBUFFERED=1 \
     POETRY_VIRTUALENVS_CREATE=1 \
     POETRY_CACHE_DIR=/tmp/poetry_cache \
     PYTHONPATH=/app \
-    PATH="/app/.venv/bin:/opt/poetry/bin:$PATH" \
-    DAGSTER_HOME=/dagster_home \
+    PATH="/app/aihub_pipeline/.venv/bin:/opt/poetry/bin:$PATH" \
     AIHUB_PIPELINE_VERSION=${VERSION}
 # Setup users
 ARG USERNAME=user
@@ -75,39 +74,31 @@ ARG USER_GID=$USER_UID
 
 # Create user group and user
 RUN groupadd --gid "$USER_GID" "$USERNAME" && \
-    useradd --uid "$USER_UID" --gid "$USER_GID" -m -s /bin/bash "$USERNAME"
-
-# Install system dependencies
-RUN apt-get update && \
+    useradd --uid "$USER_UID" --gid "$USER_GID" -m -s /bin/bash "$USERNAME" && \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
-    sudo \
-    tree \
-    vim \
-    iputils-ping \
-    libasound2 \
-    make \
     curl && \
-    curl -sSL https://install.python-poetry.org | python3 - --version ${POETRY_VERSION} && \
+    curl -sSL https://install.python-poetry.org | python3 - --version "${POETRY_VERSION}" && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir -p /dagster_home && \
+    chown "$USERNAME:$USERNAME" /dagster_home
 
-# Give sudo access to the user
-RUN echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/"$USERNAME" && \
-    chmod 0440 /etc/sudoers.d/"$USERNAME"
-
-ENV DAGSTER_HOME=/app/aihub_pipeline
-RUN mkdir -p $DAGSTER_HOME
+ENV DAGSTER_HOME=/dagster_home
 
 # Set the working directory
 WORKDIR /app
 
 # Copy application code and configuration files
-COPY --from=builder /app /app
+COPY --from=builder --chown="$USERNAME:$USERNAME" /app /app
 
-WORKDIR $DAGSTER_HOME
+# Switch to non-root user
+USER $USERNAME
+
+WORKDIR /app/aihub_pipeline
 
 # Expose necessary port
 EXPOSE 4000
 
 # Start the application
-ENTRYPOINT exec poetry run dagster api grpc -h 0.0.0.0 -p 4000 -m app.${PIPELINE_NAME}
+ENTRYPOINT ["sh", "-c", "exec poetry run dagster api grpc -h 0.0.0.0 -p 4000 -m \"app.${PIPELINE_NAME}\""]
