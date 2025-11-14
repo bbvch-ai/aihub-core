@@ -127,14 +127,20 @@ class AgentTestRunner(AgentRunner):
         """
         yield await self.test_run_start(thread_id)
         # After leaving the context, wait for StopEvent or timeout
-        # Poll every 100ms to detect StopEvent early and avoid unnecessary waiting
-        interval = 0.1
+        # Poll every 1s to detect StopEvent early and avoid unnecessary waiting
+        interval = 1
+        grace_period = 1  # Grace period after StopEvent to allow async operations to complete
         max_attempts = int(delay_before_stop / interval)
         attempts = 0
 
         while not self.has_stop_event and attempts < max_attempts:
             await sleep(interval)
             attempts += 1
+
+        # If StopEvent was detected, add a grace period for pending async operations
+        # (e.g., ThreadContext persistence to Redis) to complete
+        if self.has_stop_event:
+            await sleep(grace_period)
 
         await self.test_run_stop()
 
