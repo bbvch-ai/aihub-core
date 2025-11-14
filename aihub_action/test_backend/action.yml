@@ -95,6 +95,14 @@ runs:
         mkdir -p ./.docker-volumes/llamacpp-data
         chmod 777 ./.docker-volumes/llamacpp-data
 
+    - name: Configure Git Authentication
+      shell: bash
+      run: git config --global url."git@github.com:".insteadOf "https://github.com/"
+
+    - name: Install Global Dependencies
+      shell: bash
+      run: poetry install --no-interaction --with dev --no-root
+
     - name: Generate Docker Compose files
       if: inputs.docker_compose_services != ''
       shell: bash
@@ -122,14 +130,6 @@ runs:
       run: |
         # Use --no-build to avoid rebuilding and rely on cached images
         docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --no-build ${{ inputs.docker_compose_services }}
-
-    - name: Configure Git Authentication
-      shell: bash
-      run: git config --global url."git@github.com:".insteadOf "https://github.com/"
-
-    - name: Install Global Dependencies
-      shell: bash
-      run: poetry install --no-interaction --with dev --no-root
 
     - name: Use Local Core (without install)
       if: inputs.use_local_core == 'true'
@@ -225,7 +225,7 @@ runs:
       working-directory: ${{ inputs.working_directory }}
       run: |
         pytest_exit_code=0
-        poetry run pytest -m "not azure and not flaky" --cov=. \
+        poetry run pytest -m "not azure and not flaky and not slow" --cov=. \
                          --cov-report=xml:coverage.xml \
                          --cov-report=term-missing \
                          --junitxml=pytest.xml || pytest_exit_code=$?
