@@ -89,9 +89,11 @@ build_combined_prompt() {
     echo "Unten finden Sie:"
     echo "1. Allgemeine Schreibanweisungen für alle Kapitel"
     echo "2. Spezifische Kapitelanweisungen und -anforderungen"
-    echo "3. Quelldokumentation aus der technischen Dokumentation"
+    echo "3. Bereits generierte vorherige Kapitel (für Konsistenz)"
+    echo "4. Quelldokumentation aus der technischen Dokumentation"
     echo ""
     echo "Ihre Aufgabe: Generieren Sie den Kapitelinhalt gemäss den Anweisungen und verwenden Sie die Quelldokumentation als faktische Grundlage."
+    echo "Achten Sie auf einen konsistenten Stil und Flow mit den bereits generierten Kapiteln."
     echo ""
     echo "═══════════════════════════════════════════════════════════════"
     echo ""
@@ -109,6 +111,43 @@ build_combined_prompt() {
     echo ""
     cat "$prompt_file"
     echo ""
+    echo "═══════════════════════════════════════════════════════════════"
+    echo ""
+
+    # Add previously generated chapters for consistency
+    echo "## BEREITS GENERIERTE KAPITEL"
+    echo ""
+    echo "Nachfolgend finden Sie die bereits generierten vorherigen Kapitel."
+    echo "Verwenden Sie diese, um einen konsistenten Schreibstil, Ton und Struktur beizubehalten."
+    echo ""
+
+    local prev_chapter_count=0
+    local current_chapter_num=$((10#$chapter_id))  # Convert to decimal number
+
+    # Loop through all previous chapters (00 to current-1)
+    for ((i=0; i<current_chapter_num; i++)); do
+        local prev_id=$(printf "%02d" $i)
+        local prev_output="$OUTPUT_DIR/${prev_id}_output.md"
+
+        if [ -f "$prev_output" ]; then
+            echo "### Kapitel $prev_id"
+            echo ""
+            cat "$prev_output"
+            echo ""
+            echo "---"
+            echo ""
+            ((prev_chapter_count++))
+        fi
+    done
+
+    if [ $prev_chapter_count -eq 0 ]; then
+        echo "*(Keine vorherigen Kapitel vorhanden - dies ist das erste Kapitel)*"
+        echo ""
+    else
+        echo "**Hinweis**: Achten Sie darauf, dass Ihr neues Kapitel nahtlos an diese vorherigen Kapitel anschliesst."
+        echo ""
+    fi
+
     echo "═══════════════════════════════════════════════════════════════"
     echo ""
 
@@ -201,6 +240,26 @@ generate_chapter() {
     done < <(get_source_files "$chapter_id")
 
     echo -e "${GREEN}  ✓ Collected $file_count source document(s)${NC}"
+
+    # Count and show previously generated chapters
+    echo -e "${BLUE}📖 Checking for previous chapters...${NC}"
+    local prev_chapter_count=0
+    local current_chapter_num=$((10#$chapter_id))
+
+    for ((i=0; i<current_chapter_num; i++)); do
+        local prev_id=$(printf "%02d" $i)
+        local prev_output="$OUTPUT_DIR/${prev_id}_output.md"
+        if [ -f "$prev_output" ]; then
+            echo -e "${BLUE}  📗 Chapter $prev_id (for context)${NC}"
+            ((prev_chapter_count++))
+        fi
+    done
+
+    if [ $prev_chapter_count -eq 0 ]; then
+        echo -e "${BLUE}  ℹ️  No previous chapters (this is the first chapter)${NC}"
+    else
+        echo -e "${GREEN}  ✓ Including $prev_chapter_count previous chapter(s) for consistency${NC}"
+    fi
 
     # Build the complete combined prompt
     echo -e "${BLUE}🔨 Building combined prompt...${NC}"
@@ -375,9 +434,20 @@ Examples:
   LLM_MODEL=gpt-4 $0     # Use different model
 
 Chapter Files:
-  prompts/${chapter_id}_prompt.md     - Chapter-specific prompt with instructions
-  sources/${chapter_id}_sources.txt   - List of technical docs to include
-  output/${chapter_id}_output.md      - Generated chapter output
+  prompts/XX_prompt.md     - Chapter-specific prompt with instructions
+  sources/XX_sources.txt   - List of technical docs to include
+  output/XX_output.md      - Generated chapter output (XX = chapter ID like 00, 01, etc.)
+
+Features:
+  - Automatically includes all previously generated chapters in the prompt
+  - Ensures consistent writing style, tone, and flow across chapters
+  - Generate chapters sequentially (00, 01, 02...) for best results
+  - Each chapter learns from and builds upon previous ones
+
+Note:
+  For best consistency, generate chapters in order. When generating chapter N,
+  all chapters 00 to N-1 from the output/ directory will be included in the
+  prompt context to maintain a cohesive narrative and writing style.
 
 EOF
     exit 0
