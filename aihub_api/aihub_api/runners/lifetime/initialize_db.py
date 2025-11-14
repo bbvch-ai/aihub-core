@@ -34,7 +34,7 @@ async def initialize_roles() -> None:
     if AIHubSettings().CREATE_DEFAULT_ROLES:
         await initialize_role(
             name="AIHubUser",
-            description="Grants global administrative access to AI-Hub",
+            description="Grants global user access to AI-Hub",
             access_rules=["aihub.user.>"],
         )
         await initialize_role(

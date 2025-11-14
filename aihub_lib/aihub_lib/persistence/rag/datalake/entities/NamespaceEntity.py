@@ -1,3 +1,4 @@
+import re
 import time
 
 from bson import ObjectId
@@ -31,9 +32,21 @@ class NamespaceEntity(Document):
     inserted_at = IntField(required=True)
 
     @staticmethod
-    def _validate_name(name: str, field_name: str) -> None:
+    def _validate_namespace_name(name: str) -> None:
         if not name:
-            raise ValidationError(f"{field_name} cannot be empty")
+            raise ValidationError("namespace_name cannot be empty")
+        if not re.match(r"^[a-zA-Z0-9_-]+$", name):
+            raise ValidationError("namespace_name can only contain alphanumeric characters, hyphens, and underscores")
+
+    @staticmethod
+    def _validate_folder_name(name: str) -> None:
+        if not name:
+            raise ValidationError("folder_name cannot be empty")
+
+    @staticmethod
+    def _sanitize_namespace_name(name: str) -> str:
+        """Sanitize namespace name to only contain alphanumeric, hyphens, and underscores."""
+        return re.sub(r"[^a-zA-Z0-9_-]", "_", name)
 
     @classmethod
     def create_namespace(
@@ -45,16 +58,17 @@ class NamespaceEntity(Document):
         description: LocaleStringEntity | None = None,
         namespace_id: ObjectId | None = None,
     ) -> "NamespaceEntity":
-        cls._validate_name(namespace_name, "namespace_name")
+        sanitized_namespace_name = cls._sanitize_namespace_name(namespace_name)
+        cls._validate_namespace_name(sanitized_namespace_name)
 
         resolved_folder_name = folder_name or namespace_name
-        cls._validate_name(resolved_folder_name, "folder_name")
+        cls._validate_folder_name(resolved_folder_name)
 
         current_time = int(time.time())
         namespace = cls(
             id=namespace_id or ObjectId(),
             bucket_id=bucket_id,
-            namespace_name=namespace_name,
+            namespace_name=sanitized_namespace_name,
             folder_name=resolved_folder_name,
             display_name=display_name,
             description=description,
@@ -100,15 +114,13 @@ class NamespaceEntity(Document):
         display_name: LocaleStringEntity | None = None,
         description: LocaleStringEntity | None = None,
     ) -> "NamespaceEntity":
-        if namespace_name:
-            cls._validate_name(namespace_name, "namespace_name")
-        if folder_name:
-            cls._validate_name(folder_name, "folder_name")
-
         namespace = cls.get_namespace_by_id(namespace_id)
         if namespace_name:
-            namespace.namespace_name = namespace_name
+            sanitized_namespace_name = cls._sanitize_namespace_name(namespace_name)
+            cls._validate_namespace_name(sanitized_namespace_name)
+            namespace.namespace_name = sanitized_namespace_name
         if folder_name:
+            cls._validate_folder_name(folder_name)
             namespace.folder_name = folder_name
         if display_name:
             namespace.display_name = display_name
