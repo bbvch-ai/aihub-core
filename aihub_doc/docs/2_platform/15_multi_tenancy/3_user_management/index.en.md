@@ -1,173 +1,185 @@
 ---
-title: User and role management
+title: Managing users and roles
 index: 3
 ---
 
-# User and role management
+# Managing users and roles
 
-Managing users in a multi-tenant environment involves assigning users to tenants and granting them appropriate roles within each tenant.
+Users access the platform through your identity provider (Azure AD, Google Workspace, Okta, etc.), but their roles and tenant memberships are managed within the platform itself.
 
-## Adding users to tenants
+## User lifecycle
 
-Users must be members of a tenant before they can access resources in that tenant. New users join the default tenant automatically during their first login. Add them to additional tenants manually.
+### First login
 
-Navigate to **Service** → **Tenants** and select the tenant. Switch to the **Users** tab.
+When someone logs in for the first time:
+1. Your identity provider verifies who they are
+2. The platform creates their user profile (name, email, profile picture)
+3. They automatically join the default tenant with standard user roles
+4. They see the default tenant's agents and resources
 
-Click **Add User**. Search for the user by name or email, then select which roles to assign in this tenant. Users must have at least one role to be useful members of the tenant.
+The platform doesn't import roles from your identity provider. It only imports identity information (who you are, not what you can do).
 
-The user can now select this tenant from their tenant switcher and access resources according to their assigned roles and the tenant's access rules.
+### Adding to additional tenants
 
-## Removing users from tenants
+After someone's first login, administrators can add them to other tenants. Navigate to **Service** → **Tenants**, select a tenant, and click **Add User** on the Users tab.
 
-From the tenant's **Users** tab, find the user and click **Remove**. This removes their membership entirely - they lose all roles in that tenant and can no longer select it.
+Search for the user by name or email. Select which roles to assign in this tenant. The user can now switch to this tenant and will have the permissions defined by those roles.
 
-Removing a user from the default tenant is allowed but unusual. Users removed from all tenants cannot access any platform resources.
+Users don't need to log out and back in. Changes take effect on their next request.
+
+### Removing from tenants
+
+Click **Remove** next to a user in the tenant's user list. This removes their membership entirely - they lose all roles in that tenant and cannot select it anymore.
+
+Removing someone from the default tenant is unusual but allowed. Users removed from all tenants cannot access any platform resources.
+
+## Roles
+
+Roles are collections of permissions scoped to a specific tenant. The "Manager" role in the Finance tenant is completely separate from a "Manager" role in the HR tenant.
+
+### Creating roles
+
+Navigate to a tenant's **Roles** tab and click **Create Role**.
+
+Choose a descriptive name: "Agent User", "Document Reviewer", "Department Admin". The name should explain what the role allows.
+
+Define what this role permits. For a department user role:
+- Access to department agents
+- Access to department processes
+- Cannot see administrative services
+- Cannot see other departments' resources
+
+For a department admin role:
+- Everything department users can do
+- Create agent instances
+- Manage knowledge ingestion
+- Add users to the department tenant
+- Assign roles to department users
+
+### Role scope within tenant boundaries
+
+Roles grant permissions up to the tenant's boundary. If the tenant can only access Finance agents, a role in that tenant cannot grant access to HR agents even if configured to do so.
+
+The tenant defines what exists. Roles define what users with that role can do within what exists.
+
+### Changing roles
+
+Select a role and click **Edit**. Changes affect all users with that role immediately.
+
+Adding permissions to a role grants those permissions to everyone who has it. Removing permissions revokes them from everyone with that role.
+
+Test role changes carefully, preferably in a test tenant first.
 
 ## Managing user roles
 
-Click **Manage Roles** next to a user in the tenant's user list. This shows their current roles in that tenant.
+Click **Manage Roles** next to a user in the tenant's user list.
 
-Add or remove roles using the role selector. Changes take effect immediately. The user doesn't need to log out and back in.
+Add roles by selecting from available roles in that tenant. Remove roles by deselecting them.
 
-A user with no roles in a tenant serves no purpose. The system allows this state but it's generally unintentional.
+Users can have multiple roles in the same tenant. Their effective permissions are the union of all their roles. If one role grants access to agents and another grants access to processes, they can access both.
 
-## Creating tenant roles
+A user with no roles in a tenant is technically allowed but serves no purpose.
 
-Roles are scoped to specific tenants. The "Analyst" role in Finance tenant is separate from "Analyst" in Marketing tenant.
+## Bulk operations
 
-Navigate to the tenant's **Roles** tab and click **Create Role**.
+### CSV import
 
-**Name**: Choose a descriptive name. "Agent User", "Document Reviewer", "Department Admin" explain what the role does.
+Import many users at once through **Service** → **Users** → **Import Users**.
 
-**Description**: Document the role's purpose and intended users. This helps when assigning roles later.
+Create a CSV file with three columns:
+- email
+- name
+- initial_roles (comma-separated role names)
 
-**Access rules**: Define what this role permits. Add multiple rules to grant access to different resources.
-
-Example analyst role:
-```
-aihub.user.agent.>
-aihub.user.knowledge.>
-aihub.user.process.review-workflow.*
-```
-
-This role can use all agents and knowledge bases, and participate in review workflow processes.
-
-## Editing roles
-
-Select a role and click **Edit**. You can change the name, description, or access rules.
-
-Role changes affect all users with that role immediately. Adding access rules grants new permissions to everyone with the role. Removing access rules revokes those permissions.
-
-::: warning
-Test role changes carefully. Removing an access rule might prevent users from completing work in progress.
-:::
-
-## Deleting roles
-
-Click **Delete** on a role. The system removes the role from all users in the tenant.
-
-System roles (created during initialization) cannot be deleted. These include roles like AIHubUser, AIHubAdmin, and AIHubSuperuser.
-
-## Bulk user import
-
-Import many users at once using CSV upload. Navigate to **Service** → **Users** and click **Import Users**.
-
-The CSV requires three columns:
-- `email` - User's email address (required)
-- `name` - Display name (required)
-- `initial_roles` - Comma-separated role names (optional)
-
-Example CSV:
+Example:
 ```csv
 email,name,initial_roles
-john.doe@company.com,John Doe,"AIHubUser,AIHubAgentUser"
-jane.smith@company.com,Jane Smith,AIHubUser
-admin@company.com,Admin User,AIHubAdmin
+john.doe@company.com,John Doe,"StandardUser,AgentUser"
+jane.smith@company.com,Jane Smith,StandardUser
 ```
 
-The import process:
-1. Validates the CSV format
-2. Shows a preview of users to import
-3. Creates user accounts if they don't exist
-4. Adds users to the current tenant (determined by X-Tenant-Id header)
-5. Assigns the specified roles
+The import:
+- Creates user profiles if they don't exist yet
+- Adds users to your current tenant (determined by which tenant you're in)
+- Assigns the specified roles
 
-Users who haven't logged in yet receive placeholder profiles. Their name and email update when they first authenticate through the identity provider.
+Users who haven't logged in yet receive placeholder profiles that update when they first authenticate.
 
-The results summary shows how many users were created, updated, or failed with error details for failures.
+### Bulk role assignment
 
-## Bulk role assignment
-
-Assign the same roles to multiple users at once. Navigate to **Service** → **Users**, select users using checkboxes, then choose **Bulk Actions** → **Assign Roles**.
+Select multiple users using checkboxes in the user list. Choose **Bulk Actions** → **Assign Roles**.
 
 Three modes:
+- **Add**: Add selected roles to users' existing roles
+- **Remove**: Remove selected roles, keeping others
+- **Replace**: Replace all roles with selected roles
 
-**Add roles**: Adds the selected roles to each user's existing roles. Users keep their current roles and gain the new ones.
+Changes apply immediately to all selected users.
 
-**Remove roles**: Removes the selected roles from each user. Users keep any roles not in the removal list.
+## Cross-tenant membership
 
-**Replace roles**: Replaces all roles with the selected ones. Users lose their current roles and receive only the specified roles.
+Users often belong to multiple tenants with different roles in each.
 
-Select the desired roles and apply. Changes take effect immediately for all selected users.
+Someone might be:
+- Admin in Development tenant (can deploy and configure freely)
+- Standard user in Staging tenant (can test but not modify)
+- Viewer in Production tenant (read-only access)
 
-::: tip
-Use bulk assignment when onboarding teams or reorganizing departments. It's faster than assigning roles individually.
-:::
+They switch between tenants using the selector in the top bar. The interface shows only what's available in the selected tenant. Their permissions change based on their roles in that tenant.
 
-## User role inheritance
+## Permissions inheritance
 
-Users don't inherit roles between tenants. A user who is an admin in one tenant has no privileges in another tenant unless explicitly granted.
+Permissions don't inherit between tenants. Being an admin in one tenant grants no privileges in another tenant.
 
-When a user switches tenants, the system resolves their roles within the new tenant context. Their permissions change based on their roles in the selected tenant.
+Permissions don't inherit within role hierarchies. Having user access doesn't automatically grant admin access.
 
-## Viewing user details
+## Common role structures
 
-Navigate to **Service** → **Users** and click a username. This shows:
+### Department tenant
 
-- Basic profile (name, email, profile picture)
-- All tenants the user belongs to
-- Roles in each tenant
-- Last access timestamp
+**Standard User**: Chat with department agents, participate in processes, view results
 
-From here you can manage the user's memberships and roles across all tenants.
+**Power User**: Standard user abilities plus create agent instances, configure agents, run evaluations
 
-## Common role patterns
+**Department Admin**: Power user abilities plus manage users, assign roles, create department-specific roles
 
-**Viewer**: Read-only access to specific resources
-```
-aihub.user.agent.specific-agent.*
-aihub.user.knowledge.department-docs.>
-```
+### Management tenant
 
-**Contributor**: Can use agents and processes but not administer them
-```
-aihub.user.agent.>
-aihub.user.process.>
-aihub.user.knowledge.>
-```
+**Tenant Manager**: Create new tenants, configure tenant boundaries, assign agents to tenants
 
-**Department admin**: Full control within department resources
-```
-aihub.admin.agent.department-*
-aihub.admin.knowledge.department-docs.>
-aihub.admin.process.department-*
-```
+**User Administrator**: Add users to tenants, assign roles, manage user access across all tenants
 
-**Tenant admin**: Full control within the tenant
-```
-aihub.admin.>
-```
+**Platform Administrator**: Full administrative access to all services and configurations
 
-Avoid granting `aihub.admin.>` in tenant roles unless you want users to have full administrative control. This includes user management, role changes, and system configuration.
+### Development tenant
 
-## Security considerations
+**Developer**: Deploy agents, create pipelines, modify configurations, full service access for testing
 
-**Principle of least privilege**: Grant users the minimum permissions needed for their work. Start restrictive and expand if they need more access.
+**QA**: Create test agent instances, run evaluations, view all agents, cannot deploy code
 
-**Regular audits**: Periodically review user roles. People change positions and responsibilities. Remove unneeded permissions.
+**Observer**: Read-only access to all resources for learning and documentation
 
-**Role consolidation**: If many users need the same permissions, create a role instead of granting individual access rules.
+## Best practices
 
-**Admin role limits**: Restrict who has admin roles. Admin users can grant themselves any permission within the tenant, so admin access should be limited to trusted personnel.
+**Principle of least privilege**: Grant users the minimum permissions needed for their work. You can always expand access later.
 
-**External user management**: For customer-facing tenants, consider whether to allow users to invite others or require admin-only user management.
+**Regular audits**: Review user roles quarterly. People change positions. Access granted for a project might not be appropriate six months later.
+
+**Clear role names**: "Finance Standard User" is clearer than "FSU". Future administrators will thank you.
+
+**Test before rolling out**: Create a test user, add them to a tenant with a new role, and verify they see exactly what you intend.
+
+**Document role purposes**: When creating a role, document why it exists and what its responsibilities are. This prevents confusion when reviewing access later.
+
+**Limit admin roles**: Admin users can grant themselves any permission within their tenant. Only trusted personnel should have admin roles.
+
+## Troubleshooting access issues
+
+When a user reports they can't access something:
+
+1. Verify they selected the correct tenant (check the tenant selector in the top bar)
+2. Check if their tenant has access to that resource
+3. Verify they have roles assigned in that tenant
+4. Review what those roles permit
+
+The most common issue is users working in the wrong tenant. The second most common is the tenant boundary preventing access even though the role would permit it.

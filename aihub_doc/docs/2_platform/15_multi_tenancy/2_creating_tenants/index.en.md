@@ -1,152 +1,181 @@
 ---
-title: Creating and configuring tenants
+title: Setting up tenants
 index: 2
 ---
 
-# Creating and configuring tenants
+# Setting up tenants
 
-Tenant administrators create and configure tenants through the admin UI. Each tenant requires a name, description, and access rules that define its boundaries.
+Creating tenants requires planning your organizational structure and understanding what each group of users should be able to do. This chapter walks through practical approaches to tenant design.
+
+## Planning your tenant structure
+
+Start by identifying the groups that need separated workspaces. Common patterns:
+
+**Organizational hierarchy**: Sysadmins, managers, and departments each get their own tenant. This separates technical operations from business administration from daily work.
+
+**Business units**: Marketing, Sales, Engineering, Operations each get a tenant. They share some resources (company-wide agents) but have unit-specific agents.
+
+**Customer isolation**: Each customer gets their own tenant. Useful for service providers or SaaS deployments where customers must never see each other's data or agents.
+
+**Environment separation**: Development, staging, and production run as separate tenants. Developers can experiment in the dev tenant without affecting production users.
+
+**Compliance boundaries**: Legal requirements might mandate separation between entities, geographic regions, or data classifications. Each regulated boundary becomes a tenant.
+
+## The three-tier pattern
+
+Most deployments benefit from three levels of tenants:
+
+### Tier 1: System administration
+
+Create a tenant for people who maintain the platform infrastructure. These users:
+- Deploy agent and process code to the platform
+- Configure data pipelines for ingesting documents
+- Manage platform services and monitoring
+- Have full access to all platform capabilities
+
+This is typically 2-5 people: your DevOps team, lead developers, or IT staff responsible for the platform.
+
+### Tier 2: Business administration
+
+Create a tenant for people who administer the platform for business users. These users:
+- Create and configure new tenants
+- Add users to tenants and assign roles
+- Create agent instances from deployed classes
+- Monitor agent performance and run evaluations
+- Manage knowledge databases (view ingestion status, troubleshoot issues)
+
+These are business analysts, project managers, or department heads who understand the organization's needs but don't write code.
+
+### Tier 3: End users
+
+Create tenants for people who use agents to accomplish work. These users:
+- Chat with agents relevant to their role
+- Participate in processes that involve their department
+- Cannot see administrative interfaces or create agent instances
+
+This is everyone else in your organization.
 
 ## Creating a tenant
 
-Navigate to **Service** → **Tenants** in the admin interface. The tenant list shows existing tenants with their user and role counts.
+Navigate to **Service** → **Tenants** in the admin interface. You must be in a tenant that has administrative access to the tenant service.
 
-Click **Create Tenant** to open the configuration dialog.
+Click **Create Tenant**. You need three pieces of information:
 
-**Name**: A unique identifier for the tenant. Use clear names that reflect the organization or purpose: "Finance Department", "Customer Demo", "Development Environment".
+**Name**: Choose something clear and descriptive. "Finance Department", "Customer - Acme Corp", "Production Environment". Users see this name when selecting which tenant to work in.
 
-**Description**: Explain the tenant's purpose. This appears in the tenant selector and helps users understand what each tenant is for.
+**Description**: Explain what this tenant is for. "Finance department users - access to financial reporting agents and department guidelines." This helps both current and future administrators understand the tenant's purpose.
 
-**Access rules**: Define what resources exist within this tenant's scope. Add one or more access rule patterns.
+**Scope**: Define what resources this tenant can access. For the three-tier pattern:
+- Sysadmin tier: Full platform access
+- Management tier: Administrative services but not deployment capabilities
+- End user tier: Specific agents and processes, no services
 
-### Access rule patterns
+## Scoping tenants
 
-Access rules use the hierarchical pattern: `aihub.[user|admin].<service>.<resource>.<identifier>`
+The tenant's scope determines the maximum access anyone in that tenant can have. Think of it as drawing a boundary around resources.
 
-Common patterns:
+For a Finance department tenant, you might scope it to:
+- Finance-related agents (reporting agents, guideline agents, approval workflows)
+- Finance knowledge databases (for managers who troubleshoot ingestion issues)
+- Specific processes (budget approval workflow, expense reporting)
 
-```
-aihub.admin.>
-```
-Full platform access. No restrictions. Suitable for administrative tenants or the default tenant.
+A user in the Finance tenant cannot access HR agents even if you give them an admin role within Finance tenant. The tenant boundary prevents it.
 
-```
-aihub.user.agent.>
-aihub.user.process.>
-aihub.user.knowledge.>
-```
-Access to all agents, processes, and knowledge bases, but no admin functions. Suitable for general business units.
+### Starting broad vs starting narrow
 
-```
-aihub.user.agent.customer-service.*
-aihub.user.knowledge.customer-docs.>
-```
-Access only to customer service agents and customer documentation. Suitable for customer support teams or customer-specific tenants.
+You have two approaches:
 
-```
-aihub.user.agent.research.instance-alpha
-```
-Access to a single specific agent instance. Suitable for tightly controlled demo or test environments.
+**Broad scope**: Give the tenant access to everything initially. Users can see all agents, all services, all processes. As you learn what they actually need, narrow the scope by removing access to unused resources.
 
-### Combining rules
+**Narrow scope**: Give the tenant access only to specific resources. As users request more capabilities, expand the scope gradually.
 
-A tenant can have multiple access rules. The platform grants access if any rule matches:
+Broad scope is easier initially but requires more cleanup later. Narrow scope is more secure but users will request access as they discover needs.
 
-```
-aihub.user.agent.research.*
-aihub.user.agent.analysis.*
-aihub.user.knowledge.research-docs.>
-```
+For end-user tenants (departments, customers), start narrow. These users don't need wide visibility - they need specific tools. For management tenants, start broad since these users need flexibility to administer the platform.
 
-This tenant can access all research and analysis agents plus the research-docs knowledge base.
+## Configuring roles within tenants
 
-::: tip
-Start with broader rules and narrow them if needed. It's easier to restrict access later than to discover users can't reach resources they need.
-:::
+After creating the tenant, configure roles that users in that tenant can have. Roles define what users can do within the tenant's boundaries.
 
-## Editing tenants
+For a department tenant, you might create:
 
-Select a tenant from the list and click **Edit**. You can change the name, description, or access rules.
+**Standard User**: Can chat with department agents, participate in processes, but cannot create or modify anything.
 
-Changing access rules affects all users in the tenant immediately. Users may lose access to resources if you remove rules they depend on.
+**Team Lead**: Can create agent instances, configure agents for their team, view evaluation results, but cannot manage users or change tenant settings.
 
-The system prevents deleting the default tenant. All other tenants can be edited freely.
+**Department Admin**: Full control within the department tenant - can add users, assign roles, create agents, and manage all department resources.
 
-## Access rule validation
+These roles only apply within this tenant. A user who is "Department Admin" in Finance has no privileges in the HR tenant unless explicitly granted.
 
-The platform validates access rules when creating or editing tenants. Rules must:
+## Adding users to tenants
 
-- Start with `aihub.user.` or `aihub.admin.`
-- Use only lowercase letters, numbers, dots, hyphens, and underscores
-- Use wildcards (`*` and `>`) correctly
-- Place the multi-level wildcard `>` only at the end
+After creating roles, add users to the tenant and assign them roles.
 
-Invalid rules trigger an error message with the specific problem.
+Search for users by email or name. If a user doesn't exist yet (they haven't logged in), you can still add them. Their profile will be created when they first authenticate through your identity provider.
 
-## Viewing tenant details
+Users can belong to multiple tenants. Someone might be:
+- Standard user in their department tenant
+- Team lead in a cross-functional project tenant
+- Admin in a test tenant for trying out new features
 
-Click a tenant name to view its details page. Two tabs organize the information:
+## Default tenant behavior
 
-**Users tab** lists all users in the tenant with their assigned roles. From here you can:
-- Add users to the tenant
-- Change user roles
-- Remove users from the tenant
-
-**Roles tab** lists all roles defined for this tenant. From here you can:
-- Create tenant-specific roles
-- Edit role permissions
-- Delete roles (except system roles)
-
-Statistics at the top show the total user and role counts.
-
-## Deleting tenants
-
-Click **Delete** on a tenant row. The system prevents deletion if:
-
-- The tenant is the default tenant
-- The tenant still has users
-
-Remove all users first, then delete the tenant. Deletion cascades to remove all tenant-specific roles.
-
-::: danger
-Deleting a tenant is permanent. All roles defined for that tenant are removed. Users lose their membership in that tenant.
-:::
-
-## Configuration via environment variables
-
-Control default tenant behavior through environment variables in `.env`:
+When someone logs in for the first time, they automatically join the default tenant with standard user roles. Configure this behavior with environment variables:
 
 ```bash
-# Default tenant configuration
-DEFAULT_TENANT_NAME="Default Organization"
-DEFAULT_TENANT_ACCESS_RULES="aihub.admin.>"
-
-# New user signup defaults
 USER_SIGNUP_DEFAULT_TENANT="default"
-USER_SIGNUP_DEFAULT_ROLES="AIHubUser,AIHubAgentUser"
-FIRST_USER_SIGNUP_DEFAULT_ROLES="AIHubAdmin"
+USER_SIGNUP_DEFAULT_ROLES="StandardUser"
+FIRST_USER_SIGNUP_DEFAULT_ROLES="PlatformAdmin"
 ```
 
-**DEFAULT_TENANT_NAME**: Name for the automatically created default tenant
+The first person to sign in receives admin roles, ensuring someone can administer the platform immediately. Subsequent users receive standard roles.
 
-**DEFAULT_TENANT_ACCESS_RULES**: Access rules for the default tenant, comma-separated. Default is `aihub.admin.>` (unrestricted)
+This automatic assignment only happens once per user. After that, explicitly add them to other tenants as needed.
 
-**USER_SIGNUP_DEFAULT_TENANT**: Which tenant new users join automatically. Use the tenant name, not ID
+## Common configurations
 
-**USER_SIGNUP_DEFAULT_ROLES**: Roles assigned to new users in the default tenant, comma-separated
+### Single company with departments
 
-**FIRST_USER_SIGNUP_DEFAULT_ROLES**: Roles assigned to the very first user, comma-separated
+Sysadmin tenant → Management tenant → One tenant per department
 
-These settings apply only when users first authenticate. Changing them doesn't affect existing users.
+Managers create department tenants and configure which agents each department can access. Department users only see their department's resources.
 
-## Best practices
+### Multi-customer SaaS
 
-**Start broad**: Create tenants with unrestricted access (`aihub.admin.>`) initially. Narrow the rules once you understand which resources each tenant needs.
+Sysadmin tenant → Management tenant → One tenant per customer
 
-**Document tenant purpose**: Use clear descriptions. When users see multiple tenants in the selector, they should immediately understand which to choose.
+Each customer tenant is isolated. Customers cannot see other customers' agents or data. Managers onboard new customers by creating a tenant, configuring relevant agents, and adding that customer's users.
 
-**Test access rules**: Create a test user account and verify they can access the intended resources before rolling out a new tenant to the organization.
+### Consulting organization
 
-**Plan for growth**: Consider whether you might need finer-grained tenants later. "Customer Tenant A" is clearer than "Customer 1" when you have dozens of customers.
+Sysadmin tenant → Management tenant → One tenant per client project
 
-**Monitor unused tenants**: Periodically review tenants with zero users. These might be old test environments that can be deleted.
+Project tenants give consultants access to client-specific agents and knowledge. When a project ends, archive the tenant. When a consultant joins a new project, add them to that project's tenant.
+
+### Development workflow
+
+Sysadmin tenant → Dev tenant → Staging tenant → Production tenant
+
+Developers work in dev tenant with relaxed controls. Staging tenant mirrors production for testing. Production tenant has strict access controls. Same agents, same code, different tenants for different purposes.
+
+## Tenant lifecycle
+
+Tenants persist until explicitly deleted. You can:
+
+**Archive a tenant**: Remove all users but keep the tenant and its roles. Useful for completed projects or inactive customers. No one can access it but the configuration remains if you need to reactivate it.
+
+**Delete a tenant**: Remove the tenant, all its roles, and all user associations. Permanent. Only possible after removing all users first.
+
+The default tenant cannot be deleted. This ensures the platform always has at least one working tenant.
+
+## Practical tips
+
+**Document your decisions**: Write down why you created each tenant and what its scope should be. Six months later when roles have changed, this documentation prevents confusion.
+
+**Start simple**: One management tenant and one end-user tenant works for many organizations. Add complexity only when you need it.
+
+**Test with restricted users**: Create a test account, add it to a new tenant, and verify what that user can see. Don't assume - verify.
+
+**Review quarterly**: People change roles. Projects end. New departments form. Your tenant structure should evolve with your organization.
+
+**Plan for growth**: "Customer 1" works when you have three customers. "Customer - Acme Corp" works when you have three hundred.

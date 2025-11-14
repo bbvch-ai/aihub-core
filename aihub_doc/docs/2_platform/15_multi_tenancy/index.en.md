@@ -5,36 +5,54 @@ index: 15
 
 # Multi-tenancy
 
-Multi-tenancy lets you run separate organizations on a single platform instance. Each tenant operates independently with its own users, roles, and access boundaries.
+Multi-tenancy lets you create organizational boundaries within a single platform instance. Each tenant represents a workspace with its own users, roles, and access to agents and services.
 
-A tenant represents an organization, business unit, or customer. Users belong to one or more tenants and have different roles in each. Access rules defined at the tenant level create hard boundaries around what any user in that tenant can access.
+The platform's multi-tenant model gives you flexibility to structure access in ways that match your organization's needs, from simple departmental separation to complex hierarchical configurations.
 
-## Why use tenants
+## Three resource types
 
-Single-tenant mode works well when everyone in your organization should potentially access the same resources. Multi-tenancy becomes useful when you need:
+The platform provides three types of resources:
 
-**Organizational isolation**: Different business units require separate agent configurations and knowledge bases. A tenant for the finance team can access financial agents and documents while the HR tenant accesses only HR resources.
+**Services** are platform capabilities like user management, knowledge base management, agent evaluation, and system configuration. Most users don't need direct service access.
 
-**Customer separation**: Service providers host multiple customers on one platform instance. Each customer tenant operates independently without visibility into other customers' data or agents.
+**Agents** are AI assistants that perform specific tasks. Users interact with agents through chat or agents execute tasks autonomously. Agents access data and perform actions based on how they're configured.
 
-**Development isolation**: Development, staging, and production environments run side-by-side with the same infrastructure. Each environment tenant has its own test data and configurations.
+**Processes** orchestrate workflows involving multiple agents, human approvals, and external systems. Processes coordinate complex business operations.
 
-**Compliance requirements**: Regulations require data segregation between entities. Tenant boundaries enforce these separations at the platform level.
+## The agent independence principle
 
-## How tenants work
+This is the most important concept in multi-tenant design: **Agents operate independently of user and tenant permissions.**
 
-When a user logs in, they select which tenant they're working in. The frontend includes a tenant identifier in every API request. The backend resolves the user's roles within that specific tenant and enforces the tenant's access boundaries.
+When a user chats with an agent, the agent doesn't inherit that user's access restrictions. The agent accesses data based on its own configuration. This has profound implications for how you structure tenants and control data access.
 
-Access control operates in two layers:
+Why design it this way? Agents often need to:
+- Access data from multiple sources that individual users can't see
+- Run autonomously without any user interaction
+- Participate in group conversations with users who have different permissions
+- Execute scheduled tasks regardless of who's online
 
-**User permissions** come from roles assigned within the tenant. A user with the "Agent Admin" role can manage agents, assuming the tenant allows agent access.
+You control data access by controlling which users can interact with which agents. The agent's configuration determines what data it can access. Your tenant design determines who can use that agent.
 
-**Tenant boundaries** define what resources exist for that tenant at all. If a tenant's access rules permit only `agent.research.*`, no user in that tenant can access other agents regardless of their role.
+## Common patterns
 
-Users can switch tenants without logging out. Each tenant appears as a separate workspace with its own agents, knowledge bases, and configurations.
+Most organizations use a three-tier structure:
 
-## Default tenant
+**System administrator tier**: A tenant for platform administrators who develop agents, deploy pipelines, and maintain the infrastructure. These users see everything and can modify system-level configurations.
 
-Every platform installation creates a default tenant automatically. New users join this tenant with standard roles unless configured otherwise. The default tenant has unrestricted access rules, replicating single-tenant behavior.
+**Management tier**: A tenant for people who administer the platform for business users. They create tenants, assign users to tenants, configure agent instances, and monitor usage. They can't deploy new agent code or modify infrastructure.
 
-You can continue using only the default tenant. Multi-tenancy is opt-in through creating additional tenants.
+**Department tiers**: One tenant per department, business unit, or customer. Users work with agents relevant to their department. They can't see agents for other departments or access administrative functions.
+
+This structure separates technical operations, business administration, and day-to-day use.
+
+## Flexibility and responsibility
+
+The system is intentionally flexible. You can create permissive configurations where agents access all data, or restrictive setups where agents have narrowly scoped access to specific information.
+
+This flexibility means you're responsible for:
+- Designing a tenant structure that matches your security requirements
+- Configuring agents with appropriate data access
+- Assigning users to the right tenants with appropriate roles
+- Regularly reviewing who can access which agents
+
+The platform enforces the boundaries you define. It won't stop you from creating an agent that accesses everything and giving that agent to everyone. That's a valid configuration if it matches your needs - but you must understand the implications.

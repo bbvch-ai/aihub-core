@@ -1,32 +1,54 @@
 ---
-title: Access control model
+title: Technical reference - Access control
 index: 4
 ---
 
-# Access control model
+# Technical reference: Access control
 
-The platform enforces access control through a combination of tenant boundaries and role-based permissions. Understanding this model helps you design effective tenant and role structures.
+This chapter documents the technical details of how the platform enforces access control. This information is useful for system administrators configuring tenants and roles, and for developers extending the platform.
+
+## Access rule format
+
+Access rules use a hierarchical pattern: `aihub.[user|admin].<service>.<resource>.<identifier>`
+
+Examples:
+```
+aihub.user.agent.>                      # All agents (user access)
+aihub.admin.agent.research.*            # All research agents (admin access)
+aihub.user.knowledge.hr-docs.policies   # Specific knowledge namespace
+aihub.admin.service.tenant              # Tenant management service
+```
+
+### Wildcards
+
+**Single-level** (`*`) matches exactly one segment:
+- `agent.research.*` matches `agent.research.instance-1` but not `agent.research.team.instance-1`
+
+**Multi-level** (`>`) matches one or more segments at the end:
+- `agent.>` matches `agent.research.instance-1`, `agent.analysis.team.special`, and any other agent path
+- Must be the last token in the rule
+
+### Admin vs user rules
+
+Rules starting with `aihub.admin.*` grant administrative access. Users with admin access automatically have equivalent user access.
+
+A user with `aihub.admin.agent.>` can access resources requiring either `aihub.admin.agent.*` or `aihub.user.agent.*`.
 
 ## Permission resolution
 
-Every API request includes an `X-Tenant-Id` header identifying the user's current tenant. The backend resolves permissions in this sequence:
+When a request arrives, the platform:
 
-1. Extract user identity from authentication token
-2. Look up user's roles within the specified tenant
-3. Collect all access rules from those roles
-4. Retrieve the tenant's access rules
-5. Evaluate the requested permission against both user rules and tenant rules
-
-Access is granted only if:
-- The tenant's access rules permit the resource
-- The user's role rules permit the action
-- The user is a member of the tenant
+1. Extracts the user's identity from the authentication token
+2. Reads the `X-Tenant-Id` header to determine the tenant context
+3. Queries the user's roles within that specific tenant
+4. Collects all access rules from those roles
+5. Retrieves the tenant's access rules
+6. Checks if both the tenant and the user permit the requested action
 
 ```mermaid
 sequenceDiagram
     participant User
     participant API
-    participant AccessChecker
     participant Database
 
     User->>API: Request with X-Tenant-Id
@@ -36,185 +58,180 @@ sequenceDiagram
     Database-->>API: User access rules
     API->>Database: Get tenant access rules
     Database-->>API: Tenant access rules
-    API->>AccessChecker: Check permission
-    AccessChecker->>AccessChecker: Match user rules
-    AccessChecker->>AccessChecker: Match tenant rules
-    AccessChecker-->>API: Access level
-    API-->>User: Response or 403 Forbidden
+    API->>API: Check both rule sets
+    API-->>User: Success or 403 Forbidden
 ```
 
-## Access levels
+### Two-layer checking
 
-The system recognizes three access levels:
+Access requires passing both layers:
 
-**Access denied**: The user lacks permission entirely. Returns 403 Forbidden.
+**Layer 1: Tenant boundary** - Does the tenant allow this resource at all?
 
-**User access**: The user can view and interact with the resource as a regular user.
+If the tenant's access rules don't include the requested resource, access is denied immediately without checking user roles.
 
-**Admin access**: The user can modify, configure, or delete the resource.
+**Layer 2: User permissions** - Does the user's role permit this action?
 
-Admin access requires matching an `aihub.admin.*` rule. Admin rules automatically grant the equivalent user access. A user with `aihub.admin.agent.>` can also access resources requiring `aihub.user.agent.>`.
+After confirming the tenant allows the resource, the system checks if the user's roles grant the required permission.
 
-## Wildcard matching
+Both must pass for access to be granted.
 
-Access rules support two wildcards:
+### Example
 
-**Single-level wildcard** (`*`) matches exactly one segment:
-- `agent.research.*` matches `agent.research.instance-1` and `agent.research.instance-2`
-- Does not match `agent.research.test.instance-1` (too many segments)
+Tenant has: `aihub.user.agent.research.*`
 
-**Multi-level wildcard** (`>`) matches one or more segments:
-- `agent.>` matches `agent.research.instance-1`, `agent.analysis.special.test-2`, and any other agent path
-- Must appear only at the end of a rule
+User has: `aihub.user.agent.>` (from their role)
 
-The system evaluates wildcards part by part. A user rule matches when each segment aligns with the permission being checked.
+User requests: `aihub.user.agent.research.instance-1`
+- Tenant check: ✓ (tenant allows research agents)
+- User check: ✓ (user role allows all agents)
+- Result: Access granted
 
-## Tenant ceiling effect
-
-Tenant access rules act as a maximum boundary. User permissions cannot exceed tenant permissions.
-
-Example scenario:
-
-**Tenant access rules**:
-```
-aihub.user.agent.research.*
-```
-
-**User role rules**:
-```
-aihub.user.agent.>
-```
-
-The user can access only research agents. Their role grants broader access, but the tenant constrains it to research agents only.
-
-The system checks tenant rules first. If the tenant doesn't allow a resource, the permission check fails immediately without examining user roles.
+User requests: `aihub.user.agent.finance.instance-1`
+- Tenant check: ✗ (tenant only allows research agents)
+- Result: Access denied (user check not evaluated)
 
 ## Service-level permissions
 
-Each service (agents, processes, knowledge, etc.) requires a service-level permission: `aihub.user.service.<service-name>`
+Each service requires a base permission: `aihub.user.service.<service-name>`
 
-Controllers check this permission before any resource-specific checks. A user needs:
-- Service access (`aihub.user.service.agent`)
-- Resource access (`aihub.user.agent.research.instance-1`)
+Before checking resource-specific permissions, the system verifies the user has access to the service itself.
 
-This two-tier check lets you grant or revoke access to entire services. A tenant without `aihub.user.service.agent` in its rules makes all agents inaccessible regardless of more specific agent rules.
+To access an agent, you need:
+- Service access: `aihub.user.service.agent`
+- Resource access: `aihub.user.agent.<agent-class>.<agent-id>`
+
+If the tenant doesn't grant service access, no resources in that service are accessible regardless of other rules.
 
 ## Path parameter substitution
 
-Permission templates use placeholders for dynamic resources:
+Permission templates use placeholders that resolve from the request:
+
+Template: `aihub.user.agent.{agent_class}.{agent_id}`
+
+Request: `GET /api/v1/agents/research/instance-alpha`
+
+Resolved permission: `aihub.user.agent.research.instance-alpha`
+
+The system checks this concrete permission against the user and tenant access rules.
+
+## Access levels
+
+The system returns three levels:
+
+**ACCESS_DENIED**: No permission. Returns HTTP 403.
+
+**ACCESS_USER**: User-level access to view and interact with the resource.
+
+**ACCESS_ADMIN**: Admin-level access to modify, configure, or delete the resource.
+
+Controllers can differentiate between user and admin access for audit purposes, though many operations only check whether access is granted (not denied).
+
+## Configuration through environment
+
+Configure default behavior through environment variables:
+
+```bash
+# Default tenant created on first startup
+DEFAULT_TENANT_NAME="Default Organization"
+DEFAULT_TENANT_ACCESS_RULES="aihub.admin.>"
+
+# Automatic user signup
+USER_SIGNUP_DEFAULT_TENANT="default"
+USER_SIGNUP_DEFAULT_ROLES="AIHubUser,AIHubAgentUser"
+FIRST_USER_SIGNUP_DEFAULT_ROLES="AIHubAdmin"
 ```
-aihub.user.agent.{agent_class}.{agent_id}
-```
-
-The system substitutes actual values from the request:
-- User requests `/api/v1/agents/research/instance-alpha`
-- Permission becomes `aihub.user.agent.research.instance-alpha`
-- Checked against user and tenant access rules
-
-This pattern extends to all resources (knowledge bases, processes, threads).
-
-## Permission inheritance
-
-Permissions don't inherit across tenants. A user's admin role in one tenant grants no privileges in another tenant.
-
-Permissions don't inherit within the access rule hierarchy. A user with `aihub.user.agent.research.*` cannot access `aihub.admin.agent.research.*` without an explicit admin rule.
-
-Admin rules grant equivalent user access automatically. A user with `aihub.admin.agent.>` can access resources requiring either `aihub.admin.agent.*` or `aihub.user.agent.*`.
 
 ## Superuser bypass
 
-The global superuser role bypasses tenant restrictions entirely. Superusers:
-- Don't need to select a tenant
-- Aren't checked against tenant access rules
-- Can access all resources across all tenants
-- Have admin access everywhere
+The global superuser role bypasses tenant restrictions:
+- Doesn't require tenant selection
+- Not checked against tenant boundaries
+- Has admin access to all resources across all tenants
 
-Configure the superuser through environment variables. Use sparingly - superuser access exists for platform administration, not regular operations.
-
-## Common access patterns
-
-### Read-only access to specific resources
-
-Grant users access to view specific agents without modification:
-```
-aihub.user.agent.support.faq-bot
-aihub.user.knowledge.support-docs.>
+Configure through:
+```bash
+SUPERUSER_ENABLED="true"
+SUPERUSER_TOKEN="<secure-token>"
+SUPERUSER_OID="<user-id>"
 ```
 
-### Departmental isolation
+Use sparingly - superuser access exists for platform administration, not regular operations.
 
-Create tenant with department-specific access rules:
-```
-aihub.user.agent.finance.*
-aihub.user.knowledge.finance-docs.>
-aihub.user.process.finance.*
-```
+## Validation rules
 
-All users in this tenant, regardless of their roles, can only access finance resources.
+When creating access rules:
 
-### Tiered access within tenant
+**Required format**:
+- Must start with `aihub.user.` or `aihub.admin.`
+- Only lowercase letters, numbers, dots, hyphens, underscores, `*`, `>`
+- Multi-level wildcard `>` only at the end
 
-Define roles for different access levels:
+**Prohibited**:
+- Uppercase letters
+- Special characters other than `.`, `-`, `_`, `*`, `>`
+- `>` in the middle of a rule
 
-**Viewer role**:
-```
-aihub.user.agent.>
-aihub.user.knowledge.>
-```
+The system validates rules when creating or editing tenants and roles. Invalid rules trigger an error with the specific problem.
 
-**Power user role**:
-```
-aihub.user.agent.>
-aihub.user.knowledge.>
-aihub.user.process.>
-aihub.admin.knowledge.team-docs.>
-```
+## Common patterns
 
-**Admin role**:
+### Broad platform access
 ```
 aihub.admin.>
 ```
+Full admin access to everything. Use for sysadmin tenants.
 
-### Cross-functional teams
+### Service administrators
+```
+aihub.admin.service.user
+aihub.admin.service.role
+aihub.admin.service.tenant
+```
+Can manage users, roles, and tenants but not other services.
 
-User belongs to multiple tenants with different roles:
-- Engineering tenant: `aihub.admin.agent.engineering.*` (can create and manage engineering agents)
-- Company-wide tenant: `aihub.user.>` (can use all shared resources)
+### Department access
+```
+aihub.user.agent.department-finance.*
+aihub.user.knowledge.finance-docs.>
+aihub.user.process.finance-workflows.*
+```
+Access to finance-specific resources only.
+
+### Read-only access
+```
+aihub.user.agent.>
+aihub.user.knowledge.>
+```
+Can view and use agents and knowledge but cannot create or modify.
+
+### Power user
+```
+aihub.user.>
+aihub.admin.agent.<department>.*
+aihub.admin.knowledge.<department>-docs.>
+```
+User access everywhere, admin access only to department resources.
 
 ## Debugging access issues
 
-When a user reports access problems:
+When troubleshooting, check:
 
-1. Verify they selected the correct tenant (check tenant switcher)
-2. Check the tenant's access rules permit the resource
-3. Confirm the user has roles in that tenant
-4. Review the access rules in those roles
-5. Check for typos in access rule patterns
+1. **Tenant selection**: Verify the user selected the intended tenant
+2. **Tenant boundary**: Confirm the tenant's access rules include the resource
+3. **User membership**: Verify the user belongs to the tenant
+4. **Role assignment**: Check the user has roles in that tenant
+5. **Role rules**: Review what those roles permit
+6. **Service access**: Verify service-level permission exists
 
-The UI displays permission errors with the specific permission that failed. Use this to trace which access rule is missing.
+The platform returns detailed error messages indicating which permission failed. Use this to identify the missing rule.
 
-Common mistakes:
-- Forgetting the service-level permission (`aihub.user.service.agent`)
-- Using uppercase letters in access rules (rules are lowercase only)
-- Placing `>` in the middle of a rule (must be at the end)
-- Granting `aihub.user.*` when admin access is needed (`aihub.admin.*`)
+## Performance notes
 
-## Security boundaries
+Access checking is optimized:
+- Rules are compiled once per request
+- Multiple permission checks for the same user reuse the compiled rules
+- Complex wildcard patterns have minimal performance impact
+- Role changes take effect immediately without cache delays
 
-Tenant access rules create hard boundaries. Code cannot bypass these checks - they're enforced at the controller level before any business logic executes.
-
-Users cannot escalate their privileges within a tenant. Adding roles requires admin access to user management (`aihub.admin.service.user`).
-
-Users cannot access resources in other tenants. The `X-Tenant-Id` header determines the context, and users can only send headers for tenants they belong to.
-
-API tokens inherit the user's tenant memberships. Creating a token doesn't grant cross-tenant access - the token works only in tenants where the user is a member.
-
-## Performance considerations
-
-The access checker caches compiled access rules per request. Checking multiple permissions for the same user and tenant in one request is efficient.
-
-Switching tenants triggers cache invalidation in the frontend. Large datasets may take time to reload.
-
-Role changes take effect immediately without cache delays. Users see new permissions on their next request.
-
-Complex access rule patterns (many wildcards, long paths) don't significantly impact performance. The matching algorithm is optimized for hierarchical patterns.
+Switching tenants triggers a full cache invalidation in the frontend, causing data to be refetched.

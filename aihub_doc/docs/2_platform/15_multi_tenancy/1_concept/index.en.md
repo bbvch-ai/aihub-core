@@ -1,125 +1,138 @@
 ---
-title: Multi-tenancy concept
+title: How multi-tenancy works
 index: 1
 ---
 
-# Multi-tenancy concept
+# How multi-tenancy works
 
-The platform uses a tenant-scoped authorization model. Users authenticate once through your identity provider (Azure AD, Google Workspace, etc.), then select a tenant workspace. Roles and permissions are resolved within that tenant context.
+Understanding multi-tenancy requires understanding how the platform separates people, agents, and data. This separation creates both powerful flexibility and important responsibilities.
 
-## Authentication vs authorization
+## A practical example
 
-Identity providers handle only authentication - verifying who you are. The platform manages all authorization locally - what you can do and what you can access.
+Let's walk through a realistic deployment to see how the pieces fit together.
 
-When you sign in through Azure AD or another provider, the platform:
+### The scenario
 
-1. Verifies your identity (email, name, unique ID)
-2. Creates or updates your user profile
-3. Does not sync roles or permissions from the identity provider
+Your company has five departments (Legal, Finance, HR, Operations, Sales). You want everyone to access information about Swiss law, but each department should only see their own internal guidelines.
 
-Roles exist only within the platform's database, scoped to specific tenants. This separation lets you use any identity provider without configuring complex role mappings in each external system.
+### Step 1: System administrators prepare the data
 
-## Tenant structure
+The platform's system administrators (sysadmins) set up data pipelines:
 
-A tenant contains:
+- One pipeline ingests the public Swiss law book into a knowledge database called `swiss-law`
+- Five separate pipelines process each department's internal guidelines into their own databases: `legal-guidelines`, `finance-guidelines`, `hr-guidelines`, `operations-guidelines`, `sales-guidelines`
 
-**Name and description** that identify the tenant in the UI
+You now have six knowledge databases containing parsed, searchable documents.
 
-**Access rules** that define the maximum scope for all users in the tenant
+### Step 2: Sysadmins deploy the agent class
 
-**Roles** specific to that tenant with their own access rules
+The sysadmins deploy a RAG (Retrieval-Augmented Generation) agent class to the platform. This agent class is configurable - you can give each instance a custom system prompt and specify which knowledge database it should search.
 
-**User assignments** mapping users to roles within the tenant
+The agent class itself doesn't contain any data or know which database to use. It's a template waiting to be configured.
 
-Tenants share the platform infrastructure (agents, knowledge bases, models) but control which parts users can access through access rules.
+### Step 3: Managers create agent instances
 
-## Access rule hierarchy
+People in the management tenant can't deploy agent code, but they can create instances from deployed classes. They create six agent instances:
 
-Access rules use a hierarchical pattern: `aihub.[user|admin].<service>.<resource>.<identifier>`
+- **Law Agent**: Configured to search only `swiss-law`
+- **Legal Guidelines Agent**: Configured to search only `legal-guidelines`
+- **Finance Guidelines Agent**: Configured to search only `finance-guidelines`
+- **HR Guidelines Agent**: Configured to search only `hr-guidelines`
+- **Operations Guidelines Agent**: Configured to search only `operations-guidelines`
+- **Sales Guidelines Agent**: Configured to search only `sales-guidelines`
 
-Examples:
-- `aihub.user.agent.>` - Access all agents
-- `aihub.user.agent.research.*` - Access all instances of the research agent class
-- `aihub.admin.service.role` - Admin access to role management
-- `aihub.user.knowledge.hr-docs.policies` - Access the policies namespace in hr-docs knowledge base
+Each agent instance has its data access baked into its configuration. The Law Agent can only search Swiss law. The Finance Guidelines Agent can only search finance guidelines. This isn't determined by who's chatting with the agent - it's configured when the instance is created.
 
-Wildcards work at any level:
-- `*` matches one segment (`agent.research.*` matches any research agent instance)
-- `>` matches remaining segments (`agent.>` matches all agents of all types)
+### Step 4: Managers configure tenant access
 
-## Two-layer permission model
+The managers have already created five department tenants. Now they configure which agents each tenant can see:
 
-Every permission check evaluates two sets of rules:
+- Legal tenant: Can use Law Agent and Legal Guidelines Agent
+- Finance tenant: Can use Law Agent and Finance Guidelines Agent
+- HR tenant: Can use Law Agent and HR Guidelines Agent
+- Operations tenant: Can use Law Agent and Operations Guidelines Agent
+- Sales tenant: Can use Law Agent and Sales Guidelines Agent
 
-**Tenant access rules** define what exists in the tenant's world. If a tenant has `aihub.user.agent.research.*`, only research agents are visible to anyone in that tenant.
+All tenants can use the Law Agent (public information). Each tenant can only use their own guidelines agent.
 
-**User role rules** define what the user can do within the tenant's boundaries. A user with `aihub.user.agent.>` normally accesses all agents, but the tenant rules constrain this to only research agents.
+### What this creates
 
-The tenant rules act as a ceiling. A user's permissions can never exceed what the tenant allows.
+A user in the Finance tenant sees two agents in their interface: Law Agent and Finance Guidelines Agent. They can chat with either one. They cannot see that the Legal Guidelines Agent exists.
 
-```mermaid
-graph TD
-    A[User requests access to agent.sales.instance-1] --> B{Check tenant rules}
-    B -->|Tenant has agent.>| C{Check user roles}
-    B -->|Tenant has only agent.research.*| D[Access denied]
-    C -->|User has agent.>| E[Access granted]
-    C -->|User has only agent.research.*| D
-```
+The Finance Guidelines Agent will only answer questions from the finance guidelines database. Even though the user in Finance tenant can use this agent, they still can't access HR or Legal guidelines - because the agent itself can't access those databases.
 
-## Role scoping
+## The counterintuitive part
 
-Roles exist either globally or within a specific tenant:
+Here's what surprises people: **Users in department tenants cannot access the knowledge service at all.**
 
-**Global roles** (tenant_id = null) apply to system operations. The superuser role is global and grants platform-wide admin access.
+The Finance tenant doesn't have permission to view knowledge databases, browse documents, or see ingestion status. Yet users in Finance tenant can chat with agents that access knowledge databases.
 
-**Tenant roles** (tenant_id = specific tenant) apply only within that tenant. A "Manager" role in Tenant A is separate from a "Manager" role in Tenant B. They can have different access rules.
+This seems contradictory but it's intentional. Regular users don't benefit from seeing raw parsed documents and database metadata. That's administrative information. Users benefit from chatting with agents that answer questions using that data.
 
-Role names can duplicate across tenants. The combination of tenant + role name must be unique.
+The managers in the management tenant do have access to the knowledge service. They can see all six databases, verify documents were ingested correctly, and troubleshoot issues. But they're administrators, not end users.
 
-## User membership
+## Why agents don't inherit permissions
 
-Users can belong to multiple tenants simultaneously. Each membership specifies:
+Let's explore why the Finance Guidelines Agent can access the `finance-guidelines` database even when the user chatting with it can't.
 
-- Which tenant
-- Which roles the user has in that tenant
+**Agents run autonomously**. An agent might:
+- Execute on a schedule with no user involved
+- Participate in a Slack channel with multiple users who have different permissions
+- Be triggered by a process that runs in the background
+- Need to access data from multiple sources to synthesize an answer
 
-A user might be:
-- Admin in the development tenant
-- Viewer in the production tenant
-- Not a member of the customer-demo tenant
+If agents inherited user permissions, you couldn't do any of this reliably. The agent's behavior would change based on who triggered it, making it impossible to test or predict.
 
-The UI shows which tenants you belong to. Switch between them to change your working context.
+**Agents are configured for specific purposes**. When you create the Finance Guidelines Agent, you're saying "this agent exists to answer questions about finance guidelines." Its entire purpose requires accessing that specific database. The access is part of its identity.
 
-## System roles
+**You control access by controlling agent access**. Want to give someone access to finance guidelines? Give them access to the Finance Guidelines Agent. Want to revoke it? Remove their access to that agent. The data access follows the agent design, not the user permissions.
 
-System roles are created during platform initialization and cannot be deleted. They include:
+## Benefits of this model
 
-- `AIHubSuperuser` - Global admin access (tenant_id = null)
-- Default tenant roles like `AIHubUser`, `AIHubAdmin` created in the default tenant
+This separation between agent capabilities and user permissions creates powerful possibilities:
 
-These roles are marked with `is_system_role = True` to prevent accidental deletion.
+**Synthesize information across boundaries**. Create an agent that accesses multiple databases users can't see individually. A C-level Executive Agent might search across all department guidelines to answer strategic questions. Only executives get access to this agent.
 
-## First user advantage
+**Predictable agent behavior**. The Finance Guidelines Agent behaves identically whether the CFO or an intern chats with it. This makes testing meaningful and reduces security concerns about variable behavior.
 
-The first person to sign in after platform deployment receives admin roles automatically in the default tenant. This ensures someone can administer the system immediately.
+**Granular access control**. Instead of managing who can access which documents, you manage who can access which agents. This aligns with how people actually work - they need to accomplish tasks, not browse document repositories.
 
-Configure this behavior with environment variables:
-- `FIRST_USER_SIGNUP_DEFAULT_ROLES` - Roles for the first user (default: AIHubAdmin)
-- `USER_SIGNUP_DEFAULT_ROLES` - Roles for subsequent users (default: AIHubUser)
+**Clear audit trails**. When someone asks the Finance Guidelines Agent a question, you know exactly which data was accessed (finance guidelines only). You don't need to check user permissions to understand what happened.
 
-## Tenant selection flow
+## Responsibilities of this model
 
-When you log in:
+This flexibility requires thoughtful configuration:
 
-1. The platform fetches which tenants you belong to
-2. If you belong to one tenant, it selects automatically
-3. If you belong to multiple tenants, you choose which to work in
-4. Your selection persists in browser storage
+**Don't create overly broad agents**. You could create one RAG agent with access to all six databases and give it to everyone. But now you can't control who sees what - everyone can ask about everything. The agent becomes a security bypass. Instead, create focused agents with narrow data access and give those agents to appropriate users.
 
-All API requests include your selected tenant in the `X-Tenant-Id` header. The backend resolves your permissions within that tenant.
+**Understand the trust model**. When you give someone access to an agent, you're trusting them with whatever that agent can do. The Finance Guidelines Agent can read all finance guidelines. If you give someone access to that agent, they can ask it about any finance guideline. The agent won't respect row-level or field-level permissions - it's configured to access the entire `finance-guidelines` database.
 
-Switch tenants using the selector in the top navigation bar. The UI refetches all data for the new tenant context.
+**Test agent data access**. Create test instances of agents in isolated tenants. Verify they can only access intended data. Don't assume an agent respects user permissions - it doesn't.
 
-::: warning
-Switching tenants requires reloading data. Open forms or unsaved work may be lost.
-:::
+**Document agent purposes clearly**. Future administrators need to understand what each agent can access and why. "Finance Guidelines Agent - accesses finance-guidelines database only - for Finance department" is clear. "Helper Agent" is not.
+
+**Review access regularly**. People change roles. Departments reorganize. The agent that made sense six months ago might grant inappropriate access now.
+
+## What about service access?
+
+You might wonder why managers have access to the knowledge service but department users don't.
+
+Services are administrative capabilities. The knowledge service lets you see ingestion logs, parsed documents, chunking details, and database metadata. This information is useful for troubleshooting and monitoring but meaningless for end users.
+
+A user in the Finance tenant doesn't need to know that 47 documents are in the `finance-guidelines` database or that the last ingestion happened Tuesday at 3 AM. They need to ask the Finance Guidelines Agent questions and get answers.
+
+Services are for administrators. Agents are for users. This separation keeps the interface clean for users while giving administrators the tools they need.
+
+## Designing your tenant structure
+
+With this understanding, you can design your tenants intentionally:
+
+**Sysadmin tenant**: Full service access, can deploy agents and processes, can create knowledge databases and pipelines. These are technical experts who maintain the platform infrastructure.
+
+**Management tenant**: Access to administrative services (user management, tenant management, agent instance creation, evaluation services). Can configure but can't deploy. These are business administrators who manage the platform for users.
+
+**Department tenants**: Access to relevant agents only, no service access, no administrative capabilities. These are end users who accomplish work through agents.
+
+You can add layers or modify this structure. Maybe your Legal department needs some administrative capabilities within their own tenant. Maybe executives need their own tier with special agents. The structure adapts to your needs.
+
+The key is understanding that **data access flows through agents**, not directly to users. Design your agents first based on data access requirements, then assign agents to tenants based on who should be able to use those capabilities.
