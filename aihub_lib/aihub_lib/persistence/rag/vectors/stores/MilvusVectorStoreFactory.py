@@ -99,7 +99,9 @@ def create_milvus_vector_store(
                 field_name="embedding",
                 index_type="FLAT",
                 metric_type="IP",
-                params={_MMAP_ENABLED: "true" if enable_mmap else "false"},
+                params={
+                    _MMAP_ENABLED: "true" if enable_mmap else "false",
+                },
             )
         elif index_type == MilvusIndexType.DISKANN:
             # DISKANN already uses disk storage, mmap not applicable
