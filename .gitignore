@@ -15,6 +15,3 @@ aihub_doc/aihub
 .idea/copilot*
 *.log
 .mypy_cache/
-
-docker-compose.*.yml
-/configs
