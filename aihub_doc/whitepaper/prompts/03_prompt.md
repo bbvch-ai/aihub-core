@@ -3,6 +3,20 @@
 ## Kapitelziel
 Erklären Sie, wie die Plattform vollständige Kontrolle über Daten und AI-Systeme gewährleistet und Datensouveränitäts-Anforderungen erfüllt (1200 Wörter, 4 Seiten).
 
+
+## Kapitelabgrenzung und Fokus
+
+**WICHTIG - Fokus dieses Kapitels**: Deployment-Optionen für Datensouveränität, kundenseitige Kontrolle über Infrastruktur und Konfiguration, Vendor-Unabhängigkeit durch modulare Architektur
+
+**Behandeln Sie NICHT** (wird in anderen Kapiteln abgedeckt):
+- Detaillierte Compliance-Mechanismen (revDSG, GDPR, AI Act) → siehe Kapitel Kapitel 09 (Regulatorische Compliance)
+- Implementierungsdetails von Consent-Management → siehe Kapitel Kapitel 09
+- Technische Details zu Lösch-Workflows → siehe Kapitel Kapitel 09
+- Detaillierte Audit-Trail-Implementierung → siehe Kapitel Kapitel 04 (Plattform-Transparenz)
+- Sicherheitsarchitektur-Details → siehe Kapitel Kapitel 08 (Sicherheitsarchitektur)
+
+**Struktur-Anforderung**: Technische Details (falls vorhanden) IMMER am Ende des Kapitels als klar gekennzeichneter "Technischer Exkurs" oder "Technische Umsetzung".
+
 **WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **lang** (1200 Wörter).
 
 ## Business-Dimensionen (Priorität für dieses Kapitel)
@@ -21,7 +35,7 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 
 - **Kundenkontrolle über Administration und Konfiguration**: RBAC-basierte Administration (kundenseitige Administrationsrollen mit granularen Berechtigungen), Datenquellen-Kontrolle (volle Steuerung über Datenfluss und -nutzung), RAG-Konfiguration (Kontrolle über Vector-Stores, Chunking-Strategien, Retrieval-Parameter), AI-Modell-Kontrolle (Entscheidung über eingesetzte Modelle, Training, Fine-Tuning, Versionierung), Governance-Mechanismen (Feedback-Systeme, Bias-Monitoring, Human-in-the-Loop-Prozesse); Geschäftlicher Nutzen: Keine Black-Box mit voller Transparenz und Steuerung, Anpassung an interne Governance-Anforderungen, Risikominimierung durch menschliche Aufsicht über kritische AI-Entscheidungen, kontinuierliche Qualitätssicherung
 
-- **Compliance-Funktionen und Datenschutz-Mechanismen**: Anonymisierung (automatische PII-Erkennung und Pseudonymisierung vor AI-Verarbeitung), Consent-Management (granulare Einwilligungsverwaltung), Lösch-Workflows (vollständige Datenentfernung/Right to be Forgotten über alle Systemkomponenten), Audit-Trails (unveränderliche zeitgestempelte Logs aller Datenverarbeitungsaktivitäten), Data Lineage (Nachverfolgung von Daten vom Ursprung bis zur Nutzung), eGov-Integration (Anbindung an staatliche Identitätssysteme und Compliance-Plattformen); Geschäftlicher Nutzen: Erfüllung von revDSG/GDPR/AI Act Anforderungen, Reduzierung von Compliance-Risiken und rechtlicher Exposition, Erleichterung von Audits, Vertrauen von Bürgern und Kunden
+- **Compliance-Enabler durch Datensouveränität**: Vollständige Datenkontrolle ermöglicht Compliance (Details zu spezifischen Compliance-Mechanismen siehe Kapitel 09), Schweizer Hosting erfüllt Data-Residency-Anforderungen, Air-Gap-Option für höchste Sicherheitsanforderungen, Kunden-kontrollierte Administration erlaubt Umsetzung interner Governance-Vorgaben; Geschäftlicher Nutzen: Grundlage für revDSG/GDPR-Compliance durch vollständige Kontrolle, Transparenz-Anforderungen erfüllbar durch offene Architektur, Flexibilität zur Anpassung an sich ändernde regulatorische Anforderungen
 
 - **Vendor-Unabhängigkeit durch modulare Architektur**: Open-Source-Basis (Apache 2.0 Lizenzierung, transparenter Code), Standardbasierte Schnittstellen (REST APIs, OpenTelemetry, OAuth/OIDC), Komponentenaustauschbarkeit (Datenbanken, Vector-Stores, LLM-Provider, Authentifizierungssysteme austauschbar), Multi-Provider-Support (gleichzeitige Nutzung verschiedener LLM-Anbieter), keine proprietären Formate (Daten jederzeit exportierbar); Geschäftlicher Nutzen: Langfristige Investitionssicherheit ohne Abhängigkeit von einzelnen Anbietern, Flexibilität bei Technologiewechsel ohne System-Neubau, Verhandlungsstärke gegenüber Lieferanten, Anpassung an sich ändernde regulatorische/technische Anforderungen
 

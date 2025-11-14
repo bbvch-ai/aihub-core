@@ -24,6 +24,8 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 
 ## Business-Fragen, die das Kapitel beantwortet
 
+**ERINNERUNG**: Alle technischen Details müssen am ENDE des Kapitels stehen, klar gekennzeichnet als "Technischer Exkurs" oder "Technische Umsetzung".
+
 1. Warum können Organisationen nicht einfach ChatGPT oder Azure OpenAI für Enterprise-AI nutzen?
 2. Welche versteckten Kosten entstehen, wenn jede Abteilung ihre eigene AI-Lösung baut?
 3. Was sind die Total Cost of Ownership bei fragmentierten AI-Ansätzen vs. integrierter Plattform?

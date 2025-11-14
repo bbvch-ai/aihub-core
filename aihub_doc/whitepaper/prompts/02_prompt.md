@@ -23,6 +23,8 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 
 ## Business-Fragen, die das Kapitel beantwortet
 
+**ERINNERUNG**: Alle technischen Details müssen am ENDE des Kapitels stehen, klar gekennzeichnet als "Technischer Exkurs" oder "Technische Umsetzung".
+
 1. Was ist Swiss AI-Hub in einem Satz?
 2. Wie unterscheidet sich das von direkter Nutzung von ChatGPT oder Azure OpenAI?
 3. Was macht dies zu einer "Plattform" vs. "Framework" oder "Service"?

@@ -3,6 +3,19 @@
 ## Kapitelziel
 Erklären Sie, wie Daten während ihres gesamten Lebenszyklus in der Plattform und an allen Ein- und Austrittspunkten gesichert werden (1200 Wörter, 4 Seiten).
 
+
+## Kapitelabgrenzung und Fokus
+
+**WICHTIG - Fokus dieses Kapitels**: Sicherheit von Daten entlang ihres Lebenszyklus: Eingangspunkte → Verarbeitung → Ausgangspunkte. Datenfluss-Monitoring und Schutz an Ein-/Austrittspunkten.
+
+**Behandeln Sie NICHT** (wird in anderen Kapiteln abgedeckt):
+- Infrastruktur-Sicherheitsarchitektur → siehe Kapitel Kapitel 08 (Sicherheitsarchitektur)
+- SSO und Enterprise-Authentifizierungs-Systeme → siehe Kapitel Kapitel 05 (Administration) und 08 (Sicherheitsarchitektur)
+- Container-Isolation und Netzwerk-Policies → siehe Kapitel Kapitel 08
+- Regulatorische Compliance-Details → siehe Kapitel Kapitel 09
+
+**Struktur-Anforderung**: Technische Details (falls vorhanden) IMMER am Ende des Kapitels als klar gekennzeichneter "Technischer Exkurs" oder "Technische Umsetzung".
+
 **WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **lang** (1200 Wörter).
 
 ## Business-Dimensionen (Priorität für dieses Kapitel)

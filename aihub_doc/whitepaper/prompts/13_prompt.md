@@ -27,6 +27,8 @@ Fokussieren Sie auf den fundamentalen Unterschied zu Black-Box-AI: Transparenz, 
 
 ## Business-Fragen, die das Kapitel beantwortet
 
+**ERINNERUNG**: Alle technischen Details müssen am ENDE des Kapitels stehen, klar gekennzeichnet als "Technischer Exkurs" oder "Technische Umsetzung".
+
 1. Was unterscheidet Swiss AI-Hub Agents von Black-Box-AI-Systemen?
 2. Was bedeutet "Workflow-basierte Architektur"?
 3. Warum ist das sicherer als autonome Tool-Auswahl?

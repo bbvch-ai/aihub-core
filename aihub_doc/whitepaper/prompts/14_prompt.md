@@ -25,6 +25,8 @@ Fokussieren Sie auf End-to-End-Automatisierung, Balance zwischen Effizienz und m
 
 ## Business-Fragen, die das Kapitel beantwortet
 
+**ERINNERUNG**: Alle technischen Details müssen am ENDE des Kapitels stehen, klar gekennzeichnet als "Technischer Exkurs" oder "Technische Umsetzung".
+
 1. Wie kann ich End-to-End-Geschäftsprozesse mit AI automatisieren?
 2. Können AI, menschliche Mitarbeiter und externe Systeme in einem Prozess zusammenarbeiten?
 3. Gibt es vorgefertigte Prozess-Templates für gängige Szenarien?

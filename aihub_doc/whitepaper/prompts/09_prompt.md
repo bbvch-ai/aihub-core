@@ -3,6 +3,18 @@
 ## Kapitelziel
 Erklären Sie, wie die Plattform Schweizer und europäische regulatorische Anforderungen erfüllt, mit Fokus auf revDSG, GDPR und EU AI Act Vorbereitung (600 Wörter, 2 Seiten).
 
+
+## Kapitelabgrenzung und Fokus
+
+**WICHTIG - Fokus dieses Kapitels**: Regulatorische Compliance: revDSG, GDPR, EU AI Act. Konkrete Compliance-Mechanismen und wie sie technisch umgesetzt sind.
+
+**Behandeln Sie NICHT** (wird in anderen Kapiteln abgedeckt):
+- Deployment-Optionen und Datensouveränität-Konzept → siehe Kapitel Kapitel 03 (Datensouveränität)
+- Technische Sicherheitsarchitektur → siehe Kapitel Kapitel 08
+- Audit-Trails und Transparenz-Features → siehe Kapitel Kapitel 04 (Plattform-Transparenz)
+
+**Struktur-Anforderung**: Technische Details (falls vorhanden) IMMER am Ende des Kapitels als klar gekennzeichneter "Technischer Exkurs" oder "Technische Umsetzung".
+
 **WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **kurz** (600 Wörter).
 
 ## Business-Dimensionen (Priorität für dieses Kapitel)

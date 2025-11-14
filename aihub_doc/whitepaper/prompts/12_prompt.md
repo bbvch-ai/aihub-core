@@ -27,6 +27,8 @@ Fokussieren Sie auf niedrige Einstiegshürde, hohe Akzeptanz, Barrierefreiheit u
 
 ## Business-Fragen, die das Kapitel beantwortet
 
+**ERINNERUNG**: Alle technischen Details müssen am ENDE des Kapitels stehen, klar gekennzeichnet als "Technischer Exkurs" oder "Technische Umsetzung".
+
 1. Wie sieht die Benutzeroberfläche aus?
 2. Ist die Oberfläche intuitiv und einfach zu bedienen?
 3. Über welche Kanäle können Nutzer auf die Plattform zugreifen?

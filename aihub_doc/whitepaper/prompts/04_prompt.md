@@ -31,6 +31,8 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 
 ## Business-Fragen, die das Kapitel beantwortet
 
+**ERINNERUNG**: Alle technischen Details müssen am ENDE des Kapitels stehen, klar gekennzeichnet als "Technischer Exkurs" oder "Technische Umsetzung".
+
 1. Wie kann ich nachvollziehen, wie die AI zu einer bestimmten Antwort gekommen ist?
 2. Werden alle AI-Entscheidungen protokolliert und sind diese Protokolle einsehbar?
 3. Was unterscheidet die Workflow-basierte Architektur von Black-Box-AI-Systemen?

@@ -27,6 +27,8 @@ Fokussieren Sie auf nahtlose Integration, minimalen Integrationsaufwand, Nutzung
 
 ## Business-Fragen, die das Kapitel beantwortet
 
+**ERINNERUNG**: Alle technischen Details müssen am ENDE des Kapitels stehen, klar gekennzeichnet als "Technischer Exkurs" oder "Technische Umsetzung".
+
 1. Welche API-Optionen bietet die Plattform?
 2. Ist die API OpenAI-kompatibel für einfache Migration?
 3. Gibt es eine native Swiss AI-Hub API mit erweiterten Funktionen?

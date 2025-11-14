@@ -27,6 +27,8 @@ Fokussieren Sie auf Investitionsschutz, Flexibilität, keine Lock-ins, langfrist
 
 ## Business-Fragen, die das Kapitel beantwortet
 
+**ERINNERUNG**: Alle technischen Details müssen am ENDE des Kapitels stehen, klar gekennzeichnet als "Technischer Exkurs" oder "Technische Umsetzung".
+
 1. Ist die Plattform Open Source?
 2. Welche Lizenz wird verwendet (Apache 2.0)?
 3. Kann ich den Code inspizieren und modifizieren?

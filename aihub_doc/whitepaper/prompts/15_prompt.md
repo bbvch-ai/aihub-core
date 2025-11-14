@@ -28,6 +28,8 @@ Fokussieren Sie auf Vertrauen durch Qualität, kontinuierliche Verbesserung, dat
 
 ## Business-Fragen, die das Kapitel beantwortet
 
+**ERINNERUNG**: Alle technischen Details müssen am ENDE des Kapitels stehen, klar gekennzeichnet als "Technischer Exkurs" oder "Technische Umsetzung".
+
 1. Wie verhindert die Plattform, dass AI falsche Informationen erfindet (Halluzinationen)?
 2. Werden alle Antworten mit Quellenangaben belegt?
 3. Basieren Antworten immer auf echten Dokumenten (Retrieval-Grounding)?

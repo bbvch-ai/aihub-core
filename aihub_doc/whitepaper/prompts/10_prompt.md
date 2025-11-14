@@ -31,6 +31,8 @@ Fokussieren Sie auf Flexibilität, einfachen Betrieb, schnellen Time-to-Value un
 
 ## Business-Fragen, die das Kapitel beantwortet
 
+**ERINNERUNG**: Alle technischen Details müssen am ENDE des Kapitels stehen, klar gekennzeichnet als "Technischer Exkurs" oder "Technische Umsetzung".
+
 1. Welche Deployment-Optionen bietet die Plattform?
 2. Kann die Plattform On-Premise betrieben werden?
 3. Unterstützt die Plattform Private Cloud (BYOC - Bring Your Own Cloud)?

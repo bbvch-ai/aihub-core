@@ -148,22 +148,24 @@ Die Plattform bietet Mitarbeitern eine moderne, ChatGPT-ähnliche Benutzeroberfl
 
 ### Wann Bulletpoints verwenden
 
-**KRITISCH**: Bulletpoints sind das **LETZTE Mittel**, nicht das Standard-Format!
+**WICHTIG**: Fließtext ist bevorzugt, aber Bulletpoints haben ihren Platz für Struktur und Lesbarkeit!
 
-Setzen Sie Aufzählungen **nur in diesen seltenen Fällen** ein:
-- **Technische Spezifikationen**: Lange Listen unterstützter Formate/Protokolle (8+ Items)
-- **Compliance-Checklisten**: Wenn explizite Checkmarks verlangt sind
+**Bulletpoints sind erlaubt für:**
+- **Technische Spezifikationen**: Listen unterstützter Formate, Protokolle, Standards (5+ Items)
+- **Compliance-Checklisten**: Explizite Checkmarks und regulatorische Anforderungen
+- **Strukturierte Aufzählungen**: Wenn 4+ gleichwertige Punkte unter einem Konzept gehören und Fließtext die Lesbarkeit beeinträchtigen würde
+- **Optionen und Varianten**: Deployment-Optionen, Authentifizierungsmethoden, Integrationsarten
 
-**NIEMALS Bulletpoints für:**
-- ❌ Feature-Beschreibungen (schreiben Sie Fließtext!)
-- ❌ Vorteile/Nutzen (integrieren Sie in Absätze!)
-- ❌ Prozess-Schritte (schreiben Sie narrative Beschreibung!)
-- ❌ Konzept-Erklärungen (schreiben Sie Fließtext!)
+**VERMEIDEN Sie Bulletpoints für:**
+- ❌ Einzelne oder nur 2-3 kurze Punkte (nutzen Sie Fließtext!)
+- ❌ Ausführliche Feature-Beschreibungen mit Erklärungen (schreiben Sie Absätze!)
+- ❌ Narrative Prozess-Beschreibungen (schreiben Sie zusammenhängenden Text!)
 
-**STRIKTE Faustregel**:
-- **Maximum 1 Bulletpoint-Liste pro Kapitel** (nur für technische Specs)
-- Wenn < 5 Items: **IMMER Fließtext**, niemals Bulletpoints
-- Jede Bulletpoint-Liste maximal 5-8 Zeilen
+**Faustregel**:
+- **Maximum 2-3 Bulletpoint-Listen pro Kapitel**
+- Pro Liste maximal 6-8 Punkte
+- Wenn < 4 Items: Überlegen Sie, ob Fließtext besser wäre
+- Wenn Punkte > 2 Sätze lang sind: Schreiben Sie Absätze statt Bullets
 
 ### Natürlicher Textfluss
 **Verbinden Sie Gedanken durch Übergänge**:
@@ -477,12 +479,12 @@ als auch Legacy-Infrastrukturen ab.
 - **Rhythmus**: Wechseln Sie zwischen kurzen (3 Sätze) und längeren (5-6 Sätze) Absätzen
 
 ### Wann Formatierung verwenden
-- **Fettschrift**: Äußerst sparsam, nur für 2-3 kritische Konzepte beim ersten Auftreten
-- **Bulletpoints**: **NUR für technische Specs (8+ Items)** oder explizite Checklisten. NIEMALS für Features, Vorteile, Prozesse!
-- **Nummerierung**: Nur für sequenzielle Prozesse (3+ Schritte), sonst Fließtext
+- **Fettschrift**: Sparsam für kritische Konzepte beim ersten Auftreten oder wichtige Sub-Überschriften
+- **Bulletpoints**: Für strukturierte Aufzählungen (4+ Items), technische Specs, Optionen. Max. 2-3 Listen pro Kapitel
+- **Nummerierung**: Für sequenzielle Prozesse oder priorisierte Listen
 - **Code/Konfiguration**: Nur wenn technische Details explizit verlangt sind
 
-**ABSOLUTE Grundregel**: Wenn es in 1-2 Sätzen oder einem kurzen Absatz ausgedrückt werden kann, schreiben Sie **NIEMALS** Bulletpoints! Schreiben Sie immer Fließtext.
+**Grundregel**: Bevorzugen Sie Fließtext. Nutzen Sie Bulletpoints nur, wenn sie die Struktur und Lesbarkeit deutlich verbessern.
 
 ## Geschäftlicher Nutzen
 
@@ -600,8 +602,8 @@ Ein gutes Kapitel erfüllt diese Kriterien:
 - ✅ Konkrete Beispiele und Szenarien
 - ✅ RFP-Anforderungen natürlich integriert
 - ✅ Schweizer Kontext angemessen berücksichtigt
-- ✅ **Fast ausschließlich Fließtext** - Bulletpoints nur für technische Specs (max. 1 Liste pro Kapitel)
-- ✅ **Natürlicher Schreibstil** ohne typische AI-Muster (keine Repetition, keine generischen Übergänge, KEINE Bulletpoint-Inflation!)
+- ✅ **Überwiegend Fließtext** mit gezielten Bulletpoints für Struktur (max. 2-3 Listen pro Kapitel)
+- ✅ **Natürlicher Schreibstil** ohne typische AI-Muster (keine Repetition, keine generischen Übergänge, keine Bulletpoint-Inflation!)
 - ✅ **Variierter Satzbau** (kurze, mittlere und lange Sätze gemischt)
 - ✅ Flüssig lesbar, logischer Aufbau
 - ✅ Professioneller, vertrauenswürdiger Ton
@@ -671,7 +673,7 @@ Erstellen Sie ein **professionelles Whitepaper-Kapitel** mit folgenden Eigenscha
 - ✅ **Kompakt** - Ziel-Wortanzahl einhalten (siehe Längen-Richtlinien)
 
 **Stil:**
-- ✅ **FLIESSTEXT, nicht Bulletpoints!** (Maximum 1 Bulletpoint-Liste pro Kapitel, nur für technische Specs)
+- ✅ **Überwiegend Fließtext** mit gezielten Bulletpoints für Struktur (max. 2-3 Listen pro Kapitel)
 - ✅ **Kompakt und prägnant** (keine Redundanz, keine Füllwörter)
 - ✅ **Natürlicher Rhythmus** (variieren Sie Satzlänge und -struktur)
 - ✅ **Menschlich wirkend** (vermeiden Sie typische AI-Schreibmuster wie Bulletpoint-Inflation!)
@@ -685,7 +687,7 @@ Erstellen Sie ein **professionelles Whitepaper-Kapitel** mit folgenden Eigenscha
 - ✅ **Schweizer Kontext** (Datensouveränität, revDSG, Mehrsprachigkeit)
 
 **KRITISCH**:
-- **FLIESSTEXT schreiben, nicht Bulletpoints!** Maximum 1 Bulletpoint-Liste pro Kapitel (nur technische Specs)
+- **Überwiegend Fließtext schreiben!** Bulletpoints gezielt für Struktur einsetzen (max. 2-3 Listen pro Kapitel)
 - **Business-Entscheidungsfragen haben oberste Priorität** - Kapitel dient der Kaufentscheidung
 - Identifizieren Sie welche der 6 Dimensionen (Kosten, Sicherheit, Datenschutz, Management, Zukunft, Integration) Ihr Kapitel adressiert
 - Beantworten Sie mindestens 3-5 Kern-Fragen pro Dimension explizit

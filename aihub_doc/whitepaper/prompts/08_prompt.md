@@ -3,6 +3,19 @@
 ## Kapitelziel
 Erklären Sie die mehrschichtige Sicherheitsarchitektur der Plattform mit Fokus auf konkrete Schutzmechanismen und wie sie Schweizer Organisationen vor Bedrohungen schützen (900 Wörter, 3 Seiten).
 
+
+## Kapitelabgrenzung und Fokus
+
+**WICHTIG - Fokus dieses Kapitels**: Mehrschichtige Sicherheitsarchitektur der Plattform: Infrastruktur, Netzwerk, Authentifizierung, Verschlüsselung. Defense-in-Depth-Ansatz.
+
+**Behandeln Sie NICHT** (wird in anderen Kapiteln abgedeckt):
+- Datenfluss-Details (Ingress → Processing → Egress) → siehe Kapitel Kapitel 07 (Datensicherheit und Datenfluss)
+- Detaillierte Compliance-Mechanismen → siehe Kapitel Kapitel 09
+- Administrative Governance und RBAC-Details → siehe Kapitel Kapitel 05 (Administration)
+- PII-Detection im Datenfluss-Kontext → siehe Kapitel Kapitel 07
+
+**Struktur-Anforderung**: Technische Details (falls vorhanden) IMMER am Ende des Kapitels als klar gekennzeichneter "Technischer Exkurs" oder "Technische Umsetzung".
+
 **WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **mittel** (900 Wörter).
 
 ## Business-Dimensionen (Priorität für dieses Kapitel)

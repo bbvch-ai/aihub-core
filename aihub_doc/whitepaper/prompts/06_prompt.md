@@ -31,6 +31,8 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 
 ## Business-Fragen, die das Kapitel beantwortet
 
+**ERINNERUNG**: Alle technischen Details müssen am ENDE des Kapitels stehen, klar gekennzeichnet als "Technischer Exkurs" oder "Technische Umsetzung".
+
 1. Wie organisiere ich meine Unternehmensdokumente strukturiert in der Plattform?
 2. Was ist der Unterschied zwischen Datenbanken, Collections und Dokumenten?
 3. Wie stelle ich sicher, dass Nutzer nur auf autorisierte Dokumente zugreifen?

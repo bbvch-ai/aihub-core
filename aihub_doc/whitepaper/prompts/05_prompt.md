@@ -31,6 +31,8 @@ Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
 
 ## Business-Fragen, die das Kapitel beantwortet
 
+**ERINNERUNG**: Alle technischen Details müssen am ENDE des Kapitels stehen, klar gekennzeichnet als "Technischer Exkurs" oder "Technische Umsetzung".
+
 1. Welche Rollen und Berechtigungsebenen bietet die Plattform?
 2. Können wir kundenseitige Administratoren definieren, ohne Plattform-Provider-Abhängigkeit?
 3. Wie funktioniert die granulare Zugriffskontrolle auf Datenquellen und Features?
