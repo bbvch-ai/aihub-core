@@ -1471,7 +1471,7 @@ services:
       SUPERUSER_TOKEN: ${SUPERUSER_TOKEN}
 
       # AI-Hub Settings
-      AIHUB_API_VERSION: {{ image_tags.api[stage] }}
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
       AIHUB_CREATE_DEFAULT_ROLES: True
 
