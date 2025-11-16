@@ -87,9 +87,9 @@ services:
       -ip.bind=0.0.0.0
       -defaultReplication=000
       {%- if stage in ['dev', 'local', 'build'] %}
-      -volumeSizeLimitMB=1024     # 1GB
+      -volumeSizeLimitMB=1024
       {%- else %}
-      -volumeSizeLimitMB=1048576  # TB
+      -volumeSizeLimitMB=29000
       {%- endif %}
       -volumePreallocate=false
     volumes:
@@ -740,7 +740,6 @@ services:
       - "8185:8000"
     {%- endif %}
     volumes:
-      - ./configs/speaches/speaches-download-models.sh:/etc/speaches/speaches-download-models.sh
       - {{ global.volume_root }}/huggingface:/root/.cache/huggingface
     environment:
       HF_HOME: /root/.cache/huggingface
@@ -752,8 +751,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 5s
-    post_start:
-      - command: [ "sh", "/etc/speaches/speaches-download-models.sh" ]
     {%- if speaches_use_gpu %}
     deploy:
       resources:
@@ -1471,7 +1468,7 @@ services:
       SUPERUSER_TOKEN: ${SUPERUSER_TOKEN}
 
       # AI-Hub Settings
-      AIHUB_API_VERSION: {{ image_tags.api[stage] }}
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
       AIHUB_CREATE_DEFAULT_ROLES: True
 
@@ -1511,7 +1508,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
       OTEL_RESOURCE_SERVICE_NAME: api
-      OTEL_RESOURCE_SERVICE_VERSION: {{ image_tags.api[stage] }}
+      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
@@ -1631,7 +1628,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
       OTEL_RESOURCE_SERVICE_NAME: api
-      OTEL_RESOURCE_SERVICE_VERSION: {{ image_tags.api[stage] }}
+      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     logging:
       driver: json-file
@@ -1681,7 +1678,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
       OTEL_RESOURCE_SERVICE_NAME: api
-      OTEL_RESOURCE_SERVICE_VERSION: {{ image_tags.api[stage] }}
+      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
   {%- endif %}
 

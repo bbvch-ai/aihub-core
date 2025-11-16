@@ -26,7 +26,7 @@ services:
       -ip=seaweedfs-master
       -ip.bind=0.0.0.0
       -defaultReplication=000
-      -volumeSizeLimitMB=1024     # 1GB
+      -volumeSizeLimitMB=1024
       -volumePreallocate=false
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-master:/data
@@ -529,7 +529,6 @@ services:
     ports:
       - "8185:8000"
     volumes:
-      - ./configs/speaches/speaches-download-models.sh:/etc/speaches/speaches-download-models.sh
       - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
     environment:
       HF_HOME: /root/.cache/huggingface
@@ -541,8 +540,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 5s
-    post_start:
-      - command: [ "sh", "/etc/speaches/speaches-download-models.sh" ]
 
   # ===================================================================
   # LiteLLM Stack (Model Proxy and Guardrails)
