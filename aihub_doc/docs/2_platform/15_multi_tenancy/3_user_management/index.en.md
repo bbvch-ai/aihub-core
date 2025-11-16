@@ -11,13 +11,15 @@ Users access the platform through your identity provider (Azure AD, Google Works
 
 ### First login
 
+::: info Authentication vs Authorization
 When someone logs in for the first time:
 1. Your identity provider verifies who they are
 2. The platform creates their user profile (name, email, profile picture)
 3. They automatically join the default tenant with standard user roles
 4. They see the default tenant's agents and resources
 
-The platform doesn't import roles from your identity provider. It only imports identity information (who you are, not what you can do).
+**Important**: The platform doesn't import roles from your identity provider. It only imports identity information (who you are, not what you can do).
+:::
 
 ### Adding to additional tenants
 
@@ -84,6 +86,7 @@ A user with no roles in a tenant is technically allowed but serves no purpose.
 
 ### CSV import
 
+::: details CSV Import Format
 Import many users at once through **Service** → **Users** → **Import Users**.
 
 Create a CSV file with three columns:
@@ -104,6 +107,7 @@ The import:
 - Assigns the specified roles
 
 Users who haven't logged in yet receive placeholder profiles that update when they first authenticate.
+:::
 
 ### Bulk role assignment
 
@@ -161,6 +165,7 @@ Permissions don't inherit within role hierarchies. Having user access doesn't au
 
 ## Best practices
 
+::: tip User Management Best Practices
 **Principle of least privilege**: Grant users the minimum permissions needed for their work. You can always expand access later.
 
 **Regular audits**: Review user roles quarterly. People change positions. Access granted for a project might not be appropriate six months later.
@@ -172,6 +177,7 @@ Permissions don't inherit within role hierarchies. Having user access doesn't au
 **Document role purposes**: When creating a role, document why it exists and what its responsibilities are. This prevents confusion when reviewing access later.
 
 **Limit admin roles**: Admin users can grant themselves any permission within their tenant. Only trusted personnel should have admin roles.
+:::
 
 ## Troubleshooting access issues
 

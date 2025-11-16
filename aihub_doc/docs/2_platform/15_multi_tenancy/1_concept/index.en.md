@@ -61,13 +61,55 @@ A user in the Finance tenant sees two agents in their interface: Company Vision 
 
 The Finance Guidelines Agent will only answer questions from the finance guidelines database. Even though the user in Finance tenant can use this agent, they still can't access HR or Legal guidelines - because the agent itself can't access those databases.
 
+```mermaid
+graph LR
+    subgraph Data Layer
+        CV[company-vision DB]
+        FG[finance-guidelines DB]
+        LG[legal-guidelines DB]
+    end
+
+    subgraph Agent Layer
+        CVA[Company Vision Agent]
+        FGA[Finance Guidelines Agent]
+        LGA[Legal Guidelines Agent]
+    end
+
+    subgraph Tenant Layer
+        FT[Finance Tenant]
+        LT[Legal Tenant]
+    end
+
+    CV --> CVA
+    FG --> FGA
+    LG --> LGA
+
+    CVA --> FT
+    FGA --> FT
+    CVA --> LT
+    LGA --> LT
+
+    style CV fill:#e8f5e9
+    style FG fill:#fff3e0
+    style LG fill:#fff3e0
+    style CVA fill:#e1f5ff
+    style FGA fill:#e1f5ff
+    style LGA fill:#e1f5ff
+    style FT fill:#f3e5f5
+    style LT fill:#f3e5f5
+```
+
 ## The counterintuitive part
 
-Here's what surprises people: **Users in department tenants cannot access the knowledge service at all.**
+::: warning Users Don't Access Data Directly
+**Users in department tenants cannot access the knowledge service at all.**
 
 The Finance tenant doesn't have permission to view knowledge databases, browse documents, or see ingestion status. Yet users in Finance tenant can chat with agents that access knowledge databases.
 
-This seems contradictory but it's intentional. Regular users don't benefit from seeing raw parsed documents and database metadata. That's administrative information. Users benefit from chatting with agents that answer questions using that data.
+This seems contradictory but it's intentional.
+:::
+
+Regular users don't benefit from seeing raw parsed documents and database metadata. That's administrative information. Users benefit from chatting with agents that answer questions using that data.
 
 The managers in the management tenant do have access to the knowledge service. They can see all six databases, verify documents were ingested correctly, and troubleshoot issues. But they're administrators, not end users.
 
@@ -101,6 +143,7 @@ This separation between agent capabilities and user permissions creates powerful
 
 ## Responsibilities of this model
 
+::: details Configuration Responsibilities
 This flexibility requires thoughtful configuration:
 
 **Don't create overly broad agents**. You could create one RAG agent with access to all six databases and give it to everyone. But now you can't control who sees what - everyone can ask about everything. The agent becomes a security bypass. Instead, create focused agents with narrow data access and give those agents to appropriate users.
@@ -112,6 +155,7 @@ This flexibility requires thoughtful configuration:
 **Document agent purposes clearly**. Future administrators need to understand what each agent can access and why. "Finance Guidelines Agent - accesses finance-guidelines database only - for Finance department" is clear. "Helper Agent" is not.
 
 **Review access regularly**. People change roles. Departments reorganize. The agent that made sense six months ago might grant inappropriate access now.
+:::
 
 ## What about service access?
 

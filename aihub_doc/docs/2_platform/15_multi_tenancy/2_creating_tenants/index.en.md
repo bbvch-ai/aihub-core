@@ -25,6 +25,31 @@ Start by identifying the groups that need separated workspaces. Common patterns:
 
 Most deployments benefit from three levels of tenants:
 
+```mermaid
+graph TD
+    T1[Tier 1: Sysadmin Tenant]
+    T2[Tier 2: Management Tenant]
+    T3A[Tier 3: Finance Tenant]
+    T3B[Tier 3: HR Tenant]
+    T3C[Tier 3: Legal Tenant]
+
+    T1 -->|creates & deploys| Agents[Agent Classes]
+    T1 -->|configures| Pipelines[Data Pipelines]
+    T2 -->|creates instances| AgentInst[Agent Instances]
+    T2 -->|creates & manages| T3A
+    T2 -->|creates & manages| T3B
+    T2 -->|creates & manages| T3C
+    AgentInst -->|assigned to| T3A
+    AgentInst -->|assigned to| T3B
+    AgentInst -->|assigned to| T3C
+
+    style T1 fill:#ffebee
+    style T2 fill:#fff3e0
+    style T3A fill:#e8f5e9
+    style T3B fill:#e8f5e9
+    style T3C fill:#e8f5e9
+```
+
 ### Tier 1: System administration
 
 Create a tenant for people who maintain the platform infrastructure. These users:
@@ -166,10 +191,13 @@ Tenants persist until explicitly deleted. You can:
 
 **Delete a tenant**: Remove the tenant, all its roles, and all user associations. Permanent. Only possible after removing all users first.
 
+::: warning Default Tenant Protection
 The default tenant cannot be deleted. This ensures the platform always has at least one working tenant.
+:::
 
 ## Practical tips
 
+::: tip Best Practices
 **Document your decisions**: Write down why you created each tenant and what its scope should be. Six months later when roles have changed, this documentation prevents confusion.
 
 **Start simple**: One management tenant and one end-user tenant works for many organizations. Add complexity only when you need it.
@@ -179,3 +207,4 @@ The default tenant cannot be deleted. This ensures the platform always has at le
 **Review quarterly**: People change roles. Projects end. New departments form. Your tenant structure should evolve with your organization.
 
 **Plan for growth**: "Customer 1" works when you have three customers. "Customer - Acme Corp" works when you have three hundred.
+:::

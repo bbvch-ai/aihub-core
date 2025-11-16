@@ -160,6 +160,7 @@ Use sparingly - superuser access exists for platform administration, not regular
 
 ## Validation rules
 
+::: warning Access Rule Format Requirements
 When creating access rules:
 
 **Required format**:
@@ -173,6 +174,7 @@ When creating access rules:
 - `>` in the middle of a rule
 
 The system validates rules when creating or editing tenants and roles. Invalid rules trigger an error with the specific problem.
+:::
 
 ## Common patterns
 
@@ -215,7 +217,8 @@ User access everywhere, admin access only to department resources.
 
 ## Debugging access issues
 
-When troubleshooting, check:
+::: details Troubleshooting Checklist
+When troubleshooting, check these in order:
 
 1. **Tenant selection**: Verify the user selected the intended tenant
 2. **Tenant boundary**: Confirm the tenant's access rules include the resource
@@ -225,6 +228,7 @@ When troubleshooting, check:
 6. **Service access**: Verify service-level permission exists
 
 The platform returns detailed error messages indicating which permission failed. Use this to identify the missing rule.
+:::
 
 ## Performance notes
 

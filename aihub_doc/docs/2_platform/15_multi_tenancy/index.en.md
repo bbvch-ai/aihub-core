@@ -21,9 +21,11 @@ The platform provides three types of resources:
 
 ## The agent independence principle
 
-This is the most important concept in multi-tenant design: **Agents operate independently of user and tenant permissions.**
+::: info The Most Important Concept
+**Agents operate independently of user and tenant permissions.**
 
 When a user chats with an agent, the agent doesn't inherit that user's access restrictions. The agent accesses data based on its own configuration. This has profound implications for how you structure tenants and control data access.
+:::
 
 Why design it this way? Agents often need to:
 - Access data from multiple sources that individual users can't see
@@ -32,6 +34,21 @@ Why design it this way? Agents often need to:
 - Execute scheduled tasks regardless of who's online
 
 You control data access by controlling which users can interact with which agents. The agent's configuration determines what data it can access. Your tenant design determines who can use that agent.
+
+```mermaid
+graph TB
+    T[Tenant] -->|defines scope| R[Roles]
+    T -->|grants access to| A[Agents]
+    T -->|grants access to| S[Services]
+    U[Users] -->|belong to| T
+    U -->|assigned| R
+    R -->|grant permissions within| T
+    A -->|access data based on| AC[Agent Configuration]
+
+    style T fill:#e1f5ff
+    style A fill:#fff4e6
+    style U fill:#f0f0f0
+```
 
 ## Common patterns
 
