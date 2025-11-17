@@ -23,7 +23,7 @@ und Beispiele.
 
 ### 2. Plattform-API-Integration (externe Systeme rufen auf)
 
-Externe Systeme können AI-Hub-Agenten über die [Agent Interaction REST API](../16_api/2_agent_interaction_api/)
+Externe Systeme können AI-Hub-Agenten über die [Agent Interaction REST API](../17_api/2_agent_interaction_api/)
 auslösen. Die API authentifiziert eingehende HTTP-Anfragen, übersetzt sie in interne Ereignisse und streamt
 Agenten-Antworten als strukturierte Ergebnisse zurück.
 
@@ -46,7 +46,7 @@ Produktkataloge nach Zeitplan für Kundenservice-Agenten importieren.
 
 ### 4. MCP-Integration (Entwicklungstools)
 
-Das [Model Context Protocol (MCP)](../17_mcp/) ermöglicht es KI-Codierungsassistenten wie Claude Code, Gemini CLI und
+Das [Model Context Protocol (MCP)](../18_mcp/) ermöglicht es KI-Codierungsassistenten wie Claude Code, Gemini CLI und
 Cursor, während der Entwicklung mit dem AI-Hub zu interagieren. Dies bietet eine schreibgeschützte Beobachtung des
 Plattformzustands für Entwicklungs- und Debugging-Workflows.
 
@@ -75,7 +75,7 @@ Externe Systeme verbinden sich mit dem AI-Hub über Standard-HTTPS (Port 443). A
 2.0, API-Schlüssel oder Azure AD-Integration. Der Traefik Reverse Proxy bietet einen integrierten Schutz durch
 Ratenbegrenzung, und Let's Encrypt übernimmt die automatische Zertifikatsverwaltung für die TLS-Terminierung.
 
-[Netzwerksicherheit](../18_security/4_network_security/) behandelt die Sicherheitsarchitektur.
+[Netzwerksicherheit](../19_security/4_network_security/) behandelt die Sicherheitsarchitektur.
 
 ## Allgemeine Integrationsprinzipien
 
@@ -83,16 +83,16 @@ Passen Sie Ihren Integrationsansatz an die Anforderungen an Latenz, Volumen und 
 Schweiz, wenn Sie eine Schweizer Datenresidenz benötigen. Verwenden Sie TLS-Verschlüsselung, RBAC und eine umfassende
 Audit-Protokollierung. Nutzen Sie Enterprise-SSO über OAuth 2.0, SAML oder Azure AD. Konfigurieren Sie geeignete
 Firewall-Regeln für eingehende und ausgehende Konnektivität. Befolgen Sie die Richtlinien des
-[Schweizer Datenschutzes](../19_compliance/3_dsg/).
+[Schweizer Datenschutzes](../20_compliance/3_dsg/).
 
 ## Verwandte Dokumentation
 
 - Agenten: [Agent Developer Guide](https://github.com/bbvch-ai/aihub-core/tree/main/aihub_agent) – Direkte API-Aufrufe
   implementieren
-- API: [Agent Interaction REST API](../16_api/2_agent_interaction_api/) – HTTP-Schnittstelle der Plattform
+- API: [Agent Interaction REST API](../17_api/2_agent_interaction_api/) – HTTP-Schnittstelle der Plattform
 - Pipelines: [Daten-Pipelines](../6_pipelines/) – Automatisierte Datensynchronisation
-- MCP: [Model Context Protocol](../17_mcp/) – KI-Assistenten-Integration
+- MCP: [Model Context Protocol](../18_mcp/) – KI-Assistenten-Integration
 - Netzwerk: [Netzwerkanforderungen](../3_deployment_guide/7_network_requirements/) – Firewall und Konnektivität
-- Sicherheit: [Netzwerksicherheit](../18_security/4_network_security/) – Sicherheitsarchitektur
+- Sicherheit: [Netzwerksicherheit](../19_security/4_network_security/) – Sicherheitsarchitektur
 - Authentifizierung: [Authentifizierungseinrichtung](../11_access_management/1_authentication_setup/) – SSO
   konfigurieren

@@ -88,6 +88,6 @@ ausgehenden Einschränkungen erforderlich.
 ## Zugehörige Dokumentation
 
 - [Deployment-Optionen](../1_deployment_options/) – Architektur und Hosting-Strategien
-- [Netzwerksicherheit](../../18_security/4_network_security/) – Sicherheitsarchitektur und Defense-in-Depth
-- [Authentifizierung](../../18_security/1_authentication/) – Details zur Identity Provider-Integration
+- [Netzwerksicherheit](../../19_security/4_network_security/) – Sicherheitsarchitektur und Defense-in-Depth
+- [Authentifizierung](../../19_security/1_authentication/) – Details zur Identity Provider-Integration
 - [Infrastruktur-Ebenen](../../2_architecture/2_infrastructure_layers/) – Überblick über Infrastrukturkomponenten

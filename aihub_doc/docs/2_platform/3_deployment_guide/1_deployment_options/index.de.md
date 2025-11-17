@@ -346,4 +346,4 @@ pro-Tenant-Update-Zeitpläne.
 - [Authentifizierung & Autorisierung](../../11_access_management/1_authentication_setup/) –
   Tenant-Authentifizierungskonfiguration
 - [Monitoring und Alarmierung](../5_monitoring_and_alerting/) – Observability für Multi-Instanz-Bereitstellungen
-- [Schweizer Datenschutz](../../19_compliance/3_dsg/) – revDSG-Compliance für den öffentlichen Sektor
+- [Schweizer Datenschutz](../../20_compliance/3_dsg/) – revDSG-Compliance für den öffentlichen Sektor

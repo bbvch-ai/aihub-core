@@ -331,4 +331,4 @@ update schedules.
 - [Authentication & Authorization](../../11_access_management/1_authentication_setup/) - Tenant authentication
   configuration
 - [Monitoring and Alerting](../5_monitoring_and_alerting/) - Observability for multi-instance deployments
-- [Swiss Data Protection](../../19_compliance/3_dsg/) - revDSG compliance for public sector
+- [Swiss Data Protection](../../20_compliance/3_dsg/) - revDSG compliance for public sector
