@@ -25,7 +25,6 @@ def context():
         "collection_name": None,
         "vector_store": None,
         "index_type": None,
-        "enable_mmap": None,
         "num_partitions": 2,
         "nodes": [],
         "error": None,
@@ -92,14 +91,10 @@ def _create_vector_store(context, **kwargs):
         "collection_name": context["collection_name"],
         "embedding_vector_dimension": context["embedding_dimension"],
         "index_type": MilvusIndexType.FLAT,
-        "enable_mmap": False,
     }
 
-    try:
-        context["vector_store"] = create_milvus_vector_store(**(defaults | kwargs))
-        context["error"] = None
-    except Exception as e:
-        context["error"] = e
+    context["vector_store"] = create_milvus_vector_store(**(defaults | kwargs))
+    context["error"] = None
 
 
 # Given steps
@@ -134,14 +129,6 @@ def when_create_vector_store_with_index(context, index_type: str):
     """Create a vector store with specified index type."""
     context["index_type"] = MilvusIndexType[index_type]
     _create_vector_store(context, index_type=context["index_type"])
-
-
-@when(parsers.parse('I create a vector store with index type "{index_type}" and mmap "{mmap_enabled}"'))
-def when_create_vector_store_with_mmap(context, index_type: str, mmap_enabled: str):
-    """Create a vector store with specified index type and mmap setting."""
-    context["index_type"] = MilvusIndexType[index_type]
-    context["enable_mmap"] = mmap_enabled == "true"
-    _create_vector_store(context, index_type=context["index_type"], enable_mmap=context["enable_mmap"])
 
 
 @when(parsers.parse("I create a vector store with {num_partitions:d} partitions"))
@@ -213,24 +200,6 @@ def then_sparse_embedding_field_has_index_type(context, expected_index_type: str
         ), f"Expected {expected_index_type}, got {sparse_index.params.get('index_type')}"
 
 
-@then(parsers.parse('the embedding field mmap setting should be "{expected_mmap}"'))
-def then_embedding_field_mmap_setting(context, expected_mmap: str):
-    """Verify embedding field mmap setting."""
-    with milvus_connection(context["milvus_uri"]):
-        collection = Collection(context["collection_name"])
-        embedding_index = _get_embedding_index(collection)
-
-        assert embedding_index, "Embedding field index not found"
-
-        actual_mmap = embedding_index.params.get("mmap.enabled", "not_set")
-
-        if expected_mmap == "not_set":
-            assert actual_mmap == "not_set", f"Expected mmap not set, got {actual_mmap}"
-        else:
-            expected = "true" if expected_mmap == "true" else "false"
-            assert actual_mmap == expected, f"Expected mmap={expected}, got {actual_mmap}"
-
-
 @then("the namespace field should be the partition key")
 def then_namespace_is_the_partition_key(context):
     """Verify namespace field is configured as partition key."""
@@ -292,24 +261,6 @@ def then_collection_has_index_type(context, expected_index_type: str):
         assert (
             actual_index_type == expected_index_type
         ), f"Expected index type {expected_index_type}, got {actual_index_type}"
-
-
-@then(parsers.parse('the mmap setting should be "{expected_mmap}"'))
-def then_mmap_setting(context, expected_mmap: str):
-    """Verify mmap setting."""
-    with milvus_connection(context["milvus_uri"]):
-        collection = Collection(context["collection_name"])
-        embedding_index = _get_embedding_index(collection)
-
-        assert embedding_index, "Embedding field index not found"
-
-        actual_mmap = embedding_index.params.get("mmap.enabled", "not_set")
-
-        if expected_mmap == "not_set":
-            assert actual_mmap == "not_set", f"Expected mmap to be not set, but got {actual_mmap}"
-        else:
-            expected = "true" if expected_mmap == "true" else "false"
-            assert actual_mmap == expected, f"Expected mmap={expected}, got {actual_mmap}"
 
 
 @then("the namespace field should be marked as partition key")
