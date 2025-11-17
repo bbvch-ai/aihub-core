@@ -18,8 +18,6 @@ from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_ID, NAMESPA
 from aihub_lib.persistence.rag.vectors.stores.MilvusPartitionManager import create_manual_partitions
 from aihub_lib.persistence.rag.vectors.stores.PartitionAwareMilvusVectorStore import PartitionAwareMilvusVectorStore
 
-_MMAP_ENABLED = "mmap.enabled"
-
 
 class MilvusIndexType(str, Enum):
     HNSW = "HNSW"  # RAG optimal: 97-99% recall, fastest queries, highest memory (enable mmap to reduce)
@@ -37,7 +35,6 @@ def create_milvus_vector_store(
     index_type: Annotated[MilvusIndexType, Field(description="Vector index type for the embedding field")] = (
         MilvusIndexType.HNSW
     ),
-    enable_mmap: Annotated[bool, Field(description="Enable memory mapping to reduce RAM usage")] = True,
 ) -> MilvusVectorStore:
     """
     Factory for namespace-partitioned vector stores optimized for RAG workloads.
@@ -45,7 +42,6 @@ def create_milvus_vector_store(
     - Manual partition by namespace: Queries only load relevant namespaces
     - Hybrid search: Dense (semantic) + BM25 (keyword) for comprehensive retrieval
     - HNSW index default: Best recall/speed for semantic search
-    - Memory-mapped I/O: Optional mmap reduces RAM usage by offloading to disk (OS page cache)
 
     Index selection:
     - HNSW (default): Best for RAG quality, enable mmap if memory constrained
@@ -80,30 +76,20 @@ def create_milvus_vector_store(
                 field_name="embedding",
                 index_type="HNSW",
                 metric_type="IP",
-                params={
-                    _MMAP_ENABLED: "true" if enable_mmap else "false",
-                },
             )
         elif index_type == MilvusIndexType.IVF_FLAT:
             index_params.add_index(
                 field_name="embedding",
                 index_type="IVF_FLAT",
                 metric_type="IP",
-                params={
-                    _MMAP_ENABLED: "true" if enable_mmap else "false",
-                },
             )
         elif index_type == MilvusIndexType.FLAT:
             index_params.add_index(
                 field_name="embedding",
                 index_type="FLAT",
                 metric_type="IP",
-                params={
-                    _MMAP_ENABLED: "true" if enable_mmap else "false",
-                },
             )
         elif index_type == MilvusIndexType.DISKANN:
-            # DISKANN already uses disk storage, mmap not applicable
             index_params.add_index(field_name="embedding", index_type="DISKANN", metric_type="IP")
 
         index_params.add_index(field_name="sparse_embedding", index_type="SPARSE_INVERTED_INDEX", metric_type="BM25")
