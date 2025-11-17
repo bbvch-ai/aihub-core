@@ -1,5 +1,6 @@
 # ruff: noqa: E402
 from aihub_api.routes.docling.DoclingController import DoclingController
+
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
 
 AihubInstrumentor().instrument()
