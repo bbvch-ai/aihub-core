@@ -3,7 +3,7 @@ from typing import Any
 
 from llama_index.core.schema import BaseNode
 from llama_index.core.utils import iter_batch
-from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryResult, VectorStoreQueryMode
+from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode, VectorStoreQueryResult
 from llama_index.core.vector_stores.utils import node_to_metadata_dict
 from llama_index.vector_stores.milvus import MilvusVectorStore
 from llama_index.vector_stores.milvus.utils import BaseSparseEmbeddingFunction

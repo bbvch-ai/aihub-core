@@ -1,5 +1,6 @@
-import pytest
 from contextlib import contextmanager
+
+import pytest
 from llama_index.core.schema import TextNode
 from pymilvus import Collection, MilvusClient, connections
 from pytest_bdd import given, parsers, scenarios, then, when
@@ -194,9 +195,9 @@ def then_embedding_field_has_index_type(context, expected_index_type: str):
         embedding_index = _get_embedding_index(collection)
 
         assert embedding_index, "Embedding field index not found"
-        assert embedding_index.params.get("index_type") == expected_index_type, (
-            f"Expected {expected_index_type}, got {embedding_index.params.get('index_type')}"
-        )
+        assert (
+            embedding_index.params.get("index_type") == expected_index_type
+        ), f"Expected {expected_index_type}, got {embedding_index.params.get('index_type')}"
 
 
 @then(parsers.parse('the sparse_embedding field should have index type "{expected_index_type}"'))
@@ -207,9 +208,9 @@ def then_sparse_embedding_field_has_index_type(context, expected_index_type: str
         sparse_index = next((idx for idx in collection.indexes if idx.field_name == "sparse_embedding"), None)
 
         assert sparse_index, "Sparse embedding field index not found"
-        assert sparse_index.params.get("index_type") == expected_index_type, (
-            f"Expected {expected_index_type}, got {sparse_index.params.get('index_type')}"
-        )
+        assert (
+            sparse_index.params.get("index_type") == expected_index_type
+        ), f"Expected {expected_index_type}, got {sparse_index.params.get('index_type')}"
 
 
 @then(parsers.parse('the embedding field mmap setting should be "{expected_mmap}"'))
@@ -255,16 +256,14 @@ def then_schema_has_fields(context, datatable):
             assert field, f"Field '{field_name}' not found in schema"
 
             # Handle dtype - can be enum name or numeric value
-            actual_dtype = field.dtype.name if hasattr(field.dtype, 'name') else str(field.dtype).split(".")[-1]
-            assert actual_dtype == data_type, (
-                f"Field '{field_name}' type mismatch: expected {data_type}, got {actual_dtype} (raw: {field.dtype})"
-            )
-            assert field.is_primary == (is_primary == "true"), (
-                f"Field '{field_name}' is_primary mismatch"
-            )
-            assert field.is_partition_key == (is_partition_key == "true"), (
-                f"Field '{field_name}' is_partition_key mismatch"
-            )
+            actual_dtype = field.dtype.name if hasattr(field.dtype, "name") else str(field.dtype).split(".")[-1]
+            assert (
+                actual_dtype == data_type
+            ), f"Field '{field_name}' type mismatch: expected {data_type}, got {actual_dtype} (raw: {field.dtype})"
+            assert field.is_primary == (is_primary == "true"), f"Field '{field_name}' is_primary mismatch"
+            assert field.is_partition_key == (
+                is_partition_key == "true"
+            ), f"Field '{field_name}' is_partition_key mismatch"
 
 
 @then("the collection should have a BM25 function defined")

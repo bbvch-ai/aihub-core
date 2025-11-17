@@ -40,17 +40,17 @@ def create_milvus_vector_store(
     enable_mmap: Annotated[bool, Field(description="Enable memory mapping to reduce RAM usage")] = True,
 ) -> MilvusVectorStore:
     """
-    Create Milvus vector store with manual partition management for RAG.
+    Factory for namespace-partitioned vector stores optimized for RAG workloads.
 
-    Why manual partitions?
-    - Unlimited namespaces (hash to 1024 partitions, collisions OK)
-    - Memory-efficient (load only partitions with active namespaces)
-    - Hybrid search: HNSW (semantic) + BM25 (keyword)
+    - Manual partition by namespace: Queries only load relevant namespaces
+    - Hybrid search: Dense (semantic) + BM25 (keyword) for comprehensive retrieval
+    - HNSW index default: Best recall/speed for semantic search
+    - Memory-mapped I/O: Optional mmap reduces RAM usage by offloading to disk (OS page cache)
 
-    Index types (by use case):
-    - HNSW: RAG default (best quality, use mmap if RAM constrained)
-    - DISKANN: Large datasets exceeding RAM (requires NVMe SSD)
-    - IVF_FLAT: Balanced middle ground
+    Index selection:
+    - HNSW (default): Best for RAG quality, enable mmap if memory constrained
+    - DISKANN: Use when vectors exceed available RAM (requires NVMe SSD)
+    - IVF_FLAT: Middle ground if HNSW too memory-intensive and DISKANN unavailable
     """
     client = MilvusClient(uri=uri)
     if not client.has_collection(collection_name):
@@ -108,10 +108,8 @@ def create_milvus_vector_store(
 
         index_params.add_index(field_name="sparse_embedding", index_type="SPARSE_INVERTED_INDEX", metric_type="BM25")
 
-        # Create collection without automatic partition keys
         client.create_collection(collection_name=collection_name, schema=schema, index_params=index_params)
 
-        # Create 1024 manual partitions for namespace hashing
         create_manual_partitions(client=client, collection_name=collection_name)
 
     return PartitionAwareMilvusVectorStore(
