@@ -929,7 +929,6 @@ services:
       - -w
       - /dagster_home/workspace.yaml
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
       - ./configs/dagster/dagster-config.build.yml:/dagster_home/dagster.yaml:ro
       - ./configs/dagster/workspace.build.yml:/dagster_home/workspace.yaml:ro
     environment:
@@ -953,7 +952,6 @@ services:
       - dagster-daemon
       - run
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
       - ./configs/dagster/dagster-config.build.yml:/dagster_home/dagster.yaml:ro
       - ./configs/dagster/workspace.build.yml:/dagster_home/workspace.yaml:ro
     environment:

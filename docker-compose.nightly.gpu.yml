@@ -1122,7 +1122,6 @@ services:
       - -w
       - /dagster_home/workspace.yaml
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
       - ./configs/dagster/dagster-config.nightly.gpu.yml:/dagster_home/dagster.yaml:ro
       - ./configs/dagster/workspace.nightly.gpu.yml:/dagster_home/workspace.yaml:ro
     environment:
@@ -1144,7 +1143,6 @@ services:
       - dagster-daemon
       - run
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
       - ./configs/dagster/dagster-config.nightly.gpu.yml:/dagster_home/dagster.yaml:ro
       - ./configs/dagster/workspace.nightly.gpu.yml:/dagster_home/workspace.yaml:ro
     environment:
@@ -1433,8 +1431,6 @@ services:
     container_name: default-rag-pipeline
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:nightly
-    volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
     environment:
       PYTHONUNBUFFERED: 1
 
