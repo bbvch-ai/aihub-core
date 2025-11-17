@@ -165,7 +165,7 @@ LITELLM_UI_USERNAME="admin"
 LITELLM_UI_PASSWORD="REPLACE_WITH_RANDOM_STRING"
 LITELLM_MASTER_KEY="REPLACE_WITH_RANDOM_STRING"
 LITE_LLM_PROXY_BASE_URL="http://litellm:4000"
-LITE_LLM_PROXY_API_KEY="REPLACE_WITH_RANDOM_STRING"
+LITE_LLM_PROXY_API_KEY="GENERATE_AFTER_DEPLOYMENT_SEE_STEP_4"
 
 # =============================================================================
 # DATABASE CONFIGURATION
@@ -351,6 +351,54 @@ Initial startup takes 3-5 minutes while services initialize. All services should
 # Wait for healthy status
 docker compose -f docker-compose.latest.yml ps --format "table {{.Name}}\t{{.Status}}"
 ```
+
+### Generate LiteLLM API Key
+
+After LiteLLM is running, generate a dedicated API key for service-to-service communication. **Never use the master key directly for API access.**
+
+```bash
+# Wait for LiteLLM to be fully ready
+docker compose -f docker-compose.latest.yml logs litellm | grep "Uvicorn running"
+
+# Generate API key
+curl -X POST 'http://localhost:4000/key/generate' \
+  --header "Authorization: Bearer ${LITELLM_MASTER_KEY}" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "key_alias": "aihub-services",
+    "models": ["*"],
+    "metadata": {
+      "description": "Auto-generated key for AI-Hub services"
+    }
+  }'
+```
+
+**Expected Response:**
+
+```json
+{
+  "key": "sk-...",
+  "key_name": "aihub-services",
+  ...
+}
+```
+
+**Update your `.env` file** with the generated key:
+
+```bash
+# Copy the key value from the response (starts with "sk-...")
+LITE_LLM_PROXY_API_KEY="sk-YOUR_GENERATED_KEY_HERE"
+```
+
+**Restart affected services** to use the new key:
+
+```bash
+docker compose -f docker-compose.latest.yml restart api llm_wrapping_agent rag_agent default_rag_pipeline
+```
+
+::: tip Security Best Practice
+The master key should only be used for administrative operations like generating keys, managing users, and viewing analytics. All service-to-service communication should use generated API keys that can be rotated independently.
+:::
 
 ## Step 4: Verify Successful Deployment
 
