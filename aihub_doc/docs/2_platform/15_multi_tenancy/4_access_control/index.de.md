@@ -1,11 +1,13 @@
 ---
 title: Technische Referenz - Zugriffskontrolle
-source_sha: "f81e5298f3c4a8bd39739ff921a873d3b11a465dfb84ddee3ef6a4bf8b6245da"
+source_sha: f81e5298f3c4a8bd39739ff921a873d3b11a465dfb84ddee3ef6a4bf8b6245da
 ---
 
 # Technische Referenz: Zugriffskontrolle
 
-Dieses Kapitel dokumentiert die technischen Details, wie die Plattform die Zugriffskontrolle durchsetzt. Diese Informationen sind nützlich für Systemadministratoren, die Mandanten und Rollen konfigurieren, sowie für Entwickler, die die Plattform erweitern.
+Dieses Kapitel dokumentiert die technischen Details, wie die Plattform die Zugriffskontrolle durchsetzt. Diese
+Informationen sind nützlich für Systemadministratoren, die Mandanten und Rollen konfigurieren, sowie für Entwickler, die
+die Plattform erweitern.
 
 ## Format der Zugriffsregeln
 
@@ -33,9 +35,11 @@ aihub.admin.service.tenant              # Tenant management service
 
 ### Admin- vs. Benutzerregeln
 
-Regeln, die mit `aihub.admin.*` beginnen, gewähren administrativen Zugriff. Benutzer mit Admin-Zugriff haben automatisch gleichwertigen Benutzerzugriff.
+Regeln, die mit `aihub.admin.*` beginnen, gewähren administrativen Zugriff. Benutzer mit Admin-Zugriff haben automatisch
+gleichwertigen Benutzerzugriff.
 
-Ein Benutzer mit `aihub.admin.agent.>` kann auf Ressourcen zugreifen, die entweder `aihub.admin.agent.*` oder `aihub.user.agent.*` erfordern.
+Ein Benutzer mit `aihub.admin.agent.>` kann auf Ressourcen zugreifen, die entweder `aihub.admin.agent.*` oder
+`aihub.user.agent.*` erfordern.
 
 ## Berechtigungsauflösung
 
@@ -71,11 +75,13 @@ Der Zugriff erfordert das Bestehen beider Schichten:
 
 **Schicht 1: Mandantengrenze** – Erlaubt der Mandant diese Ressource überhaupt?
 
-Wenn die Zugriffsregeln des Mandanten die angeforderte Ressource nicht enthalten, wird der Zugriff sofort verweigert, ohne die Benutzerrollen zu überprüfen.
+Wenn die Zugriffsregeln des Mandanten die angeforderte Ressource nicht enthalten, wird der Zugriff sofort verweigert,
+ohne die Benutzerrollen zu überprüfen.
 
 **Schicht 2: Benutzerberechtigungen** – Erlaubt die Rolle des Benutzers diese Aktion?
 
-Nachdem bestätigt wurde, dass der Mandant die Ressource erlaubt, überprüft das System, ob die Rollen des Benutzers die erforderliche Berechtigung gewähren.
+Nachdem bestätigt wurde, dass der Mandant die Ressource erlaubt, überprüft das System, ob die Rollen des Benutzers die
+erforderliche Berechtigung gewähren.
 
 Beide müssen bestanden werden, damit der Zugriff gewährt wird.
 
@@ -100,14 +106,16 @@ Benutzer fordert an: `aihub.user.agent.finance.instance-1`
 
 Jeder Dienst benötigt eine Basisberechtigung: `aihub.user.service.<service-name>`
 
-Bevor ressourcenspezifische Berechtigungen geprüft werden, verifiziert das System, ob der Benutzer Zugriff auf den Dienst selbst hat.
+Bevor ressourcenspezifische Berechtigungen geprüft werden, verifiziert das System, ob der Benutzer Zugriff auf den
+Dienst selbst hat.
 
 Um auf einen Agenten zuzugreifen, benötigen Sie:
 
 - Dienstzugriff: `aihub.user.service.agent`
 - Ressourcenzugriff: `aihub.user.agent.<agent-class>.<agent-id>`
 
-Wenn der Mandant keinen Dienstzugriff gewährt, sind keine Ressourcen in diesem Dienst zugänglich, unabhängig von anderen Regeln.
+Wenn der Mandant keinen Dienstzugriff gewährt, sind keine Ressourcen in diesem Dienst zugänglich, unabhängig von anderen
+Regeln.
 
 ## Pfadparameter-Substitution
 
@@ -131,7 +139,8 @@ Das System gibt drei Stufen zurück:
 
 **ACCESS_ADMIN**: Admin-Zugriff zum Ändern, Konfigurieren oder Löschen der Ressource.
 
-Controller können zwischen Benutzer- und Admin-Zugriff zu Audit-Zwecken unterscheiden, obwohl viele Operationen nur prüfen, ob der Zugriff gewährt (nicht verweigert) wird.
+Controller können zwischen Benutzer- und Admin-Zugriff zu Audit-Zwecken unterscheiden, obwohl viele Operationen nur
+prüfen, ob der Zugriff gewährt (nicht verweigert) wird.
 
 ## Konfiguration über Umgebungsvariablen
 
@@ -183,7 +192,8 @@ Beim Erstellen von Zugriffsregeln gilt:
 - Sonderzeichen außer `.`, `-`, `_`, `*`, `>`
 - `>` mitten in einer Regel
 
-Das System validiert Regeln beim Erstellen oder Bearbeiten von Mandanten und Rollen. Ungültige Regeln lösen einen Fehler mit dem spezifischen Problem aus.
+Das System validiert Regeln beim Erstellen oder Bearbeiten von Mandanten und Rollen. Ungültige Regeln lösen einen Fehler
+mit dem spezifischen Problem aus.
 :::
 
 ## Gängige Muster
@@ -240,14 +250,15 @@ Benutzerzugriff überall, Admin-Zugriff nur auf Abteilungsressourcen.
 ::: details Checkliste zur Fehlerbehebung
 Bei der Fehlerbehebung überprüfen Sie diese Punkte der Reihe nach:
 
-1.  **Mandantenauswahl**: Überprüfen Sie, ob der Benutzer den beabsichtigten Mandanten ausgewählt hat
-2.  **Mandantengrenze**: Bestätigen Sie, dass die Zugriffsregeln des Mandanten die Ressource enthalten
-3.  **Benutzerzugehörigkeit**: Überprüfen Sie, ob der Benutzer dem Mandanten angehört
-4.  **Rollenzuweisung**: Prüfen Sie, ob der Benutzer Rollen in diesem Mandanten hat
-5.  **Rollenregeln**: Überprüfen Sie, was diese Rollen erlauben
-6.  **Dienstzugriff**: Überprüfen Sie, ob die Service-Level-Berechtigung existiert
+1. **Mandantenauswahl**: Überprüfen Sie, ob der Benutzer den beabsichtigten Mandanten ausgewählt hat
+2. **Mandantengrenze**: Bestätigen Sie, dass die Zugriffsregeln des Mandanten die Ressource enthalten
+3. **Benutzerzugehörigkeit**: Überprüfen Sie, ob der Benutzer dem Mandanten angehört
+4. **Rollenzuweisung**: Prüfen Sie, ob der Benutzer Rollen in diesem Mandanten hat
+5. **Rollenregeln**: Überprüfen Sie, was diese Rollen erlauben
+6. **Dienstzugriff**: Überprüfen Sie, ob die Service-Level-Berechtigung existiert
 
-Die Plattform gibt detaillierte Fehlermeldungen zurück, die anzeigen, welche Berechtigung fehlgeschlagen ist. Verwenden Sie dies, um die fehlende Regel zu identifizieren.
+Die Plattform gibt detaillierte Fehlermeldungen zurück, die anzeigen, welche Berechtigung fehlgeschlagen ist. Verwenden
+Sie dies, um die fehlende Regel zu identifizieren.
 :::
 
 ## Leistungshinweise
@@ -259,4 +270,5 @@ Die Zugriffsprüfung ist optimiert:
 - Komplexe Wildcard-Muster haben minimale Auswirkungen auf die Leistung
 - Rollenänderungen treten sofort ohne Cache-Verzögerungen in Kraft
 
-Das Wechseln von Mandanten löst eine vollständige Cache-Invalidierung im Frontend aus, wodurch Daten neu abgerufen werden.
+Das Wechseln von Mandanten löst eine vollständige Cache-Invalidierung im Frontend aus, wodurch Daten neu abgerufen
+werden.

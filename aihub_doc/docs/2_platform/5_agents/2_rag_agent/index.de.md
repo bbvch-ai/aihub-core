@@ -69,7 +69,7 @@ Prozess hilft bei der Beantwortung von Fragen, die Informationen aus mehreren Do
 
 ### Guardrails
 
-Der Agent kann [Input- und Output-Guards](/de/docs/2_platform/13_language_models/3_guards/) verwenden, um Abfragen und Antworten zu
-validieren. Zum Beispiel prüft der Context Sufficiency Guard, ob die abgerufenen Informationen ausreichen, um eine Frage
-zu beantworten. Wenn der Kontext unzureichend ist, teilt der Agent dies dem Benutzer mit, anstatt eine halluzinierte
-Antwort zu generieren.
+Der Agent kann [Input- und Output-Guards](/de/docs/2_platform/13_language_models/3_guards/) verwenden, um Abfragen und
+Antworten zu validieren. Zum Beispiel prüft der Context Sufficiency Guard, ob die abgerufenen Informationen ausreichen,
+um eine Frage zu beantworten. Wenn der Kontext unzureichend ist, teilt der Agent dies dem Benutzer mit, anstatt eine
+halluzinierte Antwort zu generieren.

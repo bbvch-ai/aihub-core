@@ -1,6 +1,6 @@
 ---
 title: Voraussetzungen
-source_sha: "468d25a4e6af4e01b32f598e54e934fa3111dc6430ca835013e7d8b21b026054"
+source_sha: 468d25a4e6af4e01b32f598e54e934fa3111dc6430ca835013e7d8b21b026054
 ---
 
 # Voraussetzungen
@@ -10,8 +10,10 @@ Dieser Leitfaden behandelt die Voraussetzungen für die Bereitstellung der AI-Hu
 ::: tip Wählen Sie Ihren Bereitstellungstyp
 Die Voraussetzungen unterscheiden sich je nach Bereitstellungstyp:
 
-- **Produktionsbereitstellung**: Bereitstellung auf einem Server mit einem echten Domainnamen und automatischen SSL-Zertifikaten
-- **Lokale Bereitstellung**: Ausführung auf Ihrem lokalen Computer mit `127.0.0.1.nip.io` und selbstsignierten Zertifikaten
+- **Produktionsbereitstellung**: Bereitstellung auf einem Server mit einem echten Domainnamen und automatischen
+  SSL-Zertifikaten
+- **Lokale Bereitstellung**: Ausführung auf Ihrem lokalen Computer mit `127.0.0.1.nip.io` und selbstsignierten
+  Zertifikaten
 
 Befolgen Sie nur die Abschnitte, die für Ihren Bereitstellungstyp relevant sind.
 :::
@@ -38,7 +40,8 @@ Diese Anforderungen gelten sowohl für Produktions- als auch für lokale Bereits
 
 ::: warning
 Die Plattform führt mehrere Dienste gleichzeitig aus (Datenbanken, Vektorspeicher, LLM-Proxies, Weboberflächen,
-Verarbeitungs-Engines). Systeme unterhalb der Mindestspezifikationen werden Dienstfehler oder eine verminderte Leistung aufweisen.
+Verarbeitungs-Engines). Systeme unterhalb der Mindestspezifikationen werden Dienstfehler oder eine verminderte Leistung
+aufweisen.
 :::
 
 ### Softwareanforderungen
@@ -73,9 +76,9 @@ Alle Befehle müssen erfolgreich abgeschlossen werden.
 
 ### Einrichtung des Authentifizierungsanbieters
 
-Die Plattform erfordert einen OAuth2/OpenID Connect-Identitätsanbieter für sowohl Produktions- als auch lokale Bereitstellungen.
-Dieser Leitfaden dokumentiert die Einrichtung von Azure Entra ID. Andere Anbieter (Google, Okta, Auth0) können nach
-ähnlichen Mustern konfiguriert werden.
+Die Plattform erfordert einen OAuth2/OpenID Connect-Identitätsanbieter für sowohl Produktions- als auch lokale
+Bereitstellungen. Dieser Leitfaden dokumentiert die Einrichtung von Azure Entra ID. Andere Anbieter (Google, Okta,
+Auth0) können nach ähnlichen Mustern konfiguriert werden.
 
 #### Einrichtung von Azure Entra ID
 
@@ -180,12 +183,14 @@ Erstellen Sie drei App-Rollen nach diesem Prozess:
 
 ::: tip
 Die Rolle `AIHubDeveloper` ist erforderlich, um auf das Dagster Pipeline-Orchestrierungs-Dashboard und die SeaweedFS
-Data Lake-Konsole zuzugreifen. Benutzer ohne diese Rolle können weiterhin die Haupt-AI-Hub-Oberfläche und OpenWebUI nutzen.
+Data Lake-Konsole zuzugreifen. Benutzer ohne diese Rolle können weiterhin die Haupt-AI-Hub-Oberfläche und OpenWebUI
+nutzen.
 :::
 
 **Schritt 6: SPA-Umleitungs-URIs konfigurieren**
 
-Single-Page Application (SPA)-Umleitungs-URIs sind für die Hauptweb-Oberfläche mit mehrsprachiger Unterstützung erforderlich.
+Single-Page Application (SPA)-Umleitungs-URIs sind für die Hauptweb-Oberfläche mit mehrsprachiger Unterstützung
+erforderlich.
 
 1. Navigieren Sie zu **„Authentifizierung“** → **„Plattform hinzufügen“** → **„Single-page-Anwendung“**
 
@@ -251,7 +256,8 @@ Webanwendungs-Umleitungs-URIs sind für integrierte Dienste (OpenWebUI, Dagster,
 ::: warning Unterscheidung des Plattformtyps
 Die Konfiguration des Plattformtyps (SPA vs. Web) ist entscheidend für die Auswahl des OAuth2-Flows:
 
-- **SPA-Plattform**: Sprachspezifische Callbacks (`/de/`, `/en/`, `/fr/`, `/it/`) verwenden den PKCE-Flow ohne Client-Geheimnis.
+- **SPA-Plattform**: Sprachspezifische Callbacks (`/de/`, `/en/`, `/fr/`, `/it/`) verwenden den PKCE-Flow ohne
+  Client-Geheimnis.
 - **Web-Plattform**: Service-Callbacks (`openwebui`, `dagster`, `datalake`) verwenden den Autorisierungscode-Flow mit
   Client-Geheimnis.
 
@@ -275,13 +281,14 @@ Diese Werte benötigen Sie während der Konfiguration der Plattformbereitstellun
 ## Voraussetzungen für die Produktionsbereitstellung
 
 ::: danger Nur für Produktionsbereitstellungen
-**Überspringen Sie diesen gesamten Abschnitt, wenn Sie lokal testen.** Diese Schritte sind nur erforderlich, wenn Sie auf
-einem Server mit einem echten Domainnamen bereitstellen.
+**Überspringen Sie diesen gesamten Abschnitt, wenn Sie lokal testen.** Diese Schritte sind nur erforderlich, wenn Sie
+auf einem Server mit einem echten Domainnamen bereitstellen.
 :::
 
 ### DNS-Konfiguration
 
-Konfigurieren Sie DNS-Einträge für Ihre Domain. Die Plattform erfordert **sieben Subdomains**, die auf die öffentliche IP-Adresse Ihres Servers verweisen:
+Konfigurieren Sie DNS-Einträge für Ihre Domain. Die Plattform erfordert **sieben Subdomains**, die auf die öffentliche
+IP-Adresse Ihres Servers verweisen:
 
 - `aihub.example.com` – Haupt-Weboberfläche
 - `openwebui.aihub.example.com` – Chat-UI
@@ -299,8 +306,8 @@ Subdomains, die auf die IP-Adresse Ihres Servers verweisen.
 - Die VM muss in der Lage sein, ihre eigenen Domainnamen aufzulösen (interne DNS-Auflösung).
 - Konfigurieren Sie die Nameserver korrekt, um OAuth-Authentifizierungs-Timeouts zu vermeiden.
 
-Siehe [Netzwerkanforderungen](/de/docs/2_platform/3_deployment_guide/7_network_requirements/) für detaillierte DNS-Konfiguration und
-Fehlerbehebung.
+Siehe [Netzwerkanforderungen](/de/docs/2_platform/3_deployment_guide/7_network_requirements/) für detaillierte
+DNS-Konfiguration und Fehlerbehebung.
 :::
 
 ---
@@ -308,14 +315,14 @@ Fehlerbehebung.
 ## Voraussetzungen für die lokale Bereitstellung
 
 ::: danger Nur für die lokale Bereitstellung
-**Überspringen Sie diesen gesamten Abschnitt, wenn Sie in Produktion bereitstellen.** Diese Schritte sind nur erforderlich,
-wenn Sie die Plattform auf Ihrem lokalen Rechner bereitstellen.
+**Überspringen Sie diesen gesamten Abschnitt, wenn Sie in Produktion bereitstellen.** Diese Schritte sind nur
+erforderlich, wenn Sie die Plattform auf Ihrem lokalen Rechner bereitstellen.
 :::
 
 ### mkcert installieren
 
-Für die lokale Bereitstellung mit HTTPS-Unterstützung müssen Sie **mkcert** installieren, um selbstsignierte SSL-Zertifikate zu
-generieren, die von Ihrem Browser als vertrauenswürdig eingestuft werden.
+Für die lokale Bereitstellung mit HTTPS-Unterstützung müssen Sie **mkcert** installieren, um selbstsignierte
+SSL-Zertifikate zu generieren, die von Ihrem Browser als vertrauenswürdig eingestuft werden.
 
 ::: warning
 Verwenden Sie selbstsignierte SSL-Zertifikate nur für die lokale Entwicklung. Verwenden Sie diese niemals in
@@ -355,14 +362,14 @@ mkcert -version
 ```
 
 ::: tip Was ist mkcert?
-**mkcert** ist ein Tool, das lokal vertrauenswürdige SSL-Zertifikate ohne komplexe Konfiguration generiert. Es installiert
-automatisch eine lokale Zertifizierungsstelle (CA) in Ihrem System-Vertrauensspeicher, sodass die generierten Zertifikate
-von Ihrem Browser als vertrauenswürdig eingestuft werden.
+**mkcert** ist ein Tool, das lokal vertrauenswürdige SSL-Zertifikate ohne komplexe Konfiguration generiert. Es
+installiert automatisch eine lokale Zertifizierungsstelle (CA) in Ihrem System-Vertrauensspeicher, sodass die
+generierten Zertifikate von Ihrem Browser als vertrauenswürdig eingestuft werden.
 :::
 
 ---
 
 ## Nächste Schritte
 
-Fahren Sie mit der [Ein-Befehl-Bereitstellung](/de/docs/2_platform/1_quick_start/2_one_command_deployment/) fort, um die Plattform
-mit den aufgezeichneten Konfigurationswerten bereitzustellen.
+Fahren Sie mit der [Ein-Befehl-Bereitstellung](/de/docs/2_platform/1_quick_start/2_one_command_deployment/) fort, um die
+Plattform mit den aufgezeichneten Konfigurationswerten bereitzustellen.

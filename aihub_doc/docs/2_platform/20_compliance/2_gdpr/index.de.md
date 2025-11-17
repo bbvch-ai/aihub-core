@@ -132,8 +132,10 @@ rollenbasierte Zugriffskontrolle stoppt die Verarbeitung.
 
 Die Plattform implementiert Datenschutz durch Design (privacy by design) mit obligatorischer TLS/SSL-Verschlüsselung,
 "default-deny" Zugriffskontrolle, automatischer Audit-Protokollierung, automatischer Löschung ephemerer Daten nach 30
-Tagen und minimaler Datenerhebung. Details finden Sie unter [Authentifizierung](/de/docs/2_platform/19_security/1_authentication/),
-[Verschlüsselung](/de/docs/2_platform/19_security/5_data_encryption/) und [Zugriffskontrolle](/de/docs/2_platform/11_access_management/).
+Tagen und minimaler Datenerhebung. Details finden Sie unter
+[Authentifizierung](/de/docs/2_platform/19_security/1_authentication/),
+[Verschlüsselung](/de/docs/2_platform/19_security/5_data_encryption/) und
+[Zugriffskontrolle](/de/docs/2_platform/11_access_management/).
 
 ## Internationale Datenübermittlungen
 
