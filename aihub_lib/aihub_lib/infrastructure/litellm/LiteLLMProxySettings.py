@@ -48,6 +48,11 @@ class LiteLLMProxySettings(EnvironmentSettings):
 
     @property
     def httpx_client(self) -> httpx.Client:
+        if self.API_KEY is None:
+            raise ValueError(
+                "LITE_LLM_PROXY_API_KEY environment variable is required but not set. "
+                "Please set it in your .env file."
+            )
         return httpx.Client(
             headers={"Authorization": f"Bearer {self.API_KEY.get_secret_value()}"},
             base_url=self.BASE_URL,
@@ -55,6 +60,11 @@ class LiteLLMProxySettings(EnvironmentSettings):
 
     @property
     def httpx_aclient(self) -> httpx.AsyncClient:
+        if self.API_KEY is None:
+            raise ValueError(
+                "LITE_LLM_PROXY_API_KEY environment variable is required but not set. "
+                "Please set it in your .env file."
+            )
         return httpx.AsyncClient(
             headers={"Authorization": f"Bearer {self.API_KEY.get_secret_value()}"},
             base_url=self.BASE_URL,
@@ -62,6 +72,11 @@ class LiteLLMProxySettings(EnvironmentSettings):
 
     @property
     def openai_aclient(self) -> openai.AsyncClient:
+        if self.API_KEY is None:
+            raise ValueError(
+                "LITE_LLM_PROXY_API_KEY environment variable is required but not set. "
+                "Please set it in your .env file."
+            )
         return openai.AsyncClient(
             api_key=self.API_KEY.get_secret_value(),
             base_url=self.BASE_URL,
@@ -70,6 +85,11 @@ class LiteLLMProxySettings(EnvironmentSettings):
     @property
     def httpx_admin_client(self) -> httpx.Client:
         """HTTP client for administrative operations using master key."""
+        if self.MASTER_KEY is None:
+            raise ValueError(
+                "LITE_LLM_PROXY_MASTER_KEY environment variable is required for administrative operations but not set. "
+                "Please set it in your .env file (typically same value as LITELLM_MASTER_KEY)."
+            )
         return httpx.Client(
             headers={"Authorization": f"Bearer {self.MASTER_KEY.get_secret_value()}"},
             base_url=self.BASE_URL,
@@ -78,6 +98,11 @@ class LiteLLMProxySettings(EnvironmentSettings):
     @property
     def httpx_admin_aclient(self) -> httpx.AsyncClient:
         """Async HTTP client for administrative operations using master key."""
+        if self.MASTER_KEY is None:
+            raise ValueError(
+                "LITE_LLM_PROXY_MASTER_KEY environment variable is required for administrative operations but not set. "
+                "Please set it in your .env file (typically same value as LITELLM_MASTER_KEY)."
+            )
         return httpx.AsyncClient(
             headers={"Authorization": f"Bearer {self.MASTER_KEY.get_secret_value()}"},
             base_url=self.BASE_URL,
