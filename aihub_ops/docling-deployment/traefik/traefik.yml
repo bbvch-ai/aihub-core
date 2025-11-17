@@ -28,7 +28,7 @@ api:
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: ${ACME_EMAIL:-admin@ai-agents.ch}
+      email: admin@ai-agents.ch
       storage: /etc/traefik/acme.json
       httpChallenge:
         entryPoint: web

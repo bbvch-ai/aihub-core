@@ -1,12 +1,39 @@
 services:
   # ===================================================================
+  # PostgreSQL Database
+  # ===================================================================
+  # Database for LiteLLM cost tracking and usage logs
+  # ===================================================================
+  postgres:
+    container_name: postgres
+    image: postgres:17-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: litellm
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+
+  # ===================================================================
   # Traefik Reverse Proxy
   # ===================================================================
   # Provides HTTPS termination with Let's Encrypt and routing
   # ===================================================================
   traefik:
     container_name: traefik
-    image: ghcr.io/bbvch-ai/aihub-core/traefik:v3.4.4
+    image: traefik:v3.6.1
     restart: always
     ports:
       - "80:80"
@@ -85,13 +112,14 @@ services:
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
       UI_USERNAME: ${LITELLM_UI_USERNAME}
       UI_PASSWORD: ${LITELLM_UI_PASSWORD}
-      DATABASE_URL: "sqlite:////app/data/litellm.db"
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/litellm"
       STORE_MODEL_IN_DB: "false"
     volumes:
       - ./litellm/config.yml:/app/config.yml:ro
-      - litellm-data:/app/data
     command: --config /app/config.yml --detailed_debug
     depends_on:
+      postgres:
+        condition: service_healthy
       vllm-docling:
         condition: service_healthy
     healthcheck:
@@ -120,7 +148,7 @@ services:
       - "traefik.http.routers.litellm.middlewares=security-headers"
 
 volumes:
-  huggingface-cache:
+  postgres-data:
     driver: local
-  litellm-data:
+  huggingface-cache:
     driver: local
