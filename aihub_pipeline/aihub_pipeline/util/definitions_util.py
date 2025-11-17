@@ -96,10 +96,10 @@ def default_definitions(
     """
     document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 
-    data_lake_key = AssetKey([datalake_container_name, "data_lake"])
-    document_key = AssetKey([datalake_container_name, "documents"])
-    nodes_key = AssetKey([datalake_container_name, "nodes"])
-    removed_documents_key = AssetKey([datalake_container_name, "removed_documents"])
+    data_lake_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "data_lake"])
+    document_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "documents"])
+    nodes_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "nodes"])
+    removed_documents_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "removed_documents"])
 
     observable_asset = observable_data_lake_factory(data_lake_key, document_partitions)
     assets = [
@@ -196,9 +196,11 @@ def default_sharepoint_to_datalake_definitions(
     """
     sharepoint_partitions = DynamicPartitionsDefinition(name="sharepoint_partitions")
 
-    sharepoint_key = AssetKey([datalake_container_name, "sharepoint"])
-    data_lake_files_key = AssetKey([datalake_container_name, "data_lake_files"])
-    removed_data_lake_files_key = AssetKey([datalake_container_name, "removed_data_lake_files"])
+    sharepoint_key = AssetKey([datalake_container_name, "sharepoint_to_datalake", "sharepoint"])
+    data_lake_files_key = AssetKey([datalake_container_name, "sharepoint_to_datalake", "data_lake_files"])
+    removed_data_lake_files_key = AssetKey(
+        [datalake_container_name, "sharepoint_to_datalake", "removed_data_lake_files"]
+    )
 
     observable_sharepoint_asset = observable_share_point_factory(sharepoint_key, sharepoint_partitions)
 
@@ -291,9 +293,11 @@ def default_local_filesystem_to_datalake_definitions(
     """
     filesystem_partitions = DynamicPartitionsDefinition(name="local_fs_partitions")
 
-    filesystem_key = AssetKey([datalake_container_name, "local_fs"])
-    data_lake_files_key = AssetKey([datalake_container_name, "data_lake_files"])
-    removed_data_lake_files_key = AssetKey([datalake_container_name, "removed_data_lake_files"])
+    filesystem_key = AssetKey([datalake_container_name, "local_fs_to_datalake", "local_fs"])
+    data_lake_files_key = AssetKey([datalake_container_name, "local_fs_to_datalake", "data_lake_files"])
+    removed_data_lake_files_key = AssetKey(
+        [datalake_container_name, "local_fs_to_datalake", "removed_data_lake_files"]
+    )
 
     observable_filesystem_asset = observable_local_file_system_factory(filesystem_key, filesystem_partitions)
 
