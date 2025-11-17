@@ -1,0 +1,14 @@
+# Environment variables (contains secrets)
+.env
+
+# Let's Encrypt certificates
+traefik/acme.json
+
+# LiteLLM database
+litellm-data/
+
+# Backups
+*.tar.gz
+
+# Docker volumes
+.docker-volumes/

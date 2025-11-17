@@ -1,0 +1,126 @@
+services:
+  # ===================================================================
+  # Traefik Reverse Proxy
+  # ===================================================================
+  # Provides HTTPS termination with Let's Encrypt and routing
+  # ===================================================================
+  traefik:
+    container_name: traefik
+    image: ghcr.io/bbvch-ai/aihub-core/traefik:v3.4.4
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik/traefik.yml:/etc/traefik/traefik.yml:ro"
+      - "./traefik/acme.json:/etc/traefik/acme.json"
+    environment:
+      TRAEFIK_LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    labels:
+      - "traefik.enable=true"
+      # Dashboard
+      - "traefik.http.routers.dashboard.rule=Host(`${DOMAIN}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.tls.certresolver=letsencrypt"
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+
+  # ===================================================================
+  # vLLM - Model Server
+  # ===================================================================
+  # Serves the docling granite model via OpenAI-compatible API
+  # ===================================================================
+  vllm-docling:
+    container_name: vllm-docling
+    image: ghcr.io/bbvch-ai/aihub-core/vllm-openai:v0.11.0
+    restart: always
+    volumes:
+      - huggingface-cache:/root/.cache/huggingface
+    environment:
+      HF_HOME: /root/.cache/huggingface
+      HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
+      CUDA_VISIBLE_DEVICES: "0"
+    command: >
+      --model ibm-granite/granite-docling-258M
+      --served-model-name granite-docling
+      --port 8000
+      --host 0.0.0.0
+      --max-model-len 8192
+      --trust-remote-code
+      --gpu-memory-utilization 0.90
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+
+  # ===================================================================
+  # LiteLLM - API Gateway
+  # ===================================================================
+  # Provides unified API with authentication and cost tracking
+  # ===================================================================
+  litellm:
+    container_name: litellm
+    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.79.1-stable
+    restart: always
+    environment:
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
+      UI_USERNAME: ${LITELLM_UI_USERNAME}
+      UI_PASSWORD: ${LITELLM_UI_PASSWORD}
+      DATABASE_URL: "sqlite:////app/data/litellm.db"
+      STORE_MODEL_IN_DB: "false"
+    volumes:
+      - ./litellm/config.yml:/app/config.yml:ro
+      - litellm-data:/app/data
+    command: --config /app/config.yml --detailed_debug
+    depends_on:
+      vllm-docling:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:4000/health/liveliness"]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels:
+      - "traefik.enable=true"
+      # API endpoint
+      - "traefik.http.routers.litellm.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.litellm.entrypoints=websecure"
+      - "traefik.http.routers.litellm.tls.certresolver=letsencrypt"
+      - "traefik.http.services.litellm.loadbalancer.server.port=4000"
+      # Security headers
+      - "traefik.http.middlewares.security-headers.headers.sslredirect=true"
+      - "traefik.http.middlewares.security-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.security-headers.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.security-headers.headers.stsPreload=true"
+      - "traefik.http.routers.litellm.middlewares=security-headers"
+
+volumes:
+  huggingface-cache:
+    driver: local
+  litellm-data:
+    driver: local

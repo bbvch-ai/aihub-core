@@ -1,0 +1,63 @@
+# ===================================================================
+# LiteLLM Configuration for Docling Granite Model
+# ===================================================================
+
+model_list:
+  # Docling Granite Model for OCR and Document Understanding
+  - model_name: granite-docling
+    litellm_params:
+      model: openai/granite-docling
+      api_base: http://vllm-docling:8000/v1
+      api_key: XXX  # Dummy key for internal communication
+    model_info:
+      mode: chat
+      max_input_tokens: 8192
+      max_output_tokens: 8192
+      supports_function_calling: false
+      supports_vision: true
+
+  # Alias for compatibility
+  - model_name: text-generation/ocr
+    litellm_params:
+      model: openai/granite-docling
+      api_base: http://vllm-docling:8000/v1
+      api_key: XXX
+    model_info:
+      mode: chat
+      max_input_tokens: 8192
+      max_output_tokens: 8192
+      supports_function_calling: false
+      supports_vision: true
+
+# ===================================================================
+# General Settings
+# ===================================================================
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  database_url: os.environ/DATABASE_URL
+  store_model_in_db: false
+  store_prompts_in_spend_logs: true
+  maximum_spend_logs_retention_period: 90d
+  maximum_spend_logs_retention_interval: 30d
+
+# ===================================================================
+# LiteLLM Settings
+# ===================================================================
+litellm_settings:
+  telemetry: false
+  json_logs: true
+  drop_params: true
+  success_callback: []
+  failure_callback: []
+
+# ===================================================================
+# Router Settings
+# ===================================================================
+router_settings:
+  routing_strategy: "simple-shuffle"
+  retry_policy:
+    "TimeoutErrorRetries": 2
+    "RateLimitErrorRetries": 3
+    "InternalServerErrorRetries": 2
+  allowed_fails: 3
+  cooldown_time: 30
