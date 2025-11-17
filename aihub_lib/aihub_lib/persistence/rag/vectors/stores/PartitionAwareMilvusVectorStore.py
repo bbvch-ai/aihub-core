@@ -12,6 +12,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import NAMESPACE
 from aihub_lib.persistence.rag.vectors.stores.MilvusPartitionManager import (
     get_partition_name_for_namespace,
     load_partitions_for_namespaces,
+    MAX_PARTITIONS,
 )
 
 try:
@@ -46,14 +47,7 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
         if self._has_manual_partitions is None:
             partitions = self.client.list_partitions(collection_name=self.collection_name)
             manual_partitions = [p for p in partitions if p.startswith("partition_")]
-            self._has_manual_partitions = len(manual_partitions) == 1023
-
-            if not self._has_manual_partitions:
-                logging.warning(
-                    f"Collection '{self.collection_name}' has {len(manual_partitions)} manual partitions "
-                    f"(expected 1023). Falling back to base class behavior without partition optimization. "
-                    f"To enable partition optimization, recreate collection with create_manual_partitions()."
-                )
+            self._has_manual_partitions = len(manual_partitions) == MAX_PARTITIONS
 
         return self._has_manual_partitions
 
