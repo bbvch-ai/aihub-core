@@ -34,7 +34,7 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
     - add(): Just set partition_name= per batch
     - query(): Just set partition_names= in kwargs
 
-    Backward compatibility: Falls back to base class for collections without 1023 manual partitions.
+    Backward compatibility: Falls back to base class for collections that do not have exactly 1023 manual partitions (e.g., collections created before this PR or with a different partition count).
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

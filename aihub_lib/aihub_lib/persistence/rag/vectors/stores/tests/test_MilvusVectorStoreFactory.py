@@ -118,7 +118,7 @@ def given_collection_name(context, collection_name: str):
 
 @given(parsers.parse("I create a vector store with {num_partitions:d} partitions"))
 def given_create_vector_store_with_partitions(context, num_partitions: int):
-    """Create a vector store with manual partitions (num_partitions parameter ignored for backward compat)."""
+    """Create a vector store; num_partitions parameter is ignored and retained only for test step compatibility."""
     context["num_partitions"] = num_partitions
     _create_vector_store(context)  # Always creates with manual partitions now
 

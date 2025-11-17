@@ -21,7 +21,7 @@ def get_partition_name(partition_id: int) -> str:
 
 
 def create_manual_partitions(client: MilvusClient, collection_name: str) -> None:
-    """Idempotent creation of all 1024 partitions."""
+    """Idempotent creation of all 1023 manual partitions."""
     for partition_id in range(MAX_PARTITIONS):
         partition_name = get_partition_name(partition_id)
         if not client.has_partition(collection_name=collection_name, partition_name=partition_name):
