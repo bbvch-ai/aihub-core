@@ -1,0 +1,249 @@
+from collections.abc import Sequence
+from typing import Any
+
+from llama_index.core.schema import BaseNode
+from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryResult
+from llama_index.vector_stores.milvus import MilvusVectorStore
+
+from aihub_lib.persistence.rag.vectors.node_metadata import NAMESPACE
+from aihub_lib.persistence.rag.vectors.stores.MilvusPartitionManager import get_partition_name_for_namespace
+
+# Lazy imports for hybrid search (only imported if hybrid mode is used)
+try:
+    from pymilvus.client.abstract import AnnSearchRequest
+    from pymilvus.client.types import RRFRanker, WeightedRanker
+except ImportError:
+    AnnSearchRequest = None
+    RRFRanker = None
+    WeightedRanker = None
+
+
+class PartitionAwareMilvusVectorStore(MilvusVectorStore):
+    """
+    Extends MilvusVectorStore to insert/query specific partitions based on namespace.
+
+    Memory efficiency: Milvus only loads/searches partitions you specify, not entire collection.
+
+    Backward compatibility: Falls back to base class behavior for collections without manual partitions.
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._has_manual_partitions: bool | None = None
+
+    def _check_has_manual_partitions(self) -> bool:
+        """Check if collection has 1023 manual partitions (partition_0...partition_1022)."""
+        if self._has_manual_partitions is None:
+            partitions = self.client.list_partitions(collection_name=self.collection_name)
+            manual_partitions = [p for p in partitions if p.startswith("partition_")]
+            self._has_manual_partitions = len(manual_partitions) == 1023
+
+            if not self._has_manual_partitions:
+                import logging
+
+                logging.warning(
+                    f"Collection '{self.collection_name}' has {len(manual_partitions)} manual partitions "
+                    f"(expected 1023). Falling back to base class behavior without partition optimization. "
+                    f"To enable partition optimization, recreate collection with create_manual_partitions()."
+                )
+
+        return self._has_manual_partitions
+
+    def add(self, nodes: Sequence[BaseNode], **add_kwargs: Any) -> list[str]:
+        """Insert nodes into their hashed partitions (or use base class if no manual partitions)."""
+        if not nodes:
+            return []
+
+        # Backward compatibility: fallback to base class if no manual partitions
+        if not self._check_has_manual_partitions():
+            return super().add(nodes, **add_kwargs)
+
+        # Group nodes by namespace
+        nodes_by_namespace: dict[str, list[BaseNode]] = {}
+        for node in nodes:
+            namespace = node.metadata.get(NAMESPACE, "")
+            if namespace not in nodes_by_namespace:
+                nodes_by_namespace[namespace] = []
+            nodes_by_namespace[namespace].append(node)
+
+        # Insert each namespace group into its partition
+        from llama_index.core.vector_stores.utils import node_to_metadata_dict
+        from llama_index.vector_stores.milvus.base import iter_batch
+        from llama_index.vector_stores.milvus.utils import BaseSparseEmbeddingFunction
+
+        all_ids: list[str] = []
+        for namespace, ns_nodes in nodes_by_namespace.items():
+            partition_name = get_partition_name_for_namespace(namespace)
+
+            insert_list = []
+            insert_ids = []
+
+            for node in ns_nodes:
+                entry = node_to_metadata_dict(node, remove_text=True, text_field=self.text_key)
+                entry[self.text_key] = node.dict()[self.text_key]
+                entry["id"] = node.node_id
+
+                if self.enable_dense:
+                    entry[self.embedding_field] = node.embedding
+
+                if self.enable_sparse:
+                    if isinstance(self.sparse_embedding_function, BaseSparseEmbeddingFunction):
+                        entry[self.sparse_embedding_field] = self.sparse_embedding_function.encode_documents(
+                            [node.text]
+                        )[0]
+                    # else: BaseMilvusBuiltInFunction - Milvus computes server-side
+
+                insert_ids.append(node.node_id)
+                insert_list.append(entry)
+
+            # Insert with partition_name
+            executor = self.client.upsert if self.upsert_mode else self.client.insert
+            for batch in iter_batch(insert_list, self.batch_size):
+                executor(self.collection_name, batch, partition_name=partition_name)
+
+            all_ids.extend(insert_ids)
+
+        if add_kwargs.get("force_flush", False):
+            self.client.flush(self.collection_name)
+
+        return all_ids
+
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        """
+        Query only partitions containing target namespaces.
+
+        Milvus requires partitions to be loaded before searching. We explicitly load them here.
+        Base class bug: doesn't pass kwargs to _hybrid_search(), so we intercept HYBRID mode.
+
+        Backward compatibility: Falls back to base class if no manual partitions.
+        """
+        from llama_index.core.vector_stores.types import VectorStoreQueryMode
+
+        from aihub_lib.persistence.rag.vectors.stores.MilvusPartitionManager import load_partitions_for_namespaces
+
+        # Backward compatibility: fallback to base class if no manual partitions
+        if not self._check_has_manual_partitions():
+            return super().query(query, **kwargs)
+
+        # Extract namespaces and load their partitions
+        namespaces = self._extract_namespaces_from_filters(query)
+        if namespaces:
+            # Load partitions for these namespaces (memory efficient: only load what we need)
+            partition_names = load_partitions_for_namespaces(
+                client=self.client, collection_name=self.collection_name, namespaces=namespaces
+            )
+            kwargs["milvus_partition_names"] = partition_names
+
+        # HYBRID mode workaround: base class doesn't pass kwargs, so handle it ourselves
+        if query.mode == VectorStoreQueryMode.HYBRID:
+            return self._query_hybrid_mode(query, **kwargs)
+
+        # All other modes work correctly with base class
+        return super().query(query, **kwargs)
+
+    def _query_hybrid_mode(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        """Handle HYBRID mode with partition support (workaround for base class limitation)."""
+        from llama_index.core.vector_stores.types import VectorStoreQueryResult
+
+        filter_string_expr, output_fields = self._prepare_before_search(query, **kwargs)
+        custom_string_expr = kwargs.pop("string_expr", "")
+        string_expr = filter_string_expr if filter_string_expr else custom_string_expr
+
+        nodes, similarities, ids = self._hybrid_search(query, string_expr, output_fields, **kwargs)
+        return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
+
+    def _extract_namespaces_from_filters(self, query: VectorStoreQuery) -> list[str]:
+        """Extract namespace values from query filters (handles 2-level nesting)."""
+        if not query.filters or not hasattr(query.filters, "filters"):
+            return []
+
+        namespaces: list[str] = []
+        for filter_item in query.filters.filters:
+            # Check if this is a direct namespace filter
+            if self._is_namespace_filter(filter_item):
+                namespaces.append(filter_item.value)
+            # Check nested filters (OR groups with AND conditions)
+            elif hasattr(filter_item, "filters"):
+                for nested in filter_item.filters:
+                    if self._is_namespace_filter(nested):
+                        namespaces.append(nested.value)
+
+        return namespaces
+
+    @staticmethod
+    def _is_namespace_filter(filter_item: Any) -> bool:
+        """Check if filter item is a namespace filter with string value."""
+        return (
+            hasattr(filter_item, "key")
+            and filter_item.key == NAMESPACE
+            and hasattr(filter_item, "value")
+            and isinstance(filter_item.value, str)
+        )
+
+    def _hybrid_search(
+        self, query: VectorStoreQuery, string_expr: str, output_fields: list[str], **kwargs: Any
+    ) -> tuple[list[BaseNode], list[float], list[str]]:
+        """Override hybrid search to support partition_names."""
+        from llama_index.vector_stores.milvus.utils import BaseSparseEmbeddingFunction
+
+        if AnnSearchRequest is None or WeightedRanker is None or RRFRanker is None:
+            raise ValueError("Hybrid retrieval is only supported in Milvus 2.4.0 or later.")
+
+        # Prepare sparse search request
+        if isinstance(self.sparse_embedding_function, BaseSparseEmbeddingFunction):
+            sparse_emb = self.sparse_embedding_function.encode_queries([query.query_str])[0]
+            query_data = [sparse_emb]
+            sparse_metric_type = "IP"
+        else:  # BaseMilvusBuiltInFunction
+            query_data = [query.query_str]
+            sparse_metric_type = "BM25"
+
+        sparse_req = AnnSearchRequest(
+            data=query_data,
+            anns_field=self.sparse_embedding_field,
+            param={"metric_type": sparse_metric_type},
+            limit=query.similarity_top_k,
+            expr=string_expr,
+        )
+
+        # Prepare dense search request
+        dense_search_params = {
+            "metric_type": self.similarity_metric,
+            "params": self.search_config,
+        }
+        dense_req = AnnSearchRequest(
+            data=[query.query_embedding],
+            anns_field=self.embedding_field,
+            param=dense_search_params,
+            limit=query.similarity_top_k,
+            expr=string_expr,
+        )
+
+        # Prepare ranker
+        if self.hybrid_ranker == "WeightedRanker":
+            if self.hybrid_ranker_params == {}:
+                self.hybrid_ranker_params = {"weights": [1.0, 1.0]}
+            ranker = WeightedRanker(*self.hybrid_ranker_params["weights"])
+        elif self.hybrid_ranker == "RRFRanker":
+            if self.hybrid_ranker_params == {}:
+                self.hybrid_ranker_params = {"k": 60}
+            ranker = RRFRanker(self.hybrid_ranker_params["k"])
+        else:
+            raise ValueError(f"Unsupported ranker: {self.hybrid_ranker}")
+
+        if not hasattr(self.client, "hybrid_search"):
+            raise ValueError(
+                "Your pymilvus version does not support hybrid search. please update it by `pip install -U pymilvus`"
+            )
+
+        res = self.client.hybrid_search(
+            self.collection_name,
+            [dense_req, sparse_req],
+            ranker=ranker,
+            limit=query.similarity_top_k,
+            output_fields=output_fields,
+            partition_names=kwargs.get("milvus_partition_names"),  # Add partition support
+        )
+
+        nodes, similarities, ids = self._parse_from_milvus_results(res)
+        return nodes, similarities, ids

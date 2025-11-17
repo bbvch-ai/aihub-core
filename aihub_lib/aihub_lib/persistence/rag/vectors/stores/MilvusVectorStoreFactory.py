@@ -15,6 +15,8 @@ from pymilvus import (
 )
 
 from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_ID, NAMESPACE
+from aihub_lib.persistence.rag.vectors.stores.MilvusPartitionManager import create_manual_partitions
+from aihub_lib.persistence.rag.vectors.stores.PartitionAwareMilvusVectorStore import PartitionAwareMilvusVectorStore
 
 _MMAP_ENABLED = "mmap.enabled"
 
@@ -36,29 +38,26 @@ def create_milvus_vector_store(
         MilvusIndexType.HNSW
     ),
     enable_mmap: Annotated[bool, Field(description="Enable memory mapping to reduce RAM usage")] = True,
-    num_partitions: Annotated[
-        int, Field(ge=1, le=1023, description="Hash partitions for distributing namespaces across physical storage")
-    ] = 1023,
 ) -> MilvusVectorStore:
     """
-    Factory for namespace-partitioned vector stores optimized for RAG workloads.
+    Create Milvus vector store with manual partition management for RAG.
 
-    - Partition key on namespace: Queries only search relevant namespaces
-    - Hybrid search: Dense (semantic) + BM25 (keyword) for comprehensive retrieval
-    - HNSW index default: Best recall/speed for semantic search
-    - Memory-mapped I/O: Optional mmap reduces RAM usage by offloading to disk (OS page cache)
+    Why manual partitions?
+    - Unlimited namespaces (hash to 1024 partitions, collisions OK)
+    - Memory-efficient (load only partitions with active namespaces)
+    - Hybrid search: HNSW (semantic) + BM25 (keyword)
 
-    Index selection:
-    - HNSW (default): Best for RAG quality, enable mmap if memory constrained
-    - DISKANN: Use when vectors exceed available RAM (requires NVMe SSD)
-    - IVF_FLAT: Middle ground if HNSW too memory-intensive and DISKANN unavailable
+    Index types (by use case):
+    - HNSW: RAG default (best quality, use mmap if RAM constrained)
+    - DISKANN: Large datasets exceeding RAM (requires NVMe SSD)
+    - IVF_FLAT: Balanced middle ground
     """
     client = MilvusClient(uri=uri)
     if not client.has_collection(collection_name):
         fields = [
             FieldSchema(name="id", dtype=DataType.VARCHAR, is_primary=True, auto_id=False, max_length=255),
             FieldSchema(name=DOCUMENT_ID, dtype=DataType.VARCHAR, max_length=255),
-            FieldSchema(name=NAMESPACE, dtype=DataType.VARCHAR, max_length=255, is_partition_key=True),
+            FieldSchema(name=NAMESPACE, dtype=DataType.VARCHAR, max_length=255),
             FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=embedding_vector_dimension),
             FieldSchema(name="sparse_embedding", dtype=DataType.SPARSE_FLOAT_VECTOR),
             FieldSchema(name="text", dtype=DataType.VARCHAR, max_length=65535, enable_analyzer=True),
@@ -109,11 +108,13 @@ def create_milvus_vector_store(
 
         index_params.add_index(field_name="sparse_embedding", index_type="SPARSE_INVERTED_INDEX", metric_type="BM25")
 
-        client.create_collection(
-            collection_name=collection_name, schema=schema, index_params=index_params, num_partitions=num_partitions
-        )
+        # Create collection without automatic partition keys
+        client.create_collection(collection_name=collection_name, schema=schema, index_params=index_params)
 
-    return MilvusVectorStore(
+        # Create 1024 manual partitions for namespace hashing
+        create_manual_partitions(client=client, collection_name=collection_name)
+
+    return PartitionAwareMilvusVectorStore(
         uri=uri,
         collection_name=collection_name,
         dim=embedding_vector_dimension,

@@ -81,9 +81,6 @@ class MilvusVectorStoreResource(ConfigurableResource[MilvusVectorStore]):
     uri: str
     collection_name: str
     embedding_vector_dimension: int
-    num_partitions: Annotated[
-        int, Field(description="Number of partitions to create for the collection, default 1024 - 1 reserved")
-    ] = 1023
     index_type: Annotated[MilvusIndexType, Field(description="Vector index type to use for the embedding field")] = (
         MilvusIndexType.HNSW
     )
@@ -96,7 +93,6 @@ class MilvusVectorStoreResource(ConfigurableResource[MilvusVectorStore]):
             uri=self.uri,
             collection_name=self.collection_name,
             embedding_vector_dimension=self.embedding_vector_dimension,
-            num_partitions=self.num_partitions,
             index_type=self.index_type,
             enable_mmap=self.enable_mmap,
         )
