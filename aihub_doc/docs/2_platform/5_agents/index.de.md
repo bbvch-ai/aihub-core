@@ -1,86 +1,81 @@
 ---
 title: Agenten
-source_sha: 4c36659707d0f1ddeb02c5d4bb743d8fe6f12ee5e929725e79226a1183abad72
+source_sha: c4eeca3ff84082a35213e53a1a68470b5b1f85240ecb0c4e2bf9e0cb9e7708d2
 ---
 
 # Agenten
 
-Im Zentrum des Swiss AI Hub stehen **Agenten**: spezialisierte KI-Assistenten, die darauf ausgelegt sind, bestimmte
-Aufgaben innerhalb eines strukturierten und zuverlässigen Rahmens auszuführen. Im Gegensatz zu offenen Chatbots agieren
-unsere Agenten wie erfahrene Kollegen. Sie interagieren mit ihnen über die Chat-Oberfläche, und sie folgen klar
-definierten Workflows, um Sie beim Analysieren von Dokumenten, Beantworten von Fragen oder Abschließen von
-Geschäftsprozessen zu unterstützen.
+Agenten sind spezialisierte KI-Assistenten, die bestimmte Aufgaben durch strukturierte Workflows ausführen. Im Gegensatz
+zu offenen Chatbots folgen Agenten vordefinierten Schritten, um Dokumente zu analysieren, Fragen zu beantworten oder
+Geschäftsprozesse abzuschließen.
 
-Dieser strukturierte Ansatz ist eine zentrale Designentscheidung. Er stellt sicher, dass Agenten nicht nur intelligent,
-sondern auch vorhersehbar, transparent und auditierbar sind – Eigenschaften, die für den Einsatz in Unternehmen und im
-öffentlichen Sektor unerlässlich sind.
+Agenten können interaktiv sein (auf Benutzerfragen per Chat antworten) oder autonom (Aufgaben automatisch nach einem
+Zeitplan oder durch Ereignisse ausgelöst ausführen). Der strukturierte Workflow-Ansatz macht Agenten vorhersehbar,
+transparent und überprüfbar, unabhängig davon, wie sie arbeiten.
 
 ## Was ist ein Agent?
 
-Im Swiss AI Hub ist ein Agent ein KI-gestützter Assistent, mit dem Sie in einem Chat interagieren. Jeder Agent ist so
-konfiguriert, dass er eine bestimmte Reihe von Aufgaben mithilfe eines vordefinierten Workflows bearbeitet.
+Ein Agent ist ein KI-gestützter Assistent, der für die Bearbeitung spezifischer Aufgaben unter Verwendung eines
+vordefinierten Workflows konfiguriert ist.
 
-Stellen Sie sich diese als digitale Spezialisten vor:
+Beispiele:
 
-- Ein **HR Policy Agent** kann Fragen zu den Urlaubsrichtlinien Ihres Unternehmens beantworten, indem er das offizielle
-  Mitarbeiterhandbuch konsultiert.
-- Ein **Financial Analyst Agent** kann Ihnen helfen, die Verkaufsdaten des letzten Quartals aus einem bestimmten Bericht
-  abzufragen.
-- Ein **Project Support Agent** kann die neuesten Statusaktualisierungen aus einer Sammlung von Projektdokumenten
-  zusammenfassen.
+- Ein HR-Richtlinien-Agent beantwortet Mitarbeiterfragen zu Urlaubsrichtlinien, indem er das Mitarbeiterhandbuch
+  konsultiert (interaktiv, Chat-basiert).
+- Ein Compliance-Monitoring-Agent überprüft Dokumente nach einem Zeitplan und kennzeichnet potenzielle
+  Richtlinienverstöße (autonom, zeitgesteuert).
 
-Diese Agenten verbinden die Leistungsfähigkeit von Large Language Models (LLMs) für das Verständnis natürlicher Sprache
-mit der Zuverlässigkeit eines strukturierten Prozesses.
+Agenten kombinieren große Sprachmodelle (LLMs) zum Verständnis natürlicher Sprache mit strukturierten Prozessen für
+einen zuverlässigen Betrieb.
 
-## Wie Agenten funktionieren: Der Workflow-Vorteil
+## Agenten-"Training"
 
-Das Verhalten eines Agenten wird von einem **Workflow** geleitet, einer vordefinierten Abfolge von Schritten. Dies ist
-der entscheidende Unterschied zwischen unseren Agenten und einer Allzweck-KI wie ChatGPT.
+Eine häufige Frage ist, ob Agenten mit Unternehmensdaten „trainiert“ werden können. Der AI-Hub bietet kein
+Modelltraining oder Fine-Tuning an. Stattdessen greifen Agenten über ihre Wissensdatenbanken auf aktuelle Informationen
+zu.
 
-Ein typischer Workflow könnte wie folgt aussehen:
+Wenn Personen nach dem Training eines Agenten fragen, möchten sie in der Regel, dass der Agent die spezifischen
+Informationen ihres Unternehmens kennt. Die Plattform erreicht dies durch Retrieval-Augmented Generation (RAG). Der
+Agent ruft relevante Informationen aus Ihrer Wissensdatenbank ab, wenn er Fragen beantwortet, anstatt diese
+Informationen direkt im Modell eingebettet zu haben.
 
-1. **Benutzeranfrage verstehen**: Der Agent nutzt ein LLM, um Ihre Frage zu interpretieren.
-2. **Relevante Informationen abrufen**: Falls erforderlich, führt der Agent eine semantische Suche in einer bestimmten
-   Wissensdatenbank (z.B. einem spezifischen SharePoint-Ordner) durch, um relevante Dokumente zu finden. Dies wird als
-   Retrieval-Augmented Generation (RAG) bezeichnet.
-3. **Antwort synthetisieren**: Der Agent kombiniert Ihre ursprüngliche Frage mit den abgerufenen Informationen und nutzt
-   ein LLM, um eine klare, genaue und hilfreiche Antwort zu generieren.
-4. **Quellen zitieren**: Die endgültige Antwort enthält direkte Verweise auf die Quelldokumente, sodass Sie die
-   Informationen jederzeit überprüfen können.
+Vorteile dieses Ansatzes:
 
-Dieser workflowbasierte Ansatz bietet mehrere entscheidende Vorteile:
+- Informationen bleiben aktuell. Aktualisieren Sie Ihre Dokumente, und Agenten verwenden die neuen Informationen sofort
+  ohne erneute Verarbeitung.
+- Transparenz. Sie können genau sehen, welche Dokumente der Agent zur Beantwortung jeder Frage herangezogen hat.
+- Flexibilität. Verschiedene Agenten können auf verschiedene Teilsätze Ihrer Wissensdatenbank zugreifen, indem Sie
+  konfigurieren, welche Sammlungen sie durchsuchen dürfen.
 
-- **Transparenz**: Sie können die Schritte sehen, die der Agent unternommen hat, um zu einer Antwort zu gelangen,
-  einschließlich der konsultierten Dokumente. Dies eliminiert das „Black-Box“-Problem und schafft Vertrauen.
-- **Zuverlässigkeit**: Durch die Beschränkung des Agenten auf einen spezifischen Workflow und eine Wissensdatenbank wird
-  das Risiko von „Halluzinationen“ oder sachlich falschen Antworten drastisch reduziert.
-- **Kontrolle**: Administratoren und Entwickler definieren, was ein Agent tun kann und was nicht. Ein Agent kann nicht
-  entscheiden, auf Daten zuzugreifen, die er nicht sollte, oder Aktionen außerhalb seines definierten Workflows
-  auszuführen.
+Agenten „lernen“, indem sie auf eine aktuelle Wissensdatenbank zugreifen, die über Datenpipelines gepflegt wird. Fügen
+Sie neue Dokumente hinzu oder aktualisieren Sie bestehende, und Agenten integrieren diese Informationen automatisch.
 
-## Agenten in Aktion: Ein praktisches Beispiel
+## Wie Agenten funktionieren
 
-Stellen Sie sich vor, Sie fragen den „IT Support Agent“: *„Wie richte ich das neue VPN auf meinem Laptop ein?“*
+Das Verhalten eines Agenten folgt einem Workflow, einer vordefinierten Abfolge von Schritten. Dies unterscheidet sich
+von allgemeiner konversationeller KI.
 
-Anstatt eine generische Antwort aus dem Internet zu geben, führt der Agent seinen Workflow aus:
+Beispiel-Workflow für einen Frage-Antwort-Agenten:
 
-1. Er identifiziert die Schlüsselwörter „VPN“ und „Setup“.
-2. Er durchsucht die interne „IT Knowledge Base“ des Unternehmens nach Dokumenten, die diesen Begriffen entsprechen.
-3. Er findet die offizielle, aktuelle Anleitung mit dem Titel „VPN_Setup_Guide_v3.pdf“.
-4. Er liest die relevanten Abschnitte der PDF-Datei.
-5. Er bietet Ihnen eine Schritt-für-Schritt-Zusammenfassung an, die *ausschließlich* auf diesem Dokument basiert, und
-   fügt einen direkten Link zur PDF-Datei als Referenz bei.
+1. Anfrage verstehen: Der Agent verwendet ein LLM, um Ihre Frage zu interpretieren.
+2. Informationen abrufen: Der Agent durchsucht eine zugewiesene Wissensdatenbank (z. B. einen SharePoint-Ordner) nach
+   relevanten Dokumenten mittels semantischer Suche (RAG).
+3. Antwort synthetisieren: Der Agent kombiniert Ihre Frage mit abgerufenen Informationen und generiert eine Antwort.
+4. Quellen zitieren: Die Antwort enthält Verweise auf Quelldokumente zur Überprüfung.
 
-Das Ergebnis ist eine vertrauenswürdige, relevante und überprüfbare Antwort. Dies ist die Stärke der Kombination von
-KI-Sprachfähigkeiten mit strukturierten, auditierbaren Workflows.
+Vorteile des Workflows:
 
-## Human-in-the-Loop: Kollaboration, nicht nur Automation
+- Transparenz: Sie können sehen, welche Dokumente der Agent konsultiert hat.
+- Zuverlässigkeit: Die Beschränkung des Agenten auf einen Workflow und eine Wissensdatenbank reduziert Halluzinationen
+  und falsche Antworten.
+- Kontrolle: Administratoren definieren, worauf ein Agent zugreifen und was er tun kann. Agenten können nicht auf
+  unbefugte Daten zugreifen oder Aktionen außerhalb ihres Workflows ausführen.
 
-Manche Aufgaben erfordern menschliches Urteilsvermögen. Unsere Agenten-Workflows sind darauf ausgelegt, menschliche
-Aufsicht nahtlos zu integrieren. Ein Agent kann so konfiguriert werden, dass er seinen Prozess pausiert und auf Ihre
-Genehmigung wartet, bevor er einen kritischen Schritt unternimmt. Beispielsweise könnte ein Agent einen Entwurf einer
-Antwort auf eine Kundenanfrage vorbereiten, aber warten, bis ein Support-Teammitglied diesen überprüft und genehmigt,
-bevor er ihn versendet.
+## Human-in-the-Loop
 
-Diese „Human-in-the-Loop“-Fähigkeit macht unsere Agenten zu leistungsstarken Assistenten für komplexe Prozesse, da Sie
-die Routineaufgaben automatisieren können, während Sie die volle Kontrolle über die endgültige Entscheidung behalten.
+Einige Aufgaben erfordern menschliches Urteilsvermögen. Agenten-Workflows können menschliche Aufsicht integrieren. Ein
+Agent kann pausieren und auf Ihre Genehmigung warten, bevor er einen Schritt ausführt. Zum Beispiel könnte ein Agent
+eine Kundenantwort entwerfen, aber auf die Überprüfung und Genehmigung durch ein Support-Teammitglied warten, bevor er
+sie versendet.
+
+Dadurch können Sie Routineaufgaben automatisieren und gleichzeitig die Kontrolle über Entscheidungen behalten.

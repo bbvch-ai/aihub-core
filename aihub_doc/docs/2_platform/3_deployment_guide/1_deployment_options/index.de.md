@@ -1,76 +1,77 @@
 ---
 title: Bereitstellungsoptionen
-source_sha: 98319d8f8b91d95d095b13684702023ebcdc8c1f49db30e3166cf17c126317f9
+source_sha: c069c3758f7241b2a3c35e2c012de80aece1f72a2e0c75030bc3377ef418b7e4
 ---
 
 # Bereitstellungsoptionen
 
-## Überblick
+## Übersicht
 
-Der AI-Hub kann als einzelne isolierte Instanz für eine Organisation bereitgestellt werden oder als mehrere isolierte
-Instanzen, die optional gemeinsame Backend-LLM-Ressourcen nutzen.
+Der AI-Hub kann als einzelne isolierte Instanz für eine Organisation oder als mehrere isolierte Instanzen bereitgestellt
+werden, die optional Backend-LLM-Ressourcen gemeinsam nutzen.
 
 ## Single-Tenant-Bereitstellung
 
 ### Isolierte Instanz
 
 Eine Single-Tenant-Bereitstellung betreibt eine vollständige, eigenständige AI-Hub-Instanz. Die Organisation erhält eine
-dedizierte Infrastruktur: separate Datenbanken, Vektor-Stores, Dateispeicher und Anwendungsdienste. Im Gegensatz zu
-Multi-Tenant-SaaS-Plattformen, bei denen Kunden Datenbanken und Anwendungsserver gemeinsam nutzen, hat ein Tenant seinen
-eigenen dedizierten Stack.
+dedizierte Infrastruktur: separate Datenbanken, Vektorspeicher, Dateispeicher und Anwendungsdienste. Im Gegensatz zu
+Multi-Tenant-SaaS-Plattformen, bei denen Kunden Datenbanken und Anwendungsserver gemeinsam nutzen, verfügt ein Mandant
+über einen eigenen dedizierten Stack.
 
-Die Instanz umfasst die API, Agenten, Pipelines, die Weboberfläche und Bot-Integrationen. Sie verfügt über eigene
-Datenbanken (FerretDB/PostgreSQL), Vektor-Stores (Milvus oder Azure AI Search) und Dateispeicher (SeaweedFS oder Azure
-Data Lake). Das Monitoring läuft über SigNoz und Phoenix. NATS übernimmt das Event-Streaming. Die Instanz verfügt über
-einen eigenen LiteLLM-Proxy für Kostenverfolgung und Versionskontrolle.
+Die Instanz umfasst die API, Agents, Pipelines, die Weboberfläche und Bot-Integrationen. Sie verfügt über eigene
+Datenbanken (FerretDB/PostgreSQL), Vektorspeicher (Milvus oder Azure AI Search) und Dateispeicher (SeaweedFS oder Azure
+Data Lake). Das Monitoring erfolgt über SigNoz und Phoenix. NATS übernimmt das Event-Streaming. Die Instanz verfügt über
+einen eigenen LiteLLM-Proxy zur Kostenverfolgung und Versionskontrolle.
 
 ### LLM-Backend
 
 Die Instanz verbindet sich über ihren LiteLLM-Proxy mit LLM-Diensten. Der Proxy kann sich mit Azure OpenAI, Google
-Gemini, selbst gehosteten Modellen (vLLM, llama.cpp, HF-TEI) oder einer Mischung davon verbinden. Der Proxy verwaltet
-die Modellauswahl, Budgets, Ratenbegrenzungen und Versionen. Alle Prompts, Antworten und Benutzerdaten verbleiben
-innerhalb der Tenant-Instanz.
+Gemini, selbst gehosteten Modellen (vLLM, llama.cpp, HF-TEI) oder einer Mischung aus diesen verbinden. Der Proxy
+verwaltet die Modellauswahl, Budgets, Ratenbegrenzungen und Versionen. Alle Prompts, Antworten und Benutzerdaten
+verbleiben innerhalb der Mandanteninstanz.
 
 ---
 
 ## Hosting-Optionen
 
-Der AI-Hub kann je nach organisatorischen Anforderungen auf drei Arten gehostet werden.
+Der AI-Hub kann je nach den Anforderungen der Organisation auf drei Arten gehostet werden.
 
-### On-Premise (eigener Server)
+### On-Premise (eigenen Server bereitstellen)
 
 Sie betreiben den AI-Hub auf Ihren eigenen Servern in Ihrem Rechenzentrum.
 
-Sie benötigen x86_64-Server mit CPU, RAM und Speicherplatz. NVIDIA-GPUs eignen sich für selbst gehostete LLM-Inferenz.
-Für den Netzwerkzugang entweder ausgehendes HTTPS für Cloud-basierte LLM-Dienste oder Air-Gapped mit lokalen Modellen.
+Sie benötigen x86_64-Server mit CPU, RAM und Speicherplatz. NVIDIA GPUs eignen sich für die selbst gehostete
+LLM-Inferenz. Für den Netzwerkzugriff benötigen Sie entweder ausgehendes HTTPS für Cloud-basierte LLM-Dienste oder eine
+Air-Gap-Konfiguration mit lokalen Modellen.
 
-Die Infrastruktur liegt in Ihrer Kontrolle. Keine Cloud-Abhängigkeiten. Funktioniert in Air-Gapped-Umgebungen mit selbst
+Die Infrastruktur liegt unter Ihrer Kontrolle. Keine Cloud-Abhängigkeiten. Funktioniert in Air-Gap-Umgebungen mit selbst
 gehosteten LLMs.
 
 ---
 
-### Private Cloud (eigene Cloud)
+### Private Cloud (eigene Cloud bereitstellen)
 
 Sie betreiben den AI-Hub in Ihrer eigenen Cloud-Umgebung (Schweizer Cloud-Anbieter, Azure, AWS, GCP).
 
-Daten bleiben in Ihrem Cloud-Konto unter Ihrer Kontrolle. Sie wählen die Region (z.B. Schweiz für Datenresidenz). Sie
-verwalten die Cloud-Ressourcen und -Kosten.
+Die Daten bleiben in Ihrem Cloud-Konto unter Ihrer Kontrolle. Sie wählen die Region (z. B. Schweiz für die
+Datenresidenz). Sie verwalten die Cloud-Ressourcen und -Kosten.
 
 Cloud-Anbieter verfügen in der Regel über Sicherheits- und Compliance-Zertifizierungen. Sie benötigen
-Internetkonnektivität für den LLM-Proxy-Zugriff (HTTPS), optional VPN für den administrativen Zugriff und privates
-Netzwerk zwischen Diensten (internes DNS).
+Internetkonnektivität für den LLM-Proxy-Zugriff (HTTPS), optional VPN für den administrativen Zugriff und private
+Netzwerke zwischen Diensten (internes DNS).
 
 ---
 
 ### SaaS (Schweizer Cloud-Hosting)
 
-bbv hostet und verwaltet den AI-Hub für Sie auf einer Schweizer Cloud-Infrastruktur.
+bbv hostet und verwaltet den AI-Hub für Sie auf Schweizer Cloud-Infrastruktur.
 
-bbv kümmert sich um Infrastrukturbereitstellung, Updates, Backups, Monitoring und Betriebsaufgaben. Daten bleiben in der
-Schweiz unter Schweizer Rechtshoheit. Sicherheits- und Compliance-Zertifizierungen des Cloud-Anbieters.
+bbv übernimmt die Bereitstellung der Infrastruktur, Updates, Backups, Monitoring und operative Aufgaben. Die Daten
+verbleiben in der Schweiz unter Schweizer Rechtshoheit. Sicherheits- und Compliance-Zertifizierungen vom Cloud-Anbieter.
 
 Sie greifen über eine Weboberfläche und APIs auf den AI-Hub zu. bbv bietet SLAs für Verfügbarkeit und Support. Weniger
-Betriebsaufwand für Ihr Team.
+operativer Aufwand für Ihr Team.
 
 ---
 
@@ -78,49 +79,49 @@ Betriebsaufwand für Ihr Team.
 
 ### Gemeinsames LLM-Backend
 
-Bei der Bereitstellung mehrerer Tenant-Instanzen können diese Backend-LLM-Ressourcen gemeinsam nutzen. Mehrere Tenants
-verwenden dasselbe Azure OpenAI-Abonnement, Google Gemini API-Schlüssel oder selbst gehostete Modelle. Sie können auch
-Authentifizierungsinfrastrukturen wie Azure AD oder Keycloak gemeinsam nutzen.
+Bei der Bereitstellung mehrerer Mandanteninstanzen können diese Backend-LLM-Ressourcen gemeinsam nutzen. Mehrere
+Mandanten verwenden dasselbe Azure OpenAI-Abonnement, Google Gemini API-Schlüssel oder selbst gehostete Modelle. Sie
+können auch Authentifizierungsinfrastrukturen wie Azure AD oder Keycloak gemeinsam nutzen.
 
-Jeder Tenant hat weiterhin seinen eigenen LiteLLM-Proxy. Der Proxy verwaltet die Modellauswahl, Budgets,
-Ratenbegrenzungen und Versionen pro Tenant. Die LLM-Nutzung wird pro Tenant verfolgt. Prompts, Antworten und
-Benutzerdaten verbleiben innerhalb jeder Tenant-Instanz.
+Jeder Mandant verfügt weiterhin über einen eigenen LiteLLM-Proxy. Der Proxy verwaltet die Modellauswahl, Budgets,
+Ratenbegrenzungen und Versionen pro Mandant. Die LLM-Nutzung wird pro Mandant verfolgt. Prompts, Antworten und
+Benutzerdaten verbleiben in jeder Mandanteninstanz.
 
-Die gemeinsam genutzten LLM-Backends sind zustandslos. Sie speichern keine Prompts oder Antworten. Konversationeller
-Kontext und Verlauf bleiben in der eigenen Infrastruktur jedes Tenants.
+Die gemeinsam genutzten LLM-Backends sind zustandslos. Sie persistieren keine Prompts oder Antworten.
+Konversationskontext und -historie verbleiben in der eigenen Infrastruktur jedes Mandanten.
 
-## Merkmale
+## Eigenschaften
 
-### Datenisolation
+### Datenisolierung
 
-Die Daten jedes Tenants bleiben in seiner Instanz. Es gibt keine gemeinsame Datenbank oder Vektor-Store. Daten können
-nicht zwischen Organisationen übertragen werden. Die Einrichtung erfüllt die Anforderungen des Schweizer
-Datenschutzgesetzes (revDSG), die GDPR-Anforderungen zur Datenisolation und die Sicherheitsstandards des Schweizer
+Die Daten jedes Mandanten verbleiben in seiner Instanz. Es gibt keine gemeinsame Datenbank oder Vektorspeicher. Daten
+können nicht zwischen Organisationen gelangen. Die Einrichtung erfüllt die Anforderungen des Schweizer
+Datenschutzgesetzes (revDSG), die GDPR-Anforderungen an die Datenisolierung und die Sicherheitsstandards des Schweizer
 öffentlichen Sektors.
 
 ### Konfiguration
 
-Jede Instanz kann unabhängig konfiguriert werden. Tenants können benutzerdefinierte Agenten, spezialisierte Pipelines
-für ihre Datenquellen, ihre eigene Zugriffskontrolle (RBAC, OIDC mit lokalem IdP), benutzerdefinierte Wissensbasen und
-dedizierte Authentifizierungsanbieter wie Azure AD oder Keycloak bereitstellen.
+Jede Instanz kann unabhängig konfiguriert werden. Mandanten können benutzerdefinierte Agents, spezialisierte Pipelines
+für ihre Datenquellen, ihre eigene Zugriffskontrolle (RBAC, OIDC mit lokalem IdP), benutzerdefinierte Wissensdatenbanken
+und dedizierte Authentifizierungsanbieter wie Azure AD oder Keycloak bereitstellen.
 
 ### Skalierung und Updates
 
-Die Ressourcenzuweisung erfolgt pro Tenant. Sie skalieren Rechenleistung, Arbeitsspeicher und Speicher basierend auf der
-tatsächlichen Nutzung. Jeder Tenant kann Updates nach seinem eigenen Zeitplan anwenden. Das Testen neuer Funktionen in
-einer Instanz beeinflusst andere nicht. SLAs variieren je nach Vertrag.
+Die Ressourcenzuweisung erfolgt pro Mandant. Sie skalieren Rechenleistung, Arbeitsspeicher und Speicherplatz basierend
+auf der tatsächlichen Nutzung. Jeder Mandant kann Updates nach seinem eigenen Zeitplan anwenden. Das Testen neuer
+Funktionen in einer Instanz hat keine Auswirkungen auf andere. SLAs variieren je nach Vertrag.
 
-### Compliance und Audit
+### Compliance und Auditierung
 
-Auditoren können die Infrastruktur eines einzelnen Tenants prüfen. Protokolle und Traces verbleiben in der
-Tenant-Instanz. Richtlinien zur Backup-Aufbewahrung können pro Tenant konfiguriert werden. Penetrationstests können auf
-einzelne Instanzen beschränkt werden.
+Auditoren können die Infrastruktur eines einzelnen Mandanten überprüfen. Protokolle und Traces verbleiben innerhalb der
+Mandanteninstanz. Aufbewahrungsrichtlinien für Backups können pro Mandant konfiguriert werden. Penetrationstests können
+auf einzelne Instanzen zugeschnitten werden.
 
 ## Bereitstellungsmodell
 
 ### Single-Tenant-Infrastruktur
 
-Eine Single-Tenant-Bereitstellung umfasst:
+Eine Single-Tenant-Bereitstellung enthält:
 
 ```
 Tenant Instance
@@ -160,7 +161,7 @@ Der LiteLLM-Proxy verbindet sich mit LLM-Diensten (Azure OpenAI, Google Gemini, 
 
 ### Multi-Tenant-Infrastruktur
 
-Bei der Bereitstellung mehrerer Tenants erhält jeder Tenant die gleiche oben gezeigte Infrastruktur. Sie können
+Bei der Bereitstellung mehrerer Mandanten erhält jeder Mandant die gleiche oben gezeigte Infrastruktur. Sie können
 Backend-LLM-Ressourcen gemeinsam nutzen:
 
 ```
@@ -182,15 +183,15 @@ Shared LLM Backend Resources
 
 Netzwerkarchitektur:
 
-- Jeder Tenant hat seine eigene LiteLLM-Proxy-Instanz
-- Tenant-LiteLLM-Proxys verbinden sich mit gemeinsam genutzten LLM-Backends (Azure OpenAI, Gemini, selbst gehostete
-  Modelle)
-- Gemeinsam genutzte LLM-Backends verwenden gemeinsame API-Anmeldeinformationen (pro Tenant-LiteLLM konfiguriert)
-- Keine direkte Kommunikation zwischen Tenant-Instanzen
+- Jeder Mandant verfügt über eine eigene LiteLLM-Proxy-Instanz
+- Die LiteLLM-Proxys der Mandanten verbinden sich mit gemeinsam genutzten LLM-Backends (Azure OpenAI, Gemini, selbst
+  gehostete Modelle)
+- Gemeinsam genutzte LLM-Backends verwenden gemeinsame API-Anmeldeinformationen (konfiguriert pro LiteLLM des Mandanten)
+- Keine direkte Kommunikation zwischen Mandanteninstanzen
 - Optional: Gemeinsamer Authentifizierungsanbieter (Azure AD, Keycloak)
 
-Datenisolation und Souveränität. Unabhängige Skalierung und Ressourcenzuweisung. Benutzerdefinierte Konfigurationen pro
-Tenant. Flexible Update-Zeitpläne. Klare Compliance-Grenzen.
+Datenisolierung und -souveränität. Unabhängige Skalierung und Ressourcenzuweisung. Benutzerdefinierte Konfigurationen
+pro Mandant. Flexible Update-Zeitpläne. Klare Compliance-Grenzen.
 
 ---
 
@@ -213,7 +214,7 @@ graph TB
     classDef default font-size:16px,padding:20px
 ```
 
-Die Tenant-Instanz verbindet sich über ihren LiteLLM-Proxy mit LLM-Diensten.
+Die Mandanteninstanz verbindet sich über ihren LiteLLM-Proxy mit LLM-Diensten.
 
 ### Multi-Tenant-Bereitstellung mit gemeinsamem LLM-Backend
 
@@ -246,104 +247,106 @@ graph TB
     classDef default font-size:16px,padding:20px
 ```
 
-Jeder Tenant hat seine eigene LiteLLM-Proxy-Instanz (unabhängige Kostenverfolgung, Versionierung, Konfiguration). Alle
-Tenant-LiteLLM-Proxys verbinden sich mit gemeinsam genutzten LLM-Backend-Ressourcen (Azure OpenAI-Abonnements, selbst
-gehostete Modelle). Prompts, Antworten und Benutzerdaten bleiben innerhalb der Tenant-Grenzen.
+Jeder Mandant verfügt über eine eigene LiteLLM-Proxy-Instanz (unabhängige Kostenverfolgung, Versionierung,
+Konfiguration). Alle LiteLLM-Proxys der Mandanten verbinden sich mit gemeinsam genutzten LLM-Backend-Ressourcen (Azure
+OpenAI-Abonnements, selbst gehostete Modelle). Prompts, Antworten und Benutzerdaten bleiben innerhalb der
+Mandantengrenzen.
 
 ---
 
-## Sicherheitsüberlegungen
+## Sicherheitsaspekte
 
-### Tenant-Isolation
+### Mandantenisolierung
 
-Tenant-Instanzen kommunizieren nicht miteinander. Jeder Tenant verfügt über separate Datenbanken, Vektor-Stores und
-Dateispeicher. Jeder Tenant verbindet sich mit seinem eigenen IdP (Azure AD, Keycloak). LiteLLM erzwingt pro-Tenant
-API-Schlüssel und Quoten.
+Mandanteninstanzen kommunizieren nicht miteinander. Jeder Mandant verfügt über separate Datenbanken, Vektorspeicher und
+Dateispeicher. Jeder Mandant verbindet sich mit seinem eigenen IdP (Azure AD, Keycloak). LiteLLM erzwingt pro-Mandant
+API-Schlüssel und Kontingente.
 
-### LLM-Proxy-Sicherheit
+### Sicherheit des LLM-Proxys
 
-LiteLLM speichert keine Prompts oder Antworten (zustandsloser Betrieb). Die API-Schlüsselverwaltung umfasst sichere
-Schlüsselgenerierung, Rotation und Widerruf. Pro-Tenant-Anfragebegrenzungen verhindern Missbrauch. Alle LLM-Anfragen
-werden mit Tenant-ID, aber ohne Prompt-Inhalt protokolliert. Die Presidio-Integration ist optional für PII-Erkennung und
+LiteLLM persistiert keine Prompts oder Antworten (zustandsloser Betrieb). Die API-Schlüsselverwaltung umfasst sichere
+Schlüsselgenerierung, -rotation und -widerruf. Pro-Mandant-Anfragelimits verhindern Missbrauch. Alle LLM-Anfragen werden
+mit Mandanten-ID, aber ohne Prompt-Inhalt protokolliert. Die Presidio-Integration ist optional für die PII-Erkennung und
 -Redaktion.
 
 ### Datenübertragung
 
-Die gesamte Kommunikation ist mit TLS verschlüsselt (Tenant zum LLM-Proxy). Die Zertifikatsverwaltung verwendet Let's
+Die gesamte Kommunikation wird mit TLS verschlüsselt (Mandant zum LLM-Proxy). Das Zertifikatsmanagement verwendet Let's
 Encrypt für die Produktion und mkcert für die Entwicklung. Die API-Authentifizierung verwendet Bearer-Tokens (OAuth 2.0,
 JWT).
 
-### Ruhende Daten
+### Datenruhe
 
 PostgreSQL verwendet transparente Datenverschlüsselung (TDE). Persistente Volumes sind verschlüsselt (LUKS, Azure Disk
-Encryption). Geheimnisse werden über Umgebungsvariablen, Azure Key Vault oder Docker-Secrets verwaltet.
+Encryption). Geheimnisse werden über Umgebungsvariablen, Azure Key Vault oder Docker Secrets verwaltet.
 
 ---
 
 ## Nächste Schritte
 
-- [Produktionskonfiguration](../2_production_configuration/) – Konfigurationsanleitung für Produktionsbereitstellungen
-- [Skalierungsüberlegungen](../3_scaling_considerations/) – Skalierung von Tenant-Instanzen
-- [Sicherung und Wiederherstellung](../4_backup_and_recovery/) – Sicherungsstrategien für die Pro-Tenant-Architektur
+- [Produktionskonfiguration](../2_production_configuration/) – Konfigurationsleitfaden für Produktionsbereitstellungen
+- [Skalierungsaspekte](../3_scaling_considerations/) – Skalierung von Mandanteninstanzen
+- [Backup und Wiederherstellung](../4_backup_and_recovery/) – Backup-Strategien für die Pro-Mandant-Architektur
 - [Updates und Wartung](../6_updates_and_maintenance/) – Verwaltung von Updates über mehrere Instanzen hinweg
 
 ---
 
 ## FAQ
 
-::: details Können Tenants Agenten oder Pipelines teilen?
-Nein. Jede Tenant-Instanz verfügt über einen eigenen isolierten Satz von Agenten und Pipelines. Dieselben
-Agenten-Definitionen (Code) können jedoch über mehrere Tenant-Instanzen hinweg bereitgestellt werden. Anpassungen sind
-Tenant-spezifisch.
+::: details Können Mandanten Agents oder Pipelines teilen?
+Nein. Jede Mandanteninstanz verfügt über einen eigenen isolierten Satz von Agents und Pipelines. Dieselben
+Agent-Definitionen (Code) können jedoch über mehrere Mandanteninstanzen hinweg bereitgestellt werden. Anpassungen sind
+mandantenspezifisch.
 :::
 
-::: details Welche Daten sieht das gemeinsam genutzte LLM-Backend?
-Jeder Tenant hat seinen eigenen LiteLLM-Proxy, sodass Prompts und Antworten in der Tenant-Instanz verbleiben. Die
-gemeinsam genutzten LLM-Backends (Azure OpenAI, Gemini, selbst gehostete Modelle) sehen API-Anfragen von mehreren
-Tenant-LiteLLM-Proxys (zustandslos, nicht persistent), Modellinferenzanfragen (Prompts und Completions nur während der
-Übertragung), keine Tenant-Identifikation oder Kontext und anonymisierte PII-Daten, falls aktiviert.
+::: details Welche Daten sieht das gemeinsame LLM-Backend?
+Jeder Mandant verfügt über einen eigenen LiteLLM-Proxy, sodass Prompts und Antworten innerhalb der Mandanteninstanz
+verbleiben. Die gemeinsam genutzten LLM-Backends (Azure OpenAI, Gemini, selbst gehostete Modelle) sehen API-Anfragen von
+mehreren LiteLLM-Proxys der Mandanten (zustandslos, nicht persistent), Modellanfragen (Prompts und Vervollständigungen
+nur während der Übertragung), keine Mandantenidentifikation oder Kontext und anonyme PII-Daten, falls aktiviert.
 
-Sie sehen nicht, welcher Tenant die Anfrage gestellt hat, den Konversationsverlauf oder gespeicherte Daten. Der gesamte
-Kontext bleibt im LiteLLM-Proxy und der Datenbank des Tenants.
+Sie sehen nicht, welcher Mandant die Anfrage gestellt hat, die Konversationshistorie oder gespeicherte Daten. Der
+gesamte Kontext verbleibt im LiteLLM-Proxy und der Datenbank des Mandanten.
 :::
 
-::: details Kann ein Tenant ausschließlich selbst gehostete Modelle verwenden?
-Ja. Für Air-Gapped- oder vollständig On-Premise-Bereitstellungen können Sie selbst gehostete LLMs (vLLM, llama.cpp,
-HF-TEI) bereitstellen, LiteLLM so konfigurieren, dass es an lokale Modelle weiterleitet, und dies ohne erforderliche
-ausgehende Internetverbindung betreiben.
+::: details Kann ein Mandant ausschliesslich selbst gehostete Modelle verwenden?
+Ja. Für Air-Gap- oder vollständig On-Premise-Bereitstellungen können Sie selbst gehostete LLMs (vLLM, llama.cpp, HF-TEI)
+bereitstellen, LiteLLM so konfigurieren, dass es an lokale Modelle weiterleitet, und dies ohne erforderliche ausgehende
+Internetverbindung betreiben.
 :::
 
-::: details Wie werden Kosten pro Tenant verfolgt?
-LiteLLM verfolgt die API-Nutzung pro Tenant und Benutzer: Token-Anzahl (Eingabe/Ausgabe), Modellnutzung (GPT-4, Gemini
-usw.), Kostenberechnungen basierend auf Modellpreisen und monatliche Budgetdurchsetzung.
+::: details Wie werden die Kosten pro Mandant verfolgt?
+LiteLLM verfolgt die API-Nutzung pro Mandant und Benutzer: Token-Anzahl (Eingabe/Ausgabe), Modellnutzung (GPT-4, Gemini
+usw.), Kostenberechnungen basierend auf der Modellpreisgestaltung und die Durchsetzung des monatlichen Budgets.
 
-Die Daten sind in der LiteLLM-Admin-Benutzeroberfläche verfügbar und für die Abrechnung exportierbar.
+Daten sind in der LiteLLM-Admin-UI verfügbar und für die Abrechnung exportierbar.
 :::
 
-::: details Können Tenants unterschiedlichen LLM-Zugriff haben?
-Ja. Die LiteLLM-Konfiguration ermöglicht einen pro-Tenant-Modellzugriff. Zum Beispiel könnte Tenant A nur GPT-4o für
-strikte Compliance verwenden, Tenant B könnte GPT-4o plus Gemini 2.0 für mehr Flexibilität verwenden, und Tenant C
-könnte ausschließlich selbst gehostete Modelle für eine Air-Gapped-Bereitstellung verwenden.
+::: details Können Mandanten unterschiedlichen LLM-Zugriff haben?
+Ja. Die LiteLLM-Konfiguration ermöglicht den Zugriff auf Modelle pro Mandant. Zum Beispiel könnte Mandant A nur GPT-4o
+für strikte Compliance verwenden, Mandant B könnte GPT-4o plus Gemini 2.0 für mehr Flexibilität nutzen, und Mandant C
+könnte ausschließlich selbst gehostete Modelle für eine Air-Gap-Bereitstellung verwenden.
 :::
 
 ::: details Was passiert, wenn der LLM-Proxy nicht verfügbar ist?
-Tenant-Instanzen werden eine Beeinträchtigung LLM-abhängiger Funktionen erfahren. RAG-Agenten können keine Antworten
-generieren. Embeddings können für neue Dokumente nicht erstellt werden. Vorhandene Daten und die Benutzeroberfläche
-bleiben jedoch zugänglich, und nicht-LLM-Funktionen (Dokumenten-Upload, RBAC, Observability) funktionieren weiterhin.
+Mandanteninstanzen werden eine Verschlechterung der LLM-abhängigen Funktionen erfahren. RAG-Agents können keine
+Antworten generieren. Embeddings können nicht für neue Dokumente erstellt werden. Vorhandene Daten und die
+Benutzeroberfläche bleiben jedoch zugänglich, und nicht-LLM-Funktionen (Dokumenten-Upload, RBAC, Observability)
+funktionieren weiterhin.
 
-Minderung: Bereitstellung von LiteLLM mit hoher Verfügbarkeit (mehrere Replikate, Lastausgleich).
+Minderung: LiteLLM mit hoher Verfügbarkeit (mehrere Replikas, Lastausgleich) bereitstellen.
 :::
 
-::: details Wie verwalten Sie Updates über mehrere Tenant-Instanzen hinweg?
-Siehe [Updates und Wartung](../6_updates_and_maintenance/) für Strategien wie gestaffelte Rollouts (Pilot- bis
-Produktionsumgebung), Blue-Green-Deployments, automatisierte Update-Orchestrierung (Ansible, Kubernetes-Operatoren) und
-pro-Tenant-Update-Zeitpläne.
+::: details Wie verwalten Sie Updates über viele Mandanteninstanzen hinweg?
+Siehe [Updates und Wartung](../6_updates_and_maintenance/) für Strategien, einschliesslich gestaffelter Rollouts (Pilot-
+zu Produktionsumgebung), Blue-Green-Deployments, automatisierte Update-Orchestrierung (Ansible, Kubernetes-Operatoren)
+und pro-Mandant-Update-Zeitpläne.
 :::
 
 ## Verwandte Dokumentation
 
-- [Kernkomponenten](../../2_architecture/1_core_components/) – AI-Hub-Architektur
-- [Authentifizierung & Autorisierung](../../11_access_management/1_authentication_setup/) –
-  Tenant-Authentifizierungskonfiguration
-- [Monitoring und Alarmierung](../5_monitoring_and_alerting/) – Observability für Multi-Instanz-Bereitstellungen
-- [Schweizer Datenschutz](../../20_compliance/3_dsg/) – revDSG-Compliance für den öffentlichen Sektor
+- [Kernkomponenten](/de/docs/2_platform/2_architecture/1_core_components/) – AI-Hub-Architektur
+- [Authentifizierung & Autorisierung](/de/docs/2_platform/11_access_management/1_authentication_setup/) –
+  Mandantenauthentifizierungskonfiguration
+- [Monitoring und Alerting](../5_monitoring_and_alerting/) – Observability für Multi-Instanz-Bereitstellungen
+- [Schweizer Datenschutz](/de/docs/2_platform/20_compliance/3_dsg/) – revDSG-Compliance für den öffentlichen Sektor
