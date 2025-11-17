@@ -71,7 +71,8 @@ RUN groupadd --gid "$USER_GID" "$USERNAME" && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     mkdir -p /dagster_home && \
-    chown "$USERNAME:$USERNAME" /dagster_home
+    chown "$USERNAME:$USERNAME" /dagster_home && \
+    chmod -R 755 /dagster_home
 
 ENV DAGSTER_HOME=/dagster_home
 
@@ -82,7 +83,7 @@ COPY --from=builder --chown="$USERNAME:$USERNAME" /app /app
 
 USER $USERNAME
 
-WORKDIR "$DAGSTER_HOME"
+WORKDIR /app/aihub_pipeline
 
 # Expose necessary port
 EXPOSE 8000
