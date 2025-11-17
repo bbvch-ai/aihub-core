@@ -33,7 +33,7 @@ cost tracking and version control.
 
 The instance connects to LLM services via its LiteLLM proxy. The proxy can connect to Azure OpenAI, Google Gemini,
 self-hosted models (vLLM, llama.cpp, HF-TEI), or a mix of these. The proxy handles model selection, budgets, rate
-limits, and versions. All prompts, responses, and user data stay within the tenant instance.
+limits, and versions. All prompts, responses, and user data stay within the instance.
 
 ---
 
