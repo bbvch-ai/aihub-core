@@ -1,8 +1,17 @@
 import os
+from datetime import datetime
 from typing import Annotated
 
+from mem0.configs.base import MemoryConfig
+from mem0.configs.rerankers.config import RerankerConfig
+from mem0.embeddings.configs import EmbedderConfig
+from mem0.graphs.configs import GraphStoreConfig, Neo4jConfig
+from mem0.llms.configs import LlmConfig
+from mem0.vector_stores.configs import VectorStoreConfig
 from pydantic import Field
 
+from aihub_lib.agents.AgentConfig import AgentConfig
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.neo4j.Neo4jSettings import Neo4jSettings
@@ -18,16 +27,24 @@ class Mem0Settings(EnvironmentSettings):
     SUPPORT_VISION: Annotated[bool, Field(description="Whether to support vision")] = True
     VISION_DETAIL: Annotated[str, Field(description="Vision details")] = "auto"
 
-    @property
-    def config(self) -> dict:
+    def get_config(
+        self,
+        custom_fact_extraction_prompt: Annotated[str | None, "How LLM extracts facts from conversations"] = None,
+        custom_update_memory_prompt: Annotated[str | None, "How LLM decides to ADD/UPDATE/DELETE memories"] = None,
+        custom_entity_extraction_prompt: Annotated[
+            str | None, "Controls entity/relationship extraction for Neo4j"
+        ] = None,
+    ) -> MemoryConfig:
         litellm = LiteLLMProxySettings()
         milvus = MilvusSettings()
         neo4j = Neo4jSettings()
         os.environ["CO_API_URL"] = litellm.BASE_URL
-        return {
-            "llm": {
-                "provider": "openai",
-                "config": {
+        return MemoryConfig(
+            custom_fact_extraction_prompt=custom_fact_extraction_prompt,
+            custom_update_memory_prompt=custom_update_memory_prompt,
+            llm=LlmConfig(
+                provider="openai",
+                config={
                     "model": self.LLM_NAME,
                     "temperature": 0.2,
                     "max_tokens": 2000,
@@ -36,43 +53,67 @@ class Mem0Settings(EnvironmentSettings):
                     "enable_vision": self.SUPPORT_VISION,
                     "vision_details": self.VISION_DETAIL,
                 },
-            },
-            "embedder": {
-                "provider": "openai",
-                "config": {
+            ),
+            embedder=EmbedderConfig(
+                provider="openai",
+                config={
                     "model": self.EMBEDDING_MODEL_NAME,
                     "api_key": litellm.API_KEY.get_secret_value(),
                     "openai_base_url": litellm.BASE_URL,
                 },
-            },
-            "vector_store": {
-                "provider": "milvus",
-                "config": {
+            ),
+            vector_store=VectorStoreConfig(
+                provider="milvus",
+                config={
                     "url": milvus.URL,
                     "token": "token",
                     "db_name": "default",
                     "collection_name": "memories",
                     "embedding_model_dims": milvus.DIMENSION,
                 },
-            },
-            "reranker": {
-                "provider": "cohere",
-                "config": {
+            ),
+            reranker=RerankerConfig(
+                provider="cohere",
+                config={
                     "model": self.RERANKING_MODEL_NAME,
                     "api_key": litellm.API_KEY.get_secret_value(),
                     "top_k": 20,
                     "return_documents": False,
                     "max_chunks_per_doc": None,
                 },
-            },
-            "graph_store": {
-                "provider": "neo4j",
-                "config": {
-                    "url": neo4j.URL,
-                    "username": neo4j.USERNAME,
-                    "password": neo4j.PASSWORD,
-                    "database": "neo4j",
-                },
-                # "custom_prompt": "Please only capture people, organisations, and project links.",
-            },
-        }
+            ),
+            graph_store=GraphStoreConfig(
+                provider="neo4j",
+                config=Neo4jConfig(
+                    url=neo4j.URL,
+                    username=neo4j.USERNAME,
+                    password=neo4j.PASSWORD.get_secret_value(),
+                    database="neo4j",
+                    base_label=False,
+                ),
+                custom_prompt=custom_entity_extraction_prompt,
+            ),
+        )
+
+    def get_config_for_agent(self, agent_config: AgentConfig, t: LocaleHandler) -> MemoryConfig:
+        custom_fact_extraction_prompt = t(
+            "lib.prompt.memory.custom_fact_extraction",
+            agent_name=agent_config.name,
+            agent_description=agent_config.description,
+            current_date=datetime.now().strftime("%Y-%m-%d"),
+        )
+        custom_update_memory_prompt = t(
+            "lib.prompt.memory.custom_update_memory",
+            agent_name=agent_config.name,
+            agent_description=agent_config.description,
+        )
+        custom_entity_extraction_prompt = t(
+            "lib.prompt.memory.custom_entity_extraction",
+            agent_name=agent_config.name,
+            agent_description=agent_config.description,
+        )
+        return self.get_config(
+            custom_fact_extraction_prompt=custom_fact_extraction_prompt,
+            custom_update_memory_prompt=custom_update_memory_prompt,
+            custom_entity_extraction_prompt=custom_entity_extraction_prompt,
+        )
