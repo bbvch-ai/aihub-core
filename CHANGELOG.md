@@ -5,6 +5,234 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.253.3] - 2025-11-16 - Deployment Configuration Refinements and Service Cleanups
+
+### Changed
+
+- ⚙️ **Adjusted SeaweedFS Volume Size Limit:** The default volume size limit for SeaweedFS has been reduced to 29GB
+  (from 1TB) for non-development environments, optimizing storage resource allocation.
+- 🔄 **Externalized API and OTel Version Configuration:** The `AIHUB_API_VERSION` and `OTEL_RESOURCE_SERVICE_VERSION` are
+  now configurable via environment variables, providing greater flexibility for deployment and consistent version
+  management across services.
+
+### Removed
+
+- 🗑️ **Disabled Automatic Speaches Model Downloads:** The `speaches` service no longer automatically downloads models on
+  container startup. This change requires models to be provisioned manually or via an alternative mechanism.
+- 🗑️ **Deprecated Dagster Pipeline Configuration:** The `default_rag_pipeline` configuration for Dagster has been
+  removed, streamlining the Dagster workspace setup.
+
+---
+
+## [v0.253.2] - 2025-11-14 - Comprehensive Bot Setup Documentation
+
+### Added
+
+- 📄 **New Bot Creation Manual Setup Guide**: Introduced a comprehensive, step-by-step guide for manually creating and
+  configuring bots with Microsoft Teams and Slack. This detailed resource covers everything from Azure Bot Framework and
+  Teams Developer Portal setup to MongoDB configuration and Slack OAuth integration, complete with app manifest
+  examples, key terminology, and troubleshooting tips.
+
+### Changed
+
+- 🔗 **Updated Chat Interface Documentation Link**: Corrected and updated an internal documentation link pointing to the
+  chat interface feature overview, ensuring users are directed to the most current information.
+
+---
+
+## [v0.253.1] - 2025-11-14 - Robust Milvus Vector Store Configuration and CI/CD Streamlining
+
+### Added
+
+- ✨ **Introduced Advanced Milvus Vector Store Configuration:** The Milvus vector store factory now supports configurable
+  index types (HNSW, DISKANN, IVF_FLAT, FLAT), enabling tailored performance and memory usage for different RAG
+  workloads.
+- 🚀 **Enabled Hybrid Search with BM25:** Milvus collections now support hybrid search by automatically creating sparse
+  vector indexes (BM25) alongside dense embedding indexes, significantly improving retrieval relevance.
+- 🔑 **Implemented Milvus Partition Keys:** Vector stores are now partitioned by namespace, enhancing data isolation and
+  query performance for multi-tenant or multi-document RAG applications.
+- ⚙️ **Added Memory Mapping (mmap) Option for HNSW:** Users can now enable mmap for HNSW indexes in Milvus to reduce RAM
+  consumption, offloading data to the OS page cache for memory-constrained environments.
+- 📄 **Added `regenerate_compose` CI/CD Input:** A new input allows explicit control over Docker Compose file
+  regeneration in CI/CD workflows, optimizing build times when regeneration is not needed.
+
+### Changed
+
+- ⚙️ **Exposed Milvus Configuration in Dagster Resources:** Milvus vector store parameters like index type, mmap, and
+  partitions are now exposed as configurable options in Dagster resources, allowing pipeline authors to fine-tune their
+  RAG infrastructure.
+- 🧪 **Improved Milvus Test Isolation:** Milvus test fixtures now ensure a clean state by dropping collections and
+  clearing the Milvus vector store factory cache before each test run, enhancing test reliability.
+- 🔄 **Optimized CI/CD Dependency Installation:** The order of global dependency installation in CI/CD has been adjusted
+  to precede Docker Compose file generation, ensuring all prerequisites are met for a more robust build process.
+
+### Refactor
+
+- 🧹 **Refined Milvus Type Hints:** Updated internal type hints for Milvus vector store configurations, improving
+  codebase clarity and maintainability.
+
+---
+
+## [v0.253.0] - 2025-11-14 - Unified Deployment, Local AI Power, and Docling VLM Integration
+
+### Added
+
+- ✨ **Dynamic Deployment System**: Introduced a new Jinja2-based templating system to generate Docker Compose and
+  service configuration files dynamically across various stages (dev, local, build, nightly, latest) and hardware (CPU,
+  GPU), replacing manual configurations for enhanced flexibility and maintainability.
+- 🦾 **Local Inference Services**: Integrated new Docker services (`llama-cpp`, `llama-cpp-embedding`,
+  `llama-cpp-reranker`, `vllm-docling`, `speaches`) to enable on-premise inference for Large Language Models, embedding
+  models, reranker models, and audio models (SST/TTS), dynamically selected based on hardware and deployment stage.
+- 🖼️ **Docling VLM Integration**: Implemented new API endpoints and a dedicated controller within `aihub_api` to support
+  advanced document conversion to Markdown using Docling's Visual Language Model (VLM) capabilities.
+- ⚙️ **IntelliJ Run Configurations**: Added new IntelliJ IDEA run configurations for Docker Compose (Build, Dev, Local
+  with CPU/GPU options) to streamline local development setup and execution.
+- 📄 **Deployment Documentation**: Created a new `README.md` within the `deployment` directory, providing comprehensive
+  documentation for the different deployment configurations and Traefik setup.
+- 🔑 **Hugging Face API Key Management**: Integrated Hugging Face API key support into CI workflows and LiteLLM
+  configurations, enabling seamless access to models requiring authentication from Hugging Face Hub.
+
+### Changed
+
+- 🛠️ **Centralized Configuration**: Refactored core infrastructure service configurations (LiteLLM, Milvus, NATS,
+  Dagster, OpenTelemetry, Traefik) into a centralized `compose-config.yml` for consistent and dynamic generation.
+- 🚀 **LiteLLM Model Definitions**: Updated LiteLLM proxy to dynamically route to local inference services (llama-cpp,
+  speaches) based on hardware availability and deployment stage, optimizing resource utilization.
+- 🛡️ **LiteLLM Prompt Injection Detection**: Enhanced LiteLLM's prompt injection detection by disabling simple heuristic
+  checks and enabling more robust similarity and LLM-based API checks with a refined system prompt.
+- 📊 **OpenTelemetry Configuration**: Implemented conditional activation of OpenTelemetry exporters and processors,
+  ensuring full observability pipelines are enabled only in non-development stages for optimized resource usage.
+- 📦 **Milvus Configuration Tuning**: Adjusted Milvus logging levels, segment sizes, GPU memory pool settings, and
+  default data handling policies for improved performance and consistency across environments.
+- ⚡️ **NATS Performance Tuning**: Dynamically configured NATS server settings (payload limits, connections, JetStream
+  storage) to align with specific stage requirements, optimizing performance for both development and production.
+- 🌐 **Traefik Configuration**: Enhanced Traefik setup for dynamic TLS certificate resolution (Let's Encrypt for
+  production, self-signed for local/build) and dashboard access based on the deployment stage.
+- 📜 **Docling Loader Settings**: Simplified the `DoclingLoader` configuration by removing numerous granular settings,
+  streamlining its integration into the document processing pipeline.
+- 🧑‍💻 **OpenWebUI Image Generation Model**: Changed the default image generation model in OpenWebUI to a generic
+  `"image-generation"` identifier for broader compatibility with various image generation services.
+
+### Fixed
+
+- 🐛 **Agent Test Reliability**: Improved the `AgentTestRunner` by introducing a `StopEvent` mechanism, allowing tests to
+  complete more rapidly and reliably without relying solely on fixed delays.
+- 🧪 **Removed Flaky Test Mark**: Removed the `@pytest.mark.flaky` decorator from a chatbot streaming test, indicating
+  increased confidence in its stability and reliability.
+
+### Removed
+
+- 🗑️ **Deprecated API Keys**: Cleaned up the `.env.dev` file by removing `AZURE_OPENAI_KEY_IMAGE`,
+  `AZURE_OPENAI_KEY_AUDIO`, and `HUGGINGFACE_API_KEY`, as these are now managed centrally or dynamically within the new
+  configuration system.
+- 🧹 **Legacy Docker Compose Files**: Eliminated redundant and outdated Docker Compose files, which are now replaced by
+  the new dynamically generated configurations for improved maintainability.
+- 📜 **Unused License Entries**: Updated `licenses.config.json` by removing entries for services no longer in use (e.g.,
+  `rabbitmq`, `kafka`, `airflow`, `grafana`, `prometheus`, and various base image references), ensuring an accurate and
+  up-to-date record of third-party licenses.
+
+---
+
+## [v0.252.2] - 2025-11-14 - Streamlined Docker Builds with Enhanced Security
+
+### Security
+
+- 🔑 **Enhanced Runtime Security:** Significantly improved container security across all services by removing `sudo`
+  installation and privileges for the non-root user, minimizing potential attack vectors.
+- 🔒 **Refined File Ownership:** Configured Docker builds to ensure all application files copied to the runtime image are
+  explicitly owned by the non-root user, preventing permission issues and strengthening security best practices.
+
+### Refactor
+
+- ⚡️ **Optimized Docker Image Layers:** Consolidated multiple `RUN` commands into single instructions across all
+  Dockerfiles, reducing the number of image layers for smaller image sizes and faster build times.
+- 🧹 **Trimmed Runtime Dependencies:** Removed unnecessary system packages (`tree`, `vim`, `iputils-ping`, `libasound2`)
+  from service runtime images, creating leaner and more efficient deployments.
+- ⚙️ **Standardized Entrypoint Configuration:** Updated `ENTRYPOINT` definitions to the more robust "exec" form
+  (`["sh", "-c", "..."]`) in Dockerfiles, enhancing command execution reliability and variable handling.
+- 🎯 **Improved Variable Quoting:** Applied proper quoting for the `POETRY_VERSION` environment variable during Poetry
+  installation commands, ensuring robustness and preventing potential parsing issues.
+- 📁 **Centralized Dagster Home Management:** Standardized the `DAGSTER_HOME` directory for pipeline services to a
+  dedicated, securely-owned location (`/dagster_home`), improving consistency and non-root user compatibility.
+- 🛠️ **Adjusted Build Tool Availability:** Strategically included the `make` utility in the runtime images for
+  `aihub_api`, `aihub_bot`, and `aihub_pipeline` services, ensuring necessary build tools are available only where
+  required.
+- 📦 **Precise Environment PATH:** Adjusted the `PATH` environment variable for the `default_rag_pipeline` to more
+  accurately reference its virtual environment, enhancing environment isolation and reliability.
+
+---
+
+## [v0.252.1] - 2025-11-14 - Strengthened Data Integrity and Pipeline Organization
+
+### Fixed
+
+- 🐛 Corrected the description for the **AIHubUser role**, clarifying that it grants global user access instead of
+  administrative access within AI-Hub.
+
+### Changed
+
+- 🛡️ Implemented stricter validation and automatic sanitization for **Namespace and Folder names** in the RAG datalake.
+  Names will now be restricted to alphanumeric characters, hyphens, and underscores, enhancing data integrity and system
+  compatibility.
+- 🔄 Restructured **data pipeline asset keys** by introducing clearer intermediate path segments (e.g.,
+  `datalake_to_vectorstore`, `sharepoint_to_datalake`), improving the organization and clarity of data ingestion and
+  processing workflows.
+
+### Refactor
+
+- 🧹 Streamlined internal dependencies by updating the import path for **OpenAILike** to directly reference
+  `llama_index.llms.openai_like`.
+
+---
+
+## [v0.252.0] - 2025-11-12 - Broadening Horizons: Local Filesystem Integration and Generalized Data Sources
+
+### Added
+
+- 🚀 **New Local Filesystem Ingestion Pipeline**: Introduced a complete pipeline, resource, and I/O manager for
+  seamlessly integrating and syncing files from local or network file systems to the data lake, supporting flexible
+  regex-based filtering.
+- ⚙️ **Generic Source File Abstraction**: Implemented a new `SourceFile` interface and generic factories/operations,
+  enabling the pipeline to ingest data from any source system that adheres to this standard, making it highly
+  extensible.
+- 🏷️ **Pytest `flaky` Marker**: Added official `flaky` marker definition to `pyproject.toml` and applied it to
+  unreliable tests, improving test suite clarity and stability by allowing flaky tests to be excluded from CI.
+- ➕ **Regex Pattern Utilities**: Introduced helper functions for generating powerful regex patterns, used by the new
+  local filesystem resource for flexible file and folder filtering.
+
+### Changed
+
+- 🗓️ **Standardized Source File Timestamps**: Converted all file creation and modification timestamps in source file
+  models (e.g., SharePoint) to Unix timestamps (`int`) for consistency and easier processing.
+- 🔓 **Relaxed Namespace Naming Constraints**: Removed restrictive regex validation for NamespaceEntity names, allowing
+  more flexibility in naming conventions.
+- 📈 **Enhanced Metadata Display**: Updated metadata tables to reflect new data structures and added detailed metadata
+  display for local filesystem files in the Dagster UI.
+- 🔧 **Pipeline Definition Parameters**: Adjusted `default_definitions` to remove the explicit `figures_directory_name`
+  parameter and introduced `vector_store_dimensions` and `auto_sync` for more flexible configuration.
+
+### Refactor
+
+- 🗄️ **Abstracted Data Lake Client Operations**: Replaced specific data lake client implementations (Azure, S3) with an
+  `AbstractDataLakeClient` interface, standardizing URI construction, file deletion, and directory operations across
+  different storage backends.
+- ♻️ **Consolidated Source-to-Data Lake Logic**: Replaced SharePoint-specific data lake transformation and cleanup
+  factories/operations with new generic `source_to_data_lake` counterparts, reducing code duplication and improving
+  maintainability.
+- 🖼️ **Simplified Document Loader Configuration**: Streamlined `DoclingLoader` and `DocumentIntelligenceLoader` by
+  removing the explicit `figures_directory_name` parameter, making figure directory handling internal and consistent.
+- 🔗 **Decoupled Azure Search Metadata Definitions**: Removed Azure Search specific metadata field definitions,
+  decoupling the core metadata handling from particular vector store implementations.
+
+### Removed
+
+- 🗑️ **Deprecated SharePoint-Specific Factories**: Eliminated older factories dedicated solely to SharePoint-to-Data
+  Lake transformations, superseded by the new generic source ingestion framework.
+- ❌ **Legacy SharePoint-Specific Operations**: Removed individual operations for extracting content, metadata, and URIs
+  specific to SharePoint files, which are now replaced by their generic `SourceFile` counterparts.
+
+---
+
 ## [v0.251.4] - 2025-11-11 - Azure Integration Overhaul and Infrastructure Simplification
 
 ### Removed

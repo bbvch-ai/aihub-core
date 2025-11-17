@@ -1,6 +1,12 @@
-from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
+from typing import Annotated
+
+from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import (
+    MilvusIndexType,
+    create_milvus_vector_store,
+)
 from dagster import ConfigurableResource, InitResourceContext
 from llama_index.vector_stores.milvus import MilvusVectorStore
+from pydantic import Field
 
 
 class MilvusVectorStoreResource(ConfigurableResource[MilvusVectorStore]):
@@ -75,6 +81,22 @@ class MilvusVectorStoreResource(ConfigurableResource[MilvusVectorStore]):
     uri: str
     collection_name: str
     embedding_vector_dimension: int
+    num_partitions: Annotated[
+        int, Field(description="Number of partitions to create for the collection, default 1024 - 1 reserved")
+    ] = 1023
+    index_type: Annotated[MilvusIndexType, Field(description="Vector index type to use for the embedding field")] = (
+        MilvusIndexType.HNSW
+    )
+    enable_mmap: Annotated[
+        bool, Field(description="Whether memory mapping should be enabled, reduces RAM for HNSW but adds some latency")
+    ] = True
 
     def create_resource(self, context: InitResourceContext) -> MilvusVectorStore:
-        return create_milvus_vector_store(self.uri, self.collection_name, self.embedding_vector_dimension)
+        return create_milvus_vector_store(
+            uri=self.uri,
+            collection_name=self.collection_name,
+            embedding_vector_dimension=self.embedding_vector_dimension,
+            num_partitions=self.num_partitions,
+            index_type=self.index_type,
+            enable_mmap=self.enable_mmap,
+        )

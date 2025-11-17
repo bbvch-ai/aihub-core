@@ -1,6 +1,7 @@
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.infrastructure.s3.S3StorageSettings import S3StorageSettings
+from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import MilvusIndexType
 from dagster._config.pythonic_config import ConfigurableResourceFactory
 from dagster_aws.s3 import S3PickleIOManager, S3Resource
 
@@ -75,9 +76,17 @@ def milvus_vector_store_resource(
     vector_store_uri: str,
     vector_store_name: str,
     dimensions: int = 3072,
+    index_type: MilvusIndexType = MilvusIndexType.HNSW,
+    enable_mmap: bool = True,
+    num_partitions: int = 1023,
 ) -> dict[str, ConfigurableResourceFactory]:
     vector_store = MilvusVectorStoreResource(
-        uri=vector_store_uri, collection_name=vector_store_name, embedding_vector_dimension=dimensions
+        uri=vector_store_uri,
+        collection_name=vector_store_name,
+        embedding_vector_dimension=dimensions,
+        index_type=index_type,
+        enable_mmap=enable_mmap,
+        num_partitions=num_partitions,
     )
     vector_store_io_manager = VectorStoreIOManager(vector_store=vector_store)
     return {
