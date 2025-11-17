@@ -1,0 +1,361 @@
+---
+title: Ein-Kommando-Deployment
+source_sha: bdceae6bb081803e90148aa63b1e4a4df4567b083bfa4c0a769a845ce70ff9ab
+---
+
+# Ein-Kommando-Deployment: Starten Sie Ihre KI-Plattform
+
+Die Swiss AI Hub Plattform wird mit einem einzigen Docker Compose Befehl bereitgestellt. Dieser optimierte Prozess lässt
+Ihre gesamte KI-Infrastruktur in Minuten, nicht Stunden, einsatzbereit sein.
+
+## Bereitstellungsübersicht
+
+::: tip Zwei Bereitstellungsoptionen
+Der Swiss AI Hub unterstützt zwei Bereitstellungsmodi. Befolgen Sie für beide die gleichen Schritte und verwenden Sie
+die passenden Befehle für Ihren Bereitstellungstyp:
+
+- **Produktions-Deployment**: Bereitstellung auf einem Server mit einem echten Domainnamen (z.B.
+  `aihub.yourcompany.com`)
+
+  - Verwendet `docker-compose.latest.yml`
+  - Nutzt Let's Encrypt für automatische SSL-Zertifikate
+  - Erfordert eine DNS-Konfiguration, die auf Ihren Server zeigt
+
+- **Lokales Deployment**: Ausführung auf Ihrer lokalen Maschine für Entwicklung/Tests
+
+  - Verwendet `docker-compose.local.yml`
+  - Nutzt selbstsignierte SSL-Zertifikate (mkcert)
+  - Verwendet die `127.0.0.1.nip.io`-Domain (wird automatisch zu localhost aufgelöst)
+
+Jeder der folgenden Schritte zeigt Befehle für beide Deployment-Typen. Folgen Sie einfach den Befehlen, die Ihrem
+gewählten Deployment-Modus entsprechen.
+:::
+
+---
+
+## Schritt 1: Bereitstellungsdateien abrufen
+
+**Für die Produktion:**
+
+```bash
+# Create deployment directory
+mkdir swiss-ai-hub-deployment
+cd swiss-ai-hub-deployment
+
+# Download the production deployment configuration
+curl -O https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/docker-compose.latest.yml
+
+# Download the configs directory
+curl -L https://github.com/bbvch-ai/aihub-core/tarball/main | tar -xz --strip=2 "*/configs"
+```
+
+**Für das lokale Deployment:**
+
+```bash
+# Create deployment directory
+mkdir swiss-ai-hub-deployment
+cd swiss-ai-hub-deployment
+
+# Download the local deployment configuration
+curl -O https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/docker-compose.local.yml
+
+# Download the configs directory
+curl -L https://github.com/bbvch-ai/aihub-core/tarball/main | tar -xz --strip=2 "*/configs"
+
+# Generate SSL certificates with mkcert
+mkcert -install  # Install local CA (only needed once)
+mkcert -key-file configs/traefik/certs/dev-key.pem -cert-file configs/traefik/certs/dev-cert.pem \
+  "localhost" "*.localhost" \
+  "127.0.0.1.nip.io" "*.127.0.0.1.nip.io"
+```
+
+::: tip Was ist nip.io?
+Die Domain `*.127.0.0.1.nip.io` wird automatisch zu Ihrem Localhost (127.0.0.1) aufgelöst und bietet eine
+Wildcard-DNS-Auflösung, ohne dass Sie Ihre Hosts-Datei ändern müssen. Dies ermöglicht Subdomain-basiertes Routing in der
+lokalen Entwicklung.
+:::
+
+---
+
+## Schritt 2: Umgebungsvariablen konfigurieren
+
+### Umgebungskonfiguration erstellen
+
+Erstellen Sie eine `.env`-Datei mit Ihren Konfigurationseinstellungen:
+
+```bash
+touch .env
+```
+
+### Vorlage für die essentielle Konfiguration
+
+Kopieren Sie diese Vorlage in Ihre `.env`-Datei und ersetzen Sie die Platzhalterwerte:
+
+```env
+# =============================================================================
+# BASIC PLATFORM CONFIGURATION
+# =============================================================================
+
+LOG_LEVEL="WARNING"                    # Options: CRITICAL, ERROR, WARNING, INFO, DEBUG
+ENV="prod"                             # Options: dev, test, prod
+DOMAIN="REPLACE_WITH_YOUR_DOMAIN"
+
+# Traefik Configuration
+ACME_EMAIL="admin@your-company.com"
+ADMIN_PASSWORD_HASH=""                 # Generate with: htpasswd -nb admin yourpassword
+
+# =============================================================================
+# AUTHENTICATION CONFIGURATION
+# =============================================================================
+
+# General Authentication Settings
+AUTH_ENABLE_API_ACCESS="True"
+AUTH_OPEN_WEBUI_SIGNING_SECRET="REPLACE_WITH_RANDOM_STRING"
+AUTH_IDENTITY_PROVIDER="azure"
+
+# OAuth2 Configuration (from Prerequisites setup)
+OAUTH_CLIENT_ID="REPLACE_WITH_YOUR_CLIENT_ID"
+OAUTH_CLIENT_SECRET="REPLACE_WITH_YOUR_CLIENT_SECRET"
+OAUTH_AUTHORITY_URL="https://login.microsoftonline.com/REPLACE_WITH_YOUR_TENANT_ID"
+OAUTH_PROVIDER_NAME="azure"
+OAUTH_TENANT_ID="REPLACE_WITH_YOUR_TENANT_ID"
+OAUTH_COOKIE_SECRET="REPLACE_WITH_16_HEX_CHARS"
+
+# =============================================================================
+# PLATFORM ACCESS CONFIGURATION
+# =============================================================================
+
+# Superuser Configuration
+SUPERUSER_ENABLED="True"
+SUPERUSER_NAME="AI-Hub Superuser"
+SUPERUSER_EMAIL="admin@your-company.com"
+SUPERUSER_OID="REPLACE_WITH_RANDOM_STRING"
+SUPERUSER_ROLE="AIHubSuperuser"
+SUPERUSER_TOKEN="REPLACE_WITH_RANDOM_STRING"
+
+# Platform Settings
+AIHUB_API_VERSION="dev"
+AIHUB_FRONTEND_ORIGIN="https://REPLACE_WITH_YOUR_DOMAIN"
+AIHUB_CREATE_DEFAULT_ROLES="True"
+
+# =============================================================================
+# AI MODEL ACCESS (Configure at least one)
+# =============================================================================
+
+# Azure OpenAI (Recommended)
+AZURE_OPENAI_BASE_URL="REPLACE_WITH_AZURE_OPENAI_BASE_URL"
+AZURE_OPENAI_KEY="REPLACE_WITH_AZURE_OPENAI_KEY"
+
+# Google Gemini (Alternative)
+GEMINI_API_KEY="REPLACE_WITH_GEMINI_KEY"
+
+# =============================================================================
+# LITELLM PROXY CONFIGURATION
+# =============================================================================
+
+LITELLM_UI_USERNAME="admin"
+LITELLM_UI_PASSWORD="REPLACE_WITH_RANDOM_STRING"
+LITELLM_MASTER_KEY="REPLACE_WITH_RANDOM_STRING"
+LITE_LLM_PROXY_BASE_URL="http://litellm:4000"
+LITE_LLM_PROXY_API_KEY="REPLACE_WITH_RANDOM_STRING"
+
+# =============================================================================
+# DATABASE CONFIGURATION
+# =============================================================================
+
+# PostgreSQL
+POSTGRES_USER="admin"
+POSTGRES_PASSWORD="REPLACE_WITH_RANDOM_STRING"
+
+# FerretDB (MongoDB-compatible)
+MONGO_USERNAME="admin"
+MONGO_PASSWORD="REPLACE_WITH_RANDOM_STRING"
+MONGO_CONNECTION_STRING="mongodb://admin:REPLACE_WITH_SAME_MONGO_PASSWORD@ferretdb:27017/"
+
+# Valkey (Redis-compatible)
+REDIS_URL="redis://localhost:6379"
+
+# =============================================================================
+# STORAGE CONFIGURATION
+# =============================================================================
+
+# SeaweedFS S3 Storage
+SEAWEEDFS_ROOT_USER="admin"
+SEAWEEDFS_ROOT_PASSWORD="REPLACE_WITH_RANDOM_STRING"
+S3_STORAGE_ENDPOINT="http://seaweedfs:8333"
+S3_STORAGE_ACCESS_KEY="admin"                         # Must match SEAWEEDFS_ROOT_USER
+S3_STORAGE_SECRET_KEY="REPLACE_WITH_SAME_SEAWEEDFS_PASSWORD"
+S3_STORAGE_URL_SIGNING_SECRET="REPLACE_WITH_RANDOM_STRING"
+
+# =============================================================================
+# SERVICE ENDPOINTS (Internal - Don't Change)
+# =============================================================================
+
+DOCLING_API_ENDPOINT="http://docling:5001"
+DOCLING_API_TIMEOUT="600"
+PHOENIX_SECRET="REPLACE_WITH_RANDOM_STRING"
+PHOENIX_ENDPOINT="http://phoenix:6006"
+NATS_ENDPOINT="nats://localhost:4222"
+DAGSTER_HOME="~/.dagster_home"
+JUPYTER_TOKEN="REPLACE_WITH_RANDOM_STRING"
+MILVUS_DIMENSION="3072"
+
+# =============================================================================
+# BOT DEVELOPMENT CONFIGURATION
+# =============================================================================
+
+BOT_AUTH_FAKE_NAME="Bot"
+BOT_AUTH_FAKE_EMAIL="bot@bot.com"
+BOT_AUTH_FAKE_OID="00000000-0000-0000-0000-000000000000"
+BOT_AUTH_FAKE_ROLES="AIHubBot"
+
+# =============================================================================
+# OPTIONAL INTEGRATIONS
+# =============================================================================
+
+# Jina AI Search (Optional)
+JINA_API_KEY=""
+
+# Signoz Telemetry (Optional)
+SIGNOZ_INGESTION_CLOUD_ENDPOINT=""
+SIGNOZ_INGESTION_KEY=""
+
+```
+
+### Konfigurationsrichtlinien
+
+**Kritische Werte, die ersetzt werden müssen:**
+
+1. **Authentifizierungswerte** (aus den Voraussetzungen):
+
+   - `REPLACE_WITH_YOUR_CLIENT_ID` → Ihre Azure App Registration Client ID
+   - `REPLACE_WITH_YOUR_CLIENT_SECRET` → Ihr Azure App Registration Client Secret
+   - `REPLACE_WITH_YOUR_TENANT_ID` → Ihre Azure Tenant ID (erscheint zweimal)
+
+2. **KI-Modellzugriff** (mindestens einen konfigurieren):
+
+   - `REPLACE_WITH_AZURE_OPENAI_BASE_URL` → Ihre Azure OpenAI Endpunkt-URL
+   - `REPLACE_WITH_AZURE_OPENAI_KEY` → Ihr Azure OpenAI API-Schlüssel
+   - `REPLACE_WITH_GEMINI_KEY` → Ihr Google Gemini API-Schlüssel
+
+3. **Zufällige Zeichenketten** (eindeutige Werte generieren):
+
+   - Ersetzen Sie alle `REPLACE_WITH_RANDOM_STRING` durch eindeutige zufällige Zeichenketten (verwenden Sie
+     `openssl rand -hex 32`)
+   - Ersetzen Sie `REPLACE_WITH_16_HEX_CHARS` durch eine 16-Byte-Hex-Zeichenkette (verwenden Sie `openssl rand -hex 16`)
+   - Verwenden Sie unterschiedliche Werte für jeden Platzhalter
+   - Mindestens 32 Zeichen für die Sicherheit empfohlen
+
+**Domain-Konfiguration:**
+
+- Für lokale Tests: Behalten Sie `AIHUB_FRONTEND_ORIGIN="https://127.0.0.1.nip.io"` bei
+- Für die Produktion: Ändern Sie dies auf Ihre tatsächliche Domain (z.B. `https://aihub.your-company.com`)
+
+::: tip Zufällige Zeichenketten generieren
+Verwenden Sie diese Befehle, um sichere zufällige Zeichenketten zu generieren:
+
+```bash
+# For most secrets (64 characters)
+openssl rand -hex 32
+
+# For OAUTH_COOKIE_SECRET (32 characters)
+openssl rand -hex 16
+```
+
+Führen Sie den passenden Befehl für jeden Platzhalter aus.
+:::
+
+### Umgebungsvalidierung
+
+Vor dem Deployment überprüfen Sie Ihre Konfiguration:
+
+```bash
+# Check for placeholder values that need replacement
+grep -n "REPLACE_WITH" .env
+```
+
+Dies sollte keine Ergebnisse liefern, wenn alle Platzhalter ersetzt wurden.
+
+## Schritt 3: Die Plattform deployen
+
+### Alle Services starten
+
+Deployen Sie die gesamte Plattform mit einem einzigen Befehl:
+
+```bash
+docker compose -f docker-compose.latest.yml up -d
+```
+
+Dieser Befehl wird:
+
+- Alle notwendigen Docker-Images herunterladen
+- Erforderliche Netzwerke und Volumes erstellen
+- Alle Plattform-Services in der richtigen Reihenfolge starten
+- Service Discovery und Kommunikation konfigurieren
+
+### Deployment-Fortschritt überwachen
+
+Beobachten Sie den Deployment-Fortschritt:
+
+```bash
+# See all services starting
+docker compose -f docker-compose.latest.yml logs -f
+
+# Check service health status
+docker compose -f docker-compose.latest.yml ps
+```
+
+**Erwartete Services:** Die Plattform umfasst diese Kernservices:
+
+- **Web-Oberfläche** (aihub-web)
+- **API** (aihub-api)
+- **Authentifizierung** (Auth-Services)
+- **Datenbanken** (FerretDB, PostgreSQL, Valkey)
+- **Vektordatenbank** (Milvus)
+- **LLM-Proxy** (LiteLLM)
+- **Dokumentenverarbeitung** (Docling)
+- **Observability** (Phoenix)
+- **Nachrichtenwarteschlange** (NATS)
+- **Speicher** (SeaweedFS)
+
+### Auf Service-Initialisierung warten
+
+Der erste Start dauert 3-5 Minuten, während die Services initialisiert werden. Alle Services sollten den Status
+„healthy“ anzeigen:
+
+```bash
+# Wait for healthy status
+docker compose -f docker-compose.latest.yml ps --format "table {{.Name}}\t{{.Status}}"
+```
+
+## Schritt 4: Erfolgreiches Deployment verifizieren
+
+### Auf die Plattform zugreifen
+
+1. **Stellen Sie sicher, dass Ihr Testbenutzer die Rolle „AIHubAdmin“ in der Azure Enterprise Application zugewiesen
+   bekommen hat**
+
+2. **Web-Oberfläche:**
+
+   - Lokal: `https://127.0.0.1.nip.io`
+   - Produktion: `https://your-domain.com`
+
+3. **Erwarteter Anmeldeablauf:**
+
+   - Leitet zur Azure-Authentifizierung weiter
+   - Nach der Anmeldung kehrt die Oberfläche zum AI-Hub zurück
+   - Das Haupt-Dashboard sollte sichtbar sein
+
+## Zusammenfassung: Hauptunterschiede zwischen Deployments
+
+| Funktion                  | Produktion (`docker-compose.latest.yml`) | Lokal (`docker-compose.local.yml`) |
+| :------------------------ | :--------------------------------------- | :--------------------------------- |
+| **SSL-Zertifikate**       | Let's Encrypt (automatisch)              | mkcert (manuelle Generierung)      |
+| **Domain**                | Ihre Produktions-Domain                  | `127.0.0.1.nip.io`                 |
+| **Konfigurationsdateien** | `*.latest.*`-Konfigurationen             | `*.local.*`-Konfigurationen        |
+| **Zweck**                 | Produktions-Deployments                  | Lokales Deployment und Entwicklung |
+
+::: warning
+Verwenden Sie niemals selbstsignierte SSL-Zertifikate in der Produktion. Die lokale Deployment-Konfiguration ist
+ausschließlich für die Entwicklung und das Testen auf Ihrer lokalen Maschine konzipiert.
+:::

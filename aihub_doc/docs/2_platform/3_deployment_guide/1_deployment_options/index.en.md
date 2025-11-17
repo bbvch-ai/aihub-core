@@ -372,4 +372,4 @@ update schedules.
 - [Core Components](../../2_architecture/1_core_components/) - AI-Hub architecture
 - [Authentication & Authorization](../../11_access_management/1_authentication_setup/) - Authentication configuration
 - [Monitoring and Alerting](../5_monitoring_and_alerting/) - Observability for multi-instance deployments
-- [Swiss Data Protection](../../19_compliance/3_dsg/) - revDSG compliance for public sector
+- [Swiss Data Protection](../../20_compliance/3_dsg/) - revDSG compliance for public sector

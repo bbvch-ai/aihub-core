@@ -1,6 +1,5 @@
 ---
 title: What Just Happened?
-index: 6
 ---
 
 # What Just Happened?

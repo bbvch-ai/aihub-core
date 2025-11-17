@@ -1,5 +1,5 @@
 import DefaultTheme from 'vitepress/theme'
-import CopyOrDownloadAsMarkdownButtons from 'vitepress-plugin-llms/vitepress-components/CopyOrDownloadAsMarkdownButtons.vue'
+import CopyOrDownloadAsMarkdownButtons from 'vitepress-plugin-llms'
 import './custom.css'
 import GradientBackground from '../components/GradientBackground.vue'
 import { h } from 'vue'

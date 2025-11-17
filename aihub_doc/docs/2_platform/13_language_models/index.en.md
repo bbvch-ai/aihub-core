@@ -1,6 +1,5 @@
 ---
 title: Language models
-index: 13
 ---
 
 # Language models
