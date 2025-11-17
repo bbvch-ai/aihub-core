@@ -15,6 +15,10 @@ class LiteLLMProxySettings(EnvironmentSettings):
         SecretStr | None,
         Field(description="API key for authentication. If not provided, other authentication methods will be used."),
     ] = None
+    MASTER_KEY: Annotated[
+        SecretStr | None,
+        Field(description="Master key for administrative operations (user/key management)."),
+    ] = None
 
     USER_MAX_BUDGET: Annotated[float | None, Field(description="Budget available to a user in one period")] = None
     USER_SOFT_BUDGET: Annotated[
@@ -60,5 +64,21 @@ class LiteLLMProxySettings(EnvironmentSettings):
     def openai_aclient(self) -> openai.AsyncClient:
         return openai.AsyncClient(
             api_key=self.API_KEY.get_secret_value(),
+            base_url=self.BASE_URL,
+        )
+
+    @property
+    def httpx_admin_client(self) -> httpx.Client:
+        """HTTP client for administrative operations using master key."""
+        return httpx.Client(
+            headers={"Authorization": f"Bearer {self.MASTER_KEY.get_secret_value()}"},
+            base_url=self.BASE_URL,
+        )
+
+    @property
+    def httpx_admin_aclient(self) -> httpx.AsyncClient:
+        """Async HTTP client for administrative operations using master key."""
+        return httpx.AsyncClient(
+            headers={"Authorization": f"Bearer {self.MASTER_KEY.get_secret_value()}"},
             base_url=self.BASE_URL,
         )
