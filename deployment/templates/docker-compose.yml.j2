@@ -1313,7 +1313,6 @@ services:
       - -w
       - /dagster_home/workspace.yaml
     volumes:
-      - {{ global.volume_root }}/dagster-data:/dagster_home
       - ./configs/dagster/dagster-config.{{ stage_postfix }}.yml:/dagster_home/dagster.yaml:ro
       - ./configs/dagster/workspace.{{ stage_postfix }}.yml:/dagster_home/workspace.yaml:ro
     environment:
@@ -1341,7 +1340,6 @@ services:
       - dagster-daemon
       - run
     volumes:
-      - {{ global.volume_root }}/dagster-data:/dagster_home
       - ./configs/dagster/dagster-config.{{ stage_postfix }}.yml:/dagster_home/dagster.yaml:ro
       - ./configs/dagster/workspace.{{ stage_postfix }}.yml:/dagster_home/workspace.yaml:ro
     environment:
@@ -1692,9 +1690,9 @@ services:
       dockerfile: ./aihub_pipeline/app/default_rag_pipeline/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.default_rag_pipeline[stage] }}
-    volumes:
-      - {{ global.volume_root }}/dagster-data:/dagster_home
     {%- endif %}
+    volumes:
+      - ./configs/dagster/dagster-config.{{ stage_postfix }}.yml:/dagster_home/dagster.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
 
