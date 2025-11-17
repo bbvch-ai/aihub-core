@@ -6,8 +6,8 @@ type TimeAgo = {
 export function useTimeAgo() {
   const { t } = useI18n()
 
-  const getTimeAgo = (dateString: string | number | Date): TimeAgo => {
-    const date = new Date(dateString)
+  const getTimeAgo = (dateValue: string | number | Date): TimeAgo => {
+    const date = new Date(dateValue)
     const now = new Date()
     const diffInSeconds = (now.getTime() - date.getTime()) / 1000
 
