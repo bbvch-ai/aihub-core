@@ -1691,8 +1691,6 @@ services:
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.default_rag_pipeline[stage] }}
     {%- endif %}
-    volumes:
-      - ./configs/dagster/dagster-config.{{ stage_postfix }}.yml:/dagster_home/dagster.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
 
