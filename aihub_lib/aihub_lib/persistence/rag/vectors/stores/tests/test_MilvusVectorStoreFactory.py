@@ -400,3 +400,25 @@ def then_all_nodes_have_namespace(context, expected_namespace: str, milvus_clien
         assert (
             result[NAMESPACE] == expected_namespace
         ), f"Expected namespace {expected_namespace}, got {result[NAMESPACE]}"
+
+
+@then("all returned nodes should have their correct namespace")
+def then_all_nodes_have_correct_namespace(context, milvus_client):
+    """Verify each namespace has correct nodes (no cross-contamination)."""
+    # Get all unique namespaces from inserted nodes
+    namespaces = {node.metadata.get(NAMESPACE) for node in context["nodes"]}
+
+    for namespace in namespaces:
+        results = milvus_client.query(
+            collection_name=context["collection_name"],
+            filter=f'{NAMESPACE} == "{namespace}"',
+            output_fields=["id", NAMESPACE],
+            limit=100,
+        )
+
+        assert len(results) > 0, f"No results found for namespace '{namespace}'"
+
+        for result in results:
+            assert result[NAMESPACE] == namespace, (
+                f"Namespace mismatch: expected '{namespace}', got '{result[NAMESPACE]}'"
+            )

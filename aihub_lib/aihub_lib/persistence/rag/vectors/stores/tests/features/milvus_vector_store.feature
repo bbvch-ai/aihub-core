@@ -22,11 +22,12 @@ Feature: Milvus Vector Store Factory Configuration
     And the vector store should have sparse embeddings enabled
     And the collection should have a BM25 function defined
 
-  Scenario: Insert and query data with namespace-based partition routing
-    Given I want to create a collection named "test_data_ops"
+  Scenario: Namespace-based partition routing works correctly
+    Given I want to create a collection named "test_partition_routing"
     And I create a vector store with 1024 partitions
-    When I insert 3 nodes with namespace "project_alpha"
-    And I insert 3 nodes with namespace "project_beta"
+    When I insert 3 nodes with namespace "sales_team"
+    And I insert 7 nodes with namespace "engineering_team"
     And I flush and load the collection
-    Then querying for namespace "project_alpha" should return 3 nodes
-    And querying for namespace "project_beta" should return 3 nodes
+    Then querying for namespace "sales_team" should return 3 nodes
+    And querying for namespace "engineering_team" should return 7 nodes
+    And all returned nodes should have their correct namespace

@@ -15,8 +15,7 @@ from aihub_lib.persistence.rag.vectors.stores.MilvusPartitionManager import (
 )
 
 try:
-    from pymilvus.client.abstract import AnnSearchRequest
-    from pymilvus.client.types import RRFRanker, WeightedRanker
+    from pymilvus import AnnSearchRequest, RRFRanker, WeightedRanker
 except ImportError:
     AnnSearchRequest = None
     RRFRanker = None
