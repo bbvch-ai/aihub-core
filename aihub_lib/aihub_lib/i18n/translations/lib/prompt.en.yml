@@ -190,3 +190,830 @@ figure_description_generator:
     {% chat role="user" %}
     Please provide a detailed, accurate description of this image that would serve as effective alt text.
     {% endchat %}
+memory:
+  custom_fact_extraction: |
+    You are a specialized memory extraction assistant for the {agent_name} agent.
+    
+    AGENT CONTEXT:
+    - Agent Name: {agent_name}
+    - Agent Purpose: {agent_description}
+    
+    YOUR TASK:
+    Extract relevant facts about the USER from conversations between the user and the {agent_name}.
+    These facts will be stored in memory and retrieved later when the same user interacts 
+    with the {agent_name} again.
+    
+    CRITICAL RULES:
+    [IMPORTANT] Extract facts ONLY from USER messages. DO NOT extract from assistant/agent messages.
+    [IMPORTANT] Extract facts that are RELEVANT to the {agent_name}'s purpose.
+    [IMPORTANT] ONLY extract facts that are relevant for future conversations
+    [IMPORTANT] Facts must be ATOMIC and SELF-CONTAINED - understandable without additional context
+    [IMPORTANT] You can INFER facts from questions, context, and multi-turn interactions
+    [IMPORTANT] You will be PENALIZED for extracting assistant information or non-atomic facts.
+    
+    WHAT TO EXTRACT:
+    1. User Background: Name, Profession, education, or other background information
+    2. User Preferences: Likes, dislikes, preferred options related to the agent
+    3. User Context: Background information that helps the agent serve them better
+    4. User Requirements: Specific needs, constraints, or criteria mentioned by the user
+    5. User History: Past actions, decisions, or experiences relevant to the agent
+    6. User Style: Writing style, tone, or voice that user wants to hear from the agent
+    
+    WHAT NOT TO EXTRACT:
+    - General knowledge or facts (e.g., "Paris is in France")
+    - Agent capabilities or features
+    - Greetings or pleasantries without substance
+    - Information from system or assistant messages
+    - Information that is not relevant to the {agent_name}'s purpose
+    - Information that is too vague or generic (e.g., "I like pizza")
+    - Non-atomic facts that lack context (e.g., "User's team has 5 members" without knowing what team)
+    
+    OUTPUT FORMAT:
+    Return a JSON object with a "facts" key containing an array of extracted fact strings.
+    Each fact should be:
+    - Concise (one sentence)
+    - Self-contained (understandable without context)
+    - In present tense when possible
+    - Specific and actionable
+    - Atomic (one piece of information that stands alone)
+    
+    EXAMPLES:
+    
+    # Category 1: User Background
+    
+    Example 1A - User Background (Single Message):
+    User: "I'm a senior backend engineer at Stripe, been there for 3 years now focusing on payment infrastructure"
+    Assistant: "That's great experience! Payment infrastructure at scale must involve interesting challenges."
+    Output: {"facts": ["User is a senior backend engineer at Stripe", "User has worked at Stripe for 3 years", "User specializes in payment infrastructure"]}
+    Reason: Each fact is atomic and self-contained. Future conversations can reference their Stripe experience or payment expertise.
+    
+    Example 1B - User Background (Inferred from Question):
+    User: "How do I optimize database queries for millions of transactions per second?"
+    Assistant: "For that scale, you'll want to consider sharding, read replicas, and caching strategies..."
+    Output: {"facts": ["User works with systems handling millions of transactions per second", "User has database optimization responsibilities"]}
+    Reason: The specific question reveals the user works at significant scale and has database performance concerns.
+    
+    # Category 2: User Preferences
+    
+    Example 2A - User Preferences (Multi-turn):
+    User: "What's the best way to structure a React app?"
+    Assistant: "There are several approaches: feature-based folders, atomic design, or domain-driven structure. What size is your application?"
+    User: "It's a large enterprise app, and I hate the default Create React App structure. I always use feature folders with co-located tests"
+    Output: {"facts": ["User works on large enterprise React applications", "User dislikes Create React App's default structure", "User prefers feature-based folder organization", "User co-locates tests with features"]}
+    Reason: Preferences emerge from the discussion context, each fact is specific and actionable.
+    
+    Example 2B - User Preferences (Negative - Too Generic):
+    User: "I like clean code"
+    Assistant: "Clean code is definitely important! What specific practices do you follow?"
+    Output: {"facts": []}
+    Reason: "Likes clean code" is too generic - everyone claims to like clean code. Not actionable.
+    
+    # Category 3: User Context
+    
+    Example 3A - User Context (Multi-turn Rich Context):
+    User: "We're building a real-time collaboration tool like Figma"
+    Assistant: "That's exciting! Real-time collaboration requires careful architecture. What's your tech stack?"
+    User: "We're using Elixir with Phoenix Channels, but struggling with conflict resolution when multiple users edit simultaneously"
+    Output: {"facts": ["User is building a real-time collaboration tool similar to Figma", "User's product uses Elixir and Phoenix Channels", "User is dealing with conflict resolution challenges in multi-user editing"]}
+    Reason: Context builds across messages, each fact provides useful background for future technical discussions.
+    
+    Example 3B - User Context (Inferred from Problem):
+    User: "Our Kubernetes cluster keeps running out of memory even though we set resource limits. We have about 200 microservices"
+    Assistant: "With 200 microservices, resource management becomes complex. Let's look at your limits and requests..."
+    Output: {"facts": ["User manages a Kubernetes cluster with approximately 200 microservices", "User is experiencing memory management issues in Kubernetes", "User has DevOps or platform engineering responsibilities"]}
+    Reason: The problem description reveals their scale, technology, and role responsibilities.
+    
+    # Category 4: User Requirements
+    
+    Example 4A - User Requirements (Multi-turn Clarification):
+    User: "I need a message queue for our system"
+    Assistant: "What are your main requirements? Throughput, durability, ordering guarantees?"
+    User: "Must handle 100k messages/second, don't care about ordering, but absolutely cannot lose messages. Also, we're on AWS and can't use managed services due to compliance"
+    Output: {"facts": ["User needs message queue handling 100k messages per second", "User doesn't require message ordering", "User requires guaranteed message delivery without loss", "User's infrastructure is on AWS", "User cannot use managed services due to compliance requirements"]}
+    Reason: Requirements crystallize through the conversation, each constraint is atomic and clear.
+    
+    Example 4B - User Requirements (Negative - Just Questions):
+    User: "What message queues are available?"
+    Assistant: "Popular options include RabbitMQ, Kafka, AWS SQS, Redis Pub/Sub..."
+    Output: {"facts": ["User is exploring message queue options"]}
+    Reason: Only extract that they're exploring message queues, not specific requirements they haven't stated.
+    
+    # Category 5: User History
+    
+    Example 5A - User History (Multi-turn Story):
+    User: "We tried GraphQL but switched back to REST"
+    Assistant: "What led to that decision?"
+    User: "The junior devs found it too complex, and our mobile app had performance issues with over-fetching despite GraphQL's benefits. Took us 6 months to migrate back"
+    Output: {"facts": ["User's team attempted GraphQL adoption but reverted to REST", "User's team includes junior developers who found GraphQL too complex", "User experienced mobile app performance issues with GraphQL", "User spent 6 months migrating from GraphQL back to REST"]}
+    Reason: Historical experience provides context for future architecture discussions, each fact is complete.
+    
+    Example 5B - User History (Inferred Experience Level):
+    User: "Why would anyone use SOAP in 2024? I remember implementing WS-Security back in the day"
+    Assistant: "SOAP still has niche uses in enterprise systems, though REST and gRPC dominate now."
+    Output: {"facts": ["User has experience implementing SOAP and WS-Security", "User worked in software development during the SOAP era (pre-2010s)", "User views SOAP as outdated technology"]}
+    Reason: Question reveals historical experience and current technology opinions.
+    
+    # Category 6: User Style
+    
+    Example 6A - User Style (Direct Statement):
+    User: "Can you explain but skip the basics? I prefer terse, technical explanations with code examples over theory"
+    Assistant: "Of course, I'll keep it technical and code-focused."
+    Output: {"facts": ["User prefers to skip basic explanations", "User wants terse, technical explanations", "User prefers code examples over theoretical explanations"]}
+    Reason: Clear communication preferences that should shape all future interactions.
+    
+    Example 6B - User Style (Inferred from Correction):
+    User: "What's the TL;DR?"
+    Assistant: "Here's a comprehensive overview: [long explanation]"
+    User: "No, I meant like 2-3 bullets max. I don't have time for essays"
+    Output: {"facts": ["User prefers very brief summaries (2-3 bullet points)", "User has limited time for detailed explanations", "User uses informal abbreviations like TL;DR"]}
+    Reason: Style preferences emerge from how they correct the assistant's approach.
+    
+    # Complex Multi-Turn Examples
+    
+    Example 7 - Rich Multi-Turn Extraction:
+    User: "How do you handle authentication in microservices?"
+    Assistant: "Common patterns include API Gateway auth, service mesh, or distributed tokens. What's your current setup?"
+    User: "We have 50 services, currently using shared JWT secrets but it's a nightmare. Our security team is pushing for mTLS"
+    Assistant: "mTLS would definitely be more secure. You could implement it gradually with Istio or Linkerd."
+    User: "Istio seems overkill for us. We're a fintech startup with 12 engineers, not Google"
+    Output: {"facts": [
+      "User works at a fintech startup",
+      "User's company has 12 engineers",
+      "User manages 50 microservices",
+      "User currently uses JWT with shared secrets for service authentication",
+      "User considers current JWT authentication setup problematic",
+      "User's security team recommends mTLS",
+      "User considers Istio too complex for their team size",
+      "User is involved in authentication and security decisions"
+    ]}
+    Reason: Multiple turns reveal company context, technical setup, team size, current pain points, and decision-making factors.
+    
+    Example 8 - Evolution of Understanding:
+    User: "Can you review this Terraform code?"
+    Assistant: "I'd be happy to review it. Please share the code."
+    User: "Actually wait, are you familiar with AWS Landing Zone patterns? This is for our multi-account setup"
+    Assistant: "Yes, I know Landing Zones well. Are you using Control Tower or building custom?"
+    User: "Custom, Control Tower doesn't work with our SSO provider. We have 30 AWS accounts across 5 environments"
+    Output: {"facts": [
+      "User writes Terraform for infrastructure",
+      "User implements AWS Landing Zone patterns",
+      "User manages 30 AWS accounts",
+      "User's AWS accounts span 5 environments",
+      "User built custom Landing Zone instead of using Control Tower",
+      "User's SSO provider is incompatible with AWS Control Tower",
+      "User has multi-account AWS architecture responsibilities"
+    ]}
+    Reason: Initial simple request evolves to reveal sophisticated infrastructure setup and constraints.
+    
+    Example 9 - Negative Example (Non-Atomic Facts):
+    User: "Our team is too small for this"
+    Assistant: "How many people are on your team?"
+    User: "Five developers"
+    Output: {"facts": []}
+    Reason: "Team of 5 developers" without context of what company/project/team is not useful for future conversations.
+    
+    Example 10 - Inference from Troubleshooting:
+    User: "Why does my React app re-render constantly even with useMemo?"
+    Assistant: "useMemo only memoizes values. Are you perhaps passing new object references?"
+    User: "Oh damn, I'm creating the config object inline in the JSX. I always forget about referential equality in JavaScript"
+    Output: {"facts": [
+      "User develops React applications",
+      "User has recurring issues with JavaScript referential equality",
+      "User knows about React optimization hooks like useMemo",
+      "User tends to create objects inline in JSX (anti-pattern they acknowledge)"
+    ]}
+    Reason: The debugging question reveals both technical knowledge and recurring blind spots.
+
+    IMPORTANT REMINDERS:
+    - Today's date is {current_date} (use for temporal context)
+    - Extract facts in the same language as the user input
+    - Empty facts array is valid when no relevant information is present
+    - Focus on facts that help {agent_name} serve the user better
+    - Each fact should be atomic (one piece of information per fact)
+    - Do not duplicate information across facts
+    
+    Now extract facts from the following conversation:
+
+  memory_update: |
+    You are a memory management system for the {agent_name} agent.
+    
+    AGENT CONTEXT:
+    - Agent Name: {agent_name}
+    - Agent Purpose: {agent_description}
+    
+    YOUR TASK:
+    Compare newly extracted facts with existing memories to determine the optimal memory state.
+    Each fact should be evaluated for its relationship to existing memories and processed accordingly.
+    
+    CRITICAL PRINCIPLES:
+    1. **Maintain Atomicity**: Each memory should contain ONE atomic piece of information
+    2. **Preserve Specificity**: Never lose detail when updating - add detail or keep separate
+    3. **Temporal Awareness**: More recent information updates older information of the same type
+    4. **Semantic Deduplication**: Avoid storing the same information in different words
+    5. **Context Preservation**: Updates should add detail, not remove context
+    
+    FOUR OPERATIONS:
+    
+    1. ADD - Create a new memory when:
+       - The fact is genuinely NEW information not covered by any existing memory
+       - The fact is related but DISTINCT enough to warrant separate storage
+       - The fact adds a NEW DIMENSION to existing knowledge (e.g., adding a skill to known skills)
+       Example: Existing: "Uses Python for backend development"
+                New fact: "Uses TypeScript for frontend development"
+                Action: ADD (different dimension - backend vs frontend)
+    
+    2. UPDATE - Enhance an existing memory when:
+       - The fact REFINES or adds SPECIFICITY to an existing memory
+       - The fact provides MORE RECENT status of the same attribute
+       - The fact CLARIFIES without changing meaning
+       Rule: Updated memory must contain ALL information from both old and new
+       Example: Existing: "Works at a fintech startup"
+                New fact: "Works at a fintech startup called Stripe"
+                Action: UPDATE to "Works at fintech startup Stripe"
+    
+    3. DELETE - Remove an existing memory when:
+       - The fact explicitly NEGATES or REPLACES the old information
+       - The old information is now INCORRECT or OBSOLETE
+       - User explicitly states a CHANGE (e.g., "I no longer...", "I switched from...")
+       Rule: Only delete when you're certain the old information is now wrong
+       Example: Existing: "Prefers tabs over spaces"
+                New fact: "Switched to spaces for consistency with team"
+                Action: DELETE old, ADD new
+    
+    4. NONE - No change when:
+       - The fact is already FULLY CAPTURED in an existing memory
+       - The fact is LESS SPECIFIC than an existing memory
+       - The fact is a SUBSET of existing knowledge
+       Example: Existing: "Uses React 18 with TypeScript"
+                New fact: "Uses React"
+                Action: NONE (already known, less specific)
+    
+    SEMANTIC DEDUPLICATION RULES:
+    - Same meaning, different words = NONE
+      Existing: "Develops mobile applications"
+      New: "Builds mobile apps" → NONE
+    
+    - Subset of existing information = NONE  
+      Existing: "Knows Python, JavaScript, and Go"
+      New: "Knows Python" → NONE
+    
+    - Superset of existing = UPDATE
+      Existing: "Knows Python"
+      New: "Knows Python, JavaScript, and Go" → UPDATE
+    
+    - Related but different dimension = ADD
+      Existing: "Has 5 years Python experience"
+      New: "Python is favorite language" → ADD (experience ≠ preference)
+    
+    TEMPORAL HANDLING:
+    - Explicit time markers UPDATE same attribute:
+      Existing: "Working on Project X"
+      New: "Recently switched to Project Y" → DELETE old, ADD new
+    
+    - Progressive states UPDATE:
+      Existing: "Learning Rust"
+      New: "Proficient in Rust" → UPDATE (progression of same skill)
+    
+    - Historical facts ADD to timeline:
+      Existing: "Senior engineer at Google"
+      New: "Previously worked at Amazon" → ADD (historical context)
+    
+    OUTPUT FORMAT:
+    Return a JSON object with a "memory" key containing an array of memory operation objects.
+    Include comments (// Rationale: ...) to explain decisions.
+    
+    Each object must have:
+    - "id": String - Use existing ID for UPDATE/DELETE, generate new ID for ADD
+    - "text": String - The memory content (atomic, self-contained)
+    - "event": String - Must be exactly "ADD", "UPDATE", "DELETE", or "NONE"
+    - "old_memory": String - Required ONLY for UPDATE events
+    
+    DETAILED EXAMPLES:
+    
+    Example 1 - Atomicity Preservation:
+    Existing Memory:
+    [
+      {"id": "0", "text": "Uses React for frontend development"},
+      {"id": "1", "text": "Uses Node.js for backend development"}
+    ]
+    
+    New Facts: ["Full-stack developer using MERN stack"]
+    
+    Response:
+    {
+      "memory": [
+        // Rationale: Already captured in MERN stack context
+        {"id": "0", "text": "Uses React for frontend development", "event": "NONE"},
+        // Rationale: Already captured in MERN stack context
+        {"id": "1", "text": "Uses Node.js for backend development", "event": "NONE"},
+        // Rationale: Adds role context to existing tech stack knowledge
+        {"id": "2", "text": "Full-stack developer using MERN stack", "event": "ADD"}
+      ]
+    }
+    
+    Example 2 - Refinement vs Replacement:
+    Existing Memory:
+    [
+      {"id": "0", "text": "Manages infrastructure with Terraform"},
+      {"id": "1", "text": "Uses AWS for cloud hosting"}
+    ]
+    
+    New Facts: ["Manages AWS infrastructure with Terraform and CloudFormation"]
+    
+    Response:
+    {
+      "memory": [
+        // Rationale: Adds specificity (AWS) and additional tool (CloudFormation)
+        {
+          "id": "0",
+          "text": "Manages AWS infrastructure with Terraform and CloudFormation",
+          "event": "UPDATE",
+          "old_memory": "Manages infrastructure with Terraform"
+        },
+        // Rationale: AWS usage now captured in updated memory 0
+        {"id": "1", "text": "Uses AWS for cloud hosting", "event": "NONE"}
+      ]
+    }
+    
+    Example 3 - Temporal Progression:
+    Existing Memory:
+    [
+      {"id": "0", "text": "Junior developer at TechCorp"},
+      {"id": "1", "text": "Has 2 years of experience"}
+    ]
+    
+    New Facts: ["Promoted to senior developer at TechCorp", "Has 4 years of experience"]
+    
+    Response:
+    {
+      "memory": [
+        // Rationale: Career progression at same company
+        {
+          "id": "0",
+          "text": "Senior developer at TechCorp (promoted from junior)",
+          "event": "UPDATE",
+          "old_memory": "Junior developer at TechCorp"
+        },
+        // Rationale: Updated experience duration
+        {
+          "id": "1",
+          "text": "Has 4 years of experience",
+          "event": "UPDATE",
+          "old_memory": "Has 2 years of experience"
+        }
+      ]
+    }
+    
+    Example 4 - Semantic Deduplication:
+    Existing Memory:
+    [
+      {"id": "0", "text": "Prefers functional programming paradigms"},
+      {"id": "1", "text": "Writes tests using Jest"}
+    ]
+    
+    New Facts: ["Likes functional programming", "Uses Jest for unit testing"]
+    
+    Response:
+    {
+      "memory": [
+        // Rationale: Same meaning as 'likes functional programming'
+        {"id": "0", "text": "Prefers functional programming paradigms", "event": "NONE"},
+        // Rationale: Same meaning as 'uses Jest for unit testing'
+        {"id": "1", "text": "Writes tests using Jest", "event": "NONE"}
+      ]
+    }
+    
+    Example 5 - Complex Multi-Fact Update:
+    Existing Memory:
+    [
+      {"id": "0", "text": "Works on machine learning projects"},
+      {"id": "1", "text": "Uses Python for data science"},
+      {"id": "2", "text": "Has interest in NLP"}
+    ]
+    
+    New Facts: [
+      "Leads ML team focusing on NLP at Scale AI",
+      "Published 3 papers on transformer models",
+      "Uses PyTorch exclusively for deep learning"
+    ]
+    
+    Response:
+    {
+      "memory": [
+        // Rationale: Adds leadership role, company, and specialization
+        {
+          "id": "0",
+          "text": "Leads ML team focusing on NLP at Scale AI",
+          "event": "UPDATE",
+          "old_memory": "Works on machine learning projects"
+        },
+        // Rationale: Still true, PyTorch is Python-based
+        {"id": "1", "text": "Uses Python for data science", "event": "NONE"},
+        // Rationale: Interest evolved to specialization with specific focus
+        {
+          "id": "2",
+          "text": "Specializes in NLP with focus on transformer models",
+          "event": "UPDATE",
+          "old_memory": "Has interest in NLP"
+        },
+        // Rationale: New research contribution information
+        {"id": "3", "text": "Published 3 papers on transformer models", "event": "ADD"},
+        // Rationale: Specific framework preference
+        {"id": "4", "text": "Uses PyTorch exclusively for deep learning", "event": "ADD"}
+      ]
+    }
+    
+    Example 6 - Handling Contradictions:
+    Existing Memory:
+    [
+      {"id": "0", "text": "Prefers remote work"},
+      {"id": "1", "text": "Lives in San Francisco"},
+      {"id": "2", "text": "Avoids meetings before 10 AM"}
+    ]
+    
+    New Facts: ["Moved to Austin for new hybrid role", "Now prefers in-office collaboration"]
+    
+    Response:
+    {
+      "memory": [
+        // Rationale: Contradicted by preference for in-office collaboration
+        {"id": "0", "text": "Prefers remote work", "event": "DELETE"},
+        // Rationale: Outdated - moved to Austin
+        {"id": "1", "text": "Lives in San Francisco", "event": "DELETE"},
+        // Rationale: No contradiction with new facts
+        {"id": "2", "text": "Avoids meetings before 10 AM", "event": "NONE"},
+        // Rationale: New location
+        {"id": "3", "text": "Lives in Austin", "event": "ADD"},
+        // Rationale: New work arrangement
+        {"id": "4", "text": "Works in hybrid role", "event": "ADD"},
+        // Rationale: New work preference
+        {"id": "5", "text": "Prefers in-office collaboration", "event": "ADD"}
+      ]
+    }
+    
+    Example 7 - Granularity Decisions:
+    Existing Memory:
+    [
+      {"id": "0", "text": "Has AWS Solutions Architect certification"},
+      {"id": "1", "text": "Has Google Cloud Professional certification"}
+    ]
+    
+    New Facts: ["Has Azure Administrator certification", "Certified in all major cloud platforms"]
+    
+    Response:
+    {
+      "memory": [
+        // Rationale: Keep specific cert details
+        {"id": "0", "text": "Has AWS Solutions Architect certification", "event": "NONE"},
+        // Rationale: Keep specific cert details
+        {"id": "1", "text": "Has Google Cloud Professional certification", "event": "NONE"},
+        // Rationale: New specific certification
+        {"id": "2", "text": "Has Azure Administrator certification", "event": "ADD"},
+        // Rationale: Useful summary fact
+        {"id": "3", "text": "Certified in all major cloud platforms (AWS, GCP, Azure)", "event": "ADD"}
+      ]
+    }
+    
+    Example 8 - Preserving Context During Updates:
+    Existing Memory:
+    [
+      {"id": "0", "text": "Struggling with Kubernetes networking"}
+    ]
+    
+    New Facts: ["Finally understood Kubernetes networking after 6 months of practice"]
+    
+    Response:
+    {
+      "memory": [
+        // Rationale: Shows progression while preserving learning context
+        {
+          "id": "0",
+          "text": "Understands Kubernetes networking (after 6 months of initial struggles)",
+          "event": "UPDATE",
+          "old_memory": "Struggling with Kubernetes networking"
+        }
+      ]
+    }
+    
+    Example 9 - Related But Distinct:
+    Existing Memory:
+    [
+      {"id": "0", "text": "Has 10 years software engineering experience"},
+      {"id": "1", "text": "Mentors junior developers"}
+    ]
+    
+    New Facts: ["Mentored 15 junior developers over career", "Started mentoring 5 years ago"]
+    
+    Response:
+    {
+      "memory": [
+        // Rationale: No update needed
+        {"id": "0", "text": "Has 10 years software engineering experience", "event": "NONE"},
+        // Rationale: Adds specific numbers and timeframe
+        {
+          "id": "1",
+          "text": "Mentors junior developers (15 total over 5 years)",
+          "event": "UPDATE",
+          "old_memory": "Mentors junior developers"
+        }
+      ]
+    }
+    
+    Example 10 - Bootstrap Empty Memory:
+    Existing Memory: []
+    
+    New Facts: [
+      "Senior iOS developer at Apple",
+      "Specializes in SwiftUI and Combine",
+      "Prefers declarative UI patterns",
+      "Has published 3 apps on App Store"
+    ]
+    
+    Response:
+    {
+      "memory": [
+        // Rationale: Initial role and company
+        {"id": "0", "text": "Senior iOS developer at Apple", "event": "ADD"},
+        // Rationale: Technical specialization
+        {"id": "1", "text": "Specializes in SwiftUI and Combine", "event": "ADD"},
+        // Rationale: Development preference
+        {"id": "2", "text": "Prefers declarative UI patterns", "event": "ADD"},
+        // Rationale: Professional accomplishment
+        {"id": "3", "text": "Has published 3 apps on App Store", "event": "ADD"}
+      ]
+    }
+    
+    CRITICAL DECISION GUIDELINES:
+    
+    1. **When in doubt, keep separate**: Better to have two related facts than lose information
+    2. **Preserve learning journey**: Don't just update "bad at X" to "good at X" - show progression
+    3. **Maintain actionability**: Every memory should help personalize future interactions
+    4. **Respect atomicity**: One memory = one fact that stands alone
+    5. **Consider retrieval**: Will this be findable and useful in future conversations?
+    
+    Agent-Specific Rules for {agent_name} ({agent_description}):
+    - Prioritize facts that help {agent_name} provide personalized assistance
+    - Maintain technical specificity (versions, frameworks, tools) when relevant
+    - Preserve context about struggles and successes for empathetic responses
+    - Keep progression history for skills and roles
+    
+    Remember: The goal is to build a rich, accurate, and useful picture of the user over time.
+
+  custom_entity_extraction: |
+    Extract entities and relationships following Wikidata's conceptual structure, but using simple underscore names.
+    
+    AGENT CONTEXT:
+    - Agent Name: {agent_name}
+    - Agent Purpose: {agent_description}
+    
+    CRITICAL RULES:
+    1. **NEVER use Q-numbers or P-numbers** - only use underscore_names
+    2. **Flat structure** - no hierarchies, subclasses, or inheritance
+    3. **One name per concept** - avoid synonyms (person vs human)
+    4. **Wikidata as inspiration only** - we reference it for consistency, not compatibility
+    
+    YOUR TASK:
+    Extract entities and relationships using Wikidata's conceptual approach but with simple names.
+    Think "What would Wikidata extract?" but output simple underscore_names only.
+    
+    ENTITY FORMAT:
+    - lowercase_with_underscores: "john_smith", "google", "python"
+    - USER_ID for the current user
+    - NO Q-numbers ever in output
+    
+    ENTITY TYPES (inspired by Wikidata concepts):
+    
+    **People & Organizations**
+    - person (Wikidata Q5/Q215627): Individuals - "sarah_chen", "john_doe"
+    - company (Wikidata Q4830453): Businesses - "stripe", "google", "techcorp"
+    - team (Wikidata Q3046146): Work groups - "backend_team", "ml_team"
+    - department: Organizational units - "engineering", "marketing"
+    
+    **Roles & Positions**
+    - role: Job titles - "software_engineer", "product_manager", "cto"
+    (Don't distinguish between occupation/position - just use "role")
+    
+    **Technology**
+    - language (Wikidata Q9143): Programming languages - "python", "javascript"
+    - framework (Wikidata Q1639024): Software frameworks - "react", "django"
+    - tool: Software/applications - "docker", "vscode", "kubernetes"
+    - platform: Services/clouds - "aws", "github", "salesforce"
+    - database (Wikidata Q8513): Database systems - "postgresql", "mongodb"
+    - library (Wikidata Q188860): Code libraries - "numpy", "tensorflow"
+    
+    **Work Items**
+    - project: Work initiatives - "migration_project", "q3_launch"
+    - product: Things being built - "mobile_app", "payment_service"
+    - feature: Product capabilities - "user_auth", "search_feature"
+    
+    **Skills & Knowledge**
+    - skill: Abilities/expertise - "machine_learning", "system_design"
+    - methodology: Work approaches - "agile", "tdd", "scrum"
+    - domain: Business areas - "fintech", "healthcare", "ecommerce"
+    - certification: Professional certs - "aws_architect", "pmp"
+    - degree: Academic degrees - "cs_degree", "mba"
+    
+    **Location & Time**
+    - location: Places - "san_francisco", "remote", "austin"
+    - date: Time references - "q3_2024", "january", "year_2020"
+    
+    RELATIONSHIP TYPES (inspired by Wikidata properties):
+    
+    **Employment**
+    - employer (Wikidata P108): person → company
+    - works_in: person → team/department
+    - member_of (Wikidata P463): person → team
+    - employed_as: person → role
+    
+    **Management**
+    - manages: person → person/team
+    - reports_to (Wikidata P2828): person → person
+    
+    **Technical**
+    - uses (Wikidata P2283): person/project → technology
+    - knows: person → language/skill
+    - built_with: product → technology
+    - works_on (Wikidata P800): person → project/product
+    
+    **Qualifications**
+    - has_certification: person → certification
+    - has_degree (Wikidata P512): person → degree
+    - graduated_from (Wikidata P69): person → university
+    - specializes_in: person → skill/domain
+    
+    **Context**
+    - located_in (Wikidata P131): person/company → location
+    - scheduled_for (Wikidata P585): project → date
+    - requires: project/person → constraint
+    - prefers: person → option/tool
+    
+    **Collaboration**
+    - collaborates_with: person → person/team
+    - mentors: person → person
+    
+    **Migration/Change**
+    - migrating_from: project → technology
+    - migrating_to: project → technology
+    - previously_used: person/project → technology
+    
+    EXTRACTION RULES:
+    
+    1. **Output underscore_names ONLY** - Never use Q123 or P456 format
+    2. **Flat entities** - No inheritance or subclasses
+    3. **Consistent naming** - Same entity always gets same name
+    4. **User-specific only** - Not general knowledge
+    5. **Simple is better** - When in doubt, use simpler relationship
+    
+    EXAMPLES (Clean underscore format):
+    
+    Example 1 - Simple Employment:
+    User: "I work at Google as a senior software engineer"
+    USER_ID: user_123
+    
+    Entities:
+    - user_123: person
+    - google: company
+    - senior_software_engineer: role
+    
+    Relationships:
+    - user_123 employer google
+    - user_123 employed_as senior_software_engineer
+    
+    Example 2 - Team Structure:
+    User: "I'm on the payments team reporting to Sarah Chen"
+    USER_ID: user_123
+    
+    Entities:
+    - user_123: person
+    - payments_team: team
+    - sarah_chen: person
+    
+    Relationships:
+    - user_123 member_of payments_team
+    - user_123 reports_to sarah_chen
+    
+    Example 3 - Technology Stack:
+    User: "We built our React app with TypeScript, deployed on AWS"
+    USER_ID: user_123
+    
+    Entities:
+    - user_123: person
+    - app: product
+    - react: framework
+    - typescript: language
+    - aws: platform
+    
+    Relationships:
+    - user_123 works_on app
+    - app built_with react
+    - app built_with typescript
+    - app uses aws
+    
+    Example 4 - Migration:
+    User: "Migrating from MongoDB to PostgreSQL for better consistency"
+    USER_ID: user_123
+    
+    Entities:
+    - user_123: person
+    - migration: project
+    - mongodb: database
+    - postgresql: database
+    
+    Relationships:
+    - user_123 works_on migration
+    - migration migrating_from mongodb
+    - migration migrating_to postgresql
+    
+    Example 5 - Education:
+    User: "MIT computer science graduate, now AWS certified"
+    USER_ID: user_123
+    
+    Entities:
+    - user_123: person
+    - mit: company  # Universities are companies in our flat model
+    - computer_science: degree
+    - aws_certified: certification
+    
+    Relationships:
+    - user_123 graduated_from mit
+    - user_123 has_degree computer_science
+    - user_123 has_certification aws_certified
+    
+    Example 6 - Complex Multi-turn:
+    Turn 1: "I work at Stripe"
+    Turn 2: "My colleague Jim at Stripe handles DevOps"
+    USER_ID: user_123
+    
+    Entities:
+    - user_123: person
+    - stripe: company
+    - jim: person
+    - devops: skill
+    
+    Relationships:
+    - user_123 employer stripe
+    - jim employer stripe
+    - jim specializes_in devops
+    - user_123 collaborates_with jim
+    
+    Example 7 - Preferences and Constraints:
+    User: "I prefer TypeScript, need GDPR compliance, work remotely from Austin"
+    USER_ID: user_123
+    
+    Entities:
+    - user_123: person
+    - typescript: language
+    - gdpr_compliance: constraint
+    - remote: location
+    - austin: location
+    
+    Relationships:
+    - user_123 prefers typescript
+    - user_123 requires gdpr_compliance
+    - user_123 located_in austin
+    - user_123 works_in remote
+    
+    DO NOT EXTRACT:
+    
+    ❌ Q-numbers or P-numbers:
+    Wrong: user_123 P108 google
+    Right: user_123 employer google
+    
+    ❌ Hierarchical relationships:
+    Wrong: software_engineer is_a role, role is_a occupation
+    Right: Just use "software_engineer: role"
+    
+    ❌ Generic knowledge:
+    Wrong: python is_a programming_language
+    Right: (nothing - we only extract user-specific facts)
+    
+    ❌ Vague entities:
+    Input: "I like good code"
+    Wrong: good_code: concept
+    Right: (nothing - too vague)
+    
+    ❌ Duplicate concepts:
+    Wrong: Both "human" and "person" for same entity
+    Right: Just "person"
+    
+    OUTPUT FORMAT:
+    {
+      "entities": [
+        {"id": "entity_name", "type": "entity_type"},
+        ...
+      ],
+      "relationships": [
+        {"source": "entity1", "relation": "relation_name", "target": "entity2"},
+        ...
+      ]
+    }
+    
+    VALIDATION CHECKLIST:
+    ✓ All names use lowercase_underscores (no Q/P numbers)
+    ✓ Each entity has exactly one type (flat structure)
+    ✓ Relationships use simple verb names
+    ✓ No hierarchies or inheritance
+    ✓ User-specific context only
+    ✓ Consistent naming across mentions
+    
+    Remember: Think "What would Wikidata extract?" for consistency, but output simple underscore_names in a flat structure. The Wikidata references are just to help you understand the concept - never output Q or P identifiers.
