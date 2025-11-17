@@ -419,6 +419,6 @@ def then_all_nodes_have_correct_namespace(context, milvus_client):
         assert len(results) > 0, f"No results found for namespace '{namespace}'"
 
         for result in results:
-            assert result[NAMESPACE] == namespace, (
-                f"Namespace mismatch: expected '{namespace}', got '{result[NAMESPACE]}'"
-            )
+            assert (
+                result[NAMESPACE] == namespace
+            ), f"Namespace mismatch: expected '{namespace}', got '{result[NAMESPACE]}'"

@@ -28,17 +28,8 @@ def create_manual_partitions(client: MilvusClient, collection_name: str) -> None
             client.create_partition(collection_name=collection_name, partition_name=partition_name)
 
 
-def load_partitions_for_namespaces(client: MilvusClient, collection_name: str, namespaces: list[str]) -> list[str]:
-    """Key memory optimization: load only partitions containing active namespaces, not all 1024."""
-    partition_ids = {hash_namespace_to_partition(ns) for ns in namespaces}
-    partition_names = [get_partition_name(pid) for pid in partition_ids]
-    client.load_partitions(collection_name=collection_name, partition_names=partition_names)
-    return partition_names
-
-
-def release_partitions(client: MilvusClient, collection_name: str, partition_names: list[str]) -> None:
-    """Free memory when namespaces no longer actively used."""
-    client.release_partitions(collection_name=collection_name, partition_names=partition_names)
+def get_partition_names_for_namespaces(namespaces: list[str]) -> list[str]:
+    return [get_partition_name_for_namespace(namespace) for namespace in namespaces]
 
 
 def get_partition_name_for_namespace(namespace: str) -> str:

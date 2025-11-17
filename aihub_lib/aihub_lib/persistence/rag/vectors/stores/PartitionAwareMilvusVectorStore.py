@@ -1,4 +1,3 @@
-import logging
 from typing import Any
 
 from llama_index.core.schema import BaseNode
@@ -10,9 +9,9 @@ from llama_index.vector_stores.milvus.utils import BaseSparseEmbeddingFunction
 
 from aihub_lib.persistence.rag.vectors.node_metadata import NAMESPACE
 from aihub_lib.persistence.rag.vectors.stores.MilvusPartitionManager import (
-    get_partition_name_for_namespace,
-    load_partitions_for_namespaces,
     MAX_PARTITIONS,
+    get_partition_name_for_namespace,
+    get_partition_names_for_namespaces,
 )
 
 try:
@@ -131,9 +130,7 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
         # Extract namespaces and load their partitions
         namespaces = self._extract_namespaces_from_filters(query)
         if namespaces:
-            partition_names = load_partitions_for_namespaces(
-                client=self.client, collection_name=self.collection_name, namespaces=namespaces
-            )
+            partition_names = get_partition_names_for_namespaces(namespaces=namespaces)
             kwargs["milvus_partition_names"] = partition_names
 
         # HYBRID mode workaround: base class doesn't pass kwargs, so handle it ourselves
