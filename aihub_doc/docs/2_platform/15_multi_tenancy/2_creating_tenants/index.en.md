@@ -1,6 +1,5 @@
 ---
 title: Setting up tenants
-index: 2
 ---
 
 # Setting up tenants

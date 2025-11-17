@@ -1,6 +1,5 @@
 ---
 title: RAG ingestion pipeline
-index: 2
 ---
 
 # RAG ingestion pipeline

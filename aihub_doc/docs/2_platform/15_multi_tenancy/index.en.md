@@ -1,6 +1,5 @@
 ---
 title: Multi-tenancy
-index: 15
 ---
 
 # Multi-tenancy

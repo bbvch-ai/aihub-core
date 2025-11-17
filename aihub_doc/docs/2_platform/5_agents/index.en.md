@@ -1,6 +1,5 @@
 ---
 title: Agents
-index: 5
 ---
 
 # Agents

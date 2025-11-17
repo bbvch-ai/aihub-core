@@ -1,6 +1,5 @@
 ---
 title: Managing users and roles
-index: 3
 ---
 
 # Managing users and roles

@@ -1,6 +1,5 @@
 ---
 title: Expert asking agent
-index: 3
 ---
 
 # Expert asking agent

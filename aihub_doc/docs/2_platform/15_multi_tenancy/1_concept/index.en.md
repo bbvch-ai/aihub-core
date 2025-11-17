@@ -1,6 +1,5 @@
 ---
 title: How multi-tenancy works
-index: 1
 ---
 
 # How multi-tenancy works

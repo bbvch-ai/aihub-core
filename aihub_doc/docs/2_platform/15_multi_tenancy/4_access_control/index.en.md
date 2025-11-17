@@ -1,6 +1,5 @@
 ---
 title: Technical reference - Access control
-index: 4
 ---
 
 # Technical reference: Access control
