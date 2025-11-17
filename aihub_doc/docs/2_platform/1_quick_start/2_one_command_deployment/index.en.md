@@ -354,7 +354,8 @@ docker compose -f docker-compose.latest.yml ps --format "table {{.Name}}\t{{.Sta
 
 ### Generate LiteLLM API Key
 
-After LiteLLM is running, generate a dedicated API key for service-to-service communication. **Never use the master key directly for API access.**
+After LiteLLM is running, generate a dedicated API key for service-to-service communication. **Never use the master key
+directly for API access.**
 
 ```bash
 # Wait for LiteLLM to be fully ready
@@ -397,7 +398,8 @@ docker compose -f docker-compose.latest.yml restart api llm_wrapping_agent rag_a
 ```
 
 ::: tip Security Best Practice
-The master key should only be used for administrative operations like generating keys, managing users, and viewing analytics. All service-to-service communication should use generated API keys that can be rotated independently.
+The master key should only be used for administrative operations like generating keys, managing users, and viewing
+analytics. All service-to-service communication should use generated API keys that can be rotated independently.
 :::
 
 ## Step 4: Verify Successful Deployment

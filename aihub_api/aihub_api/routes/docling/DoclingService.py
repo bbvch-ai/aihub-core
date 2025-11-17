@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 class DoclingService:
-
     @staticmethod
     async def convert_from_bytes(content: bytes, filename: str) -> DocumentConversionResponse:
         logger.info(f"Converting document: {filename} ({len(content)} bytes)")
