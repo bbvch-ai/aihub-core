@@ -1,13 +1,13 @@
 import logging
 from typing import Annotated
 
+from aihub_api.routes.docling.DoclingMappings import MimeTypeToFormat, FormatToExtensions
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
-from fastapi import HTTPException, Request, Security
+from fastapi import Request, Security, HTTPException
 
-from aihub_api.routes.docling.DoclingMappings import FormatToExtensions, MimeTypeToFormat
 from aihub_api.routes.docling.DoclingService import DoclingService
 from aihub_api.routes.docling.dto.DocumentConversionResponse import DocumentConversionResponse
 
@@ -25,6 +25,7 @@ class DoclingController(Controller):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def parse_document(self, route: str = "/process") -> "DoclingController":
+
         @self.router.put(
             route, tags=self.tags, summary="Process document (OpenWebUI)", response_model=DocumentConversionResponse
         )
