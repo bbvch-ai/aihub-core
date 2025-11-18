@@ -109,7 +109,7 @@ def default_definitions(
         nodes_factory(nodes_key, document_key=document_key, partitions=document_partitions),
     ]
     if with_summary_nodes:
-        summary_nodes_key = AssetKey([datalake_container_name, "summary_nodes"])
+        summary_nodes_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "summary_nodes"])
         assets.append(
             summary_nodes_factory(
                 summary_nodes_key, document_key=document_key, nodes_key=nodes_key, partitions=document_partitions

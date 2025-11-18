@@ -6,6 +6,7 @@ from pydantic import Field
 from aihub_lib.nats.events import StopEvent
 from aihub_lib.nats.events.utils import get_base_type
 from aihub_lib.nats.events.work.WorkEvent import WorkEvent
+from aihub_lib.nats.topics.agents import AgentInstanceTopic, PartialAgentTopic
 
 TEvent = TypeVar("TEvent", bound=StopEvent)
 
@@ -19,6 +20,9 @@ class AgentWorkEvent[TEvent: StopEvent](WorkEvent):
     from the agents stop event accessible for you to use in your process step.
     """
 
+    submitted_by: Annotated[
+        AgentInstanceTopic | PartialAgentTopic, Field(description="The topic of the agent that submitted the work.")
+    ]
     agent_stop_event: Annotated[TEvent, Field(description="The stop event of the agent that completed the work.")]
 
     @classmethod

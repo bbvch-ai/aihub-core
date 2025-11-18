@@ -19,6 +19,7 @@ from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentI
 from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
 from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
 from aihub_lib.persistence.agents.AgentEntity import EventSpec
+from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 from aihub_lib.persistence.process.ProcessConfigEntityDocument import ProcessConfigEntityDocument
 from aihub_lib.persistence.process.ProcessConfigEntityEmbeddedDocument import ProcessConfigEntityEmbeddedDocument
 
@@ -32,18 +33,18 @@ class ProgramInSpecsEntity(EmbeddedDocument):
     event_specs = EmbeddedDocumentField(EventSpec, required=True)
 
     @classmethod
-    def from_specs(cls, program_in_dto) -> "ProgramInSpecsEntity":
+    def from_specs(cls, specs: ProgramInSpecs) -> "ProgramInSpecsEntity":
         return cls(
-            route=program_in_dto.route,
-            method=program_in_dto.method,
-            is_process_start=program_in_dto.is_process_start,
-            event_specs=EventSpec.from_specs(program_in_dto.event_specs),
+            route=specs.route,
+            method=specs.method,
+            is_process_start=specs.is_process_start,
+            event_specs=EventSpec.from_specs(specs.event_specs),
         )
 
 
 class HumanInSpecsEntity(EmbeddedDocument):
-    name = DictField(required=True)
-    description = DictField(required=True)
+    name = EmbeddedDocumentField(LocaleStringEntity, required=True)
+    description = EmbeddedDocumentField(LocaleStringEntity, required=True)
     route = StringField(required=True)
     method = StringField(required=True)
     is_process_start = BooleanField(required=True)
@@ -51,15 +52,15 @@ class HumanInSpecsEntity(EmbeddedDocument):
     form = ListField(DictField(), default=list)
 
     @classmethod
-    def from_specs(cls, human_in_dto) -> "HumanInSpecsEntity":
+    def from_specs(cls, specs: HumanInSpecs) -> "HumanInSpecsEntity":
         return cls(
-            name=human_in_dto.name.model_dump(),
-            description=human_in_dto.description.model_dump(),
-            route=human_in_dto.route,
-            method=human_in_dto.method,
-            is_process_start=human_in_dto.is_process_start,
-            event_specs=EventSpec.from_specs(human_in_dto.event_specs),
-            form=[form_element.model_dump() for form_element in human_in_dto.form],
+            name=LocaleStringEntity.from_locale_string(specs.name),
+            description=LocaleStringEntity.from_locale_string(specs.description),
+            route=specs.route,
+            method=specs.method,
+            is_process_start=specs.is_process_start,
+            event_specs=EventSpec.from_specs(specs.event_specs),
+            form=[form_element.model_dump() for form_element in specs.form],
         )
 
 
@@ -70,19 +71,19 @@ class AgentInSpecsEntity(EmbeddedDocument):
     event_specs = EmbeddedDocumentField(EventSpec, required=True)
 
     @classmethod
-    def from_specs(cls, agent_in_dto) -> "AgentInSpecsEntity":
+    def from_specs(cls, specs: AgentInSpecs) -> "AgentInSpecsEntity":
         return cls(
-            agent_class=agent_in_dto.agent_class,
-            agent_id=agent_in_dto.agent_id,
-            is_process_start=agent_in_dto.is_process_start,
-            event_specs=EventSpec.from_specs(agent_in_dto.event_specs),
+            agent_class=specs.agent_class,
+            agent_id=specs.agent_id,
+            is_process_start=specs.is_process_start,
+            event_specs=EventSpec.from_specs(specs.event_specs),
         )
 
 
 class ProcessConfig(EmbeddedDocument):
     process_id = StringField(required=False)
-    name = StringField(required=True)
-    description = StringField(required=True)
+    name = EmbeddedDocumentField(LocaleStringEntity, required=True)
+    description = EmbeddedDocumentField(LocaleStringEntity, required=True)
     icon = StringField(default="meteor-icons:robot")
 
 

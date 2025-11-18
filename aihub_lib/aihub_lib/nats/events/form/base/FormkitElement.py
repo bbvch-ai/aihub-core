@@ -22,6 +22,7 @@ class FormkitElement(BaseModel, abc.ABC):
     condition_if: Annotated[
         str | None, Field(description="Conditional expression to show this element", alias="if", pattern=r"^\$.+")
     ] = None
+    ref: Annotated[str | None, Field(description="Unique identifier for this element", alias="id")] = None
 
     @abc.abstractmethod
     def in_locale(self, t: LocaleHandler) -> "FormkitElement": ...
