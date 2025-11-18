@@ -898,6 +898,7 @@ services:
       OAUTH2_PROXY_EMAIL_DOMAINS: "*"
       OAUTH2_PROXY_REVERSE_PROXY: True
       OAUTH2_PROXY_REDIRECT_URL: https://dagster.${DOMAIN}
+      OAUTH2_PROXY_SCOPE: openid email profile
       OAUTH2_PROXY_ALLOWED_GROUPS: ${DAGSTER_OAUTH_ALLOWED_GROUPS}
       OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
       OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: https://aiagentsstpublicblobs.blob.core.windows.net/logos/Bbv-Logo_farbig.png
@@ -927,7 +928,6 @@ services:
       - -w
       - /dagster_home/workspace.yaml
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
       - ./configs/dagster/dagster-config.latest.yml:/dagster_home/dagster.yaml:ro
       - ./configs/dagster/workspace.latest.yml:/dagster_home/workspace.yaml:ro
     environment:
@@ -949,7 +949,6 @@ services:
       - dagster-daemon
       - run
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
       - ./configs/dagster/dagster-config.latest.yml:/dagster_home/dagster.yaml:ro
       - ./configs/dagster/workspace.latest.yml:/dagster_home/workspace.yaml:ro
     environment:
@@ -1245,8 +1244,6 @@ services:
     container_name: default-rag-pipeline
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:latest
-    volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/dagster-data:/dagster_home
     environment:
       PYTHONUNBUFFERED: 1
 
