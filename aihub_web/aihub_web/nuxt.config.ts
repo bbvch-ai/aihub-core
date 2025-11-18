@@ -2,6 +2,33 @@ import { fileURLToPath } from 'url'
 
 import { defineNuxtConfig } from 'nuxt/config'
 
+export const wrappedPrimeInputs: string[] = [
+  'AutoComplete',
+  'CascadeSelect',
+  'Checkbox',
+  'Chip',
+  'ColorPicker',
+  'DatePicker',
+  'Editor',
+  'InputMask',
+  'InputNumber',
+  'InputOtp',
+  'InputText',
+  'Knob',
+  'Listbox',
+  'MultiSelect',
+  'Password',
+  'RadioButton',
+  'Rating',
+  'Select',
+  'SelectButton',
+  'Slider',
+  'Textarea',
+  'ToggleButton',
+  'ToggleSwitch',
+  'TreeSelect',
+]
+
 export default defineNuxtConfig({
   modules: [
     '@vueuse/nuxt',
@@ -64,6 +91,13 @@ export default defineNuxtConfig({
     },
   },
 
+  formkitPrimevue: {
+    includePrimeIcons: true,
+    includeStyles: true,
+    installFormKit: true,
+    installI18N: true,
+  },
+
   i18n: {
     strategy: 'prefix',
     detectBrowserLanguage: {
@@ -98,6 +132,10 @@ export default defineNuxtConfig({
   },
 
   primevue: {
+    autoImport: true,
+    components: {
+      exclude: [...wrappedPrimeInputs, 'Button', 'Form', 'FormField', 'Chart'],
+    },
     importTheme: {
       from: fileURLToPath(new URL('./themes/aihub-theme.ts', import.meta.url)),
     },
