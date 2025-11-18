@@ -65,8 +65,7 @@ RUN groupadd --gid "$USER_GID" "$USERNAME" && \
     useradd --uid "$USER_UID" --gid "$USER_GID" -m -s /bin/bash "$USERNAME" && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-    curl \
-    make && \
+    curl && \
     curl -sSL https://install.python-poetry.org | python3 - --version "${POETRY_VERSION}" && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
@@ -87,5 +86,4 @@ WORKDIR "$DAGSTER_HOME"
 # Expose necessary port
 EXPOSE 8000
 
-# Start the application
-ENTRYPOINT ["make", "dagster-webserver"]
+# Entrypoint is defined in docker-compose for webserver and daemon
