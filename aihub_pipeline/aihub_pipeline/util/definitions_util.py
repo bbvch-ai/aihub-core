@@ -295,9 +295,7 @@ def default_local_filesystem_to_datalake_definitions(
 
     filesystem_key = AssetKey([datalake_container_name, "local_fs_to_datalake", "local_fs"])
     data_lake_files_key = AssetKey([datalake_container_name, "local_fs_to_datalake", "data_lake_files"])
-    removed_data_lake_files_key = AssetKey(
-        [datalake_container_name, "local_fs_to_datalake", "removed_data_lake_files"]
-    )
+    removed_data_lake_files_key = AssetKey([datalake_container_name, "local_fs_to_datalake", "removed_data_lake_files"])
 
     observable_filesystem_asset = observable_local_file_system_factory(filesystem_key, filesystem_partitions)
 

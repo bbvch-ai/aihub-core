@@ -91,12 +91,12 @@ For logical separation within a shared platform, use [multi-tenancy](../../15_mu
 
 ### Shared LLM backend
 
-When deploying multiple instances, they can share backend LLM resources. Multiple instances use the same Azure
-OpenAI subscription, Google Gemini API keys, or self-hosted models. They can also share authentication infrastructure
-like Azure AD or Keycloak.
+When deploying multiple instances, they can share backend LLM resources. Multiple instances use the same Azure OpenAI
+subscription, Google Gemini API keys, or self-hosted models. They can also share authentication infrastructure like
+Azure AD or Keycloak.
 
-Each instance still has their own LiteLLM proxy. The proxy handles model selection, budgets, rate limits, and versions per
-instance. LLM usage is tracked per instance. Prompts, responses, and user data stay within each instance.
+Each instance still has their own LiteLLM proxy. The proxy handles model selection, budgets, rate limits, and versions
+per instance. LLM usage is tracked per instance. Prompts, responses, and user data stay within each instance.
 
 The shared LLM backends are stateless. They don't persist prompts or responses. Conversational context and history
 remain in each instance's own infrastructure.
@@ -105,9 +105,9 @@ remain in each instance's own infrastructure.
 
 ### Data isolation
 
-Each instance's data stays isolated. There's no shared database or vector store. Data can't leak between
-organizations. The setup meets Swiss Data Protection Law (revDSG), GDPR data isolation requirements, and Swiss public
-sector security standards.
+Each instance's data stays isolated. There's no shared database or vector store. Data can't leak between organizations.
+The setup meets Swiss Data Protection Law (revDSG), GDPR data isolation requirements, and Swiss public sector security
+standards.
 
 ::: info Multi-tenancy within instances
 Each instance can also use [multi-tenancy](../../15_multi_tenancy/) to create logical boundaries for departments,
@@ -117,14 +117,14 @@ isolation between instances.
 
 ### Configuration
 
-Each instance can be configured independently. Organizations can deploy custom agents, specialized pipelines for their data
-sources, their own access control (RBAC, OIDC with local IdP), custom knowledge bases, and dedicated authentication
+Each instance can be configured independently. Organizations can deploy custom agents, specialized pipelines for their
+data sources, their own access control (RBAC, OIDC with local IdP), custom knowledge bases, and dedicated authentication
 providers like Azure AD or Keycloak.
 
 ### Scaling and updates
 
-Resource allocation is per-instance. You scale compute, memory, and storage based on actual usage. Each instance can apply
-updates on their own schedule. Testing new features in one instance doesn't affect others. SLAs vary per contract.
+Resource allocation is per-instance. You scale compute, memory, and storage based on actual usage. Each instance can
+apply updates on their own schedule. Testing new features in one instance doesn't affect others. SLAs vary per contract.
 
 ### Compliance and auditing
 
@@ -203,8 +203,8 @@ Network architecture:
 - No direct communication between instances
 - Optional: Shared authentication provider (Azure AD, Keycloak)
 
-Data isolation and sovereignty. Independent scaling and resource allocation. Custom configurations per instance. Flexible
-update schedules. Clear compliance boundaries.
+Data isolation and sovereignty. Independent scaling and resource allocation. Custom configurations per instance.
+Flexible update schedules. Clear compliance boundaries.
 
 ---
 
@@ -260,9 +260,9 @@ graph TB
     classDef default font-size:16px,padding:20px
 ```
 
-Each instance has their own LiteLLM proxy (independent cost tracking, versioning, configuration). All instance
-LiteLLM proxies connect to shared LLM backend resources (Azure OpenAI subscriptions, self-hosted models). Prompts,
-responses, and user data stay within instance boundaries.
+Each instance has their own LiteLLM proxy (independent cost tracking, versioning, configuration). All instance LiteLLM
+proxies connect to shared LLM backend resources (Azure OpenAI subscriptions, self-hosted models). Prompts, responses,
+and user data stay within instance boundaries.
 
 ---
 
@@ -270,8 +270,9 @@ responses, and user data stay within instance boundaries.
 
 ### Instance isolation
 
-Instances do not communicate with each other. Each instance has separate databases, vector stores, and file
-storage. Each instance connects to their own IdP (Azure AD, Keycloak) or can share a common IdP with separate namespace isolation. LiteLLM enforces per-instance API keys and quotas.
+Instances do not communicate with each other. Each instance has separate databases, vector stores, and file storage.
+Each instance connects to their own IdP (Azure AD, Keycloak) or can share a common IdP with separate namespace
+isolation. LiteLLM enforces per-instance API keys and quotas.
 
 ### LLM proxy security
 
@@ -281,8 +282,8 @@ without prompt content. Presidio integration is optional for PII detection and r
 
 ### Data in transit
 
-All communication is encrypted with TLS (instance to LLM proxy). Certificate management uses Let's Encrypt for production
-and mkcert for development. API authentication uses bearer tokens (OAuth 2.0, JWT).
+All communication is encrypted with TLS (instance to LLM proxy). Certificate management uses Let's Encrypt for
+production and mkcert for development. API authentication uses bearer tokens (OAuth 2.0, JWT).
 
 ### Data at rest
 
@@ -304,8 +305,8 @@ Secrets are managed via environment variables, Azure Key Vault, or Docker secret
 ## FAQ
 
 ::: details Can instances share agents or pipelines?
-No. Each instance has its own isolated set of agents and pipelines. However, the same agent definitions (code)
-can be deployed across multiple instances. Customizations are instance-specific.
+No. Each instance has its own isolated set of agents and pipelines. However, the same agent definitions (code) can be
+deployed across multiple instances. Customizations are instance-specific.
 
 For sharing agents within an organization, use [multi-tenancy](../../15_multi_tenancy/) to create logical boundaries
 within a single instance.
@@ -325,9 +326,9 @@ separation within that instance).
 :::
 
 ::: details What data does the shared LLM backend see?
-Each instance has their own LiteLLM proxy, so prompts and responses stay within the instance. The shared LLM
-backends (Azure OpenAI, Gemini, self-hosted models) see API requests from multiple instance LiteLLM proxies (stateless,
-not persisted), model inference requests (prompts and completions in transit only), no instance identification or context,
+Each instance has their own LiteLLM proxy, so prompts and responses stay within the instance. The shared LLM backends
+(Azure OpenAI, Gemini, self-hosted models) see API requests from multiple instance LiteLLM proxies (stateless, not
+persisted), model inference requests (prompts and completions in transit only), no instance identification or context,
 and anonymous PII data if enabled.
 
 They do not see which instance made the request, conversational history, or any stored data. All context remains in the
@@ -348,14 +349,14 @@ Data is available in the LiteLLM admin UI and exportable for billing.
 
 ::: details Can instances have different LLM access?
 Yes. LiteLLM configuration allows per-instance model access. For example, Instance A might only use GPT-4o for strict
-compliance, Instance B might use GPT-4o plus Gemini 2.0 for more flexibility, and Instance C might use self-hosted models
-only for air-gapped deployment.
+compliance, Instance B might use GPT-4o plus Gemini 2.0 for more flexibility, and Instance C might use self-hosted
+models only for air-gapped deployment.
 :::
 
 ::: details What happens if the LLM proxy is unavailable?
-Instances will experience LLM-dependent feature degradation. RAG agents cannot generate responses. Embeddings
-cannot be created for new documents. However, existing data and UI remain accessible, and non-LLM features (document
-upload, RBAC, observability) continue working.
+Instances will experience LLM-dependent feature degradation. RAG agents cannot generate responses. Embeddings cannot be
+created for new documents. However, existing data and UI remain accessible, and non-LLM features (document upload, RBAC,
+observability) continue working.
 
 Mitigation: Deploy LiteLLM with high availability (multiple replicas, load balancing).
 :::
