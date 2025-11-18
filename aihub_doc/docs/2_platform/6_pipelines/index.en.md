@@ -1,6 +1,5 @@
 ---
 title: Data pipelines
-index: 6
 ---
 
 # Data pipelines

@@ -1,140 +1,96 @@
 ---
-title: Grundlagen von Agenten
-source_sha: 7336a687fb5e38f9c8ab984cd8d1e908ce545965bd1c9df05c54fb321b2133c3
+title: Grundlagen von Agents
+source_sha: 621b31e7ab5304a99327778f65077a1dbf06981c01c53e9385ac6053d883998a
 ---
 
-# Grundlagen von Agenten
+# Grundlagen von Agents
 
-Während der Benutzer über eine einfache Chat-Oberfläche mit Agenten interagiert, arbeitet eine hochentwickelte,
-ereignisgesteuerte Architektur im Hintergrund, um sie zuverlässig, auditierbar und intelligent zu machen. Dieser
-Abschnitt beleuchtet die grundlegenden Konzepte, die die Funktionsweise, Informationsverwaltung und Zusammenarbeit von
-Agenten im Swiss AI Hub steuern.
+Agents nutzen eine ereignisgesteuerte Architektur. Benutzer können über Chat-Schnittstellen interagieren oder Agents
+können autonom ausgeführt werden. Workflows, Kontextverwaltung und Ereignisbehandlung laufen im Hintergrund ab.
 
-Das Verständnis dieser Prinzipien ist entscheidend, um zu erkennen, wie die Plattform KI von einer unvorhersehbaren
-„Black Box“ in ein transparentes und vertrauenswürdiges Unternehmenswerkzeug verwandelt.
+## Strukturierte Workflows
 
-## Der Bauplan des Agenten: Strukturierte Workflows
+Jeder Agent folgt einem vordefinierten Workflow, der seine genaue Abfolge von Operationen festlegt. Anstatt einem Agent
+Tools zu geben und ihn entscheiden zu lassen, wie er diese verwendet, legen Workflows jeden Schritt fest, den der Agent
+ausführt.
 
-Das Verhalten jedes Agenten wird durch einen **Workflow** definiert – einen expliziten, Schritt-für-Schritt-Prozess.
-Dies ist das wichtigste Designprinzip der Plattform. Anstatt einem Agenten eine Reihe von Werkzeugen zu geben und ihn
-autonom entscheiden zu lassen, wie er diese einsetzt, definieren wir die genaue Abfolge der Operationen, die er befolgen
-muss.
+Workflows bieten:
 
-Dieser strukturierte Ansatz bietet die Vorhersehbarkeit und Kontrolle, die Unternehmen benötigen:
+- Transparenz: Entwickler und Compliance-Beauftragte können die Workflow-Definition lesen und verstehen, was der Agent
+  tut
+- Testbarkeit: Jeder Schritt kann unabhängig entwickelt und getestet werden
+- Kontrolle: Der Agent kann nicht auf unautorisierte Daten zugreifen oder Aktionen außerhalb seines Workflows ausführen
 
-- **Transparenz**: Jeder, vom Entwickler bis zum Compliance Officer, kann die Workflow-Definition einsehen und die Logik
-  des Agenten verstehen. Dies macht das KI-Verhalten erklärbar.
-- **Zuverlässigkeit & Testbarkeit**: Jeder Schritt in einem Workflow kann unabhängig entwickelt und getestet werden.
-  Dies reduziert das Bereitstellungsrisiko und stellt sicher, dass komplexe Prozesse aus zuverlässigen Komponenten
-  aufgebaut sind.
-- **Kontrolle**: Der Agent ist durch seinen Workflow eingeschränkt. Er kann nicht entscheiden, auf Daten zuzugreifen,
-  die er nicht sollte, oder Aktionen außerhalb seiner vordefinierten Reihenfolge ausführen, wodurch eine erhebliche
-  Klasse von Risiken eliminiert wird, die mit autonomer KI verbunden ist.
+Schritte können bei Bedarf Sprachmodelle für Argumentations- und Natural-Language-Aufgaben verwenden, aber viele
+Schritte führen deterministische Operationen wie Datenvalidierung, Formatierung oder bedingtes Routing ohne
+LLM-Beteiligung aus. Der Workflow steuert den gesamten Ausführungspfad.
 
-Innerhalb jedes Schrittes kann der Agent die volle Leistung der KI nutzen, um zu argumentieren, Daten zu analysieren und
-intelligente Entscheidungen zu treffen, aber sein gesamter Pfad wird durch den von Ihnen definierten Workflow gesteuert.
+## Kontextverwaltung
 
-## Das Gedächtnis des Agenten: Hierarchisches Kontextmanagement
+Agents verwenden drei Kontextebenen zur Zustandsverwaltung:
 
-Damit ein Agent effektiv sein kann, insbesondere in einem langen Gespräch, benötigt er ein Gedächtnis. Die Plattform
-bietet ein ausgeklügeltes, mehrschichtiges Kontextmanagementsystem, das als Gedächtnis des Agenten fungiert und
-sicherstellt, dass er den Überblick über das Gespräch nie verliert, während die Leistung optimiert wird.
+**Thread-Kontext** speichert den persistenten Zustand über mehrere Agentenläufe innerhalb desselben Threads. Ein Thread
+stellt eine kontinuierliche Interaktionssitzung dar – für Chat-Agents ist dies eine Konversation; für autonome Agents
+ist es eine Reihe verwandter Ausführungen. Wenn Sie zu einer gestern begonnenen Konversation zurückkehren, ermöglicht
+der Thread-Kontext dem Agenten, sich an frühere Austausche zu erinnern. Dieser Kontext hat eine Gültigkeitsdauer von 30
+Tagen. Die Zugriffskontrolle wird auf dieser Ebene angewendet.
 
-Dieses Gedächtnis ist in einer dreistufigen Hierarchie organisiert:
+**Display-Kontext** verwaltet, was in der Benutzeroberfläche erscheint. Er gruppiert Aktionen, um sie als eine einzige
+Interaktion darzustellen. Wenn Agents zusammenarbeiten, steuert der primäre Agent, ob die Arbeit des Sub-Agenten dem
+Benutzer angezeigt wird oder verborgen bleibt.
 
-- **Thread Context**: Dies ist das **Langzeitgedächtnis** des Agenten für ein gesamtes Gespräch oder einen langlaufenden
-  Geschäftsprozess. Es speichert Benutzereinstellungen, den vollständigen Gesprächsverlauf und Wissen, das über mehrere
-  Interaktionen hinweg gesammelt wurde. Wenn Sie zu einem Gespräch zurückkehren, das Sie gestern begonnen haben,
-  ermöglicht der Thread Context dem Agenten, sich an alles zu erinnern, was Sie besprochen haben. Er ist die Grundlage
-  für die Sicherheit, da der Zugriff auf Thread-Ebene gesteuert wird.
+**Run-Kontext** enthält temporäre Daten für einen einzelnen Agentenlauf. Er enthält Zwischenberechnungen und
+zwischengespeicherte Daten für diese spezifische Ausführung. Dieser Kontext läuft nach 30 Tagen ab, ist aber zwischen
+verschiedenen Läufen isoliert.
 
-- **Display Context**: Dieser Bereich verwaltet, was dem Benutzer in der Oberfläche angezeigt wird. Er fasst eine Reihe
-  von Aktionen zusammen, um sie als eine einzige, nahtlose Interaktion darzustellen. Dies ist besonders wichtig, wenn
-  Agenten hinter den Kulissen zusammenarbeiten, da es einem primären Agenten ermöglicht zu steuern, ob die „Arbeit“
-  eines Sub-Agenten für den Benutzer sichtbar oder verborgen ist.
+## Ereignisgesteuerte Architektur
 
-- **Run Context**: Dies ist das **Kurzzeit-Arbeitsgedächtnis** des Agenten für eine einzelne, nachverfolgbare Aufgabe
-  (z. B. von Ihrer Frage zu seiner Antwort). Es speichert die Zwischenberechnungen, temporären Daten und die
-  unveränderliche Konfiguration für diese spezifische Ausführung. Dieses Gedächtnis ist flüchtig und für einen
-  Hochgeschwindigkeitszugriff während des Betriebs des Agenten optimiert.
+Agents agieren innerhalb eines Ökosystems von Komponenten, die über asynchrone Nachrichten auf einem Message Bus (NATS)
+kommunizieren.
 
-## Das Ökosystem des Agenten: Ereignisgesteuerte Teilnehmer
+Vier Beteiligte:
 
-Ein Agent arbeitet nicht isoliert. Er ist Teil eines Ökosystems von Komponenten, die zusammenarbeiten, um eine nahtlose
-und sichere Erfahrung zu liefern. Diese Interaktion ist vollständig **ereignisgesteuert**, was bedeutet, dass
-Komponenten über asynchrone Nachrichten auf einem zentralen Message Bus kommunizieren. Dieses Design macht das System
-hoch skalierbar, resilient und perfekt auditierbar.
+**Agent**: Führt die in seinem Workflow definierte Geschäftslogik aus. Empfängt Anweisungen und erzeugt Ergebnisse und
+Telemetriedaten.
 
-Es gibt vier Hauptteilnehmer in diesem Ökosystem:
+**API Gateway**: Authentifiziert Benutzer, übersetzt HTTP-Anfragen in interne Ereignisse und streamt Agent-Antworten
+zurück an die Benutzeroberfläche.
 
-1. **Der Agent**: Der autonome Worker, der die in seinem Workflow definierte Geschäftslogik ausführt. Er konsumiert
-   Anweisungen (Control Events) und produziert einen reichhaltigen Strom von Ergebnissen und Telemetriedaten (Display
-   Events).
-2. **Das API Gateway**: Die sichere Eingangstür zur Plattform. Es ist die einzige Komponente, die initiale Ereignisse
-   aus externen Anfragen erstellen kann. Es authentifiziert Benutzer, übersetzt ihre HTTP-Anfragen in sichere interne
-   Ereignisse und streamt die Antworten des Agenten zurück zur Benutzeroberfläche.
-3. **Das Frontend**: Die Benutzeroberfläche, mit der Sie interagieren. Es ist hauptsächlich ein Listener, der einen
-   Strom von „Display Events“ vom Agenten abonniert und diese in Echtzeit als Streaming-Text, Denkprozesse oder andere
-   UI-Elemente rendert.
-4. **Der Process Orchestrator**: Ein spezialisierter Agententyp, der High-Level-Geschäftsprozesse verwaltet. Er agiert
-   wie ein Dirigent, der die Abschlussereignisse eines Agenten konsumiert, um den nächsten Teilnehmer in einem
-   komplexen, mehrstufigen Workflow auszulösen.
+**Frontend**: Empfängt die Agent-Ausgabe und rendert sie in Echtzeit als Streaming-Text und UI-Elemente.
 
-Diese entkoppelte Architektur stellt sicher, dass die Plattform robust ist. Eine Verlangsamung der Benutzeroberfläche
-kann beispielsweise den Workflow des zugrunde liegenden Agenten nicht zum Absturz bringen.
+**Process Orchestrator**: Verwaltet Multi-Agent-Workflows, indem er überwacht, wann ein Agent abgeschlossen ist, und den
+nächsten Beteiligten auslöst.
 
-## Erweiterte Funktionen: Kollaborationsmuster
+Diese entkoppelte Architektur verhindert, dass Probleme in einer Komponente andere beeinträchtigen. Eine Verlangsamung
+im Frontend kann den Workflow eines Agenten nicht zum Absturz bringen.
 
-Die Architektur der Plattform ermöglicht ausgeklügelte Kollaborationsmuster, die es Agenten ermöglichen, effektiv
-miteinander und mit menschlichen Benutzern zusammenzuarbeiten.
+## Kollaborationsmuster
 
-### Human-in-the-Loop: Integration menschlicher Urteilsfindung
+### Human-in-the-Loop
 
-Nicht jede Entscheidung kann oder sollte vollständig automatisiert werden. Die Plattform ist mit
-„Human-in-the-Loop“-Funktionen als Kernmerkmal ausgestattet, die es Workflows ermöglichen, menschliche Aufsicht nahtlos
-zu integrieren.
+Agent-Workflows können pausieren, um menschliche Eingaben anzufordern. Der Workflow erstellt eine Aufgabe in der
+Benutzeroberfläche des Benutzers mit Kontext und Auswahlmöglichkeiten. Der Workflow bleibt pausiert (Minuten, Stunden
+oder Tage), bis der Benutzer antwortet, und setzt dann die Ausführung fort.
 
-::: details Funktionsweise
-Der Workflow eines Agenten kann so konzipiert werden, dass er an jedem kritischen Schritt pausiert und ein
-`HumanInTheLoopRequestEvent` veröffentlicht. Dieses Ereignis erstellt eine Aufgabe in der Benutzeroberfläche des
-Benutzers, die ihm den notwendigen Kontext und die Auswahlmöglichkeiten präsentiert. Der Workflow bleibt pausiert – für
-Minuten, Stunden oder sogar Tage – bis der Benutzer antwortet. Nach der Antwort wird ein `HumanInTheLoopResponseEvent`
-generiert, und der Workflow des Agenten wird fortgesetzt.
-:::
+Hauptmerkmale:
 
-Dieses Muster ist weitaus leistungsfähiger als einfache Benutzereingabeaufforderungen.
+- Kontexterhaltung: Der Workflow wird genau an der Stelle fortgesetzt, an der er pausiert wurde, mit vollständiger
+  Erinnerung an Zwischenergebnisse
+- Audit-Trail: Jede Interaktion (Frage, Antwortender, Entscheidung, Zeitstempel) wird protokolliert
+- Anwendungsfälle: Regulatorische Genehmigungen, Qualitätssicherungsprüfungen, mehrdeutige Situationen, die Klärung
+  erfordern, Zustimmungs-Workflows
 
-- **Echte Kontexterhaltung**: Der Workflow wird nach menschlicher Eingabe nicht neu gestartet. Er wird vom **exakten
-  Punkt der Pause** fortgesetzt, mit vollem Gedächtnis aller Zwischenergebnisse und vorheriger Schritte. Dies ist
-  entscheidend für komplexe, mehrstufige Prozesse.
-- **Vollständige Audit-Spur**: Jede menschliche Interaktion – die gestellte Frage, wer geantwortet hat, was entschieden
-  wurde und wann – wird unveränderlich als Ereignis protokolliert, was eine vollständige Verantwortlichkeit für
-  Compliance und Auditing gewährleistet.
-- **Use Case Flexibilität**: Dies ermöglicht kritische Unternehmensszenarien, von behördlichen Genehmigungen und
-  Qualitätssicherungsprüfungen bis hin zur Bewältigung mehrdeutiger Situationen, in denen ein Agent Klärungsbedarf hat.
-  Es ermöglicht auch Benutzerzustimmungs-Workflows, bei denen ein Agent einen Haftungsausschluss präsentiert, den ein
-  Benutzer akzeptieren muss, bevor der Prozess fortgesetzt werden kann.
+### Agent-zu-Agent-Delegation
 
-### Agent-zu-Agent-Delegation: Ein Team von Spezialisten
+Ein primärer Agent kann Aufgaben an spezialisierte Agents delegieren. Zum Beispiel kann ein Dokumentenanfrage-Agent, der
+eine komplexe Rechtsfrage erhält, an einen Rechtskonformitäts-Agent delegieren.
 
-Komplexe Probleme werden oft am besten von einem Team von Spezialisten gelöst. Die Plattform ermöglicht dies, indem sie
-einem primären Agenten erlaubt, Aufgaben an andere, spezialisiertere Agenten unter Verwendung eines
-`AgentInTheLoop`-Ereignismusters zu **delegieren**.
+Vorteile:
 
-Zum Beispiel könnte ein allgemeiner „Dokumentenabfrage-Agent“ eine komplexe Rechtsfrage erhalten. Anstatt zu versuchen,
-diese selbst zu beantworten, kann er die Aufgabe an einen spezialisierten „Rechts-Compliance-Agenten“ delegieren.
-
-Dieses Muster ermöglicht es Ihnen, ein leistungsstarkes, zusammensetzbares System von KI-Fähigkeiten aufzubauen:
-
-- **Wiederverwendbarkeit**: Erstellen Sie fokussierte, wiederverwendbare Agenten für spezifische Aufgaben (z. B.
-  Entitätsextraktion, PII-Erkennung, Compliance-Prüfung) und orchestrieren Sie diese, um größere Geschäftsprobleme zu
-  lösen.
-- **Isolation und Sicherheit**: Der delegierte Agent läuft in seinem eigenen isolierten Workflow. Er kann nicht auf den
-  internen Zustand des primären Agenten zugreifen, wodurch Sicherheit gewährleistet und unbeabsichtigte Nebenwirkungen
-  verhindert werden.
-- **Kontrolle über die Sichtbarkeit**: Der primäre Agent steuert den `Display Context` und entscheidet, was der Benutzer
-  sieht. Er kann die Zusammenarbeit transparent gestalten, indem er dem Benutzer zeigt, dass er einen anderen Experten
-  konsultiert, oder sie kann vollständig im Hintergrund ablaufen, wobei der Benutzer nur die endgültige, konsolidierte
-  Antwort sieht.
-- **Skalierbarkeit**: Spezialisierte, stark nachgefragte Agenten können unabhängig skaliert werden, wodurch
-  sichergestellt wird, dass Engpässe in einer Fähigkeit das gesamte System nicht verlangsamen.
+- Wiederverwendbarkeit: Erstellen Sie fokussierte Agents für spezifische Aufgaben (Entitätsextraktion, PII-Erkennung,
+  Compliance-Prüfung) und orchestrieren Sie diese für größere Probleme
+- Isolation: Der delegierte Agent läuft in seinem eigenen Workflow und kann nicht auf den internen Zustand des primären
+  Agenten zugreifen
+- Sichtbarkeitskontrolle: Der primäre Agent steuert den Display-Kontext und kann die Delegation dem Benutzer anzeigen
+  oder verbergen
+- Skalierbarkeit: Hochleistungsfähige spezialisierte Agents können unabhängig skalieren

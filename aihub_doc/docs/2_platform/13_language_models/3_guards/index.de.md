@@ -1,82 +1,90 @@
 ---
-title: Input/Output-Wächter
-source_sha: 734885eb50682cebb736b1bc7b64fa89954873c41059b6e3fb561d7fc2ee741b
+title: Schutzmechanismen für Eingabe/Ausgabe
+source_sha: 40acd1cfd98a6135a00b1124254a0708bd9be654dfcbd0b179d72b0df4a0a4a5
 ---
 
-# LLM-Wächter
+# LLM-Schutzmechanismen
 
-Wächter überprüfen KI-Agenten-Interaktionen in Echtzeit. Sie fangen unpassende Fragen ab, bevor der Agent sie sieht, und
-überprüfen Antworten, bevor Benutzer sie erhalten. Im Gegensatz zu Evaluierungen, die Agenten vor der Bereitstellung
-testen, laufen Wächter während Live-Gesprächen.
+Schutzmechanismen (Guards) überprüfen Interaktionen von KI-Agenten in Echtzeit. Sie fangen unangemessene Fragen ab,
+bevor der Agent sie sieht, und filtern Antworten, bevor Benutzer sie erhalten. Im Gegensatz zu Evaluationen, die Agenten
+vor der Bereitstellung testen, laufen Schutzmechanismen während Live-Gesprächen.
 
-## Wie Wächter funktionieren
+## Funktionsweise der Schutzmechanismen
 
-Wächter überprüfen Konversationen an zwei Punkten:
+Schutzmechanismen überprüfen Konversationen an zwei Punkten:
 
-Input-Wächter analysieren Benutzerfragen, bevor der Agent sie verarbeitet. Sie filtern themenfremde Anfragen heraus,
-blockieren Richtlinienverstöße oder bitten um Klärung.
+Eingangs-Schutzmechanismen analysieren Benutzerfragen, bevor der Agent sie verarbeitet. Sie filtern themenfremde
+Anfragen heraus, blockieren Richtlinienverstöße oder bitten um Klärung.
 
-Output-Wächter prüfen Agentenantworten vor der Auslieferung. Sie überprüfen die Qualität, redigieren sensible
-Informationen und fangen Halluzinationen oder schädliche Inhalte ab.
+Ausgangs-Schutzmechanismen prüfen Agentenantworten vor der Auslieferung. Sie verifizieren die Qualität, redigieren
+sensible Informationen und fangen Halluzinationen oder schädliche Inhalte ab.
 
-## Verfügbare Wächter
-
-Der AI-Hub enthält mehrere Wächter, die spezifische Risiken adressieren. Welche Wächter Sie aktivieren können, hängt
-davon ab, wie Ihr Agent gebaut wurde.
-
-### Input-Wächter
-
-**Agentenbeschreibungs-Wächter**
-
-Prüft, ob Fragen zur Funktion des Agenten passen. Ein Finanz-Compliance-Agent würde „Wie ist das Wetter?“ blockieren und
-erklären, dass er nur Finanzfragen bearbeitet.
-
-**Few-Shot-Wächter**
-
-Erzwingt benutzerdefinierte Richtlinien anhand von Beispielen. Wenn Ihr Unternehmen die Nutzung von Arbeitsassistenten
-für Unterhaltungszwecke verbietet, würden Sie Beispiele wie „Empfehlen Sie einen Film“ (blockiert) und „Empfehlen Sie
-ein Projektmanagement-Tool“ (erlaubt) bereitstellen. Der Wächter lernt, ähnliche Muster zu erkennen.
-
-### Output-Wächter
-
-**Kontext-Hinreichend-Wächter**
-
-Prüft, ob der Agent über genügend Informationen verfügt, um präzise zu antworten. Besonders nützlich für RAG-Agenten,
-die Informationen aus Wissensdatenbanken abrufen. Wenn ein Benutzer eine detaillierte technische Frage stellt, die
-abgerufenen Dokumente jedoch nicht genügend Details enthalten, stoppt der Wächter die Antwort und teilt dem Benutzer
-mit, dass die Informationen nicht verfügbar sind.
-
-::: tip Konfigurationshinweis
-Einige Agenten (wie der RAG-Agent) können den Kontext-Hinreichend-Wächter automatisch verwenden, um Antworten ohne
-ausreichende Beweise zu verhindern.
+::: tip Umfassender PII-Schutz
+Schutzmechanismen arbeiten auf Agenten-Ebene. Für PII-Schutz auf Plattform-Ebene, der sensible Informationen in
+Benutzereingaben abfängt, bevor sie einen Agenten erreichen, siehe [Datenanonymisierung](../2_anonymization/), die die
+Presidio-Integration behandelt. Verwenden Sie beide Schichten für eine mehrstufige Verteidigung („Defense-in-Depth“).
 :::
 
-**Wächter für sensible Informationen**
+## Verfügbare Schutzmechanismen
 
-Findet und entfernt vertrauliche oder persönlich identifizierbare Informationen aus Antworten. Wenn ein Agent ein
-Dokument mit einer Mitarbeiter-E-Mail abruft, redigiert der Wächter diese, bevor der Benutzer sie sieht, und ersetzt sie
-durch `[REDACTED]`.
+Der AI-Hub enthält mehrere Schutzmechanismen, die spezifische Risiken adressieren. Welche Schutzmechanismen Sie
+aktivieren können, hängt davon ab, wie Ihr Agent erstellt wurde.
 
-## Wann Wächter eingesetzt werden sollten
+### Eingangs-Schutzmechanismen
 
-Zweck, Zielgruppe und Risikostufe Ihres Agenten bestimmen, welche Wächter sinnvoll sind.
+Agentenbeschreibungs-Schutzmechanismus: Überprüft, ob Fragen zur Funktion des Agenten passen. Ein Agent für
+Finanz-Compliance würde „Wie ist das Wetter?“ blockieren und erklären, dass er nur Finanzfragen bearbeitet.
 
-Verwenden Sie Wächter für:
+Few-shot-Schutzmechanismus: Setzt benutzerdefinierte Richtlinien durch Beispiele durch. Wenn Ihr Unternehmen die Nutzung
+von Arbeitsassistenten für Unterhaltungszwecke verbietet, würden Sie Beispiele wie „Empfehlen Sie einen Film“
+(blockiert) und „Empfehlen Sie ein Projektmanagement-Tool“ (erlaubt) bereitstellen. Der Schutzmechanismus lernt,
+ähnliche Muster zu erkennen.
 
-- Kundenorientierte Agenten, die externen Benutzern zugänglich sind
-- Compliance-kritische Bereiche wie Gesundheitswesen, Finanzen oder Recht
-- Agenten mit Zugriff auf sensible Daten oder interne Datenbanken
-- Mehrzweck-Agenten, bei denen die Kontrolle des Anwendungsbereichs wichtig ist
+### Ausgangs-Schutzmechanismen
 
-Sie benötigen möglicherweise weniger Wächter für:
+Kontext-Ausreichend-Schutzmechanismus: Überprüft, ob der Agent genügend Informationen hat, um genau zu antworten.
+Besonders nützlich für RAG-Agenten, die Informationen aus Wissensdatenbanken abrufen. Wenn ein Benutzer eine
+detaillierte technische Frage stellt, die abgerufenen Dokumente jedoch nicht genügend Details enthalten, stoppt der
+Schutzmechanismus die Antwort und teilt dem Benutzer mit, dass die Informationen nicht verfügbar sind.
 
-- Interne Tools für vertrauenswürdige Mitarbeiter in kontrollierten Umgebungen
-- Agenten mit engem Anwendungsbereich und hochspezialisierten Zwecken
-- Entwicklungs- oder Testumgebungen, in denen Geschwindigkeit wichtiger ist als Sicherheit
+::: tip Konfigurationshinweis
+Einige Agenten (wie der RAG-Agent) können den Kontext-Ausreichend-Schutzmechanismus automatisch verwenden, um Antworten
+ohne ausreichende Belege zu verhindern.
+:::
+
+Schutzmechanismus für sensible Informationen: Erkennt und redigiert vertrauliche oder persönlich identifizierbare
+Informationen (PII) in Agentenantworten. Dies fängt PII ab, die in abgerufenen Dokumenten erscheinen. Wenn ein Agent
+beispielsweise ein Dokument abruft, das eine E-Mail-Adresse eines Mitarbeiters enthält, redigiert der Schutzmechanismus
+diese, bevor der Benutzer sie sieht, und ersetzt sie durch `[REDACTED]`.
+
+## Wann Schutzmechanismen eingesetzt werden sollten
+
+| Agententyp                                                       | Empfohlene Schutzmechanismen                                                                                                |
+| :--------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------- |
+| Kundenorientierte Agenten                                        | Agentenbeschreibungs-Schutzmechanismus, Few-shot-Schutzmechanismus (für Richtlinien), Kontext-Ausreichend-Schutzmechanismus |
+| Compliance-kritische Domänen (Gesundheitswesen, Finanzen, Recht) | Alle Schutzmechanismen + [Presidio PII-Schutz](../2_anonymization/)                                                         |
+| Interne Wissensassistenten                                       | Agentenbeschreibungs-Schutzmechanismus, Kontext-Ausreichend-Schutzmechanismus                                               |
+| Spezialisierte Agenten mit engem Anwendungsbereich               | Kontext-Ausreichend-Schutzmechanismus (minimale Leitplanken erforderlich)                                                   |
+| Entwicklungs-/Testumgebungen                                     | Optional (Geschwindigkeit hat Vorrang vor Sicherheit)                                                                       |
+
+## Beziehung zu Presidio
+
+Schutzmechanismen und [Presidio-Anonymisierung](../2_anonymization/) arbeiten auf verschiedenen Ebenen, um vollständigen
+PII-Schutz zu bieten:
+
+| Ebene                           | Komponente                                                                | Zweck                                                                       |
+| :------------------------------ | :------------------------------------------------------------------------ | :-------------------------------------------------------------------------- |
+| LiteLLM Proxy (Plattform-Ebene) | Presidio                                                                  | Entfernt PII aus Benutzerfragen, bevor diese externe LLM-Anbieter erreichen |
+| Agent (Anwendungs-Ebene)        | Eingangs-Schutzmechanismen                                                | Validiert die Angemessenheit und den Umfang der Frage                       |
+| Agent (Anwendungs-Ebene)        | Ausgangs-Schutzmechanismen (Schutzmechanismus für sensible Informationen) | Erkennt PII in Antworten aus abgerufenen Dokumenten                         |
+
+Presidio schützt **Benutzereingaben** davor, an externe Anbieter gesendet zu werden. Der Schutzmechanismus für sensible
+Informationen schützt **Agentenantworten**, die PII aus Ihren Wissensdatenbankdokumenten enthalten könnten. Beide sind
+für einen vollständigen PII-Schutz erforderlich.
 
 ## Konfiguration
 
-Wächter werden während der Entwicklung in Agenten integriert. Wie viel Kontrolle Sie haben, hängt vom Design des Agenten
-ab. Einige Agenten werden mit obligatorischen Wächtern ausgeliefert, die Sie nicht deaktivieren können. Andere
-ermöglichen es Ihnen, bestimmte Wächter über die Konfigurationsoberfläche ein- oder auszuschalten. Einige unterstützen
-überhaupt keine Anpassung.
+Schutzmechanismen werden während der Entwicklung in Agenten integriert. Wie viel Kontrolle Sie haben, hängt vom Design
+des Agenten ab. Einige Agenten werden mit obligatorischen Schutzmechanismen ausgeliefert, die Sie nicht deaktivieren
+können. Andere ermöglichen es Ihnen, spezifische Schutzmechanismen über die Konfigurationsschnittstelle zu aktivieren
+oder zu deaktivieren. Einige unterstützen überhaupt keine Anpassung.

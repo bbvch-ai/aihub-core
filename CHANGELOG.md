@@ -5,6 +5,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.254.3] - 2025-11-18 - Unlocking Multi-Tenancy and Streamlined Onboarding with Enhanced Platform Clarity
+
+### Added
+
+- ✨ **Introduced comprehensive Multi-Tenancy documentation:** New sections detail the multi-tenancy concept, how to set
+  up tenants, manage users and roles, and a technical reference for access control, providing clear guidance on
+  organizational boundaries within a single platform instance.
+- 🚀 **New Quick Start and One-Command Deployment guides:** Detailed documentation now covers prerequisites for both
+  production and local deployments, Azure Entra ID setup, and a streamlined one-command deployment process for rapid
+  platform setup.
+- 📄 **Expanded manual Slack & Teams Bot Creation guide:** A new, in-depth guide is available for manually configuring
+  bots, including Teams Developer Portal setup, MongoDB configuration, Slack API integration, app manifest examples, and
+  troubleshooting.
+- ⚙️ **Detailed RAG Ingestion Pipeline documentation:** New content explains the processing stages (parsing, chunking,
+  embedding, linking, summarization), storage, document lifecycle, and benefits of the RAG ingestion pipeline.
+
+### Changed
+
+- 🔄 **Refined Language Model (LLM) integration documentation:** Updated content clarifies LLM proxy functions, model
+  configuration, PII protection, and guardrail concepts, enhancing understanding of AI model interactions.
+- 📈 **Improved Cost Control documentation:** Enhanced details on LiteLLM's user management for budgets and rate
+  limiting, including configuration via environment variables, to provide better predictability and control over AI
+  expenses.
+- 📚 **Clarified deployment terminology:** Documentation for deployment options, backup & recovery, and updates &
+  maintenance now explicitly differentiates between "Multi-Instancing" (hard infrastructure separation) and
+  "Multi-Tenancy" (logical separation within an instance).
+- 🦾 **Updated Agent documentation:** The fundamentals, RAG Agent, and Expert Asking Agent sections have been extensively
+  rewritten to provide deeper insights into structured workflows, context management, and human-in-the-loop
+  collaboration patterns.
+- 💡 **Enhanced Data Pipeline and Knowledge Management documentation:** Rewritten sections offer improved clarity on
+  pipeline fundamentals, workflow automation, and knowledge organization through "collections" (namespaces), detailing
+  their structure, lifecycle, and integration.
+- 🌐 **Updated main page and FAQ:** The main landing page and Frequently Asked Questions have been revised to reflect the
+  latest platform features, documentation structure, and terminology.
+- 🧹 **Standardized documentation terminology:** A new glossary has been added to the translation prompt to ensure
+  consistent terminology usage across all localized documentation, especially for multi-tenancy and related concepts.
+
+### Removed
+
+- 🗑️ **Node.js dependencies:** The platform no longer includes Node.js packages, simplifying the dependency stack.
+
+### Refactor
+
+- 📁 **Restructured documentation directories:** Several top-level documentation directories (e.g.,
+  `15_slack_teams_integrations` to `16_slack_teams_integrations`, `16_api` to `17_api`) have been renamed to accommodate
+  the new Multi-Tenancy section and improve logical grouping.
+- 🔗 **Updated internal documentation links:** All internal links within the documentation have been updated to reflect
+  the new directory structure and ensure navigation consistency.
+- 📦 **VitePress plugin import simplification:** Updated the import path for `CopyOrDownloadAsMarkdownButtons` in the
+  documentation theme for better maintainability.
+
+---
+
 ## [v0.254.2] - 2025-11-18 - New Service Integrations and Deployment Enhancements
 
 ### Added

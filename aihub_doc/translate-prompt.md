@@ -40,6 +40,84 @@ Your primary task is to translate English Markdown documentation to German. You 
 
 </rules>
 
+<glossary>
+
+## Translation Glossary
+
+This glossary defines consistent translations for key terms. **Context matters** - the same English word may translate
+differently depending on where it appears.
+
+### Tenant / Multi-tenancy
+
+**Context-dependent translation:**
+
+| English Term       | German Translation   | Context                                                                             | Example                                                                                                                               |
+| ------------------ | -------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **tenant**         | **Mandant**          | AI-Hub's multi-tenancy feature (organizational boundaries within a single instance) | "Create a new tenant for the Finance department" → "Erstellen Sie einen neuen Mandanten für die Finanzabteilung"                      |
+| **multi-tenancy**  | **Multi-Tenancy**    | AI-Hub's feature for logical separation within an instance                          | "Multi-tenancy lets you create organizational boundaries" → "Multi-Tenancy ermöglicht es Ihnen, organisatorische Grenzen zu schaffen" |
+| **tenant**         | **Tenant**           | Azure AD / Microsoft authentication context                                         | "single tenant authentication" → "Single-Tenant-Authentifizierung"                                                                    |
+| **instance**       | **Instanz**          | Isolated AI-Hub deployment (infrastructure-level separation)                        | "Deploy multiple instances" → "Mehrere Instanzen deployen"                                                                            |
+| **multi-instance** | **Multi-Instancing** | Multiple isolated deployments                                                       | "Multi-instance deployment provides hard isolation" → "Multi-Instancing bietet harte Isolation"                                       |
+
+**Key distinction:**
+
+- **Mandant** = Logical separation within one platform instance (software-level)
+- **Instanz** = Physical/infrastructure separation (deployment-level)
+- **Tenant** (unchanged) = Azure AD / Microsoft context only
+
+### Agents and AI Components
+
+| English Term                             | German Translation | Notes                                             |
+| ---------------------------------------- | ------------------ | ------------------------------------------------- |
+| **agent**                                | **Agent**          | Keep as anglicism (capitalize as German noun)     |
+| **agents**                               | **Agents**         | Plural form, capitalized                          |
+| **AI assistant**                         | **KI-Assistent**   | Translate this one                                |
+| **workflow**                             | **Workflow**       | Keep as anglicism                                 |
+| **pipeline**                             | **Pipeline**       | Keep as anglicism                                 |
+| **process**                              | **Prozess**        | Translate when referring to business processes    |
+| **RAG** (Retrieval-Augmented Generation) | **RAG**            | Keep acronym, explain in parentheses on first use |
+
+### Platform Components
+
+| English Term   | German Translation | Notes                        |
+| -------------- | ------------------ | ---------------------------- |
+| **deployment** | **Deployment**     | Keep as anglicism            |
+| **namespace**  | **Namespace**      | Keep as anglicism            |
+| **role**       | **Rolle**          | Translate (as in RBAC roles) |
+| **permission** | **Berechtigung**   | Translate                    |
+| **service**    | **Service**        | Keep as anglicism            |
+| **API**        | **API**            | Keep acronym                 |
+| **backend**    | **Backend**        | Keep as anglicism            |
+| **frontend**   | **Frontend**       | Keep as anglicism            |
+
+### Architecture Terms
+
+| English Term                 | German Translation                | Notes                              |
+| ---------------------------- | --------------------------------- | ---------------------------------- |
+| **single instance**          | **Einzelinstanz**                 | When referring to deployment model |
+| **isolated instance**        | **isolierte Instanz**             | Infrastructure separation          |
+| **dedicated infrastructure** | **dedizierte Infrastruktur**      | Translate                          |
+| **shared resources**         | **gemeinsam genutzte Ressourcen** | Translate                          |
+
+### Consistency Rules
+
+1. **Capitalization**: All anglicisms used as nouns must be capitalized (German grammar)
+
+   - "the agent" → "der Agent"
+   - "multiple agents" → "mehrere Agents"
+
+2. **Compound words**: Use hyphens for clarity in German compounds
+
+   - "multi-tenant isolation" → "Multi-Tenant-Isolation"
+   - "AI-Hub instance" → "AI-Hub-Instanz"
+
+3. **Context switching**: When a paragraph discusses both Azure AD and AI-Hub tenants, maintain the distinction:
+
+   - Azure context: "Tenant"
+   - AI-Hub context: "Mandant"
+
+</glossary>
+
 <input>
 
 ## title: Getting Started

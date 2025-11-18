@@ -6,8 +6,13 @@ title: Backup and Recovery
 
 ## Overview
 
-Each tenant instance has independent backups. Data isolation between tenants. Recovery operations don't affect other
-tenants.
+Each instance has independent backups. Data isolation between instances. Recovery operations don't affect other
+instances.
+
+::: info Multi-instancing context
+This chapter assumes a multi-instance deployment model where each organization has their own isolated AI-Hub instance.
+For multi-tenancy (logical separation within a single instance), see [Multi-tenancy](../../15_multi_tenancy/).
+:::
 
 ## Backup approaches
 

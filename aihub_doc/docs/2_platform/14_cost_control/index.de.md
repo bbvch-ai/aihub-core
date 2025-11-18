@@ -1,6 +1,6 @@
 ---
 title: Kostenkontrolle
-source_sha: ca5267e7f0332015d3f974f6edf986fd61bad8a1a9bdee6ce2e907df9d025b8b
+source_sha: 65d64babdb0d0f2b37dcc4c2a7a166007db5749a1f505f9ce2df3ed1910496f8
 ---
 
 # Kostenkontrolle
@@ -8,19 +8,19 @@ source_sha: ca5267e7f0332015d3f974f6edf986fd61bad8a1a9bdee6ce2e907df9d025b8b
 KI-Agenten verursachen Betriebskosten. Der AI-Hub verfolgt diese Kosten, damit Sie Ausgaben optimieren, Investitionen
 rechtfertigen und Budgets prognostizieren können.
 
-## Funktionsweise der KI-Kosten
+## Wie KI-Kosten funktionieren
 
-KI-Anbieter berechnen Kosten basierend auf der Token-Nutzung. Tokens sind kleine Textblöcke (ungefähr 4 Zeichen), die
-Modelle verarbeiten.
+KI-Anbieter berechnen Kosten basierend auf der Token-Nutzung. Tokens sind kleine Textabschnitte (ungefähr 4 Zeichen),
+die Modelle verarbeiten.
 
-Kostenmodell-Vergleich:
+Vergleich der Kostenmodelle:
 
-| Modell              | Typ                | Kostenstruktur                                                                                                                                                                   |
-| :------------------ | :----------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| API (Pay-per-Token) | Variable OPEX      | Zahlung an Anbieter (OpenAI, Google) für jedes verarbeitete Token                                                                                                                |
-| Lokal gehostet      | CAPEX + Feste OPEX | Kapitalausgaben für Hardware (GPUs, Server) plus laufende Kosten für Strom und MLOps-Personal. Die Kosten pro Token betragen \$0, aber die festen Infrastrukturkosten sind hoch. |
+| Modell              | Typ                | Kostenstruktur                                                                                                                                                                         |
+| ------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API (Pay-per-Token) | Variable OPEX      | Bezahlen Sie Anbieter (OpenAI, Google) für jedes verarbeitete Token                                                                                                                    |
+| Lokal gehostet      | CAPEX + Feste OPEX | Investitionskosten für Hardware (GPUs, Server) plus laufende Kosten für Strom und MLOps-Mitarbeiter. Die Kosten pro Token betragen 0 \$, aber die festen Infrastrukturkosten sind hoch |
 
-Jede Interaktion verbraucht verschiedene Arten von Tokens zu unterschiedlichen Preisen:
+Jede Interaktion verbraucht verschiedene Arten von Tokens zu unterschiedlichen Preispunkten:
 
 ::: details Prompt-Tokens
 Ihre Eingabe an die KI, einschließlich Fragen, Gesprächsverlauf, System-Prompts und abgerufene Dokumente. Längere
@@ -35,42 +35,64 @@ Die von der KI generierten Antworten. Längere, detailliertere Antworten kosten 
 Dokumentenverarbeitung für Suche und Abruf. Typischerweise günstiger als Textgenerierung.
 :::
 
-::: details Modell-Stufen
-| Stufe       | Beispiele  | Anwendungsfall                                         | Kosten     |
-| :---------- | :--------- | :----------------------------------------------------- | :--------- |
-| Flaggschiff | GPT-5      | Komplexe Argumentation, Aufgaben mit hoher Genauigkeit | Höchste    |
-| Ausgewogen  | GPT-5 mini | Standard-Workflows, interne Assistenten                | Mittel     |
-| Effizient   | GPT-5 nano | Einfache Aufgaben mit hohem Volumen, Klassifizierung   | Niedrigste |
+::: details Modellstufen
+| Stufe       | Beispiele  | Anwendungsfall                                        | Kosten    |
+| ----------- | ---------- | ----------------------------------------------------- | --------- |
+| Flaggschiff | GPT-5      | Komplexe Denkprozesse, Aufgaben mit hoher Genauigkeit | Höchste   |
+| Ausgewogen  | GPT-5 mini | Standard-Workflows, interne Assistenten               | Mittel    |
+| Effizient   | GPT-5 nano | Einfache Aufgaben mit hohem Volumen, Klassifizierung  | Geringste |
 :::
 
 ## Kostenverfolgung
 
 Der AI-Hub verfolgt die Kosten für jede Konversation. Wenn Sie mit einem Agenten chatten, zeichnet die Plattform die
-Token-Nutzung auf und berechnet die Kosten. Diese Informationen werden im Konversationsverlauf angezeigt.
+Token-Nutzung auf und berechnet die Kosten. Diese Informationen erscheinen im Konversations-Thread.
 
-Das Tracking funktioniert für alle KI-Modelle, unabhängig davon, ob Sie Cloud-Dienste wie OpenAI oder selbst gehostete
-Modelle verwenden. Für selbst gehostete Modelle können Sie einen Kostenwert zuweisen, um Ausgaben konsistent zu
-verfolgen.
+Die Verfolgung funktioniert für alle KI-Modelle, egal ob Sie Cloud-Dienste wie OpenAI oder selbst gehostete Modelle
+verwenden. Für selbst gehostete Modelle können Sie einen Kostenwert zuweisen, um die Ausgaben konsistent zu verfolgen.
 
 Sie können Kosteninformationen pro Konversation anzeigen, um zu sehen, welche Fragen am teuersten sind. Dies hilft bei
-Entscheidungen zum Agenten-Design, zur Modellauswahl und zur Budgetplanung.
+Entscheidungen zum Agenten-Design, der Modellauswahl und der Budgetplanung.
 
 ## Budgets und Ratenbegrenzungen
 
-::: warning Derzeit nicht konfiguriert
-Budget- und Ratenbegrenzungsfunktionen existieren, sind aber standardmäßig nicht aktiviert. Diese Funktion wurde noch
-nicht getestet.
+LiteLLM bietet pro-Benutzer-Budget- und Ratenbegrenzungsfunktionen über sein Benutzerverwaltungssystem. Diese Kontrollen
+werden über Umgebungsvariablen konfiguriert und automatisch vom Proxy durchgesetzt.
+
+Verfügbare Kontrollen:
+
+- Maximales Budget: Eine harte Obergrenze für die Ausgaben pro Benutzer innerhalb einer Budgetperiode. Blockiert
+  Anfragen bei Überschreitung.
+
+- Soft Budget: Eine Warnschwelle, die Benachrichtigungen auslöst, ohne Anfragen zu blockieren.
+
+- Budgetdauer: Der Zeitraum für die Budget-Zurücksetzung (z.B. „30d“ für monatliche Budgets). Ohne diese werden Budgets
+  nie zurückgesetzt.
+
+- TPM-Grenze: Maximale Tokens pro Minute, die ein Benutzer verbrauchen kann.
+
+- RPM-Grenze: Maximale Anfragen pro Minute, die ein Benutzer stellen kann.
+
+- Maximale parallele Anfragen: Maximale gleichzeitige Anfragen, die ein Benutzer offen haben kann.
+
+::: details Konfiguration über Umgebungsvariablen
+```bash
+LITE_LLM_PROXY_USER_MAX_BUDGET=100.0           # $100 hard limit
+LITE_LLM_PROXY_USER_SOFT_BUDGET=80.0           # Alert at $80
+LITE_LLM_PROXY_USER_BUDGET_DURATION="30d"      # Reset monthly
+LITE_LLM_PROXY_USER_TPM_LIMIT=10000            # 10k tokens/minute
+LITE_LLM_PROXY_USER_RPM_LIMIT=60               # 60 requests/minute
+LITE_LLM_PROXY_USER_MAX_PARALLEL_REQUESTS=5    # 5 concurrent requests
+```
+
+Diese Einstellungen gelten für neue Benutzer, die im System erstellt werden. Bestehende Benutzer behalten ihre
+konfigurierten Limits bei.
 :::
 
-Die Plattform kann Ausgabenlimits und Nutzungsbeschränkungen durchsetzen. Bei Aktivierung können Administratoren
-festlegen:
-
-- Budgetobergrenzen: Blockiert Anfragen, wenn Benutzer die Ausgabenlimits überschreiten
-- Nutzungswarnungen: Benachrichtigt, wenn Budgetschwellenwerte erreicht werden
-- Ratenbegrenzungen: Steuert, wie viele Anfragen oder Tokens Benutzer pro Minute verbrauchen können
-- Limits für gleichzeitige Anfragen: Beschränkt simultane KI-Operationen
-
-Diese Kontrollen erfordern eine Umgebungskonfiguration während des Deployments.
+::: warning Derzeit nicht aktiviert
+Obwohl die Infrastruktur diese Limits unterstützt, sind sie standardmäßig nicht aktiviert. Setzen Sie die oben genannten
+Umgebungsvariablen, um Budget- und Ratenbegrenzungen zu aktivieren.
+:::
 
 ## Optimierungsstrategien
 
@@ -78,12 +100,12 @@ Diese Kontrollen erfordern eine Umgebungskonfiguration während des Deployments.
 
 Passen Sie die Modellstufe Ihrer Aufgabe an. Verwenden Sie Flaggschiff-Modelle (GPT-5) für komplexe, kundenorientierte
 oder hochpräzise Aufgaben. Verwenden Sie ausgewogene Modelle (GPT-5 mini) für interne Assistenten oder
-Standard-Workflows. Verwenden Sie effiziente Modelle (GPT-5 nano) für Klassifizierungen, Datenextraktionen oder
-hochfrequenten Chat.
+Standard-Workflows. Verwenden Sie effiziente Modelle (GPT-5 nano) für Klassifizierung, Datenextraktion oder häufige
+Chats.
 
 ### Lokal gehostete Modelle
 
-Lokales Hosting verlagert die Ausgaben von variablen Pay-per-Token-Gebühren auf feste Infrastrukturkosten.
-Organisationen wählen dies aus Gründen des Datenschutzes (HIPAA, GDPR), der Compliance und des IP-Schutzes, nicht wegen
-sofortiger Kosteneinsparungen. Es erfordert Kapitalinvestitionen (GPUs, Server) und laufende Betriebskosten (Strom,
+Lokales Hosting verlagert Ausgaben von variablen Pay-per-Token-Gebühren auf feste Infrastrukturkosten. Organisationen
+wählen dies aus Gründen des Datenschutzes (HIPAA, GDPR), der Compliance und des IP-Schutzes, nicht wegen sofortiger
+Kosteneinsparungen. Es erfordert Kapitalinvestitionen (GPUs, Server) und laufende Betriebskosten (Strom,
 MLOps-Personal).

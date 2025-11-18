@@ -14,6 +14,8 @@ public/llms-full.txt
 public/llms.txt
 public/de
 public/docs
+public/changelog.md
+public/licenses.md
 public/index.md
 # Synced README files in section 6 (except the section index files)
 docs/6_code_deep_dive/1_introduction/

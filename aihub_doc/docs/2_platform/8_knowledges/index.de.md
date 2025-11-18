@@ -1,190 +1,134 @@
 ---
 title: Wissensmanagement
-source_sha: 68b538d87f6c17b06a2f217480818930cf0b0464954dedb57bde91aa667d7a84
+source_sha: 87bfef83579665975ab2f7a3433afe044ee8176efa87f937f552aff04d9ac877
 ---
 
 # Wissensmanagement
 
-Der Swiss AI-Hub bietet umfassende Wissensmanagementfunktionen, die es Organisationen ermöglichen, ihre
-Unternehmensinformationsressourcen für KI-gestützte Workflows zu strukturieren, zu steuern und zu nutzen. Die Plattform
-behandelt Wissen als strategische Ressource und stellt hochentwickelte Tools zur Organisation, Verarbeitung und
-Zugriffssteuerung von Dokumenten im gesamten Unternehmen bereit.
+KI-Agenten benötigen Zugriff auf relevante Informationen, um Fragen präzise beantworten zu können. Das
+Wissensmanagementsystem verarbeitet Ihre Dokumente und macht sie durch semantische Abfrage durchsuchbar.
 
-## Organisatorische Struktur
+## Struktur
 
-Die Plattform organisiert Unternehmenswissen mittels einer hierarchischen Struktur, die für Governance, Skalierbarkeit
-und klare Eigentumsgrenzen konzipiert ist.
+Wissen gliedert sich in drei Ebenen:
 
-**Wissensdatenbanken**: Auf der höchsten Ebene können Organisationen mehrere isolierte Wissensdatenbanken (auch
-„Buckets“ genannt) erstellen, die jeweils einen eigenen Wissensbereich, eine Abteilung, ein Projekt oder eine
-Sicherheitsgrenze repräsentieren. Jede Datenbank gewährleistet eine vollständige Trennung von Daten, Berechtigungen und
-Verarbeitungspipelines.
+Wissensdatenbanken sind isolierte Container auf der obersten Ebene. Jede Datenbank hat ihre eigenen Daten,
+Berechtigungen und eine eigene Verarbeitungspipeline. Organisationen erstellen Datenbanken typischerweise pro Abteilung,
+Projekt oder Sicherheitsklassifizierung.
 
-**Namespaces (Ordner)**: Innerhalb jeder Datenbank wird Wissen in Namespaces organisiert – logische Container, die
-verwandte Dokumente nach Thema, Projekt oder Geschäftsfunktion gruppieren. Namespaces bieten die organisatorische
-Flexibilität, die bestehende Informationsarchitektur des Unternehmens abzubilden, während gleichzeitig klare Grenzen für
-die Zugriffssteuerung und das Lebenszyklusmanagement gewahrt bleiben.
+Namespaces (in der Benutzeroberfläche als „Sammlungen“ bezeichnet) gruppieren zusammengehörige Dokumente innerhalb einer
+Datenbank. Sie funktionieren wie Ordner, die nach Thema oder Zweck organisiert sind. Eine Produktdatenbank könnte
+Sammlungen wie „technical“, „guides“ und „troubleshooting“ enthalten.
 
-**Mehrsprachige Unterstützung**: Alle organisatorischen Elemente (Datenbanknamen, Namespace-Bezeichnungen,
-Ordnerbeschreibungen) unterstützen die Internationalisierung über Deutsch, Englisch, Französisch und Italienisch hinweg.
-Die Plattform übersetzt administrative Bezeichnungen automatisch, um eine konsistente Benutzererfahrung über
-verschiedene Spracheinstellungen hinweg zu gewährleisten.
+Dokumente sind die eigentlichen Dateien – PDFs, Word-Dokumente, PowerPoint-Präsentationen. Das System verarbeitet sie
+nach dem Hochladen automatisch.
 
-## Dokumenten-Lebenszyklusmanagement
+::: info Mehrsprachige Unterstützung
+Datenbanknamen, Namespace-Bezeichnungen und Ordnerbeschreibungen unterstützen Deutsch, Englisch, Französisch und
+Italienisch. Die Benutzeroberfläche zeigt die Bezeichnungen entsprechend der Spracheinstellung des Benutzers an.
+:::
 
-Die Plattform verwaltet den gesamten Lebenszyklus von Unternehmensdokumenten von der Erfassung bis zum Abruf und
-gewährleistet Transparenz und Kontrolle in jeder Phase.
+## Inhalte verwalten
 
-### Dokumentenerfassung
+### Manuelle Verwaltung
 
-Organisationen können Dokumente auf zwei primäre Weisen in die Wissensbasis einfügen:
+Standardmäßig ermöglichen Datenbanken eine manuelle Kontrolle:
 
-**Manueller Upload**: Autorisierte Benutzer können Dokumente über die Weboberfläche hochladen und so eine detaillierte
-Kontrolle darüber erhalten, welche Informationen in das System gelangen. Dieser Ansatz unterstützt
-Überprüfungs-Workflows, Qualitätssicherung und Compliance-Validierung, bevor Dokumente für KI-Agenten verfügbar werden.
+1. Sammlungen über die Weboberfläche erstellen
+2. Dokumente in bestimmte Sammlungen hochladen
+3. Auf den nächsten geplanten Pipeline-Durchlauf warten
 
-**Automatisierte Synchronisierung**: Für bestimmte Datenbanken unterstützt die Plattform die automatische
-Synchronisierung mit Data Lakes (Azure Blob Storage oder S3-kompatibler Speicher). Dokumente, die in konfigurierten
-Speicherorten abgelegt werden, werden automatisch erkannt, verarbeitet und den Agenten ohne manuelles Eingreifen zur
-Verfügung gestellt. Diese „Auto-Sync“-Fähigkeit ermöglicht eine nahtlose Integration in bestehende
-Dokumentenmanagementsysteme und Geschäftsprozesse.
+![Empty knowledge database](../../../media/knowledge/empty_knowledge_base.png)
 
-### Verarbeitung und Anreicherung
+Sie steuern, was hochgeladen wird und wo es sich befindet. Die Pipeline läuft nach einem Zeitplan (üblicherweise für die
+nächtliche Verarbeitung konfiguriert), um die Dokumentenverarbeitung und -indizierung zu übernehmen.
 
-Sobald Dokumente hochgeladen sind, initiiert die Plattform eine hochentwickelte Verarbeitungspipeline:
+### Automatische Synchronisierung aus externen Quellen
 
-**Dokumenten-Parsing**: Fortgeschrittene Dokumentenintelligenz extrahiert Text, Struktur und Metadaten aus verschiedenen
-Dateiformaten, einschließlich PDFs, Office-Dokumenten und anderen Unternehmensinhaltstypen.
+Markieren Sie eine Datenbank als „auto-sync“, um sie mit externen Inhaltsquellen wie SharePoint zu verbinden. Das System
+führt dann folgende Schritte aus:
 
-**Intelligentes Chunking**: Dokumente werden in semantisch bedeutsame Chunks segmentiert, die den Kontext bewahren und
-gleichzeitig die Abrufleistung optimieren. Das System behält die Dokumentenstruktur, Überschriftenhierarchien und
-Beziehungen zwischen Abschnitten bei.
+- Synchronisiert Dateien aus der externen Quelle nach einem Zeitplan (typischerweise nächtlich)
+- Erstellt Sammlungen automatisch aus der Ordnerstruktur
+- Verarbeitet neue Inhalte während des geplanten Pipeline-Durchlaufs
+- Deaktiviert manuelle Uploads über die Benutzeroberfläche
 
-**Metadatenextraktion**: Die Plattform erfasst automatisch umfassende Metadaten, einschließlich Erstellungsdaten,
-Aktualisierungszeitstempel, Quellinformationen, Spracherkennung und Strukturelemente. Diese Metadaten ermöglichen
-präzises Filtern, Nachverfolgen und die Compliance-Dokumentation.
+Das externe System wird zur Quelle der Wahrheit. Ihr Team arbeitet weiterhin in SharePoint, und die Sync-Pipeline
+überträgt Änderungen nach dem konfigurierten Zeitplan in den AI-Hub.
 
-**Vektoreinbettung (Vector Embedding)**: Verarbeitete Inhalte werden in hochdimensionale Vektordarstellungen
-umgewandelt, was semantische Suchfunktionen ermöglicht, die über die Stichwortsuche hinausgehen, um Bedeutung und
-Kontext zu verstehen.
+## Dokumentenverarbeitung
 
-## Transparenz und Überprüfung
+Das System verarbeitet jedes hochgeladene Dokument in mehreren Phasen:
 
-Ein Unterscheidungsmerkmal des Wissensmanagements des Swiss AI-Hub ist die vollständige Transparenz darüber, wie
-Dokumente verarbeitet und gespeichert werden.
+Parsing: Docling extrahiert Text, Tabellen, Abbildungen und Strukturen aus PDFs und Office-Dokumenten. Es verarbeitet
+komplexe Layouts, mehrspaltige Seiten und eingebettete Inhalte, während die logische Struktur erhalten bleibt.
 
-**Dokumentenrekonstruktion**: Die Plattform bietet vollständige Dokumentenrekonstruktionsfunktionen, die es Benutzern
-ermöglichen, genau zu sehen, wie Dokumente geparst, gechunked und gespeichert wurden. Dies schließt eine kritische
-Vertrauenslücke in KI-Systemen – Benutzer können überprüfen, ob das Quellmaterial vom System korrekt dargestellt und
-verstanden wird.
+Chunking: Große Dokumente werden in kleinere Abschnitte (Chunks) aufgeteilt, die den Kontext bewahren. Ein 50-seitiges
+Handbuch wird zu Hunderten von Chunks, wobei jeder seine Beziehung zum umgebenden Inhalt beibehält.
 
-**Inspektion auf Knotenebene (Node-Level Inspection)**: Benutzer können einzelne „Nodes“ (verarbeitete Chunks)
-untersuchen, um zu verstehen, wie Dokumente segmentiert wurden, welche Metadaten extrahiert wurden und wie Inhalte für
-den Abruf dargestellt werden. Diese granulare Sichtbarkeit unterstützt Qualitätssicherung, Debugging und
-Compliance-Validierung.
+Metadatenextraktion: Das System erfasst Erstellungsdaten, Autoren, Quellinformationen und die erkannte Sprache. Agenten
+können Ergebnisse mithilfe dieser Metadaten filtern.
 
-**Sichtbarkeit des Verarbeitungsstatus**: Die Plattform unterscheidet klar zwischen Dokumenten, die hochgeladen, aber
-noch nicht verarbeitet wurden, sich gerade in der Verarbeitung befinden und vollständig für die Agentennutzung verfügbar
-sind. Diese Statustransparenz ermöglicht proaktives Management und Fehlerbehebung.
+Vektor-Embedding: Text-Chunks werden in Vektorrepräsentationen umgewandelt, die die semantische Bedeutung erfassen.
+Agenten finden relevante Inhalte basierend auf Konzepten, nicht nur auf Keyword-Matching. Eine Abfrage zu
+„Geschwindigkeitsbegrenzungen für Fahrzeuge“ stimmt mit Inhalten über „maximale Geschwindigkeitsbeschränkungen“ überein.
 
-## Zugriffskontrolle und Governance
+## Inspektion und Debugging
 
-Wissensmanagement lässt sich nahtlos in die umfassende Sicherheitsarchitektur der Plattform integrieren.
+Das System bietet Einblick in die Dokumentenverarbeitung:
 
-**Berechtigungsbasierter Zugriff**: Alle Wissensoperationen – das Anzeigen von Datenbanken, der Zugriff auf Namespaces,
-das Hochladen von Dokumenten oder die Überprüfung von Verarbeitungsergebnissen – werden durch das hierarchische
-Berechtigungssystem der Plattform gesteuert. Organisationen können präzise Zugriffsregeln definieren, die mit der
-Datenklassifizierung und den Organisationsrollen übereinstimmen.
+Die Dokumentenrekonstruktion zeigt, wie der Parser Ihr Dokument interpretiert hat. Überprüfen Sie, ob Tabellen,
+Seitenleisten und andere Strukturelemente korrekt identifiziert wurden.
 
-**Audit-Trail (Prüfprotokoll)**: Jede Wissensmanagement-Operation wird protokolliert, wodurch umfassende Audit-Trails
-erstellt werden, die dokumentieren, wer wann und zu welchem Zweck auf welche Informationen zugegriffen hat. Dies
-unterstützt Compliance-Anforderungen und forensische Analysen.
+Die Chunk-Inspektion zeigt, wie das System Inhalte segmentiert, welche Metadaten es extrahiert und wie es Chunks für den
+Abruf darstellt. Nützlich, wenn Agenten erwartete Inhalte nicht finden.
 
-**Isolierte Mandantenfähigkeit (Isolated Tenancy)**: Wissensdatenbanken bieten natürliche Grenzen für mandantenfähige
-Bereitstellungen und gewährleisten eine vollständige Datenisolation zwischen Organisationseinheiten, Projekten oder
-Kundenumgebungen.
+Der Verarbeitungsstatus zeigt an, ob Dokumente hochgeladen, verarbeitet oder bereit sind.
 
-## Integration mit KI-Agenten
+## Zugriffssteuerung
 
-Das Wissensmanagementsystem ist für die nahtlose Integration mit KI-Agenten konzipiert und versorgt diese mit
-kontextbezogenen, relevanten Informationen, während Governance und Kontrolle gewahrt bleiben.
+Das Berechtigungssystem steuert alle Wissensoperationen:
 
-**Namespace-basierter Abruf (Namespace-Scoped Retrieval)**: Agenten können so konfiguriert werden, dass sie auf
-bestimmte Namespaces zugreifen, wodurch sichergestellt wird, dass sie nur Informationen abrufen, die für ihren Zweck
-relevant und für ihre Benutzer autorisiert sind. Dieser auf den Namespace beschränkte Abruf unterstützt das Prinzip der
-geringsten Rechte und ermöglicht gleichzeitig fokussierte, qualitativ hochwertige Antworten.
+- Das Anzeigen von Datenbanken erfordert entsprechende Berechtigungen
+- Der Zugriff auf Namespaces überprüft die Benutzerautorisierung
+- Das Hochladen von Dokumenten validiert Benutzerrechte
+- Die Überprüfung von Verarbeitungsdetails erfordert eine Berechtigung
 
-**Echtzeit-Updates**: Wenn Dokumente hinzugefügt oder aktualisiert werden, stehen Änderungen den Agenten nahezu in
-Echtzeit zur Verfügung, wodurch sichergestellt wird, dass KI-gestützte Workflows immer mit aktuellen Informationen
-arbeiten.
+Wissensdatenbanken bieten natürliche Isolationsgrenzen. Organisationen können separate Datenbanken pro Abteilung oder
+Projekt erstellen und dann Berechtigungen verwenden, um zu steuern, wer auf jede Datenbank zugreift.
 
-**Quellenzuordnung (Source Attribution)**: Wenn Agenten Wissen abrufen, behält die Plattform eine vollständige
-Rückverfolgbarkeit zu den Quelldokumenten bei, was eine transparente Zitierung und Überprüfung von KI-generierten
-Antworten ermöglicht.
+## Agentenintegration
 
-## Geschäftlicher Nutzen und Anwendungsfälle
+Agenten verbinden sich mit bestimmten Sammlungen anstatt mit ganzen Datenbanken. Beim Konfigurieren eines Agenten geben
+Sie an, welche Sammlungen er durchsuchen kann. Ein Kundensupport-Agent könnte auf „products“ und „faq“ zugreifen, aber
+nicht auf „engineering“.
 
-Die Wissensmanagementfunktion ermöglicht kritische Unternehmensszenarien:
+Die auf Sammlungen beschränkte Abfrage hält Agenten auf relevante Inhalte fokussiert und verbessert sowohl die
+Geschwindigkeit als auch die Genauigkeit.
 
-**Abteilungsübergreifende Wissensdatenbanken**: Verschiedene Abteilungen können unabhängige Wissensdatenbanken mit
-entsprechenden Zugriffskontrollen pflegen, was spezialisierte KI-Assistenten ermöglicht, die domänenspezifischen Kontext
-verstehen, ohne Informationen über Organisationsgrenzen hinweg offenzulegen.
+Dokumente werden für Agenten verfügbar, nachdem die Pipeline sie verarbeitet hat. Das System verfolgt, welche
+Quelldokumente Agenten verwendet haben, was die Zitation und Überprüfung von Antworten ermöglicht.
 
-**Projektspezifische Intelligenz**: Projekte können dedizierte Wissensdatenbanken einrichten, die sich mit dem
-Projektlebenszyklus weiterentwickeln und neue Dokumente automatisch integrieren, sobald sie erstellt werden, während
-projektspezifische Zugriffskontrollen beibehalten werden.
+## Technische Implementierung
 
-**Bibliotheken für regulatorische Compliance**: Compliance-Teams können maßgebliche Sammlungen von Vorschriften,
-Richtlinien und Verfahren kuratieren, auf die KI-Agenten verweisen, um konforme Empfehlungen und
-Entscheidungsunterstützung zu gewährleisten.
+Die Architektur verwendet:
 
-**Technische Dokumentationssysteme**: Ingenieurteams können umfassende technische Wissensdatenbanken aufbauen, in denen
-KI-Agenten Entwicklern helfen, relevante Dokumentation, Codebeispiele und Best Practices aus umfangreichen technischen
-Bibliotheken zu finden.
+- FerretDB für Dokumentenmetadaten und Verarbeitungsstatus
+- Milvus für Vektorspeicherung und semantische Suche
+- Docling für Dokumenten-Parsing und Strukturextraktion
+- SeaweedFS für S3-kompatiblen Dateispeicher
+- LlamaIndex für Chunking- und Embedding-Orchestrierung
 
-**Mehrsprachige Operationen**: Organisationen, die über Sprachgrenzen hinweg agieren, können vereinheitlichte
-Wissensdatenbanken pflegen, in denen derselbe Inhalt Benutzern auf Deutsch, Englisch, Französisch oder Italienisch
-dient, wobei die Plattform Spracheinstellungen automatisch handhabt.
+Verarbeitungsmetadaten befinden sich in FerretDB, Vektor-Embeddings in Milvus, Rohdateien in SeaweedFS. Diese Trennung
+optimiert jede Komponente für ihre spezifische Aufgabe.
 
-## Operative Vorteile
+## Einschränkungen
 
-Die Wissensmanagement-Architektur der Plattform bietet erhebliche operative Vorteile:
+Keine gemischten Modi: Eine Datenbank wird entweder manuell verwaltet oder automatisch synchronisiert, nicht beides.
+Dies verhindert Mehrdeutigkeiten bezüglich der Inhaltsquellen.
 
-**Vereinfachte Administration**: Die hierarchische Struktur (Datenbanken → Namespaces → Dokumente) bietet eine intuitive
-Organisation, die sich an der natürlichen Informationsstruktur von Organisationen orientiert.
+Keine manuelle Chunk-Bearbeitung: Das System generiert Chunks automatisch aus Quelldokumenten. Um fehlerhafte Chunks zu
+korrigieren, aktualisieren Sie das Quelldokument und verarbeiten Sie es erneut.
 
-**Skalierbarkeit**: Die Architektur unterstützt das Wachstum von kleinen Pilotimplementierungen bis hin zu
-unternehmensweiten Wissensdatenbanken mit Millionen von Dokumenten über Hunderte von Namespaces hinweg.
-
-**Flexibilität**: Organisationen können manuelle Kuration für sensible Informationen oder automatisierte
-Synchronisierung für operative Effizienz wählen und Strategien pro Datenbank basierend auf Inhaltsvertraulichkeit und
-Geschäftsanforderungen anpassen.
-
-**Qualitätssicherung**: Die vollständige Transparenz der Verarbeitungsergebnisse ermöglicht die Qualitätsvalidierung und
-stellt sicher, dass KI-Agenten mit genau dargestellten Informationen arbeiten.
-
-**Kostentransparenz**: Die Plattform verfolgt Verarbeitungskosten und Speichernutzung, wodurch Organisationen ihre
-Wissensmanagement-Investitionen optimieren und Kosten bestimmten Geschäftsbereichen oder Projekten zuordnen können.
-
-## Wettbewerbsdifferenzierung
-
-Die Wissensmanagementfunktionen des Swiss AI-Hub zeichnen sich aus durch:
-
-1. **Vollständige Transparenz**: Im Gegensatz zu Black-Box-Systemen ist jeder Aspekt der Dokumentenverarbeitung sichtbar
-   und auditierbar, was Vertrauen schafft und Qualitätssicherung ermöglicht.
-
-2. **Governance-orientiertes Design**: Zugriffskontrolle, Audit-Trails und Datenisolation sind von Grund auf integriert
-   und nicht nachträglich hinzugefügt.
-
-3. **Flexible Bereitstellung**: Die Unterstützung sowohl für manuelle Kuration als auch für automatisierte
-   Synchronisierung ermöglicht es Organisationen, Kontrolle mit operativer Effizienz in Einklang zu bringen.
-
-4. **Mehrsprachige Exzellenz**: Die native Unterstützung der Schweizer Sprachenvielfalt gewährleistet einen
-   gleichberechtigten Zugang, unabhängig von der Sprachpräferenz.
-
-5. **Agentenbereite Architektur**: Die Wissensstruktur ist speziell für die Nutzung durch KI-Agenten konzipiert, wodurch
-   die Abrufqualität optimiert und gleichzeitig die Governance aufrechterhalten wird.
-
-Dieser Ansatz stellt sicher, dass Organisationen ihre Wissensressourcen vertrauensvoll für KI-gestützte Workflows nutzen
-können, während die Transparenz, Kontrolle und Compliance gewahrt bleiben, die in Unternehmens- und öffentlichen
-Sektorbereitstellungen erwartet werden.
+Kein Datenbank-Merging: Datenbanken bleiben designbedingt isoliert. Eine Reorganisation erfordert das Erstellen neuer
+Strukturen und das Migrieren von Dokumenten.
