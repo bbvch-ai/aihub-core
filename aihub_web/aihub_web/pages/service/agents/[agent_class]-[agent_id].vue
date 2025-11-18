@@ -24,7 +24,7 @@ const { t } = useI18n()
 const { agent } = useAgent()
 
 const subPath = (path: string) => {
-  return `/service/agents/agent-${route.params.agent_id}-${route.params.agent_class}/${path}`
+  return `/service/agents/${route.params.agent_class}-${route.params.agent_id}/${path}`
 }
 
 const isActive = (path: string) => {

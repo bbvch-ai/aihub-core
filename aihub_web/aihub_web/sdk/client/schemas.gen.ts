@@ -234,7 +234,7 @@ Used during deserialization to decide which subclass to instantiate.`,
     title: 'AgentEvent'
 } as const;
 
-export const AgentInSpecsSchema = {
+export const AgentInDTOSchema = {
     properties: {
         agent_class: {
             type: 'string',
@@ -258,11 +258,7 @@ export const AgentInSpecsSchema = {
     },
     type: 'object',
     required: ['agent_class', 'agent_id', 'is_process_start', 'event_specs'],
-    title: 'AgentInSpecs',
-    description: `Defines the specifications of a piece of work that can be submitted by an agent.
-It is limited to an exact agent by class and id and holds the event specs of the
-agents stop events, as these stop events are translated to work events and submitted
-to the agentic process as inputs.`
+    title: 'AgentInDTO'
 } as const;
 
 export const AgentInTheLoopExceptionEventSchema = {
@@ -566,6 +562,58 @@ If an event subject is something like:
 then this AgentTopic can represent it, providing quick field-level access and serialization.`
 } as const;
 
+export const AgentProcessStepDTOSchema = {
+    properties: {
+        step_index: {
+            type: 'integer',
+            title: 'Step Index',
+            description: 'Order of this step in the walkthrough (0-based).'
+        },
+        step_type: {
+            type: 'string',
+            title: 'Step Type',
+            description: 'Type of entity involved in this step.',
+            default: 'agent'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'Timestamp when this step was created in nanoseconds.'
+        },
+        is_completed: {
+            type: 'boolean',
+            title: 'Is Completed',
+            description: 'Whether this step has been completed (has a work response).'
+        },
+        work_request: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/AgentWorkRequestDTO'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'The agent work request for this step.'
+        },
+        work_response: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/AgentWorkResponseDTO'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'The agent work response for this step. May be None if work is not yet completed.'
+        }
+    },
+    type: 'object',
+    required: ['step_index', 'created_at', 'is_completed'],
+    title: 'AgentProcessStepDTO',
+    description: 'DTO representing an agent process step with agent-specific work request and response information.'
+} as const;
+
 export const AgentSuitabilityAcceptEventSchema = {
     properties: {
         event_id: {
@@ -699,6 +747,182 @@ It signifies that this agent is not appropriate for handling the user's request
 and the request should be routed to a different agent.`
 } as const;
 
+export const AgentWorkRequestDTOSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id',
+            description: 'Unique identifier of the work request event.'
+        },
+        event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: 'Name of the event type.'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'Timestamp when the work was requested in nanoseconds.'
+        },
+        request_type: {
+            type: 'string',
+            enum: ['human', 'agent', 'program'],
+            title: 'Request Type',
+            description: 'Type of entity the work was requested from.'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Name',
+            description: 'Human-readable name for the work request.'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Description',
+            description: 'Human-readable description of the work request.'
+        },
+        data: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Data',
+            description: 'The work request event data.'
+        },
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class',
+            description: 'The class of the agent that should handle this request.'
+        },
+        agent_id: {
+            type: 'string',
+            title: 'Agent Id',
+            description: 'The ID of the agent that should handle this request.'
+        },
+        agent_info: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/MinimalAgentDTO'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Detailed information about the agent, if available.'
+        },
+        start_event: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Start Event',
+            description: 'The start event that will be sent to the agent.',
+            default: {}
+        }
+    },
+    type: 'object',
+    required: ['event_id', 'event_name', 'created_at', 'request_type', 'display_name', 'display_description', 'data', 'agent_class', 'agent_id'],
+    title: 'AgentWorkRequestDTO',
+    description: 'DTO representing an agent work request with specific agent-related information.'
+} as const;
+
+export const AgentWorkResponseDTOSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id',
+            description: 'Unique identifier of the work response event.'
+        },
+        event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: 'Name of the event type.'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'Timestamp when the work was completed in nanoseconds.'
+        },
+        response_type: {
+            type: 'string',
+            enum: ['human', 'agent', 'program'],
+            title: 'Response Type',
+            description: 'Type of entity that completed the work.'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Name',
+            description: 'Human-readable name for the work response.'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Description',
+            description: 'Human-readable description of the work response.'
+        },
+        data: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Data',
+            description: 'The work response event data.'
+        },
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class',
+            description: 'The class of the agent that should handle this request.'
+        },
+        agent_id: {
+            type: 'string',
+            title: 'Agent Id',
+            description: 'The ID of the agent that should handle this request.'
+        },
+        agent_info: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/MinimalAgentDTO'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Detailed information about the agent, if available.'
+        },
+        agent_stop_event: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Agent Stop Event',
+            description: 'The stop event returned by the agent after completing the work.',
+            default: {}
+        }
+    },
+    type: 'object',
+    required: ['event_id', 'event_name', 'created_at', 'response_type', 'display_name', 'display_description', 'data', 'agent_class', 'agent_id'],
+    title: 'AgentWorkResponseDTO',
+    description: 'DTO representing an agent work response with specific agent-related information.'
+} as const;
+
 export const AnnotationSchema = {
     properties: {
         type: {
@@ -748,6 +972,7 @@ export const AudioSchema = {
             title: 'Id'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['id'],
     title: 'Audio'
@@ -996,6 +1221,226 @@ export const CachePointSchema = {
     description: 'Used to set the point to cache up to, if the LLM supports caching.'
 } as const;
 
+export const CascadeSelectSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
+        formkit: {
+            type: 'string',
+            const: 'primeCascadeSelect',
+            title: 'Formkit',
+            description: 'PrimeVue CascadeSelect element.',
+            default: 'primeCascadeSelect'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'Name of this field'
+        },
+        label: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Label',
+            description: 'Label of this field'
+        },
+        help: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Help',
+            description: 'Help text of this field'
+        },
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Additional Validation Rules',
+            description: 'Validation expression'
+        },
+        disabled: {
+            type: 'boolean',
+            title: 'Disabled',
+            description: 'Whether the input is disabled',
+            default: false
+        },
+        readonly: {
+            type: 'boolean',
+            title: 'Readonly',
+            description: 'Whether the input is readonly',
+            default: false
+        },
+        placeholder: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Placeholder',
+            description: 'Placeholder text'
+        },
+        options: {
+            items: {
+                additionalProperties: {
+                    anyOf: [
+                        {
+                            type: 'string'
+                        },
+                        {
+                            '$ref': '#/components/schemas/LocaleString'
+                        },
+                        {}
+                    ]
+                },
+                type: 'object'
+            },
+            type: 'array',
+            title: 'Options',
+            description: 'Array of hierarchical option objects'
+        },
+        optionLabel: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Optionlabel',
+            description: 'Property name to use as the label of an option'
+        },
+        optionValue: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Optionvalue',
+            description: 'Property name to use as the value of an option'
+        },
+        optionGroupLabel: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Optiongrouplabel',
+            description: 'Property name to use as the label of an option group'
+        },
+        optionGroupChildren: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Optiongroupchildren',
+            description: 'Property names that define the children of option groups'
+        },
+        filter: {
+            type: 'boolean',
+            title: 'Filter',
+            description: 'Whether to enable filtering',
+            default: false
+        },
+        multiple: {
+            type: 'boolean',
+            title: 'Multiple',
+            description: 'Whether to allow multiple selections',
+            default: false
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['label', 'options', 'validation'],
+    title: 'CascadeSelect',
+    description: 'https://formkit-primevue.netlify.app/inputs/CascadeSelect'
+} as const;
+
 export const ChainEventSchema = {
     properties: {
         event_id: {
@@ -1142,6 +1587,7 @@ export const ChatCompletionAllowedToolChoiceParamSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['allowed_tools', 'type'],
     title: 'ChatCompletionAllowedToolChoiceParam'
@@ -1163,6 +1609,7 @@ export const ChatCompletionAllowedToolsParamSchema = {
             title: 'Tools'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['mode', 'tools'],
     title: 'ChatCompletionAllowedToolsParam'
@@ -1212,7 +1659,7 @@ export const ChatCompletionAssistantMessageParamSchema = {
         function_call: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/FunctionCall-Input'
+                    '$ref': '#/components/schemas/FunctionCall'
                 },
                 {
                     type: 'null'
@@ -1249,6 +1696,7 @@ export const ChatCompletionAssistantMessageParamSchema = {
             title: 'Tool Calls'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['role'],
     title: 'ChatCompletionAssistantMessageParam'
@@ -1293,12 +1741,13 @@ export const ChatCompletionAudioParamSchema = {
                 },
                 {
                     type: 'string',
-                    enum: ['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse']
+                    enum: ['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse', 'marin', 'cedar']
                 }
             ],
             title: 'Voice'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['format', 'voice'],
     title: 'ChatCompletionAudioParam'
@@ -1315,6 +1764,7 @@ export const ChatCompletionContentPartImageParamSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['image_url', 'type'],
     title: 'ChatCompletionContentPartImageParam'
@@ -1331,6 +1781,7 @@ export const ChatCompletionContentPartInputAudioParamSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['input_audio', 'type'],
     title: 'ChatCompletionContentPartInputAudioParam'
@@ -1348,6 +1799,7 @@ export const ChatCompletionContentPartRefusalParamSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['refusal', 'type'],
     title: 'ChatCompletionContentPartRefusalParam'
@@ -1365,6 +1817,7 @@ export const ChatCompletionContentPartTextParamSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['text', 'type'],
     title: 'ChatCompletionContentPartTextParam'
@@ -1396,6 +1849,7 @@ export const ChatCompletionDeveloperMessageParamSchema = {
             title: 'Name'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['content', 'role'],
     title: 'ChatCompletionDeveloperMessageParam'
@@ -1408,6 +1862,7 @@ export const ChatCompletionFunctionCallOptionParamSchema = {
             title: 'Name'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['name'],
     title: 'ChatCompletionFunctionCallOptionParam'
@@ -1436,6 +1891,7 @@ export const ChatCompletionFunctionMessageParamSchema = {
             title: 'Role'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['content', 'name', 'role'],
     title: 'ChatCompletionFunctionMessageParam'
@@ -1452,6 +1908,7 @@ export const ChatCompletionFunctionToolParamSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['function', 'type'],
     title: 'ChatCompletionFunctionToolParam'
@@ -1513,7 +1970,7 @@ export const ChatCompletionMessageSchema = {
         function_call: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/FunctionCall-Output'
+                    '$ref': '#/components/schemas/FunctionCall'
                 },
                 {
                     type: 'null'
@@ -1584,6 +2041,7 @@ export const ChatCompletionMessageCustomToolCallParamSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['id', 'custom', 'type'],
     title: 'ChatCompletionMessageCustomToolCallParam'
@@ -1625,6 +2083,7 @@ export const ChatCompletionMessageFunctionToolCallParamSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['id', 'function', 'type'],
     title: 'ChatCompletionMessageFunctionToolCallParam'
@@ -1641,6 +2100,7 @@ export const ChatCompletionNamedToolChoiceCustomParamSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['custom', 'type'],
     title: 'ChatCompletionNamedToolChoiceCustomParam'
@@ -1657,6 +2117,7 @@ export const ChatCompletionNamedToolChoiceParamSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['function', 'type'],
     title: 'ChatCompletionNamedToolChoiceParam'
@@ -1684,6 +2145,7 @@ export const ChatCompletionPredictionContentParamSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['content', 'type'],
     title: 'ChatCompletionPredictionContentParam'
@@ -2096,6 +2558,7 @@ export const ChatCompletionStreamOptionsParamSchema = {
             title: 'Include Usage'
         }
     },
+    additionalProperties: true,
     type: 'object',
     title: 'ChatCompletionStreamOptionsParam'
 } as const;
@@ -2126,6 +2589,7 @@ export const ChatCompletionSystemMessageParamSchema = {
             title: 'Name'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['content', 'role'],
     title: 'ChatCompletionSystemMessageParam'
@@ -2195,6 +2659,7 @@ export const ChatCompletionToolMessageParamSchema = {
             title: 'Tool Call Id'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['content', 'role', 'tool_call_id'],
     title: 'ChatCompletionToolMessageParam'
@@ -2239,6 +2704,7 @@ export const ChatCompletionUserMessageParamSchema = {
             title: 'Name'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['content', 'role'],
     title: 'ChatCompletionUserMessageParam'
@@ -2298,6 +2764,181 @@ export const ChatMessageSchema = {
     type: 'object',
     title: 'ChatMessage',
     description: 'Chat message.'
+} as const;
+
+export const CheckboxSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
+        formkit: {
+            type: 'string',
+            const: 'primeCheckbox',
+            title: 'Formkit',
+            description: 'PrimeVue Checkbox element.',
+            default: 'primeCheckbox'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'Name of this field'
+        },
+        label: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Label',
+            description: 'Label of this field'
+        },
+        help: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Help',
+            description: 'Help text of this field'
+        },
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Additional Validation Rules',
+            description: 'Validation expression'
+        },
+        disabled: {
+            type: 'boolean',
+            title: 'Disabled',
+            description: 'Whether the input is disabled',
+            default: false
+        },
+        readonly: {
+            type: 'boolean',
+            title: 'Readonly',
+            description: 'Whether the input is readonly',
+            default: false
+        },
+        binary: {
+            type: 'boolean',
+            title: 'Binary',
+            description: 'Whether the checkbox works in binary mode',
+            default: true
+        },
+        indeterminate: {
+            type: 'boolean',
+            title: 'Indeterminate',
+            description: 'Whether the checkbox is in indeterminate state',
+            default: false
+        },
+        trueValue: {
+            title: 'Truevalue',
+            description: 'Value to emit when checked',
+            default: true
+        },
+        falseValue: {
+            title: 'Falsevalue',
+            description: 'Value to emit when unchecked',
+            default: false
+        },
+        prefix: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Prefix',
+            description: 'Prefix text'
+        },
+        suffix: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Suffix',
+            description: 'Suffix text'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['label', 'validation'],
+    title: 'Checkbox',
+    description: 'https://formkit-primevue.netlify.app/inputs/Checkbox'
 } as const;
 
 export const ChoiceSchema = {
@@ -2538,6 +3179,147 @@ export const CitationBlockSchema = {
     required: ['cited_content', 'source', 'title', 'additional_location_info'],
     title: 'CitationBlock',
     description: 'A representation of cited content from past messages.'
+} as const;
+
+export const ColorPickerSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
+        formkit: {
+            type: 'string',
+            const: 'primeColorPicker',
+            title: 'Formkit',
+            description: 'PrimeVue ColorPicker element.',
+            default: 'primeColorPicker'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'Name of this field'
+        },
+        label: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Label',
+            description: 'Label of this field'
+        },
+        help: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Help',
+            description: 'Help text of this field'
+        },
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Additional Validation Rules',
+            description: 'Validation expression'
+        },
+        disabled: {
+            type: 'boolean',
+            title: 'Disabled',
+            description: 'Whether the input is disabled',
+            default: false
+        },
+        readonly: {
+            type: 'boolean',
+            title: 'Readonly',
+            description: 'Whether the input is readonly',
+            default: false
+        },
+        inline: {
+            type: 'boolean',
+            title: 'Inline',
+            description: 'Whether to display the picker inline',
+            default: false
+        },
+        format: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Format',
+            description: 'Format of the color value (hex, rgb, hsl)'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['label', 'validation'],
+    title: 'ColorPicker',
+    description: 'https://formkit-primevue.netlify.app/inputs/ColorPicker'
 } as const;
 
 export const CompletionTokensDetailsSchema = {
@@ -3489,6 +4271,189 @@ export const DatasetUpdateSchema = {
     type: 'object',
     required: ['items'],
     title: 'DatasetUpdate'
+} as const;
+
+export const DatePickerSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
+        formkit: {
+            type: 'string',
+            const: 'primeDatePicker',
+            title: 'Formkit',
+            description: 'PrimeVue DatePicker element.',
+            default: 'primeDatePicker'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'Name of this field'
+        },
+        label: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Label',
+            description: 'Label of this field'
+        },
+        help: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Help',
+            description: 'Help text of this field'
+        },
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Additional Validation Rules',
+            description: 'Validation expression'
+        },
+        disabled: {
+            type: 'boolean',
+            title: 'Disabled',
+            description: 'Whether the input is disabled',
+            default: false
+        },
+        readonly: {
+            type: 'boolean',
+            title: 'Readonly',
+            description: 'Whether the input is readonly',
+            default: false
+        },
+        placeholder: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Placeholder',
+            description: 'Placeholder text'
+        },
+        dateFormat: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Dateformat',
+            description: 'Format of the date display',
+            default: 'dd.mm.yy'
+        },
+        showIcon: {
+            type: 'boolean',
+            title: 'Showicon',
+            description: 'Whether to show the calendar icon',
+            default: false
+        },
+        icon: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^pi pi-[a-z0-9-]+$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Icon',
+            description: 'Custom icon class'
+        },
+        selectionMode: {
+            type: 'string',
+            enum: ['single', 'range', 'multiple'],
+            title: 'Selectionmode',
+            description: 'Selection mode for dates',
+            default: 'single'
+        },
+        manualInput: {
+            type: 'boolean',
+            title: 'Manualinput',
+            description: 'Whether to allow manual input',
+            default: true
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['label', 'validation'],
+    title: 'DatePicker',
+    description: 'https://formkit-primevue.netlify.app/inputs/DatePicker'
 } as const;
 
 export const DeleteRoleResponseSchema = {
@@ -5054,6 +6019,7 @@ export const FileSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['file', 'type'],
     title: 'File'
@@ -5074,6 +6040,7 @@ export const FileFileSchema = {
             title: 'Filename'
         }
     },
+    additionalProperties: true,
     type: 'object',
     title: 'FileFile'
 } as const;
@@ -5095,23 +6062,7 @@ export const Function_OutputSchema = {
     title: 'Function'
 } as const;
 
-export const FunctionCall_InputSchema = {
-    properties: {
-        arguments: {
-            type: 'string',
-            title: 'Arguments'
-        },
-        name: {
-            type: 'string',
-            title: 'Name'
-        }
-    },
-    type: 'object',
-    required: ['arguments', 'name'],
-    title: 'FunctionCall'
-} as const;
-
-export const FunctionCall_OutputSchema = {
+export const FunctionCallSchema = {
     properties: {
         arguments: {
             type: 'string',
@@ -5155,6 +6106,7 @@ export const FunctionDefinitionSchema = {
             title: 'Strict'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['name'],
     title: 'FunctionDefinition'
@@ -5415,6 +6367,18 @@ export const HtmlElementSchema = {
             title: 'If',
             description: 'Conditional expression to show this element'
         },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
         '$el': {
             type: 'string',
             title: '$El',
@@ -5477,14 +6441,16 @@ Example:
     title = HtmlElement(el="h1", children="My Title")`
 } as const;
 
-export const HumanInSpecsSchema = {
+export const HumanInDTOSchema = {
     properties: {
         name: {
-            '$ref': '#/components/schemas/LocaleString',
+            type: 'string',
+            title: 'Name',
             description: 'The name of the work event.'
         },
         description: {
-            '$ref': '#/components/schemas/LocaleString',
+            type: 'string',
+            title: 'Description',
             description: 'A description of the work event, providing details about its purpose.'
         },
         route: {
@@ -5513,7 +6479,64 @@ export const HumanInSpecsSchema = {
                         '$ref': '#/components/schemas/HtmlElement'
                     },
                     {
-                        '$ref': '#/components/schemas/InputTextElement'
+                        '$ref': '#/components/schemas/InputText'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CascadeSelect'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Checkbox'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ColorPicker'
+                    },
+                    {
+                        '$ref': '#/components/schemas/DatePicker'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputMask'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputNumber'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputOtp'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Knob'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Listbox'
+                    },
+                    {
+                        '$ref': '#/components/schemas/MultiSelect'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Password'
+                    },
+                    {
+                        '$ref': '#/components/schemas/RadioButton'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Rating'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Select'
+                    },
+                    {
+                        '$ref': '#/components/schemas/SelectButton'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Slider'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Textarea'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ToggleButton'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ToggleSwitch'
                     }
                 ]
             },
@@ -5525,12 +6548,7 @@ export const HumanInSpecsSchema = {
     },
     type: 'object',
     required: ['name', 'description', 'route', 'method', 'is_process_start', 'event_specs'],
-    title: 'HumanInSpecs',
-    description: `Defines a piece of work that can be submitted by a human.
-It holds information about the form that the user must fill in in order to generate the exact
-data structure defined in the event specs of the work event.
-It also holds the route and http method that must be used to finally post that work event data
-to the API, which will forward it to the appropriate process.`
+    title: 'HumanInDTO'
 } as const;
 
 export const HumanInTheLoopRequestEventSchema = {
@@ -5681,6 +6699,256 @@ Used during deserialization to decide which subclass to instantiate.`,
 Once a human operator provides an answer to a \`HumanInTheLoopRequestEvent\`, the response:
 - Influences the workflow (since it's a \`ControlEvent\`), resuming or altering execution based on human input.
 - Is visible to the UI (since it's also a \`DisplayEvent\`), allowing transparency and auditing.`
+} as const;
+
+export const HumanProcessStepDTOSchema = {
+    properties: {
+        step_index: {
+            type: 'integer',
+            title: 'Step Index',
+            description: 'Order of this step in the walkthrough (0-based).'
+        },
+        step_type: {
+            type: 'string',
+            title: 'Step Type',
+            description: 'Type of entity involved in this step.',
+            default: 'human'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'Timestamp when this step was created in nanoseconds.'
+        },
+        is_completed: {
+            type: 'boolean',
+            title: 'Is Completed',
+            description: 'Whether this step has been completed (has a work response).'
+        },
+        work_request: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/HumanWorkRequestDTO'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'The human work request for this step.'
+        },
+        work_response: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/HumanWorkResponseDTO'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'The human work response for this step. May be None if work is not yet completed.'
+        }
+    },
+    type: 'object',
+    required: ['step_index', 'created_at', 'is_completed'],
+    title: 'HumanProcessStepDTO',
+    description: 'DTO representing a human process step with human-specific work request and response information.'
+} as const;
+
+export const HumanWorkRequestDTOSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id',
+            description: 'Unique identifier of the work request event.'
+        },
+        event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: 'Name of the event type.'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'Timestamp when the work was requested in nanoseconds.'
+        },
+        request_type: {
+            type: 'string',
+            enum: ['human', 'agent', 'program'],
+            title: 'Request Type',
+            description: 'Type of entity the work was requested from.'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Name',
+            description: 'Human-readable name for the work request.'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Description',
+            description: 'Human-readable description of the work request.'
+        },
+        data: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Data',
+            description: 'The work request event data.'
+        },
+        user_ids: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'User Ids',
+            description: 'List of user IDs that can respond to this request.',
+            default: []
+        },
+        user_emails: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'User Emails',
+            description: 'List of user emails that can respond to this request.',
+            default: []
+        },
+        user_roles: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'User Roles',
+            description: 'List of user roles that can respond to this request.',
+            default: []
+        },
+        notify: {
+            type: 'boolean',
+            title: 'Notify',
+            description: 'Whether users should be notified about this request.',
+            default: false
+        },
+        forms: {
+            items: {
+                additionalProperties: true,
+                type: 'object'
+            },
+            type: 'array',
+            title: 'Forms',
+            description: 'List of forms that users can submit.',
+            default: []
+        },
+        endpoint: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Endpoint',
+            description: 'API endpoint for form submission.'
+        },
+        method: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Method',
+            description: 'HTTP method for form submission.'
+        }
+    },
+    type: 'object',
+    required: ['event_id', 'event_name', 'created_at', 'request_type', 'display_name', 'display_description', 'data'],
+    title: 'HumanWorkRequestDTO',
+    description: 'DTO representing a human work request with specific human-related information.'
+} as const;
+
+export const HumanWorkResponseDTOSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id',
+            description: 'Unique identifier of the work response event.'
+        },
+        event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: 'Name of the event type.'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'Timestamp when the work was completed in nanoseconds.'
+        },
+        response_type: {
+            type: 'string',
+            enum: ['human', 'agent', 'program'],
+            title: 'Response Type',
+            description: 'Type of entity that completed the work.'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Name',
+            description: 'Human-readable name for the work response.'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Description',
+            description: 'Human-readable description of the work response.'
+        },
+        data: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Data',
+            description: 'The work response event data.'
+        },
+        submitted_by: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/MinimalUserDTO'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'The user who submitted this work response.'
+        }
+    },
+    type: 'object',
+    required: ['event_id', 'event_name', 'created_at', 'response_type', 'display_name', 'display_description', 'data'],
+    title: 'HumanWorkResponseDTO',
+    description: 'DTO representing a human work response with specific human-related information.'
 } as const;
 
 export const ImageSchema = {
@@ -5927,6 +7195,7 @@ export const ImageURLSchema = {
             title: 'Detail'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['url'],
     title: 'ImageURL'
@@ -6022,7 +7291,19 @@ export const IngestedNodeSchema = {
         source: {
             type: 'string',
             title: 'Source',
-            description: 'Source URI of original document.'
+            description: 'Source URI (data lake URI).'
+        },
+        source_origin: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Source Origin',
+            description: 'Original source URI (e.g., SharePoint URL, external URL).'
         },
         namespace: {
             type: 'string',
@@ -6322,6 +7603,7 @@ export const InputAudioSchema = {
             title: 'Format'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['data', 'format'],
     title: 'InputAudio'
@@ -6349,7 +7631,7 @@ export const InputEventInfoSchema = {
     description: 'Information about an input event for a step.'
 } as const;
 
-export const InputTextElementSchema = {
+export const InputMaskSchema = {
     properties: {
         is_formkit_element: {
             type: 'boolean',
@@ -6371,6 +7653,661 @@ export const InputTextElementSchema = {
             title: 'If',
             description: 'Conditional expression to show this element'
         },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
+        formkit: {
+            type: 'string',
+            const: 'primeInputMask',
+            title: 'Formkit',
+            description: 'PrimeVue InputMask element.',
+            default: 'primeInputMask'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'Name of this field'
+        },
+        label: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Label',
+            description: 'Label of this field'
+        },
+        help: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Help',
+            description: 'Help text of this field'
+        },
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Additional Validation Rules',
+            description: 'Validation expression'
+        },
+        disabled: {
+            type: 'boolean',
+            title: 'Disabled',
+            description: 'Whether the input is disabled',
+            default: false
+        },
+        readonly: {
+            type: 'boolean',
+            title: 'Readonly',
+            description: 'Whether the input is readonly',
+            default: false
+        },
+        placeholder: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Placeholder',
+            description: 'Placeholder text'
+        },
+        mask: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Mask',
+            description: 'Input mask pattern'
+        },
+        slotChar: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Slotchar',
+            description: 'Placeholder character for mask slots'
+        },
+        autoClear: {
+            type: 'boolean',
+            title: 'Autoclear',
+            description: 'Whether to clear incomplete values on blur',
+            default: true
+        },
+        unmask: {
+            type: 'boolean',
+            title: 'Unmask',
+            description: 'Whether to return unmasked value',
+            default: false
+        },
+        iconPrefix: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^pi pi-[a-z0-9-]+$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Iconprefix',
+            description: 'Icon prefix'
+        },
+        iconSuffix: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^pi pi-[a-z0-9-]+$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Iconsuffix',
+            description: 'Icon suffix'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['label', 'validation'],
+    title: 'InputMask',
+    description: 'https://formkit-primevue.netlify.app/inputs/InputMask'
+} as const;
+
+export const InputNumberSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
+        formkit: {
+            type: 'string',
+            const: 'primeInputNumber',
+            title: 'Formkit',
+            description: 'PrimeVue InputNumber element.',
+            default: 'primeInputNumber'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'Name of this field'
+        },
+        label: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Label',
+            description: 'Label of this field'
+        },
+        help: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Help',
+            description: 'Help text of this field'
+        },
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Additional Validation Rules',
+            description: 'Validation expression'
+        },
+        disabled: {
+            type: 'boolean',
+            title: 'Disabled',
+            description: 'Whether the input is disabled',
+            default: false
+        },
+        readonly: {
+            type: 'boolean',
+            title: 'Readonly',
+            description: 'Whether the input is readonly',
+            default: false
+        },
+        placeholder: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Placeholder',
+            description: 'Placeholder text'
+        },
+        min: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Min',
+            description: 'Minimum value'
+        },
+        max: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Max',
+            description: 'Maximum value'
+        },
+        step: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Step',
+            description: 'Step factor for increment/decrement'
+        },
+        useGrouping: {
+            type: 'boolean',
+            title: 'Usegrouping',
+            description: 'Whether to use grouping separators',
+            default: true
+        },
+        minFractionDigits: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Minfractiondigits',
+            description: 'Minimum number of fraction digits'
+        },
+        maxFractionDigits: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Maxfractiondigits',
+            description: 'Maximum number of fraction digits'
+        },
+        locale: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Locale',
+            description: 'Locale to use for number formatting'
+        },
+        mode: {
+            anyOf: [
+                {
+                    type: 'string',
+                    enum: ['decimal', 'currency']
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Mode',
+            description: 'Input mode'
+        },
+        currency: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Currency',
+            description: 'Currency code for currency mode'
+        },
+        prefix: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Prefix',
+            description: 'Prefix text'
+        },
+        suffix: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Suffix',
+            description: 'Suffix text'
+        },
+        showButtons: {
+            type: 'boolean',
+            title: 'Showbuttons',
+            description: 'Whether to show increment/decrement buttons',
+            default: false
+        },
+        buttonLayout: {
+            anyOf: [
+                {
+                    type: 'string',
+                    enum: ['stacked', 'horizontal']
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Buttonlayout',
+            description: 'Layout of increment/decrement buttons'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['label', 'validation'],
+    title: 'InputNumber',
+    description: 'https://formkit-primevue.netlify.app/inputs/InputNumber'
+} as const;
+
+export const InputOtpSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
+        formkit: {
+            type: 'string',
+            const: 'primeInputOtp',
+            title: 'Formkit',
+            description: 'PrimeVue InputOtp element.',
+            default: 'primeInputOtp'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'Name of this field'
+        },
+        label: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Label',
+            description: 'Label of this field'
+        },
+        help: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Help',
+            description: 'Help text of this field'
+        },
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Additional Validation Rules',
+            description: 'Validation expression'
+        },
+        disabled: {
+            type: 'boolean',
+            title: 'Disabled',
+            description: 'Whether the input is disabled',
+            default: false
+        },
+        readonly: {
+            type: 'boolean',
+            title: 'Readonly',
+            description: 'Whether the input is readonly',
+            default: false
+        },
+        length: {
+            type: 'integer',
+            title: 'Length',
+            description: 'Number of characters in the OTP',
+            default: 4
+        },
+        integerOnly: {
+            type: 'boolean',
+            title: 'Integeronly',
+            description: 'Whether to allow only integers',
+            default: false
+        },
+        mask: {
+            type: 'boolean',
+            title: 'Mask',
+            description: 'Whether to mask the input characters',
+            default: false
+        },
+        variant: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Variant',
+            description: 'Styling variant of the component'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['label', 'validation'],
+    title: 'InputOtp',
+    description: 'https://formkit-primevue.netlify.app/inputs/InputOtp'
+} as const;
+
+export const InputTextSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
         formkit: {
             type: 'string',
             const: 'primeInputText',
@@ -6391,7 +8328,15 @@ export const InputTextElementSchema = {
             description: 'Name of this field'
         },
         label: {
-            '$ref': '#/components/schemas/LocaleString',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Label',
             description: 'Label of this field'
         },
         help: {
@@ -6400,12 +8345,22 @@ export const InputTextElementSchema = {
                     '$ref': '#/components/schemas/LocaleString'
                 },
                 {
+                    type: 'string'
+                },
+                {
                     type: 'null'
                 }
             ],
+            title: 'Help',
             description: 'Help text of this field'
         },
-        validation: {
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
             anyOf: [
                 {
                     type: 'string'
@@ -6414,7 +8369,7 @@ export const InputTextElementSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Validation',
+            title: 'Additional Validation Rules',
             description: 'Validation expression'
         },
         disabled: {
@@ -6487,12 +8442,17 @@ export const InputTextElementSchema = {
             ],
             title: 'Iconsuffix',
             description: 'Icon suffix'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['label'],
-    title: 'InputTextElement',
+    required: ['label', 'validation'],
+    title: 'InputText',
     description: 'https://formkit-primevue.netlify.app/inputs/InputText'
 } as const;
 
@@ -6523,9 +8483,247 @@ export const JSONSchemaSchema = {
             title: 'Strict'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['name'],
     title: 'JSONSchema'
+} as const;
+
+export const KnobSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
+        formkit: {
+            type: 'string',
+            const: 'primeKnob',
+            title: 'Formkit',
+            description: 'PrimeVue Knob element.',
+            default: 'primeKnob'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'Name of this field'
+        },
+        label: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Label',
+            description: 'Label of this field'
+        },
+        help: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Help',
+            description: 'Help text of this field'
+        },
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Additional Validation Rules',
+            description: 'Validation expression'
+        },
+        disabled: {
+            type: 'boolean',
+            title: 'Disabled',
+            description: 'Whether the input is disabled',
+            default: false
+        },
+        readonly: {
+            type: 'boolean',
+            title: 'Readonly',
+            description: 'Whether the input is readonly',
+            default: false
+        },
+        min: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Min',
+            description: 'Minimum value'
+        },
+        max: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Max',
+            description: 'Maximum value'
+        },
+        step: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Step',
+            description: 'Step factor for increment/decrement'
+        },
+        size: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Size',
+            description: 'Size of the knob in pixels'
+        },
+        strokeWidth: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Strokewidth',
+            description: 'Width of the knob stroke'
+        },
+        showValue: {
+            type: 'boolean',
+            title: 'Showvalue',
+            description: 'Whether to show the value in the center',
+            default: true
+        },
+        valueColor: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Valuecolor',
+            description: 'Color of the value arc'
+        },
+        rangeColor: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Rangecolor',
+            description: 'Color of the range arc'
+        },
+        textColor: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Textcolor',
+            description: 'Color of the value text'
+        },
+        valueTemplate: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Valuetemplate',
+            description: 'Template string for value display'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['label', 'validation'],
+    title: 'Knob',
+    description: 'https://formkit-primevue.netlify.app/inputs/Knob'
 } as const;
 
 export const LLMCostEventSchema = {
@@ -7144,6 +9342,189 @@ Used during deserialization to decide which subclass to instantiate.`,
     description: 'Limits the chat messages based on number of input tokens.'
 } as const;
 
+export const ListboxSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
+        formkit: {
+            type: 'string',
+            const: 'primeListbox',
+            title: 'Formkit',
+            description: 'PrimeVue Listbox element.',
+            default: 'primeListbox'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'Name of this field'
+        },
+        label: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Label',
+            description: 'Label of this field'
+        },
+        help: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Help',
+            description: 'Help text of this field'
+        },
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Additional Validation Rules',
+            description: 'Validation expression'
+        },
+        disabled: {
+            type: 'boolean',
+            title: 'Disabled',
+            description: 'Whether the input is disabled',
+            default: false
+        },
+        readonly: {
+            type: 'boolean',
+            title: 'Readonly',
+            description: 'Whether the input is readonly',
+            default: false
+        },
+        placeholder: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Placeholder',
+            description: 'Placeholder text'
+        },
+        options: {
+            items: {
+                additionalProperties: true,
+                type: 'object'
+            },
+            type: 'array',
+            title: 'Options',
+            description: 'Array of selectable option objects'
+        },
+        optionLabel: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Optionlabel',
+            description: 'Property name to use as the label of an option'
+        },
+        optionValue: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Optionvalue',
+            description: 'Property name to use as the value of an option'
+        },
+        multiple: {
+            type: 'boolean',
+            title: 'Multiple',
+            description: 'Whether to allow multiple selections',
+            default: false
+        },
+        filter: {
+            type: 'boolean',
+            title: 'Filter',
+            description: 'Whether to enable filtering',
+            default: false
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['label', 'options', 'validation'],
+    title: 'Listbox',
+    description: 'https://formkit-primevue.netlify.app/inputs/Listbox'
+} as const;
+
 export const LocaleResponseSchema = {
     properties: {
         lang: {
@@ -7652,7 +10033,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1762188469
+            default: 1762879556
         },
         owned_by: {
             type: 'string',
@@ -8193,6 +10574,183 @@ export const ModelTypeGroupDTOSchema = {
     title: 'ModelTypeGroupDTO'
 } as const;
 
+export const MultiSelectSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
+        formkit: {
+            type: 'string',
+            const: 'primeMultiSelect',
+            title: 'Formkit',
+            description: 'PrimeVue MultiSelect element.',
+            default: 'primeMultiSelect'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'Name of this field'
+        },
+        label: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Label',
+            description: 'Label of this field'
+        },
+        help: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Help',
+            description: 'Help text of this field'
+        },
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Additional Validation Rules',
+            description: 'Validation expression'
+        },
+        disabled: {
+            type: 'boolean',
+            title: 'Disabled',
+            description: 'Whether the input is disabled',
+            default: false
+        },
+        readonly: {
+            type: 'boolean',
+            title: 'Readonly',
+            description: 'Whether the input is readonly',
+            default: false
+        },
+        placeholder: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Placeholder',
+            description: 'Placeholder text'
+        },
+        options: {
+            items: {
+                additionalProperties: true,
+                type: 'object'
+            },
+            type: 'array',
+            title: 'Options',
+            description: 'Array of selectable option objects'
+        },
+        optionLabel: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Optionlabel',
+            description: 'Property name to use as the label of an option'
+        },
+        optionValue: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Optionvalue',
+            description: 'Property name to use as the value of an option'
+        },
+        filter: {
+            type: 'boolean',
+            title: 'Filter',
+            description: 'Whether to enable filtering',
+            default: false
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['label', 'options', 'validation'],
+    title: 'MultiSelect',
+    description: 'https://formkit-primevue.netlify.app/inputs/MultiSelect'
+} as const;
+
 export const NamespaceDTOSchema = {
     properties: {
         id: {
@@ -8590,6 +11148,43 @@ export const PaginatedNotificationsResponseSchema = {
     description: 'A paginated response container for notifications.'
 } as const;
 
+export const PaginatedProcessWalkthroughsResponseSchema = {
+    properties: {
+        total: {
+            type: 'integer',
+            title: 'Total',
+            description: 'Total number of items available'
+        },
+        page: {
+            type: 'integer',
+            title: 'Page',
+            description: 'Current page number (1-indexed)'
+        },
+        page_size: {
+            type: 'integer',
+            title: 'Page Size',
+            description: 'Number of threads per page'
+        },
+        total_pages: {
+            type: 'integer',
+            title: 'Total Pages',
+            description: 'Total number of pages available'
+        },
+        walkthroughs: {
+            items: {
+                '$ref': '#/components/schemas/ProcessWalkthroughDTO'
+            },
+            type: 'array',
+            title: 'Walkthroughs',
+            description: 'List of process walkthroughs for the current page'
+        }
+    },
+    type: 'object',
+    required: ['total', 'page', 'page_size', 'total_pages', 'walkthroughs'],
+    title: 'PaginatedProcessWalkthroughsResponse',
+    description: 'Paginated response containing process walkthroughs with detailed step information.'
+} as const;
+
 export const PaginatedThreadsResponseSchema = {
     properties: {
         total: {
@@ -8782,6 +11377,240 @@ and which remain open (None).
   unknowns as flexible conditions.`
 } as const;
 
+export const PasswordSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
+        formkit: {
+            type: 'string',
+            const: 'primePassword',
+            title: 'Formkit',
+            description: 'PrimeVue Password element.',
+            default: 'primePassword'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'Name of this field'
+        },
+        label: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Label',
+            description: 'Label of this field'
+        },
+        help: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Help',
+            description: 'Help text of this field'
+        },
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Additional Validation Rules',
+            description: 'Validation expression'
+        },
+        disabled: {
+            type: 'boolean',
+            title: 'Disabled',
+            description: 'Whether the input is disabled',
+            default: false
+        },
+        readonly: {
+            type: 'boolean',
+            title: 'Readonly',
+            description: 'Whether the input is readonly',
+            default: false
+        },
+        placeholder: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Placeholder',
+            description: 'Placeholder text'
+        },
+        feedback: {
+            type: 'boolean',
+            title: 'Feedback',
+            description: 'Whether to show password strength feedback',
+            default: false
+        },
+        toggleMask: {
+            type: 'boolean',
+            title: 'Togglemask',
+            description: 'Whether to show toggle button to reveal/hide password',
+            default: false
+        },
+        mediumRegex: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Mediumregex',
+            description: 'Regex pattern for medium strength validation'
+        },
+        strongRegex: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Strongregex',
+            description: 'Regex pattern for strong strength validation'
+        },
+        promptLabel: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Promptlabel',
+            description: 'Label for password prompt'
+        },
+        weakLabel: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Weaklabel',
+            description: 'Label for weak password strength'
+        },
+        mediumLabel: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Mediumlabel',
+            description: 'Label for medium password strength'
+        },
+        strongLabel: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Stronglabel',
+            description: 'Label for strong password strength'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['label', 'validation'],
+    title: 'Password',
+    description: 'https://formkit-primevue.netlify.app/inputs/Password'
+} as const;
+
 export const ProcessConfigDTOSchema = {
     properties: {
         process_id: {
@@ -8830,7 +11659,7 @@ export const ProcessDTOSchema = {
         },
         human_inputs: {
             items: {
-                '$ref': '#/components/schemas/HumanInSpecs'
+                '$ref': '#/components/schemas/HumanInDTO'
             },
             type: 'array',
             title: 'Human Inputs',
@@ -8838,7 +11667,7 @@ export const ProcessDTOSchema = {
         },
         program_inputs: {
             items: {
-                '$ref': '#/components/schemas/ProgramInSpecs'
+                '$ref': '#/components/schemas/ProgramInDTO'
             },
             type: 'array',
             title: 'Program Inputs',
@@ -8846,7 +11675,7 @@ export const ProcessDTOSchema = {
         },
         agent_inputs: {
             items: {
-                '$ref': '#/components/schemas/AgentInSpecs'
+                '$ref': '#/components/schemas/AgentInDTO'
             },
             type: 'array',
             title: 'Agent Inputs',
@@ -8875,55 +11704,92 @@ event models and the publicly exposed fields in HTTP responses.
 By using \`ProcessDTO\`, the API can evolve independently from the internal event representations.`
 } as const;
 
-export const ProcessHumanInDtoSchema = {
+export const ProcessWalkthroughDTOSchema = {
     properties: {
-        name: {
+        process_walkthrough_id: {
             type: 'string',
-            title: 'Name',
-            description: 'The name of the work event.'
+            title: 'Process Walkthrough Id',
+            description: 'Unique identifier for this specific process walkthrough.'
         },
-        description: {
+        process_class: {
             type: 'string',
-            title: 'Description',
-            description: 'A description of the work event, providing details about its purpose.'
+            title: 'Process Class',
+            description: 'The class/type of the process.'
         },
-        route: {
+        process_id: {
             type: 'string',
-            title: 'Route',
-            description: 'The route of the work event.'
+            title: 'Process Id',
+            description: 'Unique identifier for the specific process instance.'
         },
-        method: {
-            type: 'string',
-            title: 'Method',
-            description: 'The HTTP method of the work event.'
-        },
-        form: {
+        process_steps: {
             items: {
                 anyOf: [
                     {
-                        '$ref': '#/components/schemas/HtmlElement'
+                        '$ref': '#/components/schemas/AgentProcessStepDTO'
                     },
                     {
-                        '$ref': '#/components/schemas/InputTextElement'
+                        '$ref': '#/components/schemas/ProgramProcessStepDTO'
+                    },
+                    {
+                        '$ref': '#/components/schemas/HumanProcessStepDTO'
                     }
                 ]
             },
             type: 'array',
-            title: 'Form',
-            description: 'Formkit fields to render the UI'
+            title: 'Process Steps',
+            description: 'List of all steps in this walkthrough, ordered chronologically.'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'Timestamp of the first event in nanoseconds.'
+        },
+        updated_at: {
+            type: 'integer',
+            title: 'Updated At',
+            description: 'Timestamp of the last event in nanoseconds.'
+        },
+        total_steps: {
+            type: 'integer',
+            title: 'Total Steps',
+            description: 'Total number of steps in this walkthrough.'
+        },
+        completed_steps: {
+            type: 'integer',
+            title: 'Completed Steps',
+            description: 'Number of completed steps in this walkthrough.'
+        },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active',
+            description: 'Whether this walkthrough is active (no ProcessStopEvent).'
+        },
+        involved_agents: {
+            items: {
+                '$ref': '#/components/schemas/MinimalAgentDTO'
+            },
+            type: 'array',
+            title: 'Involved Agents',
+            description: 'List of agents that submitted work in this walkthrough.',
+            default: []
+        },
+        involved_humans: {
+            items: {
+                '$ref': '#/components/schemas/MinimalUserDTO'
+            },
+            type: 'array',
+            title: 'Involved Humans',
+            description: 'List of humans that submitted work in this walkthrough.',
+            default: []
         }
     },
     type: 'object',
-    required: ['name', 'description', 'route', 'method', 'form'],
-    title: 'ProcessHumanInDto',
-    description: `Defines what and how a piece of work must be submitted by a user to a process.
-As humans usually submit their data by filling in forms in the frontend, this event holds
-a list of formkit form fields that can be used to generate a formkit form in the frontend.
-Submitting the form will lead to the required data structure that can be submitted
-to the <route> using the http-method <method>.`
+    required: ['process_walkthrough_id', 'process_class', 'process_id', 'process_steps', 'created_at', 'updated_at', 'total_steps', 'completed_steps', 'is_active'],
+    title: 'ProcessWalkthroughDTO',
+    description: 'DTO representing a process walkthrough with detailed step information.'
 } as const;
 
-export const ProgramInSpecsSchema = {
+export const ProgramInDTOSchema = {
     properties: {
         route: {
             type: 'string',
@@ -8947,12 +11813,214 @@ export const ProgramInSpecsSchema = {
     },
     type: 'object',
     required: ['route', 'method', 'is_process_start', 'event_specs'],
-    title: 'ProgramInSpecs',
-    description: `Defines a piece of work that can be submitted by a program.
-It holds the information about the exact data that must be submitted as a work event
-in the event specs. It also holds the information about where that work event data
-must be submitted, aka to which route and using which http method.
-The API will then forward the data to the appropriate process.`
+    title: 'ProgramInDTO'
+} as const;
+
+export const ProgramProcessStepDTOSchema = {
+    properties: {
+        step_index: {
+            type: 'integer',
+            title: 'Step Index',
+            description: 'Order of this step in the walkthrough (0-based).'
+        },
+        step_type: {
+            type: 'string',
+            title: 'Step Type',
+            description: 'Type of entity involved in this step.',
+            default: 'program'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'Timestamp when this step was created in nanoseconds.'
+        },
+        is_completed: {
+            type: 'boolean',
+            title: 'Is Completed',
+            description: 'Whether this step has been completed (has a work response).'
+        },
+        work_request: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/ProgramWorkRequestDTO'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'The program work request for this step.'
+        },
+        work_response: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/ProgramWorkResponseDTO'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'The program work response for this step. May be None if work is not yet completed.'
+        }
+    },
+    type: 'object',
+    required: ['step_index', 'created_at', 'is_completed'],
+    title: 'ProgramProcessStepDTO',
+    description: 'DTO representing a program process step with program-specific work request and response information.'
+} as const;
+
+export const ProgramWorkRequestDTOSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id',
+            description: 'Unique identifier of the work request event.'
+        },
+        event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: 'Name of the event type.'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'Timestamp when the work was requested in nanoseconds.'
+        },
+        request_type: {
+            type: 'string',
+            enum: ['human', 'agent', 'program'],
+            title: 'Request Type',
+            description: 'Type of entity the work was requested from.'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Name',
+            description: 'Human-readable name for the work request.'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Description',
+            description: 'Human-readable description of the work request.'
+        },
+        data: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Data',
+            description: 'The work request event data.'
+        },
+        endpoint: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Endpoint',
+            description: 'API endpoint for the program to submit work.'
+        },
+        method: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Method',
+            description: 'HTTP method for the program to submit work.'
+        }
+    },
+    type: 'object',
+    required: ['event_id', 'event_name', 'created_at', 'request_type', 'display_name', 'display_description', 'data'],
+    title: 'ProgramWorkRequestDTO',
+    description: 'DTO representing a program work request with specific program-related information.'
+} as const;
+
+export const ProgramWorkResponseDTOSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id',
+            description: 'Unique identifier of the work response event.'
+        },
+        event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: 'Name of the event type.'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'Timestamp when the work was completed in nanoseconds.'
+        },
+        response_type: {
+            type: 'string',
+            enum: ['human', 'agent', 'program'],
+            title: 'Response Type',
+            description: 'Type of entity that completed the work.'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Name',
+            description: 'Human-readable name for the work response.'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Description',
+            description: 'Human-readable description of the work response.'
+        },
+        data: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Data',
+            description: 'The work response event data.'
+        },
+        submitted_by: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/MinimalUserDTO'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'The user who submitted this work response on behalf of the program.'
+        }
+    },
+    type: 'object',
+    required: ['event_id', 'event_name', 'created_at', 'response_type', 'display_name', 'display_description', 'data'],
+    title: 'ProgramWorkResponseDTO',
+    description: 'DTO representing a program work response with specific program-related information.'
 } as const;
 
 export const PromptTokensDetailsSchema = {
@@ -8983,6 +12051,348 @@ export const PromptTokensDetailsSchema = {
     additionalProperties: true,
     type: 'object',
     title: 'PromptTokensDetails'
+} as const;
+
+export const RadioButtonSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
+        formkit: {
+            type: 'string',
+            const: 'primeRadioButton',
+            title: 'Formkit',
+            description: 'PrimeVue RadioButton element.',
+            default: 'primeRadioButton'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'Name of this field'
+        },
+        label: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Label',
+            description: 'Label of this field'
+        },
+        help: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Help',
+            description: 'Help text of this field'
+        },
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Additional Validation Rules',
+            description: 'Validation expression'
+        },
+        disabled: {
+            type: 'boolean',
+            title: 'Disabled',
+            description: 'Whether the input is disabled',
+            default: false
+        },
+        readonly: {
+            type: 'boolean',
+            title: 'Readonly',
+            description: 'Whether the input is readonly',
+            default: false
+        },
+        options: {
+            items: {
+                additionalProperties: true,
+                type: 'object'
+            },
+            type: 'array',
+            title: 'Options',
+            description: 'Array of selectable option objects'
+        },
+        optionLabel: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Optionlabel',
+            description: 'Property name to use as the label of an option'
+        },
+        optionValue: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Optionvalue',
+            description: 'Property name to use as the value of an option'
+        },
+        optionClass: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Optionclass',
+            description: 'CSS class to apply to each option'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['label', 'options', 'validation'],
+    title: 'RadioButton',
+    description: 'https://formkit-primevue.netlify.app/inputs/RadioButton'
+} as const;
+
+export const RatingSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
+        formkit: {
+            type: 'string',
+            const: 'primeRating',
+            title: 'Formkit',
+            description: 'PrimeVue Rating element.',
+            default: 'primeRating'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'Name of this field'
+        },
+        label: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Label',
+            description: 'Label of this field'
+        },
+        help: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Help',
+            description: 'Help text of this field'
+        },
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Additional Validation Rules',
+            description: 'Validation expression'
+        },
+        disabled: {
+            type: 'boolean',
+            title: 'Disabled',
+            description: 'Whether the input is disabled',
+            default: false
+        },
+        readonly: {
+            type: 'boolean',
+            title: 'Readonly',
+            description: 'Whether the input is readonly',
+            default: false
+        },
+        stars: {
+            type: 'integer',
+            title: 'Stars',
+            description: 'Number of stars to display',
+            default: 5
+        },
+        cancel: {
+            type: 'boolean',
+            title: 'Cancel',
+            description: 'Whether to show cancel button to clear rating',
+            default: false
+        },
+        onIcon: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^pi pi-[a-z0-9-]+$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Onicon',
+            description: 'Icon for selected state'
+        },
+        offIcon: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^pi pi-[a-z0-9-]+$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Officon',
+            description: 'Icon for unselected state'
+        },
+        cancelIcon: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^pi pi-[a-z0-9-]+$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cancelicon',
+            description: 'Icon for cancel button'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['label', 'validation'],
+    title: 'Rating',
+    description: 'https://formkit-primevue.netlify.app/inputs/Rating'
 } as const;
 
 export const RerankerEventSchema = {
@@ -9133,6 +12543,7 @@ export const ResponseFormatJSONObjectSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['type'],
     title: 'ResponseFormatJSONObject'
@@ -9149,6 +12560,7 @@ export const ResponseFormatJSONSchemaSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['json_schema', 'type'],
     title: 'ResponseFormatJSONSchema'
@@ -9162,6 +12574,7 @@ export const ResponseFormatTextSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['type'],
     title: 'ResponseFormatText'
@@ -9541,6 +12954,439 @@ export const RunStatisticsSchema = {
     description: 'Statistics for a single run, intended for API response.'
 } as const;
 
+export const SelectSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
+        formkit: {
+            type: 'string',
+            const: 'primeSelect',
+            title: 'Formkit',
+            description: 'PrimeVue Select element.',
+            default: 'primeSelect'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'Name of this field'
+        },
+        label: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Label',
+            description: 'Label of this field'
+        },
+        help: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Help',
+            description: 'Help text of this field'
+        },
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Additional Validation Rules',
+            description: 'Validation expression'
+        },
+        options: {
+            anyOf: [
+                {
+                    items: {
+                        anyOf: [
+                            {
+                                type: 'string'
+                            },
+                            {
+                                '$ref': '#/components/schemas/LocaleString'
+                            },
+                            {
+                                additionalProperties: {
+                                    anyOf: [
+                                        {
+                                            type: 'string'
+                                        },
+                                        {
+                                            '$ref': '#/components/schemas/LocaleString'
+                                        }
+                                    ]
+                                },
+                                type: 'object'
+                            }
+                        ]
+                    },
+                    type: 'array'
+                },
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                }
+            ],
+            title: 'Options',
+            description: 'Array of selectable options (objects or strings)'
+        },
+        optionLabel: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Optionlabel',
+            description: 'Property name to use as the label of an option'
+        },
+        optionValue: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Optionvalue',
+            description: 'Property name to use as the value of an option'
+        },
+        disabled: {
+            type: 'boolean',
+            title: 'Disabled',
+            description: 'Whether the input is disabled',
+            default: false
+        },
+        readonly: {
+            type: 'boolean',
+            title: 'Readonly',
+            description: 'Whether the input is readonly',
+            default: false
+        },
+        placeholder: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Placeholder',
+            description: 'Placeholder text'
+        },
+        showClear: {
+            type: 'boolean',
+            title: 'Showclear',
+            description: 'Whether to show clear button',
+            default: false
+        },
+        filter: {
+            type: 'boolean',
+            title: 'Filter',
+            description: 'Whether to enable filtering',
+            default: false
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['label', 'options', 'validation'],
+    title: 'Select',
+    description: 'https://formkit-primevue.netlify.app/inputs/Select'
+} as const;
+
+export const SelectButtonSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
+        formkit: {
+            type: 'string',
+            const: 'primeSelectButton',
+            title: 'Formkit',
+            description: 'PrimeVue SelectButton element.',
+            default: 'primeSelectButton'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'Name of this field'
+        },
+        label: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Label',
+            description: 'Label of this field'
+        },
+        help: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Help',
+            description: 'Help text of this field'
+        },
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Additional Validation Rules',
+            description: 'Validation expression'
+        },
+        options: {
+            anyOf: [
+                {
+                    items: {
+                        anyOf: [
+                            {
+                                type: 'string'
+                            },
+                            {
+                                '$ref': '#/components/schemas/LocaleString'
+                            },
+                            {
+                                additionalProperties: {
+                                    anyOf: [
+                                        {
+                                            type: 'string'
+                                        },
+                                        {
+                                            '$ref': '#/components/schemas/LocaleString'
+                                        }
+                                    ]
+                                },
+                                type: 'object'
+                            }
+                        ]
+                    },
+                    type: 'array'
+                },
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                }
+            ],
+            title: 'Options',
+            description: 'Array of selectable options (objects or strings)'
+        },
+        optionLabel: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Optionlabel',
+            description: 'Property name to use as the label of an option'
+        },
+        optionValue: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Optionvalue',
+            description: 'Property name to use as the value of an option'
+        },
+        disabled: {
+            type: 'boolean',
+            title: 'Disabled',
+            description: 'Whether the input is disabled',
+            default: false
+        },
+        readonly: {
+            type: 'boolean',
+            title: 'Readonly',
+            description: 'Whether the input is readonly',
+            default: false
+        },
+        optionDisabled: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Optiondisabled',
+            description: 'Property name to use as the disabled flag of an option'
+        },
+        multiple: {
+            type: 'boolean',
+            title: 'Multiple',
+            description: 'Whether to allow multiple selections',
+            default: false
+        },
+        unselectable: {
+            type: 'boolean',
+            title: 'Unselectable',
+            description: 'Whether selection can be cleared',
+            default: true
+        },
+        dataKey: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Datakey',
+            description: 'Property name for unique option identification'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['label', 'options', 'validation'],
+    title: 'SelectButton',
+    description: 'https://formkit-primevue.netlify.app/inputs/SelectButton'
+} as const;
+
 export const SemanticEventSchema = {
     properties: {
         event_id: {
@@ -9807,6 +13653,184 @@ export const SignedUrlDtoSchema = {
     title: 'SignedUrlDto'
 } as const;
 
+export const SliderSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
+        formkit: {
+            type: 'string',
+            const: 'primeSlider',
+            title: 'Formkit',
+            description: 'PrimeVue Slider element.',
+            default: 'primeSlider'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'Name of this field'
+        },
+        label: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Label',
+            description: 'Label of this field'
+        },
+        help: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Help',
+            description: 'Help text of this field'
+        },
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Additional Validation Rules',
+            description: 'Validation expression'
+        },
+        disabled: {
+            type: 'boolean',
+            title: 'Disabled',
+            description: 'Whether the input is disabled',
+            default: false
+        },
+        readonly: {
+            type: 'boolean',
+            title: 'Readonly',
+            description: 'Whether the input is readonly',
+            default: false
+        },
+        min: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Min',
+            description: 'Minimum value'
+        },
+        max: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Max',
+            description: 'Maximum value'
+        },
+        step: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Step',
+            description: 'Step factor for increment/decrement'
+        },
+        range: {
+            type: 'boolean',
+            title: 'Range',
+            description: 'Whether to enable range selection',
+            default: false
+        },
+        orientation: {
+            anyOf: [
+                {
+                    type: 'string',
+                    enum: ['horizontal', 'vertical']
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Orientation',
+            description: 'Orientation of the slider'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['label', 'validation'],
+    title: 'Slider',
+    description: 'https://formkit-primevue.netlify.app/inputs/Slider'
+} as const;
+
 export const StandaloneQuestionCondenserEventSchema = {
     properties: {
         event_id: {
@@ -10039,8 +14063,7 @@ export const SubmittedFormDTOSchema = {
     },
     type: 'object',
     required: ['process_class', 'process_id', 'process_walkthrough_id'],
-    title: 'SubmittedFormDTO',
-    description: 'TODO: Define what information shall be returned on partial or sucessfull submittion of the form'
+    title: 'SubmittedFormDTO'
 } as const;
 
 export const SuiteDTOSchema = {
@@ -10153,6 +14176,162 @@ export const TextToSpeechRequestSchema = {
     type: 'object',
     required: ['model', 'input', 'voice'],
     title: 'TextToSpeechRequest'
+} as const;
+
+export const TextareaSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
+        formkit: {
+            type: 'string',
+            const: 'primeTextarea',
+            title: 'Formkit',
+            description: 'PrimeVue Textarea element.',
+            default: 'primeTextarea'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'Name of this field'
+        },
+        label: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Label',
+            description: 'Label of this field'
+        },
+        help: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Help',
+            description: 'Help text of this field'
+        },
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Additional Validation Rules',
+            description: 'Validation expression'
+        },
+        disabled: {
+            type: 'boolean',
+            title: 'Disabled',
+            description: 'Whether the input is disabled',
+            default: false
+        },
+        readonly: {
+            type: 'boolean',
+            title: 'Readonly',
+            description: 'Whether the input is readonly',
+            default: false
+        },
+        placeholder: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Placeholder',
+            description: 'Placeholder text'
+        },
+        rows: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Rows',
+            description: 'Number of rows to display'
+        },
+        autoResize: {
+            type: 'boolean',
+            title: 'Autoresize',
+            description: 'Whether to automatically resize based on content',
+            default: false
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['label', 'validation'],
+    title: 'Textarea',
+    description: 'https://formkit-primevue.netlify.app/inputs/Textarea'
 } as const;
 
 export const ThoughtEventSchema = {
@@ -10447,6 +14626,359 @@ export const TimeRangeSchema = {
     type: 'string',
     enum: ['1h', '24h', '30d', '365d'],
     title: 'TimeRange'
+} as const;
+
+export const ToggleButtonSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
+        formkit: {
+            type: 'string',
+            const: 'primeToggleButton',
+            title: 'Formkit',
+            description: 'PrimeVue ToggleButton element.',
+            default: 'primeToggleButton'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'Name of this field'
+        },
+        label: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Label',
+            description: 'Label of this field'
+        },
+        help: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Help',
+            description: 'Help text of this field'
+        },
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Additional Validation Rules',
+            description: 'Validation expression'
+        },
+        disabled: {
+            type: 'boolean',
+            title: 'Disabled',
+            description: 'Whether the input is disabled',
+            default: false
+        },
+        readonly: {
+            type: 'boolean',
+            title: 'Readonly',
+            description: 'Whether the input is readonly',
+            default: false
+        },
+        onLabel: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Onlabel',
+            description: 'Label for the on state'
+        },
+        offLabel: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Offlabel',
+            description: 'Label for the off state'
+        },
+        onIcon: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^pi pi-[a-z0-9-]+$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Onicon',
+            description: 'Icon for the on state'
+        },
+        offIcon: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^pi pi-[a-z0-9-]+$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Officon',
+            description: 'Icon for the off state'
+        },
+        iconPos: {
+            anyOf: [
+                {
+                    type: 'string',
+                    enum: ['left', 'right']
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Iconpos',
+            description: 'Position of the icon'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['label', 'validation'],
+    title: 'ToggleButton',
+    description: 'https://formkit-primevue.netlify.app/inputs/ToggleButton'
+} as const;
+
+export const ToggleSwitchSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
+        formkit: {
+            type: 'string',
+            const: 'primeToggleSwitch',
+            title: 'Formkit',
+            description: 'PrimeVue ToggleSwitch element.',
+            default: 'primeToggleSwitch'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'Name of this field'
+        },
+        label: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Label',
+            description: 'Label of this field'
+        },
+        help: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Help',
+            description: 'Help text of this field'
+        },
+        required: {
+            type: 'boolean',
+            title: 'Required',
+            description: 'Whether this field is required',
+            default: false
+        },
+        additional_validation_rules: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Additional Validation Rules',
+            description: 'Validation expression'
+        },
+        disabled: {
+            type: 'boolean',
+            title: 'Disabled',
+            description: 'Whether the input is disabled',
+            default: false
+        },
+        readonly: {
+            type: 'boolean',
+            title: 'Readonly',
+            description: 'Whether the input is readonly',
+            default: false
+        },
+        trueValue: {
+            title: 'Truevalue',
+            description: 'Value to emit when toggled on'
+        },
+        falseValue: {
+            title: 'Falsevalue',
+            description: 'Value to emit when toggled off'
+        },
+        prefix: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Prefix',
+            description: 'Prefix text'
+        },
+        suffix: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Suffix',
+            description: 'Suffix text'
+        },
+        validation: {
+            type: 'string',
+            title: 'Validation',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['label', 'validation'],
+    title: 'ToggleSwitch',
+    description: 'https://formkit-primevue.netlify.app/inputs/ToggleSwitch'
 } as const;
 
 export const TokenResponseSchema = {
@@ -11457,6 +15989,7 @@ export const openai__types__chat__chat_completion_message_custom_tool_call_param
             title: 'Name'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['input', 'name'],
     title: 'Custom'
@@ -11473,6 +16006,7 @@ export const openai__types__chat__chat_completion_message_function_tool_call_par
             title: 'Name'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['arguments', 'name'],
     title: 'Function'
@@ -11485,6 +16019,7 @@ export const openai__types__chat__chat_completion_named_tool_choice_custom_param
             title: 'Name'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['name'],
     title: 'Custom'
@@ -11497,6 +16032,7 @@ export const openai__types__chat__chat_completion_named_tool_choice_param__Funct
             title: 'Name'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['name'],
     title: 'Function'
@@ -11518,6 +16054,7 @@ export const openai__types__chat__completion_create_params__FunctionSchema = {
             title: 'Parameters'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['name'],
     title: 'Function'

@@ -32,6 +32,6 @@ const { t } = useI18n()
 const { agents, agentsAreLoading } = useAgents()
 
 const toAgent = (agent: AgentDto) => {
-  router.push(localePath(`/service/agents/agent-${agent.agent_id}-${agent.agent_class}/overview`))
+  router.push(localePath(`/service/agents/${agent.agent_class}-${agent.agent_id}/overview`))
 }
 </script>
