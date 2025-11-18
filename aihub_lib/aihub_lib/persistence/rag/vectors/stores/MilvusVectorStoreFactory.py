@@ -15,8 +15,8 @@ from pymilvus import (
 )
 
 from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_ID, NAMESPACE
-
-_MMAP_ENABLED = "mmap.enabled"
+from aihub_lib.persistence.rag.vectors.stores.MilvusPartitionManager import create_manual_partitions
+from aihub_lib.persistence.rag.vectors.stores.PartitionAwareMilvusVectorStore import PartitionAwareMilvusVectorStore
 
 
 class MilvusIndexType(str, Enum):
@@ -35,18 +35,13 @@ def create_milvus_vector_store(
     index_type: Annotated[MilvusIndexType, Field(description="Vector index type for the embedding field")] = (
         MilvusIndexType.HNSW
     ),
-    enable_mmap: Annotated[bool, Field(description="Enable memory mapping to reduce RAM usage")] = True,
-    num_partitions: Annotated[
-        int, Field(ge=1, le=1023, description="Hash partitions for distributing namespaces across physical storage")
-    ] = 1023,
 ) -> MilvusVectorStore:
     """
     Factory for namespace-partitioned vector stores optimized for RAG workloads.
 
-    - Partition key on namespace: Queries only search relevant namespaces
+    - Manual partition by namespace: Queries only load relevant namespaces
     - Hybrid search: Dense (semantic) + BM25 (keyword) for comprehensive retrieval
     - HNSW index default: Best recall/speed for semantic search
-    - Memory-mapped I/O: Optional mmap reduces RAM usage by offloading to disk (OS page cache)
 
     Index selection:
     - HNSW (default): Best for RAG quality, enable mmap if memory constrained
@@ -58,7 +53,7 @@ def create_milvus_vector_store(
         fields = [
             FieldSchema(name="id", dtype=DataType.VARCHAR, is_primary=True, auto_id=False, max_length=255),
             FieldSchema(name=DOCUMENT_ID, dtype=DataType.VARCHAR, max_length=255),
-            FieldSchema(name=NAMESPACE, dtype=DataType.VARCHAR, max_length=255, is_partition_key=True),
+            FieldSchema(name=NAMESPACE, dtype=DataType.VARCHAR, max_length=255),
             FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=embedding_vector_dimension),
             FieldSchema(name="sparse_embedding", dtype=DataType.SPARSE_FLOAT_VECTOR),
             FieldSchema(name="text", dtype=DataType.VARCHAR, max_length=65535, enable_analyzer=True),
@@ -81,39 +76,29 @@ def create_milvus_vector_store(
                 field_name="embedding",
                 index_type="HNSW",
                 metric_type="IP",
-                params={
-                    _MMAP_ENABLED: "true" if enable_mmap else "false",
-                },
             )
         elif index_type == MilvusIndexType.IVF_FLAT:
             index_params.add_index(
                 field_name="embedding",
                 index_type="IVF_FLAT",
                 metric_type="IP",
-                params={
-                    _MMAP_ENABLED: "true" if enable_mmap else "false",
-                },
             )
         elif index_type == MilvusIndexType.FLAT:
             index_params.add_index(
                 field_name="embedding",
                 index_type="FLAT",
                 metric_type="IP",
-                params={
-                    _MMAP_ENABLED: "true" if enable_mmap else "false",
-                },
             )
         elif index_type == MilvusIndexType.DISKANN:
-            # DISKANN already uses disk storage, mmap not applicable
             index_params.add_index(field_name="embedding", index_type="DISKANN", metric_type="IP")
 
         index_params.add_index(field_name="sparse_embedding", index_type="SPARSE_INVERTED_INDEX", metric_type="BM25")
 
-        client.create_collection(
-            collection_name=collection_name, schema=schema, index_params=index_params, num_partitions=num_partitions
-        )
+        client.create_collection(collection_name=collection_name, schema=schema, index_params=index_params)
 
-    return MilvusVectorStore(
+        create_manual_partitions(client=client, collection_name=collection_name)
+
+    return PartitionAwareMilvusVectorStore(
         uri=uri,
         collection_name=collection_name,
         dim=embedding_vector_dimension,

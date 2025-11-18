@@ -77,16 +77,12 @@ def milvus_vector_store_resource(
     vector_store_name: str,
     dimensions: int = 3072,
     index_type: MilvusIndexType = MilvusIndexType.HNSW,
-    enable_mmap: bool = True,
-    num_partitions: int = 1023,
 ) -> dict[str, ConfigurableResourceFactory]:
     vector_store = MilvusVectorStoreResource(
         uri=vector_store_uri,
         collection_name=vector_store_name,
         embedding_vector_dimension=dimensions,
         index_type=index_type,
-        enable_mmap=enable_mmap,
-        num_partitions=num_partitions,
     )
     vector_store_io_manager = VectorStoreIOManager(vector_store=vector_store)
     return {
