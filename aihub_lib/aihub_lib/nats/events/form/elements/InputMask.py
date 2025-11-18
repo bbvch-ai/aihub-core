@@ -7,15 +7,19 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.form.base.PrimeVueElement import PrimeVueElement
 
 
-class InputTextElement(PrimeVueElement):
-    """https://formkit-primevue.netlify.app/inputs/InputText"""
+class InputMask(PrimeVueElement):
+    """https://formkit-primevue.netlify.app/inputs/InputMask"""
 
-    formkit: Annotated[Literal["primeInputText"], Field(description="PrimeVue InputText element.")] = "primeInputText"
+    formkit: Annotated[Literal["primeInputMask"], Field(description="PrimeVue InputMask element.")] = "primeInputMask"
     disabled: Annotated[bool, Field(description="Whether the input is disabled")] = False
     readonly: Annotated[bool, Field(description="Whether the input is readonly")] = False
-    placeholder: Annotated[LocaleString | None, Field(description="Placeholder text")] = None
-    prefix: Annotated[LocaleString | None, Field(description="Prefix text")] = None
-    suffix: Annotated[LocaleString | None, Field(description="Suffix text")] = None
+    placeholder: Annotated[LocaleString | str | None, Field(description="Placeholder text")] = None
+    mask: Annotated[str | None, Field(description="Input mask pattern")] = None
+    slot_char: Annotated[str | None, Field(description="Placeholder character for mask slots", alias="slotChar")] = None
+    auto_clear: Annotated[bool, Field(description="Whether to clear incomplete values on blur", alias="autoClear")] = (
+        True
+    )
+    unmask: Annotated[bool, Field(description="Whether to return unmasked value")] = False
     icon_prefix: Annotated[
         str | None, Field(description="Icon prefix", alias="iconPrefix", pattern=r"^pi pi-[a-z0-9-]+$")
     ] = None
@@ -23,12 +27,8 @@ class InputTextElement(PrimeVueElement):
         str | None, Field(description="Icon suffix", alias="iconSuffix", pattern=r"^pi pi-[a-z0-9-]+$")
     ] = None
 
-    def in_locale(self, t: LocaleHandler) -> "PrimeVueElement":
+    def in_locale(self, t: LocaleHandler) -> "InputMask":
         self_copy = super().in_locale(t)
         if isinstance(self_copy.placeholder, LocaleString):
             self_copy.placeholder = t.extract(self_copy.placeholder)
-        if isinstance(self_copy.prefix, LocaleString):
-            self_copy.prefix = t.extract(self_copy.prefix)
-        if isinstance(self_copy.suffix, LocaleString):
-            self_copy.suffix = t.extract(self_copy.suffix)
         return self_copy

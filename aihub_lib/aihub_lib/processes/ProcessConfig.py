@@ -32,7 +32,7 @@ class ProcessConfig(BaseModel):
 
     name: Annotated[LocaleString, Field(description="The name of the process.")]
     description: Annotated[LocaleString, Field(description="The description of the process.")]
-    icon: Annotated[str, Field(description="The icon representing the process.")] = "meteor-icons:robot"
+    icon: Annotated[str, Field(description="The icon representing the process.")] = "carbon:ibm-event-processing"
 
     process_class: Annotated[str, Field(description="The class name of the process, used for identification.")]
     process_id: Annotated[

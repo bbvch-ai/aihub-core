@@ -7,8 +7,7 @@
       <div
         class="grid grid-cols-2 gap-4 2xl:grid-cols-2"
       >
-        <!-- <ProcessCard -->
-        <div
+        <ProcessCard
           v-for="process in processes"
           :key="process.process_id"
           :process="process"
@@ -30,9 +29,9 @@ const router = useRouter()
 const localePath = useLocalePath()
 const { t } = useI18n()
 
-const { processes: _processes, processesAreLoading } = useProcesses()
+const { processes, processesAreLoading } = useProcesses()
 
-const _toProcess = (process: ProcessDto) => {
-  router.push(localePath(`/service/processes/process-${process.process_id}-${process.process_class}/overview`))
+const toProcess = (process: ProcessDto) => {
+  router.push(localePath(`/service/processes/${process.process_class}-${process.process_id}/overview`))
 }
 </script>
