@@ -1255,8 +1255,7 @@ services:
 
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
-      LITE_LLM_PROXY_API_KEY: ${LITE_LLM_PROXY_API_KEY}
-      LITE_LLM_PROXY_MASTER_KEY: ${LITELLM_MASTER_KEY}
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Mongo DB
       MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017
@@ -1377,7 +1376,7 @@ services:
     environment:
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
-      LITE_LLM_PROXY_API_KEY: ${LITE_LLM_PROXY_API_KEY}
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # NATs
       NATS_ENDPOINT: nats://nats:4222
@@ -1406,7 +1405,7 @@ services:
     environment:
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
-      LITE_LLM_PROXY_API_KEY: ${LITE_LLM_PROXY_API_KEY}
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Mongo DB
       MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017
@@ -1455,13 +1454,13 @@ services:
 
       # LiteLLM Proxy Server Settings
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
-      LITE_LLM_PROXY_API_KEY: ${LITE_LLM_PROXY_API_KEY}
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Docling
       DOCLING_API_ENDPOINT: http://docling:5001/v1alpha/convert/source
       DOCLING_API_TIMEOUT: 600
       DOCLING_HOSTED_VLM_API_ENDPOINT: http://litellm:4000
-      DOCLING_HOSTED_VLM_API_KEY: ${LITE_LLM_PROXY_API_KEY}
+      DOCLING_HOSTED_VLM_API_KEY: ${LITELLM_MASTER_KEY}
       DOCLING_VLM_MODEL_NAME: text-generation/ocr
 
       # Postgres

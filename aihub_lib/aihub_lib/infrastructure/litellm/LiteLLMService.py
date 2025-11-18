@@ -25,7 +25,7 @@ class LiteLLMService:
         if user.id in LiteLLMService._user_cache:
             return LiteLLMService._user_cache[user.id]
 
-        client = litellm_proxy.httpx_admin_aclient
+        client = litellm_proxy.httpx_aclient
         key_alias = f"{user.name} - Auto Generated Key"
 
         user_response = await client.get("/user/info", params={"user_id": user.id})
