@@ -1,4 +1,6 @@
-## \_--- title: Setting up tenants
+---
+title: Setting up tenants
+---
 
 # Setting up tenants
 
@@ -242,4 +244,5 @@ assume - verify.
 your organization.
 
 **Plan for growth**: "Customer 1" works when you have three customers. "Customer - Acme Corp" works when you have three
-hundred. :::\_
+hundred.
+:::

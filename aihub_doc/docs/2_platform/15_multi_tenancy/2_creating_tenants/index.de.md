@@ -1,4 +1,3 @@
-````markdown
 ---
 title: Mandanten einrichten
 source_sha: "f4d0827329dfb29df688f35743dcf26fd92bbf7615a7c1ad67db1609dd427ce6"
@@ -252,9 +251,6 @@ Fügen Sie Komplexität nur hinzu, wenn Sie sie benötigen.
 **Vierteljährlich überprüfen**: Rollen ändern sich. Projekte enden. Neue Abteilungen entstehen. Ihre Mandantenstruktur
 sollte sich mit Ihrer Organisation entwickeln.
 
-**Planen Sie für Wachstum**: „Kunde 1“ funktioniert, wenn Sie drei Kunden haben. „Kunde - Acme Corp“ funktioniert, wenn
+**Planen Sie für Wachstum**: „Kunde 1" funktioniert, wenn Sie drei Kunden haben. „Kunde - Acme Corp" funktioniert, wenn
 Sie dreihundert haben.
 :::
-
-```
-```
