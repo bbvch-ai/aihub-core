@@ -1,9 +1,12 @@
 import logging
+from types import UnionType
 from typing import TYPE_CHECKING, Annotated
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, create_model
 
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.events.form import InputText, Checkbox, InputNumber
+from aihub_lib.nats.events.form.Form import Form
 
 if TYPE_CHECKING:
     from aihub_lib.persistence.agents import AgentConfigEntity
@@ -28,7 +31,7 @@ class StepConfig(BaseModel):
     pass
 
 
-class AgentConfig(BaseModel):
+class AgentConfig(Form):
     """
     The agent config is a flexible way to configure the runtime behavior of an agent. It can ensure that two agents
     that follow the same workflow can still be configured to achieve different outcomes through a different
@@ -76,6 +79,38 @@ class AgentConfig(BaseModel):
         }
         config = cls(**data)
         return config
+
+    @staticmethod
+    def recursive_formkit_from_dict(model_name: str, model_dict: dict) -> BaseModel:
+        mapping: dict[type, UnionType] = {
+            str: InputText | str,
+            int: InputNumber | int,
+            float: InputNumber | float,
+            bool: Checkbox | bool,
+        }
+
+        fields: dict[str, tuple[UnionType | type[BaseModel], ...]] = {}
+        for key, value in model_dict.items():
+
+            value_type = type(value)
+
+            # Map to FormKit element type, fallback to the primitive type
+            if value_type in mapping:
+                fields[key] = (mapping[value_type], value)
+            elif value_type is dict:
+                pydantic_model = AgentConfig.recursive_formkit_from_dict(key, value)
+                fields[key] = (type(pydantic_model), pydantic_model)
+            else:
+                # do nothing
+                pass
+
+        return create_model(model_name, **fields)
+
+    @staticmethod
+    def formkit_from_entity(entity: "AgentConfigEntity") -> "BaseModel":
+        agent_config: dict[str, str | float | int | bool | dict] = entity.config_data
+
+        return AgentConfig.recursive_formkit_from_dict(entity.agent_class, agent_config)
 
     def get_step_configs(self) -> dict[type[StepConfig], StepConfig]:
         """
