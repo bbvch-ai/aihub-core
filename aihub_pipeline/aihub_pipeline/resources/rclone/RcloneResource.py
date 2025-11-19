@@ -135,29 +135,30 @@ class RcloneResource(ConfigurableResource):
         Build filter options for rclone RC API.
 
         Returns filter dict in rclone format or None if no filters.
-        RC API uses IncludeRule/ExcludeRule keys (no +/- prefixes needed).
+        RC API uses FilterRule with + (include) and - (exclude) prefixes.
         Rclone filter syntax: https://rclone.org/filtering/
         """
         if not self.include_patterns and not self.exclude_patterns:
             return None
 
-        filters = {}
+        # Use FilterRule instead of separate IncludeRule/ExcludeRule to avoid warning
+        filter_rules = []
 
-        # Include patterns (no prefix needed for RC API)
+        # Add include patterns with + prefix
         if self.include_patterns:
-            filters["IncludeRule"] = self.include_patterns
+            for pattern in self.include_patterns:
+                filter_rules.append(f"+ {pattern}")
 
-        # Exclude patterns (no prefix needed for RC API)
+        # Add exclude patterns with - prefix
         if self.exclude_patterns:
-            filters["ExcludeRule"] = self.exclude_patterns.copy()
-        else:
-            filters["ExcludeRule"] = []
+            for pattern in self.exclude_patterns:
+                filter_rules.append(f"- {pattern}")
 
         # If we have include patterns, exclude everything else at the end
         if self.include_patterns:
-            filters["ExcludeRule"].append("**")
+            filter_rules.append("- **")
 
-        return filters
+        return {"FilterRule": filter_rules}
 
     def fetch_minimal_files(self) -> list[MinimalRcloneFile]:
         """
@@ -184,6 +185,7 @@ class RcloneResource(ConfigurableResource):
                 "opt": {
                     "recurse": True,
                     "filesOnly": True,
+                    "showHash": True,  # Get hash checksums from backend for content-based change detection
                 },
             }
 
@@ -213,6 +215,7 @@ class RcloneResource(ConfigurableResource):
                         is_dir=False,  # filesOnly=True guarantees this
                         mime_type=file_data.get("MimeType"),
                         id=file_data.get("ID"),
+                        hashes=file_data.get("Hashes"),  # Content-based checksums from backend
                     )
                 )
 
