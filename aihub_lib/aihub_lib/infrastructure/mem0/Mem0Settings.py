@@ -1,5 +1,4 @@
 import os
-from datetime import datetime
 from typing import Annotated
 
 from mem0.configs.base import MemoryConfig
@@ -10,8 +9,6 @@ from mem0.llms.configs import LlmConfig
 from mem0.vector_stores.configs import VectorStoreConfig
 from pydantic import Field
 
-from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.neo4j.Neo4jSettings import Neo4jSettings
@@ -93,27 +90,4 @@ class Mem0Settings(EnvironmentSettings):
                 ),
                 custom_prompt=custom_entity_extraction_prompt,
             ),
-        )
-
-    def get_config_for_agent(self, agent_config: AgentConfig, t: LocaleHandler) -> MemoryConfig:
-        custom_fact_extraction_prompt = t(
-            "lib.prompt.memory.custom_fact_extraction",
-            agent_name=agent_config.name,
-            agent_description=agent_config.description,
-            current_date=datetime.now().strftime("%Y-%m-%d"),
-        )
-        custom_update_memory_prompt = t(
-            "lib.prompt.memory.custom_update_memory",
-            agent_name=agent_config.name,
-            agent_description=agent_config.description,
-        )
-        custom_entity_extraction_prompt = t(
-            "lib.prompt.memory.custom_entity_extraction",
-            agent_name=agent_config.name,
-            agent_description=agent_config.description,
-        )
-        return self.get_config(
-            custom_fact_extraction_prompt=custom_fact_extraction_prompt,
-            custom_update_memory_prompt=custom_update_memory_prompt,
-            custom_entity_extraction_prompt=custom_entity_extraction_prompt,
         )
