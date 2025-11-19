@@ -440,6 +440,38 @@ services:
       options:
         max-size: 10m
         max-file: 2
+
+  # ===================================================================
+  # Rclone (Universal Cloud Storage Sync)
+  # ===================================================================
+  # Provides RC API for syncing files from 70+ cloud providers
+  # (OneDrive, SharePoint, S3, Google Drive, Dropbox, etc.)
+  # ===================================================================
+
+  rclone:
+    container_name: aihub-rclone
+    image: rclone/rclone:latest
+    restart: unless-stopped
+    command:
+      - "rcd"
+      - "--rc-addr=0.0.0.0:5572"
+      - "--rc-no-auth"
+      - "--rc-allow-origin=*"
+      - "--log-level=INFO"
+    volumes:
+      # Mount rclone config if exists (optional)
+      - ./rclone.conf:/config/rclone/rclone.conf:ro
+    healthcheck:
+      test: ["CMD", "rclone", "rc", "--rc-addr=localhost:5572", "core/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
   # ===================================================================
   # AI Model Serving (Local Inference)
   # ===================================================================

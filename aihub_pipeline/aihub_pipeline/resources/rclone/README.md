@@ -29,21 +29,31 @@ Generic rclone-based file sync for AI-Hub pipelines. Works with 70+ cloud storag
 
 ## Installation
 
-### 1. Install rclone binary
+### 1. Rclone RC API Service
 
-**Linux/macOS:**
-```bash
-curl https://rclone.org/install.sh | sudo bash
+Rclone runs as a separate Docker service with Remote Control API enabled:
+
+**Already configured in docker-compose.yml:**
+```yaml
+rclone:
+  container_name: aihub-rclone
+  image: rclone/rclone:latest
+  command:
+    - "rcd"
+    - "--rc-addr=0.0.0.0:5572"
+    - "--rc-no-auth"
+  volumes:
+    - ./rclone.conf:/config/rclone/rclone.conf:ro
 ```
 
-**Docker (add to Dockerfile):**
-```dockerfile
-RUN curl https://rclone.org/install.sh | bash
+**Start the service:**
+```bash
+docker compose -f docker-compose.dev.yml up -d rclone
 ```
 
 **Verify installation:**
 ```bash
-rclone version
+curl -X POST http://localhost:5572/core/version
 ```
 
 ### 2. Configure Remote
@@ -87,29 +97,30 @@ from aihub_pipeline.resources.rclone.RcloneResource import RcloneResource
 from aihub_pipeline.io.RcloneIOManager import RcloneIOManager
 
 rclone_client = RcloneResource(
+    rc_url="http://aihub-rclone:5572",  # RC API endpoint
     source_remote="onedrive:Documents/ProjectX",
-    target_remote="s3:my-bucket/sync",
     include_patterns=["*.pdf", "*.docx", "*.xlsx"],
     exclude_patterns=[
         "**/archiv/**",
         "**/temp/**",
         "**/.git/**",
     ],
-    rclone_config_path="/custom/path/to/rclone.conf",
-    sync_deletions=False,  # Use application-level cleanup
-    max_delete=100,
-    dry_run=False,
+    max_retries=5,
+    initial_retry_delay=1.0,
 )
 
-# List files (metadata only)
+# List files (metadata only) - async HTTP call to RC API
 files = rclone_client.fetch_minimal_files()
 
-# Download specific file
+# Download specific file - async HTTP call to RC API
 file = rclone_client.download_file("path/to/file.pdf")
-
-# Sync to target
-result = rclone_client.sync_files()
 ```
+
+**RC API Architecture:**
+- RcloneResource uses async HTTP client (aiohttp)
+- Follows same pattern as SharePointResource
+- Connection pooling and retry logic built-in
+- No subprocess overhead
 
 ## Filter Patterns
 
@@ -224,10 +235,10 @@ defs = default_rclone_to_datalake_definitions(
 
 ## Deletion Handling
 
-By default, deletions are handled at the application level:
+Deletions are handled at the application level (not at rclone level):
 
-1. **Rclone syncs** files to S3 (append-only, no deletions)
-2. **Observable asset** scans source and reports all existing files
+1. **RC API lists** all files from source (operations/list)
+2. **Observable asset** scans source and reports all existing files to Dagster
 3. **Cleanup asset** compares source vs S3 and removes orphans
 
 **Why this approach?**
@@ -236,73 +247,91 @@ By default, deletions are handled at the application level:
 - Safer (separate scheduled job, can abort/retry)
 - Supports cascade deletions (S3 → Mongo → Milvus)
 
-**To enable rclone-level deletions:**
-```python
-rclone_client = RcloneResource(
-    source_remote="...",
-    target_remote="...",
-    sync_deletions=True,  # Use rclone sync instead of copy
-    max_delete=100,       # Safety limit
-)
-```
+**Implementation:**
+- RcloneResource only reads from source (via RC API)
+- Application logic handles S3 cleanup based on observable source state
+- Same pattern as SharePoint and LocalFS integrations
 
 ## Troubleshooting
 
-### "rclone: command not found"
-Install rclone binary: `curl https://rclone.org/install.sh | sudo bash`
-
-### Authentication errors
-Re-run: `rclone config reconnect remote_name`
-
-### No files found
-Check patterns with dry-run:
+### RC API Connection Refused
+Check if rclone service is running:
 ```bash
-rclone lsf onedrive_remote:Documents \
-    --include "*.pdf" \
-    --exclude "**/archive/**" \
-    --dry-run -vv
+docker compose -f docker-compose.dev.yml ps rclone
+docker compose -f docker-compose.dev.yml logs rclone
 ```
 
-### Slow listing
-Enable `--fast-list` (already enabled in RcloneResource)
+### Authentication errors
+Re-configure remote in rclone.conf, then restart service:
+```bash
+# On host
+rclone config reconnect remote_name
+
+# Restart service to reload config
+docker compose -f docker-compose.dev.yml restart rclone
+```
+
+### No files found
+Test RC API directly:
+```bash
+# List files via RC API
+curl -X POST http://localhost:5572/operations/list \
+    -H "Content-Type: application/json" \
+    -d '{"fs":"onedrive:Documents","opt":{"recurse":true}}'
+```
+
+### HTTP 500 errors from RC API
+Check rclone service logs:
+```bash
+docker compose -f docker-compose.dev.yml logs rclone
+```
 
 ### Rate limiting
-Rclone automatically handles rate limits via exponential backoff
+RcloneResource automatically handles rate limits with exponential backoff (max_retries parameter)
 
 ## Performance
 
 **Optimizations enabled by default:**
-- `--fast-list`: Faster directory listing
-- `--transfers=4`: 4 parallel transfers
-- `--checkers=8`: 8 parallel checkers
-- Automatic retry on failure
-- Exponential backoff on rate limits
+- Async HTTP client (aiohttp) with connection pooling
+- Automatic retry on failure (max_retries parameter)
+- Exponential backoff on rate limits (429, 5xx errors)
+- TCP connector with connection limits
+- Timeouts configured per operation type
 
 **For large datasets (100K+ files):**
 - Use `include_patterns` to reduce scope
+- RC API handles pagination automatically
 - Consider splitting into multiple pipelines
 - Monitor Dagster UI for performance metrics
 
+**RC API advantages:**
+- No subprocess overhead
+- Persistent HTTP connections
+- Efficient batch operations
+- Same pattern as SharePointResource
+
 ## Comparison to Direct Integration
 
-| Aspect | Rclone | Direct SDK (SharePoint, etc.) |
-|--------|--------|-------------------------------|
+| Aspect | Rclone (RC API) | Direct SDK (SharePoint, etc.) |
+|--------|-----------------|-------------------------------|
 | **Setup** | Single config, works everywhere | Per-provider SDK, auth, code |
 | **Providers** | 70+ backends | One per implementation |
 | **Maintenance** | Minimal (rclone handles APIs) | High (API changes, auth updates) |
-| **Performance** | Very good (optimized transfers) | Comparable |
-| **Control** | CLI-based (subprocess) | Native Python (fine-grained) |
+| **Performance** | Very good (async HTTP, pooling) | Comparable (async HTTP, pooling) |
+| **Architecture** | RC API service → HTTP client | Graph API → HTTP client |
+| **Code Pattern** | Same as SharePointResource | Native Python |
 | **Metadata** | Basic (size, mtime, type) | Rich (provider-specific) |
 
 **When to use rclone:**
-- New source types (OneDrive, GDrive, Azure Blob)
+- New source types (OneDrive, GDrive, Azure Blob, Dropbox)
 - Quick prototyping
 - Standardization across providers
+- When basic metadata is sufficient
 
 **When to use direct SDK:**
-- Need provider-specific metadata (SharePoint ETags)
+- Need provider-specific metadata (SharePoint ETags, permissions)
 - Complex authentication requirements
-- Advanced API features
+- Advanced API features (versioning, sharing, etc.)
 
 ## See Also
 

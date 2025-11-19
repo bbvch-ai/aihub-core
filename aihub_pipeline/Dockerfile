@@ -44,9 +44,6 @@ RUN poetry install && \
 # --- Runtime stage ---
 FROM python:3.13-slim AS runtime
 
-# Install rclone from official image
-COPY --from=rclone/rclone:latest /usr/local/bin/rclone /usr/local/bin/rclone
-
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     POETRY_VERSION=2.1.1 \
@@ -68,14 +65,12 @@ RUN groupadd --gid "$USER_GID" "$USERNAME" && \
     useradd --uid "$USER_UID" --gid "$USER_GID" -m -s /bin/bash "$USERNAME" && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-    curl \
-    ca-certificates && \
+    curl && \
     curl -sSL https://install.python-poetry.org | python3 - --version "${POETRY_VERSION}" && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     mkdir -p /dagster_home && \
-    chown "$USERNAME:$USERNAME" /dagster_home && \
-    rclone version
+    chown "$USERNAME:$USERNAME" /dagster_home
 
 ENV DAGSTER_HOME=/dagster_home
 

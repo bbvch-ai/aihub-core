@@ -1,20 +1,29 @@
 # Rclone Docker Integration Setup
 
-This guide explains how to use rclone in the aihub_pipeline Docker container.
+This guide explains how to use rclone as a Remote Control (RC) API service in the aihub-core platform.
 
-## ✅ Installation (Already Done!)
+## ✅ Architecture (Already Done!)
 
-The Dockerfile now includes rclone from the official `rclone/rclone:latest` image:
+Rclone runs as a separate Docker service with RC API enabled:
 
-```dockerfile
-# Install rclone from official image
-COPY --from=rclone/rclone:latest /usr/local/bin/rclone /usr/local/bin/rclone
+```yaml
+# docker-compose.yml
+rclone:
+  container_name: aihub-rclone
+  image: rclone/rclone:latest
+  command:
+    - "rcd"
+    - "--rc-addr=0.0.0.0:5572"
+    - "--rc-no-auth"
+  volumes:
+    - ./rclone.conf:/config/rclone/rclone.conf:ro
 ```
 
-**What this does:**
-- Copies the rclone binary (~20MB) from official Alpine-based image
-- No installation needed at runtime
-- Automatically gets latest stable version when you rebuild
+**Why RC API instead of subprocess:**
+- Matches existing async HTTP patterns (same as SharePointResource)
+- More efficient (connection pooling, no process overhead)
+- Better separation of concerns (microservice architecture)
+- Cleaner codebase (async/await with aiohttp)
 
 ## 🔐 Configuration Setup
 
@@ -125,40 +134,43 @@ services:
       - /tmp/rclone-test-source:/data/source:ro
 ```
 
-## 🧪 Testing the Installation
+## 🧪 Testing the RC API Service
 
-### 1. Rebuild Image
+### 1. Start the rclone service
 
 ```bash
 cd /home/user/aihub-core
-docker compose -f docker-compose.dev.yml build aihub_pipeline
+docker compose -f docker-compose.dev.yml up -d rclone
 ```
 
-### 2. Verify rclone is installed
+### 2. Verify rclone service is running
 
 ```bash
-docker compose -f docker-compose.dev.yml run --rm aihub_pipeline rclone version
+docker compose -f docker-compose.dev.yml ps rclone
 ```
 
 Expected output:
 ```
-rclone v1.68.2
-- os/version: alpine 3.20.3 (64 bit)
-- os/kernel: 4.4.0 (x86_64)
-- go/version: go1.23.3
+NAME            IMAGE                   STATUS
+aihub-rclone    rclone/rclone:latest    Up (healthy)
 ```
 
-### 3. Test with local filesystem
+### 3. Test RC API directly
 
 ```bash
-# Create test data
-mkdir -p /tmp/rclone-test-source
-echo "Test PDF" > /tmp/rclone-test-source/test.pdf
+# Get rclone version via RC API
+curl -X POST http://localhost:5572/core/version
 
-# Add volume mount to docker-compose.dev.yml
-# Then run:
-docker compose -f docker-compose.dev.yml run --rm aihub_pipeline \
-  rclone lsjson /data/source
+# List remotes
+curl -X POST http://localhost:5572/config/listremotes
+```
+
+Expected output:
+```json
+{
+  "version": "v1.68.2",
+  "isGit": false
+}
 ```
 
 ## 🚀 Usage in Pipeline
@@ -212,38 +224,59 @@ docker compose -f docker-compose.dev.yml up dagster
 
 ## 🔧 Troubleshooting
 
-### "rclone: command not found"
+### RC API Connection Refused
 
-**Solution:** Rebuild the Docker image:
+**Problem:** Cannot connect to http://localhost:5572
+
+**Solution:** Check if rclone service is running:
 ```bash
-docker compose -f docker-compose.dev.yml build aihub_pipeline
+docker compose -f docker-compose.dev.yml ps rclone
+docker compose -f docker-compose.dev.yml logs rclone
+```
+
+Restart if needed:
+```bash
+docker compose -f docker-compose.dev.yml restart rclone
 ```
 
 ### "Failed to create file system: didn't find section in config file"
 
-**Problem:** Remote not configured
+**Problem:** Remote not configured in rclone.conf
 
 **Solution:** Either:
 1. Add environment variables (see Option 1 above)
-2. Mount rclone.conf (see Option 2 above)
-3. Create remote with `rclone config`
+2. Mount rclone.conf with proper remote configuration (see Option 2 above)
+3. Create remote in rclone.conf before mounting:
+```bash
+# On host
+rclone config create onedrive_remote onedrive
+# Then mount ~/.config/rclone/rclone.conf
+```
 
 ### "Failed to configure token: failed to get token"
 
-**Problem:** OAuth2 token expired
+**Problem:** OAuth2 token expired in rclone.conf
 
-**Solution:** Refresh token:
+**Solution:** Refresh token on host, then restart rclone service:
 ```bash
+# On host
 rclone config reconnect remote_name
+
+# Restart service to reload config
+docker compose -f docker-compose.dev.yml restart rclone
 ```
 
-### Permission errors in Docker
+### HTTP 500 errors from RC API
 
-**Problem:** rclone.conf has wrong permissions
+**Problem:** rclone.conf has wrong permissions or format
 
 **Solution:**
 ```bash
+# Fix permissions
 chmod 600 ~/.config/rclone/rclone.conf
+
+# Check logs for details
+docker compose -f docker-compose.dev.yml logs rclone
 ```
 
 ## 📋 Configuration Examples
@@ -282,12 +315,13 @@ RCLONE_CONFIG_S3REMOTE_REGION=us-east-1
 
 ## 🎯 Quick Start Checklist
 
-- [x] Rclone installed in Dockerfile (via COPY --from)
-- [x] ca-certificates installed (for HTTPS)
+- [x] Rclone service added to docker-compose.yml
+- [x] RC API enabled on port 5572
+- [x] RcloneResource uses async HTTP client
 - [ ] Choose config method (env vars OR mount config file)
 - [ ] Configure remote (OneDrive/GDrive/etc.)
-- [ ] Test with `rclone version` in container
-- [ ] Test with `rclone lsjson remote:`
+- [ ] Start rclone service: `docker compose up -d rclone`
+- [ ] Test RC API: `curl -X POST http://localhost:5572/core/version`
 - [ ] Create pipeline with `default_rclone_to_datalake_definitions()`
 - [ ] Run Dagster and materialize assets
 
