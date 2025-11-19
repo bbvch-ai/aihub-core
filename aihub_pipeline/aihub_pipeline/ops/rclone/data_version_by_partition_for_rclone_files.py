@@ -21,8 +21,11 @@ def data_version_by_partition_for_rclone_files(
     Generates a dynamic partition key for each file from the rclone remote,
     reports the materialization and returns a DataVersion for each partition key.
 
-    We use mtime + size as the version to detect when files change or are re-uploaded after deletion.
-    This works consistently across all rclone-supported backends (OneDrive, SharePoint, S3, etc.).
+    **Change Detection Strategy**:
+    - Primary: Content hash (MD5/SHA1) from backend if available (Dropbox, OneDrive, S3, etc.)
+    - Fallback: mtime + size for backends without hash support
+
+    Hash-based detection is superior: detects ANY content change with zero false positives.
     """
     partition_keys = [file.path for file in rclone_files]
 
@@ -48,8 +51,15 @@ def data_version_by_partition_for_rclone_files(
             )
         )
 
-    # Use version (timestamp-size) to detect changes
-    # This ensures that if a file is deleted and re-uploaded with the same content,
-    # it will be detected as a new version and trigger reprocessing
-    # Using Unix timestamp (int) for consistent string representation, matching DataLake pipeline pattern
-    return DataVersionsByPartition({file.path: f"{file.modified}-{file.size}" for file in rclone_files})
+    # Use hash checksum if available (content-based), otherwise fallback to mtime+size
+    # Hash is superior: detects ANY content change, no false positives
+    # Fallback ensures it works even if backend doesn't support hashes
+    def get_data_version(file: MinimalRcloneFile) -> str:
+        if file.hashes:
+            # Prefer MD5 (widely supported), fallback to any available hash
+            hash_value = file.hashes.get("md5") or file.hashes.get("sha1") or next(iter(file.hashes.values()))
+            return f"hash:{hash_value}"
+        # Fallback to mtime+size if no hash available
+        return f"mtime:{file.modified}-{file.size}"
+
+    return DataVersionsByPartition({file.path: get_data_version(file) for file in rclone_files})

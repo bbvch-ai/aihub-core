@@ -17,6 +17,10 @@ class MinimalRcloneFile(MinimalSourceFile):
     is_dir: Annotated[bool, Field(description="Whether this is a directory")] = False
     mime_type: Annotated[str | None, Field(description="MIME type of the file")] = None
     id: Annotated[str | None, Field(description="Remote-specific file ID if available")] = None
+    hashes: Annotated[
+        dict[str, str] | None,
+        Field(description="Hash checksums from remote backend (e.g., {'md5': '...', 'sha1': '...'})"),
+    ] = None
 
 
 class RcloneFile(SourceFile):
