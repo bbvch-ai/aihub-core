@@ -1,6 +1,9 @@
-# Rclone Integration
+# Rclone Integration - The Universal Adapter
 
-Generic rclone-based file sync for AI-Hub pipelines. Works with 70+ cloud storage providers without provider-specific code.
+**One adapter for 70+ cloud storage providers.** No provider-specific code. Rclone does the heavy lifting.
+
+**Architecture:** Thin HTTP client (210 lines) → rclone service (handles all providers).
+**Filtering:** Native rclone filtering (server-side) - just pass patterns, rclone does the work.
 
 ## Supported Backends
 
@@ -117,14 +120,17 @@ file = rclone_client.download_file("path/to/file.pdf")
 ```
 
 **RC API Architecture:**
-- RcloneResource uses async HTTP client (aiohttp)
-- Follows same pattern as SharePointResource
-- Connection pooling and retry logic built-in
-- No subprocess overhead
+- RcloneResource is a thin HTTP client (~210 lines total)
+- Async operations with aiohttp
+- Rclone service handles ALL provider logic (auth, rate limits, filtering, retries)
+- We just make HTTP calls - rclone does the work
+- No subprocess overhead, no provider-specific code
 
 ## Filter Patterns
 
-Rclone uses glob patterns for filtering:
+**Native rclone filtering** - patterns passed to rclone via `_filter` parameter. Filtering happens server-side.
+
+Rclone uses glob patterns:
 
 **Include patterns:**
 ```python
@@ -305,10 +311,10 @@ RcloneResource automatically handles rate limits with exponential backoff (max_r
 - Monitor Dagster UI for performance metrics
 
 **RC API advantages:**
-- No subprocess overhead
-- Persistent HTTP connections
-- Efficient batch operations
-- Same pattern as SharePointResource
+- Server-side filtering (rclone filters before sending to Python)
+- No subprocess overhead (persistent HTTP service)
+- Thin client (210 lines vs 285+ with custom filtering)
+- Universal adapter pattern (one implementation for 70+ providers)
 
 ## Comparison to Direct Integration
 
