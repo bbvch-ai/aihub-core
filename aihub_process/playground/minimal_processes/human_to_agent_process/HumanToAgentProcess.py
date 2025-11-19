@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.form.InputTextElement import InputTextElement
+from aihub_lib.nats.events.form.elements.InputText import InputText
 
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 from aihub_process.delegators.agent.Agent import Agent
@@ -23,7 +23,7 @@ class HumanToAgentProcess(AgenticProcess):
             Human.In(
                 route="/input",
                 method="POST",
-                start_form=HumanAWork(payload=InputTextElement(label=LocaleString(en="Your input"))),
+                start_form=HumanAWork(payload=InputText(label=LocaleString(en="Your input"))),
             ),
         ],
     ) -> Annotated[AgentAWorkRequest, Agent.Out(agent_class="AgentA", agent_id="agent_a")]:

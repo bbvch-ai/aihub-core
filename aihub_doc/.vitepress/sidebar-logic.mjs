@@ -107,16 +107,17 @@ const createRootItem = (locale) => {
 };
 
 const createSpecialPageItem = (fileName, displayName, sortOrder, locale) => {
-  const filePath = path.join(DOCS_ROOT, `${fileName}.md`);
+  const dirPath = path.join(DOCS_ROOT, fileName);
+  const { sourceFile, frontmatter } = findLocalizedIndexFile(dirPath, locale);
 
-  if (!existsSync(filePath)) return null;
+  if (!sourceFile) return null;
 
   return {
     text: displayName,
-    link: `/${fileName}/`,
+    link: buildLocalizedLink(`/${fileName}/`, locale),
     sortOrder,
-    sourceFile: filePath,
-    frontmatter: readFrontmatter(filePath),
+    sourceFile,
+    frontmatter,
     items: [],
   };
 };

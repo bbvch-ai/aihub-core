@@ -5,6 +5,274 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.254.3] - 2025-11-18 - Unlocking Multi-Tenancy and Streamlined Onboarding with Enhanced Platform Clarity
+
+### Added
+
+- ✨ **Introduced comprehensive Multi-Tenancy documentation:** New sections detail the multi-tenancy concept, how to set
+  up tenants, manage users and roles, and a technical reference for access control, providing clear guidance on
+  organizational boundaries within a single platform instance.
+- 🚀 **New Quick Start and One-Command Deployment guides:** Detailed documentation now covers prerequisites for both
+  production and local deployments, Azure Entra ID setup, and a streamlined one-command deployment process for rapid
+  platform setup.
+- 📄 **Expanded manual Slack & Teams Bot Creation guide:** A new, in-depth guide is available for manually configuring
+  bots, including Teams Developer Portal setup, MongoDB configuration, Slack API integration, app manifest examples, and
+  troubleshooting.
+- ⚙️ **Detailed RAG Ingestion Pipeline documentation:** New content explains the processing stages (parsing, chunking,
+  embedding, linking, summarization), storage, document lifecycle, and benefits of the RAG ingestion pipeline.
+
+### Changed
+
+- 🔄 **Refined Language Model (LLM) integration documentation:** Updated content clarifies LLM proxy functions, model
+  configuration, PII protection, and guardrail concepts, enhancing understanding of AI model interactions.
+- 📈 **Improved Cost Control documentation:** Enhanced details on LiteLLM's user management for budgets and rate
+  limiting, including configuration via environment variables, to provide better predictability and control over AI
+  expenses.
+- 📚 **Clarified deployment terminology:** Documentation for deployment options, backup & recovery, and updates &
+  maintenance now explicitly differentiates between "Multi-Instancing" (hard infrastructure separation) and
+  "Multi-Tenancy" (logical separation within an instance).
+- 🦾 **Updated Agent documentation:** The fundamentals, RAG Agent, and Expert Asking Agent sections have been extensively
+  rewritten to provide deeper insights into structured workflows, context management, and human-in-the-loop
+  collaboration patterns.
+- 💡 **Enhanced Data Pipeline and Knowledge Management documentation:** Rewritten sections offer improved clarity on
+  pipeline fundamentals, workflow automation, and knowledge organization through "collections" (namespaces), detailing
+  their structure, lifecycle, and integration.
+- 🌐 **Updated main page and FAQ:** The main landing page and Frequently Asked Questions have been revised to reflect the
+  latest platform features, documentation structure, and terminology.
+- 🧹 **Standardized documentation terminology:** A new glossary has been added to the translation prompt to ensure
+  consistent terminology usage across all localized documentation, especially for multi-tenancy and related concepts.
+
+### Removed
+
+- 🗑️ **Node.js dependencies:** The platform no longer includes Node.js packages, simplifying the dependency stack.
+
+### Refactor
+
+- 📁 **Restructured documentation directories:** Several top-level documentation directories (e.g.,
+  `15_slack_teams_integrations` to `16_slack_teams_integrations`, `16_api` to `17_api`) have been renamed to accommodate
+  the new Multi-Tenancy section and improve logical grouping.
+- 🔗 **Updated internal documentation links:** All internal links within the documentation have been updated to reflect
+  the new directory structure and ensure navigation consistency.
+- 📦 **VitePress plugin import simplification:** Updated the import path for `CopyOrDownloadAsMarkdownButtons` in the
+  documentation theme for better maintainability.
+
+---
+
+## [v0.254.2] - 2025-11-18 - New Service Integrations and Deployment Enhancements
+
+### Added
+
+- 🚀 **Gunicorn Dependency**: Incorporated Gunicorn, a robust WSGI HTTP server, into the project dependencies to bolster
+  production deployment capabilities.
+- 📄 **Docling Configuration**: Integrated new environment variables for **Docling** and **Hosted VLM** API endpoints,
+  timeouts, and model specifics across all Docker Compose configurations, preparing the ground for advanced document
+  processing and visual language model integrations.
+
+---
+
+## [v0.254.1] - 2025-11-18 - Milvus Partitioning for Memory Efficiency and System Enhancements
+
+### Added
+
+- ✨ **Milvus Manual Partitioning**: Introduced a new manual partitioning system for Milvus vector stores, enabling
+  namespace-based data isolation. This allows for more targeted and memory-efficient loading of data during queries by
+  only accessing relevant partitions.
+- ⚙️ **`PartitionAwareMilvusVectorStore`**: A new Milvus vector store implementation that transparently routes data to
+  specific, hashed partitions based on namespace metadata during insertion and queries, significantly improving memory
+  management for RAG workloads.
+- 🧪 **Comprehensive Milvus Partitioning Tests**: Added a new suite of behavioral tests to validate the correctness and
+  efficiency of the Milvus manual partitioning and namespace routing logic.
+- 🔑 **Azure OpenAI Base URL Configuration**: Added `AZURE_OPENAI_BASE_URL` to development environment configurations,
+  providing greater flexibility for connecting to various Azure OpenAI service endpoints.
+- 🔒 **Enhanced OAuth2 Proxy Scopes**: Expanded the requested scopes for OAuth2 Proxy to include `openid`, `email`, and
+  `profile`, allowing for more comprehensive user information retrieval during authentication.
+
+### Changed
+
+- 🚀 **Optimized Milvus Memory Mapping (mmap)**: Updated Milvus query node configurations to broadly enable memory
+  mapping for vector indexes, scalar fields, and growing data segments. This change improves disk I/O efficiency and
+  reduces RAM footprint, with a potential slight increase in query latency for data not in memory cache.
+- 🔄 **Milvus Vector Store Factory Streamlining**: The `create_milvus_vector_store` factory and its associated Dagster
+  resources no longer require manual `num_partitions` or `enable_mmap` parameters, as partitioning is now automatically
+  handled, simplifying vector store creation.
+- 📦 **Dagster Pipeline Dockerfile Refinement**: Streamlined the Dagster pipeline Dockerfile by removing the `make` build
+  tool dependency and explicitly defining entrypoints in Docker Compose, enhancing deployment clarity.
+
+### Refactor
+
+- 🧹 **Dagster Summary Nodes Asset Path**: Reorganized the asset key for summary nodes in Dagster pipelines, moving them
+  into a more logical `datalake_to_vectorstore` subgroup for improved asset discoverability and organization.
+
+### Removed
+
+- 🗑️ **Redundant Dagster Volume Mounts**: Eliminated redundant `dagster-data` volume mounts from several Dagster-related
+  services in Docker Compose configurations, reducing clutter and simplifying deployment setups.
+
+---
+
+## [v0.254.0] - 2025-11-18 - Enhanced Data Persistence and Pipeline Management
+
+### Added
+
+- ✨ **Persistent Data Storage for Dagster:** Implemented persistent volume mounts (`dagster-data`) for Dagster services,
+  including `dagster-webserver`, `dagster-daemon`, and `default-rag-pipeline`. This change ensures that critical Dagster
+  operational data, such as run history and event logs, is preserved across container restarts and updates.
+- 🛠️ **`make` Utility in Dagster Pipelines:** The `make` utility is now installed within the `aihub_pipeline` Docker
+  image, providing enhanced capabilities for scripting and managing pipeline operations.
+
+### Changed
+
+- 🔄 **Streamlined Dagster Webserver Entrypoint:** The `aihub_pipeline` Dockerfile now explicitly defines
+  `make dagster-webserver` as its entrypoint, simplifying and standardizing the launch process for the Dagster webserver
+  within the container.
+- 🔒 **Simplified OAuth2 Proxy Configuration:** The explicit `OAUTH2_PROXY_SCOPE` setting has been removed from the
+  OAuth2 proxy configuration, streamlining its setup while maintaining robust authentication flows.
+
+---
+
+## [v0.253.4] - 2025-11-18 - Next-Gen Process Management: Introducing Walkthroughs and Advanced Form Capabilities
+
+### Added
+
+- 🚀 **Detailed Process Walkthroughs API**: Introduced a new endpoint
+  (`/processes/{process_class}/{process_id}/walkthroughs`) to retrieve paginated process walkthroughs with comprehensive
+  step information, offering deep visibility into process execution.
+- ✨ **Process Walkthrough Logic**: Implemented robust backend logic within `ProcessService` to aggregate and construct
+  detailed `ProcessWalkthroughDTO` and `ProcessStepDTO` objects, including involved agents and humans, from raw event
+  data.
+- 📦 **New Process Input Specification DTOs**: Created specialized Data Transfer Objects (`AgentInDTO`, `HumanInDTO`,
+  `ProgramInDTO`) for process input specifications, enhancing structure and type safety for API definitions.
+- ✨ **Automatic Formkit Field Configuration**: Enhanced the `Form` class to automatically assign `id` and `required`
+  properties to Formkit elements based on Pydantic field definitions, simplifying form creation.
+- 🚀 **Extended Formkit Element Library**: Introduced a comprehensive suite of new Formkit elements (e.g., `DatePicker`,
+  `MultiSelect`, `Slider`, `Password`, `InputMask`, `Knob`, `Rating`, `Textarea`, `Checkbox`, `RadioButton`, `Select`,
+  `SelectButton`, `ToggleSwitch`, `InputNumber`, `InputOtp`, `CascadeSelect`), significantly expanding UI capabilities
+  for user input.
+- ✨ **Added `ref` to Formkit Elements**: Introduced a `ref` field (aliased as `id`) to `FormkitElement`, providing a
+  unique identifier for better UI control and integration.
+- 🔗 **Event Response Tracking**: Added an `in_response_to` field to `WorkEvent` and `Human` form submissions, improving
+  the traceability and context of work events within process walkthroughs.
+- 👤 **Agent Submission Tracking**: Introduced a `submitted_by` field in `AgentWorkEvent`, allowing clear identification
+  of the agent responsible for submitting work.
+- 📊 **Paginated Process Walkthrough Retrieval**: Implemented `get_paginated_walkthrough_events` to efficiently retrieve
+  process walkthroughs with all their associated events, supporting pagination for large datasets.
+- 🆕 **Process Card UI Component**: Introduced a new Vue component for displaying process information cards, enhancing
+  the visual representation of available processes.
+- 📝 **Reusable Formkit Form Component**: Developed a versatile Vue component (`Process/Form.vue`) for rendering dynamic
+  Formkit schemas, complete with conditional field logic and label interpolation, enabling flexible user input.
+- 🚀 **Process Start Forms Component**: Created a new UI component (`Process/Starts.vue`) to render and manage multiple
+  start forms for a process, simplifying the initiation of new process runs.
+- 📊 **Process Walkthrough List Component**: Implemented a new UI component (`Process/Walkthrough/List.vue`) to display
+  paginated process walkthroughs, featuring details like creation/update times, involved entities, and step progress
+  visualization.
+- 💻 **`useProcessWalkthroughs` Composable**: Introduced a new Nuxt composable (`useProcessWalkthroughs`) for fetching
+  and managing paginated process walkthrough data, simplifying data access in the frontend.
+- 🚀 **`useSendProcessStartForm` Composable**: Created a new Nuxt composable (`useSendProcessStartForm`) to handle the
+  submission of process start forms, integrating with the query cache for immediate UI updates.
+- 🌐 **New Process Walkthrough Translations**: Added new English translations for process management and
+  walkthrough-related UI elements.
+- 🛠️ **Formkit PrimeVue Integration**: Integrated the `formkit-primevue` module and defined a comprehensive list of
+  wrapped PrimeVue inputs, preparing for advanced form rendering capabilities.
+- 🚀 **New Process Detail Pages**: Introduced a new set of pages for process details, including an overview, a dedicated
+  "start run" form, and a list of walkthroughs, enhancing process management capabilities.
+- ✨ **New `SubmittedCV` Human Start Event**: Introduced a new `SubmittedCV` event, acting as a human-initiated process
+  start event with a rich set of Formkit input fields for comprehensive CV submission.
+- 🚀 **Added Agentic CV Process Runner**: Introduced a dedicated runner (`run.py`) for the `AgenticCVProcess` playground
+  example, facilitating easier local execution and testing of the workflow.
+
+### Changed
+
+- ⚙️ **Docker Compose Dev Configuration**: Updated the Docker Compose Dev run configuration to explicitly include `.env`
+  file paths, ensuring environment variables are correctly loaded.
+- 🔄 **Refined Process API Responses**: Applied `response_model_exclude_none=True` to several process-related endpoints,
+  streamlining API responses by omitting null values.
+- 📄 **Renamed Process DTOs**: Renamed `ProcessHumanInDto` to `HumanInDTO` for consistency and clarity in process input
+  definitions.
+- ⚙️ **Simplified Human Input Retrieval**: Refactored `get_process_start_forms` and `get_process_open_forms` to directly
+  return `HumanInDTO` objects, simplifying the API and reducing data transformation.
+- 📄 **Localized Process Configuration from Entity**: Added a new constructor to `ProcessConfigDTO` to facilitate
+  creating localized process configurations directly from entity specifications.
+- 🔄 **Standardized Process Input DTOs**: Migrated `ProcessDTO` to use new, specialized DTOs for human, program, and
+  agent inputs (`HumanInDTO`, `ProgramInDTO`, `AgentInDTO`), enhancing type safety and clarity.
+- 🔄 **Updated Formkit Element Usage**: Migrated `InputTextElement` to the new `InputText` class across various event
+  definitions and process runners, aligning with the formkit refactor.
+- ⚙️ **Refined Agent Work Event Creation**: Updated agent work event creation to include `submitted_by` information,
+  enhancing event context.
+- 📄 **Enhanced Process Entity Specifications**: Upgraded process entity specifications (`ProgramInSpecsEntity`,
+  `HumanInSpecsEntity`, `AgentInSpecsEntity`) to accept type-hinted `specs` objects directly, improving type safety.
+- 🌐 **Localized Process Configuration Persistence**: Updated `ProcessConfig` entity to persist `name` and `description`
+  as `LocaleStringEntity`, enabling robust internationalization for process configurations.
+- 🎨 **Updated Default Process Icon**: Changed the default icon for new processes to `carbon:ibm-event-processing`,
+  providing a more relevant visual representation.
+- 🏗️ **Simplified Dockerfile for Pipelines**: Streamlined the `Dockerfile` for pipelines by removing unnecessary `make`
+  dependency and delegating entrypoint definition to Docker Compose, improving container efficiency.
+- 🔗 **Improved Agent Delegator Event Tracking**: Enhanced `AgentDelegator` to include `in_response_to` and
+  `submitted_by` in agent work events, and aligned `display_id` with the event's unique ID for consistent event tracing.
+- 🤖 **Agentic CV Process Overhaul**: Significantly refactored the `AgenticCVProcess` playground example to utilize an
+  expanded range of Formkit elements for initial human input, enhancing the interactive experience.
+- 🔄 **Refined Agentic CV Process Logic**: Updated the `AgenticCVProcess` to align with new event tracking mechanisms and
+  improved agent output parsing, ensuring smoother workflow execution.
+- ⚙️ **Refined `AnalyzedCV` Event Structure**: Updated `AnalyzedCV` event to specifically use `LLMStopEvent` for agent
+  work responses and removed the `cv_name` field for a more generic approach.
+- ⚙️ **Restricted Human Output in Agent-to-Human Process**: Updated `AgentToHumanProcess` and `HumanOnlyProcess` to
+  target the `AIHubAdmin` role for human output, enhancing control over human-in-the-loop interactions.
+- 🖥️ **Updated Processes Overview**: Integrated the new `ProcessCard` component into the processes overview page,
+  providing a visually enhanced list of available processes.
+- ⚙️ **Enhanced PrimeVue Element Validation and Labeling**: Improved `PrimeVueElement` to automatically include
+  `required` validation rules and append an asterisk (`*`) to the labels of required fields when localized.
+- ⚙️ **Enhanced `useTimeAgo` Flexibility**: Updated the `useTimeAgo` composable to accept numeric timestamps
+  (nanoseconds) in addition to strings and Date objects, increasing its versatility.
+- ⚙️ **Optimized PrimeVue Auto-Import**: Configured PrimeVue to exclude `wrappedPrimeInputs` from auto-import, ensuring
+  these components are managed through Formkit.
+- 🛠️ **Extended API Endpoints for Process Walkthroughs**: Generated new API endpoints and types
+  (`GetProcessWalkthroughsData`, `GetProcessWalkthroughsResponse`) to support fetching paginated process walkthrough
+  data.
+- 📦 **Comprehensive Formkit Element Schemas**: Added schemas for an extensive range of new Formkit elements, providing
+  full API support for rich user input forms.
+- 📄 **Source Origin Tracking for Ingested Nodes**: Introduced a `source_origin` field to `IngestedNode`, allowing better
+  traceability of original document sources in data lake operations.
+- 🔄 **Standardized Process Input Schemas**: Updated API schemas for process inputs to align with the new `AgentInDTO`,
+  `HumanInDTO`, and `ProgramInDTO` structures.
+- 🎙️ **Expanded Audio Voice Options**: Added new voice options (`marin`, `cedar`) to `ChatCompletionAudioParam`,
+  offering more choices for audio generation.
+- 🔑 **Enhanced OAuth2 Proxy Scopes**: Added `openid email profile` scopes to the `oauth2-proxy` configuration, improving
+  user identity and profile information retrieval for Dagster.
+
+### Fixed
+
+- 🐛 **Temporarily Disabled Failing Test**: Commented out `test_walk_through_process_std_methods` in the API playground
+  as it currently fails due to flawed logic, to be re-enabled after fix.
+- 🧪 **Marked Flaky Test**: Added `@pytest.mark.flaky` to `test_stream_response` in `test_ChatBot.py` to identify and
+  manage intermittent test failures.
+
+### Refactor
+
+- 🧹 **Import Reorganization**: Standardized import order across `DoclingController`, `DoclingService`,
+  `EventController`, and Azure Data Lake resources for improved code consistency and readability.
+- 🧹 **Import Normalization**: Converted relative imports to absolute imports within `OpenaiController` for improved
+  modularity and clarity.
+- 🧹 **Pydantic Model Validation Update**: Migrated event deserialization to use `.model_validate()` method for Pydantic
+  models, enhancing strictness and correctness in data parsing.
+- 🧹 **Simplified Logging in Process Runner**: Streamlined logging messages in `ProcessRunner` by removing redundant
+  process ID information, making logs cleaner.
+- 🧹 **Asynchronous Process Steps**: Converted `received_cv_2_analyzed_cv` to an asynchronous method, improving
+  performance for I/O-bound operations.
+- 🧹 **Documentation Formatting**: Applied minor formatting adjustments to the bot creation guide for improved
+  readability.
+- 🧹 **Standardized Agent Route Structure**: Refactored agent-related routes to use a more consistent
+  `/[agent_class]-[agent_id]` format, improving URL readability and maintainability.
+
+### Removed
+
+- 🗑️ **Removed Redundant Human Input DTO**: Eliminated `ProcessHumanInDto` as its functionality is now covered by the
+  more granular `HumanInDTO`.
+- 🗑️ **Removed Program-Initiated `SubmittedCV` Event**: Deprecated and removed the program-initiated `SubmittedCV`
+  event, transitioning the `AgenticCVProcess` to primarily use human-initiated start events.
+- 🗑️ **Streamlined Dagster Volume Mounts**: Removed explicit volume mounts for Dagster data from `docker-compose`
+  configurations, simplifying deployment and relying on other means for data persistence if needed.
+
+---
+
 ## [v0.253.3] - 2025-11-16 - Deployment Configuration Refinements and Service Cleanups
 
 ### Changed

@@ -1,52 +1,70 @@
 ---
-title: Proxy Server
-source_sha: 1c1dec88aeac51d3629156b80f9381ff8803f4d491b2d3c8c4b68abd434690ce
+title: Proxy-Server
+source_sha: de3d79f6698370a529f2caad007d3b034c387de6b1abe5a2fd765d7af7210c8f
 ---
 
-# LLM Proxy
+# LLM-Proxy
 
-Der LLM Proxy dient als zentrales Gateway zu allen Anbietern von Sprachmodellen und abstrahiert anbieterspezifische APIs
-hinter einer vereinheitlichten Schnittstelle. Diese Architekturkomponente ermöglicht es der Plattform, mehrere
-KI-Anbieter gleichzeitig zu nutzen, während die Unabhängigkeit vom Anbieter und die operative Kontrolle gewahrt bleiben.
+Der LLM-Proxy (LiteLLM) bietet ein zentralisiertes Gateway zu Sprachmodell-Anbietern. Er abstrahiert anbieterspezifische
+APIs hinter einer OpenAI-kompatiblen Schnittstelle, wodurch die Plattform mit mehreren KI-Anbietern zusammenarbeiten
+kann, ohne den Code ändern zu müssen.
 
-## Zweck und Anwendungsbereich
+## Konfiguration
 
-Die Proxy-Schicht entkoppelt die Plattform von spezifischen Sprachmodell-Anbietern und ermöglicht es Organisationen,
-Modelle durch Konfiguration statt durch Codeänderungen zu wechseln. Diese Trennung erweist sich als entscheidend für die
-Verwaltung der sich schnell entwickelnden KI-Landschaft, in der kontinuierlich neue Modelle und Anbieter entstehen.
+Modelle werden in der LiteLLM-Konfigurationsdatei konfiguriert. Jeder Modelleintrag spezifiziert den Anbieter, den
+API-Endpunkt, die Authentifizierung und die Fähigkeiten.
 
-## Kernaufgaben
+::: details Beispiel-Modellkonfiguration:
+```yaml
+model_list:
+  - model_name: azure/gpt-4o-mini
+    litellm_params:
+      model: azure/gpt-4o-mini
+      api_base: https://your-resource.openai.azure.com/
+      api_key: os.environ/AZURE_OPENAI_KEY
+      api_version: "2024-12-01-preview"
+    model_info:
+      mode: chat
 
-**Vereinheitlichte Schnittstelle**: LiteLLM bietet eine OpenAI-kompatible API, die Unterschiede zwischen Anbietern
-(OpenAI, Google, Anthropic, Azure OpenAI, selbst gehostete Modelle) abstrahiert. Der Plattform-Code interagiert mit
-einer konsistenten Schnittstelle, unabhängig vom zugrunde liegenden Modell.
+  - model_name: google/gemini-2.5-flash
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY
+    model_info:
+      mode: chat
 
-**Intelligentes Routing**: Der Proxy leitet Anfragen basierend auf Konfiguration, Kostenoptimierung oder
-Lastverteilungsanforderungen an die entsprechenden Modelle weiter. Organisationen können kostengünstige Modelle für
-Routineoperationen verwenden, während Premium-Modelle für kritische Aufgaben reserviert bleiben.
+  - model_name: local/qwen-2.5-multimodal-small
+    litellm_params:
+      model: openai/Qwen2.5-VL-3B-Instruct
+      api_base: http://llama-cpp:8182/v1
+      api_key: None
+    model_info:
+      mode: chat
+      supports_function_calling: true
+      supports_vision: true
+```
 
-**Kostenmanagement**: Eine umfassende Nutzungsverfolgung erfasst Kosten pro Benutzer, pro Abteilung und pro Operation.
-Budgetkontrollen verhindern ausufernde Ausgaben, während detaillierte Analysen Optimierungsentscheidungen unterstützen.
+Der `model_name` identifiziert das Modell in den Agentenkonfigurationen. Der Abschnitt `litellm_params` enthält
+anbieterspezifische Verbindungsdetails. Der Abschnitt `model_info` spezifiziert Funktionen wie Chat, Embedding, Vision
+oder Function Calling.
+:::
 
-**Schutzmechanismen und Compliance**: Integrierte PII-Erkennung und -Anonymisierung schützen sensible Informationen,
-bevor sie externe Anbieter erreichen. Organisationen konfigurieren Datenverarbeitungsrichtlinien einmal, anstatt
-Kontrollen in jedem verbrauchenden Dienst zu implementieren.
+## Kernfunktionen
 
-**Zuverlässigkeitsfunktionen**: Die automatische Rückfallfunktion auf Backup-Modelle gewährleistet Kontinuität, wenn
-primäre Anbieter Ausfälle erleben. Die Ratenbegrenzung verhindert eine Überlastung der Anbieter oder das Auslösen von
-Kontingentbeschränkungen.
+Vereinheitlichte Schnittstelle: LiteLLM bietet eine OpenAI-kompatible API, die mit OpenAI, Google, Anthropic, Azure
+OpenAI und selbst gehosteten Modellen funktioniert. Der Plattformcode verwendet dieselbe Schnittstelle, unabhängig
+davon, welches Modell die Anfrage verarbeitet.
 
-## Strategischer Wert
+Anfrage-Routing: Der Proxy leitet Anfragen basierend auf der konfigurierten Strategie weiter. Die aktuelle Konfiguration
+verwendet "usage-based-routing-v2", das die Last auf die verfügbaren Modelle verteilt.
 
-Die Proxy-Architektur verändert die Ökonomie der KI-Einführung grundlegend. Organisationen vermeiden Anbieter-Lock-in,
-indem sie die Flexibilität bewahren, Anbieter basierend auf Kosten, Leistung oder Datenhoheitsanforderungen zu wechseln.
-Diese Verhandlungsposition übt Druck auf die Anbieter aus, wettbewerbsfähige Preise und Servicequalität
-aufrechtzuerhalten.
+Kostenverfolgung: Die Nutzungsverfolgung erfasst den Token-Verbrauch pro Anfrage. Die Kosten pro Token werden für jedes
+Modell konfiguriert, wodurch die Plattform die Kosten pro Konversation berechnen und anzeigen kann. Weitere
+Informationen zur Kostenverfolgung und -optimierung finden Sie unter [Kostenkontrolle](../../14_cost_control/).
 
-Eine zentralisierte Kostentransparenz ermöglicht fundierte Entscheidungen über die Modellnutzung. Finanzteams verfolgen
-KI-Ausgaben wie jede andere Versorgungsleistung, während technische Teams basierend auf tatsächlichen Nutzungsmustern
-optimieren, anstatt sich auf Anbieter-Marketingaussagen zu verlassen.
+PII-Schutz: Die Presidio-Integration (sofern aktiviert) scannt Anfragen nach persönlich identifizierbaren Informationen,
+bevor sie an externe Anbieter gesendet werden. Weitere Informationen finden Sie unter
+[Datenanonymisierung](../2_anonymization/).
 
-Der Proxy dient auch als Durchsetzungspunkt für Compliance. Datenverarbeitungsrichtlinien, Nutzungsbeschränkungen und
-Audit-Logging werden einheitlich über alle Plattformoperationen angewendet, was die Compliance-Last im Vergleich zu
-verteilten Kontrollen erheblich reduziert.
+Wiederholungsrichtlinien: Die Konfiguration spezifiziert die Anzahl der Wiederholungsversuche für Timeout-Fehler,
+Ratenbegrenzungsfehler und interne Serverfehler.

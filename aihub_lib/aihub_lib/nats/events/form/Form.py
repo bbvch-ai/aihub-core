@@ -23,7 +23,7 @@ class Form(BaseModel):
 
     ```python
     class MyForm(Form):
-        note: Annotated[str | InputTextElement, Field(description="Enter a note")]
+        note: Annotated[str | InputText, Field(description="Enter a note")]
         terms: Annotated[bool | InputCheckboxElement, Field(description="Accept the terms")]
 
     submission_model = MyForm.to_form_submission_model()
@@ -55,7 +55,8 @@ class Form(BaseModel):
         This method iterates over the model's fields and identifies attributes
         that are instances of FormkitElement. For elements that are subclasses
         of PrimeVueElement, it automatically assigns the attribute's key as the
-        element's 'name'.
+        element's 'name' and sets 'required' based on whether the field type
+        includes None in its union.
         """
         formkit_elements: list[FormkitElement] = []
         for field_name, field_info in self.model_fields.items():
@@ -66,6 +67,18 @@ class Form(BaseModel):
                     element_copy = field_value.model_copy()
 
                     element_copy.name = field_name
+                    element_copy.id = field_name
+
+                    current_annotation = field_info.annotation
+                    origin = get_origin(current_annotation)
+                    is_required = True
+
+                    if origin in (Union, UnionType):
+                        union_args = get_args(current_annotation)
+                        if type(None) in union_args:
+                            is_required = False
+
+                    element_copy.required = is_required
                     formkit_elements.append(element_copy)
                 else:
                     formkit_elements.append(field_value)

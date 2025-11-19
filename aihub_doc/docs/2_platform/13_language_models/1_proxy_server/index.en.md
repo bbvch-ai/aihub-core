@@ -1,6 +1,5 @@
 ---
 title: Proxy server
-index: 1
 ---
 
 # LLM proxy

@@ -1,115 +1,50 @@
 ---
-title: Wissensorganisation durch Namespaces
-source_sha: 8737934ea649e19970c0de1c1c3e3e9ce525096ad8474319857d5dfc394fe4a6
+title: Wissensorganisation mit Sammlungen
+source_sha: 027d4d7d6261ee9fa32019e03e879a5f1de5f290427012a78b0a720314b517e5
 ---
 
-# Wissensorganisation durch Namespaces
+# Wissensorganisation mit Sammlungen
 
-Der Swiss AI-Hub organisiert Unternehmenswissen mittels einer Namespace-basierten Architektur, die logische Trennung,
-flexible Zugriffskontrolle und unabhängiges Lifecycle-Management für verschiedene Wissensbereiche bietet. Dieser Ansatz
-ermöglicht Organisationen, ihre Wissensdatenbanken so zu strukturieren, dass sie die Geschäftsrealität widerspiegeln und
-gleichzeitig die Abrufperformance und das operative Management optimieren.
+Sammlungen (technisch als „namespaces“ bezeichnet) organisieren Dokumente innerhalb einer Wissensdatenbank. Jeder
+namespace ist ein logischer Container für verwandte Dokumente.
 
-## Das Namespace-Konzept
+## Wie Sammlungen funktionieren
 
-Namespaces fungieren als logische Container für zusammengehörige Dokumente und Informationen, ähnlich wie Ordner in
-einem Dateisystem, aber optimiert für die Vektor-Ähnlichkeitssuche. Jeder Namespace repräsentiert einen eigenen
-Wissensbereich – eine Produktlinie, Geschäftseinheit, einen regulatorischen Rahmen oder eine andere logische
-Gruppierung, die für die Organisation von Bedeutung ist. Dokumente, die in den Vektor-Store aufgenommen werden, erhalten
-Namespace-Zuweisungen als Metadaten, was ein präzises Targeting bei Abrufoperationen ermöglicht.
+Wenn Dokumente ingestiert werden, erhalten sie ein Sammlungs-Label als metadata. Dieses Label begleitet jeden chunk des
+Dokuments im vector store. Wenn ein Agent nach Informationen sucht, filtert er nach Sammlung, um nur relevante Dokumente
+abzurufen.
 
-Im Gegensatz zu traditionellen Ordnerhierarchien existieren Namespaces als flache Metadatenattribute, die an jeden
-Dokumenten-Chunk im Vektor-Store angehängt sind. Diese flache Struktur ermöglicht es Agenten, gleichzeitig in mehreren
-Namespaces zu suchen, ohne hierarchische Pfade navigieren zu müssen, wodurch die organisatorischen Vorteile der
-Kategorisierung mit den Performance-Vorteilen der direkten Metadatenfilterung kombiniert werden.
+![Eine neue Sammlung erstellen](../../../../media/knowledge/create_new_collection.png)
 
-## Zugriffskontrolle auf Agenten-Ebene
+Sammlungen sind nicht verschachtelt. Es sind flache metadata-Attribute. Agenten können gleichzeitig über mehrere
+Sammlungen hinweg suchen, ohne eine Hierarchie navigieren zu müssen.
 
-Die Plattform implementiert eine Namespace-Zugriffskontrolle auf Agenten-Ebene: Wenn ein Agent für den Zugriff auf
-bestimmte Namespaces konfiguriert ist, **erhalten alle Benutzer, die mit diesem Agenten interagieren, Antworten, die auf
-demselben Wissensset basieren**. Dies gewährleistet ein konsistentes, vorhersehbares Agentenverhalten und vereinfacht
-Tests und Validierungen.
+## Zugriffssteuerung
 
-**Zugriffsphilosophie**: Agenten sind aufgabenorientierte Tools, die mit dem Wissen konfiguriert werden, das für ihre
-vorgesehene Funktion erforderlich ist. Die Zugriffskontrolle erfolgt auf Agenten-Ebene – wenn Benutzer keine
-Informationen innerhalb der Namespaces eines Agenten abrufen dürfen, sollten sie keine Berechtigung zur Nutzung dieses
-Agenten erhalten.
+Die Zugriffssteuerung für Sammlungen operiert auf Agenten-Ebene, nicht auf Benutzer-Ebene. Wenn Sie einen Agenten so
+konfigurieren, dass er auf bestimmte Sammlungen zugreift, sehen alle Benutzer, die mit diesem Agenten interagieren,
+Antworten, die auf demselben Wissensset basieren.
 
-**Agenten-Wiederverwendbarkeit**: Derselbe Agenten-Workflow kann mehrfach mit unterschiedlichen
-Namespace-Konfigurationen instanziiert werden, wodurch unterschiedliche Instanzen für verschiedene Zielgruppen
-entstehen. Zum Beispiel könnte ein Support-Agenten-Workflow wie folgt bereitgestellt werden:
+Alle Benutzer erhalten dieselben Agenten-Antworten von einer gegebenen Agenten-Instanz. Sollten Benutzer bestimmte
+Informationen nicht abrufen dürfen, gewähren Sie ihnen keinen Zugriff auf diesen Agenten. Derselbe Agenten-Workflow kann
+mehrfach mit unterschiedlichen Sammlungs-Konfigurationen deployed werden, um separate Instanzen für verschiedene
+Zielgruppen zu erstellen.
 
-- **Öffentlicher Support-Agent**: Nur öffentliche Dokumentation, für alle Kunden verfügbar
-- **Partner-Support-Agent**: Öffentliche und partnerspezifische Namespaces, für autorisierte Partner
-- **Interner Support-Agent**: Voller Zugriff, einschließlich interner technischer Dokumentation, nur für Mitarbeiter
+## Konfiguration
 
-Jede Instanz verwendet identische Workflow-Logik, operiert jedoch auf unterschiedlichen Wissensbereichen, wodurch ein
-angemessener Informationszugriff ohne komplexe Filterung pro Benutzer gewährleistet wird.
+Agenten legen in ihrer retrieval-Konfiguration fest, welche Sammlungen durchsucht werden sollen. Die Plattform
+durchsucht alle konfigurierten Sammlungen parallel und führt die Ergebnisse nach Relevanz-Scores zusammen. Aktualisieren
+Sie den Sammlungszugriff von Agenten über die Konfiguration, ohne Codeänderungen vornehmen zu müssen.
 
-**Optionale Benutzervalidierung**: Organisationen können optional überprüfen, ob Benutzer über Berechtigungen für alle
-Namespaces verfügen, auf die ein Agent zugreift. Wenn aktiviert, prüft die Plattform die Benutzerberechtigungen vor der
-Workflow-Ausführung – Benutzer erhalten entweder volle Agenten-Funktionalität oder eine klare Ablehnung, niemals
-Teilergebnisse.
+Das Beschränken des retrievals auf relevante Sammlungen reduziert den Suchraum und verbessert die Performance.
+Sammlungen können unterschiedlichen retention policies und Update-Zyklen folgen.
 
-## Wissenszugriffsmuster
+## Benennung
 
-**Domänenspezialisierung**: Spezialisierte Agenten konzentrieren sich auf bestimmte Wissensbereiche, indem sie den
-Namespace-Zugriff einschränken. Ein Agent für die Einhaltung gesetzlicher Vorschriften könnte nur auf rechtliche und
-Compliance-Namespaces zugreifen, während ein Produktsupport-Agent auf technische Dokumentation zugreift. Diese
-Spezialisierung verbessert die Abrufrelevanz, indem sie eine Kontamination durch irrelevante Informationen verhindert.
+Sammlungsnamen können alphanumerische Zeichen, Bindestriche und Unterstriche enthalten. Verwenden Sie klare, deskriptive
+Namen wie „hr“, „sales-policies“ oder „technical_docs“.
 
-**Multi-Domänen-Agenten**: Agenten, die umfassenderes Wissen benötigen, spezifizieren mehrere Namespaces in ihrer
-Abrufkonfiguration. Die Plattform führt den Abruf parallel über alle konfigurierten Namespaces durch und führt die
-Ergebnisse nach Relevanz-Scores zusammen, um die relevantesten Informationen unabhängig vom Namespace-Ursprung zu
-präsentieren.
-
-**Dynamische Bereichsanpassung**: Organisationen ändern den Namespace-Zugriff von Agenten durch
-Konfigurationsaktualisierungen ohne Codeänderungen. Das Hinzufügen einer neuen Produktlinie erfordert lediglich die
-Aktualisierung der Agentenkonfigurationen, um den neuen Namespace aufzunehmen, wodurch dieses Wissen sofort verfügbar
-gemacht wird.
-
-## Betriebliche Vorteile
-
-**Unabhängige Updates**: Organisationen können Wissen in einem Namespace aktualisieren, ohne andere zu beeinflussen. Das
-Testen neuer Ingestion-Pipelines kann in isolierten Namespaces erfolgen, ohne die Produktionsagenten, die auf
-etablierten Namespaces operieren, zu beeinträchtigen.
-
-**Zugriffskontrolle durch Bereitstellung**: Organisationen stellen mehrere Agenten-Instanzen mit unterschiedlichen
-Namespace-Konfigurationen bereit und steuern, welche Benutzer auf welche Agenten zugreifen. Mitarbeiter mit
-entsprechenden Freigaben greifen auf Agenten zu, die mit vertraulichen Namespaces konfiguriert sind, während
-Auftragnehmer auf separate Instanzen zugreifen, die nur öffentlich teilbare Namespaces enthalten.
-
-**Leistungsoptimierung**: Die Einschränkung des Abrufs auf relevante Namespaces reduziert den Suchraum und verbessert
-sowohl die Geschwindigkeit als auch die Relevanz. Wenn Wissensdatenbanken wachsen, verhindert der Namespace-fokussierte
-Abruf eine Leistungsdegradation – Agenten behalten eine konsistente Leistung, unabhängig von der Gesamtgröße der
-Wissensdatenbank.
-
-**Lifecycle-Management**: Verschiedene Namespaces folgen unterschiedlichen Aufbewahrungsrichtlinien und
-Aktualisierungszyklen. Rechtliche Dokumente erfordern eine lange Aufbewahrung mit seltenen Aktualisierungen, während
-Produktspezifikationen häufig aktualisiert werden, aber nach der Einstellung verfallen. Organisationen können inaktive
-Namespaces archivieren, ohne aktuelle Agenten zu beeinflussen.
-
-## Design-Überlegungen
-
-Ein effektives Namespace-Design berücksichtigt mehrere Faktoren:
-
-**Granularität**: Namespaces definieren die feinste Granularität der Zugriffskontrolle. Die meisten Organisationen
-finden eine optimale Granularität auf Ebene der Geschäftseinheit, Produktfamilie oder des Funktionsbereichs – grob
-genug, um eine übermäßige Agentenproliferation zu vermeiden, fein genug, um eine sinnvolle Zugriffs-Differenzierung zu
-ermöglichen.
-
-**Stabilität**: Namespace-Strukturen sollten über die Zeit relativ stabil bleiben, da Reorganisationen ein erneutes
-Einpflegen und eine Neukonfiguration der Agenten erfordern. Entwerfen Sie Schemata, die Geschäftswachstum ohne häufige
-Umstrukturierungen berücksichtigen.
-
-**Auffindbarkeit**: Klare Benennungskonventionen und Dokumentationen helfen Administratoren zu verstehen, welche
-Namespaces relevantes Wissen für bestimmte Agenten-Rollen bereitstellen und welche Kombinationen angemessene
-Zugriffsbereiche ermöglichen.
-
-**Übergreifende Bedenken**: Informationen, die mehrere Domänen betreffen (Sicherheitsrichtlinien, Markenrichtlinien),
-können in mehreren Namespaces dupliziert oder in dedizierten, übergreifenden Namespaces organisiert werden, auf die die
-meisten Agenten neben domänenspezifischen zugreifen.
-
-**Agenten-Instanzen-Planung**: Überlegen Sie, welche Namespace-Kombinationen als Agenten-Instanzen bereitgestellt werden
-sollen. Wenn Benutzergruppen Zugriff auf bestimmte Wissens-Teilmengen benötigen, organisieren Sie diese Teilmengen als
-kohärente Namespace-Sammlungen, die dedizierten Agenten-Instanzen zugewiesen werden können.
+::: info Technischer Hinweis
+Während die UI diese als „collections“ bezeichnet, sind sie technisch als „namespaces“ in der Codebase implementiert und
+erscheinen als namespace metadata auf Dokumenten-chunks im vector store.
+:::

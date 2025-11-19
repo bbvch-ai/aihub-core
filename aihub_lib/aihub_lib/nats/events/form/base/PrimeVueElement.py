@@ -1,7 +1,7 @@
 import abc
 from typing import Annotated
 
-from pydantic import Field
+from pydantic import Field, computed_field
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -16,13 +16,25 @@ class PrimeVueElement(FormkitElement, abc.ABC):
     is available that lets you create InputText, CheckBoxes etc.
     """
 
-    formkit: Annotated[str, Field(description="Primevue Element")]
+    formkit: Annotated[str, Field(description="Primevue Element", alias="$formkit")]
     name: Annotated[str | None, Field(description="Name of this field")] = None
-    label: Annotated[LocaleString, Field(description="Label of this field")]
-    help: Annotated[LocaleString | None, Field(description="Help text of this field")] = None
+    label: Annotated[LocaleString | str, Field(description="Label of this field")]
+    help: Annotated[LocaleString | str | None, Field(description="Help text of this field")] = None
+
+    required: Annotated[bool, Field(description="Whether this field is required")] = False
 
     # https://formkit.com/essentials/validation
-    validation: Annotated[str | None, Field(description="Validation expression")] = None
+    additional_validation_rules: Annotated[str | None, Field(description="Validation expression")] = None
+
+    @computed_field
+    @property
+    def validation(self) -> str:
+        rules: list[str] = []
+        if self.required:
+            rules.append("required")
+        if self.additional_validation_rules:
+            rules.append(self.additional_validation_rules)
+        return "|".join(rules)
 
     def in_locale(self, t: LocaleHandler) -> "PrimeVueElement":
         self_copy = self.model_copy()
@@ -30,4 +42,6 @@ class PrimeVueElement(FormkitElement, abc.ABC):
             self_copy.label = t.extract(self_copy.label)
         if isinstance(self_copy.help, LocaleString):
             self_copy.help = t.extract(self_copy.help)
+        if "required" in self_copy.validation and "*" not in self_copy.label:
+            self_copy.label = f"{self_copy.label} *"
         return self_copy
