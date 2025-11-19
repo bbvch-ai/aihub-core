@@ -84,12 +84,12 @@ class RcloneResource(ConfigurableResource):
             self._remote_name = self.source_remote
 
     @staticmethod
-    def _parse_rclone_timestamp(mod_time_str: str | None) -> int:
-        """Parse rclone ISO timestamp to Unix timestamp. Returns 0 if missing/invalid."""
-        if not mod_time_str:
+    def _to_unix_timestamp(rfc3339_str: str | None) -> int:
+        """Convert rclone RFC3339 timestamp to Unix timestamp (SourceFile requires int)."""
+        if not rfc3339_str:
             return 0
         try:
-            dt = datetime.fromisoformat(mod_time_str.replace("Z", "+00:00"))
+            dt = datetime.fromisoformat(rfc3339_str.replace("Z", "+00:00"))
             return int(dt.timestamp())
         except (ValueError, AttributeError):
             return 0
@@ -160,11 +160,7 @@ class RcloneResource(ConfigurableResource):
             params = {
                 "fs": self.source_remote,
                 "remote": "",
-                "opt": {
-                    "recurse": True,
-                    "filesOnly": True,
-                    "showHash": True,
-                },
+                "opt": {"recurse": True, "filesOnly": True, "showHash": True},
             }
 
             filter_opts = self._build_filter_opts()
@@ -172,27 +168,21 @@ class RcloneResource(ConfigurableResource):
                 params["_filter"] = filter_opts
 
             response = await self._make_async_request(session, "operations/list", params)
-            files_json = response.get("list", [])
-            minimal_files = []
+            return [self._parse_minimal_file(f) for f in response.get("list", [])]
 
-            for file_data in files_json:
-                assert not file_data.get("IsDir", False), f"Unexpected directory: {file_data['Path']}"
-
-                minimal_files.append(
-                    MinimalRcloneFile(
-                        name=file_data["Name"],
-                        path=file_data["Path"],
-                        size=file_data.get("Size", 0),
-                        modified=self._parse_rclone_timestamp(file_data.get("ModTime")),
-                        remote=self._remote_name,
-                        is_dir=False,
-                        mime_type=file_data.get("MimeType"),
-                        id=file_data.get("ID"),
-                        hashes=file_data.get("Hashes"),
-                    )
-                )
-
-            return minimal_files
+    def _parse_minimal_file(self, file_data: dict) -> MinimalRcloneFile:
+        assert not file_data.get("IsDir", False), f"Unexpected directory: {file_data['Path']}"
+        return MinimalRcloneFile(
+            name=file_data["Name"],
+            path=file_data["Path"],
+            size=file_data.get("Size", 0),
+            modified=self._to_unix_timestamp(file_data.get("ModTime")),
+            remote=self._remote_name,
+            is_dir=False,
+            mime_type=file_data.get("MimeType"),
+            id=file_data.get("ID"),
+            hashes=file_data.get("Hashes"),
+        )
 
     def download_file(self, file_path: str) -> RcloneFile:
         return asyncio.run(self._download_file_async(file_path))
@@ -201,35 +191,35 @@ class RcloneResource(ConfigurableResource):
         """
         **Why operations/stat + core/command**: IO Manager only provides file path.
         Need stat for metadata, then cat for content (RC API has no operations/cat).
+
+        **Why created = modified**: Most cloud backends don't track creation time separately.
         """
         timeout = aiohttp.ClientTimeout(total=None, connect=10, sock_read=120)
 
         async with aiohttp.ClientSession(timeout=timeout) as session:
             stat_params = {"fs": self.source_remote, "remote": file_path}
             stat_response = await self._make_async_request(session, "operations/stat", stat_params)
-            file_data = stat_response.get("item", {})
+            metadata = stat_response.get("item", {})
 
             full_path = f"{self.source_remote}/{file_path}"
             cat_params = {"command": "cat", "arg": [full_path], "returnType": "STREAM"}
-            cat_url = f"{self.rc_url}/core/command"
 
-            async with session.post(cat_url, json=cat_params) as response:
+            async with session.post(f"{self.rc_url}/core/command", json=cat_params) as response:
                 response.raise_for_status()
                 content = await response.read()
 
-            modified = self._parse_rclone_timestamp(file_data.get("ModTime"))
-            created = modified
+            modified = self._to_unix_timestamp(metadata.get("ModTime"))
 
             return RcloneFile(
-                name=file_data["Name"],
-                path=file_data["Path"],
+                name=metadata["Name"],
+                path=metadata["Path"],
                 content=content,
-                size=file_data.get("Size", 0),
+                size=metadata.get("Size", 0),
                 modified=modified,
-                created=created,
-                content_type=file_data.get("MimeType"),
+                created=modified,
+                content_type=metadata.get("MimeType"),
                 remote=self._remote_name,
-                remote_path=file_data["Path"],
-                mime_type=file_data.get("MimeType"),
-                id=file_data.get("ID"),
+                remote_path=metadata["Path"],
+                mime_type=metadata.get("MimeType"),
+                id=metadata.get("ID"),
             )
