@@ -11,19 +11,15 @@ from aihub_pipeline.types.RcloneFile import MinimalRcloneFile, RcloneFile
 
 class RcloneResource(ConfigurableResource):
     """
-    Rclone RC API-based resource for universal cloud storage sync.
+    Universal cloud storage access via rclone RC API.
 
-    Uses rclone's Remote Control API for efficient async operations across 70+ cloud
-    providers (OneDrive, SharePoint, S3, Azure Blob, Google Drive, Dropbox, etc.).
+    Supports 70+ providers: OneDrive, SharePoint, Dropbox, Google Drive, S3, Azure Blob, etc.
 
-    **Why RC API**: Follows same pattern as SharePointResource (async HTTP client).
-    More efficient than subprocess (connection pooling, no process overhead).
+    **Why RC API instead of subprocess**: Async HTTP client pattern (same as SharePointResource).
+    Connection pooling, no process overhead, better error handling.
 
-    **Architecture**: HTTP calls to rclone daemon running as Docker service.
-    Same pattern as SharePoint → Graph API, but rclone → RC API.
-
-    **Setup**: Requires rclone service running in Docker Compose with RC API enabled.
-    Configure remotes via environment variables or rclone.conf.
+    **Why operations/stat in download**: IO Manager pattern only provides file path, not metadata.
+    Alternative would require refactoring the interface to pass metadata from list operation.
     """
 
     rc_url: Annotated[
@@ -82,7 +78,6 @@ class RcloneResource(ConfigurableResource):
 
     def model_post_init(self, __context) -> None:
         super().model_post_init(__context)
-        # Extract remote name from source_remote (e.g., "onedrive:Documents" -> "onedrive:")
         if ":" in self.source_remote:
             self._remote_name = self.source_remote.split(":")[0] + ":"
         else:
@@ -101,10 +96,10 @@ class RcloneResource(ConfigurableResource):
 
     async def _make_async_request(self, session: aiohttp.ClientSession, operation: str, params: dict) -> dict:
         """
-        Make async HTTP request to rclone RC API with retry logic.
+        Make async HTTP request to rclone RC API with exponential backoff.
 
-        Only retries transient HTTP errors (rate limits, server errors).
-        Rclone handles backend retries (network, auth, etc.) internally.
+        **Why only HTTP retries**: Rclone handles backend retries (network, auth) internally.
+        We only retry transient HTTP errors (429 rate limit, 5xx server errors).
         """
         delay = self.initial_retry_delay
         url = f"{self.rc_url}/{operation}"
@@ -115,17 +110,15 @@ class RcloneResource(ConfigurableResource):
                     response.raise_for_status()
                     return await response.json()
             except aiohttp.ClientResponseError as e:
-                # Only retry on transient HTTP errors: 429 (rate limit) or 5xx (server errors)
                 is_retryable = e.status == 429 or e.status >= 500
                 is_last_attempt = attempt >= self.max_retries - 1
 
                 if is_retryable and not is_last_attempt:
-                    # Honor Retry-After header if present
                     retry_after = e.headers.get("Retry-After")
                     wait_time = float(retry_after) if retry_after else delay
                     await asyncio.sleep(wait_time)
                     if not retry_after:
-                        delay *= 2  # Exponential backoff
+                        delay *= 2
                 else:
                     raise
         raise Exception(f"Request failed after {self.max_retries} retries.")
@@ -134,76 +127,56 @@ class RcloneResource(ConfigurableResource):
         """
         Build filter options for rclone RC API.
 
-        Returns filter dict in rclone format or None if no filters.
-        RC API uses FilterRule with + (include) and - (exclude) prefixes.
-        Rclone filter syntax: https://rclone.org/filtering/
+        **Why FilterRule instead of IncludeRule/ExcludeRule**: Avoids rclone warning about
+        indeterminate parsing order. FilterRule uses + (include) and - (exclude) prefixes.
+        See: https://rclone.org/filtering/
         """
         if not self.include_patterns and not self.exclude_patterns:
             return None
 
-        # Use FilterRule instead of separate IncludeRule/ExcludeRule to avoid warning
         filter_rules = []
 
-        # Add include patterns with + prefix
         if self.include_patterns:
             for pattern in self.include_patterns:
                 filter_rules.append(f"+ {pattern}")
 
-        # Add exclude patterns with - prefix
         if self.exclude_patterns:
             for pattern in self.exclude_patterns:
                 filter_rules.append(f"- {pattern}")
 
-        # If we have include patterns, exclude everything else at the end
         if self.include_patterns:
             filter_rules.append("- **")
 
         return {"FilterRule": filter_rules}
 
     def fetch_minimal_files(self) -> list[MinimalRcloneFile]:
-        """
-        List all files from rclone remote using RC API.
-
-        Synchronous wrapper around async implementation (same as SharePoint pattern).
-        """
         return asyncio.run(self._fetch_minimal_files_async())
 
     async def _fetch_minimal_files_async(self) -> list[MinimalRcloneFile]:
-        """
-        Async implementation of file listing.
-
-        Uses rclone RC API operations/list endpoint.
-        """
         timeout = aiohttp.ClientTimeout(total=None, connect=10, sock_read=60)
         connector = aiohttp.TCPConnector(limit=5)
 
         async with aiohttp.ClientSession(timeout=timeout, connector=connector) as session:
-            # Build parameters for operations/list
             params = {
                 "fs": self.source_remote,
-                "remote": "",  # Remote path within fs (empty = root of fs)
+                "remote": "",
                 "opt": {
                     "recurse": True,
                     "filesOnly": True,
-                    "showHash": True,  # Get hash checksums from backend for content-based change detection
+                    "showHash": True,
                 },
             }
 
-            # Add native rclone filters if specified
-            # IMPORTANT: Filters go in "_filter" at top level, NOT in "opt"!
             filter_opts = self._build_filter_opts()
             if filter_opts:
                 params["_filter"] = filter_opts
 
             response = await self._make_async_request(session, "operations/list", params)
-
-            # Parse response (rclone already filtered server-side with filesOnly=True)
             files_json = response.get("list", [])
             minimal_files = []
 
             for file_data in files_json:
-                # filesOnly=True ensures we only get files, but assert just to be safe
-                assert not file_data.get("IsDir", False), f"Unexpected directory in response: {file_data['Path']}"
+                assert not file_data.get("IsDir", False), f"Unexpected directory: {file_data['Path']}"
 
                 minimal_files.append(
                     MinimalRcloneFile(
@@ -212,42 +185,30 @@ class RcloneResource(ConfigurableResource):
                         size=file_data.get("Size", 0),
                         modified=self._parse_rclone_timestamp(file_data.get("ModTime")),
                         remote=self._remote_name,
-                        is_dir=False,  # filesOnly=True guarantees this
+                        is_dir=False,
                         mime_type=file_data.get("MimeType"),
                         id=file_data.get("ID"),
-                        hashes=file_data.get("Hashes"),  # Content-based checksums from backend
+                        hashes=file_data.get("Hashes"),
                     )
                 )
 
             return minimal_files
 
     def download_file(self, file_path: str) -> RcloneFile:
-        """
-        Download a single file from the remote and return RcloneFile with content.
-
-        Similar to SharePointResource.download_file().
-        """
         return asyncio.run(self._download_file_async(file_path))
 
     async def _download_file_async(self, file_path: str) -> RcloneFile:
         """
-        Async file download using RC API.
-
-        NOTE: We need operations/stat to get metadata (size, mtime, mime type) since
-        download_file() is called with only the file path. Alternative would be to
-        change the interface to accept metadata from list operation, but that requires
-        refactoring the IO Manager pattern.
+        **Why operations/stat + core/command**: IO Manager only provides file path.
+        Need stat for metadata, then cat for content (RC API has no operations/cat).
         """
         timeout = aiohttp.ClientTimeout(total=None, connect=10, sock_read=120)
 
         async with aiohttp.ClientSession(timeout=timeout) as session:
-            # Get file metadata using operations/stat
             stat_params = {"fs": self.source_remote, "remote": file_path}
             stat_response = await self._make_async_request(session, "operations/stat", stat_params)
             file_data = stat_response.get("item", {})
 
-            # Download content using core/command with cat
-            # RC API doesn't have operations/cat, so we use core/command to run rclone cat
             full_path = f"{self.source_remote}/{file_path}"
             cat_params = {"command": "cat", "arg": [full_path], "returnType": "STREAM"}
             cat_url = f"{self.rc_url}/core/command"
@@ -256,9 +217,8 @@ class RcloneResource(ConfigurableResource):
                 response.raise_for_status()
                 content = await response.read()
 
-            # Parse timestamps using helper
             modified = self._parse_rclone_timestamp(file_data.get("ModTime"))
-            created = modified  # rclone doesn't always provide separate created time
+            created = modified
 
             return RcloneFile(
                 name=file_data["Name"],

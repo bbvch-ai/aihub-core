@@ -377,7 +377,7 @@ services:
   # ===================================================================
 
   rclone:
-    container_name: aihub-rclone
+    container_name: rclone
     image: rclone/rclone:latest
     restart: unless-stopped
     command:
@@ -386,9 +386,15 @@ services:
       - "--rc-no-auth"
       - "--rc-allow-origin=*"
       - "--log-level=INFO"
-    volumes:
-      # Mount rclone config if exists (optional)
-      - ./rclone.conf:/config/rclone/rclone.conf:ro
+      - "--config=/dev/null"  # Disable config file, use environment variables only
+    environment:
+      # Rclone cloud storage remotes (configure only what you use)
+      # Define in .env.<stage> using: RCLONE_CONFIG_<REMOTENAME>_<OPTION>=<value>
+      # OneDrive example
+      RCLONE_CONFIG_ONEDRIVE_TYPE: ${RCLONE_CONFIG_ONEDRIVE_TYPE:-}
+      RCLONE_CONFIG_ONEDRIVE_TOKEN: ${RCLONE_CONFIG_ONEDRIVE_TOKEN:-}
+      RCLONE_CONFIG_ONEDRIVE_DRIVE_TYPE: ${RCLONE_CONFIG_ONEDRIVE_DRIVE_TYPE:-}
+      # Add more remotes as needed
     ports:
       - "5572:5572"
     healthcheck:

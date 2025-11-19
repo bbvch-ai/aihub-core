@@ -18,21 +18,12 @@ def observable_rclone_factory(
     partitions: DynamicPartitionsDefinition,
 ) -> observable_source_asset:
     """
-    Factory to create an observable source asset for any rclone-supported backend.
+    Observable source asset for cloud storage (OneDrive, Dropbox, Google Drive, etc.).
 
-    This asset scans the configured rclone remote (OneDrive, SharePoint, S3, Azure,
-    Google Drive, Dropbox, local filesystem, etc.) and creates dynamic partitions
-    for each file, using content hash (MD5/SHA1) for change detection when available,
-    falling back to mtime + size for backends without hash support.
+    **Why hash-based change detection**: Detects ANY content change with zero false positives.
+    Prefers MD5/SHA1 from backend, falls back to mtime+size if hash unavailable.
 
-    **Why rclone**: Single implementation works across 70+ cloud storage providers
-    without provider-specific code or SDKs.
-
-    **Change Detection**: Hash-based (content) when backend supports it, otherwise
-    mtime+size. Hash is superior: detects ANY content change with zero false positives.
-
-    **Usage**: Configure RcloneResource with source_remote and filters, then use this
-    factory to create an observable asset that monitors the remote for changes.
+    **Why rclone**: Single implementation for 70+ providers without provider-specific SDKs.
     """
 
     @observable_source_asset(
