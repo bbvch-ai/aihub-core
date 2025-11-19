@@ -111,13 +111,17 @@ def exclude_file_pattern(
 
 def combine_patterns(*pattern_lists: list[str]) -> list[str]:
     """
-    Combine multiple pattern lists into a single list.
+    Combine multiple pattern lists into a single list (OR logic).
+
+    WARNING: This creates OR conditions in rclone filters. Use combine_path_and_extension()
+    if you want to filter by BOTH path AND file extension.
 
     Examples:
         >>> folders = folder_pattern(["Project Alpha", "Project Beta"])
         >>> extensions = extension_pattern([".pdf", ".md"])
         >>> combine_patterns(folders, extensions)
         ['Project Alpha/**', 'Project Beta/**', '*.pdf', '*.md']
+        # This matches: (any file in Project Alpha) OR (any file in Project Beta) OR (any .pdf) OR (any .md)
 
         >>> includes = extension_pattern([".pdf"])
         >>> excludes = exclude_folder_pattern(["temp"])
@@ -127,6 +131,41 @@ def combine_patterns(*pattern_lists: list[str]) -> list[str]:
     result = []
     for patterns in pattern_lists:
         result.extend(patterns)
+    return result
+
+
+def combine_path_and_extension(
+    paths: Annotated[list[str], "List of path patterns (e.g., ['Project Alpha/Documentation/**'])"],
+    extensions: Annotated[list[str], "List of extensions (e.g., ['.pdf', '.md'])"],
+) -> list[str]:
+    """
+    Create patterns that match BOTH specific paths AND file extensions (AND logic).
+
+    This creates the Cartesian product: each path combined with each extension.
+    Use this when you want files that match a path AND have a specific extension.
+
+    Examples:
+        >>> paths = ["Project Alpha/Documentation/**", "Project Beta/Reports/**"]
+        >>> exts = [".pdf", ".md"]
+        >>> combine_path_and_extension(paths, exts)
+        ['Project Alpha/Documentation/**.pdf', 'Project Alpha/Documentation/**.md',
+         'Project Beta/Reports/**.pdf', 'Project Beta/Reports/**.md']
+
+        >>> paths = ["**/Documentation/**"]
+        >>> exts = [".pdf"]
+        >>> combine_path_and_extension(paths, exts)
+        ['**/Documentation/**.pdf']
+    """
+    result = []
+    # Clean extensions (remove leading dot)
+    clean_exts = [ext.lstrip(".") for ext in extensions]
+
+    for path in paths:
+        # Remove trailing /** if present
+        clean_path = path.rstrip("*").rstrip("/")
+        for ext in clean_exts:
+            result.append(f"{clean_path}/**.{ext}")
+
     return result
 
 

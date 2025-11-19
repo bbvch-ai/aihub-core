@@ -11,40 +11,39 @@ from aihub_pipeline.types.RcloneFile import MinimalRcloneFile, RcloneFile
 
 class RcloneResource(ConfigurableResource):
     """
-    Universal cloud storage adapter using rclone RC API.
+    Rclone RC API-based resource for universal cloud storage sync.
 
-    **The Universal Adapter**: Single implementation for 70+ providers (OneDrive, SharePoint,
-    S3, Azure Blob, Google Drive, Dropbox, local filesystem, etc.).
+    Uses rclone's Remote Control API for efficient async operations across 70+ cloud
+    providers (OneDrive, SharePoint, S3, Azure Blob, Google Drive, Dropbox, etc.).
 
-    **Architecture**: Thin HTTP client → rclone daemon (handles all provider logic).
-    Rclone does the heavy lifting (auth, rate limits, retries, filtering, provider quirks).
-    We just make HTTP calls.
+    **Why RC API**: Follows same pattern as SharePointResource (async HTTP client).
+    More efficient than subprocess (connection pooling, no process overhead).
 
-    **Why RC API**: Clean separation - rclone service handles providers, we handle Dagster pipeline.
-    No subprocess overhead, no provider-specific Python code.
+    **Architecture**: HTTP calls to rclone daemon running as Docker service.
+    Same pattern as SharePoint → Graph API, but rclone → RC API.
 
-    **Filtering**: Uses rclone's native filtering (passed via _filter parameter).
-    Much simpler than custom client-side filtering.
+    **Setup**: Requires rclone service running in Docker Compose with RC API enabled.
+    Configure remotes via environment variables or rclone.conf.
     """
 
     rc_url: Annotated[
         str,
         Field(
             default="http://aihub-rclone:5572",
-            description="Rclone RC API endpoint",
+            description="Rclone RC API URL (default: http://aihub-rclone:5572)",
         ),
     ]
 
     source_remote: Annotated[
         str,
-        Field(description="Rclone remote:path (e.g., 'onedrive:Documents', 's3:bucket/prefix', 'local:/path')"),
+        Field(description="Rclone remote name and optional path (e.g., 'onedrive:Documents', 's3:bucket/prefix')"),
     ]
 
     include_patterns: Annotated[
         list[str] | None,
         Field(
             default=None,
-            description="Include patterns - rclone glob syntax (e.g., ['*.pdf', 'Project Alpha/**']). "
+            description="Include patterns using rclone glob syntax (e.g., ['*.pdf', '*.docx']). "
             "None = include all files.",
         ),
     ]
@@ -53,29 +52,62 @@ class RcloneResource(ConfigurableResource):
         list[str] | None,
         Field(
             default_factory=lambda: ["**/archiv/**", "**/Archiv/**"],
-            description="Exclude patterns - rclone glob syntax. Common: ['**/temp/**', '**/.git/**']",
+            description="Exclude patterns using rclone glob syntax (case-sensitive by default). "
+            "Common: ['**/temp/**', '**/.git/**', '**/node_modules/**']",
         ),
     ]
 
-    max_retries: Annotated[int, Field(default=3, ge=1, le=10, description="Max HTTP retry attempts")] = 3
-    initial_retry_delay: Annotated[float, Field(default=1.0, ge=0.1, le=10.0, description="Retry delay (seconds)")] = (
-        1.0
-    )
+    max_retries: Annotated[
+        int,
+        Field(
+            default=3,
+            ge=1,
+            le=5,
+            description="Maximum HTTP retry attempts for rate limit/server errors (1-5). "
+            "Rclone handles backend retries internally.",
+        ),
+    ]
+
+    initial_retry_delay: Annotated[
+        float,
+        Field(
+            default=1.0,
+            ge=0.1,
+            le=5.0,
+            description="Initial HTTP retry delay in seconds (0.1-5.0). Doubles after each attempt.",
+        ),
+    ]
 
     _remote_name: str = PrivateAttr(default="")
 
     def model_post_init(self, __context) -> None:
         super().model_post_init(__context)
-        # Extract remote name (e.g., "onedrive:Documents" -> "onedrive:")
+        # Extract remote name from source_remote (e.g., "onedrive:Documents" -> "onedrive:")
         if ":" in self.source_remote:
             self._remote_name = self.source_remote.split(":")[0] + ":"
         else:
             self._remote_name = self.source_remote
 
-    async def _make_request(self, session: aiohttp.ClientSession, operation: str, params: dict) -> dict:
-        """Make HTTP request to RC API with simple retry logic."""
-        url = f"{self.rc_url}/{operation}"
+    @staticmethod
+    def _parse_rclone_timestamp(mod_time_str: str | None) -> int:
+        """Parse rclone ISO timestamp to Unix timestamp. Returns 0 if missing/invalid."""
+        if not mod_time_str:
+            return 0
+        try:
+            dt = datetime.fromisoformat(mod_time_str.replace("Z", "+00:00"))
+            return int(dt.timestamp())
+        except (ValueError, AttributeError):
+            return 0
+
+    async def _make_async_request(self, session: aiohttp.ClientSession, operation: str, params: dict) -> dict:
+        """
+        Make async HTTP request to rclone RC API with retry logic.
+
+        Only retries transient HTTP errors (rate limits, server errors).
+        Rclone handles backend retries (network, auth, etc.) internally.
+        """
         delay = self.initial_retry_delay
+        url = f"{self.rc_url}/{operation}"
 
         for attempt in range(self.max_retries):
             try:
@@ -83,78 +115,102 @@ class RcloneResource(ConfigurableResource):
                     response.raise_for_status()
                     return await response.json()
             except aiohttp.ClientResponseError as e:
-                # Retry on rate limit (429) or server errors (5xx)
-                if (e.status == 429 or e.status >= 500) and attempt < self.max_retries - 1:
-                    await asyncio.sleep(delay)
-                    delay *= 2  # Exponential backoff
+                # Only retry on transient HTTP errors: 429 (rate limit) or 5xx (server errors)
+                is_retryable = e.status == 429 or e.status >= 500
+                is_last_attempt = attempt >= self.max_retries - 1
+
+                if is_retryable and not is_last_attempt:
+                    # Honor Retry-After header if present
+                    retry_after = e.headers.get("Retry-After")
+                    wait_time = float(retry_after) if retry_after else delay
+                    await asyncio.sleep(wait_time)
+                    if not retry_after:
+                        delay *= 2  # Exponential backoff
                 else:
                     raise
+        raise Exception(f"Request failed after {self.max_retries} retries.")
 
-        raise Exception(f"Request to {operation} failed after {self.max_retries} retries")
+    def _build_filter_opts(self) -> dict | None:
+        """
+        Build filter options for rclone RC API.
+
+        Returns filter dict in rclone format or None if no filters.
+        RC API uses IncludeRule/ExcludeRule keys (no +/- prefixes needed).
+        Rclone filter syntax: https://rclone.org/filtering/
+        """
+        if not self.include_patterns and not self.exclude_patterns:
+            return None
+
+        filters = {}
+
+        # Include patterns (no prefix needed for RC API)
+        if self.include_patterns:
+            filters["IncludeRule"] = self.include_patterns
+
+        # Exclude patterns (no prefix needed for RC API)
+        if self.exclude_patterns:
+            filters["ExcludeRule"] = self.exclude_patterns.copy()
+        else:
+            filters["ExcludeRule"] = []
+
+        # If we have include patterns, exclude everything else at the end
+        if self.include_patterns:
+            filters["ExcludeRule"].append("**")
+
+        return filters
 
     def fetch_minimal_files(self) -> list[MinimalRcloneFile]:
         """
-        List all files from source remote.
+        List all files from rclone remote using RC API.
 
-        Uses rclone's native filtering - patterns passed to RC API.
+        Synchronous wrapper around async implementation (same as SharePoint pattern).
         """
         return asyncio.run(self._fetch_minimal_files_async())
 
     async def _fetch_minimal_files_async(self) -> list[MinimalRcloneFile]:
-        """List files via RC API operations/list with native rclone filtering."""
-        timeout = aiohttp.ClientTimeout(total=None, connect=10, sock_read=60)
+        """
+        Async implementation of file listing.
 
-        async with aiohttp.ClientSession(timeout=timeout) as session:
-            # Build request params
-            params: dict = {
+        Uses rclone RC API operations/list endpoint.
+        """
+        timeout = aiohttp.ClientTimeout(total=None, connect=10, sock_read=60)
+        connector = aiohttp.TCPConnector(limit=5)
+
+        async with aiohttp.ClientSession(timeout=timeout, connector=connector) as session:
+            # Build parameters for operations/list
+            params = {
                 "fs": self.source_remote,
+                "remote": "",  # Remote path within fs (empty = root of fs)
                 "opt": {
                     "recurse": True,
                     "filesOnly": True,
                 },
             }
 
-            # Add rclone native filtering via _filter parameter
-            # Rclone handles all the filtering - we just pass the patterns
-            filter_config = {}
-            if self.include_patterns:
-                filter_config["IncludeRule"] = self.include_patterns
-            if self.exclude_patterns:
-                filter_config["ExcludeRule"] = self.exclude_patterns
+            # Add native rclone filters if specified
+            # IMPORTANT: Filters go in "_filter" at top level, NOT in "opt"!
+            filter_opts = self._build_filter_opts()
+            if filter_opts:
+                params["_filter"] = filter_opts
 
-            if filter_config:
-                params["_filter"] = filter_config
+            response = await self._make_async_request(session, "operations/list", params)
 
-            # Make request - rclone returns only matching files
-            response = await self._make_request(session, "operations/list", params)
-
-            # Parse file list
+            # Parse response (rclone already filtered server-side with filesOnly=True)
             files_json = response.get("list", [])
             minimal_files = []
 
             for file_data in files_json:
-                # Skip directories (rclone might return them anyway)
-                if file_data.get("IsDir", False):
-                    continue
-
-                # Parse timestamp
-                mod_time_str = file_data.get("ModTime", "")
-                modified = 0
-                if mod_time_str:
-                    try:
-                        dt = datetime.fromisoformat(mod_time_str.replace("Z", "+00:00"))
-                        modified = int(dt.timestamp())
-                    except ValueError:
-                        pass
+                # filesOnly=True ensures we only get files, but assert just to be safe
+                assert not file_data.get("IsDir", False), f"Unexpected directory in response: {file_data['Path']}"
 
                 minimal_files.append(
                     MinimalRcloneFile(
                         name=file_data["Name"],
                         path=file_data["Path"],
                         size=file_data.get("Size", 0),
-                        modified=modified,
+                        modified=self._parse_rclone_timestamp(file_data.get("ModTime")),
                         remote=self._remote_name,
-                        is_dir=file_data.get("IsDir", False),
+                        is_dir=False,  # filesOnly=True guarantees this
                         mime_type=file_data.get("MimeType"),
                         id=file_data.get("ID"),
                     )
@@ -163,36 +219,43 @@ class RcloneResource(ConfigurableResource):
             return minimal_files
 
     def download_file(self, file_path: str) -> RcloneFile:
-        """Download single file with content."""
+        """
+        Download a single file from the remote and return RcloneFile with content.
+
+        Similar to SharePointResource.download_file().
+        """
         return asyncio.run(self._download_file_async(file_path))
 
     async def _download_file_async(self, file_path: str) -> RcloneFile:
-        """Download file via RC API operations/cat."""
+        """
+        Async file download using RC API.
+
+        NOTE: We need operations/stat to get metadata (size, mtime, mime type) since
+        download_file() is called with only the file path. Alternative would be to
+        change the interface to accept metadata from list operation, but that requires
+        refactoring the IO Manager pattern.
+        """
         timeout = aiohttp.ClientTimeout(total=None, connect=10, sock_read=120)
 
         async with aiohttp.ClientSession(timeout=timeout) as session:
-            # Get file metadata
+            # Get file metadata using operations/stat
             stat_params = {"fs": self.source_remote, "remote": file_path}
-            stat_response = await self._make_request(session, "operations/stat", stat_params)
+            stat_response = await self._make_async_request(session, "operations/stat", stat_params)
             file_data = stat_response.get("item", {})
 
-            # Download content using special [remote] URL syntax
-            # RC API serves file content at /[remote:path]/file/path
-            cat_url = f"{self.rc_url}/[{self.source_remote}]/{file_path}"
+            # Download content using core/command with cat
+            # RC API doesn't have operations/cat, so we use core/command to run rclone cat
+            full_path = f"{self.source_remote}/{file_path}"
+            cat_params = {"command": "cat", "arg": [full_path], "returnType": "STREAM"}
+            cat_url = f"{self.rc_url}/core/command"
 
-            async with session.get(cat_url) as response:
+            async with session.post(cat_url, json=cat_params) as response:
                 response.raise_for_status()
                 content = await response.read()
 
-            # Parse timestamps
-            mod_time_str = file_data.get("ModTime", "")
-            modified = created = 0
-            if mod_time_str:
-                try:
-                    dt = datetime.fromisoformat(mod_time_str.replace("Z", "+00:00"))
-                    modified = created = int(dt.timestamp())
-                except ValueError:
-                    pass
+            # Parse timestamps using helper
+            modified = self._parse_rclone_timestamp(file_data.get("ModTime"))
+            created = modified  # rclone doesn't always provide separate created time
 
             return RcloneFile(
                 name=file_data["Name"],
