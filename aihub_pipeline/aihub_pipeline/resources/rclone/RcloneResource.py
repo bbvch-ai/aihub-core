@@ -192,7 +192,8 @@ class RcloneResource(ConfigurableResource):
         **Why operations/stat + core/command**: IO Manager only provides file path.
         Need stat for metadata, then cat for content (RC API has no operations/cat).
 
-        **Why created = modified**: Most cloud backends don't track creation time separately.
+        **Why created defaults to modified**: Most cloud backends don't expose BirthTime.
+        Google Drive provides it with --drive-use-created-date, but Dropbox/OneDrive don't.
         """
         timeout = aiohttp.ClientTimeout(total=None, connect=10, sock_read=120)
 
@@ -209,6 +210,7 @@ class RcloneResource(ConfigurableResource):
                 content = await response.read()
 
             modified = self._to_unix_timestamp(metadata.get("ModTime"))
+            created = self._to_unix_timestamp(metadata.get("BirthTime")) or modified
 
             return RcloneFile(
                 name=metadata["Name"],
@@ -216,7 +218,7 @@ class RcloneResource(ConfigurableResource):
                 content=content,
                 size=metadata.get("Size", 0),
                 modified=modified,
-                created=modified,
+                created=created,
                 content_type=metadata.get("MimeType"),
                 remote=self._remote_name,
                 remote_path=metadata["Path"],
