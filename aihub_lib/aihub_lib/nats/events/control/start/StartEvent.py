@@ -1,13 +1,15 @@
 import time
-from typing import Annotated, Any
+from typing import TYPE_CHECKING, Annotated, Any
 
 from bson import ObjectId
 from pydantic import Field
 
-from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
+
+if TYPE_CHECKING:
+    from aihub_lib.agents.AgentConfig import AgentConfig
 
 
 class StartEvent(ControlAndDisplayEvent):
@@ -43,7 +45,7 @@ class StartEvent(ControlAndDisplayEvent):
         user: UserIdentity,
         start_event_name: str,
         start_event_parents: list[str],
-        agent_config: AgentConfig,
+        agent_config: "AgentConfig",
         t: LocaleHandler,
         **args,
     ) -> "StartEvent":

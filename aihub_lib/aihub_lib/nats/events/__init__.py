@@ -7,7 +7,8 @@ from .common import LimitChatHistoryEvent, StandaloneQuestionCondenserEvent
 from .control import ControlEvent, ExceptionEvent, StartEvent, StopEvent
 from .ControlAndDisplayEvent import ControlAndDisplayEvent
 from .cost import CostEvent, LLMCostEvent
-from .discovery import AgentInstanceDiscoveryResponseEvent, InstanceDiscoveryRequestEvent
+# Lazy import discovery events to avoid circular dependency with AgentConfig
+# from .discovery import AgentInstanceDiscoveryResponseEvent, InstanceDiscoveryRequestEvent
 from .display import ChunkEvent, DisplayEvent, ThoughtEvent
 from .guard import GuardRejectionEvent
 from .human_in_the_loop import HumanInTheLoop
@@ -28,6 +29,20 @@ from .semantic import (
 from .user import UserMessageEvent
 from .work import AgentWorkEvent, HumanWorkEvent, ProgramWorkEvent, WorkEvent
 from .work_request import AgentWorkRequestEvent, HumanWorkRequestEvent, ProgramWorkRequestEvent, WorkRequestEvent
+
+
+# Lazy loading for discovery events to avoid circular imports with AgentConfig
+def __getattr__(name: str):
+    if name == "AgentInstanceDiscoveryResponseEvent":
+        from .discovery import AgentInstanceDiscoveryResponseEvent
+
+        return AgentInstanceDiscoveryResponseEvent
+    elif name == "InstanceDiscoveryRequestEvent":
+        from .discovery import InstanceDiscoveryRequestEvent
+
+        return InstanceDiscoveryRequestEvent
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 __all__ = [
     "BaseEvent",

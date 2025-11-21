@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING, Annotated
 from pydantic import BaseModel, ConfigDict, Field, create_model
 
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.form import InputText, Checkbox, InputNumber
 from aihub_lib.nats.events.form.Form import Form
 
 if TYPE_CHECKING:
+    from aihub_lib.nats.events.form import Checkbox, InputNumber, InputText
     from aihub_lib.persistence.agents import AgentConfigEntity
 
 logger = logging.getLogger(__name__)
@@ -82,6 +82,9 @@ class AgentConfig(Form):
 
     @staticmethod
     def recursive_formkit_from_dict(model_name: str, model_dict: dict) -> BaseModel:
+        # Import at runtime to avoid circular imports
+        from aihub_lib.nats.events.form import Checkbox, InputNumber, InputText
+
         mapping: dict[type, UnionType] = {
             str: InputText | str,
             int: InputNumber | int,
@@ -98,8 +101,11 @@ class AgentConfig(Form):
             if value_type in mapping:
                 fields[key] = (mapping[value_type], value)
             elif value_type is dict:
-                pydantic_model = AgentConfig.recursive_formkit_from_dict(key, value)
-                fields[key] = (type(pydantic_model), pydantic_model)
+                # Recursively create nested model class where dict values become field defaults
+                # Then instantiate to get an object with those values
+                nested_model_class = AgentConfig.recursive_formkit_from_dict(key, value)
+                nested_instance = nested_model_class()
+                fields[key] = (nested_model_class, nested_instance)
             else:
                 # do nothing
                 pass
