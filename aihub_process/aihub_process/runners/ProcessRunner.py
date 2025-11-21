@@ -89,12 +89,10 @@ class ProcessRunner:
         process configuration.
         """
         if topic.process_class not in [self.process_class, "*"]:
-            logger.debug(
-                f"Discovery request for {topic.process_class} with id {topic.process_id} does not match this process."
-            )
+            logger.debug(f"Discovery request for {topic.process_class} does not match this process.")
             return
 
-        logger.debug(f"Received discovery request for {topic.process_class} with id {topic.process_id}.")
+        logger.debug(f"Received discovery request for {topic.process_class}.")
         subject = self.topic_manager.get_process_class_discovery_subject_response(topic.call_id)
 
         human_inputs: list[HumanInSpecs] = [

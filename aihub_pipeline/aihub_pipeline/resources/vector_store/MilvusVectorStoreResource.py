@@ -1,6 +1,12 @@
-from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
+from typing import Annotated
+
+from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import (
+    MilvusIndexType,
+    create_milvus_vector_store,
+)
 from dagster import ConfigurableResource, InitResourceContext
 from llama_index.vector_stores.milvus import MilvusVectorStore
+from pydantic import Field
 
 
 class MilvusVectorStoreResource(ConfigurableResource[MilvusVectorStore]):
@@ -75,6 +81,14 @@ class MilvusVectorStoreResource(ConfigurableResource[MilvusVectorStore]):
     uri: str
     collection_name: str
     embedding_vector_dimension: int
+    index_type: Annotated[MilvusIndexType, Field(description="Vector index type to use for the embedding field")] = (
+        MilvusIndexType.HNSW
+    )
 
     def create_resource(self, context: InitResourceContext) -> MilvusVectorStore:
-        return create_milvus_vector_store(self.uri, self.collection_name, self.embedding_vector_dimension)
+        return create_milvus_vector_store(
+            uri=self.uri,
+            collection_name=self.collection_name,
+            embedding_vector_dimension=self.embedding_vector_dimension,
+            index_type=self.index_type,
+        )

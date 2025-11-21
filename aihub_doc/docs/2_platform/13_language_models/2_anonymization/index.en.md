@@ -1,6 +1,5 @@
 ---
 title: Data anonymization
-index: 2
 ---
 
 # Data anonymization

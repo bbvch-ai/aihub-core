@@ -1,6 +1,5 @@
 ---
 title: RAG agent
-index: 2
 ---
 
 # RAG agent

@@ -20,15 +20,15 @@ from openai.types.audio import Transcription, TranscriptionVerbose
 from openai.types.chat import ChatCompletion
 from starlette.responses import StreamingResponse
 
-from ...i18n.dependencies.use_locale import use_locale
-from .dto.ChatCompletionRequest import ChatCompletionRequest
-from .dto.EmbeddingsRequest import EmbeddingsRequest
-from .dto.EmbeddingsResponse import EmbeddingsResponse
-from .dto.ImageGenerationRequest import ImageGenerationRequest
-from .dto.ModelDetails import ModelDetails
-from .dto.ModelResponse import ModelResponse
-from .dto.TextToSpeechRequest import TextToSpeechRequest
-from .OpenaiService import OpenaiService
+from aihub_api.i18n.dependencies.use_locale import use_locale
+from aihub_api.routes.openai.dto.ChatCompletionRequest import ChatCompletionRequest
+from aihub_api.routes.openai.dto.EmbeddingsRequest import EmbeddingsRequest
+from aihub_api.routes.openai.dto.EmbeddingsResponse import EmbeddingsResponse
+from aihub_api.routes.openai.dto.ImageGenerationRequest import ImageGenerationRequest
+from aihub_api.routes.openai.dto.ModelDetails import ModelDetails
+from aihub_api.routes.openai.dto.ModelResponse import ModelResponse
+from aihub_api.routes.openai.dto.TextToSpeechRequest import TextToSpeechRequest
+from aihub_api.routes.openai.OpenaiService import OpenaiService
 
 logger = logging.getLogger(__name__)
 

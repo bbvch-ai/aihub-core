@@ -34,7 +34,6 @@ class DoclingLoader(BaseReader):
         file: str,
         extra_info: dict | None = None,
         fs: AbstractFileSystem | None = None,
-        figures_directory_name: str | None = None,
         include_images: bool | None = None,
     ) -> list[Document]:
         """Load and process documents synchronously using the Docling service."""
@@ -45,14 +44,13 @@ class DoclingLoader(BaseReader):
         file_name = os.path.basename(file)
 
         answer = self.convert_document(encoded_string, file_name, include_images)
-        return self._process_docling_response(answer, file, extra_info, fs, figures_directory_name)
+        return self._process_docling_response(answer=answer, file=file, extra_info=extra_info, fs=fs)
 
     async def aload_data(
         self,
         file: str,
         extra_info: dict | None = None,
         fs: AbstractFileSystem | None = None,
-        figures_directory_name: str | None = None,
         include_images: bool | None = None,
     ) -> list[Document]:
         """Load and process documents asynchronously using the Docling service."""
@@ -64,7 +62,7 @@ class DoclingLoader(BaseReader):
 
         answer = await self.convert_document_async(encoded_string, file_name, include_images)
         return await asyncio.to_thread(
-            self._process_docling_response, answer, file, extra_info, fs, figures_directory_name
+            self._process_docling_response, answer=answer, file=file, fs=fs, extra_info=extra_info
         )
 
     def _read_file_sync(self, fs: AbstractFileSystem, file: str) -> str:
@@ -75,9 +73,8 @@ class DoclingLoader(BaseReader):
         self,
         answer: dict,
         file: str,
+        fs: AbstractFileSystem,
         extra_info: dict | None = None,
-        fs: AbstractFileSystem | None = None,
-        figures_directory_name: str | None = None,
     ) -> list[Document]:
         """Process the Docling API response into Document objects."""
         doc = DoclingDocument(**answer["document"]["json_content"])
@@ -116,33 +113,33 @@ class DoclingLoader(BaseReader):
         ]
 
     @trace_fn
-    def _build_request_body(self, file_content: str, filename: str, include_images: bool) -> dict:
-        """Build the request body for Docling API calls."""
+    def _build_request_body(
+        self, file_content: str, filename: str, include_images: bool, to_formats: list[str] | None = None
+    ) -> dict:
+        """Build the request body for the Docling VLM Pipeline."""
         return {
             "options": {
-                "from_formats": self.config.FROM_FORMATS,
-                "to_formats": self.config.TO_FORMATS,
-                "image_export_mode": self.config.IMAGE_EXPORT_MODE,
-                "do_ocr": self.config.DO_OCR,
-                "force_ocr": self.config.FORCE_OCR,
-                "ocr_engine": self.config.OCR_ENGINE,
-                "pdf_backend": self.config.PDF_BACKEND,
-                "table_mode": self.config.TABLE_MODE,
-                "abort_on_error": False,
-                "do_table_structure": True,
+                "to_formats": to_formats if to_formats is not None else self.config.TO_FORMATS,
                 "include_images": include_images,
-                "images_scale": self.config.IMAGES_SCALE,
-                "do_code_enrichment": True,
-                "do_formula_enrichment": True,
-                "do_picture_classification": False,
-                "do_picture_description": False,
-                "md_page_break_placeholder": self.config.MD_PAGE_BREAK_PLACEHOLDER,
+                "pipeline": "vlm",
+                "vlm_pipeline_model_api": {
+                    "url": f"{self.config.HOSTED_VLM_API_ENDPOINT}/v1/chat/completions",
+                    "params": {
+                        "model": self.config.VLM_MODEL_NAME,
+                        "max_tokens": 8176,  # 8192 (max tokens) - 16 (for docling)
+                        "skip_special_tokens": False,
+                    },
+                    "response_format": "doctags",
+                    "headers": {"Authorization": f"Bearer {self.config.HOSTED_VLM_API_KEY}"},
+                },
             },
             "sources": [{"base64_string": file_content, "filename": filename, "kind": "file"}],
         }
 
-    def convert_document(self, file_content: str, filename: str, include_images: bool) -> dict:
-        request_body = self._build_request_body(file_content, filename, include_images)
+    def convert_document(
+        self, file_content: str, filename: str, include_images: bool, to_formats: list[str] | None = None
+    ) -> dict:
+        request_body = self._build_request_body(file_content, filename, include_images, to_formats)
 
         response = httpx.post(
             f"{self.config.API_ENDPOINT}/v1/convert/source",
@@ -158,8 +155,10 @@ class DoclingLoader(BaseReader):
 
         return response.json()
 
-    async def convert_document_async(self, file_content: str, filename: str, include_images: bool) -> dict:
-        request_body = self._build_request_body(file_content, filename, include_images)
+    async def convert_document_async(
+        self, file_content: str, filename: str, include_images: bool, to_formats: list[str] | None = None
+    ) -> dict:
+        request_body = self._build_request_body(file_content, filename, include_images, to_formats)
 
         async with httpx.AsyncClient(timeout=self.config.API_TIMEOUT) as client:
             response = await client.post(

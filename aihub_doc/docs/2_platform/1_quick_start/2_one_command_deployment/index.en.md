@@ -10,19 +10,23 @@ infrastructure running in minutes, not hours.
 ## Deployment Overview
 
 ::: tip Two Deployment Options
-The Swiss AI Hub supports two deployment modes. Follow the same steps for both, using the appropriate commands for your deployment type:
+The Swiss AI Hub supports two deployment modes. Follow the same steps for both, using the appropriate commands for your
+deployment type:
 
 - **Production Deployment**: Deploy to a server with a real domain name (e.g., `aihub.yourcompany.com`)
+
   - Uses `docker-compose.latest.yml`
   - Uses Let's Encrypt for automatic SSL certificates
   - Requires DNS configuration pointing to your server
 
 - **Local Deployment**: Run on your local machine for development/testing
+
   - Uses `docker-compose.local.yml`
   - Uses self-signed SSL certificates (mkcert)
   - Uses `127.0.0.1.nip.io` domain (automatically resolves to localhost)
 
-Each step below shows commands for both deployment types. Simply follow the commands that match your chosen deployment mode.
+Each step below shows commands for both deployment types. Simply follow the commands that match your chosen deployment
+mode.
 :::
 
 ---
@@ -64,7 +68,8 @@ mkcert -key-file configs/traefik/certs/dev-key.pem -cert-file configs/traefik/ce
 ```
 
 ::: tip What is nip.io?
-The `*.127.0.0.1.nip.io` domain automatically resolves to your localhost (127.0.0.1), providing wildcard DNS resolution without needing to modify your hosts file. This allows subdomain-based routing in local development.
+The `*.127.0.0.1.nip.io` domain automatically resolves to your localhost (127.0.0.1), providing wildcard DNS resolution
+without needing to modify your hosts file. This allows subdomain-based routing in local development.
 :::
 
 ---
@@ -141,6 +146,17 @@ AZURE_OPENAI_KEY="REPLACE_WITH_AZURE_OPENAI_KEY"
 # Google Gemini (Alternative)
 GEMINI_API_KEY="REPLACE_WITH_GEMINI_KEY"
 
+# Swiss LLM Cloud (Optional)
+SWISS_LLM_CLOUD_API_URL=""                # Optional: Swiss LLM Cloud endpoint URL
+SWISS_LLM_CLOUD_API_KEY=""                # Optional: Swiss LLM Cloud API key
+
+# Cohere (Optional)
+COHERE_API_BASE=""                        # Optional: Cohere API base URL
+COHERE_API_KEY=""                         # Optional: Cohere API key
+
+# Hugging Face (Optional)
+HUGGINGFACE_API_KEY=""                    # Optional: For Hugging Face model access
+
 # =============================================================================
 # LITELLM PROXY CONFIGURATION
 # =============================================================================
@@ -189,8 +205,20 @@ PHOENIX_SECRET="REPLACE_WITH_RANDOM_STRING"
 PHOENIX_ENDPOINT="http://phoenix:6006"
 NATS_ENDPOINT="nats://localhost:4222"
 DAGSTER_HOME="~/.dagster_home"
+DAGSTER_OAUTH_ALLOWED_GROUPS="AIHubDeveloper"
+SEAWEEDFS_OAUTH_ALLOWED_GROUPS="AIHubDeveloper"
 JUPYTER_TOKEN="REPLACE_WITH_RANDOM_STRING"
 MILVUS_DIMENSION="3072"
+
+# =============================================================================
+# OBSERVABILITY CONFIGURATION
+# =============================================================================
+
+# OpenTelemetry Cloud Exporter (Optional - for production monitoring)
+OTEL_ENABLED="true"                           # Enable/disable OTEL collection
+OTEL_EXPORTER_OTLP_PROTOCOL="grpc"           # Protocol for OTEL export
+OTEL_CLOUD_ENDPOINT="localhost:4317"         # Cloud OTEL endpoint (e.g., Grafana Cloud: "otlp.grafana.net:443")
+OTEL_CLOUD_HEADERS=""                         # Authentication headers (e.g., "Authorization=Bearer YOUR_TOKEN")
 
 # =============================================================================
 # BOT DEVELOPMENT CONFIGURATION
@@ -207,6 +235,12 @@ BOT_AUTH_FAKE_ROLES="AIHubBot"
 
 # Jina AI Search (Optional)
 JINA_API_KEY=""
+
+# OpenTelemetry Configuration (Optional)
+OTEL_ENABLED="False"
+OTEL_EXPORTER_OTLP_PROTOCOL="grpc"
+OTEL_CLOUD_ENDPOINT=""
+OTEL_CLOUD_HEADERS=""
 
 # Signoz Telemetry (Optional)
 SIGNOZ_INGESTION_CLOUD_ENDPOINT=""
@@ -337,13 +371,14 @@ docker compose -f docker-compose.latest.yml ps --format "table {{.Name}}\t{{.Sta
 
 ## Summary: Key Differences Between Deployments
 
-| Feature | Production (`docker-compose.latest.yml`) | Local (`docker-compose.local.yml`) |
-|---------|------------------------------------------|-------------------------------------------|
-| **SSL Certificates** | Let's Encrypt (automatic) | mkcert (manual generation) |
-| **Domain** | Your production domain | `127.0.0.1.nip.io` |
-| **Configuration Files** | `*.latest.*` configs | `*.local.*` configs |
-| **Purpose** | Production deployments | Local deployment and development |
+| Feature                 | Production (`docker-compose.latest.yml`) | Local (`docker-compose.local.yml`) |
+| ----------------------- | ---------------------------------------- | ---------------------------------- |
+| **SSL Certificates**    | Let's Encrypt (automatic)                | mkcert (manual generation)         |
+| **Domain**              | Your production domain                   | `127.0.0.1.nip.io`                 |
+| **Configuration Files** | `*.latest.*` configs                     | `*.local.*` configs                |
+| **Purpose**             | Production deployments                   | Local deployment and development   |
 
 ::: warning
-Never use self-signed SSL certificates in production. The local deployment configuration is designed exclusively for development and testing on your local machine.
+Never use self-signed SSL certificates in production. The local deployment configuration is designed exclusively for
+development and testing on your local machine.
 :::

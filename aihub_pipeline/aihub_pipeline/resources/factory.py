@@ -1,10 +1,9 @@
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.infrastructure.azure.data_lake.DataLakeAccess import DataLakeAccess
 from aihub_lib.infrastructure.s3.S3StorageSettings import S3StorageSettings
+from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import MilvusIndexType
 from dagster._config.pythonic_config import ConfigurableResourceFactory
 from dagster_aws.s3 import S3PickleIOManager, S3Resource
-from dagster_azure.adls2 import ADLS2DefaultAzureCredential, ADLS2PickleIOManager, ADLS2Resource
 
 from aihub_pipeline.io.AzureDataLakeIOManager import AzureDataLakeIOManager
 from aihub_pipeline.io.DocStoreIOManager import DocStoreIOManager
@@ -77,9 +76,13 @@ def milvus_vector_store_resource(
     vector_store_uri: str,
     vector_store_name: str,
     dimensions: int = 3072,
+    index_type: MilvusIndexType = MilvusIndexType.HNSW,
 ) -> dict[str, ConfigurableResourceFactory]:
     vector_store = MilvusVectorStoreResource(
-        uri=vector_store_uri, collection_name=vector_store_name, embedding_vector_dimension=dimensions
+        uri=vector_store_uri,
+        collection_name=vector_store_name,
+        embedding_vector_dimension=dimensions,
+        index_type=index_type,
     )
     vector_store_io_manager = VectorStoreIOManager(vector_store=vector_store)
     return {
@@ -98,24 +101,6 @@ def local_mongo_milvus_storage_context_resource(
         **milvus_vector_store_resource(
             vector_store_uri=vector_store_uri, vector_store_name=store_name, dimensions=dimensions
         ),
-    }
-
-
-def default_io_manager_azure_datalake_resources(container_name: str) -> dict[str, ConfigurableResourceFactory]:
-    """Factory function for Azure default IO manager resources."""
-    adls2 = ADLS2Resource(
-        storage_account=DataLakeAccess().get_storage_account_name(),
-        credential=ADLS2DefaultAzureCredential(kwargs={}),
-    )
-    adls2_pickle_io_manager = ADLS2PickleIOManager(
-        adls2_file_system=container_name,
-        adls2_prefix=f".{container_name}-dagster/",
-        adls2=adls2,
-    )
-
-    return {
-        "adls2": adls2,
-        "io_manager": adls2_pickle_io_manager,
     }
 
 

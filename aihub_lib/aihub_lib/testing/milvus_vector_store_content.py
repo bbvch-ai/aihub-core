@@ -19,6 +19,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     UPDATED_AT,
 )
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
+from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 
 DEFAULT_DOCUMENTS: list[Document] = [
     Document(
@@ -92,5 +93,6 @@ def drop_collection(
     try:
         client = MilvusClient(uri=uri, token=token)
         client.drop_collection(collection_name=collection_name)
+        create_milvus_vector_store.cache_clear()
     except Exception as e:
         print(f"Failed to drop collection: {e}")

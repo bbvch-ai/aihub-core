@@ -3,8 +3,6 @@ import json
 import subprocess
 import sys
 
-from azure.identity import DefaultAzureCredential
-from azure.mgmt.cosmosdb import CosmosDBManagementClient
 from pymongo import MongoClient
 
 
@@ -188,33 +186,10 @@ def save_credentials_in_mongo(
     print("Credentials successfully saved in MongoDB.")
 
 
-def save_credentials_in_cosmos(
-    cosmos_name: str,
-    api_path: str,
-    app_id: str,
-    app_password: str,
-    subscription_id: str,
-    resource_group: str,
-    tenant_id: str | None,
-    system_message: str | None = None,
-    slack_token: str | None = None,
-):
-    print("Saving credentials in Cosmos DB...")
-    credential = DefaultAzureCredential()
-    cosmos_client = CosmosDBManagementClient(credential, subscription_id)
-    # Retrieve the connection string
-    database_accounts = cosmos_client.database_accounts
-    keys = database_accounts.list_connection_strings(resource_group, cosmos_name)
-    connection_string = keys.connection_strings[0].connection_string
-
-    save_credentials_in_mongo(connection_string, api_path, app_id, app_password, tenant_id, system_message, slack_token)
-    print("Credentials successfully saved in Cosmos DB.")
-
-
 def main():
     parser = argparse.ArgumentParser(
         description="Set up an Azure Bot using the Azure CLI by creating an Azure AD app "
-        "registration and saving its credentials to Cosmos DB."
+        "registration and saving its credentials to MongoDB."
     )
     parser.add_argument("--resource-group", "-rg", required=True, help="Name of the Azure resource group.")
     parser.add_argument("--bot-name", "-bot", required=True, help="Name for the Azure Bot.")
@@ -228,12 +203,10 @@ def main():
     parser.add_argument("--tenant-id", "-tid", default=None, help="Azure tenant ID for the Azure Bot (default: None).")
     parser.add_argument("--sku", "-sku", default="F0", help="Azure Bot SKU (default: 'F0').")
 
-    # Cosmos DB parameters
-    parser.add_argument("--cosmos-name", "-cos", required=False, help="Cosmos DB account name.")
-    parser.add_argument("--subscription-id", "-sub", required=False, help="Azure subscription ID.")
-
     # MongoDB parameters
-    parser.add_argument("--mongo-connection-string", "-mongo", required=False, help="MongoDB connection string.")
+    parser.add_argument(
+        "--mongo-connection-string", "-mongo", required=True, help="MongoDB connection string (FerretDB compatible)."
+    )
 
     # System message
     parser.add_argument("--system-message", "-sys", required=False, help="System message for the bot.")
@@ -256,36 +229,16 @@ def main():
         with open(args.system_message_file) as f:
             system_message = f.read()
 
-    if args.mongo_connection_string:
-        assert all(
-            [not args.cosmos_name, not args.subscription_id]
-        ), "Must specify either MongoDB connection string or Cosmos DB parameters."
-        # Save the credentials in MongoDB.
-        save_credentials_in_mongo(
-            connection_string=args.mongo_connection_string,
-            api_path=args.api_path,
-            app_id=app_id,
-            app_password=app_password,
-            tenant_id=args.tenant_id,
-            system_message=system_message,
-            slack_token=args.slack_token,
-        )
-    else:
-        assert all(
-            [args.cosmos_name, args.subscription_id]
-        ), "Must specify Cosmos DB parameters or MongoDB connection string."
-        # Save the credentials in Cosmos DB.
-        save_credentials_in_cosmos(
-            cosmos_name=args.cosmos_name,
-            api_path=args.api_path,
-            app_id=app_id,
-            app_password=app_password,
-            subscription_id=args.subscription_id,
-            resource_group=args.resource_group,
-            tenant_id=args.tenant_id,
-            system_message=system_message,
-            slack_token=args.slack_token,
-        )
+    # Save the credentials in MongoDB (FerretDB compatible)
+    save_credentials_in_mongo(
+        connection_string=args.mongo_connection_string,
+        api_path=args.token_path,
+        app_id=app_id,
+        app_password=app_password,
+        tenant_id=args.tenant_id,
+        system_message=system_message,
+        slack_token=args.slack_token,
+    )
 
     # Create the Azure Bot resource using a direct az command.
     create_bot_resource(

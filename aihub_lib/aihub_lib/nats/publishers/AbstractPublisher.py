@@ -1,6 +1,6 @@
 import abc
 import logging
-from typing import Annotated, Generic, Literal, TypeVar
+from typing import Annotated, Literal, TypeVar
 
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
@@ -8,10 +8,11 @@ from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTop
 
 logger = logging.getLogger(__name__)
 
+# TypeVar for backward compatibility with existing imports
 TEvent = TypeVar("TEvent", bound=BaseEvent)
 
 
-class AbstractPublisher(Generic[TEvent], abc.ABC):
+class AbstractPublisher[TEvent: BaseEvent](abc.ABC):
     def __init__(
         self,
         name: Annotated[str, "Name of the publisher shown in otel"],

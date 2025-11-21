@@ -21,7 +21,7 @@ from aihub_lib.nats.events.discovery.process.ProcessInstanceDiscoveryResponseEve
     ProcessInstanceDiscoveryResponseEvent,
 )
 from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
-from aihub_lib.nats.events.form import InputTextElement
+from aihub_lib.nats.events.form import InputText
 from aihub_lib.nats.events.process.ProcessEvent import ProcessEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
@@ -193,7 +193,7 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
                 is_process_start=True,
                 event_specs=EventSpecs.from_event_class(HumanStartEvent),
                 form=HumanStartEvent(
-                    payload=InputTextElement(
+                    payload=InputText(
                         label=LocaleString(en=f"This is some label for {HumanStartEvent.event_name_from_class()}")
                     )
                 ).to_formkit_form(),
@@ -283,9 +283,7 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
             (
                 HumanStartEvent,
                 HumanBWorkRequest(
-                    forms=[
-                        HumanBWork(payload=InputTextElement(label=LocaleString(en="This is some label for HumanBWork")))
-                    ]
+                    forms=[HumanBWork(payload=InputText(label=LocaleString(en="This is some label for HumanBWork")))]
                 ),
             ),
             (HumanBWork, CustomProcessStopEvent(payload="Done")),

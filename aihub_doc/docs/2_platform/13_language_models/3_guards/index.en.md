@@ -1,6 +1,5 @@
 ---
 title: Input/output guards
-index: 3
 ---
 
 # LLM guards

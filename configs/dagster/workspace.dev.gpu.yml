@@ -1,0 +1,12 @@
+# ===================================================================
+# Dagster Workspace Configuration - Stage: dev
+# ===================================================================
+# Generated from template. Do not edit directly.
+# Defines code locations for Dagster to load pipelines from.
+# ===================================================================
+
+load_from:
+  - grpc_server:
+      host: default_rag_pipeline
+      port: 4000
+      location_name: default_rag_pipeline
