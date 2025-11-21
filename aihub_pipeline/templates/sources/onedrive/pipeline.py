@@ -13,10 +13,10 @@ from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_defi
 
 # Setup OneDrive remote (reads ONEDRIVE_* env vars)
 onedrive = onedrive_source()
-onedrive.ensure_remote_exists()
 
 # Create pipeline (syncs to data lake)
 defs = default_rclone_to_datalake_definitions(
     datalake_container_name="playground",
     source_remote=f"{onedrive.name}:",
+    rclone_config=onedrive,
 )

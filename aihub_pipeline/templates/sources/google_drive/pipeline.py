@@ -13,10 +13,10 @@ from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_defi
 
 # Setup Google Drive remote (reads GDRIVE_* env vars)
 gdrive = google_drive_source()
-gdrive.ensure_remote_exists()
 
 # Create pipeline (syncs to data lake)
 defs = default_rclone_to_datalake_definitions(
     datalake_container_name="playground",
     source_remote=f"{gdrive.name}:",
+    rclone_config=gdrive,
 )

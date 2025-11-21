@@ -14,10 +14,10 @@ from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_defi
 # Setup S3 remote (reads S3_* env vars)
 s3_settings = GenericRcloneSourceSettings.for_source("S3")
 s3 = s3_settings.to_rclone_source()
-s3.ensure_remote_exists()
 
 # Create pipeline (syncs to data lake)
 defs = default_rclone_to_datalake_definitions(
     datalake_container_name="playground",
+    rclone_config=s3,
     source_remote=f"{s3.name}:bucket-name/path",  # Update with your bucket
 )

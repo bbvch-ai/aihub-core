@@ -13,10 +13,10 @@ from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_defi
 
 # Setup Dropbox remote (reads DROPBOX_* env vars)
 dropbox = dropbox_source()
-dropbox.ensure_remote_exists()
 
 # Create pipeline (syncs to data lake)
 defs = default_rclone_to_datalake_definitions(
     datalake_container_name="playground",
     source_remote=f"{dropbox.name}:",
+    rclone_config=dropbox,
 )

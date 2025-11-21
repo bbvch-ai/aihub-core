@@ -13,10 +13,10 @@ from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_defi
 
 # Setup Box remote (reads BOX_* env vars)
 box = box_source()
-box.ensure_remote_exists()
 
 # Create pipeline (syncs to data lake)
 defs = default_rclone_to_datalake_definitions(
     datalake_container_name="playground",
     source_remote=f"{box.name}:",
+    rclone_config=box,
 )

@@ -5,6 +5,7 @@ from typing import Annotated
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
+from aihub_lib.infrastructure.rclone import RcloneSourceConfig
 from aihub_lib.nats.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
 from dagster import (
     AnchorBasedFilePathMapping,
@@ -364,6 +365,7 @@ def default_rclone_to_datalake_definitions(
     source_remote: Annotated[
         str, "Rclone remote name and path (e.g., 'onedrive:Documents', 's3:bucket/prefix', 'gdrive:MyFolder')"
     ],
+    rclone_config: Annotated[RcloneSourceConfig | None, "Rclone configurations"] = None,
     datalake_directory_name: Annotated[str | None, "Optional subdirectory within container"] = None,
     include_patterns: Annotated[
         list[str] | None, "Include patterns using rclone glob syntax (e.g., ['*.pdf', '*.docx'])"
@@ -450,6 +452,7 @@ def default_rclone_to_datalake_definitions(
         source_remote=source_remote,
         include_patterns=include_patterns,
         exclude_patterns=exclude_patterns,
+        rclone_config=rclone_config,
     )
 
     rclone_io_manager = RcloneIOManager(rclone_client=rclone_client)

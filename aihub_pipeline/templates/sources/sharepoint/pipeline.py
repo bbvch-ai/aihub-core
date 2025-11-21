@@ -13,10 +13,10 @@ from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_defi
 
 # Setup SharePoint remote (reads SHAREPOINT_* env vars)
 sharepoint = sharepoint_source()
-sharepoint.ensure_remote_exists()
 
 # Create pipeline (syncs to data lake)
 defs = default_rclone_to_datalake_definitions(
     datalake_container_name="playground",
+    rclone_config=sharepoint,
     source_remote=f"{sharepoint.name}:",
 )

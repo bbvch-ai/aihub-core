@@ -14,10 +14,10 @@ from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_defi
 # Setup SFTP remote (reads SFTP_* env vars)
 sftp_settings = GenericRcloneSourceSettings.for_source("SFTP")
 sftp = sftp_settings.to_rclone_source()
-sftp.ensure_remote_exists()
 
 # Create pipeline (syncs to data lake)
 defs = default_rclone_to_datalake_definitions(
     datalake_container_name="playground",
+    rclone_config=sftp,
     source_remote=f"{sftp.name}:/path/to/folder",  # Update with your path
 )
