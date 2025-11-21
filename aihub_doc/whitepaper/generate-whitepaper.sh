@@ -4,6 +4,12 @@
 # Generates business-focused whitepaper chapters using LLM
 # Each chapter has its own prompt and source document mapping
 #
+# Features:
+#   - Generates new chapters from technical documentation
+#   - Intelligently improves existing chapters when regenerating
+#   - Preserves manual adjustments while integrating new information
+#   - Maintains consistency across all chapters
+#
 # Usage: ./generate-whitepaper.sh [chapter_id...]
 #   If no chapter_id provided, generates all chapters
 #   Example: ./generate-whitepaper.sh 01 03 05
@@ -135,6 +141,37 @@ build_combined_prompt() {
     echo "═══════════════════════════════════════════════════════════════"
     echo ""
 
+    # Add current chapter version if it exists (for improvement/updates)
+    local output_file="$OUTPUT_DIR/${chapter_id}_output.md"
+    echo "## AKTUELLE VERSION DES KAPITELS"
+    echo ""
+
+    if [ -f "$output_file" ]; then
+        echo "Nachfolgend finden Sie die aktuelle Version dieses Kapitels."
+        echo "Ihre Aufgabe ist es, diese Version zu **verbessern und zu aktualisieren**, falls in der"
+        echo "bereitgestellten Quelldokumentation neue oder aktualisierte Informationen verfügbar sind."
+        echo ""
+        echo "**Wichtig**:"
+        echo "- Behalten Sie manuelle Anpassungen bei, sofern sie nicht im Widerspruch zur Quelldokumentation stehen"
+        echo "- Integrieren Sie neue Informationen nahtlos in die bestehende Struktur"
+        echo "- Bewahren Sie den Schreibstil und Ton der bestehenden Version"
+        echo "- Aktualisieren Sie nur die Teile, die durch neue Quelldokumentation überholt sind"
+        echo ""
+        echo "### Aktuelle Kapitelversion:"
+        echo ""
+        cat "$output_file"
+        echo ""
+    else
+        echo "*(Keine bestehende Version vorhanden - erstellen Sie das Kapitel neu)*"
+        echo ""
+        echo "Da keine bestehende Version existiert, schreiben Sie das Kapitel komplett neu"
+        echo "basierend auf der bereitgestellten Quelldokumentation und den Anweisungen."
+        echo ""
+    fi
+
+    echo "═══════════════════════════════════════════════════════════════"
+    echo ""
+
     # Add source documentation
     echo "## QUELLDOKUMENTATION"
     echo ""
@@ -200,10 +237,25 @@ build_combined_prompt() {
     echo ""
     echo "## IHRE AUFGABE"
     echo ""
-    echo "Generieren Sie nun den Kapitelinhalt gemäss den obigen Anweisungen,"
-    echo "wobei Sie die Quelldokumentation als faktische Grundlage verwenden."
+    if [ -f "$output_file" ]; then
+        echo "**Verbessern und aktualisieren Sie die aktuelle Kapitelversion:**"
+        echo ""
+        echo "1. Prüfen Sie die bereitgestellte Quelldokumentation auf neue oder aktualisierte Informationen"
+        echo "2. Falls neue Informationen vorhanden sind, integrieren Sie diese in die bestehende Version"
+        echo "3. Behalten Sie manuelle Anpassungen und den bestehenden Stil bei"
+        echo "4. Stellen Sie sicher, dass das aktualisierte Kapitel konsistent mit den vorherigen Kapiteln ist"
+        echo "5. Falls keine neuen Informationen vorhanden sind, geben Sie die aktuelle Version unverändert zurück"
+    else
+        echo "**Generieren Sie den Kapitelinhalt neu:**"
+        echo ""
+        echo "1. Verwenden Sie die Quelldokumentation als faktische Grundlage"
+        echo "2. Folgen Sie den kapitel-spezifischen und allgemeinen Anweisungen"
+        echo "3. Stellen Sie sicher, dass der Stil mit den vorherigen Kapiteln konsistent ist"
+    fi
     echo ""
     echo "Schreiben Sie auf Deutsch (Schweizer Hochdeutsch) in einem geschäftsorientierten Stil."
+    echo ""
+    echo "**WICHTIG**: Geben Sie NUR den Kapitelinhalt zurück, keine Meta-Kommentare oder Erklärungen."
 }
 
 # Generate a single chapter using LLM
@@ -213,7 +265,11 @@ generate_chapter() {
     local output_file="$OUTPUT_DIR/${chapter_id}_output.md"
 
     echo -e "${BLUE}═══════════════════════════════════════════════════${NC}"
-    echo -e "${GREEN}Generating Chapter: $chapter_id${NC}"
+    if [ -f "$output_file" ]; then
+        echo -e "${GREEN}Improving Existing Chapter: $chapter_id${NC}"
+    else
+        echo -e "${GREEN}Generating New Chapter: $chapter_id${NC}"
+    fi
     echo -e "${BLUE}═══════════════════════════════════════════════════${NC}"
 
     if [ ! -f "$prompt_file" ]; then
@@ -224,6 +280,10 @@ generate_chapter() {
     echo -e "${BLUE}📝 Using prompt: $prompt_file${NC}"
     echo -e "${BLUE}🤖 Using model: $LLM_MODEL${NC}"
     echo -e "${BLUE}📂 DOCS_ROOT: $DOCS_ROOT${NC}"
+
+    if [ -f "$output_file" ]; then
+        echo -e "${YELLOW}📄 Existing chapter found - will improve with new documentation${NC}"
+    fi
     echo -e "${BLUE}📚 Collecting source documentation...${NC}"
 
     # Show which source files are being collected
@@ -443,8 +503,23 @@ Chapter Files:
 Features:
   - Automatically includes all previously generated chapters in the prompt
   - Ensures consistent writing style, tone, and flow across chapters
+  - Intelligently improves existing chapters when regenerating
+  - Preserves manual adjustments while integrating new documentation
   - Generate chapters sequentially (00, 01, 02...) for best results
   - Each chapter learns from and builds upon previous ones
+
+Regeneration Workflow:
+  When regenerating an existing chapter, the script will:
+  1. Include the current chapter version in the prompt
+  2. Instruct the LLM to improve it with new information from documentation
+  3. Preserve manual adjustments that don't conflict with source docs
+  4. Maintain consistency with the existing style and structure
+
+  This allows you to:
+  - Make manual edits to generated chapters
+  - Update source documentation
+  - Regenerate chapters to integrate new information
+  - Keep consistency even after manual adjustments
 
 Note:
   For best consistency, generate chapters in order. When generating chapter N,
