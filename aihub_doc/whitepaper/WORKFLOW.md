@@ -1,6 +1,7 @@
 # Whitepaper Iterative Refinement Workflow
 
-This document describes the complete workflow for generating, measuring, and iteratively refining the Swiss AI-Hub whitepaper until it meets quality and length targets.
+This document describes the complete workflow for generating, measuring, and iteratively refining the Swiss AI-Hub
+whitepaper until it meets quality and length targets.
 
 ## 🎯 Quality Targets
 
@@ -14,19 +15,19 @@ This document describes the complete workflow for generating, measuring, and ite
 
 All chapter prompts have been updated with new word count targets:
 
-| Chapter | Title | Target Words | Type |
-|---------|-------|--------------|------|
-| 00 | Executive Summary | 600-900 | kurz |
-| 01 | Business Challenge | 400-600 | sehr kurz |
-| 02 | Platform Overview | 400-600 | sehr kurz |
-| 03 | Benutzererfahrung | 900-1300 | mittel |
-| 04 | Wissensmanagement & RAG | 1300-1800 | lang |
-| 05 | AI-Agents | 1300-1800 | lang |
-| 06 | Prozessautomatisierung | 600-900 | kurz |
-| 07 | Administration & Governance | 1300-1800 | lang |
-| 08 | Sicherheit | 1300-1800 | lang |
-| 09 | Compliance & Datenschutz | 1800-2100 | sehr lang |
-| 10 | Deployment & Betrieb | 900-1300 | mittel |
+| Chapter | Title                       | Target Words | Type      |
+| ------- | --------------------------- | ------------ | --------- |
+| 00      | Executive Summary           | 600-900      | kurz      |
+| 01      | Business Challenge          | 400-600      | sehr kurz |
+| 02      | Platform Overview           | 400-600      | sehr kurz |
+| 03      | Benutzererfahrung           | 900-1300     | mittel    |
+| 04      | Wissensmanagement & RAG     | 1300-1800    | lang      |
+| 05      | AI-Agents                   | 1300-1800    | lang      |
+| 06      | Prozessautomatisierung      | 600-900      | kurz      |
+| 07      | Administration & Governance | 1300-1800    | lang      |
+| 08      | Sicherheit                  | 1300-1800    | lang      |
+| 09      | Compliance & Datenschutz    | 1800-2100    | sehr lang |
+| 10      | Deployment & Betrieb        | 900-1300     | mittel    |
 
 **Total Range**: 10,800-14,900 words (target midpoint: ~12,850)
 
@@ -61,6 +62,7 @@ cd /home/user/aihub-core/aihub_doc/whitepaper
 ```
 
 **What happens**:
+
 - Script reads `general_prompt.md` (common guidelines for ALL chapters)
 - Script reads `prompts/XX_prompt.md` (chapter-specific focus)
 - Script reads source docs from `sources/XX_sources.txt`
@@ -68,6 +70,7 @@ cd /home/user/aihub-core/aihub_doc/whitepaper
 - Outputs to `output/XX_output.md`
 
 **Tips**:
+
 - First run: Generate all chapters
 - Subsequent iterations: Regenerate only chapters that need improvement
 - Use better model for quality: `LLM_MODEL=claude-3-7-sonnet-20250219 ./generate-whitepaper.sh`
@@ -84,6 +87,7 @@ Combine all generated chapters into a single document:
 ```
 
 **What happens**:
+
 - Reads all `output/XX_output.md` files
 - Sorts by chapter number
 - Adds table of contents
@@ -103,16 +107,19 @@ Measure the combined whitepaper against targets:
 **What it measures**:
 
 **Length Metrics**:
+
 - Total word count vs 12,000-word target
 - Estimated pages @ 300 words/page
 - Per-chapter word counts (identifies overly long chapters)
 
 **Quality Metrics**:
+
 - Bulletpoint ratio (should be low)
 - "Die Plattform" repetition (phrase variation check)
 - Filler phrase detection (AI-sounding text indicators)
 
 **Business Coverage**:
+
 - Checks for mentions of all 6 Kern-Dimensionen:
   - KOSTEN (Costs, TCO)
   - SICHERHEIT (Security)
@@ -122,6 +129,7 @@ Measure the combined whitepaper against targets:
   - INTEGRATION (Deployment, interoperability)
 
 **Output**:
+
 - Status: WITHIN TARGET or EXCEEDS TARGET
 - Recommendations for improvement
 - Word document with accurate page count
@@ -131,17 +139,20 @@ Measure the combined whitepaper against targets:
 Review the measurement output and identify issues:
 
 **If Total > 12,000 words**:
+
 - Check per-chapter breakdown - which chapters are over their target?
 - Are some chapters far longer than expected?
 - Is Datenschutz chapter (09) appropriately longer (1800-2100 words)?
 
 **If Quality Issues**:
+
 - Too many bulletpoints? (> 50 per 1000 words)
 - Repetitive phrasing? (e.g., "Die Plattform" > 15 per 1000 words)
 - Filler phrases detected? (AI-like writing)
 - Missing business dimensions?
 
 **If Structure Issues**:
+
 - Open individual chapter files in `output/XX_output.md`
 - Check for standalone readability (no cross-references?)
 - Check for Konzept/Prozess/Technik subsections (where appropriate)
@@ -154,11 +165,13 @@ Based on analysis, refine prompts and regenerate:
 **If a specific chapter is too long**:
 
 1. Edit `prompts/XX_prompt.md`:
+
    - Reduce word count target further
    - Remove non-essential topics
    - Simplify structure
 
 2. Regenerate that chapter:
+
    ```bash
    ./generate-whitepaper.sh XX
    ```
@@ -166,11 +179,13 @@ Based on analysis, refine prompts and regenerate:
 **If quality issues (bulletpoints, filler phrases)**:
 
 1. Edit `general_prompt.md`:
+
    - Strengthen "Textfluss" guidelines
    - Add more examples of bad vs good writing
    - Increase emphasis on natural language
 
 2. Regenerate affected chapters:
+
    ```bash
    ./generate-whitepaper.sh  # all chapters
    ```
@@ -197,20 +212,17 @@ Based on analysis, refine prompts and regenerate:
 
 **Stop iterating when ALL of these are met**:
 
-✅ Total word count: 10,800-13,000 words (within 10% of 12,000 target)
-✅ No chapter exceeds its word count target by more than 10%
-✅ Bulletpoint ratio < 30 per 1000 words
-✅ "Die Plattform" repetition < 10 per 1000 words
-✅ No filler phrases detected
-✅ All 6 business dimensions mentioned (especially Datenschutz prominent)
-✅ Each chapter reads naturally (Fließtext, not AI-like)
-✅ Word document page count: 35-42 pages
+✅ Total word count: 10,800-13,000 words (within 10% of 12,000 target) ✅ No chapter exceeds its word count target by more
+than 10% ✅ Bulletpoint ratio < 30 per 1000 words ✅ "Die Plattform" repetition < 10 per 1000 words ✅ No filler phrases
+detected ✅ All 6 business dimensions mentioned (especially Datenschutz prominent) ✅ Each chapter reads naturally
+(Fließtext, not AI-like) ✅ Word document page count: 35-42 pages
 
 ## 🛠️ Tool Reference
 
 ### generate-whitepaper.sh
 
 **Usage**:
+
 ```bash
 ./generate-whitepaper.sh [chapter_ids...]
 
@@ -221,12 +233,14 @@ Based on analysis, refine prompts and regenerate:
 ```
 
 **Environment Variables**:
+
 ```bash
 LLM_MODEL=gpt-4 ./generate-whitepaper.sh        # Use different model
 LLM_MODEL=claude-3-7-sonnet-20250219 ./generate-whitepaper.sh  # Claude
 ```
 
 **Models Recommended**:
+
 - **gemini-2.5-flash** (default): Fast, cost-effective, good quality
 - **claude-3-7-sonnet-20250219**: Highest quality, best for business writing
 - **gpt-4o**: Good balance of speed and quality
@@ -234,6 +248,7 @@ LLM_MODEL=claude-3-7-sonnet-20250219 ./generate-whitepaper.sh  # Claude
 ### combine-whitepaper.sh
 
 **Usage**:
+
 ```bash
 ./combine-whitepaper.sh [output_dir] [output_name] [include_toc]
 
@@ -244,12 +259,14 @@ LLM_MODEL=claude-3-7-sonnet-20250219 ./generate-whitepaper.sh  # Claude
 ```
 
 **Output**:
+
 - `<output_name>.md` - Combined Markdown
 - `<output_name>.docx` - Word document (if pypandoc available)
 
 ### measure-whitepaper.sh
 
 **Usage**:
+
 ```bash
 ./measure-whitepaper.sh [combined_markdown]
 
@@ -259,6 +276,7 @@ LLM_MODEL=claude-3-7-sonnet-20250219 ./generate-whitepaper.sh  # Claude
 ```
 
 **Output**:
+
 - Console report with:
   - Total words and estimated pages
   - Status (WITHIN TARGET / EXCEEDS TARGET)
@@ -299,6 +317,7 @@ whitepaper/
 ### For Natural Writing (Not AI-like)
 
 ❌ **Avoid**:
+
 - Excessive bulletpoints (max 1-2 per subsection)
 - Inflated language ("revolutionäre Plattform", "hochinnovative Lösung")
 - Filler phrases ("Es ist wichtig zu betonen", "Darüber hinaus")
@@ -306,6 +325,7 @@ whitepaper/
 - Overly structured lists
 
 ✅ **Instead**:
+
 - Write in flowing paragraphs with transition sentences
 - Use concrete, specific language
 - Vary sentence structure and length
@@ -315,6 +335,7 @@ whitepaper/
 ### For Business Focus
 
 ✅ **Always Answer**:
+
 - "What problem does this solve for my business?"
 - "How much does it cost?" (TCO, not just licensing)
 - "Is my data safe?" (Swiss context: revDSG, data residency)
@@ -326,9 +347,9 @@ whitepaper/
 
 The user explicitly requested that **Datenschutz** (data privacy) be given significantly more attention:
 
-✅ **Chapter 09** (Compliance) should be longest (1800-2100 words)
-✅ **Throughout all chapters**: Datenschutz aspects get 30-50% more detail
-✅ **Specific questions to answer**:
+✅ **Chapter 09** (Compliance) should be longest (1800-2100 words) ✅ **Throughout all chapters**: Datenschutz aspects get
+30-50% more detail ✅ **Specific questions to answer**:
+
 - Where is data stored physically? (Switzerland, EU, USA?)
 - Who has access? (Admin, Support, Cloud Provider?)
 - How is data prevented from leaving Switzerland?
@@ -341,10 +362,9 @@ The user explicitly requested that **Datenschutz** (data privacy) be given signi
 
 Each chapter must be readable independently:
 
-✅ **No cross-references**: Don't say "as mentioned in Chapter X"
-✅ **Self-contained intro**: 1 paragraph context (max 150 words)
-✅ **Clear subsections**: Use Konzept/Prozess/Technik structure
-✅ **Signaling for selective reading**: Readers can skip technical sections if needed
+✅ **No cross-references**: Don't say "as mentioned in Chapter X" ✅ **Self-contained intro**: 1 paragraph context (max
+150 words) ✅ **Clear subsections**: Use Konzept/Prozess/Technik structure ✅ **Signaling for selective reading**: Readers
+can skip technical sections if needed
 
 ## 🔧 Troubleshooting
 
@@ -409,14 +429,12 @@ sudo apt install pandoc  # or: brew install pandoc
 
 ## 📈 Expected Timeline
 
-**Initial Generation**: 30-60 minutes (all 11 chapters with Gemini Flash)
-**First Measurement**: 2 minutes
-**Analysis**: 10-20 minutes (review output, identify issues)
-**Prompt Refinement**: 15-30 minutes
-**Regeneration**: 15-45 minutes (only affected chapters)
+**Initial Generation**: 30-60 minutes (all 11 chapters with Gemini Flash) **First Measurement**: 2 minutes **Analysis**:
+10-20 minutes (review output, identify issues) **Prompt Refinement**: 15-30 minutes **Regeneration**: 15-45 minutes
+(only affected chapters)
 
-**Typical Iteration Count**: 2-4 iterations to meet all targets
-**Total Time**: 2-4 hours for complete high-quality whitepaper
+**Typical Iteration Count**: 2-4 iterations to meet all targets **Total Time**: 2-4 hours for complete high-quality
+whitepaper
 
 ## ✅ Success Checklist
 

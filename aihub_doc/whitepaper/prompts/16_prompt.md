@@ -1,65 +1,70 @@
 # Kapitel 16: Erweiterbarkeit und Zukunftssicherheit
 
 ## Kapitelziel
-Erklären Sie, wie die Plattform erweiterbar ist, sich an zukünftige Anforderungen anpassen lässt und langfristige Investitionssicherheit bietet (600 Wörter, 2 Seiten).
 
-**WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **kurz** (600 Wörter).
+Dieses Kapitel legt dar, wie die Plattform durch eine offene und modulare Architektur langfristige
+Investitionssicherheit und technologische Souveränität gewährleistet. Es wird erläutert, wie durch die strikte
+Einhaltung offener Standards und Schnittstellen Abhängigkeiten von einzelnen Herstellern (Vendor Lock-in) – insbesondere
+im Bereich der KI-Modelle – konsequent vermieden werden. Der Abschnitt beschreibt die Fähigkeit des Systems, sich
+flexibel an zukünftige technologische Entwicklungen und veränderte Geschäftsanforderungen anzupassen, ohne den Kern der
+Anwendung kostenintensiv refaktorisieren zu müssen. Zudem soll aufgezeigt werden, wie die Lösung nahtlos in bestehende
+IT-Landschaften integriert und durch eigene Entwicklungen maßgeschneidert erweitert werden kann. Abschließend wird
+verdeutlicht, wie transparente Wartungsprozesse und Interoperabilität die Betriebskontinuität und Kosteneffizienz über
+den gesamten Lebenszyklus der Software sicherstellen.
 
-## Business-Dimensionen (Priorität für dieses Kapitel)
-1. **ZUKUNFTSSICHERHEIT** - SEHR WICHTIG: Langfristige Wartbarkeit, technologische Flexibilität, Investitionsschutz
-2. **KOSTEN** - Wichtig: Vermeidung von Lock-in und Neuentwicklung, TCO langfristig
-3. **INTEGRATION** - Wichtig: Erweiterbarkeit für neue Systeme und Use Cases
+## Kernaussagen
 
-**Behandeln Sie diese Dimensionen explizit** mit konkreten Antworten auf Business-Fragen.
+- Investitionssicherheit durch Open Source: Die Basis auf etablierten Open-Source-Lizenzen (wie Apache 2.0) garantiert
+  volle Transparenz und Auditierbarkeit des Quellcodes, wodurch die Software auch unabhängig vom ursprünglichen
+  Hersteller langfristig weiterbetrieben oder angepasst werden kann.
+- Vermeidung von Vendor-Lock-in: Die modulare Systemarchitektur erlaubt den flexiblen Austausch kritischer
+  Kernkomponenten – wie Vektor-Datenbanken oder LLM-Providern – und verhindert so technologische Abhängigkeiten von
+  einzelnen Anbietern oder proprietären Ökosystemen.
+- Individuelle Erweiterbarkeit: Durch umfassende APIs, SDKs und eine Plugin-Architektur können Organisationen
+  maßgeschneiderte Integrationen, spezialisierte Agenten und eigene Workflows entwickeln, um die Plattform exakt an
+  spezifische Geschäftsanforderungen anzupassen.
+- Zukunftssichere Technologiebasis: Die konsequente Ausrichtung auf Cloud-native-Prinzipien (wie Kubernetes-Readiness)
+  und offene Industriestandards stellt sicher, dass die Lösung in modernen Infrastrukturen skalierbar bleibt und sich
+  ohne kostenintensives Refactoring weiterentwickeln lässt.
+- Garantierte Datenportabilität: Der Verzicht auf proprietäre Speicherformate gewährleistet, dass sämtliche Daten und
+  Konfigurationen jederzeit exportierbar sind, was die technologische Souveränität wahrt und Migrationen bei Bedarf
+  drastisch vereinfacht.
+- Nachhaltiges Lifecycle-Management: Professionelle Support-Strukturen und Mechanismen für unterbrechungsfreie Updates
+  (Zero-Downtime) sichern die Betriebskontinuität und gewährleisten, dass die Plattform auch bei dynamischen
+  Marktveränderungen stets auf dem aktuellen Stand der Technik bleibt.
 
-## Themen und Inhalte
+## Umfang
 
-Beschreiben Sie folgende Erweiterbarkeits- und Zukunftssicherheitsthemen und deren geschäftlichen Nutzen:
-
-- **Open-Source-Basis (Apache 2.0)**: Vollständig inspizier- und modifizierbarer Code, keine Black-Box-Abhängigkeit, Community-getrieben mit Ökosystem-Verbesserungen, Fork-Option bei Bedarf, keine Lizenzgebühren (nur Infrastruktur bezahlen)
-- **Modulare Architektur**: Austauschbare Komponenten (Datenbanken, Vector-Stores, LLM-Provider, Authentifizierungssysteme), Standard-basierte Schnittstellen (REST APIs, OpenTelemetry, OAuth/OIDC), keine proprietären Formate (Daten jederzeit exportierbar), Vendor-neutrale Basis
-- **AI-Provider-Unabhängigkeit**: LiteLLM Universal Gateway für 100+ Provider, einfacher Wechsel zwischen Providern ohne Code-Änderungen, Support für selbst-gehostete Modelle (vLLM, llama.cpp), lokale und Air-Gap-Modelle, kein Lock-in auf einzelnen AI-Anbieter
-- **Custom-Entwicklung und Erweiterungen**: Entwickler-freundliche APIs für Custom-Integrationen, Plugin-Architektur für Erweiterungen, Custom-Agents und -Workflows, Dokumentation und SDKs, Open-Source-Community-Contributions
-- **Zukunftssichere Technologie-Stack**: Container-basiert (Kubernetes-ready), Cloud-native-Prinzipien, moderne Standards (OpenTelemetry, OpenAI-API-Kompatibilität), aktive Entwicklung und Roadmap, regelmäßige Updates und neue Features
-- **Langfristige Wartbarkeit**: Zero-Downtime-Updates, Rollback-Fähigkeit, Backward-Kompatibilität, Versionierungs-Strategie, Migration-Pfade für Major-Upgrades, professioneller Support verfügbar (optional)
-
-Fokussieren Sie auf Investitionsschutz, Flexibilität, keine Lock-ins, langfristige Anpassungsfähigkeit.
+max. 600 Wörter, 2 Seiten
 
 ## Business-Fragen, die das Kapitel beantwortet
 
-**ERINNERUNG**: Alle technischen Details müssen am ENDE des Kapitels stehen, klar gekennzeichnet als "Technischer Exkurs" oder "Technische Umsetzung".
-
-1. Ist die Plattform Open Source?
-2. Welche Lizenz wird verwendet (Apache 2.0)?
-3. Kann ich den Code inspizieren und modifizieren?
-4. Gibt es Lizenzgebühren?
-5. Was passiert, wenn der Plattform-Anbieter das Geschäft einstellt?
-6. Kann ich die Plattform forken wenn nötig?
-
-7. Können einzelne Komponenten ausgetauscht werden?
-8. Welche Komponenten sind austauschbar (Datenbanken, Vector-Stores, LLM-Provider)?
-9. Basiert die Plattform auf offenen Standards?
-10. Sind Daten jederzeit exportierbar?
-11. Gibt es proprietäre Formate, die Lock-in erzeugen?
-
-12. Bin ich an einen bestimmten AI-Provider gebunden?
-13. Wie einfach ist der Wechsel zwischen AI-Providern?
-14. Werden selbst-gehostete Modelle unterstützt?
-15. Kann ich lokale Modelle für Air-Gap-Betrieb nutzen?
-
-16. Kann ich Custom-Integrationen entwickeln?
-17. Gibt es APIs und SDKs für Entwickler?
-18. Kann ich Custom-Agents und -Workflows erstellen?
-19. Gibt es eine Plugin-Architektur?
-20. Kann die Community Erweiterungen beitragen?
-
-21. Wie zukunftssicher ist die Technologie-Basis?
-22. Ist die Plattform Kubernetes-ready?
-23. Folgt die Plattform Cloud-native-Prinzipien?
-24. Gibt es eine aktive Roadmap und regelmäßige Updates?
-25. Wie wird Backward-Kompatibilität sichergestellt?
-
-26. Können Updates ohne Downtime eingespielt werden?
-27. Gibt es Rollback-Fähigkeit bei Problemen?
-28. Wie funktionieren Major-Upgrades?
-29. Gibt es professionellen Support?
+- Ist die Plattform Open Source?
+- Welche Lizenz wird verwendet (Apache 2.0)?
+- Kann ich den Code inspizieren und modifizieren?
+- Gibt es Lizenzgebühren?
+- Was passiert, wenn der Plattform-Anbieter das Geschäft einstellt?
+- Kann ich die Plattform forken wenn nötig?
+- Können einzelne Komponenten ausgetauscht werden?
+- Welche Komponenten sind austauschbar (Datenbanken, Vector-Stores, LLM-Provider)?
+- Basiert die Plattform auf offenen Standards?
+- Sind Daten jederzeit exportierbar?
+- Gibt es proprietäre Formate, die Lock-in erzeugen?
+- Bin ich an einen bestimmten AI-Provider gebunden?
+- Wie einfach ist der Wechsel zwischen AI-Providern?
+- Werden selbst-gehostete Modelle unterstützt?
+- Kann ich lokale Modelle für Air-Gap-Betrieb nutzen?
+- Kann ich Custom-Integrationen entwickeln?
+- Gibt es APIs und SDKs für Entwickler?
+- Kann ich Custom-Agents und -Workflows erstellen?
+- Gibt es eine Plugin-Architektur?
+- Kann die Community Erweiterungen beitragen?
+- Wie zukunftssicher ist die Technologie-Basis?
+- Ist die Plattform Kubernetes-ready?
+- Folgt die Plattform Cloud-native-Prinzipien?
+- Gibt es eine aktive Roadmap und regelmäßige Updates?
+- Wie wird Backward-Kompatibilität sichergestellt?
+- Können Updates ohne Downtime eingespielt werden?
+- Gibt es Rollback-Fähigkeit bei Problemen?
+- Wie funktionieren Major-Upgrades?
+- Gibt es professionellen Support?

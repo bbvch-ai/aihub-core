@@ -2,7 +2,8 @@
 
 ## Summary
 
-Updated the entire whitepaper generation system to align with refined quality targets and business focus requirements. All components now work together to produce a concise, high-quality, business-focused German whitepaper under 40 pages.
+Updated the entire whitepaper generation system to align with refined quality targets and business focus requirements.
+All components now work together to produce a concise, high-quality, business-focused German whitepaper under 40 pages.
 
 ## Key Changes
 
@@ -13,28 +14,32 @@ Updated the entire whitepaper generation system to align with refined quality ta
 **Major sections added/enhanced**:
 
 - **Business-kritische Entscheidungsfragen** (lines 20-100):
+
   - 6 Kern-Dimensionen framework: KOSTEN, SICHERHEIT, DATENSCHUTZ, MANAGEMENT, ZUKUNFTSSICHERHEIT, INTEGRATION
   - **DATENSCHUTZ marked as BESONDERS WICHTIG**: 30-50% more detail than other dimensions
   - Specific business questions for each dimension
   - Example format showing before/after for Datenschutz questions
 
 - **Textfluss und Whitepaper-Charakteristik** (lines 42-160):
+
   - Strong emphasis on Fließtext over bulletpoints
   - Maximum 1-2 bulletpoint lists per subsection
   - Examples of good vs AI-like writing
   - Prägnanz guidelines with before/after examples
 
 - **Kapitelaufbau für Standalone-Lesbarkeit** (lines 233-296):
+
   - KRITISCH: Each chapter must be standalone (no cross-references)
   - 3-type subsection structure: KONZEPT (Business), PROZESS (User), TECHNIK (IT)
   - Signaling for selective reading
   - Reduced length guidelines: kurz (600-900), mittel (900-1500), lang (1500-2100)
 
-### 2. Updated All Chapter Prompts (prompts/*.md)
+### 2. Updated All Chapter Prompts (prompts/\*.md)
 
 **Updated**: All 11 chapter prompts (00-10)
 
 **Changes per chapter**:
+
 - Adjusted word count targets to hit 12,000-word total target
 - Added reference to `general_prompt.md` for structure guidelines
 - Added `Business-Dimensionen` section specifying which dimensions are priority
@@ -44,28 +49,28 @@ Updated the entire whitepaper generation system to align with refined quality ta
 
 **New Word Count Distribution**:
 
-| Chapter | Title | Old Target | New Target | Type |
-|---------|-------|-----------|------------|------|
-| 00 | Executive Summary | 800-1200 | 600-900 | kurz |
-| 01 | Business Challenge | ~1200-1600 | 400-600 | sehr kurz |
-| 02 | Platform Overview | ~1600-2000 | 400-600 | sehr kurz |
-| 03 | Benutzererfahrung | 2400-3200 | 900-1300 | mittel |
-| 04 | Wissensmanagement | 2000-2400 | 1300-1800 | lang |
-| 05 | AI-Agents | 2000-2400 | 1300-1800 | lang |
-| 06 | Prozessautomatisierung | 1200-1600 | 600-900 | kurz |
-| 07 | Administration | 2400-3200 | 1300-1800 | lang |
-| 08 | Sicherheit | 2000-2400 | 1300-1800 | lang |
-| 09 | Compliance & Datenschutz | 2400-2800 | 1800-2100 | **sehr lang** |
-| 10 | Deployment | 2400-2800 | 900-1300 | mittel |
+| Chapter | Title                    | Old Target | New Target | Type          |
+| ------- | ------------------------ | ---------- | ---------- | ------------- |
+| 00      | Executive Summary        | 800-1200   | 600-900    | kurz          |
+| 01      | Business Challenge       | ~1200-1600 | 400-600    | sehr kurz     |
+| 02      | Platform Overview        | ~1600-2000 | 400-600    | sehr kurz     |
+| 03      | Benutzererfahrung        | 2400-3200  | 900-1300   | mittel        |
+| 04      | Wissensmanagement        | 2000-2400  | 1300-1800  | lang          |
+| 05      | AI-Agents                | 2000-2400  | 1300-1800  | lang          |
+| 06      | Prozessautomatisierung   | 1200-1600  | 600-900    | kurz          |
+| 07      | Administration           | 2400-3200  | 1300-1800  | lang          |
+| 08      | Sicherheit               | 2000-2400  | 1300-1800  | lang          |
+| 09      | Compliance & Datenschutz | 2400-2800  | 1800-2100  | **sehr lang** |
+| 10      | Deployment               | 2400-2800  | 900-1300   | mittel        |
 
-**Old Total**: ~23,000 words (almost double target!)
-**New Total**: 10,800-14,900 words (midpoint: 12,850) ✅
+**Old Total**: ~23,000 words (almost double target!) **New Total**: 10,800-14,900 words (midpoint: 12,850) ✅
 
 ### 3. Created `measure-whitepaper.sh`
 
 **Purpose**: Measure and verify whitepaper quality and length against targets.
 
 **Features**:
+
 - Total word count vs 12,000-word target
 - Estimated pages @ 300 words/page
 - Per-chapter word count breakdown (identifies overly long chapters)
@@ -84,6 +89,7 @@ Updated the entire whitepaper generation system to align with refined quality ta
 **Purpose**: Combine all generated chapters into single document.
 
 **Features**:
+
 - Sorts chapters numerically
 - Optional table of contents generation
 - Page breaks between chapters (`\newpage`)
@@ -92,12 +98,14 @@ Updated the entire whitepaper generation system to align with refined quality ta
 - Configurable output name and location
 
 **Location**:
+
 - `/home/user/aihub-core/aihub_doc/whitepaper/combine_whitepaper.py`
 - `/home/user/aihub-core/aihub_doc/whitepaper/combine-whitepaper.sh`
 
 ### 5. Created Comprehensive Documentation
 
 **WORKFLOW.md** - Complete iterative refinement guide:
+
 - 5-step iteration cycle (Generate → Combine → Measure → Analyze → Refine)
 - Convergence criteria (when to stop iterating)
 - Tool reference with all commands
@@ -106,6 +114,7 @@ Updated the entire whitepaper generation system to align with refined quality ta
 - Expected timeline: 2-4 hours for complete whitepaper
 
 **USAGE.md** - Quick start and command reference:
+
 - Schnellstart guide
 - Script usage examples
 - Directory structure explanation
@@ -118,12 +127,14 @@ Updated the entire whitepaper generation system to align with refined quality ta
 ### 6. Created Helper Scripts
 
 **update_chapter_prompts.py**:
+
 - Systematically updates all chapter prompts with new word counts
 - Adds WICHTIG notes referencing general_prompt.md
 - Adds Business-Dimensionen sections
 - Removes page-based structure markers
 
 **add_business_dimensions.py**:
+
 - Follow-up script to add Business-Dimensionen sections
 - Handles both German and English chapters
 
@@ -133,24 +144,27 @@ Updated the entire whitepaper generation system to align with refined quality ta
 
 ### Why These Changes?
 
-1. **Length Reduction**: Original prompts would produce ~23,000 words (76 pages) - almost double the 40-page target. New targets reduce to ~12,850 words (43 pages).
+1. **Length Reduction**: Original prompts would produce ~23,000 words (76 pages) - almost double the 40-page target. New
+   targets reduce to ~12,850 words (43 pages).
 
-2. **Business Focus**: User explicitly requested that business decision questions be prioritized, especially Datenschutz for Swiss organizations. New framework ensures these are addressed.
+2. **Business Focus**: User explicitly requested that business decision questions be prioritized, especially Datenschutz
+   for Swiss organizations. New framework ensures these are addressed.
 
-3. **Natural Writing**: User wanted less AI-like text with more Fließtext and fewer bulletpoints. New guidelines with examples help LLM produce natural prose.
+3. **Natural Writing**: User wanted less AI-like text with more Fließtext and fewer bulletpoints. New guidelines with
+   examples help LLM produce natural prose.
 
-4. **Standalone Readability**: User wanted chapters to be readable independently or sequentially. New structure eliminates cross-references and adds clear subsections.
+4. **Standalone Readability**: User wanted chapters to be readable independently or sequentially. New structure
+   eliminates cross-references and adds clear subsections.
 
-5. **Measurement-Driven**: Without measurement, there's no way to verify quality improvements. New tools enable data-driven iterative refinement.
+5. **Measurement-Driven**: Without measurement, there's no way to verify quality improvements. New tools enable
+   data-driven iterative refinement.
 
 ## Quality Targets
 
-✅ **Length**: Maximum 40 pages (~12,000 words)
-✅ **Natural Writing**: Fließtext-dominant, minimal bulletpoints
-✅ **Business Questions**: All 6 Kern-Dimensionen explicitly addressed
-✅ **Datenschutz Emphasis**: Chapter 09 longest (1800-2100 words), 30-50% more detail throughout
-✅ **Structure**: Konzept/Prozess/Technik subsections, standalone chapters
-✅ **Quality Indicators**: Low bulletpoint ratio, no filler phrases, varied language
+✅ **Length**: Maximum 40 pages (~12,000 words) ✅ **Natural Writing**: Fließtext-dominant, minimal bulletpoints ✅
+**Business Questions**: All 6 Kern-Dimensionen explicitly addressed ✅ **Datenschutz Emphasis**: Chapter 09 longest
+(1800-2100 words), 30-50% more detail throughout ✅ **Structure**: Konzept/Prozess/Technik subsections, standalone
+chapters ✅ **Quality Indicators**: Low bulletpoint ratio, no filler phrases, varied language
 
 ## Migration Path
 
@@ -171,6 +185,7 @@ Simply follow WORKFLOW.md - all prompts are already configured correctly.
 ## Files Changed
 
 ### Modified:
+
 - `generate-whitepaper.sh` (fixed arithmetic bug, improved error handling)
 - `general_prompt.md` (extensive enhancements)
 - `prompts/00_prompt.md` through `prompts/10_prompt.md` (all updated)
@@ -178,6 +193,7 @@ Simply follow WORKFLOW.md - all prompts are already configured correctly.
 - `USAGE.md` (updated with new tools)
 
 ### Created:
+
 - `measure-whitepaper.sh` (new measurement tool)
 - `combine_whitepaper.py` (new combination tool)
 - `combine-whitepaper.sh` (bash wrapper)
@@ -190,19 +206,21 @@ Simply follow WORKFLOW.md - all prompts are already configured correctly.
 
 - ✅ Chapter prompts: All 11 updated and verified
 - ✅ Helper scripts: Tested and working
-- ⚠️  Full generation: Not tested (requires LLM API keys in user's environment)
-- ⚠️  Measurement tool: Created but not tested with actual output
-- ⚠️  Word document generation: Requires pypandoc/pandoc (user must install)
+- ⚠️ Full generation: Not tested (requires LLM API keys in user's environment)
+- ⚠️ Measurement tool: Created but not tested with actual output
+- ⚠️ Word document generation: Requires pypandoc/pandoc (user must install)
 
 ## Next Steps for User
 
 1. **Generate whitepaper**:
+
    ```bash
    cd /home/user/aihub-core/aihub_doc/whitepaper
    ./generate-whitepaper.sh
    ```
 
 2. **Combine and measure**:
+
    ```bash
    ./combine-whitepaper.sh
    ./measure-whitepaper.sh swiss_ai_hub_whitepaper.md
@@ -215,6 +233,7 @@ Simply follow WORKFLOW.md - all prompts are already configured correctly.
 ## Expected Outcome
 
 After 2-4 iterations following the workflow:
+
 - High-quality, natural-sounding German whitepaper
 - 35-42 pages in Word document
 - 10,800-13,000 total words
@@ -225,5 +244,4 @@ After 2-4 iterations following the workflow:
 
 ---
 
-**Questions or Issues?**
-See WORKFLOW.md for troubleshooting or README.md for system architecture.
+**Questions or Issues?** See WORKFLOW.md for troubleshooting or README.md for system architecture.

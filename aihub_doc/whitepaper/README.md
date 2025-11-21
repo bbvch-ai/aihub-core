@@ -107,6 +107,7 @@ using the source documentation as your factual basis.
 ```
 
 Then this entire combined prompt is piped to the LLM:
+
 ```bash
 echo "$combined_prompt" | llm --no-stream -m claude-3-7-sonnet-20250219
 ```
@@ -139,12 +140,15 @@ whitepaper/
 ## Prerequisites
 
 1. **Install LLM CLI tool**:
+
    ```bash
    pipx install llm
    ```
+
    See: https://github.com/simonw/llm
 
 2. **Configure API keys** (for your chosen model):
+
    ```bash
    # For Claude:
    llm keys set anthropic
@@ -157,6 +161,7 @@ whitepaper/
    ```
 
 3. **Set model** (optional - default is gemini-2.5-flash):
+
    ```bash
    # Default model (already set in script):
    # LLM_MODEL=gemini-2.5-flash
@@ -170,26 +175,31 @@ whitepaper/
 ## Usage
 
 ### Generate All Chapters
+
 ```bash
 ./generate-whitepaper.sh
 ```
 
 ### Generate Specific Chapters
+
 ```bash
 ./generate-whitepaper.sh 00 03 07
 ```
 
 ### List Available Chapters
+
 ```bash
 ./generate-whitepaper.sh --list
 ```
 
 ### Use Different Model
+
 ```bash
 LLM_MODEL=gpt-4 ./generate-whitepaper.sh 00
 ```
 
 ### Help
+
 ```bash
 ./generate-whitepaper.sh --help
 ```
@@ -255,6 +265,7 @@ Describe how Swiss AI-Hub manages organizational knowledge...
 ### 4. Review and Edit Output
 
 The generated chapter will be in `output/04_output.md`. Review for:
+
 - Accuracy (verify against source docs)
 - Completeness (all key topics covered)
 - Business language (accessible to non-technical readers)
@@ -276,7 +287,8 @@ The generated chapter will be in `output/04_output.md`. Review for:
 
 ### Best Practices:
 
-- **Be specific**: Don't just say "describe RBAC", say "explain how kundenseitiger Admin role enables customer-side administration"
+- **Be specific**: Don't just say "describe RBAC", say "explain how kundenseitiger Admin role enables customer-side
+  administration"
 - **Reference requirements**: Link to specific RFP requirements naturally
 - **Specify length**: Give word count targets (e.g., "6-8 pages, 2400-3200 words")
 - **Set tone**: Be explicit about business vs. technical language
@@ -286,6 +298,7 @@ The generated chapter will be in `output/04_output.md`. Review for:
 ## Source File Guidelines
 
 ### Format:
+
 ```
 # Source Documentation for Chapter X: Title
 # List paths relative to aihub_doc/docs/
@@ -321,27 +334,35 @@ tree ../docs -L 3
 ## Tips for Quality Output
 
 ### 1. Iterate on Prompts
+
 Start with a simple prompt, generate, review, refine the prompt, regenerate.
 
 ### 2. Provide Context
+
 The more specific your prompt, the better the output. Include:
+
 - Exact terminology to use
 - Specific examples to reference
 - Format requirements
 - What to emphasize vs. what to minimize
 
 ### 3. Review Generated Content
+
 Always review for:
+
 - Accuracy (check against source docs)
 - Completeness (all topics covered)
 - Consistency (terminology matches other chapters)
 - Business focus (not too technical)
 
 ### 4. Version Control
+
 Commit both prompts and outputs. Track what prompt generated what output.
 
 ### 5. Test Different Models
+
 Different models have different strengths:
+
 - **Claude Sonnet**: Best for long-form, nuanced business writing
 - **GPT-4 Turbo**: Fast, good for technical accuracy
 - **Gemini Flash**: Very fast, good for drafts
@@ -372,27 +393,34 @@ Different models have different strengths:
 ## Troubleshooting
 
 ### Error: "llm command not found"
+
 ```bash
 pipx install llm
 ```
 
 ### Error: "API key not set"
+
 ```bash
 llm keys set anthropic  # or openai, gemini
 ```
 
 ### Output is too technical
+
 Revise prompt to emphasize:
+
 - "Write in business language accessible to non-technical decision makers"
 - "Avoid technical implementation details"
 - "Focus on WHAT and WHY, not HOW"
 
 ### Output doesn't cover all requirements
+
 Add explicit instruction:
+
 - "This chapter must address the following RFP requirements: [list]"
 - "Explain how each requirement is met with concrete examples"
 
 ### Generation fails
+
 - Check source files exist and paths are correct
 - Try with smaller model (gemini-flash) for testing
 - Check API rate limits
@@ -466,6 +494,7 @@ git commit -m "docs: Add Chapter 4 - Knowledge Management"
 ## Support
 
 For issues with:
+
 - **Script**: Check this README and script comments
 - **LLM tool**: https://github.com/simonw/llm
 - **Source docs**: Refer to main documentation in `../docs/`

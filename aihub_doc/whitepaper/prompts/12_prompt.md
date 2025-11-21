@@ -1,62 +1,68 @@
 # Kapitel 12: User Experience und Interaktion
 
 ## Kapitelziel
-Erklären Sie die Benutzererfahrung der Plattform mit Fokus auf Benutzerfreundlichkeit, Multi-Kanal-Zugang, multi-modale Eingaben und Schweizer Marktanpassung (900 Wörter, 3 Seiten).
 
-**WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **mittel** (900 Wörter).
+Dieses Kapitel beschreibt die zentralen Aspekte der Benutzererfahrung (User Experience) und der Interaktion mit der
+Plattform. Im Fokus steht die Gewährleistung einer intuitiven, barrierearmen und geräteunabhängigen Benutzeroberfläche,
+die über diverse etablierte Kommunikationskanäle hinweg ein konsistentes Erlebnis bietet. Die Plattform unterstützt
+flexible, multimodale Eingabeformen – von Texteingaben über gesprochene Sprache bis hin zum direkten Hochladen von
+Dokumenten – um sich nahtlos in die Arbeitsabläufe der Benutzer einzufügen. Es wird dargelegt, wie die Lösung
+kontextbezogene, nachvollziehbare Konversationen ermöglicht, die auf verifizierbaren Quellen aus der Wissensbasis
+basieren. Ein weiterer Schwerpunkt ist die umfassende Kontrolle der Benutzer über ihre Konversationsdaten und
+persönlichen Informationen, um die Einhaltung von Datenschutzrichtlinien (z.B. GDPR) und Betroffenenrechten zu
+gewährleisten. Abschliessend wird die Anpassungsfähigkeit der Plattform an mehrsprachige Anforderungen und die
+spezifischen Gegebenheiten des Schweizer Marktes, inklusive der Unterstützung lokaler Sprachvarianten, erläutert.
 
-## Business-Dimensionen (Priorität für dieses Kapitel)
-1. **MANAGEMENT** - Sehr wichtig: Benutzerakzeptanz, Change Management, minimaler Schulungsbedarf
-2. **INTEGRATION** - Wichtig: Multi-Kanal-Zugriff (Web, Teams, Slack, Email)
-3. **DATENSCHUTZ** - Wichtig: Transparenz über Datennutzung, Benutzerrechte
+## Kernaussagen
 
-**Behandeln Sie diese Dimensionen explizit** mit konkreten Antworten auf Business-Fragen.
+- Intuitive und konsistente Bedienung: Das User Interface folgt einem barrierearmen „Design-for-All“-Ansatz, der eine
+  intuitive Nutzung auf mobilen wie stationären Endgeräten ohne nennenswerten Schulungsaufwand ermöglicht und sich
+  flexibel an das Corporate Design anpassen lässt.
+- Multimodale Eingabeverarbeitung: Die Plattform unterstützt die nahtlose Kombination verschiedener Eingabeformen, indem
+  sie Textnachrichten, Sprachbefehle (inklusive Schweizerdeutsch) und Dokumenten-Uploads parallel verarbeitet, um
+  natürliche Arbeitsabläufe abzubilden.
+- Kontextsensitive Dialogführung: Interaktionen erfolgen innerhalb eines persistenten Konversationskontextes, wodurch
+  die KI auf vorangegangene Informationen Bezug nehmen kann, um präzise und logisch aufeinander aufbauende Antworten zu
+  generieren.
+- Quellentransparenz und Vertrauen: Zur Verifizierung von Aussagen werden generierte Antworten standardmäßig mit
+  direkten Links zu den zugrundeliegenden Dokumenten aus der Wissensbasis versehen, was die Nachvollziehbarkeit erhöht
+  und Halluzinationen transparent macht.
+- Nutzerzentrierte Datenkontrolle: Anwender verfügen über granulare Verwaltungsrechte für ihre Historie, einschließlich
+  Export- und Löschfunktionen für einzelne Chats oder Profile, um die Wahrung persönlicher Datenschutzrechte und
+  Compliance-Vorgaben sicherzustellen.
+- Lokalisierte Sprachkompetenz: Die Architektur ist auf die mehrsprachige Realität der Schweiz ausgelegt und
+  gewährleistet durch spezialisierte Modelle eine hohe Qualität bei der Verarbeitung und Übersetzung, einschließlich der
+  Unterstützung lokaler Dialekte.
 
-## Themen und Inhalte
+## Umfang
 
-Beschreiben Sie folgende User-Experience-Themen und deren geschäftlichen Nutzen:
-
-- **ChatGPT-ähnliche moderne Oberfläche**: Intuitive, vertraute Benutzerführung, minimaler Schulungsbedarf, responsives Design für Desktop und Mobile
-- **Multi-Kanal-Zugang**: Web-Interface, Microsoft Teams, Slack, Email/Outlook, einheitliche Experience über alle Kanäle
-- **Multi-modale Eingabemöglichkeiten**: Texteingabe mit Intent Recognition, Spracheingabe in archivtauglichen Formaten (WAV, MP3, AIFF, FLAC, ALAC), Dokument-Upload per Drag-and-Drop, umfassende Format-Unterstützung (PDF alle Versionen, Office-Dokumente, Bilder, CSV, XML, EML)
-- **Konversations-Features**: Kontextbewusstsein über Gesprächsrunden, letzte Eingabe nachträglich anpassen und neu generieren, konfigurierbare Aufbewahrungszeiträume, Chat-Verlauf exportieren/ausdrucken, Sitzungsmanagement (ansehen, wiederaktivieren, löschen), gesamtes Profil löschen (Betroffenenrechte)
-- **Wissensintegration und Quellenangaben**: Fragen zu Unternehmensdokumenten, Antworten mit direkten Quellverweisen, aufrufbare Quellenverweise, Warnung bei externen Links (GDPR-Compliance), Versionskontrolle für Gesetze/Verordnungen, Unsicherheit/Konfidenzgrad-Anzeige
-- **Mehrsprachigkeit und Lokalisierung**: UI in Deutsch, Englisch, Französisch, Italienisch; Fragen/Antworten in verschiedenen Sprachen; Übersetzungsqualität vergleichbar DeepL; Schweizerdeutsch-Transkription für Meetings; White Labeling und CI/CD-Anpassung
-
-Fokussieren Sie auf niedrige Einstiegshürde, hohe Akzeptanz, Barrierefreiheit und Schweizer Marktanpassung.
+max. 900 Wörter, 3 Seiten
 
 ## Business-Fragen, die das Kapitel beantwortet
 
-**ERINNERUNG**: Alle technischen Details müssen am ENDE des Kapitels stehen, klar gekennzeichnet als "Technischer Exkurs" oder "Technische Umsetzung".
-
-1. Wie sieht die Benutzeroberfläche aus?
-2. Ist die Oberfläche intuitiv und einfach zu bedienen?
-3. Über welche Kanäle können Nutzer auf die Plattform zugreifen?
-4. Funktioniert die Plattform auf Mobile-Geräten?
-5. Wie viel Schulung benötigen Mitarbeitende?
-
-6. Welche Eingabemöglichkeiten gibt es (Text, Sprache, Dokumente)?
-7. Welche Dateiformate werden für Upload unterstützt?
-8. Kann ich Sprachnachrichten eingeben?
-9. Werden alle PDF-Versionen unterstützt (inkl. PDF/A)?
-10. Funktioniert Drag-and-Drop für Dokumenten-Upload?
-
-11. Behält die AI den Kontext über mehrere Fragen?
-12. Kann ich meine letzte Eingabe nachträglich anpassen?
-13. Wie lange werden Chat-Verläufe aufbewahrt?
-14. Kann ich Aufbewahrungszeiträume konfigurieren?
-15. Kann ich Chat-Verläufe exportieren oder ausdrucken?
-16. Wie verwalte ich alte Sitzungen (ansehen, reaktivieren, löschen)?
-17. Kann ich mein gesamtes Profil löschen?
-
-18. Werden Quellenangaben für AI-Antworten bereitgestellt?
-19. Kann ich Quellen direkt aufrufen?
-20. Wie wird bei externen Links gewarnt (GDPR)?
-21. Gibt es Versionskontrolle für Gesetze und Verordnungen?
-22. Zeigt die AI ihren Konfidenzgrad/Unsicherheit an?
-
-23. In welchen Sprachen ist die Plattform verfügbar?
-24. Können Fragen und Antworten in verschiedenen Sprachen gestellt werden?
-25. Wie ist die Übersetzungsqualität?
-26. Wird Schweizerdeutsch für Meeting-Transkription unterstützt?
-27. Kann die Oberfläche gebrandetwerden (White Label)?
+- Wie sieht die Benutzeroberfläche aus?
+- Ist die Oberfläche intuitiv und einfach zu bedienen?
+- Über welche Kanäle können Nutzer auf die Plattform zugreifen?
+- Funktioniert die Plattform auf Mobile-Geräten?
+- Wie viel Schulung benötigen Mitarbeitende?
+- Welche Eingabemöglichkeiten gibt es (Text, Sprache, Dokumente)?
+- Kann ich Sprachnachrichten eingeben?
+- Werden alle PDF-Versionen unterstützt (inkl. PDF/A)?
+- Funktioniert Drag-and-Drop für Dokumenten-Upload?
+- Behält die AI den Kontext über mehrere Fragen?
+- Kann ich meine letzte Eingabe nachträglich anpassen?
+- Wie lange werden Chat-Verläufe aufbewahrt?
+- Kann ich Aufbewahrungszeiträume konfigurieren?
+- Kann ich Chat-Verläufe exportieren oder ausdrucken?
+- Wie verwalte ich alte Sitzungen (ansehen, reaktivieren, löschen)?
+- Kann ich mein gesamtes Profil löschen?
+- Werden Quellenangaben für AI-Antworten bereitgestellt?
+- Kann ich Quellen direkt aufrufen?
+- Wie wird bei externen Links gewarnt (GDPR)?
+- Gibt es Versionskontrolle für Gesetze und Verordnungen?
+- Zeigt die AI ihren Konfidenzgrad/Unsicherheit an?
+- In welchen Sprachen ist die Plattform verfügbar?
+- Können Fragen und Antworten in verschiedenen Sprachen gestellt werden?
+- Wie ist die Übersetzungsqualität?
+- Wird Schweizerdeutsch für Meeting-Transkription unterstützt?
+- Kann die Oberfläche gebrandetwerden (White Label)?

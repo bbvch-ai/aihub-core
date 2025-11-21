@@ -1,86 +1,77 @@
 # Kapitel 07: Datensicherheit und Datenfluss
 
 ## Kapitelziel
-Erklären Sie, wie Daten während ihres gesamten Lebenszyklus in der Plattform und an allen Ein- und Austrittspunkten gesichert werden (1200 Wörter, 4 Seiten).
 
+Dieses Kapitel legt dar, wie die Integrität, Vertraulichkeit und Verfügbarkeit von Daten über ihren gesamten
+Lebenszyklus hinweg – von der Erfassung über die Verarbeitung bis hin zur Ausgabe – durchgängig gewährleistet wird. Es
+beschreibt die Sicherheitsarchitektur zur Härtung aller Ein- und Austrittspunkte, um manipulative Eingaben abzuwehren
+und unbeabsichtigten Datenabfluss zu verhindern. Ein zentraler Schwerpunkt liegt auf dem Schutz sensibler Informationen
+(PII), unter anderem durch automatisierte Anonymisierungsverfahren vor der Übergabe an verarbeitende Logiken oder
+Sprachmodelle. Des Weiteren wird aufgezeigt, wie durch strikte logische Mandantentrennung sowie durchgehende
+Verschlüsselung (Data-at-Rest und Data-in-Transit) ein Höchstmaß an Sicherheit realisiert wird. Abschließend werden die
+Mechanismen zur revisionssicheren Datenlöschung sowie das kontinuierliche Monitoring zur frühzeitigen Erkennung von
+Anomalien im Datenfluss erläutert.
 
-## Kapitelabgrenzung und Fokus
+## Kernaussagen
 
-**WICHTIG - Fokus dieses Kapitels**: Sicherheit von Daten entlang ihres Lebenszyklus: Eingangspunkte → Verarbeitung → Ausgangspunkte. Datenfluss-Monitoring und Schutz an Ein-/Austrittspunkten.
+- Schutz vor KI-spezifischen Angriffen: Die Sicherheitsarchitektur implementiert spezialisierte Filtermechanismen
+  ("Input Guardrails"), die Angriffe wie Prompt-Injection oder Jailbreaking-Versuche erkennen und blockieren, bevor sie
+  die Sprachmodelle erreichen.
+- Automatisierte PII-Anonymisierung: Integrierte Erkennungsverfahren identifizieren personenbezogene Daten (PII) im
+  Datenstrom und anonymisieren oder schwärzen diese dynamisch, um einen ungewollten Abfluss sensibler Informationen an
+  LLMs zu verhindern.
+- Durchgängige Verschlüsselung: Sämtliche Datenbewegungen werden durch moderne kryptografische Standards (TLS/mTLS)
+  geschützt (Data-in-Transit), während gespeicherte Informationen – von Vektordatenbanken bis zu Logs – verschlüsselt
+  abgelegt werden (Data-at-Rest).
+- Isolation und Mandantentrennung: Eine strikte logische Trennung der Datenräume gewährleistet, dass Informationen
+  verschiedener Mandanten oder Abteilungen isoliert verarbeitet werden und keine Überschneidungen (Data Leaks) zwischen
+  getrennten Kontexten auftreten.
+- Sichere Ein- und Ausgabe-Filterung: Neben der Eingabevalidierung werden auch die generierten KI-Antworten vor der
+  Ausspielung auf sensible Inhalte oder Schadcode geprüft, um die Sicherheit der Endanwender zu garantieren.
+- Data Loss Prevention (DLP): Kontinuierliche Analysen der Datenströme überwachen auf Anomalien und verhindern exzessive
+  Datenexporte oder ungewöhnliche Zugriffsmuster, die auf eine Kompromittierung hindeuten könnten.
+- Revisionssichere Löschverfahren: Systematische Löschprozesse stellen sicher, dass Daten auf Anfrage (z. B. „Recht auf
+  Vergessenwerden“) nicht nur aus dem Index, sondern auch unwiderruflich aus den Vektorspeichern und Caches entfernt
+  werden.
 
-**Behandeln Sie NICHT** (wird in anderen Kapiteln abgedeckt):
-- Infrastruktur-Sicherheitsarchitektur → siehe Kapitel Kapitel 08 (Sicherheitsarchitektur)
-- SSO und Enterprise-Authentifizierungs-Systeme → siehe Kapitel Kapitel 05 (Administration) und 08 (Sicherheitsarchitektur)
-- Container-Isolation und Netzwerk-Policies → siehe Kapitel Kapitel 08
-- Regulatorische Compliance-Details → siehe Kapitel Kapitel 09
+## Umfang
 
-**Struktur-Anforderung**: Technische Details (falls vorhanden) IMMER am Ende des Kapitels als klar gekennzeichneter "Technischer Exkurs" oder "Technische Umsetzung".
-
-**WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **lang** (1200 Wörter).
-
-## Business-Dimensionen (Priorität für dieses Kapitel)
-1. **SICHERHEIT** - SEHR WICHTIG: Input-Validierung, Encryption, Malware-Scanning, Multi-Tenant-Isolation
-2. **DATENSCHUTZ** - SEHR WICHTIG: PII-Detection, Anonymisierung, Data-Deletion, DSGVO-Compliance
-3. **MANAGEMENT** - Wichtig: Dataflow-Monitoring, Security-Operations, Incident-Response
-4. **INTEGRATION** - Wichtig: Sichere API-Integrationen, verschlüsselte Datenübertragung
-
-**Behandeln Sie diese Dimensionen explizit** mit konkreten Antworten auf Business-Fragen.
-
-## Themen und Inhalte
-
-Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
-
-- **Dateneingangspunkte und Sicherheitsmechanismen**: User-Input-Validierung (Schutz vor SQL-Injection/XSS/Command-Injection-Attacks, Prompt-Injection-Defense gegen manipulative Prompts, Input-Sanitization mit automatischer Bereinigung schädlicher Eingaben), Dokument-Upload-Security (Malware-Scanning automatische Virenprüfung bei jedem Upload, APT-Detection und -Prevention für komplexe Bedrohungen, Format-Verifikation dass Dateien wirklich das deklarierte Format haben), externe Datenquellen-Integration-Security (authentifizierte Verbindungen kein ungeschützter Datenzugriff, verschlüsselte Übertragung SSL/TLS für alle externen Verbindungen), API-Ingestion-Security (Authentifizierung via API-Keys/JWT/OAuth2/OIDC/mTLS, Rate-Limiting gegen Überlastung und DoS-Angriffe, Request-Validierung schemabasiert für alle API-Requests); Geschäftlicher Nutzen: Defense-in-Depth mehrschichtige Sicherheit an jedem Eingangspunkt, Schutz vor gängigen Angriffsszenarien, Compliance mit Secure Development Standards, Risikominderung durch präventive Sicherheitskontrollen
-
-- **Datenverarbeitungs-Sicherheit**: PII-Detection und Anonymisierung (Presidio-Integration automatische Erkennung personenbezogener Daten, Anonymisierung vor LLM-Processing PII wird vor AI-Verarbeitung anonymisiert, Verhinderung sensibler Informationen in Prompts, Redaction Schwärzung sensibler Daten in Logs und Outputs), sichere Transformations-Pipelines (isolierte Pipeline-Ausführung keine unautorisierten Zugriffe während Verarbeitung, Audit-Trails für alle Transformationen), Vector-Database-Security (verschlüsselte Speicherung von Embeddings, Zugriffskontrolle auf Collection-Ebene), Context-Data-Security (Verschlüsselung von Chat-Kontexten und Session-Daten, automatische Löschung nach konfigurierbaren Zeiträumen); Geschäftlicher Nutzen: Erfüllung GDPR/revDSG-Anforderungen an Datenminimierung, Schutz sensibler Informationen vor unbeabsichtigter Exposition, Compliance mit Privacy-by-Design-Prinzipien, Risikominimierung bei Datenlecks
-
-- **Datenausgangspunkte und Kontrolle**: LLM-Provider-Kommunikation (verschlüsselte Übertragung SSL/TLS mit Perfect Forward Secrecy, keine Datenretention bei isolierten Deployments, Air-Gap-Option komplett offline nutzbar mit lokalen Modellen, Provider-Datenlokalitäts-Anforderungen durchsetzbar), User-Outputs (Quellenangaben mit DSGVO-konformen Link-Warnungen, Content-Filtering Verhinderung sensibler Daten in Antworten, Redaction automatische Schwärzung von PII in AI-Antworten), API-Responses (sichere Serialisierung keine Daten-Leakage, Rate-Limiting und Output-Validierung), Export-Funktionen (verschlüsselte Exports von Daten/Logs/Audit-Trails, Zugriffsprotokollierung für alle Exports), Log-Aggregations-Exports (sichere Übertragung zu externen SIEM-Systemen ELK/Splunk, optional Anonymisierung von Logs vor Export); Geschäftlicher Nutzen: Vollständige Kontrolle über Daten-Exits, Nachweis dass Daten niemals unkontrolliert das System verlassen, Compliance mit Data-Residency-Anforderungen, Vertrauen durch Transparenz über Datenflüsse
-
-- **Data-at-Rest und Data-in-Transit Security**: Data-at-Rest-Security (TDE Transparent Data Encryption für Datenbanken, verschlüsselte Filesysteme LUKS/dm-crypt, Key-Management HSM-basiert Hardware Security Module oder KMS-Integration, verschlüsselte Backups), Data-in-Transit-Security (SSL/TLS für alle Netzwerk-Kommunikation, Perfect Forward Secrecy PFS vergangene Sessions bleiben sicher bei Key-Kompromittierung, Mutual TLS mTLS für Service-to-Service-Kommunikation, VPN-Integration für Remote-Zugriffe); Geschäftlicher Nutzen: Erfüllung von Compliance-Anforderungen revDSG/ISO 27001/PCI-DSS, Schutz vor Datendiebstahl bei physischem Zugriff auf Server, Schutz vor Man-in-the-Middle-Angriffen, langfristige Datensicherheit
-
-- **Multi-Tenant-Isolation und Data-Deletion**: Multi-Tenant-Isolation (logische Isolation strikte Datenbanktrennung pro Organisation, physische Isolation Option für dedizierte Infrastruktur, Network-Isolation getrennte Netzwerk-Segmente pro Tenant, Storage-Isolation dedizierte Vector-Stores und Object-Storage pro Tenant), Data-Deletion-Security (Secure-Delete Überschreiben gelöschter Daten vs nur Markierung, kaskadierte Löschung alle abhängigen Daten Chunks/Embeddings/Logs werden mitgelöscht, Audit-Trail für Löschungen Nachweis für Compliance Right to be Forgotten, automatische Retention-Policies Daten werden nach Ablauf automatisch gelöscht); Geschäftlicher Nutzen: Compliance mit revDSG/GDPR Right to be Forgotten, Vertrauen durch garantierte Datentrennung zwischen Organisationen, Schutz vor Cross-Tenant-Data-Leakage, rechtliche Absicherung durch nachweisbare Löschung
-
-- **Dataflow-Monitoring und Security-Operations**: Dataflow-Monitoring (Echtzeit-Visualisierung aller Datenflüsse, Anomalie-Erkennung ungewöhnliche Datentransfers werden gemeldet, Data Exfiltration Prevention DLP automatische Blockierung verdächtiger Datentransfers), Security-Operations (Penetration-Testing regelmäßige externe Sicherheitsüberprüfungen, Vulnerability-Management systematisches Patching und Updates, Incident-Response vordefinierte Prozesse für Security-Incidents, Security-Logging unveränderliche Logs aller sicherheitsrelevanten Ereignisse); Geschäftlicher Nutzen: Früherkennung von Sicherheitsvorfällen, schnelle Response bei Incidents, kontinuierliche Verbesserung der Sicherheitslage, Compliance mit Security-Operations-Standards
+max. 1200 Wörter, 4 Seiten
 
 ## Business-Fragen, die das Kapitel beantwortet
 
-1. Wie werden User-Eingaben gegen Injection-Attacks geschützt?
-2. Was ist Prompt-Injection und wie wird dagegen geschützt?
-3. Wie werden hochgeladene Dokumente auf Malware geprüft?
-4. Schützt die Plattform vor Advanced Persistent Threats (APTs)?
-5. Wie werden externe Datenquellen sicher angebunden?
-6. Welche Authentifizierungsmethoden werden für API-Integrationen unterstützt?
-7. Wie wird vor API-Missbrauch und DoS geschützt (Rate-Limiting)?
-
-8. Wie erkennt die Plattform personenbezogene Daten (PII)?
-9. Wird PII automatisch anonymisiert oder geschwärzt?
-10. Wie wird verhindert, dass sensible Daten an LLM-Provider gesendet werden?
-11. Sind Transformations-Pipelines isoliert und auditiert?
-12. Wie werden Embeddings in Vector-Datenbanken geschützt?
-13. Wie wird Chat-Kontext verschlüsselt und wann wird er gelöscht?
-
-14. Wie wird die Kommunikation mit LLM-Providern gesichert?
-15. Werden Daten bei LLM-Providern gespeichert (Retention)?
-16. Kann die Plattform komplett offline betrieben werden (Air-Gap)?
-17. Wie werden Quellenangaben DSGVO-konform dargestellt?
-18. Werden sensible Daten automatisch aus AI-Antworten gefiltert?
-19. Wie werden Daten-Exports gesichert?
-20. Wie werden Logs an externe SIEM-Systeme sicher übertragen?
-
-21. Sind Daten im Ruhezustand verschlüsselt (Data-at-Rest)?
-22. Wie funktioniert Key-Management (HSM, KMS)?
-23. Ist alle Netzwerk-Kommunikation verschlüsselt (SSL/TLS)?
-24. Wird Perfect Forward Secrecy (PFS) unterstützt?
-25. Wird Mutual TLS (mTLS) für Service-to-Service-Kommunikation verwendet?
-
-26. Wie werden Daten verschiedener Organisationen getrennt (Multi-Tenant-Isolation)?
-27. Ist physische Isolation für besonders sensible Organisationen möglich?
-28. Wie werden Daten vollständig gelöscht (Right to be Forgotten)?
-29. Werden gelöschte Daten wirklich überschrieben (Secure-Delete)?
-30. Wie kann ich nachweisen, dass Daten gelöscht wurden (Audit-Trail)?
-
-31. Wie werden Datenflüsse überwacht?
-32. Erkennt die Plattform Anomalien und verdächtige Datentransfers?
-33. Gibt es Data Exfiltration Prevention (DLP)?
-34. Wie funktioniert Incident-Response bei Sicherheitsvorfällen?
-35. Werden regelmäßig Penetration-Tests durchgeführt?
+- Wie werden User-Eingaben gegen Injection-Attacks geschützt?
+- Was ist Prompt-Injection und wie wird dagegen geschützt?
+- Wie werden hochgeladene Dokumente auf Malware geprüft?
+- Schützt die Plattform vor Advanced Persistent Threats (APTs)?
+- Wie werden externe Datenquellen sicher angebunden?
+- Welche Authentifizierungsmethoden werden für API-Integrationen unterstützt?
+- Wie wird vor API-Missbrauch und DoS geschützt (Rate-Limiting)?
+- Wie erkennt die Plattform personenbezogene Daten (PII)?
+- Wird PII automatisch anonymisiert oder geschwärzt?
+- Wie wird verhindert, dass sensible Daten an LLM-Provider gesendet werden?
+- Sind Transformations-Pipelines isoliert und auditiert?
+- Wie werden Embeddings in Vector-Datenbanken geschützt?
+- Wie wird Chat-Kontext verschlüsselt und wann wird er gelöscht?
+- Wie wird die Kommunikation mit LLM-Providern gesichert?
+- Werden Daten bei LLM-Providern gespeichert (Retention)?
+- Kann die Plattform komplett offline betrieben werden (Air-Gap)?
+- Wie werden Quellenangaben DSGVO-konform dargestellt?
+- Werden sensible Daten automatisch aus AI-Antworten gefiltert?
+- Wie werden Daten-Exports gesichert?
+- Wie werden Logs an externe SIEM-Systeme sicher übertragen?
+- Sind Daten im Ruhezustand verschlüsselt (Data-at-Rest)?
+- Wie funktioniert Key-Management (HSM, KMS)?
+- Ist alle Netzwerk-Kommunikation verschlüsselt (SSL/TLS)?
+- Wird Perfect Forward Secrecy (PFS) unterstützt?
+- Wird Mutual TLS (mTLS) für Service-to-Service-Kommunikation verwendet?
+- Wie werden Daten verschiedener Organisationen getrennt (Multi-Tenant-Isolation)?
+- Ist physische Isolation für besonders sensible Organisationen möglich?
+- Wie werden Daten vollständig gelöscht (Right to be Forgotten)?
+- Werden gelöschte Daten wirklich überschrieben (Secure-Delete)?
+- Wie kann ich nachweisen, dass Daten gelöscht wurden (Audit-Trail)?
+- Wie werden Datenflüsse überwacht?
+- Erkennt die Plattform Anomalien und verdächtige Datentransfers?
+- Gibt es Data Exfiltration Prevention (DLP)?
+- Wie funktioniert Incident-Response bei Sicherheitsvorfällen?
+- Werden regelmäßig Penetration-Tests durchgeführt?

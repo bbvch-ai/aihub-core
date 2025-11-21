@@ -1,82 +1,77 @@
 # Kapitel 08: Sicherheitsarchitektur
 
 ## Kapitelziel
-Erklären Sie die mehrschichtige Sicherheitsarchitektur der Plattform mit Fokus auf konkrete Schutzmechanismen und wie sie Schweizer Organisationen vor Bedrohungen schützen (900 Wörter, 3 Seiten).
 
+Dieses Kapitel beschreibt das fundamentale Sicherheitskonzept der Plattform, welches auf einem durchgängigen
+Defense-in-Depth-Ansatz basiert, um Infrastruktur, Netzwerke und Anwendungen gleichermaßen zu schützen. Es wird
+dargelegt, wie eine mehrschichtige Abwehrstrategie die Vertraulichkeit, Integrität und Verfügbarkeit (CIA-Triade) von
+Informationen sicherstellt, ohne von einer einzelnen Technologiekomponente abhängig zu sein. Der Fokus liegt auf den
+systemischen Schutzmechanismen für Identitätsmanagement, Datenverschlüsselung und Angriffsprävention, die gemeinsam ein
+widerstandsfähiges Sicherheitsniveau gewährleisten. Dabei wird aufgezeigt, wie die Architektur darauf ausgelegt ist,
+schweizerische regulatorische Anforderungen und internationale Compliance-Standards nachhaltig zu erfüllen. Abschließend
+verdeutlicht das Kapitel, wie proaktive Sicherheitsoperationen und Überwachungsmaßnahmen die Resilienz gegenüber sich
+wandelnden Bedrohungslagen dauerhaft aufrechterhalten.
 
-## Kapitelabgrenzung und Fokus
+## Kernaussagen
 
-**WICHTIG - Fokus dieses Kapitels**: Mehrschichtige Sicherheitsarchitektur der Plattform: Infrastruktur, Netzwerk, Authentifizierung, Verschlüsselung. Defense-in-Depth-Ansatz.
+- Mehrschichtige Abwehr (Defense-in-Depth): Das Sicherheitskonzept basiert auf einer Defense-in-Depth-Strategie, die
+  Schutzmechanismen auf Netzwerk-, Infrastruktur- und Anwendungsebene kombiniert, um Angriffe durch redundante Barrieren
+  effektiv abzuwehren.
+- Kryptografische Absicherung: Die Architektur erzwingt eine durchgängige Verschlüsselung aller Daten im Ruhezustand
+  (Data-at-Rest) sowie während der Übertragung (Data-in-Transit) unter Verwendung aktueller Industriestandards und eines
+  strikten Schlüsselmanagements.
+- Netzwerkisolation und Air-Gap: Zur Minimierung der Angriffsfläche unterstützt das System eine strikte
+  Netzwerksegmentierung bis hin zum vollständigen Air-Gap-Betrieb, der kritische Komponenten physisch vom öffentlichen
+  Internet isoliert.
+- KI-spezifische Schutzschilde (Security Guards): Spezialisierte Security-Layer überwachen Eingaben auf KI-typische
+  Angriffsvektoren wie Prompt-Injections oder Jailbreaking-Versuche und blockieren diese, bevor sie verarbeitende
+  Modelle erreichen.
+- Architektonischer Datenschutz: Integrierte Anonymisierungsdienste sorgen auf Architekturebene dafür, dass
+  personenbezogene Daten (PII) automatisch maskiert werden, bevor sie an Backend-Systeme oder LLMs weitergeleitet
+  werden.
+- Integrationsfähige Authentifizierungsstandards: Die Plattform setzt auf offene Standards (OIDC, SAML) zur nahtlosen
+  Einbindung in bestehende Enterprise-Identitätsmanagement-Systeme, um Multi-Faktor-Authentifizierung (MFA) und Single
+  Sign-On (SSO) systemweit durchzusetzen.
+- Kontinuierliche Validierung: Die Widerstandsfähigkeit der Sicherheitsarchitektur wird durch regelmäßige, unabhängige
+  Penetrationstests und Sicherheitsaudits überprüft, um Schwachstellen proaktiv zu identifizieren und zu beheben.
 
-**Behandeln Sie NICHT** (wird in anderen Kapiteln abgedeckt):
-- Datenfluss-Details (Ingress → Processing → Egress) → siehe Kapitel Kapitel 07 (Datensicherheit und Datenfluss)
-- Detaillierte Compliance-Mechanismen → siehe Kapitel Kapitel 09
-- Administrative Governance und RBAC-Details → siehe Kapitel Kapitel 05 (Administration)
-- PII-Detection im Datenfluss-Kontext → siehe Kapitel Kapitel 07
+## Umfang
 
-**Struktur-Anforderung**: Technische Details (falls vorhanden) IMMER am Ende des Kapitels als klar gekennzeichneter "Technischer Exkurs" oder "Technische Umsetzung".
-
-**WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **mittel** (900 Wörter).
-
-## Business-Dimensionen (Priorität für dieses Kapitel)
-1. **SICHERHEIT** - SEHR WICHTIG: E2E-Verschlüsselung, Zero-Trust, Network Security, Angriffsprävention
-2. **DATENSCHUTZ** - Sehr wichtig: Data-at-Rest, Data-in-Transit, Key Management, PII-Protection
-3. **INTEGRATION** - Wichtig: Enterprise SSO, Security Monitoring, API-Security
-
-**Behandeln Sie diese Dimensionen explizit** mit konkreten Antworten auf Business-Fragen.
-
-## Themen und Inhalte
-
-Beschreiben Sie folgende Sicherheitsthemen und deren geschäftlichen Nutzen:
-
-- **Authentifizierung und Autorisierung**: Enterprise SSO (OAuth2/OIDC mit Azure AD, Keycloak), Multi-Faktor-Authentifizierung, API-Token-Management, Session-Management, feinkörnige Berechtigungsprüfung
-- **Datenschutz und Verschlüsselung**: SSL/TLS für Datenübertragung, Data-at-Rest-Encryption, Transparent Data Encryption (TDE), Disk Encryption, Key Management (Azure Key Vault, HSM)
-- **Input-Validierung und Angriffsprävention**: Schutz gegen Injection-Angriffe (SQL, Command, XSS), Malware-Scanning bei Dokument-Upload, APT-Detection, Prompt-Injection-Defense, Rate-Limiting, Security Guards für Agent-Validierung
-- **Netzwerksicherheit**: Container-Isolation, Network Policies, Firewall-Regeln (Ingress/Egress), Reverse Proxy (Traefik), Air-Gapped Deployment für sensible Umgebungen
-- **Datenschutz und Anonymisierung**: PII-Detection mit Presidio-Integration, Anonymisierung vor LLM-Verarbeitung, Prompt-Privacy-Mechanismen, Multi-Tenant-Architektur mit strikter Tenant-Trennung
-- **Security Operations**: Regelmäßige Penetrationstests durch Drittanbieter, Sicherheitsaudits, Vulnerability Management, Security Monitoring, Incident-Response-Prozesse
-
-Fokussieren Sie auf Defense-in-Depth-Ansatz, konkrete Schutzmechanismen und wie diese Schweizer Compliance-Anforderungen (revDSG, ISO 27001) erfüllen.
+max. 900 Wörter, 3 Seiten
 
 ## Business-Fragen, die das Kapitel beantwortet
 
-1. Wie schützt die Plattform vor unbefugtem Zugriff?
-2. Unterstützt die Plattform Enterprise-SSO (Azure AD, Keycloak)?
-3. Wie funktioniert Multi-Faktor-Authentifizierung?
-4. Wie werden API-Token sicher verwaltet?
-5. Wie granular sind Berechtigungsprüfungen?
-
-6. Sind Daten während der Übertragung verschlüsselt (SSL/TLS)?
-7. Werden gespeicherte Daten verschlüsselt (Data-at-Rest)?
-8. Wie werden Verschlüsselungsschlüssel verwaltet?
-9. Wird Verschlüsselung auf Datenbank-Ebene unterstützt (TDE)?
-
-10. Wie schützt die Plattform vor Injection-Angriffen (SQL, XSS, Command)?
-11. Werden hochgeladene Dokumente auf Malware gescannt?
-12. Wie wird verhindert, dass Benutzer Malware hochladen oder verbreiten?
-13. Welche Mechanismen gibt es gegen Prompt-Injection-Angriffe?
-14. Wie wird die Plattform vor DoS/DDoS-Angriffen geschützt?
-15. Was sind "Security Guards" und wie funktionieren sie?
-
-16. Wie sind Services untereinander isoliert?
-17. Welche Firewall-Mechanismen sind implementiert?
-18. Kann die Plattform komplett vom Internet isoliert betrieben werden (Air-Gapped)?
-19. Wie wird externer Zugriff gesichert?
-
-20. Wie erkennt die Plattform persönliche Informationen (PII) in Dokumenten?
-21. Werden sensible Daten vor LLM-Verarbeitung anonymisiert?
-22. Wie wird verhindert, dass Benutzer sensible Informationen in Prompts eingeben?
-23. Können Rückschlüsse auf interne Benutzer aus anonymisierten Daten gezogen werden?
-24. Wie wird sichergestellt, dass Nutzerdaten nicht für Modellverbesserung missbraucht werden?
-25. Wie ist die Daten-Isolation zwischen verschiedenen Mandanten (Multi-Tenancy)?
-
-26. Läuft das LLM auf isolierter und sicherer Infrastruktur?
-27. Können Daten an Dritte gelangen?
-28. Welche Netzwerk-Isolation gibt es zwischen Komponenten?
-
-29. Werden regelmäßige Penetrationstests durchgeführt?
-30. Wer führt Sicherheitsaudits durch (intern oder Dritte)?
-31. Wie werden Sicherheitslücken identifiziert und behoben?
-32. Wie wird kontinuierlich auf Bedrohungen überwacht?
-33. Gibt es definierte Incident-Response-Prozesse?
-34. Wie werden Security-Updates eingespielt?
+- Wie schützt die Plattform vor unbefugtem Zugriff?
+- Unterstützt die Plattform Enterprise-SSO (Azure AD, Keycloak)?
+- Wie funktioniert Multi-Faktor-Authentifizierung?
+- Wie werden API-Token sicher verwaltet?
+- Wie granular sind Berechtigungsprüfungen?
+- Sind Daten während der Übertragung verschlüsselt (SSL/TLS)?
+- Werden gespeicherte Daten verschlüsselt (Data-at-Rest)?
+- Wie werden Verschlüsselungsschlüssel verwaltet?
+- Wird Verschlüsselung auf Datenbank-Ebene unterstützt (TDE)?
+- Wie schützt die Plattform vor Injection-Angriffen (SQL, XSS, Command)?
+- Werden hochgeladene Dokumente auf Malware gescannt?
+- Wie wird verhindert, dass Benutzer Malware hochladen oder verbreiten?
+- Welche Mechanismen gibt es gegen Prompt-Injection-Angriffe?
+- Wie wird die Plattform vor DoS/DDoS-Angriffen geschützt?
+- Was sind "Security Guards" und wie funktionieren sie?
+- Wie sind Services untereinander isoliert?
+- Welche Firewall-Mechanismen sind implementiert?
+- Kann die Plattform komplett vom Internet isoliert betrieben werden (Air-Gapped)?
+- Wie wird externer Zugriff gesichert?
+- Wie erkennt die Plattform persönliche Informationen (PII) in Dokumenten?
+- Werden sensible Daten vor LLM-Verarbeitung anonymisiert?
+- Wie wird verhindert, dass Benutzer sensible Informationen in Prompts eingeben?
+- Können Rückschlüsse auf interne Benutzer aus anonymisierten Daten gezogen werden?
+- Wie wird sichergestellt, dass Nutzerdaten nicht für Modellverbesserung missbraucht werden?
+- Wie ist die Daten-Isolation zwischen verschiedenen Mandanten (Multi-Tenancy)?
+- Läuft das LLM auf isolierter und sicherer Infrastruktur?
+- Können Daten an Dritte gelangen?
+- Welche Netzwerk-Isolation gibt es zwischen Komponenten?
+- Werden regelmäßige Penetrationstests durchgeführt?
+- Wer führt Sicherheitsaudits durch (intern oder Dritte)?
+- Wie werden Sicherheitslücken identifiziert und behoben?
+- Wie wird kontinuierlich auf Bedrohungen überwacht?
+- Gibt es definierte Incident-Response-Prozesse?
+- Wie werden Security-Updates eingespielt?

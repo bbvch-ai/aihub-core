@@ -1,70 +1,63 @@
 # Kapitel 03: Datensouveränität und vollständige Kundenkontrolle
 
 ## Kapitelziel
-Erklären Sie, wie die Plattform vollständige Kontrolle über Daten und AI-Systeme gewährleistet und Datensouveränitäts-Anforderungen erfüllt (1200 Wörter, 4 Seiten).
 
+Dieses Kapitel legt dar, wie die Auftraggeber die uneingeschränkte Hoheit über sämtliche Daten und Informationsflüsse
+wahren, unabhängig vom gewählten Betriebsmodell. Es wird aufgezeigt, wie durch strikte Trennung von Datenhaltung und
+Verarbeitungsprozessen sichergestellt wird, dass strengste Vorgaben zur Data Residency jederzeit erfüllt und
+kontrolliert werden können. Ein zentraler Schwerpunkt liegt auf der Befähigung der Organisation, das Verhalten der
+eingesetzten KI-Modelle transparent zu steuern und die Nachvollziehbarkeit der Ergebnisse zu garantieren, um
+intransparente Entscheidungsprozesse („Black-Box“-Effekte) systematisch auszuschließen. Des Weiteren wird der Nachweis
+erbracht, dass die Systemarchitektur durch Standardisierung und Interoperabilität eine maximale technologische
+Unabhängigkeit gewährleistet. Ziel ist es, aufzuzeigen, wie Risiken eines Vendor-Lock-ins eliminiert werden und eine
+langfristige Investitionssicherheit sowie strategische Handlungsfähigkeit für die öffentliche Verwaltung sichergestellt
+wird.
 
-## Kapitelabgrenzung und Fokus
+## Kernaussagen
 
-**WICHTIG - Fokus dieses Kapitels**: Deployment-Optionen für Datensouveränität, kundenseitige Kontrolle über Infrastruktur und Konfiguration, Vendor-Unabhängigkeit durch modulare Architektur
+- Garantierte Datenresidenz: Die Plattformarchitektur ermöglicht den Betrieb in vollständig isolierten Umgebungen
+  (Air-Gap) oder im eigenen Rechenzentrum, wodurch sichergestellt wird, dass Daten den definierten Rechtsraum (z. B.
+  Schweiz) physisch niemals verlassen.
+- Ausschluss externer Zugriffe: Im Gegensatz zu SaaS-Modellen verbleibt die operative Hoheit vollständig bei der
+  auftraggebenden Organisation; der Plattformanbieter hat keinen technischen oder administrativen Zugriff auf
+  verarbeitete Inhalte oder die Wissensdatenbanken.
+- Unabhängigkeit von Modell-Anbietern: Die Plattform entkoppelt die Anwendungsebene von den KI-Modellen, sodass die
+  Organisation frei entscheiden kann, welche LLMs (Proprietär oder Open Source) eingesetzt werden, ohne strategische
+  Abhängigkeiten von einzelnen US-Hyperscalern einzugehen.
+- Vermeidung von Vendor-Lock-in: Durch die Speicherung von Vektordaten und Konfigurationen in offenen, standardisierten
+  Formaten wird verhindert, dass Unternehmenswissen in proprietären Datensilos gefangen ist; ein Systemwechsel oder
+  Datenexport ist jederzeit möglich.
+- Nachhaltige Investitionssicherheit: Die Modularität der Architektur stellt sicher, dass bei Marktaustritt eines
+  Teilanbieters oder bei technologischen Paradigmenwechseln einzelne Komponenten (wie Vektor-Stores oder LLMs)
+  ausgetauscht werden können, ohne die gesamte Lösung neu aufbauen zu müssen.
 
-**Behandeln Sie NICHT** (wird in anderen Kapiteln abgedeckt):
-- Detaillierte Compliance-Mechanismen (revDSG, GDPR, AI Act) → siehe Kapitel Kapitel 09 (Regulatorische Compliance)
-- Implementierungsdetails von Consent-Management → siehe Kapitel Kapitel 09
-- Technische Details zu Lösch-Workflows → siehe Kapitel Kapitel 09
-- Detaillierte Audit-Trail-Implementierung → siehe Kapitel Kapitel 04 (Plattform-Transparenz)
-- Sicherheitsarchitektur-Details → siehe Kapitel Kapitel 08 (Sicherheitsarchitektur)
+## Umfang
 
-**Struktur-Anforderung**: Technische Details (falls vorhanden) IMMER am Ende des Kapitels als klar gekennzeichneter "Technischer Exkurs" oder "Technische Umsetzung".
-
-**WICHTIG**: Folgen Sie den Richtlinien in `general_prompt.md` für Textfluss, Struktur und Business-Fragen. Dieses Kapitel ist **lang** (1200 Wörter).
-
-## Business-Dimensionen (Priorität für dieses Kapitel)
-1. **DATENSCHUTZ** - SEHR WICHTIG: Datensouveränität, Schweizer Hosting, Data Residency
-2. **ZUKUNFTSSICHERHEIT** - Sehr wichtig: Vendor-Unabhängigkeit, modulare Architektur, Komponentenaustauschbarkeit
-3. **MANAGEMENT** - Wichtig: Governance-Mechanismen, RBAC-Kontrolle, Administrative Autonomie
-4. **SICHERHEIT** - Wichtig: Isolation, Air-Gap-Betrieb, Zugriffskontrolle
-
-**Behandeln Sie diese Dimensionen explizit** mit konkreten Antworten auf Business-Fragen.
-
-## Themen und Inhalte
-
-Beschreiben Sie folgende Themen und deren geschäftlichen Nutzen:
-
-- **Deployment-Optionen für vollständige Datensouveränität**: Schweizer Hosting (dedizierte Cloud-Infrastruktur in ISO-zertifizierten Schweizer Rechenzentren), On-Premise-Deployment (Integration mit bestehenden Datenbanken MSSQL/Oracle/PostgreSQL), Isolierte Infrastruktur (keine Shared-Tenancy, vollständige Netzwerk-Isolation), Air-Gap-Betrieb (ohne Internetverbindung für höchste Sicherheit), Hybrid-Szenarien (Kombination verschiedener Deployment-Modelle je nach Datensensitivität); Geschäftlicher Nutzen: Vollständige Compliance mit revDSG und Data-Residency-Anforderungen, keine Abhängigkeit von externen Cloud-Providern, Anpassung an organisatorische Sicherheitsrichtlinien, Vertrauensbildung bei regulierten Branchen und öffentlicher Verwaltung
-
-- **Kundenkontrolle über Administration und Konfiguration**: RBAC-basierte Administration (kundenseitige Administrationsrollen mit granularen Berechtigungen), Datenquellen-Kontrolle (volle Steuerung über Datenfluss und -nutzung), RAG-Konfiguration (Kontrolle über Vector-Stores, Chunking-Strategien, Retrieval-Parameter), AI-Modell-Kontrolle (Entscheidung über eingesetzte Modelle, Training, Fine-Tuning, Versionierung), Governance-Mechanismen (Feedback-Systeme, Bias-Monitoring, Human-in-the-Loop-Prozesse); Geschäftlicher Nutzen: Keine Black-Box mit voller Transparenz und Steuerung, Anpassung an interne Governance-Anforderungen, Risikominimierung durch menschliche Aufsicht über kritische AI-Entscheidungen, kontinuierliche Qualitätssicherung
-
-- **Compliance-Enabler durch Datensouveränität**: Vollständige Datenkontrolle ermöglicht Compliance (Details zu spezifischen Compliance-Mechanismen siehe Kapitel 09), Schweizer Hosting erfüllt Data-Residency-Anforderungen, Air-Gap-Option für höchste Sicherheitsanforderungen, Kunden-kontrollierte Administration erlaubt Umsetzung interner Governance-Vorgaben; Geschäftlicher Nutzen: Grundlage für revDSG/GDPR-Compliance durch vollständige Kontrolle, Transparenz-Anforderungen erfüllbar durch offene Architektur, Flexibilität zur Anpassung an sich ändernde regulatorische Anforderungen
-
-- **Vendor-Unabhängigkeit durch modulare Architektur**: Open-Source-Basis (Apache 2.0 Lizenzierung, transparenter Code), Standardbasierte Schnittstellen (REST APIs, OpenTelemetry, OAuth/OIDC), Komponentenaustauschbarkeit (Datenbanken, Vector-Stores, LLM-Provider, Authentifizierungssysteme austauschbar), Multi-Provider-Support (gleichzeitige Nutzung verschiedener LLM-Anbieter), keine proprietären Formate (Daten jederzeit exportierbar); Geschäftlicher Nutzen: Langfristige Investitionssicherheit ohne Abhängigkeit von einzelnen Anbietern, Flexibilität bei Technologiewechsel ohne System-Neubau, Verhandlungsstärke gegenüber Lieferanten, Anpassung an sich ändernde regulatorische/technische Anforderungen
+max. 1200 Wörter, 4 Seiten
 
 ## Business-Fragen, die das Kapitel beantwortet
 
-1. Welche Deployment-Optionen bietet die Plattform zur Sicherstellung der Datensouveränität?
-2. Kann die Plattform vollständig in der Schweiz betrieben werden, ohne dass Daten ins Ausland übertragen werden?
-3. Unterstützt die Plattform On-Premise-Deployment mit unseren bestehenden Datenbanken (MSSQL, Oracle, PostgreSQL)?
-4. Was ist Air-Gap-Betrieb und wann ist er erforderlich?
-5. Wie stellt die Plattform sicher, dass keine Daten unkontrolliert die Schweiz verlassen?
-6. Können wir verschiedene Deployment-Modelle für unterschiedliche Datensensitivitäten kombinieren?
-
-7. Wer kontrolliert die Administration der Plattform – wir oder der Anbieter?
-8. Wie funktioniert die rollenbasierte Zugriffskontrolle (RBAC) und welche Rollen sind verfügbar?
-9. Welche Kontrolle habe ich über Datenquellen und RAG-Konfigurationen?
-10. Kann ich kontrollieren, welche AI-Modelle verwendet werden und wie sie trainiert werden?
-11. Wie stelle ich sicher, dass AI-Entscheidungen von Menschen überprüft werden können (Human-in-the-Loop)?
-12. Welche Governance-Mechanismen sind eingebaut (Feedback, Bias-Monitoring)?
-
-13. Wie erfüllt die Plattform revDSG-Anforderungen?
-14. Unterstützt die Plattform Anonymisierung sensibler Daten (PII-Erkennung)?
-15. Wie wird Consent-Management gehandhabt?
-16. Können Daten vollständig gelöscht werden (Right to be Forgotten / Art. 17 DSGVO)?
-17. Wie werden Audit-Trails für Compliance-Nachweise bereitgestellt?
-18. Unterstützt die Plattform Data Lineage für regulatorische Audits?
-19. Wie integriert sich die Plattform mit eGov-Portalen und staatlichen Identitätssystemen?
-
-20. Verhindert die Architektur Vendor Lock-in?
-21. Können einzelne Komponenten (Datenbank, Vector-Store, LLM-Provider) ausgetauscht werden?
-22. Basiert die Plattform auf offenen Standards oder proprietären Technologien?
-23. Sind unsere Daten jederzeit exportierbar und in anderen Systemen nutzbar?
-24. Kann ich mehrere LLM-Anbieter gleichzeitig nutzen?
+- Welche Deployment-Optionen bietet die Plattform zur Sicherstellung der Datensouveränität?
+- Kann die Plattform vollständig in der Schweiz betrieben werden, ohne dass Daten ins Ausland übertragen werden?
+- Unterstützt die Plattform On-Premise-Deployment mit unseren bestehenden Datenbanken (MSSQL, Oracle, PostgreSQL)?
+- Was ist Air-Gap-Betrieb und wann ist er erforderlich?
+- Wie stellt die Plattform sicher, dass keine Daten unkontrolliert die Schweiz verlassen?
+- Können wir verschiedene Deployment-Modelle für unterschiedliche Datensensitivitäten kombinieren?
+- Wer kontrolliert die Administration der Plattform – wir oder der Anbieter?
+- Wie funktioniert die rollenbasierte Zugriffskontrolle (RBAC) und welche Rollen sind verfügbar?
+- Welche Kontrolle habe ich über Datenquellen und RAG-Konfigurationen?
+- Kann ich kontrollieren, welche AI-Modelle verwendet werden und wie sie trainiert werden?
+- Wie stelle ich sicher, dass AI-Entscheidungen von Menschen überprüft werden können (Human-in-the-Loop)?
+- Welche Governance-Mechanismen sind eingebaut (Feedback, Bias-Monitoring)?
+- Wie erfüllt die Plattform revDSG-Anforderungen?
+- Unterstützt die Plattform Anonymisierung sensibler Daten (PII-Erkennung)?
+- Wie wird Consent-Management gehandhabt?
+- Können Daten vollständig gelöscht werden (Right to be Forgotten / Art. 17 DSGVO)?
+- Wie werden Audit-Trails für Compliance-Nachweise bereitgestellt?
+- Unterstützt die Plattform Data Lineage für regulatorische Audits?
+- Wie integriert sich die Plattform mit eGov-Portalen und staatlichen Identitätssystemen?
+- Verhindert die Architektur Vendor Lock-in?
+- Können einzelne Komponenten (Datenbank, Vector-Store, LLM-Provider) ausgetauscht werden?
+- Basiert die Plattform auf offenen Standards oder proprietären Technologien?
+- Sind unsere Daten jederzeit exportierbar und in anderen Systemen nutzbar?
+- Kann ich mehrere LLM-Anbieter gleichzeitig nutzen?

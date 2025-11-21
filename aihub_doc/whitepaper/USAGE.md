@@ -32,6 +32,7 @@ cd aihub_doc/whitepaper
 Generiert Whitepaper-Kapitel aus Prompts und technischer Dokumentation.
 
 **Verwendung:**
+
 ```bash
 ./generate-whitepaper.sh [chapter_id...]
 
@@ -42,11 +43,13 @@ Generiert Whitepaper-Kapitel aus Prompts und technischer Dokumentation.
 ```
 
 **Umgebungsvariablen:**
+
 ```bash
 LLM_MODEL=gpt-4 ./generate-whitepaper.sh     # Anderes Modell verwenden
 ```
 
 **Ausgabe:**
+
 - Erstellt `output/XX_output.md` für jedes Kapitel
 - Zeigt Fortschritt und Statistiken
 - Automatische Wiederholungen bei Fehlern (max. 3x)
@@ -56,6 +59,7 @@ LLM_MODEL=gpt-4 ./generate-whitepaper.sh     # Anderes Modell verwenden
 Kombiniert alle generierten Kapitel zu einem vollständigen Whitepaper.
 
 **Verwendung (Bash):**
+
 ```bash
 ./combine-whitepaper.sh [output_dir] [output_name] [include_toc]
 
@@ -66,17 +70,20 @@ Kombiniert alle generierten Kapitel zu einem vollständigen Whitepaper.
 ```
 
 **Verwendung (Python direkt):**
+
 ```bash
 python3 combine_whitepaper.py ./output swiss_ai_hub_whitepaper true
 ```
 
 **Ausgabe:**
+
 - `<output_name>.md` - Kombiniertes Markdown
 - `<output_name>.docx` - Word-Dokument (falls pypandoc verfügbar)
 - Inhaltsverzeichnis (optional)
 - Seitenumbrüche zwischen Kapiteln
 
 **Features:**
+
 - Automatische Sortierung nach Kapitelnummer
 - Extraktion von Kapiteltiteln für TOC
 - Seitenumbrüche für DOCX-Export (`\newpage`)
@@ -124,24 +131,29 @@ brew install pandoc      # macOS
 ## Workflow
 
 1. **Prompts erstellen/anpassen**
+
    - `prompts/XX_prompt.md` für Kapitelstruktur
    - `sources/XX_sources.txt` für Quelldokumente
 
 2. **Kapitel generieren**
+
    ```bash
    ./generate-whitepaper.sh
    ```
 
 3. **Qualität prüfen**
+
    - Review `output/XX_output.md`
    - Bei Bedarf Prompt anpassen und neu generieren
 
 4. **Whitepaper kombinieren**
+
    ```bash
    ./combine-whitepaper.sh
    ```
 
 5. **Finales Dokument**
+
    - `swiss_ai_hub_whitepaper.md` (Markdown)
    - `swiss_ai_hub_whitepaper.docx` (Word)
 
@@ -213,6 +225,7 @@ sudo apt install pandoc  # oder brew install pandoc
 ### Kapitel zu lang/kurz
 
 Passe `general_prompt.md` oder `prompts/XX_prompt.md` an:
+
 - Zielwortanzahl anpassen
 - Mehr/weniger Quelldokumente in `sources/XX_sources.txt`
 

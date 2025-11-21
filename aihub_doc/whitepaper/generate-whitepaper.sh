@@ -87,10 +87,10 @@ build_combined_prompt() {
     echo ""
     echo "Sie schreiben ein Whitepaper-Kapitel für die Swiss AI-Hub Plattform."
     echo "Unten finden Sie:"
-    echo "1. Allgemeine Schreibanweisungen für alle Kapitel"
-    echo "2. Spezifische Kapitelanweisungen und -anforderungen"
-    echo "3. Bereits generierte vorherige Kapitel (für Konsistenz)"
-    echo "4. Quelldokumentation aus der technischen Dokumentation"
+    echo "1. Bereits generierte vorherige Kapitel (für Konsistenz)"
+    echo "2. Quelldokumentation aus der technischen Dokumentation"
+    echo "3. Spezifische Kapitelanweisungen und -anforderungen"
+    echo "4. Allgemeine Schreibanweisungen für alle Kapitel"
     echo ""
     echo "Ihre Aufgabe: Generieren Sie den Kapitelinhalt gemäss den Anweisungen und verwenden Sie die Quelldokumentation als faktische Grundlage."
     echo "Achten Sie auf einen konsistenten Stil und Flow mit den bereits generierten Kapiteln."
@@ -98,23 +98,7 @@ build_combined_prompt() {
     echo "═══════════════════════════════════════════════════════════════"
     echo ""
 
-    # Add general instructions (common for all chapters)
-    echo "## ALLGEMEINE ANWEISUNGEN"
-    echo ""
-    cat "$GENERAL_PROMPT"
-    echo ""
-    echo "═══════════════════════════════════════════════════════════════"
-    echo ""
-
-    # Add chapter-specific instructions
-    echo "## KAPITEL-SPEZIFISCHE ANWEISUNGEN"
-    echo ""
-    cat "$prompt_file"
-    echo ""
-    echo "═══════════════════════════════════════════════════════════════"
-    echo ""
-
-    # Add previously generated chapters for consistency
+     # Add previously generated chapters for consistency
     echo "## BEREITS GENERIERTE KAPITEL"
     echo ""
     echo "Nachfolgend finden Sie die bereits generierten vorherigen Kapitel."
@@ -193,6 +177,24 @@ build_combined_prompt() {
         echo "*(Keine Quelldokumentation bereitgestellt)*"
         echo ""
     fi
+
+    # Add chapter-specific instructions
+    echo "## KAPITEL-SPEZIFISCHE ANWEISUNGEN"
+    echo ""
+    cat "$prompt_file"
+    echo ""
+    echo "═══════════════════════════════════════════════════════════════"
+    echo ""
+
+    # Add general instructions (common for all chapters)
+    echo "## ALLGEMEINE ANWEISUNGEN"
+    echo ""
+    cat "$GENERAL_PROMPT"
+    echo ""
+    echo "═══════════════════════════════════════════════════════════════"
+    echo ""
+
+
 
     echo "═══════════════════════════════════════════════════════════════"
     echo ""

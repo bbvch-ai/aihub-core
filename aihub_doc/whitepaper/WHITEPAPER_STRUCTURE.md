@@ -2,8 +2,8 @@
 
 ## Geschäftsorientiertes Dokument für Entscheidungsträger und Einkäufer
 
-Dieses Dokument bietet einen vollständigen Überblick über die Swiss AI-Hub-Plattform und unterstützt Geschäftsführer
-und Beschaffungsverantwortliche bei der Beurteilung, ob sie für die AI-Anforderungen ihrer Organisation geeignet ist.
+Dieses Dokument bietet einen vollständigen Überblick über die Swiss AI-Hub-Plattform und unterstützt Geschäftsführer und
+Beschaffungsverantwortliche bei der Beurteilung, ob sie für die AI-Anforderungen ihrer Organisation geeignet ist.
 
 **Gesamtumfang: 53 Seiten**
 
@@ -11,34 +11,33 @@ und Beschaffungsverantwortliche bei der Beurteilung, ob sie für die AI-Anforder
 
 ## Inhaltsverzeichnis
 
-| Kapitel | Titel | Umfang   |
-|---------|-------|----------|
-| | **Executive Summary** | 2 Seiten |
-| 1 | Die Business-Herausforderung: AI im Unternehmen | 2 Seiten |
-| 2 | Plattform-Überblick: Die Swiss AI-Hub-Lösung | 2 Seiten |
-| 3 | Datensouveränität und vollständige Kundenkontrolle | 4 Seiten |
-| 4 | Plattform-Transparenz und Prüfbarkeit | 4 Seiten |
-| 5 | Administration und Governance | 4 Seiten |
-| 6 | Datenmanagement, Integration und Ingestion | 3 Seiten |
-| 7 | Datensicherheit und Datenfluss | 4 Seiten |
-| 8 | Sicherheitsarchitektur | 3 Seiten |
-| 9 | Regulatorische Compliance | 2 Seiten |
-| 10 | Deployment, Betrieb | 4 Seiten |
-| 11 | Integration und Interoperabilität | 3 Seiten |
-| 12 | User Experience und Interaktion | 3 Seiten |
-| 13 | AI-Agenten und Kernkonzepte | 3 Seiten |
-| 14 | Business-Prozessautomatisierung | 3 Seiten |
-| 15 | Zuverlässigkeit und Qualitätssicherung | 3 Seiten |
-| 16 | Erweiterbarkeit und Zukunftssicherheit | 2 Seiten |
+| Kapitel | Titel                                              | Umfang   |
+| ------- | -------------------------------------------------- | -------- |
+|         | **Executive Summary**                              | 2 Seiten |
+| 1       | Die Business-Herausforderung: AI im Unternehmen    | 2 Seiten |
+| 2       | Plattform-Überblick: Die Swiss AI-Hub-Lösung       | 2 Seiten |
+| 3       | Datensouveränität und vollständige Kundenkontrolle | 4 Seiten |
+| 4       | Plattform-Transparenz und Prüfbarkeit              | 4 Seiten |
+| 5       | Administration und Governance                      | 4 Seiten |
+| 6       | Datenmanagement, Integration und Ingestion         | 3 Seiten |
+| 7       | Datensicherheit und Datenfluss                     | 4 Seiten |
+| 8       | Sicherheitsarchitektur                             | 3 Seiten |
+| 9       | Regulatorische Compliance                          | 2 Seiten |
+| 10      | Deployment, Betrieb                                | 4 Seiten |
+| 11      | Integration und Interoperabilität                  | 3 Seiten |
+| 12      | User Experience und Interaktion                    | 3 Seiten |
+| 13      | AI-Agenten und Kernkonzepte                        | 3 Seiten |
+| 14      | Business-Prozessautomatisierung                    | 3 Seiten |
+| 15      | Zuverlässigkeit und Qualitätssicherung             | 3 Seiten |
+| 16      | Erweiterbarkeit und Zukunftssicherheit             | 2 Seiten |
 
 ---
 
 ## Executive Summary
 
-**Was Sie erfahren**: In diesem Abschnitt erhalten Sie einen Überblick über Swiss AI-Hub als vollständige, souveräne
-und produktionsreife Enterprise-AI-Plattform. Sie erfahren, welchen strategischen Vorteil es bedeutet, Ihre
-AI-Infrastruktur selbst zu besitzen und zu kontrollieren – durch eine Open-Source-Plattform, die sich in 30 Minuten
-deployen lässt.
+**Was Sie erfahren**: In diesem Abschnitt erhalten Sie einen Überblick über Swiss AI-Hub als vollständige, souveräne und
+produktionsreife Enterprise-AI-Plattform. Sie erfahren, welchen strategischen Vorteil es bedeutet, Ihre AI-Infrastruktur
+selbst zu besitzen und zu kontrollieren – durch eine Open-Source-Plattform, die sich in 30 Minuten deployen lässt.
 
 **Für welche Anforderungen relevant**: Wenn Sie entscheiden müssen, ob Sie AI-Software selbst entwickeln, eine
 SaaS-Lösung kaufen oder eine selbst-gehostete Plattform deployen – dieser Abschnitt hilft Ihnen bei der
@@ -49,15 +48,15 @@ Implementierung zu Ihren Kernkriterien gehören.
 
 ## 1. Die Business-Herausforderung: AI im Unternehmen
 
-**Was Sie erfahren**: Dieser Abschnitt beleuchtet die "Last-Mile"-Problematik beim AI-Einsatz – den Weg vom Prototyp
-zur produktiven Nutzung. Sie erfahren, welche Infrastruktur-Komponenten (Authentifizierung, Monitoring, Kostenkontrolle,
+**Was Sie erfahren**: Dieser Abschnitt beleuchtet die "Last-Mile"-Problematik beim AI-Einsatz – den Weg vom Prototyp zur
+produktiven Nutzung. Sie erfahren, welche Infrastruktur-Komponenten (Authentifizierung, Monitoring, Kostenkontrolle,
 Governance) typischerweise fehlen, welche regulatorischen Anforderungen in der Schweiz gelten (revDSG, DSGVO) und welche
 versteckten Kosten durch fragmentierte AI-Lösungen entstehen (Datensilos, technische Schulden, Sicherheitslücken).
 
 **Für welche Anforderungen relevant**: Lesen Sie diesen Abschnitt, wenn Sie prüfen müssen, ob Ihre Organisation vor
 ähnlichen Herausforderungen steht. Besonders relevant, wenn Sie bewerten müssen, ob eine integrierte Plattform-Lösung
-für Sie wirtschaftlicher ist als der Zusammenbau von Einzellösungen, oder wenn Sie regulatorische Compliance-Anforderungen
-erfüllen müssen.
+für Sie wirtschaftlicher ist als der Zusammenbau von Einzellösungen, oder wenn Sie regulatorische
+Compliance-Anforderungen erfüllen müssen.
 
 ---
 
@@ -70,9 +69,9 @@ Authentifizierung, Monitoring und Benutzeroberflächen. Sie verstehen das Apache
 resultierenden Vorteile der Anbieter-Unabhängigkeit.
 
 **Für welche Anforderungen relevant**: Nutzen Sie diesen Abschnitt zur Bewertung der Lösungsvollständigkeit – prüfen
-Sie, ob zusätzliche Beschaffungen notwendig sind. Relevant für Anforderungen an Modularität, Erweiterbarkeit, Unterstützung
-verschiedener AI-Modelle und Use Cases. Kritisch zur Beurteilung der Total Cost of Ownership und zur Vermeidung von
-Vendor Lock-in.
+Sie, ob zusätzliche Beschaffungen notwendig sind. Relevant für Anforderungen an Modularität, Erweiterbarkeit,
+Unterstützung verschiedener AI-Modelle und Use Cases. Kritisch zur Beurteilung der Total Cost of Ownership und zur
+Vermeidung von Vendor Lock-in.
 
 ---
 
@@ -99,14 +98,15 @@ verlassen dürfen.
 
 ## 4. Plattform-Transparenz und Prüfbarkeit
 
-**Was Sie erfahren**: In diesem Abschnitt erfahren Sie, wie die Plattform vollständige Transparenz und Nachvollziehbarkeit
-über alle Operationen gewährleistet. Sie verstehen die End-to-End-Observability durch OpenTelemetry und Phoenix AI
-Monitoring, lernen die Workflow-basierte Architektur kennen, die im Gegensatz zu Black-Box-Systemen jeden Schritt sichtbar
-und nachvollziehbar macht. Der Abschnitt zeigt, wie AI-Entscheidungen traciert werden (Workflow-Sichtbarkeit,
-Reasoning-Prozesse, vollständige LLM-Aufrufe mit Prompts und Responses, Dokument-Suchen, Tool-Nutzung, Kostentracking).
-Sie sehen die Dokument-Lineage vom Ursprung bis zur finalen Antwort, die anonymisierte User-Interaction-Auditierung für
-Compliance sowie Human-in-the-Loop-Mechanismen mit vollständigen Audit-Trails. Der Abschnitt beschreibt auch das
-umfassende Logging über alle Plattform-Komponenten mit zeitgestempelten, unveränderlichen Logs.
+**Was Sie erfahren**: In diesem Abschnitt erfahren Sie, wie die Plattform vollständige Transparenz und
+Nachvollziehbarkeit über alle Operationen gewährleistet. Sie verstehen die End-to-End-Observability durch OpenTelemetry
+und Phoenix AI Monitoring, lernen die Workflow-basierte Architektur kennen, die im Gegensatz zu Black-Box-Systemen jeden
+Schritt sichtbar und nachvollziehbar macht. Der Abschnitt zeigt, wie AI-Entscheidungen traciert werden
+(Workflow-Sichtbarkeit, Reasoning-Prozesse, vollständige LLM-Aufrufe mit Prompts und Responses, Dokument-Suchen,
+Tool-Nutzung, Kostentracking). Sie sehen die Dokument-Lineage vom Ursprung bis zur finalen Antwort, die anonymisierte
+User-Interaction-Auditierung für Compliance sowie Human-in-the-Loop-Mechanismen mit vollständigen Audit-Trails. Der
+Abschnitt beschreibt auch das umfassende Logging über alle Plattform-Komponenten mit zeitgestempelten, unveränderlichen
+Logs.
 
 **Für welche Anforderungen relevant**: Dieser Abschnitt ist kritisch zur Bewertung der Audit-Readiness, regulatorischen
 Compliance und Vertrauenswürdigkeit der gesamten Plattform. Lesen Sie ihn, wenn Sie prüfen müssen, ob Sie vollständige
@@ -121,21 +121,21 @@ Branchen und öffentliche Organisationen benötigen.
 
 **Was Sie erfahren**: In diesem Abschnitt lernen Sie die Enterprise-Administrationsfunktionen kennen. Sie verstehen das
 RBAC-basierte Rollen- und Berechtigungsmanagement mit kundenseitigen Administrationsrollen, die sichere und effiziente
-Aufgabenverteilung über Organisationen und Kundengruppen ermöglichen. Der Abschnitt erklärt die verschiedenen Rollentypen
-(Endbenutzer, kundenseitige Administratoren, Plattform-Administratoren) und die granulare Zugriffskontrolle auf
-Datenquellen, AI-Modelle und Features. Sie sehen die Enterprise-Authentifizierungs-Integration (SSO/OAuth, Azure AD,
+Aufgabenverteilung über Organisationen und Kundengruppen ermöglichen. Der Abschnitt erklärt die verschiedenen
+Rollentypen (Endbenutzer, kundenseitige Administratoren, Plattform-Administratoren) und die granulare Zugriffskontrolle
+auf Datenquellen, AI-Modelle und Features. Sie sehen die Enterprise-Authentifizierungs-Integration (SSO/OAuth, Azure AD,
 Keycloak, OIDC/SAML) mit MFA, Passkeys und Conditional Access. Der Abschnitt beschreibt Disclaimer- und
 Consent-Management, Echtzeit-Kostentracking mit Budgetlimits pro User, System-Monitoring und Observability sowie das
-umfassende Logging mit konfigurierbarer Log-Rotation und Export zu Kundensystemen (ELK, Grafana, Splunk, Datadog).
-Sie lernen das AI-Qualitätsmanagement kennen (User-Feedback, Quality-Metrics, Bias-Monitoring, Model-Drift-Detection,
+umfassende Logging mit konfigurierbarer Log-Rotation und Export zu Kundensystemen (ELK, Grafana, Splunk, Datadog). Sie
+lernen das AI-Qualitätsmanagement kennen (User-Feedback, Quality-Metrics, Bias-Monitoring, Model-Drift-Detection,
 A/B-Testing, automatisches Retraining).
 
 **Für welche Anforderungen relevant**: Nutzen Sie diesen Abschnitt zur Bewertung der Enterprise-Governance-Fähigkeiten
 und Rollentrennung. Lesen Sie ihn, wenn Sie prüfen müssen, wie administrative Verantwortlichkeiten sicher delegiert
 werden können, während die Kontrolle erhalten bleibt. Kritisch zur Beurteilung des administrativen Aufwands, der
-rollenbasierten Sicherheitsmodelle, der Budget-Management-Fähigkeiten und Compliance-Auditing-Anforderungen. Entscheidend
-für Organisationen, die eine klare Rollentrennung zwischen Plattform-Betrieb und kundenseitiger Administration benötigen,
-sowie für grosse Enterprise-Deployments mit mehreren Organisationseinheiten.
+rollenbasierten Sicherheitsmodelle, der Budget-Management-Fähigkeiten und Compliance-Auditing-Anforderungen.
+Entscheidend für Organisationen, die eine klare Rollentrennung zwischen Plattform-Betrieb und kundenseitiger
+Administration benötigen, sowie für grosse Enterprise-Deployments mit mehreren Organisationseinheiten.
 
 ---
 
@@ -191,9 +191,9 @@ Einrichtungen mit Vertraulichkeitsanforderungen und regulierte Branchen.
 **Was Sie erfahren**: In diesem Abschnitt lernen Sie die detaillierte Sicherheitsarchitektur kennen. Sie verstehen die
 Enterprise-Authentifizierung und -Autorisierung (SSO, MFA, API-Tokens), Datenschutz und Verschlüsselung (SSL/TLS,
 Data-at-Rest, TDE, Key-Management), Input-Validierung und Threat-Prevention (Injection-Attacks, Malware-Scanning,
-Prompt-Injection-Defense, Rate-Limiting), Netzwerk-Sicherheit (Container-Isolation, Firewall-Regeln, Air-Gap-Deployment),
-Datenschutz und Anonymisierung (PII-Detection, Presidio-Integration) sowie Security-Operations (Penetration-Testing,
-Vulnerability-Management, Incident-Response).
+Prompt-Injection-Defense, Rate-Limiting), Netzwerk-Sicherheit (Container-Isolation, Firewall-Regeln,
+Air-Gap-Deployment), Datenschutz und Anonymisierung (PII-Detection, Presidio-Integration) sowie Security-Operations
+(Penetration-Testing, Vulnerability-Management, Incident-Response).
 
 **Für welche Anforderungen relevant**: Dieser Abschnitt demonstriert Enterprise-Grade-Security über alle Schichten.
 Nutzen Sie ihn zur Bewertung, ob die Plattform Ihre organisationalen Sicherheitsanforderungen und regulatorischen
@@ -207,14 +207,15 @@ Datenschutz-Fähigkeiten. Unverzichtbar zur Bewertung, ob die Sicherheitsarchite
 **Was Sie erfahren**: In diesem Abschnitt erfahren Sie umfassend über Schweizer Datensouveränität (Deployment-Optionen,
 Data-Residency-Garantien, isolierte Infrastruktur, Air-Gap-Fähigkeit), revDSG-Compliance (Privacy-by-Design,
 Betroffenenrechte, Consent-Management), DSGVO-Ausrichtung (Recht auf Vergessenwerden, Datenportabilität, DPIA-Support),
-EU-AI-Act-Vorbereitung (Transparenz, menschliche Aufsicht, Dokumentation), ethische AI-Richtlinien (Europarat,
-Schweizer Guidelines), Datenaufbewahrungs- und Lösch-Workflows, mehrsprachige Unterstützung und vollständige Audit-Trails
-für Accountability.
+EU-AI-Act-Vorbereitung (Transparenz, menschliche Aufsicht, Dokumentation), ethische AI-Richtlinien (Europarat, Schweizer
+Guidelines), Datenaufbewahrungs- und Lösch-Workflows, mehrsprachige Unterstützung und vollständige Audit-Trails für
+Accountability.
 
 **Für welche Anforderungen relevant**: Kritisch für Schweizer Organisationen und regulierte Branchen. Nutzen Sie diesen
-Abschnitt zur Bewertung der Compliance mit aktuellen und kommenden Regulierungen (revDSG, DSGVO, EU AI Act). Unverzichtbar
-für Legal- und Compliance-Teams zur Beurteilung, ob die Plattform Data-Residency-, Privacy- und Ethical-AI-Anforderungen
-erfüllt. Zeigt zukunftssichere regulatorische Ausrichtung und hilft bei der Bewertung regulatorischer Risiken.
+Abschnitt zur Bewertung der Compliance mit aktuellen und kommenden Regulierungen (revDSG, DSGVO, EU AI Act).
+Unverzichtbar für Legal- und Compliance-Teams zur Beurteilung, ob die Plattform Data-Residency-, Privacy- und
+Ethical-AI-Anforderungen erfüllt. Zeigt zukunftssichere regulatorische Ausrichtung und hilft bei der Bewertung
+regulatorischer Risiken.
 
 ---
 
@@ -222,24 +223,24 @@ erfüllt. Zeigt zukunftssichere regulatorische Ausrichtung und hilft bei der Bew
 
 **Was Sie erfahren**: In diesem Abschnitt erfahren Sie umfassend über Deployment- und Betriebs-Aspekte. Sie lernen die
 flexiblen Deployment-Optionen kennen (On-Premise, Private Cloud, Swiss Cloud, Hybrid, Air-Gapped), das schnelle
-30-Minuten-Deployment mit vorkonfigurierten Komponenten, die Infrastruktur-Komponenten (Kubernetes, Multi-Tenant-Architektur,
-Datenbank-Support inklusive MSSQL/Oracle/PostgreSQL für On-Premise), Skalierbarkeit und Performance (horizontale
-Skalierung, 99.5% Uptime-SLA, Performance vergleichbar mit führenden LLMs), High-Availability und Disaster-Recovery
-(automatische Backups, Blue-Green-Deployments), einfache Wartung und Updates (Zero-Downtime-Updates,
-Rollback-Fähigkeit), Netzwerk-Anforderungen (minimale Konnektivität, Air-Gap-Option) sowie umfassendes Monitoring und
-Observability (OpenTelemetry, Phoenix AI, Log-Aggregation). Der Abschnitt beschreibt das integrierte AI-Modell-Management
-mit LLM-agnostischer Architektur über LiteLLM Universal Gateway, das 100+ Provider unterstützt (OpenAI, Azure OpenAI,
-Anthropic, Google, AWS Bedrock, selbst-gehostete Modelle), Kostenmanagement über Provider hinweg, automatisches Failover,
-lokale und selbst-gehostete Modell-Unterstützung (vLLM, llama.cpp, Air-Gap-Betrieb), Modell-Konfiguration und -Governance
-sowie Microsoft-365-Copilot-Synergien.
+30-Minuten-Deployment mit vorkonfigurierten Komponenten, die Infrastruktur-Komponenten (Kubernetes,
+Multi-Tenant-Architektur, Datenbank-Support inklusive MSSQL/Oracle/PostgreSQL für On-Premise), Skalierbarkeit und
+Performance (horizontale Skalierung, 99.5% Uptime-SLA, Performance vergleichbar mit führenden LLMs), High-Availability
+und Disaster-Recovery (automatische Backups, Blue-Green-Deployments), einfache Wartung und Updates
+(Zero-Downtime-Updates, Rollback-Fähigkeit), Netzwerk-Anforderungen (minimale Konnektivität, Air-Gap-Option) sowie
+umfassendes Monitoring und Observability (OpenTelemetry, Phoenix AI, Log-Aggregation). Der Abschnitt beschreibt das
+integrierte AI-Modell-Management mit LLM-agnostischer Architektur über LiteLLM Universal Gateway, das 100+ Provider
+unterstützt (OpenAI, Azure OpenAI, Anthropic, Google, AWS Bedrock, selbst-gehostete Modelle), Kostenmanagement über
+Provider hinweg, automatisches Failover, lokale und selbst-gehostete Modell-Unterstützung (vLLM, llama.cpp,
+Air-Gap-Betrieb), Modell-Konfiguration und -Governance sowie Microsoft-365-Copilot-Synergien.
 
 **Für welche Anforderungen relevant**: Kritisch für IT-Infrastruktur-Teams zur Bewertung der Deployment-Machbarkeit,
 operationalen Anforderungen, Skalierbarkeit und AI-Modell-Flexibilität. Nutzen Sie diesen Abschnitt zur Beurteilung der
 Time-to-Value, Operational Excellence, Business-Continuity-Fähigkeiten und Anbieter-Unabhängigkeit bei AI-Modellen.
 Zeigt, wie die Plattform sowohl Infrastruktur-Flexibilität als auch AI-Provider-Unabhängigkeit bietet – unverzichtbar
-zur Vermeidung von Lock-in auf beiden Ebenen. Beweist, dass die Plattform in jeder Umgebung deployed werden kann
-(von Air-Gapped On-Premise bis Cloud) bei gleichzeitiger Fähigkeit, jeden AI-Provider zu nutzen oder komplett offline
-zu operieren. Entscheidend zur Bewertung der Total Cost of Ownership, Infrastruktur-Kompatibilität und langfristigen
+zur Vermeidung von Lock-in auf beiden Ebenen. Beweist, dass die Plattform in jeder Umgebung deployed werden kann (von
+Air-Gapped On-Premise bis Cloud) bei gleichzeitiger Fähigkeit, jeden AI-Provider zu nutzen oder komplett offline zu
+operieren. Entscheidend zur Bewertung der Total Cost of Ownership, Infrastruktur-Kompatibilität und langfristigen
 strategischen Flexibilität.
 
 ---
@@ -248,45 +249,45 @@ strategischen Flexibilität.
 
 **Was Sie erfahren**: In diesem Abschnitt lernen Sie die vielfältigen Integrationsmöglichkeiten kennen. Sie verstehen
 die verschiedenen API-Optionen (OpenAI-kompatible REST API, native Swiss AI-Hub API, WebSocket für Echtzeit, MCP für
-AI-Coding-Assistenten), die Integration mit Kollaborations-Plattformen (Teams, Slack, Email, Outlook), die
-Dokument- und Content-System-Integration (SharePoint, File-Shares, S3-Storage, Web-Crawling), die
-Business-System-Integration (eGov-Portale, RPA-Tools, Webhooks), das einbettbare WCAG-2.1-AA-konforme Chat-Widget sowie
-die Enterprise-Identity-Integration (Active Directory, Azure AD, Keycloak, AGOV, eID) mit modernen
+AI-Coding-Assistenten), die Integration mit Kollaborations-Plattformen (Teams, Slack, Email, Outlook), die Dokument- und
+Content-System-Integration (SharePoint, File-Shares, S3-Storage, Web-Crawling), die Business-System-Integration
+(eGov-Portale, RPA-Tools, Webhooks), das einbettbare WCAG-2.1-AA-konforme Chat-Widget sowie die
+Enterprise-Identity-Integration (Active Directory, Azure AD, Keycloak, AGOV, eID) mit modernen
 Authentifizierungs-Protokollen (keine Legacy-LDAP).
 
 **Für welche Anforderungen relevant**: Dieser Abschnitt zeigt die umfassenden Integrationsfähigkeiten mit bestehenden
 Enterprise-Systemen. Nutzen Sie ihn zur Bewertung, ob die Plattform in Ihre aktuelle IT-Landschaft passt, bestehende
-Workflows unterstützt und Barrierefreiheit bietet. Kritisch für IT-Architekten zur Beurteilung der Integrationskomplexität
-und des User-Adoption-Potenzials. Entscheidend zur Bewertung, ob die Plattform sich nahtlos in Ihre bestehende
-Infrastruktur einfügt.
+Workflows unterstützt und Barrierefreiheit bietet. Kritisch für IT-Architekten zur Beurteilung der
+Integrationskomplexität und des User-Adoption-Potenzials. Entscheidend zur Bewertung, ob die Plattform sich nahtlos in
+Ihre bestehende Infrastruktur einfügt.
 
 ---
 
 ## 12. User Experience und Interaktion
 
 **Was Sie erfahren**: In diesem Abschnitt lernen Sie die End-User-Experience kennen. Sie verstehen die ChatGPT-ähnliche
-Oberfläche, die über Web, Teams, Slack und Email zugänglich ist. Der Abschnitt beschreibt multimodale Eingabemöglichkeiten
-(Text, Sprache, Dokument-Upload) mit umfassender Format-Unterstützung (PDF, Office-Dokumente, Bilder), die
-Konversations-Features (Kontextbewusstsein, Session-Management, Export-Fähigkeiten), die Wissensintegration mit
-Quellenangaben sowie die mehrsprachige Unterstützung (Deutsch, Englisch, Französisch, Italienisch) mit
+Oberfläche, die über Web, Teams, Slack und Email zugänglich ist. Der Abschnitt beschreibt multimodale
+Eingabemöglichkeiten (Text, Sprache, Dokument-Upload) mit umfassender Format-Unterstützung (PDF, Office-Dokumente,
+Bilder), die Konversations-Features (Kontextbewusstsein, Session-Management, Export-Fähigkeiten), die Wissensintegration
+mit Quellenangaben sowie die mehrsprachige Unterstützung (Deutsch, Englisch, Französisch, Italienisch) mit
 Schweizerdeutsch-Transkription.
 
 **Für welche Anforderungen relevant**: Dieser Abschnitt demonstriert die einfache Adoption und minimale
 Trainingsanforderungen. Nutzen Sie ihn zur Bewertung, ob die Plattform diverse User-Bedürfnisse und Arbeitsstile
 unterstützt. Kritisch zur Beurteilung der User-Acceptance, Barrierefreiheit, DSGVO-Compliance und Swiss-Market-Fit mit
-mehrsprachigen Fähigkeiten. Entscheidend zur Bewertung, ob Ihre Mitarbeitenden die Plattform ohne umfangreiche Schulungen
-nutzen können.
+mehrsprachigen Fähigkeiten. Entscheidend zur Bewertung, ob Ihre Mitarbeitenden die Plattform ohne umfangreiche
+Schulungen nutzen können.
 
 ---
 
 ## 13. AI-Agenten und Kernkonzepte
 
 **Was Sie erfahren**: In diesem Abschnitt verstehen Sie AI-Agenten als Kernkomponente der Plattform und wie sie sich von
-einfachen Chatbots oder Black-Box-AI-Systemen unterscheiden. Sie lernen die Workflow-basierte Agenten-Architektur kennen,
-bei der Agenten vordefinierte Operationssequenzen ausführen, die jeden Schritt sichtbar, nachvollziehbar und prüfbar
-machen – nicht autonome Tool-Auswahl, die Unvorhersehbarkeit erzeugt. Der Abschnitt erklärt, wie Workflows die Ausführung
-kontrollieren und sicherstellen, dass Agenten weder auf unautorisierte Daten zugreifen noch unautorisierte Aktionen
-durchführen können, mit deterministischen Schritten, bei denen viele Operationen ohne LLM-Beteiligung laufen
+einfachen Chatbots oder Black-Box-AI-Systemen unterscheiden. Sie lernen die Workflow-basierte Agenten-Architektur
+kennen, bei der Agenten vordefinierte Operationssequenzen ausführen, die jeden Schritt sichtbar, nachvollziehbar und
+prüfbar machen – nicht autonome Tool-Auswahl, die Unvorhersehbarkeit erzeugt. Der Abschnitt erklärt, wie Workflows die
+Ausführung kontrollieren und sicherstellen, dass Agenten weder auf unautorisierte Daten zugreifen noch unautorisierte
+Aktionen durchführen können, mit deterministischen Schritten, bei denen viele Operationen ohne LLM-Beteiligung laufen
 (Datenvalidierung, Formatierung, Routing) – was Zuverlässigkeit verbessert und Kosten reduziert. Sie lernen die
 integrierten Agententypen kennen: RAG-Agenten (Fragenbeantwortung mit organisationalem Wissen und Quellenangaben),
 Expert-Asking-Agenten (Multi-Agenten-Kollaboration), Conversational-Agenten (natürlichsprachige Interaktion mit
@@ -294,9 +295,9 @@ Kontextbewahrung) und Tool-Using-Agenten (Zugriff auf externe Systeme und APIs).
 Agenten-Fähigkeiten wie Rückfragen bei Unsicherheit, Handhabung von Datenqualitätsproblemen, Confidence-Indicators,
 Kombination mit regelbasierten Systemen sowie Human-in-the-Loop-Mechanismen. Sie verstehen die Agenten-Governance
 (vordefinierte Antworten, Prompt-Engineering, Input-Validation, Output-Quality-Checks, Versionierung), die
-Transparenz-Features (vollständiger "Denkprozess", LLM-Aufrufe, Retriever-Events, Tool-Usage-Tracking,
-Kosten-Tracking) und die Responsible-AI-Features (Hallucination-Mitigation, Confidence-Scoring, Bias-Detection,
-Model-Drift-Tracking, Quality-Feedback-Loops).
+Transparenz-Features (vollständiger "Denkprozess", LLM-Aufrufe, Retriever-Events, Tool-Usage-Tracking, Kosten-Tracking)
+und die Responsible-AI-Features (Hallucination-Mitigation, Confidence-Scoring, Bias-Detection, Model-Drift-Tracking,
+Quality-Feedback-Loops).
 
 **Für welche Anforderungen relevant**: Dieser Abschnitt zeigt, wie sich Swiss-AI-Hub-Agenten fundamental von
 Black-Box-AI unterscheiden – durch Transparenz, Kontrolle und Erklärbarkeit, die für Enterprise- und
@@ -327,10 +328,10 @@ Prozesslandschaften integrieren lässt.
 ## 15. Zuverlässigkeit und Qualitätssicherung
 
 **Was Sie erfahren**: In diesem Abschnitt lernen Sie die System-Zuverlässigkeits-Features kennen (Stabilität,
-Error-Handling, Health-Monitoring, Self-Healing, 99.5% Uptime-SLA), das AI-Qualitätsmanagement (Hallucination-Mitigation,
-Confidence-Scoring, Source-Grounding, Bias-Monitoring, Model-Drift-Detection), die Datenqualitäts-Handhabung
-(Error-Detection, Missing-Data-Management, Conflict-Resolution, klärende Fragen) sowie die Testing-Frameworks
-(Agent-Testing, BDD-Testing, Integration-Testing, A/B-Testing, UAT).
+Error-Handling, Health-Monitoring, Self-Healing, 99.5% Uptime-SLA), das AI-Qualitätsmanagement
+(Hallucination-Mitigation, Confidence-Scoring, Source-Grounding, Bias-Monitoring, Model-Drift-Detection), die
+Datenqualitäts-Handhabung (Error-Detection, Missing-Data-Management, Conflict-Resolution, klärende Fragen) sowie die
+Testing-Frameworks (Agent-Testing, BDD-Testing, Integration-Testing, A/B-Testing, UAT).
 
 **Für welche Anforderungen relevant**: Dieser Abschnitt demonstriert Operational Excellence und Qualitätssicherung.
 Nutzen Sie ihn zur Bewertung, ob die Plattform zuverlässig Business-Value liefern und unerwartete Szenarien handhaben
@@ -348,6 +349,6 @@ zur Bewertung, ob die Plattform Ihre Verfügbarkeits- und Qualitätsanforderunge
 zertifizierte Entwickler, Schweizer Kollaborationsmodell, Schulungsprogramme).
 
 **Für welche Anforderungen relevant**: Dieser Abschnitt zeigt langfristigen Investitionsschutz und Flexibilität für
-kundenspezifische Anforderungen. Nutzen Sie ihn zur Bewertung der Plattform-Adaptierbarkeit und des Zugangs zu Expertise.
-Kritisch zur Beurteilung, ob die Plattform mit sich ändernden Business-Anforderungen und regulatorischen Vorgaben
-evolvieren kann. Entscheidend zur Bewertung, ob Sie nicht in eine technologische Sackgasse investieren.
+kundenspezifische Anforderungen. Nutzen Sie ihn zur Bewertung der Plattform-Adaptierbarkeit und des Zugangs zu
+Expertise. Kritisch zur Beurteilung, ob die Plattform mit sich ändernden Business-Anforderungen und regulatorischen
+Vorgaben evolvieren kann. Entscheidend zur Bewertung, ob Sie nicht in eine technologische Sackgasse investieren.
