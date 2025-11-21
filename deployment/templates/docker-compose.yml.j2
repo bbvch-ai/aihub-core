@@ -532,22 +532,20 @@ services:
     command:
       - "rcd"
       - "--rc-addr=0.0.0.0:5572"
-      - "--rc-no-auth"
-      - "--rc-allow-origin=*"
+      {%- if stage == 'dev' %}
+      - "--rc-no-auth"  # Only in dev!
+      {%- else %}
+      - "--rc-user=${RCLONE_RC_USER:-admin}"
+      - "--rc-pass=${RCLONE_RC_PASS:-changeme}"
+      {%- endif %}
       - "--log-level=INFO"
       - "--config=/dev/null"  # Disable config file, use environment variables only
-    environment:
-      # Rclone cloud storage remotes (configure only what you use)
-      # Define in .env.<stage> using: RCLONE_CONFIG_<REMOTENAME>_<OPTION>=<value>
-      # OneDrive example
-      RCLONE_CONFIG_ONEDRIVE_TYPE: ${RCLONE_CONFIG_ONEDRIVE_TYPE:-}
-      RCLONE_CONFIG_ONEDRIVE_TOKEN: ${RCLONE_CONFIG_ONEDRIVE_TOKEN:-}
-      RCLONE_CONFIG_ONEDRIVE_DRIVE_TYPE: ${RCLONE_CONFIG_ONEDRIVE_DRIVE_TYPE:-}
-      # Add more remotes as needed
     {%- if stage == 'dev' %}
     ports:
       - "5572:5572"
     {%- endif %}
+    networks:
+      - default
     healthcheck:
       test: ["CMD", "rclone", "rc", "--rc-addr=localhost:5572", "core/version"]
       interval: 30s

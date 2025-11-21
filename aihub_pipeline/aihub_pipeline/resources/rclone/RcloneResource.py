@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Annotated
 
 import aiohttp
+from aihub_lib.infrastructure.rclone.RcloneSettings import RcloneSettings
 from dagster import ConfigurableResource
 from pydantic import Field, PrivateAttr
 
@@ -21,14 +22,6 @@ class RcloneResource(ConfigurableResource):
     **Why operations/stat in download**: IO Manager pattern only provides file path, not metadata.
     Alternative would require refactoring the interface to pass metadata from list operation.
     """
-
-    rc_url: Annotated[
-        str,
-        Field(
-            default="http://aihub-rclone:5572",
-            description="Rclone RC API URL (default: http://aihub-rclone:5572)",
-        ),
-    ]
 
     source_remote: Annotated[
         str,
@@ -56,23 +49,21 @@ class RcloneResource(ConfigurableResource):
     max_retries: Annotated[
         int,
         Field(
-            default=3,
             ge=1,
             le=5,
             description="Maximum HTTP retry attempts for rate limit/server errors (1-5). "
             "Rclone handles backend retries internally.",
         ),
-    ]
+    ] = 3
 
     initial_retry_delay: Annotated[
         float,
         Field(
-            default=1.0,
             ge=0.1,
             le=5.0,
             description="Initial HTTP retry delay in seconds (0.1-5.0). Doubles after each attempt.",
         ),
-    ]
+    ] = 1.0
 
     _remote_name: str = PrivateAttr(default="")
 
@@ -102,7 +93,8 @@ class RcloneResource(ConfigurableResource):
         We only retry transient HTTP errors (429 rate limit, 5xx server errors).
         """
         delay = self.initial_retry_delay
-        url = f"{self.rc_url}/{operation}"
+        rc_url = RcloneSettings().URL
+        url = f"{rc_url}/{operation}"
 
         for attempt in range(self.max_retries):
             try:
@@ -205,7 +197,8 @@ class RcloneResource(ConfigurableResource):
             full_path = f"{self.source_remote}/{file_path}"
             cat_params = {"command": "cat", "arg": [full_path], "returnType": "STREAM"}
 
-            async with session.post(f"{self.rc_url}/core/command", json=cat_params) as response:
+            rc_url = RcloneSettings().URL
+            async with session.post(f"{rc_url}/core/command", json=cat_params) as response:
                 response.raise_for_status()
                 content = await response.read()
 

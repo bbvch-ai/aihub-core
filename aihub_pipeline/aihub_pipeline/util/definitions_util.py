@@ -371,9 +371,6 @@ def default_rclone_to_datalake_definitions(
     exclude_patterns: Annotated[
         list[str] | None, "Exclude patterns using rclone glob syntax (e.g., ['**/archiv/**', '**/temp/**'])"
     ] = None,
-    rc_url: Annotated[
-        str, "Rclone RC API URL (use 'http://localhost:5572' for local dev, 'http://aihub-rclone:5572' for Docker)"
-    ] = "http://aihub-rclone:5572",
     observe_job_hour: Annotated[int, "Hour to run daily rclone observation job"] = 0,
     observe_job_minute: Annotated[int, "Minute to run daily rclone observation job"] = 0,
     remove_job_hour: Annotated[int, "Hour to run daily removed files cleanup job"] = 1,
@@ -450,7 +447,6 @@ def default_rclone_to_datalake_definitions(
     )
 
     rclone_client = RcloneResource(
-        rc_url=rc_url,
         source_remote=source_remote,
         include_patterns=include_patterns,
         exclude_patterns=exclude_patterns,
