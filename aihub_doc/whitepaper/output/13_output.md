@@ -31,32 +31,35 @@ deterministischen, workflow-basierten Prozessen beruht.
 
 Für C-Level-Führungskräfte bedeutet die deterministische Workflow-Steuerung, dass KI-Agenten stets ein vorhersehbares
 und kontrollierbares Verhalten zeigen. Dies reduziert operationelle und regulatorische Risiken erheblich, da
-unerwünschte oder unautorisierte Aktionen der KI ausgeschlossen werden. IT-Verantwortliche profitieren von einer
-transparenten Architektur, die die Nachvollziehbarkeit und Testbarkeit von KI-Anwendungen massgeblich verbessert. Im
-Gegensatz zu autonomer Tool-Auswahl, bei der die KI selbständig über den Einsatz von Werkzeugen entscheidet, verhindert
-der workflow-basierte Ansatz, dass Agenten unautorisierte Datenzugriffe durchführen oder Berechtigungsgrenzen
-überschreiten. Jedes Verhalten ist klar definiert und kann vorab validiert werden.
+unerwünschte oder unautorisierte Aktionen der KI ausgeschlossen werden. Im Gegensatz zu autonomer Tool-Auswahl, bei der
+die KI selbständig über den Einsatz von Werkzeugen entscheidet, verhindert der workflow-basierte Ansatz, dass Agenten
+unautorisierte Datenzugriffe durchführen oder Berechtigungsgrenzen überschreiten. Jedes Verhalten ist klar definiert und
+kann vorab validiert werden. IT-Verantwortliche profitieren von einer transparenten Architektur, die die
+Nachvollziehbarkeit und Testbarkeit von KI-Anwendungen massgeblich verbessert.
 
 ### Konzepte & Prozesse: Strukturierte Workflows und das Swiss AI Agent Protokoll (SAAP)
 
-Im Kern der Agentenarchitektur steht der **Workflow** – eine explizit definierte, Schritt-für-Schritt-Abfolge von
+Im Kern der Agentenarchitektur steht der **Workflow** – eine explizit vordefinierte, Schritt-für-Schritt-Abfolge von
 Operationen. Ein Agent ist durch seinen Workflow eingeschränkt und kann keine Aktionen ausserhalb dieser vordefinierten
 Reihenfolge ausführen. Innerhalb jedes Schrittes kann der Agent zwar die volle Leistung der KI nutzen, um zu
 argumentieren und intelligente Entscheidungen zu treffen, der Gesamtpfad wird jedoch durch den definierten Workflow
 gesteuert.
 
-Die Kommunikation zwischen den Komponenten der Plattform, einschliesslich der Agenten, wird durch das **Swiss AI Agent
-Protokoll (SAAP)** geregelt. Dieses ereignisgesteuerte Modell definiert standardisierte Events, die den Daten- und
-Kontrollfluss steuern. Hierbei wird strikt zwischen `Control Events` (die den Workflow steuern und Zustandsänderungen
-verursachen) und `Display Events` (die rein informativ sind und Statusupdates für die Benutzeroberfläche liefern)
-unterschieden. Ein `Control Event` löst die Ausführung eines Agenten-Schritts aus, während `Display Events` niemals den
-logischen Fluss des Workflows beeinflussen.
+Die Kommunikation zwischen den internen Komponenten der Plattform, einschliesslich der Agenten, wird durch das **Swiss
+AI Agent Protokoll (SAAP)** geregelt. Dieses ereignisgesteuerte Modell ist für die interne Kohäsion der Swiss AI Hub
+Instanz konzipiert und definiert standardisierte Events, die den Daten- und Kontrollfluss steuern. Hierbei wird strikt
+zwischen `Control Events` (die den Workflow steuern und Zustandsänderungen verursachen) und `Display Events` (die rein
+informativ sind und Statusupdates für die Benutzeroberfläche liefern) unterschieden. Ein `Control Event` löst die
+Ausführung eines Agenten-Schritts aus, während `Display Events` niemals den logischen Fluss des Workflows beeinflussen.
 
 Das Gedächtnis eines Agenten wird durch ein hierarchisches Kontextmanagement in drei Scopes organisiert:
 
-- **`Thread Context`**: Das Langzeitgedächtnis für eine gesamte Konversation oder einen langlaufenden Geschäftsprozess.
-- **`Display Context`**: Für die Aggregation und Darstellung von Aktionen in der Benutzeroberfläche.
-- **`Run Context`**: Das Kurzzeit-Arbeitsgedächtnis für eine einzelne, nachverfolgbare Aufgabe.
+- **`Thread Context`**: Das Langzeitgedächtnis für eine gesamte Konversation oder einen langlaufenden Geschäftsprozess,
+  mit einer Gültigkeitsdauer von 30 Tagen. Die Zugriffskontrolle wird auf dieser Ebene angewendet.
+- **`Display Context`**: Für die Aggregation und Darstellung von Aktionen in der Benutzeroberfläche, auch über mehrere
+  Agenten hinweg.
+- **`Run Context`**: Das Kurzzeit-Arbeitsgedächtnis für eine einzelne, nachverfolgbare Aufgabe, das nach 30 Tagen
+  abläuft und zwischen Läufen isoliert ist.
 
 ### Technische Umsetzung im Swiss AI Hub: SDK und Event-Routing
 
@@ -65,13 +68,11 @@ Dieser Dispatcher inspiziert mit dem `@step`-Decorator markierte Methoden, analy
 und erstellt eine Workflow-Karte. Wenn ein Schritt ein `Control Event` zurückgibt, fängt der Dispatcher es ab und leitet
 es an den nächsten Schritt weiter, der diesen spezifischen Ereignistyp annehmen kann, wodurch die Schritte automatisch
 verkettet werden. Benutzerdefinierte `Control Events`, die von `aihub_agent.events.ControlEvent` erben, können Daten
-zwischen Schritten übergeben.
-
-Die Kommunikation über SAAP erfolgt asynchron über einen zentralen Message Bus (NATS), wodurch das System hoch
-skalierbar und resilient wird. Jeder Agenten-Schritt ist eine `async`-Methode, die eine einzelne, logische Operation
-ausführt und durch den `@step`-Decorator registriert wird. Die Konfiguration erfolgt über stark typisierte
-`AgentConfig`- und `StepConfig`-Klassen, die dynamisch in die Schrittmethoden injiziert werden, um die Logik von den
-Einstellungen zu trennen und Wiederverwendbarkeit zu fördern.
+zwischen Schritten übergeben. Die Kommunikation über SAAP erfolgt asynchron über einen zentralen Message Bus (NATS),
+wodurch das System hoch skalierbar und resilient wird. Jeder Agenten-Schritt ist eine `async`-Methode, die eine
+einzelne, logische Operation ausführt und durch den `@step`-Decorator registriert wird. Die Konfiguration erfolgt über
+stark typisierte `AgentConfig`- und `StepConfig`-Klassen, die dynamisch in die Schrittmethoden injiziert werden, um die
+Logik von den Einstellungen zu trennen und Wiederverwendbarkeit zu fördern.
 
 ## 2. Spezialisierte Agenten für spezifische Aufgaben und Integration
 
@@ -94,14 +95,15 @@ Der Swiss AI Hub bietet vorgefertigte Agenten für gängige Unternehmensanforder
 
 - **RAG-Agenten (Retrieval-Augmented Generation)**: Diese Agenten sind Wissensspezialisten, die Fragen durch die
   Konsultation interner Dokumente und Datenquellen beantworten. Sie überwinden die Wissenslücke von generischen LLMs,
-  indem sie relevante Informationen aus unternehmenseigenen Wissensdatenbanken (Knowledge Bases) abrufen und darauf
-  basierend Antworten synthetisieren. Ihr Workflow umfasst Fragenverständnis, Wissensabruf, Kontextrekonstruktion,
-  Re-Ranking und Antwortsynthese.
-- **Experten-Agenten (Expert Grounded / Expert Asking Agent)**: Dieses Agentenpaar überbrückt die Lücke zwischen
+  indem sie relevante Informationen aus unternehmenseigenen Wissensdatenbanken abrufen und darauf basierend Antworten
+  synthetisieren. Ihr Workflow umfasst Fragenverständnis, Wissensabruf, Kontextrekonstruktion, Re-Ranking und
+  Antwortsynthese, einschliesslich der Zitation von Quellen zur Überprüfung. Sie können auch Multi-Hop-Retrieval
+  durchführen, wenn die initiale Suche unzureichend ist.
+- **Experten-Agenten (Expert Grounded Agent / Expert Asking Agent)**: Dieses Agentenpaar überbrückt die Lücke zwischen
   KI-Fähigkeiten und menschlichem Fachwissen. Wenn der Expert Grounded Agent eine Frage nicht zuverlässig beantworten
   kann, leitet er diese an den Expert Asking Agent weiter, der sie einem menschlichen Experten (z.B. über Slack) zur
   Klärung vorlegt. Die Expertenantwort wird erfasst und dauerhaft in der Wissensdatenbank gespeichert, wodurch die KI
-  kontinuierlich lernt.
+  kontinuierlich lernt und die Wissensbasis erweitert wird.
 - **Multi-Agenten-Systeme**: Das "Agent in the Loop (AITL)"-Muster ermöglicht die Delegation von Aufgaben von einem
   primären Orchestrator-Agenten an spezialisierte Worker-Agenten. Dies fördert modulare, wiederverwendbare Komponenten
   und die Trennung von Zuständigkeiten.
@@ -136,9 +138,10 @@ macht.
 HITL-Workflows ermöglichen es einem Agenten, seinen Prozess an einem kritischen Punkt zu pausieren und auf menschliche
 Eingaben, Genehmigungen oder Korrekturen zu warten. Der Workflow wird genau an diesem Punkt fortgesetzt, wobei das volle
 Gedächtnis aller Zwischenergebnisse und vorheriger Schritte bewahrt bleibt. Dies ist weitaus leistungsfähiger als
-einfache Benutzereingabeaufforderungen. Die Wartezeiten können Minuten, Stunden oder sogar Tage betragen. Jede
-menschliche Interaktion – die gestellte Frage, die Antwort, die Entscheidung – wird unveränderlich als Ereignis
-protokolliert, was eine vollständige Verantwortlichkeit für Compliance und Auditing gewährleistet.
+einfache Benutzereingabeaufforderungen. Die Wartezeiten können Minuten, Stunden oder sogar Tage betragen, was die
+Bearbeitung langlaufender Genehmigungsprozesse unterstützt. Jede menschliche Interaktion – die gestellte Frage, die
+Antwort, die Entscheidung – wird unveränderlich als Ereignis protokolliert, was eine vollständige Verantwortlichkeit für
+Compliance und Auditing gewährleistet.
 
 ### Technische Umsetzung im Swiss AI Hub: `HumanInTheLoop` Events
 
@@ -147,7 +150,7 @@ Das HITL-Muster wird durch ein Paar von Events orchestriert: Ein Schritt im Agen
 Antwort des Benutzers wird als `HumanInTheLoop.response`-Event an das System zurückgesendet und löst die Fortsetzung des
 Workflows in einem dafür vorgesehenen Schritt aus. Die `HumanInTheLoop`-Helferklasse im SDK vereinfacht die
 Implementierung dieser Muster für einzelne oder mehrstufige Genehmigungsprozesse. Alle menschlichen Interaktionen werden
-im Rahmen der lückenlosen Nachvollziehbarkeit aufgezeichnet (siehe nächster Abschnitt).
+im Rahmen der lückenlosen Nachvollziehbarkeit aufgezeichnet.
 
 ## 4. Lückenlose Nachvollziehbarkeit und Auditierbarkeit
 
@@ -166,24 +169,26 @@ Kostenattribution auf granularer Ebene erlauben.
 
 Jede bedeutsame Aktion und Zustandsänderung innerhalb der Plattform wird als unveränderliches Ereignis protokolliert.
 Das hierarchische Scoping (`Thread`, `Display`, `Run`) stellt sicher, dass jeder Vorgang präzise kontextualisiert ist.
-Für RAG-Antworten wird eine lückenlose **Data Lineage** gewährleistet: Es wird exakt festgehalten, welche spezifischen
-Quelldokumente, Dokumentversionen oder Text-Chunks die Basis für eine KI-generierte Antwort bildeten. Dies ist
-entscheidend, um die Faktenbasis zu überprüfen und "Halluzinationen" zu identifizieren.
+Das SAAP definiert jede bedeutsame Aktion, jeden Gedanken oder jede Zustandsänderung als ein eigenständiges Ereignis,
+was für detailliertes Tracing und Debugging unerlässlich ist. Für RAG-Antworten wird eine lückenlose **Data Lineage**
+gewährleistet: Es wird exakt festgehalten, welche spezifischen Quelldokumente, Dokumentversionen oder Text-Chunks die
+Basis für eine KI-generierte Antwort bildeten. Dies ist entscheidend, um die Faktenbasis zu überprüfen und
+"Halluzinationen" zu identifizieren. LLM-Aufrufe mit Prompts und Responses werden geloggt, ebenso wie die Tool-Nutzung.
 
 ### Technische Umsetzung im Swiss AI Hub: OpenTelemetry, OpenInference und LLM-Tracing
 
 Der Swiss AI Hub nutzt **OpenTelemetry (OTel)** als fundamentalen Observability-Standard, ergänzt durch **OpenInference
 Semantic Conventions** für KI/ML-Workloads. Jeder Agentenlauf wird mit hierarchischen Span-Strukturen getraced, die den
-gesamten Workflow von der Benutzereingabe bis zur endgültigen Ausgabe abbilden. `LLMEvent`s erfassen Details zu
-LLM-Aufrufen, Prompts, Antworten und Token-Nutzung, während `RetrieverEvent`s die abgerufenen Dokumente aus der
-Wissensbasis protokollieren. `LLMCostEvent`s zeichnen die berechneten Kosten einer LLM-Interaktion auf.
-
-Diese Daten werden an Observability-Backends wie die **Phoenix UI** (für Entwicklung, `http://localhost:6006`) oder
-**SigNoz** (für Produktion) exportiert. Die Phoenix UI bietet spezialisierte Ansichten mit Timeline-Ansichten,
-Token-Nutzung und Inspektionsmöglichkeiten abgerufener Dokumente, wodurch der Denkprozess und die Faktenbasis der KI
-sichtbar werden. Alle menschlichen Interaktionen im Rahmen von Human-in-the-Loop-Workflows werden ebenfalls als
-Ereignisse protokolliert und sind Teil dieser Audit-Trails. Tool-Nutzung und LLM-Aufrufe mit Prompts und Responses
-werden lückenlos getrackt und sind in den Traces sichtbar.
+gesamten Workflow von der Benutzereingabe bis zur endgültigen Ausgabe abbilden. Der `AgentRunTracer` erstellt einen
+Zwei-Span-Ansatz mit einem initialen AGENT-Span als Elternteil und einem finalen CHAIN-Span, der die Gesamtdauer
+erfasst. Individuelle STEP-Spans zeigen Eingaben, Ausgaben, Verarbeitungszeit und semantische Ereignisse. `LLMEvent`s
+erfassen Details zu LLM-Aufrufen, Prompts, Antworten und Token-Nutzung, während `RetrieverEvent`s die abgerufenen
+Dokumente aus der Wissensbasis protokollieren. `LLMCostEvent`s zeichnen die berechneten Kosten einer LLM-Interaktion auf
+und ermöglichen die Kostenattribution pro Agent-Execution. Diese Daten werden an Observability-Backends wie die
+**Phoenix UI** (für Entwicklung, `http://localhost:6006`) oder **SigNoz** (für Produktion) exportiert. Die Phoenix UI
+bietet spezialisierte Ansichten mit Timeline-Ansichten, Token-Nutzung und Inspektionsmöglichkeiten abgerufener
+Dokumente, wodurch der Denkprozess und die Faktenbasis der KI sichtbar werden. Die `AihubInstrumentor`-Komponente
+instrumentiert automatisch NATS Messaging, Datenbankoperationen, HTTP-Aufrufe, LLM-Interaktionen und Vektorsuchen.
 
 ## 5. Qualitätssicherung und Halluzinationsvermeidung
 
@@ -203,25 +208,33 @@ Einhaltung von Qualitätsstandards.
 
 Der Swiss AI Hub setzt sogenannte **LLM-Wächter (Guardrails)** ein, die Agenten-Interaktionen in Echtzeit überprüfen:
 
-- **Input-Wächter** (z.B. `Agentenbeschreibungs-Wächter`, `Few-Shot-Wächter`) analysieren Benutzerfragen, bevor der
-  Agent sie verarbeitet, und filtern themenfremde Anfragen oder Richtlinienverstösse heraus.
-- **Output-Wächter** (z.B. `Kontext-Hinreichend-Wächter`, `Wächter für sensible Informationen`) prüfen generierte
-  Antworten vor der Auslieferung, um deren Qualität, Angemessenheit und Sicherheit zu verifizieren. Der
-  `Kontext-Hinreichend-Wächter` ist besonders für RAG-Agenten wichtig, da er prüft, ob ausreichend Informationen aus den
-  Wissensdatenbanken für eine präzise Antwort vorhanden sind, und so Halluzinationen entgegenwirkt.
+- **Input-Wächter**: Analysieren Benutzerfragen, bevor der Agent sie verarbeitet, und filtern themenfremde Anfragen oder
+  Richtlinienverstösse heraus. Dazu gehören der `Agentenbeschreibungs-Schutzmechanismus` und der
+  `Few-shot-Schutzmechanismus`.
+- **Output-Wächter**: Prüfen generierte Antworten vor der Auslieferung, um deren Qualität, Angemessenheit und Sicherheit
+  zu verifizieren. Der `Kontext-Ausreichend-Schutzmechanismus` ist besonders für RAG-Agenten wichtig, da er prüft, ob
+  ausreichend Informationen aus den Wissensdatenbanken für eine präzise Antwort vorhanden sind, und so Halluzinationen
+  entgegenwirkt. Ein `Wächter für sensible Informationen` erkennt und redigiert vertrauliche oder personenbezogene Daten
+  (PII) aus Agentenantworten.
 
 Für den Schutz sensibler Daten ist die **automatische PII-Anonymisierung** durch die Integration von Presidio
-implementiert. Persönlich identifizierbare Informationen werden im Datenstrom anonymisiert oder geschwärzt, bevor sie
-externe LLMs erreichen. Domänenspezifisches Prompt-Engineering (z.B. für Schweizer Recht) wird durch die flexible
-Konfiguration der Agenten und die Nutzung spezialisierter Wissensdatenbanken ermöglicht.
+implementiert. Persönlich identifizierbare Informationen werden in der LiteLLM-Proxy-Schicht anonymisiert oder
+geschwärzt, bevor sie externe LLMs erreichen. Domänenspezifisches Prompt-Engineering (z.B. für Schweizer Recht) wird
+durch die flexible Konfiguration der Agenten und die Nutzung spezialisierter Wissensdatenbanken ermöglicht. Strikte
+Input-Validierungen gegen bösartige Eingaben (Dateityp-Whitelisting, MIME-Typ-Validierung, Dateinamenprüfung) sind
+ebenfalls implementiert.
 
 Die **Qualität des Outputs** wird zudem durch **Agentenbewertungen** gemessen. Hierbei werden Agenten anhand
 vordefinierter Datasets (Fragen mit Referenzantworten) durch drei unabhängige KI-Richter (LLMs) evaluiert. Diese
 bewerten die Agentenantworten nach **Korrektheit, Vollständigkeit und Prägnanz** (0-5 Sterne), was eine messbare
 Qualitätskontrolle vor und nach dem Deployment ermöglicht. Integriertes Benutzerfeedback (Daumen hoch/runter) fliesst in
 ein Elo-basiertes Ranglistensystem ein und trägt zur kontinuierlichen Verbesserung bei.
-`UNKLARHEIT IN DER DOKU - BITTE PRÜFEN: Eine explizite Anzeige des Konfidenzgrades oder der Unsicherheit der KI-Antwort als UI-Funktion ist in der Quelldokumentation nicht beschrieben. Der "Context Sufficiency Guard" erfüllt eine ähnliche Funktion, indem er unzureichenden Kontext markiert.`
-`UNKLARHEIT IN DER DOKU - BITTE PRÜFEN: Automatisierte Bias-Überwachung oder Modell-Drift-Erkennung ist in der Plattform derzeit nicht implementiert. Das Bewertungs-Framework und OpenTelemetry-Tracing bieten jedoch grundlegende Funktionen, die für eine Erweiterung genutzt werden könnten.`
+
+**UNKLARHEIT IN DER DOKU - BITTE PRÜFEN:** Eine explizite Anzeige des Konfidenzgrades oder der Unsicherheit der
+KI-Antwort als UI-Funktion ist in der Quelldokumentation nicht beschrieben. Der "Context Sufficiency Guard" erfüllt eine
+ähnliche Funktion, indem er unzureichenden Kontext markiert. **UNKLARHEIT IN DER DOKU - BITTE PRÜFEN:** Automatisierte
+Bias-Überwachung oder Modell-Drift-Erkennung ist in der Plattform derzeit nicht implementiert. Das Bewertungs-Framework
+und OpenTelemetry-Tracing bieten jedoch grundlegende Funktionen, die für eine Erweiterung genutzt werden könnten.
 
 ### Technische Umsetzung im Swiss AI Hub: Konfigurierbare Wächter und Bewertungsdienst
 
@@ -230,9 +243,7 @@ Die LLM-Wächter sind als konfigurierbare Komponenten in die Agenten-Workflows i
 PII-Anonymisierung mittels Presidio erfolgt präventiv in der Verarbeitungskette. Der Bewertungsdienst ermöglicht das
 Erstellen von Datasets und das Ausführen von Experimenten, wobei die drei KI-Richter Bewertungen nach den Metriken
 Korrektheit, Vollständigkeit und Prägnanz abgeben. Die Ergebnisse werden detailliert in der UI angezeigt und dienen als
-Grundlage für Optimierungen. Input-Validierungen gegen bösartige Eingaben, einschliesslich Dateityp-Whitelisting,
-MIME-Typ-Validierung und Dateinamenprüfung, werden in der Plattform implementiert (siehe Kapitel 07, Datensicherheit und
-Datenfluss).
+Grundlage für Optimierungen.
 
 ## 6. Sichere Orchestrierung von Multi-Agenten-Systemen
 

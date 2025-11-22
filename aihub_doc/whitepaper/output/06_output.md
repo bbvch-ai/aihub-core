@@ -22,34 +22,37 @@ autorisierte Informationen zugreifen und somit Datenschutzrisiken minimiert werd
 KI-gestützte Entscheidungen und unterstützt die Compliance mit Schweizer Datenschutzgesetzen. IT-Professionals
 profitieren von einer intuitiven Struktur, die die Verwaltung von Wissensressourcen vereinfacht, die Skalierbarkeit
 fördert und eine präzise Steuerung der Informationsflüsse ermöglicht, was die Wartbarkeit und Sicherheit der gesamten
-KI-Plattform erheblich verbessert.
+KI-Plattform erheblich verbessert. Das gezielte "Collection-Scoping" gewährleistet, dass sensible Daten nicht
+unbeabsichtigt von KI-Agenten verwendet werden, und erhöht somit die Sicherheit und Relevanz der generierten Antworten.
 
 ### Konzepte & Prozesse: Hierarchische Gliederung und Agenten-spezifische Wissenspools
 
 Der Swiss AI Hub organisiert Unternehmenswissen in einer hierarchischen Struktur, die auf Governance, Skalierbarkeit und
 klare Eigentumsgrenzen ausgelegt ist. Auf der höchsten Ebene können Organisationen mehrere isolierte
-**Wissensdatenbanken** (auch als "Buckets" oder logische "Collections" bezeichnet) erstellen. Jede dieser Datenbanken
-repräsentiert einen eigenen Wissensbereich, eine Abteilung oder eine spezifische Sicherheitsgrenze und gewährleistet
-eine vollständige Trennung von Daten, Berechtigungen und Verarbeitungspipelines. Innerhalb jeder Wissensdatenbank wird
-das Wissen in **Namespaces** (ähnlich wie Ordner) organisiert. Diese logischen Container gruppieren verwandte Dokumente
-nach Thema, Projekt oder Geschäftsfunktion.
+**Wissensdatenbanken** erstellen. Jede Datenbank repräsentiert einen eigenen Wissensbereich, eine Abteilung oder eine
+spezifische Sicherheitsgrenze und gewährleistet eine vollständige Trennung von Daten, Berechtigungen und
+Verarbeitungspipelines. Innerhalb jeder Wissensdatenbank wird das Wissen in **Namespaces** (in der Benutzeroberfläche
+als „Sammlungen“ bezeichnet) organisiert. Diese logischen Container gruppieren verwandte Dokumente nach Thema, Projekt
+oder Geschäftsfunktion. Wichtig ist hierbei, dass Namespaces als flache Metadatenattribute und nicht als verschachtelte
+Ordnerstrukturen implementiert sind.
 
 Ein entscheidendes Konzept ist das **kontrollierte RAG-Scoping** (Retrieval-Augmented Generation). Agenten werden so
-konfiguriert, dass sie auf bestimmte Namespaces zugreifen. Wenn ein Benutzer mit einem solchen Agenten interagiert,
-basieren die generierten Antworten ausschliesslich auf den Informationen aus diesen spezifischen, vordefinierten
-Namespaces. Dies stellt sicher, dass der Agent nur relevante und autorisierte Daten für seine Antworten verwendet, was
-die Genauigkeit erhöht und unzulässige Informationsflüsse verhindert.
+konfiguriert, dass sie auf bestimmte Sammlungen zugreifen können. Wenn ein Benutzer mit einem solchen Agenten
+interagiert, basieren die generierten Antworten ausschliesslich auf den Informationen aus diesen spezifischen,
+vordefinierten Sammlungen. Dies stellt sicher, dass der Agent nur relevante und autorisierte Daten für seine Antworten
+verwendet, was die Genauigkeit erhöht und unzulässige Informationsflüsse verhindert.
 
 ### Technische Umsetzung im Swiss AI Hub: Isolierte Wissensdatenbanken und Namespace-Filterung
 
 Technisch gesehen ermöglichen Wissensdatenbanken eine vollständige Datenisolation und Trennung von
 Verarbeitungs-Pipelines. Namespaces sind als Metadatenattribute an jeden Dokumenten-Chunk im Vektor-Store angehängt.
-Diese Metadaten ermöglichen ein präzises Targeting bei Abrufoperationen. Die Zugriffskontrolle erfolgt auf
-Agenten-Ebene: Ist ein Agent für den Zugriff auf spezifische Namespaces konfiguriert, erhalten alle Benutzer, die mit
-diesem Agenten interagieren, Antworten, die auf demselben, exakt definierten Wissensset basieren. Die Plattform
+Diese Metadaten ermöglichen ein präzises Targeting bei Abrufoperationen. Die Zugriffskontrolle erfolgt primär auf
+**Agenten-Ebene**: Ist ein Agent für den Zugriff auf spezifische Sammlungen konfiguriert, erhalten alle Benutzer, die
+mit diesem Agenten interagieren, Antworten, die auf demselben, exakt definierten Wissensset basieren. Die Plattform
 unterstützt zudem die Mehrsprachigkeit auf Ebene der organisatorischen Elemente (Datenbank- und
 Namespace-Bezeichnungen), um eine konsistente Benutzererfahrung in Deutsch, Englisch, Französisch und Italienisch zu
-gewährleisten.
+gewährleisten. Berechtigungen können auf Datenbank- oder Namespace-Ebene über das RBAC-System (z.B.
+`aihub.user.knowledge.hr_documents.policies`) zugewiesen werden.
 
 ## 2. Automatisierte Datenintegration und Lebenszyklusmanagement
 
@@ -62,30 +65,40 @@ einzuspeisen.
 
 Für C-Level-Führungskräfte bedeutet die automatisierte Integration einen erheblichen Wettbewerbsvorteil durch den
 Zugriff auf stets aktuelles Unternehmenswissen, was schnellere und fundiertere Entscheidungen ermöglicht. Gleichzeitig
-senkt sie die Betriebskosten durch die Eliminierung manueller Prozesse. IT-Abteilungen profitieren von einer
+senkt sie die Betriebskosten durch die Eliminierung manueller Prozesse und die effiziente Nutzung von Rechenressourcen,
+da die Verarbeitung nur bei tatsächlichen Datenänderungen stattfindet. IT-Abteilungen profitieren von einer
 zuverlässigen, wartungsarmen Datenversorgung und standardisierten Schnittstellen, die den administrativen Aufwand
 reduzieren und die Datenqualität sicherstellen. Die Plattform wandelt unstrukturierte Rohdaten in ein sofort
 verwertbares, "lebendiges" Wissen um.
 
-### Konzepte & Prozesse: Umfassende Dokumentenerfassung und kontinuierliche Synchronisation
+### Konzepte & Prozesse: Hybride Automatisierungsstrategie und kontinuierliche Synchronisation
 
 Der Swiss AI Hub unterstützt die Dokumentenerfassung auf zwei Arten: über den manuellen Upload durch autorisierte
 Benutzer für kontrollierte Workflows und über die automatisierte Synchronisierung. Letztere ist der Eckpfeiler für ein
-dynamisches Wissensmanagement. Daten-Pipelines verbinden sich kontinuierlich mit externen Systemen, überwachen diese auf
-Änderungen und synchronisieren neue, geänderte oder gelöschte Dokumente mit der Swiss AI Hub Wissensbasis. Diese
-kontinuierliche Synchronisation stellt sicher, dass die KI-Agenten stets mit der neuesten Version Ihrer
-Unternehmensdaten arbeiten, ohne dass manuelle Eingriffe erforderlich sind.
+dynamisches Wissensmanagement und basiert auf einer **hybriden Automatisierungsstrategie**:
 
-### Technische Umsetzung im Swiss AI Hub: Vorkonfigurierte Konnektoren und Pipeline-Orchestrierung
+1. **Zeitgesteuerte Überwachung**: Ein schlanker Job überprüft nach einem festen Zeitplan (z.B. täglich) die externen
+   Datenquellen (z.B. einen S3-Bucket oder SharePoint) auf neue oder geänderte Dateien und protokolliert deren
+   Versionen. Dieser Schritt ist ressourcenschonend, da er keine Dokumente verarbeitet.
+2. **Änderungsgesteuerte Verarbeitung**: Nur wenn die Überwachung Änderungen feststellt, wird die ressourcenintensive
+   Dokumentenverarbeitung durch einen Sensor oder eine `AutomationCondition` ausgelöst.
+
+Diese ereignisgesteuerte Lebenszyklusmanagement stellt sicher, dass Dokumente, sobald sie hinzugefügt, geändert oder
+gelöscht werden, automatisch durch die Verarbeitungskette geleitet und die Wissensdatenbank konsistent aktualisiert
+wird.
+
+### Technische Umsetzung im Swiss AI Hub: Vorkonfigurierte Konnektoren und Dagster-Orchestrierung
 
 Die Plattform bietet vorkonfigurierte Konnektoren für eine Vielzahl gängiger Unternehmenssysteme. Dazu gehören
-Enterprise-Kollaborationsplattformen wie Microsoft SharePoint, OneDrive und Confluence, Dateisysteme (Netzlaufwerke,
-lokale Speicher) sowie Cloud-Speicher wie Azure Blob Storage und S3-kompatible Object-Stores. Über entsprechende
-Konnektoren können auch Inhalte von öffentlichen Websites erfasst werden. Die
-`default_sharepoint_to_datalake_definitions`-Factory beispielsweise ermöglicht die nahtlose Synchronisation von
-SharePoint-Dokumenten in einen S3-Data-Lake. Dieses ereignisgesteuerte Lebenszyklusmanagement stellt sicher, dass
-Dokumente, sobald sie hinzugefügt, geändert oder gelöscht werden, automatisch durch die Verarbeitungskette geleitet
-werden.
+Enterprise-Kollaborationsplattformen wie Microsoft SharePoint und OneDrive, Dateisysteme (Netzlaufwerke, lokale
+Speicher) sowie Cloud-Speicher wie Azure Blob Storage und S3-kompatible Object-Stores. Über entsprechende Konnektoren
+können auch Inhalte von öffentlichen Websites erfasst werden. Die `default_sharepoint_to_datalake_definitions`-Factory
+beispielsweise ermöglicht die nahtlose Synchronisation von SharePoint-Dokumenten in einen S3-Data-Lake.
+
+Die zugrunde liegende Orchestrierung erfolgt mit **Dagster**. Hierbei wird ein `observable_source_asset` konfiguriert,
+der die Datenquelle überwacht. `AutomationCondition.eager()` an den nachgelagerten Assets stellt sicher, dass die
+eigentliche Verarbeitung nur bei erkannten Änderungen ausgeführt wird. Dokumente, die in externen Quellen gelöscht
+werden, werden auch aus der Swiss AI Hub Wissensbasis entfernt.
 
 ## 3. Intelligente Dokumentenverarbeitung für KI-Bereitschaft
 
@@ -105,30 +118,30 @@ Eingabedaten für KI-Modelle gewährleistet.
 ### Konzepte & Prozesse: Hochentwickelte Parsing-, Chunking- und Embedding-Pipeline
 
 Sobald Dokumente erfasst sind, initiiert die Plattform eine hochentwickelte Verarbeitungspipeline, die Rohinhalte in
-eine KI-bereite Wissensbasis transformiert. Dazu gehören:
+eine KI-bereite Wissensbasis transformiert. Dazu gehören fünf Verarbeitungsstufen:
 
-- **Dokumenten-Parsing:** Extraktion von Text, Struktur, Tabellen und Metadaten aus verschiedenen Dateiformaten wie
-  PDFs, Word-, Excel- und PowerPoint-Dokumenten.
-- **Optische Zeichenerkennung (OCR):** Zur Verwandlung von Text in Bildern oder gescannten PDFs in maschinenlesbare
-  Inhalte.
-  `UNKLARHEIT IN DER DOKU - BITTE PRÜFEN: Die Quelldokumentation erwähnt "fortgeschrittene Parsing-Techniken" für verschiedene Formate, listet OCR jedoch nicht explizit auf, obwohl es im Kernziel genannt wird.`
-- **Intelligentes Chunking:** Dokumente werden in semantisch bedeutsame "Chunks" segmentiert, die den Kontext bewahren
-  und gleichzeitig die Abrufleistung optimieren. Das System berücksichtigt Überschriftenhierarchien und Abschnitte.
-- **Metadatenextraktion:** Automatische Erfassung von Erstellungsdaten, Zeitstempeln, Quellinformationen,
-  Spracherkennung und Strukturelementen.
-- **Vektoreinbettung (Vector Embedding):** Umwandlung der verarbeiteten Inhalte in hochdimensionale Vektordarstellungen,
-  die eine semantische Suche ermöglichen, die über die reine Stichwortsuche hinausgeht.
-- **Strukturelle Verknüpfung und Zusammenfassungsgenerierung:** Die Pipeline erstellt sequentielle und hierarchische
-  Verknüpfungen zwischen Chunks und generiert Zusammenfassungen für Dokumentenabschnitte, um einen vollständigen Kontext
-  zu gewährleisten.
+1. **Dokumenten-Parsing**: Extraktion von Text, Struktur, Tabellen, Abbildungen und Metadaten aus verschiedenen
+   Dateiformaten wie PDFs, Word-, Excel- und PowerPoint-Dokumenten. Dies beinhaltet die Verarbeitung komplexer Layouts,
+   mehrspaltiger Seiten und eingebetteter Inhalte, während die logische Struktur erhalten bleibt.
+2. **Chunking**: Dokumente werden in semantisch bedeutsame "Chunks" segmentiert, die den Kontext bewahren und
+   gleichzeitig die Abrufleistung optimieren. Hierbei wird ein struktureller Parser verwendet, der den Text an
+   Überschriften- und Absatzgrenzen aufteilt.
+3. **Vektoreinbettung (Vector Embedding)**: Umwandlung der verarbeiteten Text-Chunks in hochdimensionale
+   Vektordarstellungen, die eine semantische Suche ermöglichen, die über die reine Stichwortsuche hinausgeht.
+4. **Strukturelle Verlinkung**: Es werden sequentielle Links zwischen benachbarten Chunks sowie hierarchische Links zu
+   Abschnittszusammenfassungen auf übergeordneten Ebenen erstellt. Dies ermöglicht Agenten, einen vollständigen Kontext
+   aufzubauen, indem sie umgebende oder übergeordnete Chunks abrufen.
+5. **Zusammenfassungsgenerierung**: Erstellung hierarchischer Zusammenfassungen für Dokumentenabschnitte, um Agenten ein
+   breiteres Kontextverständnis bei der Abfrage spezifischer Details zu ermöglichen.
 
-### Technische Umsetzung im Swiss AI Hub: Docling, Vektordatenbanken und Dagster
+### Technische Umsetzung im Swiss AI Hub: Docling, Vektordatenbanken und Wissensgraphen
 
-Die Dokumentenverarbeitung nutzt spezialisierte Komponenten zur Extraktion von Inhalten aus verschiedenen Dateiformaten.
-Für das semantische Chunking kommt ein struktureller Parser zum Einsatz, der Text an Überschriften- und Absatzgrenzen
-aufteilt, um kohärente Informationsblöcke zu erhalten. Anschliessend werden diese Chunks mittels KI-Modellen in
-Vektoreinbettungen umgewandelt und zusammen mit den ursprünglichen Text-Chunks und Metadaten in einer Vektordatenbank
-(z.B. Milvus) gespeichert. Dies bildet einen Wissensgraphen, der effiziente semantische Suchfunktionen ermöglicht. Die
+Die Dokumentenverarbeitung nutzt **Docling** zur Extraktion von Inhalten aus verschiedenen Dateiformaten,
+einschliesslich der Handhabung von gescannten PDFs, die durch Texterkennung zugänglich gemacht werden. Für das
+semantische Chunking kommt ein struktureller Parser zum Einsatz. Anschliessend werden diese Chunks mittels KI-Modellen
+in Vektoreinbettungen umgewandelt und zusammen mit den ursprünglichen Text-Chunks und Metadaten in einer Vektordatenbank
+(z.B. **Milvus**) gespeichert. Dies bildet einen **Wissensgraphen**, der effiziente semantische Suchfunktionen
+ermöglicht, indem er nicht nur isolierte Textfragmente, sondern auch deren strukturelle Beziehungen speichert. Die
 `default_definitions`-Factory im SDK kapselt diesen mehrstufigen Verarbeitungs-Workflow und integriert ihn nahtlos in
 die Gesamtplattform.
 
@@ -144,7 +157,8 @@ C-Level-Führungskräfte benötigen die Gewissheit, dass die KI-Infrastruktur mi
 auch bei riesigen Datenmengen performant bleibt. Eine transparente Datenherkunft ist zudem entscheidend für die
 Einhaltung regulatorischer Anforderungen und die Verteidigung von KI-generierten Entscheidungen. IT-Teams profitieren
 von einem robusten, fehlertoleranten System, das eine massive Parallelisierung ermöglicht und gleichzeitig eine präzise
-Rückverfolgbarkeit bis zur Quelle jeder Information bietet.
+Rückverfolgbarkeit bis zur Quelle jeder Information bietet. Fehler in einem Dokument beeinträchtigen nicht die gesamte
+Pipeline.
 
 ### Konzepte & Prozesse: Dagster-Orchestrierung, partitionsbasierte Verarbeitung und Data Lineage
 
@@ -154,7 +168,7 @@ Verarbeitungslogik, bedingte Workflows und robuste Fehlerbehandlung bietet. Jede
 **Partition** verarbeitet, was eine isolierte und parallele Bearbeitung ermöglicht. Fehler in einem Dokument
 beeinträchtigen nicht die gesamte Pipeline. Pipelines sind so konzipiert, dass sie **änderungsgesteuert** agieren:
 Beobachtbare Quell-Assets erkennen neue, geänderte oder gelöschte Dateien und lösen die nachgelagerte Verarbeitung nur
-bei Bedarf aus, was hocheffizient ist.
+bei Bedarf aus, was hocheffizient ist und Rechenressourcen spart.
 
 Die Plattform gewährleistet zudem eine **lückenlose Datenherkunft (Data Lineage)**. Jede Aktion einer Pipeline wird
 protokolliert, und für RAG-Antworten wird exakt festgehalten, welche spezifischen Quelldokumente, Dokumentversionen oder
@@ -167,12 +181,13 @@ Monitoring-Funktionen zur visuellen Verfolgung von Asset-Abstammung und -Abhäng
 mit Metadaten angereichert (Dateigrösse, Verarbeitungszeit, Dokumentseiten, verwendete Parserversionen), die eine
 lückenlose Dokumentation der Verarbeitungsschritte gewährleisten. Die Plattform kann Millionen von Dokumenten verwalten
 und auch sehr grosse Einzeldateien effizient verarbeiten, indem sie auf die Parallelisierungsfähigkeiten von Dagster und
-die partitionsbasierte Verarbeitung setzt. Ingestion-Durchläufe erfolgen änderungsgesteuert oder nach Zeitplan (z.B.
-nächtlich), wobei die ressourcenintensive Verarbeitung nur bei tatsächlichen Datenänderungen ausgelöst wird. Die
-Quellenzuordnung wird durch Metadaten im Vektor-Store sichergestellt. Jeder abgerufene Chunk verweist auf sein
-Quelldokument, was transparente Zitierung und Überprüfung von KI-Antworten ermöglicht. Das
-Dokumenten-Lebenszyklusmanagement in der Pipeline (Hinzufügen, Ändern, Löschen) sorgt dafür, dass veraltete
-Informationen konsistent entfernt werden, was auch die Versionsverfolgung für regulatorische Dokumente unterstützt.
+die partitionsbasierte Verarbeitung setzt, die durch `DynamicPartitionsDefinition` und `AutomationCondition.eager()`
+realisiert wird. Ingestion-Durchläufe erfolgen änderungsgesteuert oder nach Zeitplan (z.B. nächtlich), wobei die
+ressourcenintensive Verarbeitung nur bei tatsächlichen Datenänderungen ausgelöst wird. Die Quellenzuordnung wird durch
+Metadaten im Vektor-Store sichergestellt. Jeder abgerufene Chunk verweist auf sein Quelldokument, was transparente
+Zitierung und Überprüfung von KI-Antworten ermöglicht. Das Dokumenten-Lebenszyklusmanagement in der Pipeline
+(Hinzufügen, Ändern, Löschen) sorgt dafür, dass veraltete Informationen konsistent entfernt werden, was auch die
+Versionsverfolgung für regulatorische Dokumente unterstützt.
 
 ## 5. Sicherstellung der Datenintegrität und -sicherheit während der Aufnahme
 
@@ -194,8 +209,9 @@ Der Swiss AI Hub implementiert eine mehrstufige Eingabevalidierung, um die Wisse
 schützen. Dies umfasst eine strikte Dateityp-Whitelist, die nur genehmigte Dateiformate zulässt, und eine
 MIME-Typ-Validierung, um Verschleierungstaktiken zu verhindern. Dateinamen werden auf Path Traversal-Versuche,
 Erweiterungs-Spoofing und Null-Bytes geprüft. Dateigrössenbeschränkungen verhindern zudem Ressourcenerschöpfung. Diese
-Massnahmen stellen sicher, dass nur sichere und erwartungsgemässe Inhalte in das System gelangen. Idealerweise wird der
-Ingestion-Prozess durch zusätzliche Sicherheitsmechanismen wie einen Malware-Scan ergänzt.
+Massnahmen stellen sicher, dass nur sichere und erwartungsgemässe Inhalte in das System gelangen. Pipelines können zudem
+um Schritte für ein Security Scanning erweitert werden, um auf bösartige Inhalte oder Richtlinienverstösse zu prüfen,
+bevor Dokumente verarbeitet werden.
 
 ### Technische Umsetzung im Swiss AI Hub: Strikte Validierungsregeln und Schutz vor Bedrohungen
 
@@ -205,9 +221,8 @@ dem erwarteten MIME-Typ entspricht. Dateinamen müssen alphanumerisch beginnen u
 `/`, `\` oder Null-Bytes überprüft. Maximale Dateigrössenbeschränkungen werden auf Anwendungs- oder Reverse-Proxy-Ebene
 durchgesetzt, um grosse, potenziell schädliche Dateien abzuwehren. Diese Schutzmassnahmen verhindern Path
 Traversal-Angriffe, MIME-Typ-Verwechslung, Erweiterungs-Spoofing und das Hochladen ausführbarer Dateien. Die
-Dokumentation erwähnt keine dedizierte Malware-Scan-Funktion als Teil der `Eingabevalidierung`.
-
-- `UNKLARHEIT IN DER DOKU - BITTE PRÜFEN: Die Quelldokumentation beschreibt keine explizite Funktion für einen Malware-Scan während der Dokumentenaufnahme, obwohl dies in den Kernaussagen des Kapitels erwähnt wird. Es wird angenommen, dass dies eine ergänzende, organisatorische oder zukünftige technische Implementierung wäre.`
+Quelldokumentation beschreibt "Security Scanning" als eine optionale, in Pipelines integrierbare Qualitäts- und
+Sicherheitskontrolle, nicht als eine standardmässig aktivierte Malware-Scan-Funktion der Basissystem-Ingestion.
 
 Diese robusten Validierungsmechanismen tragen wesentlich zum Schutz vor Kompromittierungen und zur Sicherstellung der
 Datenintegrität bei.

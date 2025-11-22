@@ -34,8 +34,8 @@ Der Swiss AI Hub realisiert dieses mehrschichtige Sicherheitsmodell durch das Zu
 Komponenten. Externe Zugriffe werden zunächst durch Netzwerk-Firewalls und einen Reverse Proxy gefiltert. Die internen
 Dienste laufen in isolierten Docker-Containern mit minimalen Rechten. Authentifizierung und Autorisierung sichern den
 Zugang zu Plattformressourcen, während Daten im Ruhezustand und während der Übertragung verschlüsselt sind. Ergänzt wird
-dies durch KI-spezifische Wächter und Anonymisierungsfunktionen, die die Integrität und Vertraulichkeit von
-KI-Interaktionen gewährleisten.
+dies durch KI-spezifische Eingabe- und Ausgabe-Wächter sowie Anonymisierungsfunktionen, die präventiv die Integrität und
+Vertraulichkeit von KI-Interaktionen gewährleisten.
 
 ## 2. Identitäts- und Zugriffsmanagement: Sichere Authentifizierung und Autorisierung
 
@@ -83,14 +83,16 @@ vollständige Volume-Verschlüsselung geschützt werden. Gleichzeitig wird die g
 als auch intern (wo kritisch), kryptografisch gesichert. Das Schlüsselmanagement erfolgt unabhängig von den Daten, um
 Rotation und Sicherheit zu gewährleisten.
 
-### Technische Umsetzung im Swiss AI Hub: Geplante LUKS-Verschlüsselung und TLS/HTTPS
+### Technische Umsetzung im Swiss AI Hub: LUKS-Verschlüsselung und TLS/HTTPS
 
-- **Verschlüsselung im Ruhezustand (Data-at-Rest):** Das geplante Sicherheitskonzept sieht eine
-  **LUKS-Volume-Verschlüsselung** für alle persistenten Docker-Volumes vor, die Anwendungsdatenbanken,
-  Vektordatenbank-Indizes und Dokumentenspeicherung umfassen. LUKS bietet eine AES-256-Verschlüsselung im XTS-Modus und
-  schützt Daten auch bei physischem Zugriff. Geheimnisse und sensitive Konfigurationsdaten werden über
-  Umgebungsvariablen, Azure Key Vault oder Docker-Secrets verwaltet.
-  `UNKLARHEIT IN DER DOKU - BITTE PRÜFEN: Eine dedizierte Datenbank-Verschlüsselung auf Ebene Transparent Data Encryption (TDE) ist in der Quelldokumentation für die verwendeten Datenbanken nicht explizit aufgeführt, wird aber durch die LUKS-Volume-Verschlüsselung abgedeckt.`
+- **Verschlüsselung im Ruhezustand (Data-at-Rest):** Das Sicherheitskonzept sieht eine **LUKS-Volume-Verschlüsselung**
+  für alle persistenten Docker-Volumes vor (bei On-Premise-Deployments), die Anwendungsdatenbanken,
+  Vektordatenbank-Indizes und Dokumentenspeicherung umfassen. Alternativ wird bei Private Cloud-Deployments
+  `Azure Disk Encryption` verwendet. Dies bietet eine AES-256-Verschlüsselung im XTS-Modus und schützt Daten auch bei
+  physischem Zugriff. Geheimnisse und sensitive Konfigurationsdaten werden über Umgebungsvariablen, Azure Key Vault oder
+  Docker-Secrets verwaltet. UNKLARHEIT IN DER DOKU - BITTE PRÜFEN: Eine dedizierte Datenbank-Verschlüsselung auf Ebene
+  Transparent Data Encryption (TDE) ist in der Quelldokumentation für die verwendeten Datenbanken nicht explizit
+  aufgeführt, wird aber durch die LUKS-Volume-Verschlüsselung abgedeckt.
 - **Verschlüsselung während der Übertragung (Data-in-Transit):** Der Traefik Reverse Proxy terminiert TLS am
   Netzwerkrand und erzwingt HTTPS mit TLS 1.2 und TLS 1.3. Er verwaltet auch Let's Encrypt-Zertifikate und wendet
   Sicherheits-Header wie HSTS an. Alle Verbindungen zu externen Diensten (z.B. LLM-Anbietern, OAuth/OIDC-Anbietern)
@@ -138,20 +140,46 @@ KI-gestützte Prozesse stärkt.
 
 ### Konzepte & Prozesse: Agenten-Wächter und Privacy by Design
 
-Die Plattform implementiert LLM-Wächter ("Guardrails"), die KI-Agenten-Interaktionen in Echtzeit überprüfen – sowohl bei
-der Eingabe (Input) als auch bei der Ausgabe (Output). Zusätzlich sorgt ein "Privacy by Design"-Ansatz dafür, dass
-personenbezogene Daten proaktiv identifiziert und anonymisiert werden.
+Die Plattform implementiert LLM-Wächter ("Guardrails"), die KI-Agenten-Interaktionen in Echtzeit überwachen – sowohl bei
+der Eingabe (Input) als auch bei der Ausgabe (Output). Diese Wächter agieren auf Agenten-Ebene, um themenfremde
+Anfragen, Richtlinienverstösse oder Halluzinationen zu verhindern. Eingangs-Schutzmechanismen analysieren
+Benutzerfragen, bevor der Agent diese verarbeitet, während Ausgangs-Schutzmechanismen die generierten Agentenantworten
+prüfen, bevor sie an den Benutzer ausgeliefert werden. Ergänzend dazu sorgt ein "Privacy by Design"-Ansatz durch die
+Integration von Presidio auf Plattform-Ebene dafür, dass personenbezogene Daten (PII) proaktiv identifiziert und
+anonymisiert werden, bevor sie externe LLM-Anbieter erreichen. Diese mehrstufige Verteidigung gewährleistet sowohl die
+Integrität der Agenteninteraktionen als auch den umfassenden Schutz sensibler Benutzerdaten.
 
 ### Technische Umsetzung im Swiss AI Hub: Konfigurierbare LLM-Wächter und Presidio-Integration
 
-Die **LLM-Wächter** umfassen Input-Wächter wie den `Agentenbeschreibungs-Wächter` (blockiert themenfremde Fragen) und
-den `Few-Shot-Wächter` (erzwingt benutzerdefinierte Richtlinien anhand von Beispielen). Output-Wächter wie der
-`Kontext-Hinreichend-Wächter` (verhindert Halluzinationen, indem er ausreichende Kontextinformationen prüft) und der
-`Wächter für sensible Informationen` (redigiert PII aus Antworten) sichern die Ausgabe. Die Plattform integriert
-`Presidio` zur automatischen Erkennung und **Anonymisierung sensibler Daten (PII)**. Alle LLM-Anfragen durchlaufen
-diesen Prozess, bevor sie das interne System verlassen, um den ungewollten Abfluss sensibler Informationen zu
-verhindern. Dies schützt auch davor, dass interne Benutzer unbeabsichtigt sensible Informationen in Prompts eingeben,
-die dann extern verarbeitet würden.
+Die **LLM-Wächter** umfassen spezialisierte Input- und Output-Schutzmechanismen. Bei den **Eingangs-Schutzmechanismen**
+stellt der `Agentenbeschreibungs-Schutzmechanismus` sicher, dass Fragen zur definierten Funktion des Agenten passen und
+blockiert irrelevante Anfragen. Der `Few-Shot-Schutzmechanismus` erzwingt benutzerdefinierte Richtlinien, indem er
+Muster anhand von konfigurierbaren Beispielen lernt und ähnliche Anfragen blockiert oder zulässt. Die
+**Ausgangs-Schutzmechanismen** umfassen den `Kontext-Ausreichend-Schutzmechanismus`, der prüft, ob der Agent über
+genügend Informationen aus den Wissensdatenbanken verfügt, um präzise zu antworten und Halluzinationen entgegenwirkt.
+Ein `Wächter für sensible Informationen` erkennt und redigiert vertrauliche oder personenbezogene Daten (PII) aus
+Agentenantworten, bevor diese an Benutzer ausgeliefert werden, und ersetzt sie beispielsweise durch `[REDACTED]`.
+
+Für die umfassende **Anonymisierung sensibler Daten (PII)** auf Plattform-Ebene integriert der Swiss AI Hub **Presidio**
+in der LiteLLM-Proxy-Schicht. Presidio scannt Benutzerfragen nach PII-Mustern und erkennt dabei vordefinierte oder
+benutzerdefinierte Entitätstypen wie:
+
+- Personennamen
+- E-Mail-Adressen
+- Kreditkartennummern
+- Telefonnummern
+- Sozialversicherungsnummern (SSN)
+- IP-Adressen
+- Geografische Standorte
+- Daten Die Erkennung erfolgt mittels Musterabgleich, regulären Ausdrücken und Modellen zur Erkennung benannter
+  Entitäten (Named Entity Recognition) und unterstützt mehrere Sprachen, darunter Deutsch, Englisch, Französisch und
+  Italienisch. Es bietet zwei Anonymisierungsmodi:
+- **Maskierungsmodus (Mask mode):** Ersetzt erkannte PII durch Platzhalter (z.B. `[PERSON]`), um den Kontext für das LLM
+  zu erhalten.
+- **Blockierungsmodus (Block mode):** Lehnt die gesamte Anfrage ab, wenn hochsensible PII (z.B. Kreditkartennummern)
+  erkannt werden. Diese Presidio-Guardrails sind standardmässig deaktiviert und müssen pro Deployment und
+  Datensensitivitätsanforderung konfiguriert und aktiviert werden, um PII zu schützen, bevor sie externe LLM-Anbieter
+  erreichen.
 
 ## 6. Robuste Eingabevalidierung und Integritätsschutz
 
@@ -173,8 +201,9 @@ Der Swiss AI Hub beschränkt Dateiuploads auf eine **Whitelist von etwa 40 geneh
 **MIME-Typ-Validierung** verhindert das Verschleiern bösartiger Dateien. Dateinamen werden auf **Path
 Traversal-Versuche** (`..`, `/`, `\`), Erweiterungs-Spoofing und Null-Bytes geprüft. **Dateigrössenbeschränkungen**
 verhindern Ressourcenerschöpfung. Diese Massnahmen schützen vor SQL-, XSS- oder Command-Injection-Angriffen, indem
-bösartige Dateiinhalte oder -namen abgeblockt werden.
-`UNKLARHEIT IN DER DOKU - BITTE PRÜFEN: Die Quelldokumentation beschreibt keine explizite Funktion für einen Malware-Scan während der Dokumentenaufnahme. Es wird angenommen, dass dies eine ergänzende, organisatorische oder zukünftige technische Implementierung wäre.`
+bösartige Dateiinhalte oder -namen abgeblockt werden. UNKLARHEIT IN DER DOKU - BITTE PRÜFEN: Die Quelldokumentation
+beschreibt keine explizite Funktion für einen Malware-Scan während der Dokumentenaufnahme. Es wird angenommen, dass dies
+eine ergänzende, organisatorische oder zukünftige technische Implementierung wäre.
 
 ## 7. Kontinuierliche Sicherheitsoperationen und Auditierung
 

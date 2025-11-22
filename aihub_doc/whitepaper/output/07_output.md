@@ -22,27 +22,33 @@ von KI-Anwendungen und minimiert operationelle und Compliance-Risiken. IT-Sicher
 Werkzeuge, um die Integrität und den Schutz der KI-Interaktionen in Echtzeit zu gewährleisten, wodurch sie sich auf die
 Wertschöpfung durch KI konzentrieren können, anstatt grundlegende Sicherheitslücken zu adressieren.
 
-### Konzepte & Prozesse: Agenten-Wächter und zweistufige Prüfung
+### Konzepte & Prozesse: Agenten-Wächter und mehrstufige Prüfung
 
 Der Swiss AI Hub begegnet diesen Herausforderungen mit einem System von sogenannten LLM-Wächtern ("Guardrails"), die
 KI-Agenten-Interaktionen in Echtzeit überwachen. Diese Wächter operieren präventiv an zwei kritischen Punkten im
-Datenfluss: bei der Eingabe (Input) und bei der Ausgabe (Output). Input-Wächter analysieren Benutzerfragen, bevor der
-Agent diese verarbeitet, und filtern themenfremde Anfragen oder Richtlinienverstösse heraus. Output-Wächter prüfen die
-generierten Agentenantworten, bevor sie an den Benutzer ausgeliefert werden, um deren Qualität, Angemessenheit und
-Sicherheit zu verifizieren.
+Datenfluss: bei der Eingabe (Input) und bei der Ausgabe (Output). Eingangs-Schutzmechanismen analysieren Benutzerfragen,
+bevor der Agent diese verarbeitet, und filtern themenfremde Anfragen oder Richtlinienverstösse heraus.
+Ausgangs-Schutzmechanismen prüfen die generierten Agentenantworten, bevor sie an den Benutzer ausgeliefert werden, um
+deren Qualität, Angemessenheit und Sicherheit zu verifizieren. Im Gegensatz zu Evaluationen, die Agenten vor der
+Bereitstellung testen, laufen diese Schutzmechanismen während Live-Gesprächen. Die Guardrails arbeiten auf
+Agenten-Ebene, ergänzend zum plattformweiten PII-Schutz auf LiteLLM-Proxy-Ebene.
 
 ### Technische Umsetzung im Swiss AI Hub: Konfigurierbare LLM-Wächter
 
-Die technische Implementierung der LLM-Wächter im Swiss AI Hub umfasst verschiedene spezialisierte Komponenten:
+Die technische Implementierung der LLM-Wächter im Swiss AI Hub umfasst verschiedene spezialisierte Komponenten. Bei den
+**Eingangs-Schutzmechanismen** stellt der `Agentenbeschreibungs-Schutzmechanismus` sicher, dass Fragen zur definierten
+Funktion des Agenten passen und blockiert irrelevante Anfragen. Ein Agent für Finanz-Compliance würde beispielsweise die
+Frage "Wie ist das Wetter?" blockieren. Der `Few-Shot-Schutzmechanismus` erzwingt benutzerdefinierte Richtlinien, indem
+er Muster anhand von konfigurierbaren Beispielen lernt und ähnliche Anfragen blockiert oder zulässt, etwa um die Nutzung
+von Arbeitsassistenten für Unterhaltungszwecke zu unterbinden.
 
-- **Input-Wächter** wie der `Agentenbeschreibungs-Wächter` stellen sicher, dass Fragen zur definierten Funktion des
-  Agenten passen und blockieren irrelevante Anfragen. Der `Few-Shot-Wächter` erzwingt benutzerdefinierte Richtlinien,
-  indem er Muster anhand von konfigurierbaren Beispielen lernt und ähnliche Anfragen blockiert oder zulässt.
-- **Output-Wächter** umfassen den `Kontext-Hinreichend-Wächter`, der prüft, ob der Agent über genügend Informationen aus
-  den Wissensdatenbanken verfügt, um präzise zu antworten, was "Halluzinationen" (erfundene Antworten) entgegenwirkt.
-  Ein `Wächter für sensible Informationen` erkennt und redigiert vertrauliche oder personenbezogene Daten (PII) aus den
-  Antworten, bevor diese an Benutzer ausgeliefert werden, und ersetzt sie beispielsweise durch `[REDACTED]`. Diese
-  Wächter können je nach Agentendesign und Risikostufe konfiguriert oder als obligatorisch implementiert werden.
+Die **Ausgangs-Schutzmechanismen** umfassen den `Kontext-Ausreichend-Schutzmechanismus`, der prüft, ob der Agent über
+genügend Informationen aus den Wissensdatenbanken verfügt, um präzise zu antworten. Dies ist besonders nützlich für
+RAG-Agenten und wirkt "Halluzinationen" (erfundenen Antworten) entgegen, indem die Antwort bei unzureichender
+Informationsbasis gestoppt wird. Ein `Wächter für sensible Informationen` erkennt und redigiert vertrauliche oder
+personenbezogene Daten (PII) aus Agentenantworten, bevor diese an Benutzer ausgeliefert werden, und ersetzt sie
+beispielsweise durch `[REDACTED]`. Dies fängt PII ab, die möglicherweise aus abgerufenen Dokumenten stammen. Diese
+Wächter können je nach Agentendesign und Risikostufe konfiguriert oder als obligatorisch implementiert werden.
 
 ## 2. Umfassende Datenanonymisierung und PII-Schutz
 
@@ -63,17 +69,28 @@ eliminiert, wodurch der Datenschutz von Beginn an gewährleistet ist.
 Der Swiss AI Hub verfolgt einen "Privacy by Design"-Ansatz, bei dem personenbezogene Daten identifiziert und
 anonymisiert werden, bevor sie in Kontakt mit potenziell exponierenden Systemen wie externen grossen Sprachmodellen
 (LLMs) kommen. Dies stellt sicher, dass selbst bei einem theoretischen Kompromittierung eines externen LLM-Anbieters
-keine identifizierbaren PII-Daten offengelegt werden.
+keine identifizierbaren PII-Daten offengelegt werden. Dieser Schutzmechanismus agiert auf Plattform-Ebene und kann
+entweder PII maskieren oder die gesamte Anfrage blockieren.
 
 ### Technische Umsetzung im Swiss AI Hub: Presidio-Integration
 
-Die Plattform integriert `Presidio`, eine spezialisierte Bibliothek für die Erkennung und Anonymisierung sensibler
-Daten. Presidio identifiziert vordefinierte oder benutzerdefinierte Entitätstypen (z.B. Namen, Adressen,
-E-Mail-Adressen, Sozialversicherungsnummern) in Texten. Diese PII-Informationen werden dynamisch im Datenstrom
-anonymisiert oder geschwärzt. Konkret bedeutet dies, dass alle LLM-Anfragen, die potenzielle PII enthalten könnten,
-diesen Anonymisierungsprozess durchlaufen, bevor sie das interne System verlassen und beispielsweise an einen
-LLM-Provider übermittelt werden. Dies ist eine entscheidende präventive Massnahme gegen den ungewollten Abfluss
-sensibler Informationen.
+Die Plattform integriert `Presidio` als Schutzmechanismus (Guardrail) in der LiteLLM-Proxy-Schicht für die Erkennung und
+Anonymisierung sensibler Daten. Presidio identifiziert vordefinierte oder benutzerdefinierte Entitätstypen (z.B.
+Personennamen, E-Mail-Adressen, Kreditkartennummern, Telefonnummern, Sozialversicherungsnummern, IP-Adressen, Orte oder
+Daten) in Texten. Die Erkennung erfolgt mittels Musterabgleich, regulären Ausdrücken und Modellen zur Erkennung
+benannter Entitäten (Named Entity Recognition) und unterstützt mehrere Sprachen, darunter Deutsch, Englisch, Französisch
+und Italienisch.
+
+Zwei Anonymisierungsmodi stehen zur Verfügung:
+
+- Der **Maskierungsmodus** ersetzt erkannte PII durch Platzhalter wie `[PERSON]` oder `[EMAIL_ADDRESS]`, sodass das
+  Modell den Kontext weiterhin verstehen und eine nützliche Antwort generieren kann.
+- Der **Blockierungsmodus** lehnt die gesamte Anfrage ab, wenn bestimmte, hochsensible PII-Typen wie Kreditkartennummern
+  auftreten, und gibt eine Fehlermeldung an den Benutzer zurück.
+
+Diese Presidio-Guardrails werden in LiteLLM konfiguriert, sind aber standardmässig deaktiviert und müssen pro Deployment
+und Datensensitivitätsanforderung aktiviert werden. Sie schützen Benutzeranfragen, bevor sie die externe LLM-Anbieter
+erreichen, und bilden zusammen mit den agenten-spezifischen Output-Wächtern eine mehrstufige Verteidigung.
 
 ## 3. Durchgängige Verschlüsselung: Data-at-Rest und Data-in-Transit
 
@@ -90,37 +107,43 @@ Kommunikationskanälen. Dies ist essenziell für die Einhaltung regulatorischer 
 Sicherung des Unternehmensrufs. IT-Experten erhalten eine Sicherheitsarchitektur, die auf etablierten Standards basiert
 und somit eine hohe Auditierbarkeit und langfristige Absicherung der Daten gewährleistet.
 
-### Konzepte & Prozesse: Zwei-Säulen-Verschlüsselung
+### Konzepte & Prozesse: Zwei-Säulen-Verschlüsselung und sicheres Schlüsselmanagement
 
 Die Plattform implementiert ein zweistufiges Verschlüsselungskonzept: Erstens werden alle persistent gespeicherten Daten
-vor unbefugtem Zugriff geschützt. Zweitens wird die gesamte Datenkommunikation, sowohl nach aussen als auch (teilweise)
-innerhalb der Plattform, kryptografisch gesichert. Schlüsselmanagement und zertifikatbasierte Authentifizierung ergänzen
-diese Strategie.
+im Ruhezustand geschützt. Zweitens wird die gesamte Datenkommunikation, insbesondere nach aussen, kryptografisch
+gesichert. Schlüsselmanagement und zertifikatbasierte Authentifizierung ergänzen diese Strategie, um die Vertraulichkeit
+und Integrität der Daten zu gewährleisten.
 
-### Technische Umsetzung im Swiss AI Hub: LUKS, TLS und Zertifikatsmanagement
+### Technische Umsetzung im Swiss AI Hub: TDE, LUKS, TLS und Zertifikatsmanagement
 
 Der Swiss AI Hub integriert umfassende Verschlüsselungsmechanismen:
 
-- **Verschlüsselung im Ruhezustand (Data-at-Rest):** Das geplante Sicherheitskonzept sieht eine
-  `LUKS-Volume-Verschlüsselung` für alle persistenten Docker-Volumes vor. Dies umfasst Anwendungsdatenbanken,
-  Vektordatenbank-Indizes, Dokumentenspeicherung, Konfigurationsdaten, Geheimnisse und Protokolle. LUKS bietet eine
+- **Verschlüsselung im Ruhezustand (Data-at-Rest):** Für die Datenbank (PostgreSQL) kommt transparente
+  Datenverschlüsselung (TDE) zum Einsatz. Für alle persistenten Docker-Volumes, die Anwendungsdatenbanken (FerretDB),
+  Vektordatenbank-Indizes (Milvus oder Azure AI Search), Dokumentenspeicherung (SeaweedFS oder Azure Data Lake),
+  Konfigurationsdaten, Geheimnisse und Protokolle umfassen, wird `LUKS-Volume-Verschlüsselung` (bei
+  On-Premise-Deployments) oder `Azure Disk Encryption` (bei Private Cloud-Deployments) verwendet. Dies bietet eine
   AES-256-Verschlüsselung im XTS-Modus und schützt Daten auch bei physischem Zugriff oder Diebstahl der Speichermedien.
-  Geheimnisse und sensitive Konfigurationsdaten werden über Umgebungsvariablen, Azure Key Vault oder Docker-Secrets
+  Geheimnisse und sensitive Konfigurationsdaten werden über Umgebungsvariablen, Azure Key Vault oder Docker Secrets
   verwaltet.
+
 - **Verschlüsselung während der Übertragung (Data-in-Transit):** Die gesamte Kommunikation zwischen der Plattform und
   externen Clients sowie externen Diensten wird mittels `Transport Layer Security (TLS)` Protokollen verschlüsselt.
+
   - **Edge-Verschlüsselung:** `Traefik` dient als Reverse-Proxy und Ingress-Controller und übernimmt die
     TLS-Terminierung am Netzwerkrand. Es unterstützt `TLS 1.2 und TLS 1.3` und leitet automatisch von HTTP zu HTTPS
     weiter. Durch die `Let's Encrypt-Integration` werden Zertifikate automatisiert bereitgestellt und erneuert.
     Sicherheits-Header wie `Strict-Transport-Security (HSTS)` werden zur weiteren Härtung angewendet, was auch Perfect
     Forward Secrecy (PFS) über moderne TLS-Suiten gewährleistet.
   - **Externe Diensteverbindungen:** Alle Verbindungen von der Plattform zu externen Diensten (z.B. Azure OpenAI, Google
-    Gemini, OAuth/OIDC-Anbieter) nutzen HTTPS mit strikter `Zertifikatsvalidierung`, um Man-in-the-Middle-Angriffe zu
-    verhindern. Die `LiteLLM-Proxy-Schicht` sichert hierbei die Kommunikation zu den LLM-Anbietern.
+    Gemini, OAuth/OIDC-Anbieter, SharePoint, Confluence, Custom REST APIs) nutzen HTTPS auf Port 443 mit strikter
+    `Zertifikatsvalidierung`, um Man-in-the-Middle-Angriffe zu verhindern. Die `LiteLLM-Proxy-Schicht` sichert hierbei
+    die Kommunikation zu den LLM-Anbietern. Für Service-to-Service-Kommunikation mit Unternehmenssystemen können zudem
+    branchenübliche Authentifizierungsmethoden wie OAuth2, API-Tokens oder Mutual TLS (mTLS) zum Einsatz kommen.
   - **Interne Kommunikation:** Die Kommunikation zwischen Docker-Containern im internen Docker-Netzwerk ist durch
     `Netzwerkisolation` geschützt. Dieser Datenverkehr ist jedoch auf der Anwendungsebene **nicht** standardmässig
     verschlüsselt. Für Multi-Host-Deployments, die verschlüsselte Inter-Service-Kommunikation erfordern, könnten
-    zusätzliche Massnahmen wie Service Mesh oder IPsec implementiert werden.
+    zusätzliche Massnahmen wie ein Service Mesh oder IPsec implementiert werden.
   - **WebSocket-Verbindungen:** Echtzeit-Event-Streaming über WebSocket-Verbindungen wird durch `WSS (WebSocket Secure)`
     und `Origin-Validierung` geschützt.
 
@@ -140,24 +163,33 @@ auch bei der Nutzung gemeinsam genutzter Infrastruktur-Ressourcen.
 
 ### Konzepte & Prozesse: Dedizierte Instanzen und zustandslose Backends
 
-Der Swiss AI Hub ist primär für `Single-Tenant-Bereitstellungen` konzipiert, die eine vollständige Isolation
-gewährleisten. Bei `Multi-Tenant-Bereitstellungen` wird eine logische Trennung durch dedizierte Infrastruktur pro Tenant
-und zustandslose, gemeinsam genutzte Backend-Ressourcen erreicht, die keine sensiblen Daten speichern.
+Der Swiss AI Hub ist primär für **Einzelinstanz-Deployments (Multi-Instancing)** konzipiert, die eine vollständige
+Isolation und somit eine harte Trennung zwischen Organisationen mit 0% Datenlecks gewährleisten. Jede Organisation
+betreibt dabei eine vollständige, eigenständige Instanz der Plattform. Innerhalb einer solchen Instanz kann optional
+eine **logische Multi-Tenancy** für Abteilungen oder Projekte eingerichtet werden.
+
+Bei **Multi-Instanz-Deployments** können mehrere separate AI-Hub-Instanzen optional Backend-LLM-Ressourcen teilen.
+Hierbei ist jedoch entscheidend, dass die geteilten LLM-Backends zustandslos sind und keine Prompts oder Responses
+persistieren. Der konversationelle Kontext und die Historie bleiben stets in der eigenen Infrastruktur der jeweiligen
+Instanz.
 
 ### Technische Umsetzung im Swiss AI Hub: Isolierte Stacks und Proxy-Layer
 
-- **Single-Tenant-Bereitstellung:** Jede Organisation erhält eine `vollständige, eigenständige AI-Hub-Instanz` mit
-  dedizierten Datenbanken (FerretDB/PostgreSQL), Vektor-Stores (Milvus oder Azure AI Search), Dateispeichern (SeaweedFS
-  oder Azure Data Lake) und allen Anwendungsdiensten. Dies gewährleistet eine `vollständige Datenisolation`, bei der
-  Daten nicht zwischen Organisationen übertragen werden können. Die physische Isolation kann durch
-  `On-Premise`-Bereitstellung auf eigenen Servern oder in einer `Private Cloud` des Kunden (z.B. in einem Schweizer
-  Rechenzentrum) erreicht werden.
-- **Multi-Tenant-Bereitstellung:** Mehrere Tenant-Instanzen können `zustandslose LLM-Backend-Ressourcen` (wie Azure
-  OpenAI, Google Gemini oder selbst gehostete Modelle) gemeinsam nutzen. Hierbei hat jedoch jeder Tenant einen
-  `eigenen LiteLLM-Proxy`, der die LLM-Anfragen verwaltet. Dieser Proxy speichert keine Prompts oder Antworten, sodass
-  konversationeller Kontext und Benutzerdaten stets innerhalb der jeweiligen Tenant-Instanz verbleiben. Es gibt keine
-  direkte Kommunikation zwischen den Tenant-Instanzen selbst, und die Datenisolation wird durch separate Datenbanken und
-  Vektor-Stores pro Tenant aufrechterhalten.
+- **Einzelinstanz-Deployment (Multi-Instancing):** Jede Organisation erhält eine
+  `vollständige, eigenständige AI-Hub-Instanz` mit dedizierten Anwendungsdiensten, Datenbanken (FerretDB/PostgreSQL),
+  Vektor-Stores (Milvus oder Azure AI Search), Dateispeichern (SeaweedFS oder Azure Data Lake) und einem eigenen
+  LiteLLM-Proxy. Dies gewährleistet eine `vollständige Datenisolation`, bei der Daten nicht zwischen Organisationen
+  übertragen werden können. Die physische Isolation kann durch `On-Premise`-Bereitstellung auf eigenen Servern oder in
+  einer `Private Cloud` des Kunden (z.B. in einem Schweizer Rechenzentrum) erreicht werden. Admins einer Instanz können
+  ohne separate Anmeldung keine andere Instanz konfigurieren oder darauf zugreifen. Die Datenisolation erfüllt das
+  revDSG, GDPR-Datenisolierungsanforderungen und Schweizer Sicherheitsstandards für den öffentlichen Sektor.
+
+- **Multi-Instanz-Deployment mit geteiltem LLM-Backend:** Mehrere Tenant-Instanzen können
+  `zustandslose LLM-Backend-Ressourcen` (wie Azure OpenAI, Google Gemini oder selbst gehostete Modelle) gemeinsam
+  nutzen. Hierbei hat jedoch jeder Tenant einen `eigenen LiteLLM-Proxy`, der die LLM-Anfragen verwaltet. Dieser Proxy
+  speichert keine Prompts oder Antworten, sodass konversationeller Kontext und Benutzerdaten stets innerhalb der
+  jeweiligen Tenant-Instanz verbleiben. Es gibt keine direkte Kommunikation zwischen den Tenant-Instanzen selbst, und
+  die Datenisolation wird durch separate Datenbanken und Vektor-Stores pro Tenant aufrechterhalten.
 
 ## 5. Sichere Datenaufnahme und externe Integrationen
 
@@ -177,7 +209,8 @@ die Compliance mit Unternehmensrichtlinien und externen Standards sichergestellt
 
 Die Plattform setzt auf eine mehrstufige Eingabevalidierung für alle hochgeladenen Dokumente sowie auf gehärtete und
 authentifizierte Schnittstellen für die Integration mit externen Datenquellen. Zusätzlich werden Mechanismen zum Schutz
-vor Überlastung und Missbrauch der API eingesetzt.
+vor Überlastung und Missbrauch der API eingesetzt. Die PII-Anonymisierung agiert dabei als erste präventive Schicht für
+sensible Daten.
 
 ### Technische Umsetzung im Swiss AI Hub: Whitelisting, Rate-Limiting und sichere Konnektoren
 
@@ -186,16 +219,21 @@ vor Überlastung und Missbrauch der API eingesetzt.
   `Validierung des MIME-Typs` verhindert das Verschleiern bösartiger Dateien. `Validierung von Dateinamen` blockiert
   Path Traversal-Versuche (z.B. `..`, `/`, `\`), Erweiterungs-Spoofing und Null-Bytes. Zudem werden
   Dateigrössenbeschränkungen erzwungen, um Ressourcenerschöpfung und das Hochladen potenziell schädlicher Grossdateien
-  zu verhindern.
-- `UNKLARHEIT IN DER DOKU - BITTE PRÜFEN: Die Quelldokumentation beschreibt keine explizite Funktion für einen Malware-Scan während der Dokumentenaufnahme, obwohl dies in den Kernaussagen des Kapitels erwähnt wird. Es wird angenommen, dass dies eine ergänzende, organisatorische oder zukünftige technische Implementierung wäre.`
+  zu verhindern. **UNKLARHEIT IN DER DOKU - BITTE PRÜFEN:** Die Quelldokumentation beschreibt keine explizite Funktion
+  für einen Malware-Scan während der Dokumentenaufnahme. Es wird lediglich erwähnt, dass Pipelines um Schritte für ein
+  "Security Scanning" *erweitert* werden können, was auf eine optionale, nicht standardmässige Implementierung hinweist.
+
 - **Sichere Anbindung externer Datenquellen:** Agenten und Pipelines können über HTTPS (Port 443) mit bestehenden
   Unternehmenssystemen wie SharePoint, Confluence oder kundenspezifischen REST/SOAP-APIs verbunden werden. Dabei werden
   branchenübliche `Authentifizierungsmethoden` wie OAuth2 (z.B. über Azure AD App), API-Tokens oder Mutual TLS (mTLS)
-  für Service-to-Service-Kommunikation unterstützt, um einen sicheren Zugriff zu gewährleisten.
+  für Service-to-Service-Kommunikation unterstützt, um einen sicheren Zugriff zu gewährleisten. Für die
+  Benutzerauthentifizierung und -verwaltung bei Microsoft-Diensten werden `login.microsoftonline.com` für OAuth2 und
+  `graph.microsoft.com` für Benutzerprofile und Gruppenmitgliedschaften verwendet.
+
 - **Schutz vor API-Missbrauch und DoS:** Der `Traefik Reverse Proxy` als einziger Entry Point implementiert
   `Rate Limiting`-Funktionen, um Backend-Dienste vor Brute-Force- und einfachen Denial-of-Service (DoS)-Angriffen zu
-  schützen. Der `LiteLLM-Proxy` erzwingt zudem `pro-Tenant-Anfragebegrenzungen` und Budgets, um Missbrauch zu verhindern
-  und die Kosten zu kontrollieren.
+  schützen. Der `LiteLLM-Proxy` erzwingt zudem `pro-Instanz-Anfragebegrenzungen` und Budgets (konfigurierbar über
+  Umgebungsvariablen), um Missbrauch zu verhindern und die Kosten zu kontrollieren.
 
 ## 6. Revisionssichere Datenlöschung und -aufbewahrung
 
@@ -226,14 +264,19 @@ das Recht auf Löschung, zu unterstützen. Jeder Löschvorgang wird im Audit-Tra
   zeitbasierten (30 Tage) und kapazitätsbasierten Limits (10 Millionen Nachrichten) verwaltet. Für
   `permanenten Speicher` (NoSQL) müssen Organisationen eigene Daten-Lifecycle-Richtlinien implementieren, um die
   Datenaufbewahrung gemäss ihren regulativen und geschäftlichen Anforderungen zu steuern.
+
 - **Unterstützung des Löschrechts:** Das `Recht auf Löschung (Art. 17 DSGVO / Art. 32 revDSG)` wird durch Funktionen wie
   das Entfernen von Nutzern aus Konversations-Threads unterstützt. Automatisierte Löschprozesse stellen sicher, dass
   temporäre Daten nach 30 Tagen aus den Caches und Vektorspeichern entfernt werden.
+
 - **Audit-Trails für Löschungen:** Obwohl Thread-Nachrichten und Audit-Protokolle unveränderlich bleiben, um die
   Integrität der Audit-Trails zu bewahren, dokumentiert die Plattform die Anweisung zur Löschung und das entsprechende
   Ergebnis. APIs für Benutzerprofile, Konversations-Threads und Audit-Logs stehen zur Verfügung, um Auskunftsrechten
-  nachzukommen und die Nachweisbarkeit von Löschvorgängen zu gewährleisten.
-- `UNKLARHEIT IN DER DOKU - BITTE PRÜFEN: Die Quelldokumentation erwähnt keine "Secure-Delete"-Funktion (physisches Überschreiben von Daten). Die effektive Entfernung hängt von der zugrundeliegenden Speichertechnologie ab und müsste dort explizit konfiguriert sein, um ein Überschreiben zu gewährleisten.`
+  nachzukommen und die Nachweisbarkeit von Löschvorgängen zu gewährleisten. **UNKLARHEIT IN DER DOKU - BITTE PRÜFEN:**
+  Die Quelldokumentation enthält keine neuen oder aktualisierten Informationen zu einer expliziten
+  "Secure-Delete"-Funktion (physisches Überschreiben von Daten) über die bereits in früheren Kapiteln beschriebenen
+  Mechanismen hinaus. Die effektive Entfernung hängt von der zugrundeliegenden Speichertechnologie ab und müsste dort
+  explizit konfiguriert sein, um ein Überschreiben zu gewährleisten.
 
 ## 7. Kontinuierliche Datenflussüberwachung und Data Loss Prevention (DLP)
 
@@ -256,7 +299,8 @@ etablieren.
 Die Plattform basiert auf den branchenüblichen Säulen der Observability (Health Checks, Metriken, Logs), um ein
 umfassendes Bild der Systemaktivitäten zu liefern. Durch die Analyse dieser Daten können ungewöhnliche Muster im
 Datenfluss erkannt und präventive Massnahmen wie die PII-Anonymisierung als erste Linie der Data Loss Prevention (DLP)
-ergriffen werden.
+ergriffen werden. Das System bietet detailliertes Kostenmanagement durch Überwachung des Token-Verbrauchs, was auch zur
+Identifizierung ungewöhnlicher Nutzungsmuster beitragen kann.
 
 ### Technische Umsetzung im Swiss AI Hub: OpenTelemetry, SigNoz und Alerting
 
@@ -265,6 +309,7 @@ ergriffen werden.
   reichert diese mit Metadaten an und exportiert sie sicher an die gewählten Ziele. Als offiziell unterstütztes
   Observability-Backend dient `SigNoz`, das vereinheitlichte Dashboards für Infrastruktur, Anwendungsleistung und
   `KI-Operationen` (Modellnutzung, Token-Verbrauch, Kosten pro Operation) bietet.
+
 - **Anomalieerkennung und DLP-Aspekte:** `Flexible Alarmierungsfunktionen` in SigNoz ermöglichen die Konfiguration von
   Benachrichtigungen für kritische Dienstausfälle, Leistungsverschlechterung, Ressourcenlimits, `Kostenmanagement`
   (ungewöhnlich hoher Token-Verbrauch) und `Sicherheitsereignisse` (z.B. wiederholte fehlgeschlagene Anmeldeversuche).
@@ -272,7 +317,11 @@ ergriffen werden.
   Presidio fungiert als eine primäre, präventive DLP-Massnahme, indem sensible Daten vor dem Verlassen der Plattform
   geschwärzt werden. Darüber hinaus unterstützen `umfassende Audit-Trails`, die alle Zugriffsversuche und
   Berechtigungsprüfungen protokollieren, die forensische Analyse und die Erkennung verdächtiger Datenübertragungen.
-- `UNKLARHEIT IN DER DOKU - BITTE PRÜFEN: Eine explizite "Data Loss Prevention"-Funktion (z.B. automatische Blockierung von Daten-Exports basierend auf Inhalt oder Volumen) über die PII-Anonymisierung und allgemeine Zugriffsüberwachung hinaus ist in der Quelldokumentation nicht detailliert beschrieben. Die Alarme können auf ungewöhnliche Muster hinweisen, aber eine automatische Blockierung des Datenflusses wird nicht explizit erwähnt.`
+  **UNKLARHEIT IN DER DOKU - BITTE PRÜFEN:** Eine explizite "Data Loss Prevention"-Funktion (z.B. automatische
+  Blockierung von Daten-Exports basierend auf Inhalt oder Volumen) über die PII-Anonymisierung und allgemeine
+  Zugriffsüberwachung hinaus ist in der Quelldokumentation nicht detailliert beschrieben. Die Alarme können auf
+  ungewöhnliche Muster hinweisen, aber eine automatische Blockierung des Datenflusses wird nicht explizit erwähnt.
+
 - **Sichere Log-Übertragung an SIEM:** Durch die OTel-Grundlage können Telemetriedaten sicher an alternative
   OTLP-kompatible Backends wie Grafana, Datadog oder Splunk (SIEM-Systeme) exportiert werden, indem lediglich die
   Collector-Konfiguration angepasst wird.

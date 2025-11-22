@@ -12,7 +12,7 @@ einzusetzen.
 
 Die Sicherstellung, dass sensible Unternehmensdaten die Schweiz nicht verlassen, ist für viele Organisationen von
 fundamentaler Bedeutung, um den Anforderungen des revDSG und der DSGVO gerecht zu werden. Der Swiss AI Hub gewährleistet
-dies durch flexible und datensouveräne Bereitstellungsmodelle.
+dies durch flexible und datensouveräne Bereitstellungsmodelle, die eine harte Datenisolation ermöglichen.
 
 ### Mehrwert und Nutzen: Garantierte Datenresidenz und minimiertes Compliance-Risiko
 
@@ -21,13 +21,17 @@ was Compliance-Risiken erheblich reduziert und das Vertrauen in KI-gestützte Pr
 öffentliche Institutionen ist dies entscheidend, um gesetzliche Vorgaben zur Datenhaltung lückenlos zu erfüllen.
 IT-Professionals profitieren von klaren Deployment-Optionen, die eine Architektur ohne Datentransfers in unsichere
 Drittstaaten ermöglichen, was den administrativen Aufwand für die Einhaltung internationaler
-Datenübermittlungsbestimmungen eliminiert.
+Datenübermittlungsbestimmungen eliminiert. Selbst bei der optionalen Nutzung gemeinsam genutzter LLM-Ressourcen bleiben
+sensible Prompts und Responses unter der Kontrolle der Organisation.
 
 ### Konzepte & Prozesse: Isolierte Betriebsmodelle und lokale Kontrolle
 
-Der Swiss AI Hub ist primär für Single-Tenant-Bereitstellungen konzipiert, die jede Organisation mit einer
+Der Swiss AI Hub ist primär für Einzelinstanz-Deployments konzipiert (Multi-Instancing), die jede Organisation mit einer
 vollständigen, isolierten Instanz ausstatten. Dieses Design verhindert einen ungewollten Datenaustausch zwischen
-Mandanten und ermöglicht die volle Kontrolle über die physische Speicherung und Verarbeitung der Daten. Das System
+Organisationen und ermöglicht die volle Kontrolle über die physische Speicherung und Verarbeitung der Daten. Selbst wenn
+mehrere solcher isolierten Instanzen optional Backend-LLM-Ressourcen oder Authentifizierungsinfrastrukturen teilen, sind
+die gemeinsam genutzten LLM-Backends stets zustandslos und persistieren keine Prompts oder Responses. Der gesamte
+Konversationskontext und die Historie verbleiben innerhalb der Infrastruktur jeder einzelnen Instanz. Das System
 unterstützt zudem Air-Gapped-Operationen, bei denen die Plattform vollständig vom Internet isoliert betrieben werden
 kann, wenn lokal gehostete Sprachmodelle (LLMs) verwendet werden. Die Schweiz verfügt über einen
 EU-Angemessenheitsbeschluss, der den freien Fluss personenbezogener Daten von der EU in die Schweiz ohne zusätzliche
@@ -40,8 +44,11 @@ Infrastruktur unter ihrer Kontrolle liegt und ein Air-Gapped-Betrieb ermöglicht
 der **eigenen Private Cloud** des Kunden gehostet werden, mit der Option, spezifische Schweizer Regionen für die
 Datenresidenz zu wählen. Als dritte Option bietet die bbv **SaaS (Schweizer Cloud-Hosting)** an, bei dem der AI Hub auf
 einer Schweizer Cloud-Infrastruktur verwaltet wird, wobei die Daten stets in der Schweiz und unter Schweizer
-Rechtshoheit verbleiben. Jede Instanz verfügt über eigene Datenbanken (FerretDB/PostgreSQL), Vektor-Stores (Milvus) und
-Dateispeicher (SeaweedFS), wodurch die Datenisolation strikt umgesetzt wird.
+Rechtshoheit verbleiben. Jede Instanz verfügt über einen vollständigen Stack mit eigenen Anwendungsdiensten, Datenbanken
+(FerretDB/PostgreSQL), Vektor-Stores (Milvus oder Azure AI Search) und Dateispeichern (SeaweedFS oder Azure Data Lake),
+wodurch die Datenisolation strikt umgesetzt wird. Der eigene LiteLLM-Proxy jeder Instanz handhabt dabei die
+Modellauswahl, Budgets, Ratenbegrenzungen und Versionen. LLM-Anfragen werden vom LiteLLM-Proxy mit einer Instanz-ID,
+aber ohne Prompt-Inhalt protokolliert, bevor sie optional an geteilte, zustandslose LLM-Backends weitergeleitet werden.
 
 ## 2. "Privacy by Design" und Rechte der betroffenen Personen
 
@@ -75,8 +82,8 @@ Plattform APIs für Benutzerprofile, Konversations-Threads und Audit-Logs. Admin
 Berichtigung aktualisieren; Thread-Nachrichten und Audit-Logs bleiben zur Wahrung der Integrität unveränderlich. Das
 Recht auf Löschung wird durch die Möglichkeit unterstützt, Nutzer aus Threads zu entfernen und ephemere Daten nach 30
 Tagen automatisch zu löschen. Die Datenübertragbarkeit gilt für direkt bereitgestellte Daten in maschinenlesbarem
-Format. Das Verhindern von unautorisiertem Datenabfluss wird zudem durch PII-Anonymisierung mittels Presidio
-unterstützt, bevor Daten externe LLMs erreichen.
+Format. Das Verhindern von unautorisiertem Datenabfluss wird zudem durch die optionale PII-Anonymisierung mittels
+Presidio unterstützt, bevor Daten externe LLMs erreichen.
 
 ## 3. Vorbereitung auf das EU KI-Gesetz (AI Act) und ethische KI-Verarbeitung
 
@@ -124,7 +131,8 @@ Für Führungskräfte gewährleistet dies die Fähigkeit, Datenschutz-Folgenabsc
 gegenüber Aufsichtsbehörden rechtssichere Nachweise der Compliance zu erbringen. Die klare Definition von
 Datenaufbewahrungsfristen minimiert zudem langfristige Speicher- und Haftungsrisiken. IT-Teams profitieren von
 automatisierten Prozessen für die Datenlöschung und umfassenden Audit-Funktionen, die die forensische Analyse bei
-Sicherheitsvorfällen erleichtern und den administrativen Aufwand reduzieren.
+Sicherheitsvorfällen erleichtern und den administrativen Aufwand reduzieren. Die transparente Verfolgung der LLM-Nutzung
+pro Instanz und Benutzer ermöglicht eine genaue Kosten- und Verantwortlichkeitszuweisung.
 
 ### Konzepte & Prozesse: Rechenschaftspflicht gemäss DSGVO und gestaffelte Aufbewahrung
 
@@ -133,7 +141,8 @@ Audit-Protokollierung und Nachverfolgbarkeit bietet. Dies ist entscheidend für 
 (Art. 33 DSGVO / Art. 24 revDSG). Die Datenaufbewahrungsstrategie ist gestaffelt: Ephemere Daten und Workflow-Ereignisse
 werden nach 30 Tagen automatisch gelöscht, während für den permanenten NoSQL-Speicher Organisationen eigene
 Lifecycle-Richtlinien definieren. Die Plattform unterstützt zudem das manuelle Löschen von Benutzerdaten und die
-ordnungsgemässe Datenlöschung bei Kontolöschung durch Funktionen wie das Entfernen von Nutzern aus Threads.
+ordnungsgemässe Datenlöschung bei Kontolöschung durch Funktionen wie das Entfernen von Nutzern aus Threads. Die
+LLM-Nutzung wird pro Instanz verfolgt, was eine detaillierte Zuordnung von Token-Verbrauch und Kosten ermöglicht.
 
 ### Technische Umsetzung im Swiss AI Hub: Audit-Logs, Observability und Lifecycle-Richtlinien
 
@@ -143,7 +152,9 @@ und Alarmierung bei sicherheitsrelevanten Ereignissen oder ungewöhnlichem Daten
 Meldung von Datenschutzverletzungen stärkt. Ephemere Daten im Redis-Cache und Workflow-Ereignisse in NATS JetStream
 werden nach 30 Tagen automatisch gelöscht, um Speicherbegrenzung zu gewährleisten. Für permanent gespeicherte Daten
 müssen Organisationen explizite Daten-Lifecycle-Richtlinien implementieren, um die Datenaufbewahrung gemäss ihren
-regulativen und geschäftlichen Anforderungen zu steuern.
+regulativen und geschäftlichen Anforderungen zu steuern. Die API-Nutzung von LLMs wird vom LiteLLM-Proxy pro Instanz und
+Benutzer (Token-Anzahl, Modellnutzung, Kostenberechnungen, Budgeteinhaltung) verfolgt und ist über die LiteLLM-Admin-UI
+oder für die Abrechnung exportierbar.
 
 ## 5. Mehrsprachigkeit und Internationalisierung
 

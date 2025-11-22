@@ -30,34 +30,39 @@ Komplexität reduziert und die Benutzerakzeptanz fördert.
 Der Swiss AI Hub implementiert ein ausgeklügeltes, hierarchisches Rollenbasiertes Zugriffskontrollsystem (RBAC), das auf
 dem Prinzip der geringsten Rechte basiert. Dieses System bildet komplexe Organisationsstrukturen ab und stellt sicher,
 dass Nutzer ausschliesslich auf jene Ressourcen zugreifen können, für die sie explizit autorisiert sind. Die
-Benutzeroberfläche nutzt eine dynamische Dienstsichtbarkeit, um das Nutzererlebnis automatisch an das jeweilige
-Berechtigungslevel anzupassen. Die Authentifizierung erfolgt über branchenübliche Protokolle wie OpenID Connect (OIDC)
-und OAuth 2.0, wodurch eine sichere und standardkonforme Anbindung an bestehende Enterprise-Identitätssysteme ermöglicht
-wird.
+Benutzeroberfläche nutzt eine dynamische Dienstsichtbarkeit: Beim Laden der Suite fragt sie das Backend nach dem
+autorisierten Dienstkatalog des Benutzers ab. Das Backend bewertet die Berechtigungen des Benutzers anhand der
+Anforderungen jedes registrierten Dienstes und gibt nur Dienste zurück, auf die der Benutzer zugreifen kann. Die
+Benutzeroberfläche rendert Navigationselemente ausschliesslich für autorisierte Dienste, wodurch Benutzer keine
+Funktionen sehen, die sie nicht nutzen können. Dies minimiert die Komplexität und eliminiert "Zugriff
+verweigert"-Meldungen. Automatische Berechtigungsaktualisierungen stellen zudem sicher, dass Änderungen der
+Rollenzuweisungen sofort in der Benutzeroberfläche des Benutzers reflektiert werden, sobald eine neue Sitzung gestartet
+wird. Die Authentifizierung erfolgt über branchenübliche Protokolle wie OpenID Connect (OIDC) und OAuth 2.0, wodurch
+eine sichere und standardkonforme Anbindung an bestehende Enterprise-Identitätssysteme ermöglicht wird.
 
 ### Technische Umsetzung im Swiss AI Hub: Access Checker, Entra ID und JWT-Validierung
 
 Technisch verwendet der Swiss AI Hub eine strukturierte Punkt-Notation für Berechtigungen
 (`aihub.[user|admin].<service>.<resource_type>.<resource_id>`), die Wildcard-Unterstützung (z.B. `aihub.user.agent.*`
-für alle Agenten einer Klasse) und implizite Berechtigungen (`aihub.user.?>`) bietet, um eine flexible, aber präzise
-Zugriffssteuerung zu ermöglichen. Die Client-seitige Benutzeroberfläche fragt das Backend nach dem autorisierten
-Dienstkatalog ab, der auf Basis der Benutzerberechtigungen gefiltert wird, sodass nur relevante Navigations- und
-Funktionselemente gerendert werden. Die gesamte Berechtigungsbewertung erfolgt serverseitig über eine
-`AccessChecker`-Komponente, um clientseitige Manipulationen zu verhindern.
+für alle Agenten einer Klasse oder `aihub.user.agent.?>` für alle Agenten) und implizite Berechtigungen bietet, um eine
+flexible, aber präzise Zugriffssteuerung zu ermöglichen. Die clientseitige Benutzeroberfläche fragt den autorisierten
+Dienstkatalog vom Backend ab, der auf Basis der Benutzerberechtigungen gefiltert wird, sodass nur relevante Navigations-
+und Funktionselemente gerendert werden. Die gesamte Berechtigungsbewertung erfolgt serverseitig über eine
+`AccessChecker`-Komponente. Dies verhindert clientseitige Manipulationen und implementiert das "Sicherheit durch
+Unsichtbarkeit"-Prinzip, indem nicht autorisierte Dienste keine Schnittstellenpräsenz haben und somit die Angriffsfläche
+reduziert wird.
 
 Die Plattform authentifiziert Benutzer über den OAuth 2.0 Authorization Code Flow mit PKCE und validiert JSON Web Tokens
 (JWT) mittels öffentlicher Schlüssel vom JWKS-Endpoint des Identitäts-Providers. Für den API-Zugriff wird
 standardmässige OAuth 2.0 Bearer Token-Authentifizierung unterstützt. Die primäre Integration erfolgt mit Microsoft
 Entra ID (Azure Active Directory), wobei Benutzerprofile und Rollenzuweisungen über die Microsoft Graph API abgerufen
-werden. Dies ermöglicht die Zuordnung von Organisationsgruppen zu Plattformrollen. Die Architektur unterstützt die
+werden, was die Zuordnung von Organisationsgruppen zu Plattformrollen ermöglicht. Die Architektur unterstützt die
 Erweiterung auf andere OIDC-konforme Identitäts-Provider. Die Multi-Tenant-Isolation, die eine vollständige Trennung von
 Diensten und Ressourcen pro Organisationseinheit gewährleistet, unterstreicht die datenschutzkonforme Ausrichtung der
-Plattform.
-
-*Hinweis zur Kompatibilität: Die Plattform unterstützt Multi-Faktor-Authentifizierung (MFA) und Conditional Access
-(kontextbasierte Zugriffsrichtlinien) über die Integration mit dem jeweiligen Enterprise-Identitäts-Provider (z.B.
-Microsoft Entra ID). Eine native Implementierung von Passkeys ist in der aktuellen Dokumentation nicht explizit
-aufgeführt, wird aber prinzipiell von modernen OIDC-Providern unterstützt.*
+Plattform. Die Plattform unterstützt Multi-Faktor-Authentifizierung (MFA) und Conditional Access (kontextbasierte
+Zugriffsrichtlinien) über die Integration mit dem jeweiligen Enterprise-Identitäts-Provider (z.B. Microsoft Entra ID).
+Eine native Implementierung von Passkeys ist in der aktuellen Dokumentation nicht explizit aufgeführt, wird aber
+prinzipiell von modernen OIDC-Providern unterstützt.
 
 ## 2. Transparente Kostenkontrolle und Ressourcenallokation
 
@@ -76,10 +81,18 @@ gesamten KI-Betriebs steigert.
 
 ### Konzepte & Prozesse: Token-basierte Kostenmodelle und proaktives Budgetmanagement
 
-KI-Kosten werden primär durch die Token-Nutzung bestimmt, wobei zwischen Prompt-, Completion- und Embedding-Tokens
-unterschieden wird, die jeweils unterschiedliche Preisstrukturen aufweisen. Die Plattform verfolgt diese Kosten über
-alle Modelle hinweg, unabhängig davon, ob es sich um Cloud-Dienste oder lokal gehostete Lösungen handelt. Zur
-Optimierung werden Modellstufen (Flaggschiff, Ausgewogen, Effizient) für unterschiedliche Anwendungsfälle empfohlen.
+KI-Kosten werden primär durch die Token-Nutzung bestimmt, wobei zwischen verschiedenen Arten von Tokens unterschieden
+wird: **Prompt-Tokens** (Ihre Eingabe an die KI), **Completion-Tokens** (die von der KI generierten Antworten) und
+**Embedding-Tokens** (Dokumentenverarbeitung für Suche und Abruf). Jede dieser Token-Arten hat typischerweise
+unterschiedliche Preispunkte. Die Plattform verfolgt diese Kosten über alle Modelle hinweg, unabhängig davon, ob es sich
+um Cloud-Dienste (Pay-per-Token) oder lokal gehostete Lösungen (feste Infrastrukturkosten) handelt. Zur Optimierung
+werden Modellstufen für unterschiedliche Anwendungsfälle empfohlen:
+
+- **Flaggschiff-Modelle** (z.B. GPT-5) für komplexe Denkprozesse und Aufgaben mit hoher Genauigkeit (höchste Kosten).
+- **Ausgewogene Modelle** (z.B. GPT-5 mini) für Standard-Workflows und interne Assistenten (mittlere Kosten).
+- **Effiziente Modelle** (z.B. GPT-5 nano) für einfache Aufgaben mit hohem Volumen, wie Klassifizierung (geringste
+  Kosten).
+
 Budgets und Ratenbegrenzungen sind konzipiert, um Ausgabenlimits und Nutzungsbeschränkungen auf Nutzer- oder
 Abteilungsebene durchzusetzen.
 
@@ -90,12 +103,14 @@ Ausgaben berechnet. Diese Informationen werden direkt im Konversationsverlauf an
 eine granulare Analyse auf Agenten-, Benutzer- oder Thread-Ebene. Für selbst gehostete Modelle können fixe Kostenwerte
 zugewiesen werden, um eine konsistente Kostenverfolgung zu gewährleisten.
 
-Obwohl Budget- und Ratenbegrenzungsfunktionen in der Plattform existieren, sind sie standardmässig nicht aktiviert und
-erfordern eine explizite Umgebungskonfiguration während des Deployments. Bei Aktivierung können Administratoren
-Budgetobergrenzen festlegen, Nutzungswarnungen konfigurieren, Ratenbegrenzungen (Anfragen/Tokens pro Minute) definieren
-und Limits für gleichzeitige KI-Operationen setzen. Dies ermöglicht eine feingranulare Steuerung und optimiert die
-Modellauswahl basierend auf der Aufgabenkomplexität, indem beispielsweise für einfache, hochvolumige Aufgaben
-effizientere Modelle verwendet werden, während komplexe Aufgaben Flaggschiff-Modelle nutzen.
+Budgets und Ratenbegrenzungsfunktionen werden durch LiteLLM bereitgestellt und können über Umgebungsvariablen wie
+`LITE_LLM_PROXY_USER_MAX_BUDGET` (harte Obergrenze), `LITE_LLM_PROXY_USER_SOFT_BUDGET` (Warnschwelle),
+`LITE_LLM_PROXY_USER_BUDGET_DURATION` (Zurücksetzungszeitraum), `LITE_LLM_PROXY_USER_TPM_LIMIT` (Tokens pro Minute),
+`LITE_LLM_PROXY_USER_RPM_LIMIT` (Anfragen pro Minute) und `LITE_LLM_PROXY_USER_MAX_PARALLEL_REQUESTS` (gleichzeitige
+Anfragen) konfiguriert werden. Es ist wichtig zu beachten, dass diese Infrastruktur zwar vorhanden ist, die Limits
+jedoch standardmässig nicht aktiviert sind und eine explizite Umgebungskonfiguration während des Deployments erfordern.
+Bei Aktivierung ermöglichen diese Funktionen eine feingranulare Steuerung und optimieren die Modellauswahl basierend auf
+der Aufgabenkomplexität.
 
 ## 3. Kontinuierliche Qualitätssicherung und Feedback-Loops
 
@@ -114,38 +129,36 @@ Identifizierung von Schwachstellen und zur Validierung von Optimierungsmassnahme
 ### Konzepte & Prozesse: Systematische Agentenbewertungen und integriertes Nutzerfeedback
 
 Der Swiss AI Hub nutzt ein System für Agentenbewertungen, bei dem KI-Agenten anhand vordefinierter Datasets (Testfragen
-mit bekannten Referenzantworten) evaluiert werden. Drei unabhängige KI-Richter bewerten die generierten Antworten, um
-eine objektive Qualitätsmessung zu gewährleisten. Ergänzend dazu ermöglicht die Plattform die direkte Integration von
-Benutzerfeedback über Daumen-hoch/Daumen-runter-Mechanismen in Konversationen. Dieses Feedback fliesst in ein
-Elo-basiertes Ranglistensystem ein, das die Modellleistung basierend auf der tatsächlichen Nutzung bewertet und
-themenbasiertes Reranking unterstützt.
+mit bekannten Referenzantworten) evaluiert werden. Drei unabhängige KI-Richter (LLMs) bewerten die generierten
+Antworten, um eine objektive Qualitätsmessung zu gewährleisten. Ergänzend dazu ermöglicht die Plattform die direkte
+Integration von Benutzerfeedback über Daumen-hoch/Daumen-runter-Mechanismen in Konversationen. Dieses Feedback fliesst
+in ein Elo-basiertes Ranglistensystem ein, das die Modellleistung basierend auf der tatsächlichen Nutzung bewertet und
+themenbasiertes Reranking unterstützt. Der sogenannte Arena-Modus ermöglicht zudem einen unvoreingenommenen Vergleich
+verschiedener Modelle, indem er zufällig Modelle für die Beantwortung auswählt und Benutzerfeedback direkt zur relativen
+Bewertung nutzt.
 
 ### Technische Umsetzung im Swiss AI Hub: Datasets, Experimente und Bewertungsmetriken
 
 Um die Qualität von Agenten zu testen, können Administratoren über den Bewertungsdienst Datasets erstellen, die
 repräsentative Fragen und deren Referenzantworten enthalten. Diese Datasets dienen als Grundlage für Experimente, bei
 denen ein ausgewählter Agent gegen das Dataset getestet wird. Die Bewertung erfolgt durch drei KI-Richter (LLMs), die
-jede Agentenantwort anhand von drei Metriken bewerten (0-5 Sterne):
+jede Agentenantwort anhand von drei Metriken (0-5 Sterne) bewerten:
 
-- **Korrektheit:** Faktische Genauigkeit im Vergleich zur Referenzantwort.
-- **Vollständigkeit:** Behandelt alle Aspekte der Anfrage.
-- **Prägnanz:** Effiziente und direkte Formulierung ohne Redundanzen.
+- **Korrektheit:** Faktische Genauigkeit im Vergleich zur Referenzantwort, frei von Fehlinformationen, Halluzinationen
+  oder Widersprüchen.
+- **Vollständigkeit:** Behandelt alle Aspekte der Anfrage, einschliesslich mehrteiliger Fragen und impliziter
+  Bedürfnisse.
+- **Prägnanz:** Effiziente und direkte Formulierung ohne irrelevante Abschweifungen, Redundanzen oder übermässiges
+  Füllmaterial.
 
 Die Ergebnisse der Experimente zeigen Sternenbewertungen und eine detaillierte Aufschlüsselung pro Frage,
-einschliesslich der Agentenantwort und Latenz. Phoenix Tracing kann für eine tiefere Untersuchung von
-Konversationsverläufen und Roh-Telemetriedaten herangezogen werden.
-
-Benutzer können KI-Antworten in der Chat-Benutzeroberfläche mit Daumen-hoch/Daumen-runter-Steuerelementen bewerten. Bei
-Abgabe eines Feedbacks wird ein Schnappschuss des Chats erstellt. Ein Arena-Modus ermöglicht den unvoreingenommenen
-Vergleich verschiedener Modelle. Die Bewertungen fliessen in eine Bestenliste ein, die ein Elo-Bewertungssystem
-verwendet, um die Performanz der Modelle zu ranken. Das Feedback-System hilft somit, die besten Modelle für spezifische
-Anwendungsfälle zu identifizieren und Verbesserungspotenziale aufzuzeigen.
-
-*Hinweis zu Bias- und Drift-Erkennung sowie A/B-Tests in Produktion: Der Swiss AI Hub bietet das technische Framework
-(Evaluierungen, Tracing) zur Unterstützung dieser Aspekte. Eine automatisierte, out-of-the-box Bias-Überwachung oder
-Modell-Drift-Erkennung ist jedoch nicht implementiert, kann aber auf dieser Grundlage aufgebaut werden.
-Produktions-A/B-Tests mit Traffic-Aufteilung werden nicht direkt unterstützt, der Vergleich von Agentenvarianten vor dem
-Deployment durch Experimente ist jedoch möglich.*
+einschliesslich der Agentenantwort und Latenz. Die Phoenix UI, die unter `http://localhost:6006` erreichbar ist, kann
+für tiefere Untersuchungen von Konversationsverläufen und Roh-Telemetriedaten herangezogen werden. Benutzer können
+KI-Antworten in der Chat-Benutzeroberfläche bewerten. Bei Abgabe eines Feedbacks wird ein Schnappschuss des Chats
+erstellt. Das Feedback-System hilft somit, die besten Modelle für spezifische Anwendungsfälle zu identifizieren und
+Verbesserungspotenziale aufzuzeigen. Eine automatisierte, out-of-the-box Bias-Überwachung, Modell-Drift-Erkennung oder
+Produktions-A/B-Tests mit Traffic-Aufteilung sind derzeit nicht implementiert, können aber auf dem bereitgestellten
+Bewertungs-Framework und OpenTelemetry-Tracing aufgebaut werden.
 
 ## 4. Umfassende operative Überwachung (Observability) und Auditierung
 
@@ -159,38 +172,55 @@ Für IT-Führungskräfte und Operations-Teams ist die umfassende Observability e
 der Plattform in Echtzeit zu überwachen, Engpässe zu identifizieren und Ausfälle zu verhindern, bevor sie sich auf die
 Benutzer auswirken. Dies minimiert den administrativen Aufwand und sichert eine hohe Verfügbarkeit. Lückenlose
 Audit-Trails sind für Compliance-Teams von grundlegender Bedeutung, um regulatorische Anforderungen zu erfüllen und die
-Nachvollziehbarkeit von KI-Entscheidungen zu gewährleisten.
+Nachvollziehbarkeit von KI-Entscheidungen zu gewährleisten, was die Rechtmässigkeit der Datenverarbeitung nachweisbar
+macht.
 
 ### Konzepte & Prozesse: Die Säulen der Observability und Distributed Tracing
 
-Die Überwachungsphilosophie der Plattform basiert auf den branchenüblichen Säulen der Observability: Health Checks
-(Überprüfung der Liveness und Readiness jeder Komponente), Metriken (quantitative Messungen von Leistung und
-Ressourcennutzung) und Logs (detaillierte, chronologische Aufzeichnungen aller Ereignisse). Ein zentrales Element ist
-das End-to-End Distributed Tracing mittels OpenTelemetry, das jeden Anfragefluss über Dienste, Agenten und
+Die Überwachungsphilosophie der Plattform basiert auf den branchenüblichen Säulen der Observability: **Health Checks**
+(Überprüfung der Liveness und Readiness jeder Komponente), **Metriken** (quantitative Messungen von Leistung und
+Ressourcennutzung) und **Logs** (detaillierte, chronologische Aufzeichnungen aller Ereignisse). Ein zentrales Element
+ist das **End-to-End Distributed Tracing** mittels OpenTelemetry, das jeden Anfragefluss über Dienste, Agenten und
 LLM-Interaktionen hinweg verfolgt. Alle Authentifizierungs- und Autorisierungsereignisse werden lückenlos protokolliert.
+
+Der Swiss AI Hub implementiert eine umfassende Observability-Strategie, die Distributed Tracing, semantische
+Konventionen und KI-spezifische Instrumentierung kombiniert. Die Plattform nutzt **OpenTelemetry (OTel)** als
+fundamentales Framework, ergänzt durch **OpenInference Semantic Conventions** für KI/ML-Workloads. Dies bedeutet, dass
+jede Interaktion – von einer Benutzernachricht bis zu komplexen Multi-Agenten-Orchestrierungen – automatisch mit
+umfangreichem Kontext getraced wird, einschliesslich kompletter Anfragenflüsse, KI-spezifischer Semantik (LLM-Aufrufe,
+Embeddings, Retrievals) und Performance-Metriken.
 
 ### Technische Umsetzung im Swiss AI Hub: OpenTelemetry, SigNoz und Agent-Tracing
 
 Der Swiss AI Hub basiert sein gesamtes Überwachungs- und Alarmierungssystem auf **OpenTelemetry (OTel)**, einem
 herstellerneutralen, branchenüblichen Standard. Ein zentraler **OpenTelemetry Collector** empfängt Logs, Metriken und
-Traces von allen Diensten, reichert diese mit Metadaten an und exportiert sie sicher an die gewählten Ziele. Als
-offiziell unterstütztes Observability-Backend dient **SigNoz**, eine Open-Source-, OpenTelemetry-native Plattform, die
-vereinheitlichte Dashboards für Infrastruktur, KI-Operationen (Modellnutzung, Token-Verbrauch, Kosten pro Operation),
-Anwendungsleistung und Log-Analyse bietet. Flexible Alarmierungsfunktionen können für kritische Dienstausfälle,
-Leistungsverschlechterung, Ressourcenlimits, Kostenmanagement und Sicherheitsereignisse konfiguriert und an Kanäle wie
-E-Mail, Slack oder Microsoft Teams weitergeleitet werden. Durch die OTel-Grundlage können Telemetriedaten auch an
-alternative OTLP-kompatible Backends wie Grafana, Datadog oder Splunk exportiert werden, indem lediglich die
+Traces von allen Diensten, reichert diese mit Metadaten an und exportiert sie sicher an die gewählten Ziele. Dieser
+Collector verwendet verschiedene Receiver (OTLP, `docker_stats`, `filelog`), Prozessoren (Batching,
+Ressourcen-Erkennung, Attribut-Bearbeitung, Filterung) und Exporter. Die automatische Instrumentierung umfasst NATS
+Messaging, Datenbankoperationen (FerretDB, ValKey, Milvus), HTTP-Aufrufe, LLM-Interaktionen, Embeddings und
+Retrieval-Operationen, ohne Codeänderungen zu erfordern.
+
+Als offiziell unterstütztes Observability-Backend dient **SigNoz**, eine Open-Source-, OpenTelemetry-native Plattform,
+die vereinheitlichte Logs, Metriken und Traces in einer Oberfläche bereitstellt. SigNoz bietet Dashboards für
+Infrastruktur, KI-Operationen (Modellnutzung, Token-Verbrauch, Kosten pro Operation), Anwendungsleistung und
+Log-Analyse. Flexible Alarmierungsfunktionen können für kritische Dienstausfälle, Leistungsverschlechterung,
+Ressourcenlimits, Kostenmanagement und Sicherheitsereignisse konfiguriert und an Kanäle wie E-Mail, Slack oder Microsoft
+Teams weitergeleitet werden. Für Produktionsbereitstellungen wird die **Selbst-Hinterlegung von SigNoz auf einer
+dedizierten VM** dringend empfohlen, um Leistungsisolation, hohe Verfügbarkeit, Datenhoheit und Netzwerksicherheit zu
+gewährleisten. Durch die OTel-Grundlage können Telemetriedaten auch an alternative OTLP-kompatible Backends wie Grafana,
+Datadog, Splunk, Prometheus, Elasticsearch/ELK oder New Relic exportiert werden, indem lediglich die
 Collector-Konfiguration angepasst wird.
 
 Das Distributed Tracing erfolgt mit spezialisierter Unterstützung für KI-Operationen durch OpenInference Semantic
 Conventions. Agentenläufe werden mit hierarchischen Span-Strukturen getraced, die den gesamten Workflow von der
-Benutzereingabe bis zur endgültigen Ausgabe abbilden. LLM-Aufrufe, Embeddings, Retrieval-Operationen sowie HTTP- und
+Benutzereingabe bis zur endgültigen Ausgabe abbilden. Der `AgentRunTracer` erstellt hierbei einen Zwei-Span-Ansatz mit
+einem initialen AGENT-Span und einem finalen CHAIN-Span. LLM-Aufrufe, Embeddings, Retrieval-Operationen sowie HTTP- und
 Datenbankoperationen werden automatisch instrumentiert und in den Traces sichtbar gemacht. Die Phoenix UI
 (`http://localhost:6006`) bietet eine spezialisierte LLM-Observability mit Timeline-Ansichten und
-Inspektionsmöglichkeiten. Jede Berechtigungsbewertung und Benutzeraktion generiert detaillierte Audit-Log-Einträge, die
-dokumentieren, wer wann welche Aktion ausgeführt hat. Diese Audit-Trails sind entscheidend für
-Compliance-Berichterstattung und Sicherheitsforensik. Die Log-Aufbewahrung ist konfigurierbar, wobei ephemere Daten
-standardmässig nach 30 Tagen gelöscht werden.
+Inspektionsmöglichkeiten abgerufener Dokumente während der Entwicklung. Jede Berechtigungsbewertung und Benutzeraktion
+generiert detaillierte Audit-Log-Einträge, die dokumentieren, wer wann welche Aktion ausgeführt hat. Diese Audit-Trails
+sind entscheidend für Compliance-Berichterstattung und Sicherheitsforensik. Die Log-Aufbewahrung ist konfigurierbar,
+wobei ephemere Daten standardmässig nach 30 Tagen gelöscht werden.
 
 ## 5. Integriertes Consent-Management und umfassende Compliance-Unterstützung
 

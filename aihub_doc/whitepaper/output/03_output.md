@@ -23,43 +23,48 @@ administrativen Zugriff des Plattformanbieters auf Inhalte oder Wissensdatenbank
 Datensouveränität, die den strengsten Vorgaben entspricht und die Grundlage für eine vertrauenswürdige KI-Strategie
 bildet.
 
-### Konzepte & Prozesse: Single-Tenant-Isolation und flexible Hosting-Optionen
+### Konzepte & Prozesse: Harte Isolation durch Multi-Instancing und flexible Hosting-Optionen
 
-Der Swiss AI Hub ist primär für Single-Tenant-Bereitstellungen konzipiert. Dies bedeutet, dass jede Organisation eine
-vollständige, eigenständige Instanz der Plattform betreibt, einschliesslich dedizierter Datenbanken, Vektor-Stores und
-Dateispeicher. Im Gegensatz zu Multi-Tenant-SaaS-Plattformen, bei denen Ressourcen gemeinsam genutzt werden, erhalten
-Kunden einen eigenen, vollständig isolierten Stack.
+Der Swiss AI Hub ist primär für Einzelinstanz-Deployments konzipiert, die eine harte Isolation zwischen Organisationen
+mit 0% Datenlecks bieten. Jede Organisation betreibt dabei eine vollständige, eigenständige Instanz der Plattform. Dies
+bedeutet, dass jede Instanz eine dedizierte Infrastruktur mit separaten Datenbanken, Vektor-Stores und Dateispeichern
+erhält, im Gegensatz zu Multi-Tenant-SaaS-Plattformen, bei denen Ressourcen gemeinsam genutzt werden. Administratoren
+einer Instanz können ohne separate Anmeldung keine andere Instanz konfigurieren oder darauf zugreifen.
 
 Die Plattform unterstützt zudem einen Air-Gapped-Betrieb, bei dem die Instanz ohne ausgehende Internetverbindung
 betrieben werden kann, sofern lokal gehostete Sprachmodelle (LLMs) verwendet werden. Diese Option ist für Umgebungen mit
 höchsten Sicherheitsanforderungen, wie sie oft im öffentlichen Sektor bestehen, unerlässlich. Die Kontrolle über die
 Administration der Plattform liegt dabei vollständig bei der auftraggebenden Organisation, es sei denn, ein Managed
-Service-Modell mit einem Schweizer Hoster wird explizit gewählt.
+Service-Modell mit einem Schweizer Hoster wird explizit gewählt. Wenn mehrere Instanzen Backend-LLM-Ressourcen teilen,
+bleiben die LLM-Backends zustandslos und persistieren keine Prompts oder Responses, wodurch der Konversationskontext und
+die Historie in der eigenen Infrastruktur jeder Instanz verbleiben.
 
 ### Technische Umsetzung im Swiss AI Hub: On-Premise, Private Cloud und Schweizer SaaS
 
 Der Swiss AI Hub kann flexibel in verschiedenen Umgebungen gehostet werden, um den individuellen Sicherheits- und
-Residenzanforderungen gerecht zu werden:
+Residenzanforderungen gerecht zu werden. Die Architektur umfasst einen vollständigen Stack mit API, Agenten, Pipelines,
+Webinterface und Bot-Integrationen sowie einer Daten-, LLM-, Observability- und Infrastruktur-Schicht.
 
-- **On-Premise (eigener Server):** Organisationen betreiben den AI Hub auf ihren eigenen Servern im eigenen
+- **On-Premise (eigener Server):** Organisationen betreiben den AI Hub auf ihren eigenen x86_64-Servern im eigenen
   Rechenzentrum. Die gesamte Infrastruktur, einschliesslich CPU, RAM, Speicher und optional NVIDIA-GPUs für lokale
   LLM-Inferenz, liegt in der vollständigen Kontrolle des Kunden. Dies ermöglicht einen Air-Gapped-Betrieb und eliminiert
-  jegliche Cloud-Abhängigkeit. Die Plattform nutzt standardmässig robuste Datenbanken wie FerretDB/PostgreSQL und
-  Vektor-Stores wie Milvus für die Datenhaltung.
+  jegliche Cloud-Abhängigkeit. Die Plattform nutzt standardmässig robuste Datenbanken wie FerretDB/PostgreSQL,
+  Vektor-Stores wie Milvus oder Azure AI Search und Dateispeicher wie SeaweedFS oder Azure Data Lake für die
+  Datenhaltung.
 - **Private Cloud (eigene Cloud):** Die Bereitstellung erfolgt in der eigenen Cloud-Umgebung des Kunden, sei es bei
   einem Schweizer Cloud-Anbieter oder Hyperscaler wie Azure, AWS oder GCP. Dabei bleiben alle Daten im Cloud-Konto des
   Kunden und unter dessen Kontrolle, mit der Option, spezifische Regionen (z.B. Schweiz) für die Datenresidenz zu
-  wählen.
+  wählen. Cloud-Provider verfügen typischerweise über Sicherheits- und Compliance-Zertifizierungen.
 - **SaaS (Schweizer Cloud-Hosting):** Als Alternative zu einer selbstverwalteten Bereitstellung bietet die bbv als
-  Plattformanbieter das Hosting und die Verwaltung des AI Hub auf einer Schweizer Cloud-Infrastruktur an. In diesem Fall
-  kümmert sich bbv um Bereitstellung, Updates, Backups und Monitoring, wobei die Daten stets in der Schweiz und unter
-  Schweizer Rechtshoheit verbleiben.
+  Plattformanbieter das Hosting und die Verwaltung des AI Hub auf einer in der Schweiz ansässigen Cloud-Infrastruktur
+  an. In diesem Fall übernimmt bbv Bereitstellung, Updates, Backups und Monitoring, wobei die Daten stets in der Schweiz
+  und unter Schweizer Rechtshoheit verbleiben und SLAs angeboten werden.
 
-Die Datenisolation ist ein Kernmerkmal: Die Daten jedes Tenants bleiben in der jeweiligen Instanz. Es gibt keine
-gemeinsame Datenbank oder gemeinsamen Vektor-Store zwischen Organisationen, was die Anforderungen des revDSG und der
-DSGVO an die Datenisolation vollständig erfüllt. Bei einer Multi-Tenant-Bereitstellung erhalten zwar mehrere Tenants
-eine eigene isolierte Infrastruktur, können aber optional gemeinsame, zustandslose LLM-Backend-Ressourcen nutzen, ohne
-dass Prompts, Antworten oder Benutzerdaten die Grenzen der jeweiligen Tenant-Instanz verlassen.
+Die Datenisolation ist ein Kernmerkmal: Die Daten jeder Instanz bleiben vollständig isoliert; es gibt keine gemeinsame
+Datenbank oder keinen geteilten Vektor-Store zwischen Organisationen. Dieses Setup erfüllt das Schweizer
+Datenschutzgesetz (revDSG), DSGVO-Datenisolierungsanforderungen und Schweizer Sicherheitsstandards für den öffentlichen
+Sektor. Secrets werden über Umgebungsvariablen, Azure Key Vault oder Docker Secrets verwaltet, und persistente Volumes
+werden verschlüsselt (LUKS, Azure Disk Encryption).
 
 ## 2. Herstellerunabhängigkeit und anpassbare KI-Modellnutzung
 
@@ -73,35 +78,38 @@ Herausforderung dar. Der Swiss AI Hub entkoppelt die Anwendungsebene von spezifi
 sichert die Freiheit, stets die optimalen LLMs (proprietär oder Open Source) zu wählen, die den Anforderungen an
 Leistung, Kosten und Datensouveränität am besten entsprechen. Diese Flexibilität gewährleistet nicht nur eine
 langfristige Investitionssicherheit, sondern auch die strategische Handlungsfähigkeit der Organisation, selbst bei
-marktspezifischen oder technologischen Paradigmenwechseln.
+marktspezifischen oder technologischen Paradigmenwechseln. Die Kostenstruktur bleibt transparent und planbar, da keine
+volumenbasierten Lizenzgebühren anfallen.
 
-### Konzepte & Prozesse: Der LLM-Proxy und Open Standards
+### Konzepte & Prozesse: Der LLM-Proxy als universelles Gateway und offene Standards
 
 Ein zentrales Element ist der LLM-Proxy (LiteLLM), der als vereinheitlichtes Gateway zu allen Sprachmodell-Anbietern
 dient. Er abstrahiert anbieterspezifische APIs und ermöglicht es dem Plattform-Code, mit einer konsistenten
-Schnittstelle zu interagieren, unabhängig vom zugrunde liegenden Modell (z.B. OpenAI, Google, Anthropic, Azure OpenAI
-oder selbst gehostete Modelle). Das intelligente Routing leitet Anfragen basierend auf Konfiguration, Kostenoptimierung
-oder Lastverteilung an die geeigneten Modelle weiter.
+Schnittstelle zu interagieren, unabhängig vom zugrunde liegenden Modell. Das intelligente Routing leitet Anfragen
+basierend auf Konfiguration, Kostenoptimierung oder Lastverteilung an die geeigneten Modelle weiter, und die LLM-Nutzung
+wird pro Instanz verfolgt.
 
 Darüber hinaus setzt der Swiss AI Hub auf offene, standardisierte Formate für die Speicherung von Vektordaten und
 Konfigurationen. Dies verhindert, dass Unternehmenswissen in proprietären Datensilos gefangen ist und ermöglicht einen
-Systemwechsel oder Datenexport zu jeder Zeit. Die Modularität der Architektur erlaubt den Austausch einzelner
-Komponenten wie Vektor-Stores oder LLMs, ohne die gesamte Lösung neu aufbauen zu müssen.
+Systemwechsel oder Datenexport zu jeder Zeit. Die modulare Architektur erlaubt den flexiblen Austausch einzelner
+Komponenten wie Vektor-Stores oder LLMs, ohne die gesamte Lösung neu aufbauen zu müssen. Für die Observability wird
+OpenTelemetry als herstellerneutrales Framework verwendet, das die Integration mit verschiedenen Backends ermöglicht.
 
 ### Technische Umsetzung im Swiss AI Hub: LiteLLM und modulare Komponentenarchitektur
 
-Der LLM-Proxy (LiteLLM) bietet eine OpenAI-kompatible API, die eine breite Palette von Modellen unterstützt,
-einschliesslich selbst gehosteter Lösungen wie vLLM, llama.cpp oder HF-TEI. Dies ermöglicht auch den Betrieb in
+Der LLM-Proxy (LiteLLM) bietet eine OpenAI-kompatible API, die eine breite Palette von Modellen unterstützt. Dazu
+gehören Cloud-basierte Dienste wie Azure OpenAI, Google Gemini, Anthropic oder AWS Bedrock sowie selbst gehostete
+Lösungen wie vLLM, llama.cpp oder Hugging Face Text Embedding Inference (HF-TEI). Dies ermöglicht auch den Betrieb in
 Air-Gapped-Umgebungen ohne Internetverbindung. Die Plattform kann problemlos mehrere LLM-Anbieter gleichzeitig nutzen
 und Anfragen intelligent zwischen ihnen routen, beispielsweise für Kostenoptimierung oder den Einsatz spezialisierter
 Modelle.
 
 Für die RAG-Konfiguration (Retrieval Augmented Generation) können Organisationen eigene Datenpipelines über das SDK
-erstellen und anpassen, um verschiedene Datenquellen (Dateien, Datenbanken, APIs) anzubinden. Die in Stufe 2 der
-Architektur beschriebenen Pipelines verarbeiten Dokumente, erstellen Embeddings und speichern diese in Vektordatenbanken
-(z.B. Milvus). Die Kontrolle über diese Datenquellen und die RAG-Konfiguration liegt vollständig beim Kunden. Die
-Plattform ist zudem über das Model Context Protocol (MCP) offen für die sichere Integration von Agenten aus anderen
-Systemen, was die Interoperabilität weiter fördert.
+erstellen und anpassen, um verschiedene Datenquellen (Dateien, Datenbanken, APIs) anzubinden. Diese Pipelines
+verarbeiten Dokumente, erstellen Embeddings und speichern diese in Vektordatenbanken (z.B. Milvus). Die Kontrolle über
+diese Datenquellen und die RAG-Konfiguration liegt vollständig beim Kunden. Die Plattform ist zudem über das Model
+Context Protocol (MCP) offen für die sichere Integration von Agenten aus anderen Systemen, was die Interoperabilität
+weiter fördert.
 
 ## 3. Umfassende Zugriffssteuerung und Transparenz
 
@@ -115,34 +123,40 @@ Daten zugreifen darf. Gleichzeitig müssen Unternehmen sicherstellen, dass KI-En
 "Black-Box"-Effekten führen. Der Swiss AI Hub bietet ein robustes System für rollenbasierte Zugriffssteuerung (RBAC) und
 umfassende Transparenzfunktionen. Dies stellt sicher, dass Benutzer nur relevante Funktionen sehen, während alle
 KI-Operationen nachvollziehbar und prüfbar sind. Menschliche Überprüfungsschritte (Human-in-the-Loop) können zudem
-obligatorisch integriert werden, um die Verantwortung bei kritischen Entscheidungen zu sichern.
+obligatorisch integriert werden, um die Verantwortung bei kritischen Entscheidungen zu sichern und risikobewusste
+KI-Bereitstellung zu ermöglichen.
 
-### Konzepte & Prozesse: Hierarchisches RBAC und Human-in-the-Loop
+### Konzepte & Prozesse: Hierarchisches RBAC, dynamische Dienstsichtbarkeit und Human-in-the-Loop
 
-Die Plattform implementiert eine ausgeklügelte, berechtigungsbasierte Zugriffssteuerung, die das Benutzererlebnis
-dynamisch an das Autorisierungslevel jedes Einzelnen anpasst. Berechtigungen folgen einer hierarchischen Punkt-Notation
-(`aihub.[user|admin].<service>.<resource_type>.<resource_id>`) und unterstützen Wildcards für flexible Zuweisungen.
-Administratoren können Rollen definieren und Benutzern zuweisen, um den Zugriff auf spezifische Agenten, Dienste oder
-Prozesse zu steuern.
+Die Plattform implementiert ein ausgeklügeltes, berechtigungsbasiertes Zugriffssystem, das das Benutzererlebnis
+dynamisch an das Autorisierungslevel jedes Einzelnen anpasst. Dies erfolgt durch **dynamische Dienstsichtbarkeit**, bei
+der die Benutzeroberfläche nur Funktionen anzeigt, für die der Benutzer autorisiert ist, wodurch überladene
+Benutzeroberflächen und "Zugriff verweigert"-Fehler vermieden werden. Berechtigungen folgen einer hierarchischen
+Punkt-Notation (`aihub.[user|admin].<service>.<resource_type>.<resource_id>`) und unterstützen Wildcards für flexible
+Zuweisungen. Administratoren können Rollen definieren und Benutzern zuweisen, um den Zugriff auf spezifische Agenten,
+Dienste oder Prozesse zu steuern.
 
 Für eine transparente Entscheidungsfindung integriert die Plattform Human-in-the-Loop-Funktionen, insbesondere in
 komplexen Prozessautomatisierungen (Stufe 3 der Architektur). Wenn ein Schritt menschliches Urteilsvermögen erfordert,
 wird im Arbeitsbereich des relevanten Benutzers eine Aufgabe erstellt, die die Analyse der KI, das Quelldokument und den
-Kontext für die Entscheidung bereitstellt.
+Kontext für die Entscheidung bereitstellt. Die Plattform unterstützt ausserdem die Erkennung und Anonymisierung
+sensibler Daten (PII) durch Presidio, bevor diese externe LLMs erreichen, um den Datenschutz proaktiv zu gewährleisten.
 
-### Technische Umsetzung im Swiss AI Hub: Access Checker, Audit-Trails und PII-Anonymisierung
+### Technische Umsetzung im Swiss AI Hub: Access Checker, Audit-Trails und tiefe Observability
 
 Die Zugriffssteuerung erfolgt im Backend über eine `AccessChecker`-Komponente, die sicherstellt, dass
-Sicherheitsdurchsetzung nicht durch clientseitige Manipulation umgangen werden kann. Die Benutzeroberfläche zeigt nur
-Funktionen an, für die der Benutzer autorisiert ist. Die Authentifizierung lässt sich nahtlos in bestehende
-Unternehmens-Identitätssysteme wie Azure AD oder Keycloak über Standards wie OAuth 2.0 oder OIDC integrieren.
+Sicherheitsdurchsetzung nicht durch clientseitige Manipulation umgangen werden kann. Die Authentifizierung lässt sich
+nahtlos in bestehende Unternehmens-Identitätssysteme wie Azure AD oder Keycloak über Standards wie OAuth 2.0 oder OIDC
+integrieren.
 
 Jede Berechtigungsbewertung und jede Benutzeraktion generiert detaillierte Audit-Log-Einträge, die dokumentieren, wer
 wann welche Aktion ausgeführt hat. Diese Audit-Trails, kombiniert mit der tiefen Observability durch OpenTelemetry und
 Phoenix Tracing, ermöglichen eine lückenlose Nachvollziehbarkeit jeder Agentenaktion und jedes LLM-Aufrufs. Die
 Plattform erfasst dabei auch die Herkunft jedes Embeddings zurück zu seinem Quelldokument, was eine präzise
-Daten-Lineage für regulatorische Audits sicherstellt. Darüber hinaus unterstützt die Plattform die Erkennung und
-Anonymisierung sensibler Daten (PII) durch Presidio, bevor diese externe LLMs erreichen.
+Daten-Lineage für regulatorische Audits sicherstellt. Presidio läuft als Schutzmechanismus (Guardrail) in der
+LiteLLM-Proxy-Schicht und kann PII in Benutzeranfragen maskieren oder blockieren, bevor sie externe LLM-Anbieter
+erreichen. Diese umfangreichen Funktionen bieten Enterprise Security Compliance und eine präzise Kontrolle über
+Ressourcen und Zugriffe.
 
 ## 4. Compliance und Rechte der betroffenen Person
 
@@ -156,6 +170,8 @@ Unsicherheiten bei der Einhaltung von Datenschutzvorschriften können Innovation
 Hub wurde mit Blick auf die strengen Anforderungen des revDSG und der DSGVO entwickelt. Er bietet die technischen
 Massnahmen und Konfigurationsmöglichkeiten, die Organisationen benötigen, um ihre Compliance-Verantwortung wahrzunehmen.
 Dies schafft das notwendige Vertrauen für den Einsatz von KI in sensiblen Bereichen und minimiert rechtliche Risiken.
+Insbesondere das Hosting in der Schweiz vermeidet zudem die komplexen Anforderungen an internationale
+Datenübermittlungen, die sonst geeignete Schutzmassnahmen wie Standardvertragsklauseln erfordern würden.
 
 ### Konzepte & Prozesse: DSG und DSGVO-Prinzipien
 
@@ -194,9 +210,7 @@ Quellenzuordnung.
 Im Falle einer Datenschutzverletzung (Artikel 33/34 DSGVO; Artikel 24 revDSG) stellt die Plattform Audit-Protokolle,
 Benutzerzugriffsberichte, Überwachungs-, Alarmierungs- und Sicherungsfunktionen bereit, um die Untersuchung,
 Dokumentation und fristgerechte Meldung zu unterstützen. Obwohl das revDSG keine feste Frist nennt, wird in der Praxis
-oft die 72-Stunden-Frist der DSGVO als Richtwert gesehen. Das Hosting in der Schweiz vermeidet zudem die komplexen
-Anforderungen an internationale Datenübermittlungen, die sonst geeignete Schutzmassnahmen wie Standardvertragsklauseln
-erfordern würden.
+oft die 72-Stunden-Frist der DSGVO als Richtwert gesehen.
 
 ## 5. Nachhaltige Investitionssicherheit durch Offenheit
 
@@ -219,15 +233,18 @@ Anpassbarkeit des Codes gewährleistet. Dieses Open-Source-Modell bedeutet, dass
 jeder Infrastruktur ausgeführt und bei Bedarf modifiziert werden kann. Es fallen keine Lizenzgebühren an, lediglich die
 Kosten für die Infrastruktur, auf der die Plattform betrieben wird.
 
-Die Architektur basiert konsequent auf offenen Standards und Protokollen. Dies umfasst nicht nur die APIs für
-KI-Modelle, sondern auch die Speicherung von Vektordaten und Konfigurationen in allgemein zugänglichen Formaten.
+Die Architektur basiert konsequent auf offenen Standards und Protokollen. Dies umfasst nicht nur die APIs für KI-Modelle
+(über den LiteLLM-Proxy), sondern auch die Speicherung von Vektordaten und Konfigurationen in allgemein zugänglichen
+Formaten sowie die Nutzung von OpenTelemetry für die gesamte Observability. Dies gewährleistet, dass die Telemetriedaten
+herstellerneutral sind und mit jedem OTLP-kompatiblen Backend genutzt werden können.
 
 ### Technische Umsetzung im Swiss AI Hub: Modularität und Exportierbarkeit
 
 Die Plattform ist so konzipiert, dass einzelne Kernkomponenten wie Datenbanken (FerretDB/PostgreSQL), Vektor-Stores
-(Milvus oder Azure AI Search) und LLM-Provider flexibel ausgetauscht oder ergänzt werden können. Das vereinheitlichte
-LLM-Gateway ermöglicht den Wechsel zwischen verschiedenen Sprachmodellen ohne Code-Änderungen. Diese Modularität in
-Verbindung mit der Nutzung offener Protokolle (z.B. OTLP für Observability) sichert die technologische Unabhängigkeit.
+(Milvus oder Azure AI Search), LLM-Provider und Observability-Backends flexibel ausgetauscht oder ergänzt werden können.
+Das vereinheitlichte LLM-Gateway ermöglicht den Wechsel zwischen verschiedenen Sprachmodellen ohne Code-Änderungen.
+Diese Modularität in Verbindung mit der Nutzung offener Protokolle (z.B. OTLP für Observability) sichert die
+technologische Unabhängigkeit.
 
 Alle Daten, die innerhalb des Swiss AI Hub gespeichert werden, sind jederzeit exportierbar und in anderen Systemen
 nutzbar. Das Recht auf Datenübertragbarkeit (Art. 20 DSGVO, Art. 28 revDSG) wird durch die Bereitstellung von Daten in

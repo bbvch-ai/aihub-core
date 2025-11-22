@@ -137,35 +137,43 @@ Eine fragmentierte Benutzererfahrung mit unterschiedlichen Interfaces für versc
 von KI im Unternehmen behindern. Es ist entscheidend, dass KI-Funktionen nahtlos in bestehende Portale und Webseiten
 integriert werden können, um eine konsistente Markenidentität und barrierefreie Nutzung zu gewährleisten.
 
-#### Mehrwert und Nutzen: Konsistente Markenführung und verbesserte Zugänglichkeit
+#### Mehrwert und Nutzen: Konsistente Markenführung, verbesserte Zugänglichkeit und effiziente Entwicklung
 
 Für C-Level-Führungskräfte sichert eine flexible Frontend-Integration eine einheitliche Markenpräsenz und User
 Experience über alle digitalen Kontaktpunkte hinweg. Dies stärkt die Markenbindung und fördert die Mitarbeiter- sowie
 Kundenakzeptanz von KI-gestützten Diensten. Die Sicherstellung der Barrierefreiheit (WCAG-Konformität) erweitert zudem
 die Nutzerbasis und erfüllt wichtige ethische sowie regulatorische Anforderungen. IT-Teams profitieren von
 konfigurierbaren Web-Komponenten, die eine einfache Einbettung in bestehende Portale ermöglichen, ohne dass aufwendige
-Eigenentwicklungen erforderlich sind.
+Eigenentwicklungen erforderlich sind. Durch die Integration einer bewährten Open-Source-Lösung können
+Entwicklungsressourcen effizienter eingesetzt werden, um unternehmensspezifische Anforderungen zu adressieren, anstatt
+grundlegende Chat-Funktionalitäten neu zu entwickeln und zu warten.
 
-#### Konzepte & Prozesse: White-Labeling und responsive Web-Komponenten
+#### Konzepte & Prozesse: White-Labeling, responsive Web-Komponenten und Open-Source-Strategie
 
 Der Swiss AI Hub ist darauf ausgelegt, dass seine Chat-Interfaces und interaktiven Komponenten flexibel in beliebige
 Web-Umgebungen eingebettet werden können. Dies umfasst umfangreiche Anpassungsmöglichkeiten (White-Labeling) an das
 Unternehmensdesign und eine konsequente Umsetzung von Responsive Design, um eine optimale Darstellung auf allen Geräten
 zu gewährleisten. Die Einhaltung von Barrierefreiheitsstandards ist ein fundamentaler Aspekt dieser Designphilosophie.
+Die strategische Entscheidung, auf eine bestehende Open-Source-Lösung für die Kern-Chat-Schnittstelle zu setzen,
+ermöglicht es, von einer aktiven Wartungsgemeinschaft und kontinuierlichen Verbesserungen zu profitieren, während sich
+das Swiss AI Hub Team auf die spezifischen Enterprise-KI-Fähigkeiten konzentrieren kann. Die gesamte
+Plattform-Benutzeroberfläche ist zudem als integrierte Suite konzipiert, die verschiedene KI-Dienste in einer
+einheitlichen Umgebung bündelt, um eine kohärente Nutzererfahrung ohne Kontextwechsel oder erneute Authentifizierung zu
+bieten.
 
-#### Technische Umsetzung im Swiss AI Hub: Open WebUI und anpassbare Web-Komponenten
+#### Technische Umsetzung im Swiss AI Hub: Open WebUI als eingebettete und erweiterte Komponente
 
-Der Swiss AI Hub nutzt **Open WebUI** als primäre Chat-Schnittstelle. Diese Open-Source-Lösung wird mit
-benutzerdefinierten Erweiterungen direkt in die Swiss AI Hub Suite eingebettet und kann in bestehende Webseiten und
-Portale integriert werden. Die **Chat-Schnittstelle ist responsiv**, um eine optimale Darstellung auf allen Geräten
-(Desktops, Tablets, Smartphones) zu gewährleisten.
-
-Die Plattform ermöglicht das **White-Labeling** der Chat-Interfaces und Web-Komponenten, um eine konsistente
-Markenführung sicherzustellen. Dies beinhaltet die Anpassung von Logos, Farbschemata und Schriftarten. Die zugrunde
-liegende Open-Source-Natur von Open WebUI und die modulare Architektur der Swiss AI Hub Plattform sind darauf ausgelegt,
-dass die **Barrierefreiheit (WCAG 2.1 AA)** durch entsprechende Konfigurationen und eventuelle Anpassungen gewährleistet
-oder erreicht werden kann. Die Plattform-Benutzeroberfläche selbst ist als integrierte Suite konzipiert, die eine
-kohärente und konsistente Benutzererfahrung über alle Dienste hinweg bietet.
+Der Swiss AI Hub nutzt **Open WebUI** als seine primäre Chat-Schnittstelle. Diese Open-Source-Lösung ist mit
+benutzerdefinierten Erweiterungen direkt in die Swiss AI Hub Suite eingebettet und kann nahtlos in bestehende Webseiten
+und Portale integriert werden. Die **Chat-Schnittstelle ist responsiv**, um eine optimale Darstellung auf allen Geräten
+(Desktops, Tablets, Smartphones) zu gewährleisten. Die Plattform ermöglicht das **White-Labeling** der Chat-Interfaces
+und Web-Komponenten, einschliesslich der Anpassung von Logos, Farbschemata und Schriftarten, um eine konsistente
+Markenführung sicherzustellen. Die modulare Architektur erlaubt die Anpassung und Erweiterung von Open WebUI für
+spezifische Anforderungen, während die grundlegende Funktionalität von der gemeinschaftsgesteuerten Entwicklung
+profitiert. Die Plattform-Benutzeroberfläche selbst ist als integrierte Suite konzipiert, die ein gemeinsames
+Navigationsframework und eine konsistente Designsprache über alle Dienste hinweg (z.B. Agentenverwaltung,
+Wissensverwaltung) bietet. Die Barrierefreiheit (WCAG 2.1 AA) kann durch entsprechende Konfigurationen und Anpassungen
+gewährleistet werden, unterstützt durch die offene Natur der zugrunde liegenden Komponenten.
 
 ---
 

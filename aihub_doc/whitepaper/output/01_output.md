@@ -58,9 +58,18 @@ KI-Strategie: eine komplette, produktionsreife Infrastruktur, die nicht nur die 
 Überwachung und Skalierung umfassend abdeckt. Unerlässlich ist dabei die volle Datenhoheit, mit der Option, alle
 Komponenten On-Premise oder in dedizierten Schweizer Rechenzentren zu betreiben.
 
-Zudem fordern Unternehmen Offenheit und Kontrolle, um bestehende Systeme zu modifizieren, zu erweitern und nahtlos zu
-integrieren, ohne an einen einzelnen Anbieter gebunden zu sein. Eine solche Plattform muss von Anfang an produktionsreif
-sein, mit integrierter Unternehmensauthentifizierung, umfassenden Audit-Trails und effektiven Kostenkontrollen. Das
-oberste Ziel ist eine einheitliche, souveräne KI-Plattform, die es verschiedenen Teams ermöglicht, kollaborativ
-aufzubauen, Synergien zu nutzen und die Innovationskraft der Fachabteilungen zu entfesseln, während Governance und
-Compliance jederzeit gewährleistet sind. Dies ist die Lücke, die der Swiss AI Hub schliesst.
+1. **Komplette Infrastruktur:** Eine produktionsreife Basis, die nicht nur die KI-Logik, sondern auch Bereitstellung,
+   Überwachung, Skalierung, Authentifizierung und Integration umfassend abdeckt.
+2. **Datenhoheit:** Die volle Kontrolle über sensible Daten, mit der Option, alle Komponenten On-Premise oder in
+   dedizierten Schweizer Rechenzentren zu betreiben.
+3. **Offenheit und Kontrolle:** Die Möglichkeit, bestehende Systeme zu modifizieren, zu erweitern und nahtlos zu
+   integrieren, ohne an einen einzelnen Anbieter gebunden zu sein.
+4. **Produktionsreife von Anfang an:** Integrierte Unternehmensauthentifizierung, umfassende Audit-Trails und effektive
+   Kostenkontrollen sind von Beginn an erforderlich.
+5. **Eine einheitliche Plattform:** Eine zentrale Umgebung, auf der verschiedene Teams kollaborativ aufbauen können, um
+   Silos zu vermeiden und Synergien zu nutzen.
+
+Dies ist die Lücke, die der Swiss AI Hub schliesst. Anstatt sich zwischen dem Selbstbau von allem und der Akzeptanz von
+Vendor Lock-in zu entscheiden, erhalten Organisationen eine komplette Plattform, die sie besitzen und kontrollieren.
+Eine Plattform, die für die Realitäten der KI-Bereitstellung in Unternehmen konzipiert ist und nicht nur für die
+Begeisterung der KI-Entwicklung.
