@@ -21,10 +21,10 @@ Simple pipeline to sync Google Drive documents to AI-Hub data lake.
 **Configure:**
 
 ```bash
-# .env.dev
-GDRIVE_NAME=gdrive
-GDRIVE_TYPE=drive
-GDRIVE_OPTION_SERVICE_ACCOUNT_FILE=/secrets/gdrive-service-account.json
+# .env
+RCLONE_GDRIVE_NAME=gdrive
+RCLONE_GDRIVE_TYPE=drive
+RCLONE_GDRIVE_SERVICE_ACCOUNT_FILE=/secrets/gdrive-service-account.json
 ```
 
 **Mount key file in docker-compose.dev.yml:**
@@ -59,12 +59,12 @@ rclone:
 
 3. **Save to environment** (copy the `token` field):
    ```bash
-   # .env.dev
-   GDRIVE_NAME=gdrive
-   GDRIVE_TYPE=drive
-   GDRIVE_CLIENT_ID=your-client-id
-   GDRIVE_CLIENT_SECRET=your-client-secret
-   GDRIVE_OPTION_TOKEN={"access_token":"...","refresh_token":"..."}
+   # .env
+   RCLONE_GDRIVE_NAME=gdrive
+   RCLONE_GDRIVE_TYPE=drive
+   RCLONE_GDRIVE_CLIENT_ID=your-client-id
+   RCLONE_GDRIVE_CLIENT_SECRET=your-client-secret
+   RCLONE_GDRIVE_TOKEN={"access_token":"...","refresh_token":"..."}
    ```
 
 ## Run Pipeline
@@ -74,4 +74,3 @@ make playground
 ```
 
 Open http://localhost:3000
-

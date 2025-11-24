@@ -30,6 +30,35 @@ Each template provides:
 4. Copy the `pipeline.py` example to your `playground/` or custom pipeline location
 5. Customize patterns, bucket names, and schedules as needed
 
+## Environment Variable Convention
+
+All rclone source configuration uses the `RCLONE_` prefix to avoid conflicts with other tools (AWS SDK, Azure CLI, etc.):
+
+```
+RCLONE_{SOURCE}_{OPTION}=value
+```
+
+Examples:
+```bash
+# Azure Blob
+RCLONE_AZUREBLOB_NAME=azureblob
+RCLONE_AZUREBLOB_TYPE=azureblob
+RCLONE_AZUREBLOB_ACCOUNT=mystorageaccount
+RCLONE_AZUREBLOB_KEY=your-access-key
+
+# S3 (won't conflict with AWS_* or S3_* vars used by boto3)
+RCLONE_S3_NAME=s3
+RCLONE_S3_TYPE=s3
+RCLONE_S3_ACCESS_KEY_ID=AKIA...
+RCLONE_S3_SECRET_ACCESS_KEY=your-secret
+```
+
+Required variables for all sources:
+- `RCLONE_{SOURCE}_NAME` - Remote name used in rclone
+- `RCLONE_{SOURCE}_TYPE` - Backend type (onedrive, drive, s3, azureblob, sftp, local)
+
+All other variables are passed directly to rclone as backend-specific options.
+
 ## Understanding Namespaces and Directory Structure
 
 **Important**: The `datalake_directory_name` parameter determines the **namespace** used in the downstream RAG pipeline 

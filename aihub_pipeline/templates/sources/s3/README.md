@@ -15,28 +15,28 @@ Simple pipeline to sync AWS S3 documents to AI-Hub data lake.
 Copy variables from `.env.template` to your `.env` and fill in:
 
 ```bash
-S3_NAME=s3
-S3_TYPE=s3
-S3_OPTION_ACCESS_KEY_ID=AKIA...
-S3_OPTION_SECRET_ACCESS_KEY=your-secret-key
-S3_OPTION_REGION=us-east-1
+RCLONE_S3_NAME=s3
+RCLONE_S3_TYPE=s3
+RCLONE_S3_ACCESS_KEY_ID=AKIA...
+RCLONE_S3_SECRET_ACCESS_KEY=your-secret-key
+RCLONE_S3_REGION=us-east-1
 ```
 
 ### Advanced Options
 
 **Custom endpoint (MinIO, SeaweedFS, etc.):**
 ```bash
-S3_OPTION_ENDPOINT=https://minio.example.com:9000
+RCLONE_S3_ENDPOINT=https://minio.example.com:9000
 ```
 
 **Access Control:**
 ```bash
-S3_OPTION_ACL=private
+RCLONE_S3_ACL=private
 ```
 
 **Storage Class:**
 ```bash
-S3_OPTION_STORAGE_CLASS=STANDARD_IA
+RCLONE_S3_STORAGE_CLASS=STANDARD_IA
 ```
 
 **3. Update Pipeline**
@@ -54,5 +54,3 @@ poetry run dagster dev -f pipeline.py
 ```
 
 Open http://localhost:3000
-
-

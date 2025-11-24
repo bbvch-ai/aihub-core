@@ -24,10 +24,10 @@ Simple pipeline to sync SharePoint documents to AI-Hub data lake.
 Copy variables from `.env.template` to your `.env` and fill in:
 
 ```bash
-SHAREPOINT_CLIENT_ID=<Application (client) ID>
-SHAREPOINT_CLIENT_SECRET=<Client secret value>
-SHAREPOINT_TENANT=<Directory (tenant) ID>
-SHAREPOINT_SITE_URL=https://your-tenant.sharepoint.com/sites/your-site-name
+RCLONE_SHAREPOINT_CLIENT_ID=<Application (client) ID>
+RCLONE_SHAREPOINT_CLIENT_SECRET=<Client secret value>
+RCLONE_SHAREPOINT_TENANT=<Directory (tenant) ID>
+RCLONE_SHAREPOINT_SITE_URL=https://your-tenant.sharepoint.com/sites/your-site-name
 ```
 
 **Site URL**: Just copy from browser address bar!

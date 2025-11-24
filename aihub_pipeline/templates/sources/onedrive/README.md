@@ -24,9 +24,9 @@ Simple pipeline to sync OneDrive for Business documents to AI-Hub data lake.
 Copy variables from `.env.template` to your `.env` and fill in:
 
 ```bash
-ONEDRIVE_CLIENT_ID=<Application (client) ID>
-ONEDRIVE_CLIENT_SECRET=<Client secret value>
-ONEDRIVE_TENANT=<Directory (tenant) ID>
+RCLONE_ONEDRIVE_CLIENT_ID=<Application (client) ID>
+RCLONE_ONEDRIVE_CLIENT_SECRET=<Client secret value>
+RCLONE_ONEDRIVE_TENANT=<Directory (tenant) ID>
 ```
 
 **4. Run Pipeline**

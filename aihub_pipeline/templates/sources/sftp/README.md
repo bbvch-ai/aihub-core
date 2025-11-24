@@ -17,12 +17,12 @@ You need:
 Copy variables from `.env.template` to your `.env` and fill in:
 
 ```bash
-SFTP_NAME=sftp
-SFTP_TYPE=sftp
-SFTP_OPTION_HOST=sftp.example.com
-SFTP_OPTION_USER=username
-SFTP_OPTION_PASS=password
-SFTP_OPTION_PORT=22
+RCLONE_SFTP_NAME=sftp
+RCLONE_SFTP_TYPE=sftp
+RCLONE_SFTP_HOST=sftp.example.com
+RCLONE_SFTP_USER=username
+RCLONE_SFTP_PASS=password
+RCLONE_SFTP_PORT=22
 ```
 
 **3. Update Pipeline**
@@ -48,9 +48,9 @@ Open http://localhost:3000
 Instead of password, use SSH key file:
 
 ```bash
-# .env.dev
-SFTP_OPTION_KEY_FILE=/secrets/ssh_key
-# Remove SFTP_OPTION_PASS
+# .env
+RCLONE_SFTP_KEY_FILE=/secrets/ssh_key
+# Remove RCLONE_SFTP_PASS
 ```
 
 Mount key file in docker-compose.dev.yml:
@@ -65,10 +65,10 @@ rclone:
 
 **Known hosts file:**
 ```bash
-SFTP_OPTION_KNOWN_HOSTS_FILE=/secrets/known_hosts
+RCLONE_SFTP_KNOWN_HOSTS_FILE=/secrets/known_hosts
 ```
 
 **Disable host key checking (not recommended for production):**
 ```bash
-SFTP_OPTION_SKIP_LINKS=true
+RCLONE_SFTP_SKIP_LINKS=true
 ```

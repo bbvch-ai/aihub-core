@@ -15,10 +15,10 @@ Simple pipeline to sync Azure Blob Storage documents to AI-Hub data lake.
 Copy variables from `.env.template` to your `.env` and fill in:
 
 ```bash
-AZUREBLOB_NAME=azureblob
-AZUREBLOB_TYPE=azureblob
-AZUREBLOB_OPTION_ACCOUNT=mystorageaccount
-AZUREBLOB_OPTION_KEY=your-access-key-here
+RCLONE_AZUREBLOB_NAME=azureblob
+RCLONE_AZUREBLOB_TYPE=azureblob
+RCLONE_AZUREBLOB_ACCOUNT=mystorageaccount
+RCLONE_AZUREBLOB_KEY=your-access-key-here
 ```
 
 **3. Update Pipeline**
@@ -36,4 +36,3 @@ poetry run dagster dev -f pipeline.py
 ```
 
 Open http://localhost:3000
-

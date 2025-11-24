@@ -6,7 +6,19 @@ Simple pipeline to sync local files to AI-Hub data lake using rclone.
 
 ## Setup
 
-**1. Configure Volume Mount**
+**1. Configure Environment**
+
+Copy variables from `.env.template` to your `.env`:
+
+```bash
+RCLONE_LOCAL_FS_NAME=local
+RCLONE_LOCAL_FS_TYPE=local
+
+# Point to your documents folder
+RCLONE_DATA_PATH=/path/to/your/documents
+```
+
+**2. Configure Volume Mount**
 
 In the rclone service configure the volume mount:
 
@@ -16,14 +28,7 @@ rclone:
     - ${RCLONE_DATA_PATH:-/mnt/test_data}:/mnt/test_data:ro
 ```
 
-Set the path in your `.env`:
-
-```bash
-# Point to your documents folder
-RCLONE_DATA_PATH=/path/to/your/documents
-```
-
-**2. Run Pipeline**
+**3. Run Pipeline**
 
 ```bash
 poetry run dagster dev -f pipeline.py
