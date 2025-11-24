@@ -18,6 +18,6 @@ azureblob = azure_blob_source()
 defs = default_rclone_to_datalake_definitions(
     datalake_container_name="playground",
     datalake_directory_name="azureblob",
-    source_remote=f"{azureblob.name}:playground/papers",  # Update with your container
+    source_remote=f"{azureblob.name}:playground",  # Update with your container / path
     rclone_config=azureblob,
 )
