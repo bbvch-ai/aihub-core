@@ -17,6 +17,7 @@ azureblob = azure_blob_source()
 # Create pipeline (syncs to data lake)
 defs = default_rclone_to_datalake_definitions(
     datalake_container_name="playground",
+    datalake_directory_name="azureblob",
     source_remote=f"{azureblob.name}:container-name/path",  # Update with your container
     rclone_config=azureblob,
 )

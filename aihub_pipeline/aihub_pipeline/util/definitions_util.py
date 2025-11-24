@@ -6,7 +6,6 @@ from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import Em
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.rclone import RcloneSourceConfig
-from aihub_lib.infrastructure.s3.S3StorageSettings import S3StorageSettings
 from aihub_lib.nats.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
 from dagster import (
     AnchorBasedFilePathMapping,
@@ -419,9 +418,12 @@ def default_rclone_to_datalake_definitions(
     """
     rclone_partitions = DynamicPartitionsDefinition(name="rclone_partitions")
 
-    rclone_key = AssetKey([datalake_container_name, "rclone_to_datalake", "rclone"])
-    data_lake_files_key = AssetKey([datalake_container_name, "rclone_to_datalake", "data_lake_files"])
-    removed_data_lake_files_key = AssetKey([datalake_container_name, "rclone_to_datalake", "removed_data_lake_files"])
+    rclone_source_name = rclone_config.name if rclone_config else None
+    rclone_key = AssetKey([datalake_container_name, f"{rclone_source_name}_to_datalake", rclone_source_name])
+    data_lake_files_key = AssetKey([datalake_container_name, f"{rclone_source_name}_to_datalake", "data_lake_files"])
+    removed_data_lake_files_key = AssetKey(
+        [datalake_container_name, f"{rclone_source_name}_to_datalake", "removed_data_lake_files"]
+    )
 
     observable_rclone_asset = observable_rclone_factory(rclone_key, rclone_partitions)
 

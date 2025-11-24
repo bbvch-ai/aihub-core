@@ -17,6 +17,7 @@ sharepoint = sharepoint_source()
 # Create pipeline (syncs to data lake)
 defs = default_rclone_to_datalake_definitions(
     datalake_container_name="playground",
+    datalake_directory_name="sharepoint",
     rclone_config=sharepoint,
     source_remote=f"{sharepoint.name}:",
 )

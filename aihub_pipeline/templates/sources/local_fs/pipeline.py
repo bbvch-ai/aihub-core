@@ -14,5 +14,6 @@ from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_defi
 # The /data path is mounted from RCLONE_DATA_PATH (see docker-compose)
 defs = default_rclone_to_datalake_definitions(
     datalake_container_name="playground",
+    datalake_directory_name="local_fs",
     source_remote="/data",  # Direct path to mounted volume
 )

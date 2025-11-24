@@ -17,6 +17,7 @@ sftp = sftp_source()
 # Create pipeline (syncs to data lake)
 defs = default_rclone_to_datalake_definitions(
     datalake_container_name="playground",
+    datalake_directory_name="sftp",
     rclone_config=sftp,
     source_remote=f"{sftp.name}:/path/to/folder",  # Update with your path
 )

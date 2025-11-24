@@ -17,6 +17,7 @@ gdrive = google_drive_source()
 # Create pipeline (syncs to data lake)
 defs = default_rclone_to_datalake_definitions(
     datalake_container_name="playground",
+    datalake_directory_name="gdrive",
     source_remote=f"{gdrive.name}:",
     rclone_config=gdrive,
 )

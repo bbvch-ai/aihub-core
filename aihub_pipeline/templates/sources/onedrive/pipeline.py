@@ -17,6 +17,7 @@ onedrive = onedrive_source()
 # Create pipeline (syncs to data lake)
 defs = default_rclone_to_datalake_definitions(
     datalake_container_name="playground",
+    datalake_directory_name="onedrive",
     source_remote=f"{onedrive.name}:",
     rclone_config=onedrive,
 )

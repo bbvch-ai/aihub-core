@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Annotated, Any
 
-from pydantic import BaseModel, Field, SecretStr, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 
 class RcloneBackendType(str, Enum):

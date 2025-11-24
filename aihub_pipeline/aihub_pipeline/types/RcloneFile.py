@@ -34,7 +34,9 @@ class RcloneFile(SourceFile, MinimalRcloneFile):
     This generic implementation works with all 70+ rclone backends without requiring
     backend-specific code.
     """
+
     remote_path: Annotated[str, Field(description="Full path within the remote")]
+
     @property
     def source_url(self) -> str:
         """Returns the rclone-style URL (remote:path)."""

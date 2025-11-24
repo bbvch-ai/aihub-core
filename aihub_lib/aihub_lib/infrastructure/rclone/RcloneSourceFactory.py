@@ -4,8 +4,8 @@ from typing import Annotated
 from pydantic import Field, SecretStr
 from pydantic_settings import SettingsConfigDict
 
+from aihub_lib.infrastructure.rclone.RcloneSourceConfig import RcloneBackendType, RcloneSourceConfig
 from aihub_lib.settings.EnvironmentSettings import EnvironmentSettings
-from aihub_lib.infrastructure.rclone.RcloneSourceConfig import RcloneSourceConfig, RcloneBackendType
 
 
 class GenericRcloneSourceSettings(EnvironmentSettings):

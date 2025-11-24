@@ -17,6 +17,7 @@ s3 = s3_source()
 # Create pipeline (syncs to data lake)
 defs = default_rclone_to_datalake_definitions(
     datalake_container_name="playground",
+    datalake_directory_name="s3",
     rclone_config=s3,
     source_remote=f"{s3.name}:bucket-name/path",  # Update with your bucket
 )
