@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.254.5] - 2025-11-24 - Platform Configuration Update and Docling Refinements
+
+### Changed
+
+- 📄 **Updated DNS Prerequisites:** Replaced the `datalake-api` subdomain requirement with `litellm.aihub.example.com`
+  for the `litellm` proxy, streamlining API access configurations for the platform.
+
+### Removed
+
+- 🗑️ **Removed Docling Model Initialization Script:** The dedicated `init-models.sh` script, previously responsible for
+  checking and downloading Docling models, has been removed, indicating an updated or integrated approach to model
+  management.
+
+---
+
 ## [v0.254.4] - 2025-11-21 - Internal Consistency Improvements
 
 ### Refactor

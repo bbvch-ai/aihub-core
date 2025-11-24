@@ -285,7 +285,7 @@ Configure DNS records for your domain. The platform requires **seven subdomains*
 - `openwebui.aihub.example.com` - chat UI
 - `dagster.aihub.example.com` - pipeline orchestration
 - `datalake.aihub.example.com` - data lake console
-- `datalake-api.aihub.example.com` - S3 API
+- `litellm.aihub.example.com` - litellm proxy
 - `attu.aihub.example.com` - Milvus vector database UI
 - `traefik.aihub.example.com` - reverse proxy dashboard
 
