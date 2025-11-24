@@ -59,26 +59,132 @@ graph TD
     style K fill:#299764
 ```
 
-## 1. The SharePoint to Data Lake Pipeline
+## 1. The Rclone Universal Source to Data Lake Pipeline
 
-Use the `default_sharepoint_to_datalake_definitions` factory to sync documents from a SharePoint site to your S3 data
-lake.
+Use the `default_rclone_to_datalake_definitions` factory to sync documents from **any cloud storage provider** to your
+S3 data lake. This is the recommended approach for most use cases as it supports 70+ storage backends with a single,
+unified implementation.
 
-- **What it does**: Observes a SharePoint location, downloads new or updated files, and cleans up files in the data lake
-  that were deleted from SharePoint.
-- **Key Assets**: `observable_sharepoint`, `data_lake_files`, `removed_data_lake_files`.
+- **What it does**: Observes any rclone-supported remote, downloads new or updated files, and cleans up files in the
+  data lake that were deleted from the source.
+- **Key Assets**: `observable_rclone`, `data_lake_files`, `removed_data_lake_files`.
+- **Supported Sources**: SharePoint, OneDrive, Google Drive, AWS S3, Azure Blob, SFTP, local filesystem, and
+  [70+ more](https://rclone.org/overview/).
 
-### Usage Example
+### Quick Start with Templates
+
+AI-Hub provides pre-configured templates for common enterprise sources. Each template includes environment variables,
+pipeline code, and setup instructions.
+
+| Template | Use Case | Environment Prefix |
+|----------|----------|-------------------|
+| **SharePoint** | Microsoft 365 document libraries | `SHAREPOINT_*` |
+| **OneDrive** | Microsoft 365 personal/business storage | `ONEDRIVE_*` |
+| **Google Drive** | Google Workspace organizations | `GDRIVE_*` |
+| **S3** | AWS S3, MinIO, S3-compatible storage | `S3_*` |
+| **Azure Blob** | Azure Blob Storage | `AZUREBLOB_*` |
+| **SFTP** | Legacy systems, secure file transfers | `SFTP_*` |
+| **Local FS** | Mounted network shares (NFS, SMB) | Direct path |
+
+Templates are located in `aihub_pipeline/templates/sources/`.
+
+### Usage Example: SharePoint
+
+**1. Configure environment variables** (copy from `templates/sources/sharepoint/.env.template`):
+
+```bash
+SHAREPOINT_NAME=sharepoint
+SHAREPOINT_TYPE=onedrive
+SHAREPOINT_CLIENT_ID=your-client-id
+SHAREPOINT_CLIENT_SECRET=your-secret
+SHAREPOINT_TENANT=your-tenant-id
+SHAREPOINT_SITE_URL=https://your-tenant.sharepoint.com/sites/your-site
+SHAREPOINT_DRIVE_TYPE=documentLibrary
+```
+
+**2. Create your pipeline**:
 
 ```python
-from aihub_pipeline.util.definitions_util import default_sharepoint_to_datalake_definitions
+from aihub_lib.infrastructure.rclone.RcloneSourceFactory import sharepoint_source
+from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_definitions
 
-defs = default_sharepoint_to_datalake_definitions(
+# Load config from SHAREPOINT_* environment variables
+sharepoint = sharepoint_source()
+
+# Create pipeline
+defs = default_rclone_to_datalake_definitions(
     datalake_container_name="my-company-docs",
-    datalake_directory_name="from_sharepoint",
-    target_folders=["Shared Documents/Projects"], # Folders to sync from SharePoint
-    exclude_folders=["Shared Documents/Projects/Archive"]
+    source_remote=f"{sharepoint.name}:",
+    rclone_config=sharepoint,
+    include_patterns=["*.pdf", "*.docx"],
+    exclude_patterns=["**/archive/**"],
 )
+```
+
+### Usage Example: Google Drive
+
+```python
+from aihub_lib.infrastructure.rclone.RcloneSourceFactory import google_drive_source
+from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_definitions
+
+gdrive = google_drive_source()
+
+defs = default_rclone_to_datalake_definitions(
+    datalake_container_name="gdrive-docs",
+    source_remote=f"{gdrive.name}:Shared Documents",
+    rclone_config=gdrive,
+)
+```
+
+### Usage Example: Local Filesystem / Mounted Shares
+
+For local paths or mounted network shares (NFS, SMB, Azure Files), no rclone config is needed:
+
+```python
+from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_definitions
+
+defs = default_rclone_to_datalake_definitions(
+    datalake_container_name="local-docs",
+    source_remote="/mnt/shared-drive/documents",
+)
+```
+
+### Available Source Helper Functions
+
+The `RcloneSourceFactory` provides convenience functions that read from environment variables:
+
+```python
+from aihub_lib.infrastructure.rclone.RcloneSourceFactory import (
+    sharepoint_source,    # Reads SHAREPOINT_* env vars
+    onedrive_source,      # Reads ONEDRIVE_* env vars
+    google_drive_source,  # Reads GDRIVE_* env vars
+    s3_source,            # Reads S3_* env vars
+    azure_blob_source,    # Reads AZUREBLOB_* env vars
+    sftp_source,          # Reads SFTP_* env vars
+    local_fs_source,      # Reads LOCAL_FS_* env vars
+)
+```
+
+### Environment Variable Pattern
+
+All source configurations follow a consistent pattern:
+
+```bash
+<PREFIX>_NAME=remote-name       # Rclone remote name
+<PREFIX>_TYPE=backend-type      # Rclone backend (onedrive, drive, s3, etc.)
+<PREFIX>_CLIENT_ID=...          # OAuth client ID (if applicable)
+<PREFIX>_CLIENT_SECRET=...      # OAuth client secret (if applicable)
+<PREFIX>_TENANT=...             # Azure AD tenant (Microsoft sources)
+<PREFIX>_OPTION_<KEY>=value     # Additional rclone options
+```
+
+Extra options use the `<PREFIX>_OPTION_` pattern and are passed directly to rclone:
+
+```bash
+S3_OPTION_REGION=eu-west-1
+S3_OPTION_ENDPOINT=https://minio.example.com
+SFTP_OPTION_HOST=sftp.example.com
+SFTP_OPTION_PORT=22
 ```
 
 ## 2. The Data Lake to Vector Store Pipeline
@@ -136,25 +242,4 @@ To run a pipeline, save your definitions code (e.g., `my_pipeline.py`) and use t
 ```bash
 # Start the Dagster UI and development server
 dagster dev -f my_pipeline.py
-```
-
-```python
-from dagster import Definitions
-from aihub_pipeline.util.definitions_util import (
-    default_sharepoint_to_datalake_definitions,
-    default_definitions,
-)
-
-# Get definitions from both factories
-sharepoint_defs = default_sharepoint_to_datalake_definitions(...)
-datalake_defs = default_definitions(...)
-
-# Combine all assets, resources, jobs, etc. into a single definition
-defs = Definitions(
-    assets=[*sharepoint_defs.assets, *datalake_defs.assets],
-    resources={**sharepoint_defs.resources, **datalake_defs.resources},
-    jobs=[*sharepoint_defs.jobs, *datalake_defs.jobs],
-    schedules=[*sharepoint_defs.schedules, *datalake_defs.schedules],
-    sensors=[*sharepoint_defs.sensors, *datalake_defs.sensors],
-)
 ```

@@ -7,13 +7,12 @@ AWS S3 Pipeline
 4. Open http://localhost:3000
 """
 
-from aihub_lib.infrastructure.rclone.RcloneSourceFactory import GenericRcloneSourceSettings
+from aihub_lib.infrastructure.rclone.RcloneSourceFactory import s3_source
 
 from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_definitions
 
 # Setup S3 remote (reads S3_* env vars)
-s3_settings = GenericRcloneSourceSettings.for_source("S3")
-s3 = s3_settings.to_rclone_source()
+s3 = s3_source()
 
 # Create pipeline (syncs to data lake)
 defs = default_rclone_to_datalake_definitions(

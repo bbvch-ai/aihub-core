@@ -7,9 +7,10 @@ from pydantic import BaseModel, Field, SecretStr, ConfigDict
 class RcloneBackendType(str, Enum):
     ONEDRIVE = "onedrive"
     DRIVE = "drive"
-    DROPBOX = "dropbox"
     S3 = "s3"
     LOCAL = "local"
+    AZUREBLOB = "azureblob"
+    SFTP = "sftp"
 
 
 class RcloneRegion(str, Enum):
@@ -39,7 +40,7 @@ class RcloneSourceConfig(BaseModel):
     drive_type: Annotated[str | None, Field(description="Drive type")] = None
     region: Annotated[RcloneRegion, Field(description="Region")] = RcloneRegion.GLOBAL
 
-    extra_config: Annotated[dict[str, str], Field(default_factory=dict, description="Additional config")] = dict()
+    extra_config: Annotated[dict[str, str], Field(default_factory=dict, description="Additional config")]
 
     def to_rclone_params(self) -> dict[str, Any]:
         """

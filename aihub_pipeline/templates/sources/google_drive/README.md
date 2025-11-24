@@ -67,18 +67,6 @@ rclone:
    GDRIVE_OPTION_TOKEN={"access_token":"...","refresh_token":"..."}
    ```
 
-**OR mount config file:**
-
-```bash
-# Export entire config
-docker exec rclone cat /config/rclone/rclone.conf > ./rclone.conf
-
-# Mount in docker-compose.dev.yml
-rclone:
-  volumes:
-    - ./rclone.conf:/config/rclone/rclone.conf:ro
-```
-
 ## Run Pipeline
 
 ```bash
@@ -87,23 +75,3 @@ make playground
 
 Open http://localhost:3000
 
-## Files
-
-- `.env.template` - Environment variables template
-- `pipeline.py` - Pipeline definition (~10 lines)
-- `README.md` - This file
-
-## Troubleshooting
-
-**Error: "empty token found"**
-- OAuth token missing or expired
-- Follow Option B steps above to authorize
-
-**Error: "Service account not authorized"**
-- Share Drive folders with service account email
-- OR enable domain-wide delegation (Workspace admin)
-
-**Testing connection:**
-```bash
-docker exec rclone rclone lsd gdrive:
-```

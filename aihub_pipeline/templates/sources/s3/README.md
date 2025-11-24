@@ -12,7 +12,7 @@ Simple pipeline to sync AWS S3 documents to AI-Hub data lake.
 
 **2. Configure Environment**
 
-Copy variables from `.env.template` to your `.env.dev` and fill in:
+Copy variables from `.env.template` to your `.env` and fill in:
 
 ```bash
 S3_NAME=s3

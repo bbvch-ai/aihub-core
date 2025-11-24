@@ -96,17 +96,17 @@ def google_drive_source() -> RcloneSourceConfig:
     return GenericRcloneSourceSettings.load("GDRIVE")
 
 
-def dropbox_source() -> RcloneSourceConfig:
-    return GenericRcloneSourceSettings.load("DROPBOX")
-
-
-def box_source() -> RcloneSourceConfig:
-    return GenericRcloneSourceSettings.load("BOX")
-
-
 def s3_source() -> RcloneSourceConfig:
     return GenericRcloneSourceSettings.load("S3")
 
 
 def local_fs_source() -> RcloneSourceConfig:
     return GenericRcloneSourceSettings.load("LOCAL_FS")
+
+
+def azure_blob_source() -> RcloneSourceConfig:
+    return GenericRcloneSourceSettings.load("AZUREBLOB")
+
+
+def sftp_source() -> RcloneSourceConfig:
+    return GenericRcloneSourceSettings.load("SFTP")

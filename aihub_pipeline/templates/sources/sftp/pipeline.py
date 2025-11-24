@@ -7,13 +7,12 @@ SFTP Pipeline
 4. Open http://localhost:3000
 """
 
-from aihub_lib.infrastructure.rclone.RcloneSourceFactory import GenericRcloneSourceSettings
+from aihub_lib.infrastructure.rclone.RcloneSourceFactory import sftp_source
 
 from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_definitions
 
 # Setup SFTP remote (reads SFTP_* env vars)
-sftp_settings = GenericRcloneSourceSettings.for_source("SFTP")
-sftp = sftp_settings.to_rclone_source()
+sftp = sftp_source()
 
 # Create pipeline (syncs to data lake)
 defs = default_rclone_to_datalake_definitions(

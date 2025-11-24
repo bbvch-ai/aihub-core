@@ -7,13 +7,12 @@ Azure Blob Storage Pipeline
 4. Open http://localhost:3000
 """
 
-from aihub_lib.infrastructure.rclone.RcloneSourceFactory import GenericRcloneSourceSettings
+from aihub_lib.infrastructure.rclone.RcloneSourceFactory import azure_blob_source
 
 from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_definitions
 
 # Setup Azure Blob remote (reads AZUREBLOB_* env vars)
-azureblob_settings = GenericRcloneSourceSettings.for_source("AZUREBLOB")
-azureblob = azureblob_settings.to_rclone_source()
+azureblob = azure_blob_source()
 
 # Create pipeline (syncs to data lake)
 defs = default_rclone_to_datalake_definitions(
