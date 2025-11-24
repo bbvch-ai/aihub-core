@@ -6,7 +6,7 @@ title: The Swiss Way
 
 The Swiss AI Hub embodies Swiss values, but not as marketing buzzwords. These principles exist for one reason: to build
 trust. Swiss organizations don't adopt technology lightly, especially when it involves their data and tools. This
-caution is justified—AI demonstrations are impressive, but production AI needs to earn trust through transparency,
+caution is justified - AI demonstrations are impressive, but production AI needs to earn trust through transparency,
 control, and predictability.
 
 ## Trust through bounded behavior
@@ -20,7 +20,7 @@ The Swiss AI Hub takes a different approach:
 **Closed-form workflows instead of open loops**\
 Our agents follow explicit, step-by-step workflows. Each step defines what can happen, what data flows where, and what
 decisions are possible. An agent can't suddenly decide to access data it shouldn't or perform actions you didn't
-anticipate—it can only execute the workflow steps you've defined.
+anticipate - it can only execute the workflow steps you've defined.
 
 **Observable at every level**\
 Trust requires visibility. The platform provides four layers of observability:
@@ -32,12 +32,12 @@ Trust requires visibility. The platform provides four layers of observability:
 
 **Measurable performance**\
 Hope is not a strategy. The platform includes evaluation frameworks that measure agent accuracy against test datasets.
-You don't have to trust that agents work correctly—you can prove it with metrics.
+You don't have to trust that agents work correctly - you can prove it with metrics.
 
 ## Trust through data sovereignty
 
 ::: warning Your data, your infrastructure
-Data sovereignty isn't just about compliance—it's about control. When you deploy the Swiss AI Hub, your data never
+Data sovereignty isn't just about compliance - it's about control. When you deploy the Swiss AI Hub, your data never
 leaves your infrastructure unless you explicitly configure it to. Run everything on-premise with local LLMs, and your
 sensitive data never crosses your network boundary.
 :::
@@ -56,12 +56,12 @@ control means you can start with maximum security and gradually relax constraint
 The platform's transparency goes beyond open source:
 
 **Auditable decisions**\
-Every agent decision is logged with full context. Not just what was decided, but why—what data was considered, what
+Every agent decision is logged with full context. Not just what was decided, but why - what data was considered, what
 rules were applied, what confidence levels were calculated. Compliance teams can trace any output back to its sources.
 
 **Explainable workflows**\
 Because agents follow defined workflows, you can explain their behavior to non-technical stakeholders. "The agent
-analyzes the document, extracts key information, checks it against our rules, and then requests human approval"—not "the
+analyzes the document, extracts key information, checks it against our rules, and then requests human approval" - not "the
 AI does some processing."
 
 **Visible integrations**\
@@ -108,5 +108,5 @@ The Swiss AI Hub provides all three. Not through promises or proprietary black b
 modifiable infrastructure that you own and operate.
 
 This is the Swiss way: earning trust through transparency, maintaining trust through reliability, and deserving trust
-through respect for your data, your processes, and your caution. Because in Switzerland, trust isn't given—it's earned
+through respect for your data, your processes, and your caution. Because in Switzerland, trust isn't given - it's earned
 through demonstration, maintained through consistency, and valued above rapid adoption.

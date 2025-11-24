@@ -16,7 +16,7 @@ class TopicManager(BaseModel):
     critical. Using a conventional pattern:
     - Enhances traceability: Observers can subscribe to all events from a particular agent, a specific agent run,
       or even a single event type (like "display_event" or "control_event").
-    - Simplifies filtering: Wildcards in topic segments allow flexible subscriptions—e.g. subscribing to all events
+    - Simplifies filtering: Wildcards in topic segments allow flexible subscriptions - e.g. subscribing to all events
       from all agents, or narrowing down to a specific agent or conversation thread.
     - Improves maintenance: Centralizing topic naming logic in one place makes it easier to adjust conventions
       if needed.

@@ -24,7 +24,7 @@ quadrantChart
     n8n: [0.75, 0.40]
 ```
 
-Big cloud platforms give you everything out-of-the-box—authentication, monitoring, interfaces, the works. But you own
+Big cloud platforms give you everything out-of-the-box - authentication, monitoring, interfaces, the works. But you own
 nothing and pay forever.
 
 Programming frameworks like LangChain let you deploy anywhere and own the code. But they're just libraries. You handle

@@ -25,7 +25,7 @@ This documentation assumes you have completed the general AI-Hub setup as descri
 
 ### 📚 Introduction to `aihub_process`
 
-You are contributing to the **aihub_process** scope, which orchestrates high-level business processes that involve collaboration between agents, humans, and programs within the AI-Hub platform. This scope implements the highest tier of AI-Hub's evolution—**Agentic Process Automation**—where workflows are redesigned as dynamic collaborations between different actors.
+You are contributing to the **aihub_process** scope, which orchestrates high-level business processes that involve collaboration between agents, humans, and programs within the AI-Hub platform. This scope implements the highest tier of AI-Hub's evolution - **Agentic Process Automation** - where workflows are redesigned as dynamic collaborations between different actors.
 
 ### 📁 Project Structure
 

@@ -111,7 +111,7 @@ packages.
 
 **Deployment**:
 
-- **Docker Compose**: Multi-environment support (dev, local, nightly, latest, GPU variants). 100% Docker Compose—no
+- **Docker Compose**: Multi-environment support (dev, local, nightly, latest, GPU variants). 100% Docker Compose - no
   separate IaC tooling.
 - **Traefik**: Reverse proxy and API gateway
 - **OAuth2**: Enterprise authentication (Azure AD with superuser fallback for Docker deployments)
@@ -162,7 +162,7 @@ class AgentDTO(BaseModel):  # Pydantic not dict
 - **Type Checker**: MyPy (`strict = true`). Config: `/home/user/aihub-core/pyproject.toml`
 - **Naming**: `snake_case` for files/dirs, `CamelCase` for classes, `test_*.py` for tests
 - **Types**: Mandatory type annotations. Use modern syntax (`list[int]`, `int | None`). Avoid complex types (dicts,
-  tuples)—use Pydantic models or dataclasses
+  tuples) - use Pydantic models or dataclasses
 - **Error Handling**: Let functions fail. Do NOT catch errors and return None
 - **Docstrings**: Required for all public modules/classes/methods. Explain "why", not "what"
 

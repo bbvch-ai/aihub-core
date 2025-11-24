@@ -523,7 +523,7 @@ export type AgentInTheLoopResponseEventWritable = {
  * ### Why This Class Exists
  *
  * In a hierarchical event topic model, PartialAgentTopic might not have all details filled out.
- * AgentTopic guarantees that every piece of the event route—from agent class to event ID—is known.
+ * AgentTopic guarantees that every piece of the event route - from agent class to event ID - is known.
  * This makes AgentTopic ideal for scenarios where the full path is required, such as final message
  * routing or logging a complete event identifier.
  *
@@ -2224,7 +2224,7 @@ export type ChoiceLogprobs = {
 /**
  * ChunkEvent
  * An event representing a portion of output or generated content (a "chunk") that is
- * streamed or delivered in segments—common in incremental output scenarios like LLM
+ * streamed or delivered in segments - common in incremental output scenarios like LLM
  * token streaming.
  *
  * ### Why ChunkEvent?
@@ -2278,7 +2278,7 @@ export type ChunkEventReadable = {
 /**
  * ChunkEvent
  * An event representing a portion of output or generated content (a "chunk") that is
- * streamed or delivered in segments—common in incremental output scenarios like LLM
+ * streamed or delivered in segments - common in incremental output scenarios like LLM
  * token streaming.
  *
  * ### Why ChunkEvent?
@@ -4272,7 +4272,7 @@ export type EventTimeseries = {
  *
  * By appearing as both a control and display event, `ExceptionEvent` ensures that the workflow
  * can stop further processing while also making the error visible in UI dashboards, logs, or
- * monitoring tools—giving operators and developers immediate insight into what went wrong.
+ * monitoring tools - giving operators and developers immediate insight into what went wrong.
  */
 export type ExceptionEventReadable = {
     /**
@@ -4329,7 +4329,7 @@ export type ExceptionEventReadable = {
  *
  * By appearing as both a control and display event, `ExceptionEvent` ensures that the workflow
  * can stop further processing while also making the error visible in UI dashboards, logs, or
- * monitoring tools—giving operators and developers immediate insight into what went wrong.
+ * monitoring tools - giving operators and developers immediate insight into what went wrong.
  */
 export type ExceptionEventWritable = {
     /**
@@ -6944,7 +6944,7 @@ export type KnobWritable = {
  * ### Why LLMCostEvent?
  * For teams tracking expenditures on LLM services, LLMCostEvent provides a direct, user-visible
  * breakdown of the costs per run. As a display event, it can be surfaced in UIs or logs to give
- * engineers, product managers, or finance teams clear insights into where tokens—and money—are
+ * engineers, product managers, or finance teams clear insights into where tokens - and money - are
  * going.
  */
 export type LlmCostEventReadable = {
@@ -7022,7 +7022,7 @@ export type LlmCostEventReadable = {
  * ### Why LLMCostEvent?
  * For teams tracking expenditures on LLM services, LLMCostEvent provides a direct, user-visible
  * breakdown of the costs per run. As a display event, it can be surfaced in UIs or logs to give
- * engineers, product managers, or finance teams clear insights into where tokens—and money—are
+ * engineers, product managers, or finance teams clear insights into where tokens - and money - are
  * going.
  */
 export type LlmCostEventWritable = {
@@ -8992,8 +8992,8 @@ export type PaginatedUsersResponse = {
  * Wildcards (represented by "*") in the subject translate into None values here.
  *
  * ### Why PartialAgentTopic?
- * Sometimes you deal with generic subscriptions to broad categories of events—like all display events
- * or all events from a particular agent class—without knowing the exact agent_id, thread_id, or event_id.
+ * Sometimes you deal with generic subscriptions to broad categories of events - like all display events
+ * or all events from a particular agent class - without knowing the exact agent_id, thread_id, or event_id.
  * PartialAgentTopic captures this scenario, making it explicit which parts of the topic are defined
  * and which remain open (None).
  *
@@ -11503,7 +11503,7 @@ export type StandaloneQuestionCondenserEventWritable = {
  * The start event - and all events inheriting from it - trigger a new workflow run. By inheriting
  * from the StartEvent, initial context for the workflow can be set.
  *
- * By extending `ControlEvent`, `StartEvent` influences workflow steps—only `ControlEvent` types
+ * By extending `ControlEvent`, `StartEvent` influences workflow steps - only `ControlEvent` types
  * drive the flow. Other event types may provide data or UI updates but do not start or control runs.
  */
 export type StartEventReadable = {
@@ -11556,7 +11556,7 @@ export type StartEventReadable = {
  * The start event - and all events inheriting from it - trigger a new workflow run. By inheriting
  * from the StartEvent, initial context for the workflow can be set.
  *
- * By extending `ControlEvent`, `StartEvent` influences workflow steps—only `ControlEvent` types
+ * By extending `ControlEvent`, `StartEvent` influences workflow steps - only `ControlEvent` types
  * drive the flow. Other event types may provide data or UI updates but do not start or control runs.
  */
 export type StartEventWritable = {

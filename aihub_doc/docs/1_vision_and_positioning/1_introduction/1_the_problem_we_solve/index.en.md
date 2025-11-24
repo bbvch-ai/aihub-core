@@ -18,7 +18,7 @@ A week later, you have a working prototype. Then someone asks the hard questions
 - Can we integrate it with our existing tools?
 
 Suddenly, your elegant prototype needs authentication, monitoring, data pipelines, vector databases, cost controls,
-audit trails, user interfaces, and enterprise integrations. You're not building an AI solution anymore—you're building
+audit trails, user interfaces, and enterprise integrations. You're not building an AI solution anymore - you're building
 infrastructure.
 
 ## The infrastructure gap
@@ -42,7 +42,7 @@ For Swiss organizations, these challenges are compounded by specific requirement
 
 ::: warning Data sovereignty requirements
 Swiss data protection laws and corporate policies often require that sensitive data remains within Swiss borders. Most
-AI platforms can't guarantee this—they process data wherever their infrastructure runs.
+AI platforms can't guarantee this - they process data wherever their infrastructure runs.
 :::
 
 The typical journey looks like this:
@@ -73,7 +73,7 @@ governance, no unified approach. The organization has AI capabilities but not an
 
 The requirements are clear:
 
-1. **Complete infrastructure** that handles deployment, monitoring, and scaling—not just AI logic
+1. **Complete infrastructure** that handles deployment, monitoring, and scaling - not just AI logic
 2. **Data sovereignty** with the option to run everything on-premise or in Swiss data centers
 3. **Openness and control** to modify, extend, and integrate with existing systems
 4. **Production readiness** with enterprise authentication, audit trails, and cost controls built in

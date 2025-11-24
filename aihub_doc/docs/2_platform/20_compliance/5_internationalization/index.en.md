@@ -12,7 +12,7 @@ their preferred language throughout the interface.
 German serves as the default language, but all four languages work identically. The interface, error messages, help
 text, and navigation all include translations.
 
-All user-facing text has translations—form validation, dialogs, notifications, error messages, help documentation, and
+All user-facing text has translations - form validation, dialogs, notifications, error messages, help documentation, and
 instructions. Users see no untranslated elements or mixed languages.
 
 Dynamically generated content also respects language preferences. Service descriptions, agent names, and knowledge
@@ -85,5 +85,5 @@ Training materials and documentation can be provided in users' native languages.
 
 All four languages work identically. No linguistic community gets a degraded experience.
 
-The translation architecture allows organizations to add languages if needed—regional dialects, languages of immigrant
+The translation architecture allows organizations to add languages if needed - regional dialects, languages of immigrant
 communities, or languages of international branches.

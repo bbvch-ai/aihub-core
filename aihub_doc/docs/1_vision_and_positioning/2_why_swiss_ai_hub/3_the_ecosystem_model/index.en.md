@@ -37,18 +37,83 @@ The Swiss AI Hub makes this infrastructure a commodity. Deploy the platform once
 improvement to the core platform benefits every organization using it. When someone contributes better document parsing,
 everyone's document processing improves. When someone adds a new security feature, everyone becomes more secure.
 
-## The contribution cycle
+## The contribution dynamic
 
-The ecosystem model creates a virtuous cycle through the dual licensing structure:
+The Swiss AI Hub is entirely Apache 2.0 licensed - platform, SDK, agents, pipelines, and processes. This permissive
+licensing creates natural collaboration incentives without forcing them.
 
-**Platform contributions (Apache 2.0):** When organizations improve the core platform, those improvements flow back to
-everyone. A bank that adds better compliance logging helps every regulated industry. A healthcare provider that improves
-PII handling helps everyone with privacy concerns. These contributions are freely shared because better infrastructure
-benefits everyone.
+**Shared infrastructure benefits everyone:** When organizations improve core infrastructure, sharing makes sense because
+everyone benefits. A bank that adds better compliance logging helps every regulated industry. A healthcare provider that
+improves PII handling helps everyone with privacy concerns. These contributions flow back naturally because better shared
+infrastructure reduces everyone's costs.
 
-**SDK developments (EUPL 1.2 or commercial):** Organizations building proprietary agents have a choice. They can
-open-source their agents and benefit from community improvements, or they can license commercially and keep their
-innovations private. Many choose to share non-differentiating agents while keeping strategic ones proprietary.
+**Strategic differentiation stays private:** Organizations keep their competitive advantages proprietary. The
+customer-facing agent that embodies your unique business processes, your specialized data processing, your domain
+expertise - these stay yours. Apache 2.0 doesn't require sharing anything back, so you're free to keep strategic
+innovations private while benefiting from and contributing to shared infrastructure.
+
+## Why licensing matters for AI infrastructure
+
+Understanding software licensing is critical when building AI infrastructure. Many organizations make costly mistakes by
+assuming that code on GitHub is automatically free to use - it's not.
+
+### The GitHub misconception
+
+**Seeing source code ≠ open source ≠ free to use.** GitHub hosts both open-source projects and proprietary software
+with restrictive licenses. Being able to *view* or *download* code doesn't mean you're legally permitted to *use* it,
+especially in production or commercial contexts.
+
+Example: **n8n**, one of the most popular workflow automation tools on GitHub, uses the "Sustainable Use License" (not
+an open-source license). While you can download and run it, the license prohibits commercial use without purchasing an
+enterprise license - even if you self-host. Many organizations discover this too late, after building dependencies on
+these tools.
+
+### License categories explained
+
+**Permissive licenses** (MIT, Apache 2.0, BSD): Grant broad freedoms - use, modify, distribute commercially, keep
+modifications private. No strings attached. These are ideal for building business infrastructure.
+
+**Copyleft licenses** (GPL, AGPL): Require that any modifications or derivative works be released under the same
+license. If you build on GPL software and distribute it, you must open-source your entire application. **AGPL extends
+this to network use** - even offering the software as a service triggers the requirement. Dangerous for proprietary AI
+products.
+
+**Source-available licenses** (Elastic License, BSL, SSPL, "Sustainable Use"): Let you view and sometimes use the code,
+but impose severe restrictions - often prohibiting commercial use, managed services, or competing products. Not
+open-source despite appearing on GitHub.
+
+**Proprietary/Custom licenses**: Vary widely. Require careful legal review. Often prohibit production use without
+payment.
+
+### Licenses to avoid in AI infrastructure
+
+For production AI systems, be extremely cautious with:
+
+- **AGPL/GPL**: Force your entire system open-source if you modify and distribute the software
+- **SSPL (Server Side Public License)**: MongoDB's attempt to prevent cloud providers from offering managed versions;
+  triggers open-source requirements for infrastructure
+- **Elastic License v2**: Prohibits offering the software as a competing service
+- **Business Source License (BSL)**: Time-delayed open source; restrictive until expiration date
+- **Custom "source-available" licenses**: Usually prohibit commercial use or have unclear terms
+
+These licenses might seem acceptable initially, but create legal landmines when you scale, offer services, or integrate
+with customer systems.
+
+### Our licensing commitment
+
+The Swiss AI Hub rigorously evaluates every dependency - all 232 Python packages, 197 Node.js packages, and 28 external
+Docker images. We verify that every component uses permissive licenses (MIT, Apache 2.0, BSD) or has been explicitly
+reviewed and approved.
+
+**You get complete freedom:** Use the entire stack commercially, modify anything, integrate with proprietary systems,
+offer it as a service, or build products on top - without license conflicts, hidden restrictions, or future surprises.
+
+**Why Apache 2.0 specifically:** Beyond being permissive, Apache 2.0 includes explicit patent grants, protecting you
+from patent claims by contributors. It's trusted by enterprises, well-understood by legal teams, and compatible with
+virtually all other licenses. It's the gold standard for collaborative infrastructure.
+
+This isn't just idealism - it's pragmatism. Permissive licensing removes barriers to adoption, prevents vendor lock-in,
+and ensures you own your AI infrastructure completely. No license audits, no compliance risks, no sudden rule changes.
 
 ## Real collaboration patterns
 
@@ -119,7 +184,7 @@ The ecosystem succeeds because it aligns incentives correctly:
 
 Organizations contribute to infrastructure because they benefit directly from improvements. They share
 non-differentiating capabilities because collaboration is more valuable than secrecy. They keep strategic innovations
-private because the platform supports both models.
+private because Apache 2.0 permits both approaches - the choice is always yours.
 
 The Swiss AI Hub provides the technical foundation for this collaboration, but the ecosystem is built by its members.
 Every organization that deploys the platform, contributes improvements, or shares knowledge strengthens Swiss AI

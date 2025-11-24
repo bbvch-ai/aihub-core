@@ -9,7 +9,7 @@ from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
 class ChunkEvent(DisplayEvent):
     """
     An event representing a portion of output or generated content (a "chunk") that is
-    streamed or delivered in segments—common in incremental output scenarios like LLM
+    streamed or delivered in segments - common in incremental output scenarios like LLM
     token streaming.
 
     ### Why ChunkEvent?

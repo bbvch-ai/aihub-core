@@ -11,7 +11,7 @@ class AgentThreadTopicManager(AgentInstanceTopicManager):
     """
     The AgentThreadTopicManager refines the event topic naming convention further by focusing on a specific
     conversation thread, display context, and run within a particular agent instance. Extending the
-    AgentInstanceTopicManager—which already narrows events down to a given agent_class and agent_id—this class
+    AgentInstanceTopicManager - which already narrows events down to a given agent_class and agent_id - this class
     adds thread_id, display_id, and run_id to the subject naming pattern.
 
     ### Why This Class Exists

@@ -42,19 +42,88 @@ Probleme sind gelöst. Jede Verbesserung der Kernplattform kommt jeder Organisat
 eine bessere Dokumentenanalyse beisteuert, verbessert sich die Dokumentenverarbeitung aller. Wenn jemand eine neue
 Sicherheitsfunktion hinzufügt, werden alle sicherer.
 
-## Der Beitragszyklus
+## Die Beitragsdynamik
 
-Das Ökosystem-Modell erzeugt einen positiven Kreislauf durch die duale Lizenzierungsstruktur:
+Der Swiss AI Hub ist vollständig unter Apache 2.0 lizenziert - Plattform, SDK, Agents, Pipelines und Prozesse. Diese
+permissive Lizenzierung schafft natürliche Kollaborationsanreize, ohne sie zu erzwingen.
 
-**Plattformbeiträge (Apache 2.0):** Wenn Organisationen die Kernplattform verbessern, fließen diese Verbesserungen an
-alle zurück. Eine Bank, die eine bessere Compliance-Protokollierung hinzufügt, hilft jeder regulierten Branche. Ein
-Gesundheitsdienstleister, der die Verarbeitung personenbezogener Daten (PII) verbessert, hilft allen mit
-Datenschutzbedenken. Diese Beiträge werden frei geteilt, weil eine bessere Infrastruktur allen zugutekommt.
+**Gemeinsame Infrastruktur kommt allen zugute:** Wenn Organisationen die Kerninfrastruktur verbessern, macht das Teilen
+Sinn, weil alle davon profitieren. Eine Bank, die eine bessere Compliance-Protokollierung hinzufügt, hilft jeder
+regulierten Branche. Ein Gesundheitsdienstleister, der die Verarbeitung personenbezogener Daten verbessert, hilft allen
+mit Datenschutzbedenken. Diese Beiträge fließen natürlich zurück, weil eine bessere gemeinsame Infrastruktur die Kosten
+für alle reduziert.
 
-**SDK-Entwicklungen (EUPL 1.2 oder kommerziell):** Organisationen, die proprietäre Agenten entwickeln, haben eine Wahl.
-Sie können ihre Agenten als Open Source veröffentlichen und von Community-Verbesserungen profitieren, oder sie können
-sie kommerziell lizenzieren und ihre Innovationen privat halten. Viele entscheiden sich dafür, nicht-differenzierende
-Agenten zu teilen, während sie strategische Agenten proprietär halten.
+**Strategische Differenzierung bleibt privat:** Organisationen behalten ihre Wettbewerbsvorteile proprietär. Der
+kundenorientierte Agent, der Ihre einzigartigen Geschäftsprozesse verkörpert, Ihre spezialisierte Datenverarbeitung,
+Ihre Domänenkompetenz - diese bleiben bei Ihnen. Apache 2.0 erfordert keine Rückgabe, sodass Sie strategische
+Innovationen privat halten können, während Sie von der gemeinsamen Infrastruktur profitieren und dazu beitragen.
+
+## Warum Lizenzierung für KI-Infrastruktur wichtig ist
+
+Das Verständnis von Software-Lizenzierung ist entscheidend beim Aufbau von KI-Infrastruktur. Viele Organisationen
+machen kostspielige Fehler, indem sie annehmen, dass Code auf GitHub automatisch frei nutzbar ist - das ist er nicht.
+
+### Das GitHub-Missverständnis
+
+**Quellcode sehen ≠ Open Source ≠ frei nutzbar.** GitHub hostet sowohl Open-Source-Projekte als auch proprietäre
+Software mit restriktiven Lizenzen. Die Möglichkeit, Code zu *sehen* oder *herunterzuladen*, bedeutet nicht, dass Sie
+rechtlich berechtigt sind, ihn zu *nutzen*, insbesondere in Produktions- oder kommerziellen Kontexten.
+
+Beispiel: **n8n**, eines der beliebtesten Workflow-Automatisierungstools auf GitHub, verwendet die "Sustainable Use
+License" (keine Open-Source-Lizenz). Während Sie es herunterladen und ausführen können, verbietet die Lizenz die
+kommerzielle Nutzung ohne Erwerb einer Enterprise-Lizenz - selbst wenn Sie es selbst hosten. Viele Organisationen
+entdecken dies zu spät, nachdem sie Abhängigkeiten von diesen Tools aufgebaut haben.
+
+### Lizenzkategorien erklärt
+
+**Permissive Lizenzen** (MIT, Apache 2.0, BSD): Gewähren umfassende Freiheiten - nutzen, modifizieren, kommerziell
+verbreiten, Änderungen privat halten. Keine Bedingungen. Diese sind ideal für den Aufbau von
+Geschäftsinfrastruktur.
+
+**Copyleft-Lizenzen** (GPL, AGPL): Erfordern, dass alle Änderungen oder abgeleiteten Werke unter derselben Lizenz
+veröffentlicht werden. Wenn Sie auf GPL-Software aufbauen und diese verbreiten, müssen Sie Ihre gesamte Anwendung als
+Open Source veröffentlichen. **AGPL erweitert dies auf Netzwerknutzung** - selbst das Anbieten der Software als Service
+löst die Anforderung aus. Gefährlich für proprietäre KI-Produkte.
+
+**Source-available Lizenzen** (Elastic License, BSL, SSPL, "Sustainable Use"): Ermöglichen es Ihnen, den Code zu sehen
+und manchmal zu verwenden, erlegen aber schwere Einschränkungen auf - oft verbieten sie kommerzielle Nutzung, Managed
+Services oder konkurrierende Produkte. Nicht Open Source, obwohl sie auf GitHub erscheinen.
+
+**Proprietäre/Custom Lizenzen**: Variieren stark. Erfordern sorgfältige rechtliche Prüfung. Verbieten oft
+Produktionsnutzung ohne Zahlung.
+
+### Lizenzen, die Sie in KI-Infrastruktur vermeiden sollten
+
+Für Produktions-KI-Systeme seien Sie äußerst vorsichtig mit:
+
+- **AGPL/GPL**: Zwingen Ihr gesamtes System zu Open Source, wenn Sie die Software modifizieren und verbreiten
+- **SSPL (Server Side Public License)**: MongoDBs Versuch, Cloud-Anbieter daran zu hindern, verwaltete Versionen
+  anzubieten; löst Open-Source-Anforderungen für Infrastruktur aus
+- **Elastic License v2**: Verbietet das Anbieten der Software als konkurrierender Service
+- **Business Source License (BSL)**: Zeitverzögertes Open Source; restriktiv bis zum Ablaufdatum
+- **Custom "source-available" Lizenzen**: Verbieten normalerweise kommerzielle Nutzung oder haben unklare Bedingungen
+
+Diese Lizenzen mögen anfangs akzeptabel erscheinen, schaffen aber rechtliche Minenfelder, wenn Sie skalieren, Dienste
+anbieten oder in Kundensysteme integrieren.
+
+### Unser Lizenzierungsversprechen
+
+Der Swiss AI Hub überprüft rigoros jede Abhängigkeit - alle 232 Python-Pakete, 197 Node.js-Pakete und 28 externe
+Docker-Images. Wir verifizieren, dass jede Komponente permissive Lizenzen (MIT, Apache 2.0, BSD) verwendet oder
+ausdrücklich überprüft und genehmigt wurde.
+
+**Sie erhalten vollständige Freiheit:** Nutzen Sie den gesamten Stack kommerziell, modifizieren Sie alles, integrieren
+Sie mit proprietären Systemen, bieten Sie ihn als Service an oder bauen Sie Produkte darauf auf - ohne Lizenzkonflikte,
+versteckte Einschränkungen oder zukünftige Überraschungen.
+
+**Warum speziell Apache 2.0:** Über die Permissivität hinaus beinhaltet Apache 2.0 explizite Patentgewährungen, die
+Sie vor Patentansprüchen durch Mitwirkende schützen. Sie ist von Unternehmen anerkannt, von Rechtsabteilungen gut
+verstanden und mit praktisch allen anderen Lizenzen kompatibel. Sie ist der Goldstandard für kollaborative
+Infrastruktur.
+
+Dies ist nicht nur Idealismus - es ist Pragmatismus. Permissive Lizenzierung beseitigt Adoptionsbarrieren, verhindert
+Vendor Lock-in und stellt sicher, dass Sie Ihre KI-Infrastruktur vollständig besitzen. Keine Lizenzprüfungen, keine
+Compliance-Risiken, keine plötzlichen Regeländerungen.
 
 ## Reale Kollaborationsmuster
 
@@ -130,7 +199,7 @@ Das Ökosystem ist erfolgreich, weil es Anreize korrekt aufeinander abstimmt:
 
 Organisationen tragen zur Infrastruktur bei, weil sie direkt von Verbesserungen profitieren. Sie teilen
 nicht-differenzierende Fähigkeiten, weil Zusammenarbeit wertvoller ist als Geheimhaltung. Sie halten strategische
-Innovationen privat, weil die Plattform beide Modelle unterstützt.
+Innovationen privat, weil Apache 2.0 beide Ansätze erlaubt - die Wahl liegt immer bei Ihnen.
 
 Der Swiss AI Hub bietet die technische Grundlage für diese Zusammenarbeit, doch das Ökosystem wird von seinen
 Mitgliedern aufgebaut. Jede Organisation, die die Plattform bereitstellt, Verbesserungen beisteuert oder Wissen teilt,

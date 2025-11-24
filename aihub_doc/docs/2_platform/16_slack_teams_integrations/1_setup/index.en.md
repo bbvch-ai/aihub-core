@@ -51,7 +51,7 @@ Azure Bot Service Integration eliminates the friction between AI capabilities an
 they already work:
 
 **🔄 Zero Context Switching**: Users access AI assistance directly within Microsoft Teams, Slack, and other familiar
-collaboration platforms. No need to learn new interfaces or interrupt established workflows—AI becomes a natural part of
+collaboration platforms. No need to learn new interfaces or interrupt established workflows - AI becomes a natural part of
 daily collaboration.
 
 **🌐 Enterprise-Scale Multi-Channel Support**: Single AI-Hub deployment serves users across multiple communication

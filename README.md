@@ -73,7 +73,7 @@ and saving you time and effort.
 :::
 
 ::: details :gear: AI Agents: Autonomous Process Partners    
-As an organization advances, the platform enables collaboration with AI Agents—autonomous partners that proactively
+As an organization advances, the platform enables collaboration with AI Agents - autonomous partners that proactively
 participate in business processes. Instead of simply reacting to prompts, these agents are designed to analyze
 workflows, autonomously determine the next steps, and execute tasks with minimal human intervention. This reimagines
 workflows as a deep collaboration between humans and AI, allowing employees to focus on the most critical and creative
@@ -98,8 +98,8 @@ foster collaboration without risking data leakage.
   information. This strict separation is critical, as `aihub-core` is referenced as a dependency by all
   customer-specific projects.
 - **Customer Repositories (`aihub-<CUSTOMER>`)**: These repositories are where you bring the Hub to life for a specific
-  context. They build on the powerful foundation of `aihub-core`, allowing you to add or override components—like
-  agents, pipelines, or processes—for a specific customer's needs.
+  context. They build on the powerful foundation of `aihub-core`, allowing you to add or override components - like
+  agents, pipelines, or processes - for a specific customer's needs.
 :::
 
 ### An Architecture for Speed and Extensibility

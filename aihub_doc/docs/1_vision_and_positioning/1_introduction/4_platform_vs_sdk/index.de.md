@@ -66,9 +66,9 @@ Architektur der Plattform zu verstehen, um Agents zu erstellen.
 beeinträchtigen Ihre benutzerdefinierten Agents nicht. SDK-Updates (neue Decorators oder Muster) erfordern keine
 Plattformänderungen. Jede Schicht entwickelt sich unabhängig voneinander.
 
-**Klare Eigentumsgrenzen** Die Plattform ist unter Apache 2.0 lizenziert, sodass Sie Ihre Bereitstellung vollständig
-besitzen. Das SDK hat eine andere Lizenzierung (EUPL 1.2 für die Community-Version), wodurch klare Grenzen zwischen der
-von Ihnen besessenen Infrastruktur und den von Ihnen lizenzierten Entwicklungstools geschaffen werden.
+**Klare architektonische Grenzen** Die Trennung schafft klare Schnittstellen zwischen Infrastruktur und
+Geschäftslogik. Plattform-Belange (Authentifizierung, Speicherung, Tracing) sind vollständig von der Agent-Logik
+getrennt. Dies macht die Codebasis leichter verständlich, testbar und wartbar.
 
 ## Wie sie zusammenarbeiten
 
@@ -115,24 +115,12 @@ Das SDK verbirgt keine Komplexität, sondern eliminiert Redundanz. Die Plattform
 authentifiziert, speichert, nachverfolgt, anzeigt und bereitstellt. Das SDK bietet die Muster, um diese Funktionen zu
 nutzen.
 
-## Lizenzierung und Geschäftsmodell
+## Open Source und Lizenzierung
 
-Die architektonische Trennung ermöglicht ein nachhaltiges Geschäftsmodell:
-
-**Plattform (Apache 2.0)**: Nehmen Sie es, stellen Sie es bereit, modifizieren Sie es, besitzen Sie es. Keine Gebühren,
-keine Einschränkungen. Dies beseitigt Akzeptanzbarrieren und Bedenken hinsichtlich des Vendor Lock-ins.
-
-**SDK (Dual lizenziert)**:
-
-- **Community-Edition (EUPL 1.2)**: Kostenlos nutzbar, aber Änderungen müssen zurückgegeben werden
-- **Kommerzielle Edition**: Proprietäre Entwicklung ohne Weitergabeverpflichtungen
-
-Dieses Modell bedeutet:
-
-- Organisationen können die Plattform risikofrei einführen
-- Grundlegende Anpassungen mit Plattformfunktionen bleiben kostenlos
-- Fortgeschrittene SDK-Entwicklung trägt zur Community bei oder erfordert eine kommerzielle Lizenzierung
-- Alle profitieren von Plattformverbesserungen
+Der gesamte Swiss AI Hub ist Open-Source unter der Apache 2.0-Lizenz - Plattform, SDK, Agents, Pipelines und alle
+Komponenten. Diese permissive Lizenz bedeutet, dass Sie alles frei nutzen, modifizieren und verbreiten können, auch für
+kommerzielle Zwecke, ohne jegliche Verpflichtung, Ihre Änderungen zurückzugeben. Sie besitzen Ihre Bereitstellung und
+Ihren Code vollständig.
 
 ## Wann Sie welche Komponente benötigen
 

@@ -16,7 +16,7 @@ Procurement evaluators and technical reviewers.
 
 ## Principles
 
-- Verifiable against actual implementation—check code/configs before claiming capabilities.
+- Verifiable against actual implementation - check code/configs before claiming capabilities.
 - Clear, neutral prose. Concise but readable. No marketing language.
 - Reference regulations only when they materially affect design or operations.
 
@@ -47,9 +47,9 @@ Procurement evaluators and technical reviewers.
 
 ### Examples
 
-- `Edit: Executive Overview — one-paragraph mission + three outcomes.`
-- `Edit: Security & Privacy > Access Control — brief RBAC/ABAC comparison and concept-level policy.`
-- `Edit: Ops & SRE — add SLOs and measurement approach; no tooling specifics.`
+- `Edit: Executive Overview - one-paragraph mission + three outcomes.`
+- `Edit: Security & Privacy > Access Control - brief RBAC/ABAC comparison and concept-level policy.`
+- `Edit: Ops & SRE - add SLOs and measurement approach; no tooling specifics.`
 
 ---
 
@@ -75,7 +75,7 @@ Procurement evaluators and technical reviewers.
 ## Ambiguity Handling
 
 - If the section path or the requested change is unclear, ask: "Specify exact heading path and the change you want.
-  Example: `High-Level Architecture > Event Backbone — add one-paragraph overview and 3 key capabilities`."
+  Example: `High-Level Architecture > Event Backbone - add one-paragraph overview and 3 key capabilities`."
 
 ---
 

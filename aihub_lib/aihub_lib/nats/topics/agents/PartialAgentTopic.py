@@ -12,8 +12,8 @@ class PartialAgentTopic(Topic):
     Wildcards (represented by "*") in the subject translate into None values here.
 
     ### Why PartialAgentTopic?
-    Sometimes you deal with generic subscriptions to broad categories of events—like all display events
-    or all events from a particular agent class—without knowing the exact agent_id, thread_id, or event_id.
+    Sometimes you deal with generic subscriptions to broad categories of events - like all display events
+    or all events from a particular agent class - without knowing the exact agent_id, thread_id, or event_id.
     PartialAgentTopic captures this scenario, making it explicit which parts of the topic are defined
     and which remain open (None).
 
@@ -44,7 +44,7 @@ class PartialAgentTopic(Topic):
         """
         Constructs a PartialAgentTopic from a subject string that may contain wildcards.
 
-        Use this when you have a subject and need a structured representation—knowing that some parts
+        Use this when you have a subject and need a structured representation - knowing that some parts
         of the topic might be generalized (wildcards) rather than fully specified. This is common in
         subscription scenarios where you are not targeting a single event, but a category of events.
         """

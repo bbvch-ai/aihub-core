@@ -17,7 +17,7 @@ visibility.
 
 **Permission-Filtered Service Catalog**: When the suite loads, it queries the backend for the user's authorized service
 catalog. The backend evaluates the user's permissions against each registered service's requirements, returning only
-services the user can access. The interface renders navigation elements exclusively for authorized services—users simply
+services the user can access. The interface renders navigation elements exclusively for authorized services - users simply
 never see capabilities they cannot use.
 
 **Clean, Focused Interface**: This approach creates dramatically simpler interfaces compared to traditional
@@ -135,7 +135,7 @@ because unauthorized features simply don't appear. This eliminates a common sour
 tickets in traditional enterprise applications.
 
 **Reduced Interface Complexity**: By showing only authorized capabilities, the interface remains uncluttered and
-focused. Users don't need to mentally filter visible-but-disabled features from available capabilities—everything they
+focused. Users don't need to mentally filter visible-but-disabled features from available capabilities - everything they
 see, they can use.
 
 **Self-Service Access Understanding**: Users can immediately understand their authorized capabilities by observing what
@@ -164,7 +164,7 @@ finance, and public administration.
 
 **Zero-Trust Architecture**: The suite implements zero-trust principles where every service access requires explicit
 permission evaluation. There are no implicit trust assumptions based on network location or previous
-authentication—every operation is independently authorized.
+authentication - every operation is independently authorized.
 
 ## Operational Advantages
 

@@ -28,7 +28,7 @@ control for viewing sources without leaving the conversation.
 Activating source display opens an adjacent panel. Users see their conversation on one side and source details on the
 other, enabling simultaneous review of responses and supporting materials.
 
-Sources organize by document. For each document, users see metadata—database location, namespace, title—followed by
+Sources organize by document. For each document, users see metadata - database location, namespace, title - followed by
 specific passages that contributed to the response.
 
 The system shows specific passages (nodes) retrieved and provided to the AI. Users see exact text chunks, their context
@@ -73,12 +73,12 @@ For regulated industries, source attribution provides evidence chains for AI-ass
 trace recommendations to approved materials.
 
 Knowledge managers validate retrieval quality through source attribution. Consistently irrelevant sources or knowledge
-gaps guide improvement—adding documents, refining organization, or adjusting retrieval parameters.
+gaps guide improvement - adding documents, refining organization, or adjusting retrieval parameters.
 
 Users learn how knowledge bases organize and what information exists. This reduces dependency on AI as users develop
 direct knowledge of organizational resources.
 
-For high-stakes decisions—regulatory compliance, financial commitments, operational changes—users can verify AI
+For high-stakes decisions - regulatory compliance, financial commitments, operational changes - users can verify AI
 suggestions before acting.
 
 ## Knowledge management feedback

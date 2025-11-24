@@ -21,7 +21,7 @@ Hauptaufgaben erleichtert das Erstellen von Agenten erheblich:
 2. **Event-Routing**: Der Dispatcher fungiert als zentraler Router. Wenn ein Schritt ein Ereignis **zurückgibt**, fängt
    der Dispatcher es ab und liefert es an den *nächsten* Schritt, der für die **Annahme** dieses Ereignistyps konzipiert
    ist. So werden Ihre Schritte automatisch miteinander verkettet.
-3. **Dependency Injection**: Der Dispatcher stellt — oder „injiziert“ — automatisch notwendige Objekte wie Konfiguration
+3. **Dependency Injection**: Der Dispatcher stellt - oder „injiziert“ - automatisch notwendige Objekte wie Konfiguration
    und Kontext direkt in Ihre Schrittmethoden bereit, basierend auf deren Typ-Hints. Sie erstellen diese Objekte nicht;
    Sie fordern sie einfach an.
 

@@ -7,7 +7,7 @@ title: Slack & Teams Integrations
 ## Concept and Purpose
 
 The Bot Framework API is a separately deployable service built on FastAPI that brings AI agent capabilities directly
-into collaboration platforms where employees work daily—Microsoft Teams, Slack, and web chat interfaces. Rather than
+into collaboration platforms where employees work daily - Microsoft Teams, Slack, and web chat interfaces. Rather than
 requiring users to switch to specialized AI applications, this integration embeds intelligent assistance within familiar
 communication tools, eliminating adoption barriers and accelerating AI utilization across organizations.
 
@@ -68,8 +68,8 @@ projects, and provide relevant assistance based on conversation history.
 
 **Multi-Agent Orchestration**: Users can interact with different specialized agents within the same conversation,
 switching between agents based on task requirements or explicitly selecting agents for specific questions. This
-flexibility supports workflows where different expertise areas require different agents—financial analysis, legal
-review, technical research—without requiring separate conversations or applications.
+flexibility supports workflows where different expertise areas require different agents - financial analysis, legal
+review, technical research - without requiring separate conversations or applications.
 
 **Human-in-the-Loop Workflows**: The Bot-in-the-Loop pattern enables AI agents to request human input mid-execution,
 posting questions to Slack channels where team members can provide decisions, approvals, or expert guidance. Agent
@@ -91,7 +91,7 @@ adoption friction. Employees begin using AI assistance simply by messaging a bot
 patterns they already know. Organizations report utilization rates 3-5x higher when AI capabilities integrate into
 existing tools compared to standalone AI applications requiring separate access and training.
 
-The embedded approach particularly benefits occasional users who need AI assistance infrequently but significantly—these
+The embedded approach particularly benefits occasional users who need AI assistance infrequently but significantly - these
 users rarely justify learning a separate application but readily use capabilities available in familiar tools.
 
 ### Operational Efficiency Through Human-AI Collaboration
@@ -109,15 +109,15 @@ handling (AI drafts responses, humans review before sending) that combine automa
 
 Leveraging existing collaboration platform infrastructure eliminates requirements for deploying and supporting
 additional applications. IT teams don't manage separate authentication systems, user provisioning, or help desk training
-for AI access. Security and compliance controls already governing collaboration platforms—data loss prevention,
-retention policies, audit logging—automatically apply to AI conversations without separate configuration.
+for AI access. Security and compliance controls already governing collaboration platforms - data loss prevention,
+retention policies, audit logging - automatically apply to AI conversations without separate configuration.
 
 This infrastructure reuse particularly benefits resource-constrained organizations where deploying and supporting
 additional enterprise applications creates significant burden.
 
 ### Deployment Flexibility
 
-The independent deployment model enables organizations to deploy bot capabilities selectively—enabling Teams integration
+The independent deployment model enables organizations to deploy bot capabilities selectively - enabling Teams integration
 for headquarters while using Slack for regional offices, or deploying web chat widgets for customer-facing scenarios
 while using Teams internally. Different channels can route to different agent configurations, supporting use case
 segmentation or regulatory requirements where different regions require different AI handling.

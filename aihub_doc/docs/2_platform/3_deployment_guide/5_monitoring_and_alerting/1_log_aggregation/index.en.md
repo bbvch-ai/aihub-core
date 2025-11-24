@@ -59,7 +59,7 @@ The platform supports two SigNoz deployment models:
 #### SigNoz Cloud (Easiest)
 
 SigNoz offers a fully managed cloud service with regional endpoints (EU, US, IN). The AI-Hub is pre-configured to use
-SigNoz Cloud—you only need to provide your ingestion key and region endpoint via environment variables:
+SigNoz Cloud - you only need to provide your ingestion key and region endpoint via environment variables:
 
 ```bash
 OTEL_CLOUD_ENDPOINT="ingest.eu.signoz.cloud:443"
