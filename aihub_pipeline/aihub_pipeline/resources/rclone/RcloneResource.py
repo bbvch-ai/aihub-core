@@ -1,8 +1,8 @@
 import asyncio
 from typing import Annotated, Any
 
-from aihub_lib.infrastructure.rclone import RcloneSourceConfig
 from aihub_lib.infrastructure.rclone.RcloneSettings import RcloneSettings
+from aihub_lib.infrastructure.rclone.RcloneSourceConfig import RcloneSourceConfig
 from dagster import ConfigurableResource
 from pydantic import Field, PrivateAttr
 
@@ -13,6 +13,9 @@ from aihub_pipeline.types.RcloneFile import MinimalRcloneFile, RcloneFile
 class RcloneResource(ConfigurableResource):
     """
     Universal cloud storage access via rclone RC API.
+
+    Wraps the RcloneClient to make it usable as a Dagster resource.
+    Handles automatic remote configuration (upsert) if config is provided.
     """
 
     source_remote: Annotated[
@@ -20,8 +23,8 @@ class RcloneResource(ConfigurableResource):
         Field(description="Rclone remote name (e.g., 'onedrive:Documents', 's3:bucket/prefix')"),
     ]
 
-    include_patterns: list[str] | None = None
-    exclude_patterns: list[str] | None = None
+    include_patterns: Annotated[list[str] | None, Field(description="Glob patterns to include")] = None
+    exclude_patterns: Annotated[list[str] | None, Field(description="Glob patterns to exclude")] = None
 
     rclone_config_dict: dict[str, Any] | None = None
 
@@ -37,6 +40,7 @@ class RcloneResource(ConfigurableResource):
     def client(self) -> RcloneClient:
         """
         Lazy initialization of the client.
+        Automatically ensures the remote exists in Rclone if config is provided.
         """
         if self._client is None:
             self._client = RcloneClient(base_url=RcloneSettings().URL, default_remote=self.source_remote)

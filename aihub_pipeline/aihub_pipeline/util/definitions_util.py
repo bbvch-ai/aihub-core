@@ -418,12 +418,12 @@ def default_rclone_to_datalake_definitions(
     """
     rclone_partitions = DynamicPartitionsDefinition(name="rclone_partitions")
 
-    rclone_source_name = rclone_config.name if rclone_config else None
-    rclone_key = AssetKey([datalake_container_name, f"{rclone_source_name}_to_datalake", rclone_source_name])
-    data_lake_files_key = AssetKey([datalake_container_name, f"{rclone_source_name}_to_datalake", "data_lake_files"])
-    removed_data_lake_files_key = AssetKey(
-        [datalake_container_name, f"{rclone_source_name}_to_datalake", "removed_data_lake_files"]
-    )
+    source_name = rclone_config.name if rclone_config else None
+    pipeline_group = f"{source_name}_to_datalake"
+
+    rclone_key = AssetKey([datalake_container_name, pipeline_group, source_name])
+    data_lake_files_key = AssetKey([datalake_container_name, pipeline_group, "data_lake_files"])
+    removed_data_lake_files_key = AssetKey([datalake_container_name, pipeline_group, "removed_data_lake_files"])
 
     observable_rclone_asset = observable_rclone_factory(rclone_key, rclone_partitions)
 

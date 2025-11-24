@@ -22,7 +22,7 @@ class RcloneRegion(str, Enum):
 
 class RcloneSourceConfig(BaseModel):
     """
-    Configuration for an rclone remote source.
+    Domain model for an Rclone remote configuration.
     """
 
     model_config = ConfigDict(populate_by_name=True)
@@ -44,9 +44,9 @@ class RcloneSourceConfig(BaseModel):
 
     def to_rclone_params(self) -> dict[str, Any]:
         """
-        Convert to the specific parameters dictionary expected by rclone config/create.
+        Convert to the specific JSON payload expected by Rclone's 'config/create' API.
         """
-        options = {}
+        options: dict[str, Any] = {}
 
         if self.client_id:
             options["client_id"] = self.client_id
@@ -60,7 +60,7 @@ class RcloneSourceConfig(BaseModel):
             options["config_type"] = "url"
         if self.drive_type:
             options["drive_type"] = self.drive_type
-        if self.region:
+        if self.region != RcloneRegion.GLOBAL:
             options["region"] = self.region.value
 
         options.update(self.extra_config)

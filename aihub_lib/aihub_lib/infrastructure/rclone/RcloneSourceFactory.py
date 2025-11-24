@@ -1,14 +1,12 @@
-import os
 from typing import Annotated
 
 from pydantic import Field, SecretStr
-from pydantic_settings import SettingsConfigDict
 
 from aihub_lib.infrastructure.rclone.RcloneSourceConfig import RcloneBackendType, RcloneSourceConfig
 from aihub_lib.settings.EnvironmentSettings import EnvironmentSettings
 
 
-class GenericRcloneSourceSettings(EnvironmentSettings):
+class RcloneSourceSettings(EnvironmentSettings):
     """
     Generic rclone source configuration that reads from environment variables.
 
@@ -16,49 +14,21 @@ class GenericRcloneSourceSettings(EnvironmentSettings):
     maps to the RcloneSourceConfig domain model.
     """
 
-    model_config = SettingsConfigDict(extra="ignore")
-
     # Required
     NAME: Annotated[str, Field(description="Rclone remote name")]
     TYPE: Annotated[RcloneBackendType, Field(description="Rclone backend type")]
 
-    # Authentication
-    CLIENT_ID: Annotated[str | None, Field(default=None, description="OAuth2 client ID")] = None
-    CLIENT_SECRET: Annotated[SecretStr | None, Field(default=None, description="OAuth2 client secret")] = None
-    TENANT: Annotated[str | None, Field(default=None, description="Tenant ID (Azure AD)")] = None
+    # Authentication (optional)
+    CLIENT_ID: str | None = None
+    CLIENT_SECRET: SecretStr | None = None
+    TENANT: str | None = None
 
-    # OneDrive/SharePoint specific
-    SITE_URL: Annotated[str | None, Field(default=None, description="SharePoint site URL")] = None
-    DRIVE_TYPE: Annotated[
-        str | None, Field(default=None, description="Drive type (personal, business, documentLibrary)")
-    ] = None
-
-    def _get_extra_options(self) -> dict[str, str]:
-        """
-        Scans environment variables for keys starting with {PREFIX}OPTION_.
-        Example: SHAREPOINT_OPTION_ACCESS_TIER -> access_tier
-        """
-        extra_config = {}
-        # Retrieve the prefix used to initialize this instance (e.g., "SHAREPOINT_")
-        prefix = self.model_config.get("env_prefix", "")
-
-        if not prefix:
-            return {}
-
-        # We iterate os.environ because pydantic filters out extra fields based on the 'extra=ignore' config.
-        for key, value in os.environ.items():
-            if key.startswith(prefix + "OPTION_"):
-                # Remove prefix and "OPTION_", then lowercase
-                # e.g. SHAREPOINT_OPTION_READ_ONLY -> read_only
-                clean_key = key[len(prefix + "OPTION_") :].lower()
-                extra_config[clean_key] = value
-
-        return extra_config
+    # OneDrive/SharePoint specific (optional)
+    SITE_URL: str | None = None
+    DRIVE_TYPE: str | None = None
 
     def to_rclone_source(self) -> RcloneSourceConfig:
-        """
-        Convert settings to RcloneSourceConfig domain model.
-        """
+        """Convert settings to RcloneSourceConfig."""
         return RcloneSourceConfig(
             name=self.NAME,
             backend_type=self.TYPE,
@@ -67,46 +37,51 @@ class GenericRcloneSourceSettings(EnvironmentSettings):
             tenant=self.TENANT,
             site_url=self.SITE_URL,
             drive_type=self.DRIVE_TYPE,
-            extra_config=self._get_extra_options(),
+            extra_config=self._extract_options(),
         )
+
+    def _extract_options(self) -> dict[str, str]:
+        """Extract OPTION_* env vars into rclone config format."""
+        options = {}
+        for key, value in (self.model_extra or {}).items():
+            if "option_" in key.lower():
+                config_key = key.lower().split("option_", 1)[1]
+                options[config_key] = str(value)
+        return options
 
     @classmethod
     def load(cls, prefix: str) -> RcloneSourceConfig:
-        """
-        Factory method to load configuration for a specific source prefix.
-        """
-        clean_prefix = f"{prefix.upper().rstrip('_')}_"
+        """Load config for a prefix (e.g., 'AZUREBLOB' loads AZUREBLOB_* env vars)."""
 
-        class ScopedSettings(cls):
-            model_config = SettingsConfigDict(env_prefix=clean_prefix, extra="ignore")
+        class PrefixedSettings(cls):
+            model_config = EnvironmentSettings.create_settings_config(f"{prefix}_", extra="allow")
 
-        settings = ScopedSettings()
-        return settings.to_rclone_source()
+        return PrefixedSettings().to_rclone_source()
 
 
 def sharepoint_source() -> RcloneSourceConfig:
-    return GenericRcloneSourceSettings.load("SHAREPOINT")
+    return RcloneSourceSettings.load("SHAREPOINT")
 
 
 def onedrive_source() -> RcloneSourceConfig:
-    return GenericRcloneSourceSettings.load("ONEDRIVE")
+    return RcloneSourceSettings.load("ONEDRIVE")
 
 
 def google_drive_source() -> RcloneSourceConfig:
-    return GenericRcloneSourceSettings.load("GDRIVE")
+    return RcloneSourceSettings.load("GDRIVE")
 
 
 def s3_source() -> RcloneSourceConfig:
-    return GenericRcloneSourceSettings.load("S3")
-
-
-def local_fs_source() -> RcloneSourceConfig:
-    return GenericRcloneSourceSettings.load("LOCAL_FS")
+    return RcloneSourceSettings.load("S3")
 
 
 def azure_blob_source() -> RcloneSourceConfig:
-    return GenericRcloneSourceSettings.load("AZUREBLOB")
+    return RcloneSourceSettings.load("AZUREBLOB")
 
 
 def sftp_source() -> RcloneSourceConfig:
-    return GenericRcloneSourceSettings.load("SFTP")
+    return RcloneSourceSettings.load("SFTP")
+
+
+def local_fs_source() -> RcloneSourceConfig:
+    return RcloneSourceSettings.load("LOCAL_FS")
