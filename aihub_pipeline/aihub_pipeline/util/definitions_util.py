@@ -6,6 +6,7 @@ from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import Em
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.rclone import RcloneSourceConfig
+from aihub_lib.infrastructure.s3.S3StorageSettings import S3StorageSettings
 from aihub_lib.nats.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
 from dagster import (
     AnchorBasedFilePathMapping,
@@ -452,7 +453,7 @@ def default_rclone_to_datalake_definitions(
         source_remote=source_remote,
         include_patterns=include_patterns,
         exclude_patterns=exclude_patterns,
-        rclone_config=rclone_config,
+        rclone_config_dict=rclone_config.model_dump(mode="json", exclude_none=True) if rclone_config else None,
     )
 
     rclone_io_manager = RcloneIOManager(rclone_client=rclone_client)

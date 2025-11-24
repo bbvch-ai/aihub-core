@@ -532,6 +532,7 @@ services:
     command:
       - "rcd"
       - "--rc-addr=0.0.0.0:5572"
+      - "--rc-serve"
       {%- if stage == 'dev' %}
       - "--rc-no-auth"  # Only in dev!
       {%- else %}

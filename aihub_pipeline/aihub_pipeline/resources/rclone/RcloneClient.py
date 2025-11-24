@@ -96,7 +96,7 @@ class RcloneClient:
 
     async def download_bytes(self, file_path: str, remote: str | None = None) -> RcloneFile:
         """
-        Download file content into memory.
+        Download via native HTTP serve (Requires rclone started with --rc-serve).
         """
         target_remote = self._resolve_remote(remote)
         clean_path = file_path.lstrip("/")
@@ -105,12 +105,13 @@ class RcloneClient:
         stat = await self._async_post("operations/stat", stat_params)
         item = stat.get("item", {})
 
-        full_remote_path = f"{target_remote}/{clean_path}"
-        cat_params = {"command": "cat", "arg": [full_remote_path], "returnType": "STREAM"}
+        # Construct the download url: http://host:port/[remote]/path
+        download_url = f"{self.base_url}/[{target_remote}]/{clean_path}"
 
-        # We use a raw session context here for the .read() method
-        async with aiohttp.ClientSession() as session:
-            async with session.post(f"{self.base_url}/core/command", json=cat_params) as resp:
+        timeout_config = aiohttp.ClientTimeout(total=None, sock_read=600, sock_connect=30)
+
+        async with aiohttp.ClientSession(timeout=timeout_config) as session:
+            async with session.get(download_url) as resp:
                 resp.raise_for_status()
                 content = await resp.read()
 
@@ -144,11 +145,15 @@ class RcloneClient:
                 return await resp.json()
 
     def _parse_minimal(self, item: dict, remote: str) -> MinimalRcloneFile:
+        mod_time = self._to_unix_timestamp(item.get("ModTime"))
+        birth_time = self._to_unix_timestamp(item.get("Metadata", {}).get("btime")) or mod_time
+
         return MinimalRcloneFile(
             name=item["Name"],
             path=item["Path"],
             size=item.get("Size", 0),
-            modified=self._to_unix_timestamp(item.get("ModTime")),
+            modified=mod_time,
+            created=birth_time,
             remote=remote,
             is_dir=False,
             mime_type=item.get("MimeType"),

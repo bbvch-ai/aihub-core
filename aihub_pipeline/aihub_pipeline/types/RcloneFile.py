@@ -21,9 +21,10 @@ class MinimalRcloneFile(MinimalSourceFile):
         dict[str, str] | None,
         Field(description="Hash checksums from remote backend (e.g., {'md5': '...', 'sha1': '...'})"),
     ] = None
+    created: Annotated[int, Field(description="The UNIX timestamp when the file was created (birth time)")] = 0
 
 
-class RcloneFile(SourceFile):
+class RcloneFile(SourceFile, MinimalRcloneFile):
     """
     Rclone file implementation of the SourceFile interface.
 
@@ -33,12 +34,7 @@ class RcloneFile(SourceFile):
     This generic implementation works with all 70+ rclone backends without requiring
     backend-specific code.
     """
-
-    remote: Annotated[str, Field(description="Rclone remote name (e.g., 'onedrive:', 'sharepoint:')")]
     remote_path: Annotated[str, Field(description="Full path within the remote")]
-    mime_type: Annotated[str | None, Field(description="MIME type of the file")] = None
-    id: Annotated[str | None, Field(description="Remote-specific file ID if available")] = None
-
     @property
     def source_url(self) -> str:
         """Returns the rclone-style URL (remote:path)."""
