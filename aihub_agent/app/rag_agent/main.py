@@ -131,7 +131,7 @@ async def main():
                 """,
             ),
             retrieve_step_config=RetrieveStepConfig(
-                embed_model=EmbeddingModelConfig(model_name="azure/text-embedding-3-large"),
+                embed_model=EmbeddingModelConfig(model_name="embedding/small"),
                 index_namespaces=["default"],
                 retrieve_k=10,
                 query_mode=VectorStoreQueryMode.HYBRID,
