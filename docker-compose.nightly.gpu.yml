@@ -565,45 +565,6 @@ services:
               device_ids: [ '0' ]
               capabilities: [ gpu ]
 
-  
-  vllm-docling:
-    container_name: vllm-docling
-    platform: "linux/amd64"
-    image: ghcr.io/bbvch-ai/aihub-core/vllm-openai:v0.11.0
-    restart: always
-    volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
-    environment:
-      HF_HOME: /root/.cache/huggingface
-      HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
-    command: >
-      --model ibm-granite/granite-docling-258M
-      --served-model-name granite-docling
-      --port 8182
-      --host 0.0.0.0
-      --max-model-len 8192
-      --trust-remote-code
-      --gpu-memory-utilization 0.25
-      --tensor-parallel-size 1
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
-      timeout: 10s
-      interval: 30s
-      retries: 3
-      start_period: 180s
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: [ '0' ]
-              capabilities: [ gpu ]
-
   # ===================================================================
   # Audio Model Serving (SST/TTS)
   # ===================================================================
@@ -783,6 +744,45 @@ services:
       options:
         max-size: 10m
         max-file: 2
+
+  
+  vllm-docling:
+    container_name: vllm-docling
+    platform: "linux/amd64"
+    image: ghcr.io/bbvch-ai/aihub-core/vllm-openai:v0.11.0
+    restart: always
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
+    environment:
+      HF_HOME: /root/.cache/huggingface
+      HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
+    command: >
+      --model ibm-granite/granite-docling-258M
+      --served-model-name granite-docling
+      --port 8182
+      --host 0.0.0.0
+      --max-model-len 8192
+      --trust-remote-code
+      --gpu-memory-utilization 0.25
+      --tensor-parallel-size 1
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 180s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '0' ]
+              capabilities: [ gpu ]
 
   # ===================================================================
   # Observability Stack

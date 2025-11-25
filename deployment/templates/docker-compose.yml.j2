@@ -644,50 +644,6 @@ services:
               device_ids: [ '0' ]
               capabilities: [ gpu ]
 
-  {% if gpu_enabled %}
-  vllm-docling:
-    container_name: vllm-docling
-    platform: "linux/amd64"
-    image: {{ global.registry_prefix }}{{ image_tags.vllm }}
-    restart: always
-    {%- if stage == 'dev' %}
-    ports:
-      - "8186:8182"
-    {%- endif %}
-    volumes:
-      - {{ global.volume_root }}/huggingface:/root/.cache/huggingface
-    environment:
-      HF_HOME: /root/.cache/huggingface
-      HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
-    command: >
-      --model ibm-granite/granite-docling-258M
-      --served-model-name granite-docling
-      --port 8182
-      --host 0.0.0.0
-      --max-model-len 8192
-      --trust-remote-code
-      --gpu-memory-utilization 0.25
-      --tensor-parallel-size 1
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
-      timeout: 10s
-      interval: 30s
-      retries: 3
-      start_period: 180s
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: [ '0' ]
-              capabilities: [ gpu ]
-  {%- endif %}
-
   # ===================================================================
   # Audio Model Serving (SST/TTS)
   # ===================================================================
@@ -895,6 +851,50 @@ services:
       options:
         max-size: 10m
         max-file: 2
+
+  {% if gpu_enabled %}
+  vllm-docling:
+    container_name: vllm-docling
+    platform: "linux/amd64"
+    image: {{ global.registry_prefix }}{{ image_tags.vllm }}
+    restart: always
+    {%- if stage == 'dev' %}
+    ports:
+      - "8186:8182"
+    {%- endif %}
+    volumes:
+      - {{ global.volume_root }}/huggingface:/root/.cache/huggingface
+    environment:
+      HF_HOME: /root/.cache/huggingface
+      HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
+    command: >
+      --model ibm-granite/granite-docling-258M
+      --served-model-name granite-docling
+      --port 8182
+      --host 0.0.0.0
+      --max-model-len 8192
+      --trust-remote-code
+      --gpu-memory-utilization 0.25
+      --tensor-parallel-size 1
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 180s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '0' ]
+              capabilities: [ gpu ]
+  {%- endif %}
 
   # ===================================================================
   # Observability Stack
