@@ -24,7 +24,7 @@ from aihub_agent.agents.RagAgent.configs.RetrieveSummariesConfig import Retrieve
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
 from aihub_agent.runners.AgentRunner import AgentRunner
 
-enable_logging(level=30)
+enable_logging()
 
 
 async def main():
