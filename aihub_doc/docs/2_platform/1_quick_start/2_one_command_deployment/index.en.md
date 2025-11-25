@@ -199,16 +199,53 @@ S3_STORAGE_URL_SIGNING_SECRET="REPLACE_WITH_RANDOM_STRING"
 # SERVICE ENDPOINTS (Internal - Don't Change)
 # =============================================================================
 
+# Internal Service URLs (these should generally not be changed)
+PRESIDIO_ANALYZER_API_BASE="http://presidio-analyzer:3000"
+PRESIDIO_ANONYMIZER_API_BASE="http://presidio-anonymizer:3000"
+PLAYWRIGHT_WS_URL="ws://playwright:3000"
+SEAWEEDFS_FILER_URL="http://seaweedfs-filer:8888"
+SEAWEEDFS_FILER_ENDPOINT="seaweedfs-filer:8888"
+SEAWEEDFS_MASTER_ENDPOINT="seaweedfs-master:9333"
+SEAWEEDFS_S3_ENDPOINT="seaweedfs-s3:9000"
+DAGSTER_WEBSERVER_URL="http://dagster-webserver:3000"
+ETCD_ENDPOINTS="etcd:2379"
+MILVUS_ENDPOINT="http://milvus-standalone"
+MILVUS_HOST="milvus-standalone"
+VALKEY_ENDPOINT="redis://valkey:6379"
+S3_STORAGE_ENDPOINT_INTERNAL="http://seaweedfs-s3:9000"
+
+# Database Ports
+POSTGRES_PORT="5432"
+FERRETDB_PORT="27017"
+MILVUS_PORT="19530"
+
+# Document Processing
 DOCLING_API_ENDPOINT="http://docling:5001"
 DOCLING_API_TIMEOUT="600"
+DOCLING_HOSTED_VLM_API_ENDPOINT="http://litellm:4000"
+DOCLING_HOSTED_VLM_API_KEY="REPLACE_WITH_SAME_AS_LITELLM_MASTER_KEY"
+DOCLING_VLM_MODEL_NAME="text-generation/ocr"
+
+# Other Services
 PHOENIX_SECRET="REPLACE_WITH_RANDOM_STRING"
 PHOENIX_ENDPOINT="http://phoenix:6006"
-NATS_ENDPOINT="nats://localhost:4222"
-DAGSTER_HOME="~/.dagster_home"
-DAGSTER_OAUTH_ALLOWED_GROUPS="AIHubDeveloper"
-SEAWEEDFS_OAUTH_ALLOWED_GROUPS="AIHubDeveloper"
+NATS_ENDPOINT="nats://nats:4222"
+JUPYTER_URL="http://jupyter:8888"
 JUPYTER_TOKEN="REPLACE_WITH_RANDOM_STRING"
 MILVUS_DIMENSION="3072"
+ADMIN_EMAIL="admin@your-company.com"
+
+# OAuth Access Groups
+DAGSTER_OAUTH_ALLOWED_GROUPS="AIHubDeveloper"
+SEAWEEDFS_OAUTH_ALLOWED_GROUPS="AIHubDeveloper"
+
+# OAuth Custom Branding
+OAUTH_CUSTOM_SIGN_IN_LOGO="https://aiagentsstpublicblobs.blob.core.windows.net/logos/Bbv-Logo_farbig.png"
+
+# OpenTelemetry Settings
+OTEL_EXPORTER_OTLP_ENDPOINT="http://otel-collector:4317"
+OTEL_RESOURCE_SERVICE_VERSION="0.0.1"
+OTEL_RESOURCE_SERVICE_NAMESPACE="swiss-ai-hub"
 
 # =============================================================================
 # OBSERVABILITY CONFIGURATION
