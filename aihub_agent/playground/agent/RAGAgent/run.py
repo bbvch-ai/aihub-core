@@ -132,7 +132,7 @@ async def main():
             ),
             retrieve_step_config=RetrieveStepConfig(
                 embed_model=EmbeddingModelConfig(model_name="embedding/small"),
-                index_namespaces=["default"],
+                index_namespaces=["namespace"],
                 retrieve_k=10,
                 query_mode=VectorStoreQueryMode.HYBRID,
                 node_types=["content"],
