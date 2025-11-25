@@ -518,7 +518,7 @@ services:
         max-size: 10m
         max-file: 2
 
-  {%- if gpu_enabled or stage == 'dev' %}
+  {%- if gpu_enabled and stage in ['nightly', 'latest'] %}
   # ===================================================================
   # AI Model Serving (Local Inference)
   # ===================================================================
@@ -526,16 +526,11 @@ services:
   # GPU is enabled. All other configurations use CPU variants.
   # ===================================================================
 
-  {%- set llama_cpp_use_gpu = gpu_enabled and stage in ['nightly', 'latest'] %}
   llama-cpp:
     container_name: llama-cpp
     platform: "linux/amd64"
-    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_gpu if llama_cpp_use_gpu else image_tags.llama_cpp_cpu }}
+    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_gpu }}
     restart: always
-    {%- if stage == 'dev' %}
-    ports:
-      - "8187:8182"
-    {%- endif %}
     volumes:
       - {{ global.volume_root }}/llamacpp-data:/data
       - {{ global.volume_root }}/huggingface:/root/.cache/huggingface
@@ -543,24 +538,13 @@ services:
     environment:
       HF_HOME: /root/.cache/huggingface
     command: >
-      {%- if stage in ['dev', 'local', 'build'] %}
-      -hf google/gemma-3-4b-it-qat-q4_0-gguf
-      --hf-token ${HUGGINGFACE_API_KEY}
-      --alias gemma-3-4b
-      --port 8182
-      --host 0.0.0.0
-      -c 8196
-      {%- else %}
       -hf google/gemma-3-12b-it-qat-q4_0-gguf
       --hf-token ${HUGGINGFACE_API_KEY}
       --alias gemma-3-12b
       --port 128000
       --host 0.0.0.0
       -c 8196
-      {%- endif %}
-      {%- if llama_cpp_use_gpu %}
       -ngl -1
-      {%- endif %}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
       timeout: 10s
@@ -572,7 +556,6 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    {%- if llama_cpp_use_gpu %}
     deploy:
       resources:
         reservations:
@@ -580,17 +563,12 @@ services:
             - driver: nvidia
               device_ids: [ '0' ]
               capabilities: [ gpu ]
-    {%- endif %}
 
   llama-cpp-embedding:
     container_name: llama-cpp-embedding
     platform: "linux/amd64"
-    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_gpu if llama_cpp_use_gpu else image_tags.llama_cpp_cpu }}
+    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_gpu }}
     restart: always
-    {%- if stage == 'dev' %}
-    ports:
-      - "8183:8182"
-    {%- endif %}
     volumes:
       - {{ global.volume_root }}/llamacpp-data:/data
       - {{ global.volume_root }}/huggingface:/root/.cache/huggingface
@@ -606,9 +584,7 @@ services:
       --embedding
       --pooling last
       -ub 8192
-      {%- if llama_cpp_use_gpu %}
       -ngl -1
-      {%- endif %}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
       timeout: 10s
@@ -620,7 +596,6 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    {%- if llama_cpp_use_gpu %}
     deploy:
       resources:
         reservations:
@@ -628,17 +603,12 @@ services:
             - driver: nvidia
               device_ids: [ '0' ]
               capabilities: [ gpu ]
-    {%- endif %}
 
   llama-cpp-reranker:
     container_name: llama-cpp-reranker
     platform: "linux/amd64"
-    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_gpu if llama_cpp_use_gpu else image_tags.llama_cpp_cpu }}
+    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_gpu }}
     restart: always
-    {%- if stage == 'dev' %}
-    ports:
-      - "8184:8182"
-    {%- endif %}
     volumes:
       - {{ global.volume_root }}/llamacpp-data:/data
       - {{ global.volume_root }}/huggingface:/root/.cache/huggingface
@@ -654,9 +624,7 @@ services:
       -c 8192
       --reranking
       --no-context-shift
-      {%- if llama_cpp_use_gpu %}
       -ngl 10
-      {%- endif %}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
       timeout: 10s
@@ -668,7 +636,6 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    {%- if llama_cpp_use_gpu %}
     deploy:
       resources:
         reservations:
@@ -676,7 +643,6 @@ services:
             - driver: nvidia
               device_ids: [ '0' ]
               capabilities: [ gpu ]
-    {%- endif %}
 
   {% if gpu_enabled %}
   vllm-docling:
@@ -730,15 +696,10 @@ services:
   # 'latest' stages when GPU is enabled.
   # ===================================================================
 
-  {%- set speaches_use_gpu = gpu_enabled and stage in ['nightly', 'latest'] %}
   speaches:
     container_name: speaches
-    image: {{ global.registry_prefix }}{{ image_tags.speaches_gpu if speaches_use_gpu else image_tags.speaches_cpu }}
+    image: {{ global.registry_prefix }}{{ image_tags.speaches_gpu }}
     restart: unless-stopped
-    {%- if stage == 'dev' %}
-    ports:
-      - "8185:8000"
-    {%- endif %}
     volumes:
       - {{ global.volume_root }}/huggingface:/root/.cache/huggingface
     environment:
@@ -751,7 +712,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 5s
-    {%- if speaches_use_gpu %}
     deploy:
       resources:
         reservations:
@@ -759,7 +719,6 @@ services:
             - driver: nvidia
               device_ids: [ '0' ]
               capabilities: [ gpu ]
-    {%- endif %}
   {%- endif %}
 
   # ===================================================================

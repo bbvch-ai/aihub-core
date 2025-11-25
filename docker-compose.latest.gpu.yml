@@ -446,6 +446,7 @@ services:
   # GPU variants are only used for 'nightly' and 'latest' stages when
   # GPU is enabled. All other configurations use CPU variants.
   # ===================================================================
+
   llama-cpp:
     container_name: llama-cpp
     platform: "linux/amd64"
@@ -610,6 +611,7 @@ services:
   # compatible format. GPU variants are only used for 'nightly' and
   # 'latest' stages when GPU is enabled.
   # ===================================================================
+
   speaches:
     container_name: speaches
     image: ghcr.io/bbvch-ai/aihub-core/speaches:0.8.3-cuda-12.6.3
