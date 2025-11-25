@@ -36,7 +36,7 @@ model_list:
   - model_name: local/qwen-2.5-multimodal-small
     litellm_params:
       model: openai/Qwen2.5-VL-3B-Instruct
-      api_base: http://llama-cpp:8187/v1
+      api_base: http://llama-cpp:8182/v1
       api_key: None
     model_info:
       mode: chat

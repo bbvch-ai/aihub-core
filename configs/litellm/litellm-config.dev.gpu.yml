@@ -20,7 +20,7 @@ model_list:
   - model_name: text-generation/nano
     litellm_params:
       model: openai/gemma-3-4b
-      api_base: http://llama-cpp:8187/
+      api_base: http://llama-cpp:8182/
       api_key: XXX
     model_info:
       mode: chat
@@ -31,7 +31,7 @@ model_list:
   - model_name: text-generation/mini
     litellm_params:
       model: openai/gemma-3-4b
-      api_base: http://llama-cpp:8187/
+      api_base: http://llama-cpp:8182/
       api_key: XXX
     model_info:
       mode: chat

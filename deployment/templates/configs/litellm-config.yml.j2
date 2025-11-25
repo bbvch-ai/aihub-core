@@ -36,7 +36,7 @@ model_list:
     litellm_params:
 {%- if has_llama_cpp %}
       model: openai/{{ llama_cpp_alias }}
-      api_base: http://llama-cpp:8187/
+      api_base: http://llama-cpp:8182/
       api_key: XXX
 {%- else %}
       model: azure/gpt-5-nano
@@ -57,7 +57,7 @@ model_list:
     litellm_params:
 {%- if has_llama_cpp %}
       model: openai/{{ llama_cpp_alias }}
-      api_base: http://llama-cpp:8187/
+      api_base: http://llama-cpp:8182/
       api_key: XXX
 {%- else %}
       model: azure/gpt-5-mini
