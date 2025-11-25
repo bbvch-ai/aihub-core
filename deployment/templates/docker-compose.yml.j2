@@ -534,7 +534,7 @@ services:
     restart: always
     {%- if stage == 'dev' %}
     ports:
-      - "8182:8182"
+      - "8187:8182"
     {%- endif %}
     volumes:
       - {{ global.volume_root }}/llamacpp-data:/data

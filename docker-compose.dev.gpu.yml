@@ -380,7 +380,7 @@ services:
     image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b7003
     restart: always
     ports:
-      - "8182:8182"
+      - "8187:8182"
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-data:/data
       - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
