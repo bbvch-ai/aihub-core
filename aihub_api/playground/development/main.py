@@ -1,4 +1,11 @@
 # ruff: noqa: E402
+import warnings
+
+from pydantic.warnings import UnsupportedFieldAttributeWarning
+
+# Suppress warnings from third-party libraries (fastmcp) using Field() with validate_default in unsupported contexts
+warnings.filterwarnings("ignore", category=UnsupportedFieldAttributeWarning)
+
 from aihub_api.routes.docling.DoclingController import DoclingController
 
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip

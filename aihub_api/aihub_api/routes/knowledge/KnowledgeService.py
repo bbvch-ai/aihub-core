@@ -84,7 +84,9 @@ class KnowledgeService:
         try:
             mongoengine.connection.get_connection(alias=db)
         except Exception:
-            register_connection(alias=db, name=db, host=MongoSettings().CONNECTION_STRING.get_secret_value())
+            register_connection(
+                alias=db, name=db, host=MongoSettings().CONNECTION_STRING.get_secret_value(), uuidRepresentation="standard"
+            )
 
     @staticmethod
     def _get_datalake_files_in_namespace(bucket_name: str, namespace: str) -> list[DocumentDTO]:
