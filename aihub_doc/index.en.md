@@ -16,7 +16,7 @@ hero:
     - theme: alt
       text: Why Swiss AI Hub
       link: /docs/1_vision_and_positioning/1_introduction
-      
+
 features:
   - title: The open-source AI bet
     details: Best-in-class open-source tools (LiteLLM, Milvus, LlamaIndex) integrated and ready. When they evolve, you benefit. No vendor lock-in, no licensing fees, no platform constraints. Bet on the ecosystem, not a single vendor.

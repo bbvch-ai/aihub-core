@@ -1,16 +1,18 @@
 ---
 title: Deployment mit einem Befehl
-source_sha: "87723bd9334813821bc5e71cf1a1d19542f88507095369395762d1bda81d88fd"
+source_sha: 87723bd9334813821bc5e71cf1a1d19542f88507095369395762d1bda81d88fd
 ---
 
 # Deployment mit einem Befehl: Starten Sie Ihre KI-Plattform
 
-Die Swiss AI Hub Plattform wird mit einem einzigen Docker Compose Befehl deployed. Dieser optimierte Prozess bringt Ihre komplette KI-Infrastruktur in Minuten, nicht Stunden, zum Laufen.
+Die Swiss AI Hub Plattform wird mit einem einzigen Docker Compose Befehl deployed. Dieser optimierte Prozess bringt Ihre
+komplette KI-Infrastruktur in Minuten, nicht Stunden, zum Laufen.
 
 ## Deployment-Übersicht
 
 ::: tip Zwei Deployment-Optionen
-Der Swiss AI Hub unterstützt zwei Deployment-Modi. Befolgen Sie die gleichen Schritte für beide, indem Sie die entsprechenden Befehle für Ihren Deployment-Typ verwenden:
+Der Swiss AI Hub unterstützt zwei Deployment-Modi. Befolgen Sie die gleichen Schritte für beide, indem Sie die
+entsprechenden Befehle für Ihren Deployment-Typ verwenden:
 
 - **Produktions-Deployment**: Deployment auf einem Server mit einem echten Domainnamen (z.B. `aihub.yourcompany.com`)
 
@@ -24,7 +26,8 @@ Der Swiss AI Hub unterstützt zwei Deployment-Modi. Befolgen Sie die gleichen Sc
   - Verwendet selbstsignierte SSL-Zertifikate (mkcert)
   - Verwendet die Domain `127.0.0.1.nip.io` (löst automatisch zu localhost auf)
 
-Jeder der folgenden Schritte zeigt Befehle für beide Deployment-Typen. Befolgen Sie einfach die Befehle, die Ihrem gewählten Deployment-Modus entsprechen.
+Jeder der folgenden Schritte zeigt Befehle für beide Deployment-Typen. Befolgen Sie einfach die Befehle, die Ihrem
+gewählten Deployment-Modus entsprechen.
 :::
 
 ---
@@ -66,7 +69,9 @@ mkcert -key-file configs/traefik/certs/dev-key.pem -cert-file configs/traefik/ce
 ```
 
 ::: tip Was ist nip.io?
-Die Domain `*.127.0.0.1.nip.io` löst automatisch zu Ihrem Localhost (127.0.0.1) auf und bietet eine Wildcard-DNS-Auflösung, ohne dass Sie Ihre Hosts-Datei ändern müssen. Dies ermöglicht subdomainbasiertes Routing in der lokalen Entwicklung.
+Die Domain `*.127.0.0.1.nip.io` löst automatisch zu Ihrem Localhost (127.0.0.1) auf und bietet eine
+Wildcard-DNS-Auflösung, ohne dass Sie Ihre Hosts-Datei ändern müssen. Dies ermöglicht subdomainbasiertes Routing in der
+lokalen Entwicklung.
 :::
 
 ---
@@ -249,24 +254,25 @@ SIGNOZ_INGESTION_KEY=""
 
 **Kritische Werte zum Ersetzen:**
 
-1.  **Authentifizierungswerte** (aus den Voraussetzungen):
+1. **Authentifizierungswerte** (aus den Voraussetzungen):
 
-    - `REPLACE_WITH_YOUR_CLIENT_ID` → Ihre Azure App Registration Client ID
-    - `REPLACE_WITH_YOUR_CLIENT_SECRET` → Ihr Azure App Registration Client Secret
-    - `REPLACE_WITH_YOUR_TENANT_ID` → Ihre Azure Tenant ID (erscheint zweimal)
+   - `REPLACE_WITH_YOUR_CLIENT_ID` → Ihre Azure App Registration Client ID
+   - `REPLACE_WITH_YOUR_CLIENT_SECRET` → Ihr Azure App Registration Client Secret
+   - `REPLACE_WITH_YOUR_TENANT_ID` → Ihre Azure Tenant ID (erscheint zweimal)
 
-2.  **KI-Modellzugriff** (mindestens einen konfigurieren):
+2. **KI-Modellzugriff** (mindestens einen konfigurieren):
 
-    - `REPLACE_WITH_AZURE_OPENAI_BASE_URL` → Ihre Azure OpenAI Endpunkt-URL
-    - `REPLACE_WITH_AZURE_OPENAI_KEY` → Ihr Azure OpenAI API-Schlüssel
-    - `REPLACE_WITH_GEMINI_KEY` → Ihr Google Gemini API-Schlüssel
+   - `REPLACE_WITH_AZURE_OPENAI_BASE_URL` → Ihre Azure OpenAI Endpunkt-URL
+   - `REPLACE_WITH_AZURE_OPENAI_KEY` → Ihr Azure OpenAI API-Schlüssel
+   - `REPLACE_WITH_GEMINI_KEY` → Ihr Google Gemini API-Schlüssel
 
-3.  **Zufällige Zeichenketten** (eindeutige Werte generieren):
+3. **Zufällige Zeichenketten** (eindeutige Werte generieren):
 
-    - Ersetzen Sie alle `REPLACE_WITH_RANDOM_STRING` durch eindeutige zufällige Zeichenketten (verwenden Sie `openssl rand -hex 32`)
-    - Ersetzen Sie `REPLACE_WITH_16_HEX_CHARS` durch eine 16-Byte-Hex-Zeichenkette (verwenden Sie `openssl rand -hex 16`)
-    - Verwenden Sie unterschiedliche Werte für jeden Platzhalter
-    - Mindestens 32 Zeichen werden für die Sicherheit empfohlen
+   - Ersetzen Sie alle `REPLACE_WITH_RANDOM_STRING` durch eindeutige zufällige Zeichenketten (verwenden Sie
+     `openssl rand -hex 32`)
+   - Ersetzen Sie `REPLACE_WITH_16_HEX_CHARS` durch eine 16-Byte-Hex-Zeichenkette (verwenden Sie `openssl rand -hex 16`)
+   - Verwenden Sie unterschiedliche Werte für jeden Platzhalter
+   - Mindestens 32 Zeichen werden für die Sicherheit empfohlen
 
 **Domain-Konfiguration:**
 
@@ -342,7 +348,8 @@ docker compose -f docker-compose.latest.yml ps
 
 ### Warten auf Service-Initialisierung
 
-Der erste Start dauert 3-5 Minuten, während sich die Services initialisieren. Alle Services sollten den Status "healthy" anzeigen:
+Der erste Start dauert 3-5 Minuten, während sich die Services initialisieren. Alle Services sollten den Status "healthy"
+anzeigen:
 
 ```bash
 # Wait for healthy status
@@ -353,28 +360,30 @@ docker compose -f docker-compose.latest.yml ps --format "table {{.Name}}\t{{.Sta
 
 ### Auf die Plattform zugreifen
 
-1.  **Stellen Sie sicher, dass Ihrem Benutzer, mit dem Sie testen, die Rolle "AIHubAdmin" in der Azure Enterprise Application zugewiesen ist**
+1. **Stellen Sie sicher, dass Ihrem Benutzer, mit dem Sie testen, die Rolle "AIHubAdmin" in der Azure Enterprise
+   Application zugewiesen ist**
 
-2.  **Web-Interface:**
+2. **Web-Interface:**
 
-    - Lokal: `https://127.0.0.1.nip.io`
-    - Produktion: `https://your-domain.com`
+   - Lokal: `https://127.0.0.1.nip.io`
+   - Produktion: `https://your-domain.com`
 
-3.  **Erwarteter Login-Flow:**
+3. **Erwarteter Login-Flow:**
 
-    - Leitet zur Azure-Authentifizierung weiter
-    - Nach dem Login kehrt die Oberfläche zum AI-Hub zurück
-    - Das Haupt-Dashboard sollte sichtbar sein
+   - Leitet zur Azure-Authentifizierung weiter
+   - Nach dem Login kehrt die Oberfläche zum AI-Hub zurück
+   - Das Haupt-Dashboard sollte sichtbar sein
 
 ## Zusammenfassung: Wichtige Unterschiede zwischen Deployments
 
-| Merkmal             | Produktion (`docker-compose.latest.yml`) | Lokal (`docker-compose.local.yml`) |
-| :------------------ | :--------------------------------------- | :--------------------------------- |
-| **SSL-Zertifikate** | Let's Encrypt (automatisch)              | mkcert (manuelle Generierung)      |
-| **Domain**          | Ihre Produktions-Domain                  | `127.0.0.1.nip.io`                 |
+| Merkmal                   | Produktion (`docker-compose.latest.yml`) | Lokal (`docker-compose.local.yml`) |
+| :------------------------ | :--------------------------------------- | :--------------------------------- |
+| **SSL-Zertifikate**       | Let's Encrypt (automatisch)              | mkcert (manuelle Generierung)      |
+| **Domain**                | Ihre Produktions-Domain                  | `127.0.0.1.nip.io`                 |
 | **Konfigurationsdateien** | `*.latest.*` configs                     | `*.local.*` configs                |
-| **Zweck**           | Produktions-Deployments                  | Lokales Deployment und Entwicklung |
+| **Zweck**                 | Produktions-Deployments                  | Lokales Deployment und Entwicklung |
 
 ::: warning
-Verwenden Sie niemals selbstsignierte SSL-Zertifikate in der Produktion. Die Konfiguration für das lokale Deployment ist ausschließlich für die Entwicklung und Tests auf Ihrer lokalen Maschine konzipiert.
+Verwenden Sie niemals selbstsignierte SSL-Zertifikate in der Produktion. Die Konfiguration für das lokale Deployment ist
+ausschließlich für die Entwicklung und Tests auf Ihrer lokalen Maschine konzipiert.
 :::
