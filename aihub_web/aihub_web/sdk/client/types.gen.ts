@@ -85,6 +85,37 @@ export type AgentConfigDto = {
      * The icon representing the agent.
      */
     icon?: string;
+    /**
+     * Form
+     * Dynamic form configuration for agent runtime settings.
+     */
+    form?: Array<{
+        [key: string]: unknown;
+    }> | null;
+};
+
+/**
+ * AgentConfigurationDataDTO
+ * Response containing the current configuration data for an agent.
+ */
+export type AgentConfigurationDataDto = {
+    /**
+     * Agent Class
+     * The agent's class identifier.
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     * The agent's instance identifier.
+     */
+    agent_id: string;
+    /**
+     * Configuration
+     * The current configuration values as key-value pairs. Keys match the 'name' fields from the agent's form elements.
+     */
+    configuration: {
+        [key: string]: unknown;
+    };
 };
 
 /**
@@ -943,7 +974,6 @@ export type Audio = {
      * Id
      */
     id: string;
-    [key: string]: unknown | string;
 };
 
 /**
@@ -1416,7 +1446,6 @@ export type ChatCompletionAllowedToolChoiceParam = {
      * Type
      */
     type: 'allowed_tools';
-    [key: string]: unknown | ChatCompletionAllowedToolsParam | 'allowed_tools';
 };
 
 /**
@@ -1431,9 +1460,6 @@ export type ChatCompletionAllowedToolsParam = {
      * Tools
      */
     tools: Array<{
-        [key: string]: unknown;
-    }>;
-    [key: string]: unknown | ('auto' | 'required') | Array<{
         [key: string]: unknown;
     }>;
 };
@@ -1451,7 +1477,7 @@ export type ChatCompletionAssistantMessageParam = {
      * Content
      */
     content?: string | Array<ChatCompletionContentPartTextParam | ChatCompletionContentPartRefusalParam> | null;
-    function_call?: FunctionCall | null;
+    function_call?: FunctionCallInput | null;
     /**
      * Name
      */
@@ -1464,7 +1490,6 @@ export type ChatCompletionAssistantMessageParam = {
      * Tool Calls
      */
     tool_calls?: Array<ChatCompletionMessageFunctionToolCallParam | ChatCompletionMessageCustomToolCallParam>;
-    [key: string]: unknown | 'assistant' | (Audio | null) | (string | Array<ChatCompletionContentPartTextParam | ChatCompletionContentPartRefusalParam> | null) | (FunctionCall | null) | string | (string | null) | Array<ChatCompletionMessageFunctionToolCallParam | ChatCompletionMessageCustomToolCallParam> | undefined;
 };
 
 /**
@@ -1501,8 +1526,7 @@ export type ChatCompletionAudioParam = {
     /**
      * Voice
      */
-    voice: string | ('alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'sage' | 'shimmer' | 'verse' | 'marin' | 'cedar');
-    [key: string]: unknown | ('wav' | 'aac' | 'mp3' | 'flac' | 'opus' | 'pcm16') | (string | ('alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'sage' | 'shimmer' | 'verse' | 'marin' | 'cedar'));
+    voice: string | ('alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'sage' | 'shimmer' | 'verse');
 };
 
 /**
@@ -1514,7 +1538,6 @@ export type ChatCompletionContentPartImageParam = {
      * Type
      */
     type: 'image_url';
-    [key: string]: unknown | ImageUrl | 'image_url';
 };
 
 /**
@@ -1526,7 +1549,6 @@ export type ChatCompletionContentPartInputAudioParam = {
      * Type
      */
     type: 'input_audio';
-    [key: string]: unknown | InputAudio | 'input_audio';
 };
 
 /**
@@ -1541,7 +1563,6 @@ export type ChatCompletionContentPartRefusalParam = {
      * Type
      */
     type: 'refusal';
-    [key: string]: unknown | string | 'refusal';
 };
 
 /**
@@ -1556,7 +1577,6 @@ export type ChatCompletionContentPartTextParam = {
      * Type
      */
     type: 'text';
-    [key: string]: unknown | string | 'text';
 };
 
 /**
@@ -1575,7 +1595,6 @@ export type ChatCompletionDeveloperMessageParam = {
      * Name
      */
     name?: string;
-    [key: string]: unknown | (string | Array<ChatCompletionContentPartTextParam>) | 'developer' | string | undefined;
 };
 
 /**
@@ -1586,7 +1605,6 @@ export type ChatCompletionFunctionCallOptionParam = {
      * Name
      */
     name: string;
-    [key: string]: unknown | string;
 };
 
 /**
@@ -1605,7 +1623,6 @@ export type ChatCompletionFunctionMessageParam = {
      * Role
      */
     role: 'function';
-    [key: string]: unknown | (string | null) | string | 'function';
 };
 
 /**
@@ -1617,7 +1634,6 @@ export type ChatCompletionFunctionToolParam = {
      * Type
      */
     type: 'function';
-    [key: string]: unknown | FunctionDefinition | 'function';
 };
 
 /**
@@ -1641,12 +1657,12 @@ export type ChatCompletionMessage = {
      */
     annotations?: Array<Annotation> | null;
     audio?: ChatCompletionAudio | null;
-    function_call?: FunctionCall | null;
+    function_call?: FunctionCallOutput | null;
     /**
      * Tool Calls
      */
     tool_calls?: Array<ChatCompletionMessageFunctionToolCall | ChatCompletionMessageCustomToolCall> | null;
-    [key: string]: unknown | (string | null) | (string | null) | 'assistant' | (Array<Annotation> | null) | (ChatCompletionAudio | null) | (FunctionCall | null) | (Array<ChatCompletionMessageFunctionToolCall | ChatCompletionMessageCustomToolCall> | null) | undefined;
+    [key: string]: unknown | (string | null) | (string | null) | 'assistant' | (Array<Annotation> | null) | (ChatCompletionAudio | null) | (FunctionCallOutput | null) | (Array<ChatCompletionMessageFunctionToolCall | ChatCompletionMessageCustomToolCall> | null) | undefined;
 };
 
 /**
@@ -1678,7 +1694,6 @@ export type ChatCompletionMessageCustomToolCallParam = {
      * Type
      */
     type: 'custom';
-    [key: string]: unknown | string | OpenaiTypesChatChatCompletionMessageCustomToolCallParamCustom | 'custom';
 };
 
 /**
@@ -1710,7 +1725,6 @@ export type ChatCompletionMessageFunctionToolCallParam = {
      * Type
      */
     type: 'function';
-    [key: string]: unknown | string | OpenaiTypesChatChatCompletionMessageFunctionToolCallParamFunction | 'function';
 };
 
 /**
@@ -1722,7 +1736,6 @@ export type ChatCompletionNamedToolChoiceCustomParam = {
      * Type
      */
     type: 'custom';
-    [key: string]: unknown | OpenaiTypesChatChatCompletionNamedToolChoiceCustomParamCustom | 'custom';
 };
 
 /**
@@ -1734,7 +1747,6 @@ export type ChatCompletionNamedToolChoiceParam = {
      * Type
      */
     type: 'function';
-    [key: string]: unknown | OpenaiTypesChatChatCompletionNamedToolChoiceParamFunction | 'function';
 };
 
 /**
@@ -1749,7 +1761,6 @@ export type ChatCompletionPredictionContentParam = {
      * Type
      */
     type: 'content';
-    [key: string]: unknown | (string | Array<ChatCompletionContentPartTextParam>) | 'content';
 };
 
 /**
@@ -1886,7 +1897,6 @@ export type ChatCompletionStreamOptionsParam = {
      * Include Usage
      */
     include_usage?: boolean;
-    [key: string]: unknown | boolean | undefined;
 };
 
 /**
@@ -1905,7 +1915,6 @@ export type ChatCompletionSystemMessageParam = {
      * Name
      */
     name?: string;
-    [key: string]: unknown | (string | Array<ChatCompletionContentPartTextParam>) | 'system' | string | undefined;
 };
 
 /**
@@ -1947,7 +1956,6 @@ export type ChatCompletionToolMessageParam = {
      * Tool Call Id
      */
     tool_call_id: string;
-    [key: string]: unknown | (string | Array<ChatCompletionContentPartTextParam>) | 'tool' | string;
 };
 
 /**
@@ -1966,7 +1974,6 @@ export type ChatCompletionUserMessageParam = {
      * Name
      */
     name?: string;
-    [key: string]: unknown | (string | Array<ChatCompletionContentPartTextParam | ChatCompletionContentPartImageParam | ChatCompletionContentPartInputAudioParam | File>) | 'user' | string | undefined;
 };
 
 /**
@@ -3665,6 +3672,32 @@ export type DocumentBlock = {
 };
 
 /**
+ * DocumentConversionMetadata
+ */
+export type DocumentConversionMetadata = {
+    /**
+     * Filename
+     * Original filename of the converted document
+     */
+    filename: string;
+};
+
+/**
+ * DocumentConversionResponse
+ */
+export type DocumentConversionResponse = {
+    /**
+     * Page Content
+     * Markdown content extracted from the document
+     */
+    page_content: string;
+    /**
+     * Metadata about the converted document
+     */
+    metadata: DocumentConversionMetadata;
+};
+
+/**
  * DocumentDTO
  */
 export type DocumentDto = {
@@ -4693,7 +4726,6 @@ export type File = {
      * Type
      */
     type: 'file';
-    [key: string]: unknown | FileFile | 'file';
 };
 
 /**
@@ -4712,7 +4744,6 @@ export type FileFile = {
      * Filename
      */
     filename?: string;
-    [key: string]: unknown | string | undefined;
 };
 
 /**
@@ -4733,7 +4764,21 @@ export type FunctionOutput = {
 /**
  * FunctionCall
  */
-export type FunctionCall = {
+export type FunctionCallInput = {
+    /**
+     * Arguments
+     */
+    arguments: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
+ * FunctionCall
+ */
+export type FunctionCallOutput = {
     /**
      * Arguments
      */
@@ -4767,9 +4812,6 @@ export type FunctionDefinition = {
      * Strict
      */
     strict?: boolean | null;
-    [key: string]: unknown | string | {
-        [key: string]: unknown;
-    } | (boolean | null) | undefined;
 };
 
 /**
@@ -5598,7 +5640,7 @@ export type ImageGenerationRequest = {
      * Model
      * The model to use for image generation. Defaults to dall-e-2.
      */
-    model?: ('dall-e-2' | 'dall-e-3') | null;
+    model?: string | null;
     /**
      * N
      */
@@ -5619,7 +5661,7 @@ export type ImageGenerationRequest = {
      * Style
      */
     style?: ('vivid' | 'natural') | null;
-    [key: string]: unknown | string | (('dall-e-2' | 'dall-e-3') | null) | (number | null) | (('standard' | 'hd') | null) | (('url' | 'b64_json') | null) | (('256x256' | '512x512' | '1024x1024' | '1792x1024' | '1024x1792') | null) | (('vivid' | 'natural') | null) | undefined;
+    [key: string]: unknown | string | (string | null) | (number | null) | (('standard' | 'hd') | null) | (('url' | 'b64_json') | null) | (('256x256' | '512x512' | '1024x1024' | '1792x1024' | '1024x1792') | null) | (('vivid' | 'natural') | null) | undefined;
 };
 
 /**
@@ -5634,7 +5676,6 @@ export type ImageUrl = {
      * Detail
      */
     detail?: 'auto' | 'low' | 'high';
-    [key: string]: unknown | string | ('auto' | 'low' | 'high') | undefined;
 };
 
 /**
@@ -5845,7 +5886,6 @@ export type InputAudio = {
      * Format
      */
     format: 'wav' | 'mp3';
-    [key: string]: unknown | string | ('wav' | 'mp3');
 };
 
 /**
@@ -6701,9 +6741,6 @@ export type JsonSchema = {
      * Strict
      */
     strict?: boolean | null;
-    [key: string]: unknown | string | {
-        [key: string]: unknown;
-    } | (boolean | null) | undefined;
 };
 
 /**
@@ -10123,7 +10160,6 @@ export type ResponseFormatJsonObject = {
      * Type
      */
     type: 'json_object';
-    [key: string]: unknown | 'json_object';
 };
 
 /**
@@ -10135,7 +10171,6 @@ export type ResponseFormatJsonSchema = {
      * Type
      */
     type: 'json_schema';
-    [key: string]: unknown | JsonSchema | 'json_schema';
 };
 
 /**
@@ -10146,7 +10181,6 @@ export type ResponseFormatText = {
      * Type
      */
     type: 'text';
-    [key: string]: unknown | 'text';
 };
 
 /**
@@ -13324,7 +13358,6 @@ export type OpenaiTypesChatChatCompletionMessageCustomToolCallParamCustom = {
      * Name
      */
     name: string;
-    [key: string]: unknown | string;
 };
 
 /**
@@ -13339,7 +13372,6 @@ export type OpenaiTypesChatChatCompletionMessageFunctionToolCallParamFunction = 
      * Name
      */
     name: string;
-    [key: string]: unknown | string;
 };
 
 /**
@@ -13350,7 +13382,6 @@ export type OpenaiTypesChatChatCompletionNamedToolChoiceCustomParamCustom = {
      * Name
      */
     name: string;
-    [key: string]: unknown | string;
 };
 
 /**
@@ -13361,7 +13392,6 @@ export type OpenaiTypesChatChatCompletionNamedToolChoiceParamFunction = {
      * Name
      */
     name: string;
-    [key: string]: unknown | string;
 };
 
 /**
@@ -13382,9 +13412,6 @@ export type OpenaiTypesChatCompletionCreateParamsFunction = {
     parameters?: {
         [key: string]: unknown;
     };
-    [key: string]: unknown | string | {
-        [key: string]: unknown;
-    } | undefined;
 };
 
 /**
@@ -14012,6 +14039,40 @@ export type GetAgentThreadsResponses = {
 };
 
 export type GetAgentThreadsResponse = GetAgentThreadsResponses[keyof GetAgentThreadsResponses];
+
+export type GetAgentConfigurationData = {
+    body?: never;
+    path: {
+        /**
+         * Agent Class
+         */
+        agent_class: string;
+        /**
+         * Agent Id
+         */
+        agent_id: string;
+    };
+    query?: never;
+    url: '/agents/{agent_class}/{agent_id}/configuration';
+};
+
+export type GetAgentConfigurationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetAgentConfigurationError = GetAgentConfigurationErrors[keyof GetAgentConfigurationErrors];
+
+export type GetAgentConfigurationResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentConfigurationDataDto;
+};
+
+export type GetAgentConfigurationResponse = GetAgentConfigurationResponses[keyof GetAgentConfigurationResponses];
 
 export type GetAgentsData = {
     body?: never;
@@ -15473,6 +15534,22 @@ export type UpdateNotificationResponses = {
 };
 
 export type UpdateNotificationResponse = UpdateNotificationResponses[keyof UpdateNotificationResponses];
+
+export type ProcessDocumentData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/docling/process';
+};
+
+export type ProcessDocumentResponses = {
+    /**
+     * Successful Response
+     */
+    200: DocumentConversionResponse;
+};
+
+export type ProcessDocumentResponse = ProcessDocumentResponses[keyof ProcessDocumentResponses];
 
 export type ClientOptions = {
     baseURL: `${string}://${string}/api/v1` | (string & {});

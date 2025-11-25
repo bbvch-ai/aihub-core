@@ -91,11 +91,52 @@ export const AgentConfigDTOSchema = {
             title: 'Icon',
             description: 'The icon representing the agent.',
             default: 'meteor-icons:robot'
+        },
+        form: {
+            anyOf: [
+                {
+                    items: {
+                        additionalProperties: true,
+                        type: 'object'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Form',
+            description: 'Dynamic form configuration for agent runtime settings.'
         }
     },
     type: 'object',
     required: ['agent_id', 'name', 'description'],
     title: 'AgentConfigDTO'
+} as const;
+
+export const AgentConfigurationDataDTOSchema = {
+    properties: {
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class',
+            description: "The agent's class identifier."
+        },
+        agent_id: {
+            type: 'string',
+            title: 'Agent Id',
+            description: "The agent's instance identifier."
+        },
+        configuration: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Configuration',
+            description: "The current configuration values as key-value pairs. Keys match the 'name' fields from the agent's form elements."
+        }
+    },
+    type: 'object',
+    required: ['agent_class', 'agent_id', 'configuration'],
+    title: 'AgentConfigurationDataDTO',
+    description: 'Response containing the current configuration data for an agent.'
 } as const;
 
 export const AgentDTOSchema = {
@@ -972,7 +1013,6 @@ export const AudioSchema = {
             title: 'Id'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['id'],
     title: 'Audio'
@@ -1587,7 +1627,6 @@ export const ChatCompletionAllowedToolChoiceParamSchema = {
             title: 'Type'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['allowed_tools', 'type'],
     title: 'ChatCompletionAllowedToolChoiceParam'
@@ -1609,7 +1648,6 @@ export const ChatCompletionAllowedToolsParamSchema = {
             title: 'Tools'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['mode', 'tools'],
     title: 'ChatCompletionAllowedToolsParam'
@@ -1659,7 +1697,7 @@ export const ChatCompletionAssistantMessageParamSchema = {
         function_call: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/FunctionCall'
+                    '$ref': '#/components/schemas/FunctionCall-Input'
                 },
                 {
                     type: 'null'
@@ -1696,7 +1734,6 @@ export const ChatCompletionAssistantMessageParamSchema = {
             title: 'Tool Calls'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['role'],
     title: 'ChatCompletionAssistantMessageParam'
@@ -1741,13 +1778,12 @@ export const ChatCompletionAudioParamSchema = {
                 },
                 {
                     type: 'string',
-                    enum: ['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse', 'marin', 'cedar']
+                    enum: ['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse']
                 }
             ],
             title: 'Voice'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['format', 'voice'],
     title: 'ChatCompletionAudioParam'
@@ -1764,7 +1800,6 @@ export const ChatCompletionContentPartImageParamSchema = {
             title: 'Type'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['image_url', 'type'],
     title: 'ChatCompletionContentPartImageParam'
@@ -1781,7 +1816,6 @@ export const ChatCompletionContentPartInputAudioParamSchema = {
             title: 'Type'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['input_audio', 'type'],
     title: 'ChatCompletionContentPartInputAudioParam'
@@ -1799,7 +1833,6 @@ export const ChatCompletionContentPartRefusalParamSchema = {
             title: 'Type'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['refusal', 'type'],
     title: 'ChatCompletionContentPartRefusalParam'
@@ -1817,7 +1850,6 @@ export const ChatCompletionContentPartTextParamSchema = {
             title: 'Type'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['text', 'type'],
     title: 'ChatCompletionContentPartTextParam'
@@ -1849,7 +1881,6 @@ export const ChatCompletionDeveloperMessageParamSchema = {
             title: 'Name'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['content', 'role'],
     title: 'ChatCompletionDeveloperMessageParam'
@@ -1862,7 +1893,6 @@ export const ChatCompletionFunctionCallOptionParamSchema = {
             title: 'Name'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['name'],
     title: 'ChatCompletionFunctionCallOptionParam'
@@ -1891,7 +1921,6 @@ export const ChatCompletionFunctionMessageParamSchema = {
             title: 'Role'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['content', 'name', 'role'],
     title: 'ChatCompletionFunctionMessageParam'
@@ -1908,7 +1937,6 @@ export const ChatCompletionFunctionToolParamSchema = {
             title: 'Type'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['function', 'type'],
     title: 'ChatCompletionFunctionToolParam'
@@ -1970,7 +1998,7 @@ export const ChatCompletionMessageSchema = {
         function_call: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/FunctionCall'
+                    '$ref': '#/components/schemas/FunctionCall-Output'
                 },
                 {
                     type: 'null'
@@ -2041,7 +2069,6 @@ export const ChatCompletionMessageCustomToolCallParamSchema = {
             title: 'Type'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['id', 'custom', 'type'],
     title: 'ChatCompletionMessageCustomToolCallParam'
@@ -2083,7 +2110,6 @@ export const ChatCompletionMessageFunctionToolCallParamSchema = {
             title: 'Type'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['id', 'function', 'type'],
     title: 'ChatCompletionMessageFunctionToolCallParam'
@@ -2100,7 +2126,6 @@ export const ChatCompletionNamedToolChoiceCustomParamSchema = {
             title: 'Type'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['custom', 'type'],
     title: 'ChatCompletionNamedToolChoiceCustomParam'
@@ -2117,7 +2142,6 @@ export const ChatCompletionNamedToolChoiceParamSchema = {
             title: 'Type'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['function', 'type'],
     title: 'ChatCompletionNamedToolChoiceParam'
@@ -2145,7 +2169,6 @@ export const ChatCompletionPredictionContentParamSchema = {
             title: 'Type'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['content', 'type'],
     title: 'ChatCompletionPredictionContentParam'
@@ -2558,7 +2581,6 @@ export const ChatCompletionStreamOptionsParamSchema = {
             title: 'Include Usage'
         }
     },
-    additionalProperties: true,
     type: 'object',
     title: 'ChatCompletionStreamOptionsParam'
 } as const;
@@ -2589,7 +2611,6 @@ export const ChatCompletionSystemMessageParamSchema = {
             title: 'Name'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['content', 'role'],
     title: 'ChatCompletionSystemMessageParam'
@@ -2659,7 +2680,6 @@ export const ChatCompletionToolMessageParamSchema = {
             title: 'Tool Call Id'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['content', 'role', 'tool_call_id'],
     title: 'ChatCompletionToolMessageParam'
@@ -2704,7 +2724,6 @@ export const ChatCompletionUserMessageParamSchema = {
             title: 'Name'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['content', 'role'],
     title: 'ChatCompletionUserMessageParam'
@@ -4726,6 +4745,36 @@ export const DocumentBlockSchema = {
     description: 'A representation of a document to directly pass to the LLM.'
 } as const;
 
+export const DocumentConversionMetadataSchema = {
+    properties: {
+        filename: {
+            type: 'string',
+            title: 'Filename',
+            description: 'Original filename of the converted document'
+        }
+    },
+    type: 'object',
+    required: ['filename'],
+    title: 'DocumentConversionMetadata'
+} as const;
+
+export const DocumentConversionResponseSchema = {
+    properties: {
+        page_content: {
+            type: 'string',
+            title: 'Page Content',
+            description: 'Markdown content extracted from the document'
+        },
+        metadata: {
+            '$ref': '#/components/schemas/DocumentConversionMetadata',
+            description: 'Metadata about the converted document'
+        }
+    },
+    type: 'object',
+    required: ['page_content', 'metadata'],
+    title: 'DocumentConversionResponse'
+} as const;
+
 export const DocumentDTOSchema = {
     properties: {
         id: {
@@ -6019,7 +6068,6 @@ export const FileSchema = {
             title: 'Type'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['file', 'type'],
     title: 'File'
@@ -6040,7 +6088,6 @@ export const FileFileSchema = {
             title: 'Filename'
         }
     },
-    additionalProperties: true,
     type: 'object',
     title: 'FileFile'
 } as const;
@@ -6062,7 +6109,23 @@ export const Function_OutputSchema = {
     title: 'Function'
 } as const;
 
-export const FunctionCallSchema = {
+export const FunctionCall_InputSchema = {
+    properties: {
+        arguments: {
+            type: 'string',
+            title: 'Arguments'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        }
+    },
+    type: 'object',
+    required: ['arguments', 'name'],
+    title: 'FunctionCall'
+} as const;
+
+export const FunctionCall_OutputSchema = {
     properties: {
         arguments: {
             type: 'string',
@@ -6106,7 +6169,6 @@ export const FunctionDefinitionSchema = {
             title: 'Strict'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['name'],
     title: 'FunctionDefinition'
@@ -7106,8 +7168,7 @@ export const ImageGenerationRequestSchema = {
         model: {
             anyOf: [
                 {
-                    type: 'string',
-                    enum: ['dall-e-2', 'dall-e-3']
+                    type: 'string'
                 },
                 {
                     type: 'null'
@@ -7115,7 +7176,7 @@ export const ImageGenerationRequestSchema = {
             ],
             title: 'Model',
             description: 'The model to use for image generation. Defaults to dall-e-2.',
-            default: 'dall-e-3'
+            default: 'image-generation'
         },
         n: {
             anyOf: [
@@ -7195,7 +7256,6 @@ export const ImageURLSchema = {
             title: 'Detail'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['url'],
     title: 'ImageURL'
@@ -7603,7 +7663,6 @@ export const InputAudioSchema = {
             title: 'Format'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['data', 'format'],
     title: 'InputAudio'
@@ -8483,7 +8542,6 @@ export const JSONSchemaSchema = {
             title: 'Strict'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['name'],
     title: 'JSONSchema'
@@ -10033,7 +10091,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1762879556
+            default: 1764051229
         },
         owned_by: {
             type: 'string',
@@ -12543,7 +12601,6 @@ export const ResponseFormatJSONObjectSchema = {
             title: 'Type'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['type'],
     title: 'ResponseFormatJSONObject'
@@ -12560,7 +12617,6 @@ export const ResponseFormatJSONSchemaSchema = {
             title: 'Type'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['json_schema', 'type'],
     title: 'ResponseFormatJSONSchema'
@@ -12574,7 +12630,6 @@ export const ResponseFormatTextSchema = {
             title: 'Type'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['type'],
     title: 'ResponseFormatText'
@@ -15989,7 +16044,6 @@ export const openai__types__chat__chat_completion_message_custom_tool_call_param
             title: 'Name'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['input', 'name'],
     title: 'Custom'
@@ -16006,7 +16060,6 @@ export const openai__types__chat__chat_completion_message_function_tool_call_par
             title: 'Name'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['arguments', 'name'],
     title: 'Function'
@@ -16019,7 +16072,6 @@ export const openai__types__chat__chat_completion_named_tool_choice_custom_param
             title: 'Name'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['name'],
     title: 'Custom'
@@ -16032,7 +16084,6 @@ export const openai__types__chat__chat_completion_named_tool_choice_param__Funct
             title: 'Name'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['name'],
     title: 'Function'
@@ -16054,7 +16105,6 @@ export const openai__types__chat__completion_create_params__FunctionSchema = {
             title: 'Parameters'
         }
     },
-    additionalProperties: true,
     type: 'object',
     required: ['name'],
     title: 'Function'

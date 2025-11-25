@@ -1,5 +1,15 @@
 from typing import Annotated
 
+from fastapi import Depends, HTTPException, Security
+from nats.aio.client import Client as NATS
+
+from aihub_api.i18n.dependencies.use_locale import use_locale
+from aihub_api.pagination.type.PageNumber import PageNumber
+from aihub_api.pagination.type.PageSize import PageSize
+from aihub_api.routes.agent.AgentService import AgentService
+from aihub_api.routes.agent.dto.AgentConfigurationDataDTO import AgentConfigurationDataDTO
+from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
+from aihub_api.routes.thread.dto.PaginatedThreadsResponse import PaginatedThreadsResponse
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.access.AccessLevel import AccessLevel
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -8,15 +18,6 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
-from fastapi import Depends, HTTPException, Security
-from nats.aio.client import Client as NATS
-
-from aihub_api.i18n.dependencies.use_locale import use_locale
-from aihub_api.pagination.type.PageNumber import PageNumber
-from aihub_api.pagination.type.PageSize import PageSize
-from aihub_api.routes.agent.AgentService import AgentService
-from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
-from aihub_api.routes.thread.dto.PaginatedThreadsResponse import PaginatedThreadsResponse
 
 
 class AgentController(Controller):
@@ -148,6 +149,29 @@ class AgentController(Controller):
 
             return PaginatedThreadsResponse(
                 threads=threads, total=total, page=page, page_size=page_size, total_pages=total_pages
+            )
+
+        return self
+
+    def get_agent_configuration(self, route: str = "/{agent_class}/{agent_id}/configuration") -> "AgentController":
+        @self.router.get(route, tags=self.tags)
+        async def get_agent_configuration(
+            agent_class: str,
+            agent_id: str,
+            _: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.user.agent.{agent_class}.{agent_id}"))
+            ],
+        ) -> AgentConfigurationDataDTO:
+            """
+            Retrieve the current configuration data for a specific agent.
+            Returns the configuration values (not the form schema).
+            """
+            configuration = await AgentService.get_agent_configuration(agent_class, agent_id)
+
+            return AgentConfigurationDataDTO(
+                agent_class=agent_class,
+                agent_id=agent_id,
+                configuration=configuration,
             )
 
         return self

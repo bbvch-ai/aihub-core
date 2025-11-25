@@ -219,6 +219,12 @@ service:
 agent:
   title: "Agents"
   can_chat: "Can Chat"
+  navigation:
+    basic: "Overview"
+    workflow: "Workflow"
+    threads: "Threads"
+    configuration: "Configuration"
+    chat: "Chat"
   overview:
     startEvents: "Start Events"
     stopEvents: "Stop Events"
@@ -229,16 +235,16 @@ agent:
     status: "Status:"
     online: "Online"
     offline: "Offline"
+  configuration:
+    title: "Agent Configuration"
+    description: "Configure the runtime behavior and settings for this agent"
+    runtimeSettings: "Runtime Settings"
+    noConfiguration: "No configuration available for this agent"
   chat:
     title: "Start new Chat"
     placeholder: "Type the message you want to send to the Agent"
     createThreadAndSend: "Create Thread and Send"
     manuallyCreatedThread: "Manually created thread"
-  navigation:
-    basic: "Basic"
-    workflow: "Workflow"
-    threads: "Threads"
-    chat: "Chat"
   availableAgents: "Available Agents"
   list:
     name: "Name"

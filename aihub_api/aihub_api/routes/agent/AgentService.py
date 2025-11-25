@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from asyncio import sleep
-from typing import Annotated
+from typing import Annotated, Any
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -572,6 +572,29 @@ class AgentService:
             page_size=page_size,
             user_id=user_id,
         )
+
+    @staticmethod
+    async def get_agent_configuration(agent_class: str, agent_id: str) -> dict[str, Any]:
+        """
+        Retrieve the current configuration data for a specific agent.
+        Returns mock data for now until persistence is implemented.
+
+        Args:
+            agent_class: The agent's class identifier
+            agent_id: The agent's instance identifier
+
+        Returns:
+            Dictionary containing the agent's configuration values
+        """
+        # TODO: Replace with actual persistence layer to load saved configuration
+        # For now, return mock data that matches the form fields in AgentConfigDTO._generate_mock_form()
+        return {
+            "api_endpoint": "https://api.example.com/v1",
+            "max_retries": 3,
+            "temperature": 0.7,
+            "enable_caching": True,
+            "verbose_logging": False,
+        }
 
     @staticmethod
     def _clear_cache() -> None:
