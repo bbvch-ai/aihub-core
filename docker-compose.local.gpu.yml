@@ -99,7 +99,7 @@ services:
     restart: always
     command: >
       volume
-      -mserver="seaweedfs-master:9333"
+      -mserver="${SEAWEEDFS_MASTER_ENDPOINT}"
       -ip.bind=0.0.0.0
       -port=8080
       -max=100
@@ -121,7 +121,7 @@ services:
     restart: always
     command: >
       filer
-      -master="seaweedfs-master:9333"
+      -master="${SEAWEEDFS_MASTER_ENDPOINT}"
       -ip.bind=0.0.0.0
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-filer:/data
@@ -154,7 +154,7 @@ services:
 
       # S3 Service Configuration
       S3_PORT: "9000"
-      S3_FILER: "seaweedfs-filer:8888"
+      S3_FILER: "${SEAWEEDFS_FILER_ENDPOINT}"
       S3_BIND_IP: "0.0.0.0"
       S3_ALLOW_EMPTY_FOLDER: true
     depends_on:
@@ -199,7 +199,7 @@ services:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4181
       OAUTH2_PROXY_COOKIE_SECURE: False
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
-      OAUTH2_PROXY_UPSTREAMS: http://seaweedfs-filer:8888
+      OAUTH2_PROXY_UPSTREAMS: ${SEAWEEDFS_FILER_URL}
       OAUTH2_PROXY_ALLOWED_GROUPS: ${SEAWEEDFS_OAUTH_ALLOWED_GROUPS}
       OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
       OAUTH2_PROXY_SCOPE: openid email profile
@@ -210,7 +210,7 @@ services:
       OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET}
       OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
       OAUTH2_PROXY_EMAIL_DOMAINS: "*"
-      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: https://aiagentsstpublicblobs.blob.core.windows.net/logos/Bbv-Logo_farbig.png
+      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: ${OAUTH_CUSTOM_SIGN_IN_LOGO}
       OAUTH2_PROXY_REVERSE_PROXY: True
       OAUTH2_PROXY_REDIRECT_URL: https://datalake.${DOMAIN}
     depends_on:
@@ -265,8 +265,8 @@ services:
     security_opt:
       - seccomp:unconfined
     environment:
-      ETCD_ENDPOINTS: etcd:2379
-      MINIO_ADDRESS: seaweedfs-s3:9000
+      ETCD_ENDPOINTS: ${ETCD_ENDPOINTS}
+      MINIO_ADDRESS: ${SEAWEEDFS_S3_ENDPOINT}
       MINIO_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
       MINIO_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
     volumes:
@@ -293,7 +293,7 @@ services:
     depends_on:
       - milvus-standalone
     environment:
-      MILVUS_URL: milvus-standalone:19530
+      MILVUS_URL: ${MILVUS_HOST}:${MILVUS_PORT}
     healthcheck:
       test: ["NONE"]
     logging:
@@ -647,9 +647,9 @@ services:
       COHERE_API_KEY: ${COHERE_API_KEY}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       HUGGINGFACE_API_KEY: ${HUGGINGFACE_API_KEY}
-      PRESIDIO_ANALYZER_API_BASE: http://presidio-analyzer:3000
-      PRESIDIO_ANONYMIZER_API_BASE: http://presidio-anonymizer:3000
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      PRESIDIO_ANALYZER_API_BASE: ${PRESIDIO_ANALYZER_API_BASE}
+      PRESIDIO_ANONYMIZER_API_BASE: ${PRESIDIO_ANONYMIZER_API_BASE}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: False
     volumes:
@@ -915,7 +915,7 @@ services:
       ENABLE_ADMIN_EXPORT: True
       ENABLE_ADMIN_CHAT_ACCESS: False
       SHOW_ADMIN_DETAILS: True
-      ADMIN_EMAIL: admin@ai-hub.bbv.ch
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
 
       # --- Code Execution ---
       CODE_EXECUTION_ENGINE: jupyter
@@ -957,7 +957,7 @@ services:
       WEB_SEARCH_CONCURRENT_REQUESTS: 6
       BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: True
       WEB_LOADER_ENGINE: playwright
-      PLAYWRIGHT_WS_URL: ws://playwright:3000
+      PLAYWRIGHT_WS_URL: ${PLAYWRIGHT_WS_URL}
       FILE_IMAGE_COMPRESSION_WIDTH: 796
       FILE_IMAGE_COMPRESSION_HEIGHT: 796
 
@@ -1052,7 +1052,7 @@ services:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
       OAUTH2_PROXY_COOKIE_SECURE: False
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
-      OAUTH2_PROXY_UPSTREAMS: http://dagster-webserver:3000
+      OAUTH2_PROXY_UPSTREAMS: ${DAGSTER_WEBSERVER_URL}
       OAUTH2_PROXY_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH2_PROXY_PROVIDER: oidc
       OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
@@ -1065,7 +1065,7 @@ services:
       OAUTH2_PROXY_SCOPE: openid email profile
       OAUTH2_PROXY_ALLOWED_GROUPS: ${DAGSTER_OAUTH_ALLOWED_GROUPS}
       OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
-      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: https://aiagentsstpublicblobs.blob.core.windows.net/logos/Bbv-Logo_farbig.png
+      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: ${OAUTH_CUSTOM_SIGN_IN_LOGO}
     logging:
       driver: json-file
       options:
@@ -1224,10 +1224,10 @@ services:
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Mongo DB
-      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017
+      MONGO_CONNECTION_STRING: ${MONGO_CONNECTION_STRING}
 
       # MILVUS
-      MILVUS_URL: http://milvus-standalone
+      MILVUS_URL: ${MILVUS_ENDPOINT}
       MILVUS_DIMENSION: 3072
 
       # S3 Access connection
@@ -1238,16 +1238,16 @@ services:
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
       # Phoenix
-      PHOENIX_ENDPOINT: http://phoenix:6006
+      PHOENIX_ENDPOINT: ${PHOENIX_ENDPOINT}
 
       # NATs
-      NATS_ENDPOINT: nats://nats:4222
+      NATS_ENDPOINT: ${NATS_ENDPOINT}
 
       # REDIS
-      REDIS_URL: redis://valkey:6379
+      REDIS_URL: ${VALKEY_ENDPOINT}
 
       # Jupyter (for open-webui code interpreter)
-      JUPYTER_URL: http://jupyter:8888
+      JUPYTER_URL: ${JUPYTER_URL}
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
 
       # Docling
@@ -1259,7 +1259,7 @@ services:
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
       OTEL_RESOURCE_SERVICE_NAME: api
       OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
@@ -1345,14 +1345,14 @@ services:
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # NATs
-      NATS_ENDPOINT: nats://nats:4222
+      NATS_ENDPOINT: ${NATS_ENDPOINT}
 
       # REDIS
-      REDIS_URL: redis://valkey:6379
+      REDIS_URL: ${VALKEY_ENDPOINT}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
       OTEL_RESOURCE_SERVICE_NAME: api
       OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
@@ -1374,28 +1374,28 @@ services:
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Mongo DB
-      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017
+      MONGO_CONNECTION_STRING: ${MONGO_CONNECTION_STRING}
 
       # MILVUS
-      MILVUS_URL: http://milvus-standalone
+      MILVUS_URL: ${MILVUS_ENDPOINT}
       MILVUS_DIMENSION: 3072
 
       # S3 Access connection
-      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_ENDPOINT: ${S3_STORAGE_ENDPOINT_INTERNAL}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
       # NATs
-      NATS_ENDPOINT: nats://nats:4222
+      NATS_ENDPOINT: ${NATS_ENDPOINT}
 
       # REDIS
-      REDIS_URL: redis://valkey:6379
+      REDIS_URL: ${VALKEY_ENDPOINT}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
       OTEL_RESOURCE_SERVICE_NAME: api
       OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
@@ -1414,7 +1414,7 @@ services:
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
 
       # NATS
-      NATS_ENDPOINT: "nats://nats:4222"
+      NATS_ENDPOINT: "${NATS_ENDPOINT}"
 
       # LiteLLM Proxy Server Settings
       LITE_LLM_PROXY_BASE_URL: ${LITE_LLM_PROXY_BASE_URL}
@@ -1432,17 +1432,17 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
       # Mongo DB
-      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017
+      MONGO_CONNECTION_STRING: ${MONGO_CONNECTION_STRING}
 
       # MILVUS
-      MILVUS_URL: http://milvus-standalone
+      MILVUS_URL: ${MILVUS_ENDPOINT}
       MILVUS_DIMENSION: 3072
 
       # DAGSTER
       DAGSTER_HOME: /dagster_home
 
       # S3 Access connection (access and secret key same as SeaweedFS)
-      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_ENDPOINT: ${S3_STORAGE_ENDPOINT_INTERNAL}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
@@ -1463,8 +1463,8 @@ services:
       - nats
       - traefik
     environment:
-      NATS_ENDPOINT: nats://nats:4222
-      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017
+      NATS_ENDPOINT: ${NATS_ENDPOINT}
+      MONGO_CONNECTION_STRING: ${MONGO_CONNECTION_STRING}
       LOG_LEVEL: ${LOG_LEVEL}
       NUM_WORKERS: 1
       AIHUB_API_VERSION: ${AIHUB_API_VERSION}
