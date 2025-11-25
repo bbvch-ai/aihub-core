@@ -1,6 +1,7 @@
 import logging
 
 import boto3
+from botocore.config import Config
 from botocore.exceptions import ClientError
 
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
@@ -39,6 +40,9 @@ class S3AnonymousFileAccessService:
 
         Uses configuration from S3StorageSettings to set up the boto3 client with
         appropriate endpoint URL, credentials, and region settings.
+
+        Signature v4 is explicitly configured for consistent URL encoding behavior
+        with presigned URLs, particularly for filenames containing spaces.
         """
         return boto3.client(
             "s3",
@@ -46,6 +50,7 @@ class S3AnonymousFileAccessService:
             aws_access_key_id=self._s3_config.ACCESS_KEY,
             aws_secret_access_key=self._s3_config.SECRET_KEY.get_secret_value(),
             region_name=self._s3_config.REGION,
+            config=Config(signature_version="s3v4"),
         )
 
     @trace_fn
