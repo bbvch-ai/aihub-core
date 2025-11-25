@@ -1472,7 +1472,7 @@ services:
       AIHUB_CREATE_DEFAULT_ROLES: True
 
       # LiteLLM Access
-      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_BASE_URL: ${LITE_LLM_PROXY_BASE_URL}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Mongo DB
@@ -1483,7 +1483,7 @@ services:
       MILVUS_DIMENSION: 3072
 
       # S3 Access connection
-      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_ENDPOINT: ${S3_STORAGE_ENDPOINT}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
@@ -1620,7 +1620,7 @@ services:
     {%- endif %}
     environment:
       # LiteLLM Access
-      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_BASE_URL: ${LITE_LLM_PROXY_BASE_URL}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # NATs
@@ -1656,7 +1656,7 @@ services:
     {%- endif %}
     environment:
       # LiteLLM Access
-      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_BASE_URL: ${LITE_LLM_PROXY_BASE_URL}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Mongo DB
@@ -1710,15 +1710,15 @@ services:
       NATS_ENDPOINT: "nats://nats:4222"
 
       # LiteLLM Proxy Server Settings
-      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_BASE_URL: ${LITE_LLM_PROXY_BASE_URL}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Docling
-      DOCLING_API_ENDPOINT: http://docling:5001/v1alpha/convert/source
-      DOCLING_API_TIMEOUT: 600
-      DOCLING_HOSTED_VLM_API_ENDPOINT: http://litellm:4000
+      DOCLING_API_ENDPOINT: ${DOCLING_API_ENDPOINT}
+      DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
+      DOCLING_HOSTED_VLM_API_ENDPOINT: ${DOCLING_HOSTED_VLM_API_ENDPOINT}
       DOCLING_HOSTED_VLM_API_KEY: ${LITELLM_MASTER_KEY}
-      DOCLING_VLM_MODEL_NAME: text-generation/ocr
+      DOCLING_VLM_MODEL_NAME: ${DOCLING_VLM_MODEL_NAME}
 
       # Postgres
       POSTGRES_USER: ${POSTGRES_USER}
