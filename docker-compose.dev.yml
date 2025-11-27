@@ -768,6 +768,29 @@ services:
         max-size: 10m
         max-file: 2
 
+  openwebui-init:
+    container_name: openwebui-init
+    image: ghcr.io/bbvch-ai/aihub-core/postgres:17
+    restart: "no"
+    depends_on:
+      open-webui:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: openwebui
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./configs/openwebui/init-functions.sh:/init-functions.sh:ro
+      - ./configs/openwebui/functions:/functions:ro
+    entrypoint: ["/bin/sh", "/init-functions.sh"]
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+
   
 
   
