@@ -77,7 +77,9 @@ class DoclingLoader(BaseReader):
         extra_info: dict | None = None,
     ) -> list[Document]:
         """Process the Docling API response into Document objects."""
-        doc = DoclingDocument(**answer["document"]["json_content"])
+        json_content = answer["document"]["json_content"]
+        _fix_null_meta_fields(json_content)
+        doc = DoclingDocument(**json_content)
         markdown_content = doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
 
         if len(doc.pictures) > 0:
@@ -241,3 +243,20 @@ def convert_tables_to_html(markdown_text: str, tables: list[TableItem]):
         html_table = table.export_to_dataframe().to_html(index=False)
         markdown_text = markdown_text.replace(md_table, html_table, 1)
     return markdown_text
+
+
+def _fix_null_meta_fields(data: dict) -> None:
+    """Fix null meta fields in Docling JSON content.
+
+    Works around a bug in docling-core's _migrate_annotations_to_meta validator
+    which uses setdefault() to initialize meta, but setdefault() doesn't replace
+    explicit null values. This causes AttributeError when meta is null and the
+    validator tries to call meta.setdefault().
+    """
+    if data.get("meta") is None:
+        data["meta"] = {}
+
+    for key in ("pictures", "tables"):
+        for item in data.get(key, []):
+            if item.get("meta") is None:
+                item["meta"] = {}
