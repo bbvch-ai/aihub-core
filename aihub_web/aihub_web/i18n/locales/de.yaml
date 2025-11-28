@@ -506,3 +506,26 @@ bar:
 
 process:
   title: "Prozesse"
+
+memory:
+  title: "Erinnerungen"
+  graph:
+    title: "Wissensgraph"
+  list:
+    title: "Erinnerungsliste"
+  detail:
+    title: "Erinnerungsdetails"
+  update:
+    success:
+      title: "Erfolg"
+      message: "Erinnerung erfolgreich aktualisiert"
+    error:
+      title: "Aktualisierung fehlgeschlagen"
+      message: "Erinnerung konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut."
+  delete:
+    success:
+      title: "Erfolg"
+      message: "Erinnerung erfolgreich gelöscht"
+    error:
+      title: "Löschen fehlgeschlagen"
+      message: "Erinnerung konnte nicht gelöscht werden. Bitte versuchen Sie es erneut."

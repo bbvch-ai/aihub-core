@@ -1,5 +1,6 @@
 # ruff: noqa: E402
 from aihub_api.routes.docling.DoclingController import DoclingController
+from aihub_api.routes.memory import MemoryController
 
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
 
@@ -111,6 +112,12 @@ async def main():
         .get_anonymous_file_url()
         .get_anonymous_file_redirect(),
         NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
+        MemoryController(auth=auth)
+        .get_memories()
+        .search_memories()
+        .delete_memory()
+        .delete_all_memories()
+        .update_memory(),
         DoclingController(auth=auth).parse_document(),
     )
 

@@ -527,3 +527,26 @@ process:
       in_progress: "In Progress"
       done: "Done"
       steps: "Fortschritt"
+
+memory:
+  title: "Memories"
+  graph:
+    title: "Knowledge Graph"
+  list:
+    title: "Memory List"
+  detail:
+    title: "Memory Details"
+  update:
+    success:
+      title: "Success"
+      message: "Memory updated successfully"
+    error:
+      title: "Update Failed"
+      message: "Failed to update memory. Please try again."
+  delete:
+    success:
+      title: "Success"
+      message: "Memory deleted successfully"
+    error:
+      title: "Delete Failed"
+      message: "Failed to delete memory. Please try again."

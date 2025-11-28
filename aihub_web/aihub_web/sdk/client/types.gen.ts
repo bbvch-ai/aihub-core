@@ -3460,6 +3460,35 @@ export type DatePickerWritable = {
 };
 
 /**
+ * DeleteAllMemoriesResponse
+ * Response for deleting all memories.
+ */
+export type DeleteAllMemoriesResponse = {
+    /**
+     * Status
+     * Deletion status.
+     */
+    status: string;
+};
+
+/**
+ * DeleteMemoryResponse
+ * Response for deleting a single memory.
+ */
+export type DeleteMemoryResponse = {
+    /**
+     * Status
+     * Deletion status.
+     */
+    status: string;
+    /**
+     * Memory Id
+     * ID of the deleted memory.
+     */
+    memory_id: string;
+};
+
+/**
  * DeleteRoleResponse
  * Confirmation response for a successful deletion.
  */
@@ -3662,6 +3691,32 @@ export type DocumentBlock = {
      * Document Mimetype
      */
     document_mimetype?: string | null;
+};
+
+/**
+ * DocumentConversionMetadata
+ */
+export type DocumentConversionMetadata = {
+    /**
+     * Filename
+     * Original filename of the converted document
+     */
+    filename: string;
+};
+
+/**
+ * DocumentConversionResponse
+ */
+export type DocumentConversionResponse = {
+    /**
+     * Page Content
+     * Markdown content extracted from the document
+     */
+    page_content: string;
+    /**
+     * Metadata about the converted document
+     */
+    metadata: DocumentConversionMetadata;
 };
 
 /**
@@ -5598,7 +5653,7 @@ export type ImageGenerationRequest = {
      * Model
      * The model to use for image generation. Defaults to dall-e-2.
      */
-    model?: ('dall-e-2' | 'dall-e-3') | null;
+    model?: string | null;
     /**
      * N
      */
@@ -5619,7 +5674,7 @@ export type ImageGenerationRequest = {
      * Style
      */
     style?: ('vivid' | 'natural') | null;
-    [key: string]: unknown | string | (('dall-e-2' | 'dall-e-3') | null) | (number | null) | (('standard' | 'hd') | null) | (('url' | 'b64_json') | null) | (('256x256' | '512x512' | '1024x1024' | '1792x1024' | '1024x1792') | null) | (('vivid' | 'natural') | null) | undefined;
+    [key: string]: unknown | string | (string | null) | (number | null) | (('standard' | 'hd') | null) | (('url' | 'b64_json') | null) | (('256x256' | '512x512' | '1024x1024' | '1792x1024' | '1024x1792') | null) | (('vivid' | 'natural') | null) | undefined;
 };
 
 /**
@@ -7836,6 +7891,119 @@ export type Logprob = {
      */
     logprob?: number | null;
     [key: string]: unknown | (string | null) | (Array<number> | null) | (number | null) | undefined;
+};
+
+/**
+ * MemoriesResponse
+ * Response for listing user memories with full knowledge graph.
+ */
+export type MemoriesResponse = {
+    /**
+     * Total
+     * Total number of memories returned. Respects limit and filters. Does not include graph relation count.
+     */
+    total: number;
+    /**
+     * Memories
+     * List of memory items. Limited by the 'limit' query parameter and filtered by user/agent.
+     */
+    memories: Array<MemoryDto>;
+    /**
+     * Relations
+     * FULL knowledge graph relations for the user. Includes all graph triples regardless of limit/filters for complete graph visualization.
+     */
+    relations: Array<MemoryRelationDto>;
+};
+
+/**
+ * MemoryDTO
+ * Data Transfer Object for a single memory item.
+ */
+export type MemoryDto = {
+    /**
+     * Id
+     * The unique identifier of the memory.
+     */
+    id: string;
+    /**
+     * Memory
+     * The memory content deduced from the text data.
+     */
+    memory: string;
+    /**
+     * Score
+     * The relevance score of the memory (present for search results, null otherwise).
+     */
+    score?: number | null;
+    /**
+     * Created At
+     * ISO timestamp when the memory was created.
+     */
+    created_at: string;
+    /**
+     * User Id
+     * The unique identifier of the user who owns this memory.
+     */
+    user_id?: string | null;
+    /**
+     * Agent Id
+     * The unique identifier of the agent that created this memory.
+     */
+    agent_id?: string | null;
+    /**
+     * Thread Id
+     * The unique identifier of the thread in which this memory was created.
+     */
+    thread_id?: string | null;
+};
+
+/**
+ * MemoryRelationDTO
+ * Data Transfer Object for a knowledge graph relation (triple).
+ */
+export type MemoryRelationDto = {
+    /**
+     * Source
+     * The source entity in the knowledge graph.
+     */
+    source: string;
+    /**
+     * Relation
+     * The relationship type between source and target entities.
+     */
+    relation: string;
+    /**
+     * Target
+     * The target entity in the knowledge graph.
+     */
+    target: string;
+};
+
+/**
+ * MemorySearchResponse
+ * Response for searching memories with scored results and matching graph relations.
+ */
+export type MemorySearchResponse = {
+    /**
+     * Query
+     * The original search query used.
+     */
+    query: string;
+    /**
+     * Total
+     * Total number of search results matching the query.
+     */
+    total: number;
+    /**
+     * Memories
+     * List of memories matching the search query, ordered by relevance score. Each memory includes a score field indicating relevance to the query.
+     */
+    memories: Array<MemoryDto>;
+    /**
+     * Relations
+     * Knowledge graph relations involving entities from the search results. Used for highlighting matching triples in the graph visualization. Only includes relations where both source AND target appear in the search results.
+     */
+    relations: Array<MemoryRelationDto>;
 };
 
 /**
@@ -12802,6 +12970,35 @@ export type TranscriptionWord = {
 };
 
 /**
+ * UpdateMemoryRequest
+ * Request for updating a memory's content.
+ */
+export type UpdateMemoryRequest = {
+    /**
+     * Data
+     * New content to update the memory with.
+     */
+    data: string;
+};
+
+/**
+ * UpdateMemoryResponse
+ * Response for updating a memory.
+ */
+export type UpdateMemoryResponse = {
+    /**
+     * Status
+     * Update status.
+     */
+    status: string;
+    /**
+     * Memory Id
+     * ID of the updated memory.
+     */
+    memory_id: string;
+};
+
+/**
  * UpdateNamespaceRequest
  */
 export type UpdateNamespaceRequest = {
@@ -13022,7 +13219,7 @@ export type UserIdentity = {
  *
  * ### Why UserMessageEvent?
  * While `StartEvent` influences the workflow’s starting point and `DisplayEvent` represents user-facing
- * output, a `UserMessageEvent` marks a workflow start initiated by a user’s input. This is common in chat
+ * output, a `UserMessageEvent` marks afChatMessage workflow start initiated by a user’s input. This is common in chat
  * interfaces, voice assistants, or interactive dashboards, where a user’s message serves as both:
  * - A display event (since it may appear in the UI history).
  * - A control event triggering workflow execution from a particular starting step.
@@ -13107,7 +13304,7 @@ export type UserMessageEventReadable = {
  *
  * ### Why UserMessageEvent?
  * While `StartEvent` influences the workflow’s starting point and `DisplayEvent` represents user-facing
- * output, a `UserMessageEvent` marks a workflow start initiated by a user’s input. This is common in chat
+ * output, a `UserMessageEvent` marks afChatMessage workflow start initiated by a user’s input. This is common in chat
  * interfaces, voice assistants, or interactive dashboards, where a user’s message serves as both:
  * - A display event (since it may appear in the UI history).
  * - A control event triggering workflow execution from a particular starting step.
@@ -15473,6 +15670,207 @@ export type UpdateNotificationResponses = {
 };
 
 export type UpdateNotificationResponse = UpdateNotificationResponses[keyof UpdateNotificationResponses];
+
+export type DeleteAllMemoriesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Agent Id
+         * Filter by agent ID
+         */
+        agent_id?: string | null;
+        /**
+         * Thread Id
+         * Filter by thread ID
+         */
+        thread_id?: string | null;
+    };
+    url: '/memories';
+};
+
+export type DeleteAllMemoriesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteAllMemoriesError = DeleteAllMemoriesErrors[keyof DeleteAllMemoriesErrors];
+
+export type DeleteAllMemoriesResponses = {
+    /**
+     * Successful Response
+     */
+    200: DeleteAllMemoriesResponse;
+};
+
+export type DeleteAllMemoriesResponse2 = DeleteAllMemoriesResponses[keyof DeleteAllMemoriesResponses];
+
+export type GetMemoriesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Limit
+         * Maximum number of memories to return
+         */
+        limit?: number;
+        /**
+         * Agent Id
+         * Filter by agent ID
+         */
+        agent_id?: string | null;
+        /**
+         * Thread Id
+         * Filter by thread ID
+         */
+        thread_id?: string | null;
+    };
+    url: '/memories';
+};
+
+export type GetMemoriesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetMemoriesError = GetMemoriesErrors[keyof GetMemoriesErrors];
+
+export type GetMemoriesResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoriesResponse;
+};
+
+export type GetMemoriesResponse = GetMemoriesResponses[keyof GetMemoriesResponses];
+
+export type SearchMemoriesData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Query
+         * Search query for semantic search
+         */
+        query: string;
+        /**
+         * Limit
+         * Maximum number of results to return
+         */
+        limit?: number;
+        /**
+         * Agent Id
+         * Filter by agent ID
+         */
+        agent_id?: string | null;
+        /**
+         * Thread Id
+         * Filter by thread ID
+         */
+        thread_id?: string | null;
+    };
+    url: '/memories/search';
+};
+
+export type SearchMemoriesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SearchMemoriesError = SearchMemoriesErrors[keyof SearchMemoriesErrors];
+
+export type SearchMemoriesResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemorySearchResponse;
+};
+
+export type SearchMemoriesResponse = SearchMemoriesResponses[keyof SearchMemoriesResponses];
+
+export type DeleteMemoryData = {
+    body?: never;
+    path: {
+        /**
+         * Memory Id
+         * Memory ID to delete
+         */
+        memory_id: string;
+    };
+    query?: never;
+    url: '/memories/{memory_id}';
+};
+
+export type DeleteMemoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteMemoryError = DeleteMemoryErrors[keyof DeleteMemoryErrors];
+
+export type DeleteMemoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: DeleteMemoryResponse;
+};
+
+export type DeleteMemoryResponse2 = DeleteMemoryResponses[keyof DeleteMemoryResponses];
+
+export type UpdateMemoryData = {
+    body: UpdateMemoryRequest;
+    path: {
+        /**
+         * Memory Id
+         * Memory ID to update
+         */
+        memory_id: string;
+    };
+    query?: never;
+    url: '/memories/{memory_id}';
+};
+
+export type UpdateMemoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateMemoryError = UpdateMemoryErrors[keyof UpdateMemoryErrors];
+
+export type UpdateMemoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: UpdateMemoryResponse;
+};
+
+export type UpdateMemoryResponse2 = UpdateMemoryResponses[keyof UpdateMemoryResponses];
+
+export type ProcessDocumentData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/docling/process';
+};
+
+export type ProcessDocumentResponses = {
+    /**
+     * Successful Response
+     */
+    200: DocumentConversionResponse;
+};
+
+export type ProcessDocumentResponse = ProcessDocumentResponses[keyof ProcessDocumentResponses];
 
 export type ClientOptions = {
     baseURL: `${string}://${string}/api/v1` | (string & {});

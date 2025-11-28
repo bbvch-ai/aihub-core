@@ -4456,6 +4456,39 @@ export const DatePickerSchema = {
     description: 'https://formkit-primevue.netlify.app/inputs/DatePicker'
 } as const;
 
+export const DeleteAllMemoriesResponseSchema = {
+    properties: {
+        status: {
+            type: 'string',
+            title: 'Status',
+            description: 'Deletion status.'
+        }
+    },
+    type: 'object',
+    required: ['status'],
+    title: 'DeleteAllMemoriesResponse',
+    description: 'Response for deleting all memories.'
+} as const;
+
+export const DeleteMemoryResponseSchema = {
+    properties: {
+        status: {
+            type: 'string',
+            title: 'Status',
+            description: 'Deletion status.'
+        },
+        memory_id: {
+            type: 'string',
+            title: 'Memory Id',
+            description: 'ID of the deleted memory.'
+        }
+    },
+    type: 'object',
+    required: ['status', 'memory_id'],
+    title: 'DeleteMemoryResponse',
+    description: 'Response for deleting a single memory.'
+} as const;
+
 export const DeleteRoleResponseSchema = {
     properties: {
         detail: {
@@ -4724,6 +4757,36 @@ export const DocumentBlockSchema = {
     type: 'object',
     title: 'DocumentBlock',
     description: 'A representation of a document to directly pass to the LLM.'
+} as const;
+
+export const DocumentConversionMetadataSchema = {
+    properties: {
+        filename: {
+            type: 'string',
+            title: 'Filename',
+            description: 'Original filename of the converted document'
+        }
+    },
+    type: 'object',
+    required: ['filename'],
+    title: 'DocumentConversionMetadata'
+} as const;
+
+export const DocumentConversionResponseSchema = {
+    properties: {
+        page_content: {
+            type: 'string',
+            title: 'Page Content',
+            description: 'Markdown content extracted from the document'
+        },
+        metadata: {
+            '$ref': '#/components/schemas/DocumentConversionMetadata',
+            description: 'Metadata about the converted document'
+        }
+    },
+    type: 'object',
+    required: ['page_content', 'metadata'],
+    title: 'DocumentConversionResponse'
 } as const;
 
 export const DocumentDTOSchema = {
@@ -7106,8 +7169,7 @@ export const ImageGenerationRequestSchema = {
         model: {
             anyOf: [
                 {
-                    type: 'string',
-                    enum: ['dall-e-2', 'dall-e-3']
+                    type: 'string'
                 },
                 {
                     type: 'null'
@@ -7115,7 +7177,7 @@ export const ImageGenerationRequestSchema = {
             ],
             title: 'Model',
             description: 'The model to use for image generation. Defaults to dall-e-2.',
-            default: 'dall-e-3'
+            default: 'image-generation'
         },
         n: {
             anyOf: [
@@ -9645,6 +9707,167 @@ export const LogprobSchema = {
     title: 'Logprob'
 } as const;
 
+export const MemoriesResponseSchema = {
+    properties: {
+        total: {
+            type: 'integer',
+            title: 'Total',
+            description: 'Total number of memories returned. Respects limit and filters. Does not include graph relation count.'
+        },
+        memories: {
+            items: {
+                '$ref': '#/components/schemas/MemoryDTO'
+            },
+            type: 'array',
+            title: 'Memories',
+            description: "List of memory items. Limited by the 'limit' query parameter and filtered by user/agent."
+        },
+        relations: {
+            items: {
+                '$ref': '#/components/schemas/MemoryRelationDTO'
+            },
+            type: 'array',
+            title: 'Relations',
+            description: 'FULL knowledge graph relations for the user. Includes all graph triples regardless of limit/filters for complete graph visualization.'
+        }
+    },
+    type: 'object',
+    required: ['total', 'memories', 'relations'],
+    title: 'MemoriesResponse',
+    description: 'Response for listing user memories with full knowledge graph.'
+} as const;
+
+export const MemoryDTOSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'The unique identifier of the memory.'
+        },
+        memory: {
+            type: 'string',
+            title: 'Memory',
+            description: 'The memory content deduced from the text data.'
+        },
+        score: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Score',
+            description: 'The relevance score of the memory (present for search results, null otherwise).'
+        },
+        created_at: {
+            type: 'string',
+            title: 'Created At',
+            description: 'ISO timestamp when the memory was created.'
+        },
+        user_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'User Id',
+            description: 'The unique identifier of the user who owns this memory.'
+        },
+        agent_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Agent Id',
+            description: 'The unique identifier of the agent that created this memory.'
+        },
+        thread_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Thread Id',
+            description: 'The unique identifier of the thread in which this memory was created.'
+        }
+    },
+    type: 'object',
+    required: ['id', 'memory', 'created_at'],
+    title: 'MemoryDTO',
+    description: 'Data Transfer Object for a single memory item.'
+} as const;
+
+export const MemoryRelationDTOSchema = {
+    properties: {
+        source: {
+            type: 'string',
+            title: 'Source',
+            description: 'The source entity in the knowledge graph.'
+        },
+        relation: {
+            type: 'string',
+            title: 'Relation',
+            description: 'The relationship type between source and target entities.'
+        },
+        target: {
+            type: 'string',
+            title: 'Target',
+            description: 'The target entity in the knowledge graph.'
+        }
+    },
+    type: 'object',
+    required: ['source', 'relation', 'target'],
+    title: 'MemoryRelationDTO',
+    description: 'Data Transfer Object for a knowledge graph relation (triple).'
+} as const;
+
+export const MemorySearchResponseSchema = {
+    properties: {
+        query: {
+            type: 'string',
+            title: 'Query',
+            description: 'The original search query used.'
+        },
+        total: {
+            type: 'integer',
+            title: 'Total',
+            description: 'Total number of search results matching the query.'
+        },
+        memories: {
+            items: {
+                '$ref': '#/components/schemas/MemoryDTO'
+            },
+            type: 'array',
+            title: 'Memories',
+            description: 'List of memories matching the search query, ordered by relevance score. Each memory includes a score field indicating relevance to the query.'
+        },
+        relations: {
+            items: {
+                '$ref': '#/components/schemas/MemoryRelationDTO'
+            },
+            type: 'array',
+            title: 'Relations',
+            description: 'Knowledge graph relations involving entities from the search results. Used for highlighting matching triples in the graph visualization. Only includes relations where both source AND target appear in the search results.'
+        }
+    },
+    type: 'object',
+    required: ['query', 'total', 'memories', 'relations'],
+    title: 'MemorySearchResponse',
+    description: 'Response for searching memories with scored results and matching graph relations.'
+} as const;
+
 export const MessageSchema = {
     properties: {
         role: {
@@ -10033,7 +10256,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1762879556
+            default: 1764355122
         },
         owned_by: {
             type: 'string',
@@ -15325,6 +15548,39 @@ export const TranscriptionWordSchema = {
     title: 'TranscriptionWord'
 } as const;
 
+export const UpdateMemoryRequestSchema = {
+    properties: {
+        data: {
+            type: 'string',
+            title: 'Data',
+            description: 'New content to update the memory with.'
+        }
+    },
+    type: 'object',
+    required: ['data'],
+    title: 'UpdateMemoryRequest',
+    description: "Request for updating a memory's content."
+} as const;
+
+export const UpdateMemoryResponseSchema = {
+    properties: {
+        status: {
+            type: 'string',
+            title: 'Status',
+            description: 'Update status.'
+        },
+        memory_id: {
+            type: 'string',
+            title: 'Memory Id',
+            description: 'ID of the updated memory.'
+        }
+    },
+    type: 'object',
+    required: ['status', 'memory_id'],
+    title: 'UpdateMemoryResponse',
+    description: 'Response for updating a memory.'
+} as const;
+
 export const UpdateNamespaceRequestSchema = {
     properties: {
         display_name: {
@@ -15771,7 +16027,7 @@ Used during deserialization to decide which subclass to instantiate.`,
 
 ### Why UserMessageEvent?
 While \`StartEvent\` influences the workflow’s starting point and \`DisplayEvent\` represents user-facing
-output, a \`UserMessageEvent\` marks a workflow start initiated by a user’s input. This is common in chat
+output, a \`UserMessageEvent\` marks afChatMessage workflow start initiated by a user’s input. This is common in chat
 interfaces, voice assistants, or interactive dashboards, where a user’s message serves as both:
 - A display event (since it may appear in the UI history).
 - A control event triggering workflow execution from a particular starting step.

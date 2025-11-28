@@ -102,6 +102,12 @@ class Mem0Service:
         memory = await self._memory.get(memory_id)
         return Memory.model_validate(memory)
 
+    async def delete_memory(self, memory_id: str):
+        await self._memory.delete(memory_id)
+
+    async def update_memory(self, memory_id: str, data: str):
+        await self._memory.update(memory_id=memory_id, data=data)
+
     async def search(
         self,
         query: str,

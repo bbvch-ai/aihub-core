@@ -505,3 +505,26 @@ bar:
 
 process:
   title: "Processus"
+
+memory:
+  title: "Souvenirs"
+  graph:
+    title: "Graphe de connaissances"
+  list:
+    title: "Liste des souvenirs"
+  detail:
+    title: "Détails du souvenir"
+  update:
+    success:
+      title: "Succès"
+      message: "Souvenir mis à jour avec succès"
+    error:
+      title: "Mise à jour échouée"
+      message: "Échec de la mise à jour du souvenir. Veuillez réessayer."
+  delete:
+    success:
+      title: "Succès"
+      message: "Souvenir supprimé avec succès"
+    error:
+      title: "Suppression échouée"
+      message: "Échec de la suppression du souvenir. Veuillez réessayer."

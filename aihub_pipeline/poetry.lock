@@ -54,7 +54,7 @@ llama-index-readers-file = "^0.4.1"
 llama-index-storage-docstore-mongodb = "^0.3.0"
 llama-index-vector-stores-milvus = "^0.8.7"
 lxml = "^5.4.0"
-mem0ai = {version = "^1.0.0", extras = ["graph"]}
+mem0ai = {version = "^1.0.1", extras = ["graph"]}
 mongoengine = "^0.29.1"
 nats-py = "^2.9.0"
 networkx = "^3.4.2"

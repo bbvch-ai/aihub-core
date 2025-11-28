@@ -505,3 +505,26 @@ bar:
 
 process:
   title: "Processi"
+
+memory:
+  title: "Ricordi"
+  graph:
+    title: "Grafo della conoscenza"
+  list:
+    title: "Elenco dei ricordi"
+  detail:
+    title: "Dettagli del ricordo"
+  update:
+    success:
+      title: "Successo"
+      message: "Ricordo aggiornato con successo"
+    error:
+      title: "Aggiornamento fallito"
+      message: "Impossibile aggiornare il ricordo. Riprova."
+  delete:
+    success:
+      title: "Successo"
+      message: "Ricordo eliminato con successo"
+    error:
+      title: "Eliminazione fallita"
+      message: "Impossibile eliminare il ricordo. Riprova."

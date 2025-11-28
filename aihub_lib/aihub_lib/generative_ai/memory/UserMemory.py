@@ -28,3 +28,9 @@ class UserMemory:
 
     async def get_all(self, agent_id: str | None = None) -> MemorySearchResult:
         return await self.mem0service.get_all(user_id=self.user_id, agent_id=agent_id)
+
+    async def delete_memory(self, memory_id: str):
+        return await self.mem0service.delete_memory(memory_id=memory_id)
+
+    async def update_memory(self, memory_id: str, data: str):
+        return await self.mem0service.update_memory(memory_id=memory_id, data=data)
