@@ -29,7 +29,7 @@ model_list:
 
   - model_name: text-generation/mini
     litellm_params:
-      model: azure/gpt-5-mini
+      model: azure/gpt-4o-mini
       api_base: os.environ/AZURE_OPENAI_BASE_URL
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2025-01-01-preview"
@@ -57,6 +57,7 @@ model_list:
       max_input_tokens: 8192
       max_output_tokens: 8192
       supports_function_calling: false
+      supports_vision: true
 
   # ===================================================================
   # Embedding Models

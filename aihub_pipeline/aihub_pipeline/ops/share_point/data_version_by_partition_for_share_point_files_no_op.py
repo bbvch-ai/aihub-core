@@ -16,6 +16,7 @@ def data_version_by_partition_for_share_point_files_no_op(
     asset_key: AssetKey,
     partition: DynamicPartitionsDefinition,
     share_point_files: list[MinimalSharePointFile],
+    max_partitions: int,
 ) -> DataVersionsByPartition:
     """Generates a dynamic partition key for each file in SharePoint, reports the SharePoint materialization
     and returns a DataVersion for each partition key.
@@ -25,6 +26,7 @@ def data_version_by_partition_for_share_point_files_no_op(
         context,
         partition.name,
         [share_point_file.id for share_point_file in share_point_files],
+        max_partitions,
     )
 
     if share_point_files:
