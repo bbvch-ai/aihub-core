@@ -85,6 +85,7 @@ def default_definitions(
     remove_job_hour: Annotated[int, "Hour to run daily removed documents cleanup job"] = 3,
     remove_job_minute: Annotated[int, "Minute to run daily removed documents cleanup job"] = 0,
     vector_store_dimensions: Annotated[int, "Embedding vector dimensions must match model"] = 3072,
+    max_partitions: Annotated[int, "Maximum number of partitions to create or delete at once"] = 1000,
 ) -> Definitions:
     """
     Creates a complete DataLake to vector store pipeline using local resources.
@@ -101,7 +102,7 @@ def default_definitions(
     nodes_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "nodes"])
     removed_documents_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "removed_documents"])
 
-    observable_asset = observable_data_lake_factory(data_lake_key, document_partitions)
+    observable_asset = observable_data_lake_factory(data_lake_key, document_partitions, max_partitions)
     assets = [
         observable_asset,
         removed_documents_factory(removed_documents_key, data_lake_key=data_lake_key),
@@ -181,6 +182,7 @@ def default_sharepoint_to_datalake_definitions(
     observe_job_minute: Annotated[int, "Minute to run daily SharePoint observation job"] = 0,
     remove_job_hour: Annotated[int, "Hour to run daily removed files cleanup job"] = 1,
     remove_job_minute: Annotated[int, "Minute to run daily removed files cleanup job"] = 0,
+    max_partitions: Annotated[int, "Maximum number of partitions to create or delete at once"] = 1000,
 ) -> Definitions:
     """
     Creates a SharePoint to DataLake pipeline using local S3-compatible storage.
@@ -202,7 +204,7 @@ def default_sharepoint_to_datalake_definitions(
         [datalake_container_name, "sharepoint_to_datalake", "removed_data_lake_files"]
     )
 
-    observable_sharepoint_asset = observable_share_point_factory(sharepoint_key, sharepoint_partitions)
+    observable_sharepoint_asset = observable_share_point_factory(sharepoint_key, sharepoint_partitions, max_partitions)
 
     assets = [
         observable_sharepoint_asset,
@@ -271,6 +273,7 @@ def default_local_filesystem_to_datalake_definitions(
     observe_job_minute: Annotated[int, "Minute to run daily filesystem observation job"] = 0,
     remove_job_hour: Annotated[int, "Hour to run daily removed files cleanup job"] = 1,
     remove_job_minute: Annotated[int, "Minute to run daily removed files cleanup job"] = 0,
+    max_partitions: Annotated[int, "Maximum number of partitions to create or delete at once"] = 1000,
 ) -> Definitions:
     """
     Creates a Local File System to DataLake pipeline using S3-compatible storage.
@@ -297,7 +300,11 @@ def default_local_filesystem_to_datalake_definitions(
     data_lake_files_key = AssetKey([datalake_container_name, "local_fs_to_datalake", "data_lake_files"])
     removed_data_lake_files_key = AssetKey([datalake_container_name, "local_fs_to_datalake", "removed_data_lake_files"])
 
-    observable_filesystem_asset = observable_local_file_system_factory(filesystem_key, filesystem_partitions)
+    observable_filesystem_asset = observable_local_file_system_factory(
+        filesystem_key,
+        filesystem_partitions,
+        max_partitions,
+    )
 
     assets = [
         observable_filesystem_asset,

@@ -39,7 +39,7 @@ CONTAINER_NAME = "playground"
 document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 
 # Create the pipeline assets using AI-Hub factories
-observable_asset = observable_data_lake_factory(DATA_LAKE_KEY, document_partitions)
+observable_asset = observable_data_lake_factory(DATA_LAKE_KEY, document_partitions, max_partitions=1000)
 
 assets = [
     # Observable asset watches the data lake for new/changed documents
