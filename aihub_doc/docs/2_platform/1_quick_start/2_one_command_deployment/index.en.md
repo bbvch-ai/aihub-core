@@ -212,7 +212,7 @@ ETCD_ENDPOINTS="etcd:2379"
 MILVUS_ENDPOINT="http://milvus-standalone"
 MILVUS_HOST="milvus-standalone"
 VALKEY_ENDPOINT="redis://valkey:6379"
-S3_STORAGE_ENDPOINT_INTERNAL="http://seaweedfs-s3:9000"
+S3_STORAGE_ENDPOINT="http://seaweedfs-s3:9000"
 
 # Database Ports
 POSTGRES_PORT="5432"
