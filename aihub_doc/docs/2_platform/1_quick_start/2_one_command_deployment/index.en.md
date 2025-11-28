@@ -222,7 +222,7 @@ OTEL_RESOURCE_SERVICE_VERSION="1.0.0"
 OTEL_RESOURCE_SERVICE_NAMESPACE="swiss-ai-hub"
 
 # Cloud OTEL (optional - for external observability platforms)
-OTEL_CLOUD_ENDPOINT=""
+OTEL_CLOUD_ENDPOINT="placeholder:1234"
 OTEL_CLOUD_HEADERS=""
 ```
 
