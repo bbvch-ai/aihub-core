@@ -91,18 +91,16 @@ model_list:
       api_base: http://vllm-docling:8182/v1
       api_key: XXX
 {%- else %}
-      model: azure/gpt-4o-mini
-      api_base: os.environ/AZURE_OPENAI_BASE_URL
-      api_key: os.environ/AZURE_OPENAI_KEY
-      api_version: "2025-01-01-preview"
+      model: litellm_proxy/granite-docling
+      api_base: https://docling.ai-agents.ch
+      api_key: os.environ/DOCLING_API_KEY
 {%- endif %}
     model_info:
       mode: chat
-{%- if gpu_enabled %}
       max_input_tokens: 8192
       max_output_tokens: 8192
       supports_function_calling: false
-{%- endif %}
+      supports_vision: true
 
   # ===================================================================
   # Embedding Models
