@@ -35,7 +35,7 @@ image_tags:
   docling: docling-serve-cpu:v1.8.0
   jupyter: minimal-notebook:notebook-7.0.6
   otel_collector: otel/opentelemetry-collector-contrib:latest
-  traefik: traefik:v3.4.4
+  traefik: traefik:v3.6.2
   postgres_ferretdb: postgres-documentdb:17.0.106.0-ferretdb-2.5.0
   docling_model_permission: alpine  # Init container
   presidio_analyzer: presidio-analyzer:2.2.359

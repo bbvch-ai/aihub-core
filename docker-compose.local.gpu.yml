@@ -1035,7 +1035,7 @@ services:
   # ===================================================================
   traefik:
     container_name: traefik
-    image: "ghcr.io/bbvch-ai/aihub-core/traefik:v3.4.4"
+    image: "ghcr.io/bbvch-ai/aihub-core/traefik:v3.6.2"
     restart: always
     healthcheck:
       test: [ "NONE" ]
