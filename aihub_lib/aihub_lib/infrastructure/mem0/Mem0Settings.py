@@ -28,9 +28,6 @@ class Mem0Settings(EnvironmentSettings):
         self,
         custom_fact_extraction_prompt: Annotated[str | None, "How LLM extracts facts from conversations"] = None,
         custom_update_memory_prompt: Annotated[str | None, "How LLM decides to ADD/UPDATE/DELETE memories"] = None,
-        custom_entity_extraction_prompt: Annotated[
-            str | None, "Controls entity/relationship extraction for Neo4j"
-        ] = None,
     ) -> MemoryConfig:
         litellm = LiteLLMProxySettings()
         milvus = MilvusSettings()
@@ -88,6 +85,5 @@ class Mem0Settings(EnvironmentSettings):
                     database="neo4j",
                     base_label=False,
                 ),
-                custom_prompt=custom_entity_extraction_prompt,
             ),
         )

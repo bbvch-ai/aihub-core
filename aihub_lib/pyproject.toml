@@ -63,7 +63,7 @@ opentelemetry-instrumentation-logging = "^0.58b0"
 opentelemetry-instrumentation-aiohttp-client = "^0.58b0"
 llama-index-postprocessor-cohere-rerank = "0.3.0"
 lxml = "^5.4.0"
-mem0ai = {extras = ["graph"], version = "^1.0.0"}
+mem0ai = {extras = ["graph"], version = "^1.0.1"}
 
 
 [tool.poetry.group.dev.dependencies]
