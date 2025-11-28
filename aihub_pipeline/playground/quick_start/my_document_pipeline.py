@@ -76,7 +76,7 @@ defs = Definitions(
         ),
         # AI models for embeddings and summaries
         "embedding_model": EmbeddingModelResource(
-            embedding_config=EmbeddingModelConfig(model_name="embedding/large"),
+            embedding_config=EmbeddingModelConfig(model_name="embedding/small"),
         ),
         "language_model": LanguageModelResource(llm_config=LLMConfig(model_name="text-generation/nano")),
     },
