@@ -222,11 +222,20 @@ Provide your analysis of how many header rows this table has."""
         try:
             dfs = pd.read_html(StringIO(table_html))
         except ValueError:
-            # No valid HTML tables found - return original content as table chunk
-            return [TextChunk(table_html, NODE_CONTENT_TYPE_TABLE)]
+            # No valid HTML tables found - fall back to raw content, skip if empty
+            soup = bs4.BeautifulSoup(table_html, "html.parser")
+            text_content = soup.get_text()
+            if text_content.strip():
+                return [TextChunk(text_content, NODE_CONTENT_TYPE_TABLE)]
+            return []
 
         if not dfs or dfs[0].empty:
-            return [TextChunk(table_html, NODE_CONTENT_TYPE_TABLE)]
+            # Empty dataframe or no tables parsed - fall back to raw content, skip if empty
+            soup = bs4.BeautifulSoup(table_html, "html.parser")
+            text_content = soup.get_text()
+            if text_content.strip():
+                return [TextChunk(text_content, NODE_CONTENT_TYPE_TABLE)]
+            return []
 
         df = dfs[0]
 
@@ -289,8 +298,10 @@ Provide your analysis of how many header rows this table has."""
         try:
             dfs = pd.read_html(StringIO(table_html))
         except ValueError:
-            # No valid HTML tables found - fall back to raw text content
-            text_chunks.append(TextChunk(child.text, NODE_CONTENT_TYPE_TABLE))
+            # No valid HTML tables found - fall back to raw text content, skip if empty
+            text_content = child.text
+            if text_content.strip():
+                text_chunks.append(TextChunk(text_content, NODE_CONTENT_TYPE_TABLE))
             return text_chunks
 
         if dfs and not dfs[0].empty:
@@ -306,7 +317,10 @@ Provide your analysis of how many header rows this table has."""
             else:
                 text_chunks.extend(self._split_table(table_html))
         else:
-            text_chunks.append(TextChunk(child.text, NODE_CONTENT_TYPE_TABLE))
+            # Empty dataframe or no tables parsed - fall back to raw text content, skip if empty
+            text_content = child.text
+            if text_content.strip():
+                text_chunks.append(TextChunk(text_content, NODE_CONTENT_TYPE_TABLE))
 
         return text_chunks
 

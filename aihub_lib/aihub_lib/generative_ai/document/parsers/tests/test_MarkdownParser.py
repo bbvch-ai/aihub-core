@@ -861,14 +861,14 @@ Some following text."""
     # Should not raise an exception
     nodes = node_parser.get_nodes_from_node(document)
 
-    # Find table nodes - should fall back to raw text content
+    # Invalid table content is preserved as TABLE type (backward compatible)
     table_nodes = [n for n in nodes if n.metadata.get(NODE_CONTENT_TYPE) == "table"]
     assert len(table_nodes) == 1
     assert "This is not a valid table structure" in table_nodes[0].text
 
 
 def test_empty_table_handled_gracefully(node_parser):
-    """Test that empty table elements don't crash."""
+    """Test that empty table elements don't crash and are skipped."""
     text = """# Section
 <table></table>
 Some following text."""
@@ -877,6 +877,10 @@ Some following text."""
     # Should not raise an exception
     nodes = node_parser.get_nodes_from_node(document)
 
-    # Find table nodes - empty table falls back to raw text (empty)
+    # Empty tables are skipped entirely - no table nodes should be created
     table_nodes = [n for n in nodes if n.metadata.get(NODE_CONTENT_TYPE) == "table"]
-    assert len(table_nodes) == 1
+    assert len(table_nodes) == 0
+
+    # The other content should still be present
+    text_nodes = [n for n in nodes if "Some following text" in n.text]
+    assert len(text_nodes) == 1
