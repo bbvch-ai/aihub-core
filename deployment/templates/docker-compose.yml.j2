@@ -20,6 +20,7 @@
 {%- set SEAWEEDFS_S3_ENDPOINT = "seaweedfs-s3:9000" %}
 {%- set SEAWEEDFS_FILER_URL = "http://seaweedfs-filer:8888" %}
 {%- set S3_STORAGE_ENDPOINT = "http://seaweedfs-s3:9000" %}
+{%- set S3_STORAGE_PUBLIC_ENDPOINT = "http://localhost:9000" if stage == 'dev' else "https://s3.${DOMAIN}" %}
 {%- set ETCD_ENDPOINTS = "etcd:2379" %}
 {%- set MILVUS_ENDPOINT = "http://milvus-standalone:19530" %}
 {%- set MILVUS_HOST = "milvus-standalone" %}
@@ -226,6 +227,20 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    {%- if stage != 'dev' %}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seaweedfs-s3.rule=Host(`s3.${DOMAIN}`)"
+      - "traefik.http.routers.seaweedfs-s3.priority=4000"
+      - "traefik.http.routers.seaweedfs-s3.entrypoints=websecure"
+      {%- if stage not in ['local', 'build'] %}
+      - "traefik.http.routers.seaweedfs-s3.tls.certresolver=letsencrypt"
+      {%- else %}
+      - "traefik.http.routers.seaweedfs-s3.tls=true"
+      {%- endif %}
+      - "traefik.http.routers.seaweedfs-s3.middlewares=security-headers@file"
+      - "traefik.http.services.seaweedfs-s3.loadbalancer.server.port=9000"
+    {%- endif %}
 
   seaweedfs-init:
     container_name: seaweedfs-init
@@ -1493,6 +1508,7 @@ services:
 
       # S3 Access connection
       S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      S3_STORAGE_PUBLIC_ENDPOINT: {{ S3_STORAGE_PUBLIC_ENDPOINT }}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
@@ -1677,6 +1693,7 @@ services:
 
       # S3 Access connection
       S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      S3_STORAGE_PUBLIC_ENDPOINT: {{ S3_STORAGE_PUBLIC_ENDPOINT }}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
@@ -1745,6 +1762,7 @@ services:
 
       # S3 Access connection (access and secret key same as SeaweedFS)
       S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      S3_STORAGE_PUBLIC_ENDPOINT: {{ S3_STORAGE_PUBLIC_ENDPOINT }}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}

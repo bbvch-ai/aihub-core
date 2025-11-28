@@ -175,6 +175,8 @@ MONGO_PASSWORD="REPLACE_WITH_RANDOM_STRING"
 # S3 Storage (SeaweedFS) - Generate with: openssl rand -hex 32
 S3_STORAGE_ACCESS_KEY="admin"
 S3_STORAGE_SECRET_KEY="REPLACE_WITH_RANDOM_STRING"
+# Public endpoint for presigned URLs (auto-configured as https://s3.${DOMAIN} in docker-compose)
+# S3_STORAGE_PUBLIC_ENDPOINT is set automatically - only override if using a custom S3 domain
 
 # -----------------------------------------------------------------------------
 # LiteLLM Configuration (REQUIRED)
