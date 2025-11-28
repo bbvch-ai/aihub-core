@@ -90,228 +90,164 @@ Copy this template into your `.env` file and replace placeholder values:
 
 ```env
 # =============================================================================
-# BASIC PLATFORM CONFIGURATION
+# AI-Hub Production Environment Configuration
+# =============================================================================
+# This file contains ONLY the environment variables that must be configured.
+# All internal Docker network endpoints are hardcoded in the compose files.
+#
+# Generate secrets with: openssl rand -hex 32
 # =============================================================================
 
-LOG_LEVEL="WARNING"                    # Options: CRITICAL, ERROR, WARNING, INFO, DEBUG
-ENV="prod"                             # Options: dev, test, prod
+# -----------------------------------------------------------------------------
+# General Settings
+# -----------------------------------------------------------------------------
+LOG_LEVEL="INFO"
+ENV="prod"
 DOMAIN="REPLACE_WITH_YOUR_DOMAIN"
 
-# Traefik Configuration
+# Let's Encrypt / Traefik
 ACME_EMAIL="admin@your-company.com"
-ADMIN_PASSWORD_HASH=""                 # Generate with: htpasswd -nb admin yourpassword
+# Generate with: htpasswd -nb admin yourpassword | sed 's/\$/\$\$/g'
+ADMIN_PASSWORD_HASH=""
 
-# =============================================================================
-# AUTHENTICATION CONFIGURATION
-# =============================================================================
+# -----------------------------------------------------------------------------
+# API Keys (External Services) - Configure at least one LLM provider
+# -----------------------------------------------------------------------------
+AZURE_OPENAI_KEY="REPLACE_WITH_AZURE_OPENAI_KEY"
+AZURE_OPENAI_BASE_URL="REPLACE_WITH_AZURE_OPENAI_BASE_URL"
+GEMINI_API_KEY=""
+JINA_API_KEY=""
+HUGGINGFACE_API_KEY=""
 
-# General Authentication Settings
-AUTH_ENABLE_API_ACCESS="True"
-AUTH_OPEN_WEBUI_SIGNING_SECRET="REPLACE_WITH_RANDOM_STRING"
+# Optional providers
+SWISS_LLM_CLOUD_API_URL=""
+SWISS_LLM_CLOUD_API_KEY=""
+COHERE_API_BASE=""
+COHERE_API_KEY=""
+
+# -----------------------------------------------------------------------------
+# OAuth2 / OIDC Configuration (REQUIRED)
+# -----------------------------------------------------------------------------
 AUTH_IDENTITY_PROVIDER="azure"
-
-# OAuth2 Configuration (from Prerequisites setup)
+OAUTH_PROVIDER_NAME="Azure AD"
 OAUTH_CLIENT_ID="REPLACE_WITH_YOUR_CLIENT_ID"
 OAUTH_CLIENT_SECRET="REPLACE_WITH_YOUR_CLIENT_SECRET"
 OAUTH_AUTHORITY_URL="https://login.microsoftonline.com/REPLACE_WITH_YOUR_TENANT_ID"
-OAUTH_PROVIDER_NAME="azure"
 OAUTH_TENANT_ID="REPLACE_WITH_YOUR_TENANT_ID"
+# Generate with: openssl rand -hex 16
 OAUTH_COOKIE_SECRET="REPLACE_WITH_16_HEX_CHARS"
 
-# =============================================================================
-# PLATFORM ACCESS CONFIGURATION
-# =============================================================================
+# Azure-specific OAuth (same values as above)
+AZURE_CLIENT_ID="REPLACE_WITH_YOUR_CLIENT_ID"
+AZURE_TENANT_ID="REPLACE_WITH_YOUR_TENANT_ID"
+AZURE_CLIENT_SECRET="REPLACE_WITH_YOUR_CLIENT_SECRET"
+
+# OAuth Custom Branding (optional)
+OAUTH_CUSTOM_SIGN_IN_LOGO=""
+
+# -----------------------------------------------------------------------------
+# Authentication & Security (REQUIRED - Generate new secrets!)
+# -----------------------------------------------------------------------------
+# Generate with: openssl rand -hex 32
+AUTH_OPEN_WEBUI_SIGNING_SECRET="REPLACE_WITH_RANDOM_STRING"
 
 # Superuser Configuration
 SUPERUSER_ENABLED="True"
-SUPERUSER_NAME="AI-Hub Superuser"
+SUPERUSER_NAME="AI-Hub Admin"
 SUPERUSER_EMAIL="admin@your-company.com"
+# Generate with: openssl rand -hex 32
 SUPERUSER_OID="REPLACE_WITH_RANDOM_STRING"
 SUPERUSER_ROLE="AIHubSuperuser"
+# Generate with: openssl rand -hex 32
 SUPERUSER_TOKEN="REPLACE_WITH_RANDOM_STRING"
 
-# Platform Settings
-AIHUB_API_VERSION="dev"
-AIHUB_FRONTEND_ORIGIN="https://REPLACE_WITH_YOUR_DOMAIN"
-AIHUB_CREATE_DEFAULT_ROLES="True"
-
-# =============================================================================
-# AI MODEL ACCESS (Configure at least one)
-# =============================================================================
-
-# Azure OpenAI (Recommended)
-AZURE_OPENAI_BASE_URL="REPLACE_WITH_AZURE_OPENAI_BASE_URL"
-AZURE_OPENAI_KEY="REPLACE_WITH_AZURE_OPENAI_KEY"
-
-# Google Gemini (Alternative)
-GEMINI_API_KEY="REPLACE_WITH_GEMINI_KEY"
-
-# Swiss LLM Cloud (Optional)
-SWISS_LLM_CLOUD_API_URL=""                # Optional: Swiss LLM Cloud endpoint URL
-SWISS_LLM_CLOUD_API_KEY=""                # Optional: Swiss LLM Cloud API key
-
-# Cohere (Optional)
-COHERE_API_BASE=""                        # Optional: Cohere API base URL
-COHERE_API_KEY=""                         # Optional: Cohere API key
-
-# Hugging Face (Optional)
-HUGGINGFACE_API_KEY=""                    # Optional: For Hugging Face model access
-
-# =============================================================================
-# LITELLM PROXY CONFIGURATION
-# =============================================================================
-
-LITELLM_UI_USERNAME="admin"
-LITELLM_UI_PASSWORD="REPLACE_WITH_RANDOM_STRING"
-LITELLM_MASTER_KEY="REPLACE_WITH_RANDOM_STRING"
-LITE_LLM_PROXY_BASE_URL="http://litellm:4000"
-LITE_LLM_PROXY_API_KEY="REPLACE_WITH_RANDOM_STRING"
-
-# =============================================================================
-# DATABASE CONFIGURATION
-# =============================================================================
-
-# PostgreSQL
+# -----------------------------------------------------------------------------
+# Database Credentials (REQUIRED - Use strong passwords!)
+# -----------------------------------------------------------------------------
+# PostgreSQL - Generate with: openssl rand -hex 32
 POSTGRES_USER="admin"
 POSTGRES_PASSWORD="REPLACE_WITH_RANDOM_STRING"
 
-# FerretDB (MongoDB-compatible)
+# MongoDB (FerretDB) - Generate with: openssl rand -hex 32
 MONGO_USERNAME="admin"
 MONGO_PASSWORD="REPLACE_WITH_RANDOM_STRING"
-MONGO_CONNECTION_STRING="mongodb://admin:REPLACE_WITH_SAME_MONGO_PASSWORD@ferretdb:27017/"
 
-# Valkey (Redis-compatible)
-REDIS_URL="redis://localhost:6379"
+# S3 Storage (SeaweedFS) - Generate with: openssl rand -hex 32
+S3_STORAGE_ACCESS_KEY="admin"
+S3_STORAGE_SECRET_KEY="REPLACE_WITH_RANDOM_STRING"
 
-# =============================================================================
-# STORAGE CONFIGURATION
-# =============================================================================
+# -----------------------------------------------------------------------------
+# LiteLLM Configuration (REQUIRED)
+# -----------------------------------------------------------------------------
+LITELLM_UI_USERNAME="admin"
+# Generate with: openssl rand -hex 32
+LITELLM_UI_PASSWORD="REPLACE_WITH_RANDOM_STRING"
+# Generate with: openssl rand -hex 32
+LITELLM_MASTER_KEY="REPLACE_WITH_RANDOM_STRING"
 
-# SeaweedFS S3 Storage
-SEAWEEDFS_ROOT_USER="admin"
-SEAWEEDFS_ROOT_PASSWORD="REPLACE_WITH_RANDOM_STRING"
-S3_STORAGE_ENDPOINT="http://seaweedfs:8333"
-S3_STORAGE_ACCESS_KEY="admin"                         # Must match SEAWEEDFS_ROOT_USER
-S3_STORAGE_SECRET_KEY="REPLACE_WITH_SAME_SEAWEEDFS_PASSWORD"
-S3_STORAGE_URL_SIGNING_SECRET="REPLACE_WITH_RANDOM_STRING"
+# -----------------------------------------------------------------------------
+# Service Configuration
+# -----------------------------------------------------------------------------
+# Generate with: openssl rand -hex 32
+JUPYTER_TOKEN="REPLACE_WITH_RANDOM_STRING"
+# Generate with: openssl rand -hex 32
+PHOENIX_SECRET="REPLACE_WITH_RANDOM_STRING"
 
-# =============================================================================
-# SERVICE ENDPOINTS (Internal - Don't Change)
-# =============================================================================
-
-# Internal Service URLs (these should generally not be changed)
-PRESIDIO_ANALYZER_API_BASE="http://presidio-analyzer:3000"
-PRESIDIO_ANONYMIZER_API_BASE="http://presidio-anonymizer:3000"
-PLAYWRIGHT_WS_URL="ws://playwright:3000"
-SEAWEEDFS_FILER_URL="http://seaweedfs-filer:8888"
-SEAWEEDFS_FILER_ENDPOINT="seaweedfs-filer:8888"
-SEAWEEDFS_MASTER_ENDPOINT="seaweedfs-master:9333"
-SEAWEEDFS_S3_ENDPOINT="seaweedfs-s3:9000"
-DAGSTER_WEBSERVER_URL="http://dagster-webserver:3000"
-ETCD_ENDPOINTS="etcd:2379"
-MILVUS_ENDPOINT="http://milvus-standalone"
-MILVUS_HOST="milvus-standalone"
-VALKEY_ENDPOINT="redis://valkey:6379"
-S3_STORAGE_ENDPOINT="http://seaweedfs-s3:9000"
-
-# Database Ports
-POSTGRES_PORT="5432"
-FERRETDB_PORT="27017"
-MILVUS_PORT="19530"
-
-# Document Processing
-DOCLING_API_ENDPOINT="http://docling:5001"
+# Docling Configuration
 DOCLING_API_TIMEOUT="600"
-DOCLING_HOSTED_VLM_API_ENDPOINT="http://litellm:4000"
-DOCLING_HOSTED_VLM_API_KEY="REPLACE_WITH_SAME_AS_LITELLM_MASTER_KEY"
 DOCLING_VLM_MODEL_NAME="text-generation/ocr"
 
-# Other Services
-PHOENIX_SECRET="REPLACE_WITH_RANDOM_STRING"
-PHOENIX_ENDPOINT="http://phoenix:6006"
-NATS_ENDPOINT="nats://nats:4222"
-JUPYTER_URL="http://jupyter:8888"
-JUPYTER_TOKEN="REPLACE_WITH_RANDOM_STRING"
-MILVUS_DIMENSION="3072"
+# Milvus Configuration (must match your embedding model dimensions)
+MILVUS_DIMENSION="1536"
+
+# -----------------------------------------------------------------------------
+# AI-Hub Application Settings
+# -----------------------------------------------------------------------------
+AIHUB_API_VERSION="latest"
+AIHUB_CREATE_DEFAULT_ROLES="True"
+
+# Admin Settings
 ADMIN_EMAIL="admin@your-company.com"
 
-# OAuth Access Groups
-DAGSTER_OAUTH_ALLOWED_GROUPS="AIHubDeveloper"
-SEAWEEDFS_OAUTH_ALLOWED_GROUPS="AIHubDeveloper"
+# OAuth Group Restrictions (Azure AD group names)
+DAGSTER_OAUTH_ALLOWED_GROUPS="AIHubAdmin"
+SEAWEEDFS_OAUTH_ALLOWED_GROUPS="AIHubAdmin"
 
-# OAuth Custom Branding
-OAUTH_CUSTOM_SIGN_IN_LOGO="https://aiagentsstpublicblobs.blob.core.windows.net/logos/Bbv-Logo_farbig.png"
-
-# OpenTelemetry Settings
-OTEL_EXPORTER_OTLP_ENDPOINT="http://otel-collector:4317"
-OTEL_RESOURCE_SERVICE_VERSION="0.0.1"
+# -----------------------------------------------------------------------------
+# OpenTelemetry Configuration (Optional)
+# -----------------------------------------------------------------------------
+OTEL_ENABLED="true"
+OTEL_EXPORTER_OTLP_PROTOCOL="grpc"
+OTEL_RESOURCE_SERVICE_VERSION="1.0.0"
 OTEL_RESOURCE_SERVICE_NAMESPACE="swiss-ai-hub"
 
-# =============================================================================
-# OBSERVABILITY CONFIGURATION
-# =============================================================================
-
-# OpenTelemetry Cloud Exporter (Optional - for production monitoring)
-OTEL_ENABLED="true"                           # Enable/disable OTEL collection
-OTEL_EXPORTER_OTLP_PROTOCOL="grpc"           # Protocol for OTEL export
-OTEL_CLOUD_ENDPOINT="localhost:4317"         # Cloud OTEL endpoint (e.g., Grafana Cloud: "otlp.grafana.net:443")
-OTEL_CLOUD_HEADERS=""                         # Authentication headers (e.g., "Authorization=Bearer YOUR_TOKEN")
-
-# =============================================================================
-# BOT DEVELOPMENT CONFIGURATION
-# =============================================================================
-
-BOT_AUTH_FAKE_NAME="Bot"
-BOT_AUTH_FAKE_EMAIL="bot@bot.com"
-BOT_AUTH_FAKE_OID="00000000-0000-0000-0000-000000000000"
-BOT_AUTH_FAKE_ROLES="AIHubBot"
-
-# =============================================================================
-# OPTIONAL INTEGRATIONS
-# =============================================================================
-
-# Jina AI Search (Optional)
-JINA_API_KEY=""
-
-# OpenTelemetry Configuration (Optional)
-OTEL_ENABLED="False"
-OTEL_EXPORTER_OTLP_PROTOCOL="grpc"
+# Cloud OTEL (optional - for external observability platforms)
 OTEL_CLOUD_ENDPOINT=""
 OTEL_CLOUD_HEADERS=""
-
-# Signoz Telemetry (Optional)
-SIGNOZ_INGESTION_CLOUD_ENDPOINT=""
-SIGNOZ_INGESTION_KEY=""
-
 ```
 
 ### Configuration Guidelines
 
 **Critical Values to Replace:**
 
-1. **Authentication Values** (from Prerequisites):
+1. **Domain** - Set `DOMAIN` to your production domain (e.g., `aihub.yourcompany.com`) or `127.0.0.1.nip.io` for local testing
 
+2. **Authentication Values** (from Prerequisites):
    - `REPLACE_WITH_YOUR_CLIENT_ID` → Your Azure App Registration Client ID
    - `REPLACE_WITH_YOUR_CLIENT_SECRET` → Your Azure App Registration Client Secret
-   - `REPLACE_WITH_YOUR_TENANT_ID` → Your Azure Tenant ID (appears twice)
+   - `REPLACE_WITH_YOUR_TENANT_ID` → Your Azure Tenant ID
 
-2. **AI Model Access** (configure at least one):
-
+3. **AI Model Access** (configure at least one):
    - `REPLACE_WITH_AZURE_OPENAI_BASE_URL` → Your Azure OpenAI endpoint URL
    - `REPLACE_WITH_AZURE_OPENAI_KEY` → Your Azure OpenAI API key
-   - `REPLACE_WITH_GEMINI_KEY` → Your Google Gemini API key
 
-3. **Random Strings** (generate unique values):
+4. **Secrets** (generate unique values for each):
+   - Replace all `REPLACE_WITH_RANDOM_STRING` with: `openssl rand -hex 32`
+   - Replace `REPLACE_WITH_16_HEX_CHARS` with: `openssl rand -hex 16`
 
-   - Replace all `REPLACE_WITH_RANDOM_STRING` with unique random strings (use `openssl rand -hex 32`)
-   - Replace `REPLACE_WITH_16_HEX_CHARS` with a 16-byte hex string (use `openssl rand -hex 16`)
-   - Use different values for each placeholder
-   - Minimum 32 characters recommended for security
-
-**Domain Configuration:**
-
-- For local testing: Keep `AIHUB_FRONTEND_ORIGIN="https://127.0.0.1.nip.io"`
-- For production: Change to your actual domain (e.g., `https://aihub.your-company.com`)
+::: info Simplified Configuration
+Internal service endpoints (like database URLs, message queues, etc.) are now hardcoded in the Docker Compose files. You only need to configure credentials and external service connections.
+:::
 
 ::: tip Generate Random Strings
 Use these commands to generate secure random strings:

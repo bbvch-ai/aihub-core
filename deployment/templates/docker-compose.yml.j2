@@ -8,6 +8,34 @@
 {%- set stage_postfix = stage + ".gpu" if gpu_enabled else stage %}
 {%- set hardware = 'gpu' if gpu_enabled else 'cpu' %}
 
+{#- ===================================================================
+    Internal Service Endpoints (Identical Across All Stages)
+    ===================================================================
+    These are the internal Docker network endpoints that never change
+    between stages or hardware variants. They are hardcoded here to
+    avoid unnecessary environment variable indirection.
+    =================================================================== #}
+{%- set SEAWEEDFS_MASTER_ENDPOINT = "seaweedfs-master:9333" %}
+{%- set SEAWEEDFS_FILER_ENDPOINT = "seaweedfs-filer:8888" %}
+{%- set SEAWEEDFS_S3_ENDPOINT = "seaweedfs-s3:9000" %}
+{%- set SEAWEEDFS_FILER_URL = "http://seaweedfs-filer:8888" %}
+{%- set S3_STORAGE_ENDPOINT = "http://seaweedfs-s3:9000" %}
+{%- set ETCD_ENDPOINTS = "etcd:2379" %}
+{%- set MILVUS_ENDPOINT = "http://milvus-standalone:19530" %}
+{%- set MILVUS_HOST = "milvus-standalone" %}
+{%- set MILVUS_PORT = "19530" %}
+{%- set PHOENIX_ENDPOINT = "http://phoenix:6006" %}
+{%- set NATS_ENDPOINT = "nats://nats:4222" %}
+{%- set VALKEY_ENDPOINT = "redis://valkey:6379" %}
+{%- set LITE_LLM_PROXY_BASE_URL = "http://litellm:4000" %}
+{%- set JUPYTER_URL = "http://jupyter:8888" %}
+{%- set DOCLING_API_ENDPOINT = "http://docling:5001" %}
+{%- set PRESIDIO_ANALYZER_API_BASE = "http://presidio-analyzer:3000" %}
+{%- set PRESIDIO_ANONYMIZER_API_BASE = "http://presidio-anonymizer:3000" %}
+{%- set PLAYWRIGHT_WS_URL = "ws://playwright:3000" %}
+{%- set DAGSTER_WEBSERVER_URL = "http://dagster-webserver:3000" %}
+{%- set OTEL_EXPORTER_OTLP_ENDPOINT = "http://otel-collector:4317" %}
+
 {% if stage != 'dev' %}
 # ===================================================================
 # TRAEFIK PRIORITY RULES
@@ -117,7 +145,7 @@ services:
     {%- endif %}
     command: >
       volume
-      -mserver="${SEAWEEDFS_MASTER_ENDPOINT}"
+      -mserver="{{ SEAWEEDFS_MASTER_ENDPOINT }}"
       -ip.bind=0.0.0.0
       -port=8080
       -max=100
@@ -144,7 +172,7 @@ services:
     {%- endif %}
     command: >
       filer
-      -master="${SEAWEEDFS_MASTER_ENDPOINT}"
+      -master="{{ SEAWEEDFS_MASTER_ENDPOINT }}"
       -ip.bind=0.0.0.0
     volumes:
       - {{ global.volume_root }}/seaweedfs-filer:/data
@@ -181,7 +209,7 @@ services:
 
       # S3 Service Configuration
       S3_PORT: "9000"
-      S3_FILER: "${SEAWEEDFS_FILER_ENDPOINT}"
+      S3_FILER: "{{ SEAWEEDFS_FILER_ENDPOINT }}"
       S3_BIND_IP: "0.0.0.0"
       S3_ALLOW_EMPTY_FOLDER: true
     depends_on:
@@ -227,7 +255,7 @@ services:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4181
       OAUTH2_PROXY_COOKIE_SECURE: False
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
-      OAUTH2_PROXY_UPSTREAMS: ${SEAWEEDFS_FILER_URL}
+      OAUTH2_PROXY_UPSTREAMS: {{ SEAWEEDFS_FILER_URL }}
       OAUTH2_PROXY_ALLOWED_GROUPS: ${SEAWEEDFS_OAUTH_ALLOWED_GROUPS}
       OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
       OAUTH2_PROXY_SCOPE: openid email profile
@@ -301,8 +329,8 @@ services:
     security_opt:
       - seccomp:unconfined
     environment:
-      ETCD_ENDPOINTS: ${ETCD_ENDPOINTS}
-      MINIO_ADDRESS: ${SEAWEEDFS_S3_ENDPOINT}
+      ETCD_ENDPOINTS: {{ ETCD_ENDPOINTS }}
+      MINIO_ADDRESS: {{ SEAWEEDFS_S3_ENDPOINT }}
       MINIO_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
       MINIO_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
     volumes:
@@ -338,11 +366,7 @@ services:
       - "3003:3000"
     {%- endif %}
     environment:
-      {%- if stage == 'dev' %}
-      MILVUS_URL: ${MILVUS_ENDPOINT}:${MILVUS_PORT}
-      {%- else %}
-      MILVUS_URL: ${MILVUS_HOST}:${MILVUS_PORT}
-      {%- endif %}
+      MILVUS_URL: {{ MILVUS_HOST }}:{{ MILVUS_PORT }}
     healthcheck:
       test: ["NONE"]
     logging:
@@ -725,9 +749,9 @@ services:
       COHERE_API_KEY: ${COHERE_API_KEY}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       HUGGINGFACE_API_KEY: ${HUGGINGFACE_API_KEY}
-      PRESIDIO_ANALYZER_API_BASE: ${PRESIDIO_ANALYZER_API_BASE}
-      PRESIDIO_ANONYMIZER_API_BASE: ${PRESIDIO_ANONYMIZER_API_BASE}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+      PRESIDIO_ANALYZER_API_BASE: {{ PRESIDIO_ANALYZER_API_BASE }}
+      PRESIDIO_ANONYMIZER_API_BASE: {{ PRESIDIO_ANONYMIZER_API_BASE }}
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: False
       {%- if not gpu_enabled %}
@@ -1121,7 +1145,7 @@ services:
       WEB_SEARCH_CONCURRENT_REQUESTS: 6
       BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: True
       WEB_LOADER_ENGINE: playwright
-      PLAYWRIGHT_WS_URL: ${PLAYWRIGHT_WS_URL}
+      PLAYWRIGHT_WS_URL: {{ PLAYWRIGHT_WS_URL }}
       FILE_IMAGE_COMPRESSION_WIDTH: 796
       FILE_IMAGE_COMPRESSION_HEIGHT: 796
 
@@ -1249,7 +1273,7 @@ services:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
       OAUTH2_PROXY_COOKIE_SECURE: False
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
-      OAUTH2_PROXY_UPSTREAMS: ${DAGSTER_WEBSERVER_URL}
+      OAUTH2_PROXY_UPSTREAMS: {{ DAGSTER_WEBSERVER_URL }}
       OAUTH2_PROXY_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH2_PROXY_PROVIDER: oidc
       OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
@@ -1457,46 +1481,46 @@ services:
       AIHUB_CREATE_DEFAULT_ROLES: True
 
       # LiteLLM Access
-      LITE_LLM_PROXY_BASE_URL: ${LITE_LLM_PROXY_BASE_URL}
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Mongo DB
-      MONGO_CONNECTION_STRING: ${MONGO_CONNECTION_STRING}
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
 
       # MILVUS
-      MILVUS_URL: ${MILVUS_ENDPOINT}
+      MILVUS_URL: {{ MILVUS_ENDPOINT }}
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
 
       # S3 Access connection
-      S3_STORAGE_ENDPOINT: ${S3_STORAGE_ENDPOINT}
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
       # Phoenix
-      PHOENIX_ENDPOINT: ${PHOENIX_ENDPOINT}
+      PHOENIX_ENDPOINT: {{ PHOENIX_ENDPOINT }}
 
       # NATs
-      NATS_ENDPOINT: ${NATS_ENDPOINT}
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
 
       # REDIS
-      REDIS_URL: ${VALKEY_ENDPOINT}
+      REDIS_URL: {{ VALKEY_ENDPOINT }}
 
       # Jupyter (for open-webui code interpreter)
-      JUPYTER_URL: ${JUPYTER_URL}
+      JUPYTER_URL: {{ JUPYTER_URL }}
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
 
       # Docling
-      DOCLING_API_ENDPOINT: ${DOCLING_API_ENDPOINT}
+      DOCLING_API_ENDPOINT: {{ DOCLING_API_ENDPOINT }}
       DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
-      DOCLING_HOSTED_VLM_API_ENDPOINT: ${DOCLING_HOSTED_VLM_API_ENDPOINT}
-      DOCLING_HOSTED_VLM_API_KEY: ${DOCLING_HOSTED_VLM_API_KEY}
+      DOCLING_HOSTED_VLM_API_ENDPOINT: {{ LITE_LLM_PROXY_BASE_URL }}
+      DOCLING_HOSTED_VLM_API_KEY: ${LITELLM_MASTER_KEY}
       DOCLING_VLM_MODEL_NAME: ${DOCLING_VLM_MODEL_NAME}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
       OTEL_RESOURCE_SERVICE_NAME: api
       OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
@@ -1605,20 +1629,20 @@ services:
     {%- endif %}
     environment:
       # LiteLLM Access
-      LITE_LLM_PROXY_BASE_URL: ${LITE_LLM_PROXY_BASE_URL}
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # NATs
-      NATS_ENDPOINT: ${NATS_ENDPOINT}
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
 
       # REDIS
-      REDIS_URL: ${VALKEY_ENDPOINT}
+      REDIS_URL: {{ VALKEY_ENDPOINT }}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
-      OTEL_RESOURCE_SERVICE_NAME: api
+      OTEL_RESOURCE_SERVICE_NAME: llm-wrapping-agent
       OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     logging:
@@ -1641,34 +1665,34 @@ services:
     {%- endif %}
     environment:
       # LiteLLM Access
-      LITE_LLM_PROXY_BASE_URL: ${LITE_LLM_PROXY_BASE_URL}
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Mongo DB
-      MONGO_CONNECTION_STRING: ${MONGO_CONNECTION_STRING}
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
 
       # MILVUS
-      MILVUS_URL: ${MILVUS_ENDPOINT}
+      MILVUS_URL: {{ MILVUS_ENDPOINT }}
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
 
       # S3 Access connection
-      S3_STORAGE_ENDPOINT: ${S3_STORAGE_ENDPOINT}
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
       # NATs
-      NATS_ENDPOINT: ${NATS_ENDPOINT}
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
 
       # REDIS
-      REDIS_URL: ${VALKEY_ENDPOINT}
+      REDIS_URL: {{ VALKEY_ENDPOINT }}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
-      OTEL_RESOURCE_SERVICE_NAME: api
+      OTEL_RESOURCE_SERVICE_NAME: rag-agent
       OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
   {%- endif %}
@@ -1692,16 +1716,16 @@ services:
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
 
       # NATS
-      NATS_ENDPOINT: "${NATS_ENDPOINT}"
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
 
       # LiteLLM Proxy Server Settings
-      LITE_LLM_PROXY_BASE_URL: ${LITE_LLM_PROXY_BASE_URL}
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Docling
-      DOCLING_API_ENDPOINT: ${DOCLING_API_ENDPOINT}
+      DOCLING_API_ENDPOINT: {{ DOCLING_API_ENDPOINT }}
       DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
-      DOCLING_HOSTED_VLM_API_ENDPOINT: ${DOCLING_HOSTED_VLM_API_ENDPOINT}
+      DOCLING_HOSTED_VLM_API_ENDPOINT: {{ LITE_LLM_PROXY_BASE_URL }}
       DOCLING_HOSTED_VLM_API_KEY: ${LITELLM_MASTER_KEY}
       DOCLING_VLM_MODEL_NAME: ${DOCLING_VLM_MODEL_NAME}
 
@@ -1710,17 +1734,17 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
       # Mongo DB
-      MONGO_CONNECTION_STRING: ${MONGO_CONNECTION_STRING}
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
 
       # MILVUS
-      MILVUS_URL: ${MILVUS_ENDPOINT}
+      MILVUS_URL: {{ MILVUS_ENDPOINT }}
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
 
       # DAGSTER
       DAGSTER_HOME: /dagster_home
 
       # S3 Access connection (access and secret key same as SeaweedFS)
-      S3_STORAGE_ENDPOINT: ${S3_STORAGE_ENDPOINT}
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
@@ -1748,8 +1772,8 @@ services:
       - nats
       - traefik
     environment:
-      NATS_ENDPOINT: ${NATS_ENDPOINT}
-      MONGO_CONNECTION_STRING: ${MONGO_CONNECTION_STRING}
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
       LOG_LEVEL: ${LOG_LEVEL}
       NUM_WORKERS: 1
       AIHUB_API_VERSION: ${AIHUB_API_VERSION}

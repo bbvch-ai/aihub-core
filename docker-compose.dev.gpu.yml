@@ -51,7 +51,7 @@ services:
       - "18080"
     command: >
       volume
-      -mserver="${SEAWEEDFS_MASTER_ENDPOINT}"
+      -mserver="seaweedfs-master:9333"
       -ip.bind=0.0.0.0
       -port=8080
       -max=100
@@ -76,7 +76,7 @@ services:
       - "18888"
     command: >
       filer
-      -master="${SEAWEEDFS_MASTER_ENDPOINT}"
+      -master="seaweedfs-master:9333"
       -ip.bind=0.0.0.0
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-filer:/data
@@ -111,7 +111,7 @@ services:
 
       # S3 Service Configuration
       S3_PORT: "9000"
-      S3_FILER: "${SEAWEEDFS_FILER_ENDPOINT}"
+      S3_FILER: "seaweedfs-filer:8888"
       S3_BIND_IP: "0.0.0.0"
       S3_ALLOW_EMPTY_FOLDER: true
     depends_on:
@@ -184,8 +184,8 @@ services:
     security_opt:
       - seccomp:unconfined
     environment:
-      ETCD_ENDPOINTS: ${ETCD_ENDPOINTS}
-      MINIO_ADDRESS: ${SEAWEEDFS_S3_ENDPOINT}
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: seaweedfs-s3:9000
       MINIO_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
       MINIO_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
     volumes:
@@ -217,7 +217,7 @@ services:
     ports:
       - "3003:3000"
     environment:
-      MILVUS_URL: ${MILVUS_ENDPOINT}:${MILVUS_PORT}
+      MILVUS_URL: milvus-standalone:19530
     healthcheck:
       test: ["NONE"]
     logging:
@@ -415,9 +415,9 @@ services:
       COHERE_API_KEY: ${COHERE_API_KEY}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       HUGGINGFACE_API_KEY: ${HUGGINGFACE_API_KEY}
-      PRESIDIO_ANALYZER_API_BASE: ${PRESIDIO_ANALYZER_API_BASE}
-      PRESIDIO_ANONYMIZER_API_BASE: ${PRESIDIO_ANONYMIZER_API_BASE}
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+      PRESIDIO_ANALYZER_API_BASE: http://presidio-analyzer:3000
+      PRESIDIO_ANONYMIZER_API_BASE: http://presidio-anonymizer:3000
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: False
     volumes:
@@ -772,7 +772,7 @@ services:
       WEB_SEARCH_CONCURRENT_REQUESTS: 6
       BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: True
       WEB_LOADER_ENGINE: playwright
-      PLAYWRIGHT_WS_URL: ${PLAYWRIGHT_WS_URL}
+      PLAYWRIGHT_WS_URL: ws://playwright:3000
       FILE_IMAGE_COMPRESSION_WIDTH: 796
       FILE_IMAGE_COMPRESSION_HEIGHT: 796
 
