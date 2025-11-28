@@ -844,3 +844,39 @@ def test_small_table_not_split(node_parser):
     assert len(table_nodes) == 1
     assert "Col1" in table_nodes[0].text
     assert "Col2" in table_nodes[0].text
+
+
+def test_invalid_table_html_handled_gracefully(node_parser):
+    """Test that invalid table HTML (without proper <td>/<tr> elements) doesn't crash.
+
+    Regression test for ValueError: No tables found matching pattern '.+'
+    when pd.read_html() is called on HTML that doesn't contain valid table structure.
+    """
+    # Table tag without proper structure - pd.read_html will raise ValueError
+    text = """# Section
+<table>This is not a valid table structure</table>
+Some following text."""
+
+    document = Document(text=text)
+    # Should not raise an exception
+    nodes = node_parser.get_nodes_from_node(document)
+
+    # Find table nodes - should fall back to raw text content
+    table_nodes = [n for n in nodes if n.metadata.get(NODE_CONTENT_TYPE) == "table"]
+    assert len(table_nodes) == 1
+    assert "This is not a valid table structure" in table_nodes[0].text
+
+
+def test_empty_table_handled_gracefully(node_parser):
+    """Test that empty table elements don't crash."""
+    text = """# Section
+<table></table>
+Some following text."""
+
+    document = Document(text=text)
+    # Should not raise an exception
+    nodes = node_parser.get_nodes_from_node(document)
+
+    # Find table nodes - empty table falls back to raw text (empty)
+    table_nodes = [n for n in nodes if n.metadata.get(NODE_CONTENT_TYPE) == "table"]
+    assert len(table_nodes) == 1

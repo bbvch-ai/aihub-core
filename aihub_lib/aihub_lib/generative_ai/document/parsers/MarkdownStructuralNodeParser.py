@@ -219,7 +219,12 @@ Provide your analysis of how many header rows this table has."""
         """
         Split an HTML table using pandas DataFrame, preserving multi-level headers.
         """
-        dfs = pd.read_html(StringIO(table_html))
+        try:
+            dfs = pd.read_html(StringIO(table_html))
+        except ValueError:
+            # No valid HTML tables found - return original content as table chunk
+            return [TextChunk(table_html, NODE_CONTENT_TYPE_TABLE)]
+
         if not dfs or dfs[0].empty:
             return [TextChunk(table_html, NODE_CONTENT_TYPE_TABLE)]
 
@@ -281,7 +286,13 @@ Provide your analysis of how many header rows this table has."""
         """
         table_html = str(child)
 
-        dfs = pd.read_html(StringIO(table_html))
+        try:
+            dfs = pd.read_html(StringIO(table_html))
+        except ValueError:
+            # No valid HTML tables found - fall back to raw text content
+            text_chunks.append(TextChunk(child.text, NODE_CONTENT_TYPE_TABLE))
+            return text_chunks
+
         if dfs and not dfs[0].empty:
             df = dfs[0]
             df.columns = df.iloc[0]
