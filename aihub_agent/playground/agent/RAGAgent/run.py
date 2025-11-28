@@ -139,6 +139,7 @@ async def main():
                 vector_store=MilvusVectorStoreConfig(
                     uri=MilvusSettings().URL,
                     collection_name="defaultknowledge",
+                    dimensions=MilvusSettings().DIMENSION,
                 ),
                 retrieve_prev_next=RetrievePrevNextConfig(
                     num_nodes=10,

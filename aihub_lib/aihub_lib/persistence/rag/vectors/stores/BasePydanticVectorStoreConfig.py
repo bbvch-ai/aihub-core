@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 
 class BasePydanticVectorStoreConfig(BaseModel, abc.ABC):
-    dimensions: Annotated[int, Field(description="Dimensions of the embeddings in the vector store")] = 3072
+    dimensions: Annotated[int, Field(description="Dimensions of the embeddings in the vector store")]
 
     @abc.abstractmethod
     def to_llama_index(self) -> BasePydanticVectorStore:
