@@ -105,7 +105,7 @@ services:
     container_name: seaweedfs-master
     image: {{ global.registry_prefix }}{{ image_tags.seaweedfs }}
     restart: always
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     expose:
       - "9333"   # Master HTTP port
       - "19333"  # Master gRPC port
@@ -139,7 +139,7 @@ services:
     container_name: seaweedfs-volume
     image: "{{ global.registry_prefix }}{{ image_tags.seaweedfs }}"
     restart: always
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     expose:
       - "8080"
       - "18080"
@@ -166,7 +166,7 @@ services:
     container_name: seaweedfs-filer
     image: {{ global.registry_prefix }}{{ image_tags.seaweedfs }}
     restart: always
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "8889:8888"
       - "18888"
@@ -196,7 +196,7 @@ services:
     container_name: seaweedfs-s3
     image: {{ global.registry_prefix }}{{ image_tags.seaweedfs }}
     restart: always
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "9000:9000"
     {%- endif %}
@@ -323,7 +323,7 @@ services:
       ETCD_SNAPSHOT_COUNT: 50000
     volumes:
       - {{ global.volume_root }}/etcd-data:/etcd
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
     {%- else %}
     command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
@@ -354,7 +354,7 @@ services:
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9091/healthz" ]
       start_period: 90s
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "19530:19530"
       - "9091:9091"
@@ -376,7 +376,7 @@ services:
     restart: always
     depends_on:
       - milvus-standalone
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "3003:3000"
     {%- endif %}
@@ -451,7 +451,7 @@ services:
     volumes:
       - {{ global.volume_root }}/postgres-data:/var/lib/postgresql/data
       - ./configs/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "5432:5432"
     {%- endif %}
@@ -495,7 +495,7 @@ services:
     container_name: ferretdb
     image: {{ global.registry_prefix }}{{ image_tags.ferretdb }}
     restart: always
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "27017:27017"
     {%- endif %}
@@ -523,7 +523,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "6006:6006"
       - "6007:6007"
@@ -556,7 +556,7 @@ services:
       - {{ global.volume_root }}/nats:/data/nats
     healthcheck:
       test: [ "NONE" ]
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "4222:4222"
       - "8222:8222"
@@ -574,7 +574,7 @@ services:
     command: valkey-server --save 30 1 --loglevel warning
     volumes:
       - {{ global.volume_root }}/valkey-data:/data
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "6379:6379"
     {%- endif %}
@@ -601,7 +601,7 @@ services:
     platform: "linux/amd64"
     image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_gpu if llama_cpp_use_gpu else image_tags.llama_cpp_cpu }}
     restart: always
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "8182:8182"
     {%- endif %}
@@ -650,7 +650,7 @@ services:
     platform: "linux/amd64"
     image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_gpu if llama_cpp_use_gpu else image_tags.llama_cpp_cpu }}
     restart: always
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "8183:8182"
     {%- endif %}
@@ -698,7 +698,7 @@ services:
     platform: "linux/amd64"
     image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_gpu if llama_cpp_use_gpu else image_tags.llama_cpp_cpu }}
     restart: always
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "8184:8182"
     {%- endif %}
@@ -754,7 +754,7 @@ services:
     container_name: speaches
     image: {{ global.registry_prefix }}{{ image_tags.speaches_gpu if speaches_use_gpu else image_tags.speaches_cpu }}
     restart: unless-stopped
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "8185:8000"
     {%- endif %}
@@ -812,7 +812,7 @@ services:
     container_name: litellm
     image: {{ global.registry_prefix }}{{ image_tags.litellm }}
     restart: always
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "4000:4000"
     {%- endif %}
@@ -883,7 +883,7 @@ services:
     container_name: jupyter-lab
     image: {{ global.registry_prefix }}{{ image_tags.jupyter }}
     restart: always
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "8888:8888"
     {%- endif %}
@@ -902,7 +902,7 @@ services:
     container_name: playwright-server
     image: {{ global.registry_prefix }}{{ image_tags.playwright }}
     restart: always
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "3036:3000"
     {%- endif %}
@@ -932,7 +932,7 @@ services:
     container_name: docling
     image: {{ global.registry_prefix }}{{ image_tags.docling }}
     restart: always
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "5001:5001"
     {%- endif %}
@@ -943,7 +943,7 @@ services:
       DOCLING_SERVE_LOAD_MODELS_AT_BOOT: 0
       DOCLING_SERVE_MAX_SYNC_WAIT: 600
       DOCLING_SERVE_ENABLE_REMOTE_SERVICES: 1
-      {%- if stage == 'dev' %}
+      {%- if stage in ['dev', 'local', 'build'] %}
       DOCLING_SERVE_ENABLE_UI: 1
       {%- endif %}
     depends_on:
@@ -965,7 +965,7 @@ services:
     platform: "linux/amd64"
     image: {{ global.registry_prefix }}{{ image_tags.vllm }}
     restart: always
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "8186:8182"
     {%- endif %}
@@ -1020,7 +1020,7 @@ services:
       - OTEL_CLOUD_HEADERS=${OTEL_CLOUD_HEADERS}
     volumes:
       - ./configs/otel/otel-config.{{ stage_postfix }}.yml:/etc/otel-config.yml
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "4317:4317"
       - "4318:4318"
@@ -1047,7 +1047,7 @@ services:
     container_name: open-webui
     image: {{ global.registry_prefix }}{{ image_tags.open_webui }}
     restart: always
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     network_mode: "host"
     {%- endif %}
     volumes:
@@ -1077,7 +1077,7 @@ services:
       ENABLE_VERSION_UPDATE_CHECK: False
 
       # --- Stage-Specific URLs and Environment ---
-      {%- if stage == 'dev' %}
+      {%- if stage in ['dev', 'local', 'build'] %}
       WEBUI_URL: http://localhost:8080
       ENV: ${ENV}
       GLOBAL_LOG_LEVEL: ${LOG_LEVEL}
@@ -1394,6 +1394,10 @@ services:
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.dagster[stage] }}
     {%- endif %}
+    {%- if stage in ['dev', 'local', 'build'] %}
+    ports:
+      - "3002:3000"
+    {%- endif %}
     entrypoint:
       - dagster-webserver
       - -h
@@ -1410,6 +1414,7 @@ services:
       DAGSTER_HOME: /dagster_home
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      LOG_LEVEL: ${LOG_LEVEL}
     logging:
       driver: json-file
       options:
@@ -1437,6 +1442,7 @@ services:
       DAGSTER_HOME: /dagster_home
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      LOG_LEVEL: ${LOG_LEVEL}
     logging:
       driver: json-file
       options:

@@ -72,6 +72,9 @@ services:
     container_name: seaweedfs-master
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
     restart: always
+    expose:
+      - "9333"   # Master HTTP port
+      - "19333"  # Master gRPC port
     command: >
       master
       -ip=seaweedfs-master
@@ -97,6 +100,9 @@ services:
     container_name: seaweedfs-volume
     image: "ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97"
     restart: always
+    expose:
+      - "8080"
+      - "18080"
     command: >
       volume
       -mserver="seaweedfs-master:9333"
@@ -119,6 +125,9 @@ services:
     container_name: seaweedfs-filer
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
     restart: always
+    ports:
+      - "8889:8888"
+      - "18888"
     command: >
       filer
       -master="seaweedfs-master:9333"
@@ -144,6 +153,8 @@ services:
     container_name: seaweedfs-s3
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
     restart: always
+    ports:
+      - "9000:9000"
     volumes:
       - ./configs/seaweedfs/s3-entrypoint.sh:/usr/local/bin/s3-entrypoint.sh:ro
     entrypoint: ["/bin/sh", "/usr/local/bin/s3-entrypoint.sh"]
@@ -256,7 +267,7 @@ services:
       ETCD_SNAPSHOT_COUNT: 50000
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/etcd-data:/etcd
-    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
     healthcheck:
       test: [ "CMD", "etcdctl", "endpoint", "health" ]
     logging:
@@ -283,6 +294,9 @@ services:
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9091/healthz" ]
       start_period: 90s
+    ports:
+      - "19530:19530"
+      - "9091:9091"
     depends_on:
       etcd:
         condition: service_healthy
@@ -300,6 +314,8 @@ services:
     restart: always
     depends_on:
       - milvus-standalone
+    ports:
+      - "3003:3000"
     environment:
       MILVUS_URL: milvus-standalone:19530
     healthcheck:
@@ -366,6 +382,8 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/postgres-data:/var/lib/postgresql/data
       - ./configs/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
+    ports:
+      - "5432:5432"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
       start_period: 5s
@@ -406,6 +424,8 @@ services:
     container_name: ferretdb
     image: ghcr.io/bbvch-ai/aihub-core/ferretdb:2.5.0
     restart: always
+    ports:
+      - "27017:27017"
     environment:
       - FERRETDB_POSTGRESQL_URL=postgres://${MONGO_USERNAME}:${MONGO_PASSWORD}@postgres-ferretdb:5432/postgres
     depends_on:
@@ -430,6 +450,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    ports:
+      - "6006:6006"
+      - "6007:6007"
     environment:
       PHOENIX_SQL_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/phoenix
       PHOENIX_ENABLE_AUTH: False
@@ -458,6 +481,9 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/nats:/data/nats
     healthcheck:
       test: [ "NONE" ]
+    ports:
+      - "4222:4222"
+      - "8222:8222"
     logging:
       driver: json-file
       options:
@@ -471,6 +497,8 @@ services:
     command: valkey-server --save 30 1 --loglevel warning
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/valkey-data:/data
+    ports:
+      - "6379:6379"
     healthcheck:
       test: [ "CMD", "valkey-cli", "ping" ]
       start_period: 5s
@@ -511,6 +539,8 @@ services:
     container_name: litellm
     image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.79.1-stable
     restart: always
+    ports:
+      - "4000:4000"
     environment:
       DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/litellm"
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
@@ -570,6 +600,8 @@ services:
     container_name: jupyter-lab
     image: ghcr.io/bbvch-ai/aihub-core/minimal-notebook:notebook-7.0.6
     restart: always
+    ports:
+      - "8888:8888"
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/jupyter-data:/home/jovyan/work
     environment:
@@ -585,6 +617,8 @@ services:
     container_name: playwright-server
     image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.54.1-jammy
     restart: always
+    ports:
+      - "3036:3000"
     command: npx playwright@v1.49.0 run-server --port 3000 --host 0.0.0.0
     environment:
       NODE_ENV: production
@@ -611,6 +645,8 @@ services:
     container_name: docling
     image: ghcr.io/bbvch-ai/aihub-core/docling-serve-cpu:v1.8.0
     restart: always
+    ports:
+      - "5001:5001"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
     environment:
@@ -618,6 +654,7 @@ services:
       DOCLING_SERVE_LOAD_MODELS_AT_BOOT: 0
       DOCLING_SERVE_MAX_SYNC_WAIT: 600
       DOCLING_SERVE_ENABLE_REMOTE_SERVICES: 1
+      DOCLING_SERVE_ENABLE_UI: 1
     depends_on:
       litellm:
         condition: service_healthy
@@ -646,6 +683,11 @@ services:
       - OTEL_CLOUD_HEADERS=${OTEL_CLOUD_HEADERS}
     volumes:
       - ./configs/otel/otel-config.build.yml:/etc/otel-config.yml
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "13133:13133"
+      - "55679:55679"
     healthcheck:
       test: [ "NONE" ]
     logging:
@@ -666,6 +708,7 @@ services:
     container_name: open-webui
     image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.36
     restart: always
+    network_mode: "host"
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data
     depends_on:
@@ -693,8 +736,8 @@ services:
       ENABLE_VERSION_UPDATE_CHECK: False
 
       # --- Stage-Specific URLs and Environment ---
-      WEBUI_URL: https://openwebui.${DOMAIN}
-      ENV: prod
+      WEBUI_URL: http://localhost:8080
+      ENV: ${ENV}
       GLOBAL_LOG_LEVEL: ${LOG_LEVEL}
 
       # --- Telemetry ---
@@ -986,6 +1029,8 @@ services:
     build:
       context: .
       dockerfile: ./aihub_pipeline/Dockerfile
+    ports:
+      - "3002:3000"
     entrypoint:
       - dagster-webserver
       - -h
@@ -1002,6 +1047,7 @@ services:
       DAGSTER_HOME: /dagster_home
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      LOG_LEVEL: ${LOG_LEVEL}
     logging:
       driver: json-file
       options:
@@ -1025,6 +1071,7 @@ services:
       DAGSTER_HOME: /dagster_home
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      LOG_LEVEL: ${LOG_LEVEL}
     logging:
       driver: json-file
       options:
