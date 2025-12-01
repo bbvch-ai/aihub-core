@@ -122,11 +122,18 @@ class DocumentIntelligenceLoader(BaseReader):
         Replace figures in text using span offsets from the API response.
 
         Processes figures in reverse order (by offset) to prevent offset shifts during replacement.
+        Figures are numbered sequentially (1, 2, 3...) in document order.
+
+        Note: Only the first span is used if a figure has multiple spans. Figures without spans
+        are silently skipped and will not appear in the output.
         """
         if not result.figures:
             return text
 
         # Sort figures by offset in reverse order
+        if any(not fig.spans for fig in result.figures):
+            missing_ids = [fig.id for fig in result.figures if not fig.spans]
+            raise ValueError(f"Missing span information for figures: {missing_ids}")
         figures_with_spans = [(fig, fig.spans[0].offset, fig.spans[0].length) for fig in result.figures if fig.spans]
         figures_with_spans.sort(key=lambda x: x[1], reverse=True)
 
@@ -146,7 +153,8 @@ class DocumentIntelligenceLoader(BaseReader):
 
             markdown_figure = f"![Figure {figure_counter}]({blob_path})"
             replacement = f"<{NODE_CONTENT_TYPE_FIGURE}>{markdown_figure}</{NODE_CONTENT_TYPE_FIGURE}>"
-
+            if offset < 0 or offset + length > len(text):
+                raise ValueError(f"Figure span ({offset}, {length}) out of bounds for text length {len(text)}")
             text = text[:offset] + replacement + text[offset + length :]
             figure_counter -= 1
 
