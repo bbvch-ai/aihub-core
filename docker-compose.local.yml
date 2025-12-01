@@ -708,7 +708,6 @@ services:
     container_name: open-webui
     image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.40
     restart: always
-    network_mode: "host"
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data
     depends_on:

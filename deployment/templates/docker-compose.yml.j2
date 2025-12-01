@@ -1047,7 +1047,7 @@ services:
     container_name: open-webui
     image: {{ global.registry_prefix }}{{ image_tags.open_webui }}
     restart: always
-    {%- if stage in ['dev', 'local', 'build'] %}
+    {%- if stage == 'dev' %}
     network_mode: "host"
     {%- endif %}
     volumes:
