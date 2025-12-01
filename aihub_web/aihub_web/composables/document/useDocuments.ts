@@ -5,8 +5,12 @@ export const useDocuments = defineQuery(() => {
   const currentPage = ref(1)
   const pageSize = ref(10)
 
+  const database = computed(() => route.params.db as string)
+  const namespace = computed(() => route.params.namespace as string)
+
   const documentsQuery = useQuery({
-    key: () => ['knowledge', 'databases', route.params.db as string, 'namespaces', route.params.namespace as string, 'documents', { page: currentPage.value, size: pageSize.value }],
+    key: () => ['knowledge', 'databases', database.value, 'namespaces', namespace.value, 'documents', { page: currentPage.value, size: pageSize.value }],
+    enabled: () => !!database.value && !!namespace.value,
     query: async () => {
       const pageToFetch = Math.max(1, currentPage.value)
 
@@ -17,8 +21,8 @@ export const useDocuments = defineQuery(() => {
           page_size: pageSize.value,
         },
         path: {
-          database: route.params.db,
-          namespace: route.params.namespace,
+          database: database.value,
+          namespace: namespace.value,
         },
       })
     },
