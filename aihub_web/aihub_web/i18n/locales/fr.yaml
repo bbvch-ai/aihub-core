@@ -214,6 +214,7 @@ service:
     title: "Services"
     description: "Voici tous les services que vous avez activés"
     search: "Rechercher"
+    button: "Rechercher"
 
 agent:
   title: "Agents"
@@ -528,3 +529,17 @@ memory:
     error:
       title: "Suppression échouée"
       message: "Échec de la suppression du souvenir. Veuillez réessayer."
+  search:
+    button: "Rechercher"
+    placeholder: "Rechercher des souvenirs..."
+    clear: "Effacer"
+  delete_all:
+    button: "Tout supprimer"
+    confirm_header: "Supprimer tous les souvenirs"
+    confirm_message: "Êtes-vous sûr de vouloir supprimer tous les souvenirs ? Cette action est irréversible."
+    success:
+      title: "Succès"
+      message: "Tous les souvenirs ont été supprimés avec succès"
+    error:
+      title: "Suppression échouée"
+      message: "Échec de la suppression de tous les souvenirs. Veuillez réessayer."

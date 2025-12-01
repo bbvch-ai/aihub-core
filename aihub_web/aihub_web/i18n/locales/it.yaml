@@ -214,6 +214,7 @@ service:
     title: "Servizi"
     description: "Qui sono elencati tutti i servizi che hai attivato"
     search: "Cerca"
+    button: "Cerca"
 
 agent:
   title: "Agenti"
@@ -528,3 +529,17 @@ memory:
     error:
       title: "Eliminazione fallita"
       message: "Impossibile eliminare il ricordo. Riprova."
+  search:
+    button: "Cerca"
+    placeholder: "Cerca ricordi..."
+    clear: "Cancella"
+  delete_all:
+    button: "Elimina tutto"
+    confirm_header: "Elimina tutti i ricordi"
+    confirm_message: "Sei sicuro di voler eliminare tutti i ricordi? Questa azione non può essere annullata."
+    success:
+      title: "Successo"
+      message: "Tutti i ricordi sono stati eliminati con successo"
+    error:
+      title: "Eliminazione fallita"
+      message: "Impossibile eliminare tutti i ricordi. Riprova."

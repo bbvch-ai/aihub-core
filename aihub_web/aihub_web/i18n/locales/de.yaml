@@ -215,6 +215,7 @@ service:
     title: "Dienste"
     description: "Hier sind alle Dienste aufgelistet, die Sie aktiviert haben"
     search: "Suche"
+    button: "Suchen"
 
 agent:
   title: "Agenten"
@@ -529,3 +530,17 @@ memory:
     error:
       title: "Löschen fehlgeschlagen"
       message: "Erinnerung konnte nicht gelöscht werden. Bitte versuchen Sie es erneut."
+  search:
+    button: "Suchen"
+    placeholder: "Erinnerungen durchsuchen..."
+    clear: "Löschen"
+  delete_all:
+    button: "Alle löschen"
+    confirm_header: "Alle Erinnerungen löschen"
+    confirm_message: "Sind Sie sicher, dass Sie alle Erinnerungen löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
+    success:
+      title: "Erfolg"
+      message: "Alle Erinnerungen erfolgreich gelöscht"
+    error:
+      title: "Löschen fehlgeschlagen"
+      message: "Alle Erinnerungen konnten nicht gelöscht werden. Bitte versuchen Sie es erneut."

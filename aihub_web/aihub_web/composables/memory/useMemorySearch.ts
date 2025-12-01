@@ -1,16 +1,17 @@
 import { searchMemories, type MemorySearchResponse } from '@core/sdk/client'
-import { defineQuery } from '@pinia/colada'
-import { ref } from 'vue'
+import { minutesToMilliseconds } from 'date-fns'
+import { computed, ref } from 'vue'
 
 export const useMemorySearch = defineQuery(() => {
   const query = ref<string>('')
   const limit = ref(100)
-  const agentId = ref<string | undefined>(undefined)
-  const threadId = ref<string | undefined>(undefined)
 
-  const { data, isPending } = useQuery<MemorySearchResponse>({
-    key: () => ['memory-search', { query: query.value, limit: limit.value, agentId: agentId.value, threadId: threadId.value }],
-    staleTime: 1000 * 30,
+  const {
+    data: searchData,
+    isPending: searchIsLoading,
+  } = useQuery<MemorySearchResponse>({
+    key: () => ['memory-search', { query: query.value, limit: limit.value }],
+    staleTime: minutesToMilliseconds(1),
     enabled: () => !!query.value,
     query: async () => {
       if (!query.value) {
@@ -22,28 +23,20 @@ export const useMemorySearch = defineQuery(() => {
         }
       }
 
-      const response = await searchMemories({
+      return await searchMemories({
+        composable: '$fetch',
         query: {
           query: query.value,
           limit: limit.value,
-          agent_id: agentId.value,
-          thread_id: threadId.value,
         },
       })
-      return response.data as MemorySearchResponse
     },
   })
 
+  const isSearchActive = computed(() => !!query.value)
+
   const setSearchQuery = (q: string) => {
     query.value = q
-  }
-
-  const setAgentFilter = (id: string | undefined) => {
-    agentId.value = id
-  }
-
-  const setThreadFilter = (id: string | undefined) => {
-    threadId.value = id
   }
 
   const clearSearch = () => {
@@ -51,15 +44,11 @@ export const useMemorySearch = defineQuery(() => {
   }
 
   return {
-    data,
-    isPending,
+    searchData,
+    searchIsLoading,
     query,
-    limit,
-    agentId,
-    threadId,
+    isSearchActive,
     setSearchQuery,
-    setAgentFilter,
-    setThreadFilter,
     clearSearch,
   }
 })

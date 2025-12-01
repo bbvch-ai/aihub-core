@@ -215,6 +215,7 @@ service:
     title: "Services"
     description: "Here are all the services listed that you have activated"
     search: "Search"
+    button: "Search"
 
 agent:
   title: "Agents"
@@ -550,3 +551,17 @@ memory:
     error:
       title: "Delete Failed"
       message: "Failed to delete memory. Please try again."
+  search:
+    button: "Search"
+    placeholder: "Search memories..."
+    clear: "Clear"
+  delete_all:
+    button: "Delete All"
+    confirm_header: "Delete All Memories"
+    confirm_message: "Are you sure you want to delete all memories? This action cannot be undone."
+    success:
+      title: "Success"
+      message: "All memories deleted successfully"
+    error:
+      title: "Delete Failed"
+      message: "Failed to delete all memories. Please try again."

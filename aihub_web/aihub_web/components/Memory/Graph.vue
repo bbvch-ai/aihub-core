@@ -1,14 +1,19 @@
 <script setup lang="ts">
+import { useDark } from '@vueuse/core'
 import Graph from 'graphology'
 import forceAtlas2 from 'graphology-layout-forceatlas2'
 import Sigma from 'sigma'
-import { ref, onMounted, watch, onUnmounted } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 
-import type { MemoryRelationDTO } from '@core/sdk/client'
+import type { MemoryDto, MemoryRelationDto } from '@core/sdk/client'
 
 interface Props {
-  relations: MemoryRelationDTO[]
+  relations: MemoryRelationDto[]
   selectedMemoryId?: string
+  searchResults?: {
+    memories: MemoryDto[]
+    relations: MemoryRelationDto[]
+  } | null
 }
 
 const props = defineProps<Props>()
@@ -16,9 +21,59 @@ const emit = defineEmits<{
   selectNode: [nodeId: string]
 }>()
 
+const isDark = useDark({ storageKey: 'dark' })
 const container = ref<HTMLDivElement>()
 let sigma: Sigma | null = null
 let graph: Graph | null = null
+
+const hashString = (str: string): number => {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash
+  }
+  return Math.abs(hash)
+}
+
+const getDeterministicPosition = (id: string, seed: 'x' | 'y'): number => {
+  const hash = hashString(id + seed)
+  return (hash % 1000) / 1000
+}
+
+const getCssVar = (varName: string): string => {
+  if (typeof window === 'undefined') return '#ff0000'
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim()
+}
+
+const getColors = () => ({
+  nodeActive: getCssVar('--p-primary-color'),
+  nodeInactive: getCssVar('--p-surface-500'),
+  nodeSelected: getCssVar('--p-red-600'),
+  edgeActive: getCssVar('--p-surface-600'),
+  edgeInactive: getCssVar('--p-surface-400'),
+  labelColor: getCssVar('--p-primary-color'),
+})
+
+const isSearchActive = computed(() => !!props.searchResults)
+
+const relevantNodeIds = computed(() => {
+  if (!isSearchActive.value || !props.searchResults) return new Set<string>()
+  const ids = new Set<string>()
+  props.searchResults.memories.forEach(m => ids.add(m.id))
+  props.searchResults.relations.forEach((r) => {
+    ids.add(r.source)
+    ids.add(r.target)
+  })
+  return ids
+})
+
+const relevantRelations = computed(() => {
+  if (!isSearchActive.value || !props.searchResults) return new Set<string>()
+  return new Set(
+    props.searchResults.relations.map((r, i) => `${r.source}-${r.relation}-${r.target}-${i}`),
+  )
+})
 
 const buildGraph = () => {
   if (!props.relations || props.relations.length === 0) {
@@ -26,33 +81,36 @@ const buildGraph = () => {
   }
 
   const g = new Graph({ multi: true, type: 'directed' })
+  const colors = getColors()
 
-  // Build graph from relations
   const nodeSet = new Set<string>()
   props.relations.forEach((rel) => {
     nodeSet.add(rel.source)
     nodeSet.add(rel.target)
   })
 
-  // Add nodes with random positions
   nodeSet.forEach((node) => {
     if (!g.hasNode(node)) {
+      const isRelevant = !isSearchActive.value || relevantNodeIds.value.has(node)
       g.addNode(node, {
         label: node,
-        size: 10,
-        color: '#4f46e5',
-        x: Math.random(),
-        y: Math.random(),
+        size: isRelevant ? 10 : 8,
+        color: isRelevant ? colors.nodeActive : colors.nodeInactive,
+        labelColor: colors.labelColor,
+        x: getDeterministicPosition(node, 'x'),
+        y: getDeterministicPosition(node, 'y'),
       })
     }
   })
 
-  // Add edges
   props.relations.forEach((rel, index) => {
+    const edgeKey = `${rel.source}-${rel.relation}-${rel.target}-${index}`
+    const isRelevant = !isSearchActive.value || relevantRelations.value.has(edgeKey)
     g.addEdge(rel.source, rel.target, {
       label: rel.relation,
-      size: 2,
-      color: '#94a3b8',
+      size: isRelevant ? 2 : 1,
+      color: isRelevant ? colors.edgeActive : colors.edgeInactive,
+      labelColor: colors.labelColor,
     }, `edge-${index}`)
   })
 
@@ -62,7 +120,6 @@ const buildGraph = () => {
 const renderGraph = () => {
   if (!container.value) return
 
-  // Clear previous instance
   if (sigma) {
     sigma.kill()
     sigma = null
@@ -70,7 +127,6 @@ const renderGraph = () => {
 
   graph = buildGraph()
 
-  // Apply layout if graph has nodes
   if (graph.order > 0) {
     forceAtlas2.assign(graph, {
       iterations: 100,
@@ -81,20 +137,22 @@ const renderGraph = () => {
     })
   }
 
-  // Create sigma instance
+  const colors = getColors()
+
   sigma = new Sigma(graph, container.value, {
     renderEdgeLabels: true,
     allowInvalidContainer: true,
+    labelColor: { attribute: 'labelColor', color: colors.labelColor },
+    edgeLabelColor: { attribute: 'labelColor', color: colors.labelColor },
   })
 
-  // Handle node clicks
   sigma.on('clickNode', ({ node }) => {
     emit('selectNode', node)
   })
 
-  // Highlight selected node
   if (props.selectedMemoryId && graph.hasNode(props.selectedMemoryId)) {
-    graph.setNodeAttribute(props.selectedMemoryId, 'color', '#ef4444')
+    const colors = getColors()
+    graph.setNodeAttribute(props.selectedMemoryId, 'color', colors.nodeSelected)
     graph.setNodeAttribute(props.selectedMemoryId, 'size', 15)
   }
 
@@ -105,26 +163,32 @@ onMounted(() => {
   renderGraph()
 })
 
-watch(() => props.relations, () => {
+watch(() => [props.relations, props.searchResults], () => {
   renderGraph()
 }, { deep: true })
 
 watch(() => props.selectedMemoryId, (newId, oldId) => {
   if (!graph || !sigma) return
 
-  // Reset old selection
+  const colors = getColors()
+
   if (oldId && graph.hasNode(oldId)) {
-    graph.setNodeAttribute(oldId, 'color', '#4f46e5')
-    graph.setNodeAttribute(oldId, 'size', 10)
+    const isRelevant = !isSearchActive.value || relevantNodeIds.value.has(oldId)
+    graph.setNodeAttribute(oldId, 'color', isRelevant ? colors.nodeActive : colors.nodeInactive)
+    graph.setNodeAttribute(oldId, 'size', isRelevant ? 10 : 8)
   }
 
-  // Highlight new selection
   if (newId && graph.hasNode(newId)) {
-    graph.setNodeAttribute(newId, 'color', '#ef4444')
+    graph.setNodeAttribute(newId, 'color', colors.nodeSelected)
     graph.setNodeAttribute(newId, 'size', 15)
   }
 
   sigma.refresh()
+})
+
+watch(isDark, async () => {
+  await nextTick()
+  renderGraph()
 })
 
 onUnmounted(() => {
@@ -137,7 +201,7 @@ onUnmounted(() => {
 <template>
   <div
     ref="container"
-    class="w-full h-full min-h-[400px]"
+    class="size-full min-h-[400px]"
   />
 </template>
 

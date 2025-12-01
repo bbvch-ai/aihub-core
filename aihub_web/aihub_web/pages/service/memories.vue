@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
 import { useToast } from 'primevue/usetoast'
+import { useI18n } from 'vue-i18n'
 
 import type { NavItem } from '@core/types/NavItem'
 
@@ -23,7 +23,10 @@ const subPath = (path: string) => {
 onMounted(() => {
   // Redirect to graph view by default
   if (route.path === localePath('/service/memories')) {
-    router.push(localePath(subPath('graph')))
+    router.push({
+      path: localePath(subPath('graph')),
+      query: route.query,
+    })
   }
 })
 
@@ -42,7 +45,10 @@ const navItems = computed<NavItem[]>(() => {
 })
 
 const toNavItem = (navItem: NavItem) => {
-  router.push(localePath(navItem.path))
+  router.push({
+    path: localePath(navItem.path),
+    query: route.query,
+  })
 }
 
 const activeNavItem = computed<NavItem | undefined>(() => {
@@ -52,7 +58,10 @@ const activeNavItem = computed<NavItem | undefined>(() => {
 const handleCloseDetail = () => {
   // Determine which tab is active and navigate to it
   const activeTab = activeNavItem.value?.key || 'graph'
-  router.push(localePath(`/service/memories/${activeTab}`))
+  router.push({
+    path: localePath(`/service/memories/${activeTab}`),
+    query: route.query,
+  })
 }
 
 const handleUpdateMemory = async (memoryId: string, data: string) => {

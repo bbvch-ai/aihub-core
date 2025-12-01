@@ -1,4 +1,4 @@
-import { deleteMemory } from '@core/sdk/client'
+import { deleteMemory, deleteAllMemories } from '@core/sdk/client'
 
 export const useDeleteMemory = defineMutation(() => {
   const queryCache = useQueryCache()
@@ -17,5 +17,23 @@ export const useDeleteMemory = defineMutation(() => {
 
   return {
     deleteMemory: deleteMemoryMutation,
+  }
+})
+
+export const useDeleteAllMemories = defineMutation(() => {
+  const queryCache = useQueryCache()
+
+  const { mutateAsync: deleteAllMemoriesMutation } = useMutation({
+    mutation: async () => {
+      await deleteAllMemories({
+        composable: '$fetch',
+      })
+      queryCache.invalidateQueries({ key: ['memories'] })
+      queryCache.invalidateQueries({ key: ['memory-search'] })
+    },
+  })
+
+  return {
+    deleteAllMemories: deleteAllMemoriesMutation,
   }
 })
