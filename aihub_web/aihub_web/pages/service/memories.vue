@@ -1,39 +1,58 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useToast } from 'primevue/usetoast'
+
+import type { NavItem } from '@core/types/NavItem'
 
 import { useLocalePath } from '#i18n'
 
-const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const localePath = useLocalePath()
+const { t } = useI18n()
 const toast = useToast()
 
-// Data fetching
-const {
-  paginatedMemories,
-  allRelations,
-  currentPage,
-  totalPages,
-  memoriesAreLoading,
-  nextPage,
-  prevPage,
-} = useMemories()
-
-// Mutations
+// Mutations (passed to child pages via NuxtPage)
 const { updateMemory } = useUpdateMemory()
 const { deleteMemory } = useDeleteMemory()
 
-// Selection state (from route)
-const selectedMemoryId = computed(() => route.params.memory_id as string | undefined)
-
-// Handlers
-const handleSelectMemory = (memory: { id: string }) => {
-  router.push(localePath(`/service/memories/${memory.id}`))
+const subPath = (path: string) => {
+  return `/service/memories/${path}`
 }
 
+onMounted(() => {
+  // Redirect to graph view by default
+  if (route.path === localePath('/service/memories')) {
+    router.push(localePath(subPath('graph')))
+  }
+})
+
+const isActive = (path: string) => {
+  return () => {
+    const localizedPath = localePath(subPath(path))
+    return route.path.startsWith(localizedPath)
+  }
+}
+
+const navItems = computed<NavItem[]>(() => {
+  return [
+    { name: t('memory.graph.title'), key: 'graph', path: subPath('graph'), isActive: isActive('graph') },
+    { name: t('memory.list.title'), key: 'list', path: subPath('list'), isActive: isActive('list') },
+  ]
+})
+
+const toNavItem = (navItem: NavItem) => {
+  router.push(localePath(navItem.path))
+}
+
+const activeNavItem = computed<NavItem | undefined>(() => {
+  return navItems.value?.filter(navItem => navItem.isActive())[0]
+})
+
 const handleCloseDetail = () => {
-  router.push(localePath('/service/memories'))
+  // Determine which tab is active and navigate to it
+  const activeTab = activeNavItem.value?.key || 'graph'
+  router.push(localePath(`/service/memories/${activeTab}`))
 }
 
 const handleUpdateMemory = async (memoryId: string, data: string) => {
@@ -78,49 +97,22 @@ const handleDeleteMemory = async (memoryId: string) => {
     })
   }
 }
-
-const handleSelectNode = (nodeId: string) => {
-  const memory = paginatedMemories.value.find(m => m.id === nodeId)
-  if (memory) {
-    handleSelectMemory(memory)
-  }
-}
 </script>
 
 <template>
   <StructuralScreen>
-    <StructuralColumn
-      :title="t('memory.graph.title')"
-      :width="400"
-      :loading="memoriesAreLoading"
-      class="overflow-hidden"
-    >
-      <div class="size-full">
-        <MemoryGraph
-          :relations="allRelations"
-          :selected-memory-id="selectedMemoryId"
-          @select-node="handleSelectNode"
-        />
-      </div>
-    </StructuralColumn>
-
-    <StructuralColumn
-      :title="t('memory.list.title')"
-      :loading="memoriesAreLoading"
-    >
-      <MemoryList
-        :memories="paginatedMemories"
-        :current-page="currentPage"
-        :total-pages="totalPages"
-        :selected-memory-id="selectedMemoryId"
-        @select-memory="handleSelectMemory"
-        @next-page="nextPage"
-        @prev-page="prevPage"
+    <template #top>
+      <SelectButton
+        v-if="navItems"
+        :model-value="activeNavItem"
+        :options="navItems"
+        data-key="key"
+        option-label="name"
+        size="small"
+        @update:model-value="toNavItem"
       />
-    </StructuralColumn>
-
+    </template>
     <NuxtPage
-      :selected-memory-id="selectedMemoryId"
       @close="handleCloseDetail"
       @update="handleUpdateMemory"
       @delete="handleDeleteMemory"

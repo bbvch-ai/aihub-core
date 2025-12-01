@@ -1,3 +1,17 @@
+<template>
+  <StructuralColumn
+    v-if="selectedMemory"
+    :close-route="'/service/memories/list'"
+  >
+    <MemoryEdit
+      :memory="selectedMemory"
+      @update="handleUpdate"
+      @delete="handleDelete"
+      @close="emit('close')"
+    />
+  </StructuralColumn>
+</template>
+
 <script setup lang="ts">
 const { t } = useI18n()
 const route = useRoute()
@@ -31,18 +45,3 @@ const handleDelete = () => {
   }
 }
 </script>
-
-<template>
-  <StructuralColumn
-    v-if="selectedMemory"
-    :title="t('memory.detail.title')"
-    :close-route="'/service/memories'"
-  >
-    <MemoryEdit
-      :memory="selectedMemory"
-      @update="handleUpdate"
-      @delete="handleDelete"
-      @close="emit('close')"
-    />
-  </StructuralColumn>
-</template>
