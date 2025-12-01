@@ -485,7 +485,6 @@ services:
   # GPU variants are only used for 'nightly' and 'latest' stages when
   # GPU is enabled. All other configurations use CPU variants.
   # ===================================================================
-
   llama-cpp:
     container_name: llama-cpp
     platform: "linux/amd64"
@@ -499,12 +498,12 @@ services:
       HF_HOME: /root/.cache/huggingface
     command: >
       -hf google/gemma-3-12b-it-qat-q4_0-gguf
-      --hf-token ${HUGGINGFACE_API_KEY}
       --alias gemma-3-12b
-      --port 128000
+      -ngl -1
+      --port 8182
+      --hf-token ${HUGGINGFACE_API_KEY}
       --host 0.0.0.0
       -c 8196
-      -ngl -1
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
       timeout: 10s
@@ -611,7 +610,6 @@ services:
   # compatible format. GPU variants are only used for 'nightly' and
   # 'latest' stages when GPU is enabled.
   # ===================================================================
-
   speaches:
     container_name: speaches
     image: ghcr.io/bbvch-ai/aihub-core/speaches:0.8.3-cuda-12.6.3
