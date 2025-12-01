@@ -5,11 +5,12 @@ from aihub_lib.generative_ai.document.loaders.DoclingLoader import DoclingLoader
 from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import DocumentIntelligenceLoader
 from aihub_lib.generative_ai.document.loaders.ImageLoader import ImageLoader
 from aihub_lib.generative_ai.document.loaders.RawLoader import RawLoader
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.infrastructure.azure_cognitive_services.AzureDocumentIntelligenceSettings import (
     AzureDocumentIntelligenceSettings,
 )
 from aihub_lib.infrastructure.docling.DoclingSettings import DoclingSettings
-from dagster import ConfigurableResource
+from dagster import ConfigurableResource, ResourceDependency
 from llama_index.core.readers.base import BaseReader
 from llama_index.readers.file import EpubReader, IPYNBReader, RTFReader
 from pydantic import Field
@@ -76,6 +77,8 @@ class DocumentParserResource(ConfigurableResource):
         bool, Field(default=True, description="Specifies if images should be embedded into the documents and nodes.")
     ] = True
 
+    llm_config: ResourceDependency[LLMConfig] | None = None
+
     _base_readers = {
         EpubReader: ["epub"],
         IPYNBReader: ["ipynb"],
@@ -108,4 +111,9 @@ class DocumentParserResource(ConfigurableResource):
         reader_cls = extension_to_reader.get(filetype)
         if reader_cls is None:
             raise ValueError(f"Unsupported file extension: {filetype}")
+
+        # Pass llm_config to DoclingLoader if available
+        if reader_cls == DoclingLoader:
+            return DoclingLoader(llm_config=self.llm_config)
+
         return reader_cls()

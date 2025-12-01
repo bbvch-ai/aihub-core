@@ -3,10 +3,9 @@ import base64
 import html
 import os
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import httpx
-import pandas as pd
 from bs4 import BeautifulSoup
 from docling_core.types import DoclingDocument
 from docling_core.types.doc import ImageRefMode, TableItem
@@ -15,6 +14,8 @@ from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
 
+from aihub_lib.generative_ai.document.refinement import refine_document_text
+from aihub_lib.generative_ai.document.tables import create_markdown_table
 from aihub_lib.generative_ai.utils.path_utils import create_figures_folder_name
 from aihub_lib.infrastructure.docling.DoclingSettings import DoclingSettings
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
@@ -23,11 +24,15 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     NUMBER_OF_PAGES,
 )
 
+if TYPE_CHECKING:
+    from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+
 
 class DoclingLoader(BaseReader):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, llm_config: "LLMConfig | None" = None, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.config = DoclingSettings()
+        self.llm_config = llm_config
 
     @trace_fn
     def load_data(
@@ -86,9 +91,17 @@ class DoclingLoader(BaseReader):
         if len(doc.pictures) > 0:
             img_strs = [picture.export_to_markdown(doc) for picture in doc.pictures]
             markdown_text = inject_figure_tags(markdown_text=markdown_content, img_strs=img_strs)
-            markdown_content = convert_tables_to_html(markdown_text=markdown_text, tables=doc.tables)
+            markdown_content = convert_tables_to_markdown(
+                markdown_text=markdown_text, tables=doc.tables, llm_config=self.llm_config
+            )
         else:
-            markdown_content = convert_tables_to_html(markdown_text=markdown_content, tables=doc.tables)
+            markdown_content = convert_tables_to_markdown(
+                markdown_text=markdown_content, tables=doc.tables, llm_config=self.llm_config
+            )
+
+        # Refine text with LLM to fix OCR errors and structural issues
+        if self.llm_config is not None:
+            markdown_content = refine_document_text(markdown_content, self.llm_config)
 
         metadata = {NUMBER_OF_PAGES: len(answer["document"]["json_content"]["pages"])}
 
@@ -236,28 +249,30 @@ def inject_figure_tags(markdown_text: str, img_strs: list[str]):
     return markdown_text
 
 
-def convert_tables_to_html(markdown_text: str, tables: list[TableItem]):
-    """Replace Markdown tables with HTML tables.
+def convert_tables_to_markdown(markdown_text: str, tables: list[TableItem], llm_config: "LLMConfig | None" = None):
+    """Replace Docling markdown tables with properly formatted markdown tables wrapped in <table> tags.
 
-    If the DataFrame returned by Docling has integer column indices (no header detected),
-    the first row is used as the header. This matches the behavior of MarkdownStructuralNodeParser
-    when creating nodes from tables.
+    Uses shared table utilities from aihub_lib.generative_ai.document.tables to ensure
+    consistent table handling between document creation and node parsing.
+
+    Tables are wrapped in <table> tags so MarkdownStructuralNodeParser can identify them.
+
+    When llm_config is provided, this function can:
+    - Detect and merge multi-row headers
+    - Split incorrectly merged tables into separate <table> elements
     """
     pattern = r"(\|[^\n]+\|\r?\n\|[:\-| ]+\|\r?(?:\n\|[^\n]+\|\r?)*)"
     md_tables = re.findall(pattern, markdown_text)
     for md_table, table in zip(md_tables, tables):
         df = table.export_to_dataframe()
-        if not df.empty and _has_integer_column_indices(df):
-            df.columns = df.iloc[0]
-            df = df[1:].reset_index(drop=True)
-        html_table = df.to_html(index=False)
-        markdown_text = markdown_text.replace(md_table, html_table, 1)
+        formatted_tables = create_markdown_table(df, llm_config)
+
+        # create_markdown_table may return multiple tables separated by \n\n if merged tables were detected
+        individual_tables = formatted_tables.split("\n\n")
+        wrapped_tables = "\n\n".join(f"<table>{t}</table>" for t in individual_tables if t.strip())
+
+        markdown_text = markdown_text.replace(md_table, wrapped_tables, 1)
     return markdown_text
-
-
-def _has_integer_column_indices(df: pd.DataFrame) -> bool:
-    """Check if DataFrame has integer column indices (0, 1, 2, ...) instead of proper headers."""
-    return all(isinstance(col, int) for col in df.columns)
 
 
 def _fix_null_meta_fields(data: dict) -> None:

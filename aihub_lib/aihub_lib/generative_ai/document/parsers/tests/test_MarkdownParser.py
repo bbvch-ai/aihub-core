@@ -739,9 +739,12 @@ def test_page_numbers_are_set_correctly(node_parser):
 
 
 def test_table_extraction(node_parser):
+    # Tables should be in markdown format wrapped in <table> tags (as produced by DoclingLoader)
     text = """# Section
     Some intro text.
-    <table><tr><td>Cell 1</td><td>Cell 2</td></tr></table>
+    <table>| Cell 1 | Cell 2 |
+|--------|--------|
+| Data 1 | Data 2 |</table>
     Some outro text."""
     document = Document(text=text)
     nodes = node_parser.get_nodes_from_node(document)
@@ -786,17 +789,13 @@ def test_large_table_splitting():
     # Use a small chunk size to force splitting
     node_parser = MarkdownStructuralNodeParser(metadata=metadata, chunk_size=50, chunk_overlap=0)
 
-    # Create an HTML table with header and many rows to exceed chunk size
-    table_rows = ["<table>"]
-    table_rows.append("<thead><tr><th>Column 1</th><th>Column 2</th><th>Column 3</th></tr></thead>")
-    table_rows.append("<tbody>")
+    # Create a markdown table with header and many rows to exceed chunk size
+    # Tables should be in markdown format wrapped in <table> tags (as produced by DoclingLoader)
+    table_rows = ["| Column 1 | Column 2 | Column 3 |", "|----------|----------|----------|"]
     for i in range(20):
-        table_rows.append(f"<tr><td>Data {i}A</td><td>Data {i}B</td><td>Data {i}C</td></tr>")
+        table_rows.append(f"| Data {i}A | Data {i}B | Data {i}C |")
 
-    table_rows.append("</tbody>")
-    table_rows.append("</table>")
-
-    table_text = "\n".join(table_rows)
+    table_text = "<table>" + "\n".join(table_rows) + "</table>"
 
     text = f"""# Section with Table
 Some intro text.
@@ -813,9 +812,8 @@ Some outro text."""
     assert len(table_nodes) > 1, f"Expected multiple table chunks, got {len(table_nodes)}"
 
     # Each chunk should contain the header
-    header = "| Column 1   | Column 2   | Column 3   |"
     for table_node in table_nodes:
-        assert header in table_node.text, f"Header missing in chunk: {table_node.text}"
+        assert "Column 1" in table_node.text, f"Header missing in chunk: {table_node.text}"
 
     # All chunks should have the same metadata (except index)
     first_table = table_nodes[0]
