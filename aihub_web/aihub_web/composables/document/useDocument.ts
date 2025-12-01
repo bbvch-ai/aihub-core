@@ -4,10 +4,12 @@ import { useRoute } from 'vue-router'
 
 export const useDocument = defineQuery(() => {
   const route = useRoute()
+  const isRouteReady = useRouteReady('db', 'namespace', 'document_id')
+
   const { data: document, isPending: documentIsLoading } = useQuery<DocumentDto>({
     key: () => ['knowledge', 'databases', route.params.db as string, 'namespaces', route.params.namespace as string, 'documents', route.params.document_id as string],
     staleTime: minutesToMilliseconds(5),
-    enabled: true,
+    enabled: isRouteReady,
     query: async () => {
       return await getDocumentById({
         composable: '$fetch',

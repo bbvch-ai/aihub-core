@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.254.8] - 2025-12-01 - Smarter Data Fetching for Enhanced UI Stability
+
+### Added
+
+- ✨ **Introduced `useRouteReady` Composable:** A new utility function to ensure that data fetching operations are only
+  initiated once all required route parameters are fully resolved and valid, preventing queries from executing with
+  incomplete or placeholder values during navigation.
+
+### Refactor
+
+- 🧹 **Optimized Data Query Activation:** Implemented the `useRouteReady` composable across various data fetching hooks,
+  including those for **Agents**, **Documents**, **Evaluation Datasets** and **Experiments**, **Processes**, **Roles**,
+  **Threads**, and **Users**. This change prevents API queries from running prematurely, leading to more stable UI
+  states and improved application reliability during route transitions.
+
+---
+
 ## [v0.254.7] - 2025-11-28 - New Service Integration: Attu Platform
 
 ### Added
