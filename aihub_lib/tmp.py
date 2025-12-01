@@ -45,20 +45,21 @@ async def main():
     )
     print("created_memory", created_memory)
 
-    # search_result = await agent_memory.search(
-    #     query="Wo arbeitet Stefan Häberling?",
-    #     user_id="joel",
-    #     # thread_id="thread-1",
-    # )
-    #
-    # print("search_result", search_result)
-    # print(await agent_memory.get_all(user_id="joel"))
+    search_result = await agent_memory.search(
+        query="Wo arbeitet Stefan Häberling?",
+        user_id="cc4af21b-981a-4a76-826d-e722715082e0",
+        # thread_id="thread-1",
+    )
 
-    # user_memory = UserMemory(
-    #     user=UserIdentity(id="joel", name="Joel", email="joel.barmettler@bbv.ch", roles=[]),
-    #     t=LocaleHandler(locale="en"),
-    # )
-    # print(await user_memory.get_all())
+    print("search_result", search_result)
+
+    user_memory = UserMemory(
+        user=UserIdentity(
+            id="cc4af21b-981a-4a76-826d-e722715082e0", name="Joel", email="joel.barmettler@bbv.ch", roles=[]
+        ),
+        t=LocaleHandler(locale="en"),
+    )
+    print(await user_memory.get_all())
 
 
 if __name__ == "__main__":

@@ -123,13 +123,3 @@ class AgentMemory:
             threshold=threshold,
             rerank=rerank,
         )
-
-    async def delete_all(
-        self,
-        user_id: str,
-        thread_id: str | None = None,
-    ):
-        return await self.mem0service.delete_all(user_id=user_id, agent_id=self.agent_id, thread_id=thread_id)
-
-    async def get_all(self, user_id: str) -> MemorySearchResult:
-        return await self.mem0service.get_all(user_id=user_id, agent_id=self.agent_id)

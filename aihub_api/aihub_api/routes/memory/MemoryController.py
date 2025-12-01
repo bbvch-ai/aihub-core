@@ -32,15 +32,11 @@ class MemoryController(Controller):
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
             limit: Annotated[int, Query(ge=1, le=1000, description="Maximum number of memories to return")] = 100,
-            agent_id: Annotated[str | None, Query(description="Filter by agent ID")] = None,
-            thread_id: Annotated[str | None, Query(description="Filter by thread ID")] = None,
         ) -> MemoriesResponse:
             """Retrieves user memories with limit and optional filters."""
             return await MemoryService.get_memories_for_user(
                 user=user,
                 limit=limit,
-                agent_id=agent_id,
-                thread_id=thread_id,
                 t=t,
             )
 
@@ -85,14 +81,10 @@ class MemoryController(Controller):
         async def delete_all_memories(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
-            agent_id: Annotated[str | None, Query(description="Filter by agent ID")] = None,
-            thread_id: Annotated[str | None, Query(description="Filter by thread ID")] = None,
         ) -> DeleteAllMemoriesResponse:
             """Deletes all memories for a user with optional filters."""
             return await MemoryService.delete_all_memories(
                 user=user,
-                agent_id=agent_id,
-                thread_id=thread_id,
                 t=t,
             )
 

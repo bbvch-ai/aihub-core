@@ -19,16 +19,12 @@ class MemoryService:
     async def get_memories_for_user(
         user: UserIdentity,
         limit: int,
-        agent_id: str | None,
-        thread_id: str | None,
         t: LocaleHandler,
     ) -> MemoriesResponse:
         user_memory = UserMemory(user=user, t=t)
-        all_result = await user_memory.get_all(agent_id=agent_id)
+        all_result = await user_memory.get_all()
 
         memories = all_result.results
-        if thread_id:
-            memories = [m for m in memories if m.thread_id == thread_id]
 
         limited_memories = memories[:limit]
         memory_dtos = [MemoryDTO.from_memory(m) for m in limited_memories]
@@ -51,9 +47,8 @@ class MemoryService:
         t: LocaleHandler,
     ) -> MemorySearchResponse:
         user_memory = UserMemory(user=user, t=t)
-        search_result = await user_memory.mem0service.search(
+        search_result = await user_memory.search(
             query=query,
-            user_id=user.id,
             agent_id=agent_id,
             thread_id=thread_id,
             limit=limit,
@@ -80,12 +75,10 @@ class MemoryService:
     @trace_fn
     async def delete_all_memories(
         user: UserIdentity,
-        agent_id: str | None,
-        thread_id: str | None,
         t: LocaleHandler,
     ) -> DeleteAllMemoriesResponse:
         user_memory = UserMemory(user=user, t=t)
-        await user_memory.delete_all(agent_id=agent_id, thread_id=thread_id)
+        await user_memory.delete_all()
         return DeleteAllMemoriesResponse(status="deleted")
 
     @staticmethod

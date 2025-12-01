@@ -3,6 +3,7 @@ import { useDark } from '@vueuse/core'
 import Graph from 'graphology'
 import forceAtlas2 from 'graphology-layout-forceatlas2'
 import Sigma from 'sigma'
+import { EdgeArrowProgram } from 'sigma/rendering'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 
 import type { MemoryDto, MemoryRelationDto } from '@core/sdk/client'
@@ -42,7 +43,7 @@ const getDeterministicPosition = (id: string, seed: 'x' | 'y'): number => {
 }
 
 const getCssVar = (varName: string): string => {
-  if (typeof window === 'undefined') return '#ff0000'
+  if (typeof window === 'undefined') return '#000000'
   return getComputedStyle(document.documentElement).getPropertyValue(varName).trim()
 }
 
@@ -75,13 +76,21 @@ const relevantRelations = computed(() => {
   )
 })
 
-const buildGraph = () => {
+interface GraphColors {
+  nodeActive: string
+  nodeInactive: string
+  nodeSelected: string
+  edgeActive: string
+  edgeInactive: string
+  labelColor: string
+}
+
+const buildGraph = (colors: GraphColors) => {
   if (!props.relations || props.relations.length === 0) {
     return new Graph({ multi: true, type: 'directed' })
   }
 
   const g = new Graph({ multi: true, type: 'directed' })
-  const colors = getColors()
 
   const nodeSet = new Set<string>()
   props.relations.forEach((rel) => {
@@ -125,7 +134,8 @@ const renderGraph = () => {
     sigma = null
   }
 
-  graph = buildGraph()
+  const colors = getColors()
+  graph = buildGraph(colors)
 
   if (graph.order > 0) {
     forceAtlas2.assign(graph, {
@@ -137,13 +147,15 @@ const renderGraph = () => {
     })
   }
 
-  const colors = getColors()
-
   sigma = new Sigma(graph, container.value, {
     renderEdgeLabels: true,
     allowInvalidContainer: true,
     labelColor: { attribute: 'labelColor', color: colors.labelColor },
     edgeLabelColor: { attribute: 'labelColor', color: colors.labelColor },
+    edgeProgramClasses: {
+      arrow: EdgeArrowProgram,
+    },
+    defaultEdgeType: 'arrow',
   })
 
   sigma.on('clickNode', ({ node }) => {
@@ -151,7 +163,6 @@ const renderGraph = () => {
   })
 
   if (props.selectedMemoryId && graph.hasNode(props.selectedMemoryId)) {
-    const colors = getColors()
     graph.setNodeAttribute(props.selectedMemoryId, 'color', colors.nodeSelected)
     graph.setNodeAttribute(props.selectedMemoryId, 'size', 15)
   }

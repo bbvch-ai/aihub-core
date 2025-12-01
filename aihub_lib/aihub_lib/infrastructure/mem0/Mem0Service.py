@@ -19,16 +19,27 @@ class MemoryType(Enum):
     EXPERT_MEMORY = "expert_memory"
 
 
+class MemoryMetadata(BaseModel):
+    agent_id: Annotated[str | None, Field(description="The agent ID.", alias="_agent_id")]
+    thread_id: Annotated[str | None, Field(description="The thread ID.", alias="_thread_id")]
+    display_id: Annotated[str | None, Field(description="The display ID.", alias="_display_id")]
+    run_id: Annotated[str | None, Field(description="The run ID.", alias="_run_id")]
+    visibility: Annotated[MemoryVisibility, Field(description="The visibility of the memory.", alias="_visibility")]
+    type: Annotated[MemoryType, Field(description="The type of the memory.", alias="_type")]
+    expert_memory_database: Annotated[
+        str | None, Field(description="The expert memory database.", alias="_expert_memory_database")
+    ]
+    expert_memory_namespace: Annotated[
+        str | None, Field(description="The expert memory namespace.", alias="_expert_memory_namespace")
+    ]
+
+
 class Memory(BaseModel):
     id: Annotated[str, Field(description="The unique identifier for the memory.")]
     memory: Annotated[str, Field(description="The memory deduced from the text data.")]
     score: Annotated[float | None, Field(description="The score of the memory.")] = None
     created_at: Annotated[str, Field(description="The timestamp when the memory was created.")]
-    user_id: Annotated[str | None, Field(description="The user ID of the user who created the memory.")]
-    agent_id: Annotated[str | None, Field(description="The agent ID of the agent who created the memory.")]
-    thread_id: Annotated[
-        str | None, Field(description="The ID of the thread in which the memory was created.", alias="run_id")
-    ]
+    metadata: Annotated[MemoryMetadata, Field(description="The metadata associated with the memory.")]
 
 
 class MemoryRelation(BaseModel):
@@ -84,16 +95,15 @@ class Mem0Service:
         await self._memory.add(
             messages,
             user_id=user_id,
-            agent_id=agent_id,
-            run_id=thread_id,  # Not a bug - a run in mem0 is what we consider to be a thread
             metadata={
-                "thread_id": thread_id,
-                "display_id": display_id,
-                "run_id": run_id,
-                "visibility": MemoryVisibility.PUBLIC.value if public else MemoryVisibility.PRIVATE.value,
-                "type": memory_type,
-                "expert_memory_database": expert_memory_database,
-                "expert_memory_namespace": expert_memory_namespace,
+                "_agent_id": agent_id,
+                "_thread_id": thread_id,
+                "_display_id": display_id,
+                "_run_id": run_id,
+                "_visibility": MemoryVisibility.PUBLIC.value if public else MemoryVisibility.PRIVATE.value,
+                "_type": memory_type,
+                "_expert_memory_database": expert_memory_database,
+                "_expert_memory_namespace": expert_memory_namespace,
             },
             infer=infer,
         )
@@ -125,39 +135,37 @@ class Mem0Service:
         rerank: bool = True,
     ) -> MemorySearchResult:
         filters = {
-            "thread_id": thread_id,
-            "display_id": display_id,
-            "run_id": run_id,
-            "visibility": MemoryVisibility.PUBLIC.value if public else MemoryVisibility.PRIVATE.value,
-            "type": memory_type,
-            "expert_memory_database": expert_memory_database,
-            "expert_memory_namespace": expert_memory_namespace,
+            "_agent_id": agent_id,
+            "_thread_id": thread_id,
+            "_display_id": display_id,
+            "_run_id": run_id,
+            "_visibility": MemoryVisibility.PUBLIC.value if public else MemoryVisibility.PRIVATE.value,
+            "_type": memory_type,
+            "_expert_memory_database": expert_memory_database,
+            "_expert_memory_namespace": expert_memory_namespace,
         }
         filters = {k: str(v) for k, v in filters.items() if v is not None}
         memories = await self._memory.search(
             query=query,
             user_id=user_id,
-            agent_id=agent_id,
-            run_id=thread_id,  # Not a bug - a run in mem0 is what we consider to be a thread
             limit=limit,
             filters=filters,
             threshold=threshold,
             rerank=rerank,
         )
+        print("search", memories)
         return MemorySearchResult.model_validate(memories)
 
     async def delete_all(
         self,
         user_id: str,
-        agent_id: str | None = None,
-        thread_id: str | None = None,
     ):
-        await self._memory.delete_all(user_id=user_id, agent_id=agent_id, run_id=thread_id)
+        await self._memory.delete_all(user_id=user_id)
 
     async def get_all(
         self,
         user_id: str,
-        agent_id: str | None = None,
     ) -> MemorySearchResult:
-        memories = await self._memory.get_all(user_id=user_id, agent_id=agent_id, limit=10_000)
+        memories = await self._memory.get_all(user_id=user_id, limit=10_000)
+        print("get_all", memories)
         return MemorySearchResult.model_validate(memories)
