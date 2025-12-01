@@ -165,7 +165,10 @@ def remove_figure_tags_keep_content(document_text: str) -> str:
     """Remove figure tags but keep their inner content."""
     soup = BeautifulSoup(document_text, "html.parser")
 
-    for figure_tag in soup.find_all("figure"):
-        figure_tag.replace_with(figure_tag.get_text())
+    figure_tags = soup.find_all("figure")
+
+    for figure_tag in figure_tags:
+        inner_content = figure_tag.get_text()
+        figure_tag.replace_with(inner_content)
 
     return html.unescape(str(soup))
