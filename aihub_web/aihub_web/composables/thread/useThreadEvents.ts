@@ -14,7 +14,7 @@ export const useThreadEvents = defineQuery(() => {
   const { data: threadEvents, isPending: threadEventsAreLoading } = useQuery<AgentEventReadable[]>({
     key: () => ['thread', route.params.thread_id as string, 'events'],
     staleTime: minutesToMilliseconds(5),
-    enabled: true,
+    enabled: () => !!route.params.thread_id && route.params.thread_id !== '{thread_id}',
     query: async () => {
       return await getAgentEventsInThread({
         composable: '$fetch',

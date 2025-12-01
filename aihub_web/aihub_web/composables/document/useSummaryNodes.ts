@@ -10,7 +10,7 @@ export const useSummaryNodes = defineQuery(() => {
   const { data: summaryNodes, isPending: summaryNodesAreLoading } = useQuery<NodeSummaryDto[]>({
     key: () => ['knowledge', 'databases', route.params.db as string, 'namespaces', route.params.namespace as string, 'documents', route.params.document_id as string, 'summaries'],
     staleTime: minutesToMilliseconds(5),
-    enabled: true,
+    enabled: () => !!route.params.db && route.params.db !== '{db}' && !!route.params.namespace && route.params.namespace !== '{namespace}' && !!route.params.document_id && route.params.document_id !== '{document_id}',
     query: async () => {
       return await getSummaryNodesForDocument({
         composable: '$fetch',

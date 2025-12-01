@@ -7,7 +7,7 @@ export const useExperiment = defineQuery(() => {
   const { data: experiment, isPending: experimentIsLoading } = useQuery<Experiment>({
     key: () => ['experiments', route.params.experiment_id as string],
     staleTime: minutesToMilliseconds(5),
-    enabled: true,
+    enabled: () => !!route.params.experiment_id && route.params.experiment_id !== '{experiment_id}',
     query: async () => {
       return await getExperiment({
         composable: '$fetch',

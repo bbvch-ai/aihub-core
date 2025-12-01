@@ -7,7 +7,7 @@ export const useThread = defineQuery(() => {
   const { data: thread, isPending: threadIsLoading } = useQuery<ThreadDto>({
     key: () => ['threads', route.params.thread_id as string],
     staleTime: minutesToMilliseconds(5),
-    enabled: true,
+    enabled: () => !!route.params.thread_id && route.params.thread_id !== '{thread_id}',
     query: async () => {
       return await getThread({
         composable: '$fetch',

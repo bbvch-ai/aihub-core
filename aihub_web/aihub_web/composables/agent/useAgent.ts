@@ -7,7 +7,7 @@ export const useAgent = defineQuery(() => {
   const { data: agent, isPending: agentIsLoading } = useQuery<AgentDto>({
     key: () => ['agents', route.params.agent_class as string, route.params.agent_id as string],
     staleTime: minutesToMilliseconds(5),
-    enabled: true,
+    enabled: () => !!route.params.agent_id && route.params.agent_id !== '{agent_id}' && !!route.params.agent_class && route.params.agent_class !== '{agent_class}',
     query: async () => {
       return await getAgent({
         composable: '$fetch',

@@ -10,6 +10,7 @@ export const useProcessWalkthroughs = defineQuery(() => {
 
   const walkthroughsQuery = useQuery({
     key: () => ['process-walkthroughs', processClass.value, processId.value, { page: currentPage.value, size: pageSize.value }],
+    enabled: () => !!processClass.value && processClass.value !== '{process_class}' && !!processId.value && processId.value !== '{process_id}',
     query: async () => {
       const pageToFetch = Math.max(1, currentPage.value)
 

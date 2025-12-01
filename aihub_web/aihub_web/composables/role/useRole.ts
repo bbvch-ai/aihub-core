@@ -11,7 +11,7 @@ export default defineQuery(() => {
   } = useQuery<RoleResponse>({
     key: () => ['roles', route.params.role_id as string],
     staleTime: minutesToMilliseconds(5),
-    enabled: true,
+    enabled: () => !!route.params.role_id && route.params.role_id !== '{role_id}',
     query: async () => {
       return await getRole({
         composable: '$fetch',

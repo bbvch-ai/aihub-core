@@ -11,7 +11,7 @@ export default defineQuery(() => {
   } = useQuery<UserWithAccessDto>({
     key: () => ['users', route.params.user_id as string],
     staleTime: minutesToMilliseconds(5),
-    enabled: true,
+    enabled: () => !!route.params.user_id && route.params.user_id !== '{user_id}',
     query: async () => {
       return await getUser({
         composable: '$fetch',

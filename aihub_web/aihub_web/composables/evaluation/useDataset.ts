@@ -7,7 +7,7 @@ export const useDataset = defineQuery(() => {
   const { data: dataset, isPending: datasetIsLoading } = useQuery<Dataset>({
     key: () => ['datasets', route.params.dataset_id as string],
     staleTime: minutesToMilliseconds(5),
-    enabled: true,
+    enabled: () => !!route.params.dataset_id && route.params.dataset_id !== '{dataset_id}',
     query: async () => {
       return await getDataset({
         composable: '$fetch',

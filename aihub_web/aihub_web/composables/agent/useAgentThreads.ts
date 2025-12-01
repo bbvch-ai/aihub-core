@@ -13,6 +13,7 @@ export const useAgentThreads = defineQuery(() => {
   // Query to fetch paginated threads
   const threadQuery = useQuery({
     key: () => ['agent-threads', route.params.agent_id as string, route.params.agent_class as string, currentPage.value, pageSize.value],
+    enabled: () => !!route.params.agent_id && route.params.agent_id !== '{agent_id}' && !!route.params.agent_class && route.params.agent_class !== '{agent_class}',
     query: async () => {
       return await getAgentThreads({
         composable: '$fetch',

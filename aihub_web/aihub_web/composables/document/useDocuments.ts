@@ -7,6 +7,7 @@ export const useDocuments = defineQuery(() => {
 
   const documentsQuery = useQuery({
     key: () => ['knowledge', 'databases', route.params.db as string, 'namespaces', route.params.namespace as string, 'documents', { page: currentPage.value, size: pageSize.value }],
+    enabled: () => !!route.params.db && route.params.db !== '{db}' && !!route.params.namespace && route.params.namespace !== '{namespace}',
     query: async () => {
       const pageToFetch = Math.max(1, currentPage.value)
 
