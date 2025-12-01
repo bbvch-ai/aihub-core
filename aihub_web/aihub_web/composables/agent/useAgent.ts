@@ -4,10 +4,12 @@ import { useRoute } from 'vue-router'
 
 export const useAgent = defineQuery(() => {
   const route = useRoute()
+  const isRouteReady = useRouteReady('agent_id', 'agent_class')
+
   const { data: agent, isPending: agentIsLoading } = useQuery<AgentDto>({
     key: () => ['agents', route.params.agent_class as string, route.params.agent_id as string],
     staleTime: minutesToMilliseconds(5),
-    enabled: true,
+    enabled: isRouteReady,
     query: async () => {
       return await getAgent({
         composable: '$fetch',

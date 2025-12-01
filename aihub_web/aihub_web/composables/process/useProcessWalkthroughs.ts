@@ -2,6 +2,8 @@ import { getProcessWalkthroughs, type ProcessWalkthroughDto } from '@core/sdk/cl
 
 export const useProcessWalkthroughs = defineQuery(() => {
   const route = useRoute()
+  const isRouteReady = useRouteReady('process_class', 'process_id')
+
   const currentPage = ref(1)
   const pageSize = ref(10)
 
@@ -10,6 +12,7 @@ export const useProcessWalkthroughs = defineQuery(() => {
 
   const walkthroughsQuery = useQuery({
     key: () => ['process-walkthroughs', processClass.value, processId.value, { page: currentPage.value, size: pageSize.value }],
+    enabled: isRouteReady,
     query: async () => {
       const pageToFetch = Math.max(1, currentPage.value)
 
