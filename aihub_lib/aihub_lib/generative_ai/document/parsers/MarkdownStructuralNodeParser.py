@@ -215,29 +215,36 @@ Provide your analysis of how many header rows this table has."""
         token_list = self.llm_config.token_counter(text)
         return len(token_list)
 
-    def _split_table_with_dataframe(self, table_html: str, num_header_rows: int) -> list[TextChunk]:
+    def _parse_html_table(self, table_html: str) -> pd.DataFrame | None:
         """
-        Split an HTML table using pandas DataFrame, preserving multi-level headers.
+        Parse HTML table into DataFrame, returning None if parsing fails or result is empty.
         """
         try:
             dfs = pd.read_html(StringIO(table_html))
         except ValueError:
-            # No valid HTML tables found - fall back to raw content, skip if empty
-            soup = bs4.BeautifulSoup(table_html, "html.parser")
-            text_content = soup.get_text()
-            if text_content.strip():
-                return [TextChunk(text_content, NODE_CONTENT_TYPE_TABLE)]
-            return []
+            return None
 
         if not dfs or dfs[0].empty:
-            # Empty dataframe or no tables parsed - fall back to raw content, skip if empty
-            soup = bs4.BeautifulSoup(table_html, "html.parser")
-            text_content = soup.get_text()
-            if text_content.strip():
-                return [TextChunk(text_content, NODE_CONTENT_TYPE_TABLE)]
-            return []
+            return None
 
-        df = dfs[0]
+        return dfs[0]
+
+    def _fallback_table_chunk(self, fallback_text: str) -> list[TextChunk]:
+        """
+        Create a fallback TextChunk from raw text content, or empty list if text is blank.
+        """
+        if fallback_text.strip():
+            return [TextChunk(fallback_text, NODE_CONTENT_TYPE_TABLE)]
+        return []
+
+    def _split_table_with_dataframe(self, table_html: str, num_header_rows: int) -> list[TextChunk]:
+        """
+        Split an HTML table using pandas DataFrame, preserving multi-level headers.
+        """
+        df = self._parse_html_table(table_html)
+        if df is None:
+            soup = bs4.BeautifulSoup(table_html, "html.parser")
+            return self._fallback_table_chunk(soup.get_text())
 
         if num_header_rows > 1 and num_header_rows <= len(df):
             header_rows = [df.iloc[i].tolist() for i in range(num_header_rows)]
@@ -295,32 +302,21 @@ Provide your analysis of how many header rows this table has."""
         """
         table_html = str(child)
 
-        try:
-            dfs = pd.read_html(StringIO(table_html))
-        except ValueError:
-            # No valid HTML tables found - fall back to raw text content, skip if empty
-            text_content = child.text
-            if text_content.strip():
-                text_chunks.append(TextChunk(text_content, NODE_CONTENT_TYPE_TABLE))
+        df = self._parse_html_table(table_html)
+        if df is None:
+            text_chunks.extend(self._fallback_table_chunk(child.text))
             return text_chunks
 
-        if dfs and not dfs[0].empty:
-            df = dfs[0]
-            df.columns = df.iloc[0]
-            df = df[1:].reset_index(drop=True)
-            markdown_table = df.to_markdown(index=False)
+        df.columns = df.iloc[0]
+        df = df[1:].reset_index(drop=True)
+        markdown_table = df.to_markdown(index=False)
 
-            token_count = self._count_tokens(markdown_table)
+        token_count = self._count_tokens(markdown_table)
 
-            if token_count <= self.sentence_splitter.chunk_size:
-                text_chunks.append(TextChunk(markdown_table, NODE_CONTENT_TYPE_TABLE))
-            else:
-                text_chunks.extend(self._split_table(table_html))
+        if token_count <= self.sentence_splitter.chunk_size:
+            text_chunks.append(TextChunk(markdown_table, NODE_CONTENT_TYPE_TABLE))
         else:
-            # Empty dataframe or no tables parsed - fall back to raw text content, skip if empty
-            text_content = child.text
-            if text_content.strip():
-                text_chunks.append(TextChunk(text_content, NODE_CONTENT_TYPE_TABLE))
+            text_chunks.extend(self._split_table(table_html))
 
         return text_chunks
 
