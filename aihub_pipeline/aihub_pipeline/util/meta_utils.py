@@ -28,9 +28,9 @@ from dagster import MetadataValue, TableColumn, TableRecord, TableSchema
 from llama_index.core.schema import TextNode
 
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
-from aihub_pipeline.types.LocalFile import MinimalLocalFile
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
 from aihub_pipeline.types.SharePointFile import MinimalSharePointFile
+from aihub_pipeline.types.SourceFile import MinimalSourceFile
 
 
 def readable_date(timestamp: int):
@@ -210,8 +210,8 @@ def share_point_metadata_table(share_point_files: list[MinimalSharePointFile]):
     return MetadataValue.table(records=records, schema=table_schema)
 
 
-def local_file_table_row(file: MinimalLocalFile) -> dict:
-    """Convert MinimalLocalFile to table row dict."""
+def local_file_table_row(file: MinimalSourceFile) -> dict:
+    """Convert MinimalSourceFile to table row dict."""
     modified_dt = datetime.fromtimestamp(file.modified)
     return {
         "name": file.name,
@@ -221,7 +221,7 @@ def local_file_table_row(file: MinimalLocalFile) -> dict:
     }
 
 
-def local_file_metadata_table(files: list[MinimalLocalFile]) -> MetadataValue:
+def local_file_metadata_table(files: list[MinimalSourceFile]) -> MetadataValue:
     """
     Create a Dagster metadata table from local file metadata.
 
