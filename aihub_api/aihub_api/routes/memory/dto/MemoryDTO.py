@@ -21,6 +21,12 @@ class MemoryDTO(BaseModel):
     thread_id: Annotated[
         str | None, Field(description="The unique identifier of the thread in which this memory was created.")
     ] = None
+    display_id: Annotated[
+        str | None, Field(description="The unique identifier of the memory for display purposes.")
+    ] = None
+    run_id: Annotated[
+        str | None, Field(description="The unique identifier of the run in which this memory was created.")
+    ] = None
 
     @classmethod
     def from_memory(cls, memory: Memory) -> "MemoryDTO":
@@ -31,6 +37,6 @@ class MemoryDTO(BaseModel):
             score=memory.score,
             created_at=memory.created_at,
             user_id=memory.user_id,
-            agent_id=memory.agent_id,
-            thread_id=memory.thread_id,
+            agent_id=memory.metadata.agent_id,
+            thread_id=memory.metadata.thread_id,
         )

@@ -27,12 +27,12 @@ const formattedMemories = computed(() => {
   }))
 })
 
-interface RowClickEvent {
-  data: MemoryDto
-}
+const selectedMemory = computed(() => {
+  return props.memories.find(memory => memory.id === props.selectedMemoryId)
+})
 
-const handleRowClick = (event: RowClickEvent) => {
-  emit('selectMemory', event.data)
+const handleSelection = (memory: MemoryDto) => {
+  emit('selectMemory', memory)
 }
 </script>
 
@@ -41,14 +41,14 @@ const handleRowClick = (event: RowClickEvent) => {
     <DataTable
       :value="formattedMemories"
       :loading="loading"
+      :selection="selectedMemory"
       selection-mode="single"
       :meta-key-selection="false"
       data-key="id"
       class="flex-1"
       scrollable
       scroll-height="flex"
-      :row-class="(data: MemoryDto) => data.id === selectedMemoryId ? 'bg-primary-50' : ''"
-      @row-click="handleRowClick"
+      @update:selection="handleSelection"
     >
       <Column
         field="memory"

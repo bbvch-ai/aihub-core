@@ -36,6 +36,7 @@ class MemoryMetadata(BaseModel):
 
 class Memory(BaseModel):
     id: Annotated[str, Field(description="The unique identifier for the memory.")]
+    user_id: Annotated[str, Field(description="The user ID of the user who created the memory.")]
     memory: Annotated[str, Field(description="The memory deduced from the text data.")]
     score: Annotated[float | None, Field(description="The score of the memory.")] = None
     created_at: Annotated[str, Field(description="The timestamp when the memory was created.")]

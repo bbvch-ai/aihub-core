@@ -1,8 +1,10 @@
 <template>
-  <div class="relative flex flex-col gap-3">
+  <div class="relative flex w-full flex-col gap-3">
     <div
-      class="overflow-hidden rounded-3xl bg-white dark:bg-surface-900"
-      :style="{ width }"
+      :class="[
+        'w-full max-w-full overflow-hidden rounded-3xl bg-white dark:bg-surface-900',
+        sizeClass,
+      ]"
     >
       <ProgressBar
         v-if="loading"
@@ -45,12 +47,12 @@ const props = withDefaults(defineProps<{
   loading: false,
 })
 
-const width = computed<string>(() => {
+const sizeClass = computed<string>(() => {
   return {
-    small: 680,
-    normal: 920,
-    large: 1440,
-  }[props.size] + 'px'
+    small: '2xl:w-[680px]',
+    normal: '2xl:w-[920px]',
+    large: '2xl:w-[1440px]',
+  }[props.size]
 })
 
 const router = useRouter()

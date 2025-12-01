@@ -2,6 +2,7 @@
   <StructuralColumn
     v-if="selectedMemory"
     :close-route="'/service/memories/list'"
+    title="Memory Details"
   >
     <MemoryEdit
       :memory="selectedMemory"

@@ -1,9 +1,16 @@
+<template>
+  <div
+    ref="container"
+    class="size-full min-h-[400px]"
+  />
+</template>
+
 <script setup lang="ts">
 import { useDark } from '@vueuse/core'
 import Graph from 'graphology'
 import forceAtlas2 from 'graphology-layout-forceatlas2'
 import Sigma from 'sigma'
-import { EdgeArrowProgram } from 'sigma/rendering'
+import { createEdgeArrowProgram } from 'sigma/rendering'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 
 import type { MemoryDto, MemoryRelationDto } from '@core/sdk/client'
@@ -17,49 +24,36 @@ interface Props {
   } | null
 }
 
+interface Colors {
+  nodeActive: string
+  nodeInactive: string
+  nodeSelected: string
+  edgeActive: string
+  edgeInactive: string
+  labelColor: string
+}
+
 const props = defineProps<Props>()
-const emit = defineEmits<{
-  selectNode: [nodeId: string]
-}>()
+const emit = defineEmits<{ selectNode: [nodeId: string] }>()
 
 const isDark = useDark({ storageKey: 'dark' })
 const container = ref<HTMLDivElement>()
+
 let sigma: Sigma | null = null
 let graph: Graph | null = null
 
-const hashString = (str: string): number => {
-  let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash = hash & hash
-  }
-  return Math.abs(hash)
-}
+const MIN_NODE_SIZE = 10
+const MAX_NODE_SIZE = 50
 
-const getDeterministicPosition = (id: string, seed: 'x' | 'y'): number => {
-  const hash = hashString(id + seed)
-  return (hash % 1000) / 1000
-}
-
-const getCssVar = (varName: string): string => {
-  if (typeof window === 'undefined') return '#000000'
-  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim()
-}
-
-const getColors = () => ({
-  nodeActive: getCssVar('--p-primary-color'),
-  nodeInactive: getCssVar('--p-surface-500'),
-  nodeSelected: getCssVar('--p-red-600'),
-  edgeActive: getCssVar('--p-surface-600'),
-  edgeInactive: getCssVar('--p-surface-400'),
-  labelColor: getCssVar('--p-primary-color'),
+const CustomArrowProgram = createEdgeArrowProgram({
+  widenessToThicknessRatio: 3,
+  lengthToThicknessRatio: 4,
 })
 
 const isSearchActive = computed(() => !!props.searchResults)
 
 const relevantNodeIds = computed(() => {
-  if (!isSearchActive.value || !props.searchResults) return new Set<string>()
+  if (!props.searchResults) return new Set<string>()
   const ids = new Set<string>()
   props.searchResults.memories.forEach(m => ids.add(m.id))
   props.searchResults.relations.forEach((r) => {
@@ -69,28 +63,62 @@ const relevantNodeIds = computed(() => {
   return ids
 })
 
-const relevantRelations = computed(() => {
-  if (!isSearchActive.value || !props.searchResults) return new Set<string>()
+const relevantRelationKeys = computed(() => {
+  if (!props.searchResults) return new Set<string>()
   return new Set(
     props.searchResults.relations.map((r, i) => `${r.source}-${r.relation}-${r.target}-${i}`),
   )
 })
 
-interface GraphColors {
-  nodeActive: string
-  nodeInactive: string
-  nodeSelected: string
-  edgeActive: string
-  edgeInactive: string
-  labelColor: string
+const hashString = (str: string): number => {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i)
+    hash = hash & hash
+  }
+  return Math.abs(hash)
 }
 
-const buildGraph = (colors: GraphColors) => {
-  if (!props.relations || props.relations.length === 0) {
-    return new Graph({ multi: true, type: 'directed' })
-  }
+const getDeterministicPosition = (id: string, seed: string): number => {
+  return (hashString(id + seed) % 1000) / 1000
+}
 
+const getCssVar = (varName: string): string => {
+  if (typeof window === 'undefined') return '#000000'
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim()
+}
+
+const getColors = (): Colors => ({
+  nodeActive: getCssVar('--p-primary-color'),
+  nodeInactive: getCssVar('--p-surface-500'),
+  nodeSelected: getCssVar('--p-red-600'),
+  edgeActive: getCssVar('--p-surface-600'),
+  edgeInactive: getCssVar('--p-surface-400'),
+  labelColor: getCssVar('--p-primary-color'),
+})
+
+const isNodeRelevant = (nodeId: string): boolean => {
+  return !isSearchActive.value || relevantNodeIds.value.has(nodeId)
+}
+
+const isEdgeRelevant = (edgeKey: string): boolean => {
+  return !isSearchActive.value || relevantRelationKeys.value.has(edgeKey)
+}
+
+const lerp = (min: number, max: number, t: number): number => {
+  return min + t * (max - min)
+}
+
+const calculateNodeSize = (degree: number, minDegree: number, maxDegree: number): number => {
+  if (maxDegree === minDegree) return (MIN_NODE_SIZE + MAX_NODE_SIZE) / 2
+  const t = (degree - minDegree) / (maxDegree - minDegree)
+  return lerp(MIN_NODE_SIZE, MAX_NODE_SIZE, t)
+}
+
+const buildGraph = (colors: Colors): Graph => {
   const g = new Graph({ multi: true, type: 'directed' })
+
+  if (!props.relations?.length) return g
 
   const nodeSet = new Set<string>()
   props.relations.forEach((rel) => {
@@ -99,123 +127,109 @@ const buildGraph = (colors: GraphColors) => {
   })
 
   nodeSet.forEach((node) => {
-    if (!g.hasNode(node)) {
-      const isRelevant = !isSearchActive.value || relevantNodeIds.value.has(node)
-      g.addNode(node, {
-        label: node,
-        size: isRelevant ? 10 : 8,
-        color: isRelevant ? colors.nodeActive : colors.nodeInactive,
-        labelColor: colors.labelColor,
-        x: getDeterministicPosition(node, 'x'),
-        y: getDeterministicPosition(node, 'y'),
-      })
-    }
+    g.addNode(node, {
+      label: node,
+      x: getDeterministicPosition(node, 'x'),
+      y: getDeterministicPosition(node, 'y'),
+    })
   })
 
   props.relations.forEach((rel, index) => {
     const edgeKey = `${rel.source}-${rel.relation}-${rel.target}-${index}`
-    const isRelevant = !isSearchActive.value || relevantRelations.value.has(edgeKey)
+    const relevant = isEdgeRelevant(edgeKey)
     g.addEdge(rel.source, rel.target, {
       label: rel.relation,
-      size: isRelevant ? 2 : 1,
-      color: isRelevant ? colors.edgeActive : colors.edgeInactive,
+      size: relevant ? 4 : 2,
+      color: relevant ? colors.edgeActive : colors.edgeInactive,
       labelColor: colors.labelColor,
     }, `edge-${index}`)
+  })
+
+  const degrees = g.mapNodes(node => g.degree(node))
+  const minDegree = Math.min(...degrees)
+  const maxDegree = Math.max(...degrees)
+
+  g.forEachNode((node) => {
+    const degree = g.degree(node)
+    const size = calculateNodeSize(degree, minDegree, maxDegree)
+    const relevant = isNodeRelevant(node)
+
+    g.setNodeAttribute(node, 'baseSize', size)
+    g.setNodeAttribute(node, 'size', size)
+    g.setNodeAttribute(node, 'color', relevant ? colors.nodeActive : colors.nodeInactive)
+    g.setNodeAttribute(node, 'labelColor', colors.labelColor)
   })
 
   return g
 }
 
-const renderGraph = () => {
+const applyLayout = (g: Graph): void => {
+  if (g.order === 0) return
+  forceAtlas2.assign(g, {
+    iterations: 100,
+    settings: { gravity: 1, scalingRatio: 10 },
+  })
+}
+
+const highlightSelectedNode = (nodeId: string | undefined, colors: Colors): void => {
+  if (!graph || !nodeId || !graph.hasNode(nodeId)) return
+  graph.setNodeAttribute(nodeId, 'color', colors.nodeSelected)
+}
+
+const renderGraph = (): void => {
   if (!container.value) return
 
-  if (sigma) {
-    sigma.kill()
-    sigma = null
-  }
+  sigma?.kill()
+  sigma = null
 
   const colors = getColors()
   graph = buildGraph(colors)
-
-  if (graph.order > 0) {
-    forceAtlas2.assign(graph, {
-      iterations: 100,
-      settings: {
-        gravity: 1,
-        scalingRatio: 10,
-      },
-    })
-  }
+  applyLayout(graph)
 
   sigma = new Sigma(graph, container.value, {
     renderEdgeLabels: true,
     allowInvalidContainer: true,
     labelColor: { attribute: 'labelColor', color: colors.labelColor },
     edgeLabelColor: { attribute: 'labelColor', color: colors.labelColor },
-    edgeProgramClasses: {
-      arrow: EdgeArrowProgram,
-    },
+    edgeProgramClasses: { arrow: CustomArrowProgram },
     defaultEdgeType: 'arrow',
   })
 
-  sigma.on('clickNode', ({ node }) => {
-    emit('selectNode', node)
-  })
+  sigma.on('clickNode', ({ node }) => emit('selectNode', node))
 
-  if (props.selectedMemoryId && graph.hasNode(props.selectedMemoryId)) {
-    graph.setNodeAttribute(props.selectedMemoryId, 'color', colors.nodeSelected)
-    graph.setNodeAttribute(props.selectedMemoryId, 'size', 15)
-  }
-
+  highlightSelectedNode(props.selectedMemoryId, colors)
   sigma.refresh()
 }
 
-onMounted(() => {
-  renderGraph()
-})
+watch(
+  () => [props.relations, props.searchResults],
+  () => renderGraph(),
+  { deep: true },
+)
 
-watch(() => [props.relations, props.searchResults], () => {
-  renderGraph()
-}, { deep: true })
+watch(
+  () => props.selectedMemoryId,
+  (newId, oldId) => {
+    if (!graph || !sigma) return
 
-watch(() => props.selectedMemoryId, (newId, oldId) => {
-  if (!graph || !sigma) return
+    const colors = getColors()
 
-  const colors = getColors()
+    if (oldId && graph.hasNode(oldId)) {
+      const baseSize = graph.getNodeAttribute(oldId, 'baseSize') as number
+      graph.setNodeAttribute(oldId, 'size', baseSize)
+      graph.setNodeAttribute(oldId, 'color', isNodeRelevant(oldId) ? colors.nodeActive : colors.nodeInactive)
+    }
 
-  if (oldId && graph.hasNode(oldId)) {
-    const isRelevant = !isSearchActive.value || relevantNodeIds.value.has(oldId)
-    graph.setNodeAttribute(oldId, 'color', isRelevant ? colors.nodeActive : colors.nodeInactive)
-    graph.setNodeAttribute(oldId, 'size', isRelevant ? 10 : 8)
-  }
-
-  if (newId && graph.hasNode(newId)) {
-    graph.setNodeAttribute(newId, 'color', colors.nodeSelected)
-    graph.setNodeAttribute(newId, 'size', 15)
-  }
-
-  sigma.refresh()
-})
+    highlightSelectedNode(newId, colors)
+    sigma.refresh()
+  },
+)
 
 watch(isDark, async () => {
   await nextTick()
   renderGraph()
 })
 
-onUnmounted(() => {
-  if (sigma) {
-    sigma.kill()
-  }
-})
+onMounted(() => renderGraph())
+onUnmounted(() => sigma?.kill())
 </script>
-
-<template>
-  <div
-    ref="container"
-    class="size-full min-h-[400px]"
-  />
-</template>
-
-<style scoped>
-/* sigma.js renders to canvas, no additional styles needed */
-</style>

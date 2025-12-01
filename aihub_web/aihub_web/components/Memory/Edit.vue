@@ -62,21 +62,9 @@ const handleDelete = () => {
 
 <template>
   <div class="flex h-full flex-col space-y-4 p-4">
-    <div class="flex items-center justify-between">
-      <h3 class="text-lg font-semibold">
-        Memory Details
-      </h3>
-      <Button
-        icon="pi pi-times"
-        text
-        rounded
-        @click="emit('close')"
-      />
-    </div>
-
     <div class="flex-1 space-y-4 overflow-y-auto">
       <div class="space-y-2">
-        <label class="text-sm font-medium text-gray-700">Memory Content</label>
+        <label class="text-xs font-medium text-gray-700 dark:text-gray-500">Memory Content</label>
         <Textarea
           v-if="isEditing"
           v-model="editedData"
@@ -86,7 +74,7 @@ const handleDelete = () => {
         />
         <div
           v-else
-          class="rounded border bg-gray-50 p-3"
+          class="rounded border bg-surface-50 p-3 dark:border-surface-800 dark:bg-surface-950"
         >
           {{ memory.memory }}
         </div>

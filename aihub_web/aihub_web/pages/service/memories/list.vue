@@ -57,7 +57,7 @@ const displayedTotalPages = computed(() => {
 })
 
 const handleSelectMemory = (memory: { id: string }) => {
-  router.push(localePath(`/service/memories/list/${memory.id}`))
+  router.push(localePath(`/service/memories/list/${memory.id}?q=${searchInput.value ?? ''}`))
 }
 
 const handleSearch = () => {
@@ -102,7 +102,7 @@ const handleDeleteAll = () => {
 <template>
   <StructuralColumn
     :title="t('memory.list.title')"
-    :loading="memoriesAreLoading || (isSearchActive && searchIsLoading)"
+    :loading="memoriesAreLoading"
   >
     <div class="flex h-full flex-col gap-2">
       <div class="flex w-full items-center justify-between gap-2">
@@ -133,7 +133,7 @@ const handleDeleteAll = () => {
           />
         </div>
         <Button
-          v-tooltip.left="t('memory.delete_all.button')"
+          v-tooltip.top="t('memory.delete_all.button')"
           icon="pi pi-trash"
           severity="danger"
           text
