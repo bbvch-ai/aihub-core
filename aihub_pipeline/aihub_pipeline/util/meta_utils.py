@@ -214,8 +214,6 @@ def local_file_table_row(file: MinimalLocalFile) -> dict:
     """Convert MinimalLocalFile to table row dict."""
     modified_dt = datetime.fromtimestamp(file.modified)
     return {
-        "source_folder": file.source_folder,
-        "subfolder": file.subfolder or "",
         "name": file.name,
         "modified": modified_dt.strftime("%Y-%m-%d %H:%M:%S"),
         "size": readable_size(file.size),
@@ -231,15 +229,13 @@ def local_file_metadata_table(files: list[MinimalLocalFile]) -> MetadataValue:
     Limits display to first 100 files to avoid overwhelming the UI.
     """
     columns = [
-        TableColumn("source_folder", "string"),
-        TableColumn("subfolder", "string"),
         TableColumn("name", "string"),
         TableColumn("modified", "string"),
         TableColumn("size", "string"),
         TableColumn("path", "string"),
     ]
 
-    sorted_files = sorted(files, key=lambda f: (f.source_folder, f.path))
+    sorted_files = sorted(files, key=lambda f: f.path)
 
     display_files = sorted_files[:100]
 
@@ -249,8 +245,6 @@ def local_file_metadata_table(files: list[MinimalLocalFile]) -> MetadataValue:
         records.append(
             TableRecord(
                 {
-                    "source_folder": "...",
-                    "subfolder": "...",
                     "name": f"({len(sorted_files) - 100} more files)",
                     "modified": "...",
                     "size": "...",

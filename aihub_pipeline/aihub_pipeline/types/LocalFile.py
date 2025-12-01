@@ -1,7 +1,3 @@
-from typing import Annotated
-
-from pydantic import Field
-
 from aihub_pipeline.types.SourceFile import MinimalSourceFile, SourceFile
 
 
@@ -14,8 +10,7 @@ class MinimalLocalFile(MinimalSourceFile):
     metadata to detect changes and determine which files need to be processed.
     """
 
-    source_folder: Annotated[str, Field(description="Source folder name")]
-    subfolder: Annotated[str | None, Field(description="Subfolder name within source folder")] = None
+    pass
 
 
 class LocalFile(SourceFile, MinimalLocalFile):

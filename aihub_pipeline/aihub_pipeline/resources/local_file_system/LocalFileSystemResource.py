@@ -95,15 +95,12 @@ class LocalFileSystemResource(ConfigurableResource):
             return None
 
         stat = file_path.stat()
-        path_parts = Path(relative_path).parts
 
         return MinimalLocalFile(
             name=file_path.name,
             path=relative_path,
             size=stat.st_size,
             modified=int(stat.st_mtime),
-            source_folder=path_parts[0] if len(path_parts) > 1 else "",
-            subfolder=path_parts[1] if len(path_parts) > 2 else None,
         )
 
     def _should_include_file(self, relative_path: str) -> bool:
@@ -149,10 +146,6 @@ class LocalFileSystemResource(ConfigurableResource):
         stat = full_path.stat()
         content_type, _ = mimetypes.guess_type(full_path.name)
 
-        path_parts = Path(file_path).parts
-        source_folder = path_parts[0] if path_parts else ""
-        subfolder = path_parts[1] if len(path_parts) > 1 else None
-
         return LocalFile(
             name=full_path.name,
             path=file_path,
@@ -161,8 +154,6 @@ class LocalFileSystemResource(ConfigurableResource):
             modified=int(stat.st_mtime),
             created=int(stat.st_ctime),
             content_type=content_type,
-            source_folder=source_folder,
-            subfolder=subfolder,
         )
 
     def get_minimal_local_files(self, file_paths: list[str]) -> list[MinimalLocalFile]:
@@ -174,13 +165,10 @@ class LocalFileSystemResource(ConfigurableResource):
         full_path = Path(self.base_path) / file_path
 
         stat = full_path.stat()
-        path_parts = Path(file_path).parts
 
         return MinimalLocalFile(
             name=full_path.name,
             path=file_path,
             size=stat.st_size,
             modified=int(stat.st_mtime),
-            source_folder=path_parts[0] if len(path_parts) > 1 else "",
-            subfolder=path_parts[1] if len(path_parts) > 2 else None,
         )
