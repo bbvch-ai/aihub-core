@@ -16,7 +16,7 @@ class TaskSummaryData(BaseModel):
 class EvaluationSummaryData(BaseModel):
     evaluator: Annotated[str, Field(description="Name of the evaluator.")]
     n: Annotated[int, Field(description="Number of items evaluated.")]
-    avg_score: Annotated[float | None, Field(description="Average score from this evaluator.")] = None
+    avg_score: Annotated[float, Field(description="Average score from this evaluator.")]
 
 
 class EvaluationData(BaseModel):

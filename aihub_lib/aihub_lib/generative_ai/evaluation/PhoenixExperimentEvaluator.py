@@ -3,17 +3,15 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
-import nest_asyncio
-import phoenix as px
 from bson import ObjectId
-
-# Patch asyncio to allow nested event loops. Required because Phoenix's run_experiment()
-# is synchronous but executes async tasks, and we're already inside FastAPI's event loop.
-nest_asyncio.apply()
 from llama_index.core.llms import ChatMessage, MessageRole
 from llama_index.core.prompts import ChatPromptTemplate, PromptTemplate, RichPromptTemplate
 from nats.aio.client import Client as NATS
-from phoenix.experiments import run_experiment
+from phoenix.client import AsyncClient as PhoenixAsyncClient
+from phoenix.client.experiments import async_run_experiment
+from phoenix.client.resources.datasets import Dataset as PhoenixDataset
+from phoenix.client.resources.experiments.evaluators import create_evaluator
+from phoenix.client.resources.experiments.types import RanExperiment
 from phoenix.experiments.evaluators import create_evaluator
 from phoenix.experiments.types import Dataset as PhoenixDataset
 from phoenix.experiments.types import EvaluationResult as PhoenixEvaluationResult
@@ -24,6 +22,7 @@ from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.evaluation.JudgeOutput import JudgeOutput
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.phoenix.PhoenixSettings import PhoenixSettings
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.routes.chat.ChatService import ChatContent, ChatService, JsonResources
 
@@ -57,7 +56,7 @@ class PhoenixExperimentEvaluator:
         """
         Initializes the evaluator.
         """
-        self.phoenix_client = px.Client(warn_if_server_not_running=False)
+        self.phoenix_client = PhoenixAsyncClient(base_url=PhoenixSettings().ENDPOINT)
         self.nats_client = nats_client
         self.external_agent_event_distributor = external_agent_event_distributor
         self.user = authenticated_user
@@ -256,7 +255,7 @@ class PhoenixExperimentEvaluator:
         }
 
         logger.info(f"Starting Phoenix experiment: {final_experiment_name}")
-        experiment_result: RanExperiment = run_experiment(
+        experiment_result: RanExperiment = await async_run_experiment(
             dataset=dataset,
             task=task_for_phoenix,
             evaluators=evaluators_list,

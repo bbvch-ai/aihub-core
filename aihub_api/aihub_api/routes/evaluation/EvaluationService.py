@@ -330,17 +330,19 @@ class EvaluationService:
             eval_runs_for_summary.extend(annotations)
 
         # Calculate summary statistics for each evaluator.
+        # Only create a summary if there are valid scores to average.
         eval_summary: dict[str, EvaluationSummaryData] = {}
         evaluator_names = set(e.get("name") for e in eval_runs_for_summary if e.get("name"))
 
         for name in evaluator_names:
             specific_evals = [e for e in eval_runs_for_summary if e.get("name") == name]
             scores = [e.get("score") for e in specific_evals if e.get("score") is not None and not e.get("error")]
-            eval_summary[name.lower()] = EvaluationSummaryData(
-                evaluator=name,
-                n=len(specific_evals),
-                avg_score=sum(scores) / len(scores) if scores else None,
-            )
+            if scores:
+                eval_summary[name.lower()] = EvaluationSummaryData(
+                    evaluator=name,
+                    n=len(specific_evals),
+                    avg_score=sum(scores) / len(scores),
+                )
 
         agent_class = experiment_meta.metadata.get("agent_class")
         agent_id = experiment_meta.metadata.get("agent_id")

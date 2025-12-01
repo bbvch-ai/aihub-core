@@ -1303,7 +1303,6 @@ services:
 
       # Phoenix
       PHOENIX_ENDPOINT: http://phoenix:6006
-      PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:6006
 
       # NATs
       NATS_ENDPOINT: nats://nats:4222
