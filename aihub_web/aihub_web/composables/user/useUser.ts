@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 
 export default defineQuery(() => {
   const route = useRoute()
+  const isRouteReady = useRouteReady('user_id')
 
   const {
     data: user,
@@ -11,7 +12,7 @@ export default defineQuery(() => {
   } = useQuery<UserWithAccessDto>({
     key: () => ['users', route.params.user_id as string],
     staleTime: minutesToMilliseconds(5),
-    enabled: true,
+    enabled: isRouteReady,
     query: async () => {
       return await getUser({
         composable: '$fetch',
