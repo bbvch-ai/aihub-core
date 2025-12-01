@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.254.7] - 2025-11-28 - New Service Integration: Attu Platform
+
+### Added
+
+- ✨ **Attu Service Integration:** Introduced the Attu service to the platform, enhancing capabilities (e.g., for data
+  management).
+- 🔑 **Secure Access for Attu:** Implemented OAuth2 Proxy for the Attu service, ensuring secure, group-based access for
+  authorized users.
+- 🚀 **Automated Routing for Attu:** Configured Traefik to provide automatic routing and SSL termination for the Attu
+  service via a dedicated subdomain.
+
+### Changed
+
+- 📄 **Updated OAuth Configuration Documentation:** The quick start guide has been updated to include the required
+  redirect URIs and platform type configurations for the new Attu service.
+- ⚙️ **Deployment Configurations for Attu:** Modified various Docker Compose files and templates to incorporate the Attu
+  service and its OAuth2 Proxy into the deployment stack.
+
+---
+
 ## [v0.254.5] - 2025-11-24 - Platform Configuration Update and Docling Refinements
 
 ### Changed
