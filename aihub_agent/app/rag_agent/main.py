@@ -1,5 +1,6 @@
 import asyncio
 
+from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
@@ -132,7 +133,7 @@ async def main():
             ),
             retrieve_step_config=RetrieveStepConfig(
                 embed_model=EmbeddingModelConfig(model_name="embedding/small"),
-                index_namespaces=["namespace"],
+                index_namespaces=["defaultnamespace"],
                 retrieve_k=10,
                 query_mode=VectorStoreQueryMode.HYBRID,
                 node_types=["content"],
@@ -143,7 +144,7 @@ async def main():
                 ),
                 retrieve_prev_next=RetrievePrevNextConfig(
                     num_nodes=10,
-                    mode="both",
+                    mode=ModeOptions.BOTH,
                 ),
                 retrieve_summaries=RetrieveSummariesConfig(
                     max_parent_levels=2,

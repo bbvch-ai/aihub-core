@@ -1,8 +1,10 @@
 import asyncio
 
+from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from aihub_lib.generative_ai.resources.models.llm.RerankingModelConfig import RerankingModelConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
@@ -12,6 +14,7 @@ from aihub_lib.testing.logging.logger import enable_logging
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
+from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
 from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.agents.RagAgent.configs.RetrieveSummariesConfig import RetrieveSummariesConfig
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
@@ -35,7 +38,7 @@ async def main():
                 it="Questo è l'agente RAG predefinito",
             ),
             llm=LLMConfig(model_name="text-generation/mini"),
-            check_context_sufficiency=True,
+            check_context_sufficiency=False,
             number_of_input_tokens=100_000,
             system_prompt=LocaleString(
                 en="""
@@ -132,22 +135,26 @@ async def main():
             ),
             retrieve_step_config=RetrieveStepConfig(
                 embed_model=EmbeddingModelConfig(model_name="embedding/small"),
-                index_namespaces=["namespace"],
+                index_namespaces=["defaultnamespace"],
                 retrieve_k=10,
                 query_mode=VectorStoreQueryMode.HYBRID,
-                node_types=["content"],
+                node_types=["content", "summary"],
                 vector_store=MilvusVectorStoreConfig(
                     uri=MilvusSettings().URL,
-                    collection_name="defaultknowledge",
                     dimensions=MilvusSettings().DIMENSION,
+                    collection_name="playground",
                 ),
                 retrieve_prev_next=RetrievePrevNextConfig(
-                    num_nodes=10,
-                    mode="both",
+                    num_nodes=5,
+                    mode=ModeOptions.BOTH,
                 ),
                 retrieve_summaries=RetrieveSummariesConfig(
                     max_parent_levels=2,
                 ),
+            ),
+            reranking_config=RerankingConfig(
+                enabled=True,
+                reranking_model=RerankingModelConfig(model_name="reranker", top_n=5),
             ),
         ),
         redis_url=RedisSettings().URL,
