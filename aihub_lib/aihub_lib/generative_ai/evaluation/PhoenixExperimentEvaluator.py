@@ -3,8 +3,13 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
+import nest_asyncio
 import phoenix as px
 from bson import ObjectId
+
+# Patch asyncio to allow nested event loops. Required because Phoenix's run_experiment()
+# is synchronous but executes async tasks, and we're already inside FastAPI's event loop.
+nest_asyncio.apply()
 from llama_index.core.llms import ChatMessage, MessageRole
 from llama_index.core.prompts import ChatPromptTemplate, PromptTemplate, RichPromptTemplate
 from nats.aio.client import Client as NATS
