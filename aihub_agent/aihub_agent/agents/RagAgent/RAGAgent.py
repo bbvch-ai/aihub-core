@@ -318,7 +318,7 @@ class RAGAgent(Agent):
             chat_history=chat_history_event.limited_history,
             context_messages=[nodes_event.context_message],
             system_messages=system_messages,
-            last_user_message=ChatMessage(role=MessageRole.USER, content=start_event.user_query),
+            last_user_message=start_event.last_user_message,
             tokenizer=agent_config.llm.token_counter,
             number_of_input_tokens=agent_config.number_of_input_tokens,
         )
