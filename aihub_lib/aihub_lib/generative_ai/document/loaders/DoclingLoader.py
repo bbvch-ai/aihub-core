@@ -6,6 +6,7 @@ import re
 from typing import Any
 
 import httpx
+import pandas as pd
 from bs4 import BeautifulSoup
 from docling_core.types import DoclingDocument
 from docling_core.types.doc import ImageRefMode, TableItem
@@ -236,13 +237,27 @@ def inject_figure_tags(markdown_text: str, img_strs: list[str]):
 
 
 def convert_tables_to_html(markdown_text: str, tables: list[TableItem]):
-    """Replace Markdown tables with HTML tables."""
+    """Replace Markdown tables with HTML tables.
+
+    If the DataFrame returned by Docling has integer column indices (no header detected),
+    the first row is used as the header. This matches the behavior of MarkdownStructuralNodeParser
+    when creating nodes from tables.
+    """
     pattern = r"(\|[^\n]+\|\r?\n\|[:\-| ]+\|\r?(?:\n\|[^\n]+\|\r?)*)"
     md_tables = re.findall(pattern, markdown_text)
     for md_table, table in zip(md_tables, tables):
-        html_table = table.export_to_dataframe().to_html(index=False)
+        df = table.export_to_dataframe()
+        if not df.empty and _has_integer_column_indices(df):
+            df.columns = df.iloc[0]
+            df = df[1:].reset_index(drop=True)
+        html_table = df.to_html(index=False)
         markdown_text = markdown_text.replace(md_table, html_table, 1)
     return markdown_text
+
+
+def _has_integer_column_indices(df: pd.DataFrame) -> bool:
+    """Check if DataFrame has integer column indices (0, 1, 2, ...) instead of proper headers."""
+    return all(isinstance(col, int) for col in df.columns)
 
 
 def _fix_null_meta_fields(data: dict) -> None:
