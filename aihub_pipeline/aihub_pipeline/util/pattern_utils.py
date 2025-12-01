@@ -106,7 +106,7 @@ def suffixes_pattern(suffixes_list: list[str]) -> list[str]:
 
     Examples:
         >>> suffixes_pattern(["_old", "_backup"])
-        ['.*((_old)|(_backup))$']
+        ['.*(_old|_backup)$']
 
         >>> suffixes_pattern(["/draft"])
         ['.*(/draft)$']
