@@ -2,11 +2,14 @@ import { type DocumentDto, getDocumentsForNamespace } from '@core/sdk/client'
 
 export const useDocuments = defineQuery(() => {
   const route = useRoute()
+  const isRouteReady = useRouteReady('db', 'namespace')
+
   const currentPage = ref(1)
   const pageSize = ref(10)
 
   const documentsQuery = useQuery({
     key: () => ['knowledge', 'databases', route.params.db as string, 'namespaces', route.params.namespace as string, 'documents', { page: currentPage.value, size: pageSize.value }],
+    enabled: isRouteReady,
     query: async () => {
       const pageToFetch = Math.max(1, currentPage.value)
 
