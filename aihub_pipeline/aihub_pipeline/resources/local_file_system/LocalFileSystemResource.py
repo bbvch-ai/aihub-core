@@ -102,8 +102,8 @@ class LocalFileSystemResource(ConfigurableResource):
             path=relative_path,
             size=stat.st_size,
             modified=int(stat.st_mtime),
-            source_folder=path_parts[0] if path_parts else "",
-            subfolder=path_parts[1] if len(path_parts) > 1 else None,
+            source_folder=path_parts[0] if len(path_parts) > 1 else "",
+            subfolder=path_parts[1] if len(path_parts) > 2 else None,
         )
 
     def _should_include_file(self, relative_path: str) -> bool:
@@ -181,6 +181,6 @@ class LocalFileSystemResource(ConfigurableResource):
             path=file_path,
             size=stat.st_size,
             modified=int(stat.st_mtime),
-            source_folder=path_parts[0] if path_parts else "",
-            subfolder=path_parts[1] if len(path_parts) > 1 else None,
+            source_folder=path_parts[0] if len(path_parts) > 1 else "",
+            subfolder=path_parts[1] if len(path_parts) > 2 else None,
         )
