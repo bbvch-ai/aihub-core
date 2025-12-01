@@ -37,7 +37,7 @@ def folders_pattern(folder_names: list[str]) -> list[str]:
     if not folder_names:
         return []
     escaped = [re.escape(name) for name in folder_names]
-    return [f".*(^|/)({'|'.join(escaped)})(/|$).*"]
+    return [f"(^|/)({'|'.join(escaped)})(/|$)"]
 
 
 def extensions_pattern(exts: list[str]) -> list[str]:
@@ -114,4 +114,4 @@ def suffixes_pattern(suffixes_list: list[str]) -> list[str]:
     if not suffixes_list:
         return []
     escaped = [re.escape(s) for s in suffixes_list]
-    return [f".*(({'|'.join(escaped)}))$"]
+    return [f".*({'|'.join(escaped)})$"]
