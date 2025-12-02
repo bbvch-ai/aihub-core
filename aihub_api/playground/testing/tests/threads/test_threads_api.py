@@ -34,7 +34,11 @@ DEFAULT_USER_ID = DangerousDevelopmentOnlyAuthSettings().OID
 def mongodb():
     """Setup MongoDB connection and clear data after tests."""
     yield
-    connect(db=AIHubSettings().MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_STRING.get_secret_value())
+    connect(
+        db=AIHubSettings().MONGO_MAIN_DB_NAME,
+        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
+        uuidRepresentation="standard",
+    )
     ThreadEntity.objects.delete()
     disconnect()
 
