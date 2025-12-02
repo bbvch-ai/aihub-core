@@ -6,9 +6,10 @@ Fixes OCR errors, broken paragraphs, and encoding issues from PDF extraction.
 import logging
 import re
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 
 from llama_index.core import PromptTemplate
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
@@ -20,20 +21,52 @@ _TABLE_PATTERN = re.compile(r"<table>.*?</table>", re.DOTALL)
 _FIGURE_PATTERN = re.compile(r"<figure>.*?</figure>", re.DOTALL)
 
 
+class TextRefinementMetadata(BaseModel):
+    """Metadata about text refinement applied to a document."""
+
+    original_length: Annotated[int, Field(description="Original text length in characters")]
+    refined_length: Annotated[int, Field(description="Refined text length in characters")]
+    chunks_processed: Annotated[int, Field(description="Number of chunks processed")]
+    chunks_failed: Annotated[int, Field(description="Number of chunks that failed refinement")]
+    tables_preserved: Annotated[int, Field(description="Number of tables preserved during refinement")]
+    figures_preserved: Annotated[int, Field(description="Number of figures preserved during refinement")]
+
+
+class TextRefinementResult(BaseModel):
+    """Result of text refinement including content and metadata."""
+
+    content: Annotated[str, Field(description="Refined text content")]
+    metadata: Annotated[TextRefinementMetadata, Field(description="Refinement statistics")]
+
+
 def refine_document_text(
     markdown_text: str, llm_config: "LLMConfig", max_chunk_tokens: int = _DEFAULT_MAX_CHUNK_TOKENS
 ) -> str:
     """Refine document text using LLM. Preserves <table> and <figure> tags."""
+    result = refine_document_text_with_metadata(markdown_text, llm_config, max_chunk_tokens)
+    return result.content
+
+
+def refine_document_text_with_metadata(
+    markdown_text: str, llm_config: "LLMConfig", max_chunk_tokens: int = _DEFAULT_MAX_CHUNK_TOKENS
+) -> TextRefinementResult:
+    """Refine document text and return both refined content and metadata about what was done."""
     _logger.debug("Starting LLM text refinement")
 
+    original_length = len(markdown_text)
     text, placeholders = _extract_special_elements(markdown_text)
-    _logger.debug(f"Extracted {len(placeholders)} special elements (tables/figures)")
+
+    # Count tables and figures
+    tables_count = sum(1 for p in placeholders if "TABLE" in p)
+    figures_count = sum(1 for p in placeholders if "FIGURE" in p)
+    _logger.debug(f"Extracted {len(placeholders)} special elements ({tables_count} tables, {figures_count} figures)")
 
     token_counter = _create_token_counter(llm_config)
     chunks = _split_into_chunks(text, token_counter, max_chunk_tokens)
     _logger.debug(f"Split text into {len(chunks)} chunks for processing (max {max_chunk_tokens} tokens each)")
 
     refined_chunks = []
+    chunks_failed = 0
     for i, chunk in enumerate(chunks):
         try:
             _logger.debug(f"Refining chunk {i + 1}/{len(chunks)} ({len(chunk)} chars)")
@@ -42,12 +75,23 @@ def refine_document_text(
         except Exception as e:
             _logger.warning(f"Failed to refine chunk {i + 1}/{len(chunks)}, keeping original: {e}")
             refined_chunks.append(chunk)
+            chunks_failed += 1
 
     refined_text = "".join(refined_chunks)
     refined_text = _restore_special_elements(refined_text, placeholders)
 
     _logger.debug("LLM text refinement complete")
-    return refined_text
+
+    metadata = TextRefinementMetadata(
+        original_length=original_length,
+        refined_length=len(refined_text),
+        chunks_processed=len(chunks),
+        chunks_failed=chunks_failed,
+        tables_preserved=tables_count,
+        figures_preserved=figures_count,
+    )
+
+    return TextRefinementResult(content=refined_text, metadata=metadata)
 
 
 def _extract_special_elements(text: str) -> tuple[str, dict[str, str]]:
