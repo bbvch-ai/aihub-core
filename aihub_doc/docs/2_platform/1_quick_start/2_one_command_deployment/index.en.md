@@ -94,8 +94,6 @@ Copy this template into your `.env` file and replace placeholder values:
 # =============================================================================
 # This file contains ONLY the environment variables that must be configured.
 # All internal Docker network endpoints are hardcoded in the compose files.
-#
-# Generate secrets with: openssl rand -hex 32
 # =============================================================================
 
 # -----------------------------------------------------------------------------
