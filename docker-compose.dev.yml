@@ -715,7 +715,8 @@ services:
       # --- General Settings ---
       WEBUI_NAME: Swiss AI-Hub
       DEFAULT_LOCALE: de
-      ENABLE_BASE_MODELS_CACHE: True
+      # Disable model caching to ensure pipeline models (agents) are always fetched
+      ENABLE_BASE_MODELS_CACHE: False
       ENABLE_COMMUNITY_SHARING: False
       ENABLE_USER_WEBHOOKS: False
       ENABLE_LOGIN_FORM: False
