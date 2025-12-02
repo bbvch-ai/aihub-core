@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.254.11] - 2025-12-02 - Enhanced Document Intelligence Figure Extraction
+
+### Changed
+
+- 🖼️ **Document Intelligence Figure Handling:** Reworked the figure extraction and replacement mechanism within the
+  `DocumentIntelligenceLoader` to leverage precise span offsets provided by the API, ensuring more accurate and robust
+  figure integration into the document text.
+- ⚡️ **Improved Figure Processing Robustness:** Implemented a new strategy for figure replacement that processes figures
+  in reverse order of their appearance, mitigating issues related to text shifts and ensuring correct figure placement.
+- 🐛 **Strengthened Figure Data Validation:** Introduced validation checks for figure span information to gracefully
+  handle cases where span data is missing or out of bounds, preventing errors during document processing.
+
+---
+
 ## [v0.254.10] - 2025-12-02 - AI-Powered Code Review and On-Demand Assistance with Claude
 
 ### Added
