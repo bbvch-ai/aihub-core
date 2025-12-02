@@ -15,7 +15,7 @@ from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
 
 from aihub_lib.generative_ai.utils.path_utils import create_figures_folder_name
-from aihub_lib.infrastructure.docling.DoclingSettings import DoclingSettings
+from aihub_lib.infrastructure.docling.DoclingSettings import DoclingSettings, PipelineType
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     NODE_CONTENT_TYPE_FIGURE,
@@ -117,24 +117,51 @@ class DoclingLoader(BaseReader):
         self, file_content: str, filename: str, include_images: bool, to_formats: list[str] | None = None
     ) -> dict:
         """Build the request body for the Docling VLM Pipeline."""
-        return {
-            "options": {
-                "to_formats": to_formats if to_formats is not None else self.config.TO_FORMATS,
-                "include_images": include_images,
-                "pipeline": "vlm",
-                "vlm_pipeline_model_api": {
-                    "url": f"{self.config.HOSTED_VLM_API_ENDPOINT}/v1/chat/completions",
-                    "params": {
-                        "model": self.config.VLM_MODEL_NAME,
-                        "max_tokens": 8176,  # 8192 (max tokens) - 16 (for docling)
-                        "skip_special_tokens": False,
-                    },
-                    "response_format": "doctags",
-                    "headers": {"Authorization": f"Bearer {self.config.HOSTED_VLM_API_KEY}"},
+        if self.config.PIPELINE_TYPE == PipelineType.STANDARD:
+            return {
+                "options": {
+                    "from_formats": to_formats if to_formats is not None else self.config.TO_FORMATS,
+                    "to_formats": self.config.TO_FORMATS,
+                    "image_export_mode": self.config.IMAGE_EXPORT_MODE,
+                    "do_ocr": self.config.DO_OCR,
+                    "force_ocr": self.config.FORCE_OCR,
+                    "ocr_engine": self.config.OCR_ENGINE,
+                    "pdf_backend": self.config.PDF_BACKEND,
+                    "table_mode": self.config.TABLE_MODE,
+                    "abort_on_error": False,
+                    "do_table_structure": True,
+                    "include_images": include_images,
+                    "images_scale": self.config.IMAGES_SCALE,
+                    "do_code_enrichment": True,
+                    "do_formula_enrichment": True,
+                    "do_picture_classification": False,
+                    "do_picture_description": False,
+                    "md_page_break_placeholder": self.config.MD_PAGE_BREAK_PLACEHOLDER,
                 },
-            },
-            "sources": [{"base64_string": file_content, "filename": filename, "kind": "file"}],
-        }
+                "sources": [{"base64_string": file_content, "filename": filename, "kind": "file"}],
+            }
+
+        elif self.config.PIPELINE_TYPE == PipelineType.VLM:
+            return {
+                "options": {
+                    "to_formats": to_formats if to_formats is not None else self.config.TO_FORMATS,
+                    "include_images": include_images,
+                    "pipeline": "vlm",
+                    "vlm_pipeline_model_api": {
+                        "url": f"{self.config.HOSTED_VLM_API_ENDPOINT}/v1/chat/completions",
+                        "params": {
+                            "model": self.config.VLM_MODEL_NAME,
+                            "max_tokens": 8176,  # 8192 (max tokens) - 16 (for docling)
+                            "skip_special_tokens": False,
+                        },
+                        "response_format": "doctags",
+                        "headers": {"Authorization": f"Bearer {self.config.HOSTED_VLM_API_KEY}"},
+                    },
+                },
+                "sources": [{"base64_string": file_content, "filename": filename, "kind": "file"}],
+            }
+
+        return {}
 
     def convert_document(
         self, file_content: str, filename: str, include_images: bool, to_formats: list[str] | None = None

@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Annotated
 
 from pydantic import Field
@@ -5,12 +6,22 @@ from pydantic import Field
 from aihub_lib.settings.EnvironmentSettings import EnvironmentSettings
 
 
+class PipelineType(Enum):
+    """Enum for document loader types."""
+
+    VLM = "vlm"
+    STANDARD = "standard"
+
+
 class DoclingSettings(EnvironmentSettings):
     model_config = EnvironmentSettings.create_settings_config("DOCLING_")
 
     # --- General API Settings ---
-    API_ENDPOINT: Annotated[str, Field(description="Docling API endpoint URL")]
+    BASE_API_URL: Annotated[str, Field(description="Docling API endpoint URL")]
     API_TIMEOUT: Annotated[int, Field(description="Timeout for Docling API calls in seconds")] = 300
+
+    # --- Pipeline Type ---
+    PIPELINE_TYPE: Annotated[PipelineType, Field(description="The type of pipeline to use")] = PipelineType.STANDARD
 
     # --- VLM Pipeline Settings (Permanent) ---
     HOSTED_VLM_API_ENDPOINT: Annotated[str, Field(description="The API endpoint for the self-hosted VLM")] = (

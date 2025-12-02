@@ -60,7 +60,8 @@ model_list:
       api_base: http://llama-cpp:8182/
       api_key: XXX
 {%- else %}
-      model: azure/gpt-5-mini
+      # api has changed for gpt-5 models needs to be 4o for ingestion to work currently
+      model: azure/gpt-4o-mini
       api_base: os.environ/AZURE_OPENAI_BASE_URL
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2025-01-01-preview"
@@ -244,9 +245,9 @@ general_settings:
 # LiteLLM Settings
 # ===================================================================
 litellm_settings:
-  callbacks: ["detect_prompt_injection", "otel"]
+  callbacks: [ "detect_prompt_injection", "otel" ]
   {%- if stage != "dev" %}
-  default_fallbacks: ["text-generation/nano", "text-generation/mini"]
+  default_fallbacks: [ "text-generation/nano", "text-generation/mini" ]
   {%- endif %}
   telemetry: true
   json_logs: true
