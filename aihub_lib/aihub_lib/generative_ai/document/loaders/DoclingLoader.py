@@ -89,7 +89,7 @@ class DoclingLoader(BaseReader):
 
         metadata = {NUMBER_OF_PAGES: len(answer["document"]["json_content"]["pages"])}
 
-        soup = BeautifulSoup(markdown_content, "html.parser")
+        soup = BeautifulSoup(markdown_content, "html5lib")
         figure_tags = soup.find_all("figure")
 
         figures_dir = create_figures_folder_name(file)
@@ -120,7 +120,7 @@ class DoclingLoader(BaseReader):
         if self.config.PIPELINE_TYPE == PipelineType.STANDARD:
             return {
                 "options": {
-                    "to_formats": self.config.TO_FORMATS,
+                    "to_formats": to_formats if to_formats is not None else self.config.TO_FORMATS,
                     "image_export_mode": self.config.IMAGE_EXPORT_MODE,
                     "do_ocr": self.config.DO_OCR,
                     "force_ocr": self.config.FORCE_OCR,
@@ -160,7 +160,7 @@ class DoclingLoader(BaseReader):
                 "sources": [{"base64_string": file_content, "filename": filename, "kind": "file"}],
             }
 
-        return {}
+        raise ValueError(f"Unsupported pipeline type: {self.config.PIPELINE_TYPE}")
 
     def convert_document(
         self, file_content: str, filename: str, include_images: bool, to_formats: list[str] | None = None
