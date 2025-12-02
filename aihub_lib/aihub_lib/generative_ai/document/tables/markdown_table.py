@@ -40,24 +40,6 @@ class HeaderAnalysis(BaseModel):
     reasoning: Annotated[str, Field(description="Brief explanation of header structure detected")]
 
 
-class ColumnCorrection(BaseModel):
-    """A single column correction to fix misaligned data."""
-
-    row: Annotated[int, Field(description="0-based row index where the error occurs")]
-    from_col: Annotated[int, Field(description="0-based column index where the value currently is")]
-    to_col: Annotated[int, Field(description="0-based column index where the value should be")]
-
-
-class ColumnAlignmentAnalysis(BaseModel):
-    """LLM response for column alignment correction (step 3)."""
-
-    corrections: Annotated[
-        list[ColumnCorrection],
-        Field(description="List of corrections needed. Empty list if table is correctly aligned."),
-    ]
-    reasoning: Annotated[str, Field(description="Brief explanation of alignment issues found or why table is correct")]
-
-
 class TableRefinementStats(BaseModel):
     """Statistics for a single table's refinement."""
 
@@ -65,7 +47,6 @@ class TableRefinementStats(BaseModel):
     was_split: Annotated[bool, Field(description="Whether the table was split into multiple tables")]
     tables_after_split: Annotated[int, Field(description="Number of tables after splitting")]
     header_rows_detected: Annotated[list[int], Field(description="Header rows detected for each resulting table")]
-    column_corrections_applied: Annotated[int, Field(description="Total column corrections applied")]
     split_reasoning: Annotated[str, Field(description="LLM reasoning for split decision")]
 
 
@@ -75,7 +56,6 @@ class TableRefinementMetadata(BaseModel):
     tables_processed: Annotated[int, Field(description="Number of tables processed")]
     tables_split: Annotated[int, Field(description="Number of tables that were split")]
     total_tables_after_split: Annotated[int, Field(description="Total tables after all splitting")]
-    total_column_corrections: Annotated[int, Field(description="Total column corrections applied")]
     table_stats: Annotated[list[TableRefinementStats], Field(description="Per-table statistics")]
 
 
@@ -94,10 +74,9 @@ class TableRefinementResult(BaseModel):
 def create_markdown_table(df: pd.DataFrame, llm_config: "LLMConfig | None" = None) -> str:
     """Create markdown table(s) from a DataFrame.
 
-    With llm_config: Uses three-step LLM analysis:
+    With llm_config: Uses two-step LLM analysis:
       1. Detect and split merged tables
       2. Detect multi-row headers for each table
-      3. Fix column alignment errors (data in wrong columns)
     Without: uses first row as header if columns are integers, else keeps as-is.
     """
     content, _ = _create_markdown_table_internal(df, llm_config)
@@ -135,10 +114,9 @@ def _create_markdown_table_internal(
                 f"Step 1 - Split detection: {len(split_analysis.tables)} table(s): {split_analysis.reasoning}"
             )
 
-            # Step 2 & 3: For each split table, detect headers, fix alignment, and create markdown
+            # Step 2: For each split table, detect headers and create markdown
             markdown_tables = []
             header_rows_detected = []
-            total_corrections = 0
 
             for i, boundary in enumerate(split_analysis.tables):
                 if i + 1 < len(split_analysis.tables):
@@ -149,7 +127,7 @@ def _create_markdown_table_internal(
                 table_df = df.iloc[boundary.start_row : end_row].copy()
                 table_df = table_df.reset_index(drop=True)
 
-                # Step 2: Detect headers for this specific table
+                # Detect headers for this specific table
                 table_for_analysis = _format_table_with_row_indices(table_df)
                 header_analysis = _detect_header_rows(table_for_analysis, llm_config)
                 header_rows_detected.append(header_analysis.num_header_rows)
@@ -157,16 +135,6 @@ def _create_markdown_table_internal(
                     f"  Table {i + 1} (rows {boundary.start_row}-{end_row - 1}): "
                     f"{header_analysis.num_header_rows} header row(s): {header_analysis.reasoning}"
                 )
-
-                # Step 3: Fix column alignment errors
-                alignment_analysis = _detect_column_alignment_errors(table_for_analysis, llm_config)
-                if alignment_analysis.corrections:
-                    _logger.debug(
-                        f"  Table {i + 1}: {len(alignment_analysis.corrections)} column fix(es): "
-                        f"{alignment_analysis.reasoning}"
-                    )
-                    table_df = _apply_column_corrections(table_df, alignment_analysis.corrections)
-                    total_corrections += len(alignment_analysis.corrections)
 
                 table_df = _apply_header_rows(table_df, header_analysis.num_header_rows)
                 markdown_tables.append(table_df.to_markdown(index=False))
@@ -176,7 +144,6 @@ def _create_markdown_table_internal(
                 was_split=len(split_analysis.tables) > 1,
                 tables_after_split=len(split_analysis.tables),
                 header_rows_detected=header_rows_detected,
-                column_corrections_applied=total_corrections,
                 split_reasoning=split_analysis.reasoning,
             )
 
@@ -306,75 +273,6 @@ Return the number of header rows (1-4). Most tables have 1-2 header rows."""
     # Validate: clamp to 1-4
     validated_num = max(1, min(4, analysis.num_header_rows))
     return HeaderAnalysis(num_header_rows=validated_num, reasoning=analysis.reasoning)
-
-
-def _detect_column_alignment_errors(table_text: str, llm_config: "LLMConfig") -> ColumnAlignmentAnalysis:
-    """Step 3: Detect and fix column alignment errors where data is in the wrong column."""
-    prompt_text = """Analyze this table for column alignment errors where values are in the wrong column.
-
-COMMON ALIGNMENT ERRORS:
-- A value appears in the wrong column due to OCR or parsing errors
-- Header text shifted into a data column or vice versa
-- Values displaced by one or more columns (often due to empty cells being mishandled)
-- Numeric data appearing in a text column or text in a numeric column
-
-HOW TO DETECT ERRORS:
-- Compare each cell's content type with what the column typically contains
-- Look for values that don't match the pattern of other values in the same column
-- Check if a value would make more sense in an adjacent column
-- Identify rows where the data pattern is inconsistent with other rows
-
-IMPORTANT:
-- Only report actual errors, not stylistic differences
-- Each correction moves ONE value from one column to another
-- The target column's current value will be replaced (usually it's empty or wrong)
-- Row and column indices are 0-based
-
-Each row is prefixed with its 0-based index in square brackets: "[0]", "[1]", etc.
-Columns are separated by " | " and are numbered 0, 1, 2, ... from left to right.
-
-Table Data:
-{table_text}
-
-Return a list of corrections. Each correction specifies: row index, source column, target column.
-Return an empty list if the table is correctly aligned."""
-
-    prompt = PromptTemplate(prompt_text)
-    llm, _ = llm_config.to_llama_index()
-    analysis = llm.structured_predict(ColumnAlignmentAnalysis, prompt, table_text=table_text)
-
-    _logger.debug(f"Alignment analysis raw response: {len(analysis.corrections)} corrections, {analysis.reasoning}")
-
-    return analysis
-
-
-def _apply_column_corrections(df: pd.DataFrame, corrections: list[ColumnCorrection]) -> pd.DataFrame:
-    """Apply column corrections to fix misaligned data."""
-    df = df.copy()
-    num_rows, num_cols = df.shape
-
-    for correction in corrections:
-        # Validate indices
-        if not (0 <= correction.row < num_rows):
-            _logger.warning(f"Skipping correction: row {correction.row} out of bounds (0-{num_rows - 1})")
-            continue
-        if not (0 <= correction.from_col < num_cols):
-            _logger.warning(f"Skipping correction: from_col {correction.from_col} out of bounds (0-{num_cols - 1})")
-            continue
-        if not (0 <= correction.to_col < num_cols):
-            _logger.warning(f"Skipping correction: to_col {correction.to_col} out of bounds (0-{num_cols - 1})")
-            continue
-
-        # Move value from source to target column
-        value = df.iloc[correction.row, correction.from_col]
-        df.iloc[correction.row, correction.to_col] = value
-        df.iloc[correction.row, correction.from_col] = ""
-
-        _logger.debug(
-            f"  Moved '{value}' from row {correction.row} col {correction.from_col} to col {correction.to_col}"
-        )
-
-    return df
 
 
 def _apply_header_rows(df: pd.DataFrame, num_header_rows: int) -> pd.DataFrame:

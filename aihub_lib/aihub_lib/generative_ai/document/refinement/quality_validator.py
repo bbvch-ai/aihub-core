@@ -2,6 +2,7 @@
 
 Detects severe parsing failures that require document re-parsing, such as:
 - Excessive text repetition (parsing loops)
+- Short token floods (e.g., "152" repeated 80 times)
 - Abnormal character distributions (severe encoding failures)
 
 This is NOT for normal OCR mistakes which are handled by text refinement.
@@ -18,9 +19,15 @@ _logger = logging.getLogger(__name__)
 
 # Thresholds for detecting parsing bugs (tuned to catch severe issues only)
 _MIN_TEXT_LENGTH_FOR_VALIDATION = 500  # Don't validate very short documents
-_REPETITION_PATTERN_MIN_LENGTH = 10  # Minimum pattern length to consider
+_REPETITION_PATTERN_MIN_LENGTH = 10  # Minimum pattern length to consider for long patterns
 _REPETITION_COUNT_THRESHOLD = 20  # Pattern must repeat this many times to be a bug
 _REPETITION_RATIO_THRESHOLD = 0.3  # Repeated content must be >30% of total text
+
+# Thresholds for short token flood detection (catches "152\n152\n152..." patterns)
+_SHORT_TOKEN_MIN_LENGTH = 1  # Minimum length for short tokens
+_SHORT_TOKEN_MAX_LENGTH = 10  # Maximum length to be considered a "short token"
+_SHORT_TOKEN_COUNT_THRESHOLD = 50  # Short tokens need more repetitions to be flagged
+_SHORT_TOKEN_RATIO_THRESHOLD = 0.15  # Lower ratio threshold since short tokens take less space
 
 
 class RepetitionIssue(BaseModel):
@@ -91,15 +98,16 @@ def _detect_repetition_bugs(text: str) -> list[RepetitionIssue]:
 
     Uses multiple strategies to find repeated patterns:
     1. Line-based repetition (same line repeated many times)
-    2. Phrase-based repetition (same phrase/sentence repeated)
+    2. Short token flood detection (e.g., "152" repeated 80 times)
+    3. Phrase-based repetition (same phrase/sentence repeated)
 
     Only flags patterns that:
-    - Repeat many times (>20 by default)
-    - Consume significant portion of document (>30%)
+    - Repeat many times (>20 for long patterns, >50 for short tokens)
+    - Consume significant portion of document (>30% for long, >15% for short)
     """
     issues: list[RepetitionIssue] = []
 
-    # Strategy 1: Line-based repetition detection
+    # Strategy 1: Line-based repetition detection (for longer lines)
     lines = text.split("\n")
     line_counts = Counter(line.strip() for line in lines if len(line.strip()) >= _REPETITION_PATTERN_MIN_LENGTH)
 
@@ -121,10 +129,52 @@ def _detect_repetition_bugs(text: str) -> list[RepetitionIssue]:
                 )
             )
 
-    # Strategy 2: Phrase-based repetition (for patterns not on separate lines)
-    # Look for repeated sequences that might span multiple lines
+    # Strategy 2: Short token flood detection (catches "152\n152\n152..." patterns)
+    short_token_issues = _detect_short_token_floods(text)
+    issues.extend(short_token_issues)
+
+    # Strategy 3: Phrase-based repetition (for patterns not on separate lines)
     phrase_issues = _detect_phrase_repetition(text)
     issues.extend(phrase_issues)
+
+    return issues
+
+
+def _detect_short_token_floods(text: str) -> list[RepetitionIssue]:
+    """Detect floods of short repeated tokens.
+
+    This catches patterns like:
+    - "152\\n152\\n152\\n..." (number stuck in a loop)
+    - Single words or short phrases repeated excessively
+
+    These are missed by the main line detection because they're too short.
+    """
+    issues: list[RepetitionIssue] = []
+
+    lines = text.split("\n")
+    # Count short lines (1-10 chars) that repeat
+    short_line_counts = Counter(
+        line.strip() for line in lines if _SHORT_TOKEN_MIN_LENGTH <= len(line.strip()) <= _SHORT_TOKEN_MAX_LENGTH
+    )
+
+    for token, count in short_line_counts.most_common(10):
+        if count < _SHORT_TOKEN_COUNT_THRESHOLD:
+            continue
+
+        # Calculate ratio including newlines
+        total_chars = (len(token) + 1) * count  # +1 for newline
+        ratio = total_chars / len(text)
+
+        if ratio >= _SHORT_TOKEN_RATIO_THRESHOLD:
+            _logger.warning(f"Short token flood detected: '{token}' repeated {count} times ({ratio:.1%})")
+            issues.append(
+                RepetitionIssue(
+                    pattern=token,
+                    count=count,
+                    total_chars=total_chars,
+                    ratio=ratio,
+                )
+            )
 
     return issues
 

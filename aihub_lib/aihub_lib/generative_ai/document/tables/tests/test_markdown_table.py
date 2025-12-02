@@ -1,16 +1,13 @@
-"""Tests for markdown_table module - all three refinement steps."""
+"""Tests for markdown_table module - table split and header detection."""
 
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
 
 from aihub_lib.generative_ai.document.tables.markdown_table import (
-    ColumnAlignmentAnalysis,
-    ColumnCorrection,
     HeaderAnalysis,
     TableBoundary,
     TableSplitAnalysis,
-    _apply_column_corrections,
     _apply_header_rows,
     _format_table_with_row_indices,
     _reset_columns_to_data,
@@ -101,74 +98,6 @@ class TestApplyHeaderRows:
         assert len(result) == 1
 
 
-class TestApplyColumnCorrections:
-    """Tests for _apply_column_corrections function (Step 3)."""
-
-    def test_single_correction(self) -> None:
-        """Test applying a single column correction."""
-        df = pd.DataFrame([["Header1", "Header2", ""], ["Value", "", ""]], columns=[0, 1, 2])
-        corrections = [ColumnCorrection(row=1, from_col=0, to_col=1)]
-
-        result = _apply_column_corrections(df, corrections)
-
-        assert result.iloc[1, 0] == ""
-        assert result.iloc[1, 1] == "Value"
-
-    def test_multiple_corrections(self) -> None:
-        """Test applying multiple column corrections."""
-        df = pd.DataFrame([["A", "", "B"], ["", "C", ""]], columns=[0, 1, 2])
-        corrections = [
-            ColumnCorrection(row=0, from_col=2, to_col=1),
-            ColumnCorrection(row=1, from_col=1, to_col=0),
-        ]
-
-        result = _apply_column_corrections(df, corrections)
-
-        assert result.iloc[0, 1] == "B"
-        assert result.iloc[0, 2] == ""
-        assert result.iloc[1, 0] == "C"
-        assert result.iloc[1, 1] == ""
-
-    def test_out_of_bounds_row_skipped(self) -> None:
-        """Test that corrections with out-of-bounds row are skipped."""
-        df = pd.DataFrame([["A", "B"]], columns=[0, 1])
-        corrections = [ColumnCorrection(row=5, from_col=0, to_col=1)]
-
-        result = _apply_column_corrections(df, corrections)
-
-        # DataFrame should be unchanged
-        assert result.iloc[0, 0] == "A"
-        assert result.iloc[0, 1] == "B"
-
-    def test_out_of_bounds_column_skipped(self) -> None:
-        """Test that corrections with out-of-bounds columns are skipped."""
-        df = pd.DataFrame([["A", "B"]], columns=[0, 1])
-        corrections = [ColumnCorrection(row=0, from_col=0, to_col=5)]
-
-        result = _apply_column_corrections(df, corrections)
-
-        # DataFrame should be unchanged
-        assert result.iloc[0, 0] == "A"
-
-    def test_empty_corrections_list(self) -> None:
-        """Test that empty corrections list returns DataFrame unchanged."""
-        df = pd.DataFrame([["A", "B"]], columns=[0, 1])
-        result = _apply_column_corrections(df, [])
-
-        assert result.iloc[0, 0] == "A"
-        assert result.iloc[0, 1] == "B"
-
-    def test_original_dataframe_not_modified(self) -> None:
-        """Test that the original DataFrame is not modified."""
-        df = pd.DataFrame([["A", ""]], columns=[0, 1])
-        original_value = df.iloc[0, 0]
-        corrections = [ColumnCorrection(row=0, from_col=0, to_col=1)]
-
-        _apply_column_corrections(df, corrections)
-
-        assert df.iloc[0, 0] == original_value
-
-
 class TestTableSplitAnalysisModels:
     """Tests for table split analysis Pydantic models."""
 
@@ -196,31 +125,6 @@ class TestHeaderAnalysisModel:
         analysis = HeaderAnalysis(num_header_rows=2, reasoning="Two header rows detected")
         assert analysis.num_header_rows == 2
         assert analysis.reasoning == "Two header rows detected"
-
-
-class TestColumnAlignmentModels:
-    """Tests for column alignment Pydantic models."""
-
-    def test_column_correction_model(self) -> None:
-        """Test ColumnCorrection model creation."""
-        correction = ColumnCorrection(row=1, from_col=2, to_col=3)
-        assert correction.row == 1
-        assert correction.from_col == 2
-        assert correction.to_col == 3
-
-    def test_column_alignment_analysis_model(self) -> None:
-        """Test ColumnAlignmentAnalysis model creation."""
-        analysis = ColumnAlignmentAnalysis(
-            corrections=[ColumnCorrection(row=0, from_col=1, to_col=2)],
-            reasoning="One misaligned value",
-        )
-        assert len(analysis.corrections) == 1
-        assert analysis.reasoning == "One misaligned value"
-
-    def test_empty_corrections_list(self) -> None:
-        """Test ColumnAlignmentAnalysis with empty corrections."""
-        analysis = ColumnAlignmentAnalysis(corrections=[], reasoning="Table is correctly aligned")
-        assert len(analysis.corrections) == 0
 
 
 class TestCreateMarkdownTableWithoutLLM:
@@ -260,19 +164,14 @@ class TestCreateMarkdownTableWithLLM:
         with (
             patch("aihub_lib.generative_ai.document.tables.markdown_table._detect_table_splits") as mock_split,
             patch("aihub_lib.generative_ai.document.tables.markdown_table._detect_header_rows") as mock_header,
-            patch(
-                "aihub_lib.generative_ai.document.tables.markdown_table._detect_column_alignment_errors"
-            ) as mock_align,
         ):
             mock_split.return_value = TableSplitAnalysis(tables=[TableBoundary(start_row=0)], reasoning="Single table")
             mock_header.return_value = HeaderAnalysis(num_header_rows=1, reasoning="One header row")
-            mock_align.return_value = ColumnAlignmentAnalysis(corrections=[], reasoning="Aligned")
 
             result = create_markdown_table(df, mock_llm_config)
 
             mock_split.assert_called_once()
             mock_header.assert_called_once()
-            mock_align.assert_called_once()
             assert "H1" in result
             assert "H2" in result
 
@@ -287,23 +186,18 @@ class TestCreateMarkdownTableWithLLM:
         with (
             patch("aihub_lib.generative_ai.document.tables.markdown_table._detect_table_splits") as mock_split,
             patch("aihub_lib.generative_ai.document.tables.markdown_table._detect_header_rows") as mock_header,
-            patch(
-                "aihub_lib.generative_ai.document.tables.markdown_table._detect_column_alignment_errors"
-            ) as mock_align,
         ):
             mock_split.return_value = TableSplitAnalysis(
                 tables=[TableBoundary(start_row=0), TableBoundary(start_row=2)],
                 reasoning="Two merged tables",
             )
             mock_header.return_value = HeaderAnalysis(num_header_rows=1, reasoning="One header row")
-            mock_align.return_value = ColumnAlignmentAnalysis(corrections=[], reasoning="Aligned")
 
             result = create_markdown_table(df, mock_llm_config)
 
             # Should have two tables separated by double newline
             assert "\n\n" in result
             assert mock_header.call_count == 2
-            assert mock_align.call_count == 2
 
     def test_multi_row_headers_detected(self) -> None:
         """Test LLM detecting multi-row headers."""
@@ -316,43 +210,14 @@ class TestCreateMarkdownTableWithLLM:
         with (
             patch("aihub_lib.generative_ai.document.tables.markdown_table._detect_table_splits") as mock_split,
             patch("aihub_lib.generative_ai.document.tables.markdown_table._detect_header_rows") as mock_header,
-            patch(
-                "aihub_lib.generative_ai.document.tables.markdown_table._detect_column_alignment_errors"
-            ) as mock_align,
         ):
             mock_split.return_value = TableSplitAnalysis(tables=[TableBoundary(start_row=0)], reasoning="Single table")
             mock_header.return_value = HeaderAnalysis(num_header_rows=2, reasoning="Two header rows")
-            mock_align.return_value = ColumnAlignmentAnalysis(corrections=[], reasoning="Aligned")
 
             result = create_markdown_table(df, mock_llm_config)
 
             # Headers should be merged with " - "
             assert "Category - Sub1" in result or "Sub1" in result
-
-    def test_column_corrections_applied(self) -> None:
-        """Test that column corrections are applied."""
-        df = pd.DataFrame([["H1", "H2"], ["Value", ""]], columns=[0, 1])
-        mock_llm_config = MagicMock()
-
-        with (
-            patch("aihub_lib.generative_ai.document.tables.markdown_table._detect_table_splits") as mock_split,
-            patch("aihub_lib.generative_ai.document.tables.markdown_table._detect_header_rows") as mock_header,
-            patch(
-                "aihub_lib.generative_ai.document.tables.markdown_table._detect_column_alignment_errors"
-            ) as mock_align,
-        ):
-            mock_split.return_value = TableSplitAnalysis(tables=[TableBoundary(start_row=0)], reasoning="Single table")
-            mock_header.return_value = HeaderAnalysis(num_header_rows=1, reasoning="One header row")
-            # Move value from col 0 to col 1 in row 1 (data row)
-            mock_align.return_value = ColumnAlignmentAnalysis(
-                corrections=[ColumnCorrection(row=1, from_col=0, to_col=1)],
-                reasoning="Value in wrong column",
-            )
-
-            result = create_markdown_table(df, mock_llm_config)
-
-            # Value should have been moved
-            assert "Value" in result
 
     def test_llm_failure_falls_back_to_single_header(self) -> None:
         """Test that LLM failure falls back to single header row."""
@@ -459,13 +324,9 @@ class TestCreateMarkdownTableWithStats:
         with (
             patch("aihub_lib.generative_ai.document.tables.markdown_table._detect_table_splits") as mock_split,
             patch("aihub_lib.generative_ai.document.tables.markdown_table._detect_header_rows") as mock_header,
-            patch(
-                "aihub_lib.generative_ai.document.tables.markdown_table._detect_column_alignment_errors"
-            ) as mock_align,
         ):
             mock_split.return_value = TableSplitAnalysis(tables=[TableBoundary(start_row=0)], reasoning="Single table")
             mock_header.return_value = HeaderAnalysis(num_header_rows=1, reasoning="One header row")
-            mock_align.return_value = ColumnAlignmentAnalysis(corrections=[], reasoning="Aligned")
 
             content, stats = create_markdown_table_with_stats(df, mock_llm_config)
 
@@ -474,7 +335,6 @@ class TestCreateMarkdownTableWithStats:
             assert stats.was_split is False
             assert stats.tables_after_split == 1
             assert stats.header_rows_detected == [1]
-            assert stats.column_corrections_applied == 0
 
     def test_stats_reflect_split(self) -> None:
         """Test that stats correctly reflect a split table."""
@@ -484,16 +344,12 @@ class TestCreateMarkdownTableWithStats:
         with (
             patch("aihub_lib.generative_ai.document.tables.markdown_table._detect_table_splits") as mock_split,
             patch("aihub_lib.generative_ai.document.tables.markdown_table._detect_header_rows") as mock_header,
-            patch(
-                "aihub_lib.generative_ai.document.tables.markdown_table._detect_column_alignment_errors"
-            ) as mock_align,
         ):
             mock_split.return_value = TableSplitAnalysis(
                 tables=[TableBoundary(start_row=0), TableBoundary(start_row=2)],
                 reasoning="Two tables merged",
             )
             mock_header.return_value = HeaderAnalysis(num_header_rows=1, reasoning="One header row")
-            mock_align.return_value = ColumnAlignmentAnalysis(corrections=[], reasoning="Aligned")
 
             content, stats = create_markdown_table_with_stats(df, mock_llm_config)
 
@@ -502,30 +358,3 @@ class TestCreateMarkdownTableWithStats:
             assert stats.tables_after_split == 2
             assert len(stats.header_rows_detected) == 2
             assert stats.split_reasoning == "Two tables merged"
-
-    def test_stats_reflect_column_corrections(self) -> None:
-        """Test that stats correctly reflect column corrections."""
-        df = pd.DataFrame([["H1", "H2"], ["A", "B"]], columns=[0, 1])
-        mock_llm_config = MagicMock()
-
-        with (
-            patch("aihub_lib.generative_ai.document.tables.markdown_table._detect_table_splits") as mock_split,
-            patch("aihub_lib.generative_ai.document.tables.markdown_table._detect_header_rows") as mock_header,
-            patch(
-                "aihub_lib.generative_ai.document.tables.markdown_table._detect_column_alignment_errors"
-            ) as mock_align,
-        ):
-            mock_split.return_value = TableSplitAnalysis(tables=[TableBoundary(start_row=0)], reasoning="Single table")
-            mock_header.return_value = HeaderAnalysis(num_header_rows=1, reasoning="One header row")
-            mock_align.return_value = ColumnAlignmentAnalysis(
-                corrections=[
-                    ColumnCorrection(row=1, from_col=0, to_col=1),
-                    ColumnCorrection(row=1, from_col=1, to_col=0),
-                ],
-                reasoning="Swapped columns",
-            )
-
-            content, stats = create_markdown_table_with_stats(df, mock_llm_config)
-
-            assert stats is not None
-            assert stats.column_corrections_applied == 2

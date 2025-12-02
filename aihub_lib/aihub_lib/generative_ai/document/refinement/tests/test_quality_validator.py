@@ -5,6 +5,7 @@ from aihub_lib.generative_ai.document.refinement.quality_validator import (
     RepetitionIssue,
     _detect_phrase_repetition,
     _detect_repetition_bugs,
+    _detect_short_token_floods,
     validate_document_quality,
 )
 
@@ -208,3 +209,51 @@ class TestRealWorldScenarios:
         # This is a form with repeated structure but different content - should pass
         # The line-based detection should see each line as unique
         assert result.is_valid is True
+
+    def test_number_flood_bug(self) -> None:
+        """Test detection of the number flood bug (152 repeated 80 times)."""
+        # Recreate the actual bug: sequential numbers then stuck on one number
+        text = "1.7 Energiekette\n"
+        text += "Das Bild zeigt eine Energiekette...\n\n"
+        text += "\n".join(str(i) for i in range(1, 153))  # Numbers 1-152
+        text += "\n" + "\n".join(["152"] * 80)  # 152 repeated 80 times
+        text += "\nLieferbare Einzelteile\n"
+
+        result = validate_document_quality(text)
+
+        assert result.is_valid is False
+        assert result.has_repetition_bug is True
+        # Should detect the "152" flood
+        assert any("152" in issue.pattern for issue in result.repetition_issues)
+
+
+class TestDetectShortTokenFloods:
+    """Tests for _detect_short_token_floods function."""
+
+    def test_detects_number_flood(self) -> None:
+        """Test that repeated short numbers are detected."""
+        text = "\n".join(["152"] * 100)
+
+        issues = _detect_short_token_floods(text)
+
+        assert len(issues) > 0
+        assert issues[0].pattern == "152"
+        assert issues[0].count == 100
+
+    def test_ignores_low_count(self) -> None:
+        """Test that low repetition counts are ignored."""
+        # 30 repetitions is below the 50 threshold
+        text = "\n".join(["42"] * 30) + "\n" + "Other content " * 50
+
+        issues = _detect_short_token_floods(text)
+
+        assert len(issues) == 0
+
+    def test_ignores_sequential_numbers(self) -> None:
+        """Test that sequential numbers (like page numbers) aren't flagged."""
+        # Each number is unique, so no single token repeats
+        text = "\n".join(str(i) for i in range(1, 200))
+
+        issues = _detect_short_token_floods(text)
+
+        assert len(issues) == 0
