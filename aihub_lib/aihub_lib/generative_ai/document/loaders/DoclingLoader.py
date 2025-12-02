@@ -120,7 +120,6 @@ class DoclingLoader(BaseReader):
         if self.config.PIPELINE_TYPE == PipelineType.STANDARD:
             return {
                 "options": {
-                    "from_formats": to_formats if to_formats is not None else self.config.TO_FORMATS,
                     "to_formats": self.config.TO_FORMATS,
                     "image_export_mode": self.config.IMAGE_EXPORT_MODE,
                     "do_ocr": self.config.DO_OCR,
@@ -169,7 +168,7 @@ class DoclingLoader(BaseReader):
         request_body = self._build_request_body(file_content, filename, include_images, to_formats)
 
         response = httpx.post(
-            f"{self.config.API_ENDPOINT}/v1/convert/source",
+            f"{self.config.BASE_API_URL}/v1/convert/source",
             json=request_body,
             headers={"Content-Type": "application/json"},
             timeout=self.config.API_TIMEOUT,
@@ -189,7 +188,7 @@ class DoclingLoader(BaseReader):
 
         async with httpx.AsyncClient(timeout=self.config.API_TIMEOUT) as client:
             response = await client.post(
-                f"{self.config.API_ENDPOINT}/v1/convert/source/async",
+                f"{self.config.BASE_API_URL}/v1/convert/source/async",
                 json=request_body,
                 headers={"Content-Type": "application/json"},
             )
@@ -208,7 +207,7 @@ class DoclingLoader(BaseReader):
         """Poll the task status until completion and return the result."""
         for _ in range(self.config.MAX_POLLS):
             status_response = await client.get(
-                f"{self.config.API_ENDPOINT}/v1/status/poll/{task_id}",
+                f"{self.config.BASE_API_URL}/v1/status/poll/{task_id}",
                 headers={"Content-Type": "application/json"},
             )
 
@@ -222,7 +221,7 @@ class DoclingLoader(BaseReader):
 
             if task_status["task_status"] == "success":
                 result_response = await client.get(
-                    f"{self.config.API_ENDPOINT}/v1/result/{task_id}",
+                    f"{self.config.BASE_API_URL}/v1/result/{task_id}",
                     headers={"Content-Type": "application/json"},
                 )
 
