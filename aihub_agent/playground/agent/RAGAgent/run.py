@@ -10,7 +10,7 @@ from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
-from aihub_lib.testing.logging.logger import enable_logging
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig

@@ -10,7 +10,7 @@ from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryE
 from aihub_lib.nats.events.guard.AgentSuitabilityAcceptEvent import AgentSuitabilityAcceptEvent
 from aihub_lib.nats.events.guard.GuardRejectionEvent import GuardRejectionEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
-from aihub_lib.testing.logging.logger import enable_logging
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
 

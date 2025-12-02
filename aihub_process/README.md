@@ -292,7 +292,7 @@ Process debugging focuses on understanding the flow of work events between entit
    ```python
    # my_process/trigger.py
    import asyncio
-   from aihub_lib.testing.logging.logger import enable_logging
+   from aihub_lib.infrastructure.logging.logger import enable_logging
 
    enable_logging()
 
@@ -318,7 +318,7 @@ Process debugging focuses on understanding the flow of work events between entit
    # my_process/run.py
    import asyncio
    from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-   from aihub_lib.testing.logging.logger import enable_logging
+   from aihub_lib.infrastructure.logging.logger import enable_logging
 
    enable_logging()
 

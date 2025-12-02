@@ -14,7 +14,6 @@ from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
 
-from aihub_lib.generative_ai.document.refinement import refine_document_text
 from aihub_lib.generative_ai.document.tables import create_markdown_table
 from aihub_lib.generative_ai.utils.path_utils import create_figures_folder_name
 from aihub_lib.infrastructure.docling.DoclingSettings import DoclingSettings
@@ -99,9 +98,6 @@ class DoclingLoader(BaseReader):
                 markdown_text=markdown_content, tables=doc.tables, llm_config=self.llm_config
             )
 
-        # Refine text with LLM to fix OCR errors and structural issues
-        if self.llm_config is not None:
-            markdown_content = refine_document_text(markdown_content, self.llm_config)
 
         metadata = {NUMBER_OF_PAGES: len(answer["document"]["json_content"]["pages"])}
 

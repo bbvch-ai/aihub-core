@@ -52,6 +52,7 @@ from aihub_pipeline.resources.local_file_system.LocalFileSystemResource import L
 from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource
 from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
 from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
+from aihub_pipeline.resources.parser.TextRefinementResource import TextRefinementResource
 from aihub_pipeline.resources.share_point.SharePointResource import SharePointResource
 from aihub_pipeline.schedules.factory import daily_schedule_at
 from aihub_pipeline.sensors.factory import default_automation_sensor
@@ -79,6 +80,8 @@ def default_definitions(
     embedding_model_name: Annotated[str, "LiteLLM model name for embeddings"] = "embedding/small",
     llm_model_name: Annotated[str, "LiteLLM model name for text generation"] = "text-generation/mini",
     with_summary_nodes: Annotated[bool, "Generate recursive summaries for hierarchical RAG"] = True,
+    with_text_refinement: Annotated[bool, "Refine document text with LLM to fix OCR errors"] = False,
+    text_refinement_max_chunk_tokens: Annotated[int, "Maximum tokens per chunk for text refinement"] = 4000,
     auto_sync: Annotated[bool, "Whether the S3 bucket is auto-synced (i.e. with local fs pipeline)"] = False,
     observe_job_hour: Annotated[int, "Hour to run daily data lake observation job"] = 2,
     observe_job_minute: Annotated[int, "Minute to run daily data lake observation job"] = 0,
@@ -106,7 +109,12 @@ def default_definitions(
     assets = [
         observable_asset,
         removed_documents_factory(removed_documents_key, data_lake_key=data_lake_key),
-        documents_factory(document_key, data_lake_key=data_lake_key, partitions=document_partitions),
+        documents_factory(
+            document_key,
+            data_lake_key=data_lake_key,
+            partitions=document_partitions,
+            enable_text_refinement=with_text_refinement,
+        ),
         nodes_factory(nodes_key, document_key=document_key, partitions=document_partitions),
     ]
     if with_summary_nodes:
@@ -134,24 +142,31 @@ def default_definitions(
     milvus_settings = MilvusSettings()
     dimensions = vector_store_dimensions if vector_store_dimensions is not None else milvus_settings.DIMENSION
 
+    resources: dict = {
+        "document_parser": DocumentParserResource(llm_config=llm_config),
+        "node_parser": MarkdownStructuralNodeParserResource(llm_config=llm_config),
+        "summary_parser": RecursiveSummaryParserResource(),
+        **default_io_manager_s3_datalake_resources(container_name=datalake_container_name),
+        **local_mongo_milvus_storage_context_resource(
+            vector_store_uri=milvus_settings.URL, store_name=store_name, dimensions=dimensions
+        ),
+        **s3_data_lake_resources(
+            container_name=datalake_container_name,
+        ),
+        "embedding_model": EmbeddingModelResource(
+            embedding_config=embedding_config,
+        ),
+        "language_model": LanguageModelResource(llm_config=llm_config),
+    }
+
+    if with_text_refinement:
+        resources["text_refinement"] = TextRefinementResource(
+            llm_config=llm_config, max_chunk_tokens=text_refinement_max_chunk_tokens
+        )
+
     return Definitions(
         assets=assets,
-        resources={
-            "document_parser": DocumentParserResource(),
-            "node_parser": MarkdownStructuralNodeParserResource(llm_config=llm_config),
-            "summary_parser": RecursiveSummaryParserResource(),
-            **default_io_manager_s3_datalake_resources(container_name=datalake_container_name),
-            **local_mongo_milvus_storage_context_resource(
-                vector_store_uri=milvus_settings.URL, store_name=store_name, dimensions=dimensions
-            ),
-            **s3_data_lake_resources(
-                container_name=datalake_container_name,
-            ),
-            "embedding_model": EmbeddingModelResource(
-                embedding_config=embedding_config,
-            ),
-            "language_model": LanguageModelResource(llm_config=llm_config),
-        },
+        resources=resources,
         sensors=[
             default_automation_sensor(assets),
             nats_document_uploaded_sensor(

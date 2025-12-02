@@ -5,6 +5,7 @@ Fixes OCR errors, broken paragraphs, and encoding issues from PDF extraction.
 
 import logging
 import re
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from llama_index.core import PromptTemplate
@@ -14,20 +15,23 @@ if TYPE_CHECKING:
 
 _logger = logging.getLogger(__name__)
 
-_MAX_CHUNK_SIZE = 8000
+_DEFAULT_MAX_CHUNK_TOKENS = 4000  # Leave room for prompt and response
 _TABLE_PATTERN = re.compile(r"<table>.*?</table>", re.DOTALL)
 _FIGURE_PATTERN = re.compile(r"<figure>.*?</figure>", re.DOTALL)
 
 
-def refine_document_text(markdown_text: str, llm_config: "LLMConfig") -> str:
+def refine_document_text(
+    markdown_text: str, llm_config: "LLMConfig", max_chunk_tokens: int = _DEFAULT_MAX_CHUNK_TOKENS
+) -> str:
     """Refine document text using LLM. Preserves <table> and <figure> tags."""
     _logger.debug("Starting LLM text refinement")
 
     text, placeholders = _extract_special_elements(markdown_text)
     _logger.debug(f"Extracted {len(placeholders)} special elements (tables/figures)")
 
-    chunks = _split_into_chunks(text)
-    _logger.debug(f"Split text into {len(chunks)} chunks for processing")
+    token_counter = _create_token_counter(llm_config)
+    chunks = _split_into_chunks(text, token_counter, max_chunk_tokens)
+    _logger.debug(f"Split text into {len(chunks)} chunks for processing (max {max_chunk_tokens} tokens each)")
 
     refined_chunks = []
     for i, chunk in enumerate(chunks):
@@ -70,25 +74,42 @@ def _restore_special_elements(text: str, placeholders: dict[str, str]) -> str:
     return text
 
 
-def _split_into_chunks(text: str) -> list[str]:
-    """Split text into chunks, respecting paragraph boundaries."""
-    if len(text) <= _MAX_CHUNK_SIZE:
+def _create_token_counter(llm_config: "LLMConfig") -> Callable[[str], int]:
+    """Create a token counter function from LLMConfig."""
+    raw_counter = llm_config.token_counter
+
+    def count_tokens(text: str) -> int:
+        return len(raw_counter(text))
+
+    return count_tokens
+
+
+def _split_into_chunks(text: str, token_counter: Callable[[str], int], max_tokens: int) -> list[str]:
+    """Split text into chunks based on token count, respecting paragraph boundaries."""
+    total_tokens = token_counter(text)
+    if total_tokens <= max_tokens:
         return [text]
 
     chunks = []
     current_chunk = ""
+    current_tokens = 0
     paragraphs = text.split("\n\n")
 
     for para in paragraphs:
-        if len(current_chunk) + len(para) + 2 > _MAX_CHUNK_SIZE:
+        para_tokens = token_counter(para)
+        separator_tokens = token_counter("\n\n") if current_chunk else 0
+
+        if current_tokens + para_tokens + separator_tokens > max_tokens:
             if current_chunk:
                 chunks.append(current_chunk)
             current_chunk = para
+            current_tokens = para_tokens
         else:
             if current_chunk:
                 current_chunk += "\n\n" + para
             else:
                 current_chunk = para
+            current_tokens += para_tokens + separator_tokens
 
     if current_chunk:
         chunks.append(current_chunk)

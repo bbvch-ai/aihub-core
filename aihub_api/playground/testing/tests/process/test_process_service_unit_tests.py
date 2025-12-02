@@ -11,7 +11,7 @@ from aihub_lib.persistence.process.ProcessConfigEntityDocument import ProcessCon
 from aihub_lib.persistence.process.ProcessEntity import ProcessEntity
 from aihub_lib.processes.ProcessConfig import ProcessConfig
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
-from aihub_lib.testing.logging.logger import enable_logging
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from bson import ObjectId
 from fastapi import HTTPException
 

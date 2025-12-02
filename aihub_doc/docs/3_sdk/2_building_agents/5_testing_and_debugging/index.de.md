@@ -131,7 +131,7 @@ Erstellen Sie `trigger.py` Skripte, um bestimmte Szenarien zu testen:
 ```python
 # my_agent/trigger.py
 import asyncio
-from aihub_lib.testing.logging.logger import enable_logging
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 # ALWAYS enable logging for debugging
@@ -165,7 +165,7 @@ Für Agents, die kontinuierlich laufen müssen:
 ```python
 # my_agent/run.py
 import asyncio
-from aihub_lib.testing.logging.logger import enable_logging
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 enable_logging()

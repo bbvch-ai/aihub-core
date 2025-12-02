@@ -10,7 +10,7 @@ from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.persistence.rag.documents.stores.docstore import create_mongo_document_store
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.asyncio_utils.bdd import async_test
-from aihub_lib.testing.logging.logger import enable_logging
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_collection
 from dotenv import load_dotenv
 from llama_index.core.vector_stores.types import VectorStoreQueryMode

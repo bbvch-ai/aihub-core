@@ -77,7 +77,7 @@ class DocumentParserResource(ConfigurableResource):
         bool, Field(default=True, description="Specifies if images should be embedded into the documents and nodes.")
     ] = True
 
-    llm_config: ResourceDependency[LLMConfig] | None = None
+    llm_config: ResourceDependency[LLMConfig]
 
     _base_readers = {
         EpubReader: ["epub"],

@@ -11,7 +11,7 @@ from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEn
 from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
-from aihub_lib.testing.logging.logger import enable_logging
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from bson import ObjectId
 from fastapi import HTTPException
 

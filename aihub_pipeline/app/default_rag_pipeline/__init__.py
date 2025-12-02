@@ -1,4 +1,7 @@
+from aihub_lib.infrastructure.logging import enable_logging
 from aihub_pipeline.util.definitions_util import default_definitions
+
+enable_logging()
 
 defs = default_definitions(
     datalake_container_name="defaultknowledge",

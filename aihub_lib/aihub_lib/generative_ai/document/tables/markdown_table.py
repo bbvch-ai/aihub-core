@@ -53,11 +53,11 @@ def create_markdown_table(df: pd.DataFrame, llm_config: "LLMConfig | None" = Non
 
     if llm_config is not None:
         df = _reset_columns_to_data(df)
-        table_markdown = df.to_markdown(index=False)
+        table_for_llm = _format_table_with_row_indices(df)
         _logger.debug(f"Analyzing table structure with LLM ({len(df)} rows)")
-        _logger.debug(f"Table input for LLM:\n{table_markdown[:1000]}{'...' if len(table_markdown) > 1000 else ''}")
+        _logger.debug(f"Table input for LLM:\n{table_for_llm[:1000]}{'...' if len(table_for_llm) > 1000 else ''}")
         try:
-            analysis = _analyze_table_structure_with_llm(table_markdown, llm_config)
+            analysis = _analyze_table_structure_with_llm(table_for_llm, llm_config)
             _logger.debug(f"LLM detected {len(analysis.tables)} table(s): {analysis.reasoning}")
             for i, seg in enumerate(analysis.tables):
                 _logger.debug(f"  Table {i + 1}: start_row={seg.start_row}, num_header_rows={seg.num_header_rows}")
@@ -108,34 +108,66 @@ def _has_integer_column_indices(df: pd.DataFrame) -> bool:
     return all(isinstance(col, int) for col in df.columns)
 
 
+def _format_cell_value(value: object) -> str:
+    """Format cell value, normalizing empty/null values to empty string."""
+    if pd.isna(value):
+        return ""
+    str_value = str(value).strip()
+    if str_value.lower() in ("none", "nan", "<na>"):
+        return ""
+    return str_value
+
+
+def _format_table_with_row_indices(df: pd.DataFrame) -> str:
+    """Format DataFrame as text with explicit row indices for LLM analysis.
+
+    Instead of markdown table format, uses a clearer format with row indices:
+    [0] col1_value | col2_value | col3_value
+    [1] col1_value | col2_value | col3_value
+
+    Empty cells are represented as empty strings between pipes.
+    Uses positional index (0, 1, 2...) regardless of DataFrame's actual index.
+    """
+    lines = []
+    for idx, (_, row) in enumerate(df.iterrows()):
+        row_values = " | ".join(_format_cell_value(v) for v in row.values)
+        lines.append(f"[{idx}] {row_values}")
+    return "\n".join(lines)
+
+
 def _analyze_table_structure_with_llm(table_markdown: str, llm_config: "LLMConfig") -> TableStructureAnalysis:
-    prompt_text = """Analyze the following markdown table data and identify its structure.
+    prompt_text = """Analyze the following table data and identify its structure.
 
-The data may contain:
-1. A SINGLE TABLE with one or more header rows
-2. MULTIPLE TABLES that were incorrectly merged together (look for header-like rows in the middle of the data)
+MOST tables are a SINGLE TABLE - only split if you see CLEAR evidence of merged tables.
 
-Signs of merged tables:
-- A row that looks like column headers appearing after data rows
-- Abrupt change in data pattern/content type
-- Row with category labels or column names in the middle of data
+Signs that would require splitting (ONLY split if you see these):
+- A row that clearly looks like column headers appearing AFTER data rows
+- Text like "Table 2:" or a completely different table title in the middle
+- Column structure completely changes (different number of columns or totally different content types)
 
-Signs of multi-row headers:
-- First few rows contain category names, subcategories, or column groupings
+Signs of multi-row headers (common, does NOT mean multiple tables):
+- First 1-3 rows contain category names, subcategories, or column groupings
 - Hierarchical structure in the top rows (e.g., "Q1 2024" spanning multiple sub-columns)
+- Empty cells in header rows where labels span multiple columns
 
-Row indices are 0-based (first row shown is row 0).
+DO NOT split just because:
+- Data values change or there are empty rows
+- There's a subtotal or category row
+- The content type varies slightly
 
-Markdown Table:
+Each row is prefixed with its 0-based index in square brackets: "[0]", "[1]", etc.
+
+Table Data:
 {table_markdown}
 
-Identify each table with its start_row (0-based) and num_header_rows."""
+Return ONE table entry (start_row=0) unless you see CLEAR evidence of merged tables."""
 
     prompt = PromptTemplate(prompt_text)
 
     llm, _ = llm_config.to_llama_index()
-    result = llm.structured_predict(TableStructureAnalysis, prompt, table_markdown=table_markdown)
-    analysis = TableStructureAnalysis.model_validate(result)
+    analysis = llm.structured_predict(TableStructureAnalysis, prompt, table_markdown=table_markdown)
+
+    _logger.debug(f"Raw LLM response: tables={analysis.tables}, reasoning={analysis.reasoning}")
 
     # Validate and sanitize the response
     validated_tables = []
