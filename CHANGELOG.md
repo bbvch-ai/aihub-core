@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.254.10] - 2025-12-02 - AI-Powered Code Review and On-Demand Assistance with Claude
+
+### Added
+
+- ✨ **Automated AI Code Reviews:** Introduced a new GitHub Actions workflow to automatically run Claude AI code reviews
+  on pull requests, providing comprehensive feedback on code quality, potential bugs, performance, security, and test
+  coverage.
+- 🤖 **On-Demand AI Assistant:** Added a new GitHub Actions workflow enabling direct interaction with Claude AI within
+  issues, pull request comments, and reviews by tagging `@claude`. This facilitates on-demand code assistance,
+  explanations, and insights.
+
+---
+
 ## [v0.254.9] - 2025-12-02 - Unified File System Filtering with Flexible Patterns
 
 ### Refactor
