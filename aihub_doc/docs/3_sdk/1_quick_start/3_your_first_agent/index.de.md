@@ -379,7 +379,7 @@ import asyncio
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.testing.auth_utils.fake_user import fake_user
-from aihub_lib.infrastructure.logging.logger import enable_logging
+from aihub_lib.testing.logging.logger import enable_logging
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
