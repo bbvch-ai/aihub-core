@@ -28,10 +28,19 @@ if TYPE_CHECKING:
 
 
 class DoclingLoader(BaseReader):
-    def __init__(self, llm_config: "LLMConfig | None" = None, *args: Any, **kwargs: Any) -> None:
+    def __init__(
+        self, llm_config: "LLMConfig | None" = None, refine_tables: bool = True, *args: Any, **kwargs: Any
+    ) -> None:
+        """Initialize DoclingLoader.
+
+        llm_config: LLM configuration for table structure analysis. If None, basic table formatting is used.
+        refine_tables: If True and llm_config provided, uses LLM to analyze table structure.
+            Set to False to defer table refinement to a separate pipeline step.
+        """
         super().__init__(*args, **kwargs)
         self.config = DoclingSettings()
         self.llm_config = llm_config
+        self.refine_tables = refine_tables
 
     @trace_fn
     def load_data(
@@ -87,17 +96,19 @@ class DoclingLoader(BaseReader):
         doc = DoclingDocument(**json_content)
         markdown_content = doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
 
+        # Use LLM for table analysis only if refine_tables is True
+        table_llm_config = self.llm_config if self.refine_tables else None
+
         if len(doc.pictures) > 0:
             img_strs = [picture.export_to_markdown(doc) for picture in doc.pictures]
             markdown_text = inject_figure_tags(markdown_text=markdown_content, img_strs=img_strs)
             markdown_content = convert_tables_to_markdown(
-                markdown_text=markdown_text, tables=doc.tables, llm_config=self.llm_config
+                markdown_text=markdown_text, tables=doc.tables, llm_config=table_llm_config
             )
         else:
             markdown_content = convert_tables_to_markdown(
-                markdown_text=markdown_content, tables=doc.tables, llm_config=self.llm_config
+                markdown_text=markdown_content, tables=doc.tables, llm_config=table_llm_config
             )
-
 
         metadata = {NUMBER_OF_PAGES: len(answer["document"]["json_content"]["pages"])}
 

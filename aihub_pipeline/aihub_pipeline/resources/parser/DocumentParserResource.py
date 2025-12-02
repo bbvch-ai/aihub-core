@@ -77,6 +77,15 @@ class DocumentParserResource(ConfigurableResource):
         bool, Field(default=True, description="Specifies if images should be embedded into the documents and nodes.")
     ] = True
 
+    refine_tables: Annotated[
+        bool,
+        Field(
+            default=True,
+            description="If True, uses LLM during parsing to analyze table structure. "
+            "Set to False to defer table refinement to a separate pipeline step.",
+        ),
+    ] = True
+
     llm_config: ResourceDependency[LLMConfig]
 
     _base_readers = {
@@ -112,8 +121,8 @@ class DocumentParserResource(ConfigurableResource):
         if reader_cls is None:
             raise ValueError(f"Unsupported file extension: {filetype}")
 
-        # Pass llm_config to DoclingLoader if available
+        # Pass llm_config and refine_tables to DoclingLoader
         if reader_cls == DoclingLoader:
-            return DoclingLoader(llm_config=self.llm_config)
+            return DoclingLoader(llm_config=self.llm_config, refine_tables=self.refine_tables)
 
         return reader_cls()

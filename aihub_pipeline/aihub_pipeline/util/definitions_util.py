@@ -52,6 +52,7 @@ from aihub_pipeline.resources.local_file_system.LocalFileSystemResource import L
 from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource
 from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
 from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
+from aihub_pipeline.resources.parser.TableRefinementResource import TableRefinementResource
 from aihub_pipeline.resources.parser.TextRefinementResource import TextRefinementResource
 from aihub_pipeline.resources.share_point.SharePointResource import SharePointResource
 from aihub_pipeline.schedules.factory import daily_schedule_at
@@ -82,6 +83,7 @@ def default_definitions(
     with_summary_nodes: Annotated[bool, "Generate recursive summaries for hierarchical RAG"] = True,
     with_text_refinement: Annotated[bool, "Refine document text with LLM to fix OCR errors"] = False,
     text_refinement_max_chunk_tokens: Annotated[int, "Maximum tokens per chunk for text refinement"] = 4000,
+    with_table_refinement: Annotated[bool, "Refine tables with LLM to detect structure and split"] = False,
     auto_sync: Annotated[bool, "Whether the S3 bucket is auto-synced (i.e. with local fs pipeline)"] = False,
     observe_job_hour: Annotated[int, "Hour to run daily data lake observation job"] = 2,
     observe_job_minute: Annotated[int, "Minute to run daily data lake observation job"] = 0,
@@ -114,6 +116,7 @@ def default_definitions(
             data_lake_key=data_lake_key,
             partitions=document_partitions,
             enable_text_refinement=with_text_refinement,
+            enable_table_refinement=with_table_refinement,
         ),
         nodes_factory(nodes_key, document_key=document_key, partitions=document_partitions),
     ]
@@ -142,8 +145,11 @@ def default_definitions(
     milvus_settings = MilvusSettings()
     dimensions = vector_store_dimensions if vector_store_dimensions is not None else milvus_settings.DIMENSION
 
+    # Disable table refinement during parsing if it's done as a separate step
+    refine_tables_during_parsing = not with_table_refinement
+
     resources: dict = {
-        "document_parser": DocumentParserResource(llm_config=llm_config),
+        "document_parser": DocumentParserResource(llm_config=llm_config, refine_tables=refine_tables_during_parsing),
         "node_parser": MarkdownStructuralNodeParserResource(llm_config=llm_config),
         "summary_parser": RecursiveSummaryParserResource(),
         **default_io_manager_s3_datalake_resources(container_name=datalake_container_name),
@@ -158,6 +164,9 @@ def default_definitions(
         ),
         "language_model": LanguageModelResource(llm_config=llm_config),
     }
+
+    if with_table_refinement:
+        resources["table_refinement"] = TableRefinementResource(llm_config=llm_config)
 
     if with_text_refinement:
         resources["text_refinement"] = TextRefinementResource(
