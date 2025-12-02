@@ -125,9 +125,11 @@ services:
       -ip.bind=0.0.0.0
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-filer:/data
+      - ./configs/seaweedfs/seaweed-filer-config.nightly.gpu.toml:/etc/seaweedfs/filer.toml:ro
     depends_on:
       - seaweedfs-master
       - seaweedfs-volume
+      - etcd
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/"]
       interval: 30s
@@ -171,6 +173,14 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seaweedfs-s3.rule=Host(`s3.${DOMAIN}`)"
+      - "traefik.http.routers.seaweedfs-s3.priority=4500"
+      - "traefik.http.routers.seaweedfs-s3.entrypoints=websecure"
+      - "traefik.http.routers.seaweedfs-s3.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.seaweedfs-s3.middlewares=security-headers@file"
+      - "traefik.http.services.seaweedfs-s3.loadbalancer.server.port=9000"
 
   seaweedfs-init:
     container_name: seaweedfs-init
@@ -191,45 +201,6 @@ services:
         max-size: 10m
         max-file: 2
 
-  oauth2proxy-seaweed:
-    container_name: oauth2proxy-seaweed
-    image: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
-    restart: always
-    environment:
-      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4181
-      OAUTH2_PROXY_COOKIE_SECURE: False
-      OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
-      OAUTH2_PROXY_UPSTREAMS: http://seaweedfs-filer:8888
-      OAUTH2_PROXY_ALLOWED_GROUPS: ${SEAWEEDFS_OAUTH_ALLOWED_GROUPS}
-      OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
-      OAUTH2_PROXY_SCOPE: openid email profile
-      OAUTH2_PROXY_CLIENT_ID: ${OAUTH_CLIENT_ID}
-      OAUTH2_PROXY_PROVIDER: oidc
-      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
-      OAUTH2_PROXY_OIDC_ISSUER_URL: ${OAUTH_AUTHORITY_URL}/v2.0
-      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET}
-      OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
-      OAUTH2_PROXY_EMAIL_DOMAINS: "*"
-      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: https://aiagentsstpublicblobs.blob.core.windows.net/logos/Bbv-Logo_farbig.png
-      OAUTH2_PROXY_REVERSE_PROXY: True
-      OAUTH2_PROXY_REDIRECT_URL: https://datalake.${DOMAIN}
-    depends_on:
-      seaweedfs-filer:
-        condition: service_healthy
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.seaweedfs-filer.rule=Host(`datalake.${DOMAIN}`)"
-      - "traefik.http.routers.seaweedfs-filer.priority=4000"
-      - "traefik.http.routers.seaweedfs-filer.entrypoints=websecure"
-      - "traefik.http.routers.seaweedfs-filer.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.seaweedfs-filer.middlewares=security-headers@file"
-      - "traefik.http.services.seaweedfs-filer.loadbalancer.server.port=4181"
-  
 
   # ===================================================================
   # Milvus Stack (Vector Database)
@@ -1295,7 +1266,7 @@ services:
       MILVUS_DIMENSION: 3072
 
       # S3 Access connection
-      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
@@ -1445,7 +1416,7 @@ services:
       MILVUS_DIMENSION: 3072
 
       # S3 Access connection
-      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
@@ -1506,7 +1477,7 @@ services:
       DAGSTER_HOME: /dagster_home
 
       # S3 Access connection (access and secret key same as SeaweedFS)
-      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}

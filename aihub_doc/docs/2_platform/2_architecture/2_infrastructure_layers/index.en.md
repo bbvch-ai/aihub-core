@@ -47,8 +47,10 @@ DeepSeek. It uses PagedAttention for efficient memory management, allowing large
 **Presidio** adds PII detection and anonymization, scanning text for sensitive data patterns before sending to external
 models or storing in databases.
 
-Storage infrastructure uses **MinIO** for S3-compatible object storage and **MongoDB** for document storage. MinIO
-stores uploaded files, generated reports, and model artifacts with versioning and lifecycle policies. MongoDB persists
+Storage infrastructure uses **SeaweedFS** for S3-compatible object storage and **MongoDB** for document storage. SeaweedFS
+stores uploaded files, generated reports, and model artifacts with versioning and lifecycle policies. The SeaweedFS Filer
+uses **etcd** as its metadata backend, enabling high-availability deployments with multiple Filer instances. The S3 API
+is exposed at `s3.${DOMAIN}` with AWS signature authentication, while the Filer web UI remains internal-only. MongoDB persists
 conversation history, user preferences, application data, and event history. These choices provide cloud-native storage
 patterns that work identically whether deployed on-premise or in cloud environments.
 
