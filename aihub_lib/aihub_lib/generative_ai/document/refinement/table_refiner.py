@@ -49,7 +49,6 @@ def refine_document_tables_with_metadata(markdown_text: str, llm_config: "LLMCon
                 tables_processed=0,
                 tables_split=0,
                 total_tables_after_split=0,
-                total_column_corrections=0,
                 table_stats=[],
             ),
         )
@@ -61,7 +60,6 @@ def refine_document_tables_with_metadata(markdown_text: str, llm_config: "LLMCon
     table_stats = []
     tables_split = 0
     total_tables_after_split = 0
-    total_column_corrections = 0
 
     for match in matches:
         table_content = match.group(1).strip()
@@ -78,7 +76,6 @@ def refine_document_tables_with_metadata(markdown_text: str, llm_config: "LLMCon
             if stats.was_split:
                 tables_split += 1
             total_tables_after_split += stats.tables_after_split
-            total_column_corrections += stats.column_corrections_applied
 
         individual_tables = refined_tables.split("\n\n")
         wrapped_tables = "\n\n".join(f"<table>{t}</table>" for t in individual_tables if t.strip())
@@ -92,7 +89,6 @@ def refine_document_tables_with_metadata(markdown_text: str, llm_config: "LLMCon
         tables_processed=len(matches),
         tables_split=tables_split,
         total_tables_after_split=total_tables_after_split,
-        total_column_corrections=total_column_corrections,
         table_stats=table_stats,
     )
 

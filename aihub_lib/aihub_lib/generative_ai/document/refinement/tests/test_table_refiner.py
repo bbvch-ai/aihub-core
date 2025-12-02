@@ -231,7 +231,6 @@ class TestRefineDocumentTablesWithMetadata:
         assert result.metadata.tables_processed == 0
         assert result.metadata.tables_split == 0
         assert result.metadata.total_tables_after_split == 0
-        assert result.metadata.total_column_corrections == 0
         assert result.metadata.table_stats == []
 
     def test_metadata_tracks_single_table(self) -> None:
@@ -246,7 +245,6 @@ class TestRefineDocumentTablesWithMetadata:
             was_split=False,
             tables_after_split=1,
             header_rows_detected=[1],
-            column_corrections_applied=0,
             split_reasoning="Single table",
         )
 
@@ -274,7 +272,6 @@ class TestRefineDocumentTablesWithMetadata:
             was_split=True,
             tables_after_split=2,
             header_rows_detected=[1, 1],
-            column_corrections_applied=0,
             split_reasoning="Found two merged tables",
         )
 
@@ -292,31 +289,6 @@ class TestRefineDocumentTablesWithMetadata:
             assert result.metadata.total_tables_after_split == 2
             assert result.metadata.table_stats[0].was_split is True
 
-    def test_metadata_tracks_column_corrections(self) -> None:
-        """Test that metadata tracks column corrections."""
-        text = """<table>| A | B |
-|---|---|
-| 1 | 2 |</table>"""
-
-        mock_llm_config = MagicMock()
-        mock_stats = TableRefinementStats(
-            original_rows=2,
-            was_split=False,
-            tables_after_split=1,
-            header_rows_detected=[1],
-            column_corrections_applied=3,
-            split_reasoning="Single table with column fixes",
-        )
-
-        with patch(
-            "aihub_lib.generative_ai.document.refinement.table_refiner.create_markdown_table_with_stats"
-        ) as mock_create:
-            mock_create.return_value = ("| A | B |\n|---|---|\n| 1 | 2 |", mock_stats)
-            result = refine_document_tables_with_metadata(text, mock_llm_config)
-
-            assert result.metadata.total_column_corrections == 3
-            assert result.metadata.table_stats[0].column_corrections_applied == 3
-
     def test_metadata_aggregates_multiple_tables(self) -> None:
         """Test that metadata aggregates stats from multiple tables."""
         text = """<table>| A |
@@ -332,7 +304,6 @@ class TestRefineDocumentTablesWithMetadata:
             was_split=True,
             tables_after_split=2,
             header_rows_detected=[1, 1],
-            column_corrections_applied=1,
             split_reasoning="Split first table",
         )
         mock_stats_2 = TableRefinementStats(
@@ -340,7 +311,6 @@ class TestRefineDocumentTablesWithMetadata:
             was_split=False,
             tables_after_split=1,
             header_rows_detected=[2],
-            column_corrections_applied=2,
             split_reasoning="Single table",
         )
 
@@ -356,5 +326,4 @@ class TestRefineDocumentTablesWithMetadata:
             assert result.metadata.tables_processed == 2
             assert result.metadata.tables_split == 1  # Only first table was split
             assert result.metadata.total_tables_after_split == 3  # 2 + 1
-            assert result.metadata.total_column_corrections == 3  # 1 + 2
             assert len(result.metadata.table_stats) == 2
