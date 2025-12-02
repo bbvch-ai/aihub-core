@@ -1,103 +1,117 @@
 import re
 
 
-def exact_match_pattern(names: list[str]) -> str:
+def paths_pattern(file_paths: list[str]) -> list[str]:
     """
-    Convert a list of exact names into a single regex pattern with alternation.
-    Examples:
-        >>> exact_match_pattern(["Invoices", "Contracts", "Legal"])
-        '^(Invoices|Contracts|Legal)$'
-
-        >>> exact_match_pattern(["Customer_A", "Customer_B"])
-        '^(Customer_A|Customer_B)$'
-
-        >>> exact_match_pattern(["Special.Folder", "Test[1]"])
-        '^(Special\\\\.Folder|Test\\\\[1\\\\])$'
-    """
-    if not names:
-        return ""
-    escaped_names = [re.escape(name) for name in names]
-    return f"^({'|'.join(escaped_names)})$"
-
-
-def extension_pattern(extensions: list[str]) -> str:
-    """
-    Convert a list of file extensions into a regex pattern.
-    Examples:
-        >>> extension_pattern([".pdf", ".docx", ".xlsx"])
-        '\\\\.(pdf|docx|xlsx)$'
-
-        >>> extension_pattern(["pdf", "doc", "docx"])
-        '\\\\.(pdf|doc|docx)$'
-
-        >>> extension_pattern([".PDF", ".Doc"])
-        '\\\\.(pdf|doc)$'
-    """
-    if not extensions:
-        return ""
-    # Remove leading dots and convert to lowercase for case-insensitive matching
-    clean_exts = [ext.lstrip(".").lower() for ext in extensions]
-    return f"\\.({'|'.join(clean_exts)})$"
-
-
-def contains_pattern(substring: str) -> str:
-    """
-    Create a pattern that matches if the substring appears anywhere.
-    Examples:
-        >>> contains_pattern("archive")
-        '.*archive.*'
-
-        >>> contains_pattern("draft")
-        '.*draft.*'
-
-        >>> contains_pattern("test[1]")
-        '.*test\\\\[1\\\\].*'
-    """
-    return f".*{re.escape(substring)}.*"
-
-
-def starts_with_pattern(prefix: str) -> str:
-    """
-    Create a pattern that matches names starting with the given prefix.
+    Match exact full paths from base_path.
 
     Examples:
-        >>> starts_with_pattern("Customer_")
-        '^Customer_.*'
+        >>> paths_pattern(["docs/Invoices/report.pdf", "legal/Contracts/doc.docx"])
+        ['^(docs/Invoices/report\\\\.pdf|legal/Contracts/doc\\\\.docx)$']
 
-        >>> starts_with_pattern("backup")
-        '^backup.*'
-
-        >>> starts_with_pattern("~$")
-        '^~\\\\$.*'
+        >>> paths_pattern(["Customer_A/file.txt"])
+        ['^(Customer_A/file\\\\.txt)$']
     """
-    return f"^{re.escape(prefix)}.*"
+    if not file_paths:
+        return []
+    escaped = [re.escape(path) for path in file_paths]
+    return [f"^({'|'.join(escaped)})$"]
 
 
-def ends_with_pattern(suffix: str) -> str:
+def folders_pattern(folder_names: list[str]) -> list[str]:
     """
-    Create a pattern that matches names ending with the given suffix.
-    Examples:
-        >>> ends_with_pattern("_old")
-        '.*_old$'
-
-        >>> ends_with_pattern(".tmp")
-        '.*\\\\.tmp$'
-    """
-    return f".*{re.escape(suffix)}$"
-
-
-def combine_patterns(*patterns: str) -> list[str]:
-    """
-    Combine multiple patterns into a list, filtering out empty ones.
+    Match paths that contain any of the given folder names as path components.
 
     Examples:
-        >>> combine_patterns(
-        ...     exact_match_pattern(["A", "B"]),
-        ...     starts_with_pattern("temp")
-        ... )
-        ['^(A|B)$', '^temp.*']
+        >>> folders_pattern(["Invoices", "Contracts", "Legal"])
+        ['.*(^|/)(Invoices|Contracts|Legal)(/|$).*']
 
-        >>> combine_patterns("", "pattern1", "", "pattern2")
-        ['pattern1', 'pattern2']
+        This matches:
+        - "Invoices/file.pdf"
+        - "docs/Invoices/file.pdf"
+        - "Invoices/2024/file.pdf"
+
+        But not:
+        - "MyInvoices/file.pdf" (Invoices is part of a larger name)
     """
-    return [p for p in patterns if p]
+    if not folder_names:
+        return []
+    escaped = [re.escape(name) for name in folder_names]
+    return [f"(^|/)({'|'.join(escaped)})(/|$)"]
+
+
+def extensions_pattern(exts: list[str]) -> list[str]:
+    """
+    Match file extensions.
+
+    Examples:
+        >>> extensions_pattern([".pdf", ".docx", ".xlsx"])
+        ['\\\\.(pdf|docx|xlsx)$']
+
+        >>> extensions_pattern(["pdf", "doc", "docx"])
+        ['\\\\.(pdf|doc|docx)$']
+
+        >>> extensions_pattern([".PDF", ".Doc"])
+        ['\\\\.(pdf|doc)$']
+    """
+    if not exts:
+        return []
+    clean = [ext.lstrip(".").lower() for ext in exts]
+    return [f"\\.({'|'.join(clean)})$"]
+
+
+def contains_pattern(substrings: list[str]) -> list[str]:
+    """
+    Match if any substring appears anywhere in the path.
+
+    Examples:
+        >>> contains_pattern(["archive", "backup"])
+        ['.*(archive|backup).*']
+
+        >>> contains_pattern(["draft"])
+        ['.*draft.*']
+
+        >>> contains_pattern(["test[1]"])
+        ['.*test\\\\[1\\\\].*']
+    """
+    if not substrings:
+        return []
+    escaped = [re.escape(s) for s in substrings]
+    return [f".*({'|'.join(escaped)}).*"]
+
+
+def starts_with_pattern(prefixes: list[str]) -> list[str]:
+    """
+    Match paths starting with any of the given prefixes.
+
+    Examples:
+        >>> starts_with_pattern(["docs/", "legal/"])
+        ['^(docs/|legal/).*']
+
+        >>> starts_with_pattern(["backup", "temp"])
+        ['^(backup|temp).*']
+
+        >>> starts_with_pattern(["~$"])
+        ['^(~\\\\$).*']
+    """
+    if not prefixes:
+        return []
+    escaped = [re.escape(p) for p in prefixes]
+    return [f"^({'|'.join(escaped)}).*"]
+
+
+def suffixes_pattern(suffixes_list: list[str]) -> list[str]:
+    """
+    Match paths ending with any suffix (for non-extension endings like '_old', '_backup').
+
+    Examples:
+        >>> suffixes_pattern(["_old", "_backup"])
+        ['.*(_old|_backup)$']
+
+        >>> suffixes_pattern(["/draft"])
+        ['.*(/draft)$']
+    """
+    if not suffixes_list:
+        return []
+    escaped = [re.escape(s) for s in suffixes_list]
+    return [f".*({'|'.join(escaped)})$"]
