@@ -124,10 +124,16 @@ model_list:
 
   - model_name: embedding/large
     litellm_params:
+{%- if has_llama_cpp_embedding %}
+      model: openai/qwen-3-embedding
+      api_base: http://llama-cpp-embedding:8182/v1
+      api_key: XXX
+{%- else %}
       model: azure/text-embedding-3-large
       api_base: os.environ/AZURE_OPENAI_BASE_URL
       api_key: os.environ/AZURE_OPENAI_KEY
-      api_version: "2024-02-01"
+      api_version: "2025-01-01-preview"
+{%- endif %}
     model_info:
       mode: embedding
 

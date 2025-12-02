@@ -77,7 +77,7 @@ model_list:
       model: azure/text-embedding-3-large
       api_base: os.environ/AZURE_OPENAI_BASE_URL
       api_key: os.environ/AZURE_OPENAI_KEY
-      api_version: "2024-02-01"
+      api_version: "2025-01-01-preview"
     model_info:
       mode: embedding
 
