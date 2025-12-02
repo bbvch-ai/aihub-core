@@ -22,7 +22,7 @@ def fetch_data_lake_files_to_remove(
     """
     # Build URIs using the client's build_uri method to ensure format consistency
     # This ensures S3 URIs use "s3://" prefix and Azure URIs use container prefix
-    uris_to_exclude = [data_lake_client.build_uri(path=file.path) for file in source_files]
+    uris_to_exclude = [data_lake_client.build_uri(file_path=file.path) for file in source_files]
 
     context.log.info(f"Excluding {len(uris_to_exclude)} URIs from removal")
 

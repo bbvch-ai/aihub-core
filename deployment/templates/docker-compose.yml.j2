@@ -350,7 +350,37 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    {%- if stage != 'dev' %}
+
+  {% if stage != 'dev' -%}
+  oauth2proxy-attu:
+    container_name: oauth2proxy-attu
+    image: {{ image_tags.oauth2proxy }}
+    restart: always
+    environment:
+      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4182
+      OAUTH2_PROXY_COOKIE_SECURE: False
+      OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
+      OAUTH2_PROXY_UPSTREAMS: http://attu:3000
+      OAUTH2_PROXY_ALLOWED_GROUPS: ${ATTU_OAUTH_ALLOWED_GROUPS}
+      OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
+      OAUTH2_PROXY_SCOPE: openid email profile
+      OAUTH2_PROXY_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH2_PROXY_PROVIDER: oidc
+      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
+      OAUTH2_PROXY_OIDC_ISSUER_URL: ${OAUTH_AUTHORITY_URL}/v2.0
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET}
+      OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OAUTH2_PROXY_EMAIL_DOMAINS: "*"
+      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: https://aiagentsstpublicblobs.blob.core.windows.net/logos/Bbv-Logo_farbig.png
+      OAUTH2_PROXY_REVERSE_PROXY: True
+      OAUTH2_PROXY_REDIRECT_URL: https://attu.${DOMAIN}
+    depends_on:
+      - attu
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.attu.rule=Host(`attu.${DOMAIN}`)"
@@ -362,8 +392,8 @@ services:
       - "traefik.http.routers.attu.tls=true"
       {%- endif %}
       - "traefik.http.routers.attu.middlewares=security-headers@file"
-      - "traefik.http.services.attu.loadbalancer.server.port=3000"
-    {%- endif %}
+      - "traefik.http.services.attu.loadbalancer.server.port=4182"
+  {% endif %}
 
   # ===================================================================
   # Postgres Stack (SQL Database)

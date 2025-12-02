@@ -230,6 +230,7 @@ Web application redirect URIs are required for integrated services (OpenWebUI, D
    https://openwebui.your-domain.com/oauth/oidc/callback
    https://dagster.your-domain.com/oauth2/callback
    https://datalake.your-domain.com/oauth2/callback
+   https://attu.your-domain.com/oauth2/callback
    ```
 
    **For Local Deployment:** Use `127.0.0.1.nip.io`
@@ -238,6 +239,7 @@ Web application redirect URIs are required for integrated services (OpenWebUI, D
    https://openwebui.127.0.0.1.nip.io/oauth/oidc/callback
    https://dagster.127.0.0.1.nip.io/oauth2/callback
    https://datalake.127.0.0.1.nip.io/oauth2/callback
+   https://attu.127.0.0.1.nip.io/oauth2/callback
    ```
 
 3. Configure token settings:
@@ -250,7 +252,7 @@ Web application redirect URIs are required for integrated services (OpenWebUI, D
 The platform type configuration (SPA vs Web) is critical for OAuth2 flow selection:
 
 - **SPA platform**: Language-specific callbacks (`/de/`, `/en/`, `/fr/`, `/it/`) use PKCE flow without client secret
-- **Web platform**: Service callbacks (`openwebui`, `dagster`, `datalake`) use authorization code flow with client
+- **Web platform**: Service callbacks (`openwebui`, `dagster`, `datalake`, `attu`) use authorization code flow with client
   secret
 
 Misconfigured platform types will cause authentication error
@@ -285,7 +287,7 @@ Configure DNS records for your domain. The platform requires **seven subdomains*
 - `openwebui.aihub.example.com` - chat UI
 - `dagster.aihub.example.com` - pipeline orchestration
 - `datalake.aihub.example.com` - data lake console
-- `datalake-api.aihub.example.com` - S3 API
+- `litellm.aihub.example.com` - litellm proxy
 - `attu.aihub.example.com` - Milvus vector database UI
 - `traefik.aihub.example.com` - reverse proxy dashboard
 

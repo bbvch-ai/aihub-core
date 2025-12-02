@@ -5,6 +5,116 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.254.10] - 2025-12-02 - AI-Powered Code Review and On-Demand Assistance with Claude
+
+### Added
+
+- ✨ **Automated AI Code Reviews:** Introduced a new GitHub Actions workflow to automatically run Claude AI code reviews
+  on pull requests, providing comprehensive feedback on code quality, potential bugs, performance, security, and test
+  coverage.
+- 🤖 **On-Demand AI Assistant:** Added a new GitHub Actions workflow enabling direct interaction with Claude AI within
+  issues, pull request comments, and reviews by tagging `@claude`. This facilitates on-demand code assistance,
+  explanations, and insights.
+
+---
+
+## [v0.254.9] - 2025-12-02 - Unified File System Filtering with Flexible Patterns
+
+### Refactor
+
+- 🧹 **Unified Local File System Scanning:** Significant overhaul of `LocalFileSystemResource` to replace granular
+  folder, subfolder, extension, and file-specific filters with a more flexible, unified `include_patterns` and
+  `exclude_patterns` system, simplifying file discovery and filtering logic.
+- 🔄 **Generic Source File Types:** Deprecated `LocalFile` and `MinimalLocalFile` types, transitioning to the more
+  generic `SourceFile` and `MinimalSourceFile` types for local file system interactions. This removes file
+  system-specific folder attributes (`source_folder`, `subfolder`) for broader applicability.
+- ⚡️ **Improved Pattern Utility Functions:** Rewrote and enhanced pattern utility functions to support the new flexible
+  `include_patterns` and `exclude_patterns` system, providing more robust and explicit ways to generate regex patterns
+  for paths, folders, extensions, and substrings.
+
+### Changed
+
+- 📄 **Updated IO Manager and Ops:** The `LocalFileSystemIOManager` and related data versioning operations have been
+  updated to align with the new `SourceFile` and `MinimalSourceFile` types and the simplified file system resource
+  configuration.
+- ⚙️ **Simplified Local-to-Datalake Definitions:** The `default_local_filesystem_to_datalake_definitions` utility now
+  uses the streamlined `include_patterns` and `exclude_patterns` for configuring local file system scanning, making
+  setup more intuitive.
+- 📊 **Adjusted Metadata Tables:** Local file metadata tables (`local_file_metadata_table`) no longer display
+  `source_folder` and `subfolder` information, reflecting the removal of these attributes from the underlying file
+  objects.
+
+### Removed
+
+- 🗑️ **Deprecated LocalFile Types:** The specific `LocalFile` and `MinimalLocalFile` Python types have been removed in
+  favor of the more generic `SourceFile` and `MinimalSourceFile` types.
+- 🗑️ **Legacy File System Scan Configuration:** Eliminated various specific configuration parameters (e.g.,
+  `include_folders`, `exclude_paths`, `include_extensions`) from `LocalFileSystemResource` and related utility
+  functions, replaced by the unified pattern-based approach.
+
+---
+
+## [v0.254.8] - 2025-12-01 - Smarter Data Fetching for Enhanced UI Stability
+
+### Added
+
+- ✨ **Introduced `useRouteReady` Composable:** A new utility function to ensure that data fetching operations are only
+  initiated once all required route parameters are fully resolved and valid, preventing queries from executing with
+  incomplete or placeholder values during navigation.
+
+### Refactor
+
+- 🧹 **Optimized Data Query Activation:** Implemented the `useRouteReady` composable across various data fetching hooks,
+  including those for **Agents**, **Documents**, **Evaluation Datasets** and **Experiments**, **Processes**, **Roles**,
+  **Threads**, and **Users**. This change prevents API queries from running prematurely, leading to more stable UI
+  states and improved application reliability during route transitions.
+
+---
+
+## [v0.254.7] - 2025-11-28 - New Service Integration: Attu Platform
+
+### Added
+
+- ✨ **Attu Service Integration:** Introduced the Attu service to the platform, enhancing capabilities (e.g., for data
+  management).
+- 🔑 **Secure Access for Attu:** Implemented OAuth2 Proxy for the Attu service, ensuring secure, group-based access for
+  authorized users.
+- 🚀 **Automated Routing for Attu:** Configured Traefik to provide automatic routing and SSL termination for the Attu
+  service via a dedicated subdomain.
+
+### Changed
+
+- 📄 **Updated OAuth Configuration Documentation:** The quick start guide has been updated to include the required
+  redirect URIs and platform type configurations for the new Attu service.
+- ⚙️ **Deployment Configurations for Attu:** Modified various Docker Compose files and templates to incorporate the Attu
+  service and its OAuth2 Proxy into the deployment stack.
+
+---
+
+## [v0.254.5] - 2025-11-24 - Platform Configuration Update and Docling Refinements
+
+### Changed
+
+- 📄 **Updated DNS Prerequisites:** Replaced the `datalake-api` subdomain requirement with `litellm.aihub.example.com`
+  for the `litellm` proxy, streamlining API access configurations for the platform.
+
+### Removed
+
+- 🗑️ **Removed Docling Model Initialization Script:** The dedicated `init-models.sh` script, previously responsible for
+  checking and downloading Docling models, has been removed, indicating an updated or integrated approach to model
+  management.
+
+---
+
+## [v0.254.4] - 2025-11-21 - Internal Consistency Improvements
+
+### Refactor
+
+- 🧹 **Standardized `build_uri` parameter:** Updated the `data_lake_client.build_uri` method call within the data lake
+  file removal process to use `file_path` instead of `path`, enhancing parameter naming consistency across the API.
+
+---
+
 ## [v0.254.3] - 2025-11-18 - Unlocking Multi-Tenancy and Streamlined Onboarding with Enhanced Platform Clarity
 
 ### Added
