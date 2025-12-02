@@ -1162,7 +1162,7 @@ services:
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
       WEBUI_URL: https://openwebui.${DOMAIN}
-      WS_ENDPOINT: wss://${DOMAIN}/api/v1/event/ws
+      WS_ENDPOINT: wss://${DOMAIN}/api/v1/events/ws
     logging:
       driver: json-file
       options:
