@@ -85,7 +85,10 @@ class KnowledgeService:
             mongoengine.connection.get_connection(alias=db)
         except Exception:
             register_connection(
-                alias=db, name=db, host=MongoSettings().CONNECTION_STRING.get_secret_value(), uuidRepresentation="standard"
+                alias=db,
+                name=db,
+                host=MongoSettings().CONNECTION_STRING.get_secret_value(),
+                uuidRepresentation="standard",
             )
 
     @staticmethod
