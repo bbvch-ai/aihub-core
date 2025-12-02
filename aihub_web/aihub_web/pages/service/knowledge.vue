@@ -76,6 +76,7 @@ import { useLocalePath } from '#i18n'
 const router = useRouter()
 const localePath = useLocalePath()
 const { t } = useI18n()
+const queryCache = useQueryCache()
 
 const { databases, databasesAreLoading } = useDatabases()
 
@@ -105,6 +106,7 @@ const openUploadModal = (database: DatabaseDto, namespace: NamespaceDto) => {
 
 const handleUploadSuccess = (data: { files: File[], namespace: string, database: string }) => {
   uploadModalVisible.value = false
+  queryCache.invalidateQueries({ key: ['knowledge'] })
   router.push(localePath(`/service/knowledge/${data.database}/${data.namespace}`))
 }
 
@@ -114,6 +116,7 @@ const openNewNamespaceModal = (databaseName: string) => {
 }
 
 const handleCreationSuccess = (data: { database: string, namespace: string }) => {
+  queryCache.invalidateQueries({ key: ['knowledge'] })
   router.push(localePath(`/service/knowledge/${data.database}/${data.namespace}`))
 }
 
@@ -123,6 +126,7 @@ const openEditNamespaceModal = (namespace: NamespaceDto) => {
 }
 
 const handleUpdateSuccess = () => {
+  queryCache.invalidateQueries({ key: ['knowledge'] })
   editingNamespace.value = null
 }
 </script>

@@ -53,6 +53,7 @@ const route = useRoute()
 const router = useRouter()
 const localePath = useLocalePath()
 const { t } = useI18n()
+const queryCache = useQueryCache()
 
 const { databases } = useDatabases()
 
@@ -100,6 +101,7 @@ const openUploadModal = () => {
 }
 
 const handleUpload = () => {
+  queryCache.invalidateQueries({ key: ['knowledge'] })
   refetch()
 }
 </script>
