@@ -177,7 +177,7 @@ Create three app roles following this process:
 - **Description**: `Developer access to AI-Hub platform services (Dagster, SeaweedFS data lake console)`
 
 ::: tip
-The `AIHubDeveloper` role is required to access the Dagster pipeline orchestration dashboard. Users without this role can still use the main AI-Hub interface and OpenWebUI.
+The `AIHubDeveloper` role is required to access the Dagster pipeline orchestration dashboard and the SeaweedFS data lake console at `datalake.${DOMAIN}`. Users without this role can still use the main AI-Hub interface and OpenWebUI.
 :::
 
 **Step 6: Configure SPA redirect URIs**
