@@ -188,8 +188,10 @@ REDIS_URL="redis://localhost:6379"
 # =============================================================================
 
 # SeaweedFS S3 Storage
-# Note: S3 API is exposed at s3.${DOMAIN} with AWS signature authentication
-# Filer web UI is internal-only (not exposed externally)
+# Architecture:
+#   - S3 API: Exposed at s3.${DOMAIN} with AWS signature authentication (for applications)
+#   - Filer Web UI: Exposed at datalake.${DOMAIN} via OAuth2 proxy (for developers to browse files)
+#   - Internal Filer: Available to S3 gateway at seaweedfs-filer:8888
 SEAWEEDFS_ROOT_USER="admin"
 SEAWEEDFS_ROOT_PASSWORD="REPLACE_WITH_RANDOM_STRING"
 S3_STORAGE_ENDPOINT="http://seaweedfs:9000"           # S3 API endpoint (production uses https://s3.${DOMAIN})
@@ -208,7 +210,7 @@ PHOENIX_ENDPOINT="http://phoenix:6006"
 NATS_ENDPOINT="nats://localhost:4222"
 DAGSTER_HOME="~/.dagster_home"
 DAGSTER_OAUTH_ALLOWED_GROUPS="AIHubDeveloper"
-# SEAWEEDFS_OAUTH_ALLOWED_GROUPS - Deprecated (Filer is internal-only, no longer exposed externally)
+SEAWEEDFS_OAUTH_ALLOWED_GROUPS="AIHubDeveloper"     # Required for accessing Filer web UI at datalake.${DOMAIN}
 JUPYTER_TOKEN="REPLACE_WITH_RANDOM_STRING"
 MILVUS_DIMENSION="3072"
 

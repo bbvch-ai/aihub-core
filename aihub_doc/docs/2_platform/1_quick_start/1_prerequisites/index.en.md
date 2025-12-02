@@ -174,7 +174,7 @@ Create three app roles following this process:
 - **Display name**: `AIHubDeveloper`
 - **Allowed member types**: `Users/Groups`
 - **Value**: `AIHubDeveloper`
-- **Description**: `Developer access to AI-Hub platform services (Dagster)`
+- **Description**: `Developer access to AI-Hub platform services (Dagster, SeaweedFS data lake console)`
 
 ::: tip
 The `AIHubDeveloper` role is required to access the Dagster pipeline orchestration dashboard. Users without this role can still use the main AI-Hub interface and OpenWebUI.
@@ -228,6 +228,7 @@ Web application redirect URIs are required for integrated services (OpenWebUI, D
    ```
    https://openwebui.your-domain.com/oauth/oidc/callback
    https://dagster.your-domain.com/oauth2/callback
+   https://datalake.your-domain.com/oauth2/callback
    https://attu.your-domain.com/oauth2/callback
    ```
 
@@ -236,6 +237,7 @@ Web application redirect URIs are required for integrated services (OpenWebUI, D
    ```
    https://openwebui.127.0.0.1.nip.io/oauth/oidc/callback
    https://dagster.127.0.0.1.nip.io/oauth2/callback
+   https://datalake.127.0.0.1.nip.io/oauth2/callback
    https://attu.127.0.0.1.nip.io/oauth2/callback
    ```
 
@@ -278,16 +280,17 @@ real domain name.
 
 ### DNS Configuration
 
-Configure DNS records for your domain. The platform requires **six subdomains** pointing to your server's public IP:
+Configure DNS records for your domain. The platform requires **seven subdomains** pointing to your server's public IP:
 
 - `aihub.example.com` - main web interface
 - `openwebui.aihub.example.com` - chat UI
 - `dagster.aihub.example.com` - pipeline orchestration
+- `datalake.aihub.example.com` - data lake console
 - `litellm.aihub.example.com` - litellm proxy
 - `attu.aihub.example.com` - Milvus vector database UI
 - `traefik.aihub.example.com` - reverse proxy dashboard
 
-Replace `aihub.example.com` with your actual domain. Create A records or CNAMEs for all six subdomains pointing to
+Replace `aihub.example.com` with your actual domain. Create A records or CNAMEs for all seven subdomains pointing to
 your server's IP address.
 
 ::: warning DNS Requirements for SSL

@@ -150,6 +150,7 @@ services:
         max-size: 10m
         max-file: 2
 
+  
 
   # ===================================================================
   # Milvus Stack (Vector Database)

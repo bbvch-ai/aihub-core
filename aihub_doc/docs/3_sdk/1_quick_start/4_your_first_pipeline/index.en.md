@@ -400,7 +400,8 @@ Your pipeline now supports:
 - **Milvus (Attu)**: Vector database monitoring
 
 ::: tip SeaweedFS Filer
-The SeaweedFS Filer web UI is internal-only and not exposed externally. File management is handled through the S3 API.
+In production, the SeaweedFS Filer web UI is accessible at `datalake.${DOMAIN}` (OAuth2 protected, requires AIHubDeveloper role).
+In development mode, it's available at `http://localhost:8889` for browsing uploaded files and debugging storage.
 :::
 
 ### 10. Understanding AI-Hub pipeline patterns
