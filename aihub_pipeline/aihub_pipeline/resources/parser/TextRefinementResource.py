@@ -1,3 +1,4 @@
+import json
 from typing import Annotated
 
 from aihub_lib.generative_ai.document.refinement import refine_document_text_with_metadata
@@ -27,8 +28,8 @@ class TextRefinementResource(ConfigurableResource):
             document.text, self.llm_config, max_chunk_tokens=self.max_chunk_tokens
         )
 
-        # Merge existing metadata with refinement metadata
+        # Merge existing metadata with refinement metadata (as JSON string for Dagster compatibility)
         updated_metadata = {**document.metadata} if document.metadata else {}
-        updated_metadata[TEXT_REFINEMENT_METADATA_KEY] = result.metadata.model_dump()
+        updated_metadata[TEXT_REFINEMENT_METADATA_KEY] = json.dumps(result.metadata.model_dump())
 
         return Document(text=result.content, extra_info=document.extra_info, metadata=updated_metadata)

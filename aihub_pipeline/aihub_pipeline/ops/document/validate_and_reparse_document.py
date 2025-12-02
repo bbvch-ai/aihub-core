@@ -1,5 +1,7 @@
 """Op for validating parsed documents and triggering re-parse on severe bugs."""
 
+import json
+
 from aihub_lib.generative_ai.document.refinement import validate_document_quality
 from dagster import OpExecutionContext, ResourceParam, op
 from fsspec import AbstractFileSystem
@@ -30,9 +32,9 @@ async def validate_and_reparse_document(
     """
     validation_result = validate_document_quality(ref_doc.text)
 
-    # Store validation metadata
+    # Store validation metadata as JSON string (Dagster metadata only accepts primitives)
     updated_metadata = {**ref_doc.metadata} if ref_doc.metadata else {}
-    updated_metadata[QUALITY_VALIDATION_METADATA_KEY] = validation_result.model_dump()
+    updated_metadata[QUALITY_VALIDATION_METADATA_KEY] = json.dumps(validation_result.model_dump())
 
     if validation_result.validation_skipped:
         context.log.info(f"Quality validation skipped: {validation_result.message}")
@@ -65,7 +67,7 @@ async def validate_and_reparse_document(
 
     # Validate the re-parsed document
     reparse_validation = validate_document_quality(reparsed_doc.text)
-    updated_metadata["reparse_validation"] = reparse_validation.model_dump()
+    updated_metadata["reparse_validation"] = json.dumps(reparse_validation.model_dump())
     updated_metadata["was_reparsed"] = True
 
     if reparse_validation.is_valid:

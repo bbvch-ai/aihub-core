@@ -1,3 +1,5 @@
+import json
+
 from aihub_lib.generative_ai.document.refinement import refine_document_tables_with_metadata
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from dagster import ConfigurableResource, ResourceDependency
@@ -18,8 +20,8 @@ class TableRefinementResource(ConfigurableResource):
         """
         result = refine_document_tables_with_metadata(document.text, self.llm_config)
 
-        # Merge existing metadata with refinement metadata
+        # Merge existing metadata with refinement metadata (as JSON string for Dagster compatibility)
         updated_metadata = {**document.metadata} if document.metadata else {}
-        updated_metadata[TABLE_REFINEMENT_METADATA_KEY] = result.metadata.model_dump()
+        updated_metadata[TABLE_REFINEMENT_METADATA_KEY] = json.dumps(result.metadata.model_dump())
 
         return Document(text=result.content, extra_info=document.extra_info, metadata=updated_metadata)
