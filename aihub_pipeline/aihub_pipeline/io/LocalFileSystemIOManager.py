@@ -1,22 +1,22 @@
 from dagster import ConfigurableIOManager, InputContext, OutputContext, ResourceDependency
 
 from aihub_pipeline.resources.local_file_system.LocalFileSystemResource import LocalFileSystemResource
-from aihub_pipeline.types.LocalFile import LocalFile, MinimalLocalFile
+from aihub_pipeline.types.SourceFile import MinimalSourceFile, SourceFile
 
 
 class LocalFileSystemIOManager(ConfigurableIOManager):
     """Local File System IO Manager for loading files from local or network file systems.
 
     **Why this exists**: This IO Manager loads external user files from the filesystem and returns domain objects
-    (LocalFile/MinimalLocalFile).
+    (SourceFile/MinimalSourceFile).
 
     **Two loading patterns**:
 
-    1. **Partitioned asset** (standard): Returns single ``LocalFile`` with full content.
+    1. **Partitioned asset** (standard): Returns single ``SourceFile`` with full content.
        Used for: Processing files individually (parsing, uploading, transformation).
        Enables parallel execution and incremental updates.
 
-    2. **Non-partitioned asset** (cleanup only): Returns ``list[MinimalLocalFile]`` with metadata only.
+    2. **Non-partitioned asset** (cleanup only): Returns ``list[MinimalSourceFile]`` with metadata only.
        Used for: Comparing all source files vs storage to find orphans for deletion.
        Why metadata-only: Cleanup only needs paths/timestamps, not content. Loading all file
        content would waste memory and time.
@@ -29,13 +29,13 @@ class LocalFileSystemIOManager(ConfigurableIOManager):
 
     local_file_system_client: ResourceDependency[LocalFileSystemResource]
 
-    def handle_output(self, context: OutputContext, obj: bytes | LocalFile):
+    def handle_output(self, context: OutputContext, obj: bytes | SourceFile):
         """
         Currently we do not support writing outputs to the local file system.
         """
         raise NotImplementedError("Writing outputs to the local file system is not supported.")
 
-    def load_input(self, context: InputContext) -> LocalFile | list[MinimalLocalFile]:
+    def load_input(self, context: InputContext) -> SourceFile | list[MinimalSourceFile]:
         if context.has_partition_key:
             return self.local_file_system_client.get_local_file(context.partition_key)
         else:
