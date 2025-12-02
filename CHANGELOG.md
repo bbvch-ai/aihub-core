@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.254.9] - 2025-12-02 - Unified File System Filtering with Flexible Patterns
+
+### Refactor
+
+- 🧹 **Unified Local File System Scanning:** Significant overhaul of `LocalFileSystemResource` to replace granular
+  folder, subfolder, extension, and file-specific filters with a more flexible, unified `include_patterns` and
+  `exclude_patterns` system, simplifying file discovery and filtering logic.
+- 🔄 **Generic Source File Types:** Deprecated `LocalFile` and `MinimalLocalFile` types, transitioning to the more
+  generic `SourceFile` and `MinimalSourceFile` types for local file system interactions. This removes file
+  system-specific folder attributes (`source_folder`, `subfolder`) for broader applicability.
+- ⚡️ **Improved Pattern Utility Functions:** Rewrote and enhanced pattern utility functions to support the new flexible
+  `include_patterns` and `exclude_patterns` system, providing more robust and explicit ways to generate regex patterns
+  for paths, folders, extensions, and substrings.
+
+### Changed
+
+- 📄 **Updated IO Manager and Ops:** The `LocalFileSystemIOManager` and related data versioning operations have been
+  updated to align with the new `SourceFile` and `MinimalSourceFile` types and the simplified file system resource
+  configuration.
+- ⚙️ **Simplified Local-to-Datalake Definitions:** The `default_local_filesystem_to_datalake_definitions` utility now
+  uses the streamlined `include_patterns` and `exclude_patterns` for configuring local file system scanning, making
+  setup more intuitive.
+- 📊 **Adjusted Metadata Tables:** Local file metadata tables (`local_file_metadata_table`) no longer display
+  `source_folder` and `subfolder` information, reflecting the removal of these attributes from the underlying file
+  objects.
+
+### Removed
+
+- 🗑️ **Deprecated LocalFile Types:** The specific `LocalFile` and `MinimalLocalFile` Python types have been removed in
+  favor of the more generic `SourceFile` and `MinimalSourceFile` types.
+- 🗑️ **Legacy File System Scan Configuration:** Eliminated various specific configuration parameters (e.g.,
+  `include_folders`, `exclude_paths`, `include_extensions`) from `LocalFileSystemResource` and related utility
+  functions, replaced by the unified pattern-based approach.
+
+---
+
 ## [v0.254.8] - 2025-12-01 - Smarter Data Fetching for Enhanced UI Stability
 
 ### Added

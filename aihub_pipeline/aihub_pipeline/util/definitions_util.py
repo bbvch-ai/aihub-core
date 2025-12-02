@@ -260,13 +260,9 @@ def default_local_filesystem_to_datalake_definitions(
     *,
     datalake_container_name: Annotated[str, "S3 bucket/container name where local filesystem files will be uploaded"],
     base_path: Annotated[str, "Root directory path to scan for files"],
-    include_folders: Annotated[list[str] | None, "List of folder name patterns to include"] = None,
-    include_subfolders: Annotated[list[str] | None, "List of subfolder name patterns to include recursively"] = None,
+    include_patterns: Annotated[list[str] | None, "List of patterns to include"] = None,
     datalake_directory_name: Annotated[str | None, "Optional subdirectory within container"] = None,
-    exclude_folders: Annotated[list[str] | None, "List of folder name patterns to exclude"] = None,
-    exclude_paths: Annotated[list[str] | None, "List of full path patterns to exclude"] = None,
-    include_extensions: Annotated[list[str] | None, "List of file extensions to include"] = None,
-    exclude_files: Annotated[list[str] | None, "List of filename patterns to exclude"] = None,
+    exclude_patterns: Annotated[list[str] | None, "List of patterns to exclude"] = None,
     observe_job_hour: Annotated[int, "Hour to run daily filesystem observation job"] = 0,
     observe_job_minute: Annotated[int, "Minute to run daily filesystem observation job"] = 0,
     remove_job_hour: Annotated[int, "Hour to run daily removed files cleanup job"] = 1,
@@ -325,12 +321,8 @@ def default_local_filesystem_to_datalake_definitions(
 
     filesystem_client = LocalFileSystemResource(
         base_path=base_path,
-        include_folders=include_folders,
-        include_subfolders=include_subfolders,
-        exclude_folders=exclude_folders,
-        exclude_paths=exclude_paths,
-        include_extensions=include_extensions,
-        exclude_files=exclude_files,
+        include_patterns=include_patterns,
+        exclude_patterns=exclude_patterns,
     )
 
     filesystem_io_manager = LocalFileSystemIOManager(local_file_system_client=filesystem_client)

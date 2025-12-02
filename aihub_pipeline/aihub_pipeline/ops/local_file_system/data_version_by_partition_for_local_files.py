@@ -6,7 +6,7 @@ from dagster import (
     OpExecutionContext,
 )
 
-from aihub_pipeline.types.LocalFile import MinimalLocalFile
+from aihub_pipeline.types.SourceFile import MinimalSourceFile
 from aihub_pipeline.util.meta_utils import local_file_metadata_table
 from aihub_pipeline.util.partition_utils import replace_partition_keys
 
@@ -15,7 +15,7 @@ def data_version_by_partition_for_local_files(
     context: OpExecutionContext,
     asset_key: AssetKey,
     partition: DynamicPartitionsDefinition,
-    local_files: list[MinimalLocalFile],
+    local_files: list[MinimalSourceFile],
 ) -> DataVersionsByPartition:
     """
     Generates a dynamic partition key for each file in the local filesystem,
