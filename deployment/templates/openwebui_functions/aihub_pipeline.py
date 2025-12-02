@@ -1365,7 +1365,7 @@ class Pipe:
             description="Base URL for the AI-Hub API endpoints",
         )
         AIHUB_FRONTEND_URL: str = Field(
-            default=os.getenv("AIHUB_BASE_URL", "http://localhost:3000/"),
+            default=os.getenv("AIHUB_FRONTEND_URL", "http://localhost:3000"),
             description="Base URL for the AI-Hub frontend",
         )
         AIHUB_SUPERUSER_API_KEY: str = Field(
