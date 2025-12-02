@@ -39,7 +39,7 @@ async def main():
             ),
             llm=LLMConfig(model_name="text-generation/mini"),
             check_context_sufficiency=False,
-            number_of_input_tokens=100_000,
+            number_of_input_tokens=16384,
             system_prompt=LocaleString(
                 en="""
                 <persona>
@@ -134,7 +134,7 @@ async def main():
                 """,
             ),
             retrieve_step_config=RetrieveStepConfig(
-                embed_model=EmbeddingModelConfig(model_name="embedding/small"),
+                embed_model=EmbeddingModelConfig(model_name="embedding/large"),
                 index_namespaces=["defaultnamespace"],
                 retrieve_k=10,
                 query_mode=VectorStoreQueryMode.HYBRID,
