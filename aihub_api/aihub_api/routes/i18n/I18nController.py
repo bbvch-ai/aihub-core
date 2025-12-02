@@ -24,8 +24,8 @@ class I18nController(Controller):
       handling are working properly.
     """
 
-    name = LocaleString(en="Localization")
-    description = LocaleString(en="Localization service")
+    name = LocaleString(en="Language Settings", de="Spracheinstellungen", fr="Paramètres de langue", it="Impostazioni lingua")
+    description = LocaleString(en="Manage your language preferences", de="Verwalten Sie Ihre Spracheinstellungen", fr="Gérez vos préférences linguistiques", it="Gestisci le tue preferenze linguistiche")
     icon = "mdi:language"
 
     def __init__(self, *, auth: AuthHandler, route: str = "/i18n", additionally_required_permission: str | None = None):

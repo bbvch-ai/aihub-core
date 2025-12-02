@@ -16,8 +16,8 @@ from .RoleService import RoleService
 
 
 class RoleController(Controller):
-    name = LocaleString(en="Role")
-    description = LocaleString(en="Manage user roles and permissions")
+    name = LocaleString(en="User Roles", de="Benutzerrollen", fr="Rôles d'utilisateur", it="Ruoli utente")
+    description = LocaleString(en="Configure access permissions and roles", de="Zugriffsrechte und Rollen konfigurieren", fr="Configurez les autorisations d'accès et les rôles", it="Configura permessi di accesso e ruoli")
     icon = "solar:users-group-rounded-bold"
 
     def __init__(

@@ -43,8 +43,8 @@ class ProcessController(Controller):
     The same principle holds true for endpoints that return formkit form definitions.
     """
 
-    name = LocaleString(en="Processes")
-    description = LocaleString(en="Interacts with processes")
+    name = LocaleString(en="Workflows", de="Arbeitsabläufe", fr="Flux de travail", it="Flussi di lavoro")
+    description = LocaleString(en="Manage automated business processes", de="Automatisierte Geschäftsprozesse verwalten", fr="Gérez les processus métier automatisés", it="Gestisci processi aziendali automatizzati")
     icon = "carbon:ibm-event-processing"
 
     def __init__(
