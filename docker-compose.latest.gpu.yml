@@ -1507,6 +1507,7 @@ services:
     image: ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:latest
     environment:
       PYTHONUNBUFFERED: 1
+      LOG_LEVEL: ${LOG_LEVEL}
 
       # AI-Hub Settings
       AIHUB_API_VERSION: ${AIHUB_API_VERSION}

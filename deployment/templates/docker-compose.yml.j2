@@ -1798,6 +1798,7 @@ services:
     {%- endif %}
     environment:
       PYTHONUNBUFFERED: 1
+      LOG_LEVEL: ${LOG_LEVEL}
 
       # AI-Hub Settings
       AIHUB_API_VERSION: ${AIHUB_API_VERSION}
