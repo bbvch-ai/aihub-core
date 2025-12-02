@@ -79,7 +79,7 @@ defs = Definitions(
         ),
         # AI models for embeddings and summaries
         "embedding_model": EmbeddingModelResource(
-            embedding_config=EmbeddingModelConfig(model_name="embedding/small"),
+            embedding_config=EmbeddingModelConfig(model_name="embedding/large"),
         ),
         "language_model": LanguageModelResource(llm_config=llm_config),
     },

@@ -100,7 +100,7 @@ def test_collection(event_loop):
     """
     asyncio.set_event_loop(event_loop)
 
-    embedding_config = EmbeddingModelConfig(model_name="embedding/small")
+    embedding_config = EmbeddingModelConfig(model_name="embedding/large")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="development",
@@ -126,7 +126,7 @@ def self_hosted_agent_config(test_collection):
     """
     llm_config = LLMConfig(model_name="text-generation/mini")
     reranking_config = RerankingModelConfig(model_name="reranker")
-    embedding_config = EmbeddingModelConfig(model_name="embedding/small")
+    embedding_config = EmbeddingModelConfig(model_name="embedding/large")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="development",

@@ -37,7 +37,7 @@ class MilvusVectorStoreResource(ConfigurableResource[MilvusVectorStore]):
                 "vector_store": MilvusVectorStoreResource(
                     uri="http://localhost",
                     collection_name="my_collection",
-                    embedding_vector_dimension=1536,
+                    embedding_vector_dimension=3072,
                 ),
             }
         )

@@ -73,7 +73,7 @@ def milvus_vector_store(nodes_with_relationships, event_loop):
 
     drop_collection(collection_name=collection_name)
 
-    embedding_config = EmbeddingModelConfig(model_name="embedding/small")
+    embedding_config = EmbeddingModelConfig(model_name="embedding/large")
 
     vector_store = MilvusVectorStoreConfig(
         uri="http://localhost:19530",

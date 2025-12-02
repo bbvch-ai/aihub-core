@@ -6,7 +6,7 @@ enable_logging()
 
 defs = default_definitions(
     datalake_container_name="defaultknowledge",
-    embedding_model_name="embedding/small",
+    embedding_model_name="embedding/large",
     llm_model_name="text-generation/mini",
     with_summary_nodes=True,
     with_text_refinement=True,
