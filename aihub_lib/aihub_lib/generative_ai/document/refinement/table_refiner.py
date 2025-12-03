@@ -1,5 +1,3 @@
-"""Table refinement using LLM to detect table structure and split merged tables."""
-
 import logging
 import re
 from typing import TYPE_CHECKING
@@ -19,7 +17,8 @@ _logger = logging.getLogger(__name__)
 
 
 def refine_document_tables(markdown_text: str, llm_config: "LLMConfig") -> str:
-    """Refine tables in markdown text using LLM to detect structure and split merged tables.
+    """
+    Refine tables in markdown text using LLM to detect structure and split merged tables.
 
     Finds all markdown tables in the text and processes them with LLM to:
     - Detect multi-row headers
@@ -33,11 +32,6 @@ def refine_document_tables(markdown_text: str, llm_config: "LLMConfig") -> str:
 
 
 def refine_document_tables_with_metadata(markdown_text: str, llm_config: "LLMConfig") -> TableRefinementResult:
-    """Refine tables and return both refined content and metadata about what was done.
-
-    Returns:
-        TableRefinementResult with refined content and detailed metadata about refinements.
-    """
     table_pattern = r"<table>(.*?)</table>"
     matches = list(re.finditer(table_pattern, markdown_text, re.DOTALL))
 
@@ -96,11 +90,6 @@ def refine_document_tables_with_metadata(markdown_text: str, llm_config: "LLMCon
 
 
 def _parse_markdown_table_to_dataframe(markdown_table: str) -> pd.DataFrame | None:
-    """Parse a markdown table into a DataFrame with integer column indices.
-
-    Returns DataFrame with columns as integers (0, 1, 2, ...) so the LLM can
-    analyze the full table including what would normally be the header row.
-    """
     try:
         lines = markdown_table.strip().split("\n")
         if len(lines) < 2:

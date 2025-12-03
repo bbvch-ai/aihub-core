@@ -3,7 +3,7 @@ import base64
 import html
 import os
 import re
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Annotated
 
 import httpx
 from bs4 import BeautifulSoup
@@ -29,14 +29,18 @@ if TYPE_CHECKING:
 
 class DoclingLoader(BaseReader):
     def __init__(
-        self, llm_config: "LLMConfig | None" = None, refine_tables: bool = True, *args: Any, **kwargs: Any
+        self,
+        llm_config: Annotated[
+            "LLMConfig | None",
+            "LLM configuration for table structure analysis. If None, basic table formatting is used.",
+        ] = None,
+        refine_tables: Annotated[
+            bool,
+            "If True and llm_config provided, uses LLM to analyze table structure.",
+        ] = True,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
-        """Initialize DoclingLoader.
-
-        llm_config: LLM configuration for table structure analysis. If None, basic table formatting is used.
-        refine_tables: If True and llm_config provided, uses LLM to analyze table structure.
-            Set to False to defer table refinement to a separate pipeline step.
-        """
         super().__init__(*args, **kwargs)
         self.config = DoclingSettings()
         self.llm_config = llm_config
