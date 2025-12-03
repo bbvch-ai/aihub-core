@@ -1,4 +1,4 @@
-from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.base.llms.types import ChatMessage, TextBlock
 
 
 def merge_consecutive_messages(messages: list[ChatMessage]) -> list[ChatMessage]:
@@ -10,8 +10,10 @@ def merge_consecutive_messages(messages: list[ChatMessage]) -> list[ChatMessage]
 
     for message in messages[1:]:
         if message.role == merged[-1].role:
-            merged_content = f"{merged[-1].content}\n\n{message.content}"
-            merged[-1] = ChatMessage(role=message.role, content=merged_content)
+            prev_blocks = merged[-1].blocks or []
+            curr_blocks = message.blocks or []
+            separator = [TextBlock(text="\n\n")] if prev_blocks and curr_blocks else []
+            merged[-1] = ChatMessage(role=message.role, blocks=prev_blocks + separator + curr_blocks)
         else:
             merged.append(message)
 
