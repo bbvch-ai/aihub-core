@@ -42,6 +42,6 @@ class ApiTestRunner(ApiRunner):
         """
         from uvicorn import Config, Server
 
-        config = Config(app=self.create_app(), host="localhost", port=8000, log_level="debug", ws="wsproto")
+        config = Config(app=self.create_app(), host="localhost", port=8000, log_level="debug")
         server = Server(config)
         await server.serve()
