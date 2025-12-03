@@ -1,8 +1,3 @@
-"""Markdown table utilities for creation, parsing, and chunking.
-
-Co-locates table creation and parsing to ensure format compatibility.
-"""
-
 import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Annotated
@@ -14,18 +9,14 @@ from pydantic import BaseModel, Field
 if TYPE_CHECKING:
     from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 
-_logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class TableBoundary(BaseModel):
-    """Describes the boundary of a single table within merged data."""
-
     start_row: Annotated[int, Field(description="0-based index of first row of this table")]
 
 
 class TableSplitAnalysis(BaseModel):
-    """LLM response for table split detection (step 1)."""
-
     tables: Annotated[
         list[TableBoundary],
         Field(description="List of table boundaries. First table always starts at row 0."),
@@ -34,15 +25,11 @@ class TableSplitAnalysis(BaseModel):
 
 
 class HeaderAnalysis(BaseModel):
-    """LLM response for header row detection (step 2)."""
-
     num_header_rows: Annotated[int, Field(description="Number of header rows (1-4)")]
     reasoning: Annotated[str, Field(description="Brief explanation of header structure detected")]
 
 
 class TableRefinementStats(BaseModel):
-    """Statistics for a single table's refinement."""
-
     original_rows: Annotated[int, Field(description="Number of rows in original table")]
     was_split: Annotated[bool, Field(description="Whether the table was split into multiple tables")]
     tables_after_split: Annotated[int, Field(description="Number of tables after splitting")]
@@ -51,8 +38,6 @@ class TableRefinementStats(BaseModel):
 
 
 class TableRefinementMetadata(BaseModel):
-    """Metadata about table refinement applied to a document."""
-
     tables_processed: Annotated[int, Field(description="Number of tables processed")]
     tables_split: Annotated[int, Field(description="Number of tables that were split")]
     total_tables_after_split: Annotated[int, Field(description="Total tables after all splitting")]
@@ -60,25 +45,11 @@ class TableRefinementMetadata(BaseModel):
 
 
 class TableRefinementResult(BaseModel):
-    """Result of table refinement including content and metadata."""
-
     content: Annotated[str, Field(description="Refined markdown content")]
     metadata: Annotated[TableRefinementMetadata, Field(description="Refinement statistics")]
 
 
-# =============================================================================
-# Table Creation (used by DoclingLoader)
-# =============================================================================
-
-
 def create_markdown_table(df: pd.DataFrame, llm_config: "LLMConfig | None" = None) -> str:
-    """Create markdown table(s) from a DataFrame.
-
-    With llm_config: Uses two-step LLM analysis:
-      1. Detect and split merged tables
-      2. Detect multi-row headers for each table
-    Without: uses first row as header if columns are integers, else keeps as-is.
-    """
     content, _ = _create_markdown_table_internal(df, llm_config)
     return content
 
@@ -86,18 +57,12 @@ def create_markdown_table(df: pd.DataFrame, llm_config: "LLMConfig | None" = Non
 def create_markdown_table_with_stats(
     df: pd.DataFrame, llm_config: "LLMConfig | None" = None
 ) -> tuple[str, TableRefinementStats | None]:
-    """Create markdown table(s) from a DataFrame and return refinement statistics.
-
-    Returns:
-        Tuple of (markdown_content, stats). Stats is None if no LLM processing was done.
-    """
     return _create_markdown_table_internal(df, llm_config)
 
 
 def _create_markdown_table_internal(
     df: pd.DataFrame, llm_config: "LLMConfig | None" = None
 ) -> tuple[str, TableRefinementStats | None]:
-    """Internal implementation that returns both content and stats."""
     if df.empty:
         return df.to_markdown(index=False), None
 
@@ -105,14 +70,12 @@ def _create_markdown_table_internal(
         original_rows = len(df)
         df = _reset_columns_to_data(df)
         table_for_llm = _format_table_with_row_indices(df)
-        _logger.debug(f"Analyzing table structure with LLM ({len(df)} rows)")
-        _logger.debug(f"Table input for LLM:\n{table_for_llm[:1000]}{'...' if len(table_for_llm) > 1000 else ''}")
+        logger.debug(f"Analyzing table structure with LLM ({len(df)} rows)")
+        logger.debug(f"Table input for LLM:\n{table_for_llm[:1000]}{'...' if len(table_for_llm) > 1000 else ''}")
         try:
             # Step 1: Detect table splits
             split_analysis = _detect_table_splits(table_for_llm, llm_config)
-            _logger.debug(
-                f"Step 1 - Split detection: {len(split_analysis.tables)} table(s): {split_analysis.reasoning}"
-            )
+            logger.debug(f"Step 1 - Split detection: {len(split_analysis.tables)} table(s): {split_analysis.reasoning}")
 
             # Step 2: For each split table, detect headers and create markdown
             markdown_tables = []
@@ -131,7 +94,7 @@ def _create_markdown_table_internal(
                 table_for_analysis = _format_table_with_row_indices(table_df)
                 header_analysis = _detect_header_rows(table_for_analysis, llm_config)
                 header_rows_detected.append(header_analysis.num_header_rows)
-                _logger.debug(
+                logger.debug(
                     f"  Table {i + 1} (rows {boundary.start_row}-{end_row - 1}): "
                     f"{header_analysis.num_header_rows} header row(s): {header_analysis.reasoning}"
                 )
@@ -149,7 +112,7 @@ def _create_markdown_table_internal(
 
             return "\n\n".join(markdown_tables), stats
         except Exception as e:
-            _logger.warning(f"LLM table analysis failed, falling back to single header row: {e}")
+            logger.warning(f"LLM table analysis failed, falling back to single header row: {e}")
             df = _apply_header_rows(df, 1)
     elif _has_integer_column_indices(df):
         df = _apply_header_rows(df, 1)
@@ -158,7 +121,6 @@ def _create_markdown_table_internal(
 
 
 def _reset_columns_to_data(df: pd.DataFrame) -> pd.DataFrame:
-    """Convert column names back to a data row so LLM can analyze the full table."""
     if _has_integer_column_indices(df):
         return df
 
@@ -173,7 +135,6 @@ def _has_integer_column_indices(df: pd.DataFrame) -> bool:
 
 
 def _format_cell_value(value: object) -> str:
-    """Format cell value, normalizing empty/null values to empty string."""
     if pd.isna(value):
         return ""
     str_value = str(value).strip()
@@ -200,7 +161,6 @@ def _format_table_with_row_indices(df: pd.DataFrame) -> str:
 
 
 def _detect_table_splits(table_text: str, llm_config: "LLMConfig") -> TableSplitAnalysis:
-    """Step 1: Detect if the table contains multiple merged tables that should be split."""
     prompt_text = """Analyze this table data to detect if it contains multiple tables merged together.
 
 SIGNS OF MERGED TABLES (split when you see these):
@@ -229,9 +189,9 @@ If multiple tables are merged, return multiple entries with each table's startin
     llm, _ = llm_config.to_llama_index()
     analysis = llm.structured_predict(TableSplitAnalysis, prompt, table_text=table_text)
 
-    _logger.debug(f"Split analysis raw response: {analysis.tables}, reasoning={analysis.reasoning}")
+    logger.debug(f"Split analysis raw response: {analysis.tables}, reasoning={analysis.reasoning}")
 
-    # Validate: sort by start_row and ensure first starts at 0
+    # Validate: sort by start_row and ensure the first starts at 0
     validated = sorted(
         [TableBoundary(start_row=max(0, t.start_row)) for t in analysis.tables], key=lambda t: t.start_row
     )
@@ -242,7 +202,6 @@ If multiple tables are merged, return multiple entries with each table's startin
 
 
 def _detect_header_rows(table_text: str, llm_config: "LLMConfig") -> HeaderAnalysis:
-    """Step 2: Detect how many header rows a table has."""
     prompt_text = """Analyze this table to determine how many header rows it has.
 
 SIGNS OF MULTI-ROW HEADERS:
@@ -268,7 +227,7 @@ Return the number of header rows (1-4). Most tables have 1-2 header rows."""
     llm, _ = llm_config.to_llama_index()
     analysis = llm.structured_predict(HeaderAnalysis, prompt, table_text=table_text)
 
-    _logger.debug(f"Header analysis raw response: {analysis.num_header_rows}, reasoning={analysis.reasoning}")
+    logger.debug(f"Header analysis raw response: {analysis.num_header_rows}, reasoning={analysis.reasoning}")
 
     # Validate: clamp to 1-4
     validated_num = max(1, min(4, analysis.num_header_rows))
@@ -276,7 +235,6 @@ Return the number of header rows (1-4). Most tables have 1-2 header rows."""
 
 
 def _apply_header_rows(df: pd.DataFrame, num_header_rows: int) -> pd.DataFrame:
-    """Apply header rows. Multi-row headers are joined with " - " separator."""
     if num_header_rows <= 0:
         return df
 
@@ -294,13 +252,7 @@ def _apply_header_rows(df: pd.DataFrame, num_header_rows: int) -> pd.DataFrame:
     return df
 
 
-# =============================================================================
-# Table Parsing (used by MarkdownStructuralNodeParser)
-# =============================================================================
-
-
 def parse_markdown_table(markdown_table: str) -> pd.DataFrame | None:
-    """Parse a markdown table (pandas to_markdown format) into a DataFrame."""
     try:
         lines = markdown_table.strip().split("\n")
         if len(lines) < 2:
@@ -325,17 +277,11 @@ def parse_markdown_table(markdown_table: str) -> pd.DataFrame | None:
         return None
 
 
-# =============================================================================
-# Table Chunking (used by MarkdownStructuralNodeParser for large tables)
-# =============================================================================
-
-
 def split_dataframe_into_chunks(
     df: pd.DataFrame,
     max_tokens: int,
     token_counter: Callable[[str], int],
 ) -> list[str]:
-    """Split a DataFrame into markdown table chunks. Each chunk includes headers."""
     TOKEN_COUNT_FIELD = "__token_count__"
 
     header_df = df.head(0)
