@@ -26,7 +26,7 @@ tests = ["arrow", "dask[dataframe]", "docker", "pytest", "pytest-mock"]
 
 [[package]]
 name = "aihub-lib"
-version = "v0.254.11"
+version = "v0.254.12"
 description = ""
 optional = false
 python-versions = ">=3.13, <3.14"
@@ -46,6 +46,7 @@ docling-core = "^2.38.0"
 fastapi = "^0.115.8"
 flatdict = "^4.0.1"
 fsspec = "^2024.10.0"
+html5lib = "^1.1"
 llama-index-core = "^0.12.33.post1"
 llama-index-embeddings-openai-like = "^0.1.1"
 llama-index-llms-openai-like = "^0.3.4"
@@ -88,8 +89,8 @@ transformers = "^4.48.1"
 [package.source]
 type = "git"
 url = "https://github.com/bbvch-ai/aihub-core.git"
-reference = "v0.254.11"
-resolved_reference = "71dc25b08edd5a330af184461260cbdf8b1046c8"
+reference = "v0.254.12"
+resolved_reference = "05465f37587f0483895d0d0be7568e35d4aeb0a5"
 subdirectory = "aihub_lib"
 
 [[package]]
@@ -2449,6 +2450,28 @@ files = [
 
 [package.extras]
 tests = ["pytest"]
+
+[[package]]
+name = "html5lib"
+version = "1.1"
+description = "HTML parser based on the WHATWG HTML specification"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+groups = ["main"]
+files = [
+    {file = "html5lib-1.1-py2.py3-none-any.whl", hash = "sha256:0d78f8fde1c230e99fe37986a60526d7049ed4bf8a9fadbad5f00e22e58e041d"},
+    {file = "html5lib-1.1.tar.gz", hash = "sha256:b2e5b40261e20f354d198eae92afc10d750afb487ed5e50f9c4eaf07c184146f"},
+]
+
+[package.dependencies]
+six = ">=1.9"
+webencodings = "*"
+
+[package.extras]
+all = ["chardet (>=2.2)", "genshi", "lxml ; platform_python_implementation == \"CPython\""]
+chardet = ["chardet (>=2.2)"]
+genshi = ["genshi"]
+lxml = ["lxml ; platform_python_implementation == \"CPython\""]
 
 [[package]]
 name = "httpcore"
@@ -7583,6 +7606,18 @@ files = [
 ]
 
 [[package]]
+name = "webencodings"
+version = "0.5.1"
+description = "Character encoding aliases for legacy web content"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "webencodings-0.5.1-py2.py3-none-any.whl", hash = "sha256:a0af1213f3c2226497a97e2b3aa01a7e4bee4f403f95be16fc9acd2947514a78"},
+    {file = "webencodings-0.5.1.tar.gz", hash = "sha256:b36a1c245f2d304965eb4e0a82848379241dc04b865afcc4aab16748587e1923"},
+]
+
+[[package]]
 name = "websockets"
 version = "15.0.1"
 description = "An implementation of the WebSocket Protocol (RFC 6455 & 7692)"
@@ -7920,4 +7955,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13, <3.14"
-content-hash = "08ada514da813c6cd2871f3383c12e0116a47bb07fdac870268ef6e7365d3b3b"
+content-hash = "103e5a6765007ce73afe24c5d38c0dc46993e1bb579a222a04bf21e16d520977"
