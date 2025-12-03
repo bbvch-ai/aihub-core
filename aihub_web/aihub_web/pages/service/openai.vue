@@ -9,12 +9,12 @@
         allow="microphone"
       />
     </div>
-    <NuxtPage/>
+    <NuxtPage />
   </div>
 </template>
 
 <script setup lang="ts">
-import {onBeforeUnmount, onMounted} from 'vue'
+import { onBeforeUnmount, onMounted } from 'vue'
 
 const runtimeConfig = useRuntimeConfig()
 const route = useRoute()

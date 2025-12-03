@@ -1,8 +1,8 @@
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.testing.asyncio_utils.bdd import async_test
-from aihub_lib.infrastructure.logging.logger import enable_logging
 from bson import ObjectId
 from pytest_bdd import given, parsers, scenarios, then, when
 

@@ -252,8 +252,8 @@ Web application redirect URIs are required for integrated services (OpenWebUI, D
 The platform type configuration (SPA vs Web) is critical for OAuth2 flow selection:
 
 - **SPA platform**: Language-specific callbacks (`/de/`, `/en/`, `/fr/`, `/it/`) use PKCE flow without client secret
-- **Web platform**: Service callbacks (`openwebui`, `dagster`, `datalake`, `attu`) use authorization code flow with client
-  secret
+- **Web platform**: Service callbacks (`openwebui`, `dagster`, `datalake`, `attu`) use authorization code flow with
+  client secret
 
 Misconfigured platform types will cause authentication error
 `AADSTS9002326: Cross-origin token redemption is permitted only for the 'Single-Page Application' client-type`. Ensure

@@ -20,7 +20,6 @@ logger = logging.getLogger(__name__)
 
 
 class TableAnalyzer:
-
     def __init__(self, llm_config: "LLMConfig") -> None:
         self.llm, _ = llm_config.to_llama_index()
 

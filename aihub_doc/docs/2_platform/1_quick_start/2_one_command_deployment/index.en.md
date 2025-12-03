@@ -221,23 +221,28 @@ OTEL_CLOUD_HEADERS=""
 
 **Critical Values to Replace:**
 
-1. **Domain** - Set `DOMAIN` to your production domain (e.g., `aihub.yourcompany.com`) or `127.0.0.1.nip.io` for local testing
+1. **Domain** - Set `DOMAIN` to your production domain (e.g., `aihub.yourcompany.com`) or `127.0.0.1.nip.io` for local
+   testing
 
 2. **Authentication Values** (from Prerequisites):
+
    - `REPLACE_WITH_YOUR_CLIENT_ID` → Your Azure App Registration Client ID
    - `REPLACE_WITH_YOUR_CLIENT_SECRET` → Your Azure App Registration Client Secret
    - `REPLACE_WITH_YOUR_TENANT_ID` → Your Azure Tenant ID
 
 3. **AI Model Access** (configure at least one):
+
    - `REPLACE_WITH_AZURE_OPENAI_BASE_URL` → Your Azure OpenAI endpoint URL
    - `REPLACE_WITH_AZURE_OPENAI_KEY` → Your Azure OpenAI API key
 
 4. **Secrets** (generate unique values for each):
+
    - Replace all `REPLACE_WITH_RANDOM_STRING` with: `openssl rand -hex 32`
    - Replace `REPLACE_WITH_16_HEX_CHARS` with: `openssl rand -hex 16`
 
 ::: info Simplified Configuration
-Internal service endpoints (like database URLs, message queues, etc.) are now hardcoded in the Docker Compose files. You only need to configure credentials and external service connections.
+Internal service endpoints (like database URLs, message queues, etc.) are now hardcoded in the Docker Compose files. You
+only need to configure credentials and external service connections.
 :::
 
 ::: tip Generate Random Strings

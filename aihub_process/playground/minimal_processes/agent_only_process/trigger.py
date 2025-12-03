@@ -3,8 +3,8 @@ import asyncio
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.processes.ProcessConfig import ProcessConfig
 from aihub_lib.infrastructure.logging.logger import enable_logging
+from aihub_lib.processes.ProcessConfig import ProcessConfig
 
 from aihub_process.runners.ProcessTestRunner import ProcessTestRunner
 from playground.agents.AgentA.AgentA import AgentA

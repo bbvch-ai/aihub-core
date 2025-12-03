@@ -6,8 +6,8 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
-from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.infrastructure.logging.logger import enable_logging
+from aihub_lib.routes.health.HealthController import HealthController
 
 from aihub_bot.routes.agent.AgentChatController import AgentChatController
 from aihub_bot.routes.bot_in_the_loop.BotInTheLoopController import BotInTheLoopController
