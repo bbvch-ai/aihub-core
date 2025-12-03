@@ -173,8 +173,8 @@ general_settings:
 # LiteLLM Settings
 # ===================================================================
 litellm_settings:
-  callbacks: ["detect_prompt_injection", "otel"]
-  default_fallbacks: ["text-generation/nano", "text-generation/mini"]
+  callbacks: [ "detect_prompt_injection", "otel" ]
+  default_fallbacks: [ "text-generation/nano", "text-generation/mini" ]
   telemetry: true
   json_logs: true
   drop_params: true

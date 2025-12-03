@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.254.12] - 2025-12-03 - Enhanced Document Processing and Model Updates
+
+### Added
+
+- ✨ **Introduced Docling Standard Pipeline:** Added support for a new "Standard" Docling document processing pipeline,
+  providing advanced control over OCR, table extraction, image handling, and more flexible output formats.
+- ⚙️ **Configurable Docling Asynchronous Polling:** New environment variables (`DOCLING_POLL_INTERVAL`,
+  `DOCLING_MAX_POLLS`) have been added to allow customization of the polling interval and maximum attempts for
+  asynchronous Docling document processing tasks.
+
+### Changed
+
+- 🚀 **Upgraded Default RAG Embedding Model:** The default embedding model used by the RAG Agent has been updated from
+  `embedding/small` to `embedding/large` to potentially improve retrieval quality and performance.
+- 🔄 **Updated Azure OpenAI Model Reference:** LiteLLM configurations for `text-generation/mini` have been adjusted to
+  use `azure/gpt-4o-mini` instead of `azure/gpt-5-mini`, aligning with recent Azure OpenAI API changes for model
+  ingestion.
+- branding **Updated OpenAI Compatibility Interface:** The AI Hub's OpenAI-compatible interface and web UI are now
+  consistently branded as "Open WebUI," featuring updated icons for better recognition.
+
+### Fixed
+
+- 🐛 **Improved Document Parsing Robustness:** The Docling document loader now uses `html5lib` for parsing, enhancing its
+  ability to handle malformed or complex HTML content and improving overall parsing reliability.
+
+### Refactor
+
+- 🧹 **Standardized Docling API Configuration:** The `DOCLING_API_ENDPOINT` environment variable has been renamed to
+  `DOCLING_BASE_API_URL` across the codebase, improving clarity and consistency in Docling service configuration.
+
+---
+
 ## [v0.254.11] - 2025-12-02 - Enhanced Document Intelligence Figure Extraction
 
 ### Changed
