@@ -1,6 +1,6 @@
 import json
 
-from aihub_lib.generative_ai.document.refinement import refine_document_tables_with_metadata
+from aihub_lib.generative_ai.document.refinement.table_refiner import refine_document_tables_with_metadata
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from dagster import ConfigurableResource, ResourceDependency
 from llama_index.core.schema import Document

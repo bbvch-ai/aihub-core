@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Annotated, Any
 
 import bs4
+from aihub_lib.generative_ai.document.tables.markdown_table import parse_markdown_table, split_dataframe_into_chunks
 from bs4.element import PageElement
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.node_parser import SentenceSplitter
@@ -16,7 +17,6 @@ from pydantic import ConfigDict, Field, model_validator
 from aihub_lib.generative_ai.document.extractors import MetadataExtractor
 from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import PAGE_BREAK
 from aihub_lib.generative_ai.document.parsers.Split import Split
-from aihub_lib.generative_ai.document.tables import parse_markdown_table, split_dataframe_into_chunks
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.rag.vectors.node_metadata import (
