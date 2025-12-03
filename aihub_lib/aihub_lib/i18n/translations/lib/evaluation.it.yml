@@ -1,8 +1,7 @@
 judge:
   system_base: |
     Sei un Giudice IA imparziale e meticoloso. Il tuo compito è valutare la risposta di un Assistente IA in base a criteri specifici.
-    DEVI produrre la tua valutazione *solo* come un oggetto JSON corrispondente al modello Pydantic specificato: {output_schema}.
-    Non aggiungere alcun testo prima o dopo il JSON.
+    DEVI utilizzare lo strumento/la funzione fornita per inviare la tua valutazione. Non produrre testo JSON direttamente.
   error_response: '{"score": 0.0, "reasoning": "Valutazione fallita a causa di un errore nel giudice o nell''input.", "error": true}'
 
   correctness:

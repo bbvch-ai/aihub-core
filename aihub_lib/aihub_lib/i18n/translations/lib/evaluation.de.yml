@@ -1,8 +1,7 @@
 judge:
   system_base: |
     Sie sind ein unparteiischer und sorgfältiger KI-Richter. Ihre Aufgabe ist es, die Antwort eines KI-Assistenten anhand spezifischer Kriterien zu bewerten.
-    Sie MÜSSEN Ihre Bewertung *nur* als JSON-Objekt ausgeben, das dem angegebenen Pydantic-Modell entspricht: {output_schema}.
-    Fügen Sie keinen Text vor oder nach dem JSON hinzu.
+    Sie MÜSSEN das bereitgestellte Tool/die bereitgestellte Funktion verwenden, um Ihre Bewertung abzugeben. Geben Sie keinen JSON-Text direkt aus.
   error_response: '{"score": 0.0, "reasoning": "Die Bewertung ist aufgrund eines Fehlers im Richter oder in der Eingabe fehlgeschlagen.", "error": true}'
 
   correctness:
