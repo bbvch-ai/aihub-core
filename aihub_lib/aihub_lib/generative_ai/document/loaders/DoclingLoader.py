@@ -14,7 +14,7 @@ from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
 
-from aihub_lib.generative_ai.document.tables.markdown_table import create_markdown_table
+from aihub_lib.generative_ai.document.tables.markdown_table import create_markdown_table, wrap_tables_with_tags
 from aihub_lib.generative_ai.utils.path_utils import create_figures_folder_name
 from aihub_lib.infrastructure.docling.DoclingSettings import DoclingSettings, PipelineType
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
@@ -278,7 +278,7 @@ def convert_tables_to_markdown(markdown_text: str, tables: list[TableItem]) -> s
 
         # create_markdown_table may return multiple tables separated by \n\n if merged tables were detected
         individual_tables = formatted_tables.split("\n\n")
-        wrapped_tables = "\n\n".join(f"<table>{t}</table>" for t in individual_tables if t.strip())
+        wrapped_tables = wrap_tables_with_tags(individual_tables)
 
         markdown_text = markdown_text.replace(md_table, wrapped_tables, 1)
     return markdown_text

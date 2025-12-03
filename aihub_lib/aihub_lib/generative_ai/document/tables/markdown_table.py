@@ -126,6 +126,11 @@ def format_for_llm(df: pd.DataFrame) -> str:
     return "\n".join(lines)
 
 
+def wrap_tables_with_tags(tables: list[str]) -> str:
+    """Wrap markdown tables in <table> tags, separated by double newlines."""
+    return "\n\n".join(f"<table>{t}</table>" for t in tables if t.strip())
+
+
 def split_dataframe_into_chunks(
     df: pd.DataFrame,
     max_tokens: int,

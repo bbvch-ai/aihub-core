@@ -14,6 +14,7 @@ from aihub_lib.generative_ai.document.tables.markdown_table import (
     apply_header_rows,
     format_for_llm,
     parse_markdown_table,
+    wrap_tables_with_tags,
 )
 
 if TYPE_CHECKING:
@@ -73,7 +74,7 @@ def refine_document_tables_with_metadata(markdown_text: str, llm_config: "LLMCon
                 tables_split += 1
             total_tables_after_split += stats.tables_after_split
 
-        wrapped_tables = _wrap_tables(refined_tables)
+        wrapped_tables = wrap_tables_with_tags(refined_tables)
 
         start = match.start() + offset
         end = match.end() + offset
@@ -141,8 +142,3 @@ def _refine_single_table(df: pd.DataFrame, analyzer: TableAnalyzer) -> tuple[lis
         logger.warning(f"LLM table analysis failed, falling back to single header row: {e}")
         df = apply_header_rows(df, 1)
         return [df.to_markdown(index=False)], None
-
-
-def _wrap_tables(tables: list[str]) -> str:
-    """Wrap markdown tables in <table> tags."""
-    return "\n\n".join(f"<table>{t}</table>" for t in tables if t.strip())
