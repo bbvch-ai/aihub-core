@@ -1078,15 +1078,13 @@ services:
       ENABLE_VERSION_UPDATE_CHECK: False
 
       # --- Stage-Specific URLs and Environment ---
-      {%- if stage in ['dev', 'local', 'build'] %}
+      {%- if stage == 'dev' %}
       WEBUI_URL: http://localhost:8080
-      ENV: ${ENV}
-      GLOBAL_LOG_LEVEL: ${LOG_LEVEL}
       {%- else %}
       WEBUI_URL: https://openwebui.${DOMAIN}
-      ENV: prod
-      GLOBAL_LOG_LEVEL: ${LOG_LEVEL}
       {%- endif %}
+      ENV: ${ENV}
+      GLOBAL_LOG_LEVEL: ${LOG_LEVEL}
 
       # --- Telemetry ---
       ENABLE_OTEL: True

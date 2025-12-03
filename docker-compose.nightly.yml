@@ -695,7 +695,7 @@ services:
 
       # --- Stage-Specific URLs and Environment ---
       WEBUI_URL: https://openwebui.${DOMAIN}
-      ENV: prod
+      ENV: ${ENV}
       GLOBAL_LOG_LEVEL: ${LOG_LEVEL}
 
       # --- Telemetry ---
