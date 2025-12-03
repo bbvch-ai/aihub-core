@@ -20,13 +20,11 @@ logger = logging.getLogger(__name__)
 
 
 class TableAnalyzer:
-    """Handles LLM-based table structure analysis."""
 
     def __init__(self, llm_config: "LLMConfig") -> None:
         self.llm, _ = llm_config.to_llama_index()
 
     def detect_splits(self, table_text: str) -> TableSplitAnalysis:
-        """Detect if a table should be split into multiple tables."""
         prompt = PromptTemplate(SPLIT_DETECTION_PROMPT)
         analysis = self.llm.structured_predict(TableSplitAnalysis, prompt, table_text=table_text)
 
@@ -43,7 +41,6 @@ class TableAnalyzer:
         return TableSplitAnalysis(tables=validated, reasoning=analysis.reasoning)
 
     def detect_headers(self, table_text: str) -> HeaderAnalysis:
-        """Detect number of header rows in a table."""
         prompt = PromptTemplate(HEADER_DETECTION_PROMPT)
         analysis = self.llm.structured_predict(HeaderAnalysis, prompt, table_text=table_text)
 

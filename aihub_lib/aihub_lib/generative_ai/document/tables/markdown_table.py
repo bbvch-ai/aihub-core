@@ -1,6 +1,7 @@
 import logging
 import re
 from collections.abc import Callable
+from typing import Annotated
 
 import pandas as pd
 
@@ -8,12 +9,6 @@ logger = logging.getLogger(__name__)
 
 
 def create_markdown_table(df: pd.DataFrame) -> str:
-    """
-    Convert a DataFrame to a markdown table string.
-
-    Used by DoclingLoader to convert tables without LLM refinement.
-    If the DataFrame has integer column indices, assumes the first row contains headers.
-    """
     if df.empty:
         return df.to_markdown(index=False)
 
@@ -47,15 +42,11 @@ def apply_header_rows(df: pd.DataFrame, num_header_rows: int) -> pd.DataFrame:
 
 def parse_markdown_table(
     markdown_table: str,
-    include_header_as_data: bool = False,
+    include_header_as_data: Annotated[
+        bool,
+        "Whether to include the header row as data rows and use integer column indices (0, 1, 2...).",
+    ] = False,
 ) -> pd.DataFrame | None:
-    """
-    Parse a markdown table string into a DataFrame.
-
-    If include_header_as_data is True, the header row becomes the first data row
-    and columns are integer indices (0, 1, 2...). Used for LLM analysis where
-    the LLM determines which rows are headers.
-    """
     try:
         lines = markdown_table.strip().split("\n")
         if len(lines) < 2:
@@ -127,7 +118,6 @@ def format_for_llm(df: pd.DataFrame) -> str:
 
 
 def wrap_tables_with_tags(tables: list[str]) -> str:
-    """Wrap markdown tables in <table> tags, separated by double newlines."""
     return "\n\n".join(f"<table>{t}</table>" for t in tables if t.strip())
 
 
