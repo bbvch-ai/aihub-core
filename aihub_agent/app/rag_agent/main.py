@@ -1,5 +1,12 @@
 import asyncio
 
+from llama_index.core.vector_stores.types import VectorStoreQueryMode
+
+from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
+from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
+from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
+from aihub_agent.agents.RagAgent.configs.RetrieveSummariesConfig import RetrieveSummariesConfig
+from aihub_agent.runners.AgentRunner import AgentRunner
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
@@ -9,13 +16,6 @@ from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.logging.logger import enable_logging
-from llama_index.core.vector_stores.types import VectorStoreQueryMode
-
-from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
-from aihub_agent.agents.RagAgent.configs.RetrieveSummariesConfig import RetrieveSummariesConfig
-from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
-from aihub_agent.runners.AgentRunner import AgentRunner
 
 enable_logging()
 
@@ -131,7 +131,7 @@ async def main():
                 """,
             ),
             retrieve_step_config=RetrieveStepConfig(
-                embed_model=EmbeddingModelConfig(model_name="azure/text-embedding-3-large"),
+                embed_model=EmbeddingModelConfig(model_name="embedding/large"),
                 index_namespaces=["default"],
                 retrieve_k=10,
                 query_mode=VectorStoreQueryMode.HYBRID,
