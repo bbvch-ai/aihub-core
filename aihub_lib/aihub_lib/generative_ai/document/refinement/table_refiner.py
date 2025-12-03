@@ -230,7 +230,9 @@ DO NOT split for:
 Each row is prefixed with its 0-based index in square brackets: "[0]", "[1]", etc.
 
 Table Data:
+<table_data>
 {table_text}
+</table_data>
 
 Return table boundaries. The first table always starts at row 0.
 If this is a single table, return one entry with start_row=0.
@@ -270,7 +272,9 @@ SIGNS THAT A ROW IS DATA (not a header):
 Each row is prefixed with its 0-based index in square brackets: "[0]", "[1]", etc.
 
 Table Data:
+<table_data>
 {table_text}
+</table_data>
 
 Return the number of header rows (1-4). Most tables have 1-2 header rows."""
 
