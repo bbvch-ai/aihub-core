@@ -3,11 +3,10 @@ from typing import Annotated
 from pydantic import Field
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.nats.events.form.Form import Form
 from aihub_lib.nats.events.work.WorkEvent import WorkEvent
 
 
-class HumanWorkEvent(WorkEvent, Form):
+class HumanWorkEvent(WorkEvent):
     """
     Marks a piece of work submitted by a human. As humans usually require a form in the frontend to submit their
     data, this event is a subclass of Form. Hence, on the work that the human should submit, we define how the form

@@ -3,6 +3,7 @@ from typing import Annotated, ClassVar, get_origin
 
 from pydantic import Field, model_validator
 
+from aihub_lib.nats.events.form.Form import Form
 from aihub_lib.nats.events.form.base.FormkitElement import FormkitElement
 from aihub_lib.nats.events.work.human.HumanWorkEvent import HumanWorkEvent
 from aihub_lib.nats.events.work_request.WorkRequestEvent import WorkRequestEvent
@@ -63,7 +64,7 @@ class HumanWorkRequestEvent(WorkRequestEvent):
     user_roles: Annotated[list[str], Field(description="The list of roles that can submit work.")] = []
     notify: Annotated[bool, Field(description="Whether to notify the users or not.")] = True
 
-    forms: Annotated[list[HumanWorkEvent], Field(description="The list of forms.")]
+    forms: Annotated[list[Form], Field(description="The list of forms.")]
 
     @model_validator(mode="after")
     def validate_forms_and_attributes(self) -> "HumanWorkRequestEvent":

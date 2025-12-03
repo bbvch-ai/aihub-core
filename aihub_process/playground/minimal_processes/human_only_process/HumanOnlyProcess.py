@@ -2,14 +2,14 @@ from typing import Annotated
 
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.form.elements.InputText import InputText
-
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 from aihub_process.delegators.human.Human import Human
 from aihub_process.delegators.process.Process import Process
 from aihub_process.process.decorators.process_step import process_step
 from playground.events.CustomProcessStopEvent import CustomProcessStopEvent
 from playground.events.HumanAWork import HumanAWork
-from playground.events.HumanBWork import HumanBWork
+from playground.events.HumanAWorkForm import HumanAWorkForm
+from playground.events.HumanBWorkForm import HumanBWorkForm
 from playground.events.HumanBWorkReqeust import HumanBWorkRequest
 
 
@@ -22,14 +22,14 @@ class HumanOnlyProcess(AgenticProcess):
             Human.In(
                 route="/input_a",
                 method="POST",
-                start_form=HumanAWork(payload=InputText(label=LocaleString(en="Input text A"))),
+                start_form=HumanAWorkForm(payload=InputText(label=LocaleString(en="Input text A"))),
             ),
         ],
     ) -> Annotated[HumanBWorkRequest, Human.Out(user_roles=["AIHubAdmin"])]:
         print(f"[AgentOnlyProcess.start_with_output_from_human_a] {work_from_human_a.payload}")
         return HumanBWorkRequest(
             forms=[
-                HumanBWork(
+                HumanBWorkForm(
                     payload=InputText(
                         label=LocaleString(en=f"Please respond to <{work_from_human_a.payload}> with a single word:")
                     )
