@@ -53,7 +53,6 @@ from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParse
 from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
 from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
 from aihub_pipeline.resources.parser.TableRefinementResource import TableRefinementResource
-from aihub_pipeline.resources.parser.TextRefinementResource import TextRefinementResource
 from aihub_pipeline.resources.share_point.SharePointResource import SharePointResource
 from aihub_pipeline.schedules.factory import daily_schedule_at
 from aihub_pipeline.sensors.factory import default_automation_sensor
@@ -81,9 +80,7 @@ def default_definitions(
     embedding_model_name: Annotated[str, "LiteLLM model name for embeddings"] = "embedding/large",
     llm_model_name: Annotated[str, "LiteLLM model name for text generation"] = "text-generation/mini",
     with_summary_nodes: Annotated[bool, "Generate recursive summaries for hierarchical RAG"] = True,
-    with_text_refinement: Annotated[bool, "Refine document text with LLM to fix OCR errors"] = False,
-    text_refinement_max_chunk_tokens: Annotated[int, "Maximum tokens per chunk for text refinement"] = 4000,
-    with_table_refinement: Annotated[bool, "Refine tables with LLM to detect structure and split"] = False,
+    with_table_refinement: Annotated[bool, "Refine tables with LLM to detect structure and split"] = True,
     auto_sync: Annotated[bool, "Whether the S3 bucket is auto-synced (i.e. with local fs pipeline)"] = False,
     observe_job_hour: Annotated[int, "Hour to run daily data lake observation job"] = 2,
     observe_job_minute: Annotated[int, "Minute to run daily data lake observation job"] = 0,
@@ -115,7 +112,6 @@ def default_definitions(
             document_key,
             data_lake_key=data_lake_key,
             partitions=document_partitions,
-            enable_text_refinement=with_text_refinement,
             enable_table_refinement=with_table_refinement,
         ),
         nodes_factory(nodes_key, document_key=document_key, partitions=document_partitions),
@@ -167,11 +163,6 @@ def default_definitions(
 
     if with_table_refinement:
         resources["table_refinement"] = TableRefinementResource(llm_config=llm_config)
-
-    if with_text_refinement:
-        resources["text_refinement"] = TextRefinementResource(
-            llm_config=llm_config, max_chunk_tokens=text_refinement_max_chunk_tokens
-        )
 
     return Definitions(
         assets=assets,

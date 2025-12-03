@@ -5,7 +5,6 @@ from aihub_pipeline.ops.data_lake.parse_document_from_data_lake import parse_doc
 from aihub_pipeline.ops.document.ensure_refdoc_default_metadata import ensure_refdoc_default_metadata
 from aihub_pipeline.ops.document.insert_ref_doc_into_docstore import insert_ref_doc_into_docstore
 from aihub_pipeline.ops.document.refine_document_tables import refine_document_tables
-from aihub_pipeline.ops.document.refine_document_text import refine_document_text
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
 from aihub_pipeline.util.key_utils import group_name_from_asset_key
@@ -15,8 +14,7 @@ def documents_factory(
     key: AssetKey,
     data_lake_key: str | AssetKey,
     partitions: DynamicPartitionsDefinition,
-    enable_text_refinement: bool = False,
-    enable_table_refinement: bool = False,
+    enable_table_refinement: bool,
 ) -> graph_asset:
     """
     Creates a document asset that represents a Ref Doc in the Document Store.
@@ -24,7 +22,6 @@ def documents_factory(
     Ref Doc with the text and image url into the Document store, as well as providing it as an output for
     downstream assets.
 
-    When enable_text_refinement is True, the TextRefinementResource must be provided in the resources.
     When enable_table_refinement is True, the TableRefinementResource must be provided in the resources.
     """
 
@@ -46,9 +43,6 @@ def documents_factory(
 
         if enable_table_refinement:
             current = refine_document_tables(current)
-
-        if enable_text_refinement:
-            current = refine_document_text(current)
 
         validated = ensure_refdoc_default_metadata(current)
 

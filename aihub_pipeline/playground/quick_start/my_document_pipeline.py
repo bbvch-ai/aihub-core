@@ -48,7 +48,12 @@ assets = [
     # Observable asset watches the data lake for new/changed documents
     observable_asset,
     # Document factory processes raw files into RefDocs with metadata
-    documents_factory(DOCUMENT_KEY, data_lake_key=DATA_LAKE_KEY, partitions=document_partitions),
+    documents_factory(
+        DOCUMENT_KEY,
+        data_lake_key=DATA_LAKE_KEY,
+        partitions=document_partitions,
+        enable_table_refinement=False,
+    ),
     # Nodes factory chunks documents into searchable nodes with embeddings
     nodes_factory(NODES_KEY, document_key=DOCUMENT_KEY, partitions=document_partitions),
 ]
