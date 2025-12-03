@@ -153,8 +153,8 @@ class TestCreateMarkdownTableWithoutLLM:
         assert "Col2" in result
 
 
-class TestCreateMarkdownTableWithLLM:
-    """Tests for create_markdown_table with LLM (mocked)."""
+class TestRefineMarkdownTableWithLLM:
+    """Tests for refine_markdown_table_with_stats with LLM (mocked)."""
 
     def test_single_table_single_header(self) -> None:
         """Test LLM analysis returning single table with single header."""
@@ -168,7 +168,7 @@ class TestCreateMarkdownTableWithLLM:
             mock_split.return_value = TableSplitAnalysis(tables=[TableBoundary(start_row=0)], reasoning="Single table")
             mock_header.return_value = HeaderAnalysis(num_header_rows=1, reasoning="One header row")
 
-            result = create_markdown_table(df, mock_llm_config)
+            result, stats = refine_markdown_table_with_stats(df, mock_llm_config)
 
             mock_split.assert_called_once()
             mock_header.assert_called_once()
@@ -193,7 +193,7 @@ class TestCreateMarkdownTableWithLLM:
             )
             mock_header.return_value = HeaderAnalysis(num_header_rows=1, reasoning="One header row")
 
-            result = create_markdown_table(df, mock_llm_config)
+            result, stats = refine_markdown_table_with_stats(df, mock_llm_config)
 
             # Should have two tables separated by double newline
             assert "\n\n" in result
@@ -214,7 +214,7 @@ class TestCreateMarkdownTableWithLLM:
             mock_split.return_value = TableSplitAnalysis(tables=[TableBoundary(start_row=0)], reasoning="Single table")
             mock_header.return_value = HeaderAnalysis(num_header_rows=2, reasoning="Two header rows")
 
-            result = create_markdown_table(df, mock_llm_config)
+            result, stats = refine_markdown_table_with_stats(df, mock_llm_config)
 
             # Headers should be merged with " - "
             assert "Category - Sub1" in result or "Sub1" in result
@@ -227,7 +227,7 @@ class TestCreateMarkdownTableWithLLM:
         with patch("aihub_lib.generative_ai.document.tables.markdown_table._detect_table_splits") as mock_split:
             mock_split.side_effect = Exception("LLM error")
 
-            result = create_markdown_table(df, mock_llm_config)
+            result, stats = refine_markdown_table_with_stats(df, mock_llm_config)
 
             # Should still produce valid markdown with first row as header
             assert "H1" in result
