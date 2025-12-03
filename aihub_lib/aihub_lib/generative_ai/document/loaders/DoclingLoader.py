@@ -3,7 +3,7 @@ import base64
 import html
 import os
 import re
-from typing import TYPE_CHECKING, Any, Annotated
+from typing import Any
 
 import httpx
 from bs4 import BeautifulSoup
@@ -23,28 +23,11 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     NUMBER_OF_PAGES,
 )
 
-if TYPE_CHECKING:
-    from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-
 
 class DoclingLoader(BaseReader):
-    def __init__(
-        self,
-        llm_config: Annotated[
-            "LLMConfig | None",
-            "LLM configuration for table structure analysis. If None, basic table formatting is used.",
-        ] = None,
-        refine_tables: Annotated[
-            bool,
-            "If True and llm_config provided, uses LLM to analyze table structure.",
-        ] = True,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.config = DoclingSettings()
-        self.llm_config = llm_config
-        self.refine_tables = refine_tables
 
     @trace_fn
     def load_data(
@@ -100,19 +83,11 @@ class DoclingLoader(BaseReader):
         doc = DoclingDocument(**json_content)
         markdown_content = doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
 
-        # Use LLM for table analysis only if refine_tables is True
-        table_llm_config = self.llm_config if self.refine_tables else None
-
         if len(doc.pictures) > 0:
             img_strs = [picture.export_to_markdown(doc) for picture in doc.pictures]
-            markdown_text = inject_figure_tags(markdown_text=markdown_content, img_strs=img_strs)
-            markdown_content = convert_tables_to_markdown(
-                markdown_text=markdown_text, tables=doc.tables, llm_config=table_llm_config
-            )
-        else:
-            markdown_content = convert_tables_to_markdown(
-                markdown_text=markdown_content, tables=doc.tables, llm_config=table_llm_config
-            )
+            markdown_content = inject_figure_tags(markdown_text=markdown_content, img_strs=img_strs)
+
+        markdown_content = convert_tables_to_markdown(markdown_text=markdown_content, tables=doc.tables)
 
         metadata = {NUMBER_OF_PAGES: len(answer["document"]["json_content"]["pages"])}
 
@@ -286,23 +261,20 @@ def inject_figure_tags(markdown_text: str, img_strs: list[str]):
     return markdown_text
 
 
-def convert_tables_to_markdown(markdown_text: str, tables: list[TableItem], llm_config: "LLMConfig | None" = None):
-    """Replace Docling markdown tables with properly formatted markdown tables wrapped in <table> tags.
+def convert_tables_to_markdown(markdown_text: str, tables: list[TableItem]) -> str:
+    """
+    Replace Docling markdown tables with properly formatted markdown tables wrapped in <table> tags.
 
     Uses shared table utilities from aihub_lib.generative_ai.document.tables to ensure
     consistent table handling between document creation and node parsing.
 
     Tables are wrapped in <table> tags so MarkdownStructuralNodeParser can identify them.
-
-    When llm_config is provided, this function can:
-    - Detect and merge multi-row headers
-    - Split incorrectly merged tables into separate <table> elements
     """
     pattern = r"(\|[^\n]+\|\r?\n\|[:\-| ]+\|\r?(?:\n\|[^\n]+\|\r?)*)"
     md_tables = re.findall(pattern, markdown_text)
     for md_table, table in zip(md_tables, tables):
         df = table.export_to_dataframe()
-        formatted_tables = create_markdown_table(df, llm_config)
+        formatted_tables = create_markdown_table(df)
 
         # create_markdown_table may return multiple tables separated by \n\n if merged tables were detected
         individual_tables = formatted_tables.split("\n\n")

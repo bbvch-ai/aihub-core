@@ -12,8 +12,8 @@ from aihub_lib.generative_ai.document.tables.markdown_table import (
     _format_table_with_row_indices,
     _reset_columns_to_data,
     create_markdown_table,
-    create_markdown_table_with_stats,
     parse_markdown_table,
+    refine_markdown_table_with_stats,
     split_dataframe_into_chunks,
 )
 
@@ -304,17 +304,8 @@ class TestSplitDataframeIntoChunks:
             assert "Header2" in chunk
 
 
-class TestCreateMarkdownTableWithStats:
-    """Tests for create_markdown_table_with_stats function."""
-
-    def test_returns_none_stats_without_llm(self) -> None:
-        """Test that stats are None when no LLM config is provided."""
-        df = pd.DataFrame([["H1", "H2"], ["A", "B"]], columns=[0, 1])
-
-        content, stats = create_markdown_table_with_stats(df)
-
-        assert "H1" in content
-        assert stats is None
+class TestRefineMarkdownTableWithStats:
+    """Tests for refine_markdown_table_with_stats function."""
 
     def test_returns_stats_with_llm(self) -> None:
         """Test that stats are returned when LLM is used."""
@@ -328,7 +319,7 @@ class TestCreateMarkdownTableWithStats:
             mock_split.return_value = TableSplitAnalysis(tables=[TableBoundary(start_row=0)], reasoning="Single table")
             mock_header.return_value = HeaderAnalysis(num_header_rows=1, reasoning="One header row")
 
-            content, stats = create_markdown_table_with_stats(df, mock_llm_config)
+            content, stats = refine_markdown_table_with_stats(df, mock_llm_config)
 
             assert stats is not None
             assert stats.original_rows == 2
@@ -351,7 +342,7 @@ class TestCreateMarkdownTableWithStats:
             )
             mock_header.return_value = HeaderAnalysis(num_header_rows=1, reasoning="One header row")
 
-            content, stats = create_markdown_table_with_stats(df, mock_llm_config)
+            content, stats = refine_markdown_table_with_stats(df, mock_llm_config)
 
             assert stats is not None
             assert stats.was_split is True

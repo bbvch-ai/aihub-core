@@ -113,7 +113,7 @@ Some text after."""
         mock_llm_config = MagicMock()
 
         with patch(
-            "aihub_lib.generative_ai.document.refinement.table_refiner.create_markdown_table_with_stats"
+            "aihub_lib.generative_ai.document.refinement.table_refiner.refine_markdown_table_with_stats"
         ) as mock_create:
             mock_create.return_value = ("| A | B |\n|---|---|\n| 1 | 2 |", None)
             refine_document_tables(text, mock_llm_config)
@@ -138,7 +138,7 @@ Middle text.
         mock_llm_config = MagicMock()
 
         with patch(
-            "aihub_lib.generative_ai.document.refinement.table_refiner.create_markdown_table_with_stats"
+            "aihub_lib.generative_ai.document.refinement.table_refiner.refine_markdown_table_with_stats"
         ) as mock_create:
             mock_create.return_value = ("| X |\n|---|\n| Y |", None)
             refine_document_tables(text, mock_llm_config)
@@ -152,11 +152,11 @@ Middle text.
         mock_llm_config = MagicMock()
 
         with patch(
-            "aihub_lib.generative_ai.document.refinement.table_refiner.create_markdown_table_with_stats"
+            "aihub_lib.generative_ai.document.refinement.table_refiner.refine_markdown_table_with_stats"
         ) as mock_create:
             result = refine_document_tables(text, mock_llm_config)
 
-            # create_markdown_table_with_stats should not be called for invalid tables
+            # refine_markdown_table_with_stats should not be called for invalid tables
             mock_create.assert_not_called()
             # Original text is preserved
             assert result == text
@@ -168,7 +168,7 @@ Middle text.
         mock_llm_config = MagicMock()
 
         with patch(
-            "aihub_lib.generative_ai.document.refinement.table_refiner.create_markdown_table_with_stats"
+            "aihub_lib.generative_ai.document.refinement.table_refiner.refine_markdown_table_with_stats"
         ) as mock_create:
             result = refine_document_tables(text, mock_llm_config)
 
@@ -184,7 +184,7 @@ Middle text.
         mock_llm_config = MagicMock()
 
         with patch(
-            "aihub_lib.generative_ai.document.refinement.table_refiner.create_markdown_table_with_stats"
+            "aihub_lib.generative_ai.document.refinement.table_refiner.refine_markdown_table_with_stats"
         ) as mock_create:
             # Simulate LLM splitting the table into two
             mock_create.return_value = (
@@ -208,7 +208,7 @@ After table."""
         mock_llm_config = MagicMock()
 
         with patch(
-            "aihub_lib.generative_ai.document.refinement.table_refiner.create_markdown_table_with_stats"
+            "aihub_lib.generative_ai.document.refinement.table_refiner.refine_markdown_table_with_stats"
         ) as mock_create:
             mock_create.return_value = ("| A |\n|---|\n| 1 |", None)
             result = refine_document_tables(text, mock_llm_config)
@@ -249,7 +249,7 @@ class TestRefineDocumentTablesWithMetadata:
         )
 
         with patch(
-            "aihub_lib.generative_ai.document.refinement.table_refiner.create_markdown_table_with_stats"
+            "aihub_lib.generative_ai.document.refinement.table_refiner.refine_markdown_table_with_stats"
         ) as mock_create:
             mock_create.return_value = ("| A | B |\n|---|---|\n| 1 | 2 |", mock_stats)
             result = refine_document_tables_with_metadata(text, mock_llm_config)
@@ -276,7 +276,7 @@ class TestRefineDocumentTablesWithMetadata:
         )
 
         with patch(
-            "aihub_lib.generative_ai.document.refinement.table_refiner.create_markdown_table_with_stats"
+            "aihub_lib.generative_ai.document.refinement.table_refiner.refine_markdown_table_with_stats"
         ) as mock_create:
             mock_create.return_value = (
                 "| A | B |\n|---|---|\n| 1 | 2 |\n\n| C | D |\n|---|---|\n| 3 | 4 |",
@@ -315,7 +315,7 @@ class TestRefineDocumentTablesWithMetadata:
         )
 
         with patch(
-            "aihub_lib.generative_ai.document.refinement.table_refiner.create_markdown_table_with_stats"
+            "aihub_lib.generative_ai.document.refinement.table_refiner.refine_markdown_table_with_stats"
         ) as mock_create:
             mock_create.side_effect = [
                 ("| A |\n|---|\n| 1 |\n\n| A2 |\n|---|\n| 2 |", mock_stats_1),

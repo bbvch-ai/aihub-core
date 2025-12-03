@@ -7,7 +7,7 @@ import pandas as pd
 from aihub_lib.generative_ai.document.tables import (
     TableRefinementMetadata,
     TableRefinementResult,
-    create_markdown_table_with_stats,
+    refine_markdown_table_with_stats,
 )
 
 if TYPE_CHECKING:
@@ -63,7 +63,7 @@ def refine_document_tables_with_metadata(markdown_text: str, llm_config: "LLMCon
             _logger.debug("Could not parse table, skipping")
             continue
 
-        refined_tables, stats = create_markdown_table_with_stats(df, llm_config)
+        refined_tables, stats = refine_markdown_table_with_stats(df, llm_config)
 
         if stats:
             table_stats.append(stats)

@@ -141,11 +141,8 @@ def default_definitions(
     milvus_settings = MilvusSettings()
     dimensions = vector_store_dimensions if vector_store_dimensions is not None else milvus_settings.DIMENSION
 
-    # Disable table refinement during parsing if it's done as a separate step
-    refine_tables_during_parsing = not with_table_refinement
-
     resources: dict = {
-        "document_parser": DocumentParserResource(llm_config=llm_config, refine_tables=refine_tables_during_parsing),
+        "document_parser": DocumentParserResource(),
         "node_parser": MarkdownStructuralNodeParserResource(llm_config=llm_config),
         "summary_parser": RecursiveSummaryParserResource(),
         **default_io_manager_s3_datalake_resources(container_name=datalake_container_name),

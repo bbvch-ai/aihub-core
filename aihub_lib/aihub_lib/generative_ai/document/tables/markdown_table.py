@@ -49,75 +49,76 @@ class TableRefinementResult(BaseModel):
     metadata: Annotated[TableRefinementMetadata, Field(description="Refinement statistics")]
 
 
-def create_markdown_table(df: pd.DataFrame, llm_config: "LLMConfig | None" = None) -> str:
-    content, _ = _create_markdown_table_internal(df, llm_config)
-    return content
+def create_markdown_table(df: pd.DataFrame) -> str:
+    """Convert a DataFrame to a markdown table string.
+
+    Used by DoclingLoader to convert tables without LLM refinement.
+    If the DataFrame has integer column indices, assumes the first row contains headers.
+    """
+    if df.empty:
+        return df.to_markdown(index=False)
+
+    if _has_integer_column_indices(df):
+        df = _apply_header_rows(df.copy(), 1)
+
+    return df.to_markdown(index=False)
 
 
-def create_markdown_table_with_stats(
-    df: pd.DataFrame, llm_config: "LLMConfig | None" = None
+def refine_markdown_table_with_stats(
+    df: pd.DataFrame, llm_config: "LLMConfig"
 ) -> tuple[str, TableRefinementStats | None]:
-    return _create_markdown_table_internal(df, llm_config)
-
-
-def _create_markdown_table_internal(
-    df: pd.DataFrame, llm_config: "LLMConfig | None" = None
-) -> tuple[str, TableRefinementStats | None]:
+    """Refine a table using LLM and return statistics about the refinement."""
     if df.empty:
         return df.to_markdown(index=False), None
 
-    if llm_config is not None:
-        original_rows = len(df)
-        df = _reset_columns_to_data(df)
-        table_for_llm = _format_table_with_row_indices(df)
-        logger.debug(f"Analyzing table structure with LLM ({len(df)} rows)")
-        logger.debug(f"Table input for LLM:\n{table_for_llm[:1000]}{'...' if len(table_for_llm) > 1000 else ''}")
-        try:
-            # Step 1: Detect table splits
-            split_analysis = _detect_table_splits(table_for_llm, llm_config)
-            logger.debug(f"Step 1 - Split detection: {len(split_analysis.tables)} table(s): {split_analysis.reasoning}")
+    original_rows = len(df)
+    df = _reset_columns_to_data(df)
+    table_for_llm = _format_table_with_row_indices(df)
+    logger.debug(f"Analyzing table structure with LLM ({len(df)} rows)")
+    logger.debug(f"Table input for LLM:\n{table_for_llm[:1000]}{'...' if len(table_for_llm) > 1000 else ''}")
+    try:
+        # Step 1: Detect table splits
+        split_analysis = _detect_table_splits(table_for_llm, llm_config)
+        logger.debug(f"Step 1 - Split detection: {len(split_analysis.tables)} table(s): {split_analysis.reasoning}")
 
-            # Step 2: For each split table, detect headers and create markdown
-            markdown_tables = []
-            header_rows_detected = []
+        # Step 2: For each split table, detect headers and create markdown
+        markdown_tables = []
+        header_rows_detected = []
 
-            for i, boundary in enumerate(split_analysis.tables):
-                if i + 1 < len(split_analysis.tables):
-                    end_row = split_analysis.tables[i + 1].start_row
-                else:
-                    end_row = len(df)
+        for i, boundary in enumerate(split_analysis.tables):
+            if i + 1 < len(split_analysis.tables):
+                end_row = split_analysis.tables[i + 1].start_row
+            else:
+                end_row = len(df)
 
-                table_df = df.iloc[boundary.start_row : end_row].copy()
-                table_df = table_df.reset_index(drop=True)
+            table_df = df.iloc[boundary.start_row : end_row].copy()
+            table_df = table_df.reset_index(drop=True)
 
-                # Detect headers for this specific table
-                table_for_analysis = _format_table_with_row_indices(table_df)
-                header_analysis = _detect_header_rows(table_for_analysis, llm_config)
-                header_rows_detected.append(header_analysis.num_header_rows)
-                logger.debug(
-                    f"  Table {i + 1} (rows {boundary.start_row}-{end_row - 1}): "
-                    f"{header_analysis.num_header_rows} header row(s): {header_analysis.reasoning}"
-                )
-
-                table_df = _apply_header_rows(table_df, header_analysis.num_header_rows)
-                markdown_tables.append(table_df.to_markdown(index=False))
-
-            stats = TableRefinementStats(
-                original_rows=original_rows,
-                was_split=len(split_analysis.tables) > 1,
-                tables_after_split=len(split_analysis.tables),
-                header_rows_detected=header_rows_detected,
-                split_reasoning=split_analysis.reasoning,
+            # Detect headers for this specific table
+            table_for_analysis = _format_table_with_row_indices(table_df)
+            header_analysis = _detect_header_rows(table_for_analysis, llm_config)
+            header_rows_detected.append(header_analysis.num_header_rows)
+            logger.debug(
+                f"  Table {i + 1} (rows {boundary.start_row}-{end_row - 1}): "
+                f"{header_analysis.num_header_rows} header row(s): {header_analysis.reasoning}"
             )
 
-            return "\n\n".join(markdown_tables), stats
-        except Exception as e:
-            logger.warning(f"LLM table analysis failed, falling back to single header row: {e}")
-            df = _apply_header_rows(df, 1)
-    elif _has_integer_column_indices(df):
-        df = _apply_header_rows(df, 1)
+            table_df = _apply_header_rows(table_df, header_analysis.num_header_rows)
+            markdown_tables.append(table_df.to_markdown(index=False))
 
-    return df.to_markdown(index=False), None
+        stats = TableRefinementStats(
+            original_rows=original_rows,
+            was_split=len(split_analysis.tables) > 1,
+            tables_after_split=len(split_analysis.tables),
+            header_rows_detected=header_rows_detected,
+            split_reasoning=split_analysis.reasoning,
+        )
+
+        return "\n\n".join(markdown_tables), stats
+    except Exception as e:
+        logger.warning(f"LLM table analysis failed, falling back to single header row: {e}")
+        df = _apply_header_rows(df, 1)
+        return df.to_markdown(index=False), None
 
 
 def _reset_columns_to_data(df: pd.DataFrame) -> pd.DataFrame:
