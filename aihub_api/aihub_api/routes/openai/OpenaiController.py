@@ -2,17 +2,6 @@ import logging
 from collections.abc import AsyncIterator
 from typing import Annotated, Literal
 
-from aihub_lib.auth.access.AccessChecker import AccessChecker
-from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
-from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.dependencies.use_nats import use_nats
-from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributor import (
-    use_external_agent_event_distributor,
-)
-from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from aihub_lib.routes.Controller import Controller
 from fastapi import Body, Depends, File, Form, Security, UploadFile
 from nats.aio.client import Client as NATS
 from openai.types import ImagesResponse
@@ -21,6 +10,7 @@ from openai.types.chat import ChatCompletion
 from starlette.responses import StreamingResponse
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
+from aihub_api.routes.openai.OpenaiService import OpenaiService
 from aihub_api.routes.openai.dto.ChatCompletionRequest import ChatCompletionRequest
 from aihub_api.routes.openai.dto.EmbeddingsRequest import EmbeddingsRequest
 from aihub_api.routes.openai.dto.EmbeddingsResponse import EmbeddingsResponse
@@ -28,7 +18,17 @@ from aihub_api.routes.openai.dto.ImageGenerationRequest import ImageGenerationRe
 from aihub_api.routes.openai.dto.ModelDetails import ModelDetails
 from aihub_api.routes.openai.dto.ModelResponse import ModelResponse
 from aihub_api.routes.openai.dto.TextToSpeechRequest import TextToSpeechRequest
-from aihub_api.routes.openai.OpenaiService import OpenaiService
+from aihub_lib.auth.access.AccessChecker import AccessChecker
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.dependencies.use_nats import use_nats
+from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
+from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributor import (
+    use_external_agent_event_distributor,
+)
+from aihub_lib.routes.Controller import Controller
 
 logger = logging.getLogger(__name__)
 
@@ -56,9 +56,9 @@ class OpenaiController(Controller):
     allowing customers to plug in the OpenAI SDKs directly against AI Hub.
     """
 
-    name = LocaleString(en="OpenAI")
+    name = LocaleString(en="Open WebUI")
     description = LocaleString(en="OpenAI Compatible API")
-    icon = "simple-icons:openai"
+    icon = "famicons:chatbox-ellipses-outline"
 
     def __init__(
         self,

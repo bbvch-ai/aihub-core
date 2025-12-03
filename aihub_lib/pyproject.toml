@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_lib"
-version = "v0.254.11"
+version = "v0.254.12"
 description = ""
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -63,6 +63,7 @@ opentelemetry-instrumentation-logging = "^0.58b0"
 opentelemetry-instrumentation-aiohttp-client = "^0.58b0"
 llama-index-postprocessor-cohere-rerank = "0.3.0"
 lxml = "^5.4.0"
+html5lib = "^1.1"
 
 
 [tool.poetry.group.dev.dependencies]

@@ -171,7 +171,7 @@ general_settings:
 # LiteLLM Settings
 # ===================================================================
 litellm_settings:
-  callbacks: ["detect_prompt_injection", "otel"]
+  callbacks: [ "detect_prompt_injection", "otel" ]
   telemetry: true
   json_logs: true
   drop_params: true

@@ -1,10 +1,10 @@
 # License Report
 
-Generated on: 02.12.2025
+Generated on: 03.12.2025
 
 This document contains license information for all dependencies across the monorepo:
 
-- Python packages (Poetry): **232 packages**
+- Python packages (Poetry): **234 packages**
 - Node.js packages (pnpm): **197 packages**
 - External Docker images: **28 images**
 
@@ -122,6 +122,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | striprtf                                     | 0.0.26          | BSD License                                       |       |
 | ✅     | threadpoolctl                                | 3.6.0           | BSD License                                       |       |
 | ✅     | traitlets                                    | 5.14.3          | BSD License                                       |       |
+| ✅     | webencodings                                 | 0.5.1           | BSD License                                       |       |
 | ✅     | wrapt                                        | 1.17.3          | BSD License                                       |       |
 | ✅     | ply                                          | 3.11            | BSD                                               |       |
 | ✅     | MarkupSafe                                   | 3.0.3           | BSD-3-Clause                                      |       |
@@ -168,6 +169,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | graphql-core                                 | 3.2.7           | MIT License                                       |       |
 | ✅     | grpc-interceptor                             | 0.15.4          | MIT License                                       |       |
 | ✅     | h11                                          | 0.16.0          | MIT License                                       |       |
+| ✅     | html5lib                                     | 1.1             | MIT License                                       |       |
 | ✅     | jedi                                         | 0.19.2          | MIT License                                       |       |
 | ✅     | jiter                                        | 0.11.1          | MIT License                                       |       |
 | ✅     | jmespath                                     | 1.0.1           | MIT License                                       |       |
