@@ -30,7 +30,7 @@
 {%- set VALKEY_ENDPOINT = "redis://valkey:6379" %}
 {%- set LITE_LLM_PROXY_BASE_URL = "http://litellm:4000" %}
 {%- set JUPYTER_URL = "http://jupyter:8888" %}
-{%- set DOCLING_API_ENDPOINT = "http://docling:5001" %}
+{%- set DOCLING_BASE_API_URL = "http://docling:5001" %}
 {%- set PRESIDIO_ANALYZER_API_BASE = "http://presidio-analyzer:3000" %}
 {%- set PRESIDIO_ANONYMIZER_API_BASE = "http://presidio-anonymizer:3000" %}
 {%- set PLAYWRIGHT_WS_URL = "ws://playwright:3000" %}
@@ -1599,7 +1599,7 @@ services:
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
 
       # Docling
-      DOCLING_API_ENDPOINT: {{ DOCLING_API_ENDPOINT }}
+      DOCLING_BASE_API_URL: {{ DOCLING_BASE_API_URL }}
       DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
       DOCLING_HOSTED_VLM_API_ENDPOINT: {{ LITE_LLM_PROXY_BASE_URL }}
       DOCLING_HOSTED_VLM_API_KEY: ${LITELLM_MASTER_KEY}
@@ -1812,7 +1812,7 @@ services:
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Docling
-      DOCLING_API_ENDPOINT: {{ DOCLING_API_ENDPOINT }}
+      DOCLING_BASE_API_URL: {{ DOCLING_BASE_API_URL }}
       DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
       DOCLING_HOSTED_VLM_API_ENDPOINT: {{ LITE_LLM_PROXY_BASE_URL }}
       DOCLING_HOSTED_VLM_API_KEY: ${LITELLM_MASTER_KEY}
