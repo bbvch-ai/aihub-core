@@ -9,7 +9,6 @@ defs = default_definitions(
     embedding_model_name="embedding/large",
     llm_model_name="text-generation/mini",
     with_summary_nodes=True,
-    with_text_refinement=True,
     with_table_refinement=True,
     observe_job_hour=0,
     observe_job_minute=0,
