@@ -1,12 +1,15 @@
 import copy
+import json
+import logging
 from types import UnionType
-from typing import Union, get_args, get_origin
+from typing import Any, ClassVar, Union, get_args, get_origin
 
-from openai import BaseModel
-from pydantic import create_model
+from pydantic import BaseModel, computed_field, create_model
 
 from aihub_lib.nats.events.form.base.FormkitElement import FormkitElement
 from aihub_lib.nats.events.form.base.PrimeVueElement import PrimeVueElement
+
+logger = logging.getLogger(__name__)
 
 
 class Form(BaseModel):
@@ -47,6 +50,41 @@ class Form(BaseModel):
     submission = submission_model(**formkit_data)
     ```
     """
+
+    _form_registry: ClassVar[dict[str, type["Form"]]] = {}
+
+    @computed_field
+    @property
+    def _form_name(self) -> str:
+        """The form type name, used for polymorphic deserialization."""
+        return self.__class__.__name__
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+        logger.debug(f"Registering Form {cls.__name__}")
+        Form._form_registry[cls.__name__] = cls
+
+    @classmethod
+    def deserialize_form(cls, data: bytes | str | dict[str, Any]) -> "Form":
+        """Deserialize JSON data into the correct Form subclass based on _form_name."""
+        if isinstance(data, dict):
+            json_data = data.copy()
+        elif isinstance(data, str):
+            json_data = json.loads(data)
+        elif isinstance(data, bytes):
+            json_data = json.loads(data.decode())
+        else:
+            raise ValueError(f"Cannot deserialize data of type {type(data)}")
+
+        form_name = json_data.get("_form_name")
+        if form_name and isinstance(form_name, str):
+            form_class = cls._form_registry.get(form_name)
+            if form_class:
+                return form_class.model_validate(json_data)
+
+        # Fallback to base Form
+        logger.warning(f"Form {form_name} not found in registry. Using fallback Form.")
+        return Form.model_validate(json_data)
 
     def to_formkit_form(self) -> list[FormkitElement]:
         """

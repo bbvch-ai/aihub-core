@@ -8,7 +8,6 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.form.Form import Form
 
 if TYPE_CHECKING:
-    from aihub_lib.nats.events.form import Checkbox, InputNumber, InputText
     from aihub_lib.persistence.agents import AgentConfigEntity
 
 logger = logging.getLogger(__name__)
@@ -94,7 +93,6 @@ class AgentConfig(Form):
 
         fields: dict[str, tuple[UnionType | type[BaseModel], ...]] = {}
         for key, value in model_dict.items():
-
             value_type = type(value)
 
             # Map to FormKit element type, fallback to the primitive type

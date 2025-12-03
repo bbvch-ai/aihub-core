@@ -1,11 +1,10 @@
 from collections import Counter
-from typing import Annotated, ClassVar, get_origin
+from typing import Annotated, Any, ClassVar, get_origin
 
 from pydantic import Field, model_validator
 
-from aihub_lib.nats.events.form.Form import Form
 from aihub_lib.nats.events.form.base.FormkitElement import FormkitElement
-from aihub_lib.nats.events.work.human.HumanWorkEvent import HumanWorkEvent
+from aihub_lib.nats.events.form.Form import Form
 from aihub_lib.nats.events.work_request.WorkRequestEvent import WorkRequestEvent
 
 
@@ -66,6 +65,22 @@ class HumanWorkRequestEvent(WorkRequestEvent):
 
     forms: Annotated[list[Form], Field(description="The list of forms.")]
 
+    @model_validator(mode="before")
+    @classmethod
+    def deserialize_forms(cls, data: Any) -> Any:
+        """Deserialize forms from JSON using Form.deserialize_form for polymorphic support."""
+        if isinstance(data, dict) and "forms" in data:
+            forms = data.get("forms", [])
+            if isinstance(forms, list):
+                deserialized_forms = []
+                for form in forms:
+                    if isinstance(form, dict):
+                        deserialized_forms.append(Form.deserialize_form(form))
+                    else:
+                        deserialized_forms.append(form)
+                data["forms"] = deserialized_forms
+        return data
+
     @model_validator(mode="after")
     def validate_forms_and_attributes(self) -> "HumanWorkRequestEvent":
         """Ensures that the forms provided exactly match all work event options placed on the work request event."""
@@ -74,13 +89,13 @@ class HumanWorkRequestEvent(WorkRequestEvent):
         all_errors = []
 
         # Part 1: Validate that custom form attributes are FormkitElements
-        # Define the set of fields inherited from the base HumanWorkEvent to ignore.
-        base_form_fields = set(HumanWorkEvent.model_fields.keys())
+        # Define the set of fields inherited from the base Form to ignore.
+        base_form_fields = set(Form.model_fields.keys())
 
         for i, form in enumerate(forms):
             # Isolate fields specific to the subclass (e.g., in HumanBWork)
             # by removing the base event fields.
-            custom_fields = set(form.model_fields.keys()) - base_form_fields
+            custom_fields = set(type(form).model_fields.keys()) - base_form_fields
 
             for field_name in custom_fields:
                 field_value = getattr(form, field_name)
@@ -98,8 +113,8 @@ class HumanWorkRequestEvent(WorkRequestEvent):
         for key in cls.__annotations__:
             if get_origin(getattr(cls, "__annotations__", {}).get(key)) is ClassVar:
                 class_var_value = getattr(cls, key, None)
-                # Check if the ClassVar's value is a class that inherits from HumanWorkEvent
-                if isinstance(class_var_value, type) and issubclass(class_var_value, HumanWorkEvent):
+                # Check if the ClassVar's value is a class that inherits from Form
+                if isinstance(class_var_value, type) and issubclass(class_var_value, Form):
                     expected_types.append(class_var_value)
 
         # This check only runs if the class has defined expected forms via ClassVars.
