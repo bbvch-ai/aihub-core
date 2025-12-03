@@ -6,7 +6,6 @@ import re
 from typing import Any
 
 import httpx
-from aihub_lib.generative_ai.document.tables.markdown_table import create_markdown_table
 from bs4 import BeautifulSoup
 from docling_core.types import DoclingDocument
 from docling_core.types.doc import ImageRefMode, TableItem
@@ -15,6 +14,7 @@ from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
 
+from aihub_lib.generative_ai.document.tables.markdown_table import create_markdown_table
 from aihub_lib.generative_ai.utils.path_utils import create_figures_folder_name
 from aihub_lib.infrastructure.docling.DoclingSettings import DoclingSettings, PipelineType
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn

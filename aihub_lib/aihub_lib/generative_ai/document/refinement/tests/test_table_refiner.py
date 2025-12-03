@@ -1,29 +1,30 @@
-"""Tests for table_refiner module."""
+"""Tests for table refinement module."""
 
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
 
-from aihub_lib.generative_ai.document.refinement.table_refiner import (
+from aihub_lib.generative_ai.document.refinement import (
     HeaderAnalysis,
     TableBoundary,
     TableRefinementStats,
     TableSplitAnalysis,
-    _format_table_with_row_indices,
-    _parse_markdown_table_to_dataframe,
-    _refine_markdown_table_with_stats,
-    _reset_columns_to_data,
     refine_document_tables_with_metadata,
+)
+from aihub_lib.generative_ai.document.refinement.refiner import _refine_single_table
+from aihub_lib.generative_ai.document.tables.markdown_table import (
+    format_for_llm,
+    parse_markdown_table,
 )
 
 
-class TestFormatTableWithRowIndices:
-    """Tests for _format_table_with_row_indices function."""
+class TestFormatForLlm:
+    """Tests for format_for_llm function."""
 
     def test_simple_table(self) -> None:
         """Test formatting a simple table."""
         df = pd.DataFrame([[1, 2], [3, 4]], columns=[0, 1])
-        result = _format_table_with_row_indices(df)
+        result = format_for_llm(df)
 
         assert "[0] 1 | 2" in result
         assert "[1] 3 | 4" in result
@@ -31,7 +32,7 @@ class TestFormatTableWithRowIndices:
     def test_handles_empty_cells(self) -> None:
         """Test that empty cells are represented correctly."""
         df = pd.DataFrame([["A", None], ["", "B"]], columns=[0, 1])
-        result = _format_table_with_row_indices(df)
+        result = format_for_llm(df)
 
         assert "[0] A |" in result
         assert "[1]  | B" in result
@@ -39,31 +40,9 @@ class TestFormatTableWithRowIndices:
     def test_handles_nan_values(self) -> None:
         """Test that NaN values are converted to empty strings."""
         df = pd.DataFrame([["A", float("nan")]], columns=[0, 1])
-        result = _format_table_with_row_indices(df)
+        result = format_for_llm(df)
 
         assert "[0] A |" in result
-
-
-class TestResetColumnsToData:
-    """Tests for _reset_columns_to_data function."""
-
-    def test_integer_columns_unchanged(self) -> None:
-        """Test that DataFrame with integer columns is returned unchanged."""
-        df = pd.DataFrame([[1, 2], [3, 4]], columns=[0, 1])
-        result = _reset_columns_to_data(df)
-
-        assert list(result.columns) == [0, 1]
-        assert len(result) == 2
-
-    def test_string_columns_converted_to_data_row(self) -> None:
-        """Test that string column names are converted to a data row."""
-        df = pd.DataFrame([[1, 2], [3, 4]], columns=["A", "B"])
-        result = _reset_columns_to_data(df)
-
-        assert list(result.columns) == [0, 1]
-        assert len(result) == 3  # Original header becomes first row
-        assert result.iloc[0, 0] == "A"
-        assert result.iloc[0, 1] == "B"
 
 
 class TestTableSplitAnalysisModels:
@@ -95,21 +74,37 @@ class TestHeaderAnalysisModel:
         assert analysis.reasoning == "Two header rows detected"
 
 
-class TestParseMarkdownTableToDataframe:
-    """Tests for _parse_markdown_table_to_dataframe function."""
+class TestParseMarkdownTable:
+    """Tests for parse_markdown_table function."""
 
-    def test_simple_table(self) -> None:
-        """Test parsing a simple markdown table."""
+    def test_simple_table_default(self) -> None:
+        """Test parsing a simple markdown table with default settings (header as column names)."""
         markdown = """| Header1 | Header2 |
 |---------|---------|
 | Cell1   | Cell2   |
 | Cell3   | Cell4   |"""
 
-        df = _parse_markdown_table_to_dataframe(markdown)
+        df = parse_markdown_table(markdown)
+
+        assert df is not None
+        assert df.shape == (2, 2)  # 2 data rows, 2 columns
+        assert df.columns.tolist() == ["Header1", "Header2"]
+        assert df.iloc[0, 0] == "Cell1"
+        assert df.iloc[1, 1] == "Cell4"
+
+    def test_simple_table_include_header_as_data(self) -> None:
+        """Test parsing a markdown table with header included as data."""
+        markdown = """| Header1 | Header2 |
+|---------|---------|
+| Cell1   | Cell2   |
+| Cell3   | Cell4   |"""
+
+        df = parse_markdown_table(markdown, include_header_as_data=True)
 
         assert df is not None
         assert df.shape == (3, 2)  # 3 rows (header + 2 data rows), 2 columns
-        assert list(df.columns) == [0, 1]
+        assert all(isinstance(c, int) for c in df.columns)
+        assert len(df.columns) == 2
         assert df.iloc[0, 0] == "Header1"
         assert df.iloc[0, 1] == "Header2"
         assert df.iloc[1, 0] == "Cell1"
@@ -121,7 +116,7 @@ class TestParseMarkdownTableToDataframe:
 |:-----|:------:|------:|
 | A    | B      | C     |"""
 
-        df = _parse_markdown_table_to_dataframe(markdown)
+        df = parse_markdown_table(markdown, include_header_as_data=True)
 
         assert df is not None
         assert df.shape == (2, 3)
@@ -130,20 +125,20 @@ class TestParseMarkdownTableToDataframe:
 
     def test_empty_table_returns_none(self) -> None:
         """Test that empty content returns None."""
-        df = _parse_markdown_table_to_dataframe("")
+        df = parse_markdown_table("")
         assert df is None
 
     def test_single_line_returns_none(self) -> None:
         """Test that single line (no separator) returns None."""
         markdown = "| Header1 | Header2 |"
-        df = _parse_markdown_table_to_dataframe(markdown)
+        df = parse_markdown_table(markdown)
         assert df is None
 
     def test_no_separator_returns_none(self) -> None:
         """Test that table without separator line returns None."""
         markdown = """| Header1 | Header2 |
 | Cell1   | Cell2   |"""
-        df = _parse_markdown_table_to_dataframe(markdown)
+        df = parse_markdown_table(markdown)
         assert df is None
 
     def test_whitespace_handling(self) -> None:
@@ -152,7 +147,7 @@ class TestParseMarkdownTableToDataframe:
 |---------|---------|
 |   A   |   B   |"""
 
-        df = _parse_markdown_table_to_dataframe(markdown)
+        df = parse_markdown_table(markdown, include_header_as_data=True)
 
         assert df is not None
         assert df.iloc[1, 0] == "A"
@@ -166,34 +161,32 @@ class TestParseMarkdownTableToDataframe:
 | 4 | 5 |
 | 6 | 7 | 8 |"""
 
-        df = _parse_markdown_table_to_dataframe(markdown)
+        df = parse_markdown_table(markdown, include_header_as_data=True)
 
         assert df is not None
         # Header + 2 valid rows (row with 2 cells should be skipped)
         assert df.shape == (3, 3)
 
 
-class TestRefineMarkdownTableWithStats:
-    """Tests for _refine_markdown_table_with_stats with LLM (mocked)."""
+class TestRefineSingleTable:
+    """Tests for _refine_single_table with LLM (mocked)."""
 
     def test_single_table_single_header(self) -> None:
         """Test LLM analysis returning single table with single header."""
         df = pd.DataFrame([["H1", "H2"], ["A", "B"]], columns=[0, 1])
-        mock_llm_config = MagicMock()
+        mock_analyzer = MagicMock()
+        mock_analyzer.detect_splits.return_value = TableSplitAnalysis(
+            tables=[TableBoundary(start_row=0)], reasoning="Single table"
+        )
+        mock_analyzer.detect_headers.return_value = HeaderAnalysis(num_header_rows=1, reasoning="One header row")
 
-        with (
-            patch("aihub_lib.generative_ai.document.refinement.table_refiner._detect_table_splits") as mock_split,
-            patch("aihub_lib.generative_ai.document.refinement.table_refiner._detect_header_rows") as mock_header,
-        ):
-            mock_split.return_value = TableSplitAnalysis(tables=[TableBoundary(start_row=0)], reasoning="Single table")
-            mock_header.return_value = HeaderAnalysis(num_header_rows=1, reasoning="One header row")
+        result, stats = _refine_single_table(df, mock_analyzer)
 
-            result, stats = _refine_markdown_table_with_stats(df, mock_llm_config)
-
-            mock_split.assert_called_once()
-            mock_header.assert_called_once()
-            assert "H1" in result
-            assert "H2" in result
+        mock_analyzer.detect_splits.assert_called_once()
+        mock_analyzer.detect_headers.assert_called_once()
+        assert len(result) == 1
+        assert "H1" in result[0]
+        assert "H2" in result[0]
 
     def test_split_into_multiple_tables(self) -> None:
         """Test LLM analysis splitting into multiple tables."""
@@ -201,23 +194,17 @@ class TestRefineMarkdownTableWithStats:
             [["H1", "H2"], ["A", "B"], ["H3", "H4"], ["C", "D"]],
             columns=[0, 1],
         )
-        mock_llm_config = MagicMock()
+        mock_analyzer = MagicMock()
+        mock_analyzer.detect_splits.return_value = TableSplitAnalysis(
+            tables=[TableBoundary(start_row=0), TableBoundary(start_row=2)],
+            reasoning="Two merged tables",
+        )
+        mock_analyzer.detect_headers.return_value = HeaderAnalysis(num_header_rows=1, reasoning="One header row")
 
-        with (
-            patch("aihub_lib.generative_ai.document.refinement.table_refiner._detect_table_splits") as mock_split,
-            patch("aihub_lib.generative_ai.document.refinement.table_refiner._detect_header_rows") as mock_header,
-        ):
-            mock_split.return_value = TableSplitAnalysis(
-                tables=[TableBoundary(start_row=0), TableBoundary(start_row=2)],
-                reasoning="Two merged tables",
-            )
-            mock_header.return_value = HeaderAnalysis(num_header_rows=1, reasoning="One header row")
+        result, stats = _refine_single_table(df, mock_analyzer)
 
-            result, stats = _refine_markdown_table_with_stats(df, mock_llm_config)
-
-            # Should have two tables separated by double newline
-            assert "\n\n" in result
-            assert mock_header.call_count == 2
+        assert len(result) == 2
+        assert mock_analyzer.detect_headers.call_count == 2
 
     def test_multi_row_headers_detected(self) -> None:
         """Test LLM detecting multi-row headers."""
@@ -225,76 +212,64 @@ class TestRefineMarkdownTableWithStats:
             [["Category", ""], ["Sub1", "Sub2"], ["A", "B"]],
             columns=[0, 1],
         )
-        mock_llm_config = MagicMock()
+        mock_analyzer = MagicMock()
+        mock_analyzer.detect_splits.return_value = TableSplitAnalysis(
+            tables=[TableBoundary(start_row=0)], reasoning="Single table"
+        )
+        mock_analyzer.detect_headers.return_value = HeaderAnalysis(num_header_rows=2, reasoning="Two header rows")
 
-        with (
-            patch("aihub_lib.generative_ai.document.refinement.table_refiner._detect_table_splits") as mock_split,
-            patch("aihub_lib.generative_ai.document.refinement.table_refiner._detect_header_rows") as mock_header,
-        ):
-            mock_split.return_value = TableSplitAnalysis(tables=[TableBoundary(start_row=0)], reasoning="Single table")
-            mock_header.return_value = HeaderAnalysis(num_header_rows=2, reasoning="Two header rows")
+        result, stats = _refine_single_table(df, mock_analyzer)
 
-            result, stats = _refine_markdown_table_with_stats(df, mock_llm_config)
-
-            # Headers should be merged with " - "
-            assert "Category - Sub1" in result or "Sub1" in result
+        # Headers should be merged with " - "
+        assert "Category - Sub1" in result[0] or "Sub1" in result[0]
 
     def test_llm_failure_falls_back_to_single_header(self) -> None:
         """Test that LLM failure falls back to single header row."""
         df = pd.DataFrame([["H1", "H2"], ["A", "B"]], columns=[0, 1])
-        mock_llm_config = MagicMock()
+        mock_analyzer = MagicMock()
+        mock_analyzer.detect_splits.side_effect = Exception("LLM error")
 
-        with patch("aihub_lib.generative_ai.document.refinement.table_refiner._detect_table_splits") as mock_split:
-            mock_split.side_effect = Exception("LLM error")
+        result, stats = _refine_single_table(df, mock_analyzer)
 
-            result, stats = _refine_markdown_table_with_stats(df, mock_llm_config)
-
-            # Should still produce valid markdown with first row as header
-            assert "H1" in result
-            assert "H2" in result
+        # Should still produce valid markdown with first row as header
+        assert len(result) == 1
+        assert "H1" in result[0]
+        assert "H2" in result[0]
 
     def test_returns_stats_with_llm(self) -> None:
         """Test that stats are returned when LLM is used."""
         df = pd.DataFrame([["H1", "H2"], ["A", "B"]], columns=[0, 1])
-        mock_llm_config = MagicMock()
+        mock_analyzer = MagicMock()
+        mock_analyzer.detect_splits.return_value = TableSplitAnalysis(
+            tables=[TableBoundary(start_row=0)], reasoning="Single table"
+        )
+        mock_analyzer.detect_headers.return_value = HeaderAnalysis(num_header_rows=1, reasoning="One header row")
 
-        with (
-            patch("aihub_lib.generative_ai.document.refinement.table_refiner._detect_table_splits") as mock_split,
-            patch("aihub_lib.generative_ai.document.refinement.table_refiner._detect_header_rows") as mock_header,
-        ):
-            mock_split.return_value = TableSplitAnalysis(tables=[TableBoundary(start_row=0)], reasoning="Single table")
-            mock_header.return_value = HeaderAnalysis(num_header_rows=1, reasoning="One header row")
+        content, stats = _refine_single_table(df, mock_analyzer)
 
-            content, stats = _refine_markdown_table_with_stats(df, mock_llm_config)
-
-            assert stats is not None
-            assert stats.original_rows == 2
-            assert stats.was_split is False
-            assert stats.tables_after_split == 1
-            assert stats.header_rows_detected == [1]
+        assert stats is not None
+        assert stats.original_rows == 2
+        assert stats.was_split is False
+        assert stats.tables_after_split == 1
+        assert stats.header_rows_detected == [1]
 
     def test_stats_reflect_split(self) -> None:
         """Test that stats correctly reflect a split table."""
         df = pd.DataFrame([["H1", "H2"], ["A", "B"], ["H3", "H4"], ["C", "D"]], columns=[0, 1])
-        mock_llm_config = MagicMock()
+        mock_analyzer = MagicMock()
+        mock_analyzer.detect_splits.return_value = TableSplitAnalysis(
+            tables=[TableBoundary(start_row=0), TableBoundary(start_row=2)],
+            reasoning="Two tables merged",
+        )
+        mock_analyzer.detect_headers.return_value = HeaderAnalysis(num_header_rows=1, reasoning="One header row")
 
-        with (
-            patch("aihub_lib.generative_ai.document.refinement.table_refiner._detect_table_splits") as mock_split,
-            patch("aihub_lib.generative_ai.document.refinement.table_refiner._detect_header_rows") as mock_header,
-        ):
-            mock_split.return_value = TableSplitAnalysis(
-                tables=[TableBoundary(start_row=0), TableBoundary(start_row=2)],
-                reasoning="Two tables merged",
-            )
-            mock_header.return_value = HeaderAnalysis(num_header_rows=1, reasoning="One header row")
+        content, stats = _refine_single_table(df, mock_analyzer)
 
-            content, stats = _refine_markdown_table_with_stats(df, mock_llm_config)
-
-            assert stats is not None
-            assert stats.was_split is True
-            assert stats.tables_after_split == 2
-            assert len(stats.header_rows_detected) == 2
-            assert stats.split_reasoning == "Two tables merged"
+        assert stats is not None
+        assert stats.was_split is True
+        assert stats.tables_after_split == 2
+        assert len(stats.header_rows_detected) == 2
+        assert stats.split_reasoning == "Two tables merged"
 
 
 class TestRefineDocumentTablesWithMetadataContent:
@@ -319,15 +294,16 @@ Some text after."""
 
         mock_llm_config = MagicMock()
 
-        with patch(
-            "aihub_lib.generative_ai.document.refinement.table_refiner._refine_markdown_table_with_stats"
-        ) as mock_create:
-            mock_create.return_value = ("| A | B |\n|---|---|\n| 1 | 2 |", None)
+        with (
+            patch("aihub_lib.generative_ai.document.refinement.refiner.TableAnalyzer"),
+            patch("aihub_lib.generative_ai.document.refinement.refiner._refine_single_table") as mock_refine,
+        ):
+            mock_refine.return_value = (["| A | B |\n|---|---|\n| 1 | 2 |"], None)
             refine_document_tables_with_metadata(text, mock_llm_config)
 
-            mock_create.assert_called_once()
+            mock_refine.assert_called_once()
             # Check that the dataframe passed has the expected shape
-            call_args = mock_create.call_args
+            call_args = mock_refine.call_args
             df_arg = call_args[0][0]
             assert isinstance(df_arg, pd.DataFrame)
             assert df_arg.shape == (2, 2)  # Header row + 1 data row
@@ -344,13 +320,14 @@ Middle text.
 
         mock_llm_config = MagicMock()
 
-        with patch(
-            "aihub_lib.generative_ai.document.refinement.table_refiner._refine_markdown_table_with_stats"
-        ) as mock_create:
-            mock_create.return_value = ("| X |\n|---|\n| Y |", None)
+        with (
+            patch("aihub_lib.generative_ai.document.refinement.refiner.TableAnalyzer"),
+            patch("aihub_lib.generative_ai.document.refinement.refiner._refine_single_table") as mock_refine,
+        ):
+            mock_refine.return_value = (["| X |\n|---|\n| Y |"], None)
             refine_document_tables_with_metadata(text, mock_llm_config)
 
-            assert mock_create.call_count == 2
+            assert mock_refine.call_count == 2
 
     def test_invalid_table_skipped(self) -> None:
         """Test that invalid tables are skipped without error."""
@@ -358,13 +335,14 @@ Middle text.
 
         mock_llm_config = MagicMock()
 
-        with patch(
-            "aihub_lib.generative_ai.document.refinement.table_refiner._refine_markdown_table_with_stats"
-        ) as mock_create:
+        with (
+            patch("aihub_lib.generative_ai.document.refinement.refiner.TableAnalyzer"),
+            patch("aihub_lib.generative_ai.document.refinement.refiner._refine_single_table") as mock_refine,
+        ):
             result = refine_document_tables_with_metadata(text, mock_llm_config)
 
-            # _refine_markdown_table_with_stats should not be called for invalid tables
-            mock_create.assert_not_called()
+            # _refine_single_table should not be called for invalid tables
+            mock_refine.assert_not_called()
             # Original text is preserved
             assert result.content == text
 
@@ -374,12 +352,13 @@ Middle text.
 
         mock_llm_config = MagicMock()
 
-        with patch(
-            "aihub_lib.generative_ai.document.refinement.table_refiner._refine_markdown_table_with_stats"
-        ) as mock_create:
+        with (
+            patch("aihub_lib.generative_ai.document.refinement.refiner.TableAnalyzer"),
+            patch("aihub_lib.generative_ai.document.refinement.refiner._refine_single_table") as mock_refine,
+        ):
             result = refine_document_tables_with_metadata(text, mock_llm_config)
 
-            mock_create.assert_not_called()
+            mock_refine.assert_not_called()
             assert result.content == text
 
     def test_table_splitting_creates_multiple_wrapped_tables(self) -> None:
@@ -390,12 +369,13 @@ Middle text.
 
         mock_llm_config = MagicMock()
 
-        with patch(
-            "aihub_lib.generative_ai.document.refinement.table_refiner._refine_markdown_table_with_stats"
-        ) as mock_create:
+        with (
+            patch("aihub_lib.generative_ai.document.refinement.refiner.TableAnalyzer"),
+            patch("aihub_lib.generative_ai.document.refinement.refiner._refine_single_table") as mock_refine,
+        ):
             # Simulate LLM splitting the table into two
-            mock_create.return_value = (
-                "| A | B |\n|---|---|\n| 1 | 2 |\n\n| C | D |\n|---|---|\n| 3 | 4 |",
+            mock_refine.return_value = (
+                ["| A | B |\n|---|---|\n| 1 | 2 |", "| C | D |\n|---|---|\n| 3 | 4 |"],
                 None,
             )
             result = refine_document_tables_with_metadata(text, mock_llm_config)
@@ -414,10 +394,11 @@ After table."""
 
         mock_llm_config = MagicMock()
 
-        with patch(
-            "aihub_lib.generative_ai.document.refinement.table_refiner._refine_markdown_table_with_stats"
-        ) as mock_create:
-            mock_create.return_value = ("| A |\n|---|\n| 1 |", None)
+        with (
+            patch("aihub_lib.generative_ai.document.refinement.refiner.TableAnalyzer"),
+            patch("aihub_lib.generative_ai.document.refinement.refiner._refine_single_table") as mock_refine,
+        ):
+            mock_refine.return_value = (["| A |\n|---|\n| 1 |"], None)
             result = refine_document_tables_with_metadata(text, mock_llm_config)
 
             assert "Before table." in result.content
@@ -455,10 +436,11 @@ class TestRefineDocumentTablesWithMetadata:
             split_reasoning="Single table",
         )
 
-        with patch(
-            "aihub_lib.generative_ai.document.refinement.table_refiner._refine_markdown_table_with_stats"
-        ) as mock_create:
-            mock_create.return_value = ("| A | B |\n|---|---|\n| 1 | 2 |", mock_stats)
+        with (
+            patch("aihub_lib.generative_ai.document.refinement.refiner.TableAnalyzer"),
+            patch("aihub_lib.generative_ai.document.refinement.refiner._refine_single_table") as mock_refine,
+        ):
+            mock_refine.return_value = (["| A | B |\n|---|---|\n| 1 | 2 |"], mock_stats)
             result = refine_document_tables_with_metadata(text, mock_llm_config)
 
             assert result.metadata.tables_processed == 1
@@ -482,11 +464,12 @@ class TestRefineDocumentTablesWithMetadata:
             split_reasoning="Found two merged tables",
         )
 
-        with patch(
-            "aihub_lib.generative_ai.document.refinement.table_refiner._refine_markdown_table_with_stats"
-        ) as mock_create:
-            mock_create.return_value = (
-                "| A | B |\n|---|---|\n| 1 | 2 |\n\n| C | D |\n|---|---|\n| 3 | 4 |",
+        with (
+            patch("aihub_lib.generative_ai.document.refinement.refiner.TableAnalyzer"),
+            patch("aihub_lib.generative_ai.document.refinement.refiner._refine_single_table") as mock_refine,
+        ):
+            mock_refine.return_value = (
+                ["| A | B |\n|---|---|\n| 1 | 2 |", "| C | D |\n|---|---|\n| 3 | 4 |"],
                 mock_stats,
             )
             result = refine_document_tables_with_metadata(text, mock_llm_config)
@@ -521,12 +504,13 @@ class TestRefineDocumentTablesWithMetadata:
             split_reasoning="Single table",
         )
 
-        with patch(
-            "aihub_lib.generative_ai.document.refinement.table_refiner._refine_markdown_table_with_stats"
-        ) as mock_create:
-            mock_create.side_effect = [
-                ("| A |\n|---|\n| 1 |\n\n| A2 |\n|---|\n| 2 |", mock_stats_1),
-                ("| B |\n|---|\n| 2 |", mock_stats_2),
+        with (
+            patch("aihub_lib.generative_ai.document.refinement.refiner.TableAnalyzer"),
+            patch("aihub_lib.generative_ai.document.refinement.refiner._refine_single_table") as mock_refine,
+        ):
+            mock_refine.side_effect = [
+                (["| A |\n|---|\n| 1 |", "| A2 |\n|---|\n| 2 |"], mock_stats_1),
+                (["| B |\n|---|\n| 2 |"], mock_stats_2),
             ]
             result = refine_document_tables_with_metadata(text, mock_llm_config)
 
