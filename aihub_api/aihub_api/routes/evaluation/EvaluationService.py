@@ -14,8 +14,8 @@ from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import t
 from aihub_lib.infrastructure.phoenix.PhoenixSettings import PhoenixSettings
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from nats.aio.client import Client as NATS
+from phoenix.client.resources.experiments.types import RanExperiment
 from phoenix.experiments.types import Dataset as PhoenixInternalDataset
-from phoenix.experiments.types import RanExperiment
 from phoenix.server.api.routers.v1.datasets import Dataset as PhoenixDataset
 from phoenix.server.api.routers.v1.datasets import DatasetWithExampleCount
 from phoenix.server.api.routers.v1.experiments import Experiment as PhoenixExperiment
@@ -392,4 +392,5 @@ class EvaluationService:
         )
 
         # After running, fetch the detailed results using our existing method.
-        return await EvaluationService.get_experiment(ran_experiment.id, t)
+        # RanExperiment is a TypedDict, so access via dict syntax
+        return await EvaluationService.get_experiment(ran_experiment["experiment_id"], t)

@@ -1,4 +1,3 @@
-import copy
 import logging
 from datetime import UTC, datetime
 from typing import Any
@@ -10,13 +9,10 @@ from nats.aio.client import Client as NATS
 from phoenix.client import AsyncClient as PhoenixAsyncClient
 from phoenix.client.experiments import async_run_experiment
 from phoenix.client.resources.datasets import Dataset as PhoenixDataset
-from phoenix.client.resources.experiments.evaluators import create_evaluator
 from phoenix.client.resources.experiments.types import RanExperiment
 from phoenix.experiments.evaluators import create_evaluator
-from phoenix.experiments.types import Dataset as PhoenixDataset
 from phoenix.experiments.types import EvaluationResult as PhoenixEvaluationResult
 from phoenix.experiments.types import Example as PhoenixExample
-from phoenix.experiments.types import RanExperiment
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.evaluation.JudgeOutput import JudgeOutput
@@ -140,10 +136,9 @@ class PhoenixExperimentEvaluator:
     ) -> JudgeOutput:
         """
         Calls the judge LLM with a constructed prompt and parses the structured output.
-        Directly parses the LLM's JSON output into our Pydantic `JudgeOutput` model, handling validation and structure.
+        Uses LlamaIndex's structured prediction with tool calls to enforce the JudgeOutput schema.
         """
         llm, _ = self.judge.to_llama_index()
-        prompt_vars["output_schema"] = copy.deepcopy(JudgeOutput.model_json_schema())
         return await llm.astructured_predict(
             output_cls=JudgeOutput, prompt=prompt_template, llm_kwargs=self.llm_judge_kwargs, **prompt_vars
         )
@@ -186,7 +181,7 @@ class PhoenixExperimentEvaluator:
         Phoenix experiment, logging all results.
         """
         try:
-            dataset: PhoenixDataset = self.phoenix_client.get_dataset(id=dataset_id)
+            dataset: PhoenixDataset = await self.phoenix_client.datasets.get_dataset(dataset=dataset_id)
         except Exception as e:
             logger.exception(f"CRITICAL: Failed to load dataset ID '{dataset_id}' from Phoenix: {e}")
             raise ValueError(f"Failed to load dataset ID '{dataset_id}': {e}") from e
