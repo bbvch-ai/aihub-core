@@ -111,7 +111,8 @@ class KnowledgeService:
             filename = key.split("/")[-1]
             file_namespace = key.split("/")[0]
 
-            document_uri = f"s3://{bucket_name}/{key}"
+            source_path = f"{bucket_name}/{key}"
+            document_uri = f"s3://{source_path}"
 
             all_files.append(
                 DocumentDTO(
@@ -122,6 +123,7 @@ class KnowledgeService:
                     created_at=file_info.get("last_modified", ""),
                     inserted_at="",
                     source=document_uri,
+                    source_path=source_path,
                     is_ingested=False,
                 )
             )

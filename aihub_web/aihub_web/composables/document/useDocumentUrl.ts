@@ -1,10 +1,8 @@
 import { getFileUrl } from '@core/sdk/client'
 
 export const useDocumentUrl = () => {
-  const getDocumentSourceUrl = async (source: string): Promise<string> => {
-    // Remove s3:// prefix if present
-    const cleanSource = source.replace(/^s3:\/\//, '')
-    const parts = cleanSource.split('/')
+  const getDocumentSourceUrl = async (sourcePath: string): Promise<string> => {
+    const parts = sourcePath.split('/')
     const [container, ...pathParts] = parts
     const filePath = pathParts.join('/')
 
