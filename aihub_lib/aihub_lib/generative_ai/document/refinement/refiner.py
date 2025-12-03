@@ -63,7 +63,7 @@ def refine_document_tables_with_metadata(markdown_text: str, llm_config: "LLMCon
         df = parse_markdown_table(table_content, include_header_as_data=True)
 
         if df is None or df.empty:
-            logger.debug("Could not parse table, skipping")
+            logger.debug(f"Could not parse table, skipping. Content preview: {table_content[:200]!r}")
             continue
 
         refined_tables, stats = _refine_single_table(df, analyzer)

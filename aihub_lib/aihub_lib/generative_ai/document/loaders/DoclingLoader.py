@@ -91,7 +91,7 @@ class DoclingLoader(BaseReader):
 
         metadata = {NUMBER_OF_PAGES: len(answer["document"]["json_content"]["pages"])}
 
-        soup = BeautifulSoup(markdown_content, "html5lib")
+        soup = BeautifulSoup(markdown_content, "html.parser")
         figure_tags = soup.find_all("figure")
 
         figures_dir = create_figures_folder_name(file)
