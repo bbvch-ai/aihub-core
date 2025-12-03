@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.254.13] - 2025-12-03 - Robust Evaluation and Phoenix Client Modernization
+
+### Refactor
+
+- 🔄 **Upgraded Phoenix Client Integration**: Modernized the backend to utilize the new asynchronous Phoenix client,
+  streamlining experiment and dataset interactions with updated imports, client initialization, and method calls.
+- 🦾 **Optimized LLM Structured Output**: Improved the judge LLM's ability to generate structured evaluations by
+  transitioning from direct JSON output instructions to leveraging LlamaIndex's advanced tool-calling capabilities,
+  enhancing reliability.
+
+### Changed
+
+- ⚡️ **Stricter Evaluation Summary Generation**: Evaluation summaries are now only created when valid scores are
+  available, ensuring data integrity and preventing empty summary entries in the evaluation results.
+- 📄 **Updated Evaluation Summary Data Model**: The `avg_score` field in evaluation summaries is now explicitly a
+  required float, aligning with the refined backend logic that guarantees a valid score when a summary exists.
+
+### Fixed
+
+- 🐛 **Improved UI Robustness for Missing Scores**: Frontend evaluation result displays now gracefully handle cases where
+  scores might be absent for certain evaluators, preventing UI errors and defaulting to zero when data is unavailable.
+- 🛠️ **Corrected Phoenix Experiment ID Access**: Addressed an issue where `RanExperiment` data was accessed incorrectly,
+  ensuring reliable retrieval of experiment IDs after an experiment run.
+
+---
+
 ## [v0.254.12] - 2025-12-03 - Enhanced Document Processing and Model Updates
 
 ### Added
