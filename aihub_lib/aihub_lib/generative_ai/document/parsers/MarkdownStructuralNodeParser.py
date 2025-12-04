@@ -1,24 +1,22 @@
 import html
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from io import StringIO
 from typing import Annotated, Any
 
 import bs4
-import pandas as pd
 from bs4.element import PageElement
-from llama_index.core import PromptTemplate
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.node_parser.interface import NodeParser
 from llama_index.core.node_parser.node_utils import build_nodes_from_splits
 from llama_index.core.schema import BaseNode, MetadataMode, NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.utils import get_tqdm_iterable
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import ConfigDict, Field, model_validator
 
 from aihub_lib.generative_ai.document.extractors import MetadataExtractor
 from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import PAGE_BREAK
 from aihub_lib.generative_ai.document.parsers.Split import Split
+from aihub_lib.generative_ai.document.tables.markdown_table import parse_markdown_table, split_dataframe_into_chunks
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.rag.vectors.node_metadata import (
@@ -34,17 +32,6 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     SECTION_START_LINE,
     NodeContentType,
 )
-
-TOKEN_COUNT_FIELD_NAME = "__token_count__"
-
-
-class TableHeaderAnalysis(BaseModel):
-    """LLM response for table header structure analysis."""
-
-    num_header_rows: Annotated[
-        int, Field(description="Number of header rows in the table (0 if no header, 1-3 typical range)")
-    ]
-    reasoning: Annotated[str, Field(description="Brief explanation for the determined number of header rows")]
 
 
 @dataclass
@@ -180,30 +167,6 @@ class NodeCreatorFromSplits:
         self.header_references = {}
         self.llm_config = llm_config
 
-    def _determine_header_rows_with_llm(self, table_html: str) -> int:
-        """
-        Use LLM to determine the number of header rows in an HTML table.
-        """
-
-        prompt_text = """Analyze the following HTML table and determine how many rows constitute the table header.
-
-Table headers typically contain column names, categories, or descriptive labels. Common patterns:
-- Single header row: Most common, one row of column names
-- Multi-level headers: multiple rows for hierarchical categories, grouped columns, or complex header structure
-- No header: Data-only tables (rare)
-
-HTML Table:
-{table_html}
-
-Provide your analysis of how many header rows this table has."""
-
-        prompt = PromptTemplate(prompt_text)
-
-        llm, _ = self.llm_config.to_llama_index()
-        result = llm.structured_predict(TableHeaderAnalysis, prompt, table_html=table_html)
-        analysis = TableHeaderAnalysis.model_validate(result)
-        return max(0, min(4, analysis.num_header_rows))
-
     def _count_tokens(self, text: str) -> int:
         """
         Count tokens in text using the configured LLM's tokenizer, or estimate based on characters.
@@ -215,89 +178,52 @@ Provide your analysis of how many header rows this table has."""
         token_list = self.llm_config.token_counter(text)
         return len(token_list)
 
-    def _split_table_with_dataframe(self, table_html: str, num_header_rows: int) -> list[TextChunk]:
+    def _fallback_table_chunk(self, fallback_text: str) -> list[TextChunk]:
         """
-        Split an HTML table using pandas DataFrame, preserving multi-level headers.
+        Create a fallback TextChunk from raw text content, or empty list if text is blank.
         """
-        dfs = pd.read_html(StringIO(table_html))
-        if not dfs or dfs[0].empty:
-            return [TextChunk(table_html, NODE_CONTENT_TYPE_TABLE)]
-
-        df = dfs[0]
-
-        if num_header_rows > 1 and num_header_rows <= len(df):
-            header_rows = [df.iloc[i].tolist() for i in range(num_header_rows)]
-            df.columns = pd.MultiIndex.from_arrays(header_rows)
-            df = df.iloc[num_header_rows:]
-            df.reset_index(drop=True, inplace=True)
-
-        header_df = df.head(0)
-        header_markdown = header_df.to_markdown(index=False)
-        header_token_count = self._count_tokens(header_markdown)
-
-        # maximum reranking context is 4096, therefore half is a good maximum chunk size, to fit query into reranking
-        available_tokens = min(2048, self.sentence_splitter.chunk_size * 2) - header_token_count
-
-        def count_row_tokens(row: pd.Series) -> int:
-            row_text = " | ".join(str(val) for val in row.values)
-            row_with_pipes = f"| {row_text} |"
-            return self._count_tokens(row_with_pipes)
-
-        df[TOKEN_COUNT_FIELD_NAME] = df.apply(count_row_tokens, axis=1)
-
-        chunks: list[TextChunk] = []
-        chunk_start = 0
-
-        while chunk_start < len(df):
-            cumsum = df[TOKEN_COUNT_FIELD_NAME].iloc[chunk_start:].cumsum()
-            valid_rows = cumsum[cumsum <= available_tokens]
-
-            if len(valid_rows) == 0:
-                chunk_end = chunk_start + 1
-            else:
-                chunk_end = chunk_start + len(valid_rows)
-
-            chunk_df = df.iloc[chunk_start:chunk_end].drop(columns=[TOKEN_COUNT_FIELD_NAME])
-            markdown_table = chunk_df.to_markdown(index=False)
-            chunks.append(TextChunk(markdown_table, NODE_CONTENT_TYPE_TABLE))
-
-            chunk_start = chunk_end
-
-        return chunks
-
-    def _split_table(self, table_content: str) -> list[TextChunk]:
-        """
-        Split a large table into smaller chunks, preserving headers.
-        """
-        if not self.llm_config:
-            return self._split_table_with_dataframe(table_content, 1)
-
-        num_header_rows = self._determine_header_rows_with_llm(table_content)
-        return self._split_table_with_dataframe(table_content, num_header_rows)
+        if fallback_text.strip():
+            return [TextChunk(fallback_text, NODE_CONTENT_TYPE_TABLE)]
+        return []
 
     def _chunk_table(self, child: PageElement, text_chunks: list[TextChunk]) -> list[TextChunk]:
         """
         Detects if a table needs to be chunked and splits it into separate chunks.
+
+        Tables are expected to be markdown format with headers already correctly set
+        by DoclingLoader. This method only handles chunking for large tables.
+
+        Uses shared table utilities from aihub_lib.generative_ai.document.tables.
         """
-        table_html = str(child)
+        markdown_table = child.text.strip()
 
-        dfs = pd.read_html(StringIO(table_html))
-        if dfs and not dfs[0].empty:
-            df = dfs[0]
-            df.columns = df.iloc[0]
-            df = df[1:].reset_index(drop=True)
-            markdown_table = df.to_markdown(index=False)
+        if not markdown_table:
+            return text_chunks
 
-            token_count = self._count_tokens(markdown_table)
+        token_count = self._count_tokens(markdown_table)
 
-            if token_count <= self.sentence_splitter.chunk_size:
-                text_chunks.append(TextChunk(markdown_table, NODE_CONTENT_TYPE_TABLE))
-            else:
-                text_chunks.extend(self._split_table(table_html))
+        if token_count <= self.sentence_splitter.chunk_size:
+            text_chunks.append(TextChunk(markdown_table, NODE_CONTENT_TYPE_TABLE))
         else:
-            text_chunks.append(TextChunk(child.text, NODE_CONTENT_TYPE_TABLE))
+            text_chunks.extend(self._split_markdown_table(markdown_table))
 
         return text_chunks
+
+    def _split_markdown_table(self, markdown_table: str) -> list[TextChunk]:
+        """
+        Split a large markdown table into smaller chunks, preserving headers.
+
+        Uses shared table utilities from aihub_lib.generative_ai.document.tables.
+        """
+        df = parse_markdown_table(markdown_table)
+        if df is None:
+            return self._fallback_table_chunk(markdown_table)
+
+        # Maximum reranking context is 4096, therefore half is a good maximum chunk size
+        max_tokens = min(2048, self.sentence_splitter.chunk_size * 2)
+        chunks = split_dataframe_into_chunks(df, max_tokens, self._count_tokens)
+
+        return [TextChunk(chunk, NODE_CONTENT_TYPE_TABLE) for chunk in chunks]
 
     def create_nodes_from_splits(
         self,

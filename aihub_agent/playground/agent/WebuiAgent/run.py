@@ -7,7 +7,7 @@ import asyncio
 import os
 
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.testing.logging.logger import enable_logging
+from aihub_lib.infrastructure.logging.logger import enable_logging
 
 from aihub_agent.agents.WebuiAgent.WebuiAgent import WebuiAgent
 from aihub_agent.agents.WebuiAgent.WebuiAgentConfig import WebuiAgentConfig, WebuiFeatures

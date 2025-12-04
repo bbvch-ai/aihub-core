@@ -16,6 +16,7 @@ def data_version_by_partition_for_data_lake_files_no_op(
     asset_key: AssetKey,
     partition: DynamicPartitionsDefinition,
     data_lake_files: list[DataLakeFile],
+    max_partitions: int,
 ) -> DataVersionsByPartition:
     """Generates a dynamic partition key for each file in the data lake, reports the data lake materialization
     and returns a DataVersion for each partition key.
@@ -24,6 +25,7 @@ def data_version_by_partition_for_data_lake_files_no_op(
         context,
         partition.name,
         [data_lake_file.uri for data_lake_file in data_lake_files],
+        max_partitions=max_partitions,
     )
     context.log.info(f"Found {len(data_lake_files)} files in the data lake")
     context.log.info("Materializing external data lake asset")

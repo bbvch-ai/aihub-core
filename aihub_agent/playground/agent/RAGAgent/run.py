@@ -1,20 +1,16 @@
-# ruff: noqa: E402
-from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
-
-AihubInstrumentor().instrument()
-
 import asyncio
 
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
+from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
-from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig, LLMParameter
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.generative_ai.resources.models.llm.RerankingModelConfig import RerankingModelConfig
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
-from aihub_lib.testing.logging.logger import enable_logging
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
@@ -24,7 +20,7 @@ from aihub_agent.agents.RagAgent.configs.RetrieveSummariesConfig import Retrieve
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
 from aihub_agent.runners.AgentRunner import AgentRunner
 
-enable_logging(level=30)
+enable_logging()
 
 
 async def main():
@@ -34,15 +30,14 @@ async def main():
         default_agent_config=RAGAgentConfig(
             agent_class=RAGAgent.__name__,
             agent_id="rag_agent",
-            name=LocaleString(en="RAG Agent", de="RAG Agent DE", fr="RAG Agent FR", it="RAG Agent IT"),
+            name=LocaleString(en="RAG Agent", de="RAG Agent", fr="Agent RAG", it="Agente RAG"),
             description=LocaleString(
                 en="This is the default RAG Agent",
                 de="Dies ist der Standard RAG Agent",
                 fr="Ceci est l'agent RAG par défaut",
                 it="Questo è l'agente RAG predefinito",
             ),
-            # when using nano temp needs to be 1.0 and nothing else
-            llm=LLMConfig(model_name="text-generation/nano", default_parameter=LLMParameter(temperature=1.0)),
+            llm=LLMConfig(model_name="text-generation/mini"),
             check_context_sufficiency=False,
             number_of_input_tokens=16384,
             system_prompt=LocaleString(
@@ -140,8 +135,8 @@ async def main():
             ),
             retrieve_step_config=RetrieveStepConfig(
                 embed_model=EmbeddingModelConfig(model_name="embedding/large"),
-                index_namespaces=["simple"],
-                retrieve_k=20,
+                index_namespaces=["defaultnamespace"],
+                retrieve_k=10,
                 query_mode=VectorStoreQueryMode.HYBRID,
                 node_types=["content", "summary"],
                 vector_store=MilvusVectorStoreConfig(
@@ -151,7 +146,7 @@ async def main():
                 ),
                 retrieve_prev_next=RetrievePrevNextConfig(
                     num_nodes=5,
-                    mode="both",
+                    mode=ModeOptions.BOTH,
                 ),
                 retrieve_summaries=RetrieveSummariesConfig(
                     max_parent_levels=2,

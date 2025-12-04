@@ -50,12 +50,15 @@ model_list:
 
   - model_name: text-generation/ocr
     litellm_params:
-      model: azure/gpt-4o-mini
-      api_base: os.environ/AZURE_OPENAI_BASE_URL
-      api_key: os.environ/AZURE_OPENAI_KEY
-      api_version: "2025-01-01-preview"
+      model: litellm_proxy/granite-docling
+      api_base: https://docling.ai-agents.ch
+      api_key: os.environ/DOCLING_API_KEY
     model_info:
       mode: chat
+      max_input_tokens: 8192
+      max_output_tokens: 8192
+      supports_function_calling: false
+      supports_vision: true
 
   # ===================================================================
   # Embedding Models
@@ -75,7 +78,7 @@ model_list:
       model: azure/text-embedding-3-large
       api_base: os.environ/AZURE_OPENAI_BASE_URL
       api_key: os.environ/AZURE_OPENAI_KEY
-      api_version: "2024-02-01"
+      api_version: "2025-01-01-preview"
     model_info:
       mode: embedding
 

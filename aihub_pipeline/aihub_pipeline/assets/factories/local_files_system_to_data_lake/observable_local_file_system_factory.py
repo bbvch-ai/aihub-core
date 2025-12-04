@@ -16,6 +16,7 @@ from aihub_pipeline.util.key_utils import group_name_from_asset_key
 def observable_local_file_system_factory(
     key: AssetKey,
     partitions: DynamicPartitionsDefinition,
+    max_partitions: int,
 ) -> observable_source_asset:
     """
     Factory to create an observable source asset for local filesystem monitoring.
@@ -42,6 +43,7 @@ def observable_local_file_system_factory(
             asset_key=key,
             partition=partitions,
             local_files=local_files,
+            max_partitions=max_partitions,
         )
 
     return observable_local_file_system

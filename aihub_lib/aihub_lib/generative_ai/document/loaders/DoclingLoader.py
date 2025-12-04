@@ -14,6 +14,7 @@ from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
 
+from aihub_lib.generative_ai.document.tables.markdown_table import create_markdown_table, wrap_tables_with_tags
 from aihub_lib.generative_ai.utils.path_utils import create_figures_folder_name
 from aihub_lib.infrastructure.docling.DoclingSettings import DoclingSettings, PipelineType
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
@@ -77,19 +78,20 @@ class DoclingLoader(BaseReader):
         extra_info: dict | None = None,
     ) -> list[Document]:
         """Process the Docling API response into Document objects."""
-        doc = DoclingDocument(**answer["document"]["json_content"])
+        json_content = answer["document"]["json_content"]
+        _fix_null_meta_fields(json_content)
+        doc = DoclingDocument(**json_content)
         markdown_content = doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
 
         if len(doc.pictures) > 0:
             img_strs = [picture.export_to_markdown(doc) for picture in doc.pictures]
-            markdown_text = inject_figure_tags(markdown_text=markdown_content, img_strs=img_strs)
-            markdown_content = convert_tables_to_html(markdown_text=markdown_text, tables=doc.tables)
-        else:
-            markdown_content = convert_tables_to_html(markdown_text=markdown_content, tables=doc.tables)
+            markdown_content = inject_figure_tags(markdown_text=markdown_content, img_strs=img_strs)
+
+        markdown_content = convert_tables_to_markdown(markdown_text=markdown_content, tables=doc.tables)
 
         metadata = {NUMBER_OF_PAGES: len(answer["document"]["json_content"]["pages"])}
 
-        soup = BeautifulSoup(markdown_content, "html5lib")
+        soup = BeautifulSoup(markdown_content, "html.parser")
         figure_tags = soup.find_all("figure")
 
         figures_dir = create_figures_folder_name(file)
@@ -259,11 +261,41 @@ def inject_figure_tags(markdown_text: str, img_strs: list[str]):
     return markdown_text
 
 
-def convert_tables_to_html(markdown_text: str, tables: list[TableItem]):
-    """Replace Markdown tables with HTML tables."""
+def convert_tables_to_markdown(markdown_text: str, tables: list[TableItem]) -> str:
+    """
+    Replace Docling markdown tables with properly formatted markdown tables wrapped in <table> tags.
+
+    Uses shared table utilities from aihub_lib.generative_ai.document.tables to ensure
+    consistent table handling between document creation and node parsing.
+
+    Tables are wrapped in <table> tags so MarkdownStructuralNodeParser can identify them.
+    """
     pattern = r"(\|[^\n]+\|\r?\n\|[:\-| ]+\|\r?(?:\n\|[^\n]+\|\r?)*)"
     md_tables = re.findall(pattern, markdown_text)
     for md_table, table in zip(md_tables, tables):
-        html_table = table.export_to_dataframe().to_html(index=False)
-        markdown_text = markdown_text.replace(md_table, html_table, 1)
+        df = table.export_to_dataframe()
+        formatted_tables = create_markdown_table(df)
+
+        # create_markdown_table may return multiple tables separated by \n\n if merged tables were detected
+        individual_tables = formatted_tables.split("\n\n")
+        wrapped_tables = wrap_tables_with_tags(individual_tables)
+
+        markdown_text = markdown_text.replace(md_table, wrapped_tables, 1)
     return markdown_text
+
+
+def _fix_null_meta_fields(data: dict) -> None:
+    """Fix null meta fields in Docling JSON content.
+
+    Works around a bug in docling-core's _migrate_annotations_to_meta validator
+    which uses setdefault() to initialize meta, but setdefault() doesn't replace
+    explicit null values. This causes AttributeError when meta is null and the
+    validator tries to call meta.setdefault().
+    """
+    if data.get("meta") is None:
+        data["meta"] = {}
+
+    for key in ("pictures", "tables"):
+        for item in data.get(key, []):
+            if item.get("meta") is None:
+                item["meta"] = {}

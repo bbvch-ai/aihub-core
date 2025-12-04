@@ -16,6 +16,7 @@ def data_version_by_partition_for_local_files(
     asset_key: AssetKey,
     partition: DynamicPartitionsDefinition,
     local_files: list[MinimalSourceFile],
+    max_partitions: int,
 ) -> DataVersionsByPartition:
     """
     Generates a dynamic partition key for each file in the local filesystem,
@@ -29,6 +30,7 @@ def data_version_by_partition_for_local_files(
         context,
         partition.name,
         partition_keys,
+        max_partitions,
     )
 
     context.log.info(f"Found {len(local_files)} files in the local filesystem")

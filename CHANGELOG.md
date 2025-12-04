@@ -5,6 +5,69 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.254.15] - 2025-12-04 - Deeper OpenWebUI Integration, Smarter Document Processing, and Refined Model Management
+
+### Added
+
+- ✨ **Enhanced OpenWebUI Interactivity**: Introduced a suite of new OpenWebUI functions, enabling native streaming for
+  AI-Hub agent responses, interactive displays for event traces and document sources, and direct OpenAI-compatible
+  access to AI-Hub models directly within OpenWebUI.
+- 🚀 **LLM-Powered Document Table Refinement**: Implemented a new pipeline resource and operation for intelligent table
+  processing during document ingestion, which uses LLMs to automatically detect and split merged tables and identify
+  complex multi-row headers, significantly improving data extraction accuracy.
+- 📦 **Dedicated Production Configuration Template**: A new `.env.prod` template now provides a clear and comprehensive
+  guide for configuring production deployments, enhancing setup reliability and security.
+- ⚙️ **Streamlined Development Run Configurations**: Added new run configurations for simplified local web development
+  and one-click execution of the default RAG pipeline.
+- 🗃️ **Automatic Default Knowledge Base Bucket**: The S3 storage service now automatically provisions a
+  `defaultknowledge` bucket, simplifying initial setup for RAG-enabled applications.
+
+### Changed
+
+- ⬆️ **Upgraded Core AI Models**: Updated LiteLLM configurations to integrate the latest Azure OpenAI models for chat,
+  vision, and audio (e.g., GPT-4o mini, text-embedding-3-large) and Cohere for reranking, boosting overall model
+  performance and broadening AI capabilities.
+- 📈 **Optimized Agent Online Status Reporting**: The AI-Hub API now determines agent online status based on
+  `last_discovered` timestamps stored in the database, reducing overhead and improving responsiveness compared to
+  real-time NATS discovery for every request.
+- 🔑 **Improved S3 Public File Access**: Enhanced S3 file access services to ensure presigned URLs for uploaded documents
+  are consistently generated with public endpoints and `s3v4` signatures, facilitating reliable browser access.
+- 📄 **Clarified VLM Prompting Guidelines**: Updated Vision Language Model (VLM) prompt instructions across all supported
+  languages to strictly guide models to describe only observable visual content, preventing speculative responses based
+  on text context.
+- 🗄️ **Standardized MongoDB UUID Handling**: All MongoDB connections are now explicitly configured with
+  `uuidRepresentation="standard"`, ensuring consistent and predictable UUID behavior across the platform.
+- 🐳 **Improved Docker Compose Build Process**: The Docker Compose build run configuration now includes the `--build`
+  flag by default, ensuring that service images are rebuilt when upstream changes occur.
+- ⏱️ **Increased LiteLLM Startup Robustness**: Extended the health check `start_period` for the LiteLLM service to 120
+  seconds, improving stability during initial deployment and preventing premature health check failures.
+- 🛠️ **Refined RAG Agent and Pipeline Defaults**: Adjusted default RAG agent and pipeline configurations, including
+  upgrading to `embedding/large` and adding `max_partitions` to improve data ingestion control and vector retrieval
+  efficiency.
+- 🖥️ **OpenWebUI Feature Cache Management**: Disabled the base model cache in OpenWebUI to ensure that dynamic pipeline
+  models and agent configurations are always fetched fresh.
+- 🐛 **Docling Document Loader Table Output**: Modified the Docling document loader to output tables in a standardized
+  Markdown format instead of raw HTML, improving compatibility with subsequent document parsing steps.
+
+### Refactor
+
+- 🧹 **Centralized Logging Infrastructure**: The core logging system was refactored and moved to
+  `aihub_lib.infrastructure.logging`, promoting a more modular and reusable architectural design.
+- ⚙️ **Consolidated Internal Service Endpoints**: Internal Docker network endpoints for various services are now
+  hardcoded directly within Docker Compose templates, simplifying environment variable management and improving
+  deployment consistency.
+- 🗑️ **Modernized OpenWebUI Integration Module**: The `aihub_integration` module has been removed, as its
+  functionalities are now provided through the new, more flexible OpenWebUI function integration.
+
+### Fixed
+
+- 🐛 **Docling Metadata Handling**: Resolved an issue in the Docling document loader where null meta fields in JSON
+  content could cause processing errors, enhancing document ingestion reliability.
+- 🐞 **WebSocket Endpoint Correction**: Fixed an incorrect WebSocket endpoint path in the API service configuration,
+  ensuring proper real-time event streaming for clients.
+
+---
+
 ## [v0.254.14] - 2025-12-03 - LLM Input Processing and Multimodal Enhancements
 
 ### Added

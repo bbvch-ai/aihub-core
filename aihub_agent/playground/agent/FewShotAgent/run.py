@@ -8,7 +8,7 @@ import asyncio
 from aihub_lib.generative_ai.prompting.few_shot.FewShotExample import FewShotExample
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.testing.logging.logger import enable_logging
+from aihub_lib.infrastructure.logging.logger import enable_logging
 
 from aihub_agent.agents.FewShotAgent import FewShotAgent
 from aihub_agent.agents.FewShotAgent.FewShowAgentConfig import FewShotAgentConfig

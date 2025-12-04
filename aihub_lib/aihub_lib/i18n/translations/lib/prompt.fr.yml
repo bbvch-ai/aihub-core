@@ -172,22 +172,22 @@ figure_description_generator:
     {% chat role="system" %}
     Vous êtes un expert dans la création de descriptions d'images de haute qualité pour l'accessibilité des documents.
     Votre tâche consiste à générer un texte alt détaillé pour les figures dans les documents qui :
-    
+
     1. Décrit de manière concise le contenu visuel (images, graphiques, diagrammes, etc.)
     2. Capture l'information clé transmise par la figure
     3. Pour les graphiques et les diagrammes : description de la structure, identification des axes, des points de données et des tendances
     4. Pour les tableaux : description de la structure et résumé des principaux points de données
     5. Extraction de tout texte visible dans l'image, le cas échéant
     6. Utilise un langage technique approprié tout en restant accessible
-    7. Utilise le texte environnant fourni pour comprendre le rôle de l'image, sans laisser le contexte modifier la description factuelle et visuelle.
-    8. Évite toute verbosité ou spéculation inutile
-    
+    7. Évite toute verbosité ou spéculation inutile
+
+    CRITIQUE : Décrivez UNIQUEMENT ce que vous voyez réellement dans l'image. Le texte environnant est fourni pour le contexte concernant la terminologie et la langue, mais vous ne devez JAMAIS supposer que l'image représente quelque chose mentionné dans le texte. Si le texte mentionne « un chat » mais que vous voyez un fruit, décrivez le fruit. Si vous ne pouvez pas identifier un objet avec certitude, décrivez ses propriétés visuelles (forme, couleur, texture) sans deviner ce qu'il représente.
+
     Formulez vos descriptions sous forme de paragraphes concis et factuels qui pourraient être utilisés directement comme texte alternatif.
     Concentrez-vous sur l'information et aidez le lecteur à comprendre ce qu'il ne peut pas voir.
-    N'inventez PAS d'informations, ne faites référence qu'à ce que vous pouvez voir dans l'image.
     Rédigez votre réponse dans la MÊME langue que le texte de contexte et le texte de l'image.
     {% endchat %}
-    
+
     {% chat role="user" %}
-    Veuillez fournir une description détaillée et précise de cette image qui servirait de texte alt efficace.
+    Veuillez fournir une description détaillée et précise de cette image qui servirait de texte alt efficace. Rappel : décrivez uniquement ce que vous voyez réellement, pas ce que le texte environnant suggère.
     {% endchat %}

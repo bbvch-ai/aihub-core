@@ -35,13 +35,13 @@ image_tags:
   docling: docling-serve-cpu:v1.8.0
   jupyter: minimal-notebook:notebook-7.0.6
   otel_collector: otel/opentelemetry-collector-contrib:latest
-  traefik: traefik:v3.4.4
+  traefik: traefik:v3.6.2
   postgres_ferretdb: postgres-documentdb:17.0.106.0-ferretdb-2.5.0
   docling_model_permission: alpine  # Init container
   presidio_analyzer: presidio-analyzer:2.2.359
   presidio_anonymizer: presidio-anonymizer:2.2.359
   oauth2proxy: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
-  open_webui: open-webui:v0.6.36
+  open_webui: open-webui:v0.6.41
   playwright: playwright:v1.54.1-jammy
   vllm: vllm-openai:v0.11.0
   llama_cpp_gpu: llama.cpp:server-cuda-b7003

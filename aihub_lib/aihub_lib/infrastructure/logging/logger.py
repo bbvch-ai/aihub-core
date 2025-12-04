@@ -2,14 +2,15 @@ import logging
 
 import colorlog
 
-from aihub_lib.testing.logging.LogSettings import LogSettings
+from aihub_lib.infrastructure.logging.LogSettings import LogSettings
 
 
 def enable_logging(level: int | None = None) -> logging.Logger:
     """
-    The log level will ALWAYS be set to the Level specified in the environment variables, if set.
-    """
+    Configure logging with colored output.
 
+    The log level will be set from the LOG_LEVEL environment variable if not explicitly provided.
+    """
     level = level if level is not None else LogSettings().level_number
 
     lib_loggers = [

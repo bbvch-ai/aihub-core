@@ -108,4 +108,5 @@ class DocumentParserResource(ConfigurableResource):
         reader_cls = extension_to_reader.get(filetype)
         if reader_cls is None:
             raise ValueError(f"Unsupported file extension: {filetype}")
+
         return reader_cls()
