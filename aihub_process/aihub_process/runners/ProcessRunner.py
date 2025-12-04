@@ -2,16 +2,21 @@ import asyncio
 import copy
 import logging
 
+from mongoengine import connect
+from nats.aio.client import Client as NATS
+from nats.js import JetStreamContext
+from redis.asyncio import ConnectionPool, Redis
+
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.nats.events import ProcessStartEvent
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
-from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
-from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
 from aihub_lib.nats.events.discovery.process.ProcessClassDiscoveryResponseEvent import (
     ProcessClassDiscoveryResponseEvent,
 )
 from aihub_lib.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs
+from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
+from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
 from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
@@ -22,11 +27,6 @@ from aihub_lib.nats.topic_managers.process.ProcessClassTopicManager import Proce
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
 from aihub_lib.nats.topics.discovery.process.ProcessClassDiscoveryTopic import ProcessClassDiscoveryTopic
 from aihub_lib.processes.ProcessConfig import ProcessConfig
-from mongoengine import connect
-from nats.aio.client import Client as NATS
-from nats.js import JetStreamContext
-from redis.asyncio import ConnectionPool, Redis
-
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 from aihub_process.delegators.agent.AgentDelegator import AgentDelegator
 from aihub_process.delegators.process.ProcessDelegator import ProcessDelegator
@@ -104,7 +104,7 @@ class ProcessRunner:
                 is_process_start=issubclass(human_work_event, ProcessStartEvent),
                 event_specs=EventSpecs(
                     event_name=human_work_event.event_name_from_class(),
-                    event_schema=copy.deepcopy(human_work_event.to_form_submission_model().model_json_schema()),
+                    event_schema=copy.deepcopy(human_in.form.to_form_submission_model().model_json_schema()),
                     event_parents=human_work_event.parent_event_names_from_class(),
                 ),
                 form=([] if not human_in.start_form else human_in.start_form.to_formkit_form()),

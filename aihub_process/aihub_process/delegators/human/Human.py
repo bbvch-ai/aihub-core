@@ -1,8 +1,8 @@
 from typing import Annotated, Literal
 
-from aihub_lib.nats.events.form.Form import Form
 from pydantic import Field, model_validator
 
+from aihub_lib.nats.events.form.Form import Form
 from aihub_process.delegators.AbstractProcessEntity import BaseProcessEntity
 
 
@@ -32,6 +32,7 @@ class Human(BaseProcessEntity):
                 "use this form instance to generate user form in frontend"
             ),
         ] = None
+        form: Annotated[Form, Field(description="Form definition")]
 
     class Out(BaseProcessEntity.Out):
         user_ids: Annotated[list[str], Field(description="The list of user IDs that can submit work.")] = []
