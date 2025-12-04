@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.254.14] - 2025-12-03 - LLM Input Processing and Multimodal Enhancements
+
+### Added
+
+- ✨ **Enhanced `UserMessageEvent`**: Introduced the `last_user_message` property to `UserMessageEvent`, providing direct
+  access to the complete last user message, including all multimodal blocks (like images), for richer LLM interactions.
+
+### Changed
+
+- 🔄 **Improved LLM Message Handling in RAG Agent**: The RAG Agent now explicitly merges consecutive chat messages
+  (including multimodal content blocks) with the same role right before sending them to the LLM. This ensures better
+  compatibility with various LLM providers (e.g., LiteLLM) and more robust multimodal support.
+- 🦾 **Refined Multimodal Message Merging**: The internal `merge_consecutive_messages` utility has been updated to
+  correctly handle and combine multimodal `ChatMessage` blocks, ensuring proper formatting when multiple parts of a
+  message are from the same role.
+- 🖼️ **Simplified Image URL Processing**: The Open WebUI integration now streamlines the handling of image URLs,
+  including `data:image` URLs, by directly passing them to LlamaIndex's `ImageBlock`. This improves consistency and
+  reliability for multimodal inputs.
+
+### Refactor
+
+- 🧹 **Streamlined LLM Configuration**: The custom `PreprocessingOpenAILike` wrapper has been removed, and `LLMConfig`
+  now directly utilizes `OpenAILike`. This change centralizes message preprocessing logic within the agent's flow rather
+  than the LLM wrapper, simplifying the overall architecture.
+
+---
+
 ## [v0.254.13] - 2025-12-03 - Robust Evaluation and Phoenix Client Modernization
 
 ### Refactor
