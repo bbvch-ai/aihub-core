@@ -64,12 +64,12 @@
     >
       <template #body="{ data }">
         <Button
-          v-if="data.source_path"
+          v-if="data.source"
           rounded
           size="small"
           variant="outlined"
           icon="pi pi-download"
-          @click="() => downloadFile(data.source_path)"
+          @click="() => downloadFile(data.source)"
         />
         <span
           v-else

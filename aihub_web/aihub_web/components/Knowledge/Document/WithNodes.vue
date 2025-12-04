@@ -6,7 +6,7 @@
     <KnowledgeDocumentOverview :document="document">
       <div class="mb-4 flex justify-end">
         <Button
-          v-if="document?.source_path"
+          v-if="document?.source"
           icon="pi pi-external-link"
           :label="t('knowledge.original.view_button')"
           size="small"
@@ -73,10 +73,10 @@ const { data: documentNodes, isPending: documentNodesAreLoading } = useQuery<Nod
 })
 
 const openOriginalDocument = async () => {
-  if (!document.value?.source_path) return
+  if (!document.value?.source) return
 
   try {
-    const url = await getDocumentSourceUrl(document.value.source_path)
+    const url = await getDocumentSourceUrl(document.value.source)
     window.open(url, '_blank')
   }
   catch (e) {

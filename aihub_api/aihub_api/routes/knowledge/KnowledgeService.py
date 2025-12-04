@@ -38,7 +38,7 @@ from pydantic import Field
 
 from aihub_api.routes.knowledge.dto.CreateNamespaceRequest import CreateNamespaceRequest
 from aihub_api.routes.knowledge.dto.DatabaseDTO import DatabaseDTO
-from aihub_api.routes.knowledge.dto.DocumentDTO import DocumentDTO
+from aihub_api.routes.knowledge.dto.DocumentDTO import S3_PROTOCOL_PREFIX, DocumentDTO
 from aihub_api.routes.knowledge.dto.DocumentUploadRequest import DocumentUploadRequest
 from aihub_api.routes.knowledge.dto.DocumentUploadResponse import DocumentUploadResponse
 from aihub_api.routes.knowledge.dto.DocumentUploadValidationRequest import DocumentUploadValidationRequest
@@ -92,29 +92,35 @@ class KnowledgeService:
             )
 
     @staticmethod
-    def _get_datalake_files_in_namespace(bucket_name: str, namespace: str) -> list[DocumentDTO]:
+    def _get_unprocessed_datalake_files(
+        bucket_name: str,
+        namespace: str,
+        processed_sources: set[str],
+    ) -> list[DocumentDTO]:
         """
-        Get all files from datalake in a specific namespace using the global file access configuration.
+        Get unprocessed files from datalake in a specific namespace.
 
         Files in the __figures__ directory are excluded as they are generated artifacts
         from document processing and should not be displayed in the knowledge interface.
+        Files that have already been processed (exist in processed_sources) are also excluded.
         """
         files_info = S3AnonymousFileAccessService().list_files(container=bucket_name, prefix=f"{namespace}/")
 
-        all_files = []
+        unprocessed_files = []
         for file_info in files_info:
             key = file_info["key"]
 
             if f"/{FIGURES_DIRECTORY_NAME}/" in key:
                 continue
 
+            source = f"{bucket_name}/{key}"
+            if f"{S3_PROTOCOL_PREFIX}{source}" in processed_sources:
+                continue
+
             filename = key.split("/")[-1]
             file_namespace = key.split("/")[0]
 
-            source_path = f"{bucket_name}/{key}"
-            document_uri = f"s3://{source_path}"
-
-            all_files.append(
+            unprocessed_files.append(
                 DocumentDTO(
                     id=key,
                     document_title=filename,
@@ -122,13 +128,12 @@ class KnowledgeService:
                     updated_at=file_info.get("last_modified", ""),
                     created_at=file_info.get("last_modified", ""),
                     inserted_at="",
-                    source=document_uri,
-                    source_path=source_path,
+                    source=source,
                     is_ingested=False,
                 )
             )
 
-        return all_files
+        return unprocessed_files
 
     @staticmethod
     @ttl_cache(seconds=300, maxsize=256)  # 5 minutes TTL, 256 max entries
@@ -155,10 +160,8 @@ class KnowledgeService:
     @classmethod
     @ttl_cache(seconds=300, maxsize=256)  # 5 minutes TTL, 256 max entries
     def _get_unprocessed_files(cls, db: str, namespace: str, bucket_name: str) -> list[DocumentDTO]:
-        datalake_files = cls._get_datalake_files_in_namespace(bucket_name, namespace)
         processed_sources = cls._get_processed_sources(db, namespace)
-
-        unprocessed = [f for f in datalake_files if f.source not in processed_sources]
+        unprocessed = cls._get_unprocessed_datalake_files(bucket_name, namespace, processed_sources)
         unprocessed.sort(key=lambda doc: doc.updated_at, reverse=True)
         return unprocessed
 
