@@ -1,243 +1,130 @@
 # Kapitel 08: Sicherheitsarchitektur
 
-Die erfolgreiche und vertrauenswürdige Einführung von Künstlicher Intelligenz (KI) in Schweizer Unternehmen ist
-untrennbar mit einer robusten Sicherheitsarchitektur verbunden. Angesichts strenger Datenschutzgesetze und dem
-zunehmenden Aufkommen KI-spezifischer Bedrohungen ist ein systematischer, mehrschichtiger Schutz von Infrastruktur,
-Daten und Anwendungen unerlässlich. Dieses Kapitel beleuchtet, wie der Swiss AI Hub ein umfassendes
-Defense-in-Depth-Konzept implementiert, das von der Netzwerkschicht bis zur KI-Anwendung reicht, um die Vertraulichkeit,
-Integrität und Verfügbarkeit von Informationen jederzeit zu gewährleisten und gleichzeitig höchste regulatorische
-Anforderungen zu erfüllen.
+## Das Prinzip der mehrschichtigen Verteidigung (Defense-in-Depth)
 
-## 1. Mehrschichtige Abwehr (Defense-in-Depth) als strategisches Fundament
+In der modernen IT-Sicherheit hat sich die Erkenntnis durchgesetzt, dass kein einzelner Schutzmechanismus unfehlbar ist.
+Dies gilt insbesondere für KI-Plattformen, die nicht nur klassischen Angriffen auf die Infrastruktur ausgesetzt sind,
+sondern auch neuartigen Bedrohungen wie Prompt-Injections oder semantischen Manipulationen begegnen müssen. Eine
+einfache Firewall am Netzwerkrand reicht nicht mehr aus, um komplexe Interaktionen zwischen Benutzern, Modellen und
+sensiblen Daten zu schützen.
 
-### Mehrwert und Nutzen: Ganzheitlicher Schutz und nachhaltige Compliance
+Der Swiss AI Hub verfolgt konsequent die Strategie der «Defense-in-Depth» (Verteidigung in der Tiefe). Anstatt sich auf
+einen harten Perimeter und einen weichen Kern zu verlassen, wird jede Ebene des Technologie-Stacks als eigenständige
+Sicherheitszone betrachtet. Von der physischen Infrastruktur über das Netzwerk und die Identität bis hin zur Validierung
+der KI-Eingaben greifen redundante Sicherheitskontrollen. Sollte eine Barriere überwunden werden, verhindern
+nachgelagerte Schichten eine Kompromittierung des Gesamtsystems und gewährleisten die Vertraulichkeit, Integrität und
+Verfügbarkeit der Daten.
 
-Für C-Level-Führungskräfte ist die Gewissheit entscheidend, dass KI-Investitionen auf einer resilienten und sicheren
-Grundlage ruhen. Ein durchgängiger Defense-in-Depth-Ansatz minimiert nicht nur das Risiko von Datenlecks und
-Systemausfällen, sondern sichert auch die Einhaltung kritischer regulatorischer Vorgaben wie dem revDSG und der DSGVO.
-Dies fördert das Vertrauen in die KI-Systeme und schützt den Unternehmensruf. Für IT-Professionals bedeutet dies eine
-konsistente Sicherheitsstrategie, die durch Redundanz die Widerstandsfähigkeit gegen komplexe Bedrohungen erhöht und die
-Verwaltung durch die Nutzung bewährter Standards vereinfacht.
+## Netzwerksicherheit und Infrastruktur-Härtung
 
-### Konzepte & Prozesse: Redundante Barrieren und risikobasiertes Design
+### Isolation und kontrollierte Zugänge
 
-Das Sicherheitskonzept des Swiss AI Hub basiert auf dem Prinzip der mehrschichtigen Abwehr, bei dem Schutzmechanismen
-auf Netzwerk-, Infrastruktur- und Anwendungsebene kombiniert werden. Ziel ist es, Angriffe durch redundante Barrieren
-effektiv abzuwehren und sicherzustellen, dass das Kompromittieren einer einzelnen Schutzschicht nicht zum vollständigen
-Systemausfall oder Datenverlust führt. Jede Komponente der Architektur ist darauf ausgelegt, ihre spezifischen
-Sicherheitsaufgaben zu erfüllen und dabei nahtlos mit den anderen Schichten zu interoperieren, um ein robustes
-Gesamtsystem zu bilden.
+Für Unternehmen ist die Kontrolle der Angriffsfläche entscheidend. Offene Ports und ungesicherte interne Dienste sind
+Einfallstore für Angreifer. Der Swiss AI Hub reduziert diese Fläche auf ein absolutes Minimum durch eine strikte
+«Default Deny»-Politik.
 
-### Technische Umsetzung im Swiss AI Hub: Eine integrierte Sicherheitsarchitektur
+In der technischen Umsetzung fungiert Traefik als alleiniger Reverse Proxy und zentraler Eintrittspunkt («Ingress»). Nur
+die Ports 80 (HTTP, mit automatischer Weiterleitung) und 443 (HTTPS) sind aus dem öffentlichen Netzwerk erreichbar. Alle
+Anwendungsdienste – von der API über die Datenbanken bis zum LLM-Gateway – laufen in einem isolierten, privaten
+Docker-Netzwerk. Diese Backend-Komponenten sind niemals direkt dem Internet ausgesetzt. Traefik terminiert die
+Verbindungen, prüft Zertifikate und leitet nur validierte Anfragen an die internen Dienste weiter. Diese Architektur
+verhindert effektiv den direkten Zugriff auf Datenbanken oder Service-Schnittstellen von aussen.
 
-Der Swiss AI Hub realisiert dieses mehrschichtige Sicherheitsmodell durch das Zusammenspiel verschiedener technischer
-Komponenten. Externe Zugriffe werden zunächst durch Netzwerk-Firewalls und einen Reverse Proxy gefiltert. Die internen
-Dienste laufen in isolierten Docker-Containern mit minimalen Rechten. Authentifizierung und Autorisierung sichern den
-Zugang zu Plattformressourcen, während Daten im Ruhezustand und während der Übertragung verschlüsselt sind. Ergänzt wird
-dies durch KI-spezifische Eingabe- und Ausgabe-Wächter sowie Anonymisierungsfunktionen, die präventiv die Integrität und
-Vertraulichkeit von KI-Interaktionen gewährleisten.
+### Verschlüsselung und Verbindungssicherheit
 
-## 2. Identitäts- und Zugriffsmanagement: Sichere Authentifizierung und Autorisierung
+Daten müssen sowohl im Ruhezustand als auch während der Übertragung geschützt sein. Der Swiss AI Hub setzt für den
+externen Datenverkehr (Data-in-Transit) zwingend auf Verschlüsselung mittels TLS 1.2 oder 1.3. Veraltete oder unsichere
+Cipher-Suites sind deaktiviert. Sicherheits-Header wie HSTS (Strict-Transport-Security) erzwingen, dass Browser und
+Clients ausschliesslich verschlüsselte Verbindungen aufbauen können, und schützen so vor Man-in-the-Middle-Angriffen.
 
-### Mehrwert und Nutzen: Schutz vor unbefugtem Zugriff und nahtlose Benutzererfahrung
+Für die interne Kommunikation setzt die Plattform auf strikte Netzwerksegmentierung. Da der Verkehr zwischen den
+Containern das Host-System nicht verlässt, liegt der Fokus hier auf Isolation. Für gespeicherte Daten (Data-at-Rest) ist
+das Sicherheitskonzept darauf ausgelegt, Verschlüsselung auf Volume-Ebene mittels LUKS (Linux Unified Key Setup) zu
+nutzen. Die Architektur sieht vor, persistente Daten wie Datenbanken und Vektor-Indizes mit AES-256 im XTS-Modus zu
+verschlüsseln. Dies stellt sicher, dass physisch entwendete Datenträger oder Snapshots nicht ausgelesen werden können,
+da die Schlüsselverwaltung getrennt von den Daten erfolgt.
 
-Für Schweizer Unternehmen ist der Schutz vor unbefugtem Zugriff von grösster Bedeutung. Der Swiss AI Hub bietet hierfür
-eine robuste Lösung, die sich nahtlos in bestehende Enterprise-Identitätsmanagement-Systeme integriert. Dies ermöglicht
-Single Sign-On (SSO) und Multi-Faktor-Authentifizierung (MFA) für erhöhte Sicherheit und eine reibungslose
-Benutzererfahrung. Führungskräfte erhalten die Gewissheit, dass Zugriffe auf sensible Daten und KI-Funktionen streng
-kontrolliert und auditierbar sind, während IT-Teams von einer zentralen Verwaltung und der Einhaltung etablierter
-Standards profitieren.
+## Identitätszentrierte Sicherheit und Authentifizierung
 
-### Konzepte & Prozesse: Standardisierte Protokolle und rollenbasierte Zugriffskontrolle
+### Integration in Enterprise-Verzeichnisdienste
 
-Die Plattform implementiert Authentifizierung und Autorisierung basierend auf den branchenüblichen Protokollen OpenID
-Connect (OIDC) und OAuth 2.0. Dies gewährleistet Kompatibilität mit Enterprise Identity Providern wie Microsoft Entra ID
-(Azure Active Directory) und ermöglicht die Delegation der Benutzerauthentifizierung. Die Autorisierung erfolgt über ein
-hierarchisches, rollenbasiertes Zugriffskontrollmodell (RBAC), das das Prinzip der geringsten Rechte durchsetzt.
+Die Identität hat den klassischen Netzwerk-Perimeter als primäre Sicherheitsbarriere abgelöst. Die Verwaltung lokaler
+Benutzerkonten ist fehleranfällig und skaliert schlecht in grossen Organisationen. Daher verzichtet der Swiss AI Hub auf
+eine proprietäre Benutzerverwaltung zugunsten offener Industriestandards.
 
-### Technische Umsetzung im Swiss AI Hub: JWT-Validierung und Entra ID Integration
+Die Plattform implementiert Authentifizierung basierend auf OpenID Connect (OIDC) und dem OAuth 2.0 Framework. Dies
+ermöglicht eine nahtlose Integration in bestehende Identity Provider (IdP) wie Microsoft Entra ID (ehemals Azure AD),
+Keycloak oder Okta. Der Anmeldeprozess nutzt dabei den sicheren «Authorization Code Flow» mit PKCE (Proof Key for Code
+Exchange), um auch auf öffentlichen Clients höchste Sicherheit zu gewährleisten. Unternehmensrichtlinien für Passwörter,
+Multi-Faktor-Authentifizierung (MFA) und Single Sign-On (SSO) werden somit automatisch auf den Swiss AI Hub angewendet.
+Die Validierung erfolgt über kryptografisch signierte JSON Web Tokens (JWT), deren Signatur bei jeder Anfrage gegen die
+öffentlichen Schlüssel (JWKS) des IdP geprüft wird.
 
-Der Swiss AI Hub authentifiziert Benutzer über den OAuth 2.0 Authorization Code Flow mit PKCE. Jeder Benutzer erhält
-einen JSON Web Token (JWT), dessen kryptografische Signatur mittels öffentlicher Schlüssel vom JWKS-Endpoint des
-Identity Providers validiert wird. Für den API-Zugriff wird standardmässige OAuth 2.0 Bearer Token-Authentifizierung
-unterstützt. Die Plattform ist primär mit Microsoft Entra ID integriert, um Benutzerprofile und Rollenzuweisungen
-abzurufen. Autorisierungsentscheidungen werden serverseitig durch eine `AccessChecker`-Komponente getroffen, die für
-jede API-Anfrage die zugewiesenen Rollen des Benutzers und die erforderlichen Berechtigungen evaluiert. Diese
-Berechtigungen nutzen eine hierarchische Punkt-Notation mit Wildcard-Mustern (z.B. `aihub.user.agent.*`), um eine
-feingranulare Steuerung zu ermöglichen.
+### Entkoppelte Autorisierung
 
-## 3. Datenverschlüsselung: Schutz im Ruhezustand und während der Übertragung
+Authentifizierung (Wer bin ich?) und Autorisierung (Was darf ich?) sind im System strikt getrennt. Nach der
+erfolgreichen Anmeldung ermittelt die Plattform die Zugriffsrechte dynamisch anhand der zugewiesenen Rollen und
+Gruppenmitgliedschaften aus dem Microsoft Graph oder dem entsprechenden IdP. Dieses rollenbasierte
+Zugriffskontrollsystem (RBAC) stellt sicher, dass Benutzer nur auf jene Ressourcen und Agenten-Profile zugreifen können,
+für die sie explizit autorisiert sind. Selbst API-Zugriffe für technische Nutzer erfolgen über zeitlich begrenzte
+Bearer-Tokens, was das Risiko langlebiger statischer Passwörter eliminiert.
 
-### Mehrwert und Nutzen: Maximale Vertraulichkeit und regulatorische Konformität
+## Container- und Applikationssicherheit
 
-Die durchgängige Verschlüsselung ist eine fundamentale Anforderung für den Schutz sensibler Unternehmensdaten. Der Swiss
-AI Hub gewährleistet, dass Informationen sowohl im Ruhezustand (Data-at-Rest) als auch während der Übertragung
-(Data-in-Transit) vor unbefugtem Zugriff geschützt sind. Dies erfüllt nicht nur die strengen Anforderungen des revDSG
-und der DSGVO, sondern schützt auch vor Datendiebstahl und Manipulation, selbst bei physischem Zugriff auf
-Speichermedien oder Abhören von Kommunikationskanälen.
+### Minimierung der Privilegien und Angriffsfläche
 
-### Konzepte & Prozesse: Zwei-Säulen-Verschlüsselung und robustes Schlüsselmanagement
+Sicherheit beginnt bereits beim Bau der Software. Veraltete Bibliotheken oder unnötige Systemwerkzeuge in Containern
+erhöhen das Risiko von Schwachstellen. Der Swiss AI Hub begegnet dem durch gehärtete Container-Images und strikte
+Laufzeitbeschränkungen.
 
-Die Plattform nutzt ein zweistufiges Verschlüsselungskonzept. Alle persistent gespeicherten Daten sollen durch
-vollständige Volume-Verschlüsselung geschützt werden. Gleichzeitig wird die gesamte Datenkommunikation, sowohl extern
-als auch intern (wo kritisch), kryptografisch gesichert. Das Schlüsselmanagement erfolgt unabhängig von den Daten, um
-Rotation und Sicherheit zu gewährleisten.
+Alle Dienste laufen konsequent als nicht privilegierte Benutzer (UID 1000, «Non-Root»). Sollte es einem Angreifer
+gelingen, eine Anwendung zu kompromittieren, verhindern die fehlenden Root-Rechte einen Ausbruch aus dem Container
+(«Container Escape») oder die Manipulation des Host-Systems. Die Container selbst basieren auf minimalen «Slim»-Images,
+die durch Multi-Stage-Builds erzeugt werden. Dabei werden Compiler und Build-Werkzeuge nicht in die Produktionsumgebung
+übernommen, was die Angriffsfläche drastisch reduziert. Updates erfolgen nach dem Prinzip der unveränderlichen
+Infrastruktur: Container werden nicht gepatcht, sondern vollständig durch neue, sichere Versionen ersetzt.
 
-### Technische Umsetzung im Swiss AI Hub: LUKS-Verschlüsselung und TLS/HTTPS
+### Strikte Eingabevalidierung
 
-- **Verschlüsselung im Ruhezustand (Data-at-Rest):** Das Sicherheitskonzept sieht eine **LUKS-Volume-Verschlüsselung**
-  für alle persistenten Docker-Volumes vor (bei On-Premise-Deployments), die Anwendungsdatenbanken,
-  Vektordatenbank-Indizes und Dokumentenspeicherung umfassen. Alternativ wird bei Private Cloud-Deployments
-  `Azure Disk Encryption` verwendet. Dies bietet eine AES-256-Verschlüsselung im XTS-Modus und schützt Daten auch bei
-  physischem Zugriff. Geheimnisse und sensitive Konfigurationsdaten werden über Umgebungsvariablen, Azure Key Vault oder
-  Docker-Secrets verwaltet. UNKLARHEIT IN DER DOKU - BITTE PRÜFEN: Eine dedizierte Datenbank-Verschlüsselung auf Ebene
-  Transparent Data Encryption (TDE) ist in der Quelldokumentation für die verwendeten Datenbanken nicht explizit
-  aufgeführt, wird aber durch die LUKS-Volume-Verschlüsselung abgedeckt.
-- **Verschlüsselung während der Übertragung (Data-in-Transit):** Der Traefik Reverse Proxy terminiert TLS am
-  Netzwerkrand und erzwingt HTTPS mit TLS 1.2 und TLS 1.3. Er verwaltet auch Let's Encrypt-Zertifikate und wendet
-  Sicherheits-Header wie HSTS an. Alle Verbindungen zu externen Diensten (z.B. LLM-Anbietern, OAuth/OIDC-Anbietern)
-  nutzen HTTPS mit strikter Zertifikatsvalidierung. Echtzeit-Event-Streaming über WebSockets wird durch WSS (WebSocket
-  Secure) mit Origin-Validierung gesichert. Die Kommunikation zwischen Docker-Containern im internen Docker-Netzwerk ist
-  durch Netzwerkisolation geschützt, aber auf Anwendungsebene nicht standardmässig verschlüsselt.
+Neben Netzwerkangriffen stellen bösartige Inhalte ein erhebliches Risiko dar. Der Swiss AI Hub implementiert eine
+tiefgreifende Eingabevalidierung, um Angriffe wie Path Traversal oder das Einschleusen von Malware zu verhindern.
 
-## 4. Netzwerksicherheit und Isolation: Minimierung der Angriffsfläche
+Datei-Uploads werden gegen eine strikte Whitelist von ca. 40 genehmigten Dateitypen geprüft, darunter Dokumentformate
+(PDF, DOCX), Bildformate und strukturierte Daten (JSON). Entscheidend ist dabei nicht nur die Dateiendung, sondern die
+Validierung des tatsächlichen MIME-Typs, um Tarnversuche («Extension Spoofing») zu entlarven. Dateinamen werden
+automatisch bereinigt, um Manipulationen am Dateisystempfad mittels Sonderzeichen oder Null-Bytes zu unterbinden. Zudem
+schützen Grössenbeschränkungen auf Ebene des Reverse Proxies vor Ressourcenerschöpfung durch Denial-of-Service-Attacken.
 
-### Mehrwert und Nutzen: Strikte Segmentierung und Schutz vor externen Bedrohungen
+## KI-spezifische Schutzschilde (AI Guardrails)
 
-Für Unternehmen ist die Minimierung der Angriffsfläche entscheidend, um die Plattform vor unautorisiertem Zugriff und
-Cyberangriffen zu schützen. Der Swiss AI Hub implementiert eine strikte Netzwerksegmentierung und unterstützt
-Betriebsmodi, die kritische Komponenten vom öffentlichen Internet isolieren können. Dies schützt vor DoS/DDoS-Angriffen
-und gewährleistet eine hohe Resilienz. Die Möglichkeit, die Plattform in einer Air-Gapped-Umgebung zu betreiben, ist
-besonders für Organisationen mit höchsten Sicherheitsanforderungen relevant.
+### Schutz vor Prompt-Injection und semantischen Angriffen
 
-### Konzepte & Prozesse: Default Deny und isolierte Dienstlandschaft
+Klassische Sicherheitslösungen sind oft blind gegenüber Angriffen in natürlicher Sprache. Ein Angreifer könnte
+versuchen, durch geschicktes «Jailbreaking» die Sicherheitsrichtlinien eines Modells zu umgehen.
 
-Das System verwendet eine standardmässige Ablehnungsrichtlinie (Default Deny Policy) auf Netzwerkebene und isoliert alle
-internen Dienste in privaten Docker-Netzwerken. Ein einziger Reverse Proxy dient als kontrollierter Eintrittspunkt. Die
-Architektur fördert zudem die Single-Tenant-Isolation, um eine strikte Trennung von Daten und Ressourcen pro
-Organisation zu gewährleisten.
+Der Swiss AI Hub adressiert diese Lücke durch spezialisierte Eingangs-Schutzmechanismen (Input Guards). Diese operieren
+direkt auf der Ebene der Agenten-Architektur. Ein «Agentenbeschreibungs-Schutzmechanismus» validiert semantisch, ob eine
+Benutzerfrage überhaupt zum Aufgabenbereich des Bots passt, und weist themenfremde Anfragen ab. Ergänzend definieren
+«Few-Shot-Schutzmechanismen» durch Beispiele erwünschtes und unerwünschtes Verhalten, sodass das System lernt, Angriffe
+proaktiv zu erkennen.
 
-### Technische Umsetzung im Swiss AI Hub: Firewall, Traefik und Container-Isolation
+### Anonymisierung und Ausgabekontrolle
 
-Eine **Netzwerk-Firewall** (z.B. NSG) blockiert standardmässig alle Ports aus dem öffentlichen Internet, ausser 80 und
-443\. **Traefik** fungiert als Reverse Proxy, dem einzigen extern zugänglichen Entry Point. Es terminiert TLS, wendet
-Rate Limiting zum Schutz vor Brute-Force- und einfachen DoS-Angriffen an. Alle Anwendungsdienste (AI-Hub API, Web UI,
-LiteLLM Proxy, Datenbanken) laufen in **isolierten Docker-Containern** in privaten Netzwerken. Jeder Container wird als
-nicht privilegierter Benutzer ausgeführt (Nicht-Root-Benutzer) und nutzt Multi-Stage-Builds mit minimalen Basis-Images,
-um die Angriffsfläche zu reduzieren. Regelmässige Basis-Image-Updates stellen sicher, dass die Container mit den
-neuesten Sicherheitspatches versehen sind. Die Plattform kann auch in einer **Air-Gapped-Umgebung** betrieben werden,
-sofern lokale LLMs verwendet werden (vergleiche Kapitel 03).
+Zum Schutz vor Datenabfluss ist im zentralen LLM-Gateway (LiteLLM) Microsoft Presidio integriert. Diese Komponente
+scannt Prompts auf Personenidentifizierbare Informationen (PII) wie Kreditkartennummern oder E-Mail-Adressen, bevor sie
+an ein Modell gesendet werden. Je nach Konfiguration werden diese Daten maskiert («Mask Mode») oder die Anfrage wird bei
+hochsensiblen Daten blockiert («Block Mode»).
 
-## 5. KI-spezifische Schutzmechanismen: Input/Output-Wächter und Datenanonymisierung
+Auf der Ausgabeseite prüfen «Output Guards» die generierten Antworten. Bei Systemen mit Retrieval-Augmented Generation
+(RAG) verhindert der «Kontext-Ausreichend-Schutzmechanismus» Halluzinationen, indem er Antworten unterdrückt, wenn die
+Faktenlage in der Wissensdatenbank zu dünn ist. Zusätzlich werden sensible Daten, die aus internen Dokumenten stammen
+könnten, in der Antwort geschwärzt («Redacting»), um unbeabsichtigte Informationslecks zu verhindern.
 
-### Mehrwert und Nutzen: Verlässlichkeit und Schutz vor KI-Manipulation
+## Kontinuierliche Validierung und Resilienz
 
-Die zunehmende Komplexität von KI-Systemen erfordert spezielle Schutzmechanismen gegen Prompt-Injection, Jailbreaking
-und Halluzinationen. Der Swiss AI Hub stellt durch KI-spezifische Schutzschilde sicher, dass die Modelle verlässlich und
-im Einklang mit Unternehmensrichtlinien agieren. Eine automatische Anonymisierung schützt personenbezogene Daten (PII)
-präventiv, bevor sie potenziell exponierenden Systemen zugeführt werden, was die Compliance und das Vertrauen in
-KI-gestützte Prozesse stärkt.
-
-### Konzepte & Prozesse: Agenten-Wächter und Privacy by Design
-
-Die Plattform implementiert LLM-Wächter ("Guardrails"), die KI-Agenten-Interaktionen in Echtzeit überwachen – sowohl bei
-der Eingabe (Input) als auch bei der Ausgabe (Output). Diese Wächter agieren auf Agenten-Ebene, um themenfremde
-Anfragen, Richtlinienverstösse oder Halluzinationen zu verhindern. Eingangs-Schutzmechanismen analysieren
-Benutzerfragen, bevor der Agent diese verarbeitet, während Ausgangs-Schutzmechanismen die generierten Agentenantworten
-prüfen, bevor sie an den Benutzer ausgeliefert werden. Ergänzend dazu sorgt ein "Privacy by Design"-Ansatz durch die
-Integration von Presidio auf Plattform-Ebene dafür, dass personenbezogene Daten (PII) proaktiv identifiziert und
-anonymisiert werden, bevor sie externe LLM-Anbieter erreichen. Diese mehrstufige Verteidigung gewährleistet sowohl die
-Integrität der Agenteninteraktionen als auch den umfassenden Schutz sensibler Benutzerdaten.
-
-### Technische Umsetzung im Swiss AI Hub: Konfigurierbare LLM-Wächter und Presidio-Integration
-
-Die **LLM-Wächter** umfassen spezialisierte Input- und Output-Schutzmechanismen. Bei den **Eingangs-Schutzmechanismen**
-stellt der `Agentenbeschreibungs-Schutzmechanismus` sicher, dass Fragen zur definierten Funktion des Agenten passen und
-blockiert irrelevante Anfragen. Der `Few-Shot-Schutzmechanismus` erzwingt benutzerdefinierte Richtlinien, indem er
-Muster anhand von konfigurierbaren Beispielen lernt und ähnliche Anfragen blockiert oder zulässt. Die
-**Ausgangs-Schutzmechanismen** umfassen den `Kontext-Ausreichend-Schutzmechanismus`, der prüft, ob der Agent über
-genügend Informationen aus den Wissensdatenbanken verfügt, um präzise zu antworten und Halluzinationen entgegenwirkt.
-Ein `Wächter für sensible Informationen` erkennt und redigiert vertrauliche oder personenbezogene Daten (PII) aus
-Agentenantworten, bevor diese an Benutzer ausgeliefert werden, und ersetzt sie beispielsweise durch `[REDACTED]`.
-
-Für die umfassende **Anonymisierung sensibler Daten (PII)** auf Plattform-Ebene integriert der Swiss AI Hub **Presidio**
-in der LiteLLM-Proxy-Schicht. Presidio scannt Benutzerfragen nach PII-Mustern und erkennt dabei vordefinierte oder
-benutzerdefinierte Entitätstypen wie:
-
-- Personennamen
-- E-Mail-Adressen
-- Kreditkartennummern
-- Telefonnummern
-- Sozialversicherungsnummern (SSN)
-- IP-Adressen
-- Geografische Standorte
-- Daten Die Erkennung erfolgt mittels Musterabgleich, regulären Ausdrücken und Modellen zur Erkennung benannter
-  Entitäten (Named Entity Recognition) und unterstützt mehrere Sprachen, darunter Deutsch, Englisch, Französisch und
-  Italienisch. Es bietet zwei Anonymisierungsmodi:
-- **Maskierungsmodus (Mask mode):** Ersetzt erkannte PII durch Platzhalter (z.B. `[PERSON]`), um den Kontext für das LLM
-  zu erhalten.
-- **Blockierungsmodus (Block mode):** Lehnt die gesamte Anfrage ab, wenn hochsensible PII (z.B. Kreditkartennummern)
-  erkannt werden. Diese Presidio-Guardrails sind standardmässig deaktiviert und müssen pro Deployment und
-  Datensensitivitätsanforderung konfiguriert und aktiviert werden, um PII zu schützen, bevor sie externe LLM-Anbieter
-  erreichen.
-
-## 6. Robuste Eingabevalidierung und Integritätsschutz
-
-### Mehrwert und Nutzen: Schutz vor Malware und Datenkorruption
-
-Der Schutz der Wissensbasis vor bösartigen oder fehlerhaften Eingaben ist für die Sicherheit und Zuverlässigkeit jeder
-KI-Plattform von höchster Bedeutung. Der Swiss AI Hub stellt sicher, dass nur sichere und erwartungsgemässe Inhalte in
-das System gelangen, wodurch das Risiko von Malware-Einschleusung, Datenkorruption oder Systemkompromittierung minimiert
-wird. Dies sichert die Integrität der Daten und die Verlässlichkeit der KI-Antworten.
-
-### Konzepte & Prozesse: Strikte Whitelisting-Prinzipien und Validierungsregeln
-
-Die Plattform setzt auf eine mehrstufige Eingabevalidierung für alle hochgeladenen Dokumente. Dies umfasst eine strikte
-Whitelist für Dateitypen, eine Validierung des MIME-Typs sowie umfassende Prüfungen der Dateinamen und -grössen.
-
-### Technische Umsetzung im Swiss AI Hub: Umfangreiche Validierungsmechanismen
-
-Der Swiss AI Hub beschränkt Dateiuploads auf eine **Whitelist von etwa 40 genehmigten Dateierweiterungen**. Eine
-**MIME-Typ-Validierung** verhindert das Verschleiern bösartiger Dateien. Dateinamen werden auf **Path
-Traversal-Versuche** (`..`, `/`, `\`), Erweiterungs-Spoofing und Null-Bytes geprüft. **Dateigrössenbeschränkungen**
-verhindern Ressourcenerschöpfung. Diese Massnahmen schützen vor SQL-, XSS- oder Command-Injection-Angriffen, indem
-bösartige Dateiinhalte oder -namen abgeblockt werden. UNKLARHEIT IN DER DOKU - BITTE PRÜFEN: Die Quelldokumentation
-beschreibt keine explizite Funktion für einen Malware-Scan während der Dokumentenaufnahme. Es wird angenommen, dass dies
-eine ergänzende, organisatorische oder zukünftige technische Implementierung wäre.
-
-## 7. Kontinuierliche Sicherheitsoperationen und Auditierung
-
-### Mehrwert und Nutzen: Proaktive Bedrohungserkennung und revisionssichere Nachvollziehbarkeit
-
-Die dynamische Bedrohungslandschaft erfordert eine kontinuierliche Überwachung und schnelle Reaktion auf
-Sicherheitsvorfälle. Der Swiss AI Hub bietet eine umfassende Observability-Suite und lückenlose Audit-Trails, die eine
-proaktive Bedrohungserkennung ermöglichen und die revisionssichere Nachvollziehbarkeit aller Systemaktivitäten
-gewährleisten. Dies ist entscheidend für die Einhaltung von Compliance-Anforderungen und die Fähigkeit, auf
-Sicherheitsvorfälle effektiv zu reagieren. Regelmässige Sicherheitsaudits und Penetrationstests überprüfen die
-Widerstandsfähigkeit der Architektur.
-
-### Konzepte & Prozesse: Observability-Säulen und Incident-Response-Fähigkeiten
-
-Die Plattform basiert auf den branchenüblichen Säulen der Observability (Health Checks, Metriken, Logs, Traces), um ein
-vollständiges Bild der Systemaktivitäten zu liefern. Alle Authentifizierungs- und Autorisierungsereignisse werden
-lückenlos protokolliert. Dies bildet die Grundlage für eine effektive Incident Response und die kontinuierliche
-Verbesserung der Sicherheitslage. Die Widerstandsfähigkeit wird durch regelmässige, unabhängige Penetrationstests und
-Sicherheitsaudits überprüft.
-
-### Technische Umsetzung im Swiss AI Hub: OpenTelemetry, SigNoz und Audit-Trails
-
-Das gesamte Überwachungs- und Alarmierungssystem basiert auf **OpenTelemetry (OTel)**. Ein zentraler **OpenTelemetry
-Collector** empfängt Logs, Metriken und Traces von allen Diensten und exportiert sie an **SigNoz** als offiziell
-unterstütztes Observability-Backend. SigNoz bietet Dashboards für Infrastruktur, KI-Operationen, Anwendungsleistung und
-Log-Analyse. Flexible Alarmierungen für kritische Dienstausfälle, Leistungseinbussen, Ressourcenlimits, Kostenmanagement
-(ungewöhnlich hoher Token-Verbrauch) und Sicherheitsereignisse (z.B. fehlgeschlagene Anmeldeversuche) können
-konfiguriert werden. Telemetriedaten können auch an alternative OTLP-kompatible Backends wie SIEM-Systeme (z.B. Splunk)
-exportiert werden.
-
-Jede Authentifizierungs- und Autorisierungsentscheidung sowie jede Benutzeraktion generiert detaillierte
-**Audit-Log-Einträge**. Diese umfassen Benutzeridentität, angeforderte Ressourcen und Zugriffsentscheidungen.
-Regelmässige Basis-Image-Updates der Container stellen sicher, dass die Plattform stets mit den neuesten
-Sicherheitspatches ausgestattet ist und Sicherheitslücken proaktiv behoben werden. Die Existenz definierter
-Incident-Response-Prozesse und die Planung regelmässiger Penetrationstests und Sicherheitsaudits (intern und extern)
-sind Teil der organisatorischen Verpflichtung, die kontinuierliche Validierung der Sicherheitsarchitektur zu
-gewährleisten.
+Sicherheit ist kein statischer Zustand, sondern ein fortlaufender Prozess. Die Architektur des Swiss AI Hub ist auf
+Transparenz und Überprüfbarkeit ausgelegt. Durch die Integration in OpenTelemetry-Standards werden alle
+sicherheitsrelevanten Ereignisse – von der Authentifizierung bis zur Token-Validierung – strukturiert protokolliert.
+Dies ermöglicht Security Operations Centers (SOC), Anomalien in Echtzeit zu erkennen. Regelmässige Updates der
+Basis-Images und die architektonische Trennung von Daten und Code gewährleisten, dass das System auch gegen neuartige
+Bedrohungen resilient bleibt.

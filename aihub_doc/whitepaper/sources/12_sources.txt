@@ -8,8 +8,8 @@
 2_platform/10_chat_ui/2_chat_messages/index.en.md
 
 # Multi-Kanal-Zugang
-2_platform/15_slack_teams_integrations/index.en.md
-2_platform/15_slack_teams_integrations/1_setup/index.en.md
+2_platform/16_slack_teams_integrations/index.en.md
+2_platform/16_slack_teams_integrations/1_setup/index.en.md
 
 # Multi-modale Eingaben
 2_platform/10_chat_ui/3_chat_with_your_data/index.en.md
@@ -23,7 +23,7 @@
 2_platform/8_knowledges/1_namespaces/index.en.md
 
 # Mehrsprachigkeit
-2_platform/19_compliance/5_internationalization/index.en.md
+2_platform/20_compliance/5_internationalization/index.en.md
 
 # Observability & Transparenz
 2_platform/10_chat_ui/10_observability/index.en.md

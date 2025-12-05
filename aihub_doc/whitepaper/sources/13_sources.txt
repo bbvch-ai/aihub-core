@@ -19,7 +19,7 @@
 
 # Agent Governance & Guards
 2_platform/13_language_models/3_guards/index.en.md
-2_platform/18_security/2_input_validation/index.en.md
+2_platform/19_security/2_input_validation/index.en.md
 
 # Transparency & Observability
 2_platform/12_auditing/index.en.md

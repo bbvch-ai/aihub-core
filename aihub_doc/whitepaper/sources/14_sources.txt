@@ -14,9 +14,9 @@
 3_sdk/4_building_processes/6_process_observation/index.en.md
 
 # External System Integration
-2_platform/20_external_integrations/index.en.md
-2_platform/16_api/index.en.md
-2_platform/16_api/4_dynamic_endpoints/index.en.md
+2_platform/21_external_integrations/index.en.md
+2_platform/17_api/index.en.md
+2_platform/17_api/4_dynamic_endpoints/index.en.md
 
 # Multi-Agent Systems for Processes
 3_sdk/2_building_agents/4_multi_agent_systems/index.en.md

@@ -2,12 +2,12 @@
 # List paths relative to aihub_doc/docs/
 
 # Security Architecture
-2_platform/18_security/index.en.md
-2_platform/18_security/1_authentication/index.en.md
-2_platform/18_security/2_input_validation/index.en.md
-2_platform/18_security/3_container_security/index.en.md
-2_platform/18_security/4_network_security/index.en.md
-2_platform/18_security/5_data_encryption/index.en.md
+2_platform/19_security/index.en.md
+2_platform/19_security/1_authentication/index.en.md
+2_platform/19_security/2_input_validation/index.en.md
+2_platform/19_security/3_container_security/index.en.md
+2_platform/19_security/4_network_security/index.en.md
+2_platform/19_security/5_data_encryption/index.en.md
 
 # PII Detection und Anonymization
 2_platform/13_language_models/2_anonymization/index.en.md
@@ -16,9 +16,9 @@
 2_platform/13_language_models/3_guards/index.en.md
 
 # Data Retention und Deletion
-2_platform/19_compliance/1_data_retention/index.en.md
-2_platform/19_compliance/2_gdpr/index.en.md
-2_platform/19_compliance/6_data_subject_requests/index.en.md
+2_platform/20_compliance/1_data_retention/index.en.md
+2_platform/20_compliance/2_gdpr/index.en.md
+2_platform/20_compliance/6_data_subject_requests/index.en.md
 
 # Monitoring und Security Operations
 2_platform/3_deployment_guide/5_monitoring_and_alerting/index.en.md

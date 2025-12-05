@@ -1,213 +1,152 @@
 # Kapitel 14: Business-Prozessautomatisierung
 
-Die digitale Transformation in Schweizer Unternehmen ist untrennbar mit der Optimierung und Automatisierung komplexer
-Geschäftsprozesse verbunden. Doch wo herkömmliche Automatisierungslösungen oft an der Starrheit regelbasierter Systeme
-scheitern, bietet die Integration von Künstlicher Intelligenz (KI) das Potenzial, manuelle Engpässe zu beseitigen, die
-Prozessqualität zu steigern und menschliche Entscheidungsfindung intelligent zu unterstützen. Dieses Kapitel beleuchtet,
-wie der Swiss AI Hub eine umfassende Plattform für die Business-Prozessautomatisierung bereitstellt, die eine nahtlose
-Zusammenarbeit zwischen KI-Agenten, menschlichen Entscheidungsträgern und bestehenden Fachsystemen ermöglicht. Ein
-besonderer Fokus liegt dabei auf der Verbindung von strikter Regelkonformität mit adaptiver KI-Assistenz, um
-regulatorische Anforderungen zu erfüllen und gleichzeitig Effizienzgewinne zu realisieren.
+## Von der Interaktion zur Orchestrierung
 
-## 1. Ganzheitliche Prozess-Orchestrierung für End-to-End-Automatisierung
+Während sich die vorangegangenen Kapitel primär auf die Fähigkeiten einzelner KI-Agenten und deren Interaktion mit
+Nutzern konzentrierten, erfordert die Realität komplexer Organisationen weit mehr als nur intelligente Dialogsysteme.
+Ein realer Geschäftsfall – sei es die Prüfung eines Baugesuchs, die Bearbeitung eines Schadensfalls bei einer
+Versicherung oder das Onboarding eines neuen Mitarbeitenden – ist selten ein atomarer Schritt. Es handelt sich vielmehr
+um langlaufende Vorgänge, die sich über Tage oder Wochen erstrecken, diverse IT-Systeme involvieren und zwingend
+menschliche Kontrollpunkte benötigen.
 
-Die Fragmentierung von Geschäftsprozessen über verschiedene Systeme und die Notwendigkeit manueller Übergaben stellen
-für viele Unternehmen eine erhebliche Effizienzbremse dar. Eine effektive KI-Strategie erfordert daher eine Plattform,
-die nicht nur einzelne KI-Aufgaben löst, sondern komplexe End-to-End-Workflows orchestrieren kann – von der
-Datenerfassung über intelligente Verarbeitung bis zur finalen Systemaktualisierung.
+Der Swiss AI Hub erweitert daher das Konzept des autonomen Agenten um die Ebene der **Prozess-Orchestrierung**. Hierbei
+agiert die Plattform nicht nur als reaktiver Antwortgeber, sondern als aktive Workflow-Engine, die deterministische
+Abläufe steuert. Diese Automatisierungsschicht verbindet die adaptive Intelligenz von Sprachmodellen mit der notwendigen
+Verlässlichkeit starrer Geschäftsprozesse (Business Process Management) und ermöglicht so eine echte
+End-to-End-Bearbeitung ohne Medienbrüche.
 
-### Mehrwert und Nutzen: Medienbruchfreie Prozesse und beschleunigte Wertschöpfung
+## Persistente Workflows und Status-Management
 
-Für C-Level-Führungskräfte bedeutet die ganzheitliche Prozess-Orchestrierung eine signifikante Steigerung der operativen
-Effizienz und eine Beschleunigung der Time-to-Value für digitale Initiativen. Durch die Eliminierung manueller
-Medienbrüche und die Automatisierung repetitiver Aufgaben werden nicht nur Kosten gesenkt, sondern auch die
-Fehleranfälligkeit reduziert. Dies ermöglicht schnellere Bearbeitungsprozesse und eine verbesserte Kundenzufriedenheit.
-IT-Teams profitieren von einer zentralen Plattform, die es ermöglicht, KI-Agenten, menschliche Experten und bestehende
-Drittsysteme in einem gemeinsamen, transparenten Workflow zu verbinden, was die Komplexität der Systemintegration
-reduziert und die Wartbarkeit verbessert.
+### Die Herausforderung langlaufender Transaktionen
 
-### Konzepte & Prozesse: Agentische Prozesse und Event-gesteuerte Workflows
+In klassischen KI-Implementierungen ist der Kontext oft flüchtig: Wird das Browserfenster geschlossen oder startet ein
+Server neu, ist der Zustand der Verarbeitung verloren. Für geschäftskritische Prozesse ist dies inakzeptabel. Wenn ein
+Antrag auf eine behördliche Genehmigung wartet, darf der technische Prozess nicht abbrechen, nur weil die Wartezeit die
+Timeouts einer Standard-HTTP-Verbindung überschreitet. Organisationen benötigen eine Architektur, die den Zustand eines
+Vorgangs («State») über beliebige Zeiträume hinweg sicher speichert und verwaltet.
 
-Der Swiss AI Hub ermöglicht die Automatisierung komplexer Geschäftsabläufe durch sogenannte **agentische Prozesse**.
-Diese Prozesse basieren auf einer ereignisgesteuerten Architektur, bei der definierte Workflows das Verhalten von
-KI-Agenten steuern, menschliche Interaktionen integrieren und externe Systemaufrufe orchestrieren. Anstatt dass KI
-autonom und unkontrollierbar agiert, folgen die Prozesse explizit definierten, schrittweisen Abfolgen von Operationen.
-Hierbei kommt häufig das **Agent in the Loop (AITL)**-Muster zum Einsatz, das es einem primären Orchestrator-Agenten
-ermöglicht, spezifische Aufgaben an spezialisierte Worker-Agenten zu delegieren. Dies fördert die Modularität, trennt
-Zuständigkeiten und ermöglicht die Erstellung komplexer Ketten oder paralleler Workflows, die die Stärken mehrerer
-Agenten kombinieren. Jeder Schritt eines Prozesses kann die volle Leistung der KI nutzen, um zu argumentieren und
-Entscheidungen zu treffen; der Gesamtpfad bleibt jedoch stets durch den vordefinierten Workflow gesteuert. Über das
-Swiss AI Agent Protokoll (SAAP) kommunizieren die beteiligten Komponenten über standardisierte Ereignisse, was eine
-flexible und robuste Orchestrierung ermöglicht (siehe auch Kapitel 13: AI-Agenten und Kernkonzepte für Details zu SAAP).
+### Zustandsbehaftete Prozessarchitektur
 
-### Technische Umsetzung im Swiss AI Hub: SDK für Prozessdefinitionen und dynamische Endpunkte
+Der Swiss AI Hub löst diese Anforderung durch eine strikte Trennung von **Prozessen** und **Agenten**. Während Agenten
+oft reaktiv auf eine direkte Eingabe antworten, sind Prozesse als langlebige, zustandsbehaftete Entitäten konzipiert.
+Die Plattform nutzt hierfür ein robustes State-Management, das jeden Fortschritt persistiert. Ein Prozess kann einen
+Teilschritt erledigen – beispielsweise die Klassifizierung eines eingehenden Dokuments – und sich danach «schlafen
+legen», während er auf ein externes Ereignis oder eine menschliche Freigabe wartet.
 
-Entwickler definieren diese agentischen Prozesse mit dem AI-Hub SDK, indem sie Workflow-Schritte als Code
-implementieren. Die Plattform abstrahiert die zugrundeliegende Komplexität der Orchestrierung und der Kommunikation
-zwischen Agenten. Für die Orchestrierung von Multi-Agenten-Systemen bietet das SDK die `AgentInTheLoop`-Helferklasse,
-die eine `invoke`-Methode zur Erstellung von Anfragen an Worker-Agenten bereitstellt. Dabei kann präzise gesteuert
-werden, welche Kontexte geteilt werden (`share_thread_id` für Konversationsspeicher, `share_display_id` für UI-Stream),
-während die `share_run_id` standardmässig `False` ist, um eine unabhängige Ausführung des Worker-Agenten zu
-gewährleisten. Gängige Muster wie spezialisierte Verarbeitung (Router), sequentielle Agentenketten oder parallele
-Agentenausführung (Fan-Out/Fan-In) lassen sich so flexibel umsetzen. Für jeden in der Plattform definierten Prozess
-erstellt der AI Hub automatisch dynamische REST-API-Endpunkte (`/processes/{process_class}/{process_id}/{route}`), die
-auf die spezifischen Fähigkeiten der Prozessdefinition zugeschnitten sind. Dies ermöglicht externen Systemen,
-menschlichen Benutzern oder anderen KI-Agenten, Prozesse über eine standardisierte API auszulösen, ihren Status
-abzufragen und mit ihnen zu interagieren. Die dynamische Generierung dieser Endpunkte eliminiert manuelle
-API-Entwicklungsengpässe und stellt sicher, dass die Integrationsschicht stets mit den laufenden Diensten synchronisiert
-ist.
+Technisch basiert dies auf einer ereignisgesteuerten Architektur via NATS JetStream. Der Zustand des Prozesses wird
+nicht im Arbeitsspeicher gehalten, sondern als Sequenz von Ereignissen in der Datenbank abgebildet. Dies garantiert
+Resilienz: Selbst wenn die physische Infrastruktur (Server, Container) während eines laufenden Vorgangs neu gestartet
+wird, nimmt der Prozess seine Arbeit exakt an der Stelle wieder auf, an der er unterbrochen wurde. Externe Systeme
+können über definierte Endpunkte (`/processes/{process_id}/`) jederzeit den aktuellen Status abfragen oder den Prozess
+fortsetzen, ohne sich um die technische Verfügbarkeit der darunterliegenden Rechenknoten sorgen zu müssen.
 
-## 2. Hybride Entscheidungsarchitektur: Regeln und KI in Harmonie
+## Nahtlose Integration via Dynamische Endpunkte
 
-In vielen geschäftskritischen Bereichen, insbesondere im öffentlichen Sektor, sind Entscheidungen nicht nur eine Frage
-der Effizienz, sondern auch der strikten Einhaltung von Regeln und Vorschriften. Eine reine KI-Automatisierung ohne
-Berücksichtigung deterministischer Regelwerke birgt erhebliche Compliance-Risiken.
+### Überwindung der Schnittstellen-Starre
 
-### Mehrwert und Nutzen: Regulatorische Sicherheit und intelligente Unterstützung
+Eine der grössten Hürden bei der Automatisierung ist die Anbindung an die bestehende Applikationslandschaft (ERP, CRM,
+Fachverfahren). Traditionell erfordert jede neue Automatisierung die manuelle Entwicklung von API-Wrappern («Glue
+Code»), damit ein externes System wie SAP oder CMI Axioma mit der KI-Lösung kommunizieren kann. Dies ist zeitaufwändig
+und wartungsintensiv. IT-Abteilungen stehen oft vor dem Problem, dass die KI-Plattform zwar leistungsfähig ist, aber als
+isolierter Silo neben den führenden Systemen existiert.
 
-Diese hybride Entscheidungsarchitektur bietet C-Level-Führungskräften die Gewissheit, dass automatisierte Prozesse und
-KI-generierte Vorschläge stets innerhalb definierter rechtlicher und regulatorischer Leitplanken verbleiben. Das
-minimiert Haftungsrisiken und stärkt das Vertrauen in die Konformität der KI-Anwendungen. IT-Profis können
-KI-Intelligenz gezielt zur Effizienzsteigerung einsetzen, ohne die Notwendigkeit einer vollständigen Neuentwicklung
-bestehender Regelwerke. Die Plattform ermöglicht es, KI plausible nächste Schritte in komplexen Prozessen vorzuschlagen
-und gleichzeitig sicherzustellen, dass harte Regeln niemals verletzt werden.
+### Automatische Generierung der API-Schicht
 
-### Konzepte & Prozesse: Regel-Integration in Agenten-Workflows
+Der Swiss AI Hub eliminiert diesen Integrationsaufwand durch das Konzept der **Dynamischen Endpunkte**. Die Plattform
+setzt auf intelligente Discovery-Dienste (`AgentEndpointsDiscoveryService` und `ProcessEndpointsDiscoveryService`), die
+kontinuierlich den internen Message Bus überwachen. Sobald ein neuer Prozess definiert oder ein neuer Agent deployt
+wird, generiert das integrierte API-Gateway vollautomatisch die passenden REST-Schnittstellen.
 
-Der Swiss AI Hub ermöglicht die Kombination von deterministischen Regelwerken mit adaptiver KI-Intelligenz innerhalb
-desselben Prozess-Workflows. Dies bedeutet, dass KI-Agenten nicht nur kontextbasierte Vorschläge machen, sondern diese
-Vorschläge auch automatisch gegen vordefinierte Regeln validieren, bevor sie zur Ausführung kommen oder einem
-menschlichen Prüfer vorgelegt werden. Wenn beispielsweise ein Agent in einem Antragsprüfungsprozess eine Entscheidung
-vorschlägt, kann ein nachgelagerter Schritt diesen Vorschlag automatisch gegen ein Set von Compliance-Regeln prüfen, um
-sicherzustellen, dass alle gesetzlichen Vorgaben eingehalten werden. Bei Abweichungen kann der Prozess automatisch zur
-Korrektur an den Agenten zurückgegeben oder an einen menschlichen Sachbearbeiter eskaliert werden.
+Das System analysiert dabei die Ereignis-Schemata der Komponenten und übersetzt diese mittels des «Jambo
+SchemaConverter» in validierte Pydantic-Modelle. Das Ergebnis sind typensichere, dokumentierte API-Endpunkte, die sofort
+verfügbar sind. Ein Fachverfahren kann somit einen KI-Prozess direkt über einen Standard-POST-Request anstossen (z.B.
+`/api/v1/processes/invoice_processor/start`), ohne dass ein Entwickler zuvor eine Schnittstelle programmieren musste.
 
-### Technische Umsetzung im Swiss AI Hub: Konditionale Logik und LLM-Wächter
+Die Plattform unterstützt hierbei vier primäre Integrationsmuster für maximale Flexibilität:
 
-Innerhalb der Agenten-Workflows können Entwickler über das SDK bedingte Logik implementieren, die sowohl KI-Ergebnisse
-als auch Daten aus externen Systemen verarbeitet, um Regeln durchzusetzen. Dies kann durch if/else-Statements in den
-Python-Schritten der Agenten erfolgen. Zusätzlich können KI-spezifische LLM-Wächter ("Guardrails", siehe Kapitel 08:
-Sicherheitsarchitektur) konfiguriert werden, die die Qualität und Angemessenheit von KI-Antworten und Entscheidungen
-überprüfen, bevor diese weiterverarbeitet werden. Beispielsweise kann ein `Few-Shot-Wächter` sicherstellen, dass
-KI-Antworten spezifischen internen Richtlinien entsprechen, oder ein `Kontext-Hinreichend-Wächter` Halluzinationen
-verhindert, indem er prüft, ob die KI genügend Informationen für eine faktenbasierte Aussage hat. Diese Wächter wirken
-als präventive Leitplanken, die sicherstellen, dass KI-generierte Inhalte innerhalb der regulatorischen Vorgaben
-bleiben.
+1. **Direkte Agenten-Aufrufe (Outbound):** Agenten rufen aktiv externe REST/SOAP-Schnittstellen auf (z.B. via `httpx`),
+   um Daten zu lesen oder Aktionen in Drittsystemen auszulösen.
+2. **Plattform-API-Integration (Inbound):** Externe Systeme triggern Agenten oder Prozesse via REST, um KI-Aufgaben zu
+   delegieren.
+3. **Daten-Pipelines (Batch):** Kontinuierliche Synchronisation grosser Datenmengen via Dagster für leseintensive
+   Szenarien.
+4. **MCP-Integration:** Anbindung von Entwickler-Tools über das Model Context Protocol zur Systeminspektion.
 
-## 3. Nahtlose Systemintegration mit externen Fachanwendungen
+## Hybride Intelligenz und Eskalationspfade
 
-Die Effizienz von Geschäftsprozessen wird oft durch manuelle Datenübertragungen zwischen verschiedenen
-Unternehmenssystemen untergraben. Eine erfolgreiche Automatisierung erfordert eine tiefe Integration in die bestehende
-heterogene IT-Landschaft, einschliesslich spezifischer eGovernment-Fachanwendungen.
+### Die Grenzen der Automatisierung erkennen
 
-### Mehrwert und Nutzen: Medienbruchfreier Datenaustausch und Investitionsschutz
+Vollautomatisierung ist nicht immer das Ziel. In vielen Szenarien ist die hybride Zusammenarbeit zwischen KI und Mensch
+(«Human-in-the-Loop») regulatorisch vorgeschrieben oder qualitativ notwendig. Ein System, das bei Unsicherheiten
+halluziniert oder stur falsche Entscheidungen trifft, gefährdet die Compliance. Die Business-Anforderung lautet daher:
+Automatisierung der Routine, Eskalation der Ausnahme.
 
-Für Führungskräfte sichert die nahtlose Systemintegration den Investitionsschutz in bestehende ERP-, CRM- und
-eGovernment-Lösungen, indem sie diese intelligent erweitert, anstatt sie zu ersetzen. Der medienbruchfreie
-Datenaustausch beschleunigt Verwaltungsprozesse, reduziert Fehlerquoten und gewährleistet eine hohe Datenkonsistenz über
-alle Systeme hinweg. Für IT-Teams bedeutet dies eine erhebliche Vereinfachung bei der Anbindung von KI-Funktionen an
-etablierte Systeme durch standardisierte Schnittstellen und Ereignis-basierte Trigger, wodurch der administrative
-Aufwand für Integration und Wartung minimiert wird.
+### Das Expert Asking Agent Muster
 
-### Konzepte & Prozesse: Vier Integrationsmuster für Flexibilität
+Der Swiss AI Hub implementiert diese Logik durch standardisierte Delegationsmuster. Ein besonders leistungsfähiges
+Szenario ist die Zusammenarbeit eines «Expert Grounded Agent» mit einem «Expert Asking Agent».
 
-Der Swiss AI Hub unterstützt vier Kernintegrationsmuster (siehe auch Kapitel 11: Integration und Interoperabilität), die
-eine flexible Anbindung an externe Systeme ermöglichen: `Direkte Agenten-API-Aufrufe`, `Plattform-API-Integration`,
-`Datenpipeline-Integration` und `MCP-Integration`. Diese Ansätze ermöglichen die Anbindung an breite ERP- und
-CRM-Systeme sowie spezialisierte eGovernment-Lösungen.
+Kann der Grounded Agent eine Benutzeranfrage basierend auf der Wissensdatenbank nicht zufriedenstellend beantworten,
+initiiert er eine Eskalation. Anstatt zu halluzinieren, delegiert er die Aufgabe an den Expert Asking Agent. Dieser
+formuliert die offene Frage und leitet sie über integrierte Kanäle (wie Slack oder MS Teams) an definierte menschliche
+Experten weiter. Der Prozess wechselt in einen Wartezustand.
 
-### Technische Umsetzung im Swiss AI Hub: Konnektoren, APIs und Webhooks
+Sobald der Experte im Chat antwortet, geschieht zweierlei: Erstens wird die Antwort genutzt, um den aktuellen Fall
+fortzusetzen. Zweitens speichert der Agent diese neue Information – nach einer optionalen Prüfung auf Vollständigkeit –
+direkt in die Wissensdatenbank zurück. Damit lernt das System permanent dazu: Was heute eine Ausnahme war, die
+menschliches Eingreifen erforderte, ist morgen Teil des automatisierten Standardwissens.
 
-Die Plattform bietet vorkonfigurierte und unterstützt die Entwicklung kundenspezifischer Konnektoren für die
-Datenpipeline-Integration mit Systemen wie Microsoft SharePoint, OneDrive, Confluence, File-Shares und S3-kompatiblen
-Object Stores. Auch die Integration mit spezialisierten eGov-Fachverfahren wie CMI Axioma oder RMS Gever ist über die
-flexible Datenpipeline-Architektur realisierbar. Die **Agent Interaction REST API** ermöglicht bidirektionale
-Integrationen, wobei externe Systeme KI-Funktionen auslösen und strukturierte Ergebnisse empfangen können. Die
-Authentifizierung eingehender HTTP-Anfragen erfolgt über OAuth 2.0, API-Schlüssel oder Azure AD-Integration. Ausgehende
-Konnektivität für direkte Agenten-API-Aufrufe und Pipelines erfordert ausgehenden HTTPS-Zugriff (Port 443) auf externe
-Endpunkte, wobei die Plattform API-Schlüssel, OAuth-Tokens und zertifikatbasierte Authentifizierung unterstützt. Die
-ereignisgesteuerte Architektur ermöglicht zudem die **Webhook-Unterstützung für Event-Driven-Integration**, wodurch die
-Plattform flexibel auf Ereignisse reagieren und Aktionen in externen Systemen auslösen kann.
+### Human-in-the-Loop Genehmigungen
 
-## 4. Human-in-the-Loop-Eskalation für sichere Entscheidungen
+Für formelle Freigaben nutzt die Plattform dedizierte `HumanInTheLoop`-Events. Ein Agent kann einen Workflow pausieren
+und eine explizite Entscheidung anfordern («Soll die Zahlung ausgelöst werden?»). Erst wenn das entsprechende
+`response`-Event durch einen autorisierten Nutzer eintrifft, setzt der Workflow fort. Dies ermöglicht auch mehrstufige
+Genehmigungsketten, die komplexe Hierarchien abbilden.
 
-Nicht jede Entscheidung in einem automatisierten Prozess kann vollständig einer KI überlassen werden, insbesondere bei
-Unsicherheiten, komplexen Ausnahmen oder kritischen Auswirkungen. Menschliche Kontrolle und Expertise sind oft
-unerlässlich.
+## Orchestrierung komplexer Multi-Agenten-Systeme
 
-### Mehrwert und Nutzen: Eliminierung von Fehlentscheidungen und effektive Wissenserfassung
+### Zerlegung komplexer Probleme
 
-Für C-Level-Führungskräfte eliminiert die Human-in-the-Loop (HITL)-Eskalation das Risiko von kostspieligen
-Fehlentscheidungen durch die KI, indem die Plattform bei Unsicherheiten automatisch und kontexterhaltend an menschliche
-Sachbearbeiter übergibt. Dies sichert die Compliance und die Verantwortlichkeit. Gleichzeitig wird durch die Rückführung
-menschlicher Expertise in die Wissensbasis die KI kontinuierlich intelligenter. IT-Teams profitieren von definierten
-Eskalationspfaden und der nahtlosen Integration menschlicher Interaktion in den Workflow, was komplexe Prozesse robuster
-und fehlertoleranter macht. Die Weiterleitung von Aufgaben an Sachbearbeiter erfolgt automatisch und kann über
-etablierte Kommunikationskanäle gesteuert werden.
+Monolithische KI-Modelle neigen dazu, bei komplexen, mehrstufigen Aufgaben an Präzision zu verlieren. Ein effektiver
+Business-Prozess erfordert oft unterschiedliche Kompetenzen: Ein Schritt benötigt mathematische Präzision, ein anderer
+kreatives Schreiben, ein dritter strikte Regelbefolgung.
 
-### Konzepte & Prozesse: Kontextkonservierung und Expert Asking Agent
+### Router und Worker Architektur
 
-Das HITL-Muster ermöglicht es einem Agenten, seinen Workflow an einem kritischen Punkt zu pausieren und auf menschliche
-Eingaben, Genehmigungen oder Anweisungen zu warten. Das Besondere daran ist, dass der Workflow genau an diesem Punkt mit
-dem vollen Gedächtnis aller Zwischenergebnisse und vorheriger Schritte fortgesetzt wird. Die Wartezeiten können dabei
-Minuten, Stunden oder sogar Tage betragen, ohne den technischen Ablauf zu unterbrechen – ein entscheidender Aspekt für
-das Management langlaufender Prozesse. Das System unterstützt dabei sowohl einfache Genehmigungen als auch komplexe,
-mehrstufige Genehmigungsworkflows. Ein spezialisiertes **Experten-Agenten**-Paar (`Expert Grounded Agent` und
-`Expert Asking Agent`) ist für die Beantwortung von Fragen zuständig, die das Wissen der KI übersteigen. Erkennt der
-`Expert Grounded Agent` eine Wissenslücke, informiert er den Benutzer und bittet um Erlaubnis, einen menschlichen
-Experten zu konsultieren. Mit Zustimmung des Benutzers delegiert er die Frage an den `Expert Asking Agent`. Dieser
-wiederum stellt die Frage über Kollaborationskanäle wie Slack an den menschlichen Experten und erfasst dessen Antwort.
-Die verifizierte Expertenantwort wird anschliessend als neues, permanentes Wissenselement in der Wissensdatenbank
-gespeichert, wodurch die KI kontinuierlich lernt und die Wissensbasis erweitert wird (siehe Kapitel 13 für weitere
-Details).
+Die Plattform ermöglicht den Aufbau von **Multi-Agenten-Systemen**, die nach dem «Teile und Herrsche»-Prinzip arbeiten.
+Ein zentraler **Orchestrator-Agent** analysiert die eingehende Anfrage und delegiert Teilaufgaben an spezialisierte
+**Worker-Agenten**.
 
-### Technische Umsetzung im Swiss AI Hub: `HumanInTheLoop` Events und Integration mit Kollaborations-Tools
+Technisch wird dies über das `AgentInTheLoop`-Muster realisiert, welches verschiedene Ausführungsstrategien erlaubt:
 
-Das HITL-Muster wird durch spezielle `HumanInTheLoop.request`- und `HumanInTheLoop.response`-Events orchestriert. Der
-`HumanInTheLoop.request`-Event pausiert den Agenten-Workflow und präsentiert dem Benutzer eine Frage in der
-Benutzeroberfläche. Die Antwort des Benutzers, zurückgesendet als `HumanInTheLoop.response`-Event, setzt den Workflow im
-nächsten dafür vorgesehenen Schritt fort. Die `HumanInTheLoop`-Helferklasse im SDK vereinfacht die Implementierung
-dieser Muster für einzelne oder mehrstufige Genehmigungsprozesse, indem sie die Logik zum Pausieren und Fortsetzen
-verwaltet. Alle menschlichen Interaktionen werden im Rahmen der lückenlosen Nachvollziehbarkeit als Ereignisse
-aufgezeichnet. Für die Interaktion mit menschlichen Experten integriert sich die Plattform über einen separat
-bereitstellbaren Bot Framework API-Dienst mit dem Microsoft Azure Bot Service. Dies ermöglicht die
-Multichannel-Bereitstellung von KI-Agenten in Kollaborationsplattformen wie **Microsoft Teams** und **Slack**, wodurch
-menschliche Sachbearbeiter Aufgaben und Fragen der KI in ihrem gewohnten Arbeitsumfeld empfangen, bearbeiten und die
-Ergebnisse direkt zurück in den Prozess speisen können.
+- **Sequenzielle Ketten:** Die Ausgabe von Agent A (z.B. Datenextraktion aus einer Rechnung) dient als Eingabe für Agent
+  B (z.B. Prüfung auf Betrugsmuster).
+- **Parallele Ausführung (Fan-Out):** Ein Orchestrator delegiert Teilaufgaben gleichzeitig an mehrere Agenten – etwa die
+  Prüfung eines Vertrags durch einen juristischen Bot und einen finanziellen Bot parallel – und aggregiert die
+  Ergebnisse («Fan-In») zu einer finalen Empfehlung.
+- **Routing:** Ein spezialisierter Router entscheidet basierend auf dem Dokumententyp (z.B. «Finanzen» vs. «Recht»),
+  welcher Spezialagent konsultiert wird.
 
-## 5. Transparenz und Prozess-Optimierung durch Observability
+Dabei lässt sich granular steuern, ob Kontexte geteilt werden. Mittels `share_thread_id=True` können Sub-Agenten auf die
+bisherige Konversation zugreifen, während `share_run_id=False` eine saubere Trennung der Ausführungsstränge
+gewährleistet.
 
-Ohne transparente Einblicke in den Status, die Leistung und die Kosten laufender Prozesse können Unternehmen Engpässe
-nicht identifizieren, Effizienzgewinne nicht messen und Compliance-Anforderungen nicht nachweisen.
+## Transparenz und Prozess-Monitoring
 
-### Mehrwert und Nutzen: Messbare Effizienz und fundierte Optimierung
+### Überwachung jenseits von System-Logs
 
-Für Führungskräfte liefert Echtzeit-Monitoring eine fundierte Grundlage zur Messung des ROI von automatisierten
-Prozessen und zur Identifizierung von Flaschenhälsen. Dies ermöglicht datengestützte Entscheidungen zur weiteren
-Optimierung der Prozessabläufe und zur Steigerung der betrieblichen Effizienz. Dabei werden auch der ROI messbar und die
-Kosten pro Prozess oder Abteilung genau zugeordnet. IT-Teams profitieren von einer umfassenden Observability-Suite, die
-jederzeit Einblick in den Status laufender Vorgänge bietet, die Ursachenanalyse bei Fehlern erleichtert und die
-Einhaltung von SLAs (Service Level Agreements) unterstützt.
+Für Prozessverantwortliche ist es entscheidend, nicht nur zu wissen, ob das System technisch läuft, sondern wo fachliche
+Vorgänge stehen. Hängen Anträge in der Freigabe? Wie lange dauert die KI-Bearbeitung im Durchschnitt?
 
-### Konzepte & Prozesse: Die Säulen der Observability und End-to-End-Tracing
+### Prozess-Observability
 
-Die Überwachungsphilosophie der Plattform basiert auf den branchenüblichen Säulen der Observability: `Health Checks`
-(Liveness/Readiness), `Metriken` (Leistung/Ressourcennutzung) und `Logs` (detaillierte Ereignisaufzeichnungen). Ein
-zentrales Element ist das **End-to-End Distributed Tracing** mittels OpenTelemetry, das jeden Anfragefluss über Dienste,
-Agenten und LLM-Interaktionen hinweg verfolgt. Alle Interaktionen im Prozess, einschliesslich der menschlichen
-Eingriffe, werden lückenlos protokolliert. Dies ist entscheidend, um die Nachvollziehbarkeit im Falle von Problemen zu
-gewährleisten und die Einhaltung regulatorischer Anforderungen nachzuweisen.
+Da jeder Prozessschritt auf der Plattform diskrete Ereignisse emittiert, bietet der Swiss AI Hub eine granulare
+Nachverfolgbarkeit. Über die automatisch generierten Prozess-Endpunkte lassen sich Statusinformationen in Echtzeit
+abrufen. Dies ermöglicht den Aufbau von Dashboards, die Flaschenhälse in der Prozesskette visualisieren. Kombiniert mit
+der Deep Observability (OpenTelemetry) können Administratoren bei Fehlern exakt nachvollziehen, bei welchem
+Entscheidungsschritt oder externen API-Aufruf ein Prozess gescheitert ist, und ihn gegebenenfalls gezielt neu anstossen.
 
-### Technische Umsetzung im Swiss AI Hub: OpenTelemetry, SigNoz und Phoenix UI
-
-Das gesamte Überwachungs- und Alarmierungssystem des Swiss AI Hub basiert auf **OpenTelemetry (OTel)**. Ein zentraler
-**OpenTelemetry Collector** empfängt Logs, Metriken und Traces von allen Diensten, reichert sie mit Metadaten an und
-exportiert sie sicher an die gewählten Ziele. Als offiziell unterstütztes Observability-Backend dient **SigNoz**, eine
-Open-Source-, OpenTelemetry-native Plattform, die vereinheitlichte Dashboards für Infrastruktur, KI-Operationen
-(Modellnutzung, Token-Verbrauch, Kosten pro Operation), Anwendungsleistung und Log-Analyse bereitstellt. Für die
-detaillierte Analyse von Agenten-Workflows während der Entwicklung bietet die **Phoenix UI** spezialisierte
-LLM-Observability mit Timeline-Ansichten, Token-Nutzung und Inspektionsmöglichkeiten abgerufener Dokumente. Flexible
-Alarmierungsfunktionen können für kritische Dienstausfälle, Leistungsverschlechterung, Ressourcenlimits,
-Kostenmanagement (ungewöhnlich hoher Token-Verbrauch in einem Prozess) und Sicherheitsereignisse konfiguriert und an
-Kanäle wie E-Mail, Slack oder Microsoft Teams weitergeleitet werden. Diese detaillierten Einblicke ermöglichen eine
-präzise Messung der Effizienzgewinne und unterstützen die kontinuierliche Prozess-Optimierung.
+Zusammenfassend transformiert der Swiss AI Hub KI von einem reinen Dialogpartner zu einem verlässlichen Motor für die
+Prozessautomatisierung. Durch die Verbindung von persistentem State-Management, dynamischer Integration und
+intelligenten Eskalationsstrategien werden KI-Fähigkeiten tief und sicher in die Wertschöpfungskette des Unternehmens
+eingebettet.

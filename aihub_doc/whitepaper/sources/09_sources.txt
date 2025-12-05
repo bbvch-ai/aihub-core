@@ -1,10 +1,10 @@
 # Source Documentation for Chapter 09: Compliance and Data Sovereignty
 # List paths relative to aihub_doc/docs/
 
-2_platform/19_compliance/1_data_retention/index.en.md
-2_platform/19_compliance/2_gdpr/index.en.md
-2_platform/19_compliance/3_dsg/index.en.md
-2_platform/19_compliance/4_ai_act/index.en.md
-2_platform/19_compliance/5_internationalization/index.en.md
-2_platform/19_compliance/6_data_subject_requests/index.en.md
+2_platform/20_compliance/1_data_retention/index.en.md
+2_platform/20_compliance/2_gdpr/index.en.md
+2_platform/20_compliance/3_dsg/index.en.md
+2_platform/20_compliance/4_ai_act/index.en.md
+2_platform/20_compliance/5_internationalization/index.en.md
+2_platform/20_compliance/6_data_subject_requests/index.en.md
 2_platform/3_deployment_guide/1_deployment_options/index.en.md

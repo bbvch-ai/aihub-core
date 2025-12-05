@@ -35,7 +35,7 @@
 2_platform/3_deployment_guide/4_backup_and_recovery/index.en.md
 
 # APIs & Integration Points
-2_platform/16_api/index.en.md
+2_platform/17_api/index.en.md
 5_references/1_api/1_rest_api/index.en.md
 5_references/1_api/2_event_reference/index.en.md
 5_references/1_api/3_sdk_reference/index.en.md

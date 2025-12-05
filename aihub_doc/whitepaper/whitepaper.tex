@@ -1,0 +1,127 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[a4paper,margin=2.5cm,includefoot]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}          % Latin Modern (for math etc.)
+\usepackage[scaled=0.95]{helvet} % Helvetica as sans-serif (Arial-ish)
+\renewcommand{\familydefault}{\sfdefault} % use sans serif as main text font
+
+\usepackage{graphicx}
+\graphicspath{{graphics/}} % note the double braces
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{setspace}
+\usepackage{amssymb} % for \square
+\usepackage{multirow}
+
+% For Pandoc-generated tight lists
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}%
+  \setlength{\parskip}{0pt}%
+}
+
+% Image files (adjust names if needed)
+\newcommand{\logofile}{bbv-logo} % bbv logo
+\newcommand{\qslogo}{QS}         % QS logo
+
+\setlength{\parskip}{0.5\baselineskip}
+\setlength{\parindent}{0pt}
+
+%----------------------------------------
+% Footer layout macro (address + QS + page)
+%----------------------------------------
+\newcommand{\bbvfooter}{%
+  \scriptsize
+  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l c r}
+    % Left block: address (2 lines) – shifted down slightly
+    \begin{minipage}[t]{0.58\textwidth}
+      \vspace{0.3em}% adjust this value until the height matches nicely
+      bbv Software Services AG, Blumenrain 10, Postfach, 6002 Luzern, Schweiz\\
+      Tel. +41 41 429 01 11, info@bbv.ch, www.bbv.ch
+    \end{minipage}
+    &
+    % Middle block: QS logo + vertical bar + ISO lines (stacked, centered)
+    \begin{minipage}[t]{0.22\textwidth}
+      \centering
+      \vspace{0pt}%
+      \begin{tabular}{@{}c@{\hspace{0.4em}}|@{\hspace{0.4em}}l@{}}
+        \multirow{2}{*}{\includegraphics[height=0.9cm]{\qslogo}} & ISO 9001\\
+                                                                 & ISO 13485
+      \end{tabular}
+    \end{minipage}
+    &
+    % Right block: version + page
+    \begin{minipage}[t]{0.16\textwidth}
+      \raggedleft
+      \vspace{0pt}%
+      $if(version)$$version$$else$V30082025$endif$\hspace{1em}%
+      \thepage/\pageref{LastPage}
+    \end{minipage}
+  \end{tabular*}%
+}
+
+% Header / footer
+\pagestyle{fancy}
+\fancyhf{}
+\setlength{\headheight}{30pt}
+\setlength{\footskip}{30pt}
+
+\fancyhead[L]{\includegraphics[height=1.2cm]{\logofile}}
+\fancyhead[R]{$if(title)$$title$$endif$}
+
+% Use the same footer on all pages
+\fancyfoot[C]{\bbvfooter}
+
+\fancypagestyle{plain}{%
+  \fancyhf{}
+  \fancyhead[L]{\includegraphics[height=1.2cm]{\logofile}}
+  \fancyhead[R]{$if(title)$$title$$endif$}
+  \fancyfoot[C]{\bbvfooter}
+}
+
+\begin{document}
+
+%------------------------------------------------------------
+% TITLE PAGE
+%------------------------------------------------------------
+\thispagestyle{plain}
+\begin{titlepage}
+  \begin{flushright}
+    \includegraphics[height=1.5cm]{\logofile}
+  \end{flushright}
+
+  \vspace*{2cm}
+  \centering
+
+  {\Large $if(projectname)$$projectname$$else$Project Title$endif$\par}
+  \vspace{0.5cm}
+  {\Large Projektname\par}
+
+  \vspace{2.5cm}
+  {\Huge\bfseries $if(title)$$title$$else$Business Case$endif$\par}
+
+  \vfill
+
+  {\large $if(company)$$company$$else$Company Name$endif$\par}
+  {\large $if(date)$$date$$else$\today$endif$\par}
+\end{titlepage}
+
+%------------------------------------------------------------
+% TABLE OF CONTENTS
+%------------------------------------------------------------
+\tableofcontents
+\newpage
+
+%------------------------------------------------------------
+% MAIN CONTENT FROM MARKDOWN
+%------------------------------------------------------------
+$body$
+
+\clearpage
+\label{LastPage}
+
+\end{document}

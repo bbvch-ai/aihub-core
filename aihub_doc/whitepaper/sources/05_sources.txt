@@ -8,12 +8,12 @@
 3_sdk/5_advanced_topics/5_rbac/index.en.md
 
 # Authentication und SSO
-2_platform/18_security/1_authentication/index.en.md
+2_platform/19_security/1_authentication/index.en.md
 
 # Consent Management und Compliance
-2_platform/19_compliance/index.en.md
-2_platform/19_compliance/2_gdpr/index.en.md
-2_platform/19_compliance/6_data_subject_requests/index.en.md
+2_platform/20_compliance/index.en.md
+2_platform/20_compliance/2_gdpr/index.en.md
+2_platform/20_compliance/6_data_subject_requests/index.en.md
 
 # Cost Control und Tracking
 2_platform/14_cost_control/index.en.md

@@ -25,7 +25,7 @@
 
 # Guards & Input Validation (for quality)
 2_platform/13_language_models/3_guards/index.en.md
-2_platform/18_security/2_input_validation/index.en.md
+2_platform/19_security/2_input_validation/index.en.md
 
 # Error Handling & Performance
 3_sdk/5_advanced_topics/4_error_handling/index.en.md

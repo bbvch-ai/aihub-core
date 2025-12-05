@@ -87,20 +87,36 @@ zugeordnet sind. Verweise auf andere Themen nur, beschreibe sie aber nicht erneu
 
 **Gesamt-Kapitelübersicht:**
 
-- 00 Executive Summary
-- 01 Die Business-Herausforderung: KI im Unternehmen
-- 02 Plattform-Überblick - Die Swiss AI-Hub-Lösung
-- 03 Datensouveränität und vollständige Kundenkontrolle
-- 04 Plattform-Transparenz und Prüfbarkeit
-- 05 Administration und Governance
-- 06 Datenmanagement, Integration und Ingestion
-- 07 Datensicherheit und Datenfluss
-- 08 Sicherheitsarchitektur
-- 09 Regulatorische Compliance
-- 10 Deployment, Betrieb
-- 11 Integration und Interoperabilität
-- 12 User Experience und Interaktion
-- 13 AI-Agenten und Kernkonzepte
-- 14 Business-Prozessautomatisierung
-- 15 Zuverlässigkeit und Qualitätssicherung
-- 16 Erweiterbarkeit und Zukunftssicherheit
+- Executive Summary
+- Die Business-Herausforderung: KI im Unternehmen
+- Plattform-Überblick - Die Swiss AI-Hub-Lösung
+- Datensouveränität und vollständige Kundenkontrolle
+- Plattform-Transparenz und Prüfbarkeit
+- Administration und Governance
+- Datenmanagement, Integration und Ingestion
+- Datensicherheit und Datenfluss
+- Sicherheitsarchitektur
+- Regulatorische Compliance
+- Deployment, Betrieb
+- Integration und Interoperabilität
+- User Experience und Interaktion
+- AI-Agenten und Kernkonzepte
+- Business-Prozessautomatisierung
+- Zuverlässigkeit und Qualitätssicherung
+- Erweiterbarkeit und Zukunftssicherheit
+
+---
+
+## 5. WICHITG
+
+- Beziehe dich im Text die direkt auf die Quelldokumentation in der Formulierung. 
+Aussagen wie "gemäss Quelldokumentation ..." sind verboten!
+- Stelle sicher das der Text nicht repetitiv ist. Verwende untershciedlich abschnitts Einleitungen.
+- Achte Darauf das der Text interessant und nicht repetitiv ist
+- Achte darauf das Themen nur einmal ausführlich erklärt werden.
+- Wenn Themen in mehreren Kapitel wichtig sind dann erkläre sie nur einmal ausführlich (im ersten Kapitel) und referenziere bei den anderen darauf.
+- Die SeitenZahl Angabe ist ein maximum versuche nicht diese mit duplizierten Inhalten zu füllen.
+- Verwende nur Guillemets mit Spitzen nach aussen als Anführungszeichen also «…» und nicht „…“ oder "..."
+- Verwende auf keinen Fall scharfes "S"
+- Verwende auf keinen Fall Gedankenstriche " – " sonder mache in diesen Fälle normale eingeschobene Nebensätze mit Kommas
+

@@ -6,7 +6,7 @@
 2_platform/8_knowledges/1_namespaces/index.en.md
 
 # Data Integration
-2_platform/20_external_integrations/index.en.md
+2_platform/21_external_integrations/index.en.md
 
 # Pipelines und Ingestion
 2_platform/6_pipelines/index.en.md
@@ -22,7 +22,7 @@
 2_platform/5_agents/2_rag_agent/index.en.md
 
 # Security Validation
-2_platform/18_security/2_input_validation/index.en.md
+2_platform/19_security/2_input_validation/index.en.md
 
 # Access Control
 2_platform/11_access_management/2_permissions/index.en.md
