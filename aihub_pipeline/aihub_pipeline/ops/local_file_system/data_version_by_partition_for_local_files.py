@@ -53,4 +53,9 @@ def data_version_by_partition_for_local_files(
     # This ensures that if a file is deleted and re-uploaded with the same content,
     # it will be detected as a new version and trigger reprocessing
     # Using Unix timestamp (int) for consistent string representation, matching DataLake pipeline pattern
-    return DataVersionsByPartition({file.path: f"{file.modified}-{file.size}" for file in local_files})
+    existing_partitions = set(context.instance.get_dynamic_partitions(partition.name))
+    files_with_partitions = [file for file in local_files if file.path in existing_partitions]
+
+    return DataVersionsByPartition(
+        {file.path: f"{file.modified}-{file.size}" for file in files_with_partitions}  # Only files with partitions
+    )

@@ -52,6 +52,12 @@ def data_version_by_partition_for_data_lake_files_no_op(
     # Hence, when the issue is resolved, we can wipe the materialized asset when we delete it and hence
     # get rid of the need to incorporate the updated timestamp into the version key, as dagster will "forget"
     # that the asset ever existed and re-process it when it is encountered again.
+    existing_partitions = set(context.instance.get_dynamic_partitions(partition.name))
+    files_with_partitions = [f for f in data_lake_files if f.uri in existing_partitions]
+
     return DataVersionsByPartition(
-        {data_lake_file.uri: f"{data_lake_file.updated}-{data_lake_file.hash}" for data_lake_file in data_lake_files}
+        {
+            data_lake_file.uri: f"{data_lake_file.updated}-{data_lake_file.hash}"
+            for data_lake_file in files_with_partitions
+        }
     )
