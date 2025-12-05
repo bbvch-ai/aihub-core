@@ -100,11 +100,14 @@ class ExpertAskingAgent(Agent):
             nodes = [IngestedNode(**node) for node in nodes_data]
             context_str = "\n\n".join([node.content for node in nodes if node.content])
 
+        # Prefer expert_group from event (set by parent agent) over agent config
+        expert_group = question_event.expert_group or agent_config.expert_group
+
         return ExpertInTheLoop.invoke(
             user=question_event.user,
             question=question_event.question_to_expert,
             context=context_str,
-            expert_group=agent_config.expert_group,
+            expert_group=expert_group,
             priority="normal",
             locale=question_event.locale,
         )

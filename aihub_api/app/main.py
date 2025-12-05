@@ -10,6 +10,7 @@ from aihub_api.routes.docling.DoclingController import DoclingController
 from aihub_api.routes.evaluation.EvaluationController import EvaluationController
 from aihub_api.routes.event.EventController import EventController
 from aihub_api.routes.expert.ExpertQuestionController import ExpertQuestionController
+from aihub_api.routes.expert_group.ExpertGroupController import ExpertGroupController
 from aihub_api.routes.file.FileController import FileController
 from aihub_api.routes.i18n.I18nController import I18nController
 from aihub_api.routes.knowledge.KnowledgeController import KnowledgeController
@@ -101,6 +102,14 @@ runner.mount(
     .get_question()
     .submit_answer()
     .cancel_question(),
+    ExpertGroupController(auth=auth)
+    .create_group()
+    .get_groups()
+    .get_group()
+    .update_group()
+    .delete_group()
+    .add_member()
+    .remove_member(),
 )
 
 

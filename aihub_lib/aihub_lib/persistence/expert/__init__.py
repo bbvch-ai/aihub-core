@@ -1,3 +1,4 @@
+from .ExpertGroupEntity import ExpertGroupEntity
 from .ExpertQuestionEntity import (
     ExpertQuestionEntity,
     ExpertResponder,
@@ -6,6 +7,7 @@ from .ExpertQuestionEntity import (
 )
 
 __all__ = [
+    "ExpertGroupEntity",
     "ExpertQuestionEntity",
     "ExpertResponder",
     "RequestingAgent",

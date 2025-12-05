@@ -517,6 +517,7 @@ class RAGAgent(Agent):
                 locale=user_message_event.locale,
                 user=user_message_event.user,
                 nodes=nodes,
+                expert_group=expert_config.expert_group,
             ),
         )
 

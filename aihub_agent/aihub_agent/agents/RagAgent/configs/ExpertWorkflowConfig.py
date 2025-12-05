@@ -32,3 +32,8 @@ class ExpertWorkflowConfig(BaseModel):
         int,
         Field(description="Max nodes to include when formulating expert question", ge=1),
     ] = 5
+
+    expert_group: Annotated[
+        str | None,
+        Field(description="Expert group to route questions to. Overrides ExpertAskingAgent's config if set."),
+    ] = None

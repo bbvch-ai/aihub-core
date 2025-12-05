@@ -23,3 +23,7 @@ class AskExpertEvent(ControlEvent):
         list[IngestedNode],
         Field(description="Retrieved nodes that provide context for the expert question"),
     ] = []
+    expert_group: Annotated[
+        str | None,
+        Field(description="Expert group to route the question to. Overrides agent config if set."),
+    ] = None
