@@ -1,6 +1,5 @@
 from typing import Annotated
 
-from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
@@ -55,7 +54,7 @@ class AgentDTO(MinimalAgentDTO):
         return cls(
             agent_class=instance.agent_class,
             agent_id=instance.agent_id,
-            agent_config=AgentConfigDTO.from_agent_config(instance.agent_config or instance.default_agent_config, t),
+            agent_config=AgentConfigDTO.from_agent_config_specs(instance.agent_config_specs, t),
             is_conversational=instance.is_conversational,
             start_events=instance.start_events,
             stop_events=instance.stop_events,
@@ -68,8 +67,7 @@ class AgentDTO(MinimalAgentDTO):
     @classmethod
     def from_entity(cls, entity: AgentEntity, t: LocaleHandler, is_online: bool | None = None) -> "AgentDTO":
         """Converts an AgentEntity to an AgentDTO."""
-        agent_config = AgentConfig.from_entity(entity.agent_config or entity.default_agent_config)
-        agent_config_dto = AgentConfigDTO.from_agent_config(agent_config, t)
+        agent_config_dto = AgentConfigDTO.from_agent_config_entity_specs(entity.agent_config_specs, t)
 
         start_events = [
             EventSpecs(

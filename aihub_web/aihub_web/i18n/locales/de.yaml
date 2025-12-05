@@ -240,6 +240,8 @@ agent:
     description: "Konfigurieren Sie das Laufzeitverhalten und die Einstellungen für diesen Agenten"
     runtimeSettings: "Laufzeiteinstellungen"
     noConfiguration: "Keine Konfiguration für diesen Agenten verfügbar"
+    saveSuccess: "Konfiguration erfolgreich gespeichert"
+    saveError: "Konfiguration konnte nicht gespeichert werden"
   chat:
     title: "Neuen Chat starten"
     placeholder: "Geben Sie die Nachricht ein, die Sie an den Agenten senden möchten"

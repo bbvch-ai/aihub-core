@@ -1,7 +1,8 @@
-import type { AgentConfigurationDataDto } from '@core/sdk/client'
 import { getAgentConfiguration } from '@core/sdk/client'
 import { minutesToMilliseconds } from 'date-fns'
 import { useRoute } from 'vue-router'
+
+import type { AgentConfigurationDataDto } from '@core/sdk/client'
 
 export const useAgentConfiguration = defineQuery(() => {
   const route = useRoute()

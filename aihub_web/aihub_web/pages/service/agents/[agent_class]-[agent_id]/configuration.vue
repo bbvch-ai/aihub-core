@@ -40,16 +40,39 @@
 </template>
 
 <script setup lang="ts">
+const route = useRoute()
 const { agent, agentIsLoading } = useAgent()
 const { agentConfiguration, agentConfigurationIsLoading } = useAgentConfiguration()
+const { updateAgentConfiguration } = useUpdateAgentConfiguration()
 const { t } = useI18n()
+const toast = useToast()
 
 const configForm = computed(() => agent.value?.agent_config?.form || [])
 const configurationData = computed(() => agentConfiguration.value?.configuration || {})
 
 const submitConfiguration = async (formData: Record<string, unknown>) => {
-  // TODO: Implement configuration submission when backend endpoint is ready
-  // Expected endpoint: PUT /agents/{agent_class}/{agent_id}/configuration
-  console.log('Submitting agent configuration:', formData)
+  const agentClass = route.params.agent_class as string
+  const agentId = route.params.agent_id as string
+
+  try {
+    await updateAgentConfiguration({
+      agentClass,
+      agentId,
+      configuration: formData,
+    })
+    toast.add({
+      severity: 'success',
+      summary: t('agent.configuration.saveSuccess'),
+      life: 3000,
+    })
+  }
+  catch (error) {
+    console.error('Failed to save agent configuration:', error)
+    toast.add({
+      severity: 'error',
+      summary: t('agent.configuration.saveError'),
+      life: 5000,
+    })
+  }
 }
 </script>

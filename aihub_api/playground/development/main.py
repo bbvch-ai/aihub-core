@@ -57,7 +57,7 @@ async def main():
         .add_user_to_thread()
         .remove_user_from_thread(),
         ModelController(auth=auth).get_models().get_model(),
-        AgentController(auth=auth).get_agent().get_agent_threads().get_agent_configuration().get_agents().discover_agents(),
+        AgentController(auth=auth).get_agent().get_agent_threads().get_agent_configuration().update_agent_configuration().get_agents().discover_agents(),
         ProcessController(auth=auth)
         .get_process()
         .get_processes()

@@ -64,7 +64,7 @@ export type AddUserRequest = {
 /**
  * AgentConfigDTO
  */
-export type AgentConfigDto = {
+export type AgentConfigDtoReadable = {
     /**
      * Agent Id
      * The id of the agent.
@@ -89,9 +89,38 @@ export type AgentConfigDto = {
      * Form
      * Dynamic form configuration for agent runtime settings.
      */
-    form?: Array<{
-        [key: string]: unknown;
-    }> | null;
+    form?: Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable> | null;
+};
+
+/**
+ * AgentConfigDTO
+ */
+export type AgentConfigDtoWritable = {
+    /**
+     * Agent Id
+     * The id of the agent.
+     */
+    agent_id: string;
+    /**
+     * Name
+     * The name of the agent.
+     */
+    name: string;
+    /**
+     * Description
+     * The description of the agent.
+     */
+    description: string;
+    /**
+     * Icon
+     * The icon representing the agent.
+     */
+    icon?: string;
+    /**
+     * Form
+     * Dynamic form configuration for agent runtime settings.
+     */
+    form?: Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable> | null;
 };
 
 /**
@@ -126,7 +155,7 @@ export type AgentConfigurationDataDto = {
  * event models and the publicly exposed fields in HTTP responses.
  * By using `AgentDTO`, the API can evolve independently from the internal event representations.
  */
-export type AgentDto = {
+export type AgentDtoReadable = {
     /**
      * Agent Class
      * The agent's class identifier (e.g., 'my_agent_class').
@@ -140,7 +169,66 @@ export type AgentDto = {
     /**
      * Configuration details of the agent, including name, description, and prompts.
      */
-    agent_config: AgentConfigDto;
+    agent_config: AgentConfigDtoReadable | null;
+    /**
+     * Is Conversational
+     * Whether the agent can participate in a chat-based conversation
+     */
+    is_conversational: boolean;
+    /**
+     * Start Events
+     * A list of `EventSpecs` representing events that can start this agent's workflow.
+     */
+    start_events: Array<EventSpecs>;
+    /**
+     * Stop Events
+     * A list of `EventSpecs` representing events that can stop this agent's workflow.
+     */
+    stop_events: Array<EventSpecs>;
+    /**
+     * Hitl Request Events
+     * A list of `EventSpecs` representing human-in-the-loop request events this agent can produce.
+     */
+    hitl_request_events: Array<EventSpecs>;
+    /**
+     * Hitl Response Events
+     * A list of `EventSpecs` representing human-in-the-loop response events this agent can accept.
+     */
+    hitl_response_events: Array<EventSpecs>;
+    /**
+     * A network graph of the agent, showing how different components are connected and interact.
+     */
+    network_graph: WorkflowGraph;
+    /**
+     * Is Online
+     * Indicates whether the agent is online and reachable.
+     */
+    is_online?: boolean | null;
+};
+
+/**
+ * AgentDTO
+ * A data transfer object for representing agent information in responses.
+ * This DTO standardizes how agent data is returned from the service layer to the controller,
+ * and subsequently to the API response. It helps maintain a clean separation between the internal
+ * event models and the publicly exposed fields in HTTP responses.
+ * By using `AgentDTO`, the API can evolve independently from the internal event representations.
+ */
+export type AgentDtoWritable = {
+    /**
+     * Agent Class
+     * The agent's class identifier (e.g., 'my_agent_class').
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     * Unique identifier for the agent instance (e.g., 'agent_123').
+     */
+    agent_id: string;
+    /**
+     * Configuration details of the agent, including name, description, and prompts.
+     */
+    agent_config: AgentConfigDtoWritable | null;
     /**
      * Is Conversational
      * Whether the agent can participate in a chat-based conversation
@@ -610,7 +698,7 @@ export type AgentInstanceTopic = {
  * AgentProcessStepDTO
  * DTO representing an agent process step with agent-specific work request and response information.
  */
-export type AgentProcessStepDto = {
+export type AgentProcessStepDtoReadable = {
     /**
      * Step Index
      * Order of this step in the walkthrough (0-based).
@@ -634,11 +722,46 @@ export type AgentProcessStepDto = {
     /**
      * The agent work request for this step.
      */
-    work_request?: AgentWorkRequestDto | null;
+    work_request?: AgentWorkRequestDtoReadable | null;
     /**
      * The agent work response for this step. May be None if work is not yet completed.
      */
-    work_response?: AgentWorkResponseDto | null;
+    work_response?: AgentWorkResponseDtoReadable | null;
+};
+
+/**
+ * AgentProcessStepDTO
+ * DTO representing an agent process step with agent-specific work request and response information.
+ */
+export type AgentProcessStepDtoWritable = {
+    /**
+     * Step Index
+     * Order of this step in the walkthrough (0-based).
+     */
+    step_index: number;
+    /**
+     * Step Type
+     * Type of entity involved in this step.
+     */
+    step_type?: string;
+    /**
+     * Created At
+     * Timestamp when this step was created in nanoseconds.
+     */
+    created_at: number;
+    /**
+     * Is Completed
+     * Whether this step has been completed (has a work response).
+     */
+    is_completed: boolean;
+    /**
+     * The agent work request for this step.
+     */
+    work_request?: AgentWorkRequestDtoWritable | null;
+    /**
+     * The agent work response for this step. May be None if work is not yet completed.
+     */
+    work_response?: AgentWorkResponseDtoWritable | null;
 };
 
 /**
@@ -805,7 +928,7 @@ export type AgentSuitabilityRejectEventWritable = {
  * AgentWorkRequestDTO
  * DTO representing an agent work request with specific agent-related information.
  */
-export type AgentWorkRequestDto = {
+export type AgentWorkRequestDtoReadable = {
     /**
      * Event Id
      * Unique identifier of the work request event.
@@ -856,7 +979,72 @@ export type AgentWorkRequestDto = {
     /**
      * Detailed information about the agent, if available.
      */
-    agent_info?: MinimalAgentDto | null;
+    agent_info?: MinimalAgentDtoReadable | null;
+    /**
+     * Start Event
+     * The start event that will be sent to the agent.
+     */
+    start_event?: {
+        [key: string]: unknown;
+    };
+};
+
+/**
+ * AgentWorkRequestDTO
+ * DTO representing an agent work request with specific agent-related information.
+ */
+export type AgentWorkRequestDtoWritable = {
+    /**
+     * Event Id
+     * Unique identifier of the work request event.
+     */
+    event_id: string;
+    /**
+     * Event Name
+     * Name of the event type.
+     */
+    event_name: string;
+    /**
+     * Created At
+     * Timestamp when the work was requested in nanoseconds.
+     */
+    created_at: number;
+    /**
+     * Request Type
+     * Type of entity the work was requested from.
+     */
+    request_type: 'human' | 'agent' | 'program';
+    /**
+     * Display Name
+     * Human-readable name for the work request.
+     */
+    display_name: string | null;
+    /**
+     * Display Description
+     * Human-readable description of the work request.
+     */
+    display_description: string | null;
+    /**
+     * Data
+     * The work request event data.
+     */
+    data: {
+        [key: string]: unknown;
+    };
+    /**
+     * Agent Class
+     * The class of the agent that should handle this request.
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     * The ID of the agent that should handle this request.
+     */
+    agent_id: string;
+    /**
+     * Detailed information about the agent, if available.
+     */
+    agent_info?: MinimalAgentDtoWritable | null;
     /**
      * Start Event
      * The start event that will be sent to the agent.
@@ -870,7 +1058,7 @@ export type AgentWorkRequestDto = {
  * AgentWorkResponseDTO
  * DTO representing an agent work response with specific agent-related information.
  */
-export type AgentWorkResponseDto = {
+export type AgentWorkResponseDtoReadable = {
     /**
      * Event Id
      * Unique identifier of the work response event.
@@ -921,7 +1109,72 @@ export type AgentWorkResponseDto = {
     /**
      * Detailed information about the agent, if available.
      */
-    agent_info?: MinimalAgentDto | null;
+    agent_info?: MinimalAgentDtoReadable | null;
+    /**
+     * Agent Stop Event
+     * The stop event returned by the agent after completing the work.
+     */
+    agent_stop_event?: {
+        [key: string]: unknown;
+    };
+};
+
+/**
+ * AgentWorkResponseDTO
+ * DTO representing an agent work response with specific agent-related information.
+ */
+export type AgentWorkResponseDtoWritable = {
+    /**
+     * Event Id
+     * Unique identifier of the work response event.
+     */
+    event_id: string;
+    /**
+     * Event Name
+     * Name of the event type.
+     */
+    event_name: string;
+    /**
+     * Created At
+     * Timestamp when the work was completed in nanoseconds.
+     */
+    created_at: number;
+    /**
+     * Response Type
+     * Type of entity that completed the work.
+     */
+    response_type: 'human' | 'agent' | 'program';
+    /**
+     * Display Name
+     * Human-readable name for the work response.
+     */
+    display_name: string | null;
+    /**
+     * Display Description
+     * Human-readable description of the work response.
+     */
+    display_description: string | null;
+    /**
+     * Data
+     * The work response event data.
+     */
+    data: {
+        [key: string]: unknown;
+    };
+    /**
+     * Agent Class
+     * The class of the agent that should handle this request.
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     * The ID of the agent that should handle this request.
+     */
+    agent_id: string;
+    /**
+     * Detailed information about the agent, if available.
+     */
+    agent_info?: MinimalAgentDtoWritable | null;
     /**
      * Agent Stop Event
      * The stop event returned by the agent after completing the work.
@@ -974,6 +1227,7 @@ export type Audio = {
      * Id
      */
     id: string;
+    [key: string]: unknown | string;
 };
 
 /**
@@ -1446,6 +1700,7 @@ export type ChatCompletionAllowedToolChoiceParam = {
      * Type
      */
     type: 'allowed_tools';
+    [key: string]: unknown | ChatCompletionAllowedToolsParam | 'allowed_tools';
 };
 
 /**
@@ -1460,6 +1715,9 @@ export type ChatCompletionAllowedToolsParam = {
      * Tools
      */
     tools: Array<{
+        [key: string]: unknown;
+    }>;
+    [key: string]: unknown | ('auto' | 'required') | Array<{
         [key: string]: unknown;
     }>;
 };
@@ -1477,7 +1735,7 @@ export type ChatCompletionAssistantMessageParam = {
      * Content
      */
     content?: string | Array<ChatCompletionContentPartTextParam | ChatCompletionContentPartRefusalParam> | null;
-    function_call?: FunctionCallInput | null;
+    function_call?: FunctionCall | null;
     /**
      * Name
      */
@@ -1490,6 +1748,7 @@ export type ChatCompletionAssistantMessageParam = {
      * Tool Calls
      */
     tool_calls?: Array<ChatCompletionMessageFunctionToolCallParam | ChatCompletionMessageCustomToolCallParam>;
+    [key: string]: unknown | 'assistant' | (Audio | null) | (string | Array<ChatCompletionContentPartTextParam | ChatCompletionContentPartRefusalParam> | null) | (FunctionCall | null) | string | (string | null) | Array<ChatCompletionMessageFunctionToolCallParam | ChatCompletionMessageCustomToolCallParam> | undefined;
 };
 
 /**
@@ -1526,7 +1785,8 @@ export type ChatCompletionAudioParam = {
     /**
      * Voice
      */
-    voice: string | ('alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'sage' | 'shimmer' | 'verse');
+    voice: string | ('alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'sage' | 'shimmer' | 'verse' | 'marin' | 'cedar');
+    [key: string]: unknown | ('wav' | 'aac' | 'mp3' | 'flac' | 'opus' | 'pcm16') | (string | ('alloy' | 'ash' | 'ballad' | 'coral' | 'echo' | 'sage' | 'shimmer' | 'verse' | 'marin' | 'cedar'));
 };
 
 /**
@@ -1538,6 +1798,7 @@ export type ChatCompletionContentPartImageParam = {
      * Type
      */
     type: 'image_url';
+    [key: string]: unknown | ImageUrl | 'image_url';
 };
 
 /**
@@ -1549,6 +1810,7 @@ export type ChatCompletionContentPartInputAudioParam = {
      * Type
      */
     type: 'input_audio';
+    [key: string]: unknown | InputAudio | 'input_audio';
 };
 
 /**
@@ -1563,6 +1825,7 @@ export type ChatCompletionContentPartRefusalParam = {
      * Type
      */
     type: 'refusal';
+    [key: string]: unknown | string | 'refusal';
 };
 
 /**
@@ -1577,6 +1840,7 @@ export type ChatCompletionContentPartTextParam = {
      * Type
      */
     type: 'text';
+    [key: string]: unknown | string | 'text';
 };
 
 /**
@@ -1595,6 +1859,7 @@ export type ChatCompletionDeveloperMessageParam = {
      * Name
      */
     name?: string;
+    [key: string]: unknown | (string | Array<ChatCompletionContentPartTextParam>) | 'developer' | string | undefined;
 };
 
 /**
@@ -1605,6 +1870,7 @@ export type ChatCompletionFunctionCallOptionParam = {
      * Name
      */
     name: string;
+    [key: string]: unknown | string;
 };
 
 /**
@@ -1623,6 +1889,7 @@ export type ChatCompletionFunctionMessageParam = {
      * Role
      */
     role: 'function';
+    [key: string]: unknown | (string | null) | string | 'function';
 };
 
 /**
@@ -1634,6 +1901,7 @@ export type ChatCompletionFunctionToolParam = {
      * Type
      */
     type: 'function';
+    [key: string]: unknown | FunctionDefinition | 'function';
 };
 
 /**
@@ -1657,12 +1925,12 @@ export type ChatCompletionMessage = {
      */
     annotations?: Array<Annotation> | null;
     audio?: ChatCompletionAudio | null;
-    function_call?: FunctionCallOutput | null;
+    function_call?: FunctionCall | null;
     /**
      * Tool Calls
      */
     tool_calls?: Array<ChatCompletionMessageFunctionToolCall | ChatCompletionMessageCustomToolCall> | null;
-    [key: string]: unknown | (string | null) | (string | null) | 'assistant' | (Array<Annotation> | null) | (ChatCompletionAudio | null) | (FunctionCallOutput | null) | (Array<ChatCompletionMessageFunctionToolCall | ChatCompletionMessageCustomToolCall> | null) | undefined;
+    [key: string]: unknown | (string | null) | (string | null) | 'assistant' | (Array<Annotation> | null) | (ChatCompletionAudio | null) | (FunctionCall | null) | (Array<ChatCompletionMessageFunctionToolCall | ChatCompletionMessageCustomToolCall> | null) | undefined;
 };
 
 /**
@@ -1694,6 +1962,7 @@ export type ChatCompletionMessageCustomToolCallParam = {
      * Type
      */
     type: 'custom';
+    [key: string]: unknown | string | OpenaiTypesChatChatCompletionMessageCustomToolCallParamCustom | 'custom';
 };
 
 /**
@@ -1725,6 +1994,7 @@ export type ChatCompletionMessageFunctionToolCallParam = {
      * Type
      */
     type: 'function';
+    [key: string]: unknown | string | OpenaiTypesChatChatCompletionMessageFunctionToolCallParamFunction | 'function';
 };
 
 /**
@@ -1736,6 +2006,7 @@ export type ChatCompletionNamedToolChoiceCustomParam = {
      * Type
      */
     type: 'custom';
+    [key: string]: unknown | OpenaiTypesChatChatCompletionNamedToolChoiceCustomParamCustom | 'custom';
 };
 
 /**
@@ -1747,6 +2018,7 @@ export type ChatCompletionNamedToolChoiceParam = {
      * Type
      */
     type: 'function';
+    [key: string]: unknown | OpenaiTypesChatChatCompletionNamedToolChoiceParamFunction | 'function';
 };
 
 /**
@@ -1761,6 +2033,7 @@ export type ChatCompletionPredictionContentParam = {
      * Type
      */
     type: 'content';
+    [key: string]: unknown | (string | Array<ChatCompletionContentPartTextParam>) | 'content';
 };
 
 /**
@@ -1897,6 +2170,7 @@ export type ChatCompletionStreamOptionsParam = {
      * Include Usage
      */
     include_usage?: boolean;
+    [key: string]: unknown | boolean | undefined;
 };
 
 /**
@@ -1915,6 +2189,7 @@ export type ChatCompletionSystemMessageParam = {
      * Name
      */
     name?: string;
+    [key: string]: unknown | (string | Array<ChatCompletionContentPartTextParam>) | 'system' | string | undefined;
 };
 
 /**
@@ -1956,6 +2231,7 @@ export type ChatCompletionToolMessageParam = {
      * Tool Call Id
      */
     tool_call_id: string;
+    [key: string]: unknown | (string | Array<ChatCompletionContentPartTextParam>) | 'tool' | string;
 };
 
 /**
@@ -1974,6 +2250,7 @@ export type ChatCompletionUserMessageParam = {
      * Name
      */
     name?: string;
+    [key: string]: unknown | (string | Array<ChatCompletionContentPartTextParam | ChatCompletionContentPartImageParam | ChatCompletionContentPartInputAudioParam | File>) | 'user' | string | undefined;
 };
 
 /**
@@ -1996,6 +2273,8 @@ export type ChatMessage = {
     } & ImageBlock) | ({
         block_type: 'audio';
     } & AudioBlock) | ({
+        block_type: 'video';
+    } & VideoBlock) | ({
         block_type: 'document';
     } & DocumentBlock) | ({
         block_type: 'cache';
@@ -2003,7 +2282,11 @@ export type ChatMessage = {
         block_type: 'citable';
     } & CitableBlock) | ({
         block_type: 'citation';
-    } & CitationBlock)>;
+    } & CitationBlock) | ({
+        block_type: 'thinking';
+    } & ThinkingBlock) | ({
+        block_type: 'tool_call';
+    } & ToolCallBlock)>;
 };
 
 /**
@@ -3567,7 +3850,7 @@ export type DisplayEventWritable = {
  * DisplayStatistics
  * Statistics for a display, including its runs, intended for API response.
  */
-export type DisplayStatistics = {
+export type DisplayStatisticsReadable = {
     /**
      * N Events
      * Total number of events
@@ -3637,7 +3920,84 @@ export type DisplayStatistics = {
      * Runs
      * Runs in this display, sorted by start time
      */
-    runs?: Array<RunStatistics>;
+    runs?: Array<RunStatisticsReadable>;
+};
+
+/**
+ * DisplayStatistics
+ * Statistics for a display, including its runs, intended for API response.
+ */
+export type DisplayStatisticsWritable = {
+    /**
+     * N Events
+     * Total number of events
+     */
+    n_events?: number;
+    /**
+     * Has Errors
+     * Has error events
+     */
+    has_errors?: boolean;
+    /**
+     * Has Pending
+     * Has pending events (more start than stop/exception events)
+     */
+    has_pending?: boolean;
+    /**
+     * Is Hitl
+     * Has HITL events
+     */
+    is_hitl?: boolean;
+    /**
+     * Open Hitl
+     * Has open HITL requests
+     */
+    open_hitl?: boolean;
+    /**
+     * Is Bitl
+     * Has BITL events
+     */
+    is_bitl?: boolean;
+    /**
+     * Open Bitl
+     * Has open BITL requests
+     */
+    open_bitl?: boolean;
+    /**
+     * Is Aitl
+     * Has AITL events
+     */
+    is_aitl?: boolean;
+    /**
+     * Open Aitl
+     * Has open AITL requests
+     */
+    open_aitl?: boolean;
+    /**
+     * Started At
+     * Start time (ISO format string)
+     */
+    started_at?: string | null;
+    /**
+     * Ended At
+     * End time (ISO format string)
+     */
+    ended_at?: string | null;
+    /**
+     * Duration
+     * Duration in seconds
+     */
+    duration?: number | null;
+    /**
+     * Display Id
+     * The display ID
+     */
+    display_id: string;
+    /**
+     * Runs
+     * Runs in this display, sorted by start time
+     */
+    runs?: Array<RunStatisticsWritable>;
 };
 
 /**
@@ -4398,7 +4758,7 @@ export type ExceptionEventWritable = {
 /**
  * Experiment
  */
-export type Experiment = {
+export type ExperimentReadable = {
     /**
      * Id
      * The unique identifier of the experiment in Phoenix.
@@ -4417,7 +4777,63 @@ export type Experiment = {
     /**
      * Agent that was evaluated
      */
-    agent: MinimalAgentDto;
+    agent: MinimalAgentDtoReadable;
+    /**
+     * Created At
+     * Timestamp of when the experiment data was recorded or fetched.
+     */
+    created_at?: Date | null;
+    /**
+     * The dataset associated with this experiment.
+     */
+    dataset: MinimalDataset;
+    /**
+     * Locale
+     * The locale of the experiment.
+     */
+    locale: string;
+    /**
+     * How concise is the answer
+     */
+    conciseness?: EvaluationSummaryData | null;
+    /**
+     * How correct is the answer
+     */
+    correctness?: EvaluationSummaryData | null;
+    /**
+     * How complete is the answer
+     */
+    completeness?: EvaluationSummaryData | null;
+    /**
+     * Items
+     * Detailed records of each run within the experiment, including inputs, outputs, and evaluations.
+     */
+    items: Array<ExperimentRunRecord>;
+};
+
+/**
+ * Experiment
+ */
+export type ExperimentWritable = {
+    /**
+     * Id
+     * The unique identifier of the experiment in Phoenix.
+     */
+    id: string;
+    /**
+     * Name
+     * The name of the experiment.
+     */
+    name: string;
+    /**
+     * Description
+     * The description of the experiment.
+     */
+    description?: string | null;
+    /**
+     * Agent that was evaluated
+     */
+    agent: MinimalAgentDtoWritable;
     /**
      * Created At
      * Timestamp of when the experiment data was recorded or fetched.
@@ -4726,6 +5142,7 @@ export type File = {
      * Type
      */
     type: 'file';
+    [key: string]: unknown | FileFile | 'file';
 };
 
 /**
@@ -4744,6 +5161,7 @@ export type FileFile = {
      * Filename
      */
     filename?: string;
+    [key: string]: unknown | string | undefined;
 };
 
 /**
@@ -4764,21 +5182,7 @@ export type FunctionOutput = {
 /**
  * FunctionCall
  */
-export type FunctionCallInput = {
-    /**
-     * Arguments
-     */
-    arguments: string;
-    /**
-     * Name
-     */
-    name: string;
-};
-
-/**
- * FunctionCall
- */
-export type FunctionCallOutput = {
+export type FunctionCall = {
     /**
      * Arguments
      */
@@ -4812,6 +5216,9 @@ export type FunctionDefinition = {
      * Strict
      */
     strict?: boolean | null;
+    [key: string]: unknown | string | {
+        [key: string]: unknown;
+    } | (boolean | null) | undefined;
 };
 
 /**
@@ -5676,6 +6083,7 @@ export type ImageUrl = {
      * Detail
      */
     detail?: 'auto' | 'low' | 'high';
+    [key: string]: unknown | string | ('auto' | 'low' | 'high') | undefined;
 };
 
 /**
@@ -5886,6 +6294,7 @@ export type InputAudio = {
      * Format
      */
     format: 'wav' | 'mp3';
+    [key: string]: unknown | string | ('wav' | 'mp3');
 };
 
 /**
@@ -6741,6 +7150,9 @@ export type JsonSchema = {
      * Strict
      */
     strict?: boolean | null;
+    [key: string]: unknown | string | {
+        [key: string]: unknown;
+    } | (boolean | null) | undefined;
 };
 
 /**
@@ -8021,7 +8433,7 @@ export type Metadata = {
  * Encapsulates the data transfer object (DTO) for a minimal agent.
  * Only contains minimal information about the agent.
  */
-export type MinimalAgentDto = {
+export type MinimalAgentDtoReadable = {
     /**
      * Agent Class
      * The agent's class identifier (e.g., 'my_agent_class').
@@ -8035,7 +8447,34 @@ export type MinimalAgentDto = {
     /**
      * Configuration details of the agent, including name, description, and prompts.
      */
-    agent_config: AgentConfigDto;
+    agent_config: AgentConfigDtoReadable | null;
+    /**
+     * Is Conversational
+     * Whether the agent can participate in a chat-based conversation
+     */
+    is_conversational: boolean;
+};
+
+/**
+ * MinimalAgentDTO
+ * Encapsulates the data transfer object (DTO) for a minimal agent.
+ * Only contains minimal information about the agent.
+ */
+export type MinimalAgentDtoWritable = {
+    /**
+     * Agent Class
+     * The agent's class identifier (e.g., 'my_agent_class').
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     * Unique identifier for the agent instance (e.g., 'agent_123').
+     */
+    agent_id: string;
+    /**
+     * Configuration details of the agent, including name, description, and prompts.
+     */
+    agent_config: AgentConfigDtoWritable | null;
     /**
      * Is Conversational
      * Whether the agent can participate in a chat-based conversation
@@ -8077,7 +8516,7 @@ export type MinimalDataset = {
 /**
  * MinimalExperiment
  */
-export type MinimalExperiment = {
+export type MinimalExperimentReadable = {
     /**
      * Id
      * The unique identifier of the experiment in Phoenix.
@@ -8096,7 +8535,46 @@ export type MinimalExperiment = {
     /**
      * Agent that was evaluated
      */
-    agent: MinimalAgentDto;
+    agent: MinimalAgentDtoReadable;
+    /**
+     * Created At
+     * Timestamp of when the experiment data was recorded or fetched.
+     */
+    created_at?: Date | null;
+    /**
+     * The dataset associated with this experiment.
+     */
+    dataset: MinimalDataset;
+    /**
+     * Locale
+     * The locale of the experiment.
+     */
+    locale: string;
+};
+
+/**
+ * MinimalExperiment
+ */
+export type MinimalExperimentWritable = {
+    /**
+     * Id
+     * The unique identifier of the experiment in Phoenix.
+     */
+    id: string;
+    /**
+     * Name
+     * The name of the experiment.
+     */
+    name: string;
+    /**
+     * Description
+     * The description of the experiment.
+     */
+    description?: string | null;
+    /**
+     * Agent that was evaluated
+     */
+    agent: MinimalAgentDtoWritable;
     /**
      * Created At
      * Timestamp of when the experiment data was recorded or fetched.
@@ -8932,7 +9410,7 @@ export type PaginatedNotificationsResponse = {
  * PaginatedProcessWalkthroughsResponse
  * Paginated response containing process walkthroughs with detailed step information.
  */
-export type PaginatedProcessWalkthroughsResponse = {
+export type PaginatedProcessWalkthroughsResponseReadable = {
     /**
      * Total
      * Total number of items available
@@ -8957,13 +9435,45 @@ export type PaginatedProcessWalkthroughsResponse = {
      * Walkthroughs
      * List of process walkthroughs for the current page
      */
-    walkthroughs: Array<ProcessWalkthroughDto>;
+    walkthroughs: Array<ProcessWalkthroughDtoReadable>;
+};
+
+/**
+ * PaginatedProcessWalkthroughsResponse
+ * Paginated response containing process walkthroughs with detailed step information.
+ */
+export type PaginatedProcessWalkthroughsResponseWritable = {
+    /**
+     * Total
+     * Total number of items available
+     */
+    total: number;
+    /**
+     * Page
+     * Current page number (1-indexed)
+     */
+    page: number;
+    /**
+     * Page Size
+     * Number of threads per page
+     */
+    page_size: number;
+    /**
+     * Total Pages
+     * Total number of pages available
+     */
+    total_pages: number;
+    /**
+     * Walkthroughs
+     * List of process walkthroughs for the current page
+     */
+    walkthroughs: Array<ProcessWalkthroughDtoWritable>;
 };
 
 /**
  * PaginatedThreadsResponse
  */
-export type PaginatedThreadsResponse = {
+export type PaginatedThreadsResponseReadable = {
     /**
      * Total
      * Total number of items available
@@ -8988,7 +9498,38 @@ export type PaginatedThreadsResponse = {
      * Threads
      * List of ThreadDTO objects for the current page
      */
-    threads: Array<ThreadDto>;
+    threads: Array<ThreadDtoReadable>;
+};
+
+/**
+ * PaginatedThreadsResponse
+ */
+export type PaginatedThreadsResponseWritable = {
+    /**
+     * Total
+     * Total number of items available
+     */
+    total: number;
+    /**
+     * Page
+     * Current page number (1-indexed)
+     */
+    page: number;
+    /**
+     * Page Size
+     * Number of threads per page
+     */
+    page_size: number;
+    /**
+     * Total Pages
+     * Total number of pages available
+     */
+    total_pages: number;
+    /**
+     * Threads
+     * List of ThreadDTO objects for the current page
+     */
+    threads: Array<ThreadDtoWritable>;
 };
 
 /**
@@ -9425,7 +9966,7 @@ export type ProcessDtoWritable = {
  * ProcessWalkthroughDTO
  * DTO representing a process walkthrough with detailed step information.
  */
-export type ProcessWalkthroughDto = {
+export type ProcessWalkthroughDtoReadable = {
     /**
      * Process Walkthrough Id
      * Unique identifier for this specific process walkthrough.
@@ -9445,7 +9986,7 @@ export type ProcessWalkthroughDto = {
      * Process Steps
      * List of all steps in this walkthrough, ordered chronologically.
      */
-    process_steps: Array<AgentProcessStepDto | ProgramProcessStepDto | HumanProcessStepDto>;
+    process_steps: Array<AgentProcessStepDtoReadable | ProgramProcessStepDto | HumanProcessStepDto>;
     /**
      * Created At
      * Timestamp of the first event in nanoseconds.
@@ -9475,7 +10016,69 @@ export type ProcessWalkthroughDto = {
      * Involved Agents
      * List of agents that submitted work in this walkthrough.
      */
-    involved_agents?: Array<MinimalAgentDto>;
+    involved_agents?: Array<MinimalAgentDtoReadable>;
+    /**
+     * Involved Humans
+     * List of humans that submitted work in this walkthrough.
+     */
+    involved_humans?: Array<MinimalUserDto>;
+};
+
+/**
+ * ProcessWalkthroughDTO
+ * DTO representing a process walkthrough with detailed step information.
+ */
+export type ProcessWalkthroughDtoWritable = {
+    /**
+     * Process Walkthrough Id
+     * Unique identifier for this specific process walkthrough.
+     */
+    process_walkthrough_id: string;
+    /**
+     * Process Class
+     * The class/type of the process.
+     */
+    process_class: string;
+    /**
+     * Process Id
+     * Unique identifier for the specific process instance.
+     */
+    process_id: string;
+    /**
+     * Process Steps
+     * List of all steps in this walkthrough, ordered chronologically.
+     */
+    process_steps: Array<AgentProcessStepDtoWritable | ProgramProcessStepDto | HumanProcessStepDto>;
+    /**
+     * Created At
+     * Timestamp of the first event in nanoseconds.
+     */
+    created_at: number;
+    /**
+     * Updated At
+     * Timestamp of the last event in nanoseconds.
+     */
+    updated_at: number;
+    /**
+     * Total Steps
+     * Total number of steps in this walkthrough.
+     */
+    total_steps: number;
+    /**
+     * Completed Steps
+     * Number of completed steps in this walkthrough.
+     */
+    completed_steps: number;
+    /**
+     * Is Active
+     * Whether this walkthrough is active (no ProcessStopEvent).
+     */
+    is_active: boolean;
+    /**
+     * Involved Agents
+     * List of agents that submitted work in this walkthrough.
+     */
+    involved_agents?: Array<MinimalAgentDtoWritable>;
     /**
      * Involved Humans
      * List of humans that submitted work in this walkthrough.
@@ -10160,6 +10763,7 @@ export type ResponseFormatJsonObject = {
      * Type
      */
     type: 'json_object';
+    [key: string]: unknown | 'json_object';
 };
 
 /**
@@ -10171,6 +10775,7 @@ export type ResponseFormatJsonSchema = {
      * Type
      */
     type: 'json_schema';
+    [key: string]: unknown | JsonSchema | 'json_schema';
 };
 
 /**
@@ -10181,6 +10786,7 @@ export type ResponseFormatText = {
      * Type
      */
     type: 'text';
+    [key: string]: unknown | 'text';
 };
 
 /**
@@ -10480,7 +11086,7 @@ export type RouterEventWritable = {
  * RunStatistics
  * Statistics for a single run, intended for API response.
  */
-export type RunStatistics = {
+export type RunStatisticsReadable = {
     /**
      * N Events
      * Total number of events
@@ -10549,7 +11155,83 @@ export type RunStatistics = {
     /**
      * The agent that ran the run
      */
-    agent: MinimalAgentDto;
+    agent: MinimalAgentDtoReadable;
+};
+
+/**
+ * RunStatistics
+ * Statistics for a single run, intended for API response.
+ */
+export type RunStatisticsWritable = {
+    /**
+     * N Events
+     * Total number of events
+     */
+    n_events?: number;
+    /**
+     * Has Errors
+     * Has error events
+     */
+    has_errors?: boolean;
+    /**
+     * Has Pending
+     * Has pending events (more start than stop/exception events)
+     */
+    has_pending?: boolean;
+    /**
+     * Is Hitl
+     * Has HITL events
+     */
+    is_hitl?: boolean;
+    /**
+     * Open Hitl
+     * Has open HITL requests
+     */
+    open_hitl?: boolean;
+    /**
+     * Is Bitl
+     * Has BITL events
+     */
+    is_bitl?: boolean;
+    /**
+     * Open Bitl
+     * Has open BITL requests
+     */
+    open_bitl?: boolean;
+    /**
+     * Is Aitl
+     * Has AITL events
+     */
+    is_aitl?: boolean;
+    /**
+     * Open Aitl
+     * Has open AITL requests
+     */
+    open_aitl?: boolean;
+    /**
+     * Started At
+     * Start time (ISO format string)
+     */
+    started_at?: string | null;
+    /**
+     * Ended At
+     * End time (ISO format string)
+     */
+    ended_at?: string | null;
+    /**
+     * Duration
+     * Duration in seconds
+     */
+    duration?: number | null;
+    /**
+     * Run Id
+     * The run ID
+     */
+    run_id: string;
+    /**
+     * The agent that ran the run
+     */
+    agent: MinimalAgentDtoWritable;
 };
 
 /**
@@ -11972,6 +12654,34 @@ export type TextareaWritable = {
 };
 
 /**
+ * ThinkingBlock
+ * A representation of the content streamed from reasoning/thinking processes by LLMs
+ */
+export type ThinkingBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'thinking';
+    /**
+     * Content
+     * Content of the reasoning/thinking process, if available
+     */
+    content?: string | null;
+    /**
+     * Num Tokens
+     * Number of token used for reasoning/thinking, if available
+     */
+    num_tokens?: number | null;
+    /**
+     * Additional Information
+     * Additional information related to the thinking/reasoning process, if available
+     */
+    additional_information?: {
+        [key: string]: unknown;
+    };
+};
+
+/**
  * ThoughtEvent
  * An event representing the system or agent's internal reasoning process, often displayed as
  * a "thought" or debug info stream. These "thoughts" provide insight into how the agent arrives
@@ -12074,7 +12784,7 @@ export type ThreadAgentDto = {
  * ThreadDTO
  * Thread information and statistics for API response.
  */
-export type ThreadDto = {
+export type ThreadDtoReadable = {
     /**
      * Id
      * The thread ID
@@ -12094,7 +12804,7 @@ export type ThreadDto = {
      * Agents
      * List of agents initially associated with thread
      */
-    agents: Array<MinimalAgentDto>;
+    agents: Array<MinimalAgentDtoReadable>;
     /**
      * Created At
      * Date at which thread was created (ISO format string)
@@ -12184,12 +12894,139 @@ export type ThreadDto = {
      * Displays
      * Displays in this thread, sorted by start time
      */
-    displays?: Array<DisplayStatistics>;
+    displays?: Array<DisplayStatisticsReadable>;
     /**
      * Participating Agents
      * All unique agents that participated in the thread's events
      */
-    participating_agents?: Array<MinimalAgentDto>;
+    participating_agents?: Array<MinimalAgentDtoReadable>;
+    /**
+     * Llm Cost
+     * Total LLM cost of the thread
+     */
+    llm_cost?: number;
+};
+
+/**
+ * ThreadDTO
+ * Thread information and statistics for API response.
+ */
+export type ThreadDtoWritable = {
+    /**
+     * Id
+     * The thread ID
+     */
+    id: string;
+    /**
+     * Name
+     * User given name of thread
+     */
+    name: string;
+    /**
+     * Users
+     * List of users in thread
+     */
+    users: Array<MinimalUserDto>;
+    /**
+     * Agents
+     * List of agents initially associated with thread
+     */
+    agents: Array<MinimalAgentDtoWritable>;
+    /**
+     * Created At
+     * Date at which thread was created (ISO format string)
+     */
+    created_at: string;
+    /**
+     * Process Class
+     * Class of the process that generated the thread
+     */
+    process_class?: string | null;
+    /**
+     * Process Id
+     * ID of the process that generated the thread
+     */
+    process_id?: string | null;
+    /**
+     * Process Walkthrough Id
+     * ID of the walkthrough that generated the thread
+     */
+    process_walkthrough_id?: string | null;
+    /**
+     * Num Events
+     * Total number of events in the thread
+     */
+    num_events?: number;
+    /**
+     * Num Turns
+     * Number of turns (StartEvent count)
+     */
+    num_turns?: number;
+    /**
+     * Has Pending
+     * Thread has more StartEvent than StopEvent+ExceptionEvent overall
+     */
+    has_pending?: boolean;
+    /**
+     * Has Errors
+     * There are ExceptionEvent in the thread
+     */
+    has_errors?: boolean;
+    /**
+     * Is Hitl
+     * There are HumanInTheLoopRequest events present
+     */
+    is_hitl?: boolean;
+    /**
+     * Open Hitl
+     * More HumanInTheLoopRequest than Response overall
+     */
+    open_hitl?: boolean;
+    /**
+     * Is Bitl
+     * There are BotInTheLoopRequest events present
+     */
+    is_bitl?: boolean;
+    /**
+     * Open Bitl
+     * More BotInTheLoopRequest than Response overall
+     */
+    open_bitl?: boolean;
+    /**
+     * Is Aitl
+     * There are AgentInTheLoopRequest events present
+     */
+    is_aitl?: boolean;
+    /**
+     * Open Aitl
+     * More AgentInTheLoopRequest than Response overall
+     */
+    open_aitl?: boolean;
+    /**
+     * First Interaction
+     * Date of oldest event in thread (ISO format string)
+     */
+    first_interaction?: string | null;
+    /**
+     * Latest Interaction
+     * Date of newest event in thread (ISO format string)
+     */
+    latest_interaction?: string | null;
+    /**
+     * Duration
+     * Overall duration of interactions in seconds
+     */
+    duration?: number | null;
+    /**
+     * Displays
+     * Displays in this thread, sorted by start time
+     */
+    displays?: Array<DisplayStatisticsWritable>;
+    /**
+     * Participating Agents
+     * All unique agents that participated in the thread's events
+     */
+    participating_agents?: Array<MinimalAgentDtoWritable>;
     /**
      * Llm Cost
      * Total LLM cost of the thread
@@ -12589,6 +13426,33 @@ export type TokenResponse = {
 };
 
 /**
+ * ToolCallBlock
+ */
+export type ToolCallBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'tool_call';
+    /**
+     * Tool Call Id
+     * ID of the tool call, if provided
+     */
+    tool_call_id?: string | null;
+    /**
+     * Tool Name
+     * Name of the called tool
+     */
+    tool_name: string;
+    /**
+     * Tool Kwargs
+     * Arguments provided to the tool, if available
+     */
+    tool_kwargs?: {
+        [key: string]: unknown;
+    } | string;
+};
+
+/**
  * ToolEvent
  */
 export type ToolEventReadable = {
@@ -12833,6 +13697,20 @@ export type TranscriptionWord = {
      */
     word: string;
     [key: string]: unknown | number | string;
+};
+
+/**
+ * UpdateAgentConfigurationDTO
+ * Request body for updating agent configuration.
+ */
+export type UpdateAgentConfigurationDto = {
+    /**
+     * Configuration
+     * The configuration values to update as key-value pairs. Keys should match the 'name' fields from the agent's form elements.
+     */
+    configuration: {
+        [key: string]: unknown;
+    };
 };
 
 /**
@@ -13298,6 +14176,41 @@ export type ValidationError = {
 };
 
 /**
+ * VideoBlock
+ * A representation of video data to directly pass to/from the LLM.
+ */
+export type VideoBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'video';
+    /**
+     * Video
+     */
+    video?: (Blob | File) | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | null;
+    /**
+     * Video Mimetype
+     */
+    video_mimetype?: string | null;
+    /**
+     * Detail
+     */
+    detail?: string | null;
+    /**
+     * Fps
+     */
+    fps?: number | null;
+};
+
+/**
  * WorkflowGraph
  * Complete workflow graph representation.
  */
@@ -13358,6 +14271,7 @@ export type OpenaiTypesChatChatCompletionMessageCustomToolCallParamCustom = {
      * Name
      */
     name: string;
+    [key: string]: unknown | string;
 };
 
 /**
@@ -13372,6 +14286,7 @@ export type OpenaiTypesChatChatCompletionMessageFunctionToolCallParamFunction = 
      * Name
      */
     name: string;
+    [key: string]: unknown | string;
 };
 
 /**
@@ -13382,6 +14297,7 @@ export type OpenaiTypesChatChatCompletionNamedToolChoiceCustomParamCustom = {
      * Name
      */
     name: string;
+    [key: string]: unknown | string;
 };
 
 /**
@@ -13392,6 +14308,7 @@ export type OpenaiTypesChatChatCompletionNamedToolChoiceParamFunction = {
      * Name
      */
     name: string;
+    [key: string]: unknown | string;
 };
 
 /**
@@ -13412,6 +14329,9 @@ export type OpenaiTypesChatCompletionCreateParamsFunction = {
     parameters?: {
         [key: string]: unknown;
     };
+    [key: string]: unknown | string | {
+        [key: string]: unknown;
+    } | undefined;
 };
 
 /**
@@ -13722,7 +14642,7 @@ export type GetUserThreadsResponses = {
     /**
      * Successful Response
      */
-    200: PaginatedThreadsResponse;
+    200: PaginatedThreadsResponseReadable;
 };
 
 export type GetUserThreadsResponse = GetUserThreadsResponses[keyof GetUserThreadsResponses];
@@ -13747,7 +14667,7 @@ export type CreateThreadResponses = {
     /**
      * Successful Response
      */
-    200: ThreadDto;
+    200: ThreadDtoReadable;
 };
 
 export type CreateThreadResponse = CreateThreadResponses[keyof CreateThreadResponses];
@@ -13777,7 +14697,7 @@ export type GetThreadResponses = {
     /**
      * Successful Response
      */
-    200: ThreadDto;
+    200: ThreadDtoReadable;
 };
 
 export type GetThreadResponse = GetThreadResponses[keyof GetThreadResponses];
@@ -13807,7 +14727,7 @@ export type AddAgentToThreadResponses = {
     /**
      * Successful Response
      */
-    200: ThreadDto;
+    200: ThreadDtoReadable;
 };
 
 export type AddAgentToThreadResponse = AddAgentToThreadResponses[keyof AddAgentToThreadResponses];
@@ -13845,7 +14765,7 @@ export type RemoveAgentFromThreadResponses = {
     /**
      * Successful Response
      */
-    200: ThreadDto;
+    200: ThreadDtoReadable;
 };
 
 export type RemoveAgentFromThreadResponse = RemoveAgentFromThreadResponses[keyof RemoveAgentFromThreadResponses];
@@ -13875,7 +14795,7 @@ export type AddUserToThreadResponses = {
     /**
      * Successful Response
      */
-    200: ThreadDto;
+    200: ThreadDtoReadable;
 };
 
 export type AddUserToThreadResponse = AddUserToThreadResponses[keyof AddUserToThreadResponses];
@@ -13909,7 +14829,7 @@ export type RemoveUserFromThreadResponses = {
     /**
      * Successful Response
      */
-    200: ThreadDto;
+    200: ThreadDtoReadable;
 };
 
 export type RemoveUserFromThreadResponse = RemoveUserFromThreadResponses[keyof RemoveUserFromThreadResponses];
@@ -13990,7 +14910,7 @@ export type GetAgentResponses = {
     /**
      * Successful Response
      */
-    200: AgentDto;
+    200: AgentDtoReadable;
 };
 
 export type GetAgentResponse = GetAgentResponses[keyof GetAgentResponses];
@@ -14035,7 +14955,7 @@ export type GetAgentThreadsResponses = {
     /**
      * Successful Response
      */
-    200: PaginatedThreadsResponse;
+    200: PaginatedThreadsResponseReadable;
 };
 
 export type GetAgentThreadsResponse = GetAgentThreadsResponses[keyof GetAgentThreadsResponses];
@@ -14074,6 +14994,40 @@ export type GetAgentConfigurationResponses = {
 
 export type GetAgentConfigurationResponse = GetAgentConfigurationResponses[keyof GetAgentConfigurationResponses];
 
+export type UpdateAgentConfigurationData = {
+    body: UpdateAgentConfigurationDto;
+    path: {
+        /**
+         * Agent Class
+         */
+        agent_class: string;
+        /**
+         * Agent Id
+         */
+        agent_id: string;
+    };
+    query?: never;
+    url: '/agents/{agent_class}/{agent_id}/configuration';
+};
+
+export type UpdateAgentConfigurationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateAgentConfigurationError = UpdateAgentConfigurationErrors[keyof UpdateAgentConfigurationErrors];
+
+export type UpdateAgentConfigurationResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentConfigurationDataDto;
+};
+
+export type UpdateAgentConfigurationResponse = UpdateAgentConfigurationResponses[keyof UpdateAgentConfigurationResponses];
+
 export type GetAgentsData = {
     body?: never;
     path?: never;
@@ -14086,7 +15040,7 @@ export type GetAgentsResponses = {
      * Response Get Agents Agents  Get
      * Successful Response
      */
-    200: Array<AgentDto>;
+    200: Array<AgentDtoReadable>;
 };
 
 export type GetAgentsResponse = GetAgentsResponses[keyof GetAgentsResponses];
@@ -14103,7 +15057,7 @@ export type DiscoverAgentsResponses = {
      * Response Discover Agents Agents Discover Get
      * Successful Response
      */
-    200: Array<AgentDto>;
+    200: Array<AgentDtoReadable>;
 };
 
 export type DiscoverAgentsResponse = DiscoverAgentsResponses[keyof DiscoverAgentsResponses];
@@ -14216,7 +15170,7 @@ export type GetProcessWalkthroughsResponses = {
     /**
      * Successful Response
      */
-    200: PaginatedProcessWalkthroughsResponse;
+    200: PaginatedProcessWalkthroughsResponseReadable;
 };
 
 export type GetProcessWalkthroughsResponse = GetProcessWalkthroughsResponses[keyof GetProcessWalkthroughsResponses];
@@ -14899,7 +15853,7 @@ export type GetExperimentResponses = {
     /**
      * Successful Response
      */
-    200: Experiment;
+    200: ExperimentReadable;
 };
 
 export type GetExperimentResponse = GetExperimentResponses[keyof GetExperimentResponses];
@@ -14916,7 +15870,7 @@ export type GetExperimentsResponses = {
      * Response Get Experiments Evaluations Experiments Get
      * Successful Response
      */
-    200: Array<MinimalExperiment>;
+    200: Array<MinimalExperimentReadable>;
 };
 
 export type GetExperimentsResponse = GetExperimentsResponses[keyof GetExperimentsResponses];
@@ -14941,7 +15895,7 @@ export type RunExperimentResponses = {
     /**
      * Successful Response
      */
-    200: Experiment;
+    200: ExperimentReadable;
 };
 
 export type RunExperimentResponse = RunExperimentResponses[keyof RunExperimentResponses];

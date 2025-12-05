@@ -1,5 +1,13 @@
 from typing import Annotated
 
+from aihub_lib.auth.access.AccessChecker import AccessChecker
+from aihub_lib.auth.access.AccessLevel import AccessLevel
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.dependencies.use_nats import use_nats
+from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Security
 from nats.aio.client import Client as NATS
 
@@ -9,15 +17,8 @@ from aihub_api.pagination.type.PageSize import PageSize
 from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.routes.agent.dto.AgentConfigurationDataDTO import AgentConfigurationDataDTO
 from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
+from aihub_api.routes.agent.dto.UpdateAgentConfigurationDTO import UpdateAgentConfigurationDTO
 from aihub_api.routes.thread.dto.PaginatedThreadsResponse import PaginatedThreadsResponse
-from aihub_lib.auth.access.AccessChecker import AccessChecker
-from aihub_lib.auth.access.AccessLevel import AccessLevel
-from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
-from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.dependencies.use_nats import use_nats
-from aihub_lib.routes.Controller import Controller
 
 
 class AgentController(Controller):
@@ -172,6 +173,34 @@ class AgentController(Controller):
                 agent_class=agent_class,
                 agent_id=agent_id,
                 configuration=configuration,
+            )
+
+        return self
+
+    def update_agent_configuration(
+        self, route: str = "/{agent_class}/{agent_id}/configuration"
+    ) -> "AgentController":
+        @self.router.put(route, tags=self.tags)
+        async def update_agent_configuration(
+            agent_class: str,
+            agent_id: str,
+            request: UpdateAgentConfigurationDTO,
+            _: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.user.agent.{agent_class}.{agent_id}"))
+            ],
+        ) -> AgentConfigurationDataDTO:
+            """
+            Update the configuration data for a specific agent.
+            Accepts configuration values and persists them.
+            """
+            updated_configuration = await AgentService.update_agent_configuration(
+                agent_class, agent_id, request.configuration
+            )
+
+            return AgentConfigurationDataDTO(
+                agent_class=agent_class,
+                agent_id=agent_id,
+                configuration=updated_configuration,
             )
 
         return self

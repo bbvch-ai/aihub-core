@@ -1,23 +1,6 @@
 import asyncio
 import logging
 
-from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.nats.events import UserMessageEvent
-from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
-    AgentClassDiscoveryResponseEvent,
-    AgentConfigSpecs,
-)
-from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
-from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
-from aihub_lib.nats.publishers.NCPublisher import NCPublisher
-from aihub_lib.nats.subscribers.agent.AgentJSSubscriber import AgentJSSubscriber
-from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
-from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
-from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
-from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
-from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
-from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
-from aihub_lib.nats.workflow.visualizers.WorkflowVisualizer import WorkflowVisualizer
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import ConnectionPool, Redis
@@ -25,6 +8,23 @@ from redis.asyncio import ConnectionPool, Redis
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.dispatchers.AgentDispatcher import AgentDispatcher
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
+from aihub_lib.agents.AgentConfig import AgentConfig
+from aihub_lib.nats.events import UserMessageEvent
+from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
+from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
+from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
+    AgentClassDiscoveryResponseEvent,
+    AgentConfigSpecs,
+)
+from aihub_lib.nats.publishers.NCPublisher import NCPublisher
+from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
+from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
+from aihub_lib.nats.subscribers.agent.AgentJSSubscriber import AgentJSSubscriber
+from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
+from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
+from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
+from aihub_lib.nats.workflow.visualizers.WorkflowVisualizer import WorkflowVisualizer
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +102,7 @@ class AgentRunner:
         network_graph = WorkflowVisualizer(agent=self.agent_type)
         network_graph.build_workflow_graph()
 
-        agent_config_specs = AgentConfigSpecs.from_agent_config_class(self.agent_config_type)
+        agent_config_specs = AgentConfigSpecs.from_agent_config(self.default_agent_config)
 
         agent_discovery_response_event = AgentClassDiscoveryResponseEvent(
             agent_class=self.agent_class,

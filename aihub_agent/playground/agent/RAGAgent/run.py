@@ -29,6 +29,7 @@ enable_logging(level=30)
 
 async def main():
     servers_list = [NatsSettings().ENDPOINT]
+    # TODO add form field to AgentRunner
     runner = AgentRunner(
         agent_type=RAGAgent,
         default_agent_config=RAGAgentConfig(

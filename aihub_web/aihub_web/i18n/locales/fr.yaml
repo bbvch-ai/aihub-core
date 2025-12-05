@@ -239,6 +239,8 @@ agent:
     description: "Configurez le comportement d'exécution et les paramètres de cet agent"
     runtimeSettings: "Paramètres d'exécution"
     noConfiguration: "Aucune configuration disponible pour cet agent"
+    saveSuccess: "Configuration enregistrée avec succès"
+    saveError: "Échec de l'enregistrement de la configuration"
   chat:
     title: "Démarrer un nouveau chat"
     placeholder: "Tapez le message que vous souhaitez envoyer à l'agent"

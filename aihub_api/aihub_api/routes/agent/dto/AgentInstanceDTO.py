@@ -60,6 +60,7 @@ class AgentInstanceDTO(AgentClassDTO):
             agent_id=self.agent_id,
             agent_class=self.agent_class,
             default_agent_config=self.default_agent_config,
+            agent_config_specs=self.agent_config_specs,
             is_conversational=self.is_conversational,
             start_events=self.start_events,
             stop_events=self.stop_events,

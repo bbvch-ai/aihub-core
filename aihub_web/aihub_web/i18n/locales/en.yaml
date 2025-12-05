@@ -240,6 +240,8 @@ agent:
     description: "Configure the runtime behavior and settings for this agent"
     runtimeSettings: "Runtime Settings"
     noConfiguration: "No configuration available for this agent"
+    saveSuccess: "Configuration saved successfully"
+    saveError: "Failed to save configuration"
   chat:
     title: "Start new Chat"
     placeholder: "Type the message you want to send to the Agent"

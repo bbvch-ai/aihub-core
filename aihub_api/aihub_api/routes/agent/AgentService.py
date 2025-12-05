@@ -574,10 +574,10 @@ class AgentService:
         )
 
     @staticmethod
+    @trace_fn
     async def get_agent_configuration(agent_class: str, agent_id: str) -> dict[str, Any]:
         """
         Retrieve the current configuration data for a specific agent.
-        Returns mock data for now until persistence is implemented.
 
         Args:
             agent_class: The agent's class identifier
@@ -586,15 +586,62 @@ class AgentService:
         Returns:
             Dictionary containing the agent's configuration values
         """
-        # TODO: Replace with actual persistence layer to load saved configuration
-        # For now, return mock data that matches the form fields in AgentConfigDTO._generate_mock_form()
-        return {
-            "api_endpoint": "https://api.example.com/v1",
-            "max_retries": 3,
-            "temperature": 0.7,
-            "enable_caching": True,
-            "verbose_logging": False,
-        }
+        # Look up the agent configuration from the database
+        config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+
+        if config_entity and config_entity.config_data:
+            # Return the stored configuration data
+            return config_entity.config_data
+
+        # If no configuration exists, return an empty dict
+        # The frontend will use default values from the form schema
+        return {}
+
+    @staticmethod
+    @trace_fn
+    async def update_agent_configuration(
+        agent_class: str, agent_id: str, configuration: dict[str, Any]
+    ) -> dict[str, Any]:
+        """
+        Update the configuration data for a specific agent.
+
+        Args:
+            agent_class: The agent's class identifier
+            agent_id: The agent's instance identifier
+            configuration: The new configuration values to store
+
+        Returns:
+            Dictionary containing the updated configuration values
+        """
+        # Find existing configuration or create new one
+        config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+
+        if config_entity:
+            # Update existing configuration
+            config_entity.config_data = configuration
+            config_entity.save()
+        else:
+            # Need to get agent info to create a new config entity
+            # For now, create a minimal config entity with the provided data
+            # The full agent info (name, description, icon) will come from discovery
+            agent_entity = AgentEntity.get_agent(agent_class, agent_id)
+            if agent_entity and agent_entity.agent_config_specs:
+                config_entity = AgentConfigEntityDocument(
+                    agent_class=agent_class,
+                    agent_id=agent_id,
+                    name=agent_entity.agent_config_specs.name,
+                    description=agent_entity.agent_config_specs.description,
+                    icon=agent_entity.agent_config_specs.icon,
+                    config_data=configuration,
+                )
+                config_entity.save()
+            else:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Agent {agent_class}/{agent_id} not found. Cannot create configuration.",
+                )
+
+        return configuration
 
     @staticmethod
     def _clear_cache() -> None:

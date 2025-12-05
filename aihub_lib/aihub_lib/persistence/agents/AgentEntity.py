@@ -19,6 +19,8 @@ from mongoengine import (
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+from aihub_lib.nats.events.discovery.agent.AgentConfigSpecs import AgentConfigSpecs
+from aihub_lib.nats.events.discovery.agent.AgentConfigSpecsEntity import AgentConfigSpecsEntity
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
 from aihub_lib.persistence.agents.AgentConfigEntityEmbeddedDocument import AgentConfigEntityEmbeddedDocument
@@ -110,6 +112,7 @@ class AgentEntity(Document):
     agent_id = StringField(required=True)
     agent_config = ReferenceField(AgentConfigEntityDocument, required=False)
     default_agent_config = EmbeddedDocumentField(AgentConfigEntityEmbeddedDocument, required=True)
+    agent_config_specs = EmbeddedDocumentField(AgentConfigSpecsEntity, required=False)
     is_conversational = BooleanField(required=True)
     start_events = ListField(EmbeddedDocumentField(EventSpec), required=True)
     stop_events = ListField(EmbeddedDocumentField(EventSpec), required=True)
@@ -127,6 +130,7 @@ class AgentEntity(Document):
         agent_id: str,
         agent_config: AgentConfigEntityDocument | None,
         default_agent_config: AgentConfigEntityEmbeddedDocument,
+        agent_config_specs: AgentConfigSpecsEntity | None,
         is_conversational: bool,
         start_events: list[EventSpec],
         stop_events: list[EventSpec],
@@ -141,6 +145,7 @@ class AgentEntity(Document):
             agent_id=agent_id,
             agent_config=agent_config,
             default_agent_config=default_agent_config,
+            agent_config_specs=agent_config_specs,
             is_conversational=is_conversational,
             start_events=start_events,
             stop_events=stop_events,
@@ -160,6 +165,7 @@ class AgentEntity(Document):
         agent_id: str,
         agent_class: str,
         default_agent_config: AgentConfig,
+        agent_config_specs: AgentConfigSpecs,
         is_conversational: bool,
         start_events: list[EventSpecs],
         stop_events: list[EventSpecs],
@@ -181,6 +187,7 @@ class AgentEntity(Document):
             logger.debug(f"No agent config found for class {agent_class} and ID {agent_id}.")
 
         default_agent_config_entity = AgentConfigEntityEmbeddedDocument.from_agent_config(default_agent_config)
+        agent_config_specs_entity = AgentConfigSpecsEntity.from_specs(agent_config_specs)
 
         # Create EventSpec objects, serializing the schema to avoid $ issues
         start_events = [EventSpec.from_specs(event) for event in start_events]
@@ -194,6 +201,7 @@ class AgentEntity(Document):
             # Update existing agent
             existing_agent.agent_config = agent_config_entity
             existing_agent.default_agent_config = default_agent_config_entity
+            existing_agent.agent_config_specs = agent_config_specs_entity
             existing_agent.is_conversational = is_conversational
             existing_agent.start_events = start_events
             existing_agent.stop_events = stop_events
@@ -210,6 +218,7 @@ class AgentEntity(Document):
                 agent_id=agent_id,
                 agent_config=agent_config_entity,
                 default_agent_config=default_agent_config_entity,
+                agent_config_specs=agent_config_specs_entity,
                 is_conversational=is_conversational,
                 start_events=start_events,
                 stop_events=stop_events,

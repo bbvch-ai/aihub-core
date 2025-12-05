@@ -1,13 +1,15 @@
 from typing import Annotated
 
+from pydantic import BaseModel, Field
+
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
 from aihub_lib.nats.events.form import ALL_FORM_OPTIONS
 from aihub_lib.persistence.process.ProcessEntity import HumanInSpecsEntity
-from pydantic import BaseModel, Field
 
 
+# TODO align with this for AgentConfigDTO
 class HumanInDTO(BaseModel):
     name: Annotated[str, Field(description="The name of the work event.")]
     description: Annotated[

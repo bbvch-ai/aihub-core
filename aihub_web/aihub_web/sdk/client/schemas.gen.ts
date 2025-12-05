@@ -96,8 +96,71 @@ export const AgentConfigDTOSchema = {
             anyOf: [
                 {
                     items: {
-                        additionalProperties: true,
-                        type: 'object'
+                        anyOf: [
+                            {
+                                '$ref': '#/components/schemas/HtmlElement'
+                            },
+                            {
+                                '$ref': '#/components/schemas/InputText'
+                            },
+                            {
+                                '$ref': '#/components/schemas/CascadeSelect'
+                            },
+                            {
+                                '$ref': '#/components/schemas/Checkbox'
+                            },
+                            {
+                                '$ref': '#/components/schemas/ColorPicker'
+                            },
+                            {
+                                '$ref': '#/components/schemas/DatePicker'
+                            },
+                            {
+                                '$ref': '#/components/schemas/InputMask'
+                            },
+                            {
+                                '$ref': '#/components/schemas/InputNumber'
+                            },
+                            {
+                                '$ref': '#/components/schemas/InputOtp'
+                            },
+                            {
+                                '$ref': '#/components/schemas/Knob'
+                            },
+                            {
+                                '$ref': '#/components/schemas/Listbox'
+                            },
+                            {
+                                '$ref': '#/components/schemas/MultiSelect'
+                            },
+                            {
+                                '$ref': '#/components/schemas/Password'
+                            },
+                            {
+                                '$ref': '#/components/schemas/RadioButton'
+                            },
+                            {
+                                '$ref': '#/components/schemas/Rating'
+                            },
+                            {
+                                '$ref': '#/components/schemas/Select'
+                            },
+                            {
+                                '$ref': '#/components/schemas/SelectButton'
+                            },
+                            {
+                                '$ref': '#/components/schemas/Slider'
+                            },
+                            {
+                                '$ref': '#/components/schemas/Textarea'
+                            },
+                            {
+                                '$ref': '#/components/schemas/ToggleButton'
+                            },
+                            {
+                                '$ref': '#/components/schemas/ToggleSwitch'
+                            }
+                        ]
                     },
                     type: 'array'
                 },
@@ -152,7 +215,14 @@ export const AgentDTOSchema = {
             description: "Unique identifier for the agent instance (e.g., 'agent_123')."
         },
         agent_config: {
-            '$ref': '#/components/schemas/AgentConfigDTO',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/AgentConfigDTO'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Configuration details of the agent, including name, description, and prompts.'
         },
         is_conversational: {
@@ -1013,6 +1083,7 @@ export const AudioSchema = {
             title: 'Id'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['id'],
     title: 'Audio'
@@ -1627,6 +1698,7 @@ export const ChatCompletionAllowedToolChoiceParamSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['allowed_tools', 'type'],
     title: 'ChatCompletionAllowedToolChoiceParam'
@@ -1648,6 +1720,7 @@ export const ChatCompletionAllowedToolsParamSchema = {
             title: 'Tools'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['mode', 'tools'],
     title: 'ChatCompletionAllowedToolsParam'
@@ -1697,7 +1770,7 @@ export const ChatCompletionAssistantMessageParamSchema = {
         function_call: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/FunctionCall-Input'
+                    '$ref': '#/components/schemas/FunctionCall'
                 },
                 {
                     type: 'null'
@@ -1734,6 +1807,7 @@ export const ChatCompletionAssistantMessageParamSchema = {
             title: 'Tool Calls'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['role'],
     title: 'ChatCompletionAssistantMessageParam'
@@ -1778,12 +1852,13 @@ export const ChatCompletionAudioParamSchema = {
                 },
                 {
                     type: 'string',
-                    enum: ['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse']
+                    enum: ['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse', 'marin', 'cedar']
                 }
             ],
             title: 'Voice'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['format', 'voice'],
     title: 'ChatCompletionAudioParam'
@@ -1800,6 +1875,7 @@ export const ChatCompletionContentPartImageParamSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['image_url', 'type'],
     title: 'ChatCompletionContentPartImageParam'
@@ -1816,6 +1892,7 @@ export const ChatCompletionContentPartInputAudioParamSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['input_audio', 'type'],
     title: 'ChatCompletionContentPartInputAudioParam'
@@ -1833,6 +1910,7 @@ export const ChatCompletionContentPartRefusalParamSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['refusal', 'type'],
     title: 'ChatCompletionContentPartRefusalParam'
@@ -1850,6 +1928,7 @@ export const ChatCompletionContentPartTextParamSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['text', 'type'],
     title: 'ChatCompletionContentPartTextParam'
@@ -1881,6 +1960,7 @@ export const ChatCompletionDeveloperMessageParamSchema = {
             title: 'Name'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['content', 'role'],
     title: 'ChatCompletionDeveloperMessageParam'
@@ -1893,6 +1973,7 @@ export const ChatCompletionFunctionCallOptionParamSchema = {
             title: 'Name'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['name'],
     title: 'ChatCompletionFunctionCallOptionParam'
@@ -1921,6 +2002,7 @@ export const ChatCompletionFunctionMessageParamSchema = {
             title: 'Role'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['content', 'name', 'role'],
     title: 'ChatCompletionFunctionMessageParam'
@@ -1937,6 +2019,7 @@ export const ChatCompletionFunctionToolParamSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['function', 'type'],
     title: 'ChatCompletionFunctionToolParam'
@@ -1998,7 +2081,7 @@ export const ChatCompletionMessageSchema = {
         function_call: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/FunctionCall-Output'
+                    '$ref': '#/components/schemas/FunctionCall'
                 },
                 {
                     type: 'null'
@@ -2069,6 +2152,7 @@ export const ChatCompletionMessageCustomToolCallParamSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['id', 'custom', 'type'],
     title: 'ChatCompletionMessageCustomToolCallParam'
@@ -2110,6 +2194,7 @@ export const ChatCompletionMessageFunctionToolCallParamSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['id', 'function', 'type'],
     title: 'ChatCompletionMessageFunctionToolCallParam'
@@ -2126,6 +2211,7 @@ export const ChatCompletionNamedToolChoiceCustomParamSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['custom', 'type'],
     title: 'ChatCompletionNamedToolChoiceCustomParam'
@@ -2142,6 +2228,7 @@ export const ChatCompletionNamedToolChoiceParamSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['function', 'type'],
     title: 'ChatCompletionNamedToolChoiceParam'
@@ -2169,6 +2256,7 @@ export const ChatCompletionPredictionContentParamSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['content', 'type'],
     title: 'ChatCompletionPredictionContentParam'
@@ -2581,6 +2669,7 @@ export const ChatCompletionStreamOptionsParamSchema = {
             title: 'Include Usage'
         }
     },
+    additionalProperties: true,
     type: 'object',
     title: 'ChatCompletionStreamOptionsParam'
 } as const;
@@ -2611,6 +2700,7 @@ export const ChatCompletionSystemMessageParamSchema = {
             title: 'Name'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['content', 'role'],
     title: 'ChatCompletionSystemMessageParam'
@@ -2680,6 +2770,7 @@ export const ChatCompletionToolMessageParamSchema = {
             title: 'Tool Call Id'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['content', 'role', 'tool_call_id'],
     title: 'ChatCompletionToolMessageParam'
@@ -2724,6 +2815,7 @@ export const ChatCompletionUserMessageParamSchema = {
             title: 'Name'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['content', 'role'],
     title: 'ChatCompletionUserMessageParam'
@@ -2751,6 +2843,9 @@ export const ChatMessageSchema = {
                         '$ref': '#/components/schemas/AudioBlock'
                     },
                     {
+                        '$ref': '#/components/schemas/VideoBlock'
+                    },
+                    {
                         '$ref': '#/components/schemas/DocumentBlock'
                     },
                     {
@@ -2761,6 +2856,12 @@ export const ChatMessageSchema = {
                     },
                     {
                         '$ref': '#/components/schemas/CitationBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ThinkingBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ToolCallBlock'
                     }
                 ],
                 discriminator: {
@@ -2772,7 +2873,10 @@ export const ChatMessageSchema = {
                         citation: '#/components/schemas/CitationBlock',
                         document: '#/components/schemas/DocumentBlock',
                         image: '#/components/schemas/ImageBlock',
-                        text: '#/components/schemas/TextBlock'
+                        text: '#/components/schemas/TextBlock',
+                        thinking: '#/components/schemas/ThinkingBlock',
+                        tool_call: '#/components/schemas/ToolCallBlock',
+                        video: '#/components/schemas/VideoBlock'
                     }
                 }
             },
@@ -6068,6 +6172,7 @@ export const FileSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['file', 'type'],
     title: 'File'
@@ -6088,6 +6193,7 @@ export const FileFileSchema = {
             title: 'Filename'
         }
     },
+    additionalProperties: true,
     type: 'object',
     title: 'FileFile'
 } as const;
@@ -6109,23 +6215,7 @@ export const Function_OutputSchema = {
     title: 'Function'
 } as const;
 
-export const FunctionCall_InputSchema = {
-    properties: {
-        arguments: {
-            type: 'string',
-            title: 'Arguments'
-        },
-        name: {
-            type: 'string',
-            title: 'Name'
-        }
-    },
-    type: 'object',
-    required: ['arguments', 'name'],
-    title: 'FunctionCall'
-} as const;
-
-export const FunctionCall_OutputSchema = {
+export const FunctionCallSchema = {
     properties: {
         arguments: {
             type: 'string',
@@ -6169,6 +6259,7 @@ export const FunctionDefinitionSchema = {
             title: 'Strict'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['name'],
     title: 'FunctionDefinition'
@@ -7256,6 +7347,7 @@ export const ImageURLSchema = {
             title: 'Detail'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['url'],
     title: 'ImageURL'
@@ -7663,6 +7755,7 @@ export const InputAudioSchema = {
             title: 'Format'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['data', 'format'],
     title: 'InputAudio'
@@ -8542,6 +8635,7 @@ export const JSONSchemaSchema = {
             title: 'Strict'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['name'],
     title: 'JSONSchema'
@@ -9889,7 +9983,14 @@ export const MinimalAgentDTOSchema = {
             description: "Unique identifier for the agent instance (e.g., 'agent_123')."
         },
         agent_config: {
-            '$ref': '#/components/schemas/AgentConfigDTO',
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/AgentConfigDTO'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'Configuration details of the agent, including name, description, and prompts.'
         },
         is_conversational: {
@@ -10091,7 +10192,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1764051229
+            default: 1764938421
         },
         owned_by: {
             type: 'string',
@@ -12601,6 +12702,7 @@ export const ResponseFormatJSONObjectSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['type'],
     title: 'ResponseFormatJSONObject'
@@ -12617,6 +12719,7 @@ export const ResponseFormatJSONSchemaSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['json_schema', 'type'],
     title: 'ResponseFormatJSONSchema'
@@ -12630,6 +12733,7 @@ export const ResponseFormatTextSchema = {
             title: 'Type'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['type'],
     title: 'ResponseFormatText'
@@ -14389,6 +14493,50 @@ export const TextareaSchema = {
     description: 'https://formkit-primevue.netlify.app/inputs/Textarea'
 } as const;
 
+export const ThinkingBlockSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'thinking',
+            title: 'Block Type',
+            default: 'thinking'
+        },
+        content: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Content',
+            description: 'Content of the reasoning/thinking process, if available'
+        },
+        num_tokens: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Num Tokens',
+            description: 'Number of token used for reasoning/thinking, if available'
+        },
+        additional_information: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Additional Information',
+            description: 'Additional information related to the thinking/reasoning process, if available'
+        }
+    },
+    type: 'object',
+    title: 'ThinkingBlock',
+    description: 'A representation of the content streamed from reasoning/thinking processes by LLMs'
+} as const;
+
 export const ThoughtEventSchema = {
     properties: {
         event_id: {
@@ -15070,6 +15218,50 @@ export const TokenResponseSchema = {
     title: 'TokenResponse'
 } as const;
 
+export const ToolCallBlockSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'tool_call',
+            title: 'Block Type',
+            default: 'tool_call'
+        },
+        tool_call_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tool Call Id',
+            description: 'ID of the tool call, if provided'
+        },
+        tool_name: {
+            type: 'string',
+            title: 'Tool Name',
+            description: 'Name of the called tool'
+        },
+        tool_kwargs: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Tool Kwargs',
+            description: 'Arguments provided to the tool, if available'
+        }
+    },
+    type: 'object',
+    required: ['tool_name'],
+    title: 'ToolCallBlock'
+} as const;
+
 export const ToolEventSchema = {
     properties: {
         event_id: {
@@ -15378,6 +15570,21 @@ export const TranscriptionWordSchema = {
     type: 'object',
     required: ['end', 'start', 'word'],
     title: 'TranscriptionWord'
+} as const;
+
+export const UpdateAgentConfigurationDTOSchema = {
+    properties: {
+        configuration: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Configuration',
+            description: "The configuration values to update as key-value pairs. Keys should match the 'name' fields from the agent's form elements."
+        }
+    },
+    type: 'object',
+    required: ['configuration'],
+    title: 'UpdateAgentConfigurationDTO',
+    description: 'Request body for updating agent configuration.'
 } as const;
 
 export const UpdateNamespaceRequestSchema = {
@@ -15974,6 +16181,93 @@ export const ValidationErrorSchema = {
     title: 'ValidationError'
 } as const;
 
+export const VideoBlockSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'video',
+            title: 'Block Type',
+            default: 'video'
+        },
+        video: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'binary'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Video'
+        },
+        path: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'file-path'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Path'
+        },
+        url: {
+            anyOf: [
+                {
+                    type: 'string',
+                    minLength: 1,
+                    format: 'uri'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Url'
+        },
+        video_mimetype: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Video Mimetype'
+        },
+        detail: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Detail'
+        },
+        fps: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Fps'
+        }
+    },
+    type: 'object',
+    title: 'VideoBlock',
+    description: 'A representation of video data to directly pass to/from the LLM.'
+} as const;
+
 export const WorkflowGraphSchema = {
     properties: {
         directed: {
@@ -16044,6 +16338,7 @@ export const openai__types__chat__chat_completion_message_custom_tool_call_param
             title: 'Name'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['input', 'name'],
     title: 'Custom'
@@ -16060,6 +16355,7 @@ export const openai__types__chat__chat_completion_message_function_tool_call_par
             title: 'Name'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['arguments', 'name'],
     title: 'Function'
@@ -16072,6 +16368,7 @@ export const openai__types__chat__chat_completion_named_tool_choice_custom_param
             title: 'Name'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['name'],
     title: 'Custom'
@@ -16084,6 +16381,7 @@ export const openai__types__chat__chat_completion_named_tool_choice_param__Funct
             title: 'Name'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['name'],
     title: 'Function'
@@ -16105,6 +16403,7 @@ export const openai__types__chat__completion_create_params__FunctionSchema = {
             title: 'Parameters'
         }
     },
+    additionalProperties: true,
     type: 'object',
     required: ['name'],
     title: 'Function'

@@ -239,6 +239,8 @@ agent:
     description: "Configura il comportamento runtime e le impostazioni per questo agente"
     runtimeSettings: "Impostazioni runtime"
     noConfiguration: "Nessuna configurazione disponibile per questo agente"
+    saveSuccess: "Configurazione salvata con successo"
+    saveError: "Impossibile salvare la configurazione"
   chat:
     title: "Inizia una nuova chat"
     placeholder: "Digita il messaggio che vuoi inviare all'Agente"

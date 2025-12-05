@@ -43,7 +43,7 @@ runner.mount(
     .remove_agent_from_thread()
     .add_user_to_thread()
     .remove_user_from_thread(),
-    AgentController(auth=auth).get_agent().get_agent_threads().get_agents().discover_agents(),
+    AgentController(auth=auth).get_agent().get_agent_threads().get_agent_configuration().update_agent_configuration().get_agents().discover_agents(),
     ProcessController(auth=auth)
     .get_process()
     .get_processes()
