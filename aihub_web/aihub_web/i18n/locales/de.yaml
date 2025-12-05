@@ -158,6 +158,8 @@ event:
     view_raw_data: "Ereignis-Rohdaten anzeigen"
     view_formatted: "Formatiertes Ereignis anzeigen"
     event_data: "Ereignisdaten"
+  hitl:
+    confirmationHint: "Geben Sie 'ja' oder 'nein' ein, um auf diese Bestätigungsanfrage zu antworten"
   limitChatHistory:
     summary: "Chat-Verlauf auf {count} Nachrichten begrenzt"
     assistant: "Assistent"

@@ -1,6 +1,13 @@
-from .HumanInTheLoopRequestEvent import HitlOption, HumanInTheLoopRequestEvent
+from .HumanInTheLoopRequestEvent import (
+    HitlRequestType,
+    HumanInTheLoopConfirmationRequestEvent,
+    HumanInTheLoopInputRequestEvent,
+    HumanInTheLoopRequestEvent,
+)
 
 __all__ = [
-    "HitlOption",
+    "HitlRequestType",
     "HumanInTheLoopRequestEvent",
+    "HumanInTheLoopInputRequestEvent",
+    "HumanInTheLoopConfirmationRequestEvent",
 ]

@@ -403,13 +403,6 @@ class OpenaiService:
             # Send a final "stop" chunk at the end
             if resources.stop_event.is_hitl_request_event:
                 content = resources.stop_event.question
-                # If options are provided, format them as clickable buttons
-                # Options are HitlOption objects with key (language-independent) and label (localized display)
-                if hasattr(resources.stop_event, "options") and resources.stop_event.options:
-                    options_buttons = " | ".join(
-                        [f"**[{opt.label}]({opt.key})**" for opt in resources.stop_event.options]
-                    )
-                    content = f"{content}\n\n{options_buttons}"
             elif resources.stop_event.is_exception_event:
                 content = f"\n\n>[!CAUTION]\n>**Error:** {resources.stop_event.message}\n"
             else:

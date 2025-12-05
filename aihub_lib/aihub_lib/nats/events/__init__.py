@@ -11,9 +11,21 @@ from .discovery import AgentInstanceDiscoveryResponseEvent, InstanceDiscoveryReq
 from .display import ChunkEvent, DisplayEvent, ThoughtEvent
 from .expert_in_the_loop import ExpertInTheLoop, ExpertInTheLoopRequestEvent, ExpertInTheLoopResponseEvent
 from .guard import GuardRejectionEvent
-from .human_in_the_loop import HitlOption, HumanInTheLoop
-from .human_in_the_loop.request import HumanInTheLoopRequestEvent
-from .human_in_the_loop.response import HumanInTheLoopResponseEvent
+from .human_in_the_loop import (
+    HumanInTheLoop,
+    HumanInTheLoopConfirmation,
+    HumanInTheLoopInput,
+)
+from .human_in_the_loop.request import (
+    HumanInTheLoopConfirmationRequestEvent,
+    HumanInTheLoopInputRequestEvent,
+    HumanInTheLoopRequestEvent,
+)
+from .human_in_the_loop.response import (
+    HumanInTheLoopConfirmationResponseEvent,
+    HumanInTheLoopInputResponseEvent,
+    HumanInTheLoopResponseEvent,
+)
 from .process import ProcessEvent, ProcessExceptionEvent, ProcessStartEvent, ProcessStopEvent
 from .semantic import (
     AgentEvent,
@@ -41,10 +53,15 @@ __all__ = [
     "LLMCostEvent",
     "InstanceDiscoveryRequestEvent",
     "AgentInstanceDiscoveryResponseEvent",
-    "HitlOption",
     "HumanInTheLoopRequestEvent",
+    "HumanInTheLoopInputRequestEvent",
+    "HumanInTheLoopConfirmationRequestEvent",
     "HumanInTheLoopResponseEvent",
+    "HumanInTheLoopInputResponseEvent",
+    "HumanInTheLoopConfirmationResponseEvent",
     "HumanInTheLoop",
+    "HumanInTheLoopInput",
+    "HumanInTheLoopConfirmation",
     "AgentInTheLoopRequestEvent",
     "AgentInTheLoopResponseEvent",
     "AgentInTheLoopExceptionEvent",

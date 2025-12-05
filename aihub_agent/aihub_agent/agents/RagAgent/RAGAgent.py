@@ -13,7 +13,6 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import (
     AgentInTheLoop,
-    HitlOption,
     HumanInTheLoop,
     LimitChatHistoryEvent,
     StandaloneQuestionCondenserEvent,
@@ -448,20 +447,14 @@ class RAGAgent(Agent):
         event: FormulatedQuestionEvent,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> HumanInTheLoop.request:
+    ) -> HumanInTheLoop.confirmation.request:
         """Ask user for consent to contact expert."""
         await displayer.display_thought(t("agent.rag_agent.thoughts.asking_for_consent"))
         consent_message = t(
             "agent.rag_agent.messages.consent_question",
             question=event.question,
         )
-        return HumanInTheLoop.invoke(
-            question=consent_message,
-            options=[
-                HitlOption(key="yes", label=t("agent.rag_agent.options.yes")),
-                HitlOption(key="no", label=t("agent.rag_agent.options.no")),
-            ],
-        )
+        return HumanInTheLoop.confirmation.invoke(question=consent_message)
 
     @step(
         name=LocaleString(en="Process Consent Answer"),
@@ -470,12 +463,12 @@ class RAGAgent(Agent):
     )
     async def user_consent_response_step(
         self,
-        event: HumanInTheLoop.response,
+        event: HumanInTheLoop.confirmation.response,
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> UserConsentEvent | StopEvent:
         """Process user's consent response."""
-        if event.response == "yes":
+        if event.response is True:
             await displayer.display_thought(t("agent.rag_agent.thoughts.user_consented"))
             return UserConsentEvent()
         await displayer.display_thought(t("agent.rag_agent.thoughts.user_declined"))

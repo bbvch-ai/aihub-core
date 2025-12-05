@@ -9,6 +9,15 @@ from aihub_lib.nats.events.agent_in_the_loop.response.AgentInTheLoopResponseEven
 from aihub_lib.nats.events.BaseEvent import BaseEvent
 from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.events.display import DisplayEvent
+from aihub_lib.nats.events.human_in_the_loop import (
+    HumanInTheLoop,
+    HumanInTheLoopConfirmation,
+    HumanInTheLoopConfirmationRequestEvent,
+    HumanInTheLoopConfirmationResponseEvent,
+    HumanInTheLoopInput,
+    HumanInTheLoopInputRequestEvent,
+    HumanInTheLoopInputResponseEvent,
+)
 from aihub_lib.nats.events.semantic import LLMStopEvent
 from aihub_lib.nats.events.user import UserMessageEvent
 from aihub_lib.nats.topics import PartialAgentTopic
@@ -419,3 +428,163 @@ def test_llm_events_hierarchy():
 
     # Data should be preserved
     assert remote_event.chat_model_name == "test"
+
+
+# ====== Human-in-the-Loop Event Tests ======
+
+
+@pytest.fixture
+def hitl_input_request():
+    """Create a HumanInTheLoopInputRequestEvent using the helper."""
+    return HumanInTheLoop.input.invoke(question="What is your name?")
+
+
+@pytest.fixture
+def hitl_confirmation_request():
+    """Create a HumanInTheLoopConfirmationRequestEvent using the helper."""
+    return HumanInTheLoop.confirmation.invoke(question="Do you want to proceed?")
+
+
+def test_hitl_input_request_creation(hitl_input_request):
+    """Test that HumanInTheLoopInputRequestEvent is created correctly."""
+    assert hitl_input_request.question == "What is your name?"
+    assert hitl_input_request.hitl_type == "input"
+    assert isinstance(hitl_input_request, HumanInTheLoopInputRequestEvent)
+    assert hitl_input_request.is_hitl_request_event
+
+
+def test_hitl_confirmation_request_creation(hitl_confirmation_request):
+    """Test that HumanInTheLoopConfirmationRequestEvent is created correctly."""
+    assert hitl_confirmation_request.question == "Do you want to proceed?"
+    assert hitl_confirmation_request.hitl_type == "confirmation"
+    assert isinstance(hitl_confirmation_request, HumanInTheLoopConfirmationRequestEvent)
+    assert hitl_confirmation_request.is_hitl_request_event
+
+
+def test_hitl_input_response_creation(hitl_input_request):
+    """Test that HumanInTheLoopInputResponseEvent is created correctly."""
+    response_event = HumanInTheLoopInputResponseEvent(
+        response="My name is Alice",
+        request_event=hitl_input_request,
+    )
+    assert response_event.response == "My name is Alice"
+    assert isinstance(response_event.response, str)
+    assert response_event.request_event.question == "What is your name?"
+    assert response_event.is_hitl_response_event
+
+
+def test_hitl_confirmation_response_creation(hitl_confirmation_request):
+    """Test that HumanInTheLoopConfirmationResponseEvent is created correctly."""
+    # Test with True response
+    response_event_yes = HumanInTheLoopConfirmationResponseEvent(
+        response=True,
+        request_event=hitl_confirmation_request,
+    )
+    assert response_event_yes.response is True
+    assert isinstance(response_event_yes.response, bool)
+    assert response_event_yes.is_hitl_response_event
+
+    # Test with False response
+    response_event_no = HumanInTheLoopConfirmationResponseEvent(
+        response=False,
+        request_event=hitl_confirmation_request,
+    )
+    assert response_event_no.response is False
+
+
+def test_hitl_input_round_trip(hitl_input_request):
+    """Test that HumanInTheLoopInputRequestEvent survives serialization round trip."""
+    remote_request = simulate_cross_process_boundary(hitl_input_request)
+
+    assert remote_request.is_hitl_request_event
+    assert remote_request.question == "What is your name?"
+    assert remote_request.hitl_type == "input"
+    assert "HumanInTheLoopInputRequestEvent" in remote_request._parent_event_names
+    assert "HumanInTheLoopRequestEvent" in remote_request._parent_event_names
+
+
+def test_hitl_confirmation_round_trip(hitl_confirmation_request):
+    """Test that HumanInTheLoopConfirmationRequestEvent survives serialization round trip."""
+    remote_request = simulate_cross_process_boundary(hitl_confirmation_request)
+
+    assert remote_request.is_hitl_request_event
+    assert remote_request.question == "Do you want to proceed?"
+    assert remote_request.hitl_type == "confirmation"
+    assert "HumanInTheLoopConfirmationRequestEvent" in remote_request._parent_event_names
+    assert "HumanInTheLoopRequestEvent" in remote_request._parent_event_names
+
+
+def test_hitl_input_workflow(hitl_input_request):
+    """Test complete HITL input workflow with serialization."""
+    # Step 1: Agent sends input request
+    serialized_request = hitl_input_request.model_dump_json(serialize_as_any=True)
+
+    # Step 2: UI deserializes request and checks type via hitl_type field
+    ui_request = BaseEvent.deserialize_event(serialized_request)
+    assert ui_request.hitl_type == "input"  # UI uses this to show text input dialog
+
+    # Step 3: User provides text response
+    response_event = HumanInTheLoopInputResponseEvent(
+        response="User provided text",
+        request_event=hitl_input_request,
+    )
+    serialized_response = response_event.model_dump_json(serialize_as_any=True)
+
+    # Step 4: Agent deserializes response
+    agent_response = BaseEvent.deserialize_event(serialized_response)
+    assert agent_response.is_hitl_response_event
+    assert agent_response.response == "User provided text"
+
+
+def test_hitl_confirmation_workflow(hitl_confirmation_request):
+    """Test complete HITL confirmation workflow with serialization."""
+    # Step 1: Agent sends confirmation request
+    serialized_request = hitl_confirmation_request.model_dump_json(serialize_as_any=True)
+
+    # Step 2: UI deserializes request and checks type via hitl_type field
+    ui_request = BaseEvent.deserialize_event(serialized_request)
+    assert ui_request.hitl_type == "confirmation"  # UI uses this to show yes/no dialog
+
+    # Step 3: User confirms (clicks yes)
+    response_event = HumanInTheLoopConfirmationResponseEvent(
+        response=True,
+        request_event=hitl_confirmation_request,
+    )
+    serialized_response = response_event.model_dump_json(serialize_as_any=True)
+
+    # Step 4: Agent deserializes response
+    agent_response = BaseEvent.deserialize_event(serialized_response)
+    assert agent_response.is_hitl_response_event
+    assert agent_response.response is True
+
+
+def test_hitl_type_discriminator_in_serialization(hitl_input_request, hitl_confirmation_request):
+    """Test that hitl_type is correctly serialized and can be used for discrimination."""
+    # Serialize both types
+    input_data = json.loads(hitl_input_request.model_dump_json(serialize_as_any=True))
+    confirmation_data = json.loads(hitl_confirmation_request.model_dump_json(serialize_as_any=True))
+
+    # The hitl_type field should be present and different
+    assert input_data["hitl_type"] == "input"
+    assert confirmation_data["hitl_type"] == "confirmation"
+
+    # Both should be recognized as HITL request events
+    assert "HumanInTheLoopRequestEvent" in input_data["_parent_event_names"]
+    assert "HumanInTheLoopRequestEvent" in confirmation_data["_parent_event_names"]
+
+
+def test_hitl_helpers_class_structure():
+    """Test that HumanInTheLoop helper class structure is correct."""
+    # HumanInTheLoop should have input and confirmation helpers
+    assert hasattr(HumanInTheLoop, "input")
+    assert hasattr(HumanInTheLoop, "confirmation")
+
+    # Each helper should have request and response classes
+    assert HumanInTheLoop.input.request == HumanInTheLoopInputRequestEvent
+    assert HumanInTheLoop.input.response == HumanInTheLoopInputResponseEvent
+    assert HumanInTheLoop.confirmation.request == HumanInTheLoopConfirmationRequestEvent
+    assert HumanInTheLoop.confirmation.response == HumanInTheLoopConfirmationResponseEvent
+
+    # Standalone helpers should also work
+    assert HumanInTheLoopInput.request == HumanInTheLoopInputRequestEvent
+    assert HumanInTheLoopConfirmation.request == HumanInTheLoopConfirmationRequestEvent

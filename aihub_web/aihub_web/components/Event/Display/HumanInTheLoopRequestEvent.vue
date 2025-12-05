@@ -14,16 +14,12 @@
         :icon="agentIcon"
       />
       <div
-        v-if="isOpen && options.length > 0"
+        v-if="isOpen && isConfirmation"
         class="mt-4 flex gap-2"
       >
-        <Button
-          v-for="option in options"
-          :key="option.key"
-          :label="option.label"
-          severity="secondary"
-          @click="submitOption(option.key)"
-        />
+        <span class="text-sm text-surface-500">
+          {{ t('event.hitl.confirmationHint') }}
+        </span>
       </div>
     </div>
   </EventDisplayBase>
@@ -37,39 +33,22 @@ import type {
   AgentEventReadable,
 } from '@core/sdk/client'
 
-interface HitlOption {
-  key: string
-  label: string
-}
-
 const props = defineProps<{
-  event: AgentEventReadable & { event: HumanInTheLoopRequestEventOutputReadable & { options?: HitlOption[] | null } }
+  event: AgentEventReadable & { event: HumanInTheLoopRequestEventOutputReadable }
   thread: ThreadDto
 }>()
 
+const { t } = useI18n()
 const agentIcon = useAgentIconFromThread(props.event, props.thread)
 const { runForEvent } = useThreadUtils()
-const { sendMessages } = useChatCompletions()
 
 const isOpen = computed<boolean>(() => {
   return runForEvent(props.thread, props.event)?.open_hitl ?? false
 })
 
-const options = computed<HitlOption[]>(() => {
-  return props.event.event.options ?? []
+const isConfirmation = computed<boolean>(() => {
+  return props.event.event.hitl_type === 'confirmation'
 })
-
-const submitOption = (optionKey: string) => {
-  const agent = props.thread.agents?.at(0)
-  if (!agent) return
-
-  const agentIdentifier = `${agent.agent_class}/${agent.agent_id}`
-  sendMessages({
-    model: agentIdentifier,
-    messages: [{ role: 'user', content: optionKey }],
-    threadId: props.thread.id,
-  })
-}
 
 const message = computed<ChatMessageOutput>(() => {
   return {

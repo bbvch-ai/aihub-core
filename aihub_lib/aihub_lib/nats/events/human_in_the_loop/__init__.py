@@ -1,10 +1,23 @@
-from .HumanInTheLoop import HumanInTheLoop
-from .request import HitlOption, HumanInTheLoopRequestEvent
-from .response import HumanInTheLoopResponseEvent
+from .HumanInTheLoop import HumanInTheLoop, HumanInTheLoopConfirmation, HumanInTheLoopInput
+from .request import (
+    HumanInTheLoopConfirmationRequestEvent,
+    HumanInTheLoopInputRequestEvent,
+    HumanInTheLoopRequestEvent,
+)
+from .response import (
+    HumanInTheLoopConfirmationResponseEvent,
+    HumanInTheLoopInputResponseEvent,
+    HumanInTheLoopResponseEvent,
+)
 
 __all__ = [
-    "HitlOption",
     "HumanInTheLoopRequestEvent",
+    "HumanInTheLoopInputRequestEvent",
+    "HumanInTheLoopConfirmationRequestEvent",
     "HumanInTheLoopResponseEvent",
+    "HumanInTheLoopInputResponseEvent",
+    "HumanInTheLoopConfirmationResponseEvent",
     "HumanInTheLoop",
+    "HumanInTheLoopInput",
+    "HumanInTheLoopConfirmation",
 ]

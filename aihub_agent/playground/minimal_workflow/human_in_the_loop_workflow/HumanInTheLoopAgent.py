@@ -7,12 +7,12 @@ from aihub_agent.workflow.decorators.step import step
 
 class HumanInTheLoopAgent(Agent):
     @step()
-    async def start_step(self, event: StartEvent) -> HumanInTheLoop.request:
+    async def start_step(self, event: StartEvent) -> HumanInTheLoop.input.request:
         print("[HumanInTheLoopAgent.start_step]")
-        return HumanInTheLoop.invoke(question="Shall I continue?")
+        return HumanInTheLoop.input.invoke(question="Shall I continue?")
 
     @step()
-    async def end_step(self, event: HumanInTheLoop.response) -> StopEvent:
+    async def end_step(self, event: HumanInTheLoop.input.response) -> StopEvent:
         print(
             "[HumanInTheLoopAgent.end_step]",
             event.request_event.question,

@@ -110,9 +110,25 @@ hitl_request_event:
   name: "Demande à l'Utilisateur"
   description: "L'agent a besoin d'informations supplémentaires de l'utilisateur pour poursuivre la tâche."
 
+hitl_input_request_event:
+  name: "Saisie de Texte Requise"
+  description: "L'agent a besoin d'une saisie de texte libre de l'utilisateur pour poursuivre la tâche."
+
+hitl_confirmation_request_event:
+  name: "Confirmation Requise"
+  description: "L'agent a besoin d'une confirmation oui/non de l'utilisateur pour poursuivre la tâche."
+
 hitl_response_event:
   name: "Réponse de l'Utilisateur Reçue"
   description: "L'utilisateur a répondu à la demande, et l'agent peut poursuivre la tâche."
+
+hitl_input_response_event:
+  name: "Saisie de Texte Reçue"
+  description: "L'utilisateur a fourni une saisie de texte, et l'agent peut poursuivre la tâche."
+
+hitl_confirmation_response_event:
+  name: "Confirmation Reçue"
+  description: "L'utilisateur a confirmé ou refusé, et l'agent peut poursuivre la tâche."
 
 router_event:
   name: "Chemin optimal choisi"

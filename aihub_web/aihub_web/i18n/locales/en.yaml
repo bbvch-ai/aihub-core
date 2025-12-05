@@ -158,6 +158,8 @@ event:
     view_raw_data: "View raw event data"
     view_formatted: "View formatted event"
     event_data: "Event Data"
+  hitl:
+    confirmationHint: "Type 'yes' or 'no' to respond to this confirmation request"
   limitChatHistory:
     summary: "Chat history limited to {count} messages"
     assistant: "Assistant"

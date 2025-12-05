@@ -125,11 +125,21 @@ class ChatService:
             parent_classes = [topic.event_name, HumanInTheLoopResponseEvent.event_name_from_class()] + list(
                 get_parent_classes_until_base(HumanInTheLoopResponseEvent, BaseEvent)
             )
+
+            # Determine the response value based on the HITL type
+            user_response: str | bool = messages[-1].content
+            hitl_type = getattr(open_hitl_request, "hitl_type", "input")
+            if hitl_type == "confirmation":
+                # Convert string response to boolean for confirmation events
+                # Support multiple languages: en (yes), de (ja), fr (oui), it (sì)
+                positive_responses = ("true", "yes", "1", "confirm", "ok", "ja", "oui", "sì", "si")
+                user_response = messages[-1].content.lower().strip() in positive_responses
+
             event = HumanInTheLoopResponseEvent.deserialize_event(
                 {
                     "_event_name": topic.event_name,
                     "_parent_event_names": parent_classes,
-                    "response": messages[-1].content,
+                    "response": user_response,
                     "request_event": open_hitl_request.model_dump(),
                 }
             )

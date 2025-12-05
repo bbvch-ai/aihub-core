@@ -157,6 +157,8 @@ event:
     view_raw_data: "Voir les données brutes de l'événement"
     view_formatted: "Voir l'événement formaté"
     event_data: "Données d'événement"
+  hitl:
+    confirmationHint: "Tapez 'oui' ou 'non' pour répondre à cette demande de confirmation"
   limitChatHistory:
     summary: "Historique de chat limité à {count} messages"
     assistant: "Assistant"
