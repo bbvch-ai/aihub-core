@@ -14,6 +14,7 @@ from aihub_api.routes.expert_group.ExpertGroupController import ExpertGroupContr
 from aihub_api.routes.file.FileController import FileController
 from aihub_api.routes.i18n.I18nController import I18nController
 from aihub_api.routes.knowledge.KnowledgeController import KnowledgeController
+from aihub_api.routes.model.ModelController import ModelController
 from aihub_api.routes.notification.NotificationController import NotificationController
 from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_api.routes.process.ProcessController import ProcessController
@@ -46,10 +47,12 @@ runner.mount(
     .add_user_to_thread()
     .remove_user_from_thread(),
     AgentController(auth=auth).get_agent().get_agent_threads().get_agents().discover_agents(),
+    ModelController(auth=auth).get_models().get_model(),
     ProcessController(auth=auth)
     .get_process()
     .get_processes()
     .discover_processes()
+    .get_process_walkthroughs()
     .get_process_start_forms()
     .get_process_open_forms()
     .send_process_start_form()
@@ -57,10 +60,10 @@ runner.mount(
     TokenController(auth=auth).create_token().list_tokens().revoke_token(),
     RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
     OpenaiController(auth=auth)
-    .get_models()
-    .get_model()
+    .get_models_with_assistants()
+    .get_model_with_assistants()
     .get_embeddings()
-    .chat_completion()
+    .chat_completion_with_assistants()
     .generate_image()
     .stt()
     .tts(),

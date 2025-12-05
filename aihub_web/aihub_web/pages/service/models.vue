@@ -47,7 +47,7 @@
 <script setup lang="ts">
 import { useChangeCase } from '@vueuse/integrations/useChangeCase'
 
-import type { ModelDTO } from '@core/sdk/client'
+import type { ModelDtoReadable } from '@core/sdk/client'
 
 import { useLocalePath } from '#i18n'
 
@@ -57,7 +57,7 @@ const { t } = useI18n()
 
 const { modelTypes, modelsAreLoading, error } = useModelsList()
 
-function showModelDetails(model: ModelDTO) {
+function showModelDetails(model: ModelDtoReadable) {
   router.push(localePath(`/service/models/${encodeURIComponent(model.model_name)}`))
 }
 </script>

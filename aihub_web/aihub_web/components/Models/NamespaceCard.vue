@@ -41,10 +41,10 @@
 </template>
 
 <script setup lang="ts">
-import type { ModelDTO } from '@core/sdk/client'
+import type { ModelDtoReadable } from '@core/sdk/client'
 
 const props = defineProps<{
-  model: ModelDTO
+  model: ModelDtoReadable
 }>()
 
 const { t } = useI18n()
