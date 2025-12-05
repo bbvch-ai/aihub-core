@@ -48,6 +48,7 @@ export default withNuxt(
           'pi-spin',
           'pi-question',
           'pi-check',
+          'pi-check-circle',
           'pi-spinner',
           'pi-times',
           'pi-lock-open',

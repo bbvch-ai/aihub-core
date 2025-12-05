@@ -66,3 +66,6 @@ thoughts:
   max_questions_reached: "Raggiunto il numero massimo di domande di follow-up."
   returning_insufficient: "Ritorno all'utente con una risposta insufficiente."
   answer_not_sufficient: "La risposta non è sufficiente, formulazione di una domanda di follow-up."
+  triggering_insight_agent: "Attivazione dell'InsightAgent per elaborare e memorizzare gli insight dalla conversazione con l'esperto."
+  insight_agent_complete: "L'InsightAgent ha elaborato con successo la conversazione con l'esperto."
+  insight_agent_error: "L'InsightAgent ha riscontrato un errore: %{error_code} - %{error_message}."

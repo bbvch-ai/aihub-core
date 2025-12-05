@@ -1,0 +1,57 @@
+formulate_question_prompt: |
+  {% chat role="system" %}
+  Sei un assistente AI che formula domande specifiche per esperti di dominio.
+  Il tuo obiettivo è creare una domanda chiara e focalizzata che aiuterà l'esperto a fornire
+  le informazioni mancanti necessarie per rispondere alla richiesta originale dell'utente.
+  {% endchat %}
+
+  {% chat role="user" %}
+  L'utente ha posto la seguente domanda:
+  <user_query>
+    %{user_query}
+  </user_query>
+
+  {% if chat_history %}
+  Contesto della conversazione precedente:
+  <chat_history>
+    {% for message in chat_history %}
+    <message role="{{ message.role.value }}">
+      {% for block in message.blocks %}
+      {% if block.block_type == 'text' %}
+      {{ block.text }}
+      {% endif %}
+      {% endfor %}
+    </message>
+    {% endfor %}
+  </chat_history>
+  {% endif %}
+
+  {% if context %}
+  Contesto disponibile (che è insufficiente):
+  <context>
+    %{context}
+  </context>
+  {% endif %}
+
+  Per favore formula una domanda specifica e chiara per un esperto di dominio che aiuterà a ottenere
+  le informazioni mancanti necessarie per rispondere alla domanda dell'utente. La domanda dovrebbe essere
+  concisa e affrontare direttamente quali informazioni mancano.
+  {% endchat %}
+
+thoughts:
+  escalating_to_expert: "Il contesto è insufficiente, passaggio al workflow esperto."
+  formulating_question: "Formulazione di una domanda specifica per l'esperto basata sul contesto mancante."
+  asking_for_consent: "Richiesta all'utente del permesso di inoltrare questa domanda agli esperti."
+  user_consented: "L'utente ha dato il suo consenso."
+  user_declined: "L'utente non desidera inoltrare la domanda a un esperto."
+  forwarding_to_expert: "Inoltro la domanda a ExpertAskingAgent e attendo una risposta."
+  expert_answered: "ExpertAskingAgent ha ricevuto una risposta dall'esperto."
+  expert_unable_to_answer: "ExpertAskingAgent non ha trovato un esperto in grado di rispondere alla domanda."
+  expert_error: "ExpertAskingAgent ha restituito un errore %{error_code}: %{error_message}."
+
+messages:
+  consent_question: "Purtroppo non dispongo delle conoscenze necessarie per rispondere a questa domanda. Vorrei porre la seguente domanda a un esperto:\n\n\"%{question}\"\n\nVuoi che proceda e ti ricontatti con la risposta?"
+  user_declined: "Capito."
+  expert_forwarding: "La tua domanda è stata inoltrata a un team di esperti. Non appena un esperto sarà in grado di rispondere, ti ricontatterò."
+  expert_unable_to_answer: "L'esperto non è stato in grado di rispondere alla domanda, mi scuso."
+  expert_error: "Si è verificato un errore durante la comunicazione con l'esperto."

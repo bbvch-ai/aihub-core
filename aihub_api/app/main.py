@@ -9,6 +9,7 @@ from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.docling.DoclingController import DoclingController
 from aihub_api.routes.evaluation.EvaluationController import EvaluationController
 from aihub_api.routes.event.EventController import EventController
+from aihub_api.routes.expert.ExpertQuestionController import ExpertQuestionController
 from aihub_api.routes.file.FileController import FileController
 from aihub_api.routes.i18n.I18nController import I18nController
 from aihub_api.routes.knowledge.KnowledgeController import KnowledgeController
@@ -93,6 +94,13 @@ runner.mount(
     FileController(auth=auth).get_file_url().get_file_redirect().get_anonymous_file_url().get_anonymous_file_redirect(),
     NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
     DoclingController(auth=auth).parse_document(),
+    ExpertQuestionController(auth=auth)
+    .get_questions_by_status()
+    .get_pending_questions()
+    .get_pending_count()
+    .get_question()
+    .submit_answer()
+    .cancel_question(),
 )
 
 

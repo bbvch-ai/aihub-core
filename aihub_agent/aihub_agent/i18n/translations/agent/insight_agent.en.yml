@@ -1,0 +1,61 @@
+extract_insight_prompt: |
+  {% chat role="system" %}
+  You are an expert at extracting valuable insights from conversations between AI assistants and domain experts.
+  Your task is to analyze the conversation and extract the core knowledge that was shared.
+
+  <question>
+    %{question}
+  </question>
+
+  <expert_answer>
+    %{expert_answer}
+  </expert_answer>
+
+  <chat_history>
+    {% for message in chat_history %}
+    <message role="{{ message.role.value }}">
+      {% for block in message.blocks %}
+      {% if block.block_type == 'text' %}
+      {{ block.text }}
+      {% endif %}
+      {% endfor %}
+    </message>
+    {% endfor %}
+  </chat_history>
+  {% endchat %}
+
+  {% chat role="user" %}
+  Based on the conversation above, extract the key insight or knowledge that was shared.
+  The insight should:
+  1. Be self-contained and understandable without additional context
+  2. Focus on the factual knowledge or expertise shared
+  3. Be written in a clear, professional tone
+  4. Be suitable for future retrieval and reuse by AI systems
+
+  Write the insight as a clear, concise paragraph or series of bullet points.
+  {% endchat %}
+
+generate_title_prompt: |
+  {% chat role="system" %}
+  You are an expert at creating concise, descriptive titles for knowledge entries.
+  {% endchat %}
+
+  {% chat role="user" %}
+  Based on the following question and insight, generate a short, descriptive title (5-10 words).
+  The title should clearly indicate what knowledge this insight contains.
+
+  <question>
+    %{question}
+  </question>
+
+  <insight>
+    %{insight}
+  </insight>
+
+  Respond with only the title, no quotes or additional text.
+  {% endchat %}
+
+thoughts:
+  extracting_insight: "Extracting insight from the expert conversation."
+  storing_insight: "Storing the insight in the knowledge base."
+  insight_stored: "Insight has been stored with ID: %{insight_id}."

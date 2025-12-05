@@ -1583,3 +1583,91 @@ services:
       options:
         max-size: 10m
         max-file: 2
+
+  # ===================================================================
+  # Expert Workflow Agents
+  # ===================================================================
+  # These agents implement the Expert-in-the-Loop workflow, enabling
+  # the platform to escalate questions to human experts and capture
+  # their knowledge for future use.
+  # Note: ExpertGroundedAgent has been merged into RAGAgent with optional
+  # expert workflow support via expert_workflow_config.
+  # ===================================================================
+  expert_asking_agent:
+    container_name: expert-asking-agent
+    restart: always
+    image: ghcr.io/bbvch-ai/aihub-core/expert_asking_agent:nightly
+    environment:
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # NATs
+      NATS_ENDPOINT: nats://nats:4222
+
+      # REDIS
+      REDIS_URL: redis://valkey:6379
+
+      # Expert Channel Configuration
+      # Options: "gui" (default, web interface) or "bitl" (Slack/Teams)
+      EXPERT_CHANNEL_TYPE: ${EXPERT_CHANNEL_TYPE:-gui}
+      # For BitL mode: Slack channel ID (required when EXPERT_CHANNEL_TYPE=bitl)
+      SLACK_CHANNEL_ID: ${EXPERT_SLACK_CHANNEL_ID:-}
+      # For GUI mode: Expert group identifier for filtering questions
+      EXPERT_GROUP: ${EXPERT_GROUP:-}
+
+      # Insight Storage Configuration
+      INSIGHT_NAMESPACE: ${INSIGHT_NAMESPACE:-default}
+
+      # InsightAgent Configuration
+      INSIGHT_AGENT_CLASS: InsightAgent
+      INSIGHT_AGENT_ID: insight_agent
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+      OTEL_RESOURCE_SERVICE_NAME: expert-asking-agent
+      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+  insight_agent:
+    container_name: insight-agent
+    restart: always
+    image: ghcr.io/bbvch-ai/aihub-core/insight_agent:nightly
+    environment:
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # NATs
+      NATS_ENDPOINT: nats://nats:4222
+
+      # REDIS
+      REDIS_URL: redis://valkey:6379
+
+      # Mongo DB (for storing insights)
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # Insight Storage Configuration
+      INSIGHT_NAMESPACE: ${INSIGHT_NAMESPACE:-default}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+      OTEL_RESOURCE_SERVICE_NAME: insight-agent
+      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2

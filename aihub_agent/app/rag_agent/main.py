@@ -12,6 +12,7 @@ from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
+from aihub_agent.agents.RagAgent.configs.ExpertWorkflowConfig import ExpertWorkflowConfig
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.agents.RagAgent.configs.RetrieveSummariesConfig import RetrieveSummariesConfig
@@ -149,6 +150,11 @@ async def main():
                 retrieve_summaries=RetrieveSummariesConfig(
                     max_parent_levels=2,
                 ),
+            ),
+            expert_workflow_config=ExpertWorkflowConfig(
+                enabled=True,
+                expert_asking_agent_class="ExpertAskingAgent",
+                expert_asking_agent_id="expert_asking_agent",
             ),
         ),
         redis_url=RedisSettings().URL,

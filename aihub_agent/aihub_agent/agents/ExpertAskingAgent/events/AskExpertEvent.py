@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import ControlEvent
 from pydantic import Field
@@ -13,8 +14,12 @@ class AskExpertEvent(ControlEvent):
     locale: Annotated[
         str | None,
         Field(
-            description="The user’s locale, defaults to a system-wide default locale, "
+            description="The user's locale, defaults to a system-wide default locale, "
             "guiding language or regional adaptations.",
         ),
     ] = LocaleHandler.DEFAULT_LOCALE
     user: Annotated[UserIdentity, Field(description="User who sent the message")]
+    nodes: Annotated[
+        list[IngestedNode],
+        Field(description="Retrieved nodes that provide context for the expert question"),
+    ] = []

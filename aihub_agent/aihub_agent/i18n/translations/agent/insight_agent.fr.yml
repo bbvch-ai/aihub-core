@@ -1,0 +1,61 @@
+extract_insight_prompt: |
+  {% chat role="system" %}
+  Vous êtes un expert dans l'extraction d'informations précieuses à partir de conversations entre assistants IA et experts du domaine.
+  Votre tâche est d'analyser la conversation et d'extraire les connaissances essentielles partagées.
+
+  <question>
+    %{question}
+  </question>
+
+  <expert_answer>
+    %{expert_answer}
+  </expert_answer>
+
+  <chat_history>
+    {% for message in chat_history %}
+    <message role="{{ message.role.value }}">
+      {% for block in message.blocks %}
+      {% if block.block_type == 'text' %}
+      {{ block.text }}
+      {% endif %}
+      {% endfor %}
+    </message>
+    {% endfor %}
+  </chat_history>
+  {% endchat %}
+
+  {% chat role="user" %}
+  Sur la base de la conversation ci-dessus, extrayez l'insight clé ou les connaissances partagées.
+  L'insight doit:
+  1. Être autonome et compréhensible sans contexte supplémentaire
+  2. Se concentrer sur les connaissances factuelles ou l'expertise partagée
+  3. Être rédigé dans un ton clair et professionnel
+  4. Être adapté à une récupération et réutilisation futures par des systèmes IA
+
+  Rédigez l'insight sous forme de paragraphe clair et concis ou de liste à puces.
+  {% endchat %}
+
+generate_title_prompt: |
+  {% chat role="system" %}
+  Vous êtes un expert dans la création de titres concis et descriptifs pour les entrées de connaissances.
+  {% endchat %}
+
+  {% chat role="user" %}
+  Sur la base de la question et de l'insight suivants, générez un titre court et descriptif (5-10 mots).
+  Le titre doit clairement indiquer quelles connaissances cet insight contient.
+
+  <question>
+    %{question}
+  </question>
+
+  <insight>
+    %{insight}
+  </insight>
+
+  Répondez uniquement avec le titre, sans guillemets ni texte supplémentaire.
+  {% endchat %}
+
+thoughts:
+  extracting_insight: "Extraction de l'insight de la conversation avec l'expert."
+  storing_insight: "Stockage de l'insight dans la base de connaissances."
+  insight_stored: "L'insight a été stocké avec l'ID: %{insight_id}."

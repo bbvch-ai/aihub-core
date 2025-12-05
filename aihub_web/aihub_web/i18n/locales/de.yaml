@@ -513,3 +513,35 @@ bar:
 
 process:
   title: "Prozesse"
+
+expert:
+  title: "Expertenfragen"
+  pending_questions: "Offene Fragen"
+  no_pending_questions: "Keine offenen Fragen"
+  no_answered_questions: "Keine beantworteten Fragen"
+  no_questions: "Keine Fragen"
+  filter_questions: "Fragen filtern"
+  context: "Kontext"
+  group: "Gruppe"
+  requested_by: "Angefragt von"
+  answer_button: "Antworten"
+  filter:
+    pending: "Offen"
+    answered: "Beantwortet"
+    all: "Alle"
+  priority:
+    low: "Niedrig"
+    normal: "Normal"
+    high: "Hoch"
+    urgent: "Dringend"
+  answer_dialog:
+    title: "Expertenfrage beantworten"
+    question: "Frage"
+    context: "Kontext"
+    your_answer: "Ihre Antwort"
+    answer_placeholder: "Geben Sie hier Ihre Antwort ein..."
+    submit: "Antwort senden"
+    success_title: "Antwort gesendet"
+    success_message: "Ihre Antwort wurde erfolgreich übermittelt."
+    error_title: "Fehler"
+    error_message: "Ihre Antwort konnte nicht gesendet werden. Bitte versuchen Sie es erneut."

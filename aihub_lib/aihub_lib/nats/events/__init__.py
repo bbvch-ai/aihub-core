@@ -9,6 +9,7 @@ from .ControlAndDisplayEvent import ControlAndDisplayEvent
 from .cost import CostEvent, LLMCostEvent
 from .discovery import AgentInstanceDiscoveryResponseEvent, InstanceDiscoveryRequestEvent
 from .display import ChunkEvent, DisplayEvent, ThoughtEvent
+from .expert_in_the_loop import ExpertInTheLoop, ExpertInTheLoopRequestEvent, ExpertInTheLoopResponseEvent
 from .guard import GuardRejectionEvent
 from .human_in_the_loop import HumanInTheLoop
 from .human_in_the_loop.request import HumanInTheLoopRequestEvent
@@ -47,6 +48,9 @@ __all__ = [
     "AgentInTheLoopResponseEvent",
     "AgentInTheLoopExceptionEvent",
     "AgentInTheLoop",
+    "ExpertInTheLoopRequestEvent",
+    "ExpertInTheLoopResponseEvent",
+    "ExpertInTheLoop",
     "DisplayEvent",
     "ChunkEvent",
     "ThoughtEvent",

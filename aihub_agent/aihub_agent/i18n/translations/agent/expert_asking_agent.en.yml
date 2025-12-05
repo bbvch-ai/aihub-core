@@ -66,3 +66,6 @@ thoughts:
   max_questions_reached: "Maximum number of follow-up questions reached."
   returning_insufficient: "Returning to the user with an insufficient answer."
   answer_not_sufficient: "Answer is not sufficient, formulating a follow-up question."
+  triggering_insight_agent: "Triggering InsightAgent to process and store insights from the expert conversation."
+  insight_agent_complete: "InsightAgent has successfully processed the expert conversation."
+  insight_agent_error: "InsightAgent encountered an error: %{error_code} - %{error_message}."

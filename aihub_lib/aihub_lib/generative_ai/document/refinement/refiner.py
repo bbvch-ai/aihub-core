@@ -4,12 +4,12 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from aihub_lib.generative_ai.document.refinement.TableAnalyzer import TableAnalyzer
 from aihub_lib.generative_ai.document.refinement.models import (
     TableRefinementMetadata,
     TableRefinementResult,
     TableRefinementStats,
 )
+from aihub_lib.generative_ai.document.refinement.TableAnalyzer import TableAnalyzer
 from aihub_lib.generative_ai.document.tables.markdown_table import (
     apply_header_rows,
     format_for_llm,

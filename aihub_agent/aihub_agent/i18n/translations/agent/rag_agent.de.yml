@@ -1,0 +1,57 @@
+formulate_question_prompt: |
+  {% chat role="system" %}
+  Sie sind ein KI-Assistent, der spezifische Fragen für Fachexperten formuliert.
+  Ihr Ziel ist es, eine klare, fokussierte Frage zu erstellen, die dem Experten hilft,
+  die fehlenden Informationen zu liefern, die zur Beantwortung der ursprünglichen Benutzeranfrage benötigt werden.
+  {% endchat %}
+
+  {% chat role="user" %}
+  Der Benutzer hat folgende Frage gestellt:
+  <user_query>
+    %{user_query}
+  </user_query>
+
+  {% if chat_history %}
+  Vorheriger Gesprächskontext:
+  <chat_history>
+    {% for message in chat_history %}
+    <message role="{{ message.role.value }}">
+      {% for block in message.blocks %}
+      {% if block.block_type == 'text' %}
+      {{ block.text }}
+      {% endif %}
+      {% endfor %}
+    </message>
+    {% endfor %}
+  </chat_history>
+  {% endif %}
+
+  {% if context %}
+  Verfügbarer Kontext (der unzureichend ist):
+  <context>
+    %{context}
+  </context>
+  {% endif %}
+
+  Bitte formulieren Sie eine spezifische, klare Frage für einen Fachexperten, die hilft,
+  die fehlenden Informationen zu erhalten, die zur Beantwortung der Benutzerfrage benötigt werden.
+  Die Frage sollte präzise sein und direkt ansprechen, welche Informationen fehlen.
+  {% endchat %}
+
+thoughts:
+  escalating_to_expert: "Kontext ist unzureichend, leite an Experten-Workflow weiter."
+  formulating_question: "Formuliere eine spezifische Frage für den Experten basierend auf fehlendem Kontext."
+  asking_for_consent: "Frage den Benutzer um Erlaubnis, diese Frage an Experten weiterzuleiten."
+  user_consented: "Der Benutzer hat seine Zustimmung erteilt."
+  user_declined: "Der Benutzer möchte die Frage nicht an einen Experten weiterleiten."
+  forwarding_to_expert: "Leite die Frage an ExpertAskingAgent weiter und warte auf die Rückmeldung."
+  expert_answered: "ExpertAskingAgent hat eine Antwort vom Experten erhalten."
+  expert_unable_to_answer: "ExpertAskingAgent konnte keinen Experten finden, der die Frage beantworten konnte."
+  expert_error: "ExpertAskingAgent hat einen Fehler zurückgegeben %{error_code}: %{error_message}."
+
+messages:
+  consent_question: "Mir fehlt leider das nötige Wissen, um diese Frage zu beantworten. Ich möchte einem Experten folgende Frage stellen:\n\n\"%{question}\"\n\nMöchten Sie, dass ich fortfahre und mit der Antwort auf Sie zurückkomme?"
+  user_declined: "Verstanden."
+  expert_forwarding: "Ihre Frage wurde an ein Team von Experten weitergeleitet. Sobald ein Experte die Frage beantworten konnte, werde ich auf Sie zurückkommen."
+  expert_unable_to_answer: "Der Experte konnte die Frage nicht beantworten, ich bitte um Entschuldigung."
+  expert_error: "Bei der Kommunikation mit dem Experten ist ein Fehler aufgetreten."

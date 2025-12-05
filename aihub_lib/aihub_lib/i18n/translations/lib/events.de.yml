@@ -22,6 +22,14 @@ bitl_response_event:
   name: "Antwort vom Agent"
   description: "Der spezialisierte Agent hat die Anfrage bearbeitet und eine Antwort zurückgesendet."
 
+eitl_request_event:
+  name: "Experteneingabe erforderlich"
+  description: "Eine Frage wurde über die plattformeigene Benutzeroberfläche an Fachexperten zur Beratung übermittelt."
+
+eitl_response_event:
+  name: "Expertenantwort erhalten"
+  description: "Ein Experte hat über die plattformeigene Benutzeroberfläche eine Antwort gegeben, sodass der Arbeitsablauf fortgesetzt werden kann."
+
 limit_chat_history_event:
   name: "Chatverlauf begrenzt"
   description: "Der Chatverlauf wurde aus Effizienzgründen gekürzt, wobei nur die relevantesten Teile beibehalten wurden."

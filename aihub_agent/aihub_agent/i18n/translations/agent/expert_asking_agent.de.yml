@@ -66,3 +66,6 @@ thoughts:
   max_questions_reached: "Maximale Anzahl an Folgefragen erreicht."
   returning_insufficient: "Kehre zum Benutzer mit einer unzureichenden Antwort zurück."
   answer_not_sufficient: "Antwort ist nicht ausreichend, formuliere eine Folgefrage."
+  triggering_insight_agent: "InsightAgent wird ausgelöst, um Erkenntnisse aus dem Expertengespräch zu verarbeiten und zu speichern."
+  insight_agent_complete: "InsightAgent hat das Expertengespräch erfolgreich verarbeitet."
+  insight_agent_error: "InsightAgent hat einen Fehler festgestellt: %{error_code} - %{error_message}."

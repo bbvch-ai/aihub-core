@@ -1,0 +1,61 @@
+extract_insight_prompt: |
+  {% chat role="system" %}
+  Sei un esperto nell'estrarre informazioni preziose dalle conversazioni tra assistenti IA ed esperti del settore.
+  Il tuo compito è analizzare la conversazione ed estrarre le conoscenze fondamentali condivise.
+
+  <question>
+    %{question}
+  </question>
+
+  <expert_answer>
+    %{expert_answer}
+  </expert_answer>
+
+  <chat_history>
+    {% for message in chat_history %}
+    <message role="{{ message.role.value }}">
+      {% for block in message.blocks %}
+      {% if block.block_type == 'text' %}
+      {{ block.text }}
+      {% endif %}
+      {% endfor %}
+    </message>
+    {% endfor %}
+  </chat_history>
+  {% endchat %}
+
+  {% chat role="user" %}
+  Sulla base della conversazione sopra, estrai l'insight chiave o le conoscenze condivise.
+  L'insight deve:
+  1. Essere autonomo e comprensibile senza contesto aggiuntivo
+  2. Concentrarsi sulle conoscenze fattuali o competenze condivise
+  3. Essere scritto in un tono chiaro e professionale
+  4. Essere adatto per il recupero e riutilizzo futuro da parte di sistemi IA
+
+  Scrivi l'insight come un paragrafo chiaro e conciso o come punti elenco.
+  {% endchat %}
+
+generate_title_prompt: |
+  {% chat role="system" %}
+  Sei un esperto nella creazione di titoli concisi e descrittivi per le voci di conoscenza.
+  {% endchat %}
+
+  {% chat role="user" %}
+  Sulla base della seguente domanda e insight, genera un titolo breve e descrittivo (5-10 parole).
+  Il titolo deve indicare chiaramente quali conoscenze contiene questo insight.
+
+  <question>
+    %{question}
+  </question>
+
+  <insight>
+    %{insight}
+  </insight>
+
+  Rispondi solo con il titolo, senza virgolette o testo aggiuntivo.
+  {% endchat %}
+
+thoughts:
+  extracting_insight: "Estrazione dell'insight dalla conversazione con l'esperto."
+  storing_insight: "Salvataggio dell'insight nella base di conoscenza."
+  insight_stored: "L'insight è stato salvato con ID: %{insight_id}."

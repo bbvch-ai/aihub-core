@@ -92,3 +92,15 @@ image_tags:
     nightly: bot:nightly
     latest: bot:latest
 
+  expert_asking_agent:
+    build: localbuild
+    local: expert_asking_agent:latest
+    nightly: expert_asking_agent:nightly
+    latest: expert_asking_agent:latest
+
+  insight_agent:
+    build: localbuild
+    local: insight_agent:latest
+    nightly: insight_agent:nightly
+    latest: insight_agent:latest
+

@@ -512,3 +512,35 @@ bar:
 
 process:
   title: "Processus"
+
+expert:
+  title: "Questions d'Expert"
+  pending_questions: "Questions en attente"
+  no_pending_questions: "Aucune question en attente"
+  no_answered_questions: "Aucune question répondue"
+  no_questions: "Aucune question"
+  filter_questions: "Filtrer les questions"
+  context: "Contexte"
+  group: "Groupe"
+  requested_by: "Demandé par"
+  answer_button: "Répondre"
+  filter:
+    pending: "En attente"
+    answered: "Répondues"
+    all: "Toutes"
+  priority:
+    low: "Faible"
+    normal: "Normale"
+    high: "Élevée"
+    urgent: "Urgente"
+  answer_dialog:
+    title: "Répondre à la question d'expert"
+    question: "Question"
+    context: "Contexte"
+    your_answer: "Votre réponse"
+    answer_placeholder: "Entrez votre réponse ici..."
+    submit: "Soumettre la réponse"
+    success_title: "Réponse envoyée"
+    success_message: "Votre réponse a été soumise avec succès."
+    error_title: "Erreur"
+    error_message: "Échec de l'envoi de votre réponse. Veuillez réessayer."

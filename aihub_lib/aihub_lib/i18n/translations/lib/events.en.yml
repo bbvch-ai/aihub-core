@@ -22,6 +22,14 @@ bitl_response_event:
   name: "Agent Response"
   description: "The specialized agent has processed the request and sent back a response."
 
+eitl_request_event:
+  name: "Expert Input Required"
+  description: "A question has been submitted to domain experts via the platform's built-in GUI interface for expert guidance."
+
+eitl_response_event:
+  name: "Expert Response Received"
+  description: "An expert has provided an answer through the built-in GUI, allowing the workflow to continue."
+
 limit_chat_history_event:
   name: "Chat History Limited"
   description: "The chat history has been shortened for efficiency, keeping only the most relevant parts."

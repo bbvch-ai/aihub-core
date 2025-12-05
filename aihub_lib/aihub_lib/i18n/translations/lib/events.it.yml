@@ -22,6 +22,14 @@ bitl_response_event:
   name: "Risposta dal Agente"
   description: "Il agente specializzato ha elaborato la richiesta e ha inviato una risposta."
 
+eitl_request_event:
+  name: "Parere dell'Esperto Richiesto"
+  description: "Una domanda è stata inviata agli esperti di dominio tramite l'interfaccia grafica integrata della piattaforma per ottenere consulenza."
+
+eitl_response_event:
+  name: "Risposta dell'Esperto Ricevuta"
+  description: "Un esperto ha fornito una risposta tramite l'interfaccia grafica integrata, permettendo al flusso di lavoro di proseguire."
+
 limit_chat_history_event:
   name: "Cronologia Chat Limitata"
   description: "La cronologia della chat è stata abbreviata per motivi di efficienza, mantenendo solo le parti più rilevanti."

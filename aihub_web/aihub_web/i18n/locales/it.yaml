@@ -512,3 +512,35 @@ bar:
 
 process:
   title: "Processi"
+
+expert:
+  title: "Domande degli Esperti"
+  pending_questions: "Domande in sospeso"
+  no_pending_questions: "Nessuna domanda in sospeso"
+  no_answered_questions: "Nessuna domanda con risposta"
+  no_questions: "Nessuna domanda"
+  filter_questions: "Filtra domande"
+  context: "Contesto"
+  group: "Gruppo"
+  requested_by: "Richiesto da"
+  answer_button: "Rispondi"
+  filter:
+    pending: "In sospeso"
+    answered: "Risposte"
+    all: "Tutte"
+  priority:
+    low: "Bassa"
+    normal: "Normale"
+    high: "Alta"
+    urgent: "Urgente"
+  answer_dialog:
+    title: "Rispondi alla domanda dell'esperto"
+    question: "Domanda"
+    context: "Contesto"
+    your_answer: "La tua risposta"
+    answer_placeholder: "Inserisci qui la tua risposta..."
+    submit: "Invia risposta"
+    success_title: "Risposta inviata"
+    success_message: "La tua risposta è stata inviata con successo."
+    error_title: "Errore"
+    error_message: "Impossibile inviare la risposta. Riprova."

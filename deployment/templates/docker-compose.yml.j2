@@ -1049,6 +1049,9 @@ services:
     restart: always
     {%- if stage == 'dev' %}
     network_mode: "host"
+    {%- elif stage in ['local', 'build'] %}
+    ports:
+      - "8080:8080"
     {%- endif %}
     volumes:
       - {{ global.volume_root }}/open-webui:/app/backend/data
@@ -1525,6 +1528,10 @@ services:
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.api[stage] }}
     {%- endif %}
+    {%- if stage in ['dev', 'local', 'build'] %}
+    ports:
+      - "8000:8000"
+    {%- endif %}
     depends_on:
       nats:
         condition: service_started
@@ -1650,6 +1657,10 @@ services:
       dockerfile: ./Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.web[stage] }}
+    {%- endif %}
+    {%- if stage in ['dev', 'local', 'build'] %}
+    ports:
+      - "3000:80"
     {%- endif %}
     environment:
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
@@ -1874,6 +1885,112 @@ services:
       DANGEROUS_DEV_ONLY_AUTH_FAKE_EMAIL: ${BOT_AUTH_FAKE_EMAIL}
       DANGEROUS_DEV_ONLY_AUTH_FAKE_OID: ${BOT_AUTH_FAKE_OID}
       DANGEROUS_DEV_ONLY_AUTH_FAKE_ROLES: ${BOT_AUTH_FAKE_ROLES}
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+  {%- endif %}
+
+  # ===================================================================
+  # Expert Workflow Agents
+  # ===================================================================
+  # These agents implement the Expert-in-the-Loop workflow, enabling
+  # the platform to escalate questions to human experts and capture
+  # their knowledge for future use.
+  # Note: ExpertGroundedAgent has been merged into RAGAgent with optional
+  # expert workflow support via expert_workflow_config.
+  # ===================================================================
+
+  {%- if image_tags.expert_asking_agent[stage] %}
+  expert_asking_agent:
+    container_name: expert-asking-agent
+    restart: always
+    {%- if image_tags.expert_asking_agent[stage] == 'localbuild' %}
+    build:
+      context: .
+      dockerfile: ./aihub_agent/app/expert_asking_agent/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.expert_asking_agent[stage] }}
+    {%- endif %}
+    environment:
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # NATs
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+
+      # REDIS
+      REDIS_URL: {{ VALKEY_ENDPOINT }}
+
+      # Expert Channel Configuration
+      # Options: "gui" (default, web interface) or "bitl" (Slack/Teams)
+      EXPERT_CHANNEL_TYPE: ${EXPERT_CHANNEL_TYPE:-gui}
+      # For BitL mode: Slack channel ID (required when EXPERT_CHANNEL_TYPE=bitl)
+      SLACK_CHANNEL_ID: ${EXPERT_SLACK_CHANNEL_ID:-}
+      # For GUI mode: Expert group identifier for filtering questions
+      EXPERT_GROUP: ${EXPERT_GROUP:-}
+
+      # Insight Storage Configuration
+      INSIGHT_NAMESPACE: ${INSIGHT_NAMESPACE:-default}
+
+      # InsightAgent Configuration
+      INSIGHT_AGENT_CLASS: InsightAgent
+      INSIGHT_AGENT_ID: insight_agent
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+      OTEL_RESOURCE_SERVICE_NAME: expert-asking-agent
+      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+  {%- endif %}
+
+  {%- if image_tags.insight_agent[stage] %}
+  insight_agent:
+    container_name: insight-agent
+    restart: always
+    {%- if image_tags.insight_agent[stage] == 'localbuild' %}
+    build:
+      context: .
+      dockerfile: ./aihub_agent/app/insight_agent/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.insight_agent[stage] }}
+    {%- endif %}
+    environment:
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # NATs
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+
+      # REDIS
+      REDIS_URL: {{ VALKEY_ENDPOINT }}
+
+      # Mongo DB (for storing insights)
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # Insight Storage Configuration
+      INSIGHT_NAMESPACE: ${INSIGHT_NAMESPACE:-default}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+      OTEL_RESOURCE_SERVICE_NAME: insight-agent
+      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     logging:
       driver: json-file
       options:

@@ -1,0 +1,57 @@
+formulate_question_prompt: |
+  {% chat role="system" %}
+  You are an AI assistant that formulates specific questions for domain experts.
+  Your goal is to create a clear, focused question that will help the expert provide
+  the missing information needed to answer the user's original query.
+  {% endchat %}
+
+  {% chat role="user" %}
+  The user asked the following question:
+  <user_query>
+    %{user_query}
+  </user_query>
+
+  {% if chat_history %}
+  Previous conversation context:
+  <chat_history>
+    {% for message in chat_history %}
+    <message role="{{ message.role.value }}">
+      {% for block in message.blocks %}
+      {% if block.block_type == 'text' %}
+      {{ block.text }}
+      {% endif %}
+      {% endfor %}
+    </message>
+    {% endfor %}
+  </chat_history>
+  {% endif %}
+
+  {% if context %}
+  Available context (which is insufficient):
+  <context>
+    %{context}
+  </context>
+  {% endif %}
+
+  Please formulate a specific, clear question for a domain expert that will help obtain
+  the missing information needed to answer the user's question. The question should be
+  concise and directly address what information is missing.
+  {% endchat %}
+
+thoughts:
+  escalating_to_expert: "Context is insufficient, escalating to expert workflow."
+  formulating_question: "Formulating a specific question for the expert based on missing context."
+  asking_for_consent: "Asking the user for permission to forward this question to experts."
+  user_consented: "The user has given their consent."
+  user_declined: "The user does not want to forward the question to an expert."
+  forwarding_to_expert: "Forwarding the question to ExpertAskingAgent and waiting for a response."
+  expert_answered: "ExpertAskingAgent has received a response from the expert."
+  expert_unable_to_answer: "ExpertAskingAgent could not find an expert who could answer the question."
+  expert_error: "ExpertAskingAgent has returned an error %{error_code}: %{error_message}."
+
+messages:
+  consent_question: "Unfortunately, I lack the necessary knowledge to answer this question. I would like to ask an expert the following question:\n\n\"%{question}\"\n\nWould you like me to proceed and get back to you with the answer?"
+  user_declined: "Understood."
+  expert_forwarding: "Your question has been forwarded to a team of experts. I will get back to you as soon as an expert is able to answer."
+  expert_unable_to_answer: "The expert was unable to answer the question, I apologize."
+  expert_error: "An error occurred when communicating with the expert."

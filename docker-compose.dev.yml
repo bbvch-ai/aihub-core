@@ -947,3 +947,13 @@ services:
   
 
   
+
+  # ===================================================================
+  # Expert Workflow Agents
+  # ===================================================================
+  # These agents implement the Expert-in-the-Loop workflow, enabling
+  # the platform to escalate questions to human experts and capture
+  # their knowledge for future use.
+  # Note: ExpertGroundedAgent has been merged into RAGAgent with optional
+  # expert workflow support via expert_workflow_config.
+  # ===================================================================

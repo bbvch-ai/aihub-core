@@ -22,6 +22,14 @@ bitl_response_event:
   name: "Réponse du Agent"
   description: "Le agent spécialisé a traité la demande et a renvoyé une réponse."
 
+eitl_request_event:
+  name: "Avis d'Expert Requis"
+  description: "Une question a été soumise aux experts du domaine via l'interface graphique intégrée de la plateforme pour obtenir des conseils."
+
+eitl_response_event:
+  name: "Réponse de l'Expert Reçue"
+  description: "Un expert a fourni une réponse via l'interface graphique intégrée, permettant au flux de travail de continuer."
+
 limit_chat_history_event:
   name: "Historique de Chat Limité"
   description: "L'historique du chat a été raccourci pour des raisons d'efficacité, en ne conservant que les parties les plus pertinentes."

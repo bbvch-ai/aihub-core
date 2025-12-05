@@ -1,0 +1,61 @@
+extract_insight_prompt: |
+  {% chat role="system" %}
+  Sie sind ein Experte darin, wertvolle Erkenntnisse aus Gesprächen zwischen KI-Assistenten und Fachexperten zu extrahieren.
+  Ihre Aufgabe ist es, das Gespräch zu analysieren und das geteilte Kernwissen zu extrahieren.
+
+  <question>
+    %{question}
+  </question>
+
+  <expert_answer>
+    %{expert_answer}
+  </expert_answer>
+
+  <chat_history>
+    {% for message in chat_history %}
+    <message role="{{ message.role.value }}">
+      {% for block in message.blocks %}
+      {% if block.block_type == 'text' %}
+      {{ block.text }}
+      {% endif %}
+      {% endfor %}
+    </message>
+    {% endfor %}
+  </chat_history>
+  {% endchat %}
+
+  {% chat role="user" %}
+  Extrahieren Sie basierend auf dem obigen Gespräch die wichtigste Erkenntnis oder das geteilte Wissen.
+  Die Erkenntnis sollte:
+  1. Eigenständig und ohne zusätzlichen Kontext verständlich sein
+  2. Sich auf das geteilte Fachwissen konzentrieren
+  3. In einem klaren, professionellen Ton geschrieben sein
+  4. Für zukünftiges Abrufen und Wiederverwenden durch KI-Systeme geeignet sein
+
+  Schreiben Sie die Erkenntnis als klaren, prägnanten Absatz oder als Aufzählungspunkte.
+  {% endchat %}
+
+generate_title_prompt: |
+  {% chat role="system" %}
+  Sie sind ein Experte darin, prägnante, beschreibende Titel für Wissenseinträge zu erstellen.
+  {% endchat %}
+
+  {% chat role="user" %}
+  Erstellen Sie basierend auf der folgenden Frage und Erkenntnis einen kurzen, beschreibenden Titel (5-10 Wörter).
+  Der Titel sollte klar angeben, welches Wissen diese Erkenntnis enthält.
+
+  <question>
+    %{question}
+  </question>
+
+  <insight>
+    %{insight}
+  </insight>
+
+  Antworten Sie nur mit dem Titel, ohne Anführungszeichen oder zusätzlichen Text.
+  {% endchat %}
+
+thoughts:
+  extracting_insight: "Erkenntnis aus dem Expertengespräch extrahieren."
+  storing_insight: "Erkenntnis in der Wissensdatenbank speichern."
+  insight_stored: "Erkenntnis wurde mit ID gespeichert: %{insight_id}."
