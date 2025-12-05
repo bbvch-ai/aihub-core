@@ -55,3 +55,7 @@ messages:
   expert_forwarding: "La tua domanda è stata inoltrata a un team di esperti. Non appena un esperto sarà in grado di rispondere, ti ricontatterò."
   expert_unable_to_answer: "L'esperto non è stato in grado di rispondere alla domanda, mi scuso."
   expert_error: "Si è verificato un errore durante la comunicazione con l'esperto."
+
+options:
+  yes: "Sì"
+  no: "No"

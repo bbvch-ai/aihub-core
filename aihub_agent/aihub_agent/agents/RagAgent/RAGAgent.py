@@ -13,6 +13,7 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import (
     AgentInTheLoop,
+    HitlOption,
     HumanInTheLoop,
     LimitChatHistoryEvent,
     StandaloneQuestionCondenserEvent,
@@ -454,7 +455,13 @@ class RAGAgent(Agent):
             "agent.rag_agent.messages.consent_question",
             question=event.question,
         )
-        return HumanInTheLoop.invoke(question=consent_message)
+        return HumanInTheLoop.invoke(
+            question=consent_message,
+            options=[
+                HitlOption(key="yes", label=t("agent.rag_agent.options.yes")),
+                HitlOption(key="no", label=t("agent.rag_agent.options.no")),
+            ],
+        )
 
     @step(
         name=LocaleString(en="Process Consent Answer"),
@@ -468,7 +475,7 @@ class RAGAgent(Agent):
         t: LocaleHandler,
     ) -> UserConsentEvent | StopEvent:
         """Process user's consent response."""
-        if "yes" in event.response.lower() or "ja" in event.response.lower():
+        if event.response == "yes":
             await displayer.display_thought(t("agent.rag_agent.thoughts.user_consented"))
             return UserConsentEvent()
         await displayer.display_thought(t("agent.rag_agent.thoughts.user_declined"))

@@ -11,7 +11,7 @@ from .discovery import AgentInstanceDiscoveryResponseEvent, InstanceDiscoveryReq
 from .display import ChunkEvent, DisplayEvent, ThoughtEvent
 from .expert_in_the_loop import ExpertInTheLoop, ExpertInTheLoopRequestEvent, ExpertInTheLoopResponseEvent
 from .guard import GuardRejectionEvent
-from .human_in_the_loop import HumanInTheLoop
+from .human_in_the_loop import HitlOption, HumanInTheLoop
 from .human_in_the_loop.request import HumanInTheLoopRequestEvent
 from .human_in_the_loop.response import HumanInTheLoopResponseEvent
 from .process import ProcessEvent, ProcessExceptionEvent, ProcessStartEvent, ProcessStopEvent
@@ -41,6 +41,7 @@ __all__ = [
     "LLMCostEvent",
     "InstanceDiscoveryRequestEvent",
     "AgentInstanceDiscoveryResponseEvent",
+    "HitlOption",
     "HumanInTheLoopRequestEvent",
     "HumanInTheLoopResponseEvent",
     "HumanInTheLoop",
