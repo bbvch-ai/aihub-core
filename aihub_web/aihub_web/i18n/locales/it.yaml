@@ -514,7 +514,7 @@ process:
   title: "Processi"
 
 expert:
-  title: "Domande degli Esperti"
+  title: "Esperti"
   pending_questions: "Domande in sospeso"
   no_pending_questions: "Nessuna domanda in sospeso"
   no_answered_questions: "Nessuna domanda con risposta"

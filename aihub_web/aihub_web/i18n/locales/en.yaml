@@ -537,7 +537,7 @@ process:
       steps: "Fortschritt"
 
 expert:
-  title: "Expert Questions"
+  title: "Experts"
   pending_questions: "Pending Questions"
   no_pending_questions: "No pending questions"
   no_answered_questions: "No answered questions"
