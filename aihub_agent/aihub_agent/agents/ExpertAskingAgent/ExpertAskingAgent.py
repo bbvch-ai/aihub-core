@@ -6,11 +6,6 @@ from aihub_lib.nats.events import AgentInTheLoop, ExpertInTheLoop
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoop
 from aihub_lib.nats.events.router.RouteOptions import RouteOptions
 from aihub_lib.nats.events.router.RouterEvent import RouterEvent
-from aihub_lib.persistence.expert.ExpertQuestionEntity import (
-    ExpertQuestionEntity,
-    RequestingAgent,
-    RequestingUser,
-)
 from aihub_lib.persistence.insight.InsightEntity import InsightCreator, InsightEntity, InsightSource
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 from llama_index.core.prompts import RichPromptTemplate
@@ -80,7 +75,6 @@ class ExpertAskingAgent(Agent):
                 question_event=question_event,
                 agent_config=agent_config,
                 run_context=run_context,
-                thread_context=thread_context,
             )
 
         return BotInTheLoop.invoke(
@@ -94,16 +88,19 @@ class ExpertAskingAgent(Agent):
         question_event: AskExpertStartEvent | AskExpertEvent,
         agent_config: ExpertAskingAgentConfig,
         run_context: RunContext,
-        thread_context: ThreadContext,
     ) -> ExpertInTheLoop.request:
-        """Creates an ExpertInTheLoop request for GUI-based expert input."""
+        """Creates an ExpertInTheLoop request for GUI-based expert input.
+
+        Note: The ExpertInTheLoopRequestEvent is persisted to MongoDB by the API
+        (via ExpertQuestionPersister subscriber), not by the agent.
+        """
         nodes_data = await run_context.get("nodes", [])
         context_str = None
         if nodes_data:
             nodes = [IngestedNode(**node) for node in nodes_data]
             context_str = "\n\n".join([node.content for node in nodes if node.content])
 
-        expert_request = ExpertInTheLoop.invoke(
+        return ExpertInTheLoop.invoke(
             user=question_event.user,
             question=question_event.question_to_expert,
             context=context_str,
@@ -111,31 +108,6 @@ class ExpertAskingAgent(Agent):
             priority="normal",
             locale=question_event.locale,
         )
-
-        requesting_user = RequestingUser(
-            user_id=question_event.user.id,
-            user_name=question_event.user.name,
-            email=getattr(question_event.user, "email", None),
-        )
-        requesting_agent = RequestingAgent(
-            agent_class=agent_config.agent_class,
-            agent_id=agent_config.agent_id,
-            thread_id=thread_context.thread_id,
-            run_id=run_context.run_id,
-        )
-
-        ExpertQuestionEntity.create_question(
-            question=question_event.question_to_expert,
-            requesting_user=requesting_user,
-            requesting_agent=requesting_agent,
-            topic_data=expert_request.topic.model_dump(),
-            context=context_str,
-            expert_group=agent_config.expert_group,
-            priority="normal",
-            locale=question_event.locale,
-        )
-
-        return expert_request
 
     @step(
         name=LocaleString(en="Expert Response (BitL)"),

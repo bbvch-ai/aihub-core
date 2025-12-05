@@ -194,3 +194,35 @@ class AgentNCSubscriber(NCSubscriber[BaseEvent]):
             event_cls=BaseEvent,
             handler=handler,
         )
+
+    @classmethod
+    def for_specific_display_event_in_all_agents(
+        cls,
+        nc: NATS,
+        topic_manager: AgentTopicManager,
+        handler: Callable[[DisplayEvent, AgentInstanceTopic], Awaitable[None]],
+        event: type[DisplayEvent],
+        subscriber_name: str = "Unnamed",
+    ):
+        """
+        Creates a NCSubscriber for a specific display event type across all agents.
+        Use this when you want to listen for a particular event type from any agent.
+        """
+        subject = topic_manager.get_subject_for_specific_event_in_agent(
+            agent_class="*",
+            agent_id="*",
+            thread_id="*",
+            display_id="*",
+            run_id="*",
+            event_type=AgentTopicManager.DISPLAY_EVENT,
+            event_name=event.event_name_from_class(),
+            event_id="*",
+        )
+
+        return cls(
+            name=subscriber_name,
+            nc=nc,
+            subject=subject,
+            event_cls=event,
+            handler=handler,
+        )

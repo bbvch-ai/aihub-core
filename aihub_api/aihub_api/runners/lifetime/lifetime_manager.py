@@ -7,6 +7,7 @@ from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
+from aihub_lib.nats.events import ExpertInTheLoopRequestEvent
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
@@ -17,6 +18,7 @@ from nats.aio.client import Client as NATS
 
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.persistance.events.EventPersister import EventPersister
+from aihub_api.runners.lifetime.expert_question_persister import persist_expert_question
 from aihub_api.runners.lifetime.initialize_db import initialize_roles
 from aihub_api.services.AgentEndpointsDiscoveryService import AgentEndpointsDiscoveryService
 from aihub_api.services.ProcessEndpointsDiscoveryService import ProcessEndpointsDiscoveryService
@@ -103,6 +105,16 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         )
         await process_event_persist_subscriber.start()
 
+        # Persist ExpertInTheLoopRequestEvent to expert_questions collection
+        expert_question_subscriber = AgentNCSubscriber.for_specific_display_event_in_all_agents(
+            nc=nc,
+            topic_manager=agent_topic_manager,
+            handler=persist_expert_question,
+            event=ExpertInTheLoopRequestEvent,
+            subscriber_name="ExpertQuestionPersister",
+        )
+        await expert_question_subscriber.start()
+
         # Setup WebSocket event flow
         ws_manager = WebSocketManager()
         ws_sender = WebSocketSender(ws_manager=ws_manager)
@@ -162,6 +174,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         # Shutdown: stop subscribers
         await agent_event_persist_subscriber.stop()
         await process_event_persist_subscriber.stop()
+        await expert_question_subscriber.stop()
         await ws_subscriber.stop()
 
         # Stop the discovery services
