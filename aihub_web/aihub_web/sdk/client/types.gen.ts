@@ -349,7 +349,7 @@ export type AgentInTheLoopRequestEventReadable = {
      * Other Agent Topic
      * A partial or full agent topic specifying the target agent and event routing, ensuring the task is delegated to the correct agent.
      */
-    other_agent_topic: PartialAgentTopic | AgentInstanceTopic;
+    other_agent_topic: AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic | AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic;
     /**
      * Share Thread Id
      * Whether to share the conversation thread context with the other agent.
@@ -376,7 +376,7 @@ export type AgentInTheLoopRequestEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (StartEventReadable | UserMessageEventReadable) | (PartialAgentTopic | AgentInstanceTopic) | boolean | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (StartEventReadable | UserMessageEventReadable) | (AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic | AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic) | boolean | Array<string> | undefined;
 };
 
 /**
@@ -417,7 +417,7 @@ export type AgentInTheLoopRequestEventWritable = {
      * Other Agent Topic
      * A partial or full agent topic specifying the target agent and event routing, ensuring the task is delegated to the correct agent.
      */
-    other_agent_topic: PartialAgentTopic | AgentInstanceTopic;
+    other_agent_topic: AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic | AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic;
     /**
      * Share Thread Id
      * Whether to share the conversation thread context with the other agent.
@@ -433,7 +433,7 @@ export type AgentInTheLoopRequestEventWritable = {
      * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!
      */
     share_run_id?: boolean;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (StartEventWritable | UserMessageEventWritable) | (PartialAgentTopic | AgentInstanceTopic) | boolean | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (StartEventWritable | UserMessageEventWritable) | (AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic | AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic) | boolean | undefined;
 };
 
 /**
@@ -517,22 +517,8 @@ export type AgentInTheLoopResponseEventWritable = {
 
 /**
  * AgentInstanceTopic
- * Represents a fully-defined agent event topic. Unlike PartialAgentTopic, all fields are expected
- * to be present. This includes identifiers for agent_class, agent_id, and the event itself.
- *
- * ### Why This Class Exists
- *
- * In a hierarchical event topic model, PartialAgentTopic might not have all details filled out.
- * AgentTopic guarantees that every piece of the event route—from agent class to event ID—is known.
- * This makes AgentTopic ideal for scenarios where the full path is required, such as final message
- * routing or logging a complete event identifier.
- *
- * ### Example:
- * If an event subject is something like:
- * "agent.myclass.myid.thread123.displayA.run45.display_event.some_event.789"
- * then this AgentTopic can represent it, providing quick field-level access and serialization.
  */
-export type AgentInstanceTopic = {
+export type AgentInstanceTopicInput = {
     /**
      * Agent Class
      * The agent's class identifier.
@@ -936,6 +922,56 @@ export type AnnotationUrlCitation = {
 };
 
 /**
+ * AnswerStopEventOutput
+ */
+export type AnswerStopEventOutput = {
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Expert Answer
+     * The answer to the question
+     */
+    expert_answer: string;
+    /**
+     * Chat History
+     * The chat history between the agent and the expert
+     */
+    chat_history?: Array<JamboParserObjectTypeParserChatMessageOutput>;
+    /**
+     * Nodes
+     * The nodes that were used to formulate the expert question
+     */
+    nodes?: Array<JamboParserObjectTypeParserIngestedNode>;
+};
+
+/**
+ * AskExpertStartEventInput
+ */
+export type AskExpertStartEventInput = {
+    /**
+     * Question To Expert
+     * The question to ask the expert
+     */
+    question_to_expert: string;
+    /**
+     * Nodes
+     * Retrieved nodes that provide context for the expert question
+     */
+    nodes?: Array<IngestedNodeInput>;
+    /**
+     * Expert Group
+     * Expert group to route the question to. Overrides agent config if set.
+     */
+    expert_group?: string | null;
+};
+
+/**
  * Audio
  */
 export type Audio = {
@@ -948,9 +984,8 @@ export type Audio = {
 
 /**
  * AudioBlock
- * A representation of audio data to directly pass to/from the LLM.
  */
-export type AudioBlock = {
+export type AudioBlockInput = {
     /**
      * Block Type
      */
@@ -1066,9 +1101,8 @@ export type CacheControl = {
 
 /**
  * CachePoint
- * Used to set the point to cache up to, if the LLM supports caching.
  */
-export type CachePoint = {
+export type CachePointInput = {
     /**
      * Block Type
      */
@@ -1970,36 +2004,6 @@ export type ChatCompletionUserMessageParam = {
 };
 
 /**
- * ChatMessage
- * Chat message.
- */
-export type ChatMessage = {
-    role?: MessageRole;
-    /**
-     * Additional Kwargs
-     */
-    additional_kwargs?: unknown;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlock) | ({
-        block_type: 'image';
-    } & ImageBlock) | ({
-        block_type: 'audio';
-    } & AudioBlock) | ({
-        block_type: 'document';
-    } & DocumentBlock) | ({
-        block_type: 'cache';
-    } & CachePoint) | ({
-        block_type: 'citable';
-    } & CitableBlock) | ({
-        block_type: 'citation';
-    } & CitationBlock)>;
-};
-
-/**
  * Checkbox
  * https://formkit-primevue.netlify.app/inputs/Checkbox
  */
@@ -2320,9 +2324,8 @@ export type ChunkEventWritable = {
 
 /**
  * CitableBlock
- * Supports providing citable content to LLMs that have built-in citation support.
  */
-export type CitableBlock = {
+export type CitableBlockInput = {
     /**
      * Block Type
      */
@@ -2340,18 +2343,17 @@ export type CitableBlock = {
      */
     content: Array<({
         block_type: 'text';
-    } & TextBlock) | ({
+    } & TextBlockInput) | ({
         block_type: 'image';
-    } & ImageBlock) | ({
+    } & ImageBlockInput) | ({
         block_type: 'document';
-    } & DocumentBlock)>;
+    } & DocumentBlockInput)>;
 };
 
 /**
  * CitationBlock
- * A representation of cited content from past messages.
  */
-export type CitationBlock = {
+export type CitationBlockInput = {
     /**
      * Block Type
      */
@@ -2361,9 +2363,9 @@ export type CitationBlock = {
      */
     cited_content: ({
         block_type: 'text';
-    } & TextBlock) | ({
+    } & TextBlockInput) | ({
         block_type: 'image';
-    } & ImageBlock);
+    } & ImageBlockInput);
     /**
      * Source
      */
@@ -2372,12 +2374,7 @@ export type CitationBlock = {
      * Title
      */
     title: string;
-    /**
-     * Additional Location Info
-     */
-    additional_location_info: {
-        [key: string]: number;
-    };
+    additional_location_info: AdditionalLocationInfo;
 };
 
 /**
@@ -3672,9 +3669,8 @@ export type DisplayStatistics = {
 
 /**
  * DocumentBlock
- * A representation of a document to directly pass to the LLM.
  */
-export type DocumentBlock = {
+export type DocumentBlockInput = {
     /**
      * Block Type
      */
@@ -5243,23 +5239,6 @@ export type HealthResponse = {
 };
 
 /**
- * HitlOption
- * A predefined response option for human-in-the-loop requests.
- */
-export type HitlOption = {
-    /**
-     * Key
-     * Language-independent identifier for the option (e.g., 'yes', 'no').
-     */
-    key: string;
-    /**
-     * Label
-     * Localized display label shown to the user.
-     */
-    label: string;
-};
-
-/**
  * HtmlElement
  * https://formkit.com/essentials/schema#html-elements-el
  * Flexible formkit element that can be rendered into pretty much any html element you like.
@@ -5394,14 +5373,94 @@ export type HumanInDtoWritable = {
 };
 
 /**
+ * HumanInTheLoopConfirmationRequestEvent
+ */
+export type HumanInTheLoopConfirmationRequestEvent = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Question
+     * The query or prompt presented to the human operator.
+     */
+    question: string;
+    /**
+     * Topic
+     * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
+     */
+    topic: PartialAgentTopicInput | AgentInstanceTopicInput;
+    /**
+     * Hitl Type
+     * Fixed to 'confirmation' for yes/no requests.
+     */
+    hitl_type?: 'confirmation';
+};
+
+/**
+ * HumanInTheLoopConfirmationRequestEventOutput
+ */
+export type HumanInTheLoopConfirmationRequestEventOutput = {
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Question
+     * The query or prompt presented to the human operator.
+     */
+    question: string;
+    /**
+     * Topic
+     * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
+     */
+    topic: JamboParserObjectTypeParserPartialAgentTopic | JamboParserObjectTypeParserAgentInstanceTopic;
+    /**
+     * Hitl Type
+     * Fixed to 'confirmation' for yes/no requests.
+     */
+    hitl_type?: 'confirmation';
+};
+
+/**
+ * HumanInTheLoopConfirmationResponseEventInput
+ */
+export type HumanInTheLoopConfirmationResponseEventInput = {
+    /**
+     * Response
+     * The human operator's confirmation (True for yes, False for no).
+     */
+    response: boolean;
+    /**
+     * The original confirmation request event.
+     */
+    request_event: HumanInTheLoopConfirmationRequestEvent;
+};
+
+/**
  * HumanInTheLoopRequestEvent
- * An event asking a human for input, guidance, or approval at a critical juncture in a workflow.
+ * Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
  *
- * ### Why HumanInTheLoopRequestEvent?
- * In automated workflows, certain decisions may require human validation. This event:
- * - Is a `DisplayEvent`, so it can appear in user interfaces.
- * - Carries a question and a topic indicating where the subsequent response should be sent.
- * - Optionally provides predefined options (e.g., Yes/No) for quick selection instead of free-form input.
+ * Use the specific subclasses:
+ * - `HumanInTheLoopInputRequestEvent` for free-form text input
+ * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation
  */
 export type HumanInTheLoopRequestEventReadable = {
     /**
@@ -5430,12 +5489,12 @@ export type HumanInTheLoopRequestEventReadable = {
      * Topic
      * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
      */
-    topic: PartialAgentTopic | AgentInstanceTopic;
+    topic: AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic | AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic;
     /**
-     * Options
-     * Optional list of predefined response options with key-label pairs. The key is language-independent (used in response matching), the label is displayed to the user. When provided, the UI should render these as clickable buttons instead of a text input.
+     * Hitl Type
+     * The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no.
      */
-    options?: Array<HitlOption> | null;
+    hitl_type: 'input' | 'confirmation';
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -5447,18 +5506,16 @@ export type HumanInTheLoopRequestEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | (Array<HitlOption> | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic | AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic) | ('input' | 'confirmation') | Array<string> | undefined;
 };
 
 /**
  * HumanInTheLoopRequestEvent
- * An event asking a human for input, guidance, or approval at a critical juncture in a workflow.
+ * Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
  *
- * ### Why HumanInTheLoopRequestEvent?
- * In automated workflows, certain decisions may require human validation. This event:
- * - Is a `DisplayEvent`, so it can appear in user interfaces.
- * - Carries a question and a topic indicating where the subsequent response should be sent.
- * - Optionally provides predefined options (e.g., Yes/No) for quick selection instead of free-form input.
+ * Use the specific subclasses:
+ * - `HumanInTheLoopInputRequestEvent` for free-form text input
+ * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation
  */
 export type HumanInTheLoopRequestEventWritable = {
     /**
@@ -5487,23 +5544,22 @@ export type HumanInTheLoopRequestEventWritable = {
      * Topic
      * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
      */
-    topic: PartialAgentTopic | AgentInstanceTopic;
+    topic: AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic | AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic;
     /**
-     * Options
-     * Optional list of predefined response options with key-label pairs. The key is language-independent (used in response matching), the label is displayed to the user. When provided, the UI should render these as clickable buttons instead of a text input.
+     * Hitl Type
+     * The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no.
      */
-    options?: Array<HitlOption> | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | (Array<HitlOption> | null) | undefined;
+    hitl_type: 'input' | 'confirmation';
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic | AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic) | ('input' | 'confirmation') | undefined;
 };
 
 /**
  * HumanInTheLoopResponseEvent
- * A response from a human operator after a HITL request.
+ * Base response from a human operator after a HITL request.
  *
- * ### Why HumanInTheLoopResponseEvent?
- * Once a human operator provides an answer to a `HumanInTheLoopRequestEvent`, the response:
- * - Influences the workflow (since it's a `ControlEvent`), resuming or altering execution based on human input.
- * - Is visible to the UI (since it's also a `DisplayEvent`), allowing transparency and auditing.
+ * Use the specific subclasses:
+ * - `HumanInTheLoopInputResponseEvent` for text input responses
+ * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses
  */
 export type HumanInTheLoopResponseEventReadable = {
     /**
@@ -5525,9 +5581,9 @@ export type HumanInTheLoopResponseEventReadable = {
     display_description?: LocaleString | null;
     /**
      * Response
-     * The human operator's answer or decision.
+     * The human operator's response.
      */
-    response: string;
+    response: string | boolean;
     /**
      * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
      */
@@ -5543,17 +5599,16 @@ export type HumanInTheLoopResponseEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | HumanInTheLoopRequestEventReadable | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | boolean) | HumanInTheLoopRequestEventReadable | Array<string> | undefined;
 };
 
 /**
  * HumanInTheLoopResponseEvent
- * A response from a human operator after a HITL request.
+ * Base response from a human operator after a HITL request.
  *
- * ### Why HumanInTheLoopResponseEvent?
- * Once a human operator provides an answer to a `HumanInTheLoopRequestEvent`, the response:
- * - Influences the workflow (since it's a `ControlEvent`), resuming or altering execution based on human input.
- * - Is visible to the UI (since it's also a `DisplayEvent`), allowing transparency and auditing.
+ * Use the specific subclasses:
+ * - `HumanInTheLoopInputResponseEvent` for text input responses
+ * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses
  */
 export type HumanInTheLoopResponseEventWritable = {
     /**
@@ -5575,14 +5630,14 @@ export type HumanInTheLoopResponseEventWritable = {
     display_description?: LocaleString | null;
     /**
      * Response
-     * The human operator's answer or decision.
+     * The human operator's response.
      */
-    response: string;
+    response: string | boolean;
     /**
      * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
      */
     request_event: HumanInTheLoopRequestEventWritable;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | HumanInTheLoopRequestEventWritable | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | boolean) | HumanInTheLoopRequestEventWritable | undefined;
 };
 
 /**
@@ -5770,9 +5825,8 @@ export type Image = {
 
 /**
  * ImageBlock
- * A representation of image data to directly pass to/from the LLM.
  */
-export type ImageBlock = {
+export type ImageBlockInput = {
     /**
      * Block Type
      */
@@ -5901,14 +5955,8 @@ export type ImagesResponse = {
 
 /**
  * IngestedNode
- * A node represents a chunk of a document, like a paragraph, produced by a document parser and text splitter.
- * The attributes defined here are the minimal number of attributes that a node must have to ensure the
- * UI can properly display it. Note that all attributes that are specific to text documents, like start_char_idx etc.
- * must be strictly optional, as we don't really know whether the node is indeed a text node. However, all attributes
- * that are purely technical, like the document_id to keep the back-ref to the ref_doc from which the node originates,
- * are strictly necessary.
  */
-export type IngestedNode = {
+export type IngestedNodeInput = {
     /**
      * Source
      * Source URI (data lake URI).
@@ -5945,10 +5993,9 @@ export type IngestedNode = {
      */
     document_title?: string | null;
     /**
-     * Language
      * Document language.
      */
-    language?: ('de' | 'en' | 'fr' | 'it') | null;
+    language?: Language | null;
     /**
      * Created At
      * Date source document was created (ISO format string)
@@ -5965,12 +6012,9 @@ export type IngestedNode = {
      */
     inserted_at: string;
     /**
-     * Metadata
      * Additional metadata for the document.
      */
-    metadata?: {
-        [key: string]: unknown;
-    } | null;
+    metadata?: Metadata2 | null;
     /**
      * Id
      * The unique identifier of the Node.
@@ -5982,15 +6026,13 @@ export type IngestedNode = {
      */
     content: string;
     /**
-     * Type
      * Type (content or summary).
      */
-    type?: 'content' | 'summary';
+    type?: Type;
     /**
-     * Content Type
      * Content type (text, figure or table).
      */
-    content_type?: 'text' | 'figure' | 'table';
+    content_type?: ContentType;
     /**
      * Document Id
      * ID of original ref_doc.
@@ -6052,10 +6094,9 @@ export type IngestedNode = {
      */
     h6?: string | null;
     /**
-     * Heading Level
      * Heading level of the node in document
      */
-    heading_level?: (0 | 1 | 2 | 3 | 4 | 5 | 6) | null;
+    heading_level?: HeadingLevel | null;
     /**
      * Score
      * Score representing the relevance of the document.
@@ -6910,6 +6951,56 @@ export type InputTextWritable = {
 };
 
 /**
+ * InsightStartEventInput
+ */
+export type InsightStartEventInput = {
+    /**
+     * Chat History
+     * The chat history between the agent and the expert
+     */
+    chat_history: Array<JamboParserObjectTypeParserChatMessage2>;
+    /**
+     * Nodes
+     * The nodes that were used to formulate the expert question
+     */
+    nodes: Array<IngestedNodeInput>;
+    /**
+     * Question
+     * The original question that was asked
+     */
+    question: string;
+    /**
+     * Expert Answer
+     * The answer provided by the expert
+     */
+    expert_answer: string;
+};
+
+/**
+ * InsightStopEventOutput
+ */
+export type InsightStopEventOutput = {
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Insight Stored
+     * Whether the insight was successfully stored
+     */
+    insight_stored?: boolean;
+    /**
+     * Insight Id
+     * The ID of the stored insight
+     */
+    insight_id?: string | null;
+};
+
+/**
  * JSONSchema
  */
 export type JsonSchema = {
@@ -7336,12 +7427,12 @@ export type LlmEventReadable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<MessageReadable> | null;
+    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<MessageReadable> | null;
+    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -7414,7 +7505,7 @@ export type LlmEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageReadable> | null) | (Array<MessageReadable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -7448,12 +7539,12 @@ export type LlmEventWritable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<MessageWritable> | null;
+    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<MessageWritable> | null;
+    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -7515,7 +7606,7 @@ export type LlmEventWritable = {
     tools?: Array<{
         [key: string]: unknown;
     }> | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageWritable> | null) | (Array<MessageWritable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -7549,12 +7640,12 @@ export type LlmStopEventReadable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<MessageReadable> | null;
+    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<MessageReadable> | null;
+    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -7627,7 +7718,7 @@ export type LlmStopEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageReadable> | null) | (Array<MessageReadable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -7661,12 +7752,12 @@ export type LlmStopEventWritable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<MessageWritable> | null;
+    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<MessageWritable> | null;
+    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -7728,7 +7819,7 @@ export type LlmStopEventWritable = {
     tools?: Array<{
         [key: string]: unknown;
     }> | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageWritable> | null) | (Array<MessageWritable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -7763,7 +7854,7 @@ export type LimitChatHistoryEventReadable = {
      * Limited History
      * Limited chat history based on number of input tokens.
      */
-    limited_history: Array<ChatMessage>;
+    limited_history: Array<LlamaIndexCoreBaseLlmsTypesChatMessage>;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -7775,7 +7866,7 @@ export type LimitChatHistoryEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessage> | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<LlamaIndexCoreBaseLlmsTypesChatMessage> | Array<string> | undefined;
 };
 
 /**
@@ -7804,8 +7895,8 @@ export type LimitChatHistoryEventWritable = {
      * Limited History
      * Limited chat history based on number of input tokens.
      */
-    limited_history: Array<ChatMessage>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessage> | undefined;
+    limited_history: Array<LlamaIndexCoreBaseLlmsTypesChatMessage>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<LlamaIndexCoreBaseLlmsTypesChatMessage> | undefined;
 };
 
 /**
@@ -8069,110 +8160,14 @@ export type Logprob = {
 };
 
 /**
- * Message
+ * MessageRole
  */
-export type MessageReadable = {
-    /**
-     * Role
-     * The role of the message, such as 'user', 'assistant', or 'system'.
-     */
-    role: string;
-    /**
-     * Name
-     * The name of the function or agent generating the message.
-     */
-    name?: string | null;
-    /**
-     * Tool Calls
-     * List of tool calls generated by the model, such as function calls.
-     */
-    tool_calls?: Array<{
-        [key: string]: unknown;
-    }> | null;
-    /**
-     * Function Call Name
-     * The name of the function being called in the message.
-     */
-    function_call_name?: string | null;
-    /**
-     * Function Call Arguments Json
-     * JSON representing arguments passed to the function during a function call.
-     */
-    function_call_arguments_json?: {
-        [key: string]: unknown;
-    } | null;
-    /**
-     * Tool Call Id
-     * The ID of the tool call, if applicable.
-     */
-    tool_call_id?: string | null;
-    /**
-     * Contents
-     * The message contents as an array of content blocks (text, image, audio).
-     */
-    contents?: Array<TextContent | ImageContent | AudioContent> | null;
-    /**
-     * Content
-     */
-    readonly content: string;
-};
-
-/**
- * Message
- */
-export type MessageWritable = {
-    /**
-     * Role
-     * The role of the message, such as 'user', 'assistant', or 'system'.
-     */
-    role: string;
-    /**
-     * Name
-     * The name of the function or agent generating the message.
-     */
-    name?: string | null;
-    /**
-     * Tool Calls
-     * List of tool calls generated by the model, such as function calls.
-     */
-    tool_calls?: Array<{
-        [key: string]: unknown;
-    }> | null;
-    /**
-     * Function Call Name
-     * The name of the function being called in the message.
-     */
-    function_call_name?: string | null;
-    /**
-     * Function Call Arguments Json
-     * JSON representing arguments passed to the function during a function call.
-     */
-    function_call_arguments_json?: {
-        [key: string]: unknown;
-    } | null;
-    /**
-     * Tool Call Id
-     * The ID of the tool call, if applicable.
-     */
-    tool_call_id?: string | null;
-    /**
-     * Contents
-     * The message contents as an array of content blocks (text, image, audio).
-     */
-    contents?: Array<TextContent | ImageContent | AudioContent> | null;
-};
+export type MessageRoleInput = 'system' | 'developer' | 'user' | 'assistant' | 'function' | 'tool' | 'chatbot' | 'model';
 
 /**
  * MessageRole
- * Message role.
  */
-export type MessageRole = 'system' | 'developer' | 'user' | 'assistant' | 'function' | 'tool' | 'chatbot' | 'model';
-
-/**
- * MessageRole
- * Message role.
- */
-export const MessageRole = {
+export const MessageRoleInput = {
     SYSTEM: 'system',
     DEVELOPER: 'developer',
     USER: 'user',
@@ -8206,7 +8201,7 @@ export type Metadata = {
      * Files
      * List of files to attach to the request, if supported by the model.
      */
-    files?: Array<UserUploadedFile> | null;
+    files?: Array<AihubLibNatsEventsUserUserUploadedFileUserUploadedFile> | null;
 };
 
 /**
@@ -8922,6 +8917,20 @@ export type NamespaceResponse = {
 };
 
 /**
+ * NoAnswerStopEventOutput
+ */
+export type NoAnswerStopEventOutput = {
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+};
+
+/**
  * NodeData
  * Data for a node in the workflow graph.
  */
@@ -8993,7 +9002,7 @@ export type NodeSummaryDto = {
      * Nodes
      * List of nodes in the summary
      */
-    nodes: Array<IngestedNode>;
+    nodes: Array<AihubLibGenerativeAiDocumentTypesIngestedNodeIngestedNode>;
 };
 
 /**
@@ -9250,24 +9259,8 @@ export type PaginatedUsersResponse = {
 
 /**
  * PartialAgentTopic
- * Represents a partially qualified agent event topic, where some fields may be unspecified.
- * Wildcards (represented by "*") in the subject translate into None values here.
- *
- * ### Why PartialAgentTopic?
- * Sometimes you deal with generic subscriptions to broad categories of events—like all display events
- * or all events from a particular agent class—without knowing the exact agent_id, thread_id, or event_id.
- * PartialAgentTopic captures this scenario, making it explicit which parts of the topic are defined
- * and which remain open (None).
- *
- * ### Use Cases
- * - **Generic Monitoring:** You might subscribe to `agent.myclass.*.*.*.*.display_event.*.*` to monitor
- * all display events for a given agent class, regardless of the specific agent instance or thread.
- * The resulting PartialAgentTopic shows which filters have been fixed and which are open.
- * - **Routing Decisions:** If a system receives a message on a wildcard topic, it can inspect this
- * PartialAgentTopic to decide dynamically which handler to invoke based on known fields, leaving
- * unknowns as flexible conditions.
  */
-export type PartialAgentTopic = {
+export type PartialAgentTopicInput = {
     /**
      * Agent Class
      * Agent class or None if unspecified.
@@ -10317,12 +10310,12 @@ export type RerankerEventReadable = {
      * Input Nodes
      * List of input documents provided to the reranker.
      */
-    input_nodes?: Array<IngestedNode> | null;
+    input_nodes?: Array<AihubLibGenerativeAiDocumentTypesIngestedNodeIngestedNode> | null;
     /**
      * Output Nodes
      * List of documents outputted by the reranker.
      */
-    output_nodes?: Array<IngestedNode> | null;
+    output_nodes?: Array<AihubLibGenerativeAiDocumentTypesIngestedNodeIngestedNode> | null;
     /**
      * Query
      * The query string used by the reranker.
@@ -10354,7 +10347,7 @@ export type RerankerEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<IngestedNode> | null) | (Array<IngestedNode> | null) | (string | null) | (string | null) | (number | null) | (boolean | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibGenerativeAiDocumentTypesIngestedNodeIngestedNode> | null) | (Array<AihubLibGenerativeAiDocumentTypesIngestedNodeIngestedNode> | null) | (string | null) | (string | null) | (number | null) | (boolean | null) | Array<string> | undefined;
 };
 
 /**
@@ -10382,12 +10375,12 @@ export type RerankerEventWritable = {
      * Input Nodes
      * List of input documents provided to the reranker.
      */
-    input_nodes?: Array<IngestedNode> | null;
+    input_nodes?: Array<AihubLibGenerativeAiDocumentTypesIngestedNodeIngestedNode> | null;
     /**
      * Output Nodes
      * List of documents outputted by the reranker.
      */
-    output_nodes?: Array<IngestedNode> | null;
+    output_nodes?: Array<AihubLibGenerativeAiDocumentTypesIngestedNodeIngestedNode> | null;
     /**
      * Query
      * The query string used by the reranker.
@@ -10408,7 +10401,7 @@ export type RerankerEventWritable = {
      * Whether the nodes were reranked or not.
      */
     reranked?: boolean | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<IngestedNode> | null) | (Array<IngestedNode> | null) | (string | null) | (string | null) | (number | null) | (boolean | null) | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibGenerativeAiDocumentTypesIngestedNodeIngestedNode> | null) | (Array<AihubLibGenerativeAiDocumentTypesIngestedNodeIngestedNode> | null) | (string | null) | (string | null) | (number | null) | (boolean | null) | undefined;
 };
 
 /**
@@ -10485,7 +10478,7 @@ export type RetrieverEventReadable = {
      * Nodes
      * List of nodes retrieved by the retriever, including document IDs, scores, and content.
      */
-    nodes?: Array<IngestedNode> | null;
+    nodes?: Array<AihubLibGenerativeAiDocumentTypesIngestedNodeIngestedNode> | null;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -10497,7 +10490,7 @@ export type RetrieverEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<IngestedNode> | null) | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibGenerativeAiDocumentTypesIngestedNodeIngestedNode> | null) | Array<string> | undefined;
 };
 
 /**
@@ -10525,8 +10518,8 @@ export type RetrieverEventWritable = {
      * Nodes
      * List of nodes retrieved by the retriever, including document IDs, scores, and content.
      */
-    nodes?: Array<IngestedNode> | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<IngestedNode> | null) | undefined;
+    nodes?: Array<AihubLibGenerativeAiDocumentTypesIngestedNodeIngestedNode> | null;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibGenerativeAiDocumentTypesIngestedNodeIngestedNode> | null) | undefined;
 };
 
 /**
@@ -11761,7 +11754,7 @@ export type StandaloneQuestionCondenserEventReadable = {
     /**
      * Single chat message containing the condensed user question.
      */
-    condensed_chat_message: ChatMessage;
+    condensed_chat_message: LlamaIndexCoreBaseLlmsTypesChatMessage;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -11773,7 +11766,7 @@ export type StandaloneQuestionCondenserEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ChatMessage | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | LlamaIndexCoreBaseLlmsTypesChatMessage | Array<string> | undefined;
 };
 
 /**
@@ -11801,8 +11794,8 @@ export type StandaloneQuestionCondenserEventWritable = {
     /**
      * Single chat message containing the condensed user question.
      */
-    condensed_chat_message: ChatMessage;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ChatMessage | undefined;
+    condensed_chat_message: LlamaIndexCoreBaseLlmsTypesChatMessage;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | LlamaIndexCoreBaseLlmsTypesChatMessage | undefined;
 };
 
 /**
@@ -11994,6 +11987,20 @@ export type StopEventWritable = {
 };
 
 /**
+ * StopEventOutput
+ */
+export type StopEventOutput = {
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+};
+
+/**
  * SubmitAnswerRequest
  * Request body for submitting an answer to an expert question.
  */
@@ -12039,9 +12046,8 @@ export type SuiteDto = {
 
 /**
  * TextBlock
- * A representation of text data to directly pass to/from the LLM.
  */
-export type TextBlock = {
+export type TextBlockInput = {
     /**
      * Block Type
      */
@@ -13424,12 +13430,12 @@ export type UserMessageEventReadable = {
      * Messages
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessage>;
+    messages?: Array<LlamaIndexCoreBaseLlmsTypesChatMessage>;
     /**
      * Files
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
      */
-    files?: Array<UserUploadedFile> | null;
+    files?: Array<UserUploadedFileOutput> | null;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -13443,7 +13449,7 @@ export type UserMessageEventReadable = {
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
         [key: string]: unknown;
-    } | null) | UserIdentity | Array<ChatMessage> | (Array<UserUploadedFile> | null) | Array<string> | undefined;
+    } | null) | UserIdentity | Array<LlamaIndexCoreBaseLlmsTypesChatMessage> | (Array<UserUploadedFileOutput> | null) | Array<string> | undefined;
 };
 
 /**
@@ -13509,21 +13515,21 @@ export type UserMessageEventWritable = {
      * Messages
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessage>;
+    messages?: Array<LlamaIndexCoreBaseLlmsTypesChatMessage>;
     /**
      * Files
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
      */
-    files?: Array<UserUploadedFile> | null;
+    files?: Array<UserUploadedFileOutput> | null;
     [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
         [key: string]: unknown;
-    } | null) | UserIdentity | Array<ChatMessage> | (Array<UserUploadedFile> | null) | undefined;
+    } | null) | UserIdentity | Array<LlamaIndexCoreBaseLlmsTypesChatMessage> | (Array<UserUploadedFileOutput> | null) | undefined;
 };
 
 /**
  * UserUploadedFile
  */
-export type UserUploadedFile = {
+export type UserUploadedFileOutput = {
     /**
      * Filename
      * The name of the uploaded file, including the extension.
@@ -13643,6 +13649,1497 @@ export type WorkflowGraph = {
 };
 
 /**
+ * additional_kwargs
+ */
+export type AdditionalKwargs = {
+    [key: string]: unknown;
+};
+
+/**
+ * additional_location_info
+ */
+export type AdditionalLocationInfo = {
+    [key: string]: unknown;
+};
+
+/**
+ * LLMStopEventOutput
+ */
+export type AihubApiServicesModelCreationServiceLlmStopEventOutput1 = {
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Input Messages
+     * List of messages sent to the LLM as input.
+     */
+    input_messages?: Array<JamboParserObjectTypeParserMessage> | null;
+    /**
+     * Output Messages
+     * List of messages received from the LLM as output.
+     */
+    output_messages?: Array<JamboParserObjectTypeParserMessage> | null;
+    /**
+     * Parameters used during the invocation of the LLM.
+     */
+    invocation_parameters?: InvocationParameters | null;
+    /**
+     * Chat Model Name
+     * The name of the language model being utilized.
+     */
+    chat_model_name?: string | null;
+    /**
+     * Provider
+     * The hosting provider of the LLM, e.g., OpenAI, Azure.
+     */
+    provider?: string | null;
+    /**
+     * System
+     * The AI product as identified by the client or server.
+     */
+    system?: string | null;
+    /**
+     * Prompt Template
+     * The prompt template as a Python f-string.
+     */
+    prompt_template?: string | null;
+    /**
+     * A dictionary of input variables to the prompt template.
+     */
+    prompt_template_variables?: PromptTemplateVariables | null;
+    /**
+     * Prompt Template Version
+     * The version of the prompt template being used.
+     */
+    prompt_template_version?: string | null;
+    /**
+     * Token Count Prompt
+     * The number of tokens in the prompt.
+     */
+    token_count_prompt?: number | null;
+    /**
+     * Token Count Completion
+     * The number of tokens in the completion.
+     */
+    token_count_completion?: number | null;
+    /**
+     * Token Count Total
+     * The total number of tokens, including both prompt and completion.
+     */
+    token_count_total?: number | null;
+    /**
+     * Tools
+     * List of tools that are advertised to the LLM to be able to call.
+     */
+    tools?: Array<Tools> | null;
+};
+
+/**
+ * LLMStopEventOutput
+ */
+export type AihubApiServicesModelCreationServiceLlmStopEventOutput2 = {
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Input Messages
+     * List of messages sent to the LLM as input.
+     */
+    input_messages?: Array<JamboParserObjectTypeParserMessage> | null;
+    /**
+     * Output Messages
+     * List of messages received from the LLM as output.
+     */
+    output_messages?: Array<JamboParserObjectTypeParserMessage> | null;
+    /**
+     * Parameters used during the invocation of the LLM.
+     */
+    invocation_parameters?: InvocationParameters | null;
+    /**
+     * Chat Model Name
+     * The name of the language model being utilized.
+     */
+    chat_model_name?: string | null;
+    /**
+     * Provider
+     * The hosting provider of the LLM, e.g., OpenAI, Azure.
+     */
+    provider?: string | null;
+    /**
+     * System
+     * The AI product as identified by the client or server.
+     */
+    system?: string | null;
+    /**
+     * Prompt Template
+     * The prompt template as a Python f-string.
+     */
+    prompt_template?: string | null;
+    /**
+     * A dictionary of input variables to the prompt template.
+     */
+    prompt_template_variables?: PromptTemplateVariables | null;
+    /**
+     * Prompt Template Version
+     * The version of the prompt template being used.
+     */
+    prompt_template_version?: string | null;
+    /**
+     * Token Count Prompt
+     * The number of tokens in the prompt.
+     */
+    token_count_prompt?: number | null;
+    /**
+     * Token Count Completion
+     * The number of tokens in the completion.
+     */
+    token_count_completion?: number | null;
+    /**
+     * Token Count Total
+     * The total number of tokens, including both prompt and completion.
+     */
+    token_count_total?: number | null;
+    /**
+     * Tools
+     * List of tools that are advertised to the LLM to be able to call.
+     */
+    tools?: Array<Tools> | null;
+};
+
+/**
+ * UserMessageEventInput
+ */
+export type AihubApiServicesModelCreationServiceUserMessageEventInput1 = {
+    /**
+     * Messages
+     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
+     */
+    messages?: Array<JamboParserObjectTypeParserChatMessage1>;
+    /**
+     * Files
+     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
+     */
+    files?: Array<JamboParserObjectTypeParserUserUploadedFile> | null;
+};
+
+/**
+ * UserMessageEventInput
+ */
+export type AihubApiServicesModelCreationServiceUserMessageEventInput2 = {
+    /**
+     * Messages
+     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
+     */
+    messages?: Array<JamboParserObjectTypeParserChatMessage3>;
+    /**
+     * Files
+     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
+     */
+    files?: Array<JamboParserObjectTypeParserUserUploadedFile> | null;
+};
+
+/**
+ * IngestedNode
+ * A node represents a chunk of a document, like a paragraph, produced by a document parser and text splitter.
+ * The attributes defined here are the minimal number of attributes that a node must have to ensure the
+ * UI can properly display it. Note that all attributes that are specific to text documents, like start_char_idx etc.
+ * must be strictly optional, as we don't really know whether the node is indeed a text node. However, all attributes
+ * that are purely technical, like the document_id to keep the back-ref to the ref_doc from which the node originates,
+ * are strictly necessary.
+ */
+export type AihubLibGenerativeAiDocumentTypesIngestedNodeIngestedNode = {
+    /**
+     * Source
+     * Source URI (data lake URI).
+     */
+    source: string;
+    /**
+     * Source Origin
+     * Original source URI (e.g., SharePoint URL, external URL).
+     */
+    source_origin?: string | null;
+    /**
+     * Namespace
+     * The namespace of the document within its metadata.
+     */
+    namespace: string;
+    /**
+     * Version
+     * Document version.
+     */
+    version?: number;
+    /**
+     * Content Hash
+     * Hash of the document/node, helpful to track whether file changed.
+     */
+    content_hash?: string | null;
+    /**
+     * Number Of Pages
+     * Number of Pages in the Document.
+     */
+    number_of_pages?: number | null;
+    /**
+     * Document Title
+     * Document title.
+     */
+    document_title?: string | null;
+    /**
+     * Language
+     * Document language.
+     */
+    language?: ('de' | 'en' | 'fr' | 'it') | null;
+    /**
+     * Created At
+     * Date source document was created (ISO format string)
+     */
+    created_at: string;
+    /**
+     * Updated At
+     * Date source document was last updated (ISO format string)
+     */
+    updated_at: string;
+    /**
+     * Inserted At
+     * Date source document was inserted into document store (ISO format string)
+     */
+    inserted_at: string;
+    /**
+     * Metadata
+     * Additional metadata for the document.
+     */
+    metadata?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Id
+     * The unique identifier of the Node.
+     */
+    id: string;
+    /**
+     * Content
+     * The textual content of the Node.
+     */
+    content: string;
+    /**
+     * Type
+     * Type (content or summary).
+     */
+    type?: 'content' | 'summary';
+    /**
+     * Content Type
+     * Content type (text, figure or table).
+     */
+    content_type?: 'text' | 'figure' | 'table';
+    /**
+     * Document Id
+     * ID of original ref_doc.
+     */
+    document_id: string;
+    /**
+     * Start Char Idx
+     * The start character index of the Node.
+     */
+    start_char_idx?: number | null;
+    /**
+     * End Char Idx
+     * The end character index of the Node.
+     */
+    end_char_idx?: number | null;
+    /**
+     * Index
+     * Index counting position of node in document
+     */
+    index?: number | null;
+    /**
+     * Section Start Line
+     * Start line of the node in document
+     */
+    section_start_line?: number | null;
+    /**
+     * Section End Line
+     * End line of the node in document
+     */
+    section_end_line?: number | null;
+    /**
+     * H1
+     * H1 of the node in document
+     */
+    h1?: string | null;
+    /**
+     * H2
+     * H2 of the node in document
+     */
+    h2?: string | null;
+    /**
+     * H3
+     * H3 of the node in document
+     */
+    h3?: string | null;
+    /**
+     * H4
+     * H4 of the node in document
+     */
+    h4?: string | null;
+    /**
+     * H5
+     * H5 of the node in document
+     */
+    h5?: string | null;
+    /**
+     * H6
+     * H6 of the node in document
+     */
+    h6?: string | null;
+    /**
+     * Heading Level
+     * Heading level of the node in document
+     */
+    heading_level?: (0 | 1 | 2 | 3 | 4 | 5 | 6) | null;
+    /**
+     * Score
+     * Score representing the relevance of the document.
+     */
+    score?: number | null;
+};
+
+/**
+ * Message
+ */
+export type AihubLibNatsEventsSemanticLlmMessageMessageReadable = {
+    /**
+     * Role
+     * The role of the message, such as 'user', 'assistant', or 'system'.
+     */
+    role: string;
+    /**
+     * Name
+     * The name of the function or agent generating the message.
+     */
+    name?: string | null;
+    /**
+     * Tool Calls
+     * List of tool calls generated by the model, such as function calls.
+     */
+    tool_calls?: Array<{
+        [key: string]: unknown;
+    }> | null;
+    /**
+     * Function Call Name
+     * The name of the function being called in the message.
+     */
+    function_call_name?: string | null;
+    /**
+     * Function Call Arguments Json
+     * JSON representing arguments passed to the function during a function call.
+     */
+    function_call_arguments_json?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Tool Call Id
+     * The ID of the tool call, if applicable.
+     */
+    tool_call_id?: string | null;
+    /**
+     * Contents
+     * The message contents as an array of content blocks (text, image, audio).
+     */
+    contents?: Array<TextContent | ImageContent | AudioContent> | null;
+    /**
+     * Content
+     */
+    readonly content: string;
+};
+
+/**
+ * Message
+ */
+export type AihubLibNatsEventsSemanticLlmMessageMessageWritable = {
+    /**
+     * Role
+     * The role of the message, such as 'user', 'assistant', or 'system'.
+     */
+    role: string;
+    /**
+     * Name
+     * The name of the function or agent generating the message.
+     */
+    name?: string | null;
+    /**
+     * Tool Calls
+     * List of tool calls generated by the model, such as function calls.
+     */
+    tool_calls?: Array<{
+        [key: string]: unknown;
+    }> | null;
+    /**
+     * Function Call Name
+     * The name of the function being called in the message.
+     */
+    function_call_name?: string | null;
+    /**
+     * Function Call Arguments Json
+     * JSON representing arguments passed to the function during a function call.
+     */
+    function_call_arguments_json?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Tool Call Id
+     * The ID of the tool call, if applicable.
+     */
+    tool_call_id?: string | null;
+    /**
+     * Contents
+     * The message contents as an array of content blocks (text, image, audio).
+     */
+    contents?: Array<TextContent | ImageContent | AudioContent> | null;
+};
+
+/**
+ * UserUploadedFile
+ */
+export type AihubLibNatsEventsUserUserUploadedFileUserUploadedFile = {
+    /**
+     * Filename
+     * The name of the uploaded file, including the extension.
+     */
+    filename: string;
+    /**
+     * File Data
+     * Base64 encoded content of the uploaded file.
+     */
+    file_data: string;
+    /**
+     * File Type
+     * The MIME type of the uploaded file.
+     */
+    file_type: string;
+};
+
+/**
+ * AgentInstanceTopic
+ * Represents a fully-defined agent event topic. Unlike PartialAgentTopic, all fields are expected
+ * to be present. This includes identifiers for agent_class, agent_id, and the event itself.
+ *
+ * ### Why This Class Exists
+ *
+ * In a hierarchical event topic model, PartialAgentTopic might not have all details filled out.
+ * AgentTopic guarantees that every piece of the event route—from agent class to event ID—is known.
+ * This makes AgentTopic ideal for scenarios where the full path is required, such as final message
+ * routing or logging a complete event identifier.
+ *
+ * ### Example:
+ * If an event subject is something like:
+ * "agent.myclass.myid.thread123.displayA.run45.display_event.some_event.789"
+ * then this AgentTopic can represent it, providing quick field-level access and serialization.
+ */
+export type AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic = {
+    /**
+     * Agent Class
+     * The agent's class identifier.
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     * Unique identifier for the specific agent instance.
+     */
+    agent_id: string;
+    /**
+     * Run Id
+     * The run ID within the thread.
+     */
+    run_id: string;
+    /**
+     * Thread Id
+     * Unique identifier for the conversation or workflow thread.
+     */
+    thread_id: string;
+    /**
+     * Display Id
+     * UI-facing grouping ID, used to distinguish or group related runs.
+     */
+    display_id: string;
+    /**
+     * Event Type
+     * Type of event (e.g., 'display_event', 'control_event').
+     */
+    event_type: string;
+    /**
+     * Event Name
+     * Name of the event (e.g., 'StartEvent', 'StopEvent', 'ExceptionEvent, ...').
+     */
+    event_name: string;
+    /**
+     * Event Id
+     * Unique identifier for this particular event instance.
+     */
+    event_id: string;
+};
+
+/**
+ * PartialAgentTopic
+ * Represents a partially qualified agent event topic, where some fields may be unspecified.
+ * Wildcards (represented by "*") in the subject translate into None values here.
+ *
+ * ### Why PartialAgentTopic?
+ * Sometimes you deal with generic subscriptions to broad categories of events—like all display events
+ * or all events from a particular agent class—without knowing the exact agent_id, thread_id, or event_id.
+ * PartialAgentTopic captures this scenario, making it explicit which parts of the topic are defined
+ * and which remain open (None).
+ *
+ * ### Use Cases
+ * - **Generic Monitoring:** You might subscribe to `agent.myclass.*.*.*.*.display_event.*.*` to monitor
+ * all display events for a given agent class, regardless of the specific agent instance or thread.
+ * The resulting PartialAgentTopic shows which filters have been fixed and which are open.
+ * - **Routing Decisions:** If a system receives a message on a wildcard topic, it can inspect this
+ * PartialAgentTopic to decide dynamically which handler to invoke based on known fields, leaving
+ * unknowns as flexible conditions.
+ */
+export type AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic = {
+    /**
+     * Agent Class
+     * Agent class or None if unspecified.
+     */
+    agent_class?: string | null;
+    /**
+     * Agent Id
+     * Agent ID or None if unspecified.
+     */
+    agent_id?: string | null;
+    /**
+     * Run Id
+     * Run ID or None if unspecified.
+     */
+    run_id?: string | null;
+    /**
+     * Thread Id
+     * Thread ID or None if unspecified.
+     */
+    thread_id?: string | null;
+    /**
+     * Display Id
+     * Display ID or None if unspecified.
+     */
+    display_id?: string | null;
+    /**
+     * Event Type
+     * Event type or None if unspecified.
+     */
+    event_type?: string | null;
+    /**
+     * Event Name
+     * Event name or None if unspecified.
+     */
+    event_name?: string | null;
+    /**
+     * Event Id
+     * Event ID or None if unspecified.
+     */
+    event_id?: string | null;
+};
+
+/**
+ * content_type
+ */
+export type ContentType = 'text' | 'figure' | 'table';
+
+/**
+ * content_type
+ */
+export const ContentType = {
+    TEXT: 'text',
+    FIGURE: 'figure',
+    TABLE: 'table'
+} as const;
+
+/**
+ * function_call_arguments_json
+ */
+export type FunctionCallArgumentsJson = {
+    [key: string]: unknown;
+};
+
+/**
+ * heading_level
+ */
+export type HeadingLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
+/**
+ * heading_level
+ */
+export const HeadingLevel = {
+    0: 0,
+    1: 1,
+    2: 2,
+    3: 3,
+    4: 4,
+    5: 5,
+    6: 6
+} as const;
+
+/**
+ * invocation_parameters
+ */
+export type InvocationParameters = {
+    [key: string]: unknown;
+};
+
+/**
+ * MessageRole
+ */
+export type JamboParserEnumTypeParserMessageRole = 'system' | 'developer' | 'user' | 'assistant' | 'function' | 'tool' | 'chatbot' | 'model';
+
+/**
+ * MessageRole
+ */
+export const JamboParserEnumTypeParserMessageRole = {
+    SYSTEM: 'system',
+    DEVELOPER: 'developer',
+    USER: 'user',
+    ASSISTANT: 'assistant',
+    FUNCTION: 'function',
+    TOOL: 'tool',
+    CHATBOT: 'chatbot',
+    MODEL: 'model'
+} as const;
+
+/**
+ * AgentInstanceTopic
+ */
+export type JamboParserObjectTypeParserAgentInstanceTopic = {
+    /**
+     * Agent Class
+     * The agent's class identifier.
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     * Unique identifier for the specific agent instance.
+     */
+    agent_id: string;
+    /**
+     * Run Id
+     * The run ID within the thread.
+     */
+    run_id: string;
+    /**
+     * Thread Id
+     * Unique identifier for the conversation or workflow thread.
+     */
+    thread_id: string;
+    /**
+     * Display Id
+     * UI-facing grouping ID, used to distinguish or group related runs.
+     */
+    display_id: string;
+    /**
+     * Event Type
+     * Type of event (e.g., 'display_event', 'control_event').
+     */
+    event_type: string;
+    /**
+     * Event Name
+     * Name of the event (e.g., 'StartEvent', 'StopEvent', 'ExceptionEvent, ...').
+     */
+    event_name: string;
+    /**
+     * Event Id
+     * Unique identifier for this particular event instance.
+     */
+    event_id: string;
+};
+
+/**
+ * AudioBlock
+ */
+export type JamboParserObjectTypeParserAudioBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'audio';
+    /**
+     * Audio
+     */
+    audio?: (Blob | File) | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | null;
+    /**
+     * Format
+     */
+    format?: string | null;
+};
+
+/**
+ * CachePoint
+ */
+export type JamboParserObjectTypeParserCachePoint = {
+    /**
+     * Block Type
+     */
+    block_type?: 'cache';
+    cache_control: CacheControl;
+};
+
+/**
+ * ChatMessage
+ */
+export type JamboParserObjectTypeParserChatMessageOutput = {
+    role?: JamboParserEnumTypeParserMessageRole;
+    additional_kwargs: AdditionalKwargs;
+    /**
+     * Blocks
+     */
+    blocks?: Array<({
+        block_type: 'text';
+    } & JamboParserObjectTypeParserTextBlock) | ({
+        block_type: 'image';
+    } & JamboParserObjectTypeParserImageBlock) | ({
+        block_type: 'audio';
+    } & JamboParserObjectTypeParserAudioBlock) | ({
+        block_type: 'document';
+    } & JamboParserObjectTypeParserDocumentBlock) | ({
+        block_type: 'cache';
+    } & JamboParserObjectTypeParserCachePoint) | ({
+        block_type: 'citable';
+    } & JamboParserObjectTypeParserCitableBlockOutput) | ({
+        block_type: 'citation';
+    } & JamboParserObjectTypeParserCitationBlockOutput)>;
+};
+
+/**
+ * ChatMessage
+ */
+export type JamboParserObjectTypeParserChatMessage1 = {
+    role?: MessageRoleInput;
+    additional_kwargs: AdditionalKwargs;
+    /**
+     * Blocks
+     */
+    blocks?: Array<({
+        block_type: 'text';
+    } & TextBlockInput) | ({
+        block_type: 'image';
+    } & ImageBlockInput) | ({
+        block_type: 'audio';
+    } & AudioBlockInput) | ({
+        block_type: 'document';
+    } & DocumentBlockInput) | ({
+        block_type: 'cache';
+    } & CachePointInput) | ({
+        block_type: 'citable';
+    } & CitableBlockInput) | ({
+        block_type: 'citation';
+    } & CitationBlockInput)>;
+};
+
+/**
+ * ChatMessage
+ */
+export type JamboParserObjectTypeParserChatMessage2 = {
+    role?: MessageRoleInput;
+    additional_kwargs: AdditionalKwargs;
+    /**
+     * Blocks
+     */
+    blocks?: Array<({
+        block_type: 'text';
+    } & TextBlockInput) | ({
+        block_type: 'image';
+    } & ImageBlockInput) | ({
+        block_type: 'audio';
+    } & AudioBlockInput) | ({
+        block_type: 'document';
+    } & DocumentBlockInput) | ({
+        block_type: 'cache';
+    } & CachePointInput) | ({
+        block_type: 'citable';
+    } & CitableBlockInput) | ({
+        block_type: 'citation';
+    } & CitationBlockInput)>;
+};
+
+/**
+ * ChatMessage
+ */
+export type JamboParserObjectTypeParserChatMessage3 = {
+    role?: MessageRoleInput;
+    additional_kwargs: AdditionalKwargs;
+    /**
+     * Blocks
+     */
+    blocks?: Array<({
+        block_type: 'text';
+    } & TextBlockInput) | ({
+        block_type: 'image';
+    } & ImageBlockInput) | ({
+        block_type: 'audio';
+    } & AudioBlockInput) | ({
+        block_type: 'document';
+    } & DocumentBlockInput) | ({
+        block_type: 'cache';
+    } & CachePointInput) | ({
+        block_type: 'citable';
+    } & CitableBlockInput) | ({
+        block_type: 'citation';
+    } & CitationBlockInput)>;
+};
+
+/**
+ * CitableBlock
+ */
+export type JamboParserObjectTypeParserCitableBlockOutput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'citable';
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Content
+     */
+    content: Array<({
+        block_type: 'text';
+    } & JamboParserObjectTypeParserTextBlock) | ({
+        block_type: 'image';
+    } & JamboParserObjectTypeParserImageBlock) | ({
+        block_type: 'document';
+    } & JamboParserObjectTypeParserDocumentBlock)>;
+};
+
+/**
+ * CitationBlock
+ */
+export type JamboParserObjectTypeParserCitationBlockOutput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'citation';
+    /**
+     * Cited Content
+     */
+    cited_content: ({
+        block_type: 'text';
+    } & JamboParserObjectTypeParserTextBlock) | ({
+        block_type: 'image';
+    } & JamboParserObjectTypeParserImageBlock);
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Title
+     */
+    title: string;
+    additional_location_info: AdditionalLocationInfo;
+};
+
+/**
+ * DocumentBlock
+ */
+export type JamboParserObjectTypeParserDocumentBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'document';
+    /**
+     * Data
+     */
+    data?: (Blob | File) | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | null;
+    /**
+     * Title
+     */
+    title?: string | null;
+    /**
+     * Document Mimetype
+     */
+    document_mimetype?: string | null;
+};
+
+/**
+ * ImageBlock
+ */
+export type JamboParserObjectTypeParserImageBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'image';
+    /**
+     * Image
+     */
+    image?: (Blob | File) | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | null;
+    /**
+     * Image Mimetype
+     */
+    image_mimetype?: string | null;
+    /**
+     * Detail
+     */
+    detail?: string | null;
+};
+
+/**
+ * IngestedNode
+ */
+export type JamboParserObjectTypeParserIngestedNode = {
+    /**
+     * Source
+     * Source URI (data lake URI).
+     */
+    source: string;
+    /**
+     * Source Origin
+     * Original source URI (e.g., SharePoint URL, external URL).
+     */
+    source_origin?: string | null;
+    /**
+     * Namespace
+     * The namespace of the document within its metadata.
+     */
+    namespace: string;
+    /**
+     * Version
+     * Document version.
+     */
+    version?: number;
+    /**
+     * Content Hash
+     * Hash of the document/node, helpful to track whether file changed.
+     */
+    content_hash?: string | null;
+    /**
+     * Number Of Pages
+     * Number of Pages in the Document.
+     */
+    number_of_pages?: number | null;
+    /**
+     * Document Title
+     * Document title.
+     */
+    document_title?: string | null;
+    /**
+     * Document language.
+     */
+    language?: Language | null;
+    /**
+     * Created At
+     * Date source document was created (ISO format string)
+     */
+    created_at: string;
+    /**
+     * Updated At
+     * Date source document was last updated (ISO format string)
+     */
+    updated_at: string;
+    /**
+     * Inserted At
+     * Date source document was inserted into document store (ISO format string)
+     */
+    inserted_at: string;
+    /**
+     * Additional metadata for the document.
+     */
+    metadata?: Metadata2 | null;
+    /**
+     * Id
+     * The unique identifier of the Node.
+     */
+    id: string;
+    /**
+     * Content
+     * The textual content of the Node.
+     */
+    content: string;
+    /**
+     * Type (content or summary).
+     */
+    type?: Type;
+    /**
+     * Content type (text, figure or table).
+     */
+    content_type?: ContentType;
+    /**
+     * Document Id
+     * ID of original ref_doc.
+     */
+    document_id: string;
+    /**
+     * Start Char Idx
+     * The start character index of the Node.
+     */
+    start_char_idx?: number | null;
+    /**
+     * End Char Idx
+     * The end character index of the Node.
+     */
+    end_char_idx?: number | null;
+    /**
+     * Index
+     * Index counting position of node in document
+     */
+    index?: number | null;
+    /**
+     * Section Start Line
+     * Start line of the node in document
+     */
+    section_start_line?: number | null;
+    /**
+     * Section End Line
+     * End line of the node in document
+     */
+    section_end_line?: number | null;
+    /**
+     * H1
+     * H1 of the node in document
+     */
+    h1?: string | null;
+    /**
+     * H2
+     * H2 of the node in document
+     */
+    h2?: string | null;
+    /**
+     * H3
+     * H3 of the node in document
+     */
+    h3?: string | null;
+    /**
+     * H4
+     * H4 of the node in document
+     */
+    h4?: string | null;
+    /**
+     * H5
+     * H5 of the node in document
+     */
+    h5?: string | null;
+    /**
+     * H6
+     * H6 of the node in document
+     */
+    h6?: string | null;
+    /**
+     * Heading level of the node in document
+     */
+    heading_level?: HeadingLevel | null;
+    /**
+     * Score
+     * Score representing the relevance of the document.
+     */
+    score?: number | null;
+};
+
+/**
+ * Message
+ */
+export type JamboParserObjectTypeParserMessage = {
+    /**
+     * Role
+     * The role of the message, such as 'user', 'assistant', or 'system'.
+     */
+    role: string;
+    /**
+     * Name
+     * The name of the function or agent generating the message.
+     */
+    name?: string | null;
+    /**
+     * Tool Calls
+     * List of tool calls generated by the model, such as function calls.
+     */
+    tool_calls?: Array<ToolCalls> | null;
+    /**
+     * Function Call Name
+     * The name of the function being called in the message.
+     */
+    function_call_name?: string | null;
+    /**
+     * JSON representing arguments passed to the function during a function call.
+     */
+    function_call_arguments_json?: FunctionCallArgumentsJson | null;
+    /**
+     * Tool Call Id
+     * The ID of the tool call, if applicable.
+     */
+    tool_call_id?: string | null;
+    /**
+     * Contents
+     * The message contents as an array of content blocks (text, image, audio).
+     */
+    contents?: Array<TextContent | ImageContent | AudioContent> | null;
+};
+
+/**
+ * PartialAgentTopic
+ */
+export type JamboParserObjectTypeParserPartialAgentTopic = {
+    /**
+     * Agent Class
+     * Agent class or None if unspecified.
+     */
+    agent_class?: string | null;
+    /**
+     * Agent Id
+     * Agent ID or None if unspecified.
+     */
+    agent_id?: string | null;
+    /**
+     * Run Id
+     * Run ID or None if unspecified.
+     */
+    run_id?: string | null;
+    /**
+     * Thread Id
+     * Thread ID or None if unspecified.
+     */
+    thread_id?: string | null;
+    /**
+     * Display Id
+     * Display ID or None if unspecified.
+     */
+    display_id?: string | null;
+    /**
+     * Event Type
+     * Event type or None if unspecified.
+     */
+    event_type?: string | null;
+    /**
+     * Event Name
+     * Event name or None if unspecified.
+     */
+    event_name?: string | null;
+    /**
+     * Event Id
+     * Event ID or None if unspecified.
+     */
+    event_id?: string | null;
+};
+
+/**
+ * TextBlock
+ */
+export type JamboParserObjectTypeParserTextBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'text';
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * UserUploadedFile
+ */
+export type JamboParserObjectTypeParserUserUploadedFile = {
+    /**
+     * Filename
+     * The name of the uploaded file, including the extension.
+     */
+    filename: string;
+    /**
+     * File Data
+     * Base64 encoded content of the uploaded file.
+     */
+    file_data: string;
+    /**
+     * File Type
+     * The MIME type of the uploaded file.
+     */
+    file_type: string;
+};
+
+/**
+ * language
+ */
+export type Language = 'de' | 'en' | 'fr' | 'it';
+
+/**
+ * language
+ */
+export const Language = {
+    DE: 'de',
+    EN: 'en',
+    FR: 'fr',
+    IT: 'it'
+} as const;
+
+/**
+ * AudioBlock
+ * A representation of audio data to directly pass to/from the LLM.
+ */
+export type LlamaIndexCoreBaseLlmsTypesAudioBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'audio';
+    /**
+     * Audio
+     */
+    audio?: (Blob | File) | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | null;
+    /**
+     * Format
+     */
+    format?: string | null;
+};
+
+/**
+ * CachePoint
+ * Used to set the point to cache up to, if the LLM supports caching.
+ */
+export type LlamaIndexCoreBaseLlmsTypesCachePoint = {
+    /**
+     * Block Type
+     */
+    block_type?: 'cache';
+    cache_control: CacheControl;
+};
+
+/**
+ * ChatMessage
+ * Chat message.
+ */
+export type LlamaIndexCoreBaseLlmsTypesChatMessage = {
+    role?: LlamaIndexCoreBaseLlmsTypesMessageRole;
+    /**
+     * Additional Kwargs
+     */
+    additional_kwargs?: unknown;
+    /**
+     * Blocks
+     */
+    blocks?: Array<({
+        block_type: 'text';
+    } & LlamaIndexCoreBaseLlmsTypesTextBlock) | ({
+        block_type: 'image';
+    } & LlamaIndexCoreBaseLlmsTypesImageBlock) | ({
+        block_type: 'audio';
+    } & LlamaIndexCoreBaseLlmsTypesAudioBlock) | ({
+        block_type: 'document';
+    } & LlamaIndexCoreBaseLlmsTypesDocumentBlock) | ({
+        block_type: 'cache';
+    } & LlamaIndexCoreBaseLlmsTypesCachePoint) | ({
+        block_type: 'citable';
+    } & LlamaIndexCoreBaseLlmsTypesCitableBlock) | ({
+        block_type: 'citation';
+    } & LlamaIndexCoreBaseLlmsTypesCitationBlock)>;
+};
+
+/**
+ * CitableBlock
+ * Supports providing citable content to LLMs that have built-in citation support.
+ */
+export type LlamaIndexCoreBaseLlmsTypesCitableBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'citable';
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Content
+     */
+    content: Array<({
+        block_type: 'text';
+    } & LlamaIndexCoreBaseLlmsTypesTextBlock) | ({
+        block_type: 'image';
+    } & LlamaIndexCoreBaseLlmsTypesImageBlock) | ({
+        block_type: 'document';
+    } & LlamaIndexCoreBaseLlmsTypesDocumentBlock)>;
+};
+
+/**
+ * CitationBlock
+ * A representation of cited content from past messages.
+ */
+export type LlamaIndexCoreBaseLlmsTypesCitationBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'citation';
+    /**
+     * Cited Content
+     */
+    cited_content: ({
+        block_type: 'text';
+    } & LlamaIndexCoreBaseLlmsTypesTextBlock) | ({
+        block_type: 'image';
+    } & LlamaIndexCoreBaseLlmsTypesImageBlock);
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Additional Location Info
+     */
+    additional_location_info: {
+        [key: string]: number;
+    };
+};
+
+/**
+ * DocumentBlock
+ * A representation of a document to directly pass to the LLM.
+ */
+export type LlamaIndexCoreBaseLlmsTypesDocumentBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'document';
+    /**
+     * Data
+     */
+    data?: (Blob | File) | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | null;
+    /**
+     * Title
+     */
+    title?: string | null;
+    /**
+     * Document Mimetype
+     */
+    document_mimetype?: string | null;
+};
+
+/**
+ * ImageBlock
+ * A representation of image data to directly pass to/from the LLM.
+ */
+export type LlamaIndexCoreBaseLlmsTypesImageBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'image';
+    /**
+     * Image
+     */
+    image?: (Blob | File) | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | null;
+    /**
+     * Image Mimetype
+     */
+    image_mimetype?: string | null;
+    /**
+     * Detail
+     */
+    detail?: string | null;
+};
+
+/**
+ * MessageRole
+ * Message role.
+ */
+export type LlamaIndexCoreBaseLlmsTypesMessageRole = 'system' | 'developer' | 'user' | 'assistant' | 'function' | 'tool' | 'chatbot' | 'model';
+
+/**
+ * MessageRole
+ * Message role.
+ */
+export const LlamaIndexCoreBaseLlmsTypesMessageRole = {
+    SYSTEM: 'system',
+    DEVELOPER: 'developer',
+    USER: 'user',
+    ASSISTANT: 'assistant',
+    FUNCTION: 'function',
+    TOOL: 'tool',
+    CHATBOT: 'chatbot',
+    MODEL: 'model'
+} as const;
+
+/**
+ * TextBlock
+ * A representation of text data to directly pass to/from the LLM.
+ */
+export type LlamaIndexCoreBaseLlmsTypesTextBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'text';
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * metadata
+ */
+export type Metadata2 = {
+    [key: string]: unknown;
+};
+
+/**
  * Usage
  */
 export type OpenaiTypesAudioTranscriptionVerboseUsage = {
@@ -13751,6 +15248,40 @@ export type OpenaiTypesImagesResponseUsage = {
     total_tokens: number;
     [key: string]: unknown | number | UsageInputTokensDetails;
 };
+
+/**
+ * prompt_template_variables
+ */
+export type PromptTemplateVariables = {
+    [key: string]: unknown;
+};
+
+/**
+ * tool_calls
+ */
+export type ToolCalls = {
+    [key: string]: unknown;
+};
+
+/**
+ * tools
+ */
+export type Tools = {
+    [key: string]: unknown;
+};
+
+/**
+ * type
+ */
+export type Type = 'content' | 'summary';
+
+/**
+ * type
+ */
+export const Type = {
+    CONTENT: 'content',
+    SUMMARY: 'summary'
+} as const;
 
 export type GetHealthData = {
     body?: never;
@@ -15432,7 +16963,7 @@ export type GetNodesForDocumentResponses = {
      * Response Get Nodes For Document Knowledge Databases  Database  Namespaces  Namespace  Documents  Document Id  Nodes Get
      * Successful Response
      */
-    200: Array<IngestedNode>;
+    200: Array<AihubLibGenerativeAiDocumentTypesIngestedNodeIngestedNode>;
 };
 
 export type GetNodesForDocumentResponse = GetNodesForDocumentResponses[keyof GetNodesForDocumentResponses];
@@ -16246,6 +17777,336 @@ export type AddMemberResponses = {
 };
 
 export type AddMemberResponse = AddMemberResponses[keyof AddMemberResponses];
+
+export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostData = {
+    body: AihubApiServicesModelCreationServiceUserMessageEventInput1;
+    path?: never;
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/LLMWrappingAgent/dev_agent/UserMessageEvent';
+};
+
+export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostError = SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostErrors[keyof SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostErrors];
+
+export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: AihubApiServicesModelCreationServiceLlmStopEventOutput1;
+};
+
+export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponse = SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponses[keyof SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponses];
+
+export type StreamUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventStreamPostData = {
+    body: AihubApiServicesModelCreationServiceUserMessageEventInput1;
+    path?: never;
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/LLMWrappingAgent/dev_agent/UserMessageEvent/stream';
+};
+
+export type StreamUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventStreamPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type StreamUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventStreamPostError = StreamUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventStreamPostErrors[keyof StreamUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventStreamPostErrors];
+
+export type StreamUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventStreamPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type SendInsightStartEventToInsightAgentInsightAgentAgentsInsightAgentInsightAgentInsightStartEventPostData = {
+    body: InsightStartEventInput;
+    path?: never;
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/InsightAgent/insight_agent/InsightStartEvent';
+};
+
+export type SendInsightStartEventToInsightAgentInsightAgentAgentsInsightAgentInsightAgentInsightStartEventPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SendInsightStartEventToInsightAgentInsightAgentAgentsInsightAgentInsightAgentInsightStartEventPostError = SendInsightStartEventToInsightAgentInsightAgentAgentsInsightAgentInsightAgentInsightStartEventPostErrors[keyof SendInsightStartEventToInsightAgentInsightAgentAgentsInsightAgentInsightAgentInsightStartEventPostErrors];
+
+export type SendInsightStartEventToInsightAgentInsightAgentAgentsInsightAgentInsightAgentInsightStartEventPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: InsightStopEventOutput;
+};
+
+export type SendInsightStartEventToInsightAgentInsightAgentAgentsInsightAgentInsightAgentInsightStartEventPostResponse = SendInsightStartEventToInsightAgentInsightAgentAgentsInsightAgentInsightAgentInsightStartEventPostResponses[keyof SendInsightStartEventToInsightAgentInsightAgentAgentsInsightAgentInsightAgentInsightStartEventPostResponses];
+
+export type StreamInsightStartEventToInsightAgentInsightAgentAgentsInsightAgentInsightAgentInsightStartEventStreamPostData = {
+    body: InsightStartEventInput;
+    path?: never;
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/InsightAgent/insight_agent/InsightStartEvent/stream';
+};
+
+export type StreamInsightStartEventToInsightAgentInsightAgentAgentsInsightAgentInsightAgentInsightStartEventStreamPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type StreamInsightStartEventToInsightAgentInsightAgentAgentsInsightAgentInsightAgentInsightStartEventStreamPostError = StreamInsightStartEventToInsightAgentInsightAgentAgentsInsightAgentInsightAgentInsightStartEventStreamPostErrors[keyof StreamInsightStartEventToInsightAgentInsightAgentAgentsInsightAgentInsightAgentInsightStartEventStreamPostErrors];
+
+export type StreamInsightStartEventToInsightAgentInsightAgentAgentsInsightAgentInsightAgentInsightStartEventStreamPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type SendAskExpertStartEventToExpertAskingAgentExpertAskingAgentAgentsExpertAskingAgentExpertAskingAgentAskExpertStartEventPostData = {
+    body: AskExpertStartEventInput;
+    path?: never;
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/ExpertAskingAgent/expert_asking_agent/AskExpertStartEvent';
+};
+
+export type SendAskExpertStartEventToExpertAskingAgentExpertAskingAgentAgentsExpertAskingAgentExpertAskingAgentAskExpertStartEventPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SendAskExpertStartEventToExpertAskingAgentExpertAskingAgentAgentsExpertAskingAgentExpertAskingAgentAskExpertStartEventPostError = SendAskExpertStartEventToExpertAskingAgentExpertAskingAgentAgentsExpertAskingAgentExpertAskingAgentAskExpertStartEventPostErrors[keyof SendAskExpertStartEventToExpertAskingAgentExpertAskingAgentAgentsExpertAskingAgentExpertAskingAgentAskExpertStartEventPostErrors];
+
+export type SendAskExpertStartEventToExpertAskingAgentExpertAskingAgentAgentsExpertAskingAgentExpertAskingAgentAskExpertStartEventPostResponses = {
+    /**
+     * Response Send Ask Expert Start Event To Expert Asking Agent Expert Asking Agent Agents Expertaskingagent Expert Asking Agent Askexpertstartevent Post
+     * Successful Response
+     */
+    200: NoAnswerStopEventOutput | AnswerStopEventOutput;
+};
+
+export type SendAskExpertStartEventToExpertAskingAgentExpertAskingAgentAgentsExpertAskingAgentExpertAskingAgentAskExpertStartEventPostResponse = SendAskExpertStartEventToExpertAskingAgentExpertAskingAgentAgentsExpertAskingAgentExpertAskingAgentAskExpertStartEventPostResponses[keyof SendAskExpertStartEventToExpertAskingAgentExpertAskingAgentAgentsExpertAskingAgentExpertAskingAgentAskExpertStartEventPostResponses];
+
+export type StreamAskExpertStartEventToExpertAskingAgentExpertAskingAgentAgentsExpertAskingAgentExpertAskingAgentAskExpertStartEventStreamPostData = {
+    body: AskExpertStartEventInput;
+    path?: never;
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/ExpertAskingAgent/expert_asking_agent/AskExpertStartEvent/stream';
+};
+
+export type StreamAskExpertStartEventToExpertAskingAgentExpertAskingAgentAgentsExpertAskingAgentExpertAskingAgentAskExpertStartEventStreamPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type StreamAskExpertStartEventToExpertAskingAgentExpertAskingAgentAgentsExpertAskingAgentExpertAskingAgentAskExpertStartEventStreamPostError = StreamAskExpertStartEventToExpertAskingAgentExpertAskingAgentAgentsExpertAskingAgentExpertAskingAgentAskExpertStartEventStreamPostErrors[keyof StreamAskExpertStartEventToExpertAskingAgentExpertAskingAgentAgentsExpertAskingAgentExpertAskingAgentAskExpertStartEventStreamPostErrors];
+
+export type StreamAskExpertStartEventToExpertAskingAgentExpertAskingAgentAgentsExpertAskingAgentExpertAskingAgentAskExpertStartEventStreamPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostData = {
+    body: AihubApiServicesModelCreationServiceUserMessageEventInput2;
+    path?: never;
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/RAGAgent/rag_agent/UserMessageEvent';
+};
+
+export type SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostError = SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostErrors[keyof SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostErrors];
+
+export type SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostResponses = {
+    /**
+     * Response Send User Message Event To R A G Agent Rag Agent Agents Ragagent Rag Agent Usermessageevent Post
+     * Successful Response
+     */
+    200: AihubApiServicesModelCreationServiceLlmStopEventOutput2 | StopEventOutput | HumanInTheLoopConfirmationRequestEventOutput;
+};
+
+export type SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostResponse = SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostResponses[keyof SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostResponses];
+
+export type StreamUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventStreamPostData = {
+    body: AihubApiServicesModelCreationServiceUserMessageEventInput2;
+    path?: never;
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/RAGAgent/rag_agent/UserMessageEvent/stream';
+};
+
+export type StreamUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventStreamPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type StreamUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventStreamPostError = StreamUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventStreamPostErrors[keyof StreamUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventStreamPostErrors];
+
+export type StreamUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventStreamPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type SendHumanInTheLoopConfirmationResponseEventToRagAgentRagAgentAgentsRagAgentRagAgentHumanInTheLoopConfirmationResponseEventPostData = {
+    body: HumanInTheLoopConfirmationResponseEventInput;
+    path?: never;
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/RAGAgent/rag_agent/HumanInTheLoopConfirmationResponseEvent';
+};
+
+export type SendHumanInTheLoopConfirmationResponseEventToRagAgentRagAgentAgentsRagAgentRagAgentHumanInTheLoopConfirmationResponseEventPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SendHumanInTheLoopConfirmationResponseEventToRagAgentRagAgentAgentsRagAgentRagAgentHumanInTheLoopConfirmationResponseEventPostError = SendHumanInTheLoopConfirmationResponseEventToRagAgentRagAgentAgentsRagAgentRagAgentHumanInTheLoopConfirmationResponseEventPostErrors[keyof SendHumanInTheLoopConfirmationResponseEventToRagAgentRagAgentAgentsRagAgentRagAgentHumanInTheLoopConfirmationResponseEventPostErrors];
+
+export type SendHumanInTheLoopConfirmationResponseEventToRagAgentRagAgentAgentsRagAgentRagAgentHumanInTheLoopConfirmationResponseEventPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type StreamHumanInTheLoopConfirmationResponseEventToRagAgentRagAgentAgentsRagAgentRagAgentHumanInTheLoopConfirmationResponseEventStreamPostData = {
+    body: HumanInTheLoopConfirmationResponseEventInput;
+    path?: never;
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/RAGAgent/rag_agent/HumanInTheLoopConfirmationResponseEvent/stream';
+};
+
+export type StreamHumanInTheLoopConfirmationResponseEventToRagAgentRagAgentAgentsRagAgentRagAgentHumanInTheLoopConfirmationResponseEventStreamPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type StreamHumanInTheLoopConfirmationResponseEventToRagAgentRagAgentAgentsRagAgentRagAgentHumanInTheLoopConfirmationResponseEventStreamPostError = StreamHumanInTheLoopConfirmationResponseEventToRagAgentRagAgentAgentsRagAgentRagAgentHumanInTheLoopConfirmationResponseEventStreamPostErrors[keyof StreamHumanInTheLoopConfirmationResponseEventToRagAgentRagAgentAgentsRagAgentRagAgentHumanInTheLoopConfirmationResponseEventStreamPostErrors];
+
+export type StreamHumanInTheLoopConfirmationResponseEventToRagAgentRagAgentAgentsRagAgentRagAgentHumanInTheLoopConfirmationResponseEventStreamPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
 
 export type ClientOptions = {
     baseURL: `${string}://${string}/api/v1` | (string & {});
