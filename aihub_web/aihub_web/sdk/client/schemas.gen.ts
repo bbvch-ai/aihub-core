@@ -376,10 +376,10 @@ export const AgentInTheLoopRequestEventSchema = {
         other_agent_topic: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/PartialAgentTopic'
+                    '$ref': '#/components/schemas/aihub_lib__nats__topics__agents__PartialAgentTopic__PartialAgentTopic'
                 },
                 {
-                    '$ref': '#/components/schemas/AgentInstanceTopic'
+                    '$ref': '#/components/schemas/aihub_lib__nats__topics__agents__AgentInstanceTopic__AgentInstanceTopic'
                 }
             ],
             title: 'Other Agent Topic',
@@ -500,7 +500,7 @@ When an agent completes a task delegated through an \`AgentInTheLoopRequestEvent
 - Is visible to the UI (since it's also a \`DisplayEvent\`), enabling monitoring of agent interactions`
 } as const;
 
-export const AgentInstanceTopicSchema = {
+export const AgentInstanceTopic_InputSchema = {
     properties: {
         agent_class: {
             type: 'string',
@@ -545,73 +545,7 @@ export const AgentInstanceTopicSchema = {
     },
     type: 'object',
     required: ['agent_class', 'agent_id', 'run_id', 'thread_id', 'display_id', 'event_type', 'event_name', 'event_id'],
-    title: 'AgentInstanceTopic',
-    description: `Represents a fully-defined agent event topic. Unlike PartialAgentTopic, all fields are expected
-to be present. This includes identifiers for agent_class, agent_id, and the event itself.
-
-### Why This Class Exists
-
-In a hierarchical event topic model, PartialAgentTopic might not have all details filled out.
-AgentTopic guarantees that every piece of the event route—from agent class to event ID—is known.
-This makes AgentTopic ideal for scenarios where the full path is required, such as final message
-routing or logging a complete event identifier.
-
-### Example:
-If an event subject is something like:
-"agent.myclass.myid.thread123.displayA.run45.display_event.some_event.789"
-then this AgentTopic can represent it, providing quick field-level access and serialization.`
-} as const;
-
-export const AgentProcessStepDTOSchema = {
-    properties: {
-        step_index: {
-            type: 'integer',
-            title: 'Step Index',
-            description: 'Order of this step in the walkthrough (0-based).'
-        },
-        step_type: {
-            type: 'string',
-            title: 'Step Type',
-            description: 'Type of entity involved in this step.',
-            default: 'agent'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'Timestamp when this step was created in nanoseconds.'
-        },
-        is_completed: {
-            type: 'boolean',
-            title: 'Is Completed',
-            description: 'Whether this step has been completed (has a work response).'
-        },
-        work_request: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/AgentWorkRequestDTO'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'The agent work request for this step.'
-        },
-        work_response: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/AgentWorkResponseDTO'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'The agent work response for this step. May be None if work is not yet completed.'
-        }
-    },
-    type: 'object',
-    required: ['step_index', 'created_at', 'is_completed'],
-    title: 'AgentProcessStepDTO',
-    description: 'DTO representing an agent process step with agent-specific work request and response information.'
+    title: 'AgentInstanceTopic'
 } as const;
 
 export const AgentSuitabilityAcceptEventSchema = {
@@ -747,182 +681,6 @@ It signifies that this agent is not appropriate for handling the user's request
 and the request should be routed to a different agent.`
 } as const;
 
-export const AgentWorkRequestDTOSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id',
-            description: 'Unique identifier of the work request event.'
-        },
-        event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: 'Name of the event type.'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'Timestamp when the work was requested in nanoseconds.'
-        },
-        request_type: {
-            type: 'string',
-            enum: ['human', 'agent', 'program'],
-            title: 'Request Type',
-            description: 'Type of entity the work was requested from.'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Name',
-            description: 'Human-readable name for the work request.'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Description',
-            description: 'Human-readable description of the work request.'
-        },
-        data: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Data',
-            description: 'The work request event data.'
-        },
-        agent_class: {
-            type: 'string',
-            title: 'Agent Class',
-            description: 'The class of the agent that should handle this request.'
-        },
-        agent_id: {
-            type: 'string',
-            title: 'Agent Id',
-            description: 'The ID of the agent that should handle this request.'
-        },
-        agent_info: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/MinimalAgentDTO'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Detailed information about the agent, if available.'
-        },
-        start_event: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Start Event',
-            description: 'The start event that will be sent to the agent.',
-            default: {}
-        }
-    },
-    type: 'object',
-    required: ['event_id', 'event_name', 'created_at', 'request_type', 'display_name', 'display_description', 'data', 'agent_class', 'agent_id'],
-    title: 'AgentWorkRequestDTO',
-    description: 'DTO representing an agent work request with specific agent-related information.'
-} as const;
-
-export const AgentWorkResponseDTOSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id',
-            description: 'Unique identifier of the work response event.'
-        },
-        event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: 'Name of the event type.'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'Timestamp when the work was completed in nanoseconds.'
-        },
-        response_type: {
-            type: 'string',
-            enum: ['human', 'agent', 'program'],
-            title: 'Response Type',
-            description: 'Type of entity that completed the work.'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Name',
-            description: 'Human-readable name for the work response.'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Description',
-            description: 'Human-readable description of the work response.'
-        },
-        data: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Data',
-            description: 'The work response event data.'
-        },
-        agent_class: {
-            type: 'string',
-            title: 'Agent Class',
-            description: 'The class of the agent that should handle this request.'
-        },
-        agent_id: {
-            type: 'string',
-            title: 'Agent Id',
-            description: 'The ID of the agent that should handle this request.'
-        },
-        agent_info: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/MinimalAgentDTO'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Detailed information about the agent, if available.'
-        },
-        agent_stop_event: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Agent Stop Event',
-            description: 'The stop event returned by the agent after completing the work.',
-            default: {}
-        }
-    },
-    type: 'object',
-    required: ['event_id', 'event_name', 'created_at', 'response_type', 'display_name', 'display_description', 'data', 'agent_class', 'agent_id'],
-    title: 'AgentWorkResponseDTO',
-    description: 'DTO representing an agent work response with specific agent-related information.'
-} as const;
-
 export const AnnotationSchema = {
     properties: {
         type: {
@@ -965,6 +723,90 @@ export const AnnotationURLCitationSchema = {
     title: 'AnnotationURLCitation'
 } as const;
 
+export const AnswerStopEventOutputSchema = {
+    properties: {
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        expert_answer: {
+            type: 'string',
+            title: 'Expert Answer',
+            description: 'The answer to the question'
+        },
+        chat_history: {
+            items: {
+                '$ref': '#/components/schemas/jambo__parser__object_type_parser__ChatMessage-Output'
+            },
+            type: 'array',
+            title: 'Chat History',
+            description: 'The chat history between the agent and the expert'
+        },
+        nodes: {
+            items: {
+                '$ref': '#/components/schemas/jambo__parser__object_type_parser__IngestedNode'
+            },
+            type: 'array',
+            title: 'Nodes',
+            description: 'The nodes that were used to formulate the expert question'
+        }
+    },
+    type: 'object',
+    required: ['expert_answer'],
+    title: 'AnswerStopEventOutput'
+} as const;
+
+export const AskExpertStartEventInputSchema = {
+    properties: {
+        question_to_expert: {
+            type: 'string',
+            title: 'Question To Expert',
+            description: 'The question to ask the expert'
+        },
+        nodes: {
+            items: {
+                '$ref': '#/components/schemas/IngestedNode-Input'
+            },
+            type: 'array',
+            title: 'Nodes',
+            description: 'Retrieved nodes that provide context for the expert question'
+        },
+        expert_group: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Expert Group',
+            description: 'Expert group to route the question to. Overrides agent config if set.'
+        }
+    },
+    type: 'object',
+    required: ['question_to_expert'],
+    title: 'AskExpertStartEventInput'
+} as const;
+
 export const AudioSchema = {
     properties: {
         id: {
@@ -978,7 +820,7 @@ export const AudioSchema = {
     title: 'Audio'
 } as const;
 
-export const AudioBlockSchema = {
+export const AudioBlock_InputSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -1014,6 +856,7 @@ export const AudioBlockSchema = {
             anyOf: [
                 {
                     type: 'string',
+                    maxLength: 2083,
                     minLength: 1,
                     format: 'uri'
                 },
@@ -1039,8 +882,7 @@ export const AudioBlockSchema = {
         }
     },
     type: 'object',
-    title: 'AudioBlock',
-    description: 'A representation of audio data to directly pass to/from the LLM.'
+    title: 'AudioBlock'
 } as const;
 
 export const AudioContentSchema = {
@@ -1203,7 +1045,7 @@ export const CacheControlSchema = {
     title: 'CacheControl'
 } as const;
 
-export const CachePointSchema = {
+export const CachePoint_InputSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -1217,8 +1059,7 @@ export const CachePointSchema = {
     },
     type: 'object',
     required: ['cache_control'],
-    title: 'CachePoint',
-    description: 'Used to set the point to cache up to, if the LLM supports caching.'
+    title: 'CachePoint'
 } as const;
 
 export const CascadeSelectSchema = {
@@ -2710,62 +2551,6 @@ export const ChatCompletionUserMessageParamSchema = {
     title: 'ChatCompletionUserMessageParam'
 } as const;
 
-export const ChatMessageSchema = {
-    properties: {
-        role: {
-            '$ref': '#/components/schemas/MessageRole',
-            default: 'user'
-        },
-        additional_kwargs: {
-            title: 'Additional Kwargs'
-        },
-        blocks: {
-            items: {
-                oneOf: [
-                    {
-                        '$ref': '#/components/schemas/TextBlock'
-                    },
-                    {
-                        '$ref': '#/components/schemas/ImageBlock'
-                    },
-                    {
-                        '$ref': '#/components/schemas/AudioBlock'
-                    },
-                    {
-                        '$ref': '#/components/schemas/DocumentBlock'
-                    },
-                    {
-                        '$ref': '#/components/schemas/CachePoint'
-                    },
-                    {
-                        '$ref': '#/components/schemas/CitableBlock'
-                    },
-                    {
-                        '$ref': '#/components/schemas/CitationBlock'
-                    }
-                ],
-                discriminator: {
-                    propertyName: 'block_type',
-                    mapping: {
-                        audio: '#/components/schemas/AudioBlock',
-                        cache: '#/components/schemas/CachePoint',
-                        citable: '#/components/schemas/CitableBlock',
-                        citation: '#/components/schemas/CitationBlock',
-                        document: '#/components/schemas/DocumentBlock',
-                        image: '#/components/schemas/ImageBlock',
-                        text: '#/components/schemas/TextBlock'
-                    }
-                }
-            },
-            type: 'array',
-            title: 'Blocks'
-        }
-    },
-    type: 'object',
-    title: 'ChatMessage',
-    description: 'Chat message.'
-} as const;
-
 export const CheckboxSchema = {
     properties: {
         is_formkit_element: {
@@ -3085,7 +2870,7 @@ responses as they are generated, improving user experience by not forcing them t
 for the entire answer.`
 } as const;
 
-export const CitableBlockSchema = {
+export const CitableBlock_InputSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -3105,21 +2890,21 @@ export const CitableBlockSchema = {
             items: {
                 oneOf: [
                     {
-                        '$ref': '#/components/schemas/TextBlock'
+                        '$ref': '#/components/schemas/TextBlock-Input'
                     },
                     {
-                        '$ref': '#/components/schemas/ImageBlock'
+                        '$ref': '#/components/schemas/ImageBlock-Input'
                     },
                     {
-                        '$ref': '#/components/schemas/DocumentBlock'
+                        '$ref': '#/components/schemas/DocumentBlock-Input'
                     }
                 ],
                 discriminator: {
                     propertyName: 'block_type',
                     mapping: {
-                        document: '#/components/schemas/DocumentBlock',
-                        image: '#/components/schemas/ImageBlock',
-                        text: '#/components/schemas/TextBlock'
+                        document: '#/components/schemas/DocumentBlock-Input',
+                        image: '#/components/schemas/ImageBlock-Input',
+                        text: '#/components/schemas/TextBlock-Input'
                     }
                 }
             },
@@ -3129,11 +2914,10 @@ export const CitableBlockSchema = {
     },
     type: 'object',
     required: ['title', 'source', 'content'],
-    title: 'CitableBlock',
-    description: 'Supports providing citable content to LLMs that have built-in citation support.'
+    title: 'CitableBlock'
 } as const;
 
-export const CitationBlockSchema = {
+export const CitationBlock_InputSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -3144,18 +2928,18 @@ export const CitationBlockSchema = {
         cited_content: {
             oneOf: [
                 {
-                    '$ref': '#/components/schemas/TextBlock'
+                    '$ref': '#/components/schemas/TextBlock-Input'
                 },
                 {
-                    '$ref': '#/components/schemas/ImageBlock'
+                    '$ref': '#/components/schemas/ImageBlock-Input'
                 }
             ],
             title: 'Cited Content',
             discriminator: {
                 propertyName: 'block_type',
                 mapping: {
-                    image: '#/components/schemas/ImageBlock',
-                    text: '#/components/schemas/TextBlock'
+                    image: '#/components/schemas/ImageBlock-Input',
+                    text: '#/components/schemas/TextBlock-Input'
                 }
             }
         },
@@ -3168,17 +2952,12 @@ export const CitationBlockSchema = {
             title: 'Title'
         },
         additional_location_info: {
-            additionalProperties: {
-                type: 'integer'
-            },
-            type: 'object',
-            title: 'Additional Location Info'
+            '$ref': '#/components/schemas/additional_location_info'
         }
     },
     type: 'object',
     required: ['cited_content', 'source', 'title', 'additional_location_info'],
-    title: 'CitationBlock',
-    description: 'A representation of cited content from past messages.'
+    title: 'CitationBlock'
 } as const;
 
 export const ColorPickerSchema = {
@@ -3615,7 +3394,7 @@ export const ContextualizedAgentEventSchema = {
                     '$ref': '#/components/schemas/AgentInTheLoopResponseEvent'
                 },
                 {
-                    '$ref': '#/components/schemas/HumanInTheLoopRequestEvent'
+                    '$ref': '#/components/schemas/HumanInTheLoopRequestEvent-Output'
                 },
                 {
                     '$ref': '#/components/schemas/AgentInTheLoopRequestEvent'
@@ -3774,6 +3553,41 @@ from workflow steps, only 'ControlEvent' influence the flow of the system.
 
 By subclassing \`BaseEvent\`, \`ControlEvent\` benefits from automatic type registration and
 serialization, ensuring that control signals are as easy to produce and consume as any other event.`
+} as const;
+
+export const CreateExpertGroupRequestSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'The unique name of the expert group.'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description',
+            description: "A short description of the group's purpose."
+        },
+        member_user_ids: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Member User Ids',
+            description: 'List of user IDs who are members of this group.',
+            default: []
+        }
+    },
+    type: 'object',
+    required: ['name'],
+    title: 'CreateExpertGroupRequest',
+    description: 'Request model for creating a new expert group.'
 } as const;
 
 export const CreateNamespaceRequestSchema = {
@@ -4456,6 +4270,24 @@ export const DatePickerSchema = {
     description: 'https://formkit-primevue.netlify.app/inputs/DatePicker'
 } as const;
 
+export const DeleteExpertGroupResponseSchema = {
+    properties: {
+        success: {
+            type: 'boolean',
+            title: 'Success',
+            default: true
+        },
+        message: {
+            type: 'string',
+            title: 'Message',
+            default: 'Expert group deleted successfully.'
+        }
+    },
+    type: 'object',
+    title: 'DeleteExpertGroupResponse',
+    description: 'Response model for successful expert group deletion.'
+} as const;
+
 export const DeleteRoleResponseSchema = {
     properties: {
         detail: {
@@ -4652,7 +4484,7 @@ export const DisplayStatisticsSchema = {
     description: 'Statistics for a display, including its runs, intended for API response.'
 } as const;
 
-export const DocumentBlockSchema = {
+export const DocumentBlock_InputSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -4722,8 +4554,37 @@ export const DocumentBlockSchema = {
         }
     },
     type: 'object',
-    title: 'DocumentBlock',
-    description: 'A representation of a document to directly pass to the LLM.'
+    title: 'DocumentBlock'
+} as const;
+
+export const DocumentConversionMetadataSchema = {
+    properties: {
+        filename: {
+            type: 'string',
+            title: 'Filename',
+            description: 'Original filename of the converted document'
+        }
+    },
+    type: 'object',
+    required: ['filename'],
+    title: 'DocumentConversionMetadata'
+} as const;
+
+export const DocumentConversionResponseSchema = {
+    properties: {
+        page_content: {
+            type: 'string',
+            title: 'Page Content',
+            description: 'Markdown content extracted from the document'
+        },
+        metadata: {
+            '$ref': '#/components/schemas/DocumentConversionMetadata',
+            description: 'Metadata about the converted document'
+        }
+    },
+    type: 'object',
+    required: ['page_content', 'metadata'],
+    title: 'DocumentConversionResponse'
 } as const;
 
 export const DocumentDTOSchema = {
@@ -4736,7 +4597,7 @@ export const DocumentDTOSchema = {
         source: {
             type: 'string',
             title: 'Source',
-            description: 'Source URI of original document.'
+            description: "Source path without protocol prefix (e.g., 'bucket/path/file.pdf')."
         },
         namespace: {
             type: 'string',
@@ -5305,20 +5166,13 @@ export const EvaluationSummaryDataSchema = {
             description: 'Number of items evaluated.'
         },
         avg_score: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
+            type: 'number',
             title: 'Avg Score',
             description: 'Average score from this evaluator.'
         }
     },
     type: 'object',
-    required: ['evaluator', 'n'],
+    required: ['evaluator', 'n', 'avg_score'],
     title: 'EvaluationSummaryData'
 } as const;
 
@@ -5874,6 +5728,226 @@ export const ExperimentRunRecordSchema = {
     title: 'ExperimentRunRecord'
 } as const;
 
+export const ExpertGroupResponseSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'The unique identifier of the expert group.'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'The name of the expert group.'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description',
+            description: 'The description of the expert group.'
+        },
+        member_user_ids: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Member User Ids',
+            description: 'The list of member user IDs.'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At',
+            description: 'When the group was created.'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Updated At',
+            description: 'When the group was last updated.'
+        }
+    },
+    type: 'object',
+    required: ['id', 'name', 'description', 'member_user_ids', 'created_at', 'updated_at'],
+    title: 'ExpertGroupResponse',
+    description: 'Response model representing an expert group.'
+} as const;
+
+export const ExpertQuestionDTOSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'The unique identifier of the question.'
+        },
+        question: {
+            type: 'string',
+            title: 'Question',
+            description: 'The question posed to experts.'
+        },
+        context: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Context',
+            description: 'Additional context to help answer the question.'
+        },
+        expert_group: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Expert Group',
+            description: 'The expert group this question is directed to.'
+        },
+        priority: {
+            type: 'string',
+            enum: ['low', 'normal', 'high', 'urgent'],
+            title: 'Priority',
+            description: 'The priority level of the question.',
+            default: 'normal'
+        },
+        locale: {
+            type: 'string',
+            enum: ['de', 'en', 'fr', 'it'],
+            title: 'Locale',
+            description: 'The language of the question.',
+            default: 'en'
+        },
+        status: {
+            type: 'string',
+            enum: ['pending', 'answered', 'expired', 'cancelled'],
+            title: 'Status',
+            description: 'The current status of the question.'
+        },
+        requesting_user: {
+            '$ref': '#/components/schemas/RequestingUserDTO',
+            description: 'Information about the user who triggered this.'
+        },
+        requesting_agent: {
+            '$ref': '#/components/schemas/RequestingAgentDTO',
+            description: 'Information about the requesting agent.'
+        },
+        response: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Response',
+            description: "The expert's answer, if provided."
+        },
+        responder: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/ExpertResponderDTO'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Information about the expert who answered.'
+        },
+        responded_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Responded At',
+            description: 'When the question was answered.'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At',
+            description: 'When the question was created.'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Updated At',
+            description: 'When the question was last updated.'
+        }
+    },
+    type: 'object',
+    required: ['id', 'question', 'status', 'requesting_user', 'requesting_agent', 'created_at', 'updated_at'],
+    title: 'ExpertQuestionDTO',
+    description: 'Data Transfer Object for an expert question.'
+} as const;
+
+export const ExpertResponderDTOSchema = {
+    properties: {
+        user_id: {
+            type: 'string',
+            title: 'User Id',
+            description: 'The unique identifier of the expert.'
+        },
+        user_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'User Name',
+            description: 'The display name of the expert.'
+        },
+        email: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Email',
+            description: 'The email address of the expert.'
+        },
+        expert_group: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Expert Group',
+            description: 'The expert group this user belongs to.'
+        }
+    },
+    type: 'object',
+    required: ['user_id'],
+    title: 'ExpertResponderDTO',
+    description: 'Information about the expert who answered the question.'
+} as const;
+
 export const FewShotAcceptEventSchema = {
     properties: {
         event_id: {
@@ -6345,6 +6419,24 @@ export const HealthResponseSchema = {
     title: 'HealthResponse'
 } as const;
 
+export const HitlOption_InputSchema = {
+    properties: {
+        key: {
+            type: 'string',
+            title: 'Key',
+            description: "Language-independent identifier for the option (e.g., 'yes', 'no')."
+        },
+        label: {
+            type: 'string',
+            title: 'Label',
+            description: 'Localized display label shown to the user.'
+        }
+    },
+    type: 'object',
+    required: ['key', 'label'],
+    title: 'HitlOption'
+} as const;
+
 export const HtmlElementSchema = {
     properties: {
         is_formkit_element: {
@@ -6439,6 +6531,32 @@ as dynamic tailwind classes might be stripped away when compiling the frontend.
 
 Example:
     title = HtmlElement(el="h1", children="My Title")`
+} as const;
+
+export const HumanAWorkInputSchema = {
+    properties: {
+        payload: {
+            type: 'string',
+            title: 'Payload',
+            description: 'Input text A'
+        }
+    },
+    type: 'object',
+    required: ['payload'],
+    title: 'HumanAWorkInput'
+} as const;
+
+export const HumanBWorkInputSchema = {
+    properties: {
+        payload: {
+            type: 'string',
+            title: 'Payload',
+            description: 'Input text B'
+        }
+    },
+    type: 'object',
+    required: ['payload'],
+    title: 'HumanBWorkInput'
 } as const;
 
 export const HumanInDTOSchema = {
@@ -6551,7 +6669,7 @@ export const HumanInDTOSchema = {
     title: 'HumanInDTO'
 } as const;
 
-export const HumanInTheLoopRequestEventSchema = {
+export const HumanInTheLoopRequestEvent_InputSchema = {
     properties: {
         event_id: {
             type: 'string',
@@ -6592,14 +6710,100 @@ export const HumanInTheLoopRequestEventSchema = {
         topic: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/PartialAgentTopic'
+                    '$ref': '#/components/schemas/PartialAgentTopic-Input'
                 },
                 {
-                    '$ref': '#/components/schemas/AgentInstanceTopic'
+                    '$ref': '#/components/schemas/AgentInstanceTopic-Input'
                 }
             ],
             title: 'Topic',
             description: 'A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.'
+        },
+        options: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/HitlOption-Input'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Options',
+            description: 'Optional list of predefined response options with key-label pairs. The key is language-independent (used in response matching), the label is displayed to the user. When provided, the UI should render these as clickable buttons instead of a text input.'
+        }
+    },
+    type: 'object',
+    required: ['question', 'topic'],
+    title: 'HumanInTheLoopRequestEvent'
+} as const;
+
+export const HumanInTheLoopRequestEvent_OutputSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        question: {
+            type: 'string',
+            title: 'Question',
+            description: 'The query or prompt presented to the human operator.'
+        },
+        topic: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/aihub_lib__nats__topics__agents__PartialAgentTopic__PartialAgentTopic'
+                },
+                {
+                    '$ref': '#/components/schemas/aihub_lib__nats__topics__agents__AgentInstanceTopic__AgentInstanceTopic'
+                }
+            ],
+            title: 'Topic',
+            description: 'A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.'
+        },
+        options: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/aihub_lib__nats__events__human_in_the_loop__request__HumanInTheLoopRequestEvent__HitlOption'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Options',
+            description: 'Optional list of predefined response options with key-label pairs. The key is language-independent (used in response matching), the label is displayed to the user. When provided, the UI should render these as clickable buttons instead of a text input.'
         },
         _event_name: {
             type: 'string',
@@ -6627,7 +6831,70 @@ Used during deserialization to decide which subclass to instantiate.`,
 ### Why HumanInTheLoopRequestEvent?
 In automated workflows, certain decisions may require human validation. This event:
 - Is a \`DisplayEvent\`, so it can appear in user interfaces.
-- Carries a question and a topic indicating where the subsequent response should be sent.`
+- Carries a question and a topic indicating where the subsequent response should be sent.
+- Optionally provides predefined options (e.g., Yes/No) for quick selection instead of free-form input.`
+} as const;
+
+export const HumanInTheLoopRequestEventOutputSchema = {
+    properties: {
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        question: {
+            type: 'string',
+            title: 'Question',
+            description: 'The query or prompt presented to the human operator.'
+        },
+        topic: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/jambo__parser__object_type_parser__PartialAgentTopic'
+                },
+                {
+                    '$ref': '#/components/schemas/jambo__parser__object_type_parser__AgentInstanceTopic'
+                }
+            ],
+            title: 'Topic',
+            description: 'A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.'
+        },
+        options: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__HitlOption'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Options',
+            description: 'Optional list of predefined response options with key-label pairs. The key is language-independent (used in response matching), the label is displayed to the user. When provided, the UI should render these as clickable buttons instead of a text input.'
+        }
+    },
+    type: 'object',
+    required: ['question', 'topic'],
+    title: 'HumanInTheLoopRequestEventOutput'
 } as const;
 
 export const HumanInTheLoopResponseEventSchema = {
@@ -6669,7 +6936,7 @@ export const HumanInTheLoopResponseEventSchema = {
             description: "The human operator's answer or decision."
         },
         request_event: {
-            '$ref': '#/components/schemas/HumanInTheLoopRequestEvent',
+            '$ref': '#/components/schemas/HumanInTheLoopRequestEvent-Output',
             description: 'The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.'
         },
         _event_name: {
@@ -6701,254 +6968,21 @@ Once a human operator provides an answer to a \`HumanInTheLoopRequestEvent\`, th
 - Is visible to the UI (since it's also a \`DisplayEvent\`), allowing transparency and auditing.`
 } as const;
 
-export const HumanProcessStepDTOSchema = {
+export const HumanInTheLoopResponseEventInputSchema = {
     properties: {
-        step_index: {
-            type: 'integer',
-            title: 'Step Index',
-            description: 'Order of this step in the walkthrough (0-based).'
-        },
-        step_type: {
+        response: {
             type: 'string',
-            title: 'Step Type',
-            description: 'Type of entity involved in this step.',
-            default: 'human'
+            title: 'Response',
+            description: "The human operator's answer or decision."
         },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'Timestamp when this step was created in nanoseconds.'
-        },
-        is_completed: {
-            type: 'boolean',
-            title: 'Is Completed',
-            description: 'Whether this step has been completed (has a work response).'
-        },
-        work_request: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/HumanWorkRequestDTO'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'The human work request for this step.'
-        },
-        work_response: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/HumanWorkResponseDTO'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'The human work response for this step. May be None if work is not yet completed.'
+        request_event: {
+            '$ref': '#/components/schemas/HumanInTheLoopRequestEvent-Input',
+            description: 'The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.'
         }
     },
     type: 'object',
-    required: ['step_index', 'created_at', 'is_completed'],
-    title: 'HumanProcessStepDTO',
-    description: 'DTO representing a human process step with human-specific work request and response information.'
-} as const;
-
-export const HumanWorkRequestDTOSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id',
-            description: 'Unique identifier of the work request event.'
-        },
-        event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: 'Name of the event type.'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'Timestamp when the work was requested in nanoseconds.'
-        },
-        request_type: {
-            type: 'string',
-            enum: ['human', 'agent', 'program'],
-            title: 'Request Type',
-            description: 'Type of entity the work was requested from.'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Name',
-            description: 'Human-readable name for the work request.'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Description',
-            description: 'Human-readable description of the work request.'
-        },
-        data: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Data',
-            description: 'The work request event data.'
-        },
-        user_ids: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'User Ids',
-            description: 'List of user IDs that can respond to this request.',
-            default: []
-        },
-        user_emails: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'User Emails',
-            description: 'List of user emails that can respond to this request.',
-            default: []
-        },
-        user_roles: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'User Roles',
-            description: 'List of user roles that can respond to this request.',
-            default: []
-        },
-        notify: {
-            type: 'boolean',
-            title: 'Notify',
-            description: 'Whether users should be notified about this request.',
-            default: false
-        },
-        forms: {
-            items: {
-                additionalProperties: true,
-                type: 'object'
-            },
-            type: 'array',
-            title: 'Forms',
-            description: 'List of forms that users can submit.',
-            default: []
-        },
-        endpoint: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Endpoint',
-            description: 'API endpoint for form submission.'
-        },
-        method: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Method',
-            description: 'HTTP method for form submission.'
-        }
-    },
-    type: 'object',
-    required: ['event_id', 'event_name', 'created_at', 'request_type', 'display_name', 'display_description', 'data'],
-    title: 'HumanWorkRequestDTO',
-    description: 'DTO representing a human work request with specific human-related information.'
-} as const;
-
-export const HumanWorkResponseDTOSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id',
-            description: 'Unique identifier of the work response event.'
-        },
-        event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: 'Name of the event type.'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'Timestamp when the work was completed in nanoseconds.'
-        },
-        response_type: {
-            type: 'string',
-            enum: ['human', 'agent', 'program'],
-            title: 'Response Type',
-            description: 'Type of entity that completed the work.'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Name',
-            description: 'Human-readable name for the work response.'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Description',
-            description: 'Human-readable description of the work response.'
-        },
-        data: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Data',
-            description: 'The work response event data.'
-        },
-        submitted_by: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/MinimalUserDTO'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'The user who submitted this work response.'
-        }
-    },
-    type: 'object',
-    required: ['event_id', 'event_name', 'created_at', 'response_type', 'display_name', 'display_description', 'data'],
-    title: 'HumanWorkResponseDTO',
-    description: 'DTO representing a human work response with specific human-related information.'
+    required: ['response', 'request_event'],
+    title: 'HumanInTheLoopResponseEventInput'
 } as const;
 
 export const ImageSchema = {
@@ -6992,7 +7026,7 @@ export const ImageSchema = {
     title: 'Image'
 } as const;
 
-export const ImageBlockSchema = {
+export const ImageBlock_InputSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -7028,6 +7062,7 @@ export const ImageBlockSchema = {
             anyOf: [
                 {
                     type: 'string',
+                    maxLength: 2083,
                     minLength: 1,
                     format: 'uri'
                 },
@@ -7064,8 +7099,7 @@ export const ImageBlockSchema = {
         }
     },
     type: 'object',
-    title: 'ImageBlock',
-    description: 'A representation of image data to directly pass to/from the LLM.'
+    title: 'ImageBlock'
 } as const;
 
 export const ImageContentSchema = {
@@ -7106,8 +7140,7 @@ export const ImageGenerationRequestSchema = {
         model: {
             anyOf: [
                 {
-                    type: 'string',
-                    enum: ['dall-e-2', 'dall-e-3']
+                    type: 'string'
                 },
                 {
                     type: 'null'
@@ -7115,7 +7148,7 @@ export const ImageGenerationRequestSchema = {
             ],
             title: 'Model',
             description: 'The model to use for image generation. Defaults to dall-e-2.',
-            default: 'dall-e-3'
+            default: 'image-generation'
         },
         n: {
             anyOf: [
@@ -7286,7 +7319,7 @@ export const ImagesResponseSchema = {
     title: 'ImagesResponse'
 } as const;
 
-export const IngestedNodeSchema = {
+export const IngestedNode_InputSchema = {
     properties: {
         source: {
             type: 'string',
@@ -7355,14 +7388,12 @@ export const IngestedNodeSchema = {
         language: {
             anyOf: [
                 {
-                    type: 'string',
-                    enum: ['de', 'en', 'fr', 'it']
+                    '$ref': '#/components/schemas/language'
                 },
                 {
                     type: 'null'
                 }
             ],
-            title: 'Language',
             description: 'Document language.'
         },
         created_at: {
@@ -7383,14 +7414,12 @@ export const IngestedNodeSchema = {
         metadata: {
             anyOf: [
                 {
-                    additionalProperties: true,
-                    type: 'object'
+                    '$ref': '#/components/schemas/metadata'
                 },
                 {
                     type: 'null'
                 }
             ],
-            title: 'Metadata',
             description: 'Additional metadata for the document.'
         },
         id: {
@@ -7404,16 +7433,12 @@ export const IngestedNodeSchema = {
             description: 'The textual content of the Node.'
         },
         type: {
-            type: 'string',
-            enum: ['content', 'summary'],
-            title: 'Type',
+            '$ref': '#/components/schemas/type',
             description: 'Type (content or summary).',
             default: 'content'
         },
         content_type: {
-            type: 'string',
-            enum: ['text', 'figure', 'table'],
-            title: 'Content Type',
+            '$ref': '#/components/schemas/content_type',
             description: 'Content type (text, figure or table).',
             default: 'text'
         },
@@ -7557,14 +7582,12 @@ export const IngestedNodeSchema = {
         heading_level: {
             anyOf: [
                 {
-                    type: 'integer',
-                    enum: [0, 1, 2, 3, 4, 5, 6]
+                    '$ref': '#/components/schemas/heading_level'
                 },
                 {
                     type: 'null'
                 }
             ],
-            title: 'Heading Level',
             description: 'Heading level of the node in document'
         },
         score: {
@@ -7582,13 +7605,7 @@ export const IngestedNodeSchema = {
     },
     type: 'object',
     required: ['source', 'namespace', 'created_at', 'updated_at', 'inserted_at', 'id', 'content', 'document_id'],
-    title: 'IngestedNode',
-    description: `A node represents a chunk of a document, like a paragraph, produced by a document parser and text splitter.
-The attributes defined here are the minimal number of attributes that a node must have to ensure the
-UI can properly display it. Note that all attributes that are specific to text documents, like start_char_idx etc.
-must be strictly optional, as we don't really know whether the node is indeed a text node. However, all attributes
-that are purely technical, like the document_id to keep the back-ref to the ref_doc from which the node originates,
-are strictly necessary.`
+    title: 'IngestedNode'
 } as const;
 
 export const InputAudioSchema = {
@@ -8456,6 +8473,87 @@ export const InputTextSchema = {
     description: 'https://formkit-primevue.netlify.app/inputs/InputText'
 } as const;
 
+export const InsightStartEventInputSchema = {
+    properties: {
+        chat_history: {
+            items: {
+                '$ref': '#/components/schemas/jambo__parser__object_type_parser__ChatMessage__2'
+            },
+            type: 'array',
+            title: 'Chat History',
+            description: 'The chat history between the agent and the expert'
+        },
+        nodes: {
+            items: {
+                '$ref': '#/components/schemas/IngestedNode-Input'
+            },
+            type: 'array',
+            title: 'Nodes',
+            description: 'The nodes that were used to formulate the expert question'
+        },
+        question: {
+            type: 'string',
+            title: 'Question',
+            description: 'The original question that was asked'
+        },
+        expert_answer: {
+            type: 'string',
+            title: 'Expert Answer',
+            description: 'The answer provided by the expert'
+        }
+    },
+    type: 'object',
+    required: ['chat_history', 'nodes', 'question', 'expert_answer'],
+    title: 'InsightStartEventInput'
+} as const;
+
+export const InsightStopEventOutputSchema = {
+    properties: {
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        insight_stored: {
+            type: 'boolean',
+            title: 'Insight Stored',
+            description: 'Whether the insight was successfully stored',
+            default: true
+        },
+        insight_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Insight Id',
+            description: 'The ID of the stored insight'
+        }
+    },
+    type: 'object',
+    title: 'InsightStopEventOutput'
+} as const;
+
 export const JSONSchemaSchema = {
     properties: {
         name: {
@@ -8862,7 +8960,7 @@ export const LLMEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/Message'
+                        '$ref': '#/components/schemas/aihub_lib__nats__events__semantic__llm__Message__Message'
                     },
                     type: 'array'
                 },
@@ -8877,7 +8975,7 @@ export const LLMEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/Message'
+                        '$ref': '#/components/schemas/aihub_lib__nats__events__semantic__llm__Message__Message'
                     },
                     type: 'array'
                 },
@@ -9088,7 +9186,7 @@ export const LLMStopEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/Message'
+                        '$ref': '#/components/schemas/aihub_lib__nats__events__semantic__llm__Message__Message'
                     },
                     type: 'array'
                 },
@@ -9103,7 +9201,7 @@ export const LLMStopEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/Message'
+                        '$ref': '#/components/schemas/aihub_lib__nats__events__semantic__llm__Message__Message'
                     },
                     type: 'array'
                 },
@@ -9312,7 +9410,7 @@ export const LimitChatHistoryEventSchema = {
         },
         limited_history: {
             items: {
-                '$ref': '#/components/schemas/ChatMessage'
+                '$ref': '#/components/schemas/llama_index__core__base__llms__types__ChatMessage'
             },
             type: 'array',
             title: 'Limited History',
@@ -9645,119 +9743,10 @@ export const LogprobSchema = {
     title: 'Logprob'
 } as const;
 
-export const MessageSchema = {
-    properties: {
-        role: {
-            type: 'string',
-            title: 'Role',
-            description: "The role of the message, such as 'user', 'assistant', or 'system'."
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name',
-            description: 'The name of the function or agent generating the message.'
-        },
-        tool_calls: {
-            anyOf: [
-                {
-                    items: {
-                        additionalProperties: true,
-                        type: 'object'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tool Calls',
-            description: 'List of tool calls generated by the model, such as function calls.'
-        },
-        function_call_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Function Call Name',
-            description: 'The name of the function being called in the message.'
-        },
-        function_call_arguments_json: {
-            anyOf: [
-                {
-                    additionalProperties: true,
-                    type: 'object'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Function Call Arguments Json',
-            description: 'JSON representing arguments passed to the function during a function call.'
-        },
-        tool_call_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tool Call Id',
-            description: 'The ID of the tool call, if applicable.'
-        },
-        contents: {
-            anyOf: [
-                {
-                    items: {
-                        anyOf: [
-                            {
-                                '$ref': '#/components/schemas/TextContent'
-                            },
-                            {
-                                '$ref': '#/components/schemas/ImageContent'
-                            },
-                            {
-                                '$ref': '#/components/schemas/AudioContent'
-                            }
-                        ]
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Contents',
-            description: 'The message contents as an array of content blocks (text, image, audio).'
-        },
-        content: {
-            type: 'string',
-            title: 'Content',
-            readOnly: true
-        }
-    },
-    type: 'object',
-    required: ['role', 'content'],
-    title: 'Message'
-} as const;
-
-export const MessageRoleSchema = {
+export const MessageRole_InputSchema = {
     type: 'string',
     enum: ['system', 'developer', 'user', 'assistant', 'function', 'tool', 'chatbot', 'model'],
-    title: 'MessageRole',
-    description: 'Message role.'
+    title: 'MessageRole'
 } as const;
 
 export const MetadataSchema = {
@@ -9802,7 +9791,7 @@ export const MetadataSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/UserUploadedFile'
+                        '$ref': '#/components/schemas/aihub_lib__nats__events__user__UserUploadedFile__UserUploadedFile'
                     },
                     type: 'array'
                 },
@@ -9994,28 +9983,6 @@ export const MinimalUserDTOSchema = {
     title: 'MinimalUserDTO'
 } as const;
 
-export const ModelDTOSchema = {
-    properties: {
-        model_name: {
-            type: 'string',
-            title: 'Model Name',
-            description: 'The name/identifier of the model'
-        },
-        model_info: {
-            '$ref': '#/components/schemas/ModelInfoDTO',
-            description: 'Detailed information about the model'
-        },
-        icon: {
-            type: 'string',
-            title: 'Icon',
-            readOnly: true
-        }
-    },
-    type: 'object',
-    required: ['model_name', 'model_info', 'icon'],
-    title: 'ModelDTO'
-} as const;
-
 export const ModelDetailsSchema = {
     properties: {
         id: {
@@ -10033,7 +10000,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1762879556
+            default: 1764936484
         },
         owned_by: {
             type: 'string',
@@ -10071,466 +10038,6 @@ export const ModelDetailsSchema = {
     title: 'ModelDetails'
 } as const;
 
-export const ModelInfoDTOSchema = {
-    properties: {
-        mode: {
-            type: 'string',
-            title: 'Mode',
-            description: "The mode of the model (e.g., 'chat', 'completion', 'embedding')"
-        },
-        max_input_tokens: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Max Input Tokens',
-            description: 'Maximum number of input tokens the model can handle'
-        },
-        max_output_tokens: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Max Output Tokens',
-            description: 'Maximum number of output tokens the model can generate'
-        },
-        input_cost_per_token: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Input Cost Per Token',
-            description: 'Cost per input token in USD'
-        },
-        output_cost_per_token: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Output Cost Per Token',
-            description: 'Cost per output token in USD'
-        },
-        cache_creation_input_token_cost: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Cache Creation Input Token Cost',
-            description: 'Cost for creating cache from input tokens'
-        },
-        cache_read_input_token_cost: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Cache Read Input Token Cost',
-            description: 'Cost for reading cached input tokens'
-        },
-        input_cost_per_token_above_128k_tokens: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Input Cost Per Token Above 128K Tokens',
-            description: 'Cost per input token for contexts above 128k tokens'
-        },
-        input_cost_per_token_above_200k_tokens: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Input Cost Per Token Above 200K Tokens',
-            description: 'Cost per input token for contexts above 200k tokens'
-        },
-        input_cost_per_audio_token: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Input Cost Per Audio Token',
-            description: 'Cost per audio input token'
-        },
-        input_cost_per_token_batches: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Input Cost Per Token Batches',
-            description: 'Cost per input token when using batch API'
-        },
-        output_cost_per_token_batches: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Output Cost Per Token Batches',
-            description: 'Cost per output token when using batch API'
-        },
-        output_cost_per_audio_token: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Output Cost Per Audio Token',
-            description: 'Cost per audio output token'
-        },
-        output_cost_per_reasoning_token: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Output Cost Per Reasoning Token',
-            description: 'Cost per reasoning token for models with reasoning capabilities'
-        },
-        output_cost_per_token_above_128k_tokens: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Output Cost Per Token Above 128K Tokens',
-            description: 'Cost per output token for contexts above 128k tokens'
-        },
-        output_cost_per_token_above_200k_tokens: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Output Cost Per Token Above 200K Tokens',
-            description: 'Cost per output token for contexts above 200k tokens'
-        },
-        output_cost_per_image: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Output Cost Per Image',
-            description: 'Cost per image output'
-        },
-        search_context_cost_per_query: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Search Context Cost Per Query',
-            description: 'Cost per search context query'
-        },
-        output_vector_size: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Output Vector Size',
-            description: 'Size of output vectors for embedding models'
-        },
-        supports_system_messages: {
-            anyOf: [
-                {
-                    type: 'boolean'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Supports System Messages',
-            description: 'Whether the model supports system messages'
-        },
-        supports_response_schema: {
-            anyOf: [
-                {
-                    type: 'boolean'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Supports Response Schema',
-            description: 'Whether the model supports structured response schemas'
-        },
-        supports_vision: {
-            anyOf: [
-                {
-                    type: 'boolean'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Supports Vision',
-            description: 'Whether the model supports vision/image input'
-        },
-        supports_function_calling: {
-            anyOf: [
-                {
-                    type: 'boolean'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Supports Function Calling',
-            description: 'Whether the model supports function calling'
-        },
-        supports_tool_choice: {
-            anyOf: [
-                {
-                    type: 'boolean'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Supports Tool Choice',
-            description: 'Whether the model supports tool choice selection'
-        },
-        supports_assistant_prefill: {
-            anyOf: [
-                {
-                    type: 'boolean'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Supports Assistant Prefill',
-            description: 'Whether the model supports assistant message prefilling'
-        },
-        supports_prompt_caching: {
-            anyOf: [
-                {
-                    type: 'boolean'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Supports Prompt Caching',
-            description: 'Whether the model supports prompt caching'
-        },
-        supports_audio_input: {
-            anyOf: [
-                {
-                    type: 'boolean'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Supports Audio Input',
-            description: 'Whether the model supports audio input'
-        },
-        supports_audio_output: {
-            anyOf: [
-                {
-                    type: 'boolean'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Supports Audio Output',
-            description: 'Whether the model supports audio output'
-        },
-        supports_pdf_input: {
-            anyOf: [
-                {
-                    type: 'boolean'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Supports Pdf Input',
-            description: 'Whether the model supports PDF input'
-        },
-        supports_embedding_image_input: {
-            anyOf: [
-                {
-                    type: 'boolean'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Supports Embedding Image Input',
-            description: 'Whether the model supports image input for embeddings'
-        },
-        supports_native_streaming: {
-            anyOf: [
-                {
-                    type: 'boolean'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Supports Native Streaming',
-            description: 'Whether the model supports native streaming'
-        },
-        supports_web_search: {
-            anyOf: [
-                {
-                    type: 'boolean'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Supports Web Search',
-            description: 'Whether the model supports web search capabilities'
-        },
-        supports_url_context: {
-            anyOf: [
-                {
-                    type: 'boolean'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Supports Url Context',
-            description: 'Whether the model supports URL context input'
-        },
-        supports_reasoning: {
-            anyOf: [
-                {
-                    type: 'boolean'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Supports Reasoning',
-            description: 'Whether the model supports reasoning capabilities'
-        },
-        supports_computer_use: {
-            anyOf: [
-                {
-                    type: 'boolean'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Supports Computer Use',
-            description: 'Whether the model supports computer use capabilities'
-        },
-        tpm: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tpm',
-            description: 'Tokens per minute rate limit'
-        },
-        rpm: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Rpm',
-            description: 'Requests per minute rate limit'
-        },
-        supported_openai_params: {
-            anyOf: [
-                {
-                    items: {
-                        type: 'string'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Supported Openai Params',
-            description: 'List of supported OpenAI API parameters'
-        }
-    },
-    type: 'object',
-    required: ['mode'],
-    title: 'ModelInfoDTO'
-} as const;
-
 export const ModelResponseSchema = {
     properties: {
         object: {
@@ -10551,27 +10058,6 @@ export const ModelResponseSchema = {
     type: 'object',
     required: ['data'],
     title: 'ModelResponse'
-} as const;
-
-export const ModelTypeGroupDTOSchema = {
-    properties: {
-        name: {
-            type: 'string',
-            title: 'Name',
-            description: 'The name/type of the model group'
-        },
-        models: {
-            items: {
-                '$ref': '#/components/schemas/ModelDTO'
-            },
-            type: 'array',
-            title: 'Models',
-            description: 'List of models in this group'
-        }
-    },
-    type: 'object',
-    required: ['name', 'models'],
-    title: 'ModelTypeGroupDTO'
 } as const;
 
 export const MultiSelectSchema = {
@@ -10870,6 +10356,35 @@ export const NamespaceResponseSchema = {
     title: 'NamespaceResponse'
 } as const;
 
+export const NoAnswerStopEventOutputSchema = {
+    properties: {
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        }
+    },
+    type: 'object',
+    title: 'NoAnswerStopEventOutput'
+} as const;
+
 export const NodeDataSchema = {
     properties: {
         id: {
@@ -10986,7 +10501,7 @@ export const NodeSummaryDTOSchema = {
         },
         nodes: {
             items: {
-                '$ref': '#/components/schemas/IngestedNode'
+                '$ref': '#/components/schemas/aihub_lib__generative_ai__document__types__IngestedNode__IngestedNode'
             },
             type: 'array',
             title: 'Nodes',
@@ -11111,6 +10626,43 @@ export const PaginatedDocumentsResponseSchema = {
     title: 'PaginatedDocumentsResponse'
 } as const;
 
+export const PaginatedExpertQuestionsResponseSchema = {
+    properties: {
+        total: {
+            type: 'integer',
+            title: 'Total',
+            description: 'The total number of questions matching the filter criteria.'
+        },
+        page: {
+            type: 'integer',
+            title: 'Page',
+            description: 'The current page number (1-indexed).'
+        },
+        page_size: {
+            type: 'integer',
+            title: 'Page Size',
+            description: 'The number of questions requested per page.'
+        },
+        total_pages: {
+            type: 'integer',
+            title: 'Total Pages',
+            description: 'The total number of pages available based on the page size.'
+        },
+        questions: {
+            items: {
+                '$ref': '#/components/schemas/ExpertQuestionDTO'
+            },
+            type: 'array',
+            title: 'Questions',
+            description: 'The list of questions for the current page.'
+        }
+    },
+    type: 'object',
+    required: ['total', 'page', 'page_size', 'total_pages', 'questions'],
+    title: 'PaginatedExpertQuestionsResponse',
+    description: 'A paginated response container for expert questions.'
+} as const;
+
 export const PaginatedNotificationsResponseSchema = {
     properties: {
         total: {
@@ -11146,43 +10698,6 @@ export const PaginatedNotificationsResponseSchema = {
     required: ['total', 'page', 'page_size', 'total_pages', 'notifications'],
     title: 'PaginatedNotificationsResponse',
     description: 'A paginated response container for notifications.'
-} as const;
-
-export const PaginatedProcessWalkthroughsResponseSchema = {
-    properties: {
-        total: {
-            type: 'integer',
-            title: 'Total',
-            description: 'Total number of items available'
-        },
-        page: {
-            type: 'integer',
-            title: 'Page',
-            description: 'Current page number (1-indexed)'
-        },
-        page_size: {
-            type: 'integer',
-            title: 'Page Size',
-            description: 'Number of threads per page'
-        },
-        total_pages: {
-            type: 'integer',
-            title: 'Total Pages',
-            description: 'Total number of pages available'
-        },
-        walkthroughs: {
-            items: {
-                '$ref': '#/components/schemas/ProcessWalkthroughDTO'
-            },
-            type: 'array',
-            title: 'Walkthroughs',
-            description: 'List of process walkthroughs for the current page'
-        }
-    },
-    type: 'object',
-    required: ['total', 'page', 'page_size', 'total_pages', 'walkthroughs'],
-    title: 'PaginatedProcessWalkthroughsResponse',
-    description: 'Paginated response containing process walkthroughs with detailed step information.'
 } as const;
 
 export const PaginatedThreadsResponseSchema = {
@@ -11258,7 +10773,7 @@ export const PaginatedUsersResponseSchema = {
     description: 'Represents a paginated response containing a list of users.'
 } as const;
 
-export const PartialAgentTopicSchema = {
+export const PartialAgentTopic_InputSchema = {
     properties: {
         agent_class: {
             anyOf: [
@@ -11358,23 +10873,7 @@ export const PartialAgentTopicSchema = {
         }
     },
     type: 'object',
-    title: 'PartialAgentTopic',
-    description: `Represents a partially qualified agent event topic, where some fields may be unspecified.
-Wildcards (represented by "*") in the subject translate into None values here.
-
-### Why PartialAgentTopic?
-Sometimes you deal with generic subscriptions to broad categories of events—like all display events
-or all events from a particular agent class—without knowing the exact agent_id, thread_id, or event_id.
-PartialAgentTopic captures this scenario, making it explicit which parts of the topic are defined
-and which remain open (None).
-
-### Use Cases
-- **Generic Monitoring:** You might subscribe to \`agent.myclass.*.*.*.*.display_event.*.*\` to monitor
-  all display events for a given agent class, regardless of the specific agent instance or thread.
-  The resulting PartialAgentTopic shows which filters have been fixed and which are open.
-- **Routing Decisions:** If a system receives a message on a wildcard topic, it can inspect this
-  PartialAgentTopic to decide dynamically which handler to invoke based on known fields, leaving
-  unknowns as flexible conditions.`
+    title: 'PartialAgentTopic'
 } as const;
 
 export const PasswordSchema = {
@@ -11704,91 +11203,6 @@ event models and the publicly exposed fields in HTTP responses.
 By using \`ProcessDTO\`, the API can evolve independently from the internal event representations.`
 } as const;
 
-export const ProcessWalkthroughDTOSchema = {
-    properties: {
-        process_walkthrough_id: {
-            type: 'string',
-            title: 'Process Walkthrough Id',
-            description: 'Unique identifier for this specific process walkthrough.'
-        },
-        process_class: {
-            type: 'string',
-            title: 'Process Class',
-            description: 'The class/type of the process.'
-        },
-        process_id: {
-            type: 'string',
-            title: 'Process Id',
-            description: 'Unique identifier for the specific process instance.'
-        },
-        process_steps: {
-            items: {
-                anyOf: [
-                    {
-                        '$ref': '#/components/schemas/AgentProcessStepDTO'
-                    },
-                    {
-                        '$ref': '#/components/schemas/ProgramProcessStepDTO'
-                    },
-                    {
-                        '$ref': '#/components/schemas/HumanProcessStepDTO'
-                    }
-                ]
-            },
-            type: 'array',
-            title: 'Process Steps',
-            description: 'List of all steps in this walkthrough, ordered chronologically.'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'Timestamp of the first event in nanoseconds.'
-        },
-        updated_at: {
-            type: 'integer',
-            title: 'Updated At',
-            description: 'Timestamp of the last event in nanoseconds.'
-        },
-        total_steps: {
-            type: 'integer',
-            title: 'Total Steps',
-            description: 'Total number of steps in this walkthrough.'
-        },
-        completed_steps: {
-            type: 'integer',
-            title: 'Completed Steps',
-            description: 'Number of completed steps in this walkthrough.'
-        },
-        is_active: {
-            type: 'boolean',
-            title: 'Is Active',
-            description: 'Whether this walkthrough is active (no ProcessStopEvent).'
-        },
-        involved_agents: {
-            items: {
-                '$ref': '#/components/schemas/MinimalAgentDTO'
-            },
-            type: 'array',
-            title: 'Involved Agents',
-            description: 'List of agents that submitted work in this walkthrough.',
-            default: []
-        },
-        involved_humans: {
-            items: {
-                '$ref': '#/components/schemas/MinimalUserDTO'
-            },
-            type: 'array',
-            title: 'Involved Humans',
-            description: 'List of humans that submitted work in this walkthrough.',
-            default: []
-        }
-    },
-    type: 'object',
-    required: ['process_walkthrough_id', 'process_class', 'process_id', 'process_steps', 'created_at', 'updated_at', 'total_steps', 'completed_steps', 'is_active'],
-    title: 'ProcessWalkthroughDTO',
-    description: 'DTO representing a process walkthrough with detailed step information.'
-} as const;
-
 export const ProgramInDTOSchema = {
     properties: {
         route: {
@@ -11814,213 +11228,6 @@ export const ProgramInDTOSchema = {
     type: 'object',
     required: ['route', 'method', 'is_process_start', 'event_specs'],
     title: 'ProgramInDTO'
-} as const;
-
-export const ProgramProcessStepDTOSchema = {
-    properties: {
-        step_index: {
-            type: 'integer',
-            title: 'Step Index',
-            description: 'Order of this step in the walkthrough (0-based).'
-        },
-        step_type: {
-            type: 'string',
-            title: 'Step Type',
-            description: 'Type of entity involved in this step.',
-            default: 'program'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'Timestamp when this step was created in nanoseconds.'
-        },
-        is_completed: {
-            type: 'boolean',
-            title: 'Is Completed',
-            description: 'Whether this step has been completed (has a work response).'
-        },
-        work_request: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/ProgramWorkRequestDTO'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'The program work request for this step.'
-        },
-        work_response: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/ProgramWorkResponseDTO'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'The program work response for this step. May be None if work is not yet completed.'
-        }
-    },
-    type: 'object',
-    required: ['step_index', 'created_at', 'is_completed'],
-    title: 'ProgramProcessStepDTO',
-    description: 'DTO representing a program process step with program-specific work request and response information.'
-} as const;
-
-export const ProgramWorkRequestDTOSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id',
-            description: 'Unique identifier of the work request event.'
-        },
-        event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: 'Name of the event type.'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'Timestamp when the work was requested in nanoseconds.'
-        },
-        request_type: {
-            type: 'string',
-            enum: ['human', 'agent', 'program'],
-            title: 'Request Type',
-            description: 'Type of entity the work was requested from.'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Name',
-            description: 'Human-readable name for the work request.'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Description',
-            description: 'Human-readable description of the work request.'
-        },
-        data: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Data',
-            description: 'The work request event data.'
-        },
-        endpoint: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Endpoint',
-            description: 'API endpoint for the program to submit work.'
-        },
-        method: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Method',
-            description: 'HTTP method for the program to submit work.'
-        }
-    },
-    type: 'object',
-    required: ['event_id', 'event_name', 'created_at', 'request_type', 'display_name', 'display_description', 'data'],
-    title: 'ProgramWorkRequestDTO',
-    description: 'DTO representing a program work request with specific program-related information.'
-} as const;
-
-export const ProgramWorkResponseDTOSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id',
-            description: 'Unique identifier of the work response event.'
-        },
-        event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: 'Name of the event type.'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'Timestamp when the work was completed in nanoseconds.'
-        },
-        response_type: {
-            type: 'string',
-            enum: ['human', 'agent', 'program'],
-            title: 'Response Type',
-            description: 'Type of entity that completed the work.'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Name',
-            description: 'Human-readable name for the work response.'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Description',
-            description: 'Human-readable description of the work response.'
-        },
-        data: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Data',
-            description: 'The work response event data.'
-        },
-        submitted_by: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/MinimalUserDTO'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'The user who submitted this work response on behalf of the program.'
-        }
-    },
-    type: 'object',
-    required: ['event_id', 'event_name', 'created_at', 'response_type', 'display_name', 'display_description', 'data'],
-    title: 'ProgramWorkResponseDTO',
-    description: 'DTO representing a program work response with specific program-related information.'
 } as const;
 
 export const PromptTokensDetailsSchema = {
@@ -12395,6 +11602,73 @@ export const RatingSchema = {
     description: 'https://formkit-primevue.netlify.app/inputs/Rating'
 } as const;
 
+export const RequestingAgentDTOSchema = {
+    properties: {
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class',
+            description: 'The class of the requesting agent.'
+        },
+        agent_id: {
+            type: 'string',
+            title: 'Agent Id',
+            description: 'The instance ID of the requesting agent.'
+        },
+        thread_id: {
+            type: 'string',
+            title: 'Thread Id',
+            description: 'The thread ID where the question originated.'
+        },
+        run_id: {
+            type: 'string',
+            title: 'Run Id',
+            description: 'The run ID of the agent workflow.'
+        }
+    },
+    type: 'object',
+    required: ['agent_class', 'agent_id', 'thread_id', 'run_id'],
+    title: 'RequestingAgentDTO',
+    description: 'Information about the agent requesting expert input.'
+} as const;
+
+export const RequestingUserDTOSchema = {
+    properties: {
+        user_id: {
+            type: 'string',
+            title: 'User Id',
+            description: 'The unique identifier of the requesting user.'
+        },
+        user_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'User Name',
+            description: 'The display name of the requesting user.'
+        },
+        email: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Email',
+            description: 'The email address of the requesting user.'
+        }
+    },
+    type: 'object',
+    required: ['user_id'],
+    title: 'RequestingUserDTO',
+    description: 'Information about the user who triggered the question.'
+} as const;
+
 export const RerankerEventSchema = {
     properties: {
         event_id: {
@@ -12432,7 +11706,7 @@ export const RerankerEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/IngestedNode'
+                        '$ref': '#/components/schemas/aihub_lib__generative_ai__document__types__IngestedNode__IngestedNode'
                     },
                     type: 'array'
                 },
@@ -12447,7 +11721,7 @@ export const RerankerEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/IngestedNode'
+                        '$ref': '#/components/schemas/aihub_lib__generative_ai__document__types__IngestedNode__IngestedNode'
                     },
                     type: 'array'
                 },
@@ -12617,7 +11891,7 @@ export const RetrieverEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/IngestedNode'
+                        '$ref': '#/components/schemas/aihub_lib__generative_ai__document__types__IngestedNode__IngestedNode'
                     },
                     type: 'array'
                 },
@@ -13865,7 +13139,7 @@ export const StandaloneQuestionCondenserEventSchema = {
             description: 'Display description for the event'
         },
         condensed_chat_message: {
-            '$ref': '#/components/schemas/ChatMessage',
+            '$ref': '#/components/schemas/llama_index__core__base__llms__types__ChatMessage',
             description: 'Single chat message containing the condensed user question.'
         },
         _event_name: {
@@ -14043,6 +13317,50 @@ By inheriting from both \`ControlEvent\` and \`DisplayEvent\`:
 - Informing the user interface that the conversation or task has concluded.`
 } as const;
 
+export const StopEventOutputSchema = {
+    properties: {
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        }
+    },
+    type: 'object',
+    title: 'StopEventOutput'
+} as const;
+
+export const SubmitAnswerRequestSchema = {
+    properties: {
+        response: {
+            type: 'string',
+            minLength: 1,
+            title: 'Response',
+            description: "The expert's answer to the question."
+        }
+    },
+    type: 'object',
+    required: ['response'],
+    title: 'SubmitAnswerRequest',
+    description: 'Request body for submitting an answer to an expert question.'
+} as const;
+
 export const SubmittedFormDTOSchema = {
     properties: {
         process_class: {
@@ -14082,7 +13400,7 @@ export const SuiteDTOSchema = {
     title: 'SuiteDTO'
 } as const;
 
-export const TextBlockSchema = {
+export const TextBlock_InputSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -14097,8 +13415,7 @@ export const TextBlockSchema = {
     },
     type: 'object',
     required: ['text'],
-    title: 'TextBlock',
-    description: 'A representation of text data to directly pass to/from the LLM.'
+    title: 'TextBlock'
 } as const;
 
 export const TextContentSchema = {
@@ -15325,6 +14642,53 @@ export const TranscriptionWordSchema = {
     title: 'TranscriptionWord'
 } as const;
 
+export const UpdateExpertGroupRequestSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'The unique name of the expert group.'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description',
+            description: "A short description of the group's purpose."
+        },
+        member_user_ids: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Member User Ids',
+            description: 'List of user IDs who are members of this group.'
+        }
+    },
+    type: 'object',
+    title: 'UpdateExpertGroupRequest',
+    description: 'Request model for updating an expert group.'
+} as const;
+
 export const UpdateNamespaceRequestSchema = {
     properties: {
         display_name: {
@@ -15724,7 +15088,7 @@ export const UserMessageEventSchema = {
         },
         messages: {
             items: {
-                '$ref': '#/components/schemas/ChatMessage'
+                '$ref': '#/components/schemas/llama_index__core__base__llms__types__ChatMessage'
             },
             type: 'array',
             title: 'Messages',
@@ -15735,7 +15099,7 @@ export const UserMessageEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/UserUploadedFile'
+                        '$ref': '#/components/schemas/UserUploadedFile-Output'
                     },
                     type: 'array'
                 },
@@ -15791,7 +15155,7 @@ This flexible design allows mixing and matching start events to adapt how and wh
 are triggered, depending on the source of the event.`
 } as const;
 
-export const UserUploadedFileSchema = {
+export const UserUploadedFile_OutputSchema = {
     properties: {
         filename: {
             type: 'string',
@@ -15960,6 +15324,2696 @@ export const WorkflowGraphSchema = {
     description: 'Complete workflow graph representation.'
 } as const;
 
+export const additional_kwargsSchema = {
+    properties: {},
+    type: 'object',
+    title: 'additional_kwargs'
+} as const;
+
+export const additional_location_infoSchema = {
+    properties: {},
+    type: 'object',
+    title: 'additional_location_info'
+} as const;
+
+export const aihub_api__services__ModelCreationService__LLMStopEventOutput__1Schema = {
+    properties: {
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        input_messages: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__Message'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Messages',
+            description: 'List of messages sent to the LLM as input.'
+        },
+        output_messages: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__Message'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Messages',
+            description: 'List of messages received from the LLM as output.'
+        },
+        invocation_parameters: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/invocation_parameters'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Parameters used during the invocation of the LLM.'
+        },
+        chat_model_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Chat Model Name',
+            description: 'The name of the language model being utilized.'
+        },
+        provider: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Provider',
+            description: 'The hosting provider of the LLM, e.g., OpenAI, Azure.'
+        },
+        system: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'System',
+            description: 'The AI product as identified by the client or server.'
+        },
+        prompt_template: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Prompt Template',
+            description: 'The prompt template as a Python f-string.'
+        },
+        prompt_template_variables: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/prompt_template_variables'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'A dictionary of input variables to the prompt template.'
+        },
+        prompt_template_version: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Prompt Template Version',
+            description: 'The version of the prompt template being used.'
+        },
+        token_count_prompt: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Token Count Prompt',
+            description: 'The number of tokens in the prompt.'
+        },
+        token_count_completion: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Token Count Completion',
+            description: 'The number of tokens in the completion.'
+        },
+        token_count_total: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Token Count Total',
+            description: 'The total number of tokens, including both prompt and completion.'
+        },
+        tools: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/tools'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tools',
+            description: 'List of tools that are advertised to the LLM to be able to call.'
+        }
+    },
+    type: 'object',
+    title: 'LLMStopEventOutput'
+} as const;
+
+export const aihub_api__services__ModelCreationService__LLMStopEventOutput__2Schema = {
+    properties: {
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        input_messages: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__Message'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Messages',
+            description: 'List of messages sent to the LLM as input.'
+        },
+        output_messages: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__Message'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Messages',
+            description: 'List of messages received from the LLM as output.'
+        },
+        invocation_parameters: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/invocation_parameters'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Parameters used during the invocation of the LLM.'
+        },
+        chat_model_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Chat Model Name',
+            description: 'The name of the language model being utilized.'
+        },
+        provider: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Provider',
+            description: 'The hosting provider of the LLM, e.g., OpenAI, Azure.'
+        },
+        system: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'System',
+            description: 'The AI product as identified by the client or server.'
+        },
+        prompt_template: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Prompt Template',
+            description: 'The prompt template as a Python f-string.'
+        },
+        prompt_template_variables: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/prompt_template_variables'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'A dictionary of input variables to the prompt template.'
+        },
+        prompt_template_version: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Prompt Template Version',
+            description: 'The version of the prompt template being used.'
+        },
+        token_count_prompt: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Token Count Prompt',
+            description: 'The number of tokens in the prompt.'
+        },
+        token_count_completion: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Token Count Completion',
+            description: 'The number of tokens in the completion.'
+        },
+        token_count_total: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Token Count Total',
+            description: 'The total number of tokens, including both prompt and completion.'
+        },
+        tools: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/tools'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tools',
+            description: 'List of tools that are advertised to the LLM to be able to call.'
+        }
+    },
+    type: 'object',
+    title: 'LLMStopEventOutput'
+} as const;
+
+export const aihub_api__services__ModelCreationService__UserMessageEventInput__1Schema = {
+    properties: {
+        messages: {
+            items: {
+                '$ref': '#/components/schemas/jambo__parser__object_type_parser__ChatMessage__1'
+            },
+            type: 'array',
+            title: 'Messages',
+            description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.'
+        },
+        files: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__UserUploadedFile'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Files',
+            description: 'A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.'
+        }
+    },
+    type: 'object',
+    title: 'UserMessageEventInput'
+} as const;
+
+export const aihub_api__services__ModelCreationService__UserMessageEventInput__2Schema = {
+    properties: {
+        messages: {
+            items: {
+                '$ref': '#/components/schemas/jambo__parser__object_type_parser__ChatMessage__3'
+            },
+            type: 'array',
+            title: 'Messages',
+            description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.'
+        },
+        files: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__UserUploadedFile'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Files',
+            description: 'A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.'
+        }
+    },
+    type: 'object',
+    title: 'UserMessageEventInput'
+} as const;
+
+export const aihub_lib__generative_ai__document__types__IngestedNode__IngestedNodeSchema = {
+    properties: {
+        source: {
+            type: 'string',
+            title: 'Source',
+            description: 'Source URI (data lake URI).'
+        },
+        source_origin: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Source Origin',
+            description: 'Original source URI (e.g., SharePoint URL, external URL).'
+        },
+        namespace: {
+            type: 'string',
+            title: 'Namespace',
+            description: 'The namespace of the document within its metadata.'
+        },
+        version: {
+            type: 'integer',
+            title: 'Version',
+            description: 'Document version.',
+            default: 1
+        },
+        content_hash: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Content Hash',
+            description: 'Hash of the document/node, helpful to track whether file changed.'
+        },
+        number_of_pages: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Number Of Pages',
+            description: 'Number of Pages in the Document.'
+        },
+        document_title: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Document Title',
+            description: 'Document title.'
+        },
+        language: {
+            anyOf: [
+                {
+                    type: 'string',
+                    enum: ['de', 'en', 'fr', 'it']
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Language',
+            description: 'Document language.'
+        },
+        created_at: {
+            type: 'string',
+            title: 'Created At',
+            description: 'Date source document was created (ISO format string)'
+        },
+        updated_at: {
+            type: 'string',
+            title: 'Updated At',
+            description: 'Date source document was last updated (ISO format string)'
+        },
+        inserted_at: {
+            type: 'string',
+            title: 'Inserted At',
+            description: 'Date source document was inserted into document store (ISO format string)'
+        },
+        metadata: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Metadata',
+            description: 'Additional metadata for the document.'
+        },
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'The unique identifier of the Node.'
+        },
+        content: {
+            type: 'string',
+            title: 'Content',
+            description: 'The textual content of the Node.'
+        },
+        type: {
+            type: 'string',
+            enum: ['content', 'summary'],
+            title: 'Type',
+            description: 'Type (content or summary).',
+            default: 'content'
+        },
+        content_type: {
+            type: 'string',
+            enum: ['text', 'figure', 'table'],
+            title: 'Content Type',
+            description: 'Content type (text, figure or table).',
+            default: 'text'
+        },
+        document_id: {
+            type: 'string',
+            title: 'Document Id',
+            description: 'ID of original ref_doc.'
+        },
+        start_char_idx: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Start Char Idx',
+            description: 'The start character index of the Node.'
+        },
+        end_char_idx: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'End Char Idx',
+            description: 'The end character index of the Node.'
+        },
+        index: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Index',
+            description: 'Index counting position of node in document'
+        },
+        section_start_line: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Section Start Line',
+            description: 'Start line of the node in document'
+        },
+        section_end_line: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Section End Line',
+            description: 'End line of the node in document'
+        },
+        h1: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H1',
+            description: 'H1 of the node in document'
+        },
+        h2: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H2',
+            description: 'H2 of the node in document'
+        },
+        h3: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H3',
+            description: 'H3 of the node in document'
+        },
+        h4: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H4',
+            description: 'H4 of the node in document'
+        },
+        h5: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H5',
+            description: 'H5 of the node in document'
+        },
+        h6: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H6',
+            description: 'H6 of the node in document'
+        },
+        heading_level: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    enum: [0, 1, 2, 3, 4, 5, 6]
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Heading Level',
+            description: 'Heading level of the node in document'
+        },
+        score: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Score',
+            description: 'Score representing the relevance of the document.'
+        }
+    },
+    type: 'object',
+    required: ['source', 'namespace', 'created_at', 'updated_at', 'inserted_at', 'id', 'content', 'document_id'],
+    title: 'IngestedNode',
+    description: `A node represents a chunk of a document, like a paragraph, produced by a document parser and text splitter.
+The attributes defined here are the minimal number of attributes that a node must have to ensure the
+UI can properly display it. Note that all attributes that are specific to text documents, like start_char_idx etc.
+must be strictly optional, as we don't really know whether the node is indeed a text node. However, all attributes
+that are purely technical, like the document_id to keep the back-ref to the ref_doc from which the node originates,
+are strictly necessary.`
+} as const;
+
+export const aihub_lib__nats__events__human_in_the_loop__request__HumanInTheLoopRequestEvent__HitlOptionSchema = {
+    properties: {
+        key: {
+            type: 'string',
+            title: 'Key',
+            description: "Language-independent identifier for the option (e.g., 'yes', 'no')."
+        },
+        label: {
+            type: 'string',
+            title: 'Label',
+            description: 'Localized display label shown to the user.'
+        }
+    },
+    type: 'object',
+    required: ['key', 'label'],
+    title: 'HitlOption',
+    description: 'A predefined response option for human-in-the-loop requests.'
+} as const;
+
+export const aihub_lib__nats__events__semantic__llm__Message__MessageSchema = {
+    properties: {
+        role: {
+            type: 'string',
+            title: 'Role',
+            description: "The role of the message, such as 'user', 'assistant', or 'system'."
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'The name of the function or agent generating the message.'
+        },
+        tool_calls: {
+            anyOf: [
+                {
+                    items: {
+                        additionalProperties: true,
+                        type: 'object'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tool Calls',
+            description: 'List of tool calls generated by the model, such as function calls.'
+        },
+        function_call_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Function Call Name',
+            description: 'The name of the function being called in the message.'
+        },
+        function_call_arguments_json: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Function Call Arguments Json',
+            description: 'JSON representing arguments passed to the function during a function call.'
+        },
+        tool_call_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tool Call Id',
+            description: 'The ID of the tool call, if applicable.'
+        },
+        contents: {
+            anyOf: [
+                {
+                    items: {
+                        anyOf: [
+                            {
+                                '$ref': '#/components/schemas/TextContent'
+                            },
+                            {
+                                '$ref': '#/components/schemas/ImageContent'
+                            },
+                            {
+                                '$ref': '#/components/schemas/AudioContent'
+                            }
+                        ]
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Contents',
+            description: 'The message contents as an array of content blocks (text, image, audio).'
+        },
+        content: {
+            type: 'string',
+            title: 'Content',
+            readOnly: true
+        }
+    },
+    type: 'object',
+    required: ['role', 'content'],
+    title: 'Message'
+} as const;
+
+export const aihub_lib__nats__events__user__UserUploadedFile__UserUploadedFileSchema = {
+    properties: {
+        filename: {
+            type: 'string',
+            title: 'Filename',
+            description: 'The name of the uploaded file, including the extension.'
+        },
+        file_data: {
+            type: 'string',
+            title: 'File Data',
+            description: 'Base64 encoded content of the uploaded file.'
+        },
+        file_type: {
+            type: 'string',
+            title: 'File Type',
+            description: 'The MIME type of the uploaded file.',
+            examples: ['image/png', 'application/pdf']
+        }
+    },
+    type: 'object',
+    required: ['filename', 'file_data', 'file_type'],
+    title: 'UserUploadedFile'
+} as const;
+
+export const aihub_lib__nats__topics__agents__AgentInstanceTopic__AgentInstanceTopicSchema = {
+    properties: {
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class',
+            description: "The agent's class identifier."
+        },
+        agent_id: {
+            type: 'string',
+            title: 'Agent Id',
+            description: 'Unique identifier for the specific agent instance.'
+        },
+        run_id: {
+            type: 'string',
+            title: 'Run Id',
+            description: 'The run ID within the thread.'
+        },
+        thread_id: {
+            type: 'string',
+            title: 'Thread Id',
+            description: 'Unique identifier for the conversation or workflow thread.'
+        },
+        display_id: {
+            type: 'string',
+            title: 'Display Id',
+            description: 'UI-facing grouping ID, used to distinguish or group related runs.'
+        },
+        event_type: {
+            type: 'string',
+            title: 'Event Type',
+            description: "Type of event (e.g., 'display_event', 'control_event')."
+        },
+        event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: "Name of the event (e.g., 'StartEvent', 'StopEvent', 'ExceptionEvent, ...')."
+        },
+        event_id: {
+            type: 'string',
+            title: 'Event Id',
+            description: 'Unique identifier for this particular event instance.'
+        }
+    },
+    type: 'object',
+    required: ['agent_class', 'agent_id', 'run_id', 'thread_id', 'display_id', 'event_type', 'event_name', 'event_id'],
+    title: 'AgentInstanceTopic',
+    description: `Represents a fully-defined agent event topic. Unlike PartialAgentTopic, all fields are expected
+to be present. This includes identifiers for agent_class, agent_id, and the event itself.
+
+### Why This Class Exists
+
+In a hierarchical event topic model, PartialAgentTopic might not have all details filled out.
+AgentTopic guarantees that every piece of the event route—from agent class to event ID—is known.
+This makes AgentTopic ideal for scenarios where the full path is required, such as final message
+routing or logging a complete event identifier.
+
+### Example:
+If an event subject is something like:
+"agent.myclass.myid.thread123.displayA.run45.display_event.some_event.789"
+then this AgentTopic can represent it, providing quick field-level access and serialization.`
+} as const;
+
+export const aihub_lib__nats__topics__agents__PartialAgentTopic__PartialAgentTopicSchema = {
+    properties: {
+        agent_class: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Agent Class',
+            description: 'Agent class or None if unspecified.'
+        },
+        agent_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Agent Id',
+            description: 'Agent ID or None if unspecified.'
+        },
+        run_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Run Id',
+            description: 'Run ID or None if unspecified.'
+        },
+        thread_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Thread Id',
+            description: 'Thread ID or None if unspecified.'
+        },
+        display_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Id',
+            description: 'Display ID or None if unspecified.'
+        },
+        event_type: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Event Type',
+            description: 'Event type or None if unspecified.'
+        },
+        event_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Event Name',
+            description: 'Event name or None if unspecified.'
+        },
+        event_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Event Id',
+            description: 'Event ID or None if unspecified.'
+        }
+    },
+    type: 'object',
+    title: 'PartialAgentTopic',
+    description: `Represents a partially qualified agent event topic, where some fields may be unspecified.
+Wildcards (represented by "*") in the subject translate into None values here.
+
+### Why PartialAgentTopic?
+Sometimes you deal with generic subscriptions to broad categories of events—like all display events
+or all events from a particular agent class—without knowing the exact agent_id, thread_id, or event_id.
+PartialAgentTopic captures this scenario, making it explicit which parts of the topic are defined
+and which remain open (None).
+
+### Use Cases
+- **Generic Monitoring:** You might subscribe to \`agent.myclass.*.*.*.*.display_event.*.*\` to monitor
+  all display events for a given agent class, regardless of the specific agent instance or thread.
+  The resulting PartialAgentTopic shows which filters have been fixed and which are open.
+- **Routing Decisions:** If a system receives a message on a wildcard topic, it can inspect this
+  PartialAgentTopic to decide dynamically which handler to invoke based on known fields, leaving
+  unknowns as flexible conditions.`
+} as const;
+
+export const content_typeSchema = {
+    type: 'string',
+    enum: ['text', 'figure', 'table'],
+    title: 'content_type'
+} as const;
+
+export const function_call_arguments_jsonSchema = {
+    properties: {},
+    type: 'object',
+    title: 'function_call_arguments_json'
+} as const;
+
+export const heading_levelSchema = {
+    type: 'integer',
+    enum: [0, 1, 2, 3, 4, 5, 6],
+    title: 'heading_level'
+} as const;
+
+export const invocation_parametersSchema = {
+    properties: {},
+    type: 'object',
+    title: 'invocation_parameters'
+} as const;
+
+export const jambo__parser__enum_type_parser__MessageRoleSchema = {
+    type: 'string',
+    enum: ['system', 'developer', 'user', 'assistant', 'function', 'tool', 'chatbot', 'model'],
+    title: 'MessageRole'
+} as const;
+
+export const jambo__parser__object_type_parser__AgentInstanceTopicSchema = {
+    properties: {
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class',
+            description: "The agent's class identifier."
+        },
+        agent_id: {
+            type: 'string',
+            title: 'Agent Id',
+            description: 'Unique identifier for the specific agent instance.'
+        },
+        run_id: {
+            type: 'string',
+            title: 'Run Id',
+            description: 'The run ID within the thread.'
+        },
+        thread_id: {
+            type: 'string',
+            title: 'Thread Id',
+            description: 'Unique identifier for the conversation or workflow thread.'
+        },
+        display_id: {
+            type: 'string',
+            title: 'Display Id',
+            description: 'UI-facing grouping ID, used to distinguish or group related runs.'
+        },
+        event_type: {
+            type: 'string',
+            title: 'Event Type',
+            description: "Type of event (e.g., 'display_event', 'control_event')."
+        },
+        event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: "Name of the event (e.g., 'StartEvent', 'StopEvent', 'ExceptionEvent, ...')."
+        },
+        event_id: {
+            type: 'string',
+            title: 'Event Id',
+            description: 'Unique identifier for this particular event instance.'
+        }
+    },
+    type: 'object',
+    required: ['agent_class', 'agent_id', 'run_id', 'thread_id', 'display_id', 'event_type', 'event_name', 'event_id'],
+    title: 'AgentInstanceTopic'
+} as const;
+
+export const jambo__parser__object_type_parser__AudioBlockSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'audio',
+            title: 'Block Type',
+            default: 'audio'
+        },
+        audio: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'binary'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Audio'
+        },
+        path: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'file-path'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Path'
+        },
+        url: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 2083,
+                    minLength: 1,
+                    format: 'uri'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Url'
+        },
+        format: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Format'
+        }
+    },
+    type: 'object',
+    title: 'AudioBlock'
+} as const;
+
+export const jambo__parser__object_type_parser__CachePointSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'cache',
+            title: 'Block Type',
+            default: 'cache'
+        },
+        cache_control: {
+            '$ref': '#/components/schemas/CacheControl'
+        }
+    },
+    type: 'object',
+    required: ['cache_control'],
+    title: 'CachePoint'
+} as const;
+
+export const jambo__parser__object_type_parser__ChatMessage_OutputSchema = {
+    properties: {
+        role: {
+            '$ref': '#/components/schemas/jambo__parser__enum_type_parser__MessageRole',
+            default: 'user'
+        },
+        additional_kwargs: {
+            '$ref': '#/components/schemas/additional_kwargs'
+        },
+        blocks: {
+            items: {
+                oneOf: [
+                    {
+                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__TextBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__ImageBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__AudioBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__DocumentBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__CachePoint'
+                    },
+                    {
+                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__CitableBlock-Output'
+                    },
+                    {
+                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__CitationBlock-Output'
+                    }
+                ],
+                discriminator: {
+                    propertyName: 'block_type',
+                    mapping: {
+                        audio: '#/components/schemas/jambo__parser__object_type_parser__AudioBlock',
+                        cache: '#/components/schemas/jambo__parser__object_type_parser__CachePoint',
+                        citable: '#/components/schemas/jambo__parser__object_type_parser__CitableBlock-Output',
+                        citation: '#/components/schemas/jambo__parser__object_type_parser__CitationBlock-Output',
+                        document: '#/components/schemas/jambo__parser__object_type_parser__DocumentBlock',
+                        image: '#/components/schemas/jambo__parser__object_type_parser__ImageBlock',
+                        text: '#/components/schemas/jambo__parser__object_type_parser__TextBlock'
+                    }
+                }
+            },
+            type: 'array',
+            title: 'Blocks'
+        }
+    },
+    type: 'object',
+    required: ['additional_kwargs'],
+    title: 'ChatMessage'
+} as const;
+
+export const jambo__parser__object_type_parser__ChatMessage__1Schema = {
+    properties: {
+        role: {
+            '$ref': '#/components/schemas/MessageRole-Input',
+            default: 'user'
+        },
+        additional_kwargs: {
+            '$ref': '#/components/schemas/additional_kwargs'
+        },
+        blocks: {
+            items: {
+                oneOf: [
+                    {
+                        '$ref': '#/components/schemas/TextBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ImageBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/AudioBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/DocumentBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CachePoint-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CitableBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CitationBlock-Input'
+                    }
+                ],
+                discriminator: {
+                    propertyName: 'block_type',
+                    mapping: {
+                        audio: '#/components/schemas/AudioBlock-Input',
+                        cache: '#/components/schemas/CachePoint-Input',
+                        citable: '#/components/schemas/CitableBlock-Input',
+                        citation: '#/components/schemas/CitationBlock-Input',
+                        document: '#/components/schemas/DocumentBlock-Input',
+                        image: '#/components/schemas/ImageBlock-Input',
+                        text: '#/components/schemas/TextBlock-Input'
+                    }
+                }
+            },
+            type: 'array',
+            title: 'Blocks'
+        }
+    },
+    type: 'object',
+    required: ['additional_kwargs'],
+    title: 'ChatMessage'
+} as const;
+
+export const jambo__parser__object_type_parser__ChatMessage__2Schema = {
+    properties: {
+        role: {
+            '$ref': '#/components/schemas/MessageRole-Input',
+            default: 'user'
+        },
+        additional_kwargs: {
+            '$ref': '#/components/schemas/additional_kwargs'
+        },
+        blocks: {
+            items: {
+                oneOf: [
+                    {
+                        '$ref': '#/components/schemas/TextBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ImageBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/AudioBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/DocumentBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CachePoint-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CitableBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CitationBlock-Input'
+                    }
+                ],
+                discriminator: {
+                    propertyName: 'block_type',
+                    mapping: {
+                        audio: '#/components/schemas/AudioBlock-Input',
+                        cache: '#/components/schemas/CachePoint-Input',
+                        citable: '#/components/schemas/CitableBlock-Input',
+                        citation: '#/components/schemas/CitationBlock-Input',
+                        document: '#/components/schemas/DocumentBlock-Input',
+                        image: '#/components/schemas/ImageBlock-Input',
+                        text: '#/components/schemas/TextBlock-Input'
+                    }
+                }
+            },
+            type: 'array',
+            title: 'Blocks'
+        }
+    },
+    type: 'object',
+    required: ['additional_kwargs'],
+    title: 'ChatMessage'
+} as const;
+
+export const jambo__parser__object_type_parser__ChatMessage__3Schema = {
+    properties: {
+        role: {
+            '$ref': '#/components/schemas/MessageRole-Input',
+            default: 'user'
+        },
+        additional_kwargs: {
+            '$ref': '#/components/schemas/additional_kwargs'
+        },
+        blocks: {
+            items: {
+                oneOf: [
+                    {
+                        '$ref': '#/components/schemas/TextBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ImageBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/AudioBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/DocumentBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CachePoint-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CitableBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CitationBlock-Input'
+                    }
+                ],
+                discriminator: {
+                    propertyName: 'block_type',
+                    mapping: {
+                        audio: '#/components/schemas/AudioBlock-Input',
+                        cache: '#/components/schemas/CachePoint-Input',
+                        citable: '#/components/schemas/CitableBlock-Input',
+                        citation: '#/components/schemas/CitationBlock-Input',
+                        document: '#/components/schemas/DocumentBlock-Input',
+                        image: '#/components/schemas/ImageBlock-Input',
+                        text: '#/components/schemas/TextBlock-Input'
+                    }
+                }
+            },
+            type: 'array',
+            title: 'Blocks'
+        }
+    },
+    type: 'object',
+    required: ['additional_kwargs'],
+    title: 'ChatMessage'
+} as const;
+
+export const jambo__parser__object_type_parser__CitableBlock_OutputSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'citable',
+            title: 'Block Type',
+            default: 'citable'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        source: {
+            type: 'string',
+            title: 'Source'
+        },
+        content: {
+            items: {
+                oneOf: [
+                    {
+                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__TextBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__ImageBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__DocumentBlock'
+                    }
+                ],
+                discriminator: {
+                    propertyName: 'block_type',
+                    mapping: {
+                        document: '#/components/schemas/jambo__parser__object_type_parser__DocumentBlock',
+                        image: '#/components/schemas/jambo__parser__object_type_parser__ImageBlock',
+                        text: '#/components/schemas/jambo__parser__object_type_parser__TextBlock'
+                    }
+                }
+            },
+            type: 'array',
+            title: 'Content'
+        }
+    },
+    type: 'object',
+    required: ['title', 'source', 'content'],
+    title: 'CitableBlock'
+} as const;
+
+export const jambo__parser__object_type_parser__CitationBlock_OutputSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'citation',
+            title: 'Block Type',
+            default: 'citation'
+        },
+        cited_content: {
+            oneOf: [
+                {
+                    '$ref': '#/components/schemas/jambo__parser__object_type_parser__TextBlock'
+                },
+                {
+                    '$ref': '#/components/schemas/jambo__parser__object_type_parser__ImageBlock'
+                }
+            ],
+            title: 'Cited Content',
+            discriminator: {
+                propertyName: 'block_type',
+                mapping: {
+                    image: '#/components/schemas/jambo__parser__object_type_parser__ImageBlock',
+                    text: '#/components/schemas/jambo__parser__object_type_parser__TextBlock'
+                }
+            }
+        },
+        source: {
+            type: 'string',
+            title: 'Source'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        additional_location_info: {
+            '$ref': '#/components/schemas/additional_location_info'
+        }
+    },
+    type: 'object',
+    required: ['cited_content', 'source', 'title', 'additional_location_info'],
+    title: 'CitationBlock'
+} as const;
+
+export const jambo__parser__object_type_parser__DocumentBlockSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'document',
+            title: 'Block Type',
+            default: 'document'
+        },
+        data: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'binary'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Data'
+        },
+        path: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'file-path'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Path'
+        },
+        url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Url'
+        },
+        title: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Title'
+        },
+        document_mimetype: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Document Mimetype'
+        }
+    },
+    type: 'object',
+    title: 'DocumentBlock'
+} as const;
+
+export const jambo__parser__object_type_parser__HitlOptionSchema = {
+    properties: {
+        key: {
+            type: 'string',
+            title: 'Key',
+            description: "Language-independent identifier for the option (e.g., 'yes', 'no')."
+        },
+        label: {
+            type: 'string',
+            title: 'Label',
+            description: 'Localized display label shown to the user.'
+        }
+    },
+    type: 'object',
+    required: ['key', 'label'],
+    title: 'HitlOption'
+} as const;
+
+export const jambo__parser__object_type_parser__ImageBlockSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'image',
+            title: 'Block Type',
+            default: 'image'
+        },
+        image: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'binary'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Image'
+        },
+        path: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'file-path'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Path'
+        },
+        url: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 2083,
+                    minLength: 1,
+                    format: 'uri'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Url'
+        },
+        image_mimetype: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Image Mimetype'
+        },
+        detail: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Detail'
+        }
+    },
+    type: 'object',
+    title: 'ImageBlock'
+} as const;
+
+export const jambo__parser__object_type_parser__IngestedNodeSchema = {
+    properties: {
+        source: {
+            type: 'string',
+            title: 'Source',
+            description: 'Source URI (data lake URI).'
+        },
+        source_origin: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Source Origin',
+            description: 'Original source URI (e.g., SharePoint URL, external URL).'
+        },
+        namespace: {
+            type: 'string',
+            title: 'Namespace',
+            description: 'The namespace of the document within its metadata.'
+        },
+        version: {
+            type: 'integer',
+            title: 'Version',
+            description: 'Document version.',
+            default: 1
+        },
+        content_hash: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Content Hash',
+            description: 'Hash of the document/node, helpful to track whether file changed.'
+        },
+        number_of_pages: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Number Of Pages',
+            description: 'Number of Pages in the Document.'
+        },
+        document_title: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Document Title',
+            description: 'Document title.'
+        },
+        language: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/language'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Document language.'
+        },
+        created_at: {
+            type: 'string',
+            title: 'Created At',
+            description: 'Date source document was created (ISO format string)'
+        },
+        updated_at: {
+            type: 'string',
+            title: 'Updated At',
+            description: 'Date source document was last updated (ISO format string)'
+        },
+        inserted_at: {
+            type: 'string',
+            title: 'Inserted At',
+            description: 'Date source document was inserted into document store (ISO format string)'
+        },
+        metadata: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/metadata'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Additional metadata for the document.'
+        },
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'The unique identifier of the Node.'
+        },
+        content: {
+            type: 'string',
+            title: 'Content',
+            description: 'The textual content of the Node.'
+        },
+        type: {
+            '$ref': '#/components/schemas/type',
+            description: 'Type (content or summary).',
+            default: 'content'
+        },
+        content_type: {
+            '$ref': '#/components/schemas/content_type',
+            description: 'Content type (text, figure or table).',
+            default: 'text'
+        },
+        document_id: {
+            type: 'string',
+            title: 'Document Id',
+            description: 'ID of original ref_doc.'
+        },
+        start_char_idx: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Start Char Idx',
+            description: 'The start character index of the Node.'
+        },
+        end_char_idx: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'End Char Idx',
+            description: 'The end character index of the Node.'
+        },
+        index: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Index',
+            description: 'Index counting position of node in document'
+        },
+        section_start_line: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Section Start Line',
+            description: 'Start line of the node in document'
+        },
+        section_end_line: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Section End Line',
+            description: 'End line of the node in document'
+        },
+        h1: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H1',
+            description: 'H1 of the node in document'
+        },
+        h2: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H2',
+            description: 'H2 of the node in document'
+        },
+        h3: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H3',
+            description: 'H3 of the node in document'
+        },
+        h4: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H4',
+            description: 'H4 of the node in document'
+        },
+        h5: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H5',
+            description: 'H5 of the node in document'
+        },
+        h6: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'H6',
+            description: 'H6 of the node in document'
+        },
+        heading_level: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/heading_level'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Heading level of the node in document'
+        },
+        score: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Score',
+            description: 'Score representing the relevance of the document.'
+        }
+    },
+    type: 'object',
+    required: ['source', 'namespace', 'created_at', 'updated_at', 'inserted_at', 'id', 'content', 'document_id'],
+    title: 'IngestedNode'
+} as const;
+
+export const jambo__parser__object_type_parser__MessageSchema = {
+    properties: {
+        role: {
+            type: 'string',
+            title: 'Role',
+            description: "The role of the message, such as 'user', 'assistant', or 'system'."
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'The name of the function or agent generating the message.'
+        },
+        tool_calls: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/tool_calls'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tool Calls',
+            description: 'List of tool calls generated by the model, such as function calls.'
+        },
+        function_call_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Function Call Name',
+            description: 'The name of the function being called in the message.'
+        },
+        function_call_arguments_json: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/function_call_arguments_json'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'JSON representing arguments passed to the function during a function call.'
+        },
+        tool_call_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tool Call Id',
+            description: 'The ID of the tool call, if applicable.'
+        },
+        contents: {
+            anyOf: [
+                {
+                    items: {
+                        anyOf: [
+                            {
+                                '$ref': '#/components/schemas/TextContent'
+                            },
+                            {
+                                '$ref': '#/components/schemas/ImageContent'
+                            },
+                            {
+                                '$ref': '#/components/schemas/AudioContent'
+                            }
+                        ]
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Contents',
+            description: 'The message contents as an array of content blocks (text, image, audio).'
+        }
+    },
+    type: 'object',
+    required: ['role'],
+    title: 'Message'
+} as const;
+
+export const jambo__parser__object_type_parser__PartialAgentTopicSchema = {
+    properties: {
+        agent_class: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Agent Class',
+            description: 'Agent class or None if unspecified.'
+        },
+        agent_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Agent Id',
+            description: 'Agent ID or None if unspecified.'
+        },
+        run_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Run Id',
+            description: 'Run ID or None if unspecified.'
+        },
+        thread_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Thread Id',
+            description: 'Thread ID or None if unspecified.'
+        },
+        display_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Id',
+            description: 'Display ID or None if unspecified.'
+        },
+        event_type: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Event Type',
+            description: 'Event type or None if unspecified.'
+        },
+        event_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Event Name',
+            description: 'Event name or None if unspecified.'
+        },
+        event_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Event Id',
+            description: 'Event ID or None if unspecified.'
+        }
+    },
+    type: 'object',
+    title: 'PartialAgentTopic'
+} as const;
+
+export const jambo__parser__object_type_parser__TextBlockSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'text',
+            title: 'Block Type',
+            default: 'text'
+        },
+        text: {
+            type: 'string',
+            title: 'Text'
+        }
+    },
+    type: 'object',
+    required: ['text'],
+    title: 'TextBlock'
+} as const;
+
+export const jambo__parser__object_type_parser__UserUploadedFileSchema = {
+    properties: {
+        filename: {
+            type: 'string',
+            title: 'Filename',
+            description: 'The name of the uploaded file, including the extension.'
+        },
+        file_data: {
+            type: 'string',
+            title: 'File Data',
+            description: 'Base64 encoded content of the uploaded file.'
+        },
+        file_type: {
+            type: 'string',
+            title: 'File Type',
+            description: 'The MIME type of the uploaded file.'
+        }
+    },
+    type: 'object',
+    required: ['filename', 'file_data', 'file_type'],
+    title: 'UserUploadedFile'
+} as const;
+
+export const languageSchema = {
+    type: 'string',
+    enum: ['de', 'en', 'fr', 'it'],
+    title: 'language'
+} as const;
+
+export const llama_index__core__base__llms__types__AudioBlockSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'audio',
+            title: 'Block Type',
+            default: 'audio'
+        },
+        audio: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'binary'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Audio'
+        },
+        path: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'file-path'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Path'
+        },
+        url: {
+            anyOf: [
+                {
+                    type: 'string',
+                    minLength: 1,
+                    format: 'uri'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Url'
+        },
+        format: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Format'
+        }
+    },
+    type: 'object',
+    title: 'AudioBlock',
+    description: 'A representation of audio data to directly pass to/from the LLM.'
+} as const;
+
+export const llama_index__core__base__llms__types__CachePointSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'cache',
+            title: 'Block Type',
+            default: 'cache'
+        },
+        cache_control: {
+            '$ref': '#/components/schemas/CacheControl'
+        }
+    },
+    type: 'object',
+    required: ['cache_control'],
+    title: 'CachePoint',
+    description: 'Used to set the point to cache up to, if the LLM supports caching.'
+} as const;
+
+export const llama_index__core__base__llms__types__ChatMessageSchema = {
+    properties: {
+        role: {
+            '$ref': '#/components/schemas/llama_index__core__base__llms__types__MessageRole',
+            default: 'user'
+        },
+        additional_kwargs: {
+            title: 'Additional Kwargs'
+        },
+        blocks: {
+            items: {
+                oneOf: [
+                    {
+                        '$ref': '#/components/schemas/llama_index__core__base__llms__types__TextBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/llama_index__core__base__llms__types__ImageBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/llama_index__core__base__llms__types__AudioBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/llama_index__core__base__llms__types__DocumentBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/llama_index__core__base__llms__types__CachePoint'
+                    },
+                    {
+                        '$ref': '#/components/schemas/llama_index__core__base__llms__types__CitableBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/llama_index__core__base__llms__types__CitationBlock'
+                    }
+                ],
+                discriminator: {
+                    propertyName: 'block_type',
+                    mapping: {
+                        audio: '#/components/schemas/llama_index__core__base__llms__types__AudioBlock',
+                        cache: '#/components/schemas/llama_index__core__base__llms__types__CachePoint',
+                        citable: '#/components/schemas/llama_index__core__base__llms__types__CitableBlock',
+                        citation: '#/components/schemas/llama_index__core__base__llms__types__CitationBlock',
+                        document: '#/components/schemas/llama_index__core__base__llms__types__DocumentBlock',
+                        image: '#/components/schemas/llama_index__core__base__llms__types__ImageBlock',
+                        text: '#/components/schemas/llama_index__core__base__llms__types__TextBlock'
+                    }
+                }
+            },
+            type: 'array',
+            title: 'Blocks'
+        }
+    },
+    type: 'object',
+    title: 'ChatMessage',
+    description: 'Chat message.'
+} as const;
+
+export const llama_index__core__base__llms__types__CitableBlockSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'citable',
+            title: 'Block Type',
+            default: 'citable'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        source: {
+            type: 'string',
+            title: 'Source'
+        },
+        content: {
+            items: {
+                oneOf: [
+                    {
+                        '$ref': '#/components/schemas/llama_index__core__base__llms__types__TextBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/llama_index__core__base__llms__types__ImageBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/llama_index__core__base__llms__types__DocumentBlock'
+                    }
+                ],
+                discriminator: {
+                    propertyName: 'block_type',
+                    mapping: {
+                        document: '#/components/schemas/llama_index__core__base__llms__types__DocumentBlock',
+                        image: '#/components/schemas/llama_index__core__base__llms__types__ImageBlock',
+                        text: '#/components/schemas/llama_index__core__base__llms__types__TextBlock'
+                    }
+                }
+            },
+            type: 'array',
+            title: 'Content'
+        }
+    },
+    type: 'object',
+    required: ['title', 'source', 'content'],
+    title: 'CitableBlock',
+    description: 'Supports providing citable content to LLMs that have built-in citation support.'
+} as const;
+
+export const llama_index__core__base__llms__types__CitationBlockSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'citation',
+            title: 'Block Type',
+            default: 'citation'
+        },
+        cited_content: {
+            oneOf: [
+                {
+                    '$ref': '#/components/schemas/llama_index__core__base__llms__types__TextBlock'
+                },
+                {
+                    '$ref': '#/components/schemas/llama_index__core__base__llms__types__ImageBlock'
+                }
+            ],
+            title: 'Cited Content',
+            discriminator: {
+                propertyName: 'block_type',
+                mapping: {
+                    image: '#/components/schemas/llama_index__core__base__llms__types__ImageBlock',
+                    text: '#/components/schemas/llama_index__core__base__llms__types__TextBlock'
+                }
+            }
+        },
+        source: {
+            type: 'string',
+            title: 'Source'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        additional_location_info: {
+            additionalProperties: {
+                type: 'integer'
+            },
+            type: 'object',
+            title: 'Additional Location Info'
+        }
+    },
+    type: 'object',
+    required: ['cited_content', 'source', 'title', 'additional_location_info'],
+    title: 'CitationBlock',
+    description: 'A representation of cited content from past messages.'
+} as const;
+
+export const llama_index__core__base__llms__types__DocumentBlockSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'document',
+            title: 'Block Type',
+            default: 'document'
+        },
+        data: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'binary'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Data'
+        },
+        path: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'file-path'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Path'
+        },
+        url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Url'
+        },
+        title: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Title'
+        },
+        document_mimetype: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Document Mimetype'
+        }
+    },
+    type: 'object',
+    title: 'DocumentBlock',
+    description: 'A representation of a document to directly pass to the LLM.'
+} as const;
+
+export const llama_index__core__base__llms__types__ImageBlockSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'image',
+            title: 'Block Type',
+            default: 'image'
+        },
+        image: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'binary'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Image'
+        },
+        path: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'file-path'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Path'
+        },
+        url: {
+            anyOf: [
+                {
+                    type: 'string',
+                    minLength: 1,
+                    format: 'uri'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Url'
+        },
+        image_mimetype: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Image Mimetype'
+        },
+        detail: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Detail'
+        }
+    },
+    type: 'object',
+    title: 'ImageBlock',
+    description: 'A representation of image data to directly pass to/from the LLM.'
+} as const;
+
+export const llama_index__core__base__llms__types__MessageRoleSchema = {
+    type: 'string',
+    enum: ['system', 'developer', 'user', 'assistant', 'function', 'tool', 'chatbot', 'model'],
+    title: 'MessageRole',
+    description: 'Message role.'
+} as const;
+
+export const llama_index__core__base__llms__types__TextBlockSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'text',
+            title: 'Block Type',
+            default: 'text'
+        },
+        text: {
+            type: 'string',
+            title: 'Text'
+        }
+    },
+    type: 'object',
+    required: ['text'],
+    title: 'TextBlock',
+    description: 'A representation of text data to directly pass to/from the LLM.'
+} as const;
+
+export const metadataSchema = {
+    properties: {},
+    type: 'object',
+    title: 'metadata'
+} as const;
+
 export const openai__types__audio__transcription_verbose__UsageSchema = {
     properties: {
         seconds: {
@@ -16082,4 +18136,28 @@ export const openai__types__images_response__UsageSchema = {
     type: 'object',
     required: ['input_tokens', 'input_tokens_details', 'output_tokens', 'total_tokens'],
     title: 'Usage'
+} as const;
+
+export const prompt_template_variablesSchema = {
+    properties: {},
+    type: 'object',
+    title: 'prompt_template_variables'
+} as const;
+
+export const tool_callsSchema = {
+    properties: {},
+    type: 'object',
+    title: 'tool_calls'
+} as const;
+
+export const toolsSchema = {
+    properties: {},
+    type: 'object',
+    title: 'tools'
+} as const;
+
+export const typeSchema = {
+    type: 'string',
+    enum: ['content', 'summary'],
+    title: 'type'
 } as const;
