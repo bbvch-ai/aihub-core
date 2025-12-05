@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.254.16] - 2025-12-05 - Enhanced Data Versioning for Active Partitions
+
+### Changed
+
+- 🔄 **Refined Dynamic Partition Versioning:** The data versioning operations for Data Lake, Local File System, and
+  SharePoint files now intelligently filter to generate versions only for **actively managed dynamic partitions**. This
+  improvement ensures that the system tracks versions exclusively for partitions recognized by Dagster, enhancing
+  efficiency and preventing the generation of version keys for stale or non-existent partitions.
+
+---
+
 ## [v0.254.15] - 2025-12-04 - Deeper OpenWebUI Integration, Smarter Document Processing, and Refined Model Management
 
 ### Added

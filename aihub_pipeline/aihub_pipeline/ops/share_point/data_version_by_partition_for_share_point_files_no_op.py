@@ -46,9 +46,15 @@ def data_version_by_partition_for_share_point_files_no_op(
     # Using both etag and modified timestamp provides robust change detection:
     # - etag changes on any file modification (content or metadata)
     # - modified timestamp provides additional temporal context
+
+    existing_partitions = set(context.instance.get_dynamic_partitions(partition.name))
+    files_with_partitions = [
+        share_point_file for share_point_file in share_point_files if share_point_file.id in existing_partitions
+    ]
+
     return DataVersionsByPartition(
         {
             share_point_file.id: f"{share_point_file.modified}-{share_point_file.etag}"
-            for share_point_file in share_point_files
+            for share_point_file in files_with_partitions
         }
     )
