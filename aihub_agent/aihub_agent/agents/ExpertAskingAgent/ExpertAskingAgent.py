@@ -101,7 +101,7 @@ class ExpertAskingAgent(Agent):
         context_str = None
         if nodes_data:
             nodes = [IngestedNode(**node) for node in nodes_data]
-            context_str = "\n\n".join([node.text for node in nodes if node.text])
+            context_str = "\n\n".join([node.content for node in nodes if node.content])
 
         expert_request = ExpertInTheLoop.invoke(
             user=question_event.user,
@@ -118,8 +118,8 @@ class ExpertAskingAgent(Agent):
             email=getattr(question_event.user, "email", None),
         )
         requesting_agent = RequestingAgent(
-            agent_class=thread_context.agent_class,
-            agent_id=thread_context.agent_id,
+            agent_class=agent_config.agent_class,
+            agent_id=agent_config.agent_id,
             thread_id=thread_context.thread_id,
             run_id=run_context.run_id,
         )

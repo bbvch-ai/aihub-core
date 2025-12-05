@@ -50,6 +50,7 @@ export const useExpertQuestions = (options: {
   const { currentPage, pageSize, filters } = options
   const config = useRuntimeConfig()
   const apiBase = config.public.apiUrl || '/api/v1'
+  const { getHeaders } = useAuth()
 
   const key = () => [
     'expert-questions',
@@ -72,9 +73,10 @@ export const useExpertQuestions = (options: {
       if (filters?.expertGroup?.value)
         params.set('expert_group', filters.expertGroup.value)
 
+      const headers = await getHeaders()
       const response = await $fetch<PaginatedExpertQuestionsResponse>(
         `${apiBase}/expert/questions?${params.toString()}`,
-        { credentials: 'include' },
+        { headers },
       )
       return response
     },
@@ -94,6 +96,7 @@ export const useExpertQuestions = (options: {
 export const usePendingExpertQuestionsCount = (expertGroup?: Ref<string | undefined>) => {
   const config = useRuntimeConfig()
   const apiBase = config.public.apiUrl || '/api/v1'
+  const { getHeaders } = useAuth()
 
   const key = () => ['expert-questions-count', { expertGroup: expertGroup?.value }]
 
@@ -104,9 +107,10 @@ export const usePendingExpertQuestionsCount = (expertGroup?: Ref<string | undefi
       if (expertGroup?.value)
         params.set('expert_group', expertGroup.value)
 
+      const headers = await getHeaders()
       const response = await $fetch<{ count: number }>(
         `${apiBase}/expert/questions/pending/count?${params.toString()}`,
-        { credentials: 'include' },
+        { headers },
       )
       return response
     },
@@ -125,6 +129,7 @@ export const useSubmitExpertAnswer = () => {
   const queryCache = useQueryCache()
   const config = useRuntimeConfig()
   const apiBase = config.public.apiUrl || '/api/v1'
+  const { getHeaders } = useAuth()
 
   const { mutate, mutateAsync, isPending } = useMutation({
     mutation: async (params: { questionId: string, response: string, expertGroup?: string }) => {
@@ -132,11 +137,12 @@ export const useSubmitExpertAnswer = () => {
       if (params.expertGroup)
         queryParams.set('expert_group', params.expertGroup)
 
+      const headers = await getHeaders()
       const response = await $fetch<ExpertQuestionDto>(
         `${apiBase}/expert/questions/${params.questionId}/answer?${queryParams.toString()}`,
         {
           method: 'POST',
-          credentials: 'include',
+          headers,
           body: { response: params.response },
         },
       )
