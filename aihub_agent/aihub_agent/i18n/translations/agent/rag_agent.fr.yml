@@ -57,5 +57,5 @@ messages:
   expert_error: "Une erreur s'est produite lors de la communication avec l'expert."
 
 options:
-  yes: "Oui"
-  no: "Non"
+  "yes": "Oui"
+  "no": "Non"

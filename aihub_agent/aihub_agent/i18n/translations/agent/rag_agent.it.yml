@@ -57,5 +57,5 @@ messages:
   expert_error: "Si è verificato un errore durante la comunicazione con l'esperto."
 
 options:
-  yes: "Sì"
-  no: "No"
+  "yes": "Sì"
+  "no": "No"

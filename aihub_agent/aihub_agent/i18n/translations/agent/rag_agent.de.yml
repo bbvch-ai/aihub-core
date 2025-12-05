@@ -57,5 +57,5 @@ messages:
   expert_error: "Bei der Kommunikation mit dem Experten ist ein Fehler aufgetreten."
 
 options:
-  yes: "Ja"
-  no: "Nein"
+  "yes": "Ja"
+  "no": "Nein"
