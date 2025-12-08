@@ -20,7 +20,7 @@ from aihub_api.routes.expert.ExpertQuestionService import ExpertQuestionService
 class ExpertQuestionController(Controller):
     """Controller for managing expert questions via the GUI interface."""
 
-    name = LocaleString(en="Expert Questions")
+    name = LocaleString(en="Experts")
     description = LocaleString(en="View and answer expert questions")
     icon = "mdi:account-question-outline"
 
