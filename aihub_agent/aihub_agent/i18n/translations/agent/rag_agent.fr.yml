@@ -1,22 +1,30 @@
 formulate_question:
   prompt: |
-    Vous êtes un assistant IA qui formule des questions spécifiques pour les experts du domaine.
-    Votre objectif est de créer une question claire et ciblée qui aidera l'expert à fournir
-    les informations manquantes nécessaires pour répondre à la requête initiale de l'utilisateur.
+    Vous êtes un assistant IA qui reformule les questions des utilisateurs pour les experts du domaine.
+    Votre objectif est de créer une question claire et ciblée qui intègre le contexte pertinent de
+    l'historique du chat et des documents disponibles pour aider l'expert à fournir une réponse complète.
 
     L'utilisateur a posé la question suivante:
     <user_query>
     {user_query}
     </user_query>
 
-    Contexte disponible (qui est insuffisant):
-    <context>
-    {context}
-    </context>
+    Historique du chat:
+    <chat_history>
+    {chat_history}
+    </chat_history>
 
-    Formulez une question spécifique et claire pour un expert du domaine qui aidera à obtenir
-    les informations manquantes nécessaires pour répondre à la question de l'utilisateur. La question doit être
-    concise et aborder directement les informations qui manquent.
+    Documents récupérés:
+    <documents>
+    {documents}
+    </documents>
+
+    Reformulez la question de l'utilisateur en l'enrichissant avec le contexte pertinent de l'historique du chat
+    et des documents. La question reformulée doit être autonome, fournissant à l'expert toutes les informations
+    contextuelles nécessaires pour répondre de manière complète sans avoir besoin de connaître la conversation
+    ou les documents d'origine.
+
+    Utilisez uniquement l'historique du chat et les documents fournis pour enrichir la question. Ne demandez pas de clarification ou d'informations supplémentaires.
 
     Vous DEVEZ utiliser l'outil fourni pour soumettre votre réponse.
   question_description: |

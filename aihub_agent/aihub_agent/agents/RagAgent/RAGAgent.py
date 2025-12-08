@@ -434,13 +434,23 @@ class RAGAgent(Agent):
         nodes_data = await run_context.get("retrieved_nodes", [])
         nodes = [IngestedNode(**node) for node in nodes_data]
 
-        # Build context from nodes (limit to half for question formulation)
-        context_text = ""
+        # Build chat history (excluding system messages and the last user message)
+        chat_messages = [msg for msg in event.messages[:-1] if msg.role != MessageRole.SYSTEM]
+        chat_history_parts = []
+        if chat_messages:
+            for msg in chat_messages[-5:]:  # Limit to last 5 messages to avoid token overflow
+                role_label = "User" if msg.role == MessageRole.USER else "Assistant"
+                chat_history_parts.append(f"- {role_label}: {msg.content}")
+        chat_history_text = "\n".join(chat_history_parts) if chat_history_parts else "No previous conversation."
+
+        # Build document snippets
         expert_config = agent_config.expert_workflow_config
+        document_parts = []
         if nodes and expert_config:
             max_nodes = max(1, expert_config.max_context_nodes_for_expert // 2)
-            context_parts = [f"- {node.content}" for node in nodes[:max_nodes]]
-            context_text = "\n".join(context_parts)
+            for node in nodes[:max_nodes]:
+                document_parts.append(f"- {node.content}")
+        documents_text = "\n".join(document_parts) if document_parts else "No documents retrieved."
 
         # Use structured predict to ensure the LLM returns a properly formatted question
         prompt = PromptTemplate(t("agent.rag_agent.formulate_question.prompt"))
@@ -454,7 +464,8 @@ class RAGAgent(Agent):
                 prompt,
                 llm_kwargs=llm_kwargs,
                 user_query=user_query,
-                context=context_text,
+                chat_history=chat_history_text,
+                documents=documents_text,
             )
             formulated_question = FormulatedQuestionResult.model_validate(result).question
 

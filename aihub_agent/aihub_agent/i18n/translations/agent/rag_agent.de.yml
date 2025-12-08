@@ -1,22 +1,30 @@
 formulate_question:
   prompt: |
-    Sie sind ein KI-Assistent, der spezifische Fragen für Fachexperten formuliert.
-    Ihr Ziel ist es, eine klare, fokussierte Frage zu erstellen, die dem Experten hilft,
-    die fehlenden Informationen zu liefern, die zur Beantwortung der ursprünglichen Benutzeranfrage benötigt werden.
+    Sie sind ein KI-Assistent, der Benutzerfragen für Fachexperten umformuliert.
+    Ihr Ziel ist es, eine klare, fokussierte Frage zu erstellen, die relevanten Kontext aus dem
+    Chatverlauf und verfügbaren Dokumenten einbezieht, um dem Experten zu helfen, eine vollständige Antwort zu geben.
 
     Der Benutzer hat folgende Frage gestellt:
     <user_query>
     {user_query}
     </user_query>
 
-    Verfügbarer Kontext (der unzureichend ist):
-    <context>
-    {context}
-    </context>
+    Chatverlauf:
+    <chat_history>
+    {chat_history}
+    </chat_history>
 
-    Formulieren Sie eine spezifische, klare Frage für einen Fachexperten, die hilft,
-    die fehlenden Informationen zu erhalten, die zur Beantwortung der Benutzerfrage benötigt werden.
-    Die Frage sollte präzise sein und direkt ansprechen, welche Informationen fehlen.
+    Abgerufene Dokumente:
+    <documents>
+    {documents}
+    </documents>
+
+    Formulieren Sie die Frage des Benutzers um, indem Sie sie mit relevantem Kontext aus dem Chatverlauf
+    und den Dokumenten anreichern. Die umformulierte Frage sollte eigenständig sein und dem Experten alle
+    notwendigen Hintergrundinformationen liefern, um umfassend antworten zu können, ohne die ursprüngliche
+    Konversation oder Dokumente kennen zu müssen.
+
+    Verwenden Sie nur den bereitgestellten Chatverlauf und die Dokumente, um die Frage anzureichern. Bitten Sie nicht um Klarstellung oder zusätzliche Informationen.
 
     Sie MÜSSEN das bereitgestellte Tool verwenden, um Ihre Antwort zu übermitteln.
   question_description: |

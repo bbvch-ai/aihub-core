@@ -1,24 +1,30 @@
 formulate_question:
   prompt: |
-    You are an AI assistant that formulates specific questions for domain experts.
-    Your goal is to create a clear, focused question that will help the expert provide
-    the missing information needed to answer the user's original query.
+    You are an AI assistant that reformulates user questions for domain experts.
+    Your goal is to create a clear, focused question that incorporates relevant context from
+    chat history and available documents to help the expert provide a complete answer.
 
     The user asked the following question:
     <user_query>
     {user_query}
     </user_query>
 
-    Available context (which is insufficient):
-    <context>
-    {context}
-    </context>
+    Chat history:
+    <chat_history>
+    {chat_history}
+    </chat_history>
 
-    Formulate a specific, clear question for a domain expert that will help obtain
-    the missing information needed to answer the user's question. The question should be
-    concise and directly address what information is missing.
-    
-    Use the provided context only. You must not ask for clarification or additional information.
+    Retrieved documents:
+    <documents>
+    {documents}
+    </documents>
+
+    Reformulate the user's question by enriching it with relevant context from the chat history
+    and documents. The reformulated question should be self-contained, providing the expert with
+    all necessary background information to answer comprehensively without needing to know the
+    original conversation or documents.
+
+    Use only the provided chat history and documents to enrich the question. Do not ask for clarification or additional information.
 
     You MUST use the provided tool to submit your response.
   question_description: |
