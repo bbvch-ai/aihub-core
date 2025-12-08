@@ -141,4 +141,20 @@ export default defineNuxtConfig({
     },
   },
 
+  vite: {
+    optimizeDeps: {
+      // Disable discovery of new dependencies during dev to prevent page reloads
+      noDiscovery: true,
+      // Pre-bundle common dependencies
+      include: [
+        'vue',
+        'vue-router',
+        'pinia',
+        'primevue',
+        '@vueuse/core',
+        'vue-i18n',
+      ],
+    },
+  },
+
 })
