@@ -626,9 +626,8 @@ expert:
       error_message: "Failed to update the expert group. Please try again."
     add_member_dialog:
       title: "Add Member to Group"
-      user_id: "User ID"
-      user_id_placeholder: "Enter user ID"
-      user_id_hint: "Enter the exact user ID to add as a member"
+      user: "User"
+      select_user: "Select a user"
       add: "Add Member"
       success_title: "Member Added"
       success_message: "The member has been added successfully."

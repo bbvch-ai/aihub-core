@@ -9,20 +9,37 @@
     <div class="flex flex-col gap-4">
       <div>
         <label
-          for="user-id"
+          for="user-select"
           class="mb-2 block font-semibold"
         >
-          {{ t('expert.groups.add_member_dialog.user_id') }} <span class="text-red-500">*</span>
+          {{ t('expert.groups.add_member_dialog.user') }} <span class="text-red-500">*</span>
         </label>
-        <InputText
-          id="user-id"
-          v-model="userId"
+        <Select
+          id="user-select"
+          v-model="selectedUserId"
+          :options="availableUsers"
+          option-value="id"
+          filter
+          :placeholder="t('expert.groups.add_member_dialog.select_user')"
+          :loading="usersAreLoading"
           class="w-full"
-          :placeholder="t('expert.groups.add_member_dialog.user_id_placeholder')"
-        />
-        <small class="mt-1 block opacity-70">
-          {{ t('expert.groups.add_member_dialog.user_id_hint') }}
-        </small>
+        >
+          <template #value="{ value }">
+            <div
+              v-if="value"
+              class="flex items-center gap-2"
+            >
+              <span>{{ getUserDisplayName(value) }}</span>
+            </div>
+            <span v-else>{{ t('expert.groups.add_member_dialog.select_user') }}</span>
+          </template>
+          <template #option="{ option }">
+            <div class="flex flex-col">
+              <span class="font-medium">{{ option.name }}</span>
+              <span class="text-sm opacity-70">{{ option.email }}</span>
+            </div>
+          </template>
+        </Select>
       </div>
     </div>
 
@@ -35,7 +52,7 @@
       <Button
         :label="t('expert.groups.add_member_dialog.add')"
         :loading="isPending"
-        :disabled="!userId.trim()"
+        :disabled="!selectedUserId"
         @click="handleAddMember"
       />
     </template>
@@ -44,12 +61,14 @@
 
 <script setup lang="ts">
 import { useAddGroupMember } from '@core/composables/expert/useExpertGroups'
+import useUsers from '@core/composables/user/useUsers'
 import { useToast } from 'primevue/usetoast'
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
   groupId: string
+  existingMemberIds: string[]
 }>()
 
 const visible = defineModel<boolean>('visible', { default: false })
@@ -61,24 +80,34 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const toast = useToast()
 
-const userId = ref('')
+const selectedUserId = ref<string | null>(null)
 
+const { users, usersAreLoading } = useUsers()
 const { addMemberAsync, isPending } = useAddGroupMember()
+
+const availableUsers = computed(() => {
+  return users.value.filter(user => !props.existingMemberIds.includes(user.id))
+})
+
+const getUserDisplayName = (userId: string) => {
+  const user = users.value.find(u => u.id === userId)
+  return user ? `${user.name} (${user.email})` : userId
+}
 
 watch(visible, (newValue) => {
   if (!newValue) {
-    userId.value = ''
+    selectedUserId.value = null
   }
 })
 
 const handleAddMember = async () => {
-  if (!userId.value.trim())
+  if (!selectedUserId.value)
     return
 
   try {
     await addMemberAsync({
       groupId: props.groupId,
-      userId: userId.value.trim(),
+      userId: selectedUserId.value,
     })
 
     toast.add({

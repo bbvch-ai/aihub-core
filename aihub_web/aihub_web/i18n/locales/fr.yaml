@@ -603,9 +603,8 @@ expert:
       error_message: "Échec de la mise à jour du groupe d'experts. Veuillez réessayer."
     add_member_dialog:
       title: "Ajouter un membre au groupe"
-      user_id: "ID utilisateur"
-      user_id_placeholder: "Entrez l'ID utilisateur"
-      user_id_hint: "Entrez l'ID utilisateur exact pour l'ajouter en tant que membre"
+      user: "Utilisateur"
+      select_user: "Sélectionner un utilisateur"
       add: "Ajouter un membre"
       success_title: "Membre ajouté"
       success_message: "Le membre a été ajouté avec succès."

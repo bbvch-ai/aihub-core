@@ -77,6 +77,7 @@
     <ExpertGroupAddMemberDialog
       v-model:visible="addMemberDialogVisible"
       :group-id="group?.id || ''"
+      :existing-member-ids="group?.member_user_ids || []"
       @member-added="handleMemberAdded"
     />
   </StructuralScreen>

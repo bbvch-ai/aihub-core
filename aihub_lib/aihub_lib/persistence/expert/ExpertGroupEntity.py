@@ -50,6 +50,15 @@ class ExpertGroupEntity(Document):
         """Lists all expert groups."""
         return list(cls.objects())
 
+    @classmethod
+    @trace_fn
+    def add_member_to_default_group(cls, user_id: str) -> None:
+        """Add user to default expert group if not already a member."""
+        group = cls.objects(name=cls.DEFAULT_GROUP_NAME).first()
+        if group and user_id not in group.member_user_ids:
+            group.member_user_ids.append(user_id)
+            group.save()
+
     def save(self, *args, **kwargs):
         """Override save to update the updated_at timestamp."""
         self.updated_at = datetime.now(UTC)

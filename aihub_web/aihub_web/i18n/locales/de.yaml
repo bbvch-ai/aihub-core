@@ -604,9 +604,8 @@ expert:
       error_message: "Die Expertengruppe konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut."
     add_member_dialog:
       title: "Mitglied zur Gruppe hinzufügen"
-      user_id: "Benutzer-ID"
-      user_id_placeholder: "Benutzer-ID eingeben"
-      user_id_hint: "Geben Sie die genaue Benutzer-ID ein, um sie als Mitglied hinzuzufügen"
+      user: "Benutzer"
+      select_user: "Benutzer auswählen"
       add: "Mitglied hinzufügen"
       success_title: "Mitglied hinzugefügt"
       success_message: "Das Mitglied wurde erfolgreich hinzugefügt."

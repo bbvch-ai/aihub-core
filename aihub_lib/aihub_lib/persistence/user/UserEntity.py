@@ -14,6 +14,7 @@ from mongoengine import (
 )
 
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+from aihub_lib.persistence.expert.ExpertGroupEntity import ExpertGroupEntity
 
 
 class DashboardItem(EmbeddedDocument):
@@ -132,9 +133,11 @@ class UserEntity(Document):
 
             user.last_updated = datetime.now(UTC)
             user.save()
-            return user
         except DoesNotExist:
-            return cls.create_user(oid=oid, name=name, email=email, roles=roles, profile_image=profile_image)
+            user = cls.create_user(oid=oid, name=name, email=email, roles=roles, profile_image=profile_image)
+
+        ExpertGroupEntity.add_member_to_default_group(oid)
+        return user
 
     @classmethod
     @trace_fn
