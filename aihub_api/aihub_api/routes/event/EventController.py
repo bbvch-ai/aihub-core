@@ -32,7 +32,12 @@ class EventController(Controller):
     """
 
     name = LocaleString(en="Activity Log", de="Aktivitätsprotokoll", fr="Journal d'activité", it="Registro attività")
-    description = LocaleString(en="View system activity and events", de="Systemaktivitäten und Ereignisse anzeigen", fr="Consultez l'activité système et les événements", it="Visualizza attività di sistema ed eventi")
+    description = LocaleString(
+        en="View system activity and events",
+        de="Systemaktivitäten und Ereignisse anzeigen",
+        fr="Consultez l'activité système et les événements",
+        it="Visualizza attività di sistema ed eventi",
+    )
     icon = "mdi:apache-kafka"
 
     def __init__(

@@ -1,11 +1,12 @@
 ---
 title: Ihre erste Pipeline
-source_sha: "9a11be49cd81ff051969e541e5e13a67ea7d757acc5cc5dee257d59c3da16d7d"
+source_sha: 9a11be49cd81ff051969e541e5e13a67ea7d757acc5cc5dee257d59c3da16d7d
 ---
 
 # Ihre erste Pipeline
 
-Erstellen Sie Ihre erste Datenverarbeitungspipeline mithilfe des AI-Hub Pipeline (`aihub_pipeline`) SDK – eine vollständige Datentransformationspipeline mit mehreren verbundenen Assets.
+Erstellen Sie Ihre erste Datenverarbeitungspipeline mithilfe des AI-Hub Pipeline (`aihub_pipeline`) SDK – eine
+vollständige Datentransformationspipeline mit mehreren verbundenen Assets.
 
 ## Was Sie lernen werden
 
@@ -19,11 +20,13 @@ Dieser Quickstart behandelt die wesentlichen Bausteine:
 
 ## Voraussetzungen
 
-Sie benötigen eine laufende AI-Hub Entwicklungsumgebung. Bevor Sie beginnen, stellen Sie sicher, dass Sie die Schritte zur [Einrichtung der Entwicklungsumgebung](../1_dev_environment_setup/) abgeschlossen haben.
+Sie benötigen eine laufende AI-Hub Entwicklungsumgebung. Bevor Sie beginnen, stellen Sie sicher, dass Sie die Schritte
+zur [Einrichtung der Entwicklungsumgebung](../1_dev_environment_setup/) abgeschlossen haben.
 
 ## Wie Pipelines funktionieren
 
-AI-Hub Pipelines sind **Datenverarbeitungsworkflows**, die auf Dagster basieren und aus drei wesentlichen Teilen bestehen:
+AI-Hub Pipelines sind **Datenverarbeitungsworkflows**, die auf Dagster basieren und aus drei wesentlichen Teilen
+bestehen:
 
 - **Assets**: Funktionen, die Daten erstellen, transformieren oder konsumieren
 - **Abhängigkeiten**: Automatischer Datenfluss zwischen Assets basierend auf Funktionsparametern
@@ -105,7 +108,8 @@ Klicken Sie auf **„Materialize all“**, um die Pipeline auszuführen und den 
 
 ## Erstellen Sie eine echte AI-Hub Pipeline
 
-Lassen Sie uns nun eine realistische Pipeline mit dem `aihub_pipeline` SDK erstellen, die Dokumentenverarbeitungsmuster demonstriert. Wir werden dies Schritt für Schritt aufschlüsseln, um jede Komponente zu verstehen.
+Lassen Sie uns nun eine realistische Pipeline mit dem `aihub_pipeline` SDK erstellen, die Dokumentenverarbeitungsmuster
+demonstriert. Wir werden dies Schritt für Schritt aufschlüsseln, um jede Komponente zu verstehen.
 
 ### 1. Die AI-Hub Pipeline-Struktur verstehen
 
@@ -396,8 +400,9 @@ Ihre Pipeline unterstützt nun:
 - **Milvus (Attu)**: Überwachung der Vektordatenbank
 
 ::: tip SeaweedFS Filer
-In Produktion ist die SeaweedFS Filer Web-UI unter `datalake.${DOMAIN}` zugänglich (OAuth2 geschützt, erfordert die Rolle AIHubDeveloper).
-Im Entwicklungsmodus ist sie unter `http://localhost:8889` zum Durchsuchen hochgeladener Dateien und zum Debuggen des Speichers verfügbar.
+In Produktion ist die SeaweedFS Filer Web-UI unter `datalake.${DOMAIN}` zugänglich (OAuth2 geschützt, erfordert die
+Rolle AIHubDeveloper). Im Entwicklungsmodus ist sie unter `http://localhost:8889` zum Durchsuchen hochgeladener Dateien
+und zum Debuggen des Speichers verfügbar.
 :::
 
 ### 10. AI-Hub Pipeline-Muster verstehen

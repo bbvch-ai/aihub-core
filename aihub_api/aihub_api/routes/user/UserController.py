@@ -29,7 +29,12 @@ class UserController(Controller):
     """
 
     name = LocaleString(en="My Account", de="Mein Konto", fr="Mon compte", it="Il mio account")
-    description = LocaleString(en="Manage your account settings", de="Kontoeinstellungen verwalten", fr="Gérez les paramètres de votre compte", it="Gestisci le impostazioni del tuo account")
+    description = LocaleString(
+        en="Manage your account settings",
+        de="Kontoeinstellungen verwalten",
+        fr="Gérez les paramètres de votre compte",
+        it="Gestisci le impostazioni del tuo account",
+    )
     icon = "mdi:user"
 
     def __init__(

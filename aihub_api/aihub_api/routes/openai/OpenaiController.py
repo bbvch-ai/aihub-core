@@ -57,7 +57,12 @@ class OpenaiController(Controller):
     """
 
     name = LocaleString(en="Chat", de="Chat", fr="Chat", it="Chat")
-    description = LocaleString(en="Have conversations with AI assistants", de="Gespräche mit KI-Assistenten führen", fr="Conversez avec les assistants IA", it="Conversa con gli assistenti IA")
+    description = LocaleString(
+        en="Have conversations with AI assistants",
+        de="Gespräche mit KI-Assistenten führen",
+        fr="Conversez avec les assistants IA",
+        it="Conversa con gli assistenti IA",
+    )
     icon = "simple-icons:openai"
 
     def __init__(

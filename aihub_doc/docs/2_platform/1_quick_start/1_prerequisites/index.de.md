@@ -1,6 +1,6 @@
 ---
 title: Voraussetzungen
-source_sha: "0b188ec77305fd1ddfa05ae547e646ac52da75ab3bac73d8d37169977222fd31"
+source_sha: 0b188ec77305fd1ddfa05ae547e646ac52da75ab3bac73d8d37169977222fd31
 ---
 
 # Voraussetzungen
@@ -10,7 +10,8 @@ Dieser Leitfaden behandelt die Voraussetzungen für das Deployment der AI-Hub Pl
 ::: tip Wählen Sie Ihren Deployment-Typ
 Die Voraussetzungen unterscheiden sich je nach Deployment-Typ:
 
-- **Produktions-Deployment**: Deployment auf einen Server mit einem echten Domainnamen und automatischen SSL-Zertifikaten
+- **Produktions-Deployment**: Deployment auf einen Server mit einem echten Domainnamen und automatischen
+  SSL-Zertifikaten
 - **Lokales Deployment**: Ausführung auf Ihrer lokalen Maschine mit `127.0.0.1.nip.io` und selbstsignierten Zertifikaten
 
 Befolgen Sie nur die Abschnitte, die für Ihren Deployment-Typ relevant sind.
@@ -38,7 +39,8 @@ Diese Anforderungen gelten sowohl für Produktions- als auch für lokale Deploym
 
 ::: warning
 Die Plattform betreibt mehrere Services gleichzeitig (Datenbanken, Vektorspeicher, LLM-Proxys, Weboberflächen,
-Verarbeitungs-Engines). Systeme unterhalb der Mindestanforderungen werden Servicefehler oder eine verminderte Leistung aufweisen.
+Verarbeitungs-Engines). Systeme unterhalb der Mindestanforderungen werden Servicefehler oder eine verminderte Leistung
+aufweisen.
 :::
 
 ### Softwareanforderungen
@@ -73,9 +75,9 @@ Alle Befehle müssen erfolgreich abgeschlossen werden.
 
 ### Einrichtung des Authentifizierungsanbieters
 
-Die Plattform benötigt einen OAuth2/OpenID Connect Identity Provider für sowohl Produktions- als auch lokale Deployments.
-Dieser Leitfaden dokumentiert die Einrichtung von Azure Entra ID. Andere Provider (Google, Okta, Auth0) können
-nach ähnlichen Mustern konfiguriert werden.
+Die Plattform benötigt einen OAuth2/OpenID Connect Identity Provider für sowohl Produktions- als auch lokale
+Deployments. Dieser Leitfaden dokumentiert die Einrichtung von Azure Entra ID. Andere Provider (Google, Okta, Auth0)
+können nach ähnlichen Mustern konfiguriert werden.
 
 #### Azure Entra ID Einrichtung
 
@@ -179,12 +181,15 @@ Erstellen Sie drei App-Rollen nach diesem Prozess:
 - **Beschreibung**: `Entwicklerzugriff auf AI-Hub Plattform-Services (Dagster, SeaweedFS Data Lake Konsole)`
 
 ::: tip
-Die Rolle `AIHubDeveloper` ist erforderlich, um auf das Dagster Pipeline Orchestrierungs-Dashboard und die SeaweedFS Data Lake Konsole unter `datalake.${DOMAIN}` zuzugreifen. Benutzer ohne diese Rolle können die Haupt-AI-Hub-Oberfläche und OpenWebUI weiterhin nutzen.
+Die Rolle `AIHubDeveloper` ist erforderlich, um auf das Dagster Pipeline Orchestrierungs-Dashboard und die SeaweedFS
+Data Lake Konsole unter `datalake.${DOMAIN}` zuzugreifen. Benutzer ohne diese Rolle können die Haupt-AI-Hub-Oberfläche
+und OpenWebUI weiterhin nutzen.
 :::
 
 **Schritt 6: SPA-Umleitungs-URIs konfigurieren**
 
-Single-Page Application (SPA) Umleitungs-URIs sind für die Hauptweboberfläche mit mehrsprachiger Unterstützung erforderlich.
+Single-Page Application (SPA) Umleitungs-URIs sind für die Hauptweboberfläche mit mehrsprachiger Unterstützung
+erforderlich.
 
 1. Navigieren Sie zu **"Authentifizierung"** → **"Plattform hinzufügen"** → **"Single-Page-Anwendung"**
 
@@ -252,12 +257,14 @@ Webanwendungs-Umleitungs-URIs sind für integrierte Services (OpenWebUI, Dagster
 ::: warning Unterscheidung nach Plattformtyp
 Die Konfiguration des Plattformtyps (SPA vs. Web) ist entscheidend für die Auswahl des OAuth2-Flows:
 
-- **SPA-Plattform**: Sprachspezifische Callbacks (`/de/`, `/en/`, `/fr/`, `/it/`) verwenden den PKCE-Flow ohne Client-Geheimnis
-- **Web-Plattform**: Service-Callbacks (`openwebui`, `dagster`, `datalake`, `attu`) verwenden den Authorization Code Flow mit Client-Geheimnis
+- **SPA-Plattform**: Sprachspezifische Callbacks (`/de/`, `/en/`, `/fr/`, `/it/`) verwenden den PKCE-Flow ohne
+  Client-Geheimnis
+- **Web-Plattform**: Service-Callbacks (`openwebui`, `dagster`, `datalake`, `attu`) verwenden den Authorization Code
+  Flow mit Client-Geheimnis
 
 Fehlkonfigurierte Plattformtypen führen zu Authentifizierungsfehlern:
-`AADSTS9002326: Cross-origin token redemption is permitted only for the 'Single-Page Application' client-type`. Stellen Sie
-sicher, dass Umleitungs-URIs unter dem korrekten Plattformtyp registriert sind.
+`AADSTS9002326: Cross-origin token redemption is permitted only for the 'Single-Page Application' client-type`. Stellen
+Sie sicher, dass Umleitungs-URIs unter dem korrekten Plattformtyp registriert sind.
 :::
 
 **Erforderliche Authentifizierungsinformationen**
@@ -275,13 +282,14 @@ Sie benötigen diese Werte während der Konfiguration des Plattform-Deployments.
 ## Voraussetzungen für Produktions-Deployments
 
 ::: danger Nur für Produktions-Deployments
-**Überspringen Sie diesen gesamten Abschnitt, wenn Sie lokal testen.** Diese Schritte sind nur erforderlich, wenn Sie auf
-einem Server mit einem echten Domainnamen deployen.
+**Überspringen Sie diesen gesamten Abschnitt, wenn Sie lokal testen.** Diese Schritte sind nur erforderlich, wenn Sie
+auf einem Server mit einem echten Domainnamen deployen.
 :::
 
 ### DNS-Konfiguration
 
-Konfigurieren Sie DNS-Einträge für Ihre Domain. Die Plattform benötigt **sieben Subdomains**, die auf die öffentliche IP-Adresse Ihres Servers zeigen:
+Konfigurieren Sie DNS-Einträge für Ihre Domain. Die Plattform benötigt **sieben Subdomains**, die auf die öffentliche
+IP-Adresse Ihres Servers zeigen:
 
 - `aihub.example.com` - Haupt-Weboberfläche
 - `openwebui.aihub.example.com` - Chat-UI
@@ -291,14 +299,16 @@ Konfigurieren Sie DNS-Einträge für Ihre Domain. Die Plattform benötigt **sieb
 - `attu.aihub.example.com` - Milvus-Vektordatenbank-UI
 - `traefik.aihub.example.com` - Reverse Proxy Dashboard
 
-Ersetzen Sie `aihub.example.com` durch Ihre tatsächliche Domain. Erstellen Sie A-Records oder CNAMEs für alle sieben Subdomains, die auf die IP-Adresse Ihres Servers zeigen.
+Ersetzen Sie `aihub.example.com` durch Ihre tatsächliche Domain. Erstellen Sie A-Records oder CNAMEs für alle sieben
+Subdomains, die auf die IP-Adresse Ihres Servers zeigen.
 
 ::: warning DNS-Anforderungen für SSL
 - DNS-Einträge müssen global zugänglich sein, damit Let's Encrypt SSL-Zertifikate bereitgestellt werden können.
 - Die VM muss ihre eigenen Domainnamen auflösen können (interne DNS-Auflösung).
 - Konfigurieren Sie die Nameserver korrekt, um OAuth-Authentifizierungs-Timeouts zu vermeiden.
 
-Siehe [Netzwerkanforderungen](../../3_deployment_guide/7_network_requirements/) für detaillierte DNS-Konfiguration und Fehlerbehebung.
+Siehe [Netzwerkanforderungen](../../3_deployment_guide/7_network_requirements/) für detaillierte DNS-Konfiguration und
+Fehlerbehebung.
 :::
 
 ---
@@ -306,14 +316,14 @@ Siehe [Netzwerkanforderungen](../../3_deployment_guide/7_network_requirements/) 
 ## Voraussetzungen für lokale Deployments
 
 ::: danger Nur für lokales Deployment
-**Überspringen Sie diesen gesamten Abschnitt, wenn Sie in Produktion deployen.** Diese Schritte sind nur erforderlich, wenn Sie die
-Plattform auf Ihrer lokalen Maschine deployen.
+**Überspringen Sie diesen gesamten Abschnitt, wenn Sie in Produktion deployen.** Diese Schritte sind nur erforderlich,
+wenn Sie die Plattform auf Ihrer lokalen Maschine deployen.
 :::
 
 ### mkcert installieren
 
-Für das lokale Deployment mit HTTPS-Unterstützung müssen Sie **mkcert** installieren, um selbstsignierte SSL-Zertifikate zu
-generieren, die von Ihrem Browser als vertrauenswürdig eingestuft werden.
+Für das lokale Deployment mit HTTPS-Unterstützung müssen Sie **mkcert** installieren, um selbstsignierte SSL-Zertifikate
+zu generieren, die von Ihrem Browser als vertrauenswürdig eingestuft werden.
 
 ::: warning
 Verwenden Sie selbstsignierte SSL-Zertifikate nur für die lokale Entwicklung. Verwenden Sie sie niemals in Produktions-
@@ -362,5 +372,5 @@ generierten Zertifikate von Ihrem Browser als vertrauenswürdig eingestuft werde
 
 ## Nächste Schritte
 
-Fahren Sie mit dem [One-Command Deployment](../2_one_command_deployment/) fort, um die Plattform mithilfe der
-erfassten Konfigurationswerte zu deployen.
+Fahren Sie mit dem [One-Command Deployment](../2_one_command_deployment/) fort, um die Plattform mithilfe der erfassten
+Konfigurationswerte zu deployen.

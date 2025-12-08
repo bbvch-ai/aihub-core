@@ -58,7 +58,8 @@ data volume.
 
 NATS stores event streams and message persistence for the event-driven architecture. Back up the data volume.
 
-etcd stores Milvus coordination metadata, SeaweedFS Filer metadata, and service discovery information. Use snapshot-based backup.
+etcd stores Milvus coordination metadata, SeaweedFS Filer metadata, and service discovery information. Use
+snapshot-based backup.
 
 Configuration includes environment variables, SSL certificates, and Docker compose files. Encrypt backups. Store
 encryption keys separately (HSM, key management services, multiple secure locations).

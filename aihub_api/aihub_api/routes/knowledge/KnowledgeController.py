@@ -35,7 +35,12 @@ from aihub_api.routes.knowledge.KnowledgeService import KnowledgeService
 
 class KnowledgeController(Controller):
     name = LocaleString(en="Knowledge Base", de="Wissensdatenbank", fr="Base de connaissances", it="Base di conoscenza")
-    description = LocaleString(en="Manage your knowledge base and documents", de="Verwalten Sie Ihre Wissensdatenbank und Dokumente", fr="Gérez votre base de connaissances et documents", it="Gestisci la tua base di conoscenza e documenti")
+    description = LocaleString(
+        en="Manage your knowledge base and documents",
+        de="Verwalten Sie Ihre Wissensdatenbank und Dokumente",
+        fr="Gérez votre base de connaissances et documents",
+        it="Gestisci la tua base di conoscenza e documenti",
+    )
     icon = "famicons:library-outline"
 
     def __init__(

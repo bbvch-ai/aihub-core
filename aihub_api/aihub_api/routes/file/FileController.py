@@ -20,7 +20,12 @@ class FileController(Controller):
     """
 
     name = LocaleString(en="File Access", de="Dateizugriff", fr="Accès aux fichiers", it="Accesso ai file")
-    description = LocaleString(en="Access and share your files", de="Auf Dateien zugreifen und diese teilen", fr="Accédez et partagez vos fichiers", it="Accedi e condividi i tuoi file")
+    description = LocaleString(
+        en="Access and share your files",
+        de="Auf Dateien zugreifen und diese teilen",
+        fr="Accédez et partagez vos fichiers",
+        it="Accedi e condividi i tuoi file",
+    )
     icon = "line-md:file"
 
     def __init__(

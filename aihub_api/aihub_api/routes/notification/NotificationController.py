@@ -24,7 +24,12 @@ class NotificationController(Controller):
     """Controller for managing user notifications."""
 
     name = LocaleString(en="Notifications", de="Benachrichtigungen", fr="Notifications", it="Notifiche")
-    description = LocaleString(en="View and manage your notifications", de="Benachrichtigungen anzeigen und verwalten", fr="Consultez et gérez vos notifications", it="Visualizza e gestisci le tue notifiche")
+    description = LocaleString(
+        en="View and manage your notifications",
+        de="Benachrichtigungen anzeigen und verwalten",
+        fr="Consultez et gérez vos notifications",
+        it="Visualizza e gestisci le tue notifiche",
+    )
     icon = "mdi:bell-outline"
 
     def __init__(self, *, auth: AuthHandler, route: str = "/notifications", **kwargs):

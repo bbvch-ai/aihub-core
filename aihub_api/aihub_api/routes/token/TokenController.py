@@ -15,7 +15,12 @@ from aihub_api.routes.token.TokenService import TokenService
 
 class TokenController(Controller):
     name = LocaleString(en="API Keys", de="API-Schlüssel", fr="Clés API", it="Chiavi API")
-    description = LocaleString(en="Create and manage API access keys", de="API-Zugriffsschlüssel erstellen und verwalten", fr="Créez et gérez les clés d'accès API", it="Crea e gestisci chiavi di accesso API")
+    description = LocaleString(
+        en="Create and manage API access keys",
+        de="API-Zugriffsschlüssel erstellen und verwalten",
+        fr="Créez et gérez les clés d'accès API",
+        it="Crea e gestisci chiavi di accesso API",
+    )
     icon = "solar:password-bold"
 
     def __init__(

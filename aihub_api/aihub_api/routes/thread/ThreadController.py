@@ -37,7 +37,12 @@ class ThreadController(Controller):
     """
 
     name = LocaleString(en="Conversations", de="Unterhaltungen", fr="Conversations", it="Conversazioni")
-    description = LocaleString(en="Manage your conversation history", de="Gesprächsverlauf verwalten", fr="Gérez votre historique de conversations", it="Gestisci la cronologia delle conversazioni")
+    description = LocaleString(
+        en="Manage your conversation history",
+        de="Gesprächsverlauf verwalten",
+        fr="Gérez votre historique de conversations",
+        it="Gestisci la cronologia delle conversazioni",
+    )
     icon = "simple-icons:threads"
 
     not_authorized_to_view_exception = HTTPException(status_code=403, detail="Not authorized to view this thread")

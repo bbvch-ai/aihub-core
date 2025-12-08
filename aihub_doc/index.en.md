@@ -16,7 +16,7 @@ hero:
     - theme: brand
       text: Platform Overview
       link: /docs/2_platform/2_architecture/1_core_components/
-      
+
 features:
   - title: The open-source AI bet
     details: Best-in-class open-source tools (LiteLLM, Milvus, LlamaIndex) integrated and ready. When they evolve, you benefit. No vendor lock-in, no licensing fees, no platform constraints. Bet on the ecosystem, not a single vendor.
