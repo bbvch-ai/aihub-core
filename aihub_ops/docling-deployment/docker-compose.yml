@@ -79,7 +79,7 @@ services:
       --host 0.0.0.0
       --max-model-len 8192
       --trust-remote-code
-      --gpu-memory-utilization 0.90
+      --gpu-memory-utilization 0.60
     deploy:
       resources:
         reservations:
