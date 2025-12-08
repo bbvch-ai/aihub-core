@@ -1,5 +1,7 @@
 import asyncio
 
+from aihub_lib.generative_ai.knowledge.InsightRetrieverConfig import InsightRetrieverConfig
+from aihub_lib.generative_ai.knowledge.KnowledgeRetrieverConfig import KnowledgeRetrieverConfig
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
@@ -15,8 +17,6 @@ from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
-from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
-from aihub_agent.agents.RagAgent.configs.RetrieveSummariesConfig import RetrieveSummariesConfig
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
 from aihub_agent.runners.AgentRunner import AgentRunner
 
@@ -133,25 +133,32 @@ async def main():
                 </instructions>
                 """,
             ),
-            retrieve_step_config=RetrieveStepConfig(
-                embed_model=EmbeddingModelConfig(model_name="embedding/large"),
-                index_namespaces=["defaultnamespace"],
-                retrieve_k=10,
-                query_mode=VectorStoreQueryMode.HYBRID,
-                node_types=["content", "summary"],
-                vector_store=MilvusVectorStoreConfig(
-                    uri=MilvusSettings().URL,
-                    dimensions=MilvusSettings().DIMENSION,
-                    collection_name="playground",
+            retrievers=[
+                KnowledgeRetrieverConfig(
+                    retriever_type="knowledge",
+                    name="Knowledge Base",
+                    embed_model=EmbeddingModelConfig(model_name="embedding/large"),
+                    index_namespaces=["defaultnamespace"],
+                    retrieve_k=10,
+                    query_mode=VectorStoreQueryMode.HYBRID,
+                    node_types=["content", "summary"],
+                    vector_store=MilvusVectorStoreConfig(
+                        uri=MilvusSettings().URL,
+                        dimensions=MilvusSettings().DIMENSION,
+                        collection_name="playground",
+                    ),
+                    retrieve_prev_next=RetrievePrevNextConfig(
+                        num_nodes=5,
+                        mode=ModeOptions.BOTH,
+                    ),
                 ),
-                retrieve_prev_next=RetrievePrevNextConfig(
-                    num_nodes=5,
-                    mode=ModeOptions.BOTH,
+                InsightRetrieverConfig(
+                    retriever_type="insight",
+                    name="Expert Insights",
+                    namespace="default",
+                    max_results=5,
                 ),
-                retrieve_summaries=RetrieveSummariesConfig(
-                    max_parent_levels=2,
-                ),
-            ),
+            ],
             reranking_config=RerankingConfig(
                 enabled=True,
                 reranking_model=RerankingModelConfig(model_name="reranker", top_n=5),
