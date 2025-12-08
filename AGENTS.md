@@ -288,7 +288,7 @@ Before marking task complete:
 **Access Points** (docker-compose.dev.yml):
 
 - OpenWebUI: http://localhost:8080
-- Admin UI: http://localhost:3000
+- Admin UI: http://localhost:3001
 - API: http://localhost:8000
 - Dagster: http://localhost:3000
 - Phoenix: http://localhost:6006

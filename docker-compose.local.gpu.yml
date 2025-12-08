@@ -1071,7 +1071,7 @@ services:
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/dagster:latest
     ports:
-      - "3002:3000"
+      - "3000:3000"
     entrypoint:
       - dagster-webserver
       - -h
@@ -1287,7 +1287,7 @@ services:
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/web:latest
     ports:
-      - "3000:80"
+      - "3001:80"
     environment:
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}

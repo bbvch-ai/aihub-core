@@ -122,7 +122,7 @@ CSS classes.
 4. **Create components**: Domain-specific in `components/<Service>/`
 5. **Add i18n**: Translations in `i18n/locales/*.yaml`
 6. **Lint**: `pnpm lint` (ESLint with SonarJS recommended rules)
-7. **Run**: `pnpm dev` (http://localhost:3000)
+7. **Run**: `pnpm dev` (http://localhost:3001)
 
 ## Coding Standards
 

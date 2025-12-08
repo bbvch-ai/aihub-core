@@ -1073,7 +1073,7 @@ services:
       context: .
       dockerfile: ./aihub_pipeline/Dockerfile
     ports:
-      - "3002:3000"
+      - "3000:3000"
     entrypoint:
       - dagster-webserver
       - -h
@@ -1295,7 +1295,7 @@ services:
       context: ./aihub_web/aihub_web
       dockerfile: ./Dockerfile
     ports:
-      - "3000:80"
+      - "3001:80"
     environment:
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}

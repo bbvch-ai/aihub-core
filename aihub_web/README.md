@@ -469,7 +469,7 @@ pnpm dev
 
 **Access Points:**
 
-- **Frontend Application**: `http://localhost:3000`
+- **Frontend Application**: `http://localhost:3001`
 - **API Proxy**: Automatically routes `/api/v1` to `http://localhost:8000`
 - **Hot Reload**: Automatic reloading on file changes
 
