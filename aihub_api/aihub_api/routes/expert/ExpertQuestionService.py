@@ -63,12 +63,12 @@ class ExpertQuestionService:
     @staticmethod
     @trace_fn
     def get_questions_by_status(
-        status: str,
+        status: str | None,
         expert_group: str | None,
         page: int,
         page_size: int,
     ) -> PaginatedExpertQuestionsResponse:
-        """Retrieves a paginated list of questions by status."""
+        """Retrieves a paginated list of questions by status. If status is None, returns all."""
         entities, total = ExpertQuestionEntity.get_questions_by_status(
             status=status,
             expert_group=expert_group,

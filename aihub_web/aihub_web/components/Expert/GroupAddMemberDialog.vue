@@ -20,6 +20,7 @@
           :options="availableUsers"
           option-value="id"
           filter
+          :filter-fields="['name', 'email', 'searchLabel']"
           :placeholder="t('expert.groups.add_member_dialog.select_user')"
           :loading="usersAreLoading"
           class="w-full"
@@ -86,7 +87,12 @@ const { users, usersAreLoading } = useUsers()
 const { addMemberAsync, isPending } = useAddGroupMember()
 
 const availableUsers = computed(() => {
-  return users.value.filter(user => !props.existingMemberIds.includes(user.id))
+  return users.value
+    .filter(user => !props.existingMemberIds.includes(user.id))
+    .map(user => ({
+      ...user,
+      searchLabel: `${user.name} ${user.email}`,
+    }))
 })
 
 const getUserDisplayName = (userId: string) => {

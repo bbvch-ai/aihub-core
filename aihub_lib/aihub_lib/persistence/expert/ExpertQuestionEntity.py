@@ -149,13 +149,16 @@ class ExpertQuestionEntity(Document):
     @trace_fn
     def get_questions_by_status(
         cls,
-        status: QuestionStatus,
+        status: QuestionStatus | None = None,
         expert_group: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list["ExpertQuestionEntity"], int]:
-        """Get questions by status, optionally filtered by expert group."""
-        query = cls.objects(status=status)
+        """Get questions by status, optionally filtered by expert group. If status is None, returns all."""
+        query = cls.objects()
+
+        if status:
+            query = query.filter(status=status)
 
         if expert_group:
             query = query.filter(expert_group=expert_group)

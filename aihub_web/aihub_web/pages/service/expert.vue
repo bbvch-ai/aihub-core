@@ -209,7 +209,7 @@ const statusFilter = ref<string | undefined>('pending')
 const filterOptions = computed(() => [
   { label: t('expert.filter.pending'), value: 'pending' },
   { label: t('expert.filter.answered'), value: 'answered' },
-  { label: t('expert.filter.all'), value: undefined },
+  { label: t('expert.filter.all'), value: 'all' },
 ])
 
 const activeFilter = ref('pending')

@@ -58,12 +58,14 @@ class ExpertController(Controller):
         async def get_questions_by_status(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.expert.questions.read"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
-            status: Literal["pending", "answered", "expired", "cancelled"] = Query("pending"),
+            status: Literal["pending", "answered", "expired", "cancelled"] | None = Query(
+                None, description="Filter by status. If not provided, returns all questions."
+            ),
             expert_group: str | None = Query(None, description="Filter by expert group"),
             page: int = Query(1, ge=1),
             page_size: int = Query(20, ge=1, le=100),
         ) -> PaginatedExpertQuestionsResponse:
-            """Retrieves a paginated list of expert questions filtered by status."""
+            """Retrieves a paginated list of expert questions, optionally filtered by status."""
             return ExpertQuestionService.get_questions_by_status(
                 status=status,
                 expert_group=expert_group,

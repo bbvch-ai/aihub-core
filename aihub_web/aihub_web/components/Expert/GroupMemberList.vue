@@ -13,9 +13,12 @@
       :key="userId"
       class="flex items-center justify-between rounded-lg border p-3"
     >
-      <div class="flex items-center gap-2">
-        <i class="pi pi-user text-primary" />
-        <span class="font-medium">{{ userId }}</span>
+      <div class="flex flex-col gap-1">
+        <div class="flex items-center gap-2">
+          <i class="pi pi-user text-primary" />
+          <span class="font-medium">{{ getUserName(userId) }}</span>
+        </div>
+        <span class="ml-6 text-sm opacity-70">{{ getUserEmail(userId) }}</span>
       </div>
       <Button
         icon="pi pi-times"
@@ -31,6 +34,7 @@
 
 <script setup lang="ts">
 import { useRemoveGroupMember } from '@core/composables/expert/useExpertGroups'
+import useUsers from '@core/composables/user/useUsers'
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
 import { useI18n } from 'vue-i18n'
@@ -48,11 +52,23 @@ const { t } = useI18n()
 const toast = useToast()
 const confirm = useConfirm()
 
+const { users } = useUsers()
 const { removeMemberAsync } = useRemoveGroupMember()
 
+const getUserName = (userId: string) => {
+  const user = users.value.find(u => u.id === userId)
+  return user?.name || userId
+}
+
+const getUserEmail = (userId: string) => {
+  const user = users.value.find(u => u.id === userId)
+  return user?.email || ''
+}
+
 const confirmRemove = (userId: string) => {
+  const userName = getUserName(userId)
   confirm.require({
-    message: t('expert.groups.remove_member_confirm_message', { userId }),
+    message: t('expert.groups.remove_member_confirm_message', { userId: userName }),
     header: t('expert.groups.remove_member_confirm_title'),
     icon: 'pi pi-exclamation-triangle',
     rejectLabel: t('common.cancel'),
