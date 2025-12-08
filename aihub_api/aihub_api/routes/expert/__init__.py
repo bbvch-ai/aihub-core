@@ -1,7 +1,7 @@
-from .ExpertQuestionController import ExpertQuestionController
+from .ExpertController import ExpertController
 from .ExpertQuestionService import ExpertQuestionService
 
 __all__ = [
-    "ExpertQuestionController",
+    "ExpertController",
     "ExpertQuestionService",
 ]
