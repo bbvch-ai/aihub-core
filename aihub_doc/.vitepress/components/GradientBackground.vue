@@ -56,7 +56,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, --vp-c-bg) 100%);
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, var(--vp-c-bg) 100%);
 }
 
 .gradient-orb {
