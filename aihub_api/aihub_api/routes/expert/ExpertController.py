@@ -28,7 +28,7 @@ class ExpertController(Controller):
 
     name = LocaleString(en="Experts")
     description = LocaleString(en="View and answer expert questions, manage expert groups")
-    icon = "mdi:account-question-outline"
+    icon = "mdi:school"
 
     def __init__(self, *, auth: AuthHandler, route: str = "/expert", **kwargs):
         super().__init__(auth=auth, route=route, **kwargs)

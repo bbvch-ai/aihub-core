@@ -17582,12 +17582,12 @@ export type GetGroupsData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/expert/groups/';
+    url: '/expert/groups';
 };
 
 export type GetGroupsResponses = {
     /**
-     * Response Get Groups Expert Groups  Get
+     * Response Get Groups Expert Groups Get
      * Successful Response
      */
     200: Array<ExpertGroupResponse>;
@@ -17599,7 +17599,7 @@ export type CreateGroupData = {
     body: CreateExpertGroupRequest;
     path?: never;
     query?: never;
-    url: '/expert/groups/';
+    url: '/expert/groups';
 };
 
 export type CreateGroupErrors = {
@@ -18007,7 +18007,7 @@ export type SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMess
      * Response Send User Message Event To R A G Agent Rag Agent Agents Ragagent Rag Agent Usermessageevent Post
      * Successful Response
      */
-    200: AihubApiServicesModelCreationServiceLlmStopEventOutput2 | StopEventOutput | HumanInTheLoopConfirmationRequestEventOutput;
+    200: StopEventOutput | AihubApiServicesModelCreationServiceLlmStopEventOutput2 | HumanInTheLoopConfirmationRequestEventOutput;
 };
 
 export type SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostResponse = SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostResponses[keyof SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostResponses];

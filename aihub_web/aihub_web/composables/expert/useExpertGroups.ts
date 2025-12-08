@@ -19,12 +19,11 @@ export const useExpertGroups = () => {
     key: ['expert-groups'],
     query: async () => {
       const headers = await getHeaders()
-      const response = await getGroups({
+      return await getGroups({
         composable: '$fetch',
         baseUrl: apiBase,
         headers,
       })
-      return response.data as ExpertGroupResponse[]
     },
   })
 
@@ -46,13 +45,12 @@ export const useExpertGroup = (groupId: Ref<string>) => {
     key: () => ['expert-groups', groupId.value],
     query: async () => {
       const headers = await getHeaders()
-      const response = await getGroup({
+      return await getGroup({
         composable: '$fetch',
         baseUrl: apiBase,
         path: { group_id: groupId.value },
         headers,
       })
-      return response.data as ExpertGroupResponse
     },
   })
 
@@ -74,14 +72,14 @@ export const useCreateExpertGroup = () => {
   const { mutate, mutateAsync, isPending } = useMutation({
     mutation: async (groupData: CreateExpertGroupRequest) => {
       const headers = await getHeaders()
-      const response = await createGroup({
+      const result = await createGroup({
         composable: '$fetch',
         baseUrl: apiBase,
         body: groupData,
         headers,
       })
       queryCache.invalidateQueries({ key: ['expert-groups'] })
-      return response.data as ExpertGroupResponse
+      return result
     },
   })
 
@@ -97,7 +95,7 @@ export const useUpdateExpertGroup = () => {
   const { mutate, mutateAsync, isPending } = useMutation({
     mutation: async (params: { groupId: string, groupData: UpdateExpertGroupRequest }) => {
       const headers = await getHeaders()
-      const response = await updateGroup({
+      const result = await updateGroup({
         composable: '$fetch',
         baseUrl: apiBase,
         path: { group_id: params.groupId },
@@ -106,7 +104,7 @@ export const useUpdateExpertGroup = () => {
       })
       queryCache.invalidateQueries({ key: ['expert-groups'] })
       queryCache.invalidateQueries({ key: ['expert-groups', params.groupId] })
-      return response.data as ExpertGroupResponse
+      return result
     },
   })
 
@@ -144,7 +142,7 @@ export const useAddGroupMember = () => {
   const { mutate, mutateAsync, isPending } = useMutation({
     mutation: async (params: { groupId: string, userId: string }) => {
       const headers = await getHeaders()
-      const response = await addMember({
+      const result = await addMember({
         composable: '$fetch',
         baseUrl: apiBase,
         path: { group_id: params.groupId, user_id: params.userId },
@@ -152,7 +150,7 @@ export const useAddGroupMember = () => {
       })
       queryCache.invalidateQueries({ key: ['expert-groups'] })
       queryCache.invalidateQueries({ key: ['expert-groups', params.groupId] })
-      return response.data as ExpertGroupResponse
+      return result
     },
   })
 
@@ -168,7 +166,7 @@ export const useRemoveGroupMember = () => {
   const { mutate, mutateAsync, isPending } = useMutation({
     mutation: async (params: { groupId: string, userId: string }) => {
       const headers = await getHeaders()
-      const response = await removeMember({
+      const result = await removeMember({
         composable: '$fetch',
         baseUrl: apiBase,
         path: { group_id: params.groupId, user_id: params.userId },
@@ -176,7 +174,7 @@ export const useRemoveGroupMember = () => {
       })
       queryCache.invalidateQueries({ key: ['expert-groups'] })
       queryCache.invalidateQueries({ key: ['expert-groups', params.groupId] })
-      return response.data as ExpertGroupResponse
+      return result
     },
   })
 

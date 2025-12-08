@@ -46,6 +46,7 @@
         :label="t('expert.answer_button')"
         icon="pi pi-reply"
         size="small"
+        class="shrink-0"
         @click.stop="$emit('answer', question)"
       />
       <span

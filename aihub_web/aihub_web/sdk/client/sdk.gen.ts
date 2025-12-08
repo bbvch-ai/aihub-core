@@ -1758,7 +1758,7 @@ export const getGroups = <TComposable extends Composable, DefaultT extends GetGr
             }
         ],
         responseTransformer: getGroupsResponseTransformer,
-        url: '/expert/groups/',
+        url: '/expert/groups',
         ...options
     });
 };
@@ -1780,7 +1780,7 @@ export const createGroup = <TComposable extends Composable, DefaultT extends Cre
             }
         ],
         responseTransformer: createGroupResponseTransformer,
-        url: '/expert/groups/',
+        url: '/expert/groups',
         ...options,
         headers: {
             'Content-Type': 'application/json',

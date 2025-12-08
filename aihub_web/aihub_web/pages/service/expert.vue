@@ -74,7 +74,10 @@
         </TabPanel>
 
         <!-- Groups Tab -->
-        <TabPanel :header="t('expert.tabs.groups')">
+        <TabPanel>
+          <template #header>
+            <span>{{ t('expert.tabs.groups') }}</span>
+          </template>
           <div :class="{ 'pointer-events-none opacity-50': isLoadingGroups }">
             <DataView :value="groups">
               <template #header>
