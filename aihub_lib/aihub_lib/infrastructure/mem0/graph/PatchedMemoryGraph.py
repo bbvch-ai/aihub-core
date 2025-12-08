@@ -3,9 +3,9 @@ from typing import Self
 
 from mem0.configs.base import MemoryConfig
 from mem0.graphs.tools import (
+    DELETE_MEMORY_STRUCT_TOOL_GRAPH,
     EXTRACT_ENTITIES_STRUCT_TOOL,
     RELATIONS_STRUCT_TOOL,
-    DELETE_MEMORY_STRUCT_TOOL_GRAPH,
 )
 from mem0.memory.graph_memory import MemoryGraph
 from mem0.memory.utils import format_entities
@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 
 
 class PatchedMemoryGraph(MemoryGraph):
-
     def __init__(
         self,
         config: MemoryConfig,
@@ -113,7 +112,11 @@ class PatchedMemoryGraph(MemoryGraph):
                 },
                 {
                     "role": "user",
-                    "content": f"<existing_memories>\n{search_output_string}\n</existing_memories>\n<new_information>\n{data}\n</new_information>",
+                    "content": f"<existing_memories>\n{search_output_string}\n"
+                    f"</existing_memories>\n"
+                    f"<new_information>\n"
+                    f"{data}\n"
+                    f"</new_information>",
                 },
             ],
             tools=[DELETE_MEMORY_STRUCT_TOOL_GRAPH],

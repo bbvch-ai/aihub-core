@@ -8,7 +8,6 @@ from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
 from aihub_lib.generative_ai.memory.UserMemory import UserMemory
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.infrastructure.mem0.Mem0Service import Mem0Service, MemoryType
 
 rag_agent_config = AgentConfig(
     agent_class="WikiAgent",
@@ -32,7 +31,8 @@ async def main():
     conversation = [
         ChatMessage(
             role="user",
-            content="Ich arbeite mit Stefan zusammen, er ist ein Mitarbeiter von swiss ai hub. Wie heist er zum Nachnamen?",
+            content="Ich arbeite mit Stefan zusammen, "
+            "er ist ein Mitarbeiter von swiss ai hub. Wie heist er zum Nachnamen?",
         ),
         ChatMessage(role="assistant", content="Er heisst Stefan Häberling."),
     ]

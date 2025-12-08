@@ -4,12 +4,11 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.infrastructure.mem0.Mem0Service import Mem0Service, MemoryType, MemorySearchResult
+from aihub_lib.infrastructure.mem0.Mem0Service import Mem0Service, MemorySearchResult, MemoryType
 from aihub_lib.infrastructure.mem0.Mem0Settings import Mem0Settings
 
 
 class AgentMemory:
-
     def __init__(self, agent_config: AgentConfig, t: LocaleHandler):
         custom_fact_extraction_prompt = t(
             "lib.prompt.memory.fact_extraction",

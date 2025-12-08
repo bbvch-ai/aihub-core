@@ -5,7 +5,6 @@ from aihub_lib.infrastructure.mem0.Mem0Settings import Mem0Settings
 
 
 class UserMemory:
-
     def __init__(self, user: UserIdentity, t: LocaleHandler):
         self._config = Mem0Settings().get_config()
         self._user = user

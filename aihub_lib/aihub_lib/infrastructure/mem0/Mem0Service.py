@@ -3,7 +3,7 @@ from typing import Annotated
 
 from mem0 import AsyncMemory
 from mem0.configs.base import MemoryConfig
-from pydantic import BaseModel, Field, AliasChoices
+from pydantic import AliasChoices, BaseModel, Field
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.mem0.graph.PatchedMemoryGraph import PatchedMemoryGraph
@@ -65,7 +65,6 @@ class MemorySearchResult(BaseModel):
 
 
 class Mem0Service:
-
     def __init__(
         self,
         config: MemoryConfig,
