@@ -3,7 +3,7 @@
     <StructuralColumn
       :title="group?.name || t('expert.groups.group_detail')"
       :loading="isLoading"
-      :close-route="localePath('/service/expert/groups')"
+      :close-route="localePath('/service/expert?tab=groups')"
     >
       <div
         v-if="group"

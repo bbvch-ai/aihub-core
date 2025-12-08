@@ -517,6 +517,9 @@ process:
 
 expert:
   title: "Experts"
+  tabs:
+    questions: "Questions"
+    groups: "Groupes"
   pending_questions: "Questions en attente"
   no_pending_questions: "Aucune question en attente"
   no_answered_questions: "Aucune question répondue"
