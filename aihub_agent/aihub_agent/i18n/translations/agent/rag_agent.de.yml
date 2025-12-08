@@ -1,42 +1,26 @@
-formulate_question_prompt: |
-  {% chat role="system" %}
-  Sie sind ein KI-Assistent, der spezifische Fragen für Fachexperten formuliert.
-  Ihr Ziel ist es, eine klare, fokussierte Frage zu erstellen, die dem Experten hilft,
-  die fehlenden Informationen zu liefern, die zur Beantwortung der ursprünglichen Benutzeranfrage benötigt werden.
-  {% endchat %}
+formulate_question:
+  prompt: |
+    Sie sind ein KI-Assistent, der spezifische Fragen für Fachexperten formuliert.
+    Ihr Ziel ist es, eine klare, fokussierte Frage zu erstellen, die dem Experten hilft,
+    die fehlenden Informationen zu liefern, die zur Beantwortung der ursprünglichen Benutzeranfrage benötigt werden.
 
-  {% chat role="user" %}
-  Der Benutzer hat folgende Frage gestellt:
-  <user_query>
-    %{user_query}
-  </user_query>
+    Der Benutzer hat folgende Frage gestellt:
+    <user_query>
+    {user_query}
+    </user_query>
 
-  {% if chat_history %}
-  Vorheriger Gesprächskontext:
-  <chat_history>
-    {% for message in chat_history %}
-    <message role="{{ message.role.value }}">
-      {% for block in message.blocks %}
-      {% if block.block_type == 'text' %}
-      {{ block.text }}
-      {% endif %}
-      {% endfor %}
-    </message>
-    {% endfor %}
-  </chat_history>
-  {% endif %}
+    Verfügbarer Kontext (der unzureichend ist):
+    <context>
+    {context}
+    </context>
 
-  {% if context %}
-  Verfügbarer Kontext (der unzureichend ist):
-  <context>
-    %{context}
-  </context>
-  {% endif %}
-
-  Bitte formulieren Sie eine spezifische, klare Frage für einen Fachexperten, die hilft,
-  die fehlenden Informationen zu erhalten, die zur Beantwortung der Benutzerfrage benötigt werden.
-  Die Frage sollte präzise sein und direkt ansprechen, welche Informationen fehlen.
-  {% endchat %}
+    Formulieren Sie eine spezifische, klare Frage für einen Fachexperten, die hilft,
+    die fehlenden Informationen zu erhalten, die zur Beantwortung der Benutzerfrage benötigt werden.
+    Die Frage sollte präzise sein und direkt ansprechen, welche Informationen fehlen.
+  question_description: |
+    Die spezifische, klare Frage für den Fachexperten, die hilft, die fehlenden Informationen zu erhalten.
+  docstring: |
+    Ergebnis der Formulierung einer Frage für einen Fachexperten.
 
 thoughts:
   escalating_to_expert: "Kontext ist unzureichend, leite an Experten-Workflow weiter."

@@ -1,42 +1,26 @@
-formulate_question_prompt: |
-  {% chat role="system" %}
-  Vous êtes un assistant IA qui formule des questions spécifiques pour les experts du domaine.
-  Votre objectif est de créer une question claire et ciblée qui aidera l'expert à fournir
-  les informations manquantes nécessaires pour répondre à la requête initiale de l'utilisateur.
-  {% endchat %}
+formulate_question:
+  prompt: |
+    Vous êtes un assistant IA qui formule des questions spécifiques pour les experts du domaine.
+    Votre objectif est de créer une question claire et ciblée qui aidera l'expert à fournir
+    les informations manquantes nécessaires pour répondre à la requête initiale de l'utilisateur.
 
-  {% chat role="user" %}
-  L'utilisateur a posé la question suivante:
-  <user_query>
-    %{user_query}
-  </user_query>
+    L'utilisateur a posé la question suivante:
+    <user_query>
+    {user_query}
+    </user_query>
 
-  {% if chat_history %}
-  Contexte de la conversation précédente:
-  <chat_history>
-    {% for message in chat_history %}
-    <message role="{{ message.role.value }}">
-      {% for block in message.blocks %}
-      {% if block.block_type == 'text' %}
-      {{ block.text }}
-      {% endif %}
-      {% endfor %}
-    </message>
-    {% endfor %}
-  </chat_history>
-  {% endif %}
+    Contexte disponible (qui est insuffisant):
+    <context>
+    {context}
+    </context>
 
-  {% if context %}
-  Contexte disponible (qui est insuffisant):
-  <context>
-    %{context}
-  </context>
-  {% endif %}
-
-  Veuillez formuler une question spécifique et claire pour un expert du domaine qui aidera à obtenir
-  les informations manquantes nécessaires pour répondre à la question de l'utilisateur. La question doit être
-  concise et aborder directement les informations qui manquent.
-  {% endchat %}
+    Formulez une question spécifique et claire pour un expert du domaine qui aidera à obtenir
+    les informations manquantes nécessaires pour répondre à la question de l'utilisateur. La question doit être
+    concise et aborder directement les informations qui manquent.
+  question_description: |
+    La question spécifique et claire pour l'expert du domaine qui aidera à obtenir les informations manquantes.
+  docstring: |
+    Résultat de la formulation d'une question pour un expert du domaine.
 
 thoughts:
   escalating_to_expert: "Le contexte est insuffisant, escalade vers le workflow expert."

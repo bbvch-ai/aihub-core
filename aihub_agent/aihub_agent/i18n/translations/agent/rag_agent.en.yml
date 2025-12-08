@@ -1,42 +1,26 @@
-formulate_question_prompt: |
-  {% chat role="system" %}
-  You are an AI assistant that formulates specific questions for domain experts.
-  Your goal is to create a clear, focused question that will help the expert provide
-  the missing information needed to answer the user's original query.
-  {% endchat %}
+formulate_question:
+  prompt: |
+    You are an AI assistant that formulates specific questions for domain experts.
+    Your goal is to create a clear, focused question that will help the expert provide
+    the missing information needed to answer the user's original query.
 
-  {% chat role="user" %}
-  The user asked the following question:
-  <user_query>
-    %{user_query}
-  </user_query>
+    The user asked the following question:
+    <user_query>
+    {user_query}
+    </user_query>
 
-  {% if chat_history %}
-  Previous conversation context:
-  <chat_history>
-    {% for message in chat_history %}
-    <message role="{{ message.role.value }}">
-      {% for block in message.blocks %}
-      {% if block.block_type == 'text' %}
-      {{ block.text }}
-      {% endif %}
-      {% endfor %}
-    </message>
-    {% endfor %}
-  </chat_history>
-  {% endif %}
+    Available context (which is insufficient):
+    <context>
+    {context}
+    </context>
 
-  {% if context %}
-  Available context (which is insufficient):
-  <context>
-    %{context}
-  </context>
-  {% endif %}
-
-  Please formulate a specific, clear question for a domain expert that will help obtain
-  the missing information needed to answer the user's question. The question should be
-  concise and directly address what information is missing.
-  {% endchat %}
+    Formulate a specific, clear question for a domain expert that will help obtain
+    the missing information needed to answer the user's question. The question should be
+    concise and directly address what information is missing.
+  question_description: |
+    The specific, clear question for the domain expert that will help obtain the missing information.
+  docstring: |
+    Result from formulating a question for a domain expert.
 
 thoughts:
   escalating_to_expert: "Context is insufficient, escalating to expert workflow."

@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
@@ -29,8 +31,9 @@ from aihub_lib.nats.events.semantic.reranker import RerankerEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.nats.events.user import UserMessageEvent
 from llama_index.core import PromptTemplate
-from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
-from llama_index.core.prompts.rich import RichPromptTemplate
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from openai import NOT_GIVEN
+from pydantic import BaseModel, Field
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.agents.ExpertAskingAgent.events.AnswerStopEvent import AnswerStopEvent
@@ -74,6 +77,22 @@ async def is_expert_answer_response(event: AgentInTheLoop.response) -> bool:
 async def is_expert_no_answer_response(event: AgentInTheLoop.response) -> bool:
     """Ensures agent in the loop response is an unsuccessful answer from ExpertAskingAgent."""
     return isinstance(event.stop_event, NoAnswerStopEvent)
+
+
+class FormulatedQuestionResult(BaseModel):
+    """Result from formulating a question for a domain expert."""
+
+    question: Annotated[str, Field(description="The specific, clear question for the domain expert.")]
+
+
+def formulated_question_result_factory(t: LocaleHandler) -> type[FormulatedQuestionResult]:
+    """Factory to create a localized FormulatedQuestionResult class."""
+
+    class LocalizedFormulatedQuestionResult(FormulatedQuestionResult):
+        question: Annotated[str, Field(description=t("agent.rag_agent.formulate_question.question_description"))]
+
+    LocalizedFormulatedQuestionResult.__doc__ = t("agent.rag_agent.formulate_question.docstring")
+    return LocalizedFormulatedQuestionResult
 
 
 class RAGAgent(Agent):
@@ -410,7 +429,6 @@ class RAGAgent(Agent):
         await displayer.display_thought(t("agent.rag_agent.thoughts.formulating_question"))
 
         user_query = event.messages[-1].content
-        chat_history = event.messages[:-1]
 
         # Get retrieved nodes for context
         nodes_data = await run_context.get("retrieved_nodes", [])
@@ -424,15 +442,21 @@ class RAGAgent(Agent):
             context_parts = [f"- {node.content}" for node in nodes[:max_nodes]]
             context_text = "\n".join(context_parts)
 
-        # Use LLM to formulate a specific question for the expert
+        # Use structured predict to ensure the LLM returns a properly formatted question
+        prompt = PromptTemplate(t("agent.rag_agent.formulate_question.prompt"))
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            prompt = RichPromptTemplate(template_str=t("agent.rag_agent.formulate_question_prompt")).format_messages(
-                chat_history=chat_history,
+            llm_kwargs = {}
+            if not llm.metadata.is_function_calling_model:
+                llm_kwargs["tool_choice"] = NOT_GIVEN
+
+            result = llm.structured_predict(
+                formulated_question_result_factory(t),
+                prompt,
+                llm_kwargs=llm_kwargs,
                 user_query=user_query,
                 context=context_text,
             )
-            response: ChatResponse = await llm.achat(prompt)
-            formulated_question = response.message.content or ""
+            formulated_question = FormulatedQuestionResult.model_validate(result).question
 
         await run_context.set("formulated_question", formulated_question)
         return FormulatedQuestionEvent(question=formulated_question)
