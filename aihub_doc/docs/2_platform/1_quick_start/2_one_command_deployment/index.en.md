@@ -44,19 +44,19 @@ Regardless of which deployment you choose, the configuration follows the same pa
 Each deployment guide walks you through these steps with copy-paste commands and clear explanations. The most time-consuming part is typically the initial Azure AD app registration, which you only need to do once.
 
 <NavigationBoxes :items="[
-    { 
-        'title': 'Development Setup', 
-        'description': 'For platform developers who want to run the API, web frontend, and agents locally while Docker handles the infrastructure services.', 
+    {
+        'title': 'Development Setup',
+        'description': 'For platform developers who want to run the API, web frontend, and agents locally while Docker handles the infrastructure services. Includes docker-compose.build.yml for testing local builds. ⏱️ ~15-45 minutes. Supports CPU and GPU variants.',
         href: './1_development_setup'
     },
-    { 
-        'title': 'Local Playground', 
-        'description': 'For trying out the complete Swiss AI Hub on your local machine with a single command. Perfect for demos and evaluations.', 
+    {
+        'title': 'Local Playground',
+        'description': 'For trying out the complete Swiss AI Hub on your local machine with a single command. Everything runs in Docker with self-signed SSL certificates. Perfect for demos and evaluations. ⏱️ ~15-30 minutes. Supports CPU and GPU variants.',
         href: './2_local_playground'
     },
-    { 
-        'title': 'Production Deployment', 
-        'description': 'For deploying the Swiss AI Hub to a server with a real domain, automatic SSL certificates, and production-grade configuration.', 
+    {
+        'title': 'Production Deployment',
+        'description': 'For deploying the Swiss AI Hub to a server with a real domain, automatic Let\'s Encrypt SSL certificates, and production-grade configuration. Hardened security and automated backups. ⏱️ ~30-60 minutes. Supports CPU and GPU variants.',
         href: './3_production_deployment'
     },
 ]" />
