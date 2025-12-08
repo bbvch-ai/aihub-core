@@ -5,10 +5,10 @@ import nats
 import pytest
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.nats.events import BaseEvent, ControlEvent, ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
-from aihub_lib.testing.logging.logger import enable_logging
 from bson import ObjectId
 from nats.js import JetStreamContext
 from redis.asyncio import Redis

@@ -2,6 +2,7 @@ import json
 
 import pytest
 
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.nats.events.agent_in_the_loop.exception.AgentInTheLoopExceptionEvent import AgentInTheLoopExceptionEvent
 from aihub_lib.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent import AgentInTheLoopRequestEvent
 from aihub_lib.nats.events.agent_in_the_loop.response.AgentInTheLoopResponseEvent import AgentInTheLoopResponseEvent
@@ -12,7 +13,6 @@ from aihub_lib.nats.events.semantic import LLMStopEvent
 from aihub_lib.nats.events.user import UserMessageEvent
 from aihub_lib.nats.topics import PartialAgentTopic
 from aihub_lib.testing.auth_utils.fake_user import fake_user
-from aihub_lib.testing.logging.logger import enable_logging
 
 enable_logging()
 

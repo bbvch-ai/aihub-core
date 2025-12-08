@@ -219,7 +219,7 @@ services:
     ports:
       - "3003:3000"
     environment:
-      MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_URL: milvus-standalone:19530
     healthcheck:
       test: ["NONE"]
     logging:
@@ -393,9 +393,9 @@ services:
       HF_HOME: /root/.cache/huggingface
     command: >
       -hf google/gemma-3-4b-it-qat-q4_0-gguf
-      --hf-token ${HUGGINGFACE_API_KEY}
       --alias gemma-3-4b
       --port 8182
+      --hf-token ${HUGGINGFACE_API_KEY}
       --host 0.0.0.0
       -c 8196
     healthcheck:
@@ -478,8 +478,6 @@ services:
         max-size: 10m
         max-file: 2
 
-  
-
   # ===================================================================
   # Audio Model Serving (SST/TTS)
   # ===================================================================
@@ -557,6 +555,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: False
+      DOCLING_API_KEY: ${DOCLING_API_KEY}
     volumes:
       - ./configs/litellm/litellm-config.dev.yml:/app/config.yml
     command: --config /app/config.yml
@@ -572,7 +571,7 @@ services:
       timeout: 10s
       interval: 30s
       retries: 3
-      start_period: 60s
+      start_period: 120s
     logging:
       driver: json-file
       options:
@@ -654,6 +653,8 @@ services:
         max-size: 10m
         max-file: 2
 
+  
+
   # ===================================================================
   # Observability Stack
   # ===================================================================
@@ -694,7 +695,7 @@ services:
 
   open-webui:
     container_name: open-webui
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.36
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.41
     restart: always
     network_mode: "host"
     volumes:
@@ -716,7 +717,8 @@ services:
       # --- General Settings ---
       WEBUI_NAME: Swiss AI-Hub
       DEFAULT_LOCALE: de
-      ENABLE_BASE_MODELS_CACHE: True
+      # Disable model caching to ensure pipeline models (agents) are always fetched
+      ENABLE_BASE_MODELS_CACHE: False
       ENABLE_COMMUNITY_SHARING: False
       ENABLE_USER_WEBHOOKS: False
       ENABLE_LOGIN_FORM: False
@@ -797,6 +799,7 @@ services:
 
       # --- AI-Hub Internal Connection ---
       AIHUB_BASE_URL: http://localhost:8000
+      AIHUB_FRONTEND_URL: http://localhost:3000
       AIHUB_SUPERUSER_API_KEY: ${SUPERUSER_TOKEN}
       OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
       AIHUB_PIPELINE_PREFIX: "aihub/"
@@ -824,7 +827,7 @@ services:
       ENABLE_ADMIN_EXPORT: True
       ENABLE_ADMIN_CHAT_ACCESS: False
       SHOW_ADMIN_DETAILS: True
-      ADMIN_EMAIL: admin@ai-hub.bbv.ch
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
 
       # --- Code Execution ---
       CODE_EXECUTION_ENGINE: jupyter
@@ -854,7 +857,7 @@ services:
       EXTERNAL_DOCUMENT_LOADER_URL: http://localhost:8000/api/v1/docling
       EXTERNAL_DOCUMENT_LOADER_API_KEY: ${SUPERUSER_TOKEN}
       RAG_EMBEDDING_ENGINE: openai
-      RAG_EMBEDDING_MODEL: embedding/small
+      RAG_EMBEDDING_MODEL: embedding/large
       RAG_OPENAI_API_BASE_URL: http://localhost:8000/api/v1/openai
       RAG_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
 
@@ -897,6 +900,29 @@ services:
       USER_PERMISSIONS_FEATURES_IMAGE_GENERATION: True
       USER_PERMISSIONS_FEATURES_CODE_INTERPRETER: True
       USER_PERMISSIONS_FEATURES_NOTES: True
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+
+  openwebui-init:
+    container_name: openwebui-init
+    image: ghcr.io/bbvch-ai/aihub-core/postgres:17
+    restart: "no"
+    depends_on:
+      open-webui:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: openwebui
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./configs/openwebui/init-functions.sh:/init-functions.sh:ro
+      - ./configs/openwebui/functions:/functions:ro
+    entrypoint: ["/bin/sh", "/init-functions.sh"]
     logging:
       driver: json-file
       options:

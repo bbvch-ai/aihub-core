@@ -1,6 +1,7 @@
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
 from aihub_lib.generative_ai.guards.few_shot_guard import few_shot_guard
+from aihub_lib.generative_ai.resources.models.llm.message_preprocessor import merge_consecutive_messages
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
 from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
 from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
@@ -318,7 +319,7 @@ class RAGAgent(Agent):
             chat_history=chat_history_event.limited_history,
             context_messages=[nodes_event.context_message],
             system_messages=system_messages,
-            last_user_message=ChatMessage(role=MessageRole.USER, content=start_event.user_query),
+            last_user_message=start_event.last_user_message or ChatMessage(role=MessageRole.USER, content=""),
             tokenizer=agent_config.llm.token_counter,
             number_of_input_tokens=agent_config.number_of_input_tokens,
         )
@@ -354,6 +355,9 @@ class RAGAgent(Agent):
         if system_prompt_text:
             system_message = ChatMessage(role=MessageRole.SYSTEM, content=system_prompt_text)
             messages = [system_message] + messages
+
+        # Merge consecutive messages with the same role (required by LiteLLM)
+        messages = merge_consecutive_messages(messages)
 
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             return await displayer.display_llm_stream(agent_config.llm, llm, messages, as_stop_step=True)

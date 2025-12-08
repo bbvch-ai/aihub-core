@@ -1,16 +1,18 @@
 ---
-title: One-Command Deployment
-source_sha: "59001be7987c222628da1a0d004cf515af5cd75e3589cd5c81d48cd3c97fd752"
+title: Deployment mit einem Befehl
+source_sha: 87723bd9334813821bc5e71cf1a1d19542f88507095369395762d1bda81d88fd
 ---
 
-# One-Command Deployment: Ihre KI-Plattform starten
+# Deployment mit einem Befehl: Starten Sie Ihre KI-Plattform
 
-Die Swiss AI Hub Plattform wird mit einem einzigen Docker Compose-Befehl deployed. Dieser optimierte Prozess bringt Ihre komplette KI-Infrastruktur in wenigen Minuten, nicht Stunden, zum Laufen.
+Die Swiss AI Hub Plattform wird mit einem einzigen Docker Compose Befehl deployed. Dieser optimierte Prozess bringt Ihre
+komplette KI-Infrastruktur in Minuten, nicht Stunden, zum Laufen.
 
 ## Deployment-Übersicht
 
 ::: tip Zwei Deployment-Optionen
-Der Swiss AI Hub unterstützt zwei Deployment-Modi. Befolgen Sie für beide die gleichen Schritte und verwenden Sie die entsprechenden Befehle für Ihren Deployment-Typ:
+Der Swiss AI Hub unterstützt zwei Deployment-Modi. Befolgen Sie die gleichen Schritte für beide, indem Sie die
+entsprechenden Befehle für Ihren Deployment-Typ verwenden:
 
 - **Produktions-Deployment**: Deployment auf einem Server mit einem echten Domainnamen (z.B. `aihub.yourcompany.com`)
 
@@ -22,9 +24,10 @@ Der Swiss AI Hub unterstützt zwei Deployment-Modi. Befolgen Sie für beide die 
 
   - Verwendet `docker-compose.local.yml`
   - Verwendet selbstsignierte SSL-Zertifikate (mkcert)
-  - Verwendet die Domain `127.0.0.1.nip.io` (wird automatisch zu Localhost aufgelöst)
+  - Verwendet die Domain `127.0.0.1.nip.io` (löst automatisch zu localhost auf)
 
-Jeder der folgenden Schritte zeigt Befehle für beide Deployment-Typen. Folgen Sie einfach den Befehlen, die Ihrem gewählten Deployment-Modus entsprechen.
+Jeder der folgenden Schritte zeigt Befehle für beide Deployment-Typen. Befolgen Sie einfach die Befehle, die Ihrem
+gewählten Deployment-Modus entsprechen.
 :::
 
 ---
@@ -66,7 +69,9 @@ mkcert -key-file configs/traefik/certs/dev-key.pem -cert-file configs/traefik/ce
 ```
 
 ::: tip Was ist nip.io?
-Die Domain `*.127.0.0.1.nip.io` wird automatisch zu Ihrem Localhost (127.0.0.1) aufgelöst und bietet eine Wildcard-DNS-Auflösung, ohne dass Sie Ihre Hosts-Datei ändern müssen. Dies ermöglicht Subdomain-basiertes Routing in der lokalen Entwicklung.
+Die Domain `*.127.0.0.1.nip.io` löst automatisch zu Ihrem Localhost (127.0.0.1) auf und bietet eine
+Wildcard-DNS-Auflösung, ohne dass Sie Ihre Hosts-Datei ändern müssen. Dies ermöglicht subdomainbasiertes Routing in der
+lokalen Entwicklung.
 :::
 
 ---
@@ -81,9 +86,9 @@ Erstellen Sie eine `.env`-Datei mit Ihren Konfigurationseinstellungen:
 touch .env
 ```
 
-### Vorlage für die essentielle Konfiguration
+### Essenzielle Konfigurationsvorlage
 
-Kopieren Sie diese Vorlage in Ihre `.env`-Datei und ersetzen Sie Platzhalterwerte:
+Kopieren Sie diese Vorlage in Ihre `.env`-Datei und ersetzen Sie die Platzhalterwerte:
 
 ```env
 # =============================================================================
@@ -185,13 +190,9 @@ REDIS_URL="redis://localhost:6379"
 # =============================================================================
 
 # SeaweedFS S3 Storage
-# Architecture:
-#   - S3 API: Exposed at s3.${DOMAIN} with AWS signature authentication (for applications)
-#   - Filer Web UI: Exposed at datalake.${DOMAIN} via OAuth2 proxy (for developers to browse files)
-#   - Internal Filer: Available to S3 gateway at seaweedfs-filer:8888
 SEAWEEDFS_ROOT_USER="admin"
 SEAWEEDFS_ROOT_PASSWORD="REPLACE_WITH_RANDOM_STRING"
-S3_STORAGE_ENDPOINT="http://seaweedfs:9000"           # S3 API endpoint (production uses https://s3.${DOMAIN})
+S3_STORAGE_ENDPOINT="http://seaweedfs:8333"
 S3_STORAGE_ACCESS_KEY="admin"                         # Must match SEAWEEDFS_ROOT_USER
 S3_STORAGE_SECRET_KEY="REPLACE_WITH_SAME_SEAWEEDFS_PASSWORD"
 S3_STORAGE_URL_SIGNING_SECRET="REPLACE_WITH_RANDOM_STRING"
@@ -207,7 +208,7 @@ PHOENIX_ENDPOINT="http://phoenix:6006"
 NATS_ENDPOINT="nats://localhost:4222"
 DAGSTER_HOME="~/.dagster_home"
 DAGSTER_OAUTH_ALLOWED_GROUPS="AIHubDeveloper"
-SEAWEEDFS_OAUTH_ALLOWED_GROUPS="AIHubDeveloper"     # Required for accessing Filer web UI at datalake.${DOMAIN}
+SEAWEEDFS_OAUTH_ALLOWED_GROUPS="AIHubDeveloper"
 JUPYTER_TOKEN="REPLACE_WITH_RANDOM_STRING"
 MILVUS_DIMENSION="3072"
 
@@ -253,32 +254,33 @@ SIGNOZ_INGESTION_KEY=""
 
 **Kritische Werte zum Ersetzen:**
 
-1.  **Authentifizierungswerte** (aus den Voraussetzungen):
+1. **Authentifizierungswerte** (aus den Voraussetzungen):
 
-    -   `REPLACE_WITH_YOUR_CLIENT_ID` → Ihre Azure App Registration Client ID
-    -   `REPLACE_WITH_YOUR_CLIENT_SECRET` → Ihr Azure App Registration Client Secret
-    -   `REPLACE_WITH_YOUR_TENANT_ID` → Ihre Azure Tenant ID (erscheint zweimal)
+   - `REPLACE_WITH_YOUR_CLIENT_ID` → Ihre Azure App Registration Client ID
+   - `REPLACE_WITH_YOUR_CLIENT_SECRET` → Ihr Azure App Registration Client Secret
+   - `REPLACE_WITH_YOUR_TENANT_ID` → Ihre Azure Tenant ID (erscheint zweimal)
 
-2.  **KI-Modellzugriff** (mindestens einen konfigurieren):
+2. **KI-Modellzugriff** (mindestens einen konfigurieren):
 
-    -   `REPLACE_WITH_AZURE_OPENAI_BASE_URL` → Ihre Azure OpenAI Endpoint URL
-    -   `REPLACE_WITH_AZURE_OPENAI_KEY` → Ihr Azure OpenAI API-Schlüssel
-    -   `REPLACE_WITH_GEMINI_KEY` → Ihr Google Gemini API-Schlüssel
+   - `REPLACE_WITH_AZURE_OPENAI_BASE_URL` → Ihre Azure OpenAI Endpunkt-URL
+   - `REPLACE_WITH_AZURE_OPENAI_KEY` → Ihr Azure OpenAI API-Schlüssel
+   - `REPLACE_WITH_GEMINI_KEY` → Ihr Google Gemini API-Schlüssel
 
-3.  **Zufällige Strings** (eindeutige Werte generieren):
+3. **Zufällige Zeichenketten** (eindeutige Werte generieren):
 
-    -   Ersetzen Sie alle `REPLACE_WITH_RANDOM_STRING` durch eindeutige zufällige Strings (verwenden Sie `openssl rand -hex 32`)
-    -   Ersetzen Sie `REPLACE_WITH_16_HEX_CHARS` durch einen 16-Byte-Hex-String (verwenden Sie `openssl rand -hex 16`)
-    -   Verwenden Sie unterschiedliche Werte für jeden Platzhalter
-    -   Mindestens 32 Zeichen werden aus Sicherheitsgründen empfohlen
+   - Ersetzen Sie alle `REPLACE_WITH_RANDOM_STRING` durch eindeutige zufällige Zeichenketten (verwenden Sie
+     `openssl rand -hex 32`)
+   - Ersetzen Sie `REPLACE_WITH_16_HEX_CHARS` durch eine 16-Byte-Hex-Zeichenkette (verwenden Sie `openssl rand -hex 16`)
+   - Verwenden Sie unterschiedliche Werte für jeden Platzhalter
+   - Mindestens 32 Zeichen werden für die Sicherheit empfohlen
 
 **Domain-Konfiguration:**
 
--   Für lokale Tests: Behalten Sie `AIHUB_FRONTEND_ORIGIN="https://127.0.0.1.nip.io"` bei
--   Für die Produktion: Ändern Sie dies zu Ihrer tatsächlichen Domain (z.B. `https://aihub.your-company.com`)
+- Für lokale Tests: Behalten Sie `AIHUB_FRONTEND_ORIGIN="https://127.0.0.1.nip.io"` bei
+- Für die Produktion: Ändern Sie dies zu Ihrer tatsächlichen Domain (z.B. `https://aihub.your-company.com`)
 
-::: tip Zufällige Strings generieren
-Verwenden Sie diese Befehle, um sichere zufällige Strings zu generieren:
+::: tip Zufällige Zeichenketten generieren
+Verwenden Sie diese Befehle, um sichere zufällige Zeichenketten zu generieren:
 
 ```bash
 # For most secrets (64 characters)
@@ -293,7 +295,7 @@ Führen Sie den entsprechenden Befehl für jeden Platzhalter aus.
 
 ### Umgebungsvalidierung
 
-Überprüfen Sie vor dem Deployment Ihre Konfiguration:
+Vor dem Deployment überprüfen Sie Ihre Konfiguration:
 
 ```bash
 # Check for placeholder values that need replacement
@@ -301,8 +303,6 @@ grep -n "REPLACE_WITH" .env
 ```
 
 Dies sollte keine Ergebnisse liefern, wenn alle Platzhalter ersetzt wurden.
-
----
 
 ## Schritt 3: Die Plattform deployen
 
@@ -316,10 +316,10 @@ docker compose -f docker-compose.latest.yml up -d
 
 Dieser Befehl wird:
 
--   Alle notwendigen Docker-Images herunterladen
--   Erforderliche Netzwerke und Volumes erstellen
--   Alle Plattform-Services in der richtigen Reihenfolge starten
--   Service-Discovery und Kommunikation konfigurieren
+- Alle notwendigen Docker-Images herunterladen
+- Erforderliche Netzwerke und Volumes erstellen
+- Alle Plattform-Services in der richtigen Reihenfolge starten
+- Service-Discovery und Kommunikation konfigurieren
 
 ### Deployment-Fortschritt überwachen
 
@@ -335,56 +335,55 @@ docker compose -f docker-compose.latest.yml ps
 
 **Erwartete Services:** Die Plattform umfasst diese Kern-Services:
 
--   **Web Interface** (aihub-web)
--   **API** (aihub-api)
--   **Authentication** (Auth-Services)
--   **Databases** (FerretDB, PostgreSQL, Valkey)
--   **Vector Database** (Milvus)
--   **LLM Proxy** (LiteLLM)
--   **Document Processing** (Docling)
--   **Observability** (Phoenix)
--   **Message Queue** (NATS)
--   **Storage** (SeaweedFS)
+- **Web-Interface** (aihub-web)
+- **API** (aihub-api)
+- **Authentifizierung** (auth services)
+- **Datenbanken** (FerretDB, PostgreSQL, Valkey)
+- **Vektor-Datenbank** (Milvus)
+- **LLM-Proxy** (LiteLLM)
+- **Dokumentenverarbeitung** (Docling)
+- **Observability** (Phoenix)
+- **Message Queue** (NATS)
+- **Speicher** (SeaweedFS)
 
-### Auf Service-Initialisierung warten
+### Warten auf Service-Initialisierung
 
-Der anfängliche Start dauert 3-5 Minuten, während sich die Services initialisieren. Alle Services sollten den Status "healthy" anzeigen:
+Der erste Start dauert 3-5 Minuten, während sich die Services initialisieren. Alle Services sollten den Status "healthy"
+anzeigen:
 
 ```bash
 # Wait for healthy status
 docker compose -f docker-compose.latest.yml ps --format "table {{.Name}}\t{{.Status}}"
 ```
 
----
-
 ## Schritt 4: Erfolgreiches Deployment überprüfen
 
 ### Auf die Plattform zugreifen
 
-1.  **Stellen Sie sicher, dass Ihr Benutzer, mit dem Sie testen, die Rolle "AIHubAdmin" in der Azure Enterprise Application zugewiesen hat.**
+1. **Stellen Sie sicher, dass Ihrem Benutzer, mit dem Sie testen, die Rolle "AIHubAdmin" in der Azure Enterprise
+   Application zugewiesen ist**
 
-2.  **Web-Interface:**
+2. **Web-Interface:**
 
-    -   Lokal: `https://127.0.0.1.nip.io`
-    -   Produktion: `https://your-domain.com`
+   - Lokal: `https://127.0.0.1.nip.io`
+   - Produktion: `https://your-domain.com`
 
-3.  **Erwarteter Anmelde-Workflow:**
+3. **Erwarteter Login-Flow:**
 
-    -   Weiterleitung zur Azure-Authentifizierung
-    -   Nach dem Login Rückkehr zur AI-Hub-Oberfläche
-    -   Das Haupt-Dashboard sollte sichtbar sein
+   - Leitet zur Azure-Authentifizierung weiter
+   - Nach dem Login kehrt die Oberfläche zum AI-Hub zurück
+   - Das Haupt-Dashboard sollte sichtbar sein
 
----
+## Zusammenfassung: Wichtige Unterschiede zwischen Deployments
 
-## Zusammenfassung: Hauptunterschiede zwischen Deployments
-
-| Merkmal                 | Produktion (`docker-compose.latest.yml`) | Lokal (`docker-compose.local.yml`) |
-| :---------------------- | :--------------------------------------- | :--------------------------------- |
-| **SSL-Zertifikate**     | Let's Encrypt (automatisch)              | mkcert (manuelle Generierung)      |
-| **Domain**              | Ihre Produktionsdomain                   | `127.0.0.1.nip.io`                 |
-| **Konfigurationsdateien** | `*.latest.*` Konfigurationen             | `*.local.*` Konfigurationen        |
-| **Zweck**               | Produktions-Deployments                  | Lokales Deployment und Entwicklung |
+| Merkmal                   | Produktion (`docker-compose.latest.yml`) | Lokal (`docker-compose.local.yml`) |
+| :------------------------ | :--------------------------------------- | :--------------------------------- |
+| **SSL-Zertifikate**       | Let's Encrypt (automatisch)              | mkcert (manuelle Generierung)      |
+| **Domain**                | Ihre Produktions-Domain                  | `127.0.0.1.nip.io`                 |
+| **Konfigurationsdateien** | `*.latest.*` configs                     | `*.local.*` configs                |
+| **Zweck**                 | Produktions-Deployments                  | Lokales Deployment und Entwicklung |
 
 ::: warning
-Verwenden Sie niemals selbstsignierte SSL-Zertifikate in der Produktion. Die Konfiguration für das lokale Deployment ist ausschließlich für die Entwicklung und Tests auf Ihrer lokalen Maschine konzipiert.
+Verwenden Sie niemals selbstsignierte SSL-Zertifikate in der Produktion. Die Konfiguration für das lokale Deployment ist
+ausschließlich für die Entwicklung und Tests auf Ihrer lokalen Maschine konzipiert.
 :::

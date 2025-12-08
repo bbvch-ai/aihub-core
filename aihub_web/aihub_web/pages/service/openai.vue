@@ -5,7 +5,7 @@
         :src="runtimeConfig.public.webui.url"
         width="100%"
         height="100%"
-        title="Open Web UI"
+        title="Open WebUI"
         allow="microphone"
       />
     </div>
@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount } from 'vue'
+import { onBeforeUnmount, onMounted } from 'vue'
 
 const runtimeConfig = useRuntimeConfig()
 const route = useRoute()

@@ -75,7 +75,7 @@ def mongo_document_store_resource(
 def milvus_vector_store_resource(
     vector_store_uri: str,
     vector_store_name: str,
-    dimensions: int = 3072,
+    dimensions: int,
     index_type: MilvusIndexType = MilvusIndexType.HNSW,
 ) -> dict[str, ConfigurableResourceFactory]:
     vector_store = MilvusVectorStoreResource(
@@ -94,7 +94,7 @@ def milvus_vector_store_resource(
 def local_mongo_milvus_storage_context_resource(
     vector_store_uri: str,
     store_name: str,
-    dimensions: int = 3072,
+    dimensions: int,
 ) -> dict[str, ConfigurableResourceFactory]:
     return {
         **mongo_document_store_resource(document_store_name=store_name),
@@ -128,7 +128,7 @@ def default_io_manager_s3_datalake_resources(container_name: str) -> dict[str, C
 
 def default_llm_resources() -> dict[str, ConfigurableResourceFactory]:
     embedding_model_resource = EmbeddingModelResource(
-        embedding_config=EmbeddingModelConfig(model_name="embedding/small")
+        embedding_config=EmbeddingModelConfig(model_name="embedding/large")
     )
     language_model = LanguageModelResource(llm_config=LLMConfig(model_name="text-generation/mini"))
     return {

@@ -35,17 +35,25 @@ NODES_KEY = AssetKey(["playground", "nodes"])
 
 CONTAINER_NAME = "playground"
 
+# LLM configuration for document parsing and node processing
+llm_config = LLMConfig(model_name="text-generation/nano")
+
 # Dynamic partitions for scalable document processing
 document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 
 # Create the pipeline assets using AI-Hub factories
-observable_asset = observable_data_lake_factory(DATA_LAKE_KEY, document_partitions)
+observable_asset = observable_data_lake_factory(DATA_LAKE_KEY, document_partitions, max_partitions=1000)
 
 assets = [
     # Observable asset watches the data lake for new/changed documents
     observable_asset,
     # Document factory processes raw files into RefDocs with metadata
-    documents_factory(DOCUMENT_KEY, data_lake_key=DATA_LAKE_KEY, partitions=document_partitions),
+    documents_factory(
+        DOCUMENT_KEY,
+        data_lake_key=DATA_LAKE_KEY,
+        partitions=document_partitions,
+        enable_table_refinement=False,
+    ),
     # Nodes factory chunks documents into searchable nodes with embeddings
     nodes_factory(NODES_KEY, document_key=DOCUMENT_KEY, partitions=document_partitions),
 ]
@@ -62,8 +70,8 @@ defs = Definitions(
         # Data lake I/O managers for S3-compatible storage
         **default_io_manager_s3_datalake_resources(container_name=CONTAINER_NAME),
         # Document processing resources
-        "document_parser": DocumentParserResource(loader_type=LoaderType.DOCLING),
-        "node_parser": MarkdownStructuralNodeParserResource(),
+        "document_parser": DocumentParserResource(loader_type=LoaderType.DOCLING, llm_config=llm_config),
+        "node_parser": MarkdownStructuralNodeParserResource(llm_config=llm_config),
         "summary_parser": RecursiveSummaryParserResource(),
         # Vector store and document store (MongoDB + Milvus)
         **local_mongo_milvus_storage_context_resource(
@@ -78,7 +86,7 @@ defs = Definitions(
         "embedding_model": EmbeddingModelResource(
             embedding_config=EmbeddingModelConfig(model_name="embedding/large"),
         ),
-        "language_model": LanguageModelResource(llm_config=LLMConfig(model_name="text-generation/nano")),
+        "language_model": LanguageModelResource(llm_config=llm_config),
     },
     # Add jobs for pipeline operations
     jobs=[observe_job],

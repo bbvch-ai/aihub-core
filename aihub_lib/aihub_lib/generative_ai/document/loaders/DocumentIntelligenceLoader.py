@@ -93,38 +93,72 @@ class DocumentIntelligenceLoader(BaseReader):
             ]
 
         operation_id = poller.details["operation_id"]
-
-        soup = BeautifulSoup(text, "html.parser")
-        figure_tags = soup.find_all("figure")
-
-        if len(result.figures) != len(figure_tags):
-            raise ValueError(
-                f"Mismatch between number of figures returned by the API ({len(result.figures)}) "
-                f"and number of <figure> tags in the document ({len(figure_tags)})."
-            )
-
         figures_dir = create_figures_folder_name(file)
-        for idx, (figure, figure_tag) in enumerate(zip(result.figures, figure_tags)):
+
+        text = self._replace_figures_by_spans(
+            text=text,
+            result=result,
+            operation_id=operation_id,
+            figures_dir=figures_dir,
+            fs=fs,
+        )
+
+        return [
+            Document(
+                text=html.unescape(text),
+                extra_info={**extra_info, **metadata} if extra_info else metadata,
+            )
+        ]
+
+    def _replace_figures_by_spans(
+        self,
+        text: str,
+        result: AnalyzeResult,
+        operation_id: str,
+        figures_dir: str,
+        fs: AbstractFileSystem,
+    ) -> str:
+        """
+        Replace figures in text using span offsets from the API response.
+
+        Processes figures in reverse order (by offset) to prevent offset shifts during replacement.
+        Figures are numbered sequentially (1, 2, 3...) in document order.
+
+        Note: Only the first span is used if a figure has multiple spans. Figures without spans
+        are silently skipped and will not appear in the output.
+        """
+        if not result.figures:
+            return text
+
+        # Sort figures by offset in reverse order
+        if any(not fig.spans for fig in result.figures):
+            missing_ids = [fig.id for fig in result.figures if not fig.spans]
+            raise ValueError(f"Missing span information for figures: {missing_ids}")
+        figures_with_spans = [(fig, fig.spans[0].offset, fig.spans[0].length) for fig in result.figures if fig.spans]
+        figures_with_spans.sort(key=lambda x: x[1], reverse=True)
+
+        figure_counter = len(figures_with_spans)
+
+        for figure, offset, length in figures_with_spans:
             response = self.document_intelligence_client.get_analyze_result_figure(
                 model_id="prebuilt-layout",
                 result_id=operation_id,
                 figure_id=figure.id,
             )
 
-            blob_path = os.path.join(figures_dir, f"figure_{idx + 1}.png")
-            with fs.open(blob_path, "wb") as pdf_file:
+            blob_path = os.path.join(figures_dir, f"figure_{figure_counter}.png")
+            with fs.open(blob_path, "wb") as img_file:
                 for chunk in response:
-                    pdf_file.write(chunk)
+                    img_file.write(chunk)
 
-            markdown_figure = f"![Figure {idx + 1}]({blob_path})"
-            figure_tag.replace_with(f"<{NODE_CONTENT_TYPE_FIGURE}>{markdown_figure}</{NODE_CONTENT_TYPE_FIGURE}>")
+            markdown_figure = f"![Figure {figure_counter}]({blob_path})"
+            replacement = f"<{NODE_CONTENT_TYPE_FIGURE}>{markdown_figure}</{NODE_CONTENT_TYPE_FIGURE}>"
+            if offset < 0 or offset + length > len(text):
+                raise ValueError(f"Figure span ({offset}, {length}) out of bounds for text length {len(text)}")
+            text = text[:offset] + replacement + text[offset + length :]
+            figure_counter -= 1
 
-        return [
-            Document(
-                text=html.unescape(str(soup)),
-                extra_info={**extra_info, **metadata} if extra_info else metadata,
-            )
-        ]
+        return text
 
 
 def remove_figure_tags_keep_content(document_text: str) -> str:

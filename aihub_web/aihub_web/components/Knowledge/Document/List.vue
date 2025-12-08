@@ -81,10 +81,11 @@
 </template>
 
 <script setup lang="ts">
-import { getFileUrl, type DocumentDto } from '@core/sdk/client'
+import type { DocumentDto } from '@core/sdk/client'
 
 const route = useRoute()
 const { t } = useI18n()
+const { getDocumentSourceUrl } = useDocumentUrl()
 
 const props = defineProps<{
   documents: DocumentDto[]
@@ -112,16 +113,7 @@ const getRowClass = (data: DocumentDto) => {
 }
 
 const downloadFile = async (src: string) => {
-  const parts = src.split('/')
-  const [container, file_path] = [parts[0], parts.slice(1).join('/')]
-
-  const { url } = await getFileUrl({
-    composable: '$fetch',
-    path: {
-      container,
-      file_path,
-    },
-  })
+  const url = await getDocumentSourceUrl(src)
   window.open(url, '_blank')
 }
 </script>

@@ -1,12 +1,12 @@
 from typing import Annotated
 
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
+from llama_index.llms.openai_like import OpenAILike
 from opentelemetry.propagate import inject
 from pydantic import BaseModel, Field
 
 from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
 from aihub_lib.generative_ai.resources.models.llm.LiteLLMBase import LiteLLMBase
-from aihub_lib.generative_ai.resources.models.llm.PreprocessingOpenAILike import PreprocessingOpenAILike
 from aihub_lib.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
 
 
@@ -41,7 +41,7 @@ class LLMParameter(BaseModel):
     )
 
 
-class LLMConfig(LiteLLMBase[PreprocessingOpenAILike]):
+class LLMConfig(LiteLLMBase[OpenAILike]):
     """
     Configuration for a chat-based LLM, providing default parameters and a method
     to instantiate a chat LLM and cost tracker for llama_index.
@@ -56,7 +56,7 @@ class LLMConfig(LiteLLMBase[PreprocessingOpenAILike]):
         LLMParameter()
     )
 
-    def to_llama_index(self) -> tuple[PreprocessingOpenAILike, LLMCostTracker]:
+    def to_llama_index(self) -> tuple[OpenAILike, LLMCostTracker]:
         """
         Instantiate an OpenAILike model with local endpoint logic and a LLMCostTracker.
 
@@ -81,7 +81,7 @@ class LLMConfig(LiteLLMBase[PreprocessingOpenAILike]):
         default_headers = {}
         inject(default_headers)
 
-        open_ai_like = PreprocessingOpenAILike(
+        open_ai_like = OpenAILike(
             model=self.model_name,
             api_base=config.BASE_URL,
             api_key=config.API_KEY.get_secret_value(),

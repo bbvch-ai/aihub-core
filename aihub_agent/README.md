@@ -264,7 +264,7 @@ For any non-trivial agent, create a `trigger.py` script. This script programmati
 ```python
 # my_agent/trigger.py - Essential for debugging
 import asyncio
-from aihub_lib.testing.logging.logger import enable_logging
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 # ... other imports
@@ -326,7 +326,7 @@ Enable logging in your `trigger.py` script to see a detailed, real-time feed of 
 
 ```python
 # Add this to the top of your trigger.py or run.py
-from aihub_lib.testing.logging.logger import enable_logging
+from aihub_lib.infrastructure.logging.logger import enable_logging
 enable_logging()
 ```
 
