@@ -15,7 +15,7 @@ from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 BASE_URL = "http://test"
 MODELS_ENDPOINT = "/api/v1/openai/models"
-CHAT_MODEL = "text-generation/mini"
+CHAT_MODEL = "text-generation/nano"
 EMBEDDING_MODEL = "embedding/large"
 
 

@@ -20,8 +20,8 @@ agent_description_guard:
     {agent_description}
     </DescrizioneAgente>
     L'agente potrebbe avere accesso a ulteriori fonti di informazione che possono aiutarlo a rispondere alla domanda.
-    Decidi se la domanda posta dall'utente nel contesto della conversazione debba essere indirizzata a questo agente. 
-    Permetti tutte le domande che potrebbero rientrare nell'ambito di competenza dell'agente. Blocca tutte le domande 
+    Decidi se la domanda posta dall'utente nel contesto della conversazione debba essere indirizzata a questo agente.
+    Permetti tutte le domande che potrebbero rientrare nell'ambito di competenza dell'agente. Blocca tutte le domande
     che chiaramente non hanno nulla a che fare con l'agente. In caso di dubbio, scegli di consentire la domanda.
     <DomandaUtente>
     {user_query}
@@ -29,15 +29,13 @@ agent_description_guard:
     <CronologiaConversazionePrecedente>
     {history}
     </CronologiaConversazionePrecedente>
-    L'output finale deve essere esclusivamente un oggetto JSON con esattamente le due chiavi “success” e “reasoning”. Non ripetere l'intero schema JSON né aggiungere ulteriori meta-informazioni.
+    DEVI utilizzare lo strumento fornito per inviare la tua risposta.
 few_shot_guard:
   prompt: |
     Riceverete diversi esempi che mostrano quali richieste dell'utente sono consentite e quali no. Ogni risposta di esempio è composta da due chiavi:
 
     "success": un booleano (vero o falso) che indica se la richiesta è consentita.
     "reasoning": una stringa contenente la motivazione di questa decisione.
-    Importante:
-    L'output finale deve essere esclusivamente un oggetto JSON con esattamente le due chiavi “success” e “reasoning”. Non ripetere l'intero schema JSON né aggiungere ulteriori meta-informazioni.
 
     Il tuo compito è determinare se una nuova richiesta dell'utente è consentita in base a questi esempi.
 
@@ -50,6 +48,8 @@ few_shot_guard:
     <UserQuery>
     {user_query}
     </UserQuery>
+
+    DEVI utilizzare lo strumento fornito per inviare la tua risposta.
   user_message: |
     <Utente>
     {user}
@@ -80,26 +80,26 @@ context_sufficient_guard:
     Fornirò un contesto, una domanda e le query precedenti, se sono state generate.
     Se è possibile rispondere alla domanda con il contesto fornito, la conversazione può continuare (success=True).
     Se non è possibile rispondere alla domanda con il contesto, la conversazione deve essere interrotta (success=False).
-    
+
     Quando success=False, è necessario generare una nuova query che verrà utilizzata per raccogliere ulteriori informazioni. Quando si crea una nuova query:
 
     1. DARE PRIORITÀ AI CONCETTI DI LIVELLO SUPERIORE: La strategia principale dovrebbe essere quella di risalire le gerarchie concettuali verso domini più ampi che includano naturalmente informazioni sull'argomento originale.
-       - Ad esempio, se la richiesta di “reti neurali” non produce risultati sufficienti, spostatevi su “metodi di apprendimento automatico” o “modelli computazionali” invece di chiedere le reti neurali in modo diverso.
+       - Ad esempio, se la richiesta di "reti neurali" non produce risultati sufficienti, spostatevi su "metodi di apprendimento automatico" o "modelli computazionali" invece di chiedere le reti neurali in modo diverso.
        - Se un argomento non produce risultati, considerate il campo accademico, l'industria o il dominio di conoscenza a cui appartiene.
-    
+
     2. Analizzate le query precedenti per evitare ripetizioni o piccole variazioni della stessa domanda.
-    
+
     3. Se i concetti di livello superiore sono già stati esplorati, provate queste strategie alternative:
        - Esaminare i campi correlati che si intersecano con l'argomento principale.
        - Cercare i concetti fondamentali che stanno alla base dell'argomento
        - Cercare informazioni sulla categoria o sul sistema di classificazione di riferimento.
        - Richiedere informazioni su principi tecnologici o scientifici più ampi
        - Considerare collegamenti interdisciplinari con altri ambiti
-    
+
     4. La nuova interrogazione DEVE essere chiaramente distinta da tutte le interrogazioni precedenti e allontanarsi dall'argomento specifico se gli approcci diretti hanno fallito.
-    
+
     5. Ogni domanda successiva deve rappresentare un cambiamento concettuale più significativo di quelle precedenti.
-    
+
     Domanda:
     <Domanda>
     {user_query}
@@ -112,6 +112,8 @@ context_sufficient_guard:
     <Questioni_precedenti>
     {prev_queries}
     <Questioni_precedenti>
+
+    DEVI utilizzare lo strumento fornito per inviare la tua risposta.
   reason_no_hops: |
     Motivo che spiega perché il contesto è o non è sufficiente (nessun salto aggiuntivo disponibile).
   success_no_hops: |
@@ -138,10 +140,7 @@ sensitive_info_guard:
     {answer}
     </Risposta da analizzare>
 
-    Il tuo output deve essere un oggetto JSON con esattamente tre chiavi:
-    - "success": true se non sono state trovate informazioni sensibili, false se sono state rilevate informazioni sensibili
-    - "reasoning": spiegazione della tua decisione
-    - "cleaned_answer": se sono state trovate informazioni sensibili, fornisci una versione pulita; altrimenti null
+    DEVI utilizzare lo strumento fornito per inviare la tua risposta.
   reason: |
     Spiegazione se sono state rilevate informazioni sensibili e quali azioni sono state intraprese.
   success: |

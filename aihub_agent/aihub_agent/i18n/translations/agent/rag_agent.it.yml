@@ -17,6 +17,8 @@ formulate_question:
     Formula una domanda specifica e chiara per un esperto di dominio che aiuterà a ottenere
     le informazioni mancanti necessarie per rispondere alla domanda dell'utente. La domanda dovrebbe essere
     concisa e affrontare direttamente quali informazioni mancano.
+
+    DEVI utilizzare lo strumento fornito per inviare la tua risposta.
   question_description: |
     La domanda specifica e chiara per l'esperto di dominio che aiuterà a ottenere le informazioni mancanti.
   docstring: |

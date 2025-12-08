@@ -17,6 +17,8 @@ formulate_question:
     Formulieren Sie eine spezifische, klare Frage für einen Fachexperten, die hilft,
     die fehlenden Informationen zu erhalten, die zur Beantwortung der Benutzerfrage benötigt werden.
     Die Frage sollte präzise sein und direkt ansprechen, welche Informationen fehlen.
+
+    Sie MÜSSEN das bereitgestellte Tool verwenden, um Ihre Antwort zu übermitteln.
   question_description: |
     Die spezifische, klare Frage für den Fachexperten, die hilft, die fehlenden Informationen zu erhalten.
   docstring: |

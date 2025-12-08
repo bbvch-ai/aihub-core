@@ -411,21 +411,9 @@ class MessageConverter:
         """Process image items from content"""
         image_url = item.get("image_url", {}).get("url", "")
 
-        if image_url.startswith("data:image"):
-            try:
-                parts = image_url.split(",", 1)
-                if len(parts) == 2:
-                    header, base64_data = parts
-                    mime_type = header.split(";")[0].replace("data:", "")
-                    return {
-                        "block_type": "image",
-                        "image_data": base64_data,
-                        "mime_type": mime_type,
-                    }
-            except Exception as e:
-                logger.warning(f"Failed to parse image URL: {e}")
-
-        return {"block_type": "image", "image_url": image_url}
+        # Pass the full data URL directly - LlamaIndex ImageBlock expects the url field
+        # to contain either a regular URL or a data URL (data:image/...;base64,...)
+        return {"block_type": "image", "url": image_url}
 
 
 # ============================================================================

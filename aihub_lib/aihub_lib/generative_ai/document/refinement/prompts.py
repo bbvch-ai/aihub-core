@@ -22,7 +22,9 @@ Table Data:
 
 Return table boundaries. The first table always starts at row 0.
 If this is a single table, return one entry with start_row=0.
-If multiple tables are merged, return multiple entries with each table's starting row."""
+If multiple tables are merged, return multiple entries with each table's starting row.
+
+You MUST use the provided tool to submit your response."""
 
 HEADER_DETECTION_PROMPT = """Analyze this table to determine how many header rows it has.
 
@@ -45,4 +47,6 @@ Table Data:
 {table_text}
 </table_data>
 
-Return the number of header rows (1-4). Most tables have 1-2 header rows."""
+Return the number of header rows (1-4). Most tables have 1-2 header rows.
+
+You MUST use the provided tool to submit your response."""

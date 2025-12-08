@@ -14,7 +14,7 @@ agent_description_guard:
     <Historique de la conversation>
     {history}
     </Historique de la conversation>
-    Votre résultat final doit être exclusivement un objet JSON contenant exactement les deux clés « success » et « reasoning ». Ne répétez pas l'ensemble du schéma JSON et n'ajoutez pas de méta-informations supplémentaires.
+    Vous DEVEZ utiliser l'outil fourni pour soumettre votre réponse.
   user_message: |
     <Utilisateur>
     {user}
@@ -35,8 +35,6 @@ few_shot_guard:
 
     "success" : un booléen (vrai ou faux) indiquant si la demande est autorisée.
     "reasoning" : une chaîne de caractères contenant les raisons de cette décision.
-    Important :
-    Votre résultat final doit être exclusivement un objet JSON contenant exactement les deux clés « success » et « reasoning ». Ne répétez pas l'ensemble du schéma JSON et n'ajoutez pas de méta-informations supplémentaires.
 
     Votre tâche est de déterminer si une nouvelle requête utilisateur est autorisée en vous basant sur ces exemples.
 
@@ -49,6 +47,8 @@ few_shot_guard:
     <UserQuery>
     {user_query}
     </UserQuery>
+
+    Vous DEVEZ utiliser l'outil fourni pour soumettre votre réponse.
   user_message: |
     <Utilisateur>
     {user}
@@ -79,24 +79,24 @@ context_sufficient_guard:
     Je vais vous donner un contexte, une question et les requêtes précédentes si elles ont été générées.
     Si le contexte fourni permet de répondre à la question, la conversation peut se poursuivre (success=True).
     Si le contexte ne permet pas de répondre à la question, la conversation doit être interrompue (success=False).
-    
+
     Si success=False, vous devez générer une nouvelle requête qui sera utilisée pour recueillir plus d'informations. Lors de la création d'une nouvelle requête :
 
     1. DONNEZ LA PRIORITÉ AUX CONCEPTS DE HAUT NIVEAU : Votre stratégie principale doit consister à remonter les hiérarchies conceptuelles vers des domaines plus larges qui incluraient naturellement des informations sur le sujet d'origine.
        - Par exemple, si une requête sur les « réseaux neuronaux » ne donne pas de résultats suffisants, passez aux « méthodes d'apprentissage automatique » ou aux « modèles informatiques » au lieu de poser une question différente sur les réseaux neuronaux.
        - Si un sujet ne donne pas de résultats, réfléchissez au domaine académique, à l'industrie ou au domaine de connaissances auquel il appartient.
-    
+
     2. Analysez les requêtes précédentes pour éviter les répétitions ou les variations mineures de la même question.
-    
+
     3. Si des concepts de plus haut niveau ont déjà été explorés, essayez ces stratégies alternatives :
        - Examiner les domaines connexes qui recoupent le sujet principal
        - rechercher les concepts fondamentaux qui sous-tendent le sujet
        - Rechercher des informations sur la catégorie ou le système de classification d'origine
        - Demander des informations sur des principes technologiques ou scientifiques plus larges
        - Envisager des liens interdisciplinaires avec d'autres domaines
-    
+
     4. La nouvelle requête DOIT être clairement distincte de toutes les requêtes précédentes et s'éloigner du sujet spécifique si les approches directes ont échoué.
-    
+
     5. Chaque requête successive doit représenter un changement conceptuel plus important que les précédentes.
 
     Question:
@@ -111,6 +111,8 @@ context_sufficient_guard:
     <Previous_Queries>
     { prev_queries }
     <\Previous_Queries>
+
+    Vous DEVEZ utiliser l'outil fourni pour soumettre votre réponse.
   reason_no_hops: |
     Raisonnement expliquant pourquoi le contexte est ou n'est pas suffisant (aucun saut supplémentaire disponible).
   success_no_hops: |
@@ -137,10 +139,7 @@ sensitive_info_guard:
     {answer}
     </Réponse à analyser>
 
-    Votre sortie doit être un objet JSON avec exactement trois clés :
-    - "success" : true si aucune information sensible n'a été trouvée, false si des informations sensibles ont été détectées
-    - "reasoning" : explication de votre décision
-    - "cleaned_answer" : si des informations sensibles ont été trouvées, fournissez une version nettoyée ; sinon null
+    Vous DEVEZ utiliser l'outil fourni pour soumettre votre réponse.
   reason: |
     Explication indiquant si des informations sensibles ont été détectées et quelles actions ont été prises.
   success: |

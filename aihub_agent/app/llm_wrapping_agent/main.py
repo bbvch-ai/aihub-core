@@ -22,7 +22,7 @@ async def main():
             agent_id="dev_agent",
             name=LocaleString(en="Dev Agent"),
             description=LocaleString(en="This is the default Dev Agent config"),
-            llm=LLMConfig(model_name="text-generation/mini"),
+            llm=LLMConfig(model_name="text-generation/nano"),
         ),
         redis_url=RedisSettings().URL,
         servers=servers_list,

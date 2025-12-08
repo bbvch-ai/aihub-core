@@ -78,7 +78,7 @@ def default_definitions(
     *,
     datalake_container_name: Annotated[str, "S3 bucket/container name where raw documents are stored"],
     embedding_model_name: Annotated[str, "LiteLLM model name for embeddings"] = "embedding/large",
-    llm_model_name: Annotated[str, "LiteLLM model name for text generation"] = "text-generation/mini",
+    llm_model_name: Annotated[str, "LiteLLM model name for text generation"] = "text-generation/nano",
     with_summary_nodes: Annotated[bool, "Generate recursive summaries for hierarchical RAG"] = True,
     with_table_refinement: Annotated[bool, "Refine tables with LLM to detect structure and split"] = True,
     auto_sync: Annotated[bool, "Whether the S3 bucket is auto-synced (i.e. with local fs pipeline)"] = False,

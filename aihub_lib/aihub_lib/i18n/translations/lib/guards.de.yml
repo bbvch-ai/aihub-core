@@ -14,7 +14,7 @@ agent_description_guard:
     <vergangener Gesprächsverlauf>
     {history}
     </vergangener Gesprächsverlauf>
-    Ihre finale Ausgabe muss ausschliesslich ein JSON-Objekt mit genau den beiden Schlüsseln "success" und "reasoning" sein. Wiederholen Sie nicht das gesamte JSON-Schema oder fügen zusätzliche Meta-Informationen hinzu.
+    Sie MÜSSEN das bereitgestellte Tool verwenden, um Ihre Antwort zu übermitteln.
   user_message: |
     <Benutzer>
     {user}
@@ -35,8 +35,6 @@ few_shot_guard:
 
     "success": ein Boolean (true oder false), der angibt, ob die Anfrage zulässig ist.
     "reasoning": ein String, der die Begründung für diese Entscheidung enthält.
-    Wichtig:
-    Ihre finale Ausgabe muss ausschliesslich ein JSON-Objekt mit genau den beiden Schlüsseln "success" und "reasoning" sein. Wiederholen Sie nicht das gesamte JSON-Schema oder fügen zusätzliche Meta-Informationen hinzu.
 
     Ihre Aufgabe ist es, zu bestimmen, ob eine neue Benutzeranfrage basierend auf diesen Beispielen zulässig ist.
 
@@ -49,6 +47,8 @@ few_shot_guard:
     <Benutzer>
     {user_query}
     </Benutzer>
+
+    Sie MÜSSEN das bereitgestellte Tool verwenden, um Ihre Antwort zu übermitteln.
   user_message: |
     <Benutzer>
     {user}
@@ -79,26 +79,26 @@ context_sufficient_guard:
     Ich gebe Ihnen einen Kontext, eine Frage und frühere Abfragen, falls welche erstellt wurden.
     Wenn die Frage mit dem angegebenen Kontext beantwortet werden kann, kann die Konversation fortgesetzt werden (success=True).
     Ist die Beantwortung der Frage mit dem Kontext nicht möglich, sollte die Konversation beendet werden (success=False).
-    
+
     Wenn success=False ist, müssen Sie eine neue Abfrage erstellen, mit der Sie weitere Informationen sammeln können. Wenn Sie eine neue Abfrage erstellen:
 
     1. PRIORISIEREN SIE ÜBERGEORDNETE KONZEPTE: Ihre primäre Strategie sollte darin bestehen, in der Begriffshierarchie nach oben zu gehen, um breitere Bereiche zu finden, die auf natürliche Weise Informationen über das ursprüngliche Thema enthalten würden.
-       - Wenn z. B. die Frage nach „neuronalen Netzen“ unzureichende Ergebnisse liefert, wechseln Sie zu „Methoden des maschinellen Lernens“ oder „Berechnungsmodelle“, anstatt anders nach neuronalen Netzen zu fragen.
+       - Wenn z. B. die Frage nach „neuronalen Netzen" unzureichende Ergebnisse liefert, wechseln Sie zu „Methoden des maschinellen Lernens" oder „Berechnungsmodelle", anstatt anders nach neuronalen Netzen zu fragen.
        - Wenn ein Thema keine Ergebnisse liefert, überlegen Sie, zu welchem akademischen Bereich, welcher Branche oder Wissensdomäne es gehört.
-    
+
     2. Analysieren Sie die vorherigen Abfragen, um Wiederholungen oder geringfügige Variationen derselben Frage zu vermeiden.
-    
+
     3. Wenn übergeordnete Konzepte bereits erforscht wurden, versuchen Sie diese alternativen Strategien:
        - Untersuchen Sie verwandte Bereiche, die sich mit dem Hauptthema überschneiden.
        - Suchen Sie nach grundlegenden Konzepten, die das Thema untermauern
        - Suchen Sie nach Informationen über die übergeordnete Kategorie oder das Klassifizierungssystem
        - Bitten Sie um Informationen über breitere technologische oder wissenschaftliche Prinzipien
        - Berücksichtigen Sie interdisziplinäre Verbindungen zu anderen Bereichen.
-    
+
     4. Die neue Abfrage MUSS sich deutlich von allen vorherigen Abfragen unterscheiden und sich von dem spezifischen Thema entfernen, wenn direkte Ansätze fehlgeschlagen sind.
-    
+
     5. Jede nachfolgende Abfrage sollte eine grössere konzeptionelle Veränderung darstellen als die vorhergehenden.
-    
+
     Frage:
     <Question>
     {user_query}
@@ -111,6 +111,8 @@ context_sufficient_guard:
     <Previous_Queries>
     {prev_queries}
     <\Previous_Queries>
+
+    Sie MÜSSEN das bereitgestellte Tool verwenden, um Ihre Antwort zu übermitteln.
   reason_no_hops: |
     Begründung, warum der Kontext ausreichend ist oder nicht (keine zusätzlichen Sprünge verfügbar).
   success_no_hops: |
@@ -137,10 +139,7 @@ sensitive_info_guard:
     {answer}
     </Zu analysierende Antwort>
 
-    Ihre Ausgabe muss ein JSON-Objekt mit genau drei Schlüsseln sein:
-    - "success": true, wenn keine sensiblen Informationen gefunden wurden, false, wenn sensible Informationen erkannt wurden
-    - "reasoning": Erklärung Ihrer Entscheidung
-    - "cleaned_answer": wenn sensible Informationen gefunden wurden, stellen Sie eine bereinigte Version zur Verfügung; andernfalls null
+    Sie MÜSSEN das bereitgestellte Tool verwenden, um Ihre Antwort zu übermitteln.
   reason: |
     Erklärung, ob sensible Informationen erkannt wurden und welche Maßnahmen ergriffen wurden.
   success: |

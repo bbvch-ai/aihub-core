@@ -45,7 +45,7 @@ async def main():
                 fr="Pose des questions aux experts humains et valide leurs réponses.",
                 it="Pone domande agli esperti umani e valida le loro risposte.",
             ),
-            llm=LLMConfig(model_name="text-generation/mini"),
+            llm=LLMConfig(model_name="text-generation/nano"),
             expert_channel_type=settings.EXPERT_CHANNEL_TYPE,  # type: ignore[arg-type]
             slack_channel_id=settings.SLACK_CHANNEL_ID,
             expert_group=settings.EXPERT_GROUP,

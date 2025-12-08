@@ -130,7 +130,7 @@ def default_llm_resources() -> dict[str, ConfigurableResourceFactory]:
     embedding_model_resource = EmbeddingModelResource(
         embedding_config=EmbeddingModelConfig(model_name="embedding/large")
     )
-    language_model = LanguageModelResource(llm_config=LLMConfig(model_name="text-generation/mini"))
+    language_model = LanguageModelResource(llm_config=LLMConfig(model_name="text-generation/nano"))
     return {
         "embedding_model": embedding_model_resource,
         "language_model": language_model,

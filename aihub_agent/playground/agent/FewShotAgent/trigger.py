@@ -21,7 +21,7 @@ async def main():
             agent_class=FewShotAgent.__name__,
             name=LocaleString(en="RAG Agent"),
             description=LocaleString(en="This is an agent can transfer movie titles into emojis"),
-            llm=LLMConfig(model_name="text-generation/mini"),
+            llm=LLMConfig(model_name="text-generation/nano"),
             number_of_input_tokens=100000,
             condense_question_prompt=LocaleString(en="""return the last user message"""),
             few_shot=FewShotStepConfig(

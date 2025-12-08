@@ -28,7 +28,7 @@ async def main():
             agent_class=FrontendTestingAgent.__name__,
             name=LocaleString(en="Frontend Testing Agent"),
             description=LocaleString(en="This is an agent that can be used to develop the frontend"),
-            llm=LLMConfig(model_name="text-generation/mini"),
+            llm=LLMConfig(model_name="text-generation/nano"),
         ),
     )
 

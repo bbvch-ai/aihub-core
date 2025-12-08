@@ -17,6 +17,8 @@ formulate_question:
     Formulez une question spécifique et claire pour un expert du domaine qui aidera à obtenir
     les informations manquantes nécessaires pour répondre à la question de l'utilisateur. La question doit être
     concise et aborder directement les informations qui manquent.
+
+    Vous DEVEZ utiliser l'outil fourni pour soumettre votre réponse.
   question_description: |
     La question spécifique et claire pour l'expert du domaine qui aidera à obtenir les informations manquantes.
   docstring: |

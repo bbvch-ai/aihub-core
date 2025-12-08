@@ -40,7 +40,7 @@ async def main():
                 fr="Extrait des insights des conversations d'experts et les stocke.",
                 it="Estrae insights dalle conversazioni con esperti e li memorizza.",
             ),
-            llm=LLMConfig(model_name="text-generation/mini"),
+            llm=LLMConfig(model_name="text-generation/nano"),
             namespace=settings.INSIGHT_NAMESPACE,
         ),
         redis_url=RedisSettings().URL,

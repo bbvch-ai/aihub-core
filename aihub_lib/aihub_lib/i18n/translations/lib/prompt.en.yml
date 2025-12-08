@@ -70,6 +70,8 @@ router:
     4. Provide the option index (0 to {{ routes|length - 1 }})
     5. Explain your reasoning in detail
     </selection_requirements>
+
+    You MUST use the provided tool to submit your response.
     {% endchat %}
   instructions:
     context_sufficient: |

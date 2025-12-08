@@ -37,7 +37,7 @@ async def main():
                 fr="Ceci est l'agent RAG par défaut",
                 it="Questo è l'agente RAG predefinito",
             ),
-            llm=LLMConfig(model_name="text-generation/mini"),
+            llm=LLMConfig(model_name="text-generation/nano"),
             check_context_sufficiency=False,
             number_of_input_tokens=16384,
             system_prompt=LocaleString(

@@ -17,6 +17,8 @@ formulate_question:
     Formulate a specific, clear question for a domain expert that will help obtain
     the missing information needed to answer the user's question. The question should be
     concise and directly address what information is missing.
+
+    You MUST use the provided tool to submit your response.
   question_description: |
     The specific, clear question for the domain expert that will help obtain the missing information.
   docstring: |
