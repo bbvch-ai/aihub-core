@@ -526,6 +526,12 @@ expert:
   group: "Groupe"
   requested_by: "Demandé par"
   answer_button: "Répondre"
+  answered_by: "Répondu par"
+  status:
+    pending: "En attente"
+    answered: "Répondue"
+    expired: "Expirée"
+    cancelled: "Annulée"
   filter:
     pending: "En attente"
     answered: "Répondues"

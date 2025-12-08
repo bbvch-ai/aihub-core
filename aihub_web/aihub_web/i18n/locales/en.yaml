@@ -549,6 +549,12 @@ expert:
   group: "Group"
   requested_by: "Requested by"
   answer_button: "Answer"
+  answered_by: "Answered by"
+  status:
+    pending: "Pending"
+    answered: "Answered"
+    expired: "Expired"
+    cancelled: "Cancelled"
   filter:
     pending: "Pending"
     answered: "Answered"

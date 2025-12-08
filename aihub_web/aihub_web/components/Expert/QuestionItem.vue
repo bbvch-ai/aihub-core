@@ -11,6 +11,11 @@
             :severity="prioritySeverity"
             size="small"
           />
+          <Tag
+            :value="statusLabel"
+            :severity="statusSeverity"
+            size="small"
+          />
           <span class="text-xs font-light opacity-70">
             {{ timeAgoText }}
           </span>
@@ -37,11 +42,18 @@
         </p>
       </div>
       <Button
+        v-if="question.status === 'pending'"
         :label="t('expert.answer_button')"
         icon="pi pi-reply"
         size="small"
         @click.stop="$emit('answer', question)"
       />
+      <span
+        v-else-if="question.responder"
+        class="text-xs opacity-70"
+      >
+        {{ t('expert.answered_by') }}: {{ question.responder.user_name || question.responder.user_id }}
+      </span>
     </div>
   </div>
 </template>
@@ -92,5 +104,25 @@ const prioritySeverity = computed(() => {
     urgent: 'danger',
   }
   return severities[props.question.priority]
+})
+
+const statusLabel = computed(() => {
+  const labels: Record<string, string> = {
+    pending: t('expert.status.pending'),
+    answered: t('expert.status.answered'),
+    expired: t('expert.status.expired'),
+    cancelled: t('expert.status.cancelled'),
+  }
+  return labels[props.question.status] || props.question.status
+})
+
+const statusSeverity = computed(() => {
+  const severities: Record<string, 'info' | 'success' | 'warn' | 'danger' | 'secondary' | undefined> = {
+    pending: 'warn',
+    answered: 'success',
+    expired: 'secondary',
+    cancelled: 'secondary',
+  }
+  return severities[props.question.status]
 })
 </script>

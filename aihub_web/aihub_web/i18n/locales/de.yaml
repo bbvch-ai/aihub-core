@@ -527,6 +527,12 @@ expert:
   group: "Gruppe"
   requested_by: "Angefragt von"
   answer_button: "Antworten"
+  answered_by: "Beantwortet von"
+  status:
+    pending: "Offen"
+    answered: "Beantwortet"
+    expired: "Abgelaufen"
+    cancelled: "Abgebrochen"
   filter:
     pending: "Offen"
     answered: "Beantwortet"

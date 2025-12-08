@@ -526,6 +526,12 @@ expert:
   group: "Gruppo"
   requested_by: "Richiesto da"
   answer_button: "Rispondi"
+  answered_by: "Risposto da"
+  status:
+    pending: "In sospeso"
+    answered: "Risposta"
+    expired: "Scaduta"
+    cancelled: "Annullata"
   filter:
     pending: "In sospeso"
     answered: "Risposte"
