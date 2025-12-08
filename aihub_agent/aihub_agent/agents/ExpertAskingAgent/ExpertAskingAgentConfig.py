@@ -2,6 +2,7 @@ from typing import Annotated, Literal
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from aihub_lib.persistence.expert.ExpertGroupEntity import ExpertGroupEntity
 from pydantic import Field, model_validator
 
 ExpertChannelType = Literal["bitl", "gui"]
@@ -27,9 +28,12 @@ class ExpertAskingAgentConfig(AgentConfig):
     ] = None
 
     expert_group: Annotated[
-        str | None,
-        Field(None, description="Expert group identifier for GUI mode. Used to filter questions by group."),
-    ] = None
+        str,
+        Field(
+            ExpertGroupEntity.DEFAULT_GROUP_NAME,
+            description="Expert group identifier for GUI mode. Used to filter questions by group.",
+        ),
+    ] = ExpertGroupEntity.DEFAULT_GROUP_NAME
 
     loop_max: Annotated[int, Field(3, description="Maximum number of loops to ask experts", gt=0)] = 3
 

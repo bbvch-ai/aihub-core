@@ -11,6 +11,7 @@ from aihub_lib.auth.dependencies.SuperuserAuthHandler.SuperuserSettings import S
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.no_trace import no_trace
 from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
+from aihub_lib.persistence.expert.ExpertGroupEntity import ExpertGroupEntity
 from aihub_lib.persistence.user.UserEntity import UserEntity
 
 logger = logging.getLogger(__name__)
@@ -73,6 +74,9 @@ async def initialize_roles() -> None:
     # Initialize superuser if enabled
     await initialize_superuser()
 
+    # Initialize default expert group (unconditionally)
+    await initialize_default_expert_group()
+
 
 async def initialize_role(name: str, description: str, access_rules: list[str]) -> None:
     """
@@ -126,4 +130,30 @@ async def initialize_superuser() -> None:
 
     except Exception as e:
         logger.error(f"Failed to initialize superuser: {e}")
+        raise
+
+
+async def initialize_default_expert_group() -> None:
+    """
+    Initialize the default expert group in the database if it doesn't exist.
+
+    This function ensures that a default expert group always exists,
+    which is used as the fallback for expert escalation workflows.
+    """
+    default_name = ExpertGroupEntity.DEFAULT_GROUP_NAME
+
+    existing_group = ExpertGroupEntity.get_by_name(default_name)
+    if existing_group:
+        logger.info(f"Expert group '{default_name}' already exists, skipping creation")
+        return
+
+    try:
+        group = ExpertGroupEntity(
+            name=default_name,
+            description="Default expert group for expert escalation workflows",
+        )
+        group.save()
+        logger.info(f"Successfully created default expert group '{default_name}'")
+    except Exception as e:
+        logger.error(f"Failed to create default expert group '{default_name}': {e}")
         raise

@@ -2,6 +2,7 @@
 
 from typing import Annotated
 
+from aihub_lib.persistence.expert.ExpertGroupEntity import ExpertGroupEntity
 from pydantic import BaseModel, Field
 
 
@@ -34,6 +35,6 @@ class ExpertWorkflowConfig(BaseModel):
     ] = 5
 
     expert_group: Annotated[
-        str | None,
+        str,
         Field(description="Expert group to route questions to. Overrides ExpertAskingAgent's config if set."),
-    ] = None
+    ] = ExpertGroupEntity.DEFAULT_GROUP_NAME

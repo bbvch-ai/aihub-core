@@ -15,6 +15,8 @@ class ExpertGroupEntity(Document):
     expert questions in the Expert-in-the-Loop workflow.
     """
 
+    DEFAULT_GROUP_NAME = "defaultexpertgroup"
+
     meta = {
         "collection": "expert_groups",
         "strict": False,
