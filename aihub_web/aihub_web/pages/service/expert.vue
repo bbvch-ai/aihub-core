@@ -127,6 +127,7 @@
         </TabPanel>
       </TabView>
     </StructuralColumn>
+    <NuxtPage />
 
     <!-- Questions Tab Dialogs -->
     <ExpertAnswerDialog
