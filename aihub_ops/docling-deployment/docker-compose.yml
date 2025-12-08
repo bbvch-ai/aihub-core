@@ -33,7 +33,7 @@ services:
   # ===================================================================
   traefik:
     container_name: traefik
-    image: traefik:v3.6.1
+    image: traefik:v3.6.2
     restart: always
     ports:
       - "80:80"
@@ -146,6 +146,55 @@ services:
       - "traefik.http.middlewares.security-headers.headers.stsIncludeSubdomains=true"
       - "traefik.http.middlewares.security-headers.headers.stsPreload=true"
       - "traefik.http.routers.litellm.middlewares=security-headers"
+
+  # ===================================================================
+  # Docling Serve - Document Processing API
+  # ===================================================================
+  # Provides document conversion via Docling with GPU acceleration
+  # Subdomain: serve.docling.ai-agents.ch
+  # Auth: IP allowlist via Traefik middleware
+  # Image: cu128 for CUDA 12.8+ (compatible with host CUDA 13.0)
+  # ===================================================================
+  docling-serve:
+    container_name: docling-serve
+    image: quay.io/docling-project/docling-serve-cu128:v1.9.0
+    restart: always
+    environment:
+      DOCLING_SERVE_ENABLE_UI: "true"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels:
+      - "traefik.enable=true"
+      # Router on dedicated subdomain
+      - "traefik.http.routers.docling-serve.rule=Host(`${DOCLING_SERVE_DOMAIN}`)"
+      - "traefik.http.routers.docling-serve.entrypoints=websecure"
+      - "traefik.http.routers.docling-serve.tls.certresolver=letsencrypt"
+      - "traefik.http.services.docling-serve.loadbalancer.server.port=5001"
+      # IP Allowlist middleware
+      - "traefik.http.middlewares.docling-serve-ipallowlist.ipallowlist.sourcerange=${DOCLING_SERVE_ALLOWED_IPS}"
+      # Security headers
+      - "traefik.http.middlewares.docling-serve-headers.headers.sslredirect=true"
+      - "traefik.http.middlewares.docling-serve-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.docling-serve-headers.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.docling-serve-headers.headers.stsPreload=true"
+      # Apply middlewares
+      - "traefik.http.routers.docling-serve.middlewares=docling-serve-ipallowlist,docling-serve-headers"
 
 volumes:
   postgres-data:

@@ -1,19 +1,22 @@
 # Docling Granite Deployment
 
-Production-ready deployment of IBM Granite Docling model with LiteLLM API gateway and Traefik reverse proxy.
+Production-ready deployment of IBM Granite Docling model with LiteLLM API gateway, Docling Serve document processing, and Traefik reverse proxy.
 
 ## 🚀 Features
 
 - **Granite Docling 258M**: OCR and document understanding model served via vLLM
+- **Docling Serve**: GPU-accelerated document conversion API (PDF, DOCX, images → structured data)
 - **LiteLLM API Gateway**: OpenAI-compatible API with authentication and cost tracking
 - **Traefik Reverse Proxy**: Automatic HTTPS with Let's Encrypt
-- **GPU Acceleration**: Optimized for NVIDIA L4 GPU
+- **GPU Acceleration**: Optimized for NVIDIA L4 GPU (CUDA 13.0)
 
 ## 📋 Prerequisites
 
 - Ubuntu 22.04 LTS (or similar)
 - Docker with NVIDIA GPU support
-- Domain name pointing to server IP (`docling.ai-agents.ch` → `83.228.225.110`)
+- Domain names pointing to server IP:
+  - `docling.ai-agents.ch` → `83.228.225.110` (LiteLLM API)
+  - `serve.docling.ai-agents.ch` → `83.228.225.110` (Docling Serve)
 - Ports 80 and 443 open for HTTP/HTTPS traffic
 
 ## 🔧 Installation
@@ -25,7 +28,8 @@ Ensure your domain points to the server:
 ```bash
 # Check DNS resolution
 nslookup docling.ai-agents.ch
-# Should return: 83.228.225.110
+nslookup serve.docling.ai-agents.ch
+# Both should return: 83.228.225.110
 ```
 
 ### 2. Install Docker with GPU Support
@@ -158,6 +162,68 @@ response = client.chat.completions.create(
 print(response.choices[0].message.content)
 ```
 
+## 📄 Docling Serve API
+
+Docling Serve provides GPU-accelerated document conversion (PDF, DOCX, PPTX, images → JSON/Markdown).
+
+### Base URL
+
+```
+https://serve.docling.ai-agents.ch
+```
+
+### Authentication
+
+Access is restricted by IP allowlist. Configure allowed IPs in `.env`:
+
+```bash
+DOCLING_SERVE_ALLOWED_IPS=192.168.1.0/24,10.0.0.1/32
+```
+
+### Health Check
+
+```bash
+curl https://serve.docling.ai-agents.ch/health
+```
+
+### Convert Document
+
+```bash
+# Convert PDF to JSON
+curl -X POST https://serve.docling.ai-agents.ch/v1/convert/file \
+  -F "files=@document.pdf" \
+  -H "Accept: application/json"
+
+# Convert to Markdown
+curl -X POST https://serve.docling.ai-agents.ch/v1/convert/file \
+  -F "files=@document.pdf" \
+  -H "Accept: text/markdown"
+```
+
+### Python Example
+
+```python
+import httpx
+
+with open("document.pdf", "rb") as f:
+    response = httpx.post(
+        "https://serve.docling.ai-agents.ch/v1/convert/file",
+        files={"files": ("document.pdf", f, "application/pdf")},
+        headers={"Accept": "application/json"},
+    )
+
+result = response.json()
+print(result)
+```
+
+### Web UI
+
+If enabled (`DOCLING_SERVE_ENABLE_UI=true`), access the UI at:
+
+```
+https://serve.docling.ai-agents.ch/ui
+```
+
 ## 🎛️ Management
 
 ### Access LiteLLM Dashboard
@@ -181,6 +247,7 @@ docker compose logs -f
 # Specific service
 docker compose logs -f vllm-docling
 docker compose logs -f litellm
+docker compose logs -f docling-serve
 docker compose logs -f traefik
 ```
 
@@ -231,6 +298,9 @@ curl https://docling.ai-agents.ch/health/liveliness
 
 # vLLM
 docker exec vllm-docling curl http://localhost:8000/health
+
+# Docling Serve
+curl https://serve.docling.ai-agents.ch/health
 ```
 
 ### Model Information
