@@ -17,7 +17,10 @@
         v-if="loading === undefined || loading === false"
         class="p-8"
       >
-        <div class="flex items-center justify-between">
+        <div
+          v-if="title || closeRoute"
+          class="flex items-center justify-between"
+        >
           <h2 class="text-3xl">
             {{ title }}
           </h2>
@@ -27,7 +30,7 @@
             @click="close"
           />
         </div>
-        <Divider />
+        <Divider v-if="title || closeRoute" />
         <slot />
       </div>
     </div>
@@ -36,7 +39,7 @@
 
 <script setup lang="ts">
 const props = withDefaults(defineProps<{
-  title: string
+  title?: string
   closeRoute?: string
   size?: 'small' | 'normal' | 'large'
   loading?: boolean
