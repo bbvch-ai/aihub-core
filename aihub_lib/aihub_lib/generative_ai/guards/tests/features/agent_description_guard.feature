@@ -32,5 +32,5 @@ Feature: Agent Description Guard
       </Agent>
 
       </vergangener Gesprächsverlauf>
-      Ihre finale Ausgabe muss ausschliesslich ein JSON-Objekt mit genau den beiden Schlüsseln "success" und "reasoning" sein. Wiederholen Sie nicht das gesamte JSON-Schema oder fügen zusätzliche Meta-Informationen hinzu.
+      Sie MÜSSEN das bereitgestellte Tool verwenden, um Ihre Antwort zu übermitteln.
       """
