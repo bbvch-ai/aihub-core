@@ -1,6 +1,5 @@
 ---
 title: "Development Setup"
-description: "Set up a development environment for extending the Swiss AI Hub platform"
 ---
 
 # Development Setup
@@ -49,7 +48,7 @@ After starting the infrastructure, you run these services from your local reposi
 - **Docker** and **Docker Compose** (v2.20+)
 - **Git** for cloning the repository
 - **Node.js** (v20+) and **pnpm** for the web frontend
-- **Python** (3.11+) and **uv** for the API and agents
+- **Python** (3.11+) and **poetry** for the API and agents
 
 ### Hardware Requirements
 
@@ -75,16 +74,12 @@ After starting the infrastructure, you run these services from your local reposi
 - **Azure AD / Entra ID** application registration for authentication
 - **LLM Provider** (CPU variant only): Azure OpenAI, Google Gemini, or similar
 
----
-
 ## Step 1: Clone the Repository
 
 ```bash
 git clone https://github.com/bbvch-ai/aihub-core.git
 cd aihub-core
 ```
-
----
 
 ## Step 2: Configure Environment Variables
 
@@ -100,7 +95,9 @@ cp .env.example .env
 
 Edit the `.env` file and configure these values:
 
-```env
+::: code-group
+
+```env [CPU Variant]
 # =============================================================================
 # BASIC PLATFORM CONFIGURATION
 # =============================================================================
@@ -137,11 +134,6 @@ SUPERUSER_TOKEN="generate-with-openssl-rand-hex-32"
 # =============================================================================
 # AI MODEL ACCESS
 # =============================================================================
-```
-
-::: code-group
-
-```env [CPU Variant]
 # Configure at least one external LLM provider
 
 # Azure OpenAI (Recommended)
@@ -153,22 +145,6 @@ GEMINI_API_KEY="your-gemini-key"
 
 # Hugging Face (for model downloads, optional)
 HUGGINGFACE_API_KEY=""
-```
-
-```env [GPU Variant]
-# Models are self-hosted, but HuggingFace token is required for downloads
-
-HUGGINGFACE_API_KEY="your-huggingface-token"
-
-# Optional: Configure external providers as fallback
-AZURE_OPENAI_BASE_URL=""
-AZURE_OPENAI_KEY=""
-GEMINI_API_KEY=""
-```
-
-:::
-
-```env
 # =============================================================================
 # DATABASE CONFIGURATION
 # =============================================================================
@@ -228,6 +204,112 @@ OTEL_CLOUD_HEADERS=""
 JINA_API_KEY=""  # For web search
 ```
 
+```env [GPU Variant]
+# =============================================================================
+# BASIC PLATFORM CONFIGURATION
+# =============================================================================
+
+LOG_LEVEL="DEBUG"                      # Options: CRITICAL, ERROR, WARNING, INFO, DEBUG
+ENV="dev"
+
+# =============================================================================
+# AUTHENTICATION CONFIGURATION
+# =============================================================================
+
+# OAuth2 Configuration (from Azure AD App Registration)
+OAUTH_CLIENT_ID="your-azure-client-id"
+OAUTH_CLIENT_SECRET="your-azure-client-secret"
+OAUTH_AUTHORITY_URL="https://login.microsoftonline.com/your-tenant-id"
+OAUTH_PROVIDER_NAME="azure"
+OAUTH_TENANT_ID="your-tenant-id"
+OAUTH_COOKIE_SECRET="generate-with-openssl-rand-hex-16"
+
+# Open WebUI Signing Secret
+AUTH_OPEN_WEBUI_SIGNING_SECRET="generate-with-openssl-rand-hex-32"
+
+# =============================================================================
+# SUPERUSER CONFIGURATION
+# =============================================================================
+
+SUPERUSER_ENABLED="True"
+SUPERUSER_NAME="Development Admin"
+SUPERUSER_EMAIL="dev@localhost"
+SUPERUSER_OID="generate-with-openssl-rand-hex-16"
+SUPERUSER_ROLE="AIHubSuperuser"
+SUPERUSER_TOKEN="generate-with-openssl-rand-hex-32"
+
+# =============================================================================
+# AI MODEL ACCESS
+# =============================================================================
+# Models are self-hosted, but HuggingFace token is required for downloads
+
+HUGGINGFACE_API_KEY="your-huggingface-token"
+
+# Optional: Configure external providers as fallback
+AZURE_OPENAI_BASE_URL=""
+AZURE_OPENAI_KEY=""
+GEMINI_API_KEY=""
+# =============================================================================
+# DATABASE CONFIGURATION
+# =============================================================================
+
+POSTGRES_USER="admin"
+POSTGRES_PASSWORD="generate-with-openssl-rand-hex-16"
+
+MONGO_USERNAME="admin"
+MONGO_PASSWORD="generate-with-openssl-rand-hex-16"
+MONGO_CONNECTION_STRING="mongodb://admin:same-mongo-password@localhost:27017/"
+
+# =============================================================================
+# STORAGE CONFIGURATION
+# =============================================================================
+
+S3_STORAGE_ACCESS_KEY="admin"
+S3_STORAGE_SECRET_KEY="generate-with-openssl-rand-hex-16"
+S3_STORAGE_ENDPOINT="http://localhost:9000"
+S3_STORAGE_URL_SIGNING_SECRET="generate-with-openssl-rand-hex-32"
+
+# =============================================================================
+# LITELLM CONFIGURATION
+# =============================================================================
+
+LITELLM_UI_USERNAME="admin"
+LITELLM_UI_PASSWORD="generate-with-openssl-rand-hex-16"
+LITELLM_MASTER_KEY="generate-with-openssl-rand-hex-32"
+LITE_LLM_PROXY_BASE_URL="http://localhost:4000"
+LITE_LLM_PROXY_API_KEY="same-as-litellm-master-key"
+
+# =============================================================================
+# SERVICE CONFIGURATION
+# =============================================================================
+
+JUPYTER_TOKEN="generate-with-openssl-rand-hex-16"
+PHOENIX_SECRET="generate-with-openssl-rand-hex-16"
+PHOENIX_ENDPOINT="http://localhost:6006"
+NATS_ENDPOINT="nats://localhost:4222"
+REDIS_URL="redis://localhost:6379"
+MILVUS_DIMENSION="3072"
+DOCLING_API_ENDPOINT="http://localhost:5001"
+DOCLING_API_TIMEOUT="600"
+
+# =============================================================================
+# OBSERVABILITY (Optional)
+# =============================================================================
+
+OTEL_ENABLED="true"
+OTEL_EXPORTER_OTLP_PROTOCOL="grpc"
+OTEL_CLOUD_ENDPOINT="localhost:4317"
+OTEL_CLOUD_HEADERS=""
+
+# =============================================================================
+# OPTIONAL INTEGRATIONS
+# =============================================================================
+
+JINA_API_KEY=""  # For web search
+```
+
+:::
+
 ### Generate Random Secrets
 
 Use these commands to generate secure random strings:
@@ -249,8 +331,6 @@ grep -n "your-\|generate-with" .env
 ```
 
 This should return no results if all values are configured.
-
----
 
 ## Step 3: Start Infrastructure Services
 
@@ -298,8 +378,6 @@ Initial startup takes 3-5 minutes. Wait until all services show "healthy" status
 The GPU variant downloads AI models on first startup, which can take 15-30 minutes depending on your internet connection. Subsequent starts are much faster.
 :::
 
----
-
 ## Step 4: Verify Infrastructure
 
 Once services are running, verify access to the key infrastructure UIs:
@@ -311,8 +389,6 @@ Once services are running, verify access to the key infrastructure UIs:
 | **Phoenix** | http://localhost:6006 | ML tracing and observability |
 | **NATS Monitoring** | http://localhost:8222 | Message queue status |
 | **LiteLLM** | http://localhost:4000 | LLM proxy admin |
-
----
 
 ## Step 5: Run AI Hub Services Locally
 
@@ -361,8 +437,6 @@ uv sync
 uv run python -m default_rag_pipeline
 ```
 
----
-
 ## Step 6: Access the Platform
 
 With all services running:
@@ -372,8 +446,6 @@ With all services running:
 - **API Documentation**: http://localhost:8000/docs
 
 Log in using your Azure AD credentials. Ensure your user has the appropriate roles assigned in the Azure Enterprise Application.
-
----
 
 ## Exposed Ports Reference
 
@@ -411,8 +483,6 @@ No additional ports.
 ```
 
 :::
-
----
 
 ## Common Operations
 
@@ -460,42 +530,4 @@ docker logs -f milvus
 docker logs -f litellm postgres
 ```
 
----
 
-## Troubleshooting
-
-### Services Won't Start
-
-1. Ensure Docker has sufficient resources allocated (16GB+ RAM)
-2. Check if ports are already in use: `lsof -i :5432` (example for PostgreSQL)
-3. Review logs for specific errors: `docker logs <container-name>`
-
-### GPU Not Detected
-
-1. Verify NVIDIA drivers are installed: `nvidia-smi`
-2. Ensure NVIDIA Container Toolkit is installed
-3. Test Docker GPU access: `docker run --rm --gpus all nvidia/cuda:12.0-base nvidia-smi`
-
-### Connection Refused Errors
-
-1. Wait for services to fully initialize (check health status)
-2. Verify the service is running: `docker ps | grep <service-name>`
-3. Check if the port is correctly exposed: `docker port <container-name>`
-
-### LiteLLM Model Errors (CPU Variant)
-
-1. Verify your LLM provider credentials in `.env`
-2. Check LiteLLM logs: `docker logs litellm`
-3. Test the provider directly before using through LiteLLM
-
----
-
-## Next Steps
-
-With your development environment running, you can:
-
-- Explore the API documentation at http://localhost:8000/docs
-- Create knowledge bases and test RAG functionality
-- Modify the API, web frontend, or agents with hot-reloading
-- Add new LLM providers in the LiteLLM configuration
-- Implement new agents and pipelines
