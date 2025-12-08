@@ -5,6 +5,265 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.254.16] - 2025-12-05 - Enhanced Data Versioning for Active Partitions
+
+### Changed
+
+- 🔄 **Refined Dynamic Partition Versioning:** The data versioning operations for Data Lake, Local File System, and
+  SharePoint files now intelligently filter to generate versions only for **actively managed dynamic partitions**. This
+  improvement ensures that the system tracks versions exclusively for partitions recognized by Dagster, enhancing
+  efficiency and preventing the generation of version keys for stale or non-existent partitions.
+
+---
+
+## [v0.254.15] - 2025-12-04 - Deeper OpenWebUI Integration, Smarter Document Processing, and Refined Model Management
+
+### Added
+
+- ✨ **Enhanced OpenWebUI Interactivity**: Introduced a suite of new OpenWebUI functions, enabling native streaming for
+  AI-Hub agent responses, interactive displays for event traces and document sources, and direct OpenAI-compatible
+  access to AI-Hub models directly within OpenWebUI.
+- 🚀 **LLM-Powered Document Table Refinement**: Implemented a new pipeline resource and operation for intelligent table
+  processing during document ingestion, which uses LLMs to automatically detect and split merged tables and identify
+  complex multi-row headers, significantly improving data extraction accuracy.
+- 📦 **Dedicated Production Configuration Template**: A new `.env.prod` template now provides a clear and comprehensive
+  guide for configuring production deployments, enhancing setup reliability and security.
+- ⚙️ **Streamlined Development Run Configurations**: Added new run configurations for simplified local web development
+  and one-click execution of the default RAG pipeline.
+- 🗃️ **Automatic Default Knowledge Base Bucket**: The S3 storage service now automatically provisions a
+  `defaultknowledge` bucket, simplifying initial setup for RAG-enabled applications.
+
+### Changed
+
+- ⬆️ **Upgraded Core AI Models**: Updated LiteLLM configurations to integrate the latest Azure OpenAI models for chat,
+  vision, and audio (e.g., GPT-4o mini, text-embedding-3-large) and Cohere for reranking, boosting overall model
+  performance and broadening AI capabilities.
+- 📈 **Optimized Agent Online Status Reporting**: The AI-Hub API now determines agent online status based on
+  `last_discovered` timestamps stored in the database, reducing overhead and improving responsiveness compared to
+  real-time NATS discovery for every request.
+- 🔑 **Improved S3 Public File Access**: Enhanced S3 file access services to ensure presigned URLs for uploaded documents
+  are consistently generated with public endpoints and `s3v4` signatures, facilitating reliable browser access.
+- 📄 **Clarified VLM Prompting Guidelines**: Updated Vision Language Model (VLM) prompt instructions across all supported
+  languages to strictly guide models to describe only observable visual content, preventing speculative responses based
+  on text context.
+- 🗄️ **Standardized MongoDB UUID Handling**: All MongoDB connections are now explicitly configured with
+  `uuidRepresentation="standard"`, ensuring consistent and predictable UUID behavior across the platform.
+- 🐳 **Improved Docker Compose Build Process**: The Docker Compose build run configuration now includes the `--build`
+  flag by default, ensuring that service images are rebuilt when upstream changes occur.
+- ⏱️ **Increased LiteLLM Startup Robustness**: Extended the health check `start_period` for the LiteLLM service to 120
+  seconds, improving stability during initial deployment and preventing premature health check failures.
+- 🛠️ **Refined RAG Agent and Pipeline Defaults**: Adjusted default RAG agent and pipeline configurations, including
+  upgrading to `embedding/large` and adding `max_partitions` to improve data ingestion control and vector retrieval
+  efficiency.
+- 🖥️ **OpenWebUI Feature Cache Management**: Disabled the base model cache in OpenWebUI to ensure that dynamic pipeline
+  models and agent configurations are always fetched fresh.
+- 🐛 **Docling Document Loader Table Output**: Modified the Docling document loader to output tables in a standardized
+  Markdown format instead of raw HTML, improving compatibility with subsequent document parsing steps.
+
+### Refactor
+
+- 🧹 **Centralized Logging Infrastructure**: The core logging system was refactored and moved to
+  `aihub_lib.infrastructure.logging`, promoting a more modular and reusable architectural design.
+- ⚙️ **Consolidated Internal Service Endpoints**: Internal Docker network endpoints for various services are now
+  hardcoded directly within Docker Compose templates, simplifying environment variable management and improving
+  deployment consistency.
+- 🗑️ **Modernized OpenWebUI Integration Module**: The `aihub_integration` module has been removed, as its
+  functionalities are now provided through the new, more flexible OpenWebUI function integration.
+
+### Fixed
+
+- 🐛 **Docling Metadata Handling**: Resolved an issue in the Docling document loader where null meta fields in JSON
+  content could cause processing errors, enhancing document ingestion reliability.
+- 🐞 **WebSocket Endpoint Correction**: Fixed an incorrect WebSocket endpoint path in the API service configuration,
+  ensuring proper real-time event streaming for clients.
+
+---
+
+## [v0.254.14] - 2025-12-03 - LLM Input Processing and Multimodal Enhancements
+
+### Added
+
+- ✨ **Enhanced `UserMessageEvent`**: Introduced the `last_user_message` property to `UserMessageEvent`, providing direct
+  access to the complete last user message, including all multimodal blocks (like images), for richer LLM interactions.
+
+### Changed
+
+- 🔄 **Improved LLM Message Handling in RAG Agent**: The RAG Agent now explicitly merges consecutive chat messages
+  (including multimodal content blocks) with the same role right before sending them to the LLM. This ensures better
+  compatibility with various LLM providers (e.g., LiteLLM) and more robust multimodal support.
+- 🦾 **Refined Multimodal Message Merging**: The internal `merge_consecutive_messages` utility has been updated to
+  correctly handle and combine multimodal `ChatMessage` blocks, ensuring proper formatting when multiple parts of a
+  message are from the same role.
+- 🖼️ **Simplified Image URL Processing**: The Open WebUI integration now streamlines the handling of image URLs,
+  including `data:image` URLs, by directly passing them to LlamaIndex's `ImageBlock`. This improves consistency and
+  reliability for multimodal inputs.
+
+### Refactor
+
+- 🧹 **Streamlined LLM Configuration**: The custom `PreprocessingOpenAILike` wrapper has been removed, and `LLMConfig`
+  now directly utilizes `OpenAILike`. This change centralizes message preprocessing logic within the agent's flow rather
+  than the LLM wrapper, simplifying the overall architecture.
+
+---
+
+## [v0.254.13] - 2025-12-03 - Robust Evaluation and Phoenix Client Modernization
+
+### Refactor
+
+- 🔄 **Upgraded Phoenix Client Integration**: Modernized the backend to utilize the new asynchronous Phoenix client,
+  streamlining experiment and dataset interactions with updated imports, client initialization, and method calls.
+- 🦾 **Optimized LLM Structured Output**: Improved the judge LLM's ability to generate structured evaluations by
+  transitioning from direct JSON output instructions to leveraging LlamaIndex's advanced tool-calling capabilities,
+  enhancing reliability.
+
+### Changed
+
+- ⚡️ **Stricter Evaluation Summary Generation**: Evaluation summaries are now only created when valid scores are
+  available, ensuring data integrity and preventing empty summary entries in the evaluation results.
+- 📄 **Updated Evaluation Summary Data Model**: The `avg_score` field in evaluation summaries is now explicitly a
+  required float, aligning with the refined backend logic that guarantees a valid score when a summary exists.
+
+### Fixed
+
+- 🐛 **Improved UI Robustness for Missing Scores**: Frontend evaluation result displays now gracefully handle cases where
+  scores might be absent for certain evaluators, preventing UI errors and defaulting to zero when data is unavailable.
+- 🛠️ **Corrected Phoenix Experiment ID Access**: Addressed an issue where `RanExperiment` data was accessed incorrectly,
+  ensuring reliable retrieval of experiment IDs after an experiment run.
+
+---
+
+## [v0.254.12] - 2025-12-03 - Enhanced Document Processing and Model Updates
+
+### Added
+
+- ✨ **Introduced Docling Standard Pipeline:** Added support for a new "Standard" Docling document processing pipeline,
+  providing advanced control over OCR, table extraction, image handling, and more flexible output formats.
+- ⚙️ **Configurable Docling Asynchronous Polling:** New environment variables (`DOCLING_POLL_INTERVAL`,
+  `DOCLING_MAX_POLLS`) have been added to allow customization of the polling interval and maximum attempts for
+  asynchronous Docling document processing tasks.
+
+### Changed
+
+- 🚀 **Upgraded Default RAG Embedding Model:** The default embedding model used by the RAG Agent has been updated from
+  `embedding/small` to `embedding/large` to potentially improve retrieval quality and performance.
+- 🔄 **Updated Azure OpenAI Model Reference:** LiteLLM configurations for `text-generation/mini` have been adjusted to
+  use `azure/gpt-4o-mini` instead of `azure/gpt-5-mini`, aligning with recent Azure OpenAI API changes for model
+  ingestion.
+- branding **Updated OpenAI Compatibility Interface:** The AI Hub's OpenAI-compatible interface and web UI are now
+  consistently branded as "Open WebUI," featuring updated icons for better recognition.
+
+### Fixed
+
+- 🐛 **Improved Document Parsing Robustness:** The Docling document loader now uses `html5lib` for parsing, enhancing its
+  ability to handle malformed or complex HTML content and improving overall parsing reliability.
+
+### Refactor
+
+- 🧹 **Standardized Docling API Configuration:** The `DOCLING_API_ENDPOINT` environment variable has been renamed to
+  `DOCLING_BASE_API_URL` across the codebase, improving clarity and consistency in Docling service configuration.
+
+---
+
+## [v0.254.11] - 2025-12-02 - Enhanced Document Intelligence Figure Extraction
+
+### Changed
+
+- 🖼️ **Document Intelligence Figure Handling:** Reworked the figure extraction and replacement mechanism within the
+  `DocumentIntelligenceLoader` to leverage precise span offsets provided by the API, ensuring more accurate and robust
+  figure integration into the document text.
+- ⚡️ **Improved Figure Processing Robustness:** Implemented a new strategy for figure replacement that processes figures
+  in reverse order of their appearance, mitigating issues related to text shifts and ensuring correct figure placement.
+- 🐛 **Strengthened Figure Data Validation:** Introduced validation checks for figure span information to gracefully
+  handle cases where span data is missing or out of bounds, preventing errors during document processing.
+
+---
+
+## [v0.254.10] - 2025-12-02 - AI-Powered Code Review and On-Demand Assistance with Claude
+
+### Added
+
+- ✨ **Automated AI Code Reviews:** Introduced a new GitHub Actions workflow to automatically run Claude AI code reviews
+  on pull requests, providing comprehensive feedback on code quality, potential bugs, performance, security, and test
+  coverage.
+- 🤖 **On-Demand AI Assistant:** Added a new GitHub Actions workflow enabling direct interaction with Claude AI within
+  issues, pull request comments, and reviews by tagging `@claude`. This facilitates on-demand code assistance,
+  explanations, and insights.
+
+---
+
+## [v0.254.9] - 2025-12-02 - Unified File System Filtering with Flexible Patterns
+
+### Refactor
+
+- 🧹 **Unified Local File System Scanning:** Significant overhaul of `LocalFileSystemResource` to replace granular
+  folder, subfolder, extension, and file-specific filters with a more flexible, unified `include_patterns` and
+  `exclude_patterns` system, simplifying file discovery and filtering logic.
+- 🔄 **Generic Source File Types:** Deprecated `LocalFile` and `MinimalLocalFile` types, transitioning to the more
+  generic `SourceFile` and `MinimalSourceFile` types for local file system interactions. This removes file
+  system-specific folder attributes (`source_folder`, `subfolder`) for broader applicability.
+- ⚡️ **Improved Pattern Utility Functions:** Rewrote and enhanced pattern utility functions to support the new flexible
+  `include_patterns` and `exclude_patterns` system, providing more robust and explicit ways to generate regex patterns
+  for paths, folders, extensions, and substrings.
+
+### Changed
+
+- 📄 **Updated IO Manager and Ops:** The `LocalFileSystemIOManager` and related data versioning operations have been
+  updated to align with the new `SourceFile` and `MinimalSourceFile` types and the simplified file system resource
+  configuration.
+- ⚙️ **Simplified Local-to-Datalake Definitions:** The `default_local_filesystem_to_datalake_definitions` utility now
+  uses the streamlined `include_patterns` and `exclude_patterns` for configuring local file system scanning, making
+  setup more intuitive.
+- 📊 **Adjusted Metadata Tables:** Local file metadata tables (`local_file_metadata_table`) no longer display
+  `source_folder` and `subfolder` information, reflecting the removal of these attributes from the underlying file
+  objects.
+
+### Removed
+
+- 🗑️ **Deprecated LocalFile Types:** The specific `LocalFile` and `MinimalLocalFile` Python types have been removed in
+  favor of the more generic `SourceFile` and `MinimalSourceFile` types.
+- 🗑️ **Legacy File System Scan Configuration:** Eliminated various specific configuration parameters (e.g.,
+  `include_folders`, `exclude_paths`, `include_extensions`) from `LocalFileSystemResource` and related utility
+  functions, replaced by the unified pattern-based approach.
+
+---
+
+## [v0.254.8] - 2025-12-01 - Smarter Data Fetching for Enhanced UI Stability
+
+### Added
+
+- ✨ **Introduced `useRouteReady` Composable:** A new utility function to ensure that data fetching operations are only
+  initiated once all required route parameters are fully resolved and valid, preventing queries from executing with
+  incomplete or placeholder values during navigation.
+
+### Refactor
+
+- 🧹 **Optimized Data Query Activation:** Implemented the `useRouteReady` composable across various data fetching hooks,
+  including those for **Agents**, **Documents**, **Evaluation Datasets** and **Experiments**, **Processes**, **Roles**,
+  **Threads**, and **Users**. This change prevents API queries from running prematurely, leading to more stable UI
+  states and improved application reliability during route transitions.
+
+---
+
+## [v0.254.7] - 2025-11-28 - New Service Integration: Attu Platform
+
+### Added
+
+- ✨ **Attu Service Integration:** Introduced the Attu service to the platform, enhancing capabilities (e.g., for data
+  management).
+- 🔑 **Secure Access for Attu:** Implemented OAuth2 Proxy for the Attu service, ensuring secure, group-based access for
+  authorized users.
+- 🚀 **Automated Routing for Attu:** Configured Traefik to provide automatic routing and SSL termination for the Attu
+  service via a dedicated subdomain.
+
+### Changed
+
+- 📄 **Updated OAuth Configuration Documentation:** The quick start guide has been updated to include the required
+  redirect URIs and platform type configurations for the new Attu service.
+- ⚙️ **Deployment Configurations for Attu:** Modified various Docker Compose files and templates to incorporate the Attu
+  service and its OAuth2 Proxy into the deployment stack.
+
+---
+
 ## [v0.254.5] - 2025-11-24 - Platform Configuration Update and Docling Refinements
 
 ### Changed

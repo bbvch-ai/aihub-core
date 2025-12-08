@@ -230,6 +230,7 @@ Web application redirect URIs are required for integrated services (OpenWebUI, D
    https://openwebui.your-domain.com/oauth/oidc/callback
    https://dagster.your-domain.com/oauth2/callback
    https://datalake.your-domain.com/oauth2/callback
+   https://attu.your-domain.com/oauth2/callback
    ```
 
    **For Local Deployment:** Use `127.0.0.1.nip.io`
@@ -238,6 +239,7 @@ Web application redirect URIs are required for integrated services (OpenWebUI, D
    https://openwebui.127.0.0.1.nip.io/oauth/oidc/callback
    https://dagster.127.0.0.1.nip.io/oauth2/callback
    https://datalake.127.0.0.1.nip.io/oauth2/callback
+   https://attu.127.0.0.1.nip.io/oauth2/callback
    ```
 
 3. Configure token settings:
@@ -250,8 +252,8 @@ Web application redirect URIs are required for integrated services (OpenWebUI, D
 The platform type configuration (SPA vs Web) is critical for OAuth2 flow selection:
 
 - **SPA platform**: Language-specific callbacks (`/de/`, `/en/`, `/fr/`, `/it/`) use PKCE flow without client secret
-- **Web platform**: Service callbacks (`openwebui`, `dagster`, `datalake`) use authorization code flow with client
-  secret
+- **Web platform**: Service callbacks (`openwebui`, `dagster`, `datalake`, `attu`) use authorization code flow with
+  client secret
 
 Misconfigured platform types will cause authentication error
 `AADSTS9002326: Cross-origin token redemption is permitted only for the 'Single-Page Application' client-type`. Ensure

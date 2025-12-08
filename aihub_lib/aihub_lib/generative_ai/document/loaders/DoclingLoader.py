@@ -14,8 +14,9 @@ from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
 
+from aihub_lib.generative_ai.document.tables.markdown_table import create_markdown_table, wrap_tables_with_tags
 from aihub_lib.generative_ai.utils.path_utils import create_figures_folder_name
-from aihub_lib.infrastructure.docling.DoclingSettings import DoclingSettings
+from aihub_lib.infrastructure.docling.DoclingSettings import DoclingSettings, PipelineType
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     NODE_CONTENT_TYPE_FIGURE,
@@ -77,15 +78,16 @@ class DoclingLoader(BaseReader):
         extra_info: dict | None = None,
     ) -> list[Document]:
         """Process the Docling API response into Document objects."""
-        doc = DoclingDocument(**answer["document"]["json_content"])
+        json_content = answer["document"]["json_content"]
+        _fix_null_meta_fields(json_content)
+        doc = DoclingDocument(**json_content)
         markdown_content = doc.export_to_markdown(image_mode=ImageRefMode.EMBEDDED)
 
         if len(doc.pictures) > 0:
             img_strs = [picture.export_to_markdown(doc) for picture in doc.pictures]
-            markdown_text = inject_figure_tags(markdown_text=markdown_content, img_strs=img_strs)
-            markdown_content = convert_tables_to_html(markdown_text=markdown_text, tables=doc.tables)
-        else:
-            markdown_content = convert_tables_to_html(markdown_text=markdown_content, tables=doc.tables)
+            markdown_content = inject_figure_tags(markdown_text=markdown_content, img_strs=img_strs)
+
+        markdown_content = convert_tables_to_markdown(markdown_text=markdown_content, tables=doc.tables)
 
         metadata = {NUMBER_OF_PAGES: len(answer["document"]["json_content"]["pages"])}
 
@@ -117,24 +119,50 @@ class DoclingLoader(BaseReader):
         self, file_content: str, filename: str, include_images: bool, to_formats: list[str] | None = None
     ) -> dict:
         """Build the request body for the Docling VLM Pipeline."""
-        return {
-            "options": {
-                "to_formats": to_formats if to_formats is not None else self.config.TO_FORMATS,
-                "include_images": include_images,
-                "pipeline": "vlm",
-                "vlm_pipeline_model_api": {
-                    "url": f"{self.config.HOSTED_VLM_API_ENDPOINT}/v1/chat/completions",
-                    "params": {
-                        "model": self.config.VLM_MODEL_NAME,
-                        "max_tokens": 8176,  # 8192 (max tokens) - 16 (for docling)
-                        "skip_special_tokens": False,
-                    },
-                    "response_format": "doctags",
-                    "headers": {"Authorization": f"Bearer {self.config.HOSTED_VLM_API_KEY}"},
+        if self.config.PIPELINE_TYPE == PipelineType.STANDARD:
+            return {
+                "options": {
+                    "to_formats": to_formats if to_formats is not None else self.config.TO_FORMATS,
+                    "image_export_mode": self.config.IMAGE_EXPORT_MODE,
+                    "do_ocr": self.config.DO_OCR,
+                    "force_ocr": self.config.FORCE_OCR,
+                    "ocr_engine": self.config.OCR_ENGINE,
+                    "pdf_backend": self.config.PDF_BACKEND,
+                    "table_mode": self.config.TABLE_MODE,
+                    "abort_on_error": False,
+                    "do_table_structure": True,
+                    "include_images": include_images,
+                    "images_scale": self.config.IMAGES_SCALE,
+                    "do_code_enrichment": True,
+                    "do_formula_enrichment": True,
+                    "do_picture_classification": False,
+                    "do_picture_description": False,
+                    "md_page_break_placeholder": self.config.MD_PAGE_BREAK_PLACEHOLDER,
                 },
-            },
-            "sources": [{"base64_string": file_content, "filename": filename, "kind": "file"}],
-        }
+                "sources": [{"base64_string": file_content, "filename": filename, "kind": "file"}],
+            }
+
+        elif self.config.PIPELINE_TYPE == PipelineType.VLM:
+            return {
+                "options": {
+                    "to_formats": to_formats if to_formats is not None else self.config.TO_FORMATS,
+                    "include_images": include_images,
+                    "pipeline": "vlm",
+                    "vlm_pipeline_model_api": {
+                        "url": f"{self.config.HOSTED_VLM_API_ENDPOINT}/v1/chat/completions",
+                        "params": {
+                            "model": self.config.VLM_MODEL_NAME,
+                            "max_tokens": 8176,  # 8192 (max tokens) - 16 (for docling)
+                            "skip_special_tokens": False,
+                        },
+                        "response_format": "doctags",
+                        "headers": {"Authorization": f"Bearer {self.config.HOSTED_VLM_API_KEY}"},
+                    },
+                },
+                "sources": [{"base64_string": file_content, "filename": filename, "kind": "file"}],
+            }
+
+        raise ValueError(f"Unsupported pipeline type: {self.config.PIPELINE_TYPE}")
 
     def convert_document(
         self, file_content: str, filename: str, include_images: bool, to_formats: list[str] | None = None
@@ -142,7 +170,7 @@ class DoclingLoader(BaseReader):
         request_body = self._build_request_body(file_content, filename, include_images, to_formats)
 
         response = httpx.post(
-            f"{self.config.API_ENDPOINT}/v1/convert/source",
+            f"{self.config.BASE_API_URL}/v1/convert/source",
             json=request_body,
             headers={"Content-Type": "application/json"},
             timeout=self.config.API_TIMEOUT,
@@ -162,7 +190,7 @@ class DoclingLoader(BaseReader):
 
         async with httpx.AsyncClient(timeout=self.config.API_TIMEOUT) as client:
             response = await client.post(
-                f"{self.config.API_ENDPOINT}/v1/convert/source/async",
+                f"{self.config.BASE_API_URL}/v1/convert/source/async",
                 json=request_body,
                 headers={"Content-Type": "application/json"},
             )
@@ -181,7 +209,7 @@ class DoclingLoader(BaseReader):
         """Poll the task status until completion and return the result."""
         for _ in range(self.config.MAX_POLLS):
             status_response = await client.get(
-                f"{self.config.API_ENDPOINT}/v1/status/poll/{task_id}",
+                f"{self.config.BASE_API_URL}/v1/status/poll/{task_id}",
                 headers={"Content-Type": "application/json"},
             )
 
@@ -195,7 +223,7 @@ class DoclingLoader(BaseReader):
 
             if task_status["task_status"] == "success":
                 result_response = await client.get(
-                    f"{self.config.API_ENDPOINT}/v1/result/{task_id}",
+                    f"{self.config.BASE_API_URL}/v1/result/{task_id}",
                     headers={"Content-Type": "application/json"},
                 )
 
@@ -233,11 +261,41 @@ def inject_figure_tags(markdown_text: str, img_strs: list[str]):
     return markdown_text
 
 
-def convert_tables_to_html(markdown_text: str, tables: list[TableItem]):
-    """Replace Markdown tables with HTML tables."""
+def convert_tables_to_markdown(markdown_text: str, tables: list[TableItem]) -> str:
+    """
+    Replace Docling markdown tables with properly formatted markdown tables wrapped in <table> tags.
+
+    Uses shared table utilities from aihub_lib.generative_ai.document.tables to ensure
+    consistent table handling between document creation and node parsing.
+
+    Tables are wrapped in <table> tags so MarkdownStructuralNodeParser can identify them.
+    """
     pattern = r"(\|[^\n]+\|\r?\n\|[:\-| ]+\|\r?(?:\n\|[^\n]+\|\r?)*)"
     md_tables = re.findall(pattern, markdown_text)
     for md_table, table in zip(md_tables, tables):
-        html_table = table.export_to_dataframe().to_html(index=False)
-        markdown_text = markdown_text.replace(md_table, html_table, 1)
+        df = table.export_to_dataframe()
+        formatted_tables = create_markdown_table(df)
+
+        # create_markdown_table may return multiple tables separated by \n\n if merged tables were detected
+        individual_tables = formatted_tables.split("\n\n")
+        wrapped_tables = wrap_tables_with_tags(individual_tables)
+
+        markdown_text = markdown_text.replace(md_table, wrapped_tables, 1)
     return markdown_text
+
+
+def _fix_null_meta_fields(data: dict) -> None:
+    """Fix null meta fields in Docling JSON content.
+
+    Works around a bug in docling-core's _migrate_annotations_to_meta validator
+    which uses setdefault() to initialize meta, but setdefault() doesn't replace
+    explicit null values. This causes AttributeError when meta is null and the
+    validator tries to call meta.setdefault().
+    """
+    if data.get("meta") is None:
+        data["meta"] = {}
+
+    for key in ("pictures", "tables"):
+        for item in data.get(key, []):
+            if item.get("meta") is None:
+                item["meta"] = {}

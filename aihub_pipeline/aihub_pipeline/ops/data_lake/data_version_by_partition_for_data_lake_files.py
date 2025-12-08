@@ -16,6 +16,7 @@ def data_version_by_partition_for_data_lake_files_no_op(
     asset_key: AssetKey,
     partition: DynamicPartitionsDefinition,
     data_lake_files: list[DataLakeFile],
+    max_partitions: int,
 ) -> DataVersionsByPartition:
     """Generates a dynamic partition key for each file in the data lake, reports the data lake materialization
     and returns a DataVersion for each partition key.
@@ -24,6 +25,7 @@ def data_version_by_partition_for_data_lake_files_no_op(
         context,
         partition.name,
         [data_lake_file.uri for data_lake_file in data_lake_files],
+        max_partitions=max_partitions,
     )
     context.log.info(f"Found {len(data_lake_files)} files in the data lake")
     context.log.info("Materializing external data lake asset")
@@ -50,6 +52,12 @@ def data_version_by_partition_for_data_lake_files_no_op(
     # Hence, when the issue is resolved, we can wipe the materialized asset when we delete it and hence
     # get rid of the need to incorporate the updated timestamp into the version key, as dagster will "forget"
     # that the asset ever existed and re-process it when it is encountered again.
+    existing_partitions = set(context.instance.get_dynamic_partitions(partition.name))
+    files_with_partitions = [data_lake_file for data_lake_file in data_lake_files if data_lake_file.uri in existing_partitions]
+
     return DataVersionsByPartition(
-        {data_lake_file.uri: f"{data_lake_file.updated}-{data_lake_file.hash}" for data_lake_file in data_lake_files}
+        {
+            data_lake_file.uri: f"{data_lake_file.updated}-{data_lake_file.hash}"
+            for data_lake_file in files_with_partitions
+        }
     )

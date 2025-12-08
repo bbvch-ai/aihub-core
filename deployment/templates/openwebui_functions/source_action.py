@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class Action:
     class Valves(BaseModel):
         AIHUB_FRONTEND_URL: str = Field(
-            default=os.getenv("AIHUB_BASE_URL", "http://localhost:3000/"),
+            default=os.getenv("AIHUB_FRONTEND_URL", "http://localhost:3000"),
             description="Base URL for the AI-Hub frontend",
         )
 

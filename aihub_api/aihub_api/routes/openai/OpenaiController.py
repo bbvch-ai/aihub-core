@@ -56,9 +56,9 @@ class OpenaiController(Controller):
     allowing customers to plug in the OpenAI SDKs directly against AI Hub.
     """
 
-    name = LocaleString(en="OpenAI")
+    name = LocaleString(en="Open WebUI")
     description = LocaleString(en="OpenAI Compatible API")
-    icon = "simple-icons:openai"
+    icon = "famicons:chatbox-ellipses-outline"
 
     def __init__(
         self,

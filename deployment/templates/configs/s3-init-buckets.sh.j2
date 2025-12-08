@@ -9,7 +9,7 @@ echo "Waiting for S3 to be ready..."
 sleep 5
 
 ENDPOINT=${S3_ENDPOINT:-"http://seaweedfs-s3:9000"}
-BUCKETS=${DEFAULT_BUCKETS:-"open-webui milvus"}
+BUCKETS=${DEFAULT_BUCKETS:-"open-webui milvus defaultknowledge"}
 
 # Create CORS configuration file
 cat > /tmp/cors.json <<EOF
