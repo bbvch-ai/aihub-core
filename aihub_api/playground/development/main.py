@@ -1,6 +1,4 @@
 # ruff: noqa: E402
-from aihub_api.routes.docling.DoclingController import DoclingController
-
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
 
 AihubInstrumentor().instrument()
@@ -16,8 +14,10 @@ from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import cr
 from aihub_lib.routes.health.HealthController import HealthController
 
 from aihub_api.routes.agent.AgentController import AgentController
+from aihub_api.routes.docling.DoclingController import DoclingController
 from aihub_api.routes.evaluation.EvaluationController import EvaluationController
 from aihub_api.routes.event.EventController import EventController
+from aihub_api.routes.expert.ExpertController import ExpertController
 from aihub_api.routes.file.FileController import FileController
 from aihub_api.routes.i18n.I18nController import I18nController
 from aihub_api.routes.knowledge.KnowledgeController import KnowledgeController
@@ -56,21 +56,21 @@ async def main():
         .remove_agent_from_thread()
         .add_user_to_thread()
         .remove_user_from_thread(),
-        ModelController(auth=auth).get_models().get_model(),
         AgentController(auth=auth).get_agent().get_agent_threads().get_agents().discover_agents(),
+        ModelController(auth=auth).get_models().get_model(),
         ProcessController(auth=auth)
         .get_process()
         .get_processes()
         .discover_processes()
         .get_process_walkthroughs()
         .get_process_start_forms()
+        .get_process_open_forms()
         .send_process_start_form()
-        .send_process_open_form()
-        .get_process_open_forms(),
+        .send_process_open_form(),
         TokenController(auth=auth).create_token().list_tokens().revoke_token(),
         RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
         OpenaiController(auth=auth)
-        .get_models_with_assistants(exclude_webui_agents=True)
+        .get_models_with_assistants()
         .get_model_with_assistants()
         .get_embeddings()
         .chat_completion_with_assistants()
@@ -112,6 +112,20 @@ async def main():
         .get_anonymous_file_redirect(),
         NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
         DoclingController(auth=auth).parse_document(),
+        ExpertController(auth=auth)
+        .get_questions_by_status()
+        .get_pending_questions()
+        .get_pending_count()
+        .get_question()
+        .submit_answer()
+        .cancel_question()
+        .create_group()
+        .get_groups()
+        .get_group()
+        .update_group()
+        .delete_group()
+        .add_member()
+        .remove_member(),
     )
 
     await runner.run()
