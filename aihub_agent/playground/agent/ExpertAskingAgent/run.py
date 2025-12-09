@@ -26,14 +26,14 @@ async def main():
             name=LocaleString(en="Expert Asking Agent"),
             description=LocaleString(en="This is an agent that can be used to develop the frontend"),
             llm=LLMConfig(model_name="text-generation/mini"),
-            slack_config=SlackConfig(
-                channel_id="C08MK7Z8GU9",
-            ),
-            # teams_config=TeamsConfig(
-            #     channel_id="19:zAzZDk2wJBx_2WR949Eh25xG-UntOkk1BtykJ27Qcrk1@thread.tacv2",
-            #     tenant_id="37314c94-c755-48ab-85bb-acb83e492c42",
-            #     bot_id="ac98b506-ec21-46b9-a31e-80d34c6eb71e",
+            # slack_config=SlackConfig(
+            #     channel_id="C08MK7Z8GU9",
             # ),
+            teams_config=TeamsConfig(
+                channel_id="19:zAzZDk2wJBx_2WR949Eh25xG-UntOkk1BtykJ27Qcrk1@thread.tacv2",
+                tenant_id="37314c94-c755-48ab-85bb-acb83e492c42",
+                bot_id="ac98b506-ec21-46b9-a31e-80d34c6eb71e",
+            ),
         ),
     )
 
