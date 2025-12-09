@@ -113,43 +113,28 @@ router:
       Analysieren Sie die Benutzeranfrage sorgfältig in Bezug auf den Chat-Verlauf. Bestimmen Sie, ob die Anfrage basierend auf den oben genannten Kriterien erfüllt werden kann. Geben Sie eine klare Ja/Nein-Entscheidung mit detaillierter Begründung an.
 
     expert_answer_sufficient: |
-      Sie erhalten einen Chat-Verlauf zwischen einem KI-Assistenten und einem Experten. Das Ziel dieses Gesprächs
-      ist es, eine ursprünglich von einem Benutzer gestellte Frage zu beantworten. Bestimmen Sie, ob der Experte die Frage
-      basierend auf dem Chat-Verlauf bereits ausreichend beantwortet hat.
+      Beantwortet die Antwort des Experten die Frage des Benutzers?
 
-       <chat_history>
+      <expert_response>
       {% for message in chat_history %}
-      <message role="{{ message.role.value }}">
+      {% if message.role.value == 'user' %}
       {% for block in message.blocks %}
       {% if block.block_type == 'text' %}
       {{ block.text }}
       {% endif %}
       {% endfor %}
-      </message>
+      {% endif %}
       {% endfor %}
-      </chat_history>
+      </expert_response>
 
-      <user_query>
-      %{question}
-      </user_query>
+      <user_question>
+      {{ query }}
+      </user_question>
 
-      <answered_criteria>
-      <is_answered>
-      Eine Frage gilt als beantwortet, wenn EINER der folgenden Punkte zutrifft:
-      * Der Experte hat eine vollständige und genaue Antwort auf die Frage des Benutzers gegeben
-      * Der Experte hat eine teilweise Antwort gegeben, aber der Benutzer kann die Hauptpunkte immer noch verstehen
-      * Der Experte hat angegeben, wo die Antwort zu finden ist
-      * Der Experte hat Kontextinformationen geliefert, möglicherweise in der Systemnachricht, die - direkt oder indirekt - die Frage beantworten
-      </is_answered>
-      <is_not_answered>
-      Eine Frage gilt als nicht beantwortet, wenn EINER der folgenden Punkte zutrifft:
-      * Der Experte hat keine Antwort auf die Frage des Benutzers gegeben
-      * Der Experte hat eine Antwort gegeben, aber sie ist unvollständig oder ungenau
-      * Der Experte hat eine Antwort gegeben, aber sie ist nicht relevant für die Frage des Benutzers
-      * Der Experte hat eine Antwort gegeben, aber sie ist nicht klar oder verständlich
-      * Der Experte gibt an, dass er die Antwort nicht kennt
-      </is_not_answered>
-      </answered_criteria>
+      Die Frage IST beantwortet, wenn der Experte Informationen geliefert hat, die direkt auf ALLE Teile des Gefragten eingehen.
+      Die Frage ist NICHT beantwortet, wenn:
+      - Der Experte ausdrücklich sagt, dass er es nicht weiss oder die Antwort verweigert
+      - Die Frage mehrere Teile hat und nur einige beantwortet wurden
 
       Analysieren Sie den Chat-Verlauf sorgfältig in Bezug auf die Frage des Benutzers. Bestimmen Sie, ob der Experte die Frage basierend auf den oben genannten Kriterien bereits ausreichend beantwortet hat. Geben Sie eine klare Entscheidung mit detaillierter Begründung an.
 

@@ -53,7 +53,9 @@ def data_version_by_partition_for_data_lake_files_no_op(
     # get rid of the need to incorporate the updated timestamp into the version key, as dagster will "forget"
     # that the asset ever existed and re-process it when it is encountered again.
     existing_partitions = set(context.instance.get_dynamic_partitions(partition.name))
-    files_with_partitions = [data_lake_file for data_lake_file in data_lake_files if data_lake_file.uri in existing_partitions]
+    files_with_partitions = [
+        data_lake_file for data_lake_file in data_lake_files if data_lake_file.uri in existing_partitions
+    ]
 
     return DataVersionsByPartition(
         {

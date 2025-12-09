@@ -1,68 +1,29 @@
 follow_up_question: |
-  Ihnen wird ein Chat-Verlauf zwischen einem KI-Assistenten und einem Experten gegeben. Das Ziel dieses Gesprächs
-  ist es, eine ursprünglich von einem Benutzer gestellte Frage zu beantworten. Die Antwort des Experten scheint jedoch unzureichend zu sein.
+  Der Experte wurde gefragt: "{{ question }}"
 
-   <chat_history>
-    {% for message in chat_history %}
-    <message role="{{ message.role.value }}">
-      {% for block in message.blocks %}
-      {% if block.block_type == 'text' %}
-      {{ block.text }}
-      {% endif %}
-      {% endfor %}
-    </message>
-    {% endfor %}
-  </chat_history>
+  Seine Antwort:
+  {% for message in chat_history %}
+  {% if message.role.value == 'user' %}
+  {% for block in message.blocks %}
+  {% if block.block_type == 'text' %}
+  {{ block.text }}
+  {% endif %}
+  {% endfor %}
+  {% endif %}
+  {% endfor %}
 
-  <user_query>
-    %{question}
-  </user_query>
-  
-  Bitte formulieren Sie eine Folgefrage an den Experten, die auf die Unzulänglichkeit in seiner vorherigen Antwort eingeht.
-  Die Frage sollte klar und präzise sein und dem Experten helfen, eine vollständigere Antwort auf die ursprüngliche Frage des Benutzers zu geben.
+  Der Experte sagte entweder, dass er es nicht weiss, hat nicht geantwortet, oder hat nur einen Teil der Frage beantwortet.
+  Fragen Sie nach den spezifischen fehlenden Informationen. Halten Sie es kurz und höflich. Fragen Sie nur nach dem, was ursprünglich angefragt aber noch nicht beantwortet wurde.
 
-knowledge_snippet_prompt: |
-  {% chat role="system" %}
-  Ihnen wird ein Chat-Verlauf zwischen einem KI-Assistenten und einem Experten gegeben. Das Ziel dieses Gesprächs
-  war es, eine ursprünglich von einem Benutzer gestellte Frage zu beantworten. Der Experte konnte die Antwort erfolgreich liefern.
-
-  <user_query>
-    %{question}
-  </user_query>
-
-  <chat_history> 
-    {% for message in chat_history %}
-    <message role="{{ message.role.value }}">
-      {% for block in message.blocks %}
-      {% if block.block_type == 'text' %}
-      {{ block.text }}
-      {% endif %}
-      {% endfor %}
-    </message>
-    {% endfor %}
-  </chat_history>
-  {% endchat %}
-  
-  {% chat role="user" %}
-  Nachdem die Antwort gegeben wurde, extrahieren Sie bitte das Schlüsselwissen aus diesem Gespräch, das dem Benutzer fehlte.
-  Dieser Wissensausschnitt sollte eine prägnante Zusammenfassung der wichtigsten Informationen sein, die der Benutzer wissen musste.
-  Der Ausschnitt wird an den Benutzer zurückgegeben, daher muss aus dem Ausschnitt allein die Antwort auf die Frage offensichtlich sein.
-  Der Ausschnitt wird jedoch auch zur Wissensdatenbank hinzugefügt, daher sollte der Ausschnitt nicht nur die Antwort auf die Frage enthalten,
-  sondern das Wissen, das erforderlich ist, um die Frage zu beantworten.
-  {% endchat %}
-
-knowledge_snippet: |
-  %{content}
-  
-  Wissen wurde eingereicht via Slack vom Benutzer %{expert_name} am %{date} um %{time} Uhr.
+routes:
+  answer_sufficient: "Der Experte hat die Frage beantwortet. Wählen Sie dies, wenn der Experte IRGENDEINE direkte Antwort gegeben hat."
+  answer_insufficient: "Der Experte hat NICHT geantwortet. Wählen Sie dies NUR, wenn der Experte 'Ich weiss nicht' sagte oder die Antwort verweigerte."
 
 thoughts:
   asking_question: "Frage an Experten stellen: '%{question}'."
   expert_responded: "Experte hat geantwortet: '%{response}'."
   determine_sufficient: "Überprüfen, ob die Antwort des Experten ausreichend ist."
-  answer_sufficient: "Die Antwort des Experten ist ausreichend! Erstelle jetzt einen Wissensausschnitt."
-  saving_knowledge: "Speichere den Wissensausschnitt in der Datenbank."
-  knowledge_saved: "Wissen wurde unter %{filename} gespeichert."
+  answer_sufficient: "Die Antwort des Experten ist ausreichend."
   max_questions_reached: "Maximale Anzahl an Folgefragen erreicht."
   returning_insufficient: "Kehre zum Benutzer mit einer unzureichenden Antwort zurück."
   answer_not_sufficient: "Antwort ist nicht ausreichend, formuliere eine Folgefrage."
