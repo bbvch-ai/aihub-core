@@ -464,6 +464,41 @@ services:
         max-size: 10m
         max-file: 2
 
+  {% if stage != 'dev' %}
+  # ===================================================================
+  # PgBouncer (Connection Pooler for Dagster)
+  # ===================================================================
+  pgbouncer:
+    container_name: pgbouncer
+    image: {{ global.registry_prefix }}{{ image_tags.pgbouncer }}
+    restart: always
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: dagster
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: "1000"
+      DEFAULT_POOL_SIZE: "20"
+      MIN_POOL_SIZE: "5"
+      RESERVE_POOL_SIZE: "5"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-h", "127.0.0.1", "-p", "6432" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+  {% endif %}
+
   # ===================================================================
   # FerretDB Stack (MongoDB Compatibility)
   # ===================================================================
@@ -1394,6 +1429,9 @@ services:
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.dagster[stage] }}
     {%- endif %}
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "3002:3000"
@@ -1431,6 +1469,9 @@ services:
     {%- else %}
     image: "{{ global.registry_prefix }}{{ image_tags.dagster[stage] }}"
     {%- endif %}
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
     entrypoint:
       - dagster-daemon
       - run

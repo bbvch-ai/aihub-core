@@ -48,6 +48,7 @@ image_tags:
   llama_cpp_cpu: llama.cpp:server-b7003
   speaches_gpu: speaches:0.8.3-cuda-12.6.3
   speaches_cpu: speaches:0.8.3-cpu
+  pgbouncer: pgbouncer:1.25.1
 
   # --- Custom Application Services ---
   api:
