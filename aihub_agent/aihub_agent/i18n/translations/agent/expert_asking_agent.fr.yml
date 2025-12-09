@@ -1,25 +1,23 @@
 follow_up_question: |
-  Vous disposez d'un historique de chat entre un assistant IA et un expert. L'objectif de cette conversation
-  est de répondre à une question initialement posée par un utilisateur. Cependant, la réponse de l'expert semble insuffisante.
+  L'expert a été interrogé : "{{ question }}"
 
-   <chat_history>
-    {% for message in chat_history %}
-    <message role="{{ message.role.value }}">
-      {% for block in message.blocks %}
-      {% if block.block_type == 'text' %}
-      {{ block.text }}
-      {% endif %}
-      {% endfor %}
-    </message>
-    {% endfor %}
-  </chat_history>
+  Sa réponse :
+  {% for message in chat_history %}
+  {% if message.role.value == 'user' %}
+  {% for block in message.blocks %}
+  {% if block.block_type == 'text' %}
+  {{ block.text }}
+  {% endif %}
+  {% endfor %}
+  {% endif %}
+  {% endfor %}
 
-  <user_query>
-    %{question}
-  </user_query>
+  L'expert a dit qu'il ne sait pas, n'a pas répondu, ou n'a répondu qu'à une partie de la question.
+  Demandez les informations spécifiques manquantes. Restez bref et poli. Ne demandez que ce qui a été initialement demandé mais pas encore répondu.
 
-  Veuillez formuler une question de suivi à l'expert qui aborde l'insuffisance de sa réponse précédente.
-  La question doit être claire et concise, et elle doit aider l'expert à fournir une réponse plus complète à la question initiale de l'utilisateur.
+routes:
+  answer_sufficient: "L'expert a répondu à la question. Choisissez ceci si l'expert a fourni UNE réponse directe."
+  answer_insufficient: "L'expert n'a PAS répondu. Choisissez ceci UNIQUEMENT si l'expert a dit 'Je ne sais pas' ou a refusé de répondre."
 
 thoughts:
   asking_question: "Poser une question à l'expert: '%{question}'."

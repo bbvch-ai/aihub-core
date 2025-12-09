@@ -102,11 +102,11 @@ class ExpertAskingAgent(Agent):
                 routes=[
                     RouteOptions.for_event(
                         ExpertAnswerSufficientEvent(response=expert_response, expert_name=expert_name),
-                        "Choose this option if the experts response sufficiently answered the question.",
+                        t("agent.expert_asking_agent.routes.answer_sufficient"),
                     ),
                     RouteOptions.for_event(
                         ExpertAnswerInsufficientEvent(response=expert_response, expert_name=expert_name),
-                        "Choose this option if the experts response does NOT sufficiently answered the question.",
+                        t("agent.expert_asking_agent.routes.answer_insufficient"),
                     ),
                 ],
                 t=t,

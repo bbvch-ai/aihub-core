@@ -1,25 +1,23 @@
 follow_up_question: |
-  Ihnen wird ein Chat-Verlauf zwischen einem KI-Assistenten und einem Experten gegeben. Das Ziel dieses Gesprächs
-  ist es, eine ursprünglich von einem Benutzer gestellte Frage zu beantworten. Die Antwort des Experten scheint jedoch unzureichend zu sein.
+  Der Experte wurde gefragt: "{{ question }}"
 
-   <chat_history>
-    {% for message in chat_history %}
-    <message role="{{ message.role.value }}">
-      {% for block in message.blocks %}
-      {% if block.block_type == 'text' %}
-      {{ block.text }}
-      {% endif %}
-      {% endfor %}
-    </message>
-    {% endfor %}
-  </chat_history>
+  Seine Antwort:
+  {% for message in chat_history %}
+  {% if message.role.value == 'user' %}
+  {% for block in message.blocks %}
+  {% if block.block_type == 'text' %}
+  {{ block.text }}
+  {% endif %}
+  {% endfor %}
+  {% endif %}
+  {% endfor %}
 
-  <user_query>
-    %{question}
-  </user_query>
+  Der Experte sagte entweder, dass er es nicht weiss, hat nicht geantwortet, oder hat nur einen Teil der Frage beantwortet.
+  Fragen Sie nach den spezifischen fehlenden Informationen. Halten Sie es kurz und höflich. Fragen Sie nur nach dem, was ursprünglich angefragt aber noch nicht beantwortet wurde.
 
-  Bitte formulieren Sie eine Folgefrage an den Experten, die auf die Unzulänglichkeit in seiner vorherigen Antwort eingeht.
-  Die Frage sollte klar und präzise sein und dem Experten helfen, eine vollständigere Antwort auf die ursprüngliche Frage des Benutzers zu geben.
+routes:
+  answer_sufficient: "Der Experte hat die Frage beantwortet. Wählen Sie dies, wenn der Experte IRGENDEINE direkte Antwort gegeben hat."
+  answer_insufficient: "Der Experte hat NICHT geantwortet. Wählen Sie dies NUR, wenn der Experte 'Ich weiss nicht' sagte oder die Antwort verweigerte."
 
 thoughts:
   asking_question: "Frage an Experten stellen: '%{question}'."

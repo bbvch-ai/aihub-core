@@ -1,25 +1,23 @@
 follow_up_question: |
-  Ti viene fornita una cronologia di chat tra un assistente AI e un esperto. L'obiettivo di questa conversazione
-  è rispondere a una domanda originariamente posta da un utente. Tuttavia, la risposta dell'esperto sembra essere insufficiente.
+  All'esperto è stato chiesto: "{{ question }}"
 
-   <chat_history>
-    {% for message in chat_history %}
-    <message role="{{ message.role.value }}">
-      {% for block in message.blocks %}
-      {% if block.block_type == 'text' %}
-      {{ block.text }}
-      {% endif %}
-      {% endfor %}
-    </message>
-    {% endfor %}
-  </chat_history>
+  La sua risposta:
+  {% for message in chat_history %}
+  {% if message.role.value == 'user' %}
+  {% for block in message.blocks %}
+  {% if block.block_type == 'text' %}
+  {{ block.text }}
+  {% endif %}
+  {% endfor %}
+  {% endif %}
+  {% endfor %}
 
-  <user_query>
-    %{question}
-  </user_query>
+  L'esperto ha detto che non sa, non ha risposto, o ha risposto solo a parte della domanda.
+  Chiedi le informazioni specifiche mancanti. Sii breve e cortese. Chiedi solo ciò che è stato originariamente richiesto ma non ancora risposto.
 
-  Per favore, formula una domanda di follow-up all'esperto che affronti l'insufficienza della sua risposta precedente.
-  La domanda dovrebbe essere chiara e concisa, e dovrebbe aiutare l'esperto a fornire una risposta più completa alla domanda originale dell'utente.
+routes:
+  answer_sufficient: "L'esperto ha risposto alla domanda. Scegli questo se l'esperto ha fornito QUALSIASI risposta diretta."
+  answer_insufficient: "L'esperto NON ha risposto. Scegli questo SOLO se l'esperto ha detto 'Non lo so' o ha rifiutato di rispondere."
 
 thoughts:
   asking_question: "Porre una domanda all'esperto: '%{question}'."

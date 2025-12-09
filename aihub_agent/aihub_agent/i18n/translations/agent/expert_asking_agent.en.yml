@@ -1,25 +1,23 @@
 follow_up_question: |
-  You are given a chat history between an AI assistant and an expert. The goal of this conversation
-  is to answer a question originally posed by a user. However, the experts answer seemed to be insufficient.
+  The expert was asked: "{{ question }}"
 
-   <chat_history>
-    {% for message in chat_history %}
-    <message role="{{ message.role.value }}">
-      {% for block in message.blocks %}
-      {% if block.block_type == 'text' %}
-      {{ block.text }}
-      {% endif %}
-      {% endfor %}
-    </message>
-    {% endfor %}
-  </chat_history>
+  Their response:
+  {% for message in chat_history %}
+  {% if message.role.value == 'user' %}
+  {% for block in message.blocks %}
+  {% if block.block_type == 'text' %}
+  {{ block.text }}
+  {% endif %}
+  {% endfor %}
+  {% endif %}
+  {% endfor %}
 
-  <user_query>
-    %{question}
-  </user_query>
+  The expert either said they don't know, didn't answer, or only answered part of the question.
+  Ask for the specific missing information. Keep it short and polite. Only ask for what was originally requested but not yet answered.
 
-  Please formulate a follow-up question to the expert that addresses the insufficiency in their previous answer.
-  The question should be clear and concise, and it should help the expert provide a more complete answer to the user's original question.
+routes:
+  answer_sufficient: "The expert answered the question. Choose this if the expert provided ANY direct answer."
+  answer_insufficient: "The expert did NOT answer. Choose ONLY if the expert said 'I don't know' or refused to answer."
 
 thoughts:
   asking_question: "Asking question to expert: '%{question}'."
