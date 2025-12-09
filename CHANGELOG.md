@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.254.18] - 2025-12-09 - Docling Loader Robustness and Development Workflow Enhancements
+
+### Fixed
+
+- 🐛 **Improved Docling Content Robustness:** Enhanced the Docling document loader to recursively handle and fix
+  malformed `null` meta fields within document content, ensuring better compatibility and preventing errors when
+  processing data from older Docling server deployments.
+
+### Changed
+
+- 🔄 **Expanded PR Branch Naming:** Updated CI/CD rules to allow feature branches prefixed with `claude/` to pass
+  semantic pull request checks, streamlining specific development workflows.
+
+---
+
 ## [v0.254.17] - 2025-12-09 - Enhanced RAG Agent with Expert Escalation and Streamlined Bot Communication
 
 ### Added

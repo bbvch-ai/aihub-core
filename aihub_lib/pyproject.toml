@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_lib"
-version = "v0.254.17"
+version = "v0.254.18"
 description = ""
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -47,7 +47,7 @@ redis = "^5.2.1"
 openai = "^1.76.2"
 cachetools = "^5.5.2"
 arize-phoenix = "^10.0.2"
-docling-core = "^2.38.0"
+docling-core = "^2.54.1"
 boto3 = "^1.35.0"
 llama-index-embeddings-openai-like = "^0.1.1"
 opentelemetry-exporter-otlp-proto-grpc = "^1.36.0"

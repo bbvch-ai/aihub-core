@@ -284,18 +284,19 @@ def convert_tables_to_markdown(markdown_text: str, tables: list[TableItem]) -> s
     return markdown_text
 
 
-def _fix_null_meta_fields(data: dict) -> None:
-    """Fix null meta fields in Docling JSON content.
+def _fix_null_meta_fields(data: dict | list | Any) -> None:
+    """Recursively fix null meta fields in Docling JSON content.
 
-    Works around a bug in docling-core's _migrate_annotations_to_meta validator
-    which uses setdefault() to initialize meta, but setdefault() doesn't replace
-    explicit null values. This causes AttributeError when meta is null and the
-    validator tries to call meta.setdefault().
+    Works around a bug in docling-core < 2.51.0 where _migrate_annotations_to_meta
+    validator uses setdefault() on meta, which fails when meta is null. Fixed
+    upstream in v2.51.0 (#417), but kept for compatibility with older docling-serve
+    deployments that may return documents with null meta fields.
     """
-    if data.get("meta") is None:
-        data["meta"] = {}
-
-    for key in ("pictures", "tables"):
-        for item in data.get(key, []):
-            if item.get("meta") is None:
-                item["meta"] = {}
+    if isinstance(data, dict):
+        if "meta" in data and data["meta"] is None:
+            data["meta"] = {}
+        for value in data.values():
+            _fix_null_meta_fields(value)
+    elif isinstance(data, list):
+        for item in data:
+            _fix_null_meta_fields(item)
