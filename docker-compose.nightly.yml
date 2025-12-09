@@ -1249,6 +1249,8 @@ services:
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:nightly
     environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
@@ -1278,6 +1280,8 @@ services:
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/rag_agent:nightly
     environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}

@@ -1716,6 +1716,8 @@ services:
     image: {{ global.registry_prefix }}{{ image_tags.llm_wrapping_agent[stage] }}
     {%- endif %}
     environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
@@ -1752,6 +1754,8 @@ services:
     image: {{ global.registry_prefix }}{{ image_tags.rag_agent[stage] }}
     {%- endif %}
     environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}

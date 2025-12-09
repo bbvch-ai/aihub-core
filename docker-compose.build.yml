@@ -1301,6 +1301,8 @@ services:
       context: .
       dockerfile: ./aihub_agent/app/llm_wrapping_agent/Dockerfile
     environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
@@ -1332,6 +1334,8 @@ services:
       context: .
       dockerfile: ./aihub_agent/app/rag_agent/Dockerfile
     environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
