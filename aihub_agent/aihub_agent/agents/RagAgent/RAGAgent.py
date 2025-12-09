@@ -2,14 +2,12 @@ from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
 from aihub_lib.generative_ai.guards.few_shot_guard import few_shot_guard
 from aihub_lib.generative_ai.resources.models.llm.message_preprocessor import merge_consecutive_messages
+from aihub_lib.generative_ai.retrievers import create_retriever
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
 from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
 from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
 from aihub_lib.generative_ai.utils.rerank_nodes import rerank_nodes
-from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
-from aihub_lib.generative_ai.utils.retrieve_parent_summary_nodes import retrieve_parent_summary_nodes
-from aihub_lib.generative_ai.utils.retrieve_prev_next_nodes import retrieve_prev_next_nodes
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import (
@@ -38,7 +36,6 @@ from aihub_agent.agents.ExpertAskingAgent.events.AnswerStopEvent import AnswerSt
 from aihub_agent.agents.ExpertAskingAgent.events.AskExpertStartEvent import AskExpertStartEvent
 from aihub_agent.agents.ExpertAskingAgent.events.NoAnswerStopEvent import NoAnswerStopEvent
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.agents.RagAgent.events.ContextInsufficientWithQueryEvent import ContextInsufficientWithQueryEvent
 from aihub_agent.agents.RagAgent.events.ExpertAnswerContextEvent import ExpertAnswerContextEvent
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
@@ -202,52 +199,42 @@ class RAGAgent(Agent):
 
     @step(
         name=LocaleString(en="Retrieve Nodes"),
-        description=LocaleString(en="Retrieves relevant nodes from the knowledge base."),
+        description=LocaleString(en="Retrieves relevant nodes from knowledge sources."),
     )
     async def retrieve_step(
         self,
         event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
         _: FewShotAcceptEvent,
-        retrieve_step_config: RetrieveStepConfig,
+        agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> RetrieverEvent:
         """
-        Retrieves relevant nodes from the knowledge base.
-        """
-        await displayer.display_thought(t("agent.thought.searching_knowledge"))
-        embedding, _ = retrieve_step_config.embed_model.to_llama_index()
+        Retrieves relevant nodes from multiple knowledge sources.
 
+        Iterates through configured retrievers (knowledge base, insights)
+        and combines all retrieved nodes.
+        """
         if isinstance(event, StandaloneQuestionCondenserEvent):
             query = event.condensed_chat_message.content
         else:
             query = event.new_query
 
-        vector_store = retrieve_step_config.vector_store.to_llama_index()
+        all_nodes = []
+        for retriever_config in agent_config.retrievers:
+            if not retriever_config.enabled:
+                continue
 
-        nodes = retrieve_nodes(
-            message=query,
-            retrieve_k=retrieve_step_config.retrieve_k,
-            embed_model=embedding,
-            index_namespaces=retrieve_step_config.index_namespaces,
-            query_mode=retrieve_step_config.query_mode,
-            node_types=retrieve_step_config.node_types,
-            vector_store=vector_store,
-        )
-        if retrieve_step_config.retrieve_prev_next:
-            nodes = retrieve_prev_next_nodes(
-                vector_store=vector_store,
-                nodes=nodes,
-                num_nodes=retrieve_step_config.retrieve_prev_next.num_nodes,
-                prev_next_mode=retrieve_step_config.retrieve_prev_next.mode,
+            retriever = create_retriever(retriever_config)
+            await displayer.display_thought(
+                t("agent.thought.retrieving_from", source=retriever_config.retriever_type.value)
             )
-        if retrieve_step_config.retrieve_summaries:
-            nodes = retrieve_parent_summary_nodes(
-                vector_store=vector_store,
-                nodes=nodes,
-                max_levels=retrieve_step_config.retrieve_summaries.max_parent_levels,
-            )
-        return RetrieverEvent.from_nodes(nodes)
+            nodes = await retriever.retrieve(query)
+            all_nodes.extend(nodes)
+
+        # Convert IngestedNodes to NodeWithScore for downstream processing
+        nodes_with_score = [node.to_llama_index_node_with_score() for node in all_nodes]
+        return RetrieverEvent.from_nodes(nodes_with_score)
 
     @step(
         name=LocaleString(en="Rerank Retrieved Nodes"),

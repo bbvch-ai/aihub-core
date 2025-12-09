@@ -141,7 +141,8 @@ class ExpertAskingAgent(Agent):
             InsightEntity.create_insight(
                 question=initial_question_event.question_to_expert,
                 expert_answer=event.response,
-                conversation=[msg.content for msg in chat_history],
+                conversation=[f"{msg.role.value}: {msg.content}" for msg in chat_history],
+                namespace=agent_config.insight_namespace,
                 source=InsightSource(
                     thread_id=thread_context.thread_id,
                     expert_user_id=event.expert_user_id,
@@ -150,7 +151,7 @@ class ExpertAskingAgent(Agent):
                 creator=InsightCreator(
                     agent_class=agent_config.agent_class,
                     agent_id=agent_config.agent_id,
-                    user_id=initial_question_event.user.oid,
+                    user_id=initial_question_event.user.id,
                     user_name=initial_question_event.user.name,
                 ),
             )
