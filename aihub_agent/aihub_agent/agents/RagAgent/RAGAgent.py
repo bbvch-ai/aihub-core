@@ -40,6 +40,7 @@ from aihub_agent.agents.ExpertAskingAgent.events.NoAnswerStopEvent import NoAnsw
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.agents.RagAgent.events.ContextInsufficientWithQueryEvent import ContextInsufficientWithQueryEvent
+from aihub_agent.agents.RagAgent.events.ExpertAnswerContextEvent import ExpertAnswerContextEvent
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 from aihub_agent.agents.RagAgent.events.UserRequestsExpertEvent import UserRequestsExpertEvent
@@ -91,6 +92,23 @@ async def accepts_context_insufficient_reject(
     if isinstance(event, ContextInsufficientRejectEvent):
         return config.expert_escalation is None
     return True
+
+
+@precondition()
+async def context_ready_for_history_limit(
+    context_event: InOrderNodeCombinerEvent | ExpertAnswerContextEvent,
+    context_sufficient_event: ContextSufficientAcceptEvent | None = None,
+) -> bool:
+    """
+    Precondition for limit_chat_history_with_context_step.
+    Allows the step to run when:
+    - ExpertAnswerContextEvent is present (expert flow), OR
+    - InOrderNodeCombinerEvent is present AND ContextSufficientAcceptEvent is present (normal RAG flow)
+    """
+    if isinstance(context_event, ExpertAnswerContextEvent):
+        return True
+    # For InOrderNodeCombinerEvent, we need ContextSufficientAcceptEvent
+    return context_sufficient_event is not None
 
 
 class RAGAgent(Agent):
@@ -341,23 +359,24 @@ class RAGAgent(Agent):
     @step(
         name=LocaleString(en="Limit Chat History with Context"),
         description=LocaleString(en="Includes the combined context and truncates chat history again."),
+        precondition=context_ready_for_history_limit,
     )
     async def limit_chat_history_with_context_step(
         self,
-        nodes_event: InOrderNodeCombinerEvent,
+        context_event: InOrderNodeCombinerEvent | ExpertAnswerContextEvent,
         chat_history_event: LimitChatHistoryEvent,
-        _: ContextSufficientAcceptEvent,
         start_event: UserMessageEvent,
         agent_config: RAGAgentConfig,
     ) -> LimitChatHistoryWithContextEvent:
         """
         Includes the combined context and truncates chat history again.
+        Accepts either retrieved nodes context or expert answer context.
         """
         chat_history = chat_history_event.limited_history
         system_messages = [msg for msg in chat_history if msg.role == MessageRole.SYSTEM]
         limited_chat_history = limit_chat_history_with_context(
             chat_history=chat_history_event.limited_history,
-            context_messages=[nodes_event.context_message],
+            context_messages=[context_event.context_message],
             system_messages=system_messages,
             last_user_message=start_event.last_user_message or ChatMessage(role=MessageRole.USER, content=""),
             tokenizer=agent_config.llm.token_counter,
@@ -441,11 +460,27 @@ class RAGAgent(Agent):
         displayer: EventDisplayer,
         event: AgentInTheLoop.response,
         t: LocaleHandler,
-    ) -> StopEvent:
+    ) -> ExpertAnswerContextEvent:
         await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.expert_answered"))
-        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.forwarding_expert_info"))
-        await displayer.display_chunk(event.stop_event.expert_answer, model_name="expert")
-        return StopEvent()
+        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.can_answer_question"))
+
+        # Format the expert conversation as context
+        expert_conversation = event.stop_event.expert_conversation
+        conversation_parts = []
+        for msg in expert_conversation:
+            role_label = "Agent" if msg.role == MessageRole.ASSISTANT else "Expert"
+            content = msg.content or ""
+            conversation_parts.append(f"{role_label}: {content}")
+        expert_conversation_text = "\n".join(conversation_parts)
+
+        context_content = t("agent.prompt.expert_context", expert_conversation=expert_conversation_text)
+        await displayer.display_thought(f"Expert context: {context_content}")
+
+        context_message = ChatMessage(
+            role=MessageRole.SYSTEM,
+            content=context_content,
+        )
+        return ExpertAnswerContextEvent(context_message=context_message)
 
     @step(
         precondition=is_no_answer_response,

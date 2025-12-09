@@ -113,13 +113,16 @@ class ExpertAskingAgent(Agent):
         self,
         router_event: RouterEvent,
         displayer: EventDisplayer,
+        run_context: RunContext,
         t: AgentLocaleHandler,
     ) -> AnswerStopEvent | ExpertAnswerInsufficientEvent:
         await displayer.display_thought(t("agent.expert_asking_agent.thoughts.determine_sufficient"))
         event = router_event.selected_option.event
         if isinstance(event, ExpertAnswerSufficientEvent):
             await displayer.display_thought(t("agent.expert_asking_agent.thoughts.answer_sufficient"))
-            return AnswerStopEvent(expert_answer=event.response)
+            chat_history = await run_context.get("chat_history", [])
+            chat_history = [ChatMessage(**message) for message in chat_history]
+            return AnswerStopEvent(expert_answer=event.response, expert_conversation=chat_history)
         return event
 
     @step(
