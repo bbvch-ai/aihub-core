@@ -582,6 +582,8 @@ class AgentService:
         Returns the nested dict structure directly. The frontend handles
         flattening/unflattening for FormKit compatibility.
 
+        Falls back to default_agent_config if no custom configuration exists.
+
         Args:
             agent_class: The agent's class identifier
             agent_id: The agent's instance identifier
@@ -589,13 +591,18 @@ class AgentService:
         Returns:
             Dictionary containing the agent's configuration values (nested structure)
         """
+        # First, check for custom configuration in agent_configs collection
         config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
 
         if config_entity and config_entity.config_data:
             return config_entity.config_data
 
-        # If no configuration exists, return an empty dict
-        # The frontend will use default values from the form schema
+        # Fall back to default_agent_config from AgentEntity
+        agent_entity = AgentEntity.get_agent(agent_class, agent_id)
+        if agent_entity and agent_entity.default_agent_config:
+            return agent_entity.default_agent_config.config_data
+
+        # If no configuration exists at all, return empty dict
         return {}
 
     @staticmethod
