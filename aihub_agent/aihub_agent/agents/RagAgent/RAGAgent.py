@@ -412,6 +412,7 @@ class RAGAgent(Agent):
         t: LocaleHandler,
     ) -> UserRequestsExpertEvent | ExpertRejectEvent:
         if "yes" in event.response.lower() or "ja" in event.response.lower():
+            # TODO: Use OpenWebUI confirmation dialog (will be done in another PR)
             await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.user_consented"))
             return UserRequestsExpertEvent()
         await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.user_declined"))
