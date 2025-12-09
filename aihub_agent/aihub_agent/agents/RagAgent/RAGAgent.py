@@ -365,6 +365,7 @@ class RAGAgent(Agent):
         self,
         context_event: InOrderNodeCombinerEvent | ExpertAnswerContextEvent,
         chat_history_event: LimitChatHistoryEvent,
+        _: ContextSufficientAcceptEvent | None,
         start_event: UserMessageEvent,
         agent_config: RAGAgentConfig,
     ) -> LimitChatHistoryWithContextEvent:
