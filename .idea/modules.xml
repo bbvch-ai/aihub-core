@@ -6,7 +6,6 @@
       <module fileurl="file://$PROJECT_DIR$/aihub_agent/.idea/aihub_agent.iml" filepath="$PROJECT_DIR$/aihub_agent/.idea/aihub_agent.iml" />
       <module fileurl="file://$PROJECT_DIR$/aihub_api/.idea/aihub_api.iml" filepath="$PROJECT_DIR$/aihub_api/.idea/aihub_api.iml" />
       <module fileurl="file://$PROJECT_DIR$/aihub_bot/.idea/aihub_bot.iml" filepath="$PROJECT_DIR$/aihub_bot/.idea/aihub_bot.iml" />
-      <module fileurl="file://$PROJECT_DIR$/aihub_integration/.idea/aihub_integration.iml" filepath="$PROJECT_DIR$/aihub_integration/.idea/aihub_integration.iml" />
       <module fileurl="file://$PROJECT_DIR$/aihub_lib/.idea/aihub_lib.iml" filepath="$PROJECT_DIR$/aihub_lib/.idea/aihub_lib.iml" />
       <module fileurl="file://$PROJECT_DIR$/aihub_pipeline/.idea/aihub_pipeline.iml" filepath="$PROJECT_DIR$/aihub_pipeline/.idea/aihub_pipeline.iml" />
       <module fileurl="file://$PROJECT_DIR$/aihub_process/.idea/aihub_process.iml" filepath="$PROJECT_DIR$/aihub_process/.idea/aihub_process.iml" />
