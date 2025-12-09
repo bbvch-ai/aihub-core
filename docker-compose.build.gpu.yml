@@ -1341,6 +1341,8 @@ services:
       context: .
       dockerfile: ./aihub_agent/app/llm_wrapping_agent/Dockerfile
     environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
@@ -1372,6 +1374,8 @@ services:
       context: .
       dockerfile: ./aihub_agent/app/rag_agent/Dockerfile
     environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
@@ -1473,6 +1477,8 @@ services:
       - ferretdb
       - nats
       - traefik
+    ports:
+      - "8001:8001"
     environment:
       NATS_ENDPOINT: nats://nats:4222
       MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
@@ -1489,3 +1495,10 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bot.rule=Host(`bot.${DOMAIN}`)"
+      - "traefik.http.routers.bot.entrypoints=websecure"
+      - "traefik.http.routers.bot.tls=true"
+      - "traefik.http.routers.bot.middlewares=security-headers@file"
+      - "traefik.http.services.bot.loadbalancer.server.port=8000"

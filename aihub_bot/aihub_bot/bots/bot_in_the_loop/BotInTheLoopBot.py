@@ -78,34 +78,62 @@ class BotInTheLoopBot(ActivityHandler):
     @override
     async def on_message_activity(self, turn_context: TurnContext):
         channel_id = turn_context.activity.channel_id
+        conversation_id = turn_context.activity.conversation.id
+        message_text = turn_context.activity.text
+
+        logger.info(
+            f"[BITL] Received message activity: channel={channel_id}, "
+            f"conversation_id={conversation_id}, text={message_text!r}"
+        )
+
         channel: Channels
 
         if channel_id == Channels.slack:
-            if not self.is_slack_channel_thread_message(turn_context):
-                logger.debug("Not a Slack channel thread message")
+            is_thread_msg = self.is_slack_channel_thread_message(turn_context)
+            logger.info(f"[BITL] Slack message - is_thread_message={is_thread_msg}")
+            if not is_thread_msg:
+                logger.info(f"[BITL] Ignoring non-thread Slack message: {conversation_id}")
                 return
             channel = Channels.slack
         elif channel_id == Channels.ms_teams:
             channel = Channels.ms_teams
         else:
+            logger.warning(f"[BITL] Unsupported channel: {channel_id}")
             raise NotImplementedError("Only Slack and Teams channels are supported")
 
         parsed: tuple[str, str] | None = self._parse_conversation_id(turn_context, channel)
         if parsed is None:
+            logger.warning(f"[BITL] Failed to parse conversation ID: {conversation_id}")
             return
 
         base_conversation_id, thread_identifier = parsed
+        logger.info(f"[BITL] Parsed conversation: base={base_conversation_id}, thread={thread_identifier}")
+
+        # Log all tracked threads for debugging
+        logger.info(f"[BITL] Currently tracked threads ({len(self.bot_in_the_loop_handler.threads)}):")
+        for tid, thread in self.bot_in_the_loop_handler.threads.items():
+            logger.info(
+                f"[BITL]   - thread_id={tid}, conv_id={thread.conversation_id}, "
+                f"thread_identifier={thread.thread_identifier}"
+            )
 
         matching_thread_id = self._find_matching_thread(base_conversation_id, thread_identifier)
         if not matching_thread_id:
-            logger.debug(
-                f"No matching thread found for {channel.value} channel {base_conversation_id} "
-                f"and thread {thread_identifier}"
+            logger.warning(
+                f"[BITL] No matching thread found for {channel.value} channel "
+                f"base_conversation_id={base_conversation_id}, thread_identifier={thread_identifier}"
             )
             return
 
+        logger.info(f"[BITL] Found matching thread: {matching_thread_id}")
+
         bot_in_the_loop_request = self.bot_in_the_loop_handler.threads[matching_thread_id].last_request_event
         responder_info = self._extract_responder_info(turn_context)
+
+        logger.info(
+            f"[BITL] Distributing response event: thread_id={bot_in_the_loop_request.topic.thread_id}, "
+            f"display_id={bot_in_the_loop_request.topic.display_id}, response={message_text!r}"
+        )
 
         await self.external_agent_event_distributor.distribute_event(
             external_event=ExternalAgentEvent(
@@ -119,6 +147,8 @@ class BotInTheLoopBot(ActivityHandler):
             ),
             user=bot_in_the_loop_request.user,
         )
+
+        logger.info("[BITL] Response event distributed successfully")
 
     @staticmethod
     def is_slack_channel_thread_message(turn_context: TurnContext) -> bool:

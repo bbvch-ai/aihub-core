@@ -111,43 +111,28 @@ router:
       Analyze the user query carefully in relation to the chat history. Determine whether the query can be fulfilled based on the criteria above. Provide a clear yes/no decision with detailed reasoning.
 
     expert_answer_sufficient: |
-      Ti viene fornita una cronologia di chat tra un assistente AI e un esperto. L'obiettivo di questa conversazione
-      è rispondere a una domanda originariamente posta da un utente. Determina se l'esperto ha già risposto 
-      sufficientemente alla domanda in base alla cronologia della chat.
+      La risposta dell'esperto risponde alla domanda dell'utente?
 
-       <chat_history>
+      <expert_response>
       {% for message in chat_history %}
-      <message role="{{ message.role.value }}">
+      {% if message.role.value == 'user' %}
       {% for block in message.blocks %}
       {% if block.block_type == 'text' %}
       {{ block.text }}
       {% endif %}
       {% endfor %}
-      </message>
+      {% endif %}
       {% endfor %}
-      </chat_history>
+      </expert_response>
 
-      <user_query>
-      %{question}
-      </user_query>
+      <user_question>
+      {{ query }}
+      </user_question>
 
-      <answered_criteria>
-      <is_answered>
-      Una domanda è considerata risposta se UNO dei seguenti è vero:
-      * L'esperto ha fornito una risposta completa e accurata alla domanda dell'utente
-      * L'esperto ha fornito una risposta parziale, ma l'utente può comunque comprendere i punti principali
-      * L'esperto ha indicato dove può essere trovata la risposta
-      * L'esperto ha fornito informazioni contestuali, forse nel messaggio di sistema, che - direttamente o indirettamente - rispondono alla domanda
-      </is_answered>
-      <is_not_answered>
-      Una domanda è considerata non risposta se UNO dei seguenti è vero:
-      * L'esperto non ha fornito alcuna risposta alla domanda dell'utente
-      * L'esperto ha fornito una risposta, ma è incompleta o inaccurata
-      * L'esperto ha fornito una risposta, ma non è pertinente alla domanda dell'utente
-      * L'esperto ha fornito una risposta, ma non è chiara o comprensibile
-      * L'esperto indica di non conoscere la risposta
-      </is_not_answered>
-      </answered_criteria>
+      La domanda È risposta se l'esperto ha fornito informazioni che rispondono direttamente a TUTTE le parti di ciò che è stato chiesto.
+      La domanda NON è risposta se:
+      - L'esperto dice esplicitamente che non sa o rifiuta di rispondere
+      - La domanda ha più parti e solo alcune sono state risposte
 
       Analizza attentamente la cronologia della chat in relazione alla domanda dell'utente. Determina se l'esperto ha già risposto sufficientemente alla domanda in base ai criteri sopra indicati. Fornisci una decisione chiara con un ragionamento dettagliato.
 summarizer:

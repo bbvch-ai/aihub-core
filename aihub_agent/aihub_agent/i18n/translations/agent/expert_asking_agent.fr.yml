@@ -1,68 +1,29 @@
 follow_up_question: |
-  Vous disposez d'un historique de chat entre un assistant IA et un expert. L'objectif de cette conversation
-  est de répondre à une question initialement posée par un utilisateur. Cependant, la réponse de l'expert semble insuffisante.
+  L'expert a été interrogé : "{{ question }}"
 
-   <chat_history>
-    {% for message in chat_history %}
-    <message role="{{ message.role.value }}">
-      {% for block in message.blocks %}
-      {% if block.block_type == 'text' %}
-      {{ block.text }}
-      {% endif %}
-      {% endfor %}
-    </message>
-    {% endfor %}
-  </chat_history>
+  Sa réponse :
+  {% for message in chat_history %}
+  {% if message.role.value == 'user' %}
+  {% for block in message.blocks %}
+  {% if block.block_type == 'text' %}
+  {{ block.text }}
+  {% endif %}
+  {% endfor %}
+  {% endif %}
+  {% endfor %}
 
-  <user_query>
-    %{question}
-  </user_query>
-  
-  Veuillez formuler une question de suivi à l'expert qui aborde l'insuffisance de sa réponse précédente.
-  La question doit être claire et concise, et elle doit aider l'expert à fournir une réponse plus complète à la question initiale de l'utilisateur.
+  L'expert a dit qu'il ne sait pas, n'a pas répondu, ou n'a répondu qu'à une partie de la question.
+  Demandez les informations spécifiques manquantes. Restez bref et poli. Ne demandez que ce qui a été initialement demandé mais pas encore répondu.
 
-knowledge_snippet_prompt: |
-  {% chat role="system" %}
-  Vous disposez d'un historique de chat entre un assistant IA et un expert. L'objectif de cette conversation
-  était de répondre à une question initialement posée par un utilisateur. L'expert a pu fournir la réponse avec succès.
-
-  <user_query>
-    %{question}
-  </user_query>
-
-  <chat_history> 
-    {% for message in chat_history %}
-    <message role="{{ message.role.value }}">
-      {% for block in message.blocks %}
-      {% if block.block_type == 'text' %}
-      {{ block.text }}
-      {% endif %}
-      {% endfor %}
-    </message>
-    {% endfor %}
-  </chat_history>
-  {% endchat %}
-
-  {% chat role="user" %}
-  Maintenant que la réponse est fournie, veuillez extraire les connaissances clés de cette conversation qui manquaient à l'utilisateur.
-  Cet extrait de connaissances doit être un résumé concis des informations les plus importantes que l'utilisateur devait connaître.
-  L'extrait sera renvoyé à l'utilisateur, donc, à partir de l'extrait seul, la réponse à la question doit être évidente.
-  Cependant, l'extrait sera également ajouté à la base de connaissances, donc l'extrait ne doit pas simplement contenir
-  la réponse à la question, mais les connaissances nécessaires pour répondre à la question..
-  {% endchat %}
-
-knowledge_snippet: |
-  %{content}
-  
-  Connaissance soumise via Slack par l'utilisateur %{expert_name} le %{date} à %{time}.
+routes:
+  answer_sufficient: "L'expert a répondu à la question. Choisissez ceci si l'expert a fourni UNE réponse directe."
+  answer_insufficient: "L'expert n'a PAS répondu. Choisissez ceci UNIQUEMENT si l'expert a dit 'Je ne sais pas' ou a refusé de répondre."
 
 thoughts:
   asking_question: "Poser une question à l'expert: '%{question}'."
   expert_responded: "L'expert a répondu: '%{response}'."
   determine_sufficient: "Vérifier si la réponse de l'expert est suffisante."
-  answer_sufficient: "La réponse de l'expert est suffisante! Création d'un extrait de connaissance maintenant."
-  saving_knowledge: "Enregistrement de l'extrait de connaissance dans la base de données."
-  knowledge_saved: "Les connaissances ont été enregistrées sous %{filename}."
+  answer_sufficient: "La réponse de l'expert est suffisante."
   max_questions_reached: "Nombre maximum de questions de suivi atteint."
   returning_insufficient: "Retour à l'utilisateur avec une réponse insuffisante."
   answer_not_sufficient: "La réponse n'est pas suffisante, formulation d'une question de suivi."
