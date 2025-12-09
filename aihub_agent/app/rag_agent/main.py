@@ -1,7 +1,5 @@
 import asyncio
 
-# from aihub_agent.agents.ExpertAskingAgent.ExpertAskingAgent import ExpertAskingAgent
-# from aihub_agent.agents.RagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
@@ -152,10 +150,6 @@ async def main():
                     max_parent_levels=2,
                 ),
             ),
-            # expert_escalation=ExpertEscalationConfig(
-            #     expert_asking_agent_class=ExpertAskingAgent.__name__,
-            #     expert_asking_agent_id="expert_agent",
-            # ),
         ),
         redis_url=RedisSettings().URL,
         servers=servers_list,
