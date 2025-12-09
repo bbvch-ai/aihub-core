@@ -26,9 +26,8 @@ s3fs = "^2024.12.0"
 boto3 = "^1.35.0"
 
 [tool.poetry.dependencies.aihub_lib]
-git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.254.16"
-subdirectory = "aihub_lib"
+path = "../aihub_lib"
+develop = true
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
