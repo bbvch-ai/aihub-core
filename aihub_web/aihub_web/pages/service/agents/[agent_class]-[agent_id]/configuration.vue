@@ -19,7 +19,7 @@
           :title="t('agent.configuration.runtimeSettings')"
           :description="agent?.agent_config.description || ''"
           :form="configForm"
-          :initial-data="configurationData"
+          :initial-data="flattenedConfigurationData"
           @submit="submitConfiguration"
         />
         <div
@@ -40,6 +40,8 @@
 </template>
 
 <script setup lang="ts">
+import { flattenObject, unflattenObject } from '@core/utils/objectUtils'
+
 const route = useRoute()
 const { agent, agentIsLoading } = useAgent()
 const { agentConfiguration, agentConfigurationIsLoading } = useAgentConfiguration()
@@ -48,17 +50,25 @@ const { t } = useI18n()
 const toast = useToast()
 
 const configForm = computed(() => agent.value?.agent_config?.form || [])
-const configurationData = computed(() => agentConfiguration.value?.configuration || {})
+
+// Flatten nested config from API to dot-notation for FormKit
+const flattenedConfigurationData = computed(() => {
+  const nestedData = agentConfiguration.value?.configuration || {}
+  return flattenObject(nestedData as Record<string, unknown>)
+})
 
 const submitConfiguration = async (formData: Record<string, unknown>) => {
   const agentClass = route.params.agent_class as string
   const agentId = route.params.agent_id as string
 
+  // Unflatten dot-notation form data back to nested structure for API
+  const nestedFormData = unflattenObject(formData)
+
   try {
     await updateAgentConfiguration({
       agentClass,
       agentId,
-      configuration: formData,
+      configuration: nestedFormData,
     })
     toast.add({
       severity: 'success',

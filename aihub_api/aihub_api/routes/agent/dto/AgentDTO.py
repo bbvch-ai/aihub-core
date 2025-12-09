@@ -67,7 +67,10 @@ class AgentDTO(MinimalAgentDTO):
     @classmethod
     def from_entity(cls, entity: AgentEntity, t: LocaleHandler, is_online: bool | None = None) -> "AgentDTO":
         """Converts an AgentEntity to an AgentDTO."""
+        # Use agent_config_specs if available, otherwise fall back to default_agent_config
         agent_config_dto = AgentConfigDTO.from_agent_config_entity_specs(entity.agent_config_specs, t)
+        if agent_config_dto is None:
+            agent_config_dto = AgentConfigDTO.from_default_agent_config_entity(entity.default_agent_config, t)
 
         start_events = [
             EventSpecs(

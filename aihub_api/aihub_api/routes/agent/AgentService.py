@@ -579,18 +579,19 @@ class AgentService:
         """
         Retrieve the current configuration data for a specific agent.
 
+        Returns the nested dict structure directly. The frontend handles
+        flattening/unflattening for FormKit compatibility.
+
         Args:
             agent_class: The agent's class identifier
             agent_id: The agent's instance identifier
 
         Returns:
-            Dictionary containing the agent's configuration values
+            Dictionary containing the agent's configuration values (nested structure)
         """
-        # Look up the agent configuration from the database
         config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
 
         if config_entity and config_entity.config_data:
-            # Return the stored configuration data
             return config_entity.config_data
 
         # If no configuration exists, return an empty dict
@@ -605,41 +606,45 @@ class AgentService:
         """
         Update the configuration data for a specific agent.
 
+        Expects nested dict structure from the frontend (frontend handles conversion
+        from FormKit's dot-notation format).
+
         Args:
             agent_class: The agent's class identifier
             agent_id: The agent's instance identifier
-            configuration: The new configuration values to store
+            configuration: The new configuration values (nested structure)
 
         Returns:
-            Dictionary containing the updated configuration values
+            Dictionary containing the updated configuration values (nested structure)
         """
+        agent_entity = AgentEntity.get_agent(agent_class, agent_id)
+        if not agent_entity:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Agent {agent_class}/{agent_id} not found. Cannot update configuration.",
+            )
+
         # Find existing configuration or create new one
         config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
 
         if config_entity:
-            # Update existing configuration
             config_entity.config_data = configuration
             config_entity.save()
         else:
-            # Need to get agent info to create a new config entity
-            # For now, create a minimal config entity with the provided data
-            # The full agent info (name, description, icon) will come from discovery
-            agent_entity = AgentEntity.get_agent(agent_class, agent_id)
-            if agent_entity and agent_entity.agent_config_specs:
-                config_entity = AgentConfigEntityDocument(
-                    agent_class=agent_class,
-                    agent_id=agent_id,
-                    name=agent_entity.agent_config_specs.name,
-                    description=agent_entity.agent_config_specs.description,
-                    icon=agent_entity.agent_config_specs.icon,
-                    config_data=configuration,
-                )
-                config_entity.save()
-            else:
+            if not agent_entity.agent_config_specs:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"Agent {agent_class}/{agent_id} not found. Cannot create configuration.",
+                    detail=f"Agent {agent_class}/{agent_id} has no config specs. Cannot create configuration.",
                 )
+            config_entity = AgentConfigEntityDocument(
+                agent_class=agent_class,
+                agent_id=agent_id,
+                name=agent_entity.agent_config_specs.name,
+                description=agent_entity.agent_config_specs.description,
+                icon=agent_entity.agent_config_specs.icon,
+                config_data=configuration,
+            )
+            config_entity.save()
 
         return configuration
 

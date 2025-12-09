@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -7,6 +7,9 @@ from aihub_lib.nats.events.discovery.agent.AgentConfigSpecsEntity import AgentCo
 from aihub_lib.nats.events.form import ALL_FORM_OPTIONS, Checkbox, InputNumber, InputText, Slider
 from aihub_lib.nats.events.form.base.FormkitElement import FormkitElement
 from pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    from aihub_lib.persistence.agents.AgentConfigEntity import AgentConfigEntity
 
 
 class AgentConfigDTO(BaseModel):
@@ -57,6 +60,23 @@ class AgentConfigDTO(BaseModel):
             description=t.extract(agent_config_specs_entity.to_locale_string_description()),
             icon=agent_config_specs_entity.icon,
             form=form,
+        )
+
+    @classmethod
+    def from_default_agent_config_entity(
+        cls, default_agent_config: "AgentConfigEntity", t: LocaleHandler
+    ) -> "AgentConfigDTO":
+        """
+        Create an AgentConfigDTO from a default AgentConfigEntity (embedded document).
+        Used as fallback for agents stored before agent_config_specs was added.
+        Returns a minimal AgentConfigDTO with no form elements.
+        """
+        return cls(
+            agent_id=default_agent_config.agent_id,
+            name=t.extract(default_agent_config.name.to_locale_string()),
+            description=t.extract(default_agent_config.description.to_locale_string()),
+            icon=default_agent_config.icon,
+            form=None,
         )
 
     @staticmethod

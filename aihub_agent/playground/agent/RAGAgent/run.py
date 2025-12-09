@@ -13,6 +13,7 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
+from aihub_lib.nats.events.form import Checkbox, InputNumber, Select, Slider, Textarea
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.logging.logger import enable_logging
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
@@ -29,7 +30,182 @@ enable_logging(level=30)
 
 async def main():
     servers_list = [NatsSettings().ENDPOINT]
-    # TODO add form field to AgentRunner
+
+    # Define form elements explicitly (same pattern as ProcessRunner with Human.In(start_form=...))
+    form = [
+        # LLM Configuration
+        Select(
+            name="llm.model_name",
+            label=LocaleString(
+                en="LLM Model",
+                de="LLM-Modell",
+                fr="Modèle LLM",
+                it="Modello LLM",
+            ),
+            help=LocaleString(
+                en="The language model to use for generating responses.",
+                de="Das Sprachmodell für die Generierung von Antworten.",
+                fr="Le modèle de langage à utiliser pour générer des réponses.",
+                it="Il modello di linguaggio da utilizzare per generare risposte.",
+            ),
+            options=[
+                {"label": "Nano (Local, Fast)", "value": "text-generation/nano"},
+                {"label": "Mini (Local, Balanced)", "value": "text-generation/mini"},
+                {"label": "Large (Azure, Best Quality)", "value": "text-generation/large"},
+                {"label": "OCR (Azure, Vision)", "value": "text-generation/ocr"},
+            ],
+            option_label="label",
+            option_value="value",
+        ),
+        Slider(
+            name="llm.default_parameter.temperature",
+            label=LocaleString(
+                en="Temperature",
+                de="Temperatur",
+                fr="Température",
+                it="Temperatura",
+            ),
+            help=LocaleString(
+                en="Controls randomness in responses. Lower = more deterministic, higher = more creative.",
+                de="Steuert die Zufälligkeit der Antworten. Niedriger = deterministischer, höher = kreativer.",
+                fr="Contrôle l'aléatoire des réponses. Bas = déterministe, haut = créatif.",
+                it="Controlla la casualità nelle risposte. Basso = deterministico, alto = creativo.",
+            ),
+            min=0.0,
+            max=2.0,
+            step=0.1,
+        ),
+        # Context and Retrieval Settings
+        InputNumber(
+            name="number_of_input_tokens",
+            label=LocaleString(
+                en="Max Input Tokens",
+                de="Maximale Eingabe-Tokens",
+                fr="Tokens d'entrée maximum",
+                it="Token di input massimi",
+            ),
+            help=LocaleString(
+                en="Maximum number of tokens allowed in input to manage context size.",
+                de="Maximale Anzahl der Tokens in der Eingabe zur Verwaltung der Kontextgröße.",
+                fr="Nombre maximum de tokens autorisés en entrée pour gérer la taille du contexte.",
+                it="Numero massimo di token consentiti in input per gestire la dimensione del contesto.",
+            ),
+            min=1024,
+            max=128000,
+            step=1024,
+            show_buttons=True,
+        ),
+        InputNumber(
+            name="retrieve_step_config.retrieve_k",
+            label=LocaleString(
+                en="Retrieve K Documents",
+                de="K Dokumente abrufen",
+                fr="Récupérer K documents",
+                it="Recupera K documenti",
+            ),
+            help=LocaleString(
+                en="Number of documents to retrieve from the vector store.",
+                de="Anzahl der Dokumente, die aus dem Vektorspeicher abgerufen werden.",
+                fr="Nombre de documents à récupérer du magasin de vecteurs.",
+                it="Numero di documenti da recuperare dal vector store.",
+            ),
+            min=1,
+            max=100,
+            step=1,
+            show_buttons=True,
+        ),
+        # Retrieval Behavior
+        Checkbox(
+            name="check_context_sufficiency",
+            label=LocaleString(
+                en="Check Context Sufficiency",
+                de="Kontext-Suffizienz prüfen",
+                fr="Vérifier la suffisance du contexte",
+                it="Verifica sufficienza contesto",
+            ),
+            help=LocaleString(
+                en="When enabled, the agent will verify if the retrieved context contains enough information.",
+                de="Wenn aktiviert, prüft der Agent, ob der abgerufene Kontext genügend Informationen enthält.",
+                fr="Lorsqu'activé, l'agent vérifie si le contexte récupéré contient suffisamment d'informations.",
+                it="Se abilitato, l'agente verifica se il contesto recuperato contiene informazioni sufficienti.",
+            ),
+            binary=True,
+        ),
+        InputNumber(
+            name="max_hops",
+            label=LocaleString(
+                en="Max Retrieval Hops",
+                de="Maximale Abruf-Sprünge",
+                fr="Sauts de récupération maximum",
+                it="Salti di recupero massimi",
+            ),
+            help=LocaleString(
+                en="Maximum number of additional retrieval attempts if context is insufficient.",
+                de="Maximale Anzahl zusätzlicher Abrufversuche, wenn der Kontext unzureichend ist.",
+                fr="Nombre maximum de tentatives de récupération supplémentaires si le contexte est insuffisant.",
+                it="Numero massimo di tentativi di recupero aggiuntivi se il contesto è insufficiente.",
+            ),
+            min=1,
+            max=10,
+            step=1,
+            show_buttons=True,
+        ),
+        # Reranking Configuration
+        Checkbox(
+            name="reranking_config.enabled",
+            label=LocaleString(
+                en="Enable Reranking",
+                de="Reranking aktivieren",
+                fr="Activer le reclassement",
+                it="Abilita riordinamento",
+            ),
+            help=LocaleString(
+                en="When enabled, retrieved documents will be reranked for improved relevance.",
+                de="Wenn aktiviert, werden abgerufene Dokumente für bessere Relevanz neu geordnet.",
+                fr="Lorsqu'activé, les documents récupérés seront reclassés pour une meilleure pertinence.",
+                it="Se abilitato, i documenti recuperati verranno riordinati per una migliore rilevanza.",
+            ),
+            binary=True,
+        ),
+        InputNumber(
+            name="reranking_config.reranking_model.top_n",
+            label=LocaleString(
+                en="Reranking Top N",
+                de="Reranking Top N",
+                fr="Top N du reclassement",
+                it="Top N riordinamento",
+            ),
+            help=LocaleString(
+                en="Number of top documents to keep after reranking.",
+                de="Anzahl der Top-Dokumente, die nach dem Reranking behalten werden.",
+                fr="Nombre de documents principaux à conserver après le reclassement.",
+                it="Numero di documenti principali da mantenere dopo il riordinamento.",
+            ),
+            min=1,
+            max=50,
+            step=1,
+            show_buttons=True,
+        ),
+        # System Prompt
+        Textarea(
+            name="system_prompt.en",
+            label=LocaleString(
+                en="System Prompt (English)",
+                de="Systemprompt (Englisch)",
+                fr="Prompt système (Anglais)",
+                it="Prompt di sistema (Inglese)",
+            ),
+            help=LocaleString(
+                en="The system prompt that guides the agent's behavior and responses.",
+                de="Der Systemprompt, der das Verhalten und die Antworten des Agenten steuert.",
+                fr="Le prompt système qui guide le comportement et les réponses de l'agent.",
+                it="Il prompt di sistema che guida il comportamento e le risposte dell'agente.",
+            ),
+            rows=10,
+            auto_resize=True,
+        ),
+    ]
+
     runner = AgentRunner(
         agent_type=RAGAgent,
         default_agent_config=RAGAgentConfig(
@@ -43,7 +219,7 @@ async def main():
                 it="Questo è l'agente RAG predefinito",
             ),
             # when using nano temp needs to be 1.0 and nothing else
-            llm=LLMConfig(model_name="text-generation/nano", default_parameter=LLMParameter(temperature=1.0)),
+            llm=LLMConfig(model_name="text-generation/large", default_parameter=LLMParameter(temperature=1.0)),
             check_context_sufficiency=False,
             number_of_input_tokens=16384,
             system_prompt=LocaleString(
@@ -165,6 +341,7 @@ async def main():
         ),
         redis_url=RedisSettings().URL,
         servers=servers_list,
+        form=form,
     )
 
     await runner.run_forever()

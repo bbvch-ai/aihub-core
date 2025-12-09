@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.form import ALL_FORM_OPTIONS
+from aihub_lib.nats.events.form.base.FormkitElement import FormkitElement
 
 if TYPE_CHECKING:
     from aihub_lib.agents.AgentConfig import AgentConfig
@@ -24,12 +25,20 @@ class AgentConfigSpecs(BaseModel):
     form: Annotated[list[ALL_FORM_OPTIONS], Field(description="Formkit elements of the Agent Config.")] = []
 
     @classmethod
-    def from_agent_config(cls, agent_config: "AgentConfig") -> "AgentConfigSpecs":
+    def from_agent_config(
+        cls, agent_config: "AgentConfig", form: list[FormkitElement] | None = None
+    ) -> "AgentConfigSpecs":
         """
         Creates an AgentConfigSpecs from an AgentConfig instance.
 
-        Extracts the form elements by calling to_formkit_form() on the config instance,
-        along with the metadata fields (name, description, icon, agent_class, agent_id).
+        Args:
+            agent_config: The agent configuration instance containing metadata.
+            form: Optional explicit list of form elements. If provided, these are used instead of
+                  calling to_formkit_form() on the config. This follows the same pattern as
+                  ProcessRunner where forms are passed explicitly via Human.In(start_form=...).
+
+        Returns:
+            AgentConfigSpecs with the agent metadata and form elements.
         """
         return cls(
             name=agent_config.name,
@@ -37,7 +46,7 @@ class AgentConfigSpecs(BaseModel):
             icon=agent_config.icon,
             agent_class=agent_config.agent_class,
             agent_id=agent_config.agent_id,
-            form=agent_config.to_formkit_form(),
+            form=form if form is not None else agent_config.to_formkit_form(),
         )
 
     @classmethod
