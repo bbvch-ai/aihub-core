@@ -4,7 +4,7 @@ from typing import Annotated, cast
 
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoopRequestEvent
-from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import TeamsConfig, SlackConfig
+from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import SlackConfig, TeamsConfig
 from aihub_lib.nats.topics import AgentInstanceTopic
 from cachetools import TTLCache
 from fastapi import Request
