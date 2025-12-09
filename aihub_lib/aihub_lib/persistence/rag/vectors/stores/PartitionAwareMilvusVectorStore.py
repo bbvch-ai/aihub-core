@@ -133,16 +133,16 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
 
         # Extract namespaces and load their partitions
         namespaces = self._extract_namespaces_from_filters(query)
-
         if namespaces:
             partition_names = get_partition_names_for_namespaces(namespaces=namespaces)
             kwargs["milvus_partition_names"] = partition_names
 
+        # HYBRID mode workaround: base class doesn't pass kwargs, so handle it ourselves
         if query.mode == VectorStoreQueryMode.HYBRID:
-            result = self._query_hybrid_mode(query, **kwargs)
-        else:
-            result = super().query(query, **kwargs)
-        return result
+            return self._query_hybrid_mode(query, **kwargs)
+
+        # All other modes work correctly with base class
+        return super().query(query, **kwargs)
 
     def _query_hybrid_mode(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """
