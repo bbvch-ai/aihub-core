@@ -49,20 +49,11 @@ class ExpertAskingAgent(Agent):
         chat_history.append(ChatMessage(role=MessageRole.ASSISTANT, content=question_event.question_to_expert))
         await run_context.set("chat_history", [msg.model_dump() for msg in chat_history])
 
-        if agent_config.teams_config is not None:
-            return BotInTheLoop.invoke(
-                question=question_event.question_to_expert,
-                user=question_event.user,
-                teams_config=agent_config.teams_config,
-            )
-        elif agent_config.slack_config is not None:
-            return BotInTheLoop.invoke(
-                question=question_event.question_to_expert,
-                user=question_event.user,
-                slack_config=agent_config.slack_config,
-            )
-        else:
-            raise ValueError("Either teams_config or slack_config must be provided")
+        return BotInTheLoop.invoke(
+            question=question_event.question_to_expert,
+            user=question_event.user,
+            channel_config=agent_config.channel_config,
+        )
 
     @step(
         name=LocaleString(en="Expert Response"),
