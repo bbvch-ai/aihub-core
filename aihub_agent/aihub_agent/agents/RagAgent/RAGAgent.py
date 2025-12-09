@@ -65,12 +65,6 @@ async def reranking_complete_or_disabled(event: RetrieverEvent | RerankerEvent, 
 
 
 @precondition()
-async def expert_escalation_enabled(event: ContextInsufficientRejectEvent, config: RAGAgentConfig) -> bool:
-    """Precondition to check if expert escalation is configured."""
-    return config.expert_escalation is not None
-
-
-@precondition()
 async def is_answer_response(event: AgentInTheLoop.response) -> bool:
     """Ensures agent in the loop response is a successful answer."""
     return isinstance(event.stop_event, AnswerStopEvent)
@@ -355,18 +349,22 @@ class RAGAgent(Agent):
         return LimitChatHistoryWithContextEvent(limited_history_with_context=limited_chat_history)
 
     @step(
-        name=LocaleString(en="Ask for Consent"),
-        description=LocaleString(en="Ask user for consent to contact expert with their question."),
+        name=LocaleString(en="Handle Insufficient Context"),
+        description=LocaleString(en="Handle insufficient context by asking for expert consent or rejecting."),
         icon="akar-icons:chat-approve",
-        precondition=expert_escalation_enabled,
     )
     async def insufficient_context_step(
         self,
-        _: ContextInsufficientRejectEvent,
+        event: ContextInsufficientRejectEvent,
+        agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> HumanInTheLoop.request:
+    ) -> HumanInTheLoop.request | ExpertRejectEvent:
         await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.context_not_sufficient"))
+
+        if agent_config.expert_escalation is None:
+            return ExpertRejectEvent(reason=event.reason)
+
         await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.asking_for_consent"))
         return HumanInTheLoop.invoke(question=t("agent.expert_grounded_agent.messages.consent_question"))
 
@@ -486,10 +484,7 @@ class RAGAgent(Agent):
     )
     async def respond_with_llm_step(
         self,
-        event: LimitChatHistoryWithContextEvent
-        | FewShotRejectEvent
-        | ContextInsufficientRejectEvent
-        | ExpertRejectEvent,
+        event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ExpertRejectEvent,
         limited_history_without_context: LimitChatHistoryEvent,
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
