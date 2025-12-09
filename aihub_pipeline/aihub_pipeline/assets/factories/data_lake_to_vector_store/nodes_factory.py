@@ -4,7 +4,6 @@ from llama_index.core.schema import TextNode
 from aihub_pipeline.ops.nodes.chunk_ref_doc_into_nodes_using_md_structural_node_parser import (
     chunk_ref_doc_into_nodes_using_md_structural_node_parser,
 )
-from aihub_pipeline.ops.nodes.delete_nodes_for_ref_doc import delete_nodes_for_ref_doc
 from aihub_pipeline.ops.nodes.embed_nodes import embed_nodes
 from aihub_pipeline.ops.nodes.ensure_node_default_metadata import ensure_node_default_metadata
 from aihub_pipeline.ops.nodes.insert_nodes_into_vector_store import insert_nodes_into_vector_store
@@ -31,9 +30,7 @@ def nodes_factory(key: AssetKey, document_key: str | AssetKey, partitions: Dynam
     ) -> Output[list[TextNode]]:
         return insert_nodes_into_vector_store(
             embed_nodes(
-                ensure_node_default_metadata(
-                    chunk_ref_doc_into_nodes_using_md_structural_node_parser(delete_nodes_for_ref_doc(document))
-                )
+                ensure_node_default_metadata(chunk_ref_doc_into_nodes_using_md_structural_node_parser(document))
             ),
             document,
         )

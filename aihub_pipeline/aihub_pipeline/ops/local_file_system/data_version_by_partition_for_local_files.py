@@ -57,5 +57,7 @@ def data_version_by_partition_for_local_files(
     files_with_partitions = [local_file for local_file in local_files if local_file.path in existing_partitions]
 
     return DataVersionsByPartition(
-        {local_file.path: f"{local_file.modified}-{local_file.size}" for local_file in files_with_partitions}  # Only files with partitions
+        {
+            local_file.path: f"{local_file.modified}-{local_file.size}" for local_file in files_with_partitions
+        }  # Only files with partitions
     )

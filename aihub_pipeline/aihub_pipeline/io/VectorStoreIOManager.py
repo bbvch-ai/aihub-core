@@ -95,13 +95,20 @@ class VectorStoreIOManager(ConfigurableIOManager):
             context.log.warning("No nodes to add to vector store")
             return
 
-        # In milvus, IDs are not unique. Adding nodes with the same ID will NOT overwrite the existing node
-        # but rather create a duplicate. To avoid this, we first delete the existing nodes with the same ID
-        # Meanwhile, Azure does not support filtering for document IDs, hence we need to treat these two
-        # vector stores differently. Sucks, but that's how it is.
         if isinstance(self.vector_store, MilvusVectorStore):
-            self.vector_store.delete_nodes([node.id_ for node in nodes])
+            if not getattr(self.vector_store, "upsert_mode", False):
+                error_msg = (
+                    "upsert_mode is False for MilvusVectorStore. "
+                    "This will create duplicate nodes and cause memory leaks. "
+                    "Please enable upsert_mode=True in MilvusVectorStoreResource."
+                )
+                context.log.error(error_msg)
+                raise ValueError(error_msg)
 
+        # Milvus 2.3+ with upsert_mode=True handles duplicates automatically
+        # - Upsert replaces nodes with matching primary key (id) within their partition
+        # - No explicit delete needed, preventing memory leaks from partition loading
+        # - Single atomic operation is faster and more reliable than delete+insert
         self.vector_store.add(nodes)
         context.log.info("Successfully added nodes to vector store")
 

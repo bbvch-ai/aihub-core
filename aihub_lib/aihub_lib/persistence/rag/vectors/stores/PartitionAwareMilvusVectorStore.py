@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 
 from llama_index.core.schema import BaseNode
@@ -20,6 +21,8 @@ except ImportError:
     AnnSearchRequest = None
     RRFRanker = None
     WeightedRanker = None
+
+logger = logging.getLogger(__name__)
 
 
 class PartitionAwareMilvusVectorStore(MilvusVectorStore):
@@ -130,16 +133,28 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
 
         # Extract namespaces and load their partitions
         namespaces = self._extract_namespaces_from_filters(query)
+        partition_names = None
+
         if namespaces:
             partition_names = get_partition_names_for_namespaces(namespaces=namespaces)
             kwargs["milvus_partition_names"] = partition_names
 
-        # HYBRID mode workaround: base class doesn't pass kwargs, so handle it ourselves
-        if query.mode == VectorStoreQueryMode.HYBRID:
-            return self._query_hybrid_mode(query, **kwargs)
+        try:
+            if query.mode == VectorStoreQueryMode.HYBRID:
+                result = self._query_hybrid_mode(query, **kwargs)
+            else:
+                result = super().query(query, **kwargs)
+            return result
 
-        # All other modes work correctly with base class
-        return super().query(query, **kwargs)
+        finally:
+            # Release auto-loaded partitions to prevent memory leaks
+            if partition_names:
+                try:
+                    self.client.release_partitions(
+                        collection_name=self.collection_name, partition_names=partition_names
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to release partitions {partition_names}: {e}")
 
     def _query_hybrid_mode(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """
