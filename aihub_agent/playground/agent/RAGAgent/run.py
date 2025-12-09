@@ -1,7 +1,5 @@
 import asyncio
 
-from aihub_agent.agents.ExpertAskingAgent.ExpertAskingAgent import ExpertAskingAgent
-from aihub_agent.agents.RagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
@@ -15,6 +13,8 @@ from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
+from aihub_agent.agents.ExpertAskingAgent.ExpertAskingAgent import ExpertAskingAgent
+from aihub_agent.agents.RagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
 from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig

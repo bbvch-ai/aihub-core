@@ -107,9 +107,7 @@ class BotInTheLoopBot(ActivityHandler):
             return
 
         base_conversation_id, thread_identifier = parsed
-        logger.info(
-            f"[BITL] Parsed conversation: base={base_conversation_id}, thread={thread_identifier}"
-        )
+        logger.info(f"[BITL] Parsed conversation: base={base_conversation_id}, thread={thread_identifier}")
 
         # Log all tracked threads for debugging
         logger.info(f"[BITL] Currently tracked threads ({len(self.bot_in_the_loop_handler.threads)}):")

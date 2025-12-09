@@ -104,9 +104,7 @@ class BotInTheLoopHandler:
             logger.info(f"[BITL-Handler] Updating existing thread: {thread_id}")
             self.threads[thread_id].last_request_event = event
         else:
-            logger.info(
-                f"[BITL-Handler] Creating new thread: thread_id={thread_id}, conversation_id={conversation_id}"
-            )
+            logger.info(f"[BITL-Handler] Creating new thread: thread_id={thread_id}, conversation_id={conversation_id}")
             self.threads[thread_id] = BotInTheLoopThread(
                 thread_id=thread_id, conversation_id=conversation_id, last_request_event=event
             )
@@ -209,9 +207,7 @@ class BotInTheLoopHandler:
         )
 
         await self._send_bot_in_the_loop_message(conversation, question, thread)
-        logger.info(
-            f"[BITL-Handler] Message sent. Thread now has identifier: {thread.thread_identifier}"
-        )
+        logger.info(f"[BITL-Handler] Message sent. Thread now has identifier: {thread.thread_identifier}")
 
     @staticmethod
     def _bot_in_the_loop_callback(question: str, thread: BotInTheLoopThread) -> Callable:
