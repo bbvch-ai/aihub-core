@@ -396,10 +396,10 @@ class RAGAgent(Agent):
         _: ContextInsufficientRejectEvent,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> HumanInTheLoop.request:
+    ) -> HumanInTheLoop.confirmation.request:
         await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.context_not_sufficient"))
         await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.asking_for_consent"))
-        return HumanInTheLoop.invoke(question=t("agent.expert_grounded_agent.messages.consent_question"))
+        return HumanInTheLoop.confirmation.invoke(question=t("agent.expert_grounded_agent.messages.consent_question"))
 
     @step(
         name=LocaleString(en="Consent Answer"),
@@ -408,12 +408,11 @@ class RAGAgent(Agent):
     )
     async def user_expert_inquiry_response(
         self,
-        event: HumanInTheLoop.response,
+        event: HumanInTheLoop.confirmation.response,
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> UserRequestsExpertEvent | ExpertRejectEvent:
-        if "yes" in event.response.lower() or "ja" in event.response.lower():
-            # TODO: Use OpenWebUI confirmation dialog (will be done in another PR)
+        if event.response is True:
             await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.user_consented"))
             return UserRequestsExpertEvent()
         await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.user_declined"))
