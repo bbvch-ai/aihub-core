@@ -2,7 +2,7 @@ from typing import Annotated
 
 from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import SlackConfig, TeamsConfig
-from pydantic import Field, model_validator
+from pydantic import Field
 
 
 class BotInTheLoopAgentStartEvent(UserMessageEvent):

@@ -76,6 +76,23 @@ async def is_no_answer_response(event: AgentInTheLoop.response) -> bool:
     return isinstance(event.stop_event, NoAnswerStopEvent)
 
 
+@precondition()
+async def has_expert_escalation(config: RAGAgentConfig) -> bool:
+    """Precondition to check if expert escalation is configured."""
+    return config.expert_escalation is not None
+
+
+@precondition()
+async def accepts_context_insufficient_reject(
+    event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ContextInsufficientRejectEvent | ExpertRejectEvent,
+    config: RAGAgentConfig,
+) -> bool:
+    """Accept ContextInsufficientRejectEvent only if no expert flow is configured."""
+    if isinstance(event, ContextInsufficientRejectEvent):
+        return config.expert_escalation is None
+    return True
+
+
 class RAGAgent(Agent):
     """
     Implements a Retrieval-Augmented Generation (RAG) Agent.
@@ -350,21 +367,17 @@ class RAGAgent(Agent):
 
     @step(
         name=LocaleString(en="Handle Insufficient Context"),
-        description=LocaleString(en="Handle insufficient context by asking for expert consent or rejecting."),
+        description=LocaleString(en="Handle insufficient context by asking for expert consent."),
         icon="akar-icons:chat-approve",
+        precondition=has_expert_escalation,
     )
-    async def insufficient_context_step(
+    async def insufficient_context_ask_expert_step(
         self,
-        event: ContextInsufficientRejectEvent,
-        agent_config: RAGAgentConfig,
+        _: ContextInsufficientRejectEvent,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> HumanInTheLoop.request | ExpertRejectEvent:
+    ) -> HumanInTheLoop.request:
         await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.context_not_sufficient"))
-
-        if agent_config.expert_escalation is None:
-            return ExpertRejectEvent(reason=event.reason)
-
         await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.asking_for_consent"))
         return HumanInTheLoop.invoke(question=t("agent.expert_grounded_agent.messages.consent_question"))
 
@@ -384,9 +397,6 @@ class RAGAgent(Agent):
             return UserRequestsExpertEvent()
         await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.user_declined"))
         await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.waiting_for_instructions"))
-        await displayer.display_chunk(
-            t("agent.expert_grounded_agent.messages.user_declined_confirmation"), model_name="gpt-4o"
-        )
         return ExpertRejectEvent(reason="User declined expert escalation")
 
     @step(
@@ -404,11 +414,11 @@ class RAGAgent(Agent):
     ) -> AgentInTheLoop.request:
         await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.forwarding_to_expert"))
         await displayer.display_chunk(
-            t("agent.expert_grounded_agent.messages.expert_forwarding_confirmation"), model_name="expert"
+            t("agent.expert_grounded_agent.messages.expert_forwarding_confirmation"), model_name="RAG Agent"
         )
-        await displayer.display_chunk("\n", model_name="expert")
+        await displayer.display_chunk("\n", model_name="RAG Agent")
         await displayer.display_chunk(
-            t("agent.expert_grounded_agent.messages.expert_answer_coming_soon"), model_name="expert"
+            t("agent.expert_grounded_agent.messages.expert_answer_coming_soon"), model_name="RAG Agent"
         )
         return AgentInTheLoop.invoke(
             agent_class=agent_config.expert_escalation.expert_asking_agent_class,
@@ -474,17 +484,20 @@ class RAGAgent(Agent):
             )
         )
         await displayer.display_chunk(
-            t("agent.expert_grounded_agent.messages.expert_error_occurred"), model_name="expert"
+            t("agent.expert_grounded_agent.messages.expert_error_occurred"), model_name="RAG Agent"
         )
         return StopEvent()
 
     @step(
         name=LocaleString(en="Respond with LLM"),
         description=LocaleString(en="Generates a response using the configured LLM."),
+        precondition=accepts_context_insufficient_reject,
     )
     async def respond_with_llm_step(
         self,
-        event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ExpertRejectEvent,
+        event: (
+            LimitChatHistoryWithContextEvent | FewShotRejectEvent | ContextInsufficientRejectEvent | ExpertRejectEvent
+        ),
         limited_history_without_context: LimitChatHistoryEvent,
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,

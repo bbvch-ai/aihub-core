@@ -3,7 +3,7 @@ from typing import Annotated
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import SlackConfig, TeamsConfig
-from pydantic import Field, model_validator
+from pydantic import Field
 
 
 class ExpertAskingAgentConfig(AgentConfig):
