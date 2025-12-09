@@ -1587,3 +1587,10 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bot.rule=Host(`bot.${DOMAIN}`)"
+      - "traefik.http.routers.bot.entrypoints=websecure"
+      - "traefik.http.routers.bot.tls=true"
+      - "traefik.http.routers.bot.middlewares=security-headers@file"
+      - "traefik.http.services.bot.loadbalancer.server.port=8000"

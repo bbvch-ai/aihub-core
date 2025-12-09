@@ -1867,6 +1867,10 @@ services:
       - ferretdb
       - nats
       - traefik
+    {%- if stage in ['dev', 'local', 'build'] %}
+    ports:
+      - "8001:8001"
+    {%- endif %}
     environment:
       NATS_ENDPOINT: {{ NATS_ENDPOINT }}
       MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
@@ -1883,4 +1887,13 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    {%- if stage not in ['dev'] %}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bot.rule=Host(`bot.${DOMAIN}`)"
+      - "traefik.http.routers.bot.entrypoints=websecure"
+      - "traefik.http.routers.bot.tls=true"
+      - "traefik.http.routers.bot.middlewares=security-headers@file"
+      - "traefik.http.services.bot.loadbalancer.server.port=8000"
+    {%- endif %}
   {%- endif %}
