@@ -1,20 +1,13 @@
 from typing import Annotated, Literal
 
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
+from aihub_lib.generative_ai.processors.models.RetrieveSummariesConfig import RetrieveSummariesConfig
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.retrievers.BaseRetrieverConfig import BaseRetrieverConfig, RetrieverType
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
-
-
-class RetrieveSummariesConfig(BaseModel):
-    """Configuration for retrieving parent summary nodes."""
-
-    max_parent_levels: Annotated[
-        int, Field(description="Maximum number of parent levels to retrieve summaries from.")
-    ] = 2
 
 
 class KnowledgeRetrieverConfig(BaseRetrieverConfig):

@@ -16,6 +16,7 @@ from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewSh
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.generative_ai.resources.models.llm.RerankingModelConfig import RerankingModelConfig
+from aihub_lib.generative_ai.retrievers import KnowledgeRetrieverConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.nats.events import LLMEvent, UserMessageEvent
@@ -36,7 +37,6 @@ from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
-from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
@@ -75,18 +75,20 @@ def build_rag_agent_config(
         name=LocaleString(en="RAG Agent"),
         description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
         llm=llm_config,
-        retrieve_step_config=RetrieveStepConfig(
-            embed_model=embedding_config,
-            index_namespaces=["ai_knowledge"],
-            retrieve_k=5,
-            query_mode=query_mode,
-            node_types=["content"],
-            vector_store=vector_store,
-            retrieve_prev_next=RetrievePrevNextConfig(
-                num_nodes=2,
-                mode=ModeOptions.BOTH,
+        retrievers=[
+            KnowledgeRetrieverConfig(
+                embed_model=embedding_config,
+                index_namespaces=["ai_knowledge"],
+                retrieve_k=5,
+                query_mode=query_mode,
+                node_types=["content"],
+                vector_store=vector_store,
+                retrieve_prev_next=RetrievePrevNextConfig(
+                    num_nodes=2,
+                    mode=ModeOptions.BOTH,
+                ),
             ),
-        ),
+        ],
         number_of_input_tokens=8192,
         check_context_sufficiency=False,
         reranking_config=RerankingConfig(enabled=False, reranking_model=reranking_config),
