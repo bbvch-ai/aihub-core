@@ -443,7 +443,7 @@ class RAGAgent(Agent):
             agent_class=agent_config.expert_escalation.expert_asking_agent_class,
             agent_id=agent_config.expert_escalation.expert_asking_agent_id,
             start_event=AskExpertStartEvent(
-                question_to_expert=user_message_event.messages[-1].content,
+                question_to_expert=user_message_event.user_query,
                 locale=user_message_event.locale,
                 user=user_message_event.user,
             ),
