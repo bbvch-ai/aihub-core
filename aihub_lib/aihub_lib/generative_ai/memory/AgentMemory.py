@@ -4,7 +4,10 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.infrastructure.mem0.Mem0Service import Mem0Service, MemorySearchResult, MemoryType
+from aihub_lib.infrastructure.mem0.Mem0Service import Mem0Service
+from aihub_lib.infrastructure.mem0.types.MemoryAdded import MemoryAdded
+from aihub_lib.infrastructure.mem0.types.MemorySearchResult import MemorySearchResult
+from aihub_lib.infrastructure.mem0.types.MemoryType import MemoryType
 from aihub_lib.infrastructure.mem0.Mem0Settings import Mem0Settings
 
 
@@ -55,69 +58,90 @@ class AgentMemory:
         thread_id: str,
         display_id: str,
         run_id: str,
-        public: bool = False,
-    ):
-        await self.mem0service.add_memory(
+    ) -> MemoryAdded:
+        return await self.mem0service.add_memory(
             messages=self.messages_to_dict(messages, user_id),
-            thread_id=thread_id,
-            display_id=display_id,
-            run_id=run_id,
+            owner_id=user_id,
             memory_type=MemoryType.USER_MEMORY,
             user_id=user_id,
             agent_id=self.agent_id,
-            public=public,
+            thread_id=thread_id,
+            display_id=display_id,
+            run_id=run_id,
         )
 
-    async def add_expert_memory(
+    async def add_organization_memory(
         self,
         messages: list[ChatMessage],
         user_id: str,
         thread_id: str,
         display_id: str,
         run_id: str,
-        public: bool = True,
-        expert_memory_database: str | None = None,
-        expert_memory_namespace: str | None = None,
-    ) -> MemorySearchResult:
+        organization_name: str,
+        organization_namespace: str,
+    ) -> MemoryAdded:
         return await self.mem0service.add_memory(
             messages=self.messages_to_dict(messages, user_id),
+            owner_id=organization_name,
+            memory_type=MemoryType.ORGANIZATION_MEMORY,
+            user_id=user_id,
+            agent_id=self.agent_id,
             thread_id=thread_id,
             display_id=display_id,
             run_id=run_id,
-            memory_type=MemoryType.EXPERT_MEMORY,
-            user_id=user_id,
-            agent_id=self.agent_id,
-            public=public,
-            expert_memory_database=expert_memory_database,
-            expert_memory_namespace=expert_memory_namespace,
+            organization_name=organization_name,
+            organization_namespace=organization_namespace,
         )
 
-    async def search(
+    async def search_user_memory(
         self,
         query: str,
+        user_id: str,
         thread_id: str | None = None,
         display_id: str | None = None,
         run_id: str | None = None,
-        memory_type: MemoryType | None = None,
-        user_id: str | None = None,
-        public: bool | None = None,
-        expert_memory_database: str | None = None,
-        expert_memory_namespace: str | None = None,
         limit: int = 100,
         threshold: float | None = None,
         rerank: bool = True,
     ) -> MemorySearchResult:
         return await self.mem0service.search(
             query=query,
+            owner_id=user_id,
             thread_id=thread_id,
             display_id=display_id,
             run_id=run_id,
-            memory_type=memory_type,
+            memory_type=MemoryType.USER_MEMORY,
             user_id=user_id,
             agent_id=self.agent_id,
-            public=public,
-            expert_memory_database=expert_memory_database,
-            expert_memory_namespace=expert_memory_namespace,
+            limit=limit,
+            threshold=threshold,
+            rerank=rerank,
+        )
+
+    async def search_organization_memory(
+        self,
+        query: str,
+        organization_name: str,
+        organization_namespace: str | None = None,
+        user_id: str | None = None,
+        thread_id: str | None = None,
+        display_id: str | None = None,
+        run_id: str | None = None,
+        limit: int = 100,
+        threshold: float | None = None,
+        rerank: bool = True,
+    ) -> MemorySearchResult:
+        return await self.mem0service.search(
+            query=query,
+            owner_id=organization_name,
+            thread_id=thread_id,
+            display_id=display_id,
+            run_id=run_id,
+            memory_type=MemoryType.ORGANIZATION_MEMORY,
+            user_id=user_id,
+            agent_id=self.agent_id,
+            organization_namespace=organization_namespace,
+            organization_name=organization_name,
             limit=limit,
             threshold=threshold,
             rerank=rerank,

@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from aihub_lib.infrastructure.mem0.Mem0Service import Memory
+from aihub_lib.infrastructure.mem0.types.Memory import Memory
 from pydantic import BaseModel, Field
 
 

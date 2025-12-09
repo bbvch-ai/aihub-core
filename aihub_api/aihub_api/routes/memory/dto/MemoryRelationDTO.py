@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from aihub_lib.infrastructure.mem0.Mem0Service import MemoryRelation
+from aihub_lib.infrastructure.mem0.types.MemoryRelation import MemoryRelation
 from pydantic import BaseModel, Field
 
 

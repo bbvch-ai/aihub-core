@@ -16,6 +16,7 @@ from aihub_lib.nats.events import (
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
     LimitChatHistoryEvent,
+    AddMemoryToChatHistoryEvent,
     LLMCostEvent,
     LLMEvent,
     LLMStopEvent,
@@ -27,6 +28,8 @@ from aihub_lib.nats.events import (
     ThoughtEvent,
     ToolEvent,
     UserMessageEvent,
+    NewMemoryEvent,
+    RetrieveMemoryEvent,
 )
 from aihub_lib.nats.events.guard import (
     AgentSuitabilityAcceptEvent,
@@ -54,6 +57,7 @@ DisplayEvents = (
     | Annotated[AgentInTheLoopExceptionEvent, Tag("AgentInTheLoopExceptionEvent")]
     | Annotated[HumanInTheLoopResponseEvent, Tag("HumanInTheLoopResponseEvent")]
     | Annotated[LimitChatHistoryEvent, Tag("LimitChatHistoryEvent")]
+    | Annotated[AddMemoryToChatHistoryEvent, Tag("AddMemoryToChatHistoryEvent")]
     | Annotated[StandaloneQuestionCondenserEvent, Tag("StandaloneQuestionCondenserEvent")]
     | Annotated[LLMCostEvent, Tag("LLMCostEvent")]
     | Annotated[ChunkEvent, Tag("ChunkEvent")]
@@ -83,6 +87,8 @@ DisplayEvents = (
     | Annotated[FewShotRejectEvent, Tag("FewShotRejectEvent")]
     | Annotated[SensitiveInfoAcceptEvent, Tag("SensitiveInfoAcceptEvent")]
     | Annotated[SensitiveInfoRejectEvent, Tag("SensitiveInfoRejectEvent")]
+    | Annotated[NewMemoryEvent, Tag("NewMemoryEvent")]
+    | Annotated[RetrieveMemoryEvent, Tag("RetrieveMemoryEvent")]
 )
 
 

@@ -59,7 +59,7 @@ runner.mount(
     .get_models()
     .get_model()
     .get_embeddings()
-    .chat_completion()
+    .chat_completion_with_assistants()
     .generate_image()
     .stt()
     .tts(),

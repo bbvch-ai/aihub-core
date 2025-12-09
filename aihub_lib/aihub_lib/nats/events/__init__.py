@@ -3,7 +3,7 @@ from .agent_in_the_loop.exception.AgentInTheLoopExceptionEvent import AgentInThe
 from .agent_in_the_loop.request.AgentInTheLoopRequestEvent import AgentInTheLoopRequestEvent
 from .agent_in_the_loop.response.AgentInTheLoopResponseEvent import AgentInTheLoopResponseEvent
 from .BaseEvent import BaseEvent
-from .common import LimitChatHistoryEvent, StandaloneQuestionCondenserEvent
+from .common import LimitChatHistoryEvent, StandaloneQuestionCondenserEvent, AddMemoryToChatHistoryEvent
 from .control import ControlEvent, ExceptionEvent, StartEvent, StopEvent
 from .ControlAndDisplayEvent import ControlAndDisplayEvent
 from .cost import CostEvent, LLMCostEvent
@@ -28,6 +28,7 @@ from .semantic import (
 from .user import UserMessageEvent
 from .work import AgentWorkEvent, HumanWorkEvent, ProgramWorkEvent, WorkEvent
 from .work_request import AgentWorkRequestEvent, HumanWorkRequestEvent, ProgramWorkRequestEvent, WorkRequestEvent
+from .memory import NewMemoryEvent, RetrieveMemoryEvent
 
 __all__ = [
     "BaseEvent",
@@ -62,6 +63,7 @@ __all__ = [
     "UserMessageEvent",
     "GuardRejectionEvent",
     "LimitChatHistoryEvent",
+    "AddMemoryToChatHistoryEvent",
     "StandaloneQuestionCondenserEvent",
     "WorkEvent",
     "AgentWorkEvent",
@@ -75,4 +77,6 @@ __all__ = [
     "ProcessExceptionEvent",
     "ProcessStartEvent",
     "ProcessStopEvent",
+    "NewMemoryEvent",
+    "RetrieveMemoryEvent",
 ]

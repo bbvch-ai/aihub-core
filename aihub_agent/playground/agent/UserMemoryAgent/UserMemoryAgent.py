@@ -1,0 +1,65 @@
+from aihub_agent.agents.Agent import Agent
+from aihub_agent.workflow.decorators.step import step
+from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.generative_ai.chat_history.extend_chat_history_with_memory import extend_chat_history_with_memory
+from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
+from aihub_lib.nats.events import UserMessageEvent, StopEvent, LLMEvent, NewMemoryEvent
+from aihub_lib.nats.events.common.AddMemoryToChatHistoryEvent import AddMemoryToChatHistoryEvent
+from aihub_lib.nats.events.memory.RetrieveMemoryEvent import RetrieveMemoryEvent
+from aihub_lib.nats.topics import AgentInstanceTopic
+from playground.agent.UserMemoryAgent.UserMemoryAgentConfig import UserMemoryAgentConfig
+
+
+class UserMemoryAgent(Agent):
+
+    @step()
+    async def retrieve_memory_step(
+        self,
+        event: UserMessageEvent,
+        memory: AgentMemory,
+    ) -> RetrieveMemoryEvent:
+        memory_search_result = await memory.search_user_memory(query=event.user_query, user_id=event.user.id)
+        return RetrieveMemoryEvent.from_memory_search_result(memory_search_result=memory_search_result)
+
+    @step()
+    async def add_memory_to_chat_history_step(
+        self, user_message_event: UserMessageEvent, memory_event: RetrieveMemoryEvent
+    ) -> AddMemoryToChatHistoryEvent:
+        extended_chat_history = extend_chat_history_with_memory(
+            chat_history=user_message_event.messages,
+            memories=memory_event.memories,
+            relations=memory_event.relations,
+        )
+        return AddMemoryToChatHistoryEvent(extended_history=extended_chat_history)
+
+    @step()
+    async def respond_with_memory_step(
+        self,
+        event: AddMemoryToChatHistoryEvent,
+        agent_config: UserMemoryAgentConfig,
+        displayer: EventDisplayer,
+    ) -> LLMEvent:
+        async with agent_config.llm.cost_reporting_llm(displayer) as llm:
+            return await displayer.display_llm_stream(agent_config.llm, llm, event.messages, as_stop_step=False)
+
+    @step()
+    async def update_memory_step(
+        self,
+        user_message_event: UserMessageEvent,
+        llm_event: LLMEvent,
+        memory: AgentMemory,
+        topic: AgentInstanceTopic,
+    ) -> NewMemoryEvent:
+        chat_history = llm_event.to_llama_index()
+        memory_added = await memory.add_user_memory(
+            messages=chat_history,
+            user_id=user_message_event.user.id,
+            thread_id=topic.thread_id,
+            display_id=topic.display_id,
+            run_id=topic.run_id,
+        )
+        return NewMemoryEvent.from_memory_added_object(memory_added=memory_added)
+
+    @step()
+    async def stop_step(self, _: NewMemoryEvent) -> StopEvent:
+        return StopEvent()

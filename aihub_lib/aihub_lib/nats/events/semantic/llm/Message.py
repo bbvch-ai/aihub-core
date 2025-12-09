@@ -1,7 +1,13 @@
 import json
 from typing import Annotated, Any, Literal
 
-from llama_index.core.base.llms.types import AudioBlock, ChatMessage, ImageBlock, TextBlock
+from llama_index.core.base.llms.types import (
+    AudioBlock,
+    ChatMessage,
+    ImageBlock,
+    TextBlock,
+    ContentBlock as LlamaIndexContentBlock,
+)
 from openinference.semconv.trace import AudioAttributes, ImageAttributes, MessageAttributes, MessageContentAttributes
 from pydantic import BaseModel, Field, computed_field
 
@@ -136,6 +142,15 @@ class Message(BaseModel):
             message_dict["contents"] = contents
         return cls(**{k: v for k, v in message_dict.items() if v is not None})
 
+    def to_llama_index(self) -> ChatMessage:
+        """Converts a message to llama index"""
+        blocks: list[LlamaIndexContentBlock] = []
+        for block in self.contents or []:
+            cb = self._process_block_backwards(block)
+            if cb:
+                blocks.append(cb)
+        return ChatMessage(role=self.role, blocks=blocks)
+
     @staticmethod
     def _process_block(block: Any) -> ContentBlock | None:
         if isinstance(block, TextBlock) or getattr(block, "block_type", None) == "text":
@@ -149,3 +164,12 @@ class Message(BaseModel):
             mime = f"audio/{getattr(block, 'format', '')}" if getattr(block, "format", None) else None
             return AudioContent(url=str(url) if url else None, mime_type=mime)
         return None
+
+    @staticmethod
+    def _process_block_backwards(block: ContentBlock) -> Any:
+        if isinstance(block, TextContent):
+            return TextBlock(text=block.text)
+        if isinstance(block, ImageContent):
+            return ImageBlock(url=block.url)
+        if isinstance(block, AudioContent):
+            return AudioBlock(url=block.url, format=block.mime_type.split("/")[1])
