@@ -90,6 +90,10 @@ context_insufficient_reject_event:
   name: "Unzureichender Kontext verfügbar"
   description: "Mehr Kontext ist erforderlich, um die Benutzeranfrage ordnungsgemäss zu beantworten."
 
+expert_reject_event:
+  name: "Experten-Eskalation abgelehnt"
+  description: "Der Benutzer hat die Weiterleitung seiner Frage an einen menschlichen Experten abgelehnt."
+
 sensitive_info_accept_event:
   name: "Antwort sicher zu teilen"
   description: "Die Antwort enthält keine sensiblen Informationen und kann sicher geteilt werden."

@@ -90,6 +90,10 @@ context_insufficient_reject_event:
   name: "Contesto Insufficiente Disponibile"
   description: "È necessario più contesto per rispondere correttamente alla query dell'utente."
 
+expert_reject_event:
+  name: "Escalation Esperto Rifiutata"
+  description: "L'utente ha rifiutato di inoltrare la sua domanda a un esperto umano."
+
 sensitive_info_accept_event:
   name: "Risposta Sicura da Condividere"
   description: "La risposta non contiene informazioni sensibili e può essere condivisa in sicurezza."
