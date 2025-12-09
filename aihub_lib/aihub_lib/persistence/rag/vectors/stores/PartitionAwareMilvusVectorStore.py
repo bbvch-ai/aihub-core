@@ -1,4 +1,3 @@
-import logging
 from typing import Any
 
 from llama_index.core.schema import BaseNode
@@ -21,8 +20,6 @@ except ImportError:
     AnnSearchRequest = None
     RRFRanker = None
     WeightedRanker = None
-
-logger = logging.getLogger(__name__)
 
 
 class PartitionAwareMilvusVectorStore(MilvusVectorStore):
