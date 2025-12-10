@@ -399,7 +399,7 @@ services:
   # ===================================================================
   pgbouncer:
     container_name: pgbouncer
-    image: ghcr.io/bbvch-ai/aihub-core/pgbouncer:1.25.1
+    image: ghcr.io/bbvch-ai/aihub-core/pgbouncer:v1.24.1-p1
     restart: always
     environment:
       POSTGRES_HOST: postgres
