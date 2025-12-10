@@ -2,7 +2,7 @@
 # Dagster Configuration - Stage: dev
 # ===================================================================
 # Generated from template. Do not edit directly.
-# Uses PgBouncer for connection pooling to prevent connection exhaustion.
+# Connects directly to PostgreSQL (postgres:5432) without PgBouncer.
 # ===================================================================
 
 run_storage:
@@ -10,39 +10,39 @@ run_storage:
   class: PostgresRunStorage
   config:
     postgres_db:
-      hostname: pgbouncer
+      hostname: postgres
       username:
         env: POSTGRES_USER
       password:
         env: POSTGRES_PASSWORD
       db_name: dagster
-      port: 6432
+      port: 5432
 
 event_log_storage:
   module: dagster_postgres.event_log
   class: PostgresEventLogStorage
   config:
     postgres_db:
-      hostname: pgbouncer
+      hostname: postgres
       username:
         env: POSTGRES_USER
       password:
         env: POSTGRES_PASSWORD
       db_name: dagster
-      port: 6432
+      port: 5432
 
 schedule_storage:
   module: dagster_postgres.schedule_storage
   class: PostgresScheduleStorage
   config:
     postgres_db:
-      hostname: pgbouncer
+      hostname: postgres
       username:
         env: POSTGRES_USER
       password:
         env: POSTGRES_PASSWORD
       db_name: dagster
-      port: 6432
+      port: 5432
 
 compute_logs:
   module: dagster.core.storage.noop_compute_log_manager

@@ -2,7 +2,7 @@
 # Dagster Configuration - Stage: nightly
 # ===================================================================
 # Generated from template. Do not edit directly.
-# Uses PgBouncer for connection pooling to prevent connection exhaustion.
+# Uses PgBouncer (pgbouncer:6432) for connection pooling to prevent exhaustion.
 # ===================================================================
 
 run_storage:
