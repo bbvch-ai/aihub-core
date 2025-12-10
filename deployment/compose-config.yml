@@ -32,7 +32,7 @@ image_tags:
   valkey: valkey:8.0.5
   ferretdb: ferretdb:2.5.0
   litellm: litellm:v1.79.1-stable
-  docling: docling-serve-cpu:v1.8.0
+  docling: docling-serve-cpu:v1.9.0
   jupyter: minimal-notebook:notebook-7.0.6
   otel_collector: otel/opentelemetry-collector-contrib:latest
   traefik: traefik:v3.6.2

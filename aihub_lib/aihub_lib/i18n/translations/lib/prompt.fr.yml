@@ -111,43 +111,28 @@ router:
       Analyze the user query carefully in relation to the chat history. Determine whether the query can be fulfilled based on the criteria above. Provide a clear yes/no decision with detailed reasoning.
 
     expert_answer_sufficient: |
-      Vous disposez d'un historique de chat entre un assistant IA et un expert. L'objectif de cette conversation
-      est de répondre à une question initialement posée par un utilisateur. Déterminez si l'expert a déjà suffisamment
-      répondu à la question en fonction de l'historique du chat.
+      La réponse de l'expert répond-elle à la question de l'utilisateur ?
 
-       <chat_history>
+      <expert_response>
       {% for message in chat_history %}
-      <message role="{{ message.role.value }}">
+      {% if message.role.value == 'user' %}
       {% for block in message.blocks %}
       {% if block.block_type == 'text' %}
       {{ block.text }}
       {% endif %}
       {% endfor %}
-      </message>
+      {% endif %}
       {% endfor %}
-      </chat_history>
+      </expert_response>
 
-      <user_query>
-      %{question}
-      </user_query>
+      <user_question>
+      {{ query }}
+      </user_question>
 
-      <answered_criteria>
-      <is_answered>
-      Une question est considérée comme répondue si L'UN des critères suivants est vrai :
-      * L'expert a fourni une réponse complète et précise à la question de l'utilisateur
-      * L'expert a fourni une réponse partielle, mais l'utilisateur peut toujours comprendre les points principaux
-      * L'expert a indiqué où la réponse peut être trouvée
-      * L'expert a fourni des informations contextuelles, peut-être dans le message système, qui - directement ou indirectement - répondent à la question
-      </is_answered>
-      <is_not_answered>
-      Une question est considérée comme non répondue si L'UN des critères suivants est vrai :
-      * L'expert n'a fourni aucune réponse à la question de l'utilisateur
-      * L'expert a fourni une réponse, mais elle est incomplète ou inexacte
-      * L'expert a fourni une réponse, mais elle n'est pas pertinente pour la question de l'utilisateur
-      * L'expert a fourni une réponse, mais elle n'est pas claire ou compréhensible
-      * L'expert indique qu'il ne connaît pas la réponse
-      </is_not_answered>
-      </answered_criteria>
+      La question EST répondue si l'expert a fourni des informations qui répondent directement à TOUTES les parties de ce qui a été demandé.
+      La question n'est PAS répondue si :
+      - L'expert dit explicitement qu'il ne sait pas ou refuse de répondre
+      - La question comporte plusieurs parties et seules certaines ont été répondues
 
       Analysez soigneusement l'historique du chat par rapport à la question de l'utilisateur. Déterminez si l'expert a déjà suffisamment répondu à la question selon les critères ci-dessus. Fournissez une décision claire avec un raisonnement détaillé.
 summarizer:

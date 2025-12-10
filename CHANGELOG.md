@@ -5,6 +5,82 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.254.19] - 2025-12-10 - Refined Contextual Chat History Management
+
+### Changed
+
+- 🔄 **Adjusted message ordering** within the `limit_chat_history_with_context` utility. Context messages are now placed
+  after the limited chat history but before the final user prompt, optimizing the input structure for generative AI
+  models to potentially enhance comprehension and response quality.
+
+---
+
+## [v0.254.18] - 2025-12-09 - Docling Loader Robustness and Development Workflow Enhancements
+
+### Fixed
+
+- 🐛 **Improved Docling Content Robustness:** Enhanced the Docling document loader to recursively handle and fix
+  malformed `null` meta fields within document content, ensuring better compatibility and preventing errors when
+  processing data from older Docling server deployments.
+
+### Changed
+
+- 🔄 **Expanded PR Branch Naming:** Updated CI/CD rules to allow feature branches prefixed with `claude/` to pass
+  semantic pull request checks, streamlining specific development workflows.
+
+---
+
+## [v0.254.17] - 2025-12-09 - Enhanced RAG Agent with Expert Escalation and Streamlined Bot Communication
+
+### Added
+
+- ✨ **Expert Escalation to RAG Agent**: Introduced a new capability for the **RAG Agent** to escalate questions to human
+  experts when the retrieved context is insufficient, improving answer reliability for complex queries.
+- 🦾 **Unified Channel Configuration for Bot-in-the-Loop**: Centralized bot communication setup with a new
+  `channel_config` for the **Bot-in-the-Loop** agent, enabling seamless integration with both Slack and Microsoft Teams.
+- 💬 **Expert Conversation Context Event**: Added `ExpertAnswerContextEvent` to seamlessly integrate expert responses
+  into the **RAG Agent**'s context for generating more informed answers.
+- 🚫 **Expert Rejection Event**: Introduced `ExpertRejectEvent` to gracefully handle scenarios where users decline human
+  expert assistance within the workflow.
+
+### Changed
+
+- 🔄 **RAG Agent Expert Escalation Flow**: The **RAG Agent** now includes new steps for user consent, invoking the
+  `ExpertAskingAgent`, and incorporating expert answers, integrating functionality previously handled by the standalone
+  `ExpertGroundedAgent`.
+- 🤖 **Expert Asking Agent Role Refinement**: The **Expert Asking Agent**'s responsibilities have been refined to focus
+  solely on posing questions to experts and validating their responses, removing the previous capability to generate and
+  save knowledge snippets to an OpenWebUI knowledge base.
+- 📝 **Improved Expert Answer Sufficiency Logic**: Refined the prompt and criteria used by the system to determine
+  whether an expert's answer is sufficient, leading to more accurate routing decisions in multi-turn expert
+  conversations.
+- 📊 **Enhanced Bot Logging**: Added more detailed logging for the **Bot-in-the-Loop** service to provide better
+  visibility into conversation handling and thread management across different channels.
+- 🖼️ **Refined Image Handling in Pipelines**: Updated the image processing logic within the **AI Hub Pipeline**'s
+  `MessageConverter` to directly pass data URLs, improving compatibility with LlamaIndex's image block handling.
+- ⚙️ **RAG Agent Configuration Defaults**: Adjusted default settings for the **RAG Agent**, including enabling context
+  sufficiency checks by default and increasing the maximum number of input tokens, leading to improved performance and
+  robustness.
+
+### Fixed
+
+- 🐛 **Docker Compose Configuration**: Addressed Docker Compose settings by including `LOG_LEVEL` environment variables
+  for agents and implementing Traefik labels and local port exposure (8001) for the **Bot** service, enhancing
+  debuggability and accessibility in various deployment stages.
+
+### Removed
+
+- 🗑️ **Deprecated Expert Grounded Agent**: The `ExpertGroundedAgent` and all its associated files and events have been
+  removed, as its core functionality has been refactored and integrated into the **RAG Agent**.
+- 🧹 **OpenWebUI Knowledge Snippet Features**: Eliminated the `ExpertAskingAgent`'s capabilities related to generating
+  and persisting knowledge snippets to OpenWebUI, streamlining its core function.
+- 📦 **Unused `aihub_integration` Module**: Removed references to the `aihub_integration` module from IDE configuration
+  files.
+- ✂️ **Unused `stringcase` Dependency**: Cleaned up the `stringcase` dependency from `pyproject.toml` as it was no
+  longer utilized.
+
+---
+
 ## [v0.254.16] - 2025-12-05 - Enhanced Data Versioning for Active Partitions
 
 ### Changed

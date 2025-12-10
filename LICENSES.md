@@ -1,6 +1,6 @@
 # License Report
 
-Generated on: 05.12.2025
+Generated on: 10.12.2025
 
 This document contains license information for all dependencies across the monorepo:
 
@@ -218,7 +218,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | banks                                        | 2.2.0             | BSD-3-Clause (override)                           |       |
 | ✅     | cffi                                         | 2.0.0             | MIT                                               |       |
 | ✅     | charset-normalizer                           | 3.4.4             | MIT                                               |       |
-| ✅     | docling-core                                 | 2.50.1            | MIT (override)                                    |       |
+| ✅     | docling-core                                 | 2.54.1            | MIT (override)                                    |       |
 | ✅     | fastavro                                     | 1.12.1            | MIT                                               |       |
 | ✅     | fonttools                                    | 4.60.1            | MIT                                               |       |
 | ✅     | gherkin-official                             | 29.0.0            | MIT                                               |       |
