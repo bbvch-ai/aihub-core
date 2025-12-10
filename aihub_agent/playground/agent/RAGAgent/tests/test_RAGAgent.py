@@ -18,38 +18,31 @@ from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.generative_ai.resources.models.llm.RerankingModelConfig import RerankingModelConfig
 from aihub_lib.generative_ai.retrievers import InsightRetrieverConfig, KnowledgeRetrieverConfig
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.logging.logger import enable_logging
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.nats.events import LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_lib.nats.events.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
-from aihub_lib.nats.events.guard import ExpertRejectEvent
 from aihub_lib.nats.events.guard.FewShotAcceptEvent import FewShotAcceptEvent
 from aihub_lib.nats.events.guard.FewShotRejectEvent import FewShotRejectEvent
-from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoop import HumanInTheLoopConfirmation
-from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
-    HumanInTheLoopConfirmationRequestEvent,
-)
 from aihub_lib.nats.events.semantic.reranker import RerankerEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
-from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
-from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.persistence.insight.InsightEntity import InsightCreator, InsightEntity, InsightSource
 from aihub_lib.persistence.rag.documents.stores.docstore import create_mongo_document_store
-from mongoengine import connect, disconnect
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_collection
 from dotenv import load_dotenv
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
+from mongoengine import connect, disconnect
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from aihub_agent.agents.RagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
-from aihub_agent.agents.RagAgent.events.UserRequestsExpertEvent import UserRequestsExpertEvent
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
@@ -146,7 +139,6 @@ def build_rag_agent_config_with_insights(
         check_context_sufficiency=False,
         reranking_config=RerankingConfig(enabled=False, reranking_model=reranking_config),
     )
-
 
 
 @pytest.fixture(scope="session")
@@ -540,5 +532,3 @@ def insight_enabled_agent_config(test_collection, test_insights):
         insight_agent_class=TEST_INSIGHT_AGENT_CLASS,
         insight_agent_id=TEST_INSIGHT_AGENT_ID,
     )
-
-
