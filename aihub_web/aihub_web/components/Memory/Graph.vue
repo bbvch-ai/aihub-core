@@ -1,11 +1,12 @@
 <template>
   <div
     ref="container"
-    class="size-full min-h-[400px]"
+    class="size-full min-h-[800px]"
   />
 </template>
 
 <script setup lang="ts">
+import { EdgeCurvedArrowProgram } from '@sigma/edge-curve'
 import { useDark } from '@vueuse/core'
 import Graph from 'graphology'
 import forceAtlas2 from 'graphology-layout-forceatlas2'
@@ -36,6 +37,7 @@ interface Colors {
 const props = defineProps<Props>()
 const emit = defineEmits<{ selectNode: [nodeId: string] }>()
 
+const { myUser } = useMyUser()
 const isDark = useDark({ storageKey: 'dark' })
 const container = ref<HTMLDivElement>()
 
@@ -44,6 +46,7 @@ let graph: Graph | null = null
 
 const MIN_NODE_SIZE = 10
 const MAX_NODE_SIZE = 50
+const EDGE_CURVATURE = 0.4
 
 const CustomArrowProgram = createEdgeArrowProgram({
   widenessToThicknessRatio: 3,
@@ -79,8 +82,10 @@ const hashString = (str: string): number => {
   return Math.abs(hash)
 }
 
-const getDeterministicPosition = (id: string, seed: string): number => {
-  return (hashString(id + seed) % 1000) / 1000
+const getDeterministicPosition = (id: string, seed: string, index: number): number => {
+  const hash = hashString(id + seed)
+  const offset = (index * 0.001) % 1
+  return ((hash % 1000) / 1000 + offset) % 1
 }
 
 const getCssVar = (varName: string): string => {
@@ -115,6 +120,47 @@ const calculateNodeSize = (degree: number, minDegree: number, maxDegree: number)
   return lerp(MIN_NODE_SIZE, MAX_NODE_SIZE, t)
 }
 
+/**
+ * Creates a canonical key for a pair of nodes (order-independent)
+ */
+const getNodePairKey = (source: string, target: string): string => {
+  return [source, target].sort().join('::')
+}
+
+/**
+ * Detects parallel edges and assigns curvature to them
+ */
+const assignEdgeCurvatures = (g: Graph): void => {
+  const edgesByPair = new Map<string, string[]>()
+
+  g.forEachEdge((edge, _attrs, source, target) => {
+    const pairKey = getNodePairKey(source, target)
+    if (!edgesByPair.has(pairKey)) {
+      edgesByPair.set(pairKey, [])
+    }
+    edgesByPair.get(pairKey)!.push(edge)
+  })
+
+  edgesByPair.forEach((edges) => {
+    if (edges.length === 1) {
+      g.setEdgeAttribute(edges[0], 'curvature', 0)
+      g.setEdgeAttribute(edges[0], 'type', 'straight')
+    }
+    else {
+      // Spread all parallel edges evenly
+      // For 2 edges: indices 0,1 → offsets -0.5, +0.5
+      // For 3 edges: indices 0,1,2 → offsets -1, 0, +1
+      edges.forEach((edge, index) => {
+        const spreadFactor = index - (edges.length - 1) / 2
+        const curvature = spreadFactor * EDGE_CURVATURE
+
+        g.setEdgeAttribute(edge, 'curvature', curvature)
+        g.setEdgeAttribute(edge, 'type', curvature === 0 ? 'straight' : 'curved')
+      })
+    }
+  })
+}
+
 const buildGraph = (colors: Colors): Graph => {
   const g = new Graph({ multi: true, type: 'directed' })
 
@@ -126,11 +172,14 @@ const buildGraph = (colors: Colors): Graph => {
     nodeSet.add(rel.target)
   })
 
-  nodeSet.forEach((node) => {
+  Array.from(nodeSet).forEach((node, index) => {
+    const isCurrentUser = myUser.value?.id === node
+    const label = isCurrentUser ? (myUser.value?.name ?? node) : node
+
     g.addNode(node, {
-      label: node,
-      x: getDeterministicPosition(node, 'x'),
-      y: getDeterministicPosition(node, 'y'),
+      label,
+      x: getDeterministicPosition(node, 'x', index),
+      y: getDeterministicPosition(node, 'y', index),
     })
   })
 
@@ -142,8 +191,12 @@ const buildGraph = (colors: Colors): Graph => {
       size: relevant ? 4 : 2,
       color: relevant ? colors.edgeActive : colors.edgeInactive,
       labelColor: colors.labelColor,
+      forceLabel: true,
     }, `edge-${index}`)
   })
+
+  // Assign curvatures to handle parallel/bidirectional edges
+  assignEdgeCurvatures(g)
 
   const degrees = g.mapNodes(node => g.degree(node))
   const minDegree = Math.min(...degrees)
@@ -166,8 +219,16 @@ const buildGraph = (colors: Colors): Graph => {
 const applyLayout = (g: Graph): void => {
   if (g.order === 0) return
   forceAtlas2.assign(g, {
-    iterations: 100,
-    settings: { gravity: 1, scalingRatio: 10 },
+    iterations: 300,
+    settings: {
+      gravity: 0.15, // was 0.3 - lower to give more room
+      scalingRatio: 70, // was 50 - slightly more repulsion
+      adjustSizes: true,
+      barnesHutOptimize: true,
+      strongGravityMode: false,
+      linLogMode: false, // revert back to false
+      outboundAttractionDistribution: true,
+    },
   })
 }
 
@@ -189,10 +250,19 @@ const renderGraph = (): void => {
   sigma = new Sigma(graph, container.value, {
     renderEdgeLabels: true,
     allowInvalidContainer: true,
+    labelSize: 12,
+    labelWeight: 'bold',
+    labelRenderedSizeThreshold: 5,
+    labelDensity: 0.5,
+    labelGridCellSize: 100,
+    edgeLabelSize: 10,
     labelColor: { attribute: 'labelColor', color: colors.labelColor },
     edgeLabelColor: { attribute: 'labelColor', color: colors.labelColor },
-    edgeProgramClasses: { arrow: CustomArrowProgram },
-    defaultEdgeType: 'arrow',
+    defaultEdgeType: 'straight',
+    edgeProgramClasses: {
+      straight: CustomArrowProgram,
+      curved: EdgeCurvedArrowProgram,
+    },
   })
 
   sigma.on('clickNode', ({ node }) => emit('selectNode', node))

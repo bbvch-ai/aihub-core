@@ -41,7 +41,7 @@ class Mem0Settings(EnvironmentSettings):
                 config={
                     "model": self.LLM_NAME,
                     "temperature": 0.2,
-                    "max_tokens": 2000,
+                    "max_tokens": 16_000,
                     "api_key": litellm.API_KEY.get_secret_value(),
                     "openai_base_url": litellm.BASE_URL,
                     "enable_vision": self.SUPPORT_VISION,

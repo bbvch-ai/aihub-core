@@ -5,6 +5,7 @@
     selection-mode="single"
     :selection="selectedDocument"
     :row-class="getRowClass"
+    size="small"
     @update:selection="handleSelection"
   >
     <Column

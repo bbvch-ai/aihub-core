@@ -48,14 +48,30 @@ class Mem0Service:
             "_organization_namespace": organization_namespace,
         }
         metadata = { k: str(v) for k, v in metadata.items() if v is not None}
-        added = await self._memory.add(
+        added_memory = await self._memory.add(
             messages,
             user_id=owner_id,
             metadata=metadata,
             infer=infer,
         )
+
+        added_entities, deleted_entities = [], []
+        for i, relation in enumerate(added_memory["relations"]["added_entities"]):
+            if isinstance(relation, list):
+                added_entities.extend(relation)
+            else:
+                added_entities.append(relation)
+        for i, relation in enumerate(added_memory["relations"]["deleted_entities"]):
+            if isinstance(relation, list):
+                deleted_entities.extend(relation)
+            else:
+                deleted_entities.append(relation)
+
+        added_memory["relations"]["added_entities"] = added_entities
+        added_memory["relations"]["deleted_entities"] = deleted_entities
+
         return MemoryAdded.model_validate({
-            **added,
+            **added_memory,
             "owner_id": owner_id,
             "_user_id": user_id,
             "_agent_id": agent_id,

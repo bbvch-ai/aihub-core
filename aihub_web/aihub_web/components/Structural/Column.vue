@@ -1,8 +1,8 @@
 <template>
-  <div class="relative flex w-full flex-col gap-3">
+  <div class="relative flex flex-col gap-3 max-2xl:w-full">
     <div
       :class="[
-        'w-full max-w-full overflow-hidden rounded-3xl bg-white dark:bg-surface-900',
+        'overflow-hidden rounded-3xl bg-white dark:bg-surface-900 max-2xl:w-full max-2xl:max-w-full',
         sizeClass,
       ]"
     >
@@ -17,12 +17,21 @@
       />
       <div
         v-if="loading === undefined || loading === false"
-        class="p-8"
+        class="p-6"
       >
-        <div class="flex items-center justify-between">
-          <h2 class="text-3xl">
+        <div class="flex items-center justify-between font-bold">
+          <h2
+            v-if="!childColumn"
+            class="text-2xl"
+          >
             {{ title }}
           </h2>
+          <h3
+            v-else
+            class="text-xl"
+          >
+            {{ title }}
+          </h3>
           <i
             v-if="closeRoute"
             class="pi pi-times cursor-pointer text-xl"
@@ -42,9 +51,11 @@ const props = withDefaults(defineProps<{
   closeRoute?: string
   size?: 'small' | 'normal' | 'large'
   loading?: boolean
+  childColumn?: boolean
 }>(), {
   size: 'normal',
   loading: false,
+  childColumn: false,
 })
 
 const sizeClass = computed<string>(() => {

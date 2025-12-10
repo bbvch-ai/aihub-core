@@ -1110,14 +1110,8 @@ memory:
     **User ID**: `user_alice`
 
     **Output**:
-    ```json
-    {
-      "entities": [
-        {"entity": "user_alice", "entity_type": "person"},
-        {"entity": "google", "entity_type": "organization"},
-        {"entity": "senior_software_engineer", "entity_type": "role"}
-      ]
-    }
+    ```
+    extract_entities(entities=[{"entity": "user_alice", "entity_type": "person"}, {"entity": "google", "entity_type": "organization"}, {"entity": "senior_software_engineer", "entity_type": "role"}])
     ```
 
     ### Example 2: Technology Stack
@@ -1125,16 +1119,8 @@ memory:
     **User ID**: `user_bob`
 
     **Output**:
-    ```json
-    {
-      "entities": [
-        {"entity": "user_bob", "entity_type": "person"},
-        {"entity": "python_3", "entity_type": "programming_language"},
-        {"entity": "fastapi", "entity_type": "framework"},
-        {"entity": "postgresql", "entity_type": "database"},
-        {"entity": "aws_lambda", "entity_type": "platform"}
-      ]
-    }
+    ```
+    extract_entities(entities=[{"entity": "user_bob", "entity_type": "person"}, {"entity": "python_3", "entity_type": "programming_language"}, {"entity": "fastapi", "entity_type": "framework"}, {"entity": "postgresql", "entity_type": "database"}, {"entity": "aws_lambda", "entity_type": "platform"}])
     ```
     Note: "3.11" normalized to "3" as minor versions rarely matter for graph purposes.
 
@@ -1143,15 +1129,8 @@ memory:
     **User ID**: `user_carol`
 
     **Output**:
-    ```json
-    {
-      "entities": [
-        {"entity": "user_carol", "entity_type": "person"},
-        {"entity": "dotnet_conference_2023", "entity_type": "event"},
-        {"entity": "seattle", "entity_type": "city"},
-        {"entity": "dotnet_conference_2024", "entity_type": "event"}
-      ]
-    }
+    ```
+    extract_entities(entities=[{"entity": "user_carol", "entity_type": "person"}, {"entity": "dotnet_conference_2023", "entity_type": "event"}, {"entity": "seattle", "entity_type": "city"}, {"entity": "dotnet_conference_2024", "entity_type": "event"}])
     ```
     Note: The two conferences are DIFFERENT entities because the year differs.
 
@@ -1160,15 +1139,8 @@ memory:
     **User ID**: `user_dave`
 
     **Output**:
-    ```json
-    {
-      "entities": [
-        {"entity": "user_dave", "entity_type": "person"},
-        {"entity": "sarah_chen", "entity_type": "person"},
-        {"entity": "james_wilson", "entity_type": "person"},
-        {"entity": "security_team", "entity_type": "team"}
-      ]
-    }
+    ```
+    extract_entities(entities=[{"entity": "user_dave", "entity_type": "person"}, {"entity": "sarah_chen", "entity_type": "person"}, {"entity": "james_wilson", "entity_type": "person"}, {"entity": "security_team", "entity_type": "team"}])
     ```
     Note: Titles (Dr.) are removed from names.
 
@@ -1177,15 +1149,8 @@ memory:
     **User ID**: `user_eve`
 
     **Output**:
-    ```json
-    {
-      "entities": [
-        {"entity": "user_eve", "entity_type": "person"},
-        {"entity": "migration_project", "entity_type": "project"},
-        {"entity": "2024_q1", "entity_type": "date"},
-        {"entity": "2025_03", "entity_type": "date"}
-      ]
-    }
+    ```
+    extract_entities(entities=[{"entity": "user_eve", "entity_type": "person"}, {"entity": "migration_project", "entity_type": "project"}, {"entity": "2024_q1", "entity_type": "date"}, {"entity": "2025_03", "entity_type": "date"}])
     ```
 
     ### Example 6: Non-English Input
@@ -1193,14 +1158,8 @@ memory:
     **User ID**: `user_franz`
 
     **Output**:
-    ```json
-    {
-      "entities": [
-        {"entity": "user_franz", "entity_type": "person"},
-        {"entity": "deutsche_bank", "entity_type": "organization"},
-        {"entity": "frankfurt", "entity_type": "city"}
-      ]
-    }
+    ```
+    extract_entities(entities=[{"entity": "user_franz", "entity_type": "person"}, {"entity": "deutsche_bank", "entity_type": "organization"}, {"entity": "frankfurt", "entity_type": "city"}])
     ```
     Note: Entity names remain recognizable but normalized.
 
@@ -1209,15 +1168,8 @@ memory:
     **User ID**: `user_grace`
 
     **Output**:
-    ```json
-    {
-      "entities": [
-        {"entity": "user_grace", "entity_type": "person"},
-        {"entity": "spring_boot", "entity_type": "framework"},
-        {"entity": "2024_spring", "entity_type": "date"},
-        {"entity": "product", "entity_type": "product"}
-      ]
-    }
+    ```
+    extract_entities(entities=[{"entity": "user_grace", "entity_type": "person"}, {"entity": "spring_boot", "entity_type": "framework"}, {"entity": "2024_spring", "entity_type": "date"}, {"entity": "product", "entity_type": "product"}])
     ```
     Note: "Spring Boot" (framework) vs "Spring 2024" (season) are correctly distinguished.
 
@@ -1226,15 +1178,8 @@ memory:
     **User ID**: `user_doctor`
 
     **Output**:
-    ```json
-    {
-      "entities": [
-        {"entity": "user_doctor", "entity_type": "person"},
-        {"entity": "patient", "entity_type": "person"},
-        {"entity": "type_2_diabetes", "entity_type": "disease"},
-        {"entity": "metformin", "entity_type": "medication"}
-      ]
-    }
+    ```
+    extract_entities(entities=[{"entity": "user_doctor", "entity_type": "person"}, {"entity": "patient", "entity_type": "person"}, {"entity": "type_2_diabetes", "entity_type": "disease"}, {"entity": "metformin", "entity_type": "medication"}])
     ```
 
     ### Example 9: Domain-Specific (Legal)
@@ -1242,16 +1187,8 @@ memory:
     **User ID**: `user_lawyer`
 
     **Output**:
-    ```json
-    {
-      "entities": [
-        {"entity": "user_lawyer", "entity_type": "person"},
-        {"entity": "contract", "entity_type": "document"},
-        {"entity": "switzerland", "entity_type": "country"},
-        {"entity": "lugano_convention", "entity_type": "legal_document"},
-        {"entity": "lugano_convention_article_5", "entity_type": "legal_provision"}
-      ]
-    }
+    ```
+    extract_entities(entities=[{"entity": "user_lawyer", "entity_type": "person"}, {"entity": "contract", "entity_type": "document"}, {"entity": "switzerland", "entity_type": "country"}, {"entity": "lugano_convention", "entity_type": "legal_document"}, {"entity": "lugano_convention_article_5", "entity_type": "legal_provision"}])
     ```
 
     ### Example 10: Minimal/Vague Input
@@ -1259,10 +1196,8 @@ memory:
     **User ID**: `user_test`
 
     **Output**:
-    ```json
-    {
-      "entities": []
-    }
+    ```
+    extract_entities(entities=[])
     ```
     Note: No extractable entities. Do NOT force extraction of vague concepts.
 
@@ -1277,7 +1212,7 @@ memory:
 
     ## Output Format
 
-    Call the `establish_relations` tool with your extracted relationships. If no relationships can be extracted, call it with an empty array.
+    Call the `extract_entities` tool with your extracted entities. If no entities can be extracted, call it with an empty array.
   relationship_extraction: |
     # Relationship Extraction for Knowledge Graph Construction
 
@@ -1414,13 +1349,8 @@ memory:
     **Input**: "I work at Google as a senior software engineer"
 
     **Output**:
-    ```json
-    {
-      "entities": [
-        {"source": "user_alice", "relationship": "employer", "destination": "google"},
-        {"source": "user_alice", "relationship": "employed_as", "destination": "senior_software_engineer"}
-      ]
-    }
+    ```
+    establish_relations(entities=[{"source": "user_alice", "relationship": "employer", "destination": "google"}, {"source": "user_alice", "relationship": "employed_as", "destination": "senior_software_engineer"}])
     ```
 
     ### Example 2: Team Structure
@@ -1428,14 +1358,8 @@ memory:
     **Input**: "I'm on the backend team in engineering, reporting to Sarah Chen"
 
     **Output**:
-    ```json
-    {
-      "entities": [
-        {"source": "user_bob", "relationship": "member_of", "destination": "backend_team"},
-        {"source": "user_bob", "relationship": "department", "destination": "engineering"},
-        {"source": "user_bob", "relationship": "reports_to", "destination": "sarah_chen"}
-      ]
-    }
+    ```
+    establish_relations(entities=[{"source": "user_bob", "relationship": "member_of", "destination": "backend_team"}, {"source": "user_bob", "relationship": "department", "destination": "engineering"}, {"source": "user_bob", "relationship": "reports_to", "destination": "sarah_chen"}])
     ```
 
     ### Example 3: Technology Stack
@@ -1443,16 +1367,8 @@ memory:
     **Input**: "Our payment service is built with Python 3 and FastAPI, uses PostgreSQL, and runs on AWS Lambda"
 
     **Output**:
-    ```json
-    {
-      "entities": [
-        {"source": "user_carol", "relationship": "works_on", "destination": "payment_service"},
-        {"source": "payment_service", "relationship": "written_in", "destination": "python_3"},
-        {"source": "payment_service", "relationship": "built_with", "destination": "fastapi"},
-        {"source": "payment_service", "relationship": "uses", "destination": "postgresql"},
-        {"source": "payment_service", "relationship": "runs_on", "destination": "aws_lambda"}
-      ]
-    }
+    ```
+    establish_relations(entities=[{"source": "user_carol", "relationship": "works_on", "destination": "payment_service"}, {"source": "payment_service", "relationship": "written_in", "destination": "python_3"}, {"source": "payment_service", "relationship": "built_with", "destination": "fastapi"}, {"source": "payment_service", "relationship": "uses", "destination": "postgresql"}, {"source": "payment_service", "relationship": "runs_on", "destination": "aws_lambda"}])
     ```
 
     ### Example 4: Education
@@ -1460,14 +1376,8 @@ memory:
     **Input**: "I graduated from MIT with a CS degree and recently got AWS Solutions Architect certified"
 
     **Output**:
-    ```json
-    {
-      "entities": [
-        {"source": "user_dave", "relationship": "educated_at", "destination": "mit"},
-        {"source": "user_dave", "relationship": "has_degree", "destination": "bachelor_cs"},
-        {"source": "user_dave", "relationship": "has_certification", "destination": "aws_solutions_architect"}
-      ]
-    }
+    ```
+    establish_relations(entities=[{"source": "user_dave", "relationship": "educated_at", "destination": "mit"}, {"source": "user_dave", "relationship": "has_degree", "destination": "bachelor_cs"}, {"source": "user_dave", "relationship": "has_certification", "destination": "aws_solutions_architect"}])
     ```
 
     ### Example 5: Project Timeline
@@ -1475,16 +1385,8 @@ memory:
     **Input**: "The migration project started in Q1 2024, moving from MongoDB to PostgreSQL, targeting March 2025"
 
     **Output**:
-    ```json
-    {
-      "entities": [
-        {"source": "user_eve", "relationship": "works_on", "destination": "migration_project"},
-        {"source": "migration_project", "relationship": "started_at", "destination": "2024_q1"},
-        {"source": "migration_project", "relationship": "scheduled_for", "destination": "2025_03"},
-        {"source": "migration_project", "relationship": "migrating_from", "destination": "mongodb"},
-        {"source": "migration_project", "relationship": "migrating_to", "destination": "postgresql"}
-      ]
-    }
+    ```
+    establish_relations(entities=[{"source": "user_eve", "relationship": "works_on", "destination": "migration_project"}, {"source": "migration_project", "relationship": "started_at", "destination": "2024_q1"}, {"source": "migration_project", "relationship": "scheduled_for", "destination": "2025_03"}, {"source": "migration_project", "relationship": "migrating_from", "destination": "mongodb"}, {"source": "migration_project", "relationship": "migrating_to", "destination": "postgresql"}])
     ```
 
     ### Example 6: Collaboration
@@ -1492,15 +1394,8 @@ memory:
     **Input**: "I'm working with James Wilson from the security team on securing our API service"
 
     **Output**:
-    ```json
-    {
-      "entities": [
-        {"source": "user_franz", "relationship": "collaborates_with", "destination": "james_wilson"},
-        {"source": "james_wilson", "relationship": "member_of", "destination": "security_team"},
-        {"source": "user_franz", "relationship": "works_on", "destination": "api_service"},
-        {"source": "james_wilson", "relationship": "works_on", "destination": "api_service"}
-      ]
-    }
+    ```
+    establish_relations(entities=[{"source": "user_franz", "relationship": "collaborates_with", "destination": "james_wilson"}, {"source": "james_wilson", "relationship": "member_of", "destination": "security_team"}, {"source": "user_franz", "relationship": "works_on", "destination": "api_service"}, {"source": "james_wilson", "relationship": "works_on", "destination": "api_service"}])
     ```
 
     ### Example 7: Skills and Preferences
@@ -1508,15 +1403,8 @@ memory:
     **Input**: "I prefer TypeScript over Python for backend, but I specialize in machine learning"
 
     **Output**:
-    ```json
-    {
-      "entities": [
-        {"source": "user_grace", "relationship": "prefers", "destination": "typescript"},
-        {"source": "user_grace", "relationship": "knows", "destination": "python"},
-        {"source": "user_grace", "relationship": "knows", "destination": "typescript"},
-        {"source": "user_grace", "relationship": "specializes_in", "destination": "machine_learning"}
-      ]
-    }
+    ```
+    establish_relations(entities=[{"source": "user_grace", "relationship": "prefers", "destination": "typescript"}, {"source": "user_grace", "relationship": "knows", "destination": "python"}, {"source": "user_grace", "relationship": "knows", "destination": "typescript"}, {"source": "user_grace", "relationship": "specializes_in", "destination": "machine_learning"}])
     ```
     Note: "prefers X over Y" implies knowledge of both.
 
@@ -1525,15 +1413,8 @@ memory:
     **Input**: "I diagnosed Patient John with Type 2 diabetes and prescribed Metformin"
 
     **Output**:
-    ```json
-    {
-      "entities": [
-        {"source": "user_doctor", "relationship": "diagnosed", "destination": "patient_john"},
-        {"source": "patient_john", "relationship": "has_condition", "destination": "type_2_diabetes"},
-        {"source": "user_doctor", "relationship": "prescribed", "destination": "metformin"},
-        {"source": "patient_john", "relationship": "takes_medication", "destination": "metformin"}
-      ]
-    }
+    ```
+    establish_relations(entities=[{"source": "user_doctor", "relationship": "diagnosed", "destination": "patient_john"}, {"source": "patient_john", "relationship": "has_condition", "destination": "type_2_diabetes"}, {"source": "user_doctor", "relationship": "prescribed", "destination": "metformin"}, {"source": "patient_john", "relationship": "takes_medication", "destination": "metformin"}])
     ```
 
     ### Example 9: Company Ownership
@@ -1541,14 +1422,8 @@ memory:
     **Input**: "Microsoft owns GitHub, and I use their Copilot daily"
 
     **Output**:
-    ```json
-    {
-      "entities": [
-        {"source": "microsoft", "relationship": "owns", "destination": "github"},
-        {"source": "github", "relationship": "owns", "destination": "copilot"},
-        {"source": "user_hank", "relationship": "uses", "destination": "copilot"}
-      ]
-    }
+    ```
+    establish_relations(entities=[{"source": "microsoft", "relationship": "owns", "destination": "github"}, {"source": "github", "relationship": "owns", "destination": "copilot"}, {"source": "user_hank", "relationship": "uses", "destination": "copilot"}])
     ```
 
     ### Example 10: No Relationships Extractable
@@ -1556,10 +1431,8 @@ memory:
     **Input**: "Python and JavaScript are both popular"
 
     **Output**:
-    ```json
-    {
-      "entities": []
-    }
+    ```
+    establish_relations(entities=[])
     ```
     Note: This is general knowledge, not a user-specific relationship. Do not extract.
 
@@ -1582,7 +1455,7 @@ memory:
 
     ## Output Format
 
-    Call the `establish_relationships` tool with your extracted relationships. If no relationships can be extracted, call it with an empty array.
+    Call the `establish_relations` tool with your extracted relationships. If no relationships can be extracted, call it with an empty array.
   relationship_deletion: |
     # Relationship Deletion Analysis for Knowledge Graph Maintenance
 
@@ -1668,11 +1541,9 @@ memory:
     - `employed_as` has a new value (senior engineer vs software engineer)
 
     **Decision**: DELETE both relationships
-    ```json
-    [
-      {"source": "user_alice", "relationship": "employer", "destination": "acme_corp"},
-      {"source": "user_alice", "relationship": "employed_as", "destination": "software_engineer"}
-    ]
+    ```
+    delete_graph_memory(source="user_alice", relationship="employer", destination="acme_corp")
+    delete_graph_memory(source="user_alice", relationship="employed_as", destination="software_engineer")
     ```
 
     ### Example 2: Addition, Not Replacement (KEEP)
@@ -1689,9 +1560,9 @@ memory:
     - `uses` is many-to-many (people use multiple tools)
     - No indication that Bob stopped using Python or VSCode
 
-    **Decision**: DELETE nothing (empty array)
-    ```json
-    []
+    **Decision**: DELETE nothing
+    ```
+    (no tool calls)
     ```
 
     ### Example 3: Explicit Replacement Signal (DELETE)
@@ -1708,10 +1579,8 @@ memory:
     - This applies to the project, not necessarily the user personally
 
     **Decision**: DELETE project's MongoDB relationship only
-    ```json
-    [
-      {"source": "project_x", "relationship": "uses", "destination": "mongodb"}
-    ]
+    ```
+    delete_graph_memory(source="project_x", relationship="uses", destination="mongodb")
     ```
 
     ### Example 4: Manager Change (DELETE)
@@ -1729,10 +1598,8 @@ memory:
     - Team membership not mentioned (might still be on same team)
 
     **Decision**: DELETE only the manager relationship
-    ```json
-    [
-      {"source": "user_dave", "relationship": "reports_to", "destination": "sarah_chen"}
-    ]
+    ```
+    delete_graph_memory(source="user_dave", relationship="reports_to", destination="sarah_chen")
     ```
 
     ### Example 5: Ambiguous Team Situation (KEEP)
@@ -1749,8 +1616,8 @@ memory:
     - Could be on multiple teams
 
     **Decision**: DELETE nothing
-    ```json
-    []
+    ```
+    (no tool calls)
     ```
 
     ### Example 6: Explicit Team Departure (DELETE)
@@ -1766,10 +1633,8 @@ memory:
     - "full-time" suggests exclusive membership
 
     **Decision**: DELETE
-    ```json
-    [
-      {"source": "user_eve", "relationship": "member_of", "destination": "backend_team"}
-    ]
+    ```
+    delete_graph_memory(source="user_eve", relationship="member_of", destination="backend_team")
     ```
 
     ### Example 7: Location Move (DELETE)
@@ -1787,10 +1652,8 @@ memory:
     - Employer not mentioned (might or might not have changed)
 
     **Decision**: DELETE only location
-    ```json
-    [
-      {"source": "user_franz", "relationship": "located_in", "destination": "berlin"}
-    ]
+    ```
+    delete_graph_memory(source="user_franz", relationship="located_in", destination="berlin")
     ```
 
     ### Example 8: Project Completion (Context-Dependent)
@@ -1807,8 +1670,8 @@ memory:
     - This is a state change, not a contradiction
 
     **Decision**: DELETE nothing (let new information be added separately)
-    ```json
-    []
+    ```
+    (no tool calls)
     ```
 
     ### Example 9: Certification Expiry (DELETE)
@@ -1824,10 +1687,8 @@ memory:
     - Certification explicitly replaced with new version
 
     **Decision**: DELETE old cert
-    ```json
-    [
-      {"source": "user_hank", "relationship": "has_certification", "destination": "aws_solutions_architect_2020"}
-    ]
+    ```
+    delete_graph_memory(source="user_hank", relationship="has_certification", destination="aws_solutions_architect_2020")
     ```
 
     ### Example 10: Multiple Existing, One Replaced
@@ -1847,11 +1708,9 @@ memory:
     - Skills not mentioned → keep them
 
     **Decision**: DELETE employer and location only
-    ```json
-    [
-      {"source": "user_iris", "relationship": "employer", "destination": "acme"},
-      {"source": "user_iris", "relationship": "located_in", "destination": "austin"}
-    ]
+    ```
+    delete_graph_memory(source="user_iris", relationship="employer", destination="acme")
+    delete_graph_memory(source="user_iris", relationship="located_in", destination="austin")
     ```
 
     ### Example 11: Same Relationship Type, Different Destination (CAREFUL)
@@ -1868,8 +1727,8 @@ memory:
     - Ambiguous → err on the side of keeping
 
     **Decision**: DELETE nothing (ambiguous)
-    ```json
-    []
+    ```
+    (no tool calls)
     ```
 
     ### Example 12: Third-Party Information
@@ -1886,10 +1745,8 @@ memory:
     - `employed_as` should be updated
 
     **Decision**: DELETE old role only
-    ```json
-    [
-      {"source": "sarah_chen", "relationship": "employed_as", "destination": "engineering_manager"}
-    ]
+    ```
+    delete_graph_memory(source="sarah_chen", relationship="employed_as", destination="engineering_manager")
     ```
 
     ## Red Flags - When NOT to Delete

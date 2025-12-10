@@ -61,7 +61,7 @@ const handleDelete = () => {
 </script>
 
 <template>
-  <div class="flex h-full flex-col space-y-4 p-4">
+  <div class="flex h-full flex-col space-y-4">
     <div class="flex-1 space-y-4 overflow-y-auto">
       <div class="space-y-2">
         <label class="text-xs font-medium text-gray-700 dark:text-gray-500">Memory Content</label>

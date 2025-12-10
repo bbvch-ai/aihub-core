@@ -20,13 +20,6 @@ const emit = defineEmits<{
   goToPage: [page: number]
 }>()
 
-const formattedMemories = computed(() => {
-  return props.memories.map(memory => ({
-    ...memory,
-    created_at_formatted: new Date(memory.created_at).toLocaleString(),
-  }))
-})
-
 const selectedMemory = computed(() => {
   return props.memories.find(memory => memory.id === props.selectedMemoryId)
 })
@@ -39,13 +32,14 @@ const handleSelection = (memory: MemoryDto) => {
 <template>
   <div class="flex h-full flex-col">
     <DataTable
-      :value="formattedMemories"
+      :value="memories"
       :loading="loading"
       :selection="selectedMemory"
       selection-mode="single"
       :meta-key-selection="false"
       data-key="id"
       class="flex-1"
+      size="small"
       scrollable
       scroll-height="flex"
       @update:selection="handleSelection"
@@ -61,21 +55,7 @@ const handleSelection = (memory: MemoryDto) => {
           </div>
         </template>
       </Column>
-      <Column
-        field="score"
-        header="Score"
-        style="width: 100px"
-      >
-        <template #body="slotProps">
-          <span v-if="slotProps.data.score != null">
-            {{ slotProps.data.score.toFixed(2) }}
-          </span>
-          <span
-            v-else
-            class="text-gray-400"
-          >-</span>
-        </template>
-      </Column>
+
       <Column
         field="agent_id"
         header="Agent"
@@ -95,16 +75,24 @@ const handleSelection = (memory: MemoryDto) => {
         </template>
       </Column>
       <Column
-        field="thread_id"
-        header="Thread"
-        style="width: 150px"
+        field="created"
+        header="Created"
+        style="width: 180px"
       >
         <template #body="slotProps">
-          <span
-            v-if="slotProps.data.thread_id"
-            class="font-mono text-sm"
-          >
-            {{ slotProps.data.thread_id }}
+          <span class="text-sm">
+            {{ useDateFormat(slotProps.data.created, 'DD.MM.YYYY HH:mm:ss') }}
+          </span>
+        </template>
+      </Column>
+      <Column
+        field="score"
+        header="Score"
+        style="width: 100px"
+      >
+        <template #body="slotProps">
+          <span v-if="slotProps.data.score != null">
+            {{ slotProps.data.score.toFixed(2) }}
           </span>
           <span
             v-else
@@ -112,11 +100,6 @@ const handleSelection = (memory: MemoryDto) => {
           >-</span>
         </template>
       </Column>
-      <Column
-        field="created_at_formatted"
-        header="Created"
-        style="width: 180px"
-      />
     </DataTable>
 
     <div
