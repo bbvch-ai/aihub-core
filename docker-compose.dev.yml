@@ -561,7 +561,7 @@ services:
 
   litellm:
     container_name: litellm
-    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.79.1-stable
+    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.80.5-stable.1
     restart: always
     ports:
       - "4000:4000"

@@ -54,10 +54,11 @@ class LLMEvent(SemanticEvent):
     ] = None
 
     @property
-    def messages(self) -> list[ChatMessage]:
+    def chat_messages(self) -> list[ChatMessage]:
         input_messages = self.input_messages or []
         output_messages = self.output_messages or []
-        return [*input_messages, *output_messages]
+        messages = [*input_messages, *output_messages]
+        return [msg.to_llama_index() for msg in messages]
 
     def to_semantic_convention(self) -> dict[str, str]:
         attributes = {

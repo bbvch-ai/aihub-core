@@ -52,6 +52,75 @@ export type AddAgentRequest = {
 };
 
 /**
+ * AddMemoryToChatHistoryEvent
+ */
+export type AddMemoryToChatHistoryEventReadable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Extended History
+     * Chat history extended with user memories.
+     */
+    extended_history: Array<ChatMessageOutput>;
+    /**
+     * Event Name
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessageOutput> | Array<string> | undefined;
+};
+
+/**
+ * AddMemoryToChatHistoryEvent
+ */
+export type AddMemoryToChatHistoryEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Extended History
+     * Chat history extended with user memories.
+     */
+    extended_history: Array<ChatMessageOutput>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessageOutput> | undefined;
+};
+
+/**
  * AddUserRequest
  */
 export type AddUserRequest = {
@@ -948,9 +1017,35 @@ export type Audio = {
 
 /**
  * AudioBlock
+ */
+export type AudioBlockInput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'audio';
+    /**
+     * Audio
+     */
+    audio?: (Blob | File) | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | null;
+    /**
+     * Format
+     */
+    format?: string | null;
+};
+
+/**
+ * AudioBlock
  * A representation of audio data to directly pass to/from the LLM.
  */
-export type AudioBlock = {
+export type AudioBlockOutput = {
     /**
      * Block Type
      */
@@ -1066,9 +1161,20 @@ export type CacheControl = {
 
 /**
  * CachePoint
+ */
+export type CachePointInput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'cache';
+    cache_control: CacheControl;
+};
+
+/**
+ * CachePoint
  * Used to set the point to cache up to, if the LLM supports caching.
  */
-export type CachePoint = {
+export type CachePointOutput = {
     /**
      * Block Type
      */
@@ -1971,10 +2077,36 @@ export type ChatCompletionUserMessageParam = {
 
 /**
  * ChatMessage
+ */
+export type ChatMessageInput = {
+    role?: MessageRoleInput;
+    additional_kwargs: AdditionalKwargs;
+    /**
+     * Blocks
+     */
+    blocks?: Array<({
+        block_type: 'text';
+    } & TextBlockInput) | ({
+        block_type: 'image';
+    } & ImageBlockInput) | ({
+        block_type: 'audio';
+    } & AudioBlockInput) | ({
+        block_type: 'document';
+    } & DocumentBlockInput) | ({
+        block_type: 'cache';
+    } & CachePointInput) | ({
+        block_type: 'citable';
+    } & CitableBlockInput) | ({
+        block_type: 'citation';
+    } & CitationBlockInput)>;
+};
+
+/**
+ * ChatMessage
  * Chat message.
  */
-export type ChatMessage = {
-    role?: MessageRole;
+export type ChatMessageOutput = {
+    role?: MessageRoleOutput;
     /**
      * Additional Kwargs
      */
@@ -1984,19 +2116,19 @@ export type ChatMessage = {
      */
     blocks?: Array<({
         block_type: 'text';
-    } & TextBlock) | ({
+    } & TextBlockOutput) | ({
         block_type: 'image';
-    } & ImageBlock) | ({
+    } & ImageBlockOutput) | ({
         block_type: 'audio';
-    } & AudioBlock) | ({
+    } & AudioBlockOutput) | ({
         block_type: 'document';
-    } & DocumentBlock) | ({
+    } & DocumentBlockOutput) | ({
         block_type: 'cache';
-    } & CachePoint) | ({
+    } & CachePointOutput) | ({
         block_type: 'citable';
-    } & CitableBlock) | ({
+    } & CitableBlockOutput) | ({
         block_type: 'citation';
-    } & CitationBlock)>;
+    } & CitationBlockOutput)>;
 };
 
 /**
@@ -2320,9 +2452,8 @@ export type ChunkEventWritable = {
 
 /**
  * CitableBlock
- * Supports providing citable content to LLMs that have built-in citation support.
  */
-export type CitableBlock = {
+export type CitableBlockInput = {
     /**
      * Block Type
      */
@@ -2340,18 +2471,46 @@ export type CitableBlock = {
      */
     content: Array<({
         block_type: 'text';
-    } & TextBlock) | ({
+    } & TextBlockInput) | ({
         block_type: 'image';
-    } & ImageBlock) | ({
+    } & ImageBlockInput) | ({
         block_type: 'document';
-    } & DocumentBlock)>;
+    } & DocumentBlockInput)>;
+};
+
+/**
+ * CitableBlock
+ * Supports providing citable content to LLMs that have built-in citation support.
+ */
+export type CitableBlockOutput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'citable';
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Content
+     */
+    content: Array<({
+        block_type: 'text';
+    } & TextBlockOutput) | ({
+        block_type: 'image';
+    } & ImageBlockOutput) | ({
+        block_type: 'document';
+    } & DocumentBlockOutput)>;
 };
 
 /**
  * CitationBlock
- * A representation of cited content from past messages.
  */
-export type CitationBlock = {
+export type CitationBlockInput = {
     /**
      * Block Type
      */
@@ -2361,9 +2520,37 @@ export type CitationBlock = {
      */
     cited_content: ({
         block_type: 'text';
-    } & TextBlock) | ({
+    } & TextBlockInput) | ({
         block_type: 'image';
-    } & ImageBlock);
+    } & ImageBlockInput);
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Title
+     */
+    title: string;
+    additional_location_info: AdditionalLocationInfo;
+};
+
+/**
+ * CitationBlock
+ * A representation of cited content from past messages.
+ */
+export type CitationBlockOutput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'citation';
+    /**
+     * Cited Content
+     */
+    cited_content: ({
+        block_type: 'text';
+    } & TextBlockOutput) | ({
+        block_type: 'image';
+    } & ImageBlockOutput);
     /**
      * Source
      */
@@ -2802,7 +2989,7 @@ export type ContextualizedAgentEventReadable = {
      * Event
      * Data of the event itself.
      */
-    event: StartEventReadable | AgentInTheLoopResponseEventReadable | HumanInTheLoopRequestEventReadable | AgentInTheLoopRequestEventReadable | AgentInTheLoopExceptionEventReadable | HumanInTheLoopResponseEventReadable | LimitChatHistoryEventReadable | StandaloneQuestionCondenserEventReadable | LlmCostEventReadable | ChunkEventReadable | ThoughtEventReadable | GuardEventReadable | RouterEventReadable | GuardRejectionEventReadable | SemanticEventReadable | AgentEventReadable | ChainEventReadable | EmbeddingEventReadable | LlmEventReadable | LlmStopEventReadable | RerankerEventReadable | RetrieverEventReadable | ToolEventReadable | UserMessageEventReadable | ExceptionEventReadable | StopEventReadable | DisplayEventReadable | GuardAcceptEventReadable | AgentSuitabilityAcceptEventReadable | AgentSuitabilityRejectEventReadable | ContextSufficientAcceptEventReadable | ContextInsufficientRejectEventReadable | FewShotAcceptEventReadable | FewShotRejectEventReadable | SensitiveInfoAcceptEventReadable | SensitiveInfoRejectEventReadable;
+    event: StartEventReadable | AgentInTheLoopResponseEventReadable | HumanInTheLoopRequestEventReadable | AgentInTheLoopRequestEventReadable | AgentInTheLoopExceptionEventReadable | HumanInTheLoopResponseEventReadable | LimitChatHistoryEventReadable | AddMemoryToChatHistoryEventReadable | StandaloneQuestionCondenserEventReadable | LlmCostEventReadable | ChunkEventReadable | ThoughtEventReadable | GuardEventReadable | RouterEventReadable | GuardRejectionEventReadable | SemanticEventReadable | AgentEventReadable | ChainEventReadable | EmbeddingEventReadable | LlmEventReadable | LlmStopEventReadable | RerankerEventReadable | RetrieverEventReadable | ToolEventReadable | UserMessageEventReadable | ExceptionEventReadable | StopEventReadable | DisplayEventReadable | GuardAcceptEventReadable | AgentSuitabilityAcceptEventReadable | AgentSuitabilityRejectEventReadable | ContextSufficientAcceptEventReadable | ContextInsufficientRejectEventReadable | FewShotAcceptEventReadable | FewShotRejectEventReadable | SensitiveInfoAcceptEventReadable | SensitiveInfoRejectEventReadable | NewMemoryEventReadable | RetrieveMemoryEventReadable;
 };
 
 /**
@@ -2873,7 +3060,7 @@ export type ContextualizedAgentEventWritable = {
      * Event
      * Data of the event itself.
      */
-    event: StartEventWritable | AgentInTheLoopResponseEventWritable | HumanInTheLoopRequestEventWritable | AgentInTheLoopRequestEventWritable | AgentInTheLoopExceptionEventWritable | HumanInTheLoopResponseEventWritable | LimitChatHistoryEventWritable | StandaloneQuestionCondenserEventWritable | LlmCostEventWritable | ChunkEventWritable | ThoughtEventWritable | GuardEventWritable | RouterEventWritable | GuardRejectionEventWritable | SemanticEventWritable | AgentEventWritable | ChainEventWritable | EmbeddingEventWritable | LlmEventWritable | LlmStopEventWritable | RerankerEventWritable | RetrieverEventWritable | ToolEventWritable | UserMessageEventWritable | ExceptionEventWritable | StopEventWritable | DisplayEventWritable | GuardAcceptEventWritable | AgentSuitabilityAcceptEventWritable | AgentSuitabilityRejectEventWritable | ContextSufficientAcceptEventWritable | ContextInsufficientRejectEventWritable | FewShotAcceptEventWritable | FewShotRejectEventWritable | SensitiveInfoAcceptEventWritable | SensitiveInfoRejectEventWritable;
+    event: StartEventWritable | AgentInTheLoopResponseEventWritable | HumanInTheLoopRequestEventWritable | AgentInTheLoopRequestEventWritable | AgentInTheLoopExceptionEventWritable | HumanInTheLoopResponseEventWritable | LimitChatHistoryEventWritable | AddMemoryToChatHistoryEventWritable | StandaloneQuestionCondenserEventWritable | LlmCostEventWritable | ChunkEventWritable | ThoughtEventWritable | GuardEventWritable | RouterEventWritable | GuardRejectionEventWritable | SemanticEventWritable | AgentEventWritable | ChainEventWritable | EmbeddingEventWritable | LlmEventWritable | LlmStopEventWritable | RerankerEventWritable | RetrieverEventWritable | ToolEventWritable | UserMessageEventWritable | ExceptionEventWritable | StopEventWritable | DisplayEventWritable | GuardAcceptEventWritable | AgentSuitabilityAcceptEventWritable | AgentSuitabilityRejectEventWritable | ContextSufficientAcceptEventWritable | ContextInsufficientRejectEventWritable | FewShotAcceptEventWritable | FewShotRejectEventWritable | SensitiveInfoAcceptEventWritable | SensitiveInfoRejectEventWritable | NewMemoryEventWritable | RetrieveMemoryEventWritable;
 };
 
 /**
@@ -3664,9 +3851,39 @@ export type DisplayStatistics = {
 
 /**
  * DocumentBlock
+ */
+export type DocumentBlockInput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'document';
+    /**
+     * Data
+     */
+    data?: (Blob | File) | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | null;
+    /**
+     * Title
+     */
+    title?: string | null;
+    /**
+     * Document Mimetype
+     */
+    document_mimetype?: string | null;
+};
+
+/**
+ * DocumentBlock
  * A representation of a document to directly pass to the LLM.
  */
-export type DocumentBlock = {
+export type DocumentBlockOutput = {
     /**
      * Block Type
      */
@@ -3730,7 +3947,7 @@ export type DocumentDto = {
     id: string;
     /**
      * Source
-     * Source URI of original document.
+     * Source path without protocol prefix (e.g., 'bucket/path/file.pdf').
      */
     source: string;
     /**
@@ -4156,7 +4373,7 @@ export type EvaluationSummaryData = {
      * Avg Score
      * Average score from this evaluator.
      */
-    avg_score?: number | null;
+    avg_score: number;
 };
 
 /**
@@ -5595,9 +5812,39 @@ export type Image = {
 
 /**
  * ImageBlock
+ */
+export type ImageBlockInput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'image';
+    /**
+     * Image
+     */
+    image?: (Blob | File) | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | null;
+    /**
+     * Image Mimetype
+     */
+    image_mimetype?: string | null;
+    /**
+     * Detail
+     */
+    detail?: string | null;
+};
+
+/**
+ * ImageBlock
  * A representation of image data to directly pass to/from the LLM.
  */
-export type ImageBlock = {
+export type ImageBlockOutput = {
     /**
      * Block Type
      */
@@ -7588,7 +7835,7 @@ export type LimitChatHistoryEventReadable = {
      * Limited History
      * Limited chat history based on number of input tokens.
      */
-    limited_history: Array<ChatMessage>;
+    limited_history: Array<ChatMessageOutput>;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -7600,7 +7847,7 @@ export type LimitChatHistoryEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessage> | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessageOutput> | Array<string> | undefined;
 };
 
 /**
@@ -7629,8 +7876,8 @@ export type LimitChatHistoryEventWritable = {
      * Limited History
      * Limited chat history based on number of input tokens.
      */
-    limited_history: Array<ChatMessage>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessage> | undefined;
+    limited_history: Array<ChatMessageOutput>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessageOutput> | undefined;
 };
 
 /**
@@ -7916,6 +8163,41 @@ export type MemoriesResponse = {
 };
 
 /**
+ * Memory
+ */
+export type Memory = {
+    /**
+     * Id
+     * The unique identifier for the memory.
+     */
+    id: string;
+    /**
+     * User Id
+     * The user ID of the user who created the memory.
+     */
+    user_id: string;
+    /**
+     * Memory
+     * The memory deduced from the text data.
+     */
+    memory: string;
+    /**
+     * Score
+     * The score of the memory.
+     */
+    score?: number | null;
+    /**
+     * Created At
+     * The timestamp when the memory was created.
+     */
+    created_at: string;
+    /**
+     * The metadata associated with the memory.
+     */
+    metadata: MemoryMetadata;
+};
+
+/**
  * MemoryDTO
  * Data Transfer Object for a single memory item.
  */
@@ -7955,6 +8237,83 @@ export type MemoryDto = {
      * The unique identifier of the thread in which this memory was created.
      */
     thread_id?: string | null;
+    /**
+     * Display Id
+     * The unique identifier of the memory for display purposes.
+     */
+    display_id?: string | null;
+    /**
+     * Run Id
+     * The unique identifier of the run in which this memory was created.
+     */
+    run_id?: string | null;
+};
+
+/**
+ * MemoryMetadata
+ */
+export type MemoryMetadata = {
+    /**
+     * User Id
+     * The user ID.
+     */
+    _user_id: string | null;
+    /**
+     * Agent Id
+     * The agent ID.
+     */
+    _agent_id: string | null;
+    /**
+     * Thread Id
+     * The thread ID.
+     */
+    _thread_id: string | null;
+    /**
+     * Display Id
+     * The display ID.
+     */
+    _display_id: string | null;
+    /**
+     * Run Id
+     * The run ID.
+     */
+    _run_id: string | null;
+    /**
+     * The type of the memory.
+     */
+    _type: MemoryType;
+    /**
+     * Organization Name
+     * The organization memory database.
+     */
+    _organization_name: string | null;
+    /**
+     * Organization Namespace
+     * The organization memory namespace.
+     */
+    _organization_namespace: string | null;
+};
+
+/**
+ * MemoryRelation
+ * Represents a knowledge graph triple
+ */
+export type MemoryRelation = {
+    /**
+     * Source
+     * The source entity.
+     */
+    source: string;
+    /**
+     * Relation
+     * The relationship between the source and target entities.
+     */
+    relation: string;
+    /**
+     * Target
+     * The target entity.
+     */
+    target: string;
 };
 
 /**
@@ -8005,6 +8364,19 @@ export type MemorySearchResponse = {
      */
     relations: Array<MemoryRelationDto>;
 };
+
+/**
+ * MemoryType
+ */
+export type MemoryType = 'user_memory' | 'organization_memory';
+
+/**
+ * MemoryType
+ */
+export const MemoryType = {
+    USER_MEMORY: 'user_memory',
+    ORGANIZATION_MEMORY: 'organization_memory'
+} as const;
 
 /**
  * Message
@@ -8102,15 +8474,34 @@ export type MessageWritable = {
 
 /**
  * MessageRole
- * Message role.
  */
-export type MessageRole = 'system' | 'developer' | 'user' | 'assistant' | 'function' | 'tool' | 'chatbot' | 'model';
+export type MessageRoleInput = 'system' | 'developer' | 'user' | 'assistant' | 'function' | 'tool' | 'chatbot' | 'model';
+
+/**
+ * MessageRole
+ */
+export const MessageRoleInput = {
+    SYSTEM: 'system',
+    DEVELOPER: 'developer',
+    USER: 'user',
+    ASSISTANT: 'assistant',
+    FUNCTION: 'function',
+    TOOL: 'tool',
+    CHATBOT: 'chatbot',
+    MODEL: 'model'
+} as const;
 
 /**
  * MessageRole
  * Message role.
  */
-export const MessageRole = {
+export type MessageRoleOutput = 'system' | 'developer' | 'user' | 'assistant' | 'function' | 'tool' | 'chatbot' | 'model';
+
+/**
+ * MessageRole
+ * Message role.
+ */
+export const MessageRoleOutput = {
     SYSTEM: 'system',
     DEVELOPER: 'developer',
     USER: 'user',
@@ -8144,7 +8535,7 @@ export type Metadata = {
      * Files
      * List of files to attach to the request, if supported by the model.
      */
-    files?: Array<UserUploadedFile> | null;
+    files?: Array<AihubLibNatsEventsUserUserUploadedFileUserUploadedFile> | null;
 };
 
 /**
@@ -8857,6 +9248,115 @@ export type NamespaceResponse = {
      * A brief description of the namespace's contents.
      */
     description?: string | null;
+};
+
+/**
+ * NewMemoryEvent
+ */
+export type NewMemoryEventReadable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Added Memories
+     * Newly added memory texts
+     */
+    added_memories: Array<string>;
+    /**
+     * Updated Memories
+     * Updated memory texts
+     */
+    updated_memories: Array<string>;
+    /**
+     * Deleted Memories
+     * Deleted memory texts
+     */
+    deleted_memories: Array<string>;
+    /**
+     * Added Relations
+     * Newly added relations
+     */
+    added_relations: Array<MemoryRelation>;
+    /**
+     * Deleted Relations
+     * Deleted relations
+     */
+    deleted_relations: Array<MemoryRelation>;
+    /**
+     * Event Name
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | Array<string> | Array<string> | Array<MemoryRelation> | Array<MemoryRelation> | Array<string> | undefined;
+};
+
+/**
+ * NewMemoryEvent
+ */
+export type NewMemoryEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Added Memories
+     * Newly added memory texts
+     */
+    added_memories: Array<string>;
+    /**
+     * Updated Memories
+     * Updated memory texts
+     */
+    updated_memories: Array<string>;
+    /**
+     * Deleted Memories
+     * Deleted memory texts
+     */
+    deleted_memories: Array<string>;
+    /**
+     * Added Relations
+     * Newly added relations
+     */
+    added_relations: Array<MemoryRelation>;
+    /**
+     * Deleted Relations
+     * Deleted relations
+     */
+    deleted_relations: Array<MemoryRelation>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | Array<string> | Array<string> | Array<MemoryRelation> | Array<MemoryRelation> | undefined;
 };
 
 /**
@@ -10318,6 +10818,85 @@ export type ResponseFormatText = {
 };
 
 /**
+ * RetrieveMemoryEvent
+ */
+export type RetrieveMemoryEventReadable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Memories
+     * The list of memories that were retrieved.
+     */
+    memories?: Array<Memory>;
+    /**
+     * Relations
+     * The list of matching memory relations.
+     */
+    relations: Array<MemoryRelation>;
+    /**
+     * Event Name
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<Memory> | Array<MemoryRelation> | Array<string> | undefined;
+};
+
+/**
+ * RetrieveMemoryEvent
+ */
+export type RetrieveMemoryEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Memories
+     * The list of memories that were retrieved.
+     */
+    memories?: Array<Memory>;
+    /**
+     * Relations
+     * The list of matching memory relations.
+     */
+    relations: Array<MemoryRelation>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<Memory> | Array<MemoryRelation> | undefined;
+};
+
+/**
  * RetrieverEvent
  */
 export type RetrieverEventReadable = {
@@ -11618,7 +12197,7 @@ export type StandaloneQuestionCondenserEventReadable = {
     /**
      * Single chat message containing the condensed user question.
      */
-    condensed_chat_message: ChatMessage;
+    condensed_chat_message: ChatMessageOutput;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -11630,7 +12209,7 @@ export type StandaloneQuestionCondenserEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ChatMessage | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ChatMessageOutput | Array<string> | undefined;
 };
 
 /**
@@ -11658,8 +12237,8 @@ export type StandaloneQuestionCondenserEventWritable = {
     /**
      * Single chat message containing the condensed user question.
      */
-    condensed_chat_message: ChatMessage;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ChatMessage | undefined;
+    condensed_chat_message: ChatMessageOutput;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ChatMessageOutput | undefined;
 };
 
 /**
@@ -11851,6 +12430,20 @@ export type StopEventWritable = {
 };
 
 /**
+ * StopEventOutput
+ */
+export type StopEventOutput = {
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+};
+
+/**
  * SubmittedFormDTO
  */
 export type SubmittedFormDto = {
@@ -11884,9 +12477,23 @@ export type SuiteDto = {
 
 /**
  * TextBlock
+ */
+export type TextBlockInput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'text';
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
+ * TextBlock
  * A representation of text data to directly pass to/from the LLM.
  */
-export type TextBlock = {
+export type TextBlockOutput = {
     /**
      * Block Type
      */
@@ -13276,12 +13883,12 @@ export type UserMessageEventReadable = {
      * Messages
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessage>;
+    messages?: Array<ChatMessageOutput>;
     /**
      * Files
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
      */
-    files?: Array<UserUploadedFile> | null;
+    files?: Array<UserUploadedFileOutput> | null;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -13295,7 +13902,7 @@ export type UserMessageEventReadable = {
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
         [key: string]: unknown;
-    } | null) | UserIdentity | Array<ChatMessage> | (Array<UserUploadedFile> | null) | Array<string> | undefined;
+    } | null) | UserIdentity | Array<ChatMessageOutput> | (Array<UserUploadedFileOutput> | null) | Array<string> | undefined;
 };
 
 /**
@@ -13361,21 +13968,37 @@ export type UserMessageEventWritable = {
      * Messages
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessage>;
+    messages?: Array<ChatMessageOutput>;
     /**
      * Files
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
      */
-    files?: Array<UserUploadedFile> | null;
+    files?: Array<UserUploadedFileOutput> | null;
     [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
         [key: string]: unknown;
-    } | null) | UserIdentity | Array<ChatMessage> | (Array<UserUploadedFile> | null) | undefined;
+    } | null) | UserIdentity | Array<ChatMessageOutput> | (Array<UserUploadedFileOutput> | null) | undefined;
+};
+
+/**
+ * UserMessageEventInput
+ */
+export type UserMessageEventInput = {
+    /**
+     * Messages
+     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
+     */
+    messages?: Array<ChatMessageInput>;
+    /**
+     * Files
+     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
+     */
+    files?: Array<JamboParserObjectTypeParserUserUploadedFile> | null;
 };
 
 /**
  * UserUploadedFile
  */
-export type UserUploadedFile = {
+export type UserUploadedFileOutput = {
     /**
      * Filename
      * The name of the uploaded file, including the extension.
@@ -13492,6 +14115,62 @@ export type WorkflowGraph = {
      * List of edges in the graph
      */
     links: Array<EdgeData>;
+};
+
+/**
+ * additional_kwargs
+ */
+export type AdditionalKwargs = {
+    [key: string]: unknown;
+};
+
+/**
+ * additional_location_info
+ */
+export type AdditionalLocationInfo = {
+    [key: string]: unknown;
+};
+
+/**
+ * UserUploadedFile
+ */
+export type AihubLibNatsEventsUserUserUploadedFileUserUploadedFile = {
+    /**
+     * Filename
+     * The name of the uploaded file, including the extension.
+     */
+    filename: string;
+    /**
+     * File Data
+     * Base64 encoded content of the uploaded file.
+     */
+    file_data: string;
+    /**
+     * File Type
+     * The MIME type of the uploaded file.
+     */
+    file_type: string;
+};
+
+/**
+ * UserUploadedFile
+ */
+export type JamboParserObjectTypeParserUserUploadedFile = {
+    /**
+     * Filename
+     * The name of the uploaded file, including the extension.
+     */
+    filename: string;
+    /**
+     * File Data
+     * Base64 encoded content of the uploaded file.
+     */
+    file_data: string;
+    /**
+     * File Type
+     * The MIME type of the uploaded file.
+     */
+    file_type: string;
 };
 
 /**
@@ -15674,29 +16353,9 @@ export type UpdateNotificationResponse = UpdateNotificationResponses[keyof Updat
 export type DeleteAllMemoriesData = {
     body?: never;
     path?: never;
-    query?: {
-        /**
-         * Agent Id
-         * Filter by agent ID
-         */
-        agent_id?: string | null;
-        /**
-         * Thread Id
-         * Filter by thread ID
-         */
-        thread_id?: string | null;
-    };
+    query?: never;
     url: '/memories';
 };
-
-export type DeleteAllMemoriesErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type DeleteAllMemoriesError = DeleteAllMemoriesErrors[keyof DeleteAllMemoriesErrors];
 
 export type DeleteAllMemoriesResponses = {
     /**
@@ -15716,16 +16375,6 @@ export type GetMemoriesData = {
          * Maximum number of memories to return
          */
         limit?: number;
-        /**
-         * Agent Id
-         * Filter by agent ID
-         */
-        agent_id?: string | null;
-        /**
-         * Thread Id
-         * Filter by thread ID
-         */
-        thread_id?: string | null;
     };
     url: '/memories';
 };
@@ -15871,6 +16520,72 @@ export type ProcessDocumentResponses = {
 };
 
 export type ProcessDocumentResponse = ProcessDocumentResponses[keyof ProcessDocumentResponses];
+
+export type SendUserMessageEventToUserMemoryAgentMemoryAgentAgentsUserMemoryAgentMemoryAgentUserMessageEventPostData = {
+    body: UserMessageEventInput;
+    path?: never;
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/UserMemoryAgent/memory_agent/UserMessageEvent';
+};
+
+export type SendUserMessageEventToUserMemoryAgentMemoryAgentAgentsUserMemoryAgentMemoryAgentUserMessageEventPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SendUserMessageEventToUserMemoryAgentMemoryAgentAgentsUserMemoryAgentMemoryAgentUserMessageEventPostError = SendUserMessageEventToUserMemoryAgentMemoryAgentAgentsUserMemoryAgentMemoryAgentUserMessageEventPostErrors[keyof SendUserMessageEventToUserMemoryAgentMemoryAgentAgentsUserMemoryAgentMemoryAgentUserMessageEventPostErrors];
+
+export type SendUserMessageEventToUserMemoryAgentMemoryAgentAgentsUserMemoryAgentMemoryAgentUserMessageEventPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: StopEventOutput;
+};
+
+export type SendUserMessageEventToUserMemoryAgentMemoryAgentAgentsUserMemoryAgentMemoryAgentUserMessageEventPostResponse = SendUserMessageEventToUserMemoryAgentMemoryAgentAgentsUserMemoryAgentMemoryAgentUserMessageEventPostResponses[keyof SendUserMessageEventToUserMemoryAgentMemoryAgentAgentsUserMemoryAgentMemoryAgentUserMessageEventPostResponses];
+
+export type StreamUserMessageEventToUserMemoryAgentMemoryAgentAgentsUserMemoryAgentMemoryAgentUserMessageEventStreamPostData = {
+    body: UserMessageEventInput;
+    path?: never;
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/UserMemoryAgent/memory_agent/UserMessageEvent/stream';
+};
+
+export type StreamUserMessageEventToUserMemoryAgentMemoryAgentAgentsUserMemoryAgentMemoryAgentUserMessageEventStreamPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type StreamUserMessageEventToUserMemoryAgentMemoryAgentAgentsUserMemoryAgentMemoryAgentUserMessageEventStreamPostError = StreamUserMessageEventToUserMemoryAgentMemoryAgentAgentsUserMemoryAgentMemoryAgentUserMessageEventStreamPostErrors[keyof StreamUserMessageEventToUserMemoryAgentMemoryAgentAgentsUserMemoryAgentMemoryAgentUserMessageEventStreamPostErrors];
+
+export type StreamUserMessageEventToUserMemoryAgentMemoryAgentAgentsUserMemoryAgentMemoryAgentUserMessageEventStreamPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
 
 export type ClientOptions = {
     baseURL: `${string}://${string}/api/v1` | (string & {});

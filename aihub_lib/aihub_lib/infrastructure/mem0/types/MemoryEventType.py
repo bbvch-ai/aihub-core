@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class MemoryEventType(str, Enum):
+class MemoryEventType(StrEnum):
     """Event types for memory operations."""
 
     ADD = "ADD"

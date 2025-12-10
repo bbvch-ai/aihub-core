@@ -1,6 +1,6 @@
 import base64
 import logging
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated
 
 import httpx
@@ -13,7 +13,7 @@ from aihub_bot.persistence.entities.PathEntity import PathEntity
 logger = logging.getLogger(__name__)
 
 
-class FileSource(Enum):
+class FileSource(StrEnum):
     SLACK = Channels.slack
     TEAMS = Channels.ms_teams
     GENERIC = "generic"

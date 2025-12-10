@@ -47,7 +47,7 @@ class MemoryService:
         t: LocaleHandler,
     ) -> MemorySearchResponse:
         user_memory = UserMemory(user=user, t=t)
-        search_result = await user_memory.search(
+        search_result = await user_memory.search_user_memory(
             query=query,
             agent_id=agent_id,
             thread_id=thread_id,

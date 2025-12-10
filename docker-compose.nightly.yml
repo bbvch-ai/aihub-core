@@ -418,6 +418,33 @@ services:
         max-file: 2
 
   # ===================================================================
+  # Neo4j Stack (Graph Database)
+  # ===================================================================
+  # Neo4j provides graph database capabilities for relationship-based
+  # data modeling and querying.
+  # ===================================================================
+
+  neo4j:
+    container_name: neo4j
+    image: ghcr.io/bbvch-ai/aihub-core/neo4j:5.26.16-community
+    restart: always
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/neo4j:/data
+    environment:
+      NEO4J_AUTH: ${NEO4J_USERNAME}/${NEO4J_PASSWORD}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:7474"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+
+  # ===================================================================
   # Phoenix Stack (ML Observability)
   # ===================================================================
   # Phoenix helps visualize and debug AI model traces and evaluations.
@@ -509,7 +536,7 @@ services:
 
   litellm:
     container_name: litellm
-    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.79.1-stable
+    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.80.5-stable.1
     restart: always
     environment:
       DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/litellm"
@@ -1154,6 +1181,16 @@ services:
       # REDIS
       REDIS_URL: redis://valkey:6379
 
+      # Neo4j
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: "text-generation/large"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
+      MEM0_RERANKING_MODEL_NAME: "reranker"
+
       # Jupyter (for open-webui code interpreter)
       JUPYTER_URL: http://jupyter:8888
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
@@ -1259,6 +1296,16 @@ services:
       # REDIS
       REDIS_URL: redis://valkey:6379
 
+      # Neo4j
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: "text-generation/large"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
+      MEM0_RERANKING_MODEL_NAME: "reranker"
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
@@ -1302,6 +1349,16 @@ services:
 
       # REDIS
       REDIS_URL: redis://valkey:6379
+
+      # Neo4j
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: "text-generation/large"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
+      MEM0_RERANKING_MODEL_NAME: "reranker"
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -1361,6 +1418,16 @@ services:
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
+      # Neo4j
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: "text-generation/large"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
+      MEM0_RERANKING_MODEL_NAME: "reranker"
+
   
   # ===================================================================
   # Bot Service (MS Teams Integration)
@@ -1378,6 +1445,12 @@ services:
     environment:
       NATS_ENDPOINT: nats://nats:4222
       MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+      MEM0_LLM_NAME: "text-generation/large"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
+      MEM0_RERANKING_MODEL_NAME: "reranker"
       LOG_LEVEL: ${LOG_LEVEL}
       NUM_WORKERS: 1
       AIHUB_API_VERSION: ${AIHUB_API_VERSION}

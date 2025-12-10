@@ -36,7 +36,9 @@ class MemoryDTO(BaseModel):
             memory=memory.memory,
             score=memory.score,
             created_at=memory.created_at,
-            user_id=memory.user_id,
+            user_id=memory.owner_id,
             agent_id=memory.metadata.agent_id,
             thread_id=memory.metadata.thread_id,
+            display_id=memory.metadata.display_id,
+            run_id=memory.metadata.run_id,
         )

@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from pydantic import BaseModel, Field, AliasChoices
+from pydantic import AliasChoices, BaseModel, Field
 
 
 class MemoryRelation(BaseModel):
@@ -11,9 +11,13 @@ class MemoryRelation(BaseModel):
         str,
         Field(
             description="The relationship between the source and target entities.",
-            validation_alias=AliasChoices("relationship", "relation"),
+            validation_alias=AliasChoices("relation", "relationship"),
         ),
     ]
     target: Annotated[
-        str, Field(description="The target entity.", validation_alias=AliasChoices("target", "destination"))
+        str,
+        Field(
+            description="The target entity.",
+            validation_alias=AliasChoices("target", "destination"),
+        ),
     ]

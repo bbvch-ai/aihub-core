@@ -40,7 +40,7 @@ class UserMemoryAgent(Agent):
         displayer: EventDisplayer,
     ) -> LLMEvent:
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            return await displayer.display_llm_stream(agent_config.llm, llm, event.messages, as_stop_step=False)
+            return await displayer.display_llm_stream(agent_config.llm, llm, event.extended_history, as_stop_step=False)
 
     @step()
     async def update_memory_step(
@@ -50,9 +50,8 @@ class UserMemoryAgent(Agent):
         memory: AgentMemory,
         topic: AgentInstanceTopic,
     ) -> NewMemoryEvent:
-        chat_history = llm_event.to_llama_index()
         memory_added = await memory.add_user_memory(
-            messages=chat_history,
+            messages=llm_event.chat_messages,
             user_id=user_message_event.user.id,
             thread_id=topic.thread_id,
             display_id=topic.display_id,

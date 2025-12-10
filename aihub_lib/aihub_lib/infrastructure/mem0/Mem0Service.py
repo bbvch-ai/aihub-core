@@ -37,31 +37,34 @@ class Mem0Service:
         organization_namespace: str | None = None,
         infer: bool = True,
     ) -> MemoryAdded:
+        metadata = {
+            "_type": memory_type.value,
+            "_user_id": user_id,
+            "_agent_id": agent_id,
+            "_thread_id": thread_id,
+            "_display_id": display_id,
+            "_run_id": run_id,
+            "_organization_name": organization_name,
+            "_organization_namespace": organization_namespace,
+        }
+        metadata = { k: str(v) for k, v in metadata.items() if v is not None}
         added = await self._memory.add(
             messages,
             user_id=owner_id,
-            metadata={
-                "_type": memory_type.value,
-                "_user_id": user_id,
-                "_agent_id": agent_id,
-                "_thread_id": thread_id,
-                "_display_id": display_id,
-                "_run_id": run_id,
-                "_organization_name": organization_name,
-                "_organization_namespace": organization_namespace,
-            },
+            metadata=metadata,
             infer=infer,
         )
         return MemoryAdded.model_validate({
             **added,
-            "user_id": user_id,
-            "agent_id": agent_id,
-            "thread_id": thread_id,
-            "display_id": display_id,
-            "run_id": run_id,
-            "organization_name": organization_name,
-            "organization_namespace": organization_namespace,
-            "type": memory_type.value,
+            "owner_id": owner_id,
+            "_user_id": user_id,
+            "_agent_id": agent_id,
+            "_thread_id": thread_id,
+            "_display_id": display_id,
+            "_run_id": run_id,
+            "_organization_name": organization_name,
+            "_organization_namespace": organization_namespace,
+            "_type": memory_type.value,
         })
 
     async def get_memory(self, memory_id: str) -> Memory:
@@ -91,7 +94,7 @@ class Mem0Service:
         rerank: bool = True,
     ) -> MemorySearchResult:
         filters = {
-            "_type": memory_type,
+            "_type": memory_type.value,
             "_user_id": user_id,
             "_agent_id": agent_id,
             "_thread_id": thread_id,
