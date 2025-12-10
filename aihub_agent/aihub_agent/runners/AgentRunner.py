@@ -21,6 +21,7 @@ from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicMan
 from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
 from aihub_lib.nats.workflow.visualizers.WorkflowVisualizer import WorkflowVisualizer
 from mongoengine import connect, disconnect
+from mongoengine.connection import get_connection
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import ConnectionPool, Redis
@@ -138,12 +139,15 @@ class AgentRunner:
         _, host, port = self.redis_url.split(":")
         self.redis = Redis(connection_pool=ConnectionPool(host=host[2:], port=port))
 
-        # Connect to MongoDB
-        connect(
-            db=AIHubSettings().MONGO_MAIN_DB_NAME,
-            host=MongoSettings().CONNECTION_STRING.get_secret_value(),
-            uuidRepresentation="standard",
-        )
+        # Connect to MongoDB (skip if already connected)
+        try:
+            get_connection()
+        except Exception:
+            connect(
+                db=AIHubSettings().MONGO_MAIN_DB_NAME,
+                host=MongoSettings().CONNECTION_STRING.get_secret_value(),
+                uuidRepresentation="standard",
+            )
 
         # Initialize dispatcher
         self.dispatcher = AgentDispatcher(
