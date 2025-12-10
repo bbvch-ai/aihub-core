@@ -1405,14 +1405,14 @@ wmi = ["wmi (>=1.5.1) ; platform_system == \"Windows\""]
 
 [[package]]
 name = "docling-core"
-version = "2.50.1"
+version = "2.54.1"
 description = "A python library to define and validate data types in Docling."
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["main"]
 files = [
-    {file = "docling_core-2.50.1-py3-none-any.whl", hash = "sha256:92a34b77e02ed4faad451be36a56c37142e8ae240d87a0dcf58e89df41e256ae"},
-    {file = "docling_core-2.50.1.tar.gz", hash = "sha256:8afae348abb7f7622899d8664195a5e0bef4b2a872f0df0ed40bcd023970a995"},
+    {file = "docling_core-2.54.1-py3-none-any.whl", hash = "sha256:2d22ee1cd8508fa7ffdd2e01ef30d7521390ff55ef240610f16be0cf54ffe73e"},
+    {file = "docling_core-2.54.1.tar.gz", hash = "sha256:c6595e8b84f5e9de7a0a6298206d749f4be5730824604e684f204078a3689985"},
 ]
 
 [package.dependencies]
@@ -1428,8 +1428,8 @@ typer = ">=0.12.5,<0.20.0"
 typing-extensions = ">=4.12.2,<5.0.0"
 
 [package.extras]
-chunking = ["semchunk (>=2.2.0,<3.0.0)", "transformers (>=4.34.0,<5.0.0)"]
-chunking-openai = ["semchunk", "tiktoken (>=0.9.0,<0.13.0)"]
+chunking = ["semchunk (>=2.2.0,<3.0.0)", "transformers (>=4.34.0,<5.0.0)", "tree-sitter (>=0.23.2,<1.0.0)", "tree-sitter-c (>=0.23.4,<1.0.0)", "tree-sitter-java (>=0.23.5,<1.0.0)", "tree-sitter-javascript (>=0.23.1,<1.0.0)", "tree-sitter-python (>=0.23.6,<1.0.0)", "tree-sitter-typescript (>=0.23.2,<1.0.0)"]
+chunking-openai = ["semchunk (>=2.2.0,<3.0.0)", "tiktoken (>=0.9.0,<0.13.0)", "tree-sitter (>=0.23.2,<1.0.0)", "tree-sitter-c (>=0.23.4,<1.0.0)", "tree-sitter-java (>=0.23.5,<1.0.0)", "tree-sitter-javascript (>=0.23.1,<1.0.0)", "tree-sitter-python (>=0.23.6,<1.0.0)", "tree-sitter-typescript (>=0.23.2,<1.0.0)"]
 
 [[package]]
 name = "email-validator"
@@ -7304,4 +7304,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13, <3.14"
-content-hash = "21df1f52e1204fa5bbb3a6c552eaa51fecf4440792b8333a689b9ab8c33e02e8"
+content-hash = "59573d75f8916dfe7272ae5e410579a13688f01cc0a9c04c41706430592040c8"

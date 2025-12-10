@@ -1,68 +1,29 @@
 follow_up_question: |
-  Ti viene fornita una cronologia di chat tra un assistente AI e un esperto. L'obiettivo di questa conversazione
-  è rispondere a una domanda originariamente posta da un utente. Tuttavia, la risposta dell'esperto sembra essere insufficiente.
+  All'esperto è stato chiesto: "{{ question }}"
 
-   <chat_history>
-    {% for message in chat_history %}
-    <message role="{{ message.role.value }}">
-      {% for block in message.blocks %}
-      {% if block.block_type == 'text' %}
-      {{ block.text }}
-      {% endif %}
-      {% endfor %}
-    </message>
-    {% endfor %}
-  </chat_history>
+  La sua risposta:
+  {% for message in chat_history %}
+  {% if message.role.value == 'user' %}
+  {% for block in message.blocks %}
+  {% if block.block_type == 'text' %}
+  {{ block.text }}
+  {% endif %}
+  {% endfor %}
+  {% endif %}
+  {% endfor %}
 
-  <user_query>
-    %{question}
-  </user_query>
-  
-  Per favore, formula una domanda di follow-up all'esperto che affronti l'insufficienza della sua risposta precedente.
-  La domanda dovrebbe essere chiara e concisa, e dovrebbe aiutare l'esperto a fornire una risposta più completa alla domanda originale dell'utente.
+  L'esperto ha detto che non sa, non ha risposto, o ha risposto solo a parte della domanda.
+  Chiedi le informazioni specifiche mancanti. Sii breve e cortese. Chiedi solo ciò che è stato originariamente richiesto ma non ancora risposto.
 
-knowledge_snippet_prompt: |
-  {% chat role="system" %}
-  Ti viene fornita una cronologia di chat tra un assistente AI e un esperto. L'obiettivo di questa conversazione
-  era rispondere a una domanda originariamente posta da un utente. L'esperto è riuscito a fornire la risposta con successo.
-
-  <user_query>
-    %{question}
-  </user_query>
-
-  <chat_history> 
-    {% for message in chat_history %}
-    <message role="{{ message.role.value }}">
-      {% for block in message.blocks %}
-      {% if block.block_type == 'text' %}
-      {{ block.text }}
-      {% endif %}
-      {% endfor %}
-    </message>
-    {% endfor %}
-  </chat_history>
-  {% endchat %}
-  
-  {% chat role="user" %}
-  Ora che la risposta è stata fornita, estrai la conoscenza chiave da questa conversazione che mancava all'utente.
-  Questo frammento di conoscenza dovrebbe essere un riassunto conciso delle informazioni più importanti che l'utente doveva conoscere.
-  Il frammento sarà restituito all'utente, quindi, dal frammento stesso, la risposta alla domanda deve essere ovvia.
-  Tuttavia, il frammento sarà anche aggiunto alla base di conoscenza, quindi il frammento non dovrebbe contenere semplicemente
-  la risposta alla domanda, ma la conoscenza necessaria per rispondere alla domanda.
-  {% endchat %}
-
-knowledge_snippet: |
-  %{content}
-  
-  Conoscenza inviata tramite Slack dall'utente %{expert_name} il %{date} alle %{time}.
+routes:
+  answer_sufficient: "L'esperto ha risposto alla domanda. Scegli questo se l'esperto ha fornito QUALSIASI risposta diretta."
+  answer_insufficient: "L'esperto NON ha risposto. Scegli questo SOLO se l'esperto ha detto 'Non lo so' o ha rifiutato di rispondere."
 
 thoughts:
   asking_question: "Porre una domanda all'esperto: '%{question}'."
   expert_responded: "L'esperto ha risposto: '%{response}'."
   determine_sufficient: "Verificare se la risposta dell'esperto è sufficiente."
-  answer_sufficient: "La risposta dell'esperto è sufficiente! Ora creo un frammento di conoscenza."
-  saving_knowledge: "Salvataggio del frammento di conoscenza nel database."
-  knowledge_saved: "La conoscenza è stata salvata sotto %{filename}."
+  answer_sufficient: "La risposta dell'esperto è sufficiente."
   max_questions_reached: "Raggiunto il numero massimo di domande di follow-up."
   returning_insufficient: "Ritorno all'utente con una risposta insufficiente."
   answer_not_sufficient: "La risposta non è sufficiente, formulazione di una domanda di follow-up."

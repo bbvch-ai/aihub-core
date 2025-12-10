@@ -90,6 +90,10 @@ context_insufficient_reject_event:
   name: "Contexte Insuffisant Disponible"
   description: "Plus de contexte est nécessaire pour répondre correctement à la requête de l'utilisateur."
 
+expert_reject_event:
+  name: "Escalade Expert Refusée"
+  description: "L'utilisateur a refusé de transmettre sa question à un expert humain."
+
 sensitive_info_accept_event:
   name: "Réponse Sûre à Partager"
   description: "La réponse ne contient pas d'informations sensibles et peut être partagée en toute sécurité."
