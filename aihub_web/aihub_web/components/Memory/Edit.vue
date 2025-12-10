@@ -158,7 +158,3 @@ const handleDelete = () => {
     </div>
   </div>
 </template>
-
-<style scoped>
-/* Component uses Tailwind and PrimeVue styles */
-</style>
