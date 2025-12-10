@@ -142,7 +142,6 @@ class AgentRunner:
         connect(
             db=AIHubSettings().MONGO_MAIN_DB_NAME,
             host=MongoSettings().CONNECTION_STRING.get_secret_value(),
-            alias="agent_runner",
             uuidRepresentation="standard",
         )
 
@@ -210,7 +209,7 @@ class AgentRunner:
         if self.redis:
             await self.redis.close()
 
-        disconnect(alias="agent_runner")
+        disconnect()
 
     async def _run_loop(self):
         """A background task that keeps the runner alive until stopped."""
