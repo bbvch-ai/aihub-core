@@ -195,7 +195,7 @@ async def _(rag_agent_runner: AgentTestRunner, query: str):
         # User declines expert escalation
         await rag_agent_runner.send_event_from_topic(
             start_event=HumanInTheLoopConfirmation.response(response=False, request_event=hitl_request_event),
-            topic=hitl_request_event.topic,
+            topic=topic,
         )
 
 
@@ -224,7 +224,7 @@ async def _(rag_agent_runner: AgentTestRunner, query: str):
         # User accepts expert escalation
         await rag_agent_runner.send_event_from_topic(
             start_event=HumanInTheLoopConfirmation.response(response=True, request_event=hitl_request_event),
-            topic=hitl_request_event.topic,
+            topic=topic,
         )
         # Wait for AgentInTheLoop request to expert
         await rag_agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
