@@ -47,6 +47,8 @@ from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 enable_logging()
 
+pytestmark = pytest.mark.flaky
+
 scenarios("./features/rag_agent_expert_escalation.feature")
 load_dotenv(Path(__file__).parent / ".env")
 

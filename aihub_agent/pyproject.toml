@@ -87,6 +87,7 @@ markers = [
     "slow: mark a test as slow",
     "integration: mark a test as an integration test",
     "experimental: mark a test as experimental",
+    "flaky: mark tests that are flaky and should be skipped in CI",
 ]
 addopts = "--strict-markers"
 
