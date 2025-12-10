@@ -6,7 +6,6 @@ from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_ID
 from dagster import ConfigurableIOManager, InputContext, OutputContext, ResourceDependency
 from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores.types import BasePydanticVectorStore, MetadataFilter, MetadataFilters
-from llama_index.vector_stores.milvus import MilvusVectorStore
 
 from aihub_pipeline.util.id_utils import uri_to_id
 
@@ -95,21 +94,9 @@ class VectorStoreIOManager(ConfigurableIOManager):
             context.log.warning("No nodes to add to vector store")
             return
 
-        if isinstance(self.vector_store, MilvusVectorStore):
-            upsert_mode = getattr(self.vector_store, "upsert_mode", False)
-            # Milvus 2.3+ with upsert_mode=True handles duplicates automatically:
-            # - Replaces nodes with matching primary key (id) within their partition
-            # - No explicit delete needed, preventing memory leaks from partition loading
-            # - Single atomic operation is faster and more reliable than delete+insert
-            if not upsert_mode:
-                # LEGACY MODE (backward compatible): Delete before insert
-                context.log.warning(
-                    "upsert_mode is False - using legacy delete+insert mode. "
-                    "This may cause memory issues with manual partitions. "
-                    "Consider enabling upsert_mode=True for better performance and reliability."
-                )
-                self.vector_store.delete_nodes([node.id_ for node in nodes])
-
+        # Milvus 2.3+ with upsert_mode=True handles duplicates automatically:
+        # - Replaces nodes with matching primary key (id) within their partition
+        # - No explicit delete needed, preventing memory leaks from partition loading
         self.vector_store.add(nodes)
         context.log.info("Successfully added nodes to vector store")
 
