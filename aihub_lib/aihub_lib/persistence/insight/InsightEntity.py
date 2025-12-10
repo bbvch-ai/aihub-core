@@ -45,7 +45,7 @@ class InsightEntity(Document):
             {"fields": ["namespace"]},
             {"fields": ["created_at"]},
             {"fields": ["source.thread_id"]},
-            {"fields": ["namespace", "creator.agent_class", "creator.agent_id"]},
+            {"fields": ["namespace", "creator.agent_class", "creator.agent_id", "-created_at"]},
         ],
     }
 
@@ -96,12 +96,17 @@ class InsightEntity(Document):
         namespace: str,
         agent_class: str,
         agent_id: str,
+        limit: int = 100,
     ) -> list["InsightEntity"]:
-        """Get all insights for a namespace filtered by agent class and id."""
+        """
+        Get insights for a namespace filtered by agent class and id.
+        """
         return list(
             cls.objects(
                 namespace=namespace,
                 creator__agent_class=agent_class,
                 creator__agent_id=agent_id,
-            ).order_by("-created_at")
+            )
+            .order_by("-created_at")
+            .limit(limit)
         )
