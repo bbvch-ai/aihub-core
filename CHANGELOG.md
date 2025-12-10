@@ -5,6 +5,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.255.0] - 2025-12-10 - Enhanced Platform Experience and High-Availability Storage
+
+### Added
+
+- ✨ **Enhanced User Interface Descriptions**: A comprehensive update across all API routes, introducing multi-language
+  support (German, French, Italian) and more descriptive names for key platform components, such as `AI Assistants`
+  (formerly `Agents`), `Quality Testing` (formerly `Evaluation`), `Activity Log` (formerly `Events`), `Knowledge Base`
+  (formerly `Knowledge`), `AI Models` (formerly `Models`), `Chat` (formerly `Open WebUI`), `Workflows` (formerly
+  `Processes`), and `Platform Overview` (formerly `Suite`).
+- 🔄 **New Document Conversion API**: Introduced a new `/docling/process` API endpoint and corresponding schemas
+  (`DocumentConversionMetadata`, `DocumentConversionResponse`) to provide advanced document conversion capabilities,
+  allowing direct processing of documents via the API.
+- 🚀 **Integrated `etcd` with SeaweedFS Filer**: Added `etcd` as the metadata backend for `SeaweedFS Filer`, enabling
+  high-availability deployments and robust metadata storage for the object storage service.
+- 🎨 **Improved Image Display in Documentation**: Added CSS rules to invert image colors in light mode within the
+  documentation, enhancing readability and visual consistency.
+- 📦 **Globally Available `NavigationBoxes` Component**: Made the `NavigationBoxes` component available globally in the
+  VitePress documentation theme.
+
+### Changed
+
+- ⚙️ **Refined OpenAI API Endpoints**: Updated OpenAI-compatible API routes to integrate `_with_assistants` versions for
+  `get_model` and `chat_completion`, streamlining interactions with AI assistants.
+- 📝 **Updated Image Generation Model Default**: Changed the default model for image generation from `dall-e-3` to a more
+  generic `image-generation` string, allowing greater flexibility in model selection.
+- 📚 **Comprehensive Documentation Overhaul**: Extensive updates to German and English documentation, including
+  terminology clarifications, vision alignment, updated feature descriptions, and rewritten FAQs to reflect the
+  platform's focus on open-source, data sovereignty, and the new SeaweedFS storage.
+- 💾 **Alphabetical Sorting of Services in Platform Overview**: The platform overview now sorts services alphabetically
+  by name, improving navigability and user experience.
+- 💄 **Theme and UI Enhancements**: Minor visual adjustments to the documentation, including updating tip box colors from
+  gray to green and refining gradients and font styles for navigation boxes.
+
+### Fixed
+
+- 🐛 **Docs Link Handling**: Set `ignoreDeadLinks: true` in VitePress configuration to prevent documentation build
+  failures due to temporary or external dead links.
+
+### Security
+
+- 🔒 **Removed Anonymous S3 Read Access**: Hardened security for the SeaweedFS S3 policy by removing anonymous read
+  actions, ensuring all S3 access requires proper authentication.
+
+### Refactor
+
+- 🧹 **Internal Development Configuration Cleanup**: Removed unused `<node-interpreter>` setting from
+  `.idea/runConfigurations/Docs_Dev.xml`.
+- 🔄 **Build System Configuration for SeaweedFS**: Updated `generate_compose.py` to include new
+  `seaweed-filer-config.toml.j2` templates, ensuring proper generation of SeaweedFS configurations across different
+  deployment stages and hardware types.
+- 🧹 **User Mock Data Adjustment**: Updated the user mock data to reflect the new `My Account` localization for service
+  names.
+
+---
+
 ## [v0.254.19] - 2025-12-10 - Refined Contextual Chat History Management
 
 ### Changed

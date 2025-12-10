@@ -13,8 +13,18 @@ from aihub_api.routes.suite.SuiteService import SuiteService
 
 
 class SuiteController(Controller):
-    name = LocaleString(en="Suite")
-    description = LocaleString(en="Suite endpoints")
+    name = LocaleString(
+        en="Platform Overview",
+        de="Plattformübersicht",
+        fr="Vue d'ensemble de la plateforme",
+        it="Panoramica della piattaforma",
+    )
+    description = LocaleString(
+        en="View platform features and settings",
+        de="Plattformfunktionen und Einstellungen anzeigen",
+        fr="Consultez les fonctionnalités et paramètres de la plateforme",
+        it="Visualizza funzionalità e impostazioni della piattaforma",
+    )
     icon = "material-symbols:token"
 
     def __init__(
