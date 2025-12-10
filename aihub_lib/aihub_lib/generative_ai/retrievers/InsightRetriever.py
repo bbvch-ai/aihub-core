@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from datetime import UTC
 
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.retrievers.BaseRetriever import BaseRetriever
@@ -49,8 +48,8 @@ class InsightRetriever(BaseRetriever):
 
         content: str = "\n".join(content_parts)
 
-        created_at: str = insight.created_at.astimezone(UTC).isoformat().replace("+00:00", "Z")
-        updated_at: str = insight.updated_at.astimezone(UTC).isoformat().replace("+00:00", "Z")
+        created_at: str = insight.created_at.isoformat().replace("+00:00", "Z")
+        updated_at: str = insight.updated_at.isoformat().replace("+00:00", "Z")
 
         return IngestedNode(
             id=str(insight.id),
