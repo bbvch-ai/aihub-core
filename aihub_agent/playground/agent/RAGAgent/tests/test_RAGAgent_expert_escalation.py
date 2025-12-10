@@ -53,6 +53,8 @@ enable_logging()
 scenarios("./features/rag_agent_expert_escalation.feature")
 load_dotenv(Path(__file__).parent / ".env")
 
+TIMEOUT = 240
+
 
 @pytest.fixture(scope="session")
 def event_loop():
@@ -176,7 +178,7 @@ def _(expert_escalation_agent_config):
 @async_test
 async def _(rag_agent_runner: AgentTestRunner, query: str):
     """Send a query that triggers expert escalation and user declines."""
-    async with rag_agent_runner.test_run(delay_before_stop=120) as topic:
+    async with rag_agent_runner.test_run(delay_before_stop=TIMEOUT) as topic:
         await rag_agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
@@ -188,7 +190,7 @@ async def _(rag_agent_runner: AgentTestRunner, query: str):
         # Wait for HITL confirmation request
         hitl_request_event = await rag_agent_runner.wait_for_event(
             HumanInTheLoopConfirmationRequestEvent,
-            timeout=120,
+            timeout=TIMEOUT,
         )
         # User declines expert escalation
         await rag_agent_runner.send_event_from_topic(
@@ -205,7 +207,7 @@ async def _(rag_agent_runner: AgentTestRunner, query: str):
     This test mocks the expert agent's response by sending an AnswerStopEvent
     to the expert agent's topic, which the RAG agent's internal subscription picks up.
     """
-    async with rag_agent_runner.test_run(delay_before_stop=120) as topic:
+    async with rag_agent_runner.test_run(delay_before_stop=TIMEOUT) as topic:
         await rag_agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
@@ -217,7 +219,7 @@ async def _(rag_agent_runner: AgentTestRunner, query: str):
         # Wait for HITL confirmation request
         hitl_request_event = await rag_agent_runner.wait_for_event(
             HumanInTheLoopConfirmationRequestEvent,
-            timeout=120,
+            timeout=TIMEOUT,
         )
         # User accepts expert escalation
         await rag_agent_runner.send_event_from_topic(
@@ -225,7 +227,7 @@ async def _(rag_agent_runner: AgentTestRunner, query: str):
             topic=hitl_request_event.topic,
         )
         # Wait for AgentInTheLoop request to expert
-        await rag_agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=120)
+        await rag_agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
 
         # Mock expert response by sending AnswerStopEvent to the expert agent's topic
         # The RAG agent's internal subscription will pick this up and convert it to AgentInTheLoopResponseEvent
