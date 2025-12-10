@@ -1,17 +1,12 @@
 condenser:
   standalone_question: |
-    Given the following conversation between a user and an AI assistant, along with a follow-up question from the user, 
-    rephrase the follow-up question into a fully standalone question that retains the original context.
-
+    Given the conversation history below, rephrase the user's next input (which may contain text and images) into a fully standalone question.
+    
     <chat_history>
     {chat_history}
     </chat_history>
     
-    <user_query>
-    {question}
-    </user_question>
-    
-    Standalone question:
+    Do not output the history or the original image description, just the standalone text question.
 
 rag:
   context_prompt: |

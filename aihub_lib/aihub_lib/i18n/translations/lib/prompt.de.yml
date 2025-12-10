@@ -1,18 +1,13 @@
 condenser:
   standalone_question: |
-    Basierend auf dem folgenden Gespräch zwischen einem Benutzer und einem KI-Assistenten sowie einer 
-    Anschlussfrage des Benutzers, formuliere die Anschlussfrage so um, dass sie eine eigenständige Frage 
-    darstellt und den ursprünglichen Kontext beibehält.
-
+    Formulieren Sie anhand des untenstehenden Gesprächsverlaufs die nächste Eingabe des Benutzers (die Text und Bilder 
+    enthalten kann) in eine vollständig eigenständige Frage um.
+  
     <chat_history>
     {chat_history}
     </chat_history>
-    
-    <user_query>
-    {question}
-    </user_question>
-    
-    Eigenständige Frage:
+  
+    Geben Sie nicht den Verlauf oder die ursprüngliche Bildbeschreibung aus, sondern nur die eigenständige Textfrage.
 
 rag:
   context_prompt: |

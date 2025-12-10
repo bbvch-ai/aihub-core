@@ -89,7 +89,7 @@ class FewShotAgent(Agent):
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             condensed_question = condense_standalone_question(
                 chat_history=chat_history_event.limited_history,
-                message=start_event.user_query,
+                message=start_event.last_user_message,
                 t=t,
                 llm=llm,
                 condense_prompt=agent_config.condense_question_prompt,

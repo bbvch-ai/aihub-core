@@ -1,17 +1,12 @@
 condenser:
   standalone_question: |
-    Étant donné la conversation suivante entre un utilisateur et un assistant IA, ainsi qu'une question de suivi de l'utilisateur, 
-    reformule la question de suivi de manière à ce qu'elle soit une question autonome tout en conservant le contexte d'origine.
+    Compte tenu de l'historique de la conversation ci-dessous, reformulez la prochaine entrée de l'utilisateur (qui peut contenir du texte et des images) en une question entièrement autonome.
 
     <chat_history>
     {chat_history}
     </chat_history>
-    
-    <user_query>
-    {question}
-    </user_question>
-    
-    Question autonome :
+
+    Ne produisez pas l'historique ou la description originale de l'image, uniquement la question textuelle autonome.
 
 rag:
   context_prompt: |

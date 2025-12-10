@@ -22,7 +22,7 @@ def _messages_to_history_str(messages: list[ChatMessage]) -> str:
 
 
 def condense_standalone_question(
-    message: str,
+    message: ChatMessage,
     chat_history: list[ChatMessage],
     t: LocaleHandler,
     llm: LLM,
@@ -35,9 +35,9 @@ def condense_standalone_question(
     else:
         condense_prompt_locale = t("lib.prompt.condenser.standalone_question")
 
-    response = llm.predict(
-        prompt=PromptTemplate(condense_prompt_locale),
-        question=message,
-        chat_history=chat_history_str,
-    )
-    return ChatMessage(role=MessageRole.USER, content=response)
+    prompt_template = PromptTemplate(condense_prompt_locale)
+    instruction_content = prompt_template.format(chat_history=chat_history_str)
+    messages = [ChatMessage(role=MessageRole.SYSTEM, content=instruction_content), message]
+    response = llm.chat(messages=messages)
+
+    return ChatMessage(role=MessageRole.USER, content=response.content)

@@ -1,17 +1,12 @@
 condenser:
   standalone_question: |
-    Dato il seguente dialogo tra un utente e un assistente AI, insieme a una domanda di follow-up dell'utente, 
-    riformula la domanda di follow-up in modo che sia una domanda completamente autonoma mantenendo il contesto originale.
+    Data la cronologia della conversazione qui sotto, riformula il prossimo input dell'utente (che potrebbe contenere testo e immagini) in una domanda completamente autonoma.
 
     <chat_history>
     {chat_history}
     </chat_history>
 
-    <user_query>
-    {question}
-    </user_question>
-    
-    Domanda autonoma:
+    Non includere la cronologia o la descrizione originale dell'immagine nell'output, ma solo la domanda testuale autonoma.
 
 rag:
   context_prompt: |
