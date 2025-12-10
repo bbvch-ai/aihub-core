@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
@@ -26,8 +25,7 @@ class InsightRetriever(BaseRetriever):
         insights for the configured namespace/agent without semantic filtering.
         """
         try:
-            insights = await asyncio.to_thread(
-                InsightEntity.get_by_namespace_and_agent,
+            insights = InsightEntity.get_by_namespace_and_agent(
                 namespace=self.config.namespace,
                 agent_class=self.config.agent_class,
                 agent_id=self.config.agent_id,

@@ -1,5 +1,3 @@
-import asyncio
-
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.routing.route_to_event_using_llm import route_to_event_using_llm
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -139,9 +137,8 @@ class ExpertAskingAgent(Agent):
             chat_history = await run_context.get("chat_history", [])
             chat_history = [ChatMessage(**message) for message in chat_history]
 
-            # Create insight from expert conversation (wrapped for async safety)
-            await asyncio.to_thread(
-                InsightEntity.create_insight,
+            # Create insight from expert conversation
+            InsightEntity.create_insight(
                 question=initial_question_event.question_to_expert,
                 expert_answer=event.response,
                 conversation=[f"{msg.role.value}: {msg.content}" for msg in chat_history],
