@@ -473,24 +473,19 @@ services:
     image: {{ global.registry_prefix }}{{ image_tags.pgbouncer }}
     restart: always
     environment:
-      # --- Database Connection ---
       DB_HOST: postgres
       DB_PORT: "5432"
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: dagster
-
-      # --- PgBouncer Settings ---
       AUTH_TYPE: scram-sha-256
       POOL_MODE: transaction
-      MAX_CLIENT_CONN: "1000"
-      DEFAULT_POOL_SIZE: "20"
-      MIN_POOL_SIZE: "5"
-      RESERVE_POOL_SIZE: "5"
+      MAX_CLIENT_CONN: "${PGBOUNCER_MAX_CLIENT_CONN:-1000}"
+      DEFAULT_POOL_SIZE: "${PGBOUNCER_DEFAULT_POOL_SIZE:-20}"
+      MIN_POOL_SIZE: "${PGBOUNCER_MIN_POOL_SIZE:-2}"
+      RESERVE_POOL_SIZE: "${PGBOUNCER_RESERVE_POOL_SIZE:-3}"
       LISTEN_ADDR: "0.0.0.0"
       LISTEN_PORT: "6432"
-
-      # --- Admin User (Required for Healthcheck to pass) ---
       ADMIN_USERS: ${POSTGRES_USER}
       LOG_CONNECTIONS: "0"
       LOG_DISCONNECTIONS: "0"
