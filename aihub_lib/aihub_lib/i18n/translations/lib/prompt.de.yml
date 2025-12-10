@@ -1,13 +1,20 @@
 condenser:
   standalone_question: |
-    Formulieren Sie anhand des untenstehenden Gesprächsverlaufs die nächste Eingabe des Benutzers (die Text und Bilder 
-    enthalten kann) in eine vollständig eigenständige Frage um.
+    <role_and_task>
+    Du bist ein Experte für Suchanfragen-Optimierung. 
+    Deine Aufgabe ist es, **die letzte Nachricht des Benutzers** in diesem Chat in eine vollständig eigenständige Frage umzuformulieren.
+    </role_and_task>
   
     <chat_history>
     {chat_history}
     </chat_history>
   
-    Geben Sie nicht den Verlauf oder die ursprüngliche Bildbeschreibung aus, sondern nur die eigenständige Textfrage.
+    <instructions>
+    Die Nachricht des Benutzers enthält Text und eventuell ein Bild.
+    1. **Bild-Analyse:** Bezieht sich der Benutzer auf das Bild (z.B. "Was ist **das**?"), ersetze das Pronomen durch eine präzise textuelle Beschreibung des sichtbaren Objekts.
+    2. **Unabhängigkeit:** Formuliere den Satz so um, dass er ohne das Bild und ohne den Verlauf verständlich ist.
+    3. **Output:** Gib NUR den neuen Satz aus.
+    </instructions>
 
 rag:
   context_prompt: |

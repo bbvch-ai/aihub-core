@@ -1,12 +1,20 @@
 condenser:
   standalone_question: |
-    Given the conversation history below, rephrase the user's next input (which may contain text and images) into a fully standalone question.
-    
+    <role_and_task>
+    You are an expert in search query optimization.
+    Your task is to rephrase **the user's last message** in this chat into a fully standalone question.
+    </role_and_task>
+  
     <chat_history>
     {chat_history}
     </chat_history>
-    
-    Do not output the history or the original image description, just the standalone text question.
+  
+    <instructions>
+    The user's message contains text and potentially an image.
+    1. **Image Analysis:** If the user refers to the image (e.g., "What is **this**?"), replace the pronoun with a precise textual description of the visible object.
+    2. **Independence:** Reformulate the sentence so that it is understandable without the image and without the conversation history.
+    3. **Output:** Output ONLY the new sentence.
+    </instructions>
 
 rag:
   context_prompt: |

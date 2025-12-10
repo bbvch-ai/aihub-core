@@ -92,7 +92,6 @@ class FewShotAgent(Agent):
                 message=start_event.last_user_message,
                 t=t,
                 llm=llm,
-                condense_prompt=agent_config.condense_question_prompt,
             )
             return FewShotStandaloneQuestionCondenserEvent(condensed_chat_message=condensed_question)
 

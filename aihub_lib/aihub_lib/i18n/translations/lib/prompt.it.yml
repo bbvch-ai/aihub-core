@@ -1,12 +1,20 @@
 condenser:
   standalone_question: |
-    Data la cronologia della conversazione qui sotto, riformula il prossimo input dell'utente (che potrebbe contenere testo e immagini) in una domanda completamente autonoma.
+    <role_and_task>
+    Sei un esperto di ottimizzazione delle query di ricerca.
+    Il tuo compito è riformulare **l'ultimo messaggio dell'utente** in questa chat in una domanda completamente autonoma.
+    </role_and_task>
 
     <chat_history>
     {chat_history}
     </chat_history>
 
-    Non includere la cronologia o la descrizione originale dell'immagine nell'output, ma solo la domanda testuale autonoma.
+    <instructions>
+    Il messaggio dell'utente contiene testo ed eventualmente un'immagine.
+    1. **Analisi dell'immagine:** Se l'utente si riferisce all'immagine (ad es. "Cos'è **questo**?"), sostituisci il pronome con una descrizione testuale precisa dell'oggetto visibile.
+    2. **Indipendenza:** Riformula la frase in modo che sia comprensibile senza l'immagine e senza la cronologia.
+    3. **Output:** Restituisci SOLO la nuova frase.
+    </instructions>
 
 rag:
   context_prompt: |
