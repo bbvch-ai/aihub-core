@@ -200,6 +200,8 @@ async def _(rag_agent_runner: AgentTestRunner, query: str):
             timeout=TIMEOUT,
         )
         # User accepts expert escalation
+        # Small delay to ensure agent is ready to receive response (CI timing)
+        await asyncio.sleep(10)
         await rag_agent_runner.send_event_from_topic(
             start_event=HumanInTheLoopConfirmation.response(response=True, request_event=hitl_request_event),
             topic=topic,
