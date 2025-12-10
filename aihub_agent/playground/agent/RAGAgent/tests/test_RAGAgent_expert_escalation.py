@@ -22,7 +22,6 @@ from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.nats.events import LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.agent_in_the_loop import AgentInTheLoopRequestEvent, AgentInTheLoopResponseEvent
-from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import TeamsConfig
 from aihub_lib.nats.events.guard import ExpertRejectEvent
 from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoop import HumanInTheLoopConfirmation
 from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
@@ -39,8 +38,6 @@ from mongoengine import connect, disconnect
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_agent.agents.ExpertAskingAgent.events.AnswerStopEvent import AnswerStopEvent
-from aihub_agent.agents.ExpertAskingAgent.ExpertAskingAgent import ExpertAskingAgent
-from aihub_agent.agents.ExpertAskingAgent.ExpertAskingAgentConfig import ExpertAskingAgentConfig
 from aihub_agent.agents.RagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
@@ -142,25 +139,6 @@ def expert_escalation_agent_config(test_collection):
             expert_asking_agent_id="test_expert_agent",
         ),
         reranking_config=RerankingConfig(enabled=False, reranking_model=reranking_config),
-    )
-
-
-@pytest.fixture(scope="session")
-def expert_asking_agent_config(mongo_connection):
-    """Return an ExpertAskingAgentConfig for tests."""
-    return ExpertAskingAgentConfig(
-        agent_id="test_expert_agent",
-        agent_class=ExpertAskingAgent.__name__,
-        name=LocaleString(en="Test Expert Asking Agent"),
-        description=LocaleString(en="Mock expert asking agent for tests"),
-        llm=LLMConfig(model_name="text-generation/mini"),
-        loop_max=3,
-        channel_config=TeamsConfig(
-            channel_id="19:test-channel-id@thread.tacv2",
-            tenant_id="00000000-0000-0000-0000-000000000000",
-            bot_id="00000000-0000-0000-0000-000000000001",
-        ),
-        insight_namespace="ai_knowledge",
     )
 
 
