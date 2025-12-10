@@ -532,3 +532,19 @@ def insight_enabled_agent_config(test_collection, test_insights):
         insight_agent_class=TEST_INSIGHT_AGENT_CLASS,
         insight_agent_id=TEST_INSIGHT_AGENT_ID,
     )
+
+
+@pytest.mark.usefixtures("insight_enabled_agent_config")
+@given("a RAGAgent runner with insight retriever enabled", target_fixture="agent_runner")
+def _(insight_enabled_agent_config):
+    """Given a RAGAgent runner with insight retriever enabled."""
+    return AgentTestRunner(
+        agent_type=RAGAgent,
+        default_agent_config=insight_enabled_agent_config,
+    )
+
+
+@given("test insights are pre-seeded in the database")
+def _(test_insights):
+    """Ensure test insights are pre-seeded in the database (handled by fixture)."""
+    assert len(test_insights) > 0, "Test insights were not pre-seeded"
