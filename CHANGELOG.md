@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.255.1] - 2025-12-11 - Enhanced Database Connection Management with PgBouncer
+
+### Added
+
+- 🚀 **PgBouncer Integration:** Introduced PgBouncer connection pooling for Dagster deployments (all stages except `dev`)
+  to improve database connection management and prevent connection exhaustion.
+- ✨ **PgBouncer Service:** Added a dedicated PgBouncer service with robust health checks and configurable pooling
+  parameters to all non-development Docker Compose configurations.
+- 📄 **PgBouncer License Information:** Included the ISC license details for PgBouncer in the project's license
+  configuration.
+
+### Changed
+
+- 🔄 **Dagster Database Connectivity:** Updated Dagster's database configuration in `build`, `latest`, `local`, and
+  `nightly` stages to connect through PgBouncer (hostname `pgbouncer`, port `6432`) instead of directly to PostgreSQL.
+- ⚡️ **Service Dependencies:** Configured Dagster's `webserver` and `daemon` services in non-development environments to
+  explicitly depend on the `pgbouncer` service, ensuring correct startup order.
+
+### Refactor
+
+- 🧹 **Dynamic Dagster Configuration:** Refactored the Dagster configuration template (`dagster-config.yml.j2`) to
+  conditionally configure database connections: direct to PostgreSQL for `dev` stage, and via PgBouncer for all other
+  stages.
+
+---
+
 ## [v0.255.0] - 2025-12-10 - Enhanced Platform Experience and High-Availability Storage
 
 ### Added

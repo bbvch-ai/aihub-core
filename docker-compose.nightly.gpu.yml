@@ -377,6 +377,47 @@ services:
         max-size: 10m
         max-file: 2
 
+  
+  # ===================================================================
+  # PgBouncer (Connection Pooler for Dagster)
+  # ===================================================================
+  pgbouncer:
+    container_name: pgbouncer
+    image: ghcr.io/bbvch-ai/aihub-core/pgbouncer:v1.24.1-p1
+    restart: always
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: dagster
+      AUTH_TYPE: scram-sha-256
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: "${PGBOUNCER_MAX_CLIENT_CONN:-1000}"
+      DEFAULT_POOL_SIZE: "${PGBOUNCER_DEFAULT_POOL_SIZE:-20}"
+      MIN_POOL_SIZE: "${PGBOUNCER_MIN_POOL_SIZE:-2}"
+      RESERVE_POOL_SIZE: "${PGBOUNCER_RESERVE_POOL_SIZE:-3}"
+      LISTEN_ADDR: "0.0.0.0"
+      LISTEN_PORT: "6432"
+      ADMIN_USERS: ${POSTGRES_USER}
+      LOG_CONNECTIONS: "0"
+      LOG_DISCONNECTIONS: "0"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-h", "127.0.0.1", "-p", "6432", "-U", "${POSTGRES_USER}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+  
+
   # ===================================================================
   # FerretDB Stack (MongoDB Compatibility)
   # ===================================================================
@@ -1180,6 +1221,9 @@ services:
     container_name: dagster-webserver
     restart: always
     image: ghcr.io/bbvch-ai/aihub-core/dagster:nightly
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
     entrypoint:
       - dagster-webserver
       - -h
@@ -1207,6 +1251,9 @@ services:
     container_name: dagster-daemon
     restart: always
     image: "ghcr.io/bbvch-ai/aihub-core/dagster:nightly"
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
     entrypoint:
       - dagster-daemon
       - run
