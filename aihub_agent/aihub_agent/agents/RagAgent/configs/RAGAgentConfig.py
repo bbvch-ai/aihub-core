@@ -1,14 +1,14 @@
 from typing import Annotated
 
-from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
-from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
 
 from aihub_agent.agents.RagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
 from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
+from aihub_lib.agents.AgentConfig import AgentConfig
+from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from aihub_lib.i18n.LocaleString import LocaleString
 
 
 class RAGAgentConfig(AgentConfig):
@@ -57,22 +57,10 @@ class RAGAgentConfig(AgentConfig):
         LocaleString | None,
         Field(description="Prompt used when the retrieved context is insufficient to answer the user's question."),
     ] = LocaleString(
-        en=(
-            "Inform the user that you can not answer the question due to the following reason:\n"
-            "<Reject reason>\n{reason}\n</Reject reason>"
-        ),
-        de=(
-            "Informiere den Benutzer, dass du die Frage nicht beantworten kannst, "
-            "aufgrund des folgenden Grundes:\n<Grund>\n{reason}\n</Grund>"
-        ),
-        fr=(
-            "Informez l'utilisateur que vous ne pouvez pas répondre à la question "
-            "pour la raison suivante :\n<Raison du rejet>\n{reason}\n</Raison du rejet>"
-        ),
-        it=(
-            "Informa l'utente che non puoi rispondere alla domanda per il seguente motivo:\n"
-            "<Motivo del rifiuto>\n{reason}\n</Motivo del rifiuto>"
-        ),
+        en=("Inform the user that you can not answer the question due to the following reason:"),
+        de=("Informiere den Benutzer, dass du die Frage nicht beantworten kannst,"),
+        fr=("Informez l'utilisateur que vous ne pouvez pas répondre à la question"),
+        it=("Informa l'utente che non puoi rispondere alla domanda per il seguente motivo:"),
     )
     reranking_config: Annotated[
         RerankingConfig,
