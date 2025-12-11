@@ -1,15 +1,13 @@
-import asyncio
-
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
 from aihub_lib.generative_ai.guards.few_shot_guard import few_shot_guard
 from aihub_lib.generative_ai.resources.models.llm.message_preprocessor import merge_consecutive_messages
-from aihub_lib.generative_ai.retrievers import create_retriever
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
 from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
 from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
 from aihub_lib.generative_ai.utils.rerank_nodes import rerank_nodes
+from aihub_lib.generative_ai.utils.retrieve_from_all_sources import retrieve_from_all_sources
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import (
@@ -211,32 +209,13 @@ class RAGAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> RetrieverEvent:
-        """
-        Retrieves relevant nodes from multiple knowledge sources in parallel.
-
-        Creates retrievers for all configured sources and executes
-        retrieval concurrently using asyncio.gather().
-        """
+        """Retrieves relevant nodes from multiple knowledge sources in parallel."""
         if isinstance(event, StandaloneQuestionCondenserEvent):
             query = event.condensed_chat_message.content
         else:
             query = event.new_query
 
-        # Create retrievers and display thoughts
-        retrievers = []
-        for retriever_config in agent_config.retrievers:
-            retriever = create_retriever(retriever_config)
-            source_name = t(f"agent.retriever.{retriever_config.retriever_type.value}")
-            await displayer.display_thought(t("agent.thought.retrieving_from", source=source_name))
-            retrievers.append(retriever)
-
-        # Retrieve from all sources in parallel
-        results = await asyncio.gather(*[retriever.retrieve(query, t) for retriever in retrievers])
-
-        # Flatten results from all retrievers
-        all_nodes = [node for nodes in results for node in nodes]
-
-        # Convert IngestedNodes to NodeWithScore for downstream processing
+        all_nodes = await retrieve_from_all_sources(query, agent_config.retrievers, displayer, t)
         nodes_with_score = [node.to_llama_index_node_with_score() for node in all_nodes]
         return RetrieverEvent.from_nodes(nodes_with_score)
 
