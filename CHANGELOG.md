@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.255.2] - 2025-12-11 - Unlocking Knowledge: Expert Insights and Advanced RAG for Smarter Agents
+
+### Added
+
+- ✨ **Expert Insight Persistence**: Expert responses and conversations from the `ExpertAskingAgent` are now stored as
+  valuable 'insights' in MongoDB, enabling agents to learn from and leverage past expert interactions.
+- 🚀 **Modular Multi-Source Retrieval System**: Introduced a new, flexible system allowing RAG agents to retrieve
+  information from diverse sources, including traditional knowledge bases and newly persisted expert insights, in
+  parallel.
+- 💬 **Specialized Human-in-the-Loop (HITL) Events**: Enhanced human interaction capabilities with new event types
+  (`HumanInTheLoopInput` and `HumanInTheLoopConfirmation`), providing more explicit and structured dialogues for
+  free-form text input or yes/no confirmations.
+- 🌐 **Bot-in-the-Loop Path Entity**: A new MongoDB path entity has been added to streamline bot-in-the-loop responses,
+  improving the integration and handling of bot channel interactions.
+- 🧪 **Comprehensive Agent Test Suites**: New test coverage has been added for the `ExpertAskingAgent` and expanded for
+  the `RAGAgent`, specifically addressing expert escalation workflows and the new insight retrieval functionality.
+- 🖥️ **Robust MongoDB Connection Management**: Implemented enhanced connection management for MongoDB within both agent
+  and process runners, ensuring reliable data persistence and retrieval.
+
+### Changed
+
+- ⚙️ **RAG Agent Configuration**: The `RAGAgent`'s retrieval configuration has been modernized to utilize the new
+  multi-source retrieval system, replacing the singular `retrieve_step_config` with a flexible list of `retrievers`.
+- 🆔 **Detailed Expert Identification**: `ExpertAnswerSufficientEvent` and `ExpertAnswerInsufficientEvent` now include
+  the `expert_user_id`, allowing for more granular tracking and identification of expert contributions.
+- 🤝 **Mandatory Bot-in-the-Loop Responder Information**: The `responder` and `user_name` fields in
+  `BotInTheLoopResponseEvent` are now required, ensuring complete traceability of human responses from bot channels.
+- 🔄 **OpenWebUI Human-in-the-Loop Handler**: The OpenWebUI integration has been updated to fully support the new
+  specialized `HumanInTheLoopConfirmation` dialogs, providing a richer and more intuitive user experience for agent
+  confirmations.
+
+### Refactor
+
+- 🧹 **Centralized Retrieval Logic**: Core retrieval utilities and configurations, including `RetrieveSummariesConfig`
+  and helper functions for node retrieval, have been moved to a shared library (`aihub_lib`), promoting better code
+  organization and reusability across agents.
+- ⚡️ **Streamlined Human-in-the-Loop Event Structure**: The internal architecture of Human-in-the-Loop events has been
+  refined, abstracting common `Request` and `Response` patterns into base classes and introducing dedicated subclasses
+  for specific interaction types.
+
+---
+
 ## [v0.255.1] - 2025-12-11 - Enhanced Database Connection Management with PgBouncer
 
 ### Added

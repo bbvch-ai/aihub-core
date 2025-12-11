@@ -5,6 +5,7 @@ import pytest
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
+from aihub_lib.generative_ai.retrievers import KnowledgeRetrieverConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
@@ -16,7 +17,6 @@ from dotenv import load_dotenv
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.RetrievalAgent.configs.RetrievalAgentConfig import RetrievalAgentConfig
 from aihub_agent.agents.RetrievalAgent.events.QuestionStartEvent import QuestionStartEvent
@@ -46,7 +46,7 @@ def build_retrieval_agent_config(
     query_mode: VectorStoreQueryMode,
 ) -> RetrievalAgentConfig:
     """
-    Build a fully populated RAGAgentConfig, substituting in the LLM/Embedding config
+    Build a fully populated RetrievalAgentConfig, substituting in the embedding config
     and vector store that differ between Azure vs. Self-Hosted.
 
     We keep the entire parameter list intact to avoid partial Pydantic construction.
@@ -57,7 +57,7 @@ def build_retrieval_agent_config(
         name=LocaleString(en="Retrieval Agent"),
         description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
         icon="robot",
-        retrieve_step_config=RetrieveStepConfig(
+        retriever=KnowledgeRetrieverConfig(
             embed_model=embedding_config,
             index_namespaces=["ai_knowledge"],
             retrieve_k=5,

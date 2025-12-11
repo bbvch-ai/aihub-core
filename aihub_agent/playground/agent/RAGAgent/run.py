@@ -4,6 +4,11 @@ from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import Ret
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from aihub_lib.generative_ai.retrievers import (
+    InsightRetrieverConfig,
+    KnowledgeRetrieverConfig,
+    RetrieveSummariesConfig,
+)
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
@@ -15,8 +20,6 @@ from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from aihub_agent.agents.ExpertAskingAgent.ExpertAskingAgent import ExpertAskingAgent
 from aihub_agent.agents.RagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
-from aihub_agent.agents.RagAgent.configs.RetrieveSummariesConfig import RetrieveSummariesConfig
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
 from aihub_agent.runners.AgentRunner import AgentRunner
 
@@ -133,25 +136,32 @@ async def main():
                 </instructions>
                 """,
             ),
-            retrieve_step_config=RetrieveStepConfig(
-                embed_model=EmbeddingModelConfig(model_name="embedding/large"),
-                index_namespaces=["defaultnamespace"],
-                retrieve_k=10,
-                query_mode=VectorStoreQueryMode.HYBRID,
-                node_types=["content"],
-                vector_store=MilvusVectorStoreConfig(
-                    uri=MilvusSettings().URL,
-                    collection_name="defaultknowledge",
-                    dimensions=MilvusSettings().DIMENSION,
+            retrievers=[
+                KnowledgeRetrieverConfig(
+                    embed_model=EmbeddingModelConfig(model_name="embedding/large"),
+                    index_namespaces=["defaultnamespace"],
+                    retrieve_k=10,
+                    query_mode=VectorStoreQueryMode.HYBRID,
+                    node_types=["content"],
+                    vector_store=MilvusVectorStoreConfig(
+                        uri=MilvusSettings().URL,
+                        collection_name="defaultknowledge",
+                        dimensions=MilvusSettings().DIMENSION,
+                    ),
+                    retrieve_prev_next=RetrievePrevNextConfig(
+                        num_nodes=10,
+                        mode=ModeOptions.BOTH,
+                    ),
+                    retrieve_summaries=RetrieveSummariesConfig(
+                        max_parent_levels=2,
+                    ),
                 ),
-                retrieve_prev_next=RetrievePrevNextConfig(
-                    num_nodes=10,
-                    mode=ModeOptions.BOTH,
+                InsightRetrieverConfig(
+                    namespace="default",
+                    agent_class="ExpertAskingAgent",
+                    agent_id="expert_agent",
                 ),
-                retrieve_summaries=RetrieveSummariesConfig(
-                    max_parent_levels=2,
-                ),
-            ),
+            ],
             expert_escalation=ExpertEscalationConfig(
                 expert_asking_agent_class=ExpertAskingAgent.__name__,
                 expert_asking_agent_id="expert_agent",

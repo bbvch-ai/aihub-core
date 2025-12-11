@@ -7,9 +7,7 @@ from aihub_lib.generative_ai.utils.condense_standalone_question import condense_
 from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
 from aihub_lib.generative_ai.utils.rerank_nodes import rerank_nodes
-from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
-from aihub_lib.generative_ai.utils.retrieve_parent_summary_nodes import retrieve_parent_summary_nodes
-from aihub_lib.generative_ai.utils.retrieve_prev_next_nodes import retrieve_prev_next_nodes
+from aihub_lib.generative_ai.utils.retrieve_from_all_sources import retrieve_from_all_sources
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import (
@@ -38,7 +36,6 @@ from aihub_agent.agents.ExpertAskingAgent.events.AnswerStopEvent import AnswerSt
 from aihub_agent.agents.ExpertAskingAgent.events.AskExpertStartEvent import AskExpertStartEvent
 from aihub_agent.agents.ExpertAskingAgent.events.NoAnswerStopEvent import NoAnswerStopEvent
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.agents.RagAgent.events.ContextInsufficientWithQueryEvent import ContextInsufficientWithQueryEvent
 from aihub_agent.agents.RagAgent.events.ExpertAnswerContextEvent import ExpertAnswerContextEvent
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
@@ -202,52 +199,25 @@ class RAGAgent(Agent):
 
     @step(
         name=LocaleString(en="Retrieve Nodes"),
-        description=LocaleString(en="Retrieves relevant nodes from the knowledge base."),
+        description=LocaleString(en="Retrieves relevant nodes from knowledge sources."),
     )
     async def retrieve_step(
         self,
         event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
         _: FewShotAcceptEvent,
-        retrieve_step_config: RetrieveStepConfig,
+        agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> RetrieverEvent:
-        """
-        Retrieves relevant nodes from the knowledge base.
-        """
-        await displayer.display_thought(t("agent.thought.searching_knowledge"))
-        embedding, _ = retrieve_step_config.embed_model.to_llama_index()
-
+        """Retrieves relevant nodes from multiple knowledge sources in parallel."""
         if isinstance(event, StandaloneQuestionCondenserEvent):
             query = event.condensed_chat_message.content
         else:
             query = event.new_query
 
-        vector_store = retrieve_step_config.vector_store.to_llama_index()
-
-        nodes = retrieve_nodes(
-            message=query,
-            retrieve_k=retrieve_step_config.retrieve_k,
-            embed_model=embedding,
-            index_namespaces=retrieve_step_config.index_namespaces,
-            query_mode=retrieve_step_config.query_mode,
-            node_types=retrieve_step_config.node_types,
-            vector_store=vector_store,
-        )
-        if retrieve_step_config.retrieve_prev_next:
-            nodes = retrieve_prev_next_nodes(
-                vector_store=vector_store,
-                nodes=nodes,
-                num_nodes=retrieve_step_config.retrieve_prev_next.num_nodes,
-                prev_next_mode=retrieve_step_config.retrieve_prev_next.mode,
-            )
-        if retrieve_step_config.retrieve_summaries:
-            nodes = retrieve_parent_summary_nodes(
-                vector_store=vector_store,
-                nodes=nodes,
-                max_levels=retrieve_step_config.retrieve_summaries.max_parent_levels,
-            )
-        return RetrieverEvent.from_nodes(nodes)
+        all_nodes = await retrieve_from_all_sources(query, agent_config.retrievers, displayer, t)
+        nodes_with_score = [node.to_llama_index_node_with_score() for node in all_nodes]
+        return RetrieverEvent.from_nodes(nodes_with_score)
 
     @step(
         name=LocaleString(en="Rerank Retrieved Nodes"),
@@ -396,10 +366,10 @@ class RAGAgent(Agent):
         _: ContextInsufficientRejectEvent,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> HumanInTheLoop.request:
+    ) -> HumanInTheLoop.confirmation.request:
         await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.context_not_sufficient"))
         await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.asking_for_consent"))
-        return HumanInTheLoop.invoke(question=t("agent.expert_grounded_agent.messages.consent_question"))
+        return HumanInTheLoop.confirmation.invoke(question=t("agent.expert_grounded_agent.messages.consent_question"))
 
     @step(
         name=LocaleString(en="Consent Answer"),
@@ -408,12 +378,11 @@ class RAGAgent(Agent):
     )
     async def user_expert_inquiry_response(
         self,
-        event: HumanInTheLoop.response,
+        event: HumanInTheLoop.confirmation.response,
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> UserRequestsExpertEvent | ExpertRejectEvent:
-        if "yes" in event.response.lower() or "ja" in event.response.lower():
-            # TODO: Use OpenWebUI confirmation dialog (will be done in another PR)
+        if event.response is True:
             await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.user_consented"))
             return UserRequestsExpertEvent()
         await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.user_declined"))

@@ -652,7 +652,7 @@ services:
 
   docling:
     container_name: docling
-    image: ghcr.io/bbvch-ai/aihub-core/docling-serve-cpu:v1.8.0
+    image: ghcr.io/bbvch-ai/aihub-core/docling-serve-cpu:v1.9.0
     restart: always
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
@@ -1300,6 +1300,10 @@ services:
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
@@ -1330,6 +1334,10 @@ services:
     image: ghcr.io/bbvch-ai/aihub-core/rag_agent:nightly
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
 
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
