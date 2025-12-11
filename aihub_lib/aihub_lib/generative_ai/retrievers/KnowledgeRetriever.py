@@ -16,7 +16,7 @@ class KnowledgeRetriever(BaseRetriever):
         self.config: KnowledgeRetrieverConfig = config
 
     @trace_fn
-    async def retrieve(self, query: str, t: LocaleHandler) -> list[IngestedNode]:  # noqa: ARG002
+    async def retrieve(self, query: str, t: LocaleHandler) -> list[IngestedNode]:
         """Retrieve nodes from the vector store matching the query."""
         embed_model, _ = self.config.embed_model.to_llama_index()
         vector_store = self.config.vector_store.to_llama_index()
