@@ -1278,7 +1278,7 @@ quotaAndLimits:
       # No action will be taken if the growing segments size is less than the low watermark.
       # When the growing segments size exceeds the low watermark, the dml rate will be reduced,
       # but the rate will not be lower than minRateRatio * dmlRate.
-      enabled: false
+      enabled: true
       minRateRatio: 0.5
       lowWaterLevel: 0.2
       highWaterLevel: 0.4

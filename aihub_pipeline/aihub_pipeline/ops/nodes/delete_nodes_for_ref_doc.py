@@ -6,7 +6,7 @@ from llama_index.core.vector_stores.types import BasePydanticVectorStore
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
 
 
-@op(code_version="v2")
+@op(code_version="v1")
 def delete_nodes_for_ref_doc(
     vector_store: ResourceParam[BasePydanticVectorStore],
     ref_doc: RefDocDocument,
