@@ -1270,8 +1270,8 @@ quotaAndLimits:
       # When memoryLowWaterLevel < memory usage < memoryHighWaterLevel, reduce the dml rate;
       # When memory usage < memoryLowWaterLevel, no action.
       enabled: true
-      dataNodeMemoryLowWaterLevel: 0.75 # (0, 1], memoryLowWaterLevel in DataNodes
-      dataNodeMemoryHighWaterLevel: 0.90 # (0, 1], memoryHighWaterLevel in DataNodes
+      dataNodeMemoryLowWaterLevel: 0.70 # (0, 1], memoryLowWaterLevel in DataNodes
+      dataNodeMemoryHighWaterLevel: 0.85 # (0, 1], memoryHighWaterLevel in DataNodes
       queryNodeMemoryLowWaterLevel: 0.70 # (0, 1], memoryLowWaterLevel in QueryNodes
       queryNodeMemoryHighWaterLevel: 0.85 # (0, 1], memoryHighWaterLevel in QueryNodes
     growingSegmentsSizeProtection:
