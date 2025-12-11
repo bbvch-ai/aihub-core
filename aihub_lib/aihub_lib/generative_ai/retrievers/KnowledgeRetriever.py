@@ -4,6 +4,7 @@ from aihub_lib.generative_ai.retrievers.KnowledgeRetrieverConfig import Knowledg
 from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
 from aihub_lib.generative_ai.utils.retrieve_parent_summary_nodes import retrieve_parent_summary_nodes
 from aihub_lib.generative_ai.utils.retrieve_prev_next_nodes import retrieve_prev_next_nodes
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 
@@ -15,7 +16,7 @@ class KnowledgeRetriever(BaseRetriever):
         self.config: KnowledgeRetrieverConfig = config
 
     @trace_fn
-    async def retrieve(self, query: str) -> list[IngestedNode]:
+    async def retrieve(self, query: str, t: LocaleHandler) -> list[IngestedNode]:  # noqa: ARG002
         """Retrieve nodes from the vector store matching the query."""
         embed_model, _ = self.config.embed_model.to_llama_index()
         vector_store = self.config.vector_store.to_llama_index()

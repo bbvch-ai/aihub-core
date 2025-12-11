@@ -3,6 +3,7 @@ import logging
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.retrievers.BaseRetriever import BaseRetriever
 from aihub_lib.generative_ai.retrievers.InsightRetrieverConfig import InsightRetrieverConfig
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.insight import InsightEntity
 
@@ -17,7 +18,7 @@ class InsightRetriever(BaseRetriever):
         self.config: InsightRetrieverConfig = config
 
     @trace_fn
-    async def retrieve(self, query: str) -> list[IngestedNode]:
+    async def retrieve(self, query: str, t: LocaleHandler) -> list[IngestedNode]:
         """
         Retrieve all insights for the configured namespace and agent.
 
@@ -30,14 +31,16 @@ class InsightRetriever(BaseRetriever):
                 agent_class=self.config.agent_class,
                 agent_id=self.config.agent_id,
             )
-            return [self._insight_to_node(insight) for insight in insights]
+            return [self._insight_to_node(insight, t) for insight in insights]
         except Exception as e:
             self.logger.error(f"Failed to retrieve insights: {e}")
             return []
 
-    def _insight_to_node(self, insight: InsightEntity) -> IngestedNode:
+    def _insight_to_node(self, insight: InsightEntity, t: LocaleHandler) -> IngestedNode:
         """Convert an InsightEntity to an IngestedNode."""
-        conversation_lines = [f"{msg.role.value}: {msg.content}" for msg in insight.conversation]
+        conversation_lines = [
+            f"{t(f'lib.insight.role.{msg.role.value}')}: {msg.content}" for msg in insight.conversation
+        ]
         content_parts: list[str] = [
             f"Question: {insight.question}",
             f"Answer: {insight.expert_answer}",

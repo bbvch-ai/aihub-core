@@ -231,7 +231,7 @@ class RAGAgent(Agent):
             retrievers.append(retriever)
 
         # Retrieve from all sources in parallel
-        results = await asyncio.gather(*[retriever.retrieve(query) for retriever in retrievers])
+        results = await asyncio.gather(*[retriever.retrieve(query, t) for retriever in retrievers])
 
         # Flatten results from all retrievers
         all_nodes = [node for nodes in results for node in nodes]
