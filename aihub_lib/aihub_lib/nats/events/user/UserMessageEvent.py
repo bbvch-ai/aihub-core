@@ -1,6 +1,6 @@
 from typing import Annotated, ClassVar
 
-from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pydantic import Field
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -70,14 +70,14 @@ class UserMessageEvent(StartEvent):
         Extracts the user query text from the chat history, returning the last user message content.
         Note: This only returns text content. Use last_user_message for full message with all blocks.
         """
-        user_messages = [msg for msg in self.messages if msg.role == "user"]
+        user_messages = [msg for msg in self.messages if msg.role == MessageRole.USER]
         return user_messages[-1].content if user_messages else ""
 
     @property
-    def last_user_message(self) -> ChatMessage | None:
+    def last_user_message(self) -> ChatMessage:
         """
         Extracts the complete last user message (with all blocks including images/audio) from chat history.
         Use this when passing messages to LLMs to preserve multimodal content.
         """
-        user_messages = [msg for msg in self.messages if msg.role == "user"]
-        return user_messages[-1] if user_messages else None
+        user_messages = [msg for msg in self.messages if msg.role == MessageRole.USER]
+        return user_messages[-1]
