@@ -522,6 +522,10 @@ memory:
     title: "Liste des souvenirs"
   detail:
     title: "Détails du souvenir"
+    created_at: "Créé le"
+    agent_link_label: "Créé par l'agent"
+    thread_link_label: "Thread associé"
+    thread_title: "Interaction du thread"
   update:
     success:
       title: "Succès"

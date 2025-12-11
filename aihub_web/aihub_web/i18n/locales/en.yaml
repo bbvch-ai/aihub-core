@@ -545,6 +545,10 @@ memory:
     title: "Memory List"
   detail:
     title: "Memory Details"
+    created_at: "Created At"
+    agent_link_label: "Created by Agent"
+    thread_link_label: "Related Thread"
+    thread_title: "Thread Interaction"
   update:
     success:
       title: "Success"

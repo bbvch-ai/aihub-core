@@ -523,6 +523,10 @@ memory:
     title: "Erinnerungsliste"
   detail:
     title: "Erinnerungsdetails"
+    created_at: "Erstellt am"
+    agent_link_label: "Erstellt von Agent"
+    thread_link_label: "Zugehöriger Thread"
+    thread_title: "Thread-Interaktion"
   update:
     success:
       title: "Erfolg"

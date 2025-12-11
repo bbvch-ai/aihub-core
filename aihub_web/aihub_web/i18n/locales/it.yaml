@@ -522,6 +522,10 @@ memory:
     title: "Elenco dei ricordi"
   detail:
     title: "Dettagli del ricordo"
+    created_at: "Creato il"
+    agent_link_label: "Creato dall'agente"
+    thread_link_label: "Thread correlato"
+    thread_title: "Interazione thread"
   update:
     success:
       title: "Successo"

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useToast } from 'primevue/usetoast'
 import { useI18n } from 'vue-i18n'
 
 import type { NavItem } from '@core/types/NavItem'
@@ -10,11 +9,6 @@ const router = useRouter()
 const route = useRoute()
 const localePath = useLocalePath()
 const { t } = useI18n()
-const toast = useToast()
-
-// Mutations (passed to child pages via NuxtPage)
-const { updateMemory } = useUpdateMemory()
-const { deleteMemory } = useDeleteMemory()
 
 const subPath = (path: string) => {
   return `/service/memories/${path}`
@@ -52,60 +46,8 @@ const toNavItem = (navItem: NavItem) => {
 }
 
 const activeNavItem = computed<NavItem | undefined>(() => {
-  return navItems.value?.filter(navItem => navItem.isActive())[0]
+  return navItems.value?.find(navItem => navItem.isActive())
 })
-
-const handleCloseDetail = () => {
-  // Determine which tab is active and navigate to it
-  const activeTab = activeNavItem.value?.key || 'graph'
-  router.push({
-    path: localePath(`/service/memories/${activeTab}`),
-    query: route.query,
-  })
-}
-
-const handleUpdateMemory = async (memoryId: string, data: string) => {
-  try {
-    await updateMemory({ memoryId, data })
-    toast.add({
-      severity: 'success',
-      summary: t('memory.update.success.title'),
-      detail: t('memory.update.success.message'),
-      life: 3000,
-    })
-  }
-  catch (error) {
-    console.error('Failed to update memory:', error)
-    toast.add({
-      severity: 'error',
-      summary: t('memory.update.error.title'),
-      detail: t('memory.update.error.message'),
-      life: 5000,
-    })
-  }
-}
-
-const handleDeleteMemory = async (memoryId: string) => {
-  try {
-    await deleteMemory({ memoryId })
-    toast.add({
-      severity: 'success',
-      summary: t('memory.delete.success.title'),
-      detail: t('memory.delete.success.message'),
-      life: 3000,
-    })
-    handleCloseDetail()
-  }
-  catch (error) {
-    console.error('Failed to delete memory:', error)
-    toast.add({
-      severity: 'error',
-      summary: t('memory.delete.error.title'),
-      detail: t('memory.delete.error.message'),
-      life: 5000,
-    })
-  }
-}
 </script>
 
 <template>
@@ -121,10 +63,6 @@ const handleDeleteMemory = async (memoryId: string) => {
         @update:model-value="toNavItem"
       />
     </template>
-    <NuxtPage
-      @close="handleCloseDetail"
-      @update="handleUpdateMemory"
-      @delete="handleDeleteMemory"
-    />
+    <NuxtPage />
   </StructuralScreen>
 </template>
