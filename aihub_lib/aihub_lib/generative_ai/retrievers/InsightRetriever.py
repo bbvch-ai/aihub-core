@@ -42,9 +42,9 @@ class InsightRetriever(BaseRetriever):
             f"{t(f'lib.insight.role.{msg.role.value}')}: {msg.content}" for msg in insight.conversation
         ]
         content_parts: list[str] = [
-            f"Question: {insight.question}",
-            f"Answer: {insight.expert_answer}",
-            "Conversation:",
+            f"{t('lib.insight.label.question')}: {insight.question}",
+            f"{t('lib.insight.label.answer')}: {insight.expert_answer}",
+            f"{t('lib.insight.label.conversation')}:",
             *conversation_lines,
         ]
 

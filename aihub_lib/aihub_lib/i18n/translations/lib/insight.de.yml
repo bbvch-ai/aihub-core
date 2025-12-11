@@ -1,3 +1,7 @@
 role:
   assistant: "Assistent"
   user: "Experte"
+label:
+  question: "Frage"
+  answer: "Antwort"
+  conversation: "Gespräch"
