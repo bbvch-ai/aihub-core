@@ -243,3 +243,28 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
 
         nodes, similarities, ids = self._parse_from_milvus_results(res)
         return nodes, similarities, ids
+
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes associated with a ref_doc_id, scoped to a specific partition.
+        """
+        partition_name = delete_kwargs.get("partition_name")
+
+        doc_ids = [ref_doc_id] if not isinstance(ref_doc_id, list) else ref_doc_id
+        doc_ids_expr = ['"' + entry + '"' for entry in doc_ids]
+
+        entries = self.client.query(
+            collection_name=self.collection_name,
+            filter=f"{self.doc_id_field} in [{','.join(doc_ids_expr)}]",
+            partition_names=[partition_name] if partition_name else None,
+            output_fields=["id"],
+        )
+
+        if len(entries) > 0:
+            ids_to_delete = [entry["id"] for entry in entries]
+
+            self.client.delete(
+                collection_name=self.collection_name,
+                pks=ids_to_delete,
+                partition_name=partition_name,
+            )

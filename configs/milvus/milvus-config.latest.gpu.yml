@@ -283,10 +283,10 @@ rocksmq:
   # It is recommended to change this parameter before starting Milvus for the first time.
   # Set an easy-to-identify root key prefix for Milvus if etcd service already exists.
   path: /var/lib/milvus/rdb_data
-  lrucacheratio: 0.06 # rocksdb cache memory ratio
-  rocksmqPageSize: 67108864 # The maximum size of messages in each page in RocksMQ. Messages in RocksMQ are checked and cleared (when expired) in batch based on this parameters. Unit: Byte.
-  retentionTimeInMinutes: 4320 # The maximum retention time of acked messages in RocksMQ. Acked messages in RocksMQ are retained for the specified period of time and then cleared. Unit: Minute.
-  retentionSizeInMB: 8192 # The maximum retention size of acked messages of each topic in RocksMQ. Acked messages in each topic are cleared if their size exceed this parameter. Unit: MB.
+  lrucacheratio: 0.03 # rocksdb cache memory ratio
+  rocksmqPageSize: 33554432 # The maximum size of messages in each page in RocksMQ. Messages in RocksMQ are checked and cleared (when expired) in batch based on this parameters. Unit: Byte.
+  retentionTimeInMinutes: 2160 # The maximum retention time of acked messages in RocksMQ. Acked messages in RocksMQ are retained for the specified period of time and then cleared. Unit: Minute.
+  retentionSizeInMB: 4096 # The maximum retention size of acked messages of each topic in RocksMQ. Acked messages in each topic are cleared if their size exceed this parameter. Unit: MB.
   compactionInterval: 86400 # Time interval to trigger rocksdb compaction to remove deleted data. Unit: Second
   compressionTypes: 0,0,7,7,7 # compaction compression type, only support use 0,7. 0 means not compress, 7 will use zstd. Length of types means num of rocksdb level.
 
@@ -493,22 +493,22 @@ queryNode:
       # - If the current memory/disk usage exceeds the high watermark, an eviction will be triggered to evict data from memory/disk
       #   until the memory/disk usage is below the low watermark.
       # - The max amount of memory/disk that can be used for cache is controlled by overloadedMemoryThresholdPercentage and diskMaxUsagePercentage.
-      memoryLowWatermarkRatio: 0.75
-      memoryHighWatermarkRatio: 0.8
+      memoryLowWatermarkRatio: 0.65 # Start evicting at 65% memory
+      memoryHighWatermarkRatio: 0.75 # Aggressive eviction at 75%
       diskLowWatermarkRatio: 0.75
       diskHighWatermarkRatio: 0.8
       # Enable eviction for Tiered Storage. Defaults to false.
       # Note that if eviction is enabled, cache data loaded during sync warmup is also subject to eviction.
-      evictionEnabled: false
+      evictionEnabled: true
       # Enable background eviction for Tiered Storage. Defaults to false.
       # Background eviction is used to do periodic eviction in a separate thread.
       # And it will only work when both 'evictionEnabled' and 'backgroundEvictionEnabled' are set to 'true'.
-      backgroundEvictionEnabled: false
+      backgroundEvictionEnabled: true
       # Time in seconds after which an unaccessed cache cell will be evicted. 'backgroundEvictionEnabled' is required.
       # If a cached data hasn't been accessed again after this time since its last access, it will be evicted.
       # If set to 0, time based eviction is disabled.
-      cacheTtl: 0
-      storageUsageTrackingEnabled: false # Enable storage usage tracking for Tiered Storage. Defaults to false.
+      cacheTtl: 300  # 5 minutes - evict partitions not accessed in 5min
+      storageUsageTrackingEnabled: true # Enable storage usage tracking for Tiered Storage. Defaults to false.
     knowhereScoreConsistency: false # Enable knowhere strong consistency score computation logic
     deleteDumpBatchSize: 10000 # Batch size for delete snapshot dump in segcore.
   loadMemoryUsageFactor: 1 # The multiply factor of calculating the memory usage while loading segments
@@ -561,8 +561,8 @@ queryNode:
       enableCrossUserGrouping: false # Enable Cross user grouping when using user-task-polling policy. (Disable it if user's task can not merge each other)
       maxPendingTaskPerUser: 1024 # Max pending task per user in scheduler
   grouping:
-    maxNQ: 1000
-    topKMergeRatio: 20
+    maxNQ: 500
+    topKMergeRatio: 10
   levelZeroForwardPolicy: FilterByBF # delegator level zero deletion forward policy, possible option["FilterByBF", "RemoteLoad"]
   streamingDeltaForwardPolicy: FilterByBF # delegator streaming deletion forward policy, possible option["FilterByBF", "Direct"]
   forwardBatchSize: 4194304 # the batch size delegator uses for forwarding stream delete in loading procedure
@@ -573,9 +573,9 @@ queryNode:
     flowGraph:
       maxQueueLength: 16 # The maximum size of task queue cache in flow graph in query node.
       maxParallelism: 1024 # Maximum number of tasks executed in parallel in the flowgraph
-  enableSegmentPrune: false # use partition stats to prune data in search/query on shard delegator
-  queryStreamBatchSize: 4194304 # return min batch size of stream query
-  queryStreamMaxBatchSize: 134217728 # return max batch size of stream query
+  enableSegmentPrune: true # use partition stats to prune data in search/query on shard delegator
+  queryStreamBatchSize: 2097152 # return min batch size of stream query
+  queryStreamMaxBatchSize: 67108864 # return max batch size of stream query
   bloomFilterApplyParallelFactor: 2 # parallel factor when to apply pk to bloom filter, default to 2*CPU_CORE_NUM
   workerPooling:
     size: 10 # the size for worker querynode client pool
@@ -1213,15 +1213,15 @@ quotaAndLimits:
       # When memoryLowWaterLevel < memory usage < memoryHighWaterLevel, reduce the dml rate;
       # When memory usage < memoryLowWaterLevel, no action.
       enabled: true
-      dataNodeMemoryLowWaterLevel: 0.85 # (0, 1], memoryLowWaterLevel in DataNodes
-      dataNodeMemoryHighWaterLevel: 0.95 # (0, 1], memoryHighWaterLevel in DataNodes
-      queryNodeMemoryLowWaterLevel: 0.85 # (0, 1], memoryLowWaterLevel in QueryNodes
-      queryNodeMemoryHighWaterLevel: 0.95 # (0, 1], memoryHighWaterLevel in QueryNodes
+      dataNodeMemoryLowWaterLevel: 0.70 # (0, 1], memoryLowWaterLevel in DataNodes
+      dataNodeMemoryHighWaterLevel: 0.85 # (0, 1], memoryHighWaterLevel in DataNodes
+      queryNodeMemoryLowWaterLevel: 0.70 # (0, 1], memoryLowWaterLevel in QueryNodes
+      queryNodeMemoryHighWaterLevel: 0.85 # (0, 1], memoryHighWaterLevel in QueryNodes
     growingSegmentsSizeProtection:
       # No action will be taken if the growing segments size is less than the low watermark.
       # When the growing segments size exceeds the low watermark, the dml rate will be reduced,
       # but the rate will not be lower than minRateRatio * dmlRate.
-      enabled: false
+      enabled: true
       minRateRatio: 0.5
       lowWaterLevel: 0.2
       highWaterLevel: 0.4

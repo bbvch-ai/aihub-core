@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.255.3] - 2025-12-11 - Enhanced Milvus Performance and Smarter Data Management
+
+### Added
+
+- ✨ **Introduced Partition-Aware Deletion for Milvus**: Implemented a new deletion mechanism in
+  `PartitionAwareMilvusVectorStore` that enables more granular and efficient removal of vector nodes associated with a
+  reference document within specific Milvus partitions.
+- 🦾 **Enabled Upsert Mode for Milvus Vector Stores**: Configured the Milvus vector store factory to use
+  `upsert_mode=True`, which automatically overwrites existing nodes when new data with matching IDs is added,
+  streamlining data synchronization and preventing duplicates.
+
+### Changed
+
+- 🚀 **Optimized Milvus Configuration for Performance and Resource Management**: Significantly adjusted Milvus parameters
+  across all configurations (including `rocksmq`, `queryNode`, and `quotaAndLimits`) to improve memory usage, enhance
+  data eviction policies, and optimize query processing, leading to better stability and efficiency.
+- 🧹 **Streamlined Milvus Node Addition Workflow**: Updated the `VectorStoreIOManager` to leverage Milvus's
+  `upsert_mode`, removing the explicit pre-deletion of nodes before adding new ones. This simplifies the data ingestion
+  pipeline and prevents potential memory leaks.
+- 🎯 **Enhanced Reference Document Deletion Op**: The `delete_nodes_for_ref_doc` operation now utilizes partition-aware
+  deletion, ensuring that nodes related to a reference document are targeted precisely within their respective Milvus
+  partitions.
+- ⚙️ **Upgraded Core Infrastructure Components**: Updated **Milvus** to `v2.6.7` and **Etcd** to `v3.5.25`,
+  incorporating performance improvements, bug fixes, and new features from these latest versions.
+
+---
+
 ## [v0.255.2] - 2025-12-11 - Unlocking Knowledge: Expert Insights and Advanced RAG for Smarter Agents
 
 ### Added
