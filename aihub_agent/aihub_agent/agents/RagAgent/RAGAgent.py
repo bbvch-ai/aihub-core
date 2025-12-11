@@ -30,7 +30,6 @@ from aihub_lib.nats.events.semantic.llm import LLMStopEvent
 from aihub_lib.nats.events.semantic.reranker import RerankerEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.nats.events.user import UserMessageEvent
-from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_agent.agents.Agent import Agent
@@ -544,10 +543,11 @@ class RAGAgent(Agent):
         Generates a response using the configured LLM.
         """
         if isinstance(event, FewShotRejectEvent | ContextInsufficientRejectEvent | ExpertRejectEvent):
+            prompt_text = t.extract(agent_config.context_insufficient_prompt).format(reason=event.reason)
             messages = limited_history_without_context.limited_history + [
                 ChatMessage(
                     role=MessageRole.SYSTEM,
-                    content=PromptTemplate(t("agent.prompt.guard.reject")).format(reason=event.reason),
+                    content=prompt_text,
                 ),
             ]
         else:
