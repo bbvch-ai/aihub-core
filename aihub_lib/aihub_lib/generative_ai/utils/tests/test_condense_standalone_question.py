@@ -1,7 +1,7 @@
 from unittest.mock import Mock
 
 import pytest
-from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
+from llama_index.core.base.llms.types import ChatMessage, ChatResponse, ImageBlock, MessageRole, TextBlock
 
 from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -76,18 +76,22 @@ def test_condense_filters_system_messages(locale_handler, mock_llm):
     assert result.content == "Tell me more about Artificial Intelligence"
 
 
-def test_condense_preserves_multimodal_message(locale_handler, mock_llm):
-    """Test that the original message with multimodal content is passed to LLM."""
-    # Create a message with additional_kwargs simulating image content
+def test_condense_preserves_multimodal_message_with_image_blocks(locale_handler, mock_llm):
+    """Test that the original message with image blocks is passed to LLM for multimodal processing."""
+    # Create a message with both text and image blocks (multimodal content)
     message = ChatMessage(
         role=MessageRole.USER,
-        content="What is this?",
-        additional_kwargs={"images": ["base64_encoded_image_data"]},
+        blocks=[
+            TextBlock(text="What is this?"),
+            ImageBlock(
+                url="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+            ),
+        ],
     )
     chat_history = []
 
     mock_llm.chat.return_value = ChatResponse(
-        message=ChatMessage(role=MessageRole.ASSISTANT, content="What is the object shown in the image?")
+        message=ChatMessage(role=MessageRole.ASSISTANT, content="What is the red apple shown in the image?")
     )
 
     result = condense_standalone_question(
@@ -97,17 +101,19 @@ def test_condense_preserves_multimodal_message(locale_handler, mock_llm):
         llm=mock_llm,
     )
 
-    # Verify the original message (with additional_kwargs) was passed to llm.chat
+    # Verify the original multimodal message was passed to llm.chat
     mock_llm.chat.assert_called_once()
     call_args = mock_llm.chat.call_args
     messages_passed = call_args.kwargs.get("messages") or call_args.args[0]
 
-    # Second message should be the original user message with multimodal content
+    # Second message should be the original user message with image blocks preserved
     assert messages_passed[1] == message
-    assert messages_passed[1].additional_kwargs == {"images": ["base64_encoded_image_data"]}
+    assert len(messages_passed[1].blocks) == 2
+    assert isinstance(messages_passed[1].blocks[0], TextBlock)
+    assert isinstance(messages_passed[1].blocks[1], ImageBlock)
 
     assert result.role == MessageRole.USER
-    assert result.content == "What is the object shown in the image?"
+    assert result.content == "What is the red apple shown in the image?"
 
 
 def test_condense_with_empty_chat_history(locale_handler, mock_llm):
