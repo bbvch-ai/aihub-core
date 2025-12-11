@@ -1,5 +1,8 @@
 Feature: RAG Agent
-  Testing the RAGAgent steps in sequence with specific configuration
+  Testing the RAGAgent steps in sequence with specific configuration.
+
+  Note: Retrieval logic (RetrieverEvent, RerankerEvent, insights) is now tested
+  in the RetrievalAgent tests. RAGAgent invokes RetrievalAgent via AgentInTheLoop.
 
   Scenario Outline: Test RAGAgent with multi-language system prompt
     Given a RAGAgent runner with a valid self hosted configuration
@@ -21,28 +24,8 @@ Feature: RAG Agent
     Then a StartEvent is present with payload "What is AI?"
     * a LimitChatHistoryEvent is present
     * a StandaloneQuestionCondenserEvent is present with condensed question
-    * a RetrieverEvent is present with retrieved nodes
     * an InOrderNodeCombinerEvent is present with ordered context message
     * a LimitChatHistoryWithContextEvent is present with limited history and context
-    * an LLMEvent is present with a generated response
-    * a StopEvent is present
-
-  Scenario: Test RAGAgent with reranking enabled
-    Given a RAGAgent runner with a valid self hosted configuration
-    * with reranking enabled and top_n of "2"
-    When the start event is sent with a user query "What is AI Hub?"
-    Then a RetrieverEvent is present with more than "2" retrieved nodes
-    * a RerankerEvent is present with reranked nodes
-    * the RerankerEvent model name should be "reranker"
-    * the RerankerEvent should limit results to "2" nodes
-    * an LLMEvent is present with a generated response
-    * a StopEvent is present
-
-  Scenario: Test RAGAgent retrieves insights alongside knowledge base documents
-    Given a RAGAgent runner with insight retriever enabled
-    * test insights are pre-seeded in the database
-    When the start event is sent with a user query "What is machine learning?"
-    Then a RetrieverEvent is present with retrieved nodes
     * an LLMEvent is present with a generated response
     * a StopEvent is present
 

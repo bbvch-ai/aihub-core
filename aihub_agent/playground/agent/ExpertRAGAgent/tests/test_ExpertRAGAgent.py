@@ -1,5 +1,6 @@
 # ruff: noqa: E402
 """Tests for ExpertRAGAgent with mandatory expert escalation workflow."""
+
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
 
 AihubInstrumentor().instrument()
@@ -11,16 +12,9 @@ import pytest
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
-from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
-from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
-from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.generative_ai.resources.models.llm.RerankingModelConfig import RerankingModelConfig
-from aihub_lib.generative_ai.retrievers import KnowledgeRetrieverConfig
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.logging.logger import enable_logging
-from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.nats.events import LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.agent_in_the_loop import AgentInTheLoopRequestEvent, AgentInTheLoopResponseEvent
 from aihub_lib.nats.events.guard import ExpertRejectEvent
@@ -28,14 +22,9 @@ from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoop import HumanInTheLoo
 from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
     HumanInTheLoopConfirmationRequestEvent,
 )
-from aihub_lib.persistence.rag.documents.stores.docstore import create_mongo_document_store
-from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.asyncio_utils.bdd import async_test
-from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_collection
 from dotenv import load_dotenv
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.vector_stores.types import VectorStoreQueryMode
-from mongoengine import connect, disconnect
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_agent.agents.ExpertAskingAgent.events.AnswerStopEvent import AnswerStopEvent
@@ -43,7 +32,7 @@ from aihub_agent.agents.ExpertRagAgent.configs.ExpertEscalationConfig import Exp
 from aihub_agent.agents.ExpertRagAgent.configs.ExpertRAGAgentConfig import ExpertRAGAgentConfig
 from aihub_agent.agents.ExpertRagAgent.events.UserRequestsExpertEvent import UserRequestsExpertEvent
 from aihub_agent.agents.ExpertRagAgent.ExpertRAGAgent import ExpertRAGAgent
-from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
+from aihub_agent.agents.RetrievalAgent.events.RetrievalResponseEvent import RetrievalResponseEvent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 enable_logging()
@@ -65,54 +54,14 @@ def event_loop():
 
 
 @pytest.fixture(scope="session")
-def test_collection(event_loop):
-    """Set up and tear down the test collection for all tests."""
-    asyncio.set_event_loop(event_loop)
+def expert_rag_agent_config():
+    """Return an ExpertRAGAgentConfig with expert escalation (required).
 
-    embedding_config = EmbeddingModelConfig(model_name="embedding/large")
-    vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
-        uri="http://localhost",
-        collection_name="development",
-        dimensions=1024,
-    )
-    doc_store = create_mongo_document_store(document_store_name="development")
-
-    fill_collection(
-        embedding_config,
-        vector_store,
-        doc_store,
-    )
-
-    yield
-
-    drop_collection()
-
-
-@pytest.fixture(scope="session")
-def mongo_connection(event_loop):
-    """Set up MongoEngine connection for tests."""
-    asyncio.set_event_loop(event_loop)
-    config = AIHubSettings()
-    connect(
-        db=config.MONGO_MAIN_DB_NAME,
-        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
-        uuidRepresentation="standard",
-    )
-    yield
-    disconnect()
-
-
-@pytest.fixture(scope="session")
-def expert_rag_agent_config(test_collection):
-    """Return an ExpertRAGAgentConfig with expert escalation (required)."""
+    Note: Retrieval is now handled by RetrievalAgent via AgentInTheLoop.
+    The retrieval config (retrievers, reranking) is in RetrievalAgentConfig.
+    This config just references the RetrievalAgent.
+    """
     llm_config = LLMConfig(model_name="text-generation/mini")
-    reranking_config = RerankingModelConfig(model_name="reranker")
-    embedding_config = EmbeddingModelConfig(model_name="embedding/large")
-    vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
-        uri="http://localhost",
-        collection_name="development",
-        dimensions=1024,
-    )
 
     return ExpertRAGAgentConfig(
         agent_id="expert_rag_agent",
@@ -120,20 +69,8 @@ def expert_rag_agent_config(test_collection):
         name=LocaleString(en="Expert RAG Agent"),
         description=LocaleString(en="RAG agent with mandatory expert escalation"),
         llm=llm_config,
-        retrievers=[
-            KnowledgeRetrieverConfig(
-                embed_model=embedding_config,
-                index_namespaces=["ai_knowledge"],
-                retrieve_k=5,
-                query_mode=VectorStoreQueryMode.HYBRID,
-                node_types=["content"],
-                vector_store=vector_store,
-                retrieve_prev_next=RetrievePrevNextConfig(
-                    num_nodes=2,
-                    mode=ModeOptions.BOTH,
-                ),
-            ),
-        ],
+        retrieval_agent_class="RetrievalAgent",
+        retrieval_agent_id="test_retrieval_agent",
         number_of_input_tokens=8192,
         check_context_sufficiency=True,
         max_hops=1,
@@ -141,7 +78,6 @@ def expert_rag_agent_config(test_collection):
             expert_asking_agent_class="ExpertAskingAgent",
             expert_asking_agent_id="test_expert_agent",
         ),
-        reranking_config=RerankingConfig(enabled=False, reranking_model=reranking_config),
     )
 
 
@@ -174,7 +110,23 @@ async def send_query_user_declines(expert_rag_agent_runner: AgentTestRunner, que
                 locale="en",
             ),
         )
-        # Wait for HITL confirmation request
+        # Wait for AgentInTheLoop request to RetrievalAgent
+        await expert_rag_agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
+
+        # Mock RetrievalAgent response with minimal context (triggers context insufficient)
+        mock_retrieval_response = RetrievalResponseEvent(
+            context_message=ChatMessage(
+                role=MessageRole.SYSTEM,
+                content="Retrieved context: No relevant information found.",
+            ),
+            nodes=[],  # Empty nodes to trigger context insufficiency
+        )
+        await expert_rag_agent_runner.send_event_from_topic(
+            start_event=AgentInTheLoopResponseEvent(stop_event=mock_retrieval_response),
+            topic=topic,
+        )
+
+        # Wait for HITL confirmation request (after context insufficient guard)
         hitl_request_event = await expert_rag_agent_runner.wait_for_event(
             HumanInTheLoopConfirmationRequestEvent,
             timeout=TIMEOUT,
@@ -191,8 +143,7 @@ async def send_query_user_declines(expert_rag_agent_runner: AgentTestRunner, que
 async def send_query_user_accepts(expert_rag_agent_runner: AgentTestRunner, query: str):
     """Send a query that triggers expert escalation and user accepts.
 
-    This test mocks the expert agent's response by sending an AnswerStopEvent
-    to the expert agent's topic, which the RAG agent's internal subscription picks up.
+    This test mocks both the RetrievalAgent and ExpertAskingAgent responses via AgentInTheLoop.
     """
     async with expert_rag_agent_runner.test_run(delay_before_stop=TIMEOUT) as topic:
         await expert_rag_agent_runner.send_event_from_topic(
@@ -203,7 +154,23 @@ async def send_query_user_accepts(expert_rag_agent_runner: AgentTestRunner, quer
                 locale="en",
             ),
         )
-        # Wait for HITL confirmation request
+        # Wait for AgentInTheLoop request to RetrievalAgent (first AITL)
+        await expert_rag_agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
+
+        # Mock RetrievalAgent response with minimal context (triggers context insufficient)
+        mock_retrieval_response = RetrievalResponseEvent(
+            context_message=ChatMessage(
+                role=MessageRole.SYSTEM,
+                content="Retrieved context: No relevant information found.",
+            ),
+            nodes=[],  # Empty nodes to trigger context insufficiency
+        )
+        await expert_rag_agent_runner.send_event_from_topic(
+            start_event=AgentInTheLoopResponseEvent(stop_event=mock_retrieval_response),
+            topic=topic,
+        )
+
+        # Wait for HITL confirmation request (after context insufficient guard)
         hitl_request_event = await expert_rag_agent_runner.wait_for_event(
             HumanInTheLoopConfirmationRequestEvent,
             timeout=TIMEOUT,
@@ -215,11 +182,10 @@ async def send_query_user_accepts(expert_rag_agent_runner: AgentTestRunner, quer
             start_event=HumanInTheLoopConfirmation.response(response=True, request_event=hitl_request_event),
             topic=topic,
         )
-        # Wait for AgentInTheLoop request to expert
+        # Wait for AgentInTheLoop request to ExpertAskingAgent (second AITL)
         await expert_rag_agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
 
-        # Mock expert response by sending AnswerStopEvent to the expert agent's topic
-        # The RAG agent's internal subscription will pick this up and convert it to AgentInTheLoopResponseEvent
+        # Mock expert response by sending AnswerStopEvent
         mock_expert_answer = AnswerStopEvent(
             expert_answer="Quantum entanglement in advanced medicine refers to experimental applications...",
             expert_conversation=[

@@ -3,12 +3,10 @@ from typing import Annotated
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.generative_ai.retrievers import RetrieverConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
 
 from aihub_agent.agents.ExpertRagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
-from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
 
 
 class ExpertRAGAgentConfig(AgentConfig):
@@ -16,10 +14,12 @@ class ExpertRAGAgentConfig(AgentConfig):
     Configuration for ExpertRAGAgent with mandatory expert escalation.
 
     Supports:
-    - Multiple retrievers (knowledge base + insights)
     - Multi-hop retrieval for context sufficiency
-    - Optional reranking
+    - Shared retrieval via RetrievalAgent (configured separately)
     - MANDATORY expert escalation when context is insufficient
+
+    The retrieval settings (retrievers, reranking, context_prompt) are configured
+    in the referenced RetrievalAgent's config, not here.
 
     The expert_escalation field is required, ensuring expert escalation
     is always available when context is insufficient.
@@ -30,10 +30,15 @@ class ExpertRAGAgentConfig(AgentConfig):
         Field(description="The LLM configuration for the agent."),
     ]
 
-    retrievers: Annotated[
-        list[RetrieverConfig],
-        Field(description="List of retriever configurations (knowledge, insight)."),
-    ]
+    # RetrievalAgent reference for AgentInTheLoop invocation
+    retrieval_agent_class: Annotated[
+        str,
+        Field(description="Agent class name of the RetrievalAgent to invoke."),
+    ] = "RetrievalAgent"
+    retrieval_agent_id: Annotated[
+        str,
+        Field(description="Agent ID of the RetrievalAgent to invoke."),
+    ] = "default"
 
     number_of_input_tokens: Annotated[
         int, Field(description="Maximum tokens allowed in input to manage context size or cost.")
@@ -48,10 +53,6 @@ class ExpertRAGAgentConfig(AgentConfig):
     condense_question_prompt: Annotated[
         LocaleString | None,
         Field(description="Prompt template for transforming a user query into a standalone question."),
-    ] = None
-    context_prompt: Annotated[
-        LocaleString | None,
-        Field(description="Prompt template for providing context (e.g., retrieved documents) to the LLM."),
     ] = None
     few_shot_guard_examples: Annotated[
         list[FewShotGuardExample],
@@ -74,7 +75,3 @@ class ExpertRAGAgentConfig(AgentConfig):
         LocaleString | None,
         Field(description="System prompt to guide the agent's behavior and responses."),
     ] = None
-    reranking_config: Annotated[
-        RerankingConfig,
-        Field(description="Configuration for reranking retrieved documents to improve relevance."),
-    ] = RerankingConfig()

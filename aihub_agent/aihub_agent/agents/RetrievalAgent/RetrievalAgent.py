@@ -1,30 +1,60 @@
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
-from aihub_lib.generative_ai.utils.retrieve_nodes import retrieve_nodes
-from aihub_lib.generative_ai.utils.retrieve_prev_next_nodes import retrieve_prev_next_nodes
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.events.semantic.reranker import RerankerEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 
 from aihub_agent.agents.Agent import Agent
-from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.RetrievalAgent.configs.RetrievalAgentConfig import RetrievalAgentConfig
 from aihub_agent.agents.RetrievalAgent.events.QuestionStartEvent import QuestionStartEvent
 from aihub_agent.agents.RetrievalAgent.events.RetrievalResponseEvent import RetrievalResponseEvent
+from aihub_agent.rag.events import InOrderNodeCombinerEvent
+from aihub_agent.rag.steps import (
+    execute_order_nodes_by_documents,
+    execute_rerank_nodes,
+    execute_retrieve,
+)
+from aihub_agent.workflow.decorators.precondition import precondition
 from aihub_agent.workflow.decorators.step import step
+
+
+@precondition()
+async def reranking_enabled(event: RetrieverEvent, config: RetrievalAgentConfig) -> bool:
+    """Precondition to check if reranking is enabled."""
+    return isinstance(event, RetrieverEvent) and config.reranking_config.enabled
+
+
+@precondition()
+async def reranking_complete_or_disabled(event: RetrieverEvent | RerankerEvent, config: RetrievalAgentConfig) -> bool:
+    """Precondition to ensure we only order nodes after reranking is complete (or if reranking is disabled)."""
+    if not config.reranking_config.enabled:
+        return isinstance(event, RetrieverEvent)
+    return isinstance(event, RerankerEvent)
 
 
 class RetrievalAgent(Agent):
     """
-    The agent is a simplified Retrieval-Augmented Generation agent that focuses on retrieving relevant
-    information from a knowledge base without any additional steps.
-    This can be useful if we want to separate the retrieval process from the generation process,
-    when we have for example different data sources and each source has its own retrieval agent.
+    Retrieval agent that encapsulates the retrieval pipeline: retrieve → rerank → order.
+
+    This agent is invoked via AgentInTheLoop from RAGAgent or ExpertRAGAgent
+    to share retrieval logic. It must be registered with its own RetrievalAgentConfig
+    containing the retriever and reranking settings.
+
+    ### Workflow
+    1. `retrieve_step`: Retrieves relevant nodes from multiple sources in parallel
+    2. `rerank_nodes_step` (conditional): Reranks nodes if reranking is enabled
+    3. `order_nodes_by_documents_step`: Orders nodes by their source documents
+    4. `stop_step`: Returns the ordered context and raw nodes
+
+    ### Configuration (RetrievalAgentConfig)
+    - `retrievers`: List of retriever configurations (KnowledgeRetrieverConfig, InsightRetrieverConfig)
+    - `reranking_config`: Configuration for optional reranking
+    - `context_prompt`: Optional prompt template for combining nodes
     """
 
     @step(
-        name=LocaleString(en="Retrieve nodes"),
-        description=LocaleString(en="Retrieves relevant nodes from the knowledge base."),
+        name=LocaleString(en="Retrieve Nodes"),
+        description=LocaleString(en="Retrieves relevant nodes from knowledge sources."),
     )
     async def retrieve_step(
         self,
@@ -33,60 +63,70 @@ class RetrievalAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> RetrieverEvent:
-        """
-        Retrieves relevant nodes from the knowledge base.
-        """
-        await displayer.display_thought(t("agent.thought.searching_knowledge"))
-        retriever = agent_config.retriever
-        embedding, _ = retriever.embed_model.to_llama_index()
-
-        vector_store = retriever.vector_store.to_llama_index()
-
-        nodes = retrieve_nodes(
-            message=event.question,
-            retrieve_k=retriever.retrieve_k,
-            embed_model=embedding,
-            index_namespaces=retriever.index_namespaces,
-            query_mode=retriever.query_mode,
-            node_types=retriever.node_types,
-            vector_store=vector_store,
+        """Retrieves relevant nodes from multiple knowledge sources in parallel."""
+        return await execute_retrieve(
+            query=event.question,
+            retrievers=agent_config.retrievers,
+            displayer=displayer,
+            t=t.in_locale(event.locale),
         )
-        if retriever.retrieve_prev_next:
-            nodes = retrieve_prev_next_nodes(
-                vector_store=vector_store,
-                nodes=nodes,
-                num_nodes=retriever.retrieve_prev_next.num_nodes,
-                prev_next_mode=retriever.retrieve_prev_next.mode,
-            )
-
-        return RetrieverEvent.from_nodes(nodes)
 
     @step(
-        name=LocaleString(en="Order nodes by documents"),
+        name=LocaleString(en="Rerank Retrieved Nodes"),
+        description=LocaleString(
+            en="Reranks retrieved documents using a dedicated reranking model for improved relevance"
+        ),
+        icon="iconoir:sort-desc",
+        precondition=reranking_enabled,
+    )
+    async def rerank_nodes_step(
+        self,
+        event: RetrieverEvent,
+        start_event: QuestionStartEvent,
+        agent_config: RetrievalAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> RerankerEvent:
+        """Reranks retrieved documents using a dedicated reranking model."""
+        return await execute_rerank_nodes(
+            nodes=event.nodes,
+            query=start_event.question,
+            reranking_model=agent_config.reranking_config.reranking_model,
+            displayer=displayer,
+            t=t.in_locale(start_event.locale),
+            reranking_enabled=agent_config.reranking_config.enabled,
+        )
+
+    @step(
+        name=LocaleString(en="Order Nodes by Documents"),
         description=LocaleString(en="Orders the retrieved nodes by their source documents."),
+        precondition=reranking_complete_or_disabled,
     )
     async def order_nodes_by_documents_step(
         self,
-        event: RetrieverEvent,
-        t: LocaleHandler,
+        event: RetrieverEvent | RerankerEvent,
         start_event: QuestionStartEvent,
         agent_config: RetrievalAgentConfig,
+        t: LocaleHandler,
+        displayer: EventDisplayer,
     ) -> InOrderNodeCombinerEvent:
-        """
-        Orders the retrieved nodes based on their source documents.
-        """
-        ordered_nodes = combine_nodes_in_order(
-            context_nodes=event.nodes,
+        """Orders the retrieved nodes based on their source documents."""
+        nodes = event.output_nodes if isinstance(event, RerankerEvent) else event.nodes
+        return await execute_order_nodes_by_documents(
+            nodes=nodes,
             t=t.in_locale(start_event.locale),
+            displayer=displayer,
             context_prompt=agent_config.context_prompt,
         )
-        return InOrderNodeCombinerEvent(context_message=ordered_nodes)
 
     @step(
-        name=LocaleString(en="Stop step"),
-        description=LocaleString(en="Stops the agent and returns the ordered nodes as context messages."),
+        name=LocaleString(en="Return Retrieval Result"),
+        description=LocaleString(en="Returns the ordered nodes as context message."),
     )
     async def stop_step(
-        self, event: InOrderNodeCombinerEvent, retriever_event: RetrieverEvent
+        self,
+        event: InOrderNodeCombinerEvent,
+        retriever_event: RetrieverEvent,
     ) -> RetrievalResponseEvent:
+        """Returns the retrieval result with context message and raw nodes."""
         return RetrievalResponseEvent(context_message=event.context_message, nodes=retriever_event.nodes)

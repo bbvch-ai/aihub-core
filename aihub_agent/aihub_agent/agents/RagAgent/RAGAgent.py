@@ -2,8 +2,10 @@ from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import (
+    AgentInTheLoop,
     LimitChatHistoryEvent,
     StandaloneQuestionCondenserEvent,
+    StopEvent,
 )
 from aihub_lib.nats.events.guard import (
     ContextInsufficientRejectEvent,
@@ -12,12 +14,12 @@ from aihub_lib.nats.events.guard import (
     FewShotRejectEvent,
 )
 from aihub_lib.nats.events.semantic.llm import LLMStopEvent
-from aihub_lib.nats.events.semantic.reranker import RerankerEvent
-from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.nats.events.user import UserMessageEvent
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
+from aihub_agent.agents.RetrievalAgent.events.QuestionStartEvent import QuestionStartEvent
+from aihub_agent.agents.RetrievalAgent.events.RetrievalResponseEvent import RetrievalResponseEvent
 from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.rag.events import (
     ContextInsufficientWithQueryEvent,
@@ -30,27 +32,16 @@ from aihub_agent.rag.steps import (
     execute_few_shot_guard,
     execute_limit_chat_history,
     execute_limit_chat_history_with_context,
-    execute_order_nodes_by_documents,
-    execute_rerank_nodes,
     execute_respond_with_llm,
-    execute_retrieve,
 )
 from aihub_agent.workflow.decorators.precondition import precondition
 from aihub_agent.workflow.decorators.step import step
 
 
 @precondition()
-async def reranking_enabled(event: RetrieverEvent, config: RAGAgentConfig) -> bool:
-    """Precondition to check if reranking is enabled."""
-    return isinstance(event, RetrieverEvent) and config.reranking_config.enabled
-
-
-@precondition()
-async def reranking_complete_or_disabled(event: RetrieverEvent | RerankerEvent, config: RAGAgentConfig) -> bool:
-    """Precondition to ensure we only order nodes after reranking is complete (or if reranking is disabled)."""
-    if not config.reranking_config.enabled:
-        return isinstance(event, RetrieverEvent)
-    return isinstance(event, RerankerEvent)
+async def is_retrieval_success(event: AgentInTheLoop.response) -> bool:
+    """Precondition to check if retrieval was successful."""
+    return isinstance(event.stop_event, RetrievalResponseEvent)
 
 
 @precondition()
@@ -69,13 +60,14 @@ class RAGAgent(Agent):
     """
     Implements a Retrieval-Augmented Generation (RAG) Agent.
 
-    The RAGAgent orchestrates steps to process user input, retrieve relevant information,
-    condense questions, and generate responses using a configured language model and retrieval setup.
+    The RAGAgent orchestrates steps to process user input, retrieve relevant information
+    via a shared RetrievalAgent, condense questions, and generate responses using a
+    configured language model.
 
     ### Features
     - Limit chat history to fit input token limits.
     - Condenses chat history into standalone question.
-    - Retrieve relevant documents from a knowledge base.
+    - Delegates retrieval to RetrievalAgent via AgentInTheLoop.
     - Order retrieved nodes for better contextual relevance.
     - Generate responses using an LLM based on the context and retrieved information.
 
@@ -142,76 +134,69 @@ class RAGAgent(Agent):
         )
 
     @step(
-        name=LocaleString(en="Retrieve Nodes"),
-        description=LocaleString(en="Retrieves relevant nodes from knowledge sources."),
+        name=LocaleString(en="Invoke Retrieval Agent"),
+        description=LocaleString(en="Delegates retrieval to the shared RetrievalAgent."),
+        icon="hugeicons:robot-02",
     )
-    async def retrieve_step(
+    async def invoke_retrieval_agent_step(
         self,
         event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
         _: FewShotAcceptEvent,
+        start_event: UserMessageEvent,
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> RetrieverEvent:
-        """Retrieves relevant nodes from multiple knowledge sources in parallel."""
+    ) -> AgentInTheLoop.request:
+        """Invokes the RetrievalAgent to retrieve relevant nodes."""
+        await displayer.display_thought(t("agent.thought.searching_knowledge"))
+
         if isinstance(event, StandaloneQuestionCondenserEvent):
             query = event.condensed_chat_message.content
         else:
             query = event.new_query
 
-        return await execute_retrieve(
-            query=query,
-            retrievers=agent_config.retrievers,
-            displayer=displayer,
-            t=t,
+        return AgentInTheLoop.invoke(
+            agent_class=agent_config.retrieval_agent_class,
+            agent_id=agent_config.retrieval_agent_id,
+            start_event=QuestionStartEvent(
+                question=query,
+                locale=start_event.locale,
+            ),
         )
 
     @step(
-        name=LocaleString(en="Rerank Retrieved Nodes"),
-        description=LocaleString(
-            en="Reranks retrieved documents using a dedicated reranking model for improved relevance"
-        ),
-        icon="iconoir:sort-desc",
-        precondition=reranking_enabled,
+        name=LocaleString(en="Retrieval Complete"),
+        description=LocaleString(en="Processes the successful retrieval response."),
+        precondition=is_retrieval_success,
     )
-    async def rerank_nodes_step(
+    async def retrieval_complete_step(
         self,
-        event: RetrieverEvent,
-        condense_event: StandaloneQuestionCondenserEvent,
-        agent_config: RAGAgentConfig,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-    ) -> RerankerEvent:
-        """Reranks retrieved documents using a dedicated reranking model."""
-        return await execute_rerank_nodes(
-            nodes=event.nodes,
-            query=condense_event.condensed_chat_message.content,
-            reranking_model=agent_config.reranking_config.reranking_model,
-            displayer=displayer,
-            t=t,
-            reranking_enabled=agent_config.reranking_config.enabled,
-        )
-
-    @step(
-        name=LocaleString(en="Order Nodes by Documents"),
-        description=LocaleString(en="Orders the retrieved nodes by their source documents."),
-        precondition=reranking_complete_or_disabled,
-    )
-    async def order_nodes_by_documents_step(
-        self,
-        event: RetrieverEvent | RerankerEvent,
-        t: LocaleHandler,
-        agent_config: RAGAgentConfig,
-        displayer: EventDisplayer,
+        event: AgentInTheLoop.response,
     ) -> InOrderNodeCombinerEvent:
-        """Orders the retrieved nodes based on their source documents."""
-        nodes = event.output_nodes if isinstance(event, RerankerEvent) else event.nodes
-        return await execute_order_nodes_by_documents(
-            nodes=nodes,
-            t=t,
-            displayer=displayer,
-            context_prompt=agent_config.context_prompt,
+        """Processes the successful retrieval response from RetrievalAgent."""
+        retrieval_response: RetrievalResponseEvent = event.stop_event
+        return InOrderNodeCombinerEvent(context_message=retrieval_response.context_message)
+
+    @step(
+        name=LocaleString(en="Retrieval Error"),
+        description=LocaleString(en="Handles errors from the RetrievalAgent."),
+    )
+    async def retrieval_exception_step(
+        self,
+        event: AgentInTheLoop.exception,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> StopEvent:
+        """Handles errors from the RetrievalAgent."""
+        await displayer.display_thought(
+            t(
+                "agent.rag_agent.thoughts.retrieval_error",
+                error_code=event.exception_event.http_status_code,
+                error_message=event.exception_event.message,
+            )
         )
+        await displayer.display_chunk(t("agent.rag_agent.messages.retrieval_error"), model_name="RAG Agent")
+        return StopEvent()
 
     @step(
         name=LocaleString(en="Context Sufficient Guard"),

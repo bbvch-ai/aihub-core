@@ -10,38 +10,24 @@ import pytest
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
-from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
-from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
-from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.generative_ai.resources.models.llm.RerankingModelConfig import RerankingModelConfig
-from aihub_lib.generative_ai.retrievers import InsightRetrieverConfig, KnowledgeRetrieverConfig
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.logging.logger import enable_logging
-from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.nats.events import LLMEvent, UserMessageEvent
+from aihub_lib.nats.events.agent_in_the_loop import AgentInTheLoopRequestEvent, AgentInTheLoopResponseEvent
 from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_lib.nats.events.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
 from aihub_lib.nats.events.guard.FewShotAcceptEvent import FewShotAcceptEvent
 from aihub_lib.nats.events.guard.FewShotRejectEvent import FewShotRejectEvent
-from aihub_lib.nats.events.semantic.reranker import RerankerEvent
-from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
-from aihub_lib.persistence.insight.InsightEntity import InsightCreator, InsightEntity, InsightMessage, InsightSource
-from aihub_lib.persistence.rag.documents.stores.docstore import create_mongo_document_store
-from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.asyncio_utils.bdd import async_test
-from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_collection
 from dotenv import load_dotenv
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.vector_stores.types import VectorStoreQueryMode
-from mongoengine import connect, disconnect
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
+from aihub_agent.agents.RetrievalAgent.events.RetrievalResponseEvent import RetrievalResponseEvent
 from aihub_agent.rag.events import InOrderNodeCombinerEvent, LimitChatHistoryWithContextEvent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
@@ -59,18 +45,15 @@ def event_loop():
 scenarios("./features/rag_agent.feature")
 load_dotenv(Path(__file__).parent / ".env")
 
+TIMEOUT = 120
 
-def build_rag_agent_config(
-    llm_config,
-    reranking_config,
-    embedding_config,
-    vector_store,
-    query_mode: VectorStoreQueryMode,
-) -> RAGAgentConfig:
+
+def build_rag_agent_config(llm_config: LLMConfig) -> RAGAgentConfig:
     """
-    Build a fully populated RAGAgentConfig with the specified LLM, embedding, and vector store configuration.
+    Build a RAGAgentConfig with the specified LLM configuration.
 
-    We keep the entire parameter list intact to avoid partial Pydantic construction.
+    Note: Retrieval is now handled by RetrievalAgent via AgentInTheLoop.
+    The retrieval config (retrievers, reranking) is in RetrievalAgentConfig.
     """
     return RAGAgentConfig(
         agent_id="rag_agent",
@@ -78,178 +61,22 @@ def build_rag_agent_config(
         name=LocaleString(en="RAG Agent"),
         description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
         llm=llm_config,
-        retrievers=[
-            KnowledgeRetrieverConfig(
-                embed_model=embedding_config,
-                index_namespaces=["ai_knowledge"],
-                retrieve_k=5,
-                query_mode=query_mode,
-                node_types=["content"],
-                vector_store=vector_store,
-                retrieve_prev_next=RetrievePrevNextConfig(
-                    num_nodes=2,
-                    mode=ModeOptions.BOTH,
-                ),
-            ),
-        ],
+        retrieval_agent_class="RetrievalAgent",
+        retrieval_agent_id="test_retrieval_agent",
         number_of_input_tokens=8192,
         check_context_sufficiency=False,
-        reranking_config=RerankingConfig(enabled=False, reranking_model=reranking_config),
-    )
-
-
-def build_rag_agent_config_with_insights(
-    llm_config,
-    reranking_config,
-    embedding_config,
-    vector_store,
-    query_mode: VectorStoreQueryMode,
-    insight_namespace: str,
-    insight_agent_class: str,
-    insight_agent_id: str,
-) -> RAGAgentConfig:
-    """Build RAGAgentConfig with both knowledge AND insight retrievers."""
-    return RAGAgentConfig(
-        agent_id="rag_agent",
-        agent_class=RAGAgent.__name__,
-        name=LocaleString(en="RAG Agent with Insights"),
-        description=LocaleString(en="RAG agent with expert insights"),
-        llm=llm_config,
-        retrievers=[
-            KnowledgeRetrieverConfig(
-                embed_model=embedding_config,
-                index_namespaces=["ai_knowledge"],
-                retrieve_k=5,
-                query_mode=query_mode,
-                node_types=["content"],
-                vector_store=vector_store,
-                retrieve_prev_next=RetrievePrevNextConfig(
-                    num_nodes=2,
-                    mode=ModeOptions.BOTH,
-                ),
-            ),
-            InsightRetrieverConfig(
-                namespace=insight_namespace,
-                agent_class=insight_agent_class,
-                agent_id=insight_agent_id,
-            ),
-        ],
-        number_of_input_tokens=8192,
-        check_context_sufficiency=False,
-        reranking_config=RerankingConfig(enabled=False, reranking_model=reranking_config),
     )
 
 
 @pytest.fixture(scope="session")
-def test_collection(event_loop):
+def self_hosted_agent_config():
     """
-    Set up and tear down the test collection for all tests.
-    """
-    asyncio.set_event_loop(event_loop)
+    Return a RAGAgentConfig that uses a self-hosted LLM.
 
-    embedding_config = EmbeddingModelConfig(model_name="embedding/large")
-    vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
-        uri="http://localhost",
-        collection_name="development",
-        dimensions=1024,
-    )
-    doc_store = create_mongo_document_store(document_store_name="development")
-
-    fill_collection(
-        embedding_config,
-        vector_store,
-        doc_store,
-    )
-
-    yield
-
-    drop_collection()
-
-
-# Insight test data helpers
-TEST_INSIGHT_NAMESPACE = "ai_knowledge"
-TEST_INSIGHT_AGENT_CLASS = "RAGAgent"
-TEST_INSIGHT_AGENT_ID = "rag_agent"
-
-
-def create_test_insights(namespace: str, agent_class: str, agent_id: str) -> list[InsightEntity]:
-    """Pre-seed MongoDB with test insights for retrieval tests."""
-    insights = []
-    insight1 = InsightEntity.create_insight(
-        question="What is machine learning?",
-        expert_answer="Machine learning is a subset of AI that enables systems to learn from data.",
-        conversation=[
-            InsightMessage(role=MessageRole.USER, content="What is machine learning?"),
-            InsightMessage(
-                role=MessageRole.ASSISTANT,
-                content="Machine learning is a subset of AI that enables systems to learn from data.",
-            ),
-        ],
-        namespace=namespace,
-        source=InsightSource(thread_id="test-thread-1", expert_user_id="expert-1", expert_name="Dr. AI Expert"),
-        creator=InsightCreator(agent_class=agent_class, agent_id=agent_id, user_id="test-user", user_name="Test User"),
-    )
-    insights.append(insight1)
-    return insights
-
-
-def delete_test_insights(namespace: str):
-    """Cleanup test insights after tests."""
-    InsightEntity.objects(namespace=namespace).delete()
-
-
-@pytest.fixture(scope="session")
-def mongo_connection(event_loop):
-    """Set up MongoEngine connection for InsightEntity tests."""
-    asyncio.set_event_loop(event_loop)
-    config = AIHubSettings()
-    connect(
-        db=config.MONGO_MAIN_DB_NAME,
-        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
-        uuidRepresentation="standard",
-    )
-    yield
-    disconnect()
-
-
-@pytest.fixture(scope="session")
-def test_insights(event_loop, test_collection, mongo_connection):
-    """Setup/teardown test insights for expert workflow tests."""
-    asyncio.set_event_loop(event_loop)
-    insights = create_test_insights(
-        namespace=TEST_INSIGHT_NAMESPACE,
-        agent_class=TEST_INSIGHT_AGENT_CLASS,
-        agent_id=TEST_INSIGHT_AGENT_ID,
-    )
-    yield insights
-    # Cleanup insights - wrapped in try/except in case mongo disconnects first
-    try:
-        delete_test_insights(namespace=TEST_INSIGHT_NAMESPACE)
-    except Exception:
-        pass  # Connection may already be closed during teardown
-
-
-@pytest.fixture(scope="session")
-def self_hosted_agent_config(test_collection):
-    """
-    Return a RAGAgentConfig that uses a self-hosted LLM and self-hosted embeddings.
+    Note: Retrieval is now handled by RetrievalAgent via AgentInTheLoop.
     """
     llm_config = LLMConfig(model_name="text-generation/mini")
-    reranking_config = RerankingModelConfig(model_name="reranker")
-    embedding_config = EmbeddingModelConfig(model_name="embedding/large")
-    vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
-        uri="http://localhost",
-        collection_name="development",
-        dimensions=1024,
-    )
-
-    return build_rag_agent_config(
-        llm_config=llm_config,
-        reranking_config=reranking_config,
-        embedding_config=embedding_config,
-        vector_store=vector_store,
-        query_mode=VectorStoreQueryMode.HYBRID,
-    )
+    return build_rag_agent_config(llm_config=llm_config)
 
 
 @given(parsers.parse('check_context_sufficiency set to "{flag}" and max_hops to "{max_hops:d}"'))
@@ -273,7 +100,7 @@ def _(self_hosted_agent_config):
 @when(parsers.parse('the start event is sent with a user query "{query}"'))
 @async_test
 async def _(agent_runner: AgentTestRunner, query: str):
-    async with agent_runner.test_run(delay_before_stop=120) as topic:
+    async with agent_runner.test_run(delay_before_stop=TIMEOUT) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
@@ -281,6 +108,26 @@ async def _(agent_runner: AgentTestRunner, query: str):
                 user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
                 locale="en",
             ),
+        )
+        # Wait for AgentInTheLoop request to RetrievalAgent
+        await agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
+
+        # Mock RetrievalAgent response with relevant context
+        mock_retrieval_response = RetrievalResponseEvent(
+            context_message=ChatMessage(
+                role=MessageRole.SYSTEM,
+                content=(
+                    "Retrieved context about AI:\n"
+                    "Artificial Intelligence (AI) is the simulation of human intelligence by machines. "
+                    "It includes machine learning, neural networks, and natural language processing. "
+                    "AI systems can learn from data, identify patterns, and make decisions."
+                ),
+            ),
+            nodes=[],  # Nodes would normally come from the retrieval
+        )
+        await agent_runner.send_event_from_topic(
+            start_event=AgentInTheLoopResponseEvent(stop_event=mock_retrieval_response),
+            topic=topic,
         )
 
 
@@ -298,25 +145,6 @@ def _(agent_runner: AgentTestRunner):
 def _(agent_runner: AgentTestRunner):
     condenser_event = agent_runner.get_event_of_class(StandaloneQuestionCondenserEvent)
     assert condenser_event.condensed_chat_message.content, "No condensed question found"
-
-
-@then("a RetrieverEvent is present with retrieved nodes")
-def _(agent_runner: AgentTestRunner):
-    retriever_event = agent_runner.get_event_of_class(RetrieverEvent)
-    assert retriever_event.nodes, "RetrieverEvent did not produce nodes"
-
-
-@then(parsers.parse('a RetrieverEvent is present with more than "{node_count:d}" retrieved nodes'))
-def _(agent_runner: AgentTestRunner, node_count: int):
-    retriever_event = agent_runner.get_event_of_class(RetrieverEvent)
-    nodes = len(retriever_event.nodes)
-    assert nodes > node_count, f"Expected more than {node_count} nodes, got {nodes}"
-
-
-@then(parsers.parse('"{count:d}" RetrieverEvent are present'))
-def _(count: int, agent_runner: AgentTestRunner):
-    retriever_events = len(agent_runner.get_events_of_class(RetrieverEvent, True))
-    assert retriever_events == count, f"Expected {count} RetrieverEvents, got {retriever_events}"
 
 
 @then("an InOrderNodeCombinerEvent is present with ordered context message")
@@ -366,7 +194,7 @@ def _(agent_runner: AgentTestRunner, datatable):
 @when(parsers.parse('the start event is sent with a user query "{query}" and locale {locale}'))
 @async_test
 async def _(agent_runner: AgentTestRunner, query: str, locale: str):
-    async with agent_runner.test_run(delay_before_stop=120) as topic:
+    async with agent_runner.test_run(delay_before_stop=TIMEOUT) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
@@ -374,6 +202,25 @@ async def _(agent_runner: AgentTestRunner, query: str, locale: str):
                 user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
                 messages=[ChatMessage(content=query, role=MessageRole.USER)],
             ),
+        )
+        # Wait for AgentInTheLoop request to RetrievalAgent
+        await agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
+
+        # Mock RetrievalAgent response with relevant context
+        mock_retrieval_response = RetrievalResponseEvent(
+            context_message=ChatMessage(
+                role=MessageRole.SYSTEM,
+                content=(
+                    "Retrieved context about AI:\n"
+                    "Artificial Intelligence (AI) is the simulation of human intelligence by machines. "
+                    "It includes machine learning, neural networks, and natural language processing."
+                ),
+            ),
+            nodes=[],
+        )
+        await agent_runner.send_event_from_topic(
+            start_event=AgentInTheLoopResponseEvent(stop_event=mock_retrieval_response),
+            topic=topic,
         )
 
 
@@ -445,108 +292,6 @@ def _(agent_runner: AgentTestRunner, expected_prompt: str):
     assert actual_prompt == expected_prompt, f"Expected system prompt '{expected_prompt}', got '{actual_prompt}'"
 
 
-@given(parsers.parse('with reranking enabled and top_n of "{top_n:d}"'))
-def _(agent_runner: AgentTestRunner, top_n: int):
-    agent_runner.default_agent_config.reranking_config = RerankingConfig(
-        enabled=True, reranking_model=RerankingModelConfig(model_name="reranker", top_n=top_n)
-    )
-    return agent_runner
-
-
-@given("with reranking disabled")
-def _(agent_runner: AgentTestRunner):
-    agent_runner.default_agent_config.reranking_config = RerankingConfig(
-        enabled=False,
-    )
-    return agent_runner
-
-
-@then("a RerankerEvent is present with reranked nodes")
-def _(agent_runner: AgentTestRunner):
-    reranker_event = agent_runner.get_event_of_class(RerankerEvent)
-    assert reranker_event, "RerankerEvent was not produced"
-    assert reranker_event.output_nodes, "RerankerEvent did not contain reranked nodes"
-
-
-@then("a RerankerEvent is present without reranking")
-def _(agent_runner: AgentTestRunner):
-    reranker_event = agent_runner.get_event_of_class(RerankerEvent)
-    assert reranker_event, "RerankerEvent was not produced"
-    assert len(reranker_event.input_nodes) == len(
-        reranker_event.output_nodes
-    ), "Pass-through mode should preserve all nodes"
-
-
-@then("the RerankerEvent contains the original nodes from the RetrieverEvent")
-def _(agent_runner: AgentTestRunner):
-    retriever_event = agent_runner.get_event_of_class(RetrieverEvent)
-    reranker_event = agent_runner.get_event_of_class(RerankerEvent)
-
-    assert retriever_event, "RetrieverEvent was not found"
-    assert reranker_event, "RerankerEvent was not found"
-
-    retriever_node_ids = [node.node.node_id for node in retriever_event.nodes]
-    reranker_node_ids = [node.node.node_id for node in reranker_event.output_nodes]
-
-    assert retriever_node_ids == reranker_node_ids, "Node IDs should match in pass-through mode"
-
-
-@then(parsers.parse('the RerankerEvent should limit results to "{top_n:d}" nodes'))
-def _(agent_runner: AgentTestRunner, top_n: int):
-    reranker_event = agent_runner.get_event_of_class(RerankerEvent)
-    assert reranker_event, "RerankerEvent was not found"
-    assert (
-        len(reranker_event.output_nodes) <= top_n
-    ), f"Expected at most {top_n} nodes, got {len(reranker_event.output_nodes)}"
-
-
-@then(parsers.parse('the RerankerEvent model name should be "{model_name}"'))
-def _(agent_runner: AgentTestRunner, model_name: str):
-    reranker_event = agent_runner.get_event_of_class(RerankerEvent)
-    assert reranker_event, "RerankerEvent was not found"
-    assert (
-        reranker_event.rerank_model_name == model_name
-    ), f"Expected model {model_name}, got {reranker_event.rerank_model_name}"
-
-
-# ====== Insight Retrieval Step Definitions ======
-
-
-@pytest.fixture(scope="session")
-def insight_enabled_agent_config(test_collection, test_insights):
-    """Return a RAGAgentConfig with insight retriever enabled."""
-    llm_config = LLMConfig(model_name="text-generation/mini")
-    reranking_config = RerankingModelConfig(model_name="reranker")
-    embedding_config = EmbeddingModelConfig(model_name="embedding/large")
-    vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
-        uri="http://localhost",
-        collection_name="development",
-        dimensions=1024,
-    )
-
-    return build_rag_agent_config_with_insights(
-        llm_config=llm_config,
-        reranking_config=reranking_config,
-        embedding_config=embedding_config,
-        vector_store=vector_store,
-        query_mode=VectorStoreQueryMode.HYBRID,
-        insight_namespace=TEST_INSIGHT_NAMESPACE,
-        insight_agent_class=TEST_INSIGHT_AGENT_CLASS,
-        insight_agent_id=TEST_INSIGHT_AGENT_ID,
-    )
-
-
-@pytest.mark.usefixtures("insight_enabled_agent_config")
-@given("a RAGAgent runner with insight retriever enabled", target_fixture="agent_runner")
-def _(insight_enabled_agent_config):
-    """Given a RAGAgent runner with insight retriever enabled."""
-    return AgentTestRunner(
-        agent_type=RAGAgent,
-        default_agent_config=insight_enabled_agent_config,
-    )
-
-
-@given("test insights are pre-seeded in the database")
-def _(test_insights):
-    """Ensure test insights are pre-seeded in the database (handled by fixture)."""
-    assert len(test_insights) > 0, "Test insights were not pre-seeded"
+# Note: Reranking and insight retrieval step definitions have been removed.
+# These are now tested in the RetrievalAgent tests since retrieval logic
+# has been moved to the shared RetrievalAgent.
