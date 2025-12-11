@@ -27,6 +27,12 @@ def condense_standalone_question(
     t: LocaleHandler,
     llm: LLM,
 ) -> ChatMessage:
+    """
+    Condenses a follow-up user question into a standalone question using chat history and a language model.
+    This function takes a user message (as a ChatMessage, which may include text and multimodal content such as images),
+    the chat history.
+    It generates a prompt to rephrase the user's question as a standalone question, leveraging the chat history context.
+    """
     chat_history_without_system_messages = [msg for msg in chat_history if msg.role != MessageRole.SYSTEM]
     chat_history_str = _messages_to_history_str(chat_history_without_system_messages)
 
