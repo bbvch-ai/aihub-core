@@ -3,7 +3,6 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms import LLM
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.i18n.LocaleString import LocaleString
 
 
 def _messages_to_history_str(messages: list[ChatMessage]) -> str:
