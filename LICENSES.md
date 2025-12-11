@@ -1,12 +1,12 @@
 # License Report
 
-Generated on: 10.12.2025
+Generated on: 11.12.2025
 
 This document contains license information for all dependencies across the monorepo:
 
 - Python packages (Poetry): **236 packages**
 - Node.js packages (pnpm): **197 packages**
-- External Docker images: **29 images**
+- External Docker images: **30 images**
 
 ### License Compatibility
 
@@ -497,6 +497,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | ferretdb                        | `ghcr.io/bbvch-ai/aihub-core/ferretdb:2.5.0`                                | Apache-2.0         | Permissive license                                                |
 | ✅     | seaweedfs                       | `ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97`                                | Apache-2.0         | Permissive license                                                |
 | ✅     | speaches                        | `ghcr.io/bbvch-ai/aihub-core/speaches:0.8.3-cpu`                            | MIT                | Permissive license                                                |
+| ✅     | pgbouncer                       | `ghcr.io/bbvch-ai/aihub-core/pgbouncer:v1.24.1-p1`                          | ISC                | Based on edoburu/pgbouncer (MIT wrapper); permissive licenses     |
 | ✅     | aws-cli-alpine                  | `ghcr.io/bbvch-ai/aihub-core/aws-cli-alpine:3.22.1`                         | Apache-2.0         | Permissive license                                                |
 | ⚠️     | phoenix                         | `ghcr.io/bbvch-ai/aihub-core/phoenix:version-10.0.4`                        | ELv2               | Source-available; cannot offer as a service, internal use allowed |
 | ✅     | dagster                         | `ghcr.io/bbvch-ai/aihub-core/dagster:nightly`                               | Apache-2.0         | Permissive license                                                |

@@ -15,8 +15,18 @@ logger = logging.getLogger(__name__)
 
 
 class DoclingController(Controller):
-    name = LocaleString(en="Document Conversion")
-    description = LocaleString(en="Convert documents using Docling service")
+    name = LocaleString(
+        en="Document Converter",
+        de="Dokumentenkonverter",
+        fr="Convertisseur de documents",
+        it="Convertitore di documenti",
+    )
+    description = LocaleString(
+        en="Convert documents to different formats",
+        de="Dokumente in verschiedene Formate konvertieren",
+        fr="Convertissez des documents en différents formats",
+        it="Converti documenti in formati diversi",
+    )
     icon = "line-md:document"
 
     def __init__(
