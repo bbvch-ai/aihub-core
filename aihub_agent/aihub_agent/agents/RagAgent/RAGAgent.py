@@ -1,3 +1,5 @@
+import asyncio
+
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
 from aihub_lib.generative_ai.guards.few_shot_guard import few_shot_guard
@@ -210,24 +212,30 @@ class RAGAgent(Agent):
         t: LocaleHandler,
     ) -> RetrieverEvent:
         """
-        Retrieves relevant nodes from multiple knowledge sources.
+        Retrieves relevant nodes from multiple knowledge sources in parallel.
 
-        Iterates through configured retrievers (knowledge base, insights)
-        and combines all retrieved nodes.
+        Creates retrievers for all configured sources and executes
+        retrieval concurrently using asyncio.gather().
         """
         if isinstance(event, StandaloneQuestionCondenserEvent):
             query = event.condensed_chat_message.content
         else:
             query = event.new_query
 
-        all_nodes = []
+        # Create retrievers and display thoughts
+        retrievers = []
         for retriever_config in agent_config.retrievers:
             retriever = create_retriever(retriever_config)
             await displayer.display_thought(
                 t("agent.thought.retrieving_from", source=retriever_config.retriever_type.value)
             )
-            nodes = await retriever.retrieve(query)
-            all_nodes.extend(nodes)
+            retrievers.append(retriever)
+
+        # Retrieve from all sources in parallel
+        results = await asyncio.gather(*[retriever.retrieve(query) for retriever in retrievers])
+
+        # Flatten results from all retrievers
+        all_nodes = [node for nodes in results for node in nodes]
 
         # Convert IngestedNodes to NodeWithScore for downstream processing
         nodes_with_score = [node.to_llama_index_node_with_score() for node in all_nodes]
