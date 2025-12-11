@@ -222,9 +222,6 @@ class RAGAgent(Agent):
 
         all_nodes = []
         for retriever_config in agent_config.retrievers:
-            if not retriever_config.enabled:
-                continue
-
             retriever = create_retriever(retriever_config)
             await displayer.display_thought(
                 t("agent.thought.retrieving_from", source=retriever_config.retriever_type.value)
