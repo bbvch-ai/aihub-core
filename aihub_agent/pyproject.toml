@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_agent"
-version = "v0.255.0"
+version = "v0.255.4"
 description = "agents core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -35,7 +35,7 @@ stringcase = "^1.2.0"
 
 [tool.poetry.dependencies.aihub_lib]
 git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.255.0"
+tag = "v0.255.4"
 subdirectory = "aihub_lib"
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
@@ -87,6 +87,7 @@ markers = [
     "slow: mark a test as slow",
     "integration: mark a test as an integration test",
     "experimental: mark a test as experimental",
+    "flaky: mark tests that are flaky and should be skipped in CI",
 ]
 addopts = "--strict-markers"
 

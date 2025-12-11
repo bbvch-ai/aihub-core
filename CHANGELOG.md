@@ -5,6 +5,134 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.255.4] - 2025-12-11 - Smarter Standalone Questions: Multimodal Support and Centralized Prompts
+
+### Added
+
+- 🧪 **Comprehensive Tests for Question Condensation**: Introduced new test cases for the `condense_standalone_question`
+  utility, ensuring robust functionality for text-only and multimodal inputs, and proper handling of chat history.
+
+### Changed
+
+- 🖼️ **Enabled Multimodal Question Condensation**: The `condense_standalone_question` utility now supports multimodal
+  input (e.g., text and images) by accepting a `ChatMessage` object directly, allowing agents to understand and rephrase
+  questions that refer to visual content.
+- ⚙️ **Standardized Standalone Question Prompt**: The prompt for generating standalone questions is now centralized and
+  embedded within `aihub_lib`, removing the configurable `condense_question_prompt` option from `FewShotAgentConfig` and
+  `RAGAgentConfig` to ensure consistent and optimized behavior across all agents.
+- 🚀 **Upgraded LLM Interaction for Condensation**: The internal mechanism for condensing questions transitioned from
+  simple `llm.predict` to `llm.chat`, utilizing system messages to provide more structured instructions to the LLM for
+  improved accuracy and multimodal processing.
+- 💬 **Enhanced User Message Handling**: Agents now leverage the `last_user_message` property to retrieve the complete
+  user input, including any multimodal content, ensuring all relevant information is considered during question
+  condensation.
+- 📄 **Improved Standalone Question Prompt Logic**: Updated the default prompt translations (`lib/prompt.*.yml`) for
+  standalone question condensation with explicit instructions, including directives for image analysis and replacing
+  pronouns with precise textual descriptions of visible objects.
+
+### Removed
+
+- 🗑️ **Deprecated Configurable Condense Prompt**: The `condense_question_prompt` configuration field has been removed
+  from `FewShotAgentConfig` and `RAGAgentConfig`, streamlining agent configuration by relying on the new centralized
+  prompt definition.
+
+---
+
+## [v0.255.3] - 2025-12-11 - Enhanced Milvus Performance and Smarter Data Management
+
+### Added
+
+- ✨ **Introduced Partition-Aware Deletion for Milvus**: Implemented a new deletion mechanism in
+  `PartitionAwareMilvusVectorStore` that enables more granular and efficient removal of vector nodes associated with a
+  reference document within specific Milvus partitions.
+- 🦾 **Enabled Upsert Mode for Milvus Vector Stores**: Configured the Milvus vector store factory to use
+  `upsert_mode=True`, which automatically overwrites existing nodes when new data with matching IDs is added,
+  streamlining data synchronization and preventing duplicates.
+
+### Changed
+
+- 🚀 **Optimized Milvus Configuration for Performance and Resource Management**: Significantly adjusted Milvus parameters
+  across all configurations (including `rocksmq`, `queryNode`, and `quotaAndLimits`) to improve memory usage, enhance
+  data eviction policies, and optimize query processing, leading to better stability and efficiency.
+- 🧹 **Streamlined Milvus Node Addition Workflow**: Updated the `VectorStoreIOManager` to leverage Milvus's
+  `upsert_mode`, removing the explicit pre-deletion of nodes before adding new ones. This simplifies the data ingestion
+  pipeline and prevents potential memory leaks.
+- 🎯 **Enhanced Reference Document Deletion Op**: The `delete_nodes_for_ref_doc` operation now utilizes partition-aware
+  deletion, ensuring that nodes related to a reference document are targeted precisely within their respective Milvus
+  partitions.
+- ⚙️ **Upgraded Core Infrastructure Components**: Updated **Milvus** to `v2.6.7` and **Etcd** to `v3.5.25`,
+  incorporating performance improvements, bug fixes, and new features from these latest versions.
+
+---
+
+## [v0.255.2] - 2025-12-11 - Unlocking Knowledge: Expert Insights and Advanced RAG for Smarter Agents
+
+### Added
+
+- ✨ **Expert Insight Persistence**: Expert responses and conversations from the `ExpertAskingAgent` are now stored as
+  valuable 'insights' in MongoDB, enabling agents to learn from and leverage past expert interactions.
+- 🚀 **Modular Multi-Source Retrieval System**: Introduced a new, flexible system allowing RAG agents to retrieve
+  information from diverse sources, including traditional knowledge bases and newly persisted expert insights, in
+  parallel.
+- 💬 **Specialized Human-in-the-Loop (HITL) Events**: Enhanced human interaction capabilities with new event types
+  (`HumanInTheLoopInput` and `HumanInTheLoopConfirmation`), providing more explicit and structured dialogues for
+  free-form text input or yes/no confirmations.
+- 🌐 **Bot-in-the-Loop Path Entity**: A new MongoDB path entity has been added to streamline bot-in-the-loop responses,
+  improving the integration and handling of bot channel interactions.
+- 🧪 **Comprehensive Agent Test Suites**: New test coverage has been added for the `ExpertAskingAgent` and expanded for
+  the `RAGAgent`, specifically addressing expert escalation workflows and the new insight retrieval functionality.
+- 🖥️ **Robust MongoDB Connection Management**: Implemented enhanced connection management for MongoDB within both agent
+  and process runners, ensuring reliable data persistence and retrieval.
+
+### Changed
+
+- ⚙️ **RAG Agent Configuration**: The `RAGAgent`'s retrieval configuration has been modernized to utilize the new
+  multi-source retrieval system, replacing the singular `retrieve_step_config` with a flexible list of `retrievers`.
+- 🆔 **Detailed Expert Identification**: `ExpertAnswerSufficientEvent` and `ExpertAnswerInsufficientEvent` now include
+  the `expert_user_id`, allowing for more granular tracking and identification of expert contributions.
+- 🤝 **Mandatory Bot-in-the-Loop Responder Information**: The `responder` and `user_name` fields in
+  `BotInTheLoopResponseEvent` are now required, ensuring complete traceability of human responses from bot channels.
+- 🔄 **OpenWebUI Human-in-the-Loop Handler**: The OpenWebUI integration has been updated to fully support the new
+  specialized `HumanInTheLoopConfirmation` dialogs, providing a richer and more intuitive user experience for agent
+  confirmations.
+
+### Refactor
+
+- 🧹 **Centralized Retrieval Logic**: Core retrieval utilities and configurations, including `RetrieveSummariesConfig`
+  and helper functions for node retrieval, have been moved to a shared library (`aihub_lib`), promoting better code
+  organization and reusability across agents.
+- ⚡️ **Streamlined Human-in-the-Loop Event Structure**: The internal architecture of Human-in-the-Loop events has been
+  refined, abstracting common `Request` and `Response` patterns into base classes and introducing dedicated subclasses
+  for specific interaction types.
+
+---
+
+## [v0.255.1] - 2025-12-11 - Enhanced Database Connection Management with PgBouncer
+
+### Added
+
+- 🚀 **PgBouncer Integration:** Introduced PgBouncer connection pooling for Dagster deployments (all stages except `dev`)
+  to improve database connection management and prevent connection exhaustion.
+- ✨ **PgBouncer Service:** Added a dedicated PgBouncer service with robust health checks and configurable pooling
+  parameters to all non-development Docker Compose configurations.
+- 📄 **PgBouncer License Information:** Included the ISC license details for PgBouncer in the project's license
+  configuration.
+
+### Changed
+
+- 🔄 **Dagster Database Connectivity:** Updated Dagster's database configuration in `build`, `latest`, `local`, and
+  `nightly` stages to connect through PgBouncer (hostname `pgbouncer`, port `6432`) instead of directly to PostgreSQL.
+- ⚡️ **Service Dependencies:** Configured Dagster's `webserver` and `daemon` services in non-development environments to
+  explicitly depend on the `pgbouncer` service, ensuring correct startup order.
+
+### Refactor
+
+- 🧹 **Dynamic Dagster Configuration:** Refactored the Dagster configuration template (`dagster-config.yml.j2`) to
+  conditionally configure database connections: direct to PostgreSQL for `dev` stage, and via PgBouncer for all other
+  stages.
+
+---
+
 ## [v0.255.0] - 2025-12-10 - Enhanced Platform Experience and High-Availability Storage
 
 ### Added

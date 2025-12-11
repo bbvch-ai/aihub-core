@@ -1,0 +1,7 @@
+role:
+  assistant: "Assistente"
+  user: "Esperto"
+label:
+  question: "Domanda"
+  answer: "Risposta"
+  conversation: "Conversazione"

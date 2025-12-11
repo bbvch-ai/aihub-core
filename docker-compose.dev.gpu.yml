@@ -160,7 +160,7 @@ services:
 
   etcd:
     container_name: etcd
-    image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.16
+    image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.25
     restart: always
     environment:
       ETCD_AUTO_COMPACTION_MODE: revision
@@ -180,7 +180,7 @@ services:
 
   milvus-standalone:
     container_name: milvus
-    image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.5.15
+    image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.6.7
     restart: always
     command: [ "milvus", "run", "standalone" ]
     security_opt:
@@ -257,6 +257,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+
+  
 
   # ===================================================================
   # FerretDB Stack (MongoDB Compatibility)
@@ -631,7 +633,7 @@ services:
 
   docling:
     container_name: docling
-    image: ghcr.io/bbvch-ai/aihub-core/docling-serve-cpu:v1.8.0
+    image: ghcr.io/bbvch-ai/aihub-core/docling-serve-cpu:v1.9.0
     restart: always
     ports:
       - "5001:5001"

@@ -23,6 +23,7 @@ from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTop
 from aihub_lib.nats.topics.discovery.process.ProcessClassDiscoveryTopic import ProcessClassDiscoveryTopic
 from aihub_lib.processes.ProcessConfig import ProcessConfig
 from mongoengine import connect
+from mongoengine.connection import get_connection
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import ConnectionPool, Redis
@@ -156,10 +157,14 @@ class ProcessRunner:
         self.running = True
         self._stop_signal.clear()
 
-        connect(
-            host=MongoSettings().CONNECTION_STRING.get_secret_value(),
-            uuidRepresentation="standard",
-        )
+        # Connect to MongoDB (skip if already connected)
+        try:
+            get_connection()
+        except Exception:
+            connect(
+                host=MongoSettings().CONNECTION_STRING.get_secret_value(),
+                uuidRepresentation="standard",
+            )
 
         self.nc = NATS()
         await self.nc.connect(servers=self.servers)
