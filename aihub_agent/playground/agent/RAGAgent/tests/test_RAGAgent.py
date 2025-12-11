@@ -41,9 +41,8 @@ from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
-from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
-from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
+from aihub_agent.rag.events import InOrderNodeCombinerEvent, LimitChatHistoryWithContextEvent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 enable_logging()

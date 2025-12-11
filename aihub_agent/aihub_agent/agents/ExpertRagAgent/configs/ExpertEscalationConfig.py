@@ -7,8 +7,8 @@ class ExpertEscalationConfig(BaseModel):
     """
     Configuration for expert escalation workflow.
 
-    When configured in RAGAgentConfig, this enables the agent to offer expert
-    escalation when retrieved context is insufficient to answer the user's query.
+    When configured in ExpertRAGAgentConfig, this enables the agent to escalate
+    to human experts when retrieved context is insufficient to answer the user's query.
     """
 
     expert_asking_agent_class: Annotated[

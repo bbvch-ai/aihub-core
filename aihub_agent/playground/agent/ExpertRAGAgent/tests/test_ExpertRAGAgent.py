@@ -1,4 +1,5 @@
 # ruff: noqa: E402
+"""Tests for ExpertRAGAgent with mandatory expert escalation workflow."""
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
 
 AihubInstrumentor().instrument()
@@ -38,18 +39,18 @@ from mongoengine import connect, disconnect
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_agent.agents.ExpertAskingAgent.events.AnswerStopEvent import AnswerStopEvent
-from aihub_agent.agents.RagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
-from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
+from aihub_agent.agents.ExpertRagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
+from aihub_agent.agents.ExpertRagAgent.configs.ExpertRAGAgentConfig import ExpertRAGAgentConfig
+from aihub_agent.agents.ExpertRagAgent.events.UserRequestsExpertEvent import UserRequestsExpertEvent
+from aihub_agent.agents.ExpertRagAgent.ExpertRAGAgent import ExpertRAGAgent
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
-from aihub_agent.agents.RagAgent.events.UserRequestsExpertEvent import UserRequestsExpertEvent
-from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 enable_logging()
 
 pytestmark = pytest.mark.flaky
 
-scenarios("./features/rag_agent_expert_escalation.feature")
+scenarios("./features/expert_rag_agent.feature")
 load_dotenv(Path(__file__).parent / ".env")
 
 TIMEOUT = 240
@@ -102,8 +103,8 @@ def mongo_connection(event_loop):
 
 
 @pytest.fixture(scope="session")
-def expert_escalation_agent_config(test_collection):
-    """Return a RAGAgentConfig with expert escalation enabled."""
+def expert_rag_agent_config(test_collection):
+    """Return an ExpertRAGAgentConfig with expert escalation (required)."""
     llm_config = LLMConfig(model_name="text-generation/mini")
     reranking_config = RerankingModelConfig(model_name="reranker")
     embedding_config = EmbeddingModelConfig(model_name="embedding/large")
@@ -113,11 +114,11 @@ def expert_escalation_agent_config(test_collection):
         dimensions=1024,
     )
 
-    return RAGAgentConfig(
-        agent_id="rag_agent",
-        agent_class=RAGAgent.__name__,
-        name=LocaleString(en="RAG Agent with Expert Escalation"),
-        description=LocaleString(en="RAG agent with expert escalation for insufficient context"),
+    return ExpertRAGAgentConfig(
+        agent_id="expert_rag_agent",
+        agent_class=ExpertRAGAgent.__name__,
+        name=LocaleString(en="Expert RAG Agent"),
+        description=LocaleString(en="RAG agent with mandatory expert escalation"),
         llm=llm_config,
         retrievers=[
             KnowledgeRetrieverConfig(
@@ -144,22 +145,28 @@ def expert_escalation_agent_config(test_collection):
     )
 
 
-@pytest.mark.usefixtures("expert_escalation_agent_config")
-@given("a RAGAgent runner with expert escalation enabled", target_fixture="rag_agent_runner")
-def _(expert_escalation_agent_config):
-    """Given a RAGAgent runner with expert escalation enabled."""
+# ==================== Given Steps ====================
+
+
+@pytest.mark.usefixtures("expert_rag_agent_config")
+@given("an ExpertRAGAgent runner", target_fixture="expert_rag_agent_runner")
+def create_expert_rag_agent_runner(expert_rag_agent_config):
+    """Given an ExpertRAGAgent runner with mandatory expert escalation."""
     return AgentTestRunner(
-        agent_type=RAGAgent,
-        default_agent_config=expert_escalation_agent_config,
+        agent_type=ExpertRAGAgent,
+        default_agent_config=expert_rag_agent_config,
     )
+
+
+# ==================== When Steps ====================
 
 
 @when(parsers.parse('a query is sent and user declines expert escalation with query "{query}"'))
 @async_test
-async def _(rag_agent_runner: AgentTestRunner, query: str):
+async def send_query_user_declines(expert_rag_agent_runner: AgentTestRunner, query: str):
     """Send a query that triggers expert escalation and user declines."""
-    async with rag_agent_runner.test_run(delay_before_stop=TIMEOUT) as topic:
-        await rag_agent_runner.send_event_from_topic(
+    async with expert_rag_agent_runner.test_run(delay_before_stop=TIMEOUT) as topic:
+        await expert_rag_agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
                 messages=[ChatMessage(content=query, role=MessageRole.USER)],
@@ -168,12 +175,12 @@ async def _(rag_agent_runner: AgentTestRunner, query: str):
             ),
         )
         # Wait for HITL confirmation request
-        hitl_request_event = await rag_agent_runner.wait_for_event(
+        hitl_request_event = await expert_rag_agent_runner.wait_for_event(
             HumanInTheLoopConfirmationRequestEvent,
             timeout=TIMEOUT,
         )
         # User declines expert escalation
-        await rag_agent_runner.send_event_from_topic(
+        await expert_rag_agent_runner.send_event_from_topic(
             start_event=HumanInTheLoopConfirmation.response(response=False, request_event=hitl_request_event),
             topic=topic,
         )
@@ -181,14 +188,14 @@ async def _(rag_agent_runner: AgentTestRunner, query: str):
 
 @when(parsers.parse('a query is sent and user accepts expert escalation with query "{query}"'))
 @async_test
-async def _(rag_agent_runner: AgentTestRunner, query: str):
+async def send_query_user_accepts(expert_rag_agent_runner: AgentTestRunner, query: str):
     """Send a query that triggers expert escalation and user accepts.
 
     This test mocks the expert agent's response by sending an AnswerStopEvent
     to the expert agent's topic, which the RAG agent's internal subscription picks up.
     """
-    async with rag_agent_runner.test_run(delay_before_stop=TIMEOUT) as topic:
-        await rag_agent_runner.send_event_from_topic(
+    async with expert_rag_agent_runner.test_run(delay_before_stop=TIMEOUT) as topic:
+        await expert_rag_agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
                 messages=[ChatMessage(content=query, role=MessageRole.USER)],
@@ -197,19 +204,19 @@ async def _(rag_agent_runner: AgentTestRunner, query: str):
             ),
         )
         # Wait for HITL confirmation request
-        hitl_request_event = await rag_agent_runner.wait_for_event(
+        hitl_request_event = await expert_rag_agent_runner.wait_for_event(
             HumanInTheLoopConfirmationRequestEvent,
             timeout=TIMEOUT,
         )
         # User accepts expert escalation
         # Small delay to ensure agent is ready to receive response (CI timing)
         await asyncio.sleep(10)
-        await rag_agent_runner.send_event_from_topic(
+        await expert_rag_agent_runner.send_event_from_topic(
             start_event=HumanInTheLoopConfirmation.response(response=True, request_event=hitl_request_event),
             topic=topic,
         )
         # Wait for AgentInTheLoop request to expert
-        await rag_agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
+        await expert_rag_agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
 
         # Mock expert response by sending AnswerStopEvent to the expert agent's topic
         # The RAG agent's internal subscription will pick this up and convert it to AgentInTheLoopResponseEvent
@@ -220,45 +227,54 @@ async def _(rag_agent_runner: AgentTestRunner, query: str):
                 ChatMessage(role=MessageRole.USER, content="It refers to experimental applications..."),
             ],
         )
-        await rag_agent_runner.send_event_from_topic(
+        await expert_rag_agent_runner.send_event_from_topic(
             start_event=AgentInTheLoopResponseEvent(stop_event=mock_expert_answer),
             topic=topic,
         )
 
 
+# ==================== Then Steps ====================
+
+
 @then("a HumanInTheLoopConfirmationRequestEvent is present")
-def _(rag_agent_runner: AgentTestRunner):
+def check_hitl_confirmation_request(expert_rag_agent_runner: AgentTestRunner):
     """Check that a HITL confirmation request was emitted."""
-    assert rag_agent_runner.has_event_of_class(
+    assert expert_rag_agent_runner.has_event_of_class(
         HumanInTheLoopConfirmationRequestEvent
     ), "HumanInTheLoopConfirmationRequestEvent was not emitted"
 
 
 @then("an ExpertRejectEvent is present")
-def _(rag_agent_runner: AgentTestRunner):
+def check_expert_reject_event(expert_rag_agent_runner: AgentTestRunner):
     """Check that an ExpertRejectEvent was emitted."""
-    assert rag_agent_runner.has_event_of_class(ExpertRejectEvent), "ExpertRejectEvent was not emitted"
+    assert expert_rag_agent_runner.has_event_of_class(ExpertRejectEvent), "ExpertRejectEvent was not emitted"
 
 
 @then("a UserRequestsExpertEvent is present")
-def _(rag_agent_runner: AgentTestRunner):
+def check_user_requests_expert_event(expert_rag_agent_runner: AgentTestRunner):
     """Check that a UserRequestsExpertEvent was emitted."""
-    assert rag_agent_runner.has_event_of_class(UserRequestsExpertEvent), "UserRequestsExpertEvent was not emitted"
+    assert expert_rag_agent_runner.has_event_of_class(
+        UserRequestsExpertEvent
+    ), "UserRequestsExpertEvent was not emitted"
 
 
 @then("an AgentInTheLoopRequestEvent is present")
-def _(rag_agent_runner: AgentTestRunner):
+def check_agent_in_the_loop_request(expert_rag_agent_runner: AgentTestRunner):
     """Check that an AgentInTheLoopRequestEvent was emitted."""
-    assert rag_agent_runner.has_event_of_class(AgentInTheLoopRequestEvent), "AgentInTheLoopRequestEvent was not emitted"
+    assert expert_rag_agent_runner.has_event_of_class(
+        AgentInTheLoopRequestEvent
+    ), "AgentInTheLoopRequestEvent was not emitted"
 
 
 @then("an LLMEvent is present with a generated response")
-def _(rag_agent_runner: AgentTestRunner):
-    llm_event = rag_agent_runner.get_event_of_class(LLMEvent)
+def check_llm_event_with_response(expert_rag_agent_runner: AgentTestRunner):
+    """Check that an LLMEvent was emitted with a non-empty response."""
+    llm_event = expert_rag_agent_runner.get_event_of_class(LLMEvent)
     response_content = llm_event.output_messages[0].content
     assert response_content, "No generated response was returned"
 
 
 @then("a StopEvent is present")
-def _(rag_agent_runner: AgentTestRunner):
-    assert rag_agent_runner.has_stop_event, "Agent did not produce StopEvent"
+def check_stop_event(expert_rag_agent_runner: AgentTestRunner):
+    """Check that the agent produced a StopEvent."""
+    assert expert_rag_agent_runner.has_stop_event, "Agent did not produce StopEvent"

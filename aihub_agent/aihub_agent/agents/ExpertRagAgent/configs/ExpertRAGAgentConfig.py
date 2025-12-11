@@ -7,19 +7,22 @@ from aihub_lib.generative_ai.retrievers import RetrieverConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
 
+from aihub_agent.agents.ExpertRagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
 
 
-class RAGAgentConfig(AgentConfig):
+class ExpertRAGAgentConfig(AgentConfig):
     """
-    Configuration for a simple RAGAgent without expert escalation.
+    Configuration for ExpertRAGAgent with mandatory expert escalation.
 
     Supports:
     - Multiple retrievers (knowledge base + insights)
     - Multi-hop retrieval for context sufficiency
     - Optional reranking
+    - MANDATORY expert escalation when context is insufficient
 
-    Note: For expert escalation support, use ExpertRAGAgentConfig.
+    The expert_escalation field is required, ensuring expert escalation
+    is always available when context is insufficient.
     """
 
     llm: Annotated[
@@ -35,6 +38,13 @@ class RAGAgentConfig(AgentConfig):
     number_of_input_tokens: Annotated[
         int, Field(description="Maximum tokens allowed in input to manage context size or cost.")
     ]
+
+    # Expert escalation is REQUIRED (not Optional)
+    expert_escalation: Annotated[
+        ExpertEscalationConfig,
+        Field(description="Expert escalation config. REQUIRED for ExpertRAGAgent."),
+    ]
+
     condense_question_prompt: Annotated[
         LocaleString | None,
         Field(description="Prompt template for transforming a user query into a standalone question."),
