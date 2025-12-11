@@ -13,7 +13,7 @@ class BotInTheLoopResponderInfo(BaseModel):
     """
 
     user_id: Annotated[str, Field(description="The Slack user ID.")]
-    user_name: Annotated[str | None, Field(description="The Slack user name.")] = None
+    user_name: Annotated[str, Field(description="The Slack user name.")]
     additional_info: Annotated[dict | None, Field(description="Additional Slack-specific user information.")] = None
     aad_object_id: Annotated[str | None, Field(description="The Azure Active Directory object ID.")] = None
 
@@ -41,9 +41,9 @@ class BotInTheLoopResponseEvent(ControlEvent):
         ),
     ]
     responder: Annotated[
-        BotInTheLoopResponderInfo | None,
+        BotInTheLoopResponderInfo,
         Field(
             description="Information about the user who responded to the request, "
             "enabling tracking of who provided the input.",
         ),
-    ] = None
+    ]

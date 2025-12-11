@@ -34,6 +34,13 @@ router.onAfterRouteChange = setupMediumZoom;
 </template>
 
 <style>
+img.medium-zoom-image {
+  transition: filter 0.3s ease;
+}
+
+html:not(.dark) img.medium-zoom-image {
+  filter: invert(1);
+}
 .medium-zoom-overlay {
   backdrop-filter: blur(5rem);
 }

@@ -38,8 +38,13 @@ class EvaluationController(Controller):
     to interact with the underlying evaluation framework (Arize Phoenix).
     """
 
-    name = LocaleString(en="Evaluation")
-    description = LocaleString(en="Manages evaluation datasets and experiments.")
+    name = LocaleString(en="Quality Testing", de="Qualitätsprüfung", fr="Tests de qualité", it="Test di qualità")
+    description = LocaleString(
+        en="Test and evaluate AI assistant quality",
+        de="KI-Assistenten testen und bewerten",
+        fr="Testez et évaluez la qualité des assistants IA",
+        it="Testa e valuta la qualità degli assistenti IA",
+    )
     icon = "material-symbols:science-outline"
 
     def __init__(

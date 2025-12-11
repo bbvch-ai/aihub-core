@@ -291,6 +291,12 @@
       "license": "MIT",
       "status": "✅",
       "notes": "Permissive license"
+    },
+    {
+      "service": "pgbouncer",
+      "license": "ISC",
+      "status": "✅",
+      "notes": "Based on edoburu/pgbouncer (MIT wrapper); permissive licenses"
     }
   ]
 }

@@ -7,15 +7,15 @@ hero:
   text: The open AI platform you own and control
   tagline: Complete infrastructure for production AI. Deploy in your data center. Build with confidence. Keep your data in Switzerland.
   actions:
-    - theme: brand
-      text: Quick Start
-      link: /docs/2_platform/1_quick_start/
     - theme: alt
-      text: Platform Overview
-      link: /docs/2_platform/2_architecture/1_core_components/
+      text: Our Vision
+      link: /docs/1_vision_and_positioning/1_introduction/
     - theme: alt
       text: Why Swiss AI Hub
       link: /docs/1_vision_and_positioning/1_introduction
+    - theme: brand
+      text: Platform Overview
+      link: /docs/2_platform/2_architecture/1_core_components/
 
 features:
   - title: The open-source AI bet

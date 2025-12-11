@@ -2,8 +2,7 @@
 # Dagster Configuration - Stage: build
 # ===================================================================
 # Generated from template. Do not edit directly.
-# This configuration is used for containerized Dagster deployments.
-# Dev stage runs Dagster locally and does not use this config.
+# Uses PgBouncer (pgbouncer:6432) for connection pooling to prevent exhaustion.
 # ===================================================================
 
 run_storage:
@@ -11,39 +10,39 @@ run_storage:
   class: PostgresRunStorage
   config:
     postgres_db:
-      hostname: postgres
+      hostname: pgbouncer
       username:
         env: POSTGRES_USER
       password:
         env: POSTGRES_PASSWORD
       db_name: dagster
-      port: 5432
+      port: 6432
 
 event_log_storage:
   module: dagster_postgres.event_log
   class: PostgresEventLogStorage
   config:
     postgres_db:
-      hostname: postgres
+      hostname: pgbouncer
       username:
         env: POSTGRES_USER
       password:
         env: POSTGRES_PASSWORD
       db_name: dagster
-      port: 5432
+      port: 6432
 
 schedule_storage:
   module: dagster_postgres.schedule_storage
   class: PostgresScheduleStorage
   config:
     postgres_db:
-      hostname: postgres
+      hostname: pgbouncer
       username:
         env: POSTGRES_USER
       password:
         env: POSTGRES_PASSWORD
       db_name: dagster
-      port: 5432
+      port: 6432
 
 compute_logs:
   module: dagster.core.storage.noop_compute_log_manager

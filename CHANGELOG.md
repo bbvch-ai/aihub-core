@@ -5,6 +5,129 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.255.2] - 2025-12-11 - Unlocking Knowledge: Expert Insights and Advanced RAG for Smarter Agents
+
+### Added
+
+- ✨ **Expert Insight Persistence**: Expert responses and conversations from the `ExpertAskingAgent` are now stored as
+  valuable 'insights' in MongoDB, enabling agents to learn from and leverage past expert interactions.
+- 🚀 **Modular Multi-Source Retrieval System**: Introduced a new, flexible system allowing RAG agents to retrieve
+  information from diverse sources, including traditional knowledge bases and newly persisted expert insights, in
+  parallel.
+- 💬 **Specialized Human-in-the-Loop (HITL) Events**: Enhanced human interaction capabilities with new event types
+  (`HumanInTheLoopInput` and `HumanInTheLoopConfirmation`), providing more explicit and structured dialogues for
+  free-form text input or yes/no confirmations.
+- 🌐 **Bot-in-the-Loop Path Entity**: A new MongoDB path entity has been added to streamline bot-in-the-loop responses,
+  improving the integration and handling of bot channel interactions.
+- 🧪 **Comprehensive Agent Test Suites**: New test coverage has been added for the `ExpertAskingAgent` and expanded for
+  the `RAGAgent`, specifically addressing expert escalation workflows and the new insight retrieval functionality.
+- 🖥️ **Robust MongoDB Connection Management**: Implemented enhanced connection management for MongoDB within both agent
+  and process runners, ensuring reliable data persistence and retrieval.
+
+### Changed
+
+- ⚙️ **RAG Agent Configuration**: The `RAGAgent`'s retrieval configuration has been modernized to utilize the new
+  multi-source retrieval system, replacing the singular `retrieve_step_config` with a flexible list of `retrievers`.
+- 🆔 **Detailed Expert Identification**: `ExpertAnswerSufficientEvent` and `ExpertAnswerInsufficientEvent` now include
+  the `expert_user_id`, allowing for more granular tracking and identification of expert contributions.
+- 🤝 **Mandatory Bot-in-the-Loop Responder Information**: The `responder` and `user_name` fields in
+  `BotInTheLoopResponseEvent` are now required, ensuring complete traceability of human responses from bot channels.
+- 🔄 **OpenWebUI Human-in-the-Loop Handler**: The OpenWebUI integration has been updated to fully support the new
+  specialized `HumanInTheLoopConfirmation` dialogs, providing a richer and more intuitive user experience for agent
+  confirmations.
+
+### Refactor
+
+- 🧹 **Centralized Retrieval Logic**: Core retrieval utilities and configurations, including `RetrieveSummariesConfig`
+  and helper functions for node retrieval, have been moved to a shared library (`aihub_lib`), promoting better code
+  organization and reusability across agents.
+- ⚡️ **Streamlined Human-in-the-Loop Event Structure**: The internal architecture of Human-in-the-Loop events has been
+  refined, abstracting common `Request` and `Response` patterns into base classes and introducing dedicated subclasses
+  for specific interaction types.
+
+---
+
+## [v0.255.1] - 2025-12-11 - Enhanced Database Connection Management with PgBouncer
+
+### Added
+
+- 🚀 **PgBouncer Integration:** Introduced PgBouncer connection pooling for Dagster deployments (all stages except `dev`)
+  to improve database connection management and prevent connection exhaustion.
+- ✨ **PgBouncer Service:** Added a dedicated PgBouncer service with robust health checks and configurable pooling
+  parameters to all non-development Docker Compose configurations.
+- 📄 **PgBouncer License Information:** Included the ISC license details for PgBouncer in the project's license
+  configuration.
+
+### Changed
+
+- 🔄 **Dagster Database Connectivity:** Updated Dagster's database configuration in `build`, `latest`, `local`, and
+  `nightly` stages to connect through PgBouncer (hostname `pgbouncer`, port `6432`) instead of directly to PostgreSQL.
+- ⚡️ **Service Dependencies:** Configured Dagster's `webserver` and `daemon` services in non-development environments to
+  explicitly depend on the `pgbouncer` service, ensuring correct startup order.
+
+### Refactor
+
+- 🧹 **Dynamic Dagster Configuration:** Refactored the Dagster configuration template (`dagster-config.yml.j2`) to
+  conditionally configure database connections: direct to PostgreSQL for `dev` stage, and via PgBouncer for all other
+  stages.
+
+---
+
+## [v0.255.0] - 2025-12-10 - Enhanced Platform Experience and High-Availability Storage
+
+### Added
+
+- ✨ **Enhanced User Interface Descriptions**: A comprehensive update across all API routes, introducing multi-language
+  support (German, French, Italian) and more descriptive names for key platform components, such as `AI Assistants`
+  (formerly `Agents`), `Quality Testing` (formerly `Evaluation`), `Activity Log` (formerly `Events`), `Knowledge Base`
+  (formerly `Knowledge`), `AI Models` (formerly `Models`), `Chat` (formerly `Open WebUI`), `Workflows` (formerly
+  `Processes`), and `Platform Overview` (formerly `Suite`).
+- 🔄 **New Document Conversion API**: Introduced a new `/docling/process` API endpoint and corresponding schemas
+  (`DocumentConversionMetadata`, `DocumentConversionResponse`) to provide advanced document conversion capabilities,
+  allowing direct processing of documents via the API.
+- 🚀 **Integrated `etcd` with SeaweedFS Filer**: Added `etcd` as the metadata backend for `SeaweedFS Filer`, enabling
+  high-availability deployments and robust metadata storage for the object storage service.
+- 🎨 **Improved Image Display in Documentation**: Added CSS rules to invert image colors in light mode within the
+  documentation, enhancing readability and visual consistency.
+- 📦 **Globally Available `NavigationBoxes` Component**: Made the `NavigationBoxes` component available globally in the
+  VitePress documentation theme.
+
+### Changed
+
+- ⚙️ **Refined OpenAI API Endpoints**: Updated OpenAI-compatible API routes to integrate `_with_assistants` versions for
+  `get_model` and `chat_completion`, streamlining interactions with AI assistants.
+- 📝 **Updated Image Generation Model Default**: Changed the default model for image generation from `dall-e-3` to a more
+  generic `image-generation` string, allowing greater flexibility in model selection.
+- 📚 **Comprehensive Documentation Overhaul**: Extensive updates to German and English documentation, including
+  terminology clarifications, vision alignment, updated feature descriptions, and rewritten FAQs to reflect the
+  platform's focus on open-source, data sovereignty, and the new SeaweedFS storage.
+- 💾 **Alphabetical Sorting of Services in Platform Overview**: The platform overview now sorts services alphabetically
+  by name, improving navigability and user experience.
+- 💄 **Theme and UI Enhancements**: Minor visual adjustments to the documentation, including updating tip box colors from
+  gray to green and refining gradients and font styles for navigation boxes.
+
+### Fixed
+
+- 🐛 **Docs Link Handling**: Set `ignoreDeadLinks: true` in VitePress configuration to prevent documentation build
+  failures due to temporary or external dead links.
+
+### Security
+
+- 🔒 **Removed Anonymous S3 Read Access**: Hardened security for the SeaweedFS S3 policy by removing anonymous read
+  actions, ensuring all S3 access requires proper authentication.
+
+### Refactor
+
+- 🧹 **Internal Development Configuration Cleanup**: Removed unused `<node-interpreter>` setting from
+  `.idea/runConfigurations/Docs_Dev.xml`.
+- 🔄 **Build System Configuration for SeaweedFS**: Updated `generate_compose.py` to include new
+  `seaweed-filer-config.toml.j2` templates, ensuring proper generation of SeaweedFS configurations across different
+  deployment stages and hardware types.
+- 🧹 **User Mock Data Adjustment**: Updated the user mock data to reflect the new `My Account` localization for service
+  names.
+
+---
+
 ## [v0.254.19] - 2025-12-10 - Refined Contextual Chat History Management
 
 ### Changed

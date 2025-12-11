@@ -177,9 +177,11 @@ services:
       -ip.bind=0.0.0.0
     volumes:
       - {{ global.volume_root }}/seaweedfs-filer:/data
+      - ./configs/seaweedfs/seaweed-filer-config.{{ stage_postfix }}.toml:/etc/seaweedfs/filer.toml:ro
     depends_on:
       - seaweedfs-master
       - seaweedfs-volume
+      - etcd
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/"]
       interval: 30s
@@ -463,6 +465,47 @@ services:
       options:
         max-size: 10m
         max-file: 2
+
+  {% if stage != 'dev' %}
+  # ===================================================================
+  # PgBouncer (Connection Pooler for Dagster)
+  # ===================================================================
+  pgbouncer:
+    container_name: pgbouncer
+    image: {{ global.registry_prefix }}{{ image_tags.pgbouncer }}
+    restart: always
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: dagster
+      AUTH_TYPE: scram-sha-256
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: "${PGBOUNCER_MAX_CLIENT_CONN:-1000}"
+      DEFAULT_POOL_SIZE: "${PGBOUNCER_DEFAULT_POOL_SIZE:-20}"
+      MIN_POOL_SIZE: "${PGBOUNCER_MIN_POOL_SIZE:-2}"
+      RESERVE_POOL_SIZE: "${PGBOUNCER_RESERVE_POOL_SIZE:-3}"
+      LISTEN_ADDR: "0.0.0.0"
+      LISTEN_PORT: "6432"
+      ADMIN_USERS: ${POSTGRES_USER}
+      LOG_CONNECTIONS: "0"
+      LOG_DISCONNECTIONS: "0"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-h", "127.0.0.1", "-p", "6432", "-U", "${POSTGRES_USER}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+  {% endif %}
 
   # ===================================================================
   # FerretDB Stack (MongoDB Compatibility)
@@ -1394,6 +1437,9 @@ services:
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.dagster[stage] }}
     {%- endif %}
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "3002:3000"
@@ -1431,6 +1477,9 @@ services:
     {%- else %}
     image: "{{ global.registry_prefix }}{{ image_tags.dagster[stage] }}"
     {%- endif %}
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
     entrypoint:
       - dagster-daemon
       - run
@@ -1718,6 +1767,10 @@ services:
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
@@ -1755,6 +1808,10 @@ services:
     {%- endif %}
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
 
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}

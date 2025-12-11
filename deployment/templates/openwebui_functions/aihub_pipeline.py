@@ -715,7 +715,12 @@ class ToolEventHandler(EventHandler):
 
 
 class HumanInTheLoopHandler(EventHandler):
-    """Handler for human-in-the-loop interactions"""
+    """Handler for human-in-the-loop interactions.
+
+    Supports two types of HITL events:
+    - HumanInTheLoopConfirmationRequestEvent: Yes/No confirmation dialog
+    - HumanInTheLoopInputRequestEvent: Free-form text input dialog
+    """
 
     async def can_handle(
         self, event: Annotated[dict[str, Any], "Event to check"]
@@ -729,29 +734,39 @@ class HumanInTheLoopHandler(EventHandler):
     ) -> Annotated[bool, "Always returns True"]:
         question = event.get("question", "Please provide input")
         topic = event.get("topic", {})
+        hitl_type = event.get("hitl_type", "input")
 
-        logger.info(f"Received HITL request: {question}")
+        logger.info(f"Received HITL request (type={hitl_type}): {question}")
 
-        result = await context.caller(
-            {
-                "type": "input",
-                "data": {
-                    "title": "Agent Question",
-                    "message": question,
-                    "placeholder": "Enter your response...",
-                },
-            }
-        )
+        if hitl_type == "confirmation":
+            result = await context.caller(
+                {
+                    "type": "confirmation",
+                    "data": {
+                        "title": "Agent Question",
+                        "message": question,
+                    },
+                }
+            )
+        else:
+            result = await context.caller(
+                {
+                    "type": "input",
+                    "data": {
+                        "title": "Agent Question",
+                        "message": question,
+                        "placeholder": "Enter your response...",
+                    },
+                }
+            )
+            # Extract value from input result
+            result = result.get("value", "") if isinstance(result, dict) else str(result)
 
-        user_response = (
-            result.get("value", "") if isinstance(result, dict) else str(result)
-        )
-
-        if user_response:
+        if result is not None and result != "":
             response_event_name = topic.get("event_name", "HumanInTheLoopResponseEvent")
             hitl_display_id = topic.get("display_id", "")
 
-            response_payload = {"response": user_response, "request_event": event}
+            response_payload = {"response": result, "request_event": event}
 
             await context.stream_service.send_hitl_response(
                 response_event_name, response_payload, hitl_display_id, context

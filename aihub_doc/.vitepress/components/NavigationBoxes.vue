@@ -39,7 +39,6 @@ defineProps({
 .vt-box {
   display: block;
   padding: 1.5rem;
-  background: var(--vp-c-bg-soft);
   border: 1px solid var(--vp-c-border);
   border-radius: 8px;
   text-decoration: none !important;
@@ -61,14 +60,15 @@ defineProps({
 .next-steps-link {
   margin: 0 0 0.5rem 0;
   font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--vp-c-brand-1);
+  font-weight: 700;
+  color: var(--vp-c-text-1);
   text-align: center;
 }
 
 .next-steps-caption {
   margin: 0;
   font-size: 0.875rem;
+  font-weight: 300;
   color: var(--vp-c-text-2);
   line-height: 1.5;
   text-align: center;
