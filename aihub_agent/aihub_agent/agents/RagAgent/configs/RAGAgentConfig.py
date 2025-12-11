@@ -33,10 +33,6 @@ class RAGAgentConfig(AgentConfig):
     number_of_input_tokens: Annotated[
         int, Field(description="Maximum tokens allowed in input to manage context size or cost.")
     ]
-    condense_question_prompt: Annotated[
-        LocaleString | None,
-        Field(description="Prompt template for transforming a user query into a standalone question."),
-    ] = None
     context_prompt: Annotated[
         LocaleString | None,
         Field(description="Prompt template for providing context (e.g., retrieved documents) to the LLM."),

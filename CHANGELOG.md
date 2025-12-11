@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.255.4] - 2025-12-11 - Smarter Standalone Questions: Multimodal Support and Centralized Prompts
+
+### Added
+
+- 🧪 **Comprehensive Tests for Question Condensation**: Introduced new test cases for the `condense_standalone_question`
+  utility, ensuring robust functionality for text-only and multimodal inputs, and proper handling of chat history.
+
+### Changed
+
+- 🖼️ **Enabled Multimodal Question Condensation**: The `condense_standalone_question` utility now supports multimodal
+  input (e.g., text and images) by accepting a `ChatMessage` object directly, allowing agents to understand and rephrase
+  questions that refer to visual content.
+- ⚙️ **Standardized Standalone Question Prompt**: The prompt for generating standalone questions is now centralized and
+  embedded within `aihub_lib`, removing the configurable `condense_question_prompt` option from `FewShotAgentConfig` and
+  `RAGAgentConfig` to ensure consistent and optimized behavior across all agents.
+- 🚀 **Upgraded LLM Interaction for Condensation**: The internal mechanism for condensing questions transitioned from
+  simple `llm.predict` to `llm.chat`, utilizing system messages to provide more structured instructions to the LLM for
+  improved accuracy and multimodal processing.
+- 💬 **Enhanced User Message Handling**: Agents now leverage the `last_user_message` property to retrieve the complete
+  user input, including any multimodal content, ensuring all relevant information is considered during question
+  condensation.
+- 📄 **Improved Standalone Question Prompt Logic**: Updated the default prompt translations (`lib/prompt.*.yml`) for
+  standalone question condensation with explicit instructions, including directives for image analysis and replacing
+  pronouns with precise textual descriptions of visible objects.
+
+### Removed
+
+- 🗑️ **Deprecated Configurable Condense Prompt**: The `condense_question_prompt` configuration field has been removed
+  from `FewShotAgentConfig` and `RAGAgentConfig`, streamlining agent configuration by relying on the new centralized
+  prompt definition.
+
+---
+
 ## [v0.255.3] - 2025-12-11 - Enhanced Milvus Performance and Smarter Data Management
 
 ### Added

@@ -159,14 +159,9 @@ class RAGAgent(Agent):
         Condenses the chat history and user query into a standalone question.
         """
         await displayer.display_thought(t("agent.thought.condense_question"))
-        user_query = start_event.user_query
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             condensed_question = condense_standalone_question(
-                chat_history=event.limited_history,
-                message=user_query,
-                t=t,
-                llm=llm,
-                condense_prompt=agent_config.condense_question_prompt,
+                chat_history=event.limited_history, message=start_event.last_user_message, t=t, llm=llm
             )
             return StandaloneQuestionCondenserEvent(condensed_chat_message=condensed_question)
 
