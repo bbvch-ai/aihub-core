@@ -64,9 +64,11 @@ class RetrievalAgent(Agent):
         t: LocaleHandler,
     ) -> RetrieverEvent:
         """Retrieves relevant nodes from multiple knowledge sources in parallel."""
+        # Use event retrievers if provided, otherwise fall back to agent config
+        retrievers = event.retrievers or agent_config.retrievers
         return await execute_retrieve(
             query=event.question,
-            retrievers=agent_config.retrievers,
+            retrievers=retrievers,
             displayer=displayer,
             t=t.in_locale(event.locale),
         )

@@ -18,6 +18,7 @@ from aihub_lib.nats.events.user import UserMessageEvent
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
+from aihub_agent.agents.RagAgent.events import RAGUserMessageEvent
 from aihub_agent.agents.RetrievalAgent.events.QuestionStartEvent import QuestionStartEvent
 from aihub_agent.agents.RetrievalAgent.events.RetrievalResponseEvent import RetrievalResponseEvent
 from aihub_agent.context.run.RunContext import RunContext
@@ -82,7 +83,7 @@ class RAGAgent(Agent):
     )
     async def limit_chat_history_step(
         self,
-        event: UserMessageEvent,
+        event: UserMessageEvent | RAGUserMessageEvent,
         agent_config: RAGAgentConfig,
     ) -> LimitChatHistoryEvent:
         """Truncates incoming chat messages to fit within the configured token limit."""
@@ -98,7 +99,7 @@ class RAGAgent(Agent):
     async def condense_standalone_question_step(
         self,
         event: LimitChatHistoryEvent,
-        start_event: UserMessageEvent,
+        start_event: UserMessageEvent | RAGUserMessageEvent,
         agent_config: RAGAgentConfig,
         t: LocaleHandler,
         displayer: EventDisplayer,
@@ -142,7 +143,7 @@ class RAGAgent(Agent):
         self,
         event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
         _: FewShotAcceptEvent,
-        start_event: UserMessageEvent,
+        start_event: UserMessageEvent | RAGUserMessageEvent,
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
@@ -155,12 +156,16 @@ class RAGAgent(Agent):
         else:
             query = event.new_query
 
+        # Get retrievers: start_event (if RAGUserMessageEvent) > agent_config > None
+        retrievers = getattr(start_event, "retrievers", None) or agent_config.retrievers
+
         return AgentInTheLoop.invoke(
             agent_class=agent_config.retrieval_agent_class,
             agent_id=agent_config.retrieval_agent_id,
             start_event=QuestionStartEvent(
                 question=query,
                 locale=start_event.locale,
+                retrievers=retrievers,
             ),
         )
 
@@ -233,7 +238,7 @@ class RAGAgent(Agent):
         context_event: InOrderNodeCombinerEvent,
         chat_history_event: LimitChatHistoryEvent,
         _: ContextSufficientAcceptEvent | None,
-        start_event: UserMessageEvent,
+        start_event: UserMessageEvent | RAGUserMessageEvent,
         agent_config: RAGAgentConfig,
     ) -> LimitChatHistoryWithContextEvent:
         """Includes the combined context and truncates chat history again."""

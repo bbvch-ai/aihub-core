@@ -26,6 +26,7 @@ from aihub_agent.agents.ExpertAskingAgent.events.NoAnswerStopEvent import NoAnsw
 from aihub_agent.agents.ExpertRagAgent.configs.ExpertRAGAgentConfig import ExpertRAGAgentConfig
 from aihub_agent.agents.ExpertRagAgent.events.ExpertAnswerContextEvent import ExpertAnswerContextEvent
 from aihub_agent.agents.ExpertRagAgent.events.UserRequestsExpertEvent import UserRequestsExpertEvent
+from aihub_agent.agents.RagAgent.events import RAGUserMessageEvent
 from aihub_agent.agents.RetrievalAgent.events.QuestionStartEvent import QuestionStartEvent
 from aihub_agent.agents.RetrievalAgent.events.RetrievalResponseEvent import RetrievalResponseEvent
 from aihub_agent.context.run.RunContext import RunContext
@@ -110,7 +111,7 @@ class ExpertRAGAgent(Agent):
     )
     async def limit_chat_history_step(
         self,
-        event: UserMessageEvent,
+        event: UserMessageEvent | RAGUserMessageEvent,
         agent_config: ExpertRAGAgentConfig,
     ) -> LimitChatHistoryEvent:
         """Truncates incoming chat messages to fit within the configured token limit."""
@@ -126,7 +127,7 @@ class ExpertRAGAgent(Agent):
     async def condense_standalone_question_step(
         self,
         event: LimitChatHistoryEvent,
-        start_event: UserMessageEvent,
+        start_event: UserMessageEvent | RAGUserMessageEvent,
         agent_config: ExpertRAGAgentConfig,
         t: LocaleHandler,
         displayer: EventDisplayer,
@@ -170,7 +171,7 @@ class ExpertRAGAgent(Agent):
         self,
         event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
         _: FewShotAcceptEvent,
-        start_event: UserMessageEvent,
+        start_event: UserMessageEvent | RAGUserMessageEvent,
         agent_config: ExpertRAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
@@ -183,12 +184,16 @@ class ExpertRAGAgent(Agent):
         else:
             query = event.new_query
 
+        # Get retrievers: start_event (if UserMessageEvent) > agent_config > None
+        retrievers = getattr(start_event, "retrievers", None) or agent_config.retrievers
+
         return AgentInTheLoop.invoke(
             agent_class=agent_config.retrieval_agent_class,
             agent_id=agent_config.retrieval_agent_id,
             start_event=QuestionStartEvent(
                 question=query,
                 locale=start_event.locale,
+                retrievers=retrievers,
             ),
         )
 
@@ -274,7 +279,7 @@ class ExpertRAGAgent(Agent):
     )
     async def forward_to_expert_asking_agent_step(
         self,
-        user_message_event: UserMessageEvent,
+        user_message_event: UserMessageEvent | RAGUserMessageEvent,
         _: UserRequestsExpertEvent,
         displayer: EventDisplayer,
         agent_config: ExpertRAGAgentConfig,
@@ -388,7 +393,7 @@ class ExpertRAGAgent(Agent):
         context_event: InOrderNodeCombinerEvent | ExpertAnswerContextEvent,
         chat_history_event: LimitChatHistoryEvent,
         _: ContextSufficientAcceptEvent | None,
-        start_event: UserMessageEvent,
+        start_event: UserMessageEvent | RAGUserMessageEvent,
         agent_config: ExpertRAGAgentConfig,
     ) -> LimitChatHistoryWithContextEvent:
         """Includes the combined context and truncates chat history again."""

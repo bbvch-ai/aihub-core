@@ -3,6 +3,7 @@ from typing import Annotated
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from aihub_lib.generative_ai.retrievers import RetrieverConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
 
@@ -16,10 +17,12 @@ class ExpertRAGAgentConfig(AgentConfig):
     Supports:
     - Multi-hop retrieval for context sufficiency
     - Shared retrieval via RetrievalAgent (configured separately)
+    - Optional retriever config override (passed to RetrievalAgent)
     - MANDATORY expert escalation when context is insufficient
 
-    The retrieval settings (retrievers, reranking, context_prompt) are configured
-    in the referenced RetrievalAgent's config, not here.
+    The retrieval settings can be configured either here (retrievers field)
+    or in the referenced RetrievalAgent's config. If both are configured,
+    this agent's retrievers take precedence.
 
     The expert_escalation field is required, ensuring expert escalation
     is always available when context is insufficient.
@@ -39,6 +42,12 @@ class ExpertRAGAgentConfig(AgentConfig):
         str,
         Field(description="Agent ID of the RetrievalAgent to invoke."),
     ] = "default"
+
+    # Optional retriever config override
+    retrievers: Annotated[
+        list[RetrieverConfig] | None,
+        Field(description="Optional retriever configs to pass to RetrievalAgent. Overrides RetrievalAgent config."),
+    ] = None
 
     number_of_input_tokens: Annotated[
         int, Field(description="Maximum tokens allowed in input to manage context size or cost.")
