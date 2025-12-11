@@ -226,9 +226,8 @@ class RAGAgent(Agent):
         retrievers = []
         for retriever_config in agent_config.retrievers:
             retriever = create_retriever(retriever_config)
-            await displayer.display_thought(
-                t("agent.thought.retrieving_from", source=retriever_config.retriever_type.value)
-            )
+            source_name = t(f"agent.retriever.{retriever_config.retriever_type.value}")
+            await displayer.display_thought(t("agent.thought.retrieving_from", source=source_name))
             retrievers.append(retriever)
 
         # Retrieve from all sources in parallel
