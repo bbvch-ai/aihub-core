@@ -1,3 +1,3 @@
-from aihub_lib.persistence.insight.InsightEntity import InsightCreator, InsightEntity, InsightSource
+from aihub_lib.persistence.insight.InsightEntity import InsightCreator, InsightEntity, InsightMessage, InsightSource
 
-__all__ = ["InsightEntity", "InsightSource", "InsightCreator"]
+__all__ = ["InsightEntity", "InsightMessage", "InsightSource", "InsightCreator"]

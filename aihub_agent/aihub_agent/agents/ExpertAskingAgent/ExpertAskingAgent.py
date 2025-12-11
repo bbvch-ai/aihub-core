@@ -4,7 +4,7 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoop
 from aihub_lib.nats.events.router.RouteOptions import RouteOptions
 from aihub_lib.nats.events.router.RouterEvent import RouterEvent
-from aihub_lib.persistence.insight import InsightCreator, InsightEntity, InsightSource
+from aihub_lib.persistence.insight import InsightCreator, InsightEntity, InsightMessage, InsightSource
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 from llama_index.core.prompts import RichPromptTemplate
 
@@ -141,7 +141,7 @@ class ExpertAskingAgent(Agent):
             InsightEntity.create_insight(
                 question=initial_question_event.question_to_expert,
                 expert_answer=event.response,
-                conversation=[f"{msg.role.value}: {msg.content}" for msg in chat_history],
+                conversation=[InsightMessage(role=msg.role, content=msg.content) for msg in chat_history],
                 namespace=agent_config.insight_namespace,
                 source=InsightSource(
                     thread_id=thread_context.thread_id,

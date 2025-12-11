@@ -28,7 +28,7 @@ from aihub_lib.nats.events.guard.FewShotAcceptEvent import FewShotAcceptEvent
 from aihub_lib.nats.events.guard.FewShotRejectEvent import FewShotRejectEvent
 from aihub_lib.nats.events.semantic.reranker import RerankerEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
-from aihub_lib.persistence.insight.InsightEntity import InsightCreator, InsightEntity, InsightSource
+from aihub_lib.persistence.insight.InsightEntity import InsightCreator, InsightEntity, InsightMessage, InsightSource
 from aihub_lib.persistence.rag.documents.stores.docstore import create_mongo_document_store
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.asyncio_utils.bdd import async_test
@@ -180,8 +180,8 @@ def create_test_insights(namespace: str, agent_class: str, agent_id: str) -> lis
         question="What is machine learning?",
         expert_answer="Machine learning is a subset of AI that enables systems to learn from data.",
         conversation=[
-            "User: What is machine learning?",
-            "Expert: Machine learning is a subset of AI that enables systems to learn from data.",
+            InsightMessage(role=MessageRole.USER, content="What is machine learning?"),
+            InsightMessage(role=MessageRole.ASSISTANT, content="Machine learning is a subset of AI that enables systems to learn from data."),
         ],
         namespace=namespace,
         source=InsightSource(thread_id="test-thread-1", expert_user_id="expert-1", expert_name="Dr. AI Expert"),

@@ -1,16 +1,25 @@
 from datetime import UTC, datetime
 
 from bson import ObjectId
+from llama_index.core.base.llms.types import MessageRole
 from mongoengine import (
     DateTimeField,
     Document,
     EmbeddedDocument,
     EmbeddedDocumentField,
+    EnumField,
     ListField,
     StringField,
 )
 
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+
+
+class InsightMessage(EmbeddedDocument):
+    """A single message in an insight conversation."""
+
+    role = EnumField(MessageRole, required=True)
+    content = StringField(required=True)
 
 
 class InsightSource(EmbeddedDocument):
@@ -52,7 +61,7 @@ class InsightEntity(Document):
     # Content fields - raw data, no LLM processing
     question = StringField(required=True)
     expert_answer = StringField(required=True)
-    conversation = ListField(StringField(), required=True)
+    conversation = ListField(EmbeddedDocumentField(InsightMessage), required=True)
 
     # Organization
     namespace = StringField(required=True)
@@ -71,7 +80,7 @@ class InsightEntity(Document):
         cls,
         question: str,
         expert_answer: str,
-        conversation: list[str],
+        conversation: list[InsightMessage],
         namespace: str,
         source: InsightSource,
         creator: InsightCreator,

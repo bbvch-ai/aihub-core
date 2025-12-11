@@ -37,11 +37,12 @@ class InsightRetriever(BaseRetriever):
 
     def _insight_to_node(self, insight: InsightEntity) -> IngestedNode:
         """Convert an InsightEntity to an IngestedNode."""
+        conversation_lines = [f"{msg.role.value}: {msg.content}" for msg in insight.conversation]
         content_parts: list[str] = [
             f"Question: {insight.question}",
             f"Answer: {insight.expert_answer}",
             "Conversation:",
-            *insight.conversation,
+            *conversation_lines,
         ]
 
         content: str = "\n".join(content_parts)
