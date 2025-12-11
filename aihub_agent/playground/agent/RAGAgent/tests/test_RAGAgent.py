@@ -181,7 +181,10 @@ def create_test_insights(namespace: str, agent_class: str, agent_id: str) -> lis
         expert_answer="Machine learning is a subset of AI that enables systems to learn from data.",
         conversation=[
             InsightMessage(role=MessageRole.USER, content="What is machine learning?"),
-            InsightMessage(role=MessageRole.ASSISTANT, content="Machine learning is a subset of AI that enables systems to learn from data."),
+            InsightMessage(
+                role=MessageRole.ASSISTANT,
+                content="Machine learning is a subset of AI that enables systems to learn from data.",
+            ),
         ],
         namespace=namespace,
         source=InsightSource(thread_id="test-thread-1", expert_user_id="expert-1", expert_name="Dr. AI Expert"),
