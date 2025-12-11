@@ -80,4 +80,4 @@ class UserMessageEvent(StartEvent):
         Use this when passing messages to LLMs to preserve multimodal content.
         """
         user_messages = [msg for msg in self.messages if msg.role == MessageRole.USER]
-        return user_messages[-1]
+        return user_messages[-1] if user_messages else ChatMessage(role=MessageRole.USER, content="")

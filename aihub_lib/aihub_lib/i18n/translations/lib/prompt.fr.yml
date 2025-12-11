@@ -11,9 +11,9 @@ condenser:
 
     <instructions>
     Le message de l'utilisateur contient du texte et éventuellement une image.
-    1. **Analyse d'image :** Si l'utilisateur fait référence à l'image (par ex. "Qu'est-ce que **c'est** ?"), remplacez le pronom par une description textuelle précise de l'objet visible.
-    2. **Indépendance :** Reformulez la phrase de manière à ce qu'elle soit compréhensible sans l'image et sans l'historique de la conversation.
-    3. **Sortie :** Ne donnez QUE la nouvelle phrase.
+    1. **Analyse d'image** : Si l'utilisateur fait référence à l'image (par ex. "Qu'est-ce que **c'est** ?"), remplacez le pronom par une description textuelle précise de l'objet visible.
+    2. **Indépendance** : Reformulez la phrase de manière à ce qu'elle soit compréhensible sans l'image et sans l'historique de la conversation.
+    3. **Sortie** : Ne donnez QUE la nouvelle phrase.
     </instructions>
 
 rag:

@@ -11,9 +11,9 @@ condenser:
   
     <instructions>
     Die Nachricht des Benutzers enthält Text und eventuell ein Bild.
-    1. **Bild-Analyse:** Bezieht sich der Benutzer auf das Bild (z.B. "Was ist **das**?"), ersetze das Pronomen durch eine präzise textuelle Beschreibung des sichtbaren Objekts.
-    2. **Unabhängigkeit:** Formuliere den Satz so um, dass er ohne das Bild und ohne den Verlauf verständlich ist.
-    3. **Output:** Gib NUR den neuen Satz aus.
+    1. **Bild-Analyse**: Bezieht sich der Benutzer auf das Bild (z.B. "Was ist **das**?"), ersetze das Pronomen durch eine präzise textuelle Beschreibung des sichtbaren Objekts.
+    2. **Unabhängigkeit**: Formuliere den Satz so um, dass er ohne das Bild und ohne den Verlauf verständlich ist.
+    3. **Output**: Gib NUR den neuen Satz aus.
     </instructions>
 
 rag:

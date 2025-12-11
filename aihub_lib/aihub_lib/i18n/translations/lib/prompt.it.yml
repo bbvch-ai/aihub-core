@@ -11,9 +11,9 @@ condenser:
 
     <instructions>
     Il messaggio dell'utente contiene testo ed eventualmente un'immagine.
-    1. **Analisi dell'immagine:** Se l'utente si riferisce all'immagine (ad es. "Cos'è **questo**?"), sostituisci il pronome con una descrizione testuale precisa dell'oggetto visibile.
-    2. **Indipendenza:** Riformula la frase in modo che sia comprensibile senza l'immagine e senza la cronologia.
-    3. **Output:** Restituisci SOLO la nuova frase.
+    1. **Analisi dell'immagine**: Se l'utente si riferisce all'immagine (ad es. "Cos'è **questo**?"), sostituisci il pronome con una descrizione testuale precisa dell'oggetto visibile.
+    2. **Indipendenza**: Riformula la frase in modo che sia comprensibile senza l'immagine e senza la cronologia.
+    3. **Output**: Restituisci SOLO la nuova frase.
     </instructions>
 
 rag:
