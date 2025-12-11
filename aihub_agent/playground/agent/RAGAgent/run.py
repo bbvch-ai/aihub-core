@@ -1,7 +1,16 @@
 import asyncio
 
-from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
+from llama_index.core.vector_stores.types import VectorStoreQueryMode
+
+from aihub_agent.agents.ExpertAskingAgent.ExpertAskingAgent import ExpertAskingAgent
+from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
+from aihub_agent.agents.RagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
+from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
+from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
+from aihub_agent.agents.RagAgent.configs.RetrieveSummariesConfig import RetrieveSummariesConfig
+from aihub_agent.runners.AgentRunner import AgentRunner
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
+from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -11,15 +20,6 @@ from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.nats.events.form import Checkbox, Group, InputNumber, Select, Slider, Textarea
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
-from llama_index.core.vector_stores.types import VectorStoreQueryMode
-
-from aihub_agent.agents.ExpertAskingAgent.ExpertAskingAgent import ExpertAskingAgent
-from aihub_agent.agents.RagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
-from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
-from aihub_agent.agents.RagAgent.configs.RetrieveSummariesConfig import RetrieveSummariesConfig
-from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
-from aihub_agent.runners.AgentRunner import AgentRunner
 
 enable_logging()
 
@@ -28,6 +28,7 @@ async def main():
     servers_list = [NatsSettings().ENDPOINT]
 
     # Define form elements explicitly using Groups for nested configuration
+    # TODO create full default config
     form = [
         # LLM Configuration Group
         Group(
