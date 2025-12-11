@@ -169,7 +169,7 @@ export type AgentDtoReadable = {
     /**
      * Configuration details of the agent, including name, description, and prompts.
      */
-    agent_config: AgentConfigDtoReadable | null;
+    agent_config: AgentConfigDtoReadable;
     /**
      * Is Conversational
      * Whether the agent can participate in a chat-based conversation
@@ -228,7 +228,7 @@ export type AgentDtoWritable = {
     /**
      * Configuration details of the agent, including name, description, and prompts.
      */
-    agent_config: AgentConfigDtoWritable | null;
+    agent_config: AgentConfigDtoWritable;
     /**
      * Is Conversational
      * Whether the agent can participate in a chat-based conversation
@@ -4068,7 +4068,7 @@ export type DocumentDto = {
     id: string;
     /**
      * Source
-     * Source URI of original document.
+     * Source path without protocol prefix (e.g., 'bucket/path/file.pdf').
      */
     source: string;
     /**
@@ -4494,7 +4494,7 @@ export type EvaluationSummaryData = {
      * Avg Score
      * Average score from this evaluator.
      */
-    avg_score?: number | null;
+    avg_score: number;
 };
 
 /**
@@ -8447,7 +8447,7 @@ export type MinimalAgentDtoReadable = {
     /**
      * Configuration details of the agent, including name, description, and prompts.
      */
-    agent_config: AgentConfigDtoReadable | null;
+    agent_config: AgentConfigDtoReadable;
     /**
      * Is Conversational
      * Whether the agent can participate in a chat-based conversation
@@ -8474,7 +8474,7 @@ export type MinimalAgentDtoWritable = {
     /**
      * Configuration details of the agent, including name, description, and prompts.
      */
-    agent_config: AgentConfigDtoWritable | null;
+    agent_config: AgentConfigDtoWritable;
     /**
      * Is Conversational
      * Whether the agent can participate in a chat-based conversation
@@ -15553,21 +15553,21 @@ export type CreateRoleResponses = {
 
 export type CreateRoleResponse = CreateRoleResponses[keyof CreateRoleResponses];
 
-export type GetModelsWithAssistantsData = {
+export type GetModels2Data = {
     body?: never;
     path?: never;
     query?: never;
     url: '/openai/models';
 };
 
-export type GetModelsWithAssistantsResponses = {
+export type GetModels2Responses = {
     /**
      * Successful Response
      */
     200: ModelResponse;
 };
 
-export type GetModelsWithAssistantsResponse = GetModelsWithAssistantsResponses[keyof GetModelsWithAssistantsResponses];
+export type GetModels2Response = GetModels2Responses[keyof GetModels2Responses];
 
 export type GetModelWithAssistantsData = {
     body?: never;

@@ -3,7 +3,7 @@
     :title="agent?.agent_config.name"
     close-route="/service/agents"
     :loading="agentIsLoading"
-    size="large"
+    size="medium"
   >
     <div class="flex flex-col gap-12">
       <Panel
@@ -15,7 +15,6 @@
         </p>
         <AgentConfiguration
           v-if="configForm && configForm.length > 0 && !agentConfigurationIsLoading"
-          class="w-full"
           :title="t('agent.configuration.runtimeSettings')"
           :description="agent?.agent_config.description || ''"
           :form="configForm"

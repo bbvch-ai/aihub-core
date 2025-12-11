@@ -9,7 +9,7 @@ from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
-from aihub_lib.nats.events.form import Checkbox, InputNumber, Select, Slider, Textarea
+from aihub_lib.nats.events.form import Checkbox, Group, InputNumber, Select, Slider, Textarea
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
@@ -27,51 +27,98 @@ enable_logging()
 async def main():
     servers_list = [NatsSettings().ENDPOINT]
 
-    # Define form elements explicitly (same pattern as ProcessRunner with Human.In(start_form=...))
+    # Define form elements explicitly using Groups for nested configuration
     form = [
-        # LLM Configuration
-        Select(
-            name="llm.model_name",
+        # LLM Configuration Group
+        Group(
+            name="llm",
             label=LocaleString(
-                en="LLM Model",
-                de="LLM-Modell",
-                fr="Modèle LLM",
-                it="Modello LLM",
+                en="LLM Configuration",
+                de="LLM-Konfiguration",
+                fr="Configuration LLM",
+                it="Configurazione LLM",
             ),
-            help=LocaleString(
-                en="The language model to use for generating responses.",
-                de="Das Sprachmodell für die Generierung von Antworten.",
-                fr="Le modèle de langage à utiliser pour générer des réponses.",
-                it="Il modello di linguaggio da utilizzare per generare risposte.",
-            ),
-            options=[
-                {"label": "Nano (Local, Fast)", "value": "text-generation/nano"},
-                {"label": "Mini (Local, Balanced)", "value": "text-generation/mini"},
-                {"label": "Large (Azure, Best Quality)", "value": "text-generation/large"},
-                {"label": "OCR (Azure, Vision)", "value": "text-generation/ocr"},
+            children=[
+                Select(
+                    name="model_name",
+                    label=LocaleString(
+                        en="Model",
+                        de="Modell",
+                        fr="Modèle",
+                        it="Modello",
+                    ),
+                    help=LocaleString(
+                        en="The language model to use for generating responses.",
+                        de="Das Sprachmodell für die Generierung von Antworten.",
+                        fr="Le modèle de langage à utiliser pour générer des réponses.",
+                        it="Il modello di linguaggio da utilizzare per generare risposte.",
+                    ),
+                    options=[
+                        {"label": "Nano (Local, Fast)", "value": "text-generation/nano"},
+                        {"label": "Mini (Local, Balanced)", "value": "text-generation/mini"},
+                        {"label": "Large (Azure, Best Quality)", "value": "text-generation/large"},
+                        {"label": "OCR (Azure, Vision)", "value": "text-generation/ocr"},
+                    ],
+                    option_label="label",
+                    option_value="value",
+                ),
+                Group(
+                    name="default_parameter",
+                    children=[
+                        Slider(
+                            name="temperature",
+                            label=LocaleString(
+                                en="Temperature",
+                                de="Temperatur",
+                                fr="Température",
+                                it="Temperatura",
+                            ),
+                            help=LocaleString(
+                                en="Controls randomness in responses. Lower = more deterministic, higher = more creative.",
+                                de="Steuert die Zufälligkeit der Antworten. Niedriger = deterministischer, höher = kreativer.",
+                                fr="Contrôle l'aléatoire des réponses. Bas = déterministe, haut = créatif.",
+                                it="Controlla la casualità nelle risposte. Basso = deterministico, alto = creativo.",
+                            ),
+                            min=0.0,
+                            max=2.0,
+                            step=0.1,
+                        ),
+                    ],
+                ),
             ],
-            option_label="label",
-            option_value="value",
         ),
-        Slider(
-            name="llm.default_parameter.temperature",
+        # Retrieval Configuration Group
+        Group(
+            name="retrieve_step_config",
             label=LocaleString(
-                en="Temperature",
-                de="Temperatur",
-                fr="Température",
-                it="Temperatura",
+                en="Retrieval Configuration",
+                de="Abruf-Konfiguration",
+                fr="Configuration de récupération",
+                it="Configurazione recupero",
             ),
-            help=LocaleString(
-                en="Controls randomness in responses. Lower = more deterministic, higher = more creative.",
-                de="Steuert die Zufälligkeit der Antworten. Niedriger = deterministischer, höher = kreativer.",
-                fr="Contrôle l'aléatoire des réponses. Bas = déterministe, haut = créatif.",
-                it="Controlla la casualità nelle risposte. Basso = deterministico, alto = creativo.",
-            ),
-            min=0.0,
-            max=2.0,
-            step=0.1,
+            children=[
+                InputNumber(
+                    name="retrieve_k",
+                    label=LocaleString(
+                        en="Retrieve K Documents",
+                        de="K Dokumente abrufen",
+                        fr="Récupérer K documents",
+                        it="Recupera K documenti",
+                    ),
+                    help=LocaleString(
+                        en="Number of documents to retrieve from the vector store.",
+                        de="Anzahl der Dokumente, die aus dem Vektorspeicher abgerufen werden.",
+                        fr="Nombre de documents à récupérer du magasin de vecteurs.",
+                        it="Numero di documenti da recuperare dal vector store.",
+                    ),
+                    min=1,
+                    max=100,
+                    step=1,
+                    show_buttons=True,
+                ),
+            ],
         ),
-        # Context and Retrieval Settings
+        # Context Settings (top-level fields)
         InputNumber(
             name="number_of_input_tokens",
             label=LocaleString(
@@ -91,26 +138,6 @@ async def main():
             step=1024,
             show_buttons=True,
         ),
-        InputNumber(
-            name="retrieve_step_config.retrieve_k",
-            label=LocaleString(
-                en="Retrieve K Documents",
-                de="K Dokumente abrufen",
-                fr="Récupérer K documents",
-                it="Recupera K documenti",
-            ),
-            help=LocaleString(
-                en="Number of documents to retrieve from the vector store.",
-                de="Anzahl der Dokumente, die aus dem Vektorspeicher abgerufen werden.",
-                fr="Nombre de documents à récupérer du magasin de vecteurs.",
-                it="Numero di documenti da recuperare dal vector store.",
-            ),
-            min=1,
-            max=100,
-            step=1,
-            show_buttons=True,
-        ),
-        # Retrieval Behavior
         Checkbox(
             name="check_context_sufficiency",
             label=LocaleString(
@@ -146,59 +173,86 @@ async def main():
             step=1,
             show_buttons=True,
         ),
-        # Reranking Configuration
-        Checkbox(
-            name="reranking_config.enabled",
+        # Reranking Configuration Group
+        Group(
+            name="reranking_config",
             label=LocaleString(
-                en="Enable Reranking",
-                de="Reranking aktivieren",
-                fr="Activer le reclassement",
-                it="Abilita riordinamento",
+                en="Reranking Configuration",
+                de="Reranking-Konfiguration",
+                fr="Configuration du reclassement",
+                it="Configurazione riordinamento",
             ),
-            help=LocaleString(
-                en="When enabled, retrieved documents will be reranked for improved relevance.",
-                de="Wenn aktiviert, werden abgerufene Dokumente für bessere Relevanz neu geordnet.",
-                fr="Lorsqu'activé, les documents récupérés seront reclassés pour une meilleure pertinence.",
-                it="Se abilitato, i documenti recuperati verranno riordinati per una migliore rilevanza.",
-            ),
-            binary=True,
+            children=[
+                Checkbox(
+                    name="enabled",
+                    label=LocaleString(
+                        en="Enable Reranking",
+                        de="Reranking aktivieren",
+                        fr="Activer le reclassement",
+                        it="Abilita riordinamento",
+                    ),
+                    help=LocaleString(
+                        en="When enabled, retrieved documents will be reranked for improved relevance.",
+                        de="Wenn aktiviert, werden abgerufene Dokumente für bessere Relevanz neu geordnet.",
+                        fr="Lorsqu'activé, les documents récupérés seront reclassés pour une meilleure pertinence.",
+                        it="Se abilitato, i documenti recuperati verranno riordinati per una migliore rilevanza.",
+                    ),
+                    binary=True,
+                ),
+                Group(
+                    name="reranking_model",
+                    children=[
+                        InputNumber(
+                            name="top_n",
+                            label=LocaleString(
+                                en="Reranking Top N",
+                                de="Reranking Top N",
+                                fr="Top N du reclassement",
+                                it="Top N riordinamento",
+                            ),
+                            help=LocaleString(
+                                en="Number of top documents to keep after reranking.",
+                                de="Anzahl der Top-Dokumente, die nach dem Reranking behalten werden.",
+                                fr="Nombre de documents principaux à conserver après le reclassement.",
+                                it="Numero di documenti principali da mantenere dopo il riordinamento.",
+                            ),
+                            min=1,
+                            max=50,
+                            step=1,
+                            show_buttons=True,
+                        ),
+                    ],
+                ),
+            ],
         ),
-        InputNumber(
-            name="reranking_config.reranking_model.top_n",
+        # System Prompt Group
+        Group(
+            name="system_prompt",
             label=LocaleString(
-                en="Reranking Top N",
-                de="Reranking Top N",
-                fr="Top N du reclassement",
-                it="Top N riordinamento",
+                en="System Prompt",
+                de="Systemprompt",
+                fr="Prompt système",
+                it="Prompt di sistema",
             ),
-            help=LocaleString(
-                en="Number of top documents to keep after reranking.",
-                de="Anzahl der Top-Dokumente, die nach dem Reranking behalten werden.",
-                fr="Nombre de documents principaux à conserver après le reclassement.",
-                it="Numero di documenti principali da mantenere dopo il riordinamento.",
-            ),
-            min=1,
-            max=50,
-            step=1,
-            show_buttons=True,
-        ),
-        # System Prompt
-        Textarea(
-            name="system_prompt.en",
-            label=LocaleString(
-                en="System Prompt (English)",
-                de="Systemprompt (Englisch)",
-                fr="Prompt système (Anglais)",
-                it="Prompt di sistema (Inglese)",
-            ),
-            help=LocaleString(
-                en="The system prompt that guides the agent's behavior and responses.",
-                de="Der Systemprompt, der das Verhalten und die Antworten des Agenten steuert.",
-                fr="Le prompt système qui guide le comportement et les réponses de l'agent.",
-                it="Il prompt di sistema che guida il comportamento e le risposte dell'agente.",
-            ),
-            rows=10,
-            auto_resize=True,
+            children=[
+                Textarea(
+                    name="en",
+                    label=LocaleString(
+                        en="English",
+                        de="Englisch",
+                        fr="Anglais",
+                        it="Inglese",
+                    ),
+                    help=LocaleString(
+                        en="The system prompt that guides the agent's behavior and responses.",
+                        de="Der Systemprompt, der das Verhalten und die Antworten des Agenten steuert.",
+                        fr="Le prompt système qui guide le comportement et les réponses de l'agent.",
+                        it="Il prompt di sistema che guida il comportamento e le risposte dell'agente.",
+                    ),
+                    rows=10,
+                    auto_resize=True,
+                ),
+            ],
         ),
     ]
 

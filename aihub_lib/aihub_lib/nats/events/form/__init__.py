@@ -3,6 +3,7 @@ from .elements.CascadeSelect import CascadeSelect
 from .elements.Checkbox import Checkbox
 from .elements.ColorPicker import ColorPicker
 from .elements.DatePicker import DatePicker
+from .elements.Group import Group
 from .elements.InputMask import InputMask
 from .elements.InputNumber import InputNumber
 from .elements.InputOtp import InputOtp
@@ -27,6 +28,7 @@ ALL_FORM_OPTIONS = (
     | Checkbox
     | ColorPicker
     | DatePicker
+    | Group
     | InputMask
     | InputNumber
     | InputOtp
@@ -43,3 +45,7 @@ ALL_FORM_OPTIONS = (
     | ToggleButton
     | ToggleSwitch
 )
+
+# Rebuild Group model to resolve forward reference to ALL_FORM_OPTIONS
+# Group.children uses ALL_FORM_OPTIONS which creates a circular dependency
+Group.model_rebuild()

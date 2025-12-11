@@ -6,28 +6,26 @@
     <p class="text-xs dark:text-surface-500">
       {{ description }}
     </p>
-    <div class="content pt-6">
-      <div class="w-full">
-        <FormKit
-          id="form"
-          v-model="data"
-          type="form"
-          :submit-attrs="{
-            inputClass: 'p-button p-component w-full',
-          }"
-          :config="{
-            validationVisibility: 'blur',
-          }"
-          @submit="submitHandler"
-        >
-          <FormKitSchema
-            :schema="schema"
-            :data="data"
-          />
-        </FormKit>
-      </div>
+    <div class="content pt-6 max-w-2xl">
+      <FormKit
+        id="form"
+        v-model="data"
+        type="form"
+        :submit-attrs="{
+          inputClass: 'p-button p-component w-full',
+        }"
+        :config="{
+          validationVisibility: 'blur',
+        }"
+        @submit="submitHandler"
+      >
+        <FormKitSchema
+          :schema="schema"
+          :data="data"
+        />
+      </FormKit>
     </div>
-    <pre>{{ data }}</pre>
+    <pre class="overflow-auto max-h-96 max-w-2xl text-xs bg-surface-900 p-4 rounded-lg mt-4">{{ data }}</pre>
   </Panel>
 </template>
 
@@ -66,23 +64,72 @@ const schema = computed<FormKitSchemaDefinition>(() => {
       .join('|'),
     'g',
   )
-  return props.form.map((formElement: FormkitElement) => {
+
+  function transformElement(formElement: FormkitElement): FormKitSchemaNode | FormKitSchemaNode[] {
+    const elementRecord = formElement as Record<string, unknown>
+    const formkitType = elementRecord.formkit || elementRecord.$formkit
+
+    // Handle group elements - wrap with visual container if label exists
+    if (formkitType === 'group') {
+      const children = (elementRecord.children as FormkitElement[] || []).flatMap(transformElement)
+      const groupNode: FormKitSchemaNode = {
+        $formkit: 'group',
+        name: elementRecord.name as string,
+        children: children as FormKitSchemaNode[],
+      }
+
+      // If group has a label, wrap it in a visual fieldset-like structure
+      if (elementRecord.label) {
+        return [
+          {
+            $el: 'fieldset',
+            attrs: {
+              class: 'formkit-group-fieldset border border-surface-300 dark:border-surface-600 rounded-lg p-4 mb-4',
+            },
+            children: [
+              {
+                $el: 'legend',
+                attrs: {
+                  class: 'text-sm font-semibold px-2 text-surface-700 dark:text-surface-300',
+                },
+                children: elementRecord.label as string,
+              },
+              groupNode,
+            ],
+          },
+        ] as FormKitSchemaNode[]
+      }
+
+      return groupNode
+    }
+
     const formkitNode = {
       ...formElement,
-      $formkit: (formElement as Record<string, unknown>).formkit || (formElement as Record<string, unknown>).$formkit,
+      $formkit: formkitType,
     } as FormKitSchemaNode
 
     // Remove the original formkit property to avoid duplication
     delete (formkitNode as Record<string, unknown>).formkit
 
+    // Replace template variables in labels
     if (formkitNode?.label && typeof formkitNode.label === 'string') {
       formkitNode.label = formkitNode.label.replace(pattern, (match: string) => {
         const key = match.substring(1)
         return data.value[key] || match
       })
     }
+
+
+    // Recursively transform children for any other elements with children
+    const nodeRecord = formkitNode as Record<string, unknown>
+    if (nodeRecord.children && Array.isArray(nodeRecord.children)) {
+      nodeRecord.children = (nodeRecord.children as FormkitElement[]).flatMap(transformElement)
+    }
+
     return formkitNode
-  })
+  }
+
+  return props.form.flatMap(transformElement)
 })
 
 async function submitHandler() {
@@ -163,5 +210,25 @@ async function submitHandler() {
 }
 .content :deep(td) {
   @apply border border-surface-200 dark:border-surface-500 p-2 text-left;
+}
+
+.content :deep(.formkit-group-fieldset) {
+  @apply border border-surface-300 dark:border-surface-600 rounded-lg p-4 mb-4 max-w-2xl;
+}
+
+.content :deep(.formkit-group-fieldset legend) {
+  @apply text-sm font-semibold px-2 text-surface-700 dark:text-surface-300;
+}
+
+.content :deep(.formkit-group-fieldset .formkit-group-fieldset) {
+  @apply ml-2 mt-2;
+}
+
+.content :deep(.formkit-slider-value-input) {
+  @apply w-20;
+}
+
+.content :deep(.formkit-slider-value-input .p-inputnumber-input) {
+  @apply text-center text-sm;
 }
 </style>
