@@ -1,9 +1,9 @@
 import asyncio
 
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.nats.events.discovery.InstanceDiscoveryRequestEvent import InstanceDiscoveryRequestEvent
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
-from aihub_lib.testing.logging.logger import enable_logging
 from bson import ObjectId
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner

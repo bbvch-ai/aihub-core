@@ -3,6 +3,7 @@ Generates Docker Compose and service configuration files from Jinja2 templates.
 Based on a matrix of stages (dev/local/nightly/latest) and hardware (CPU/GPU).
 """
 
+import shutil
 import sys
 from pathlib import Path
 import yaml
@@ -30,10 +31,13 @@ CONFIG_SPECS = [
     ("templates/configs/traefik-config.yml.j2", "configs/traefik", "traefik-config.{stage}{hardware}.yml"),
     ("templates/configs/traefik-middlewares.yml.j2", "configs/traefik", "middlewares.{stage}{hardware}.yml"),
     ("templates/configs/traefik-tls.yml.j2", "configs/traefik", "tls.{stage}{hardware}.yml"),
+    # SeaweedFS Filer config - stage/hardware variations
+    ("templates/configs/seaweed-filer-config.toml.j2", "configs/seaweedfs", "seaweed-filer-config.{stage}{hardware}.toml"),
     # Static scripts - no stage/hardware variations
     ("templates/configs/s3-entrypoint.sh.j2", "configs/seaweedfs", "s3-entrypoint.sh"),
     ("templates/configs/s3-init-buckets.sh.j2", "configs/seaweedfs", "init-buckets.sh"),
     ("templates/configs/pg-init-multiple-dbs.sh.j2", "configs/postgres", "init-multiple-dbs.sh"),
+    ("templates/configs/openwebui-init-functions.sh.j2", "configs/openwebui", "init-functions.sh"),
 ]
 
 
@@ -102,6 +106,19 @@ def main():
 
             generate_config(template, context, output_path)
             stats[config_name] += 1
+
+    # Copy OpenWebUI functions to configs directory
+    functions_src = DEPLOYMENT_DIR / "templates" / "openwebui_functions"
+    functions_dst = ROOT_DIR / "configs" / "openwebui" / "functions"
+    if functions_src.exists():
+        functions_dst.mkdir(parents=True, exist_ok=True)
+        function_count = 0
+        for py_file in functions_src.glob("*.py"):
+            shutil.copy2(py_file, functions_dst / py_file.name)
+            function_count += 1
+        if function_count > 0:
+            print(f"✅ Copied {function_count} OpenWebUI functions to configs/openwebui/functions/")
+            stats["openwebui-functions"] = function_count
 
     # Print summary
     print(f"\n✨ Generation complete!")

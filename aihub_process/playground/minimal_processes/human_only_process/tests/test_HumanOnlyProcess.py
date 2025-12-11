@@ -1,7 +1,7 @@
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.processes.ProcessConfig import ProcessConfig
 from aihub_lib.testing.asyncio_utils.bdd import async_test
-from aihub_lib.testing.logging.logger import enable_logging
 from bson import ObjectId
 from pytest_bdd import given, parsers, scenarios, then, when
 

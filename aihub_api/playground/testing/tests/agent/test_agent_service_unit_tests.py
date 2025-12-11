@@ -5,13 +5,13 @@ from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentClassDiscoveryResponseEvent
 from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
 from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
-from aihub_lib.testing.logging.logger import enable_logging
 from bson import ObjectId
 from fastapi import HTTPException
 
@@ -146,121 +146,80 @@ class TestAgentServiceUnit:
                 assert result is None
 
     @pytest.mark.asyncio
-    async def test_get_agent_online_success(self, mock_nats, sample_agent_instance, mock_locale_handler):
-        """Test get_agent returns online agent when discoverable."""
-        with patch.object(AgentService, "discover_agent_instance") as mock_discover:
-            mock_discover.return_value = sample_agent_instance
+    async def test_get_agent_success(self, mock_nats, sample_agent_entity, mock_locale_handler):
+        """Test get_agent returns agent from database."""
+        with patch.object(AgentEntity, "get_agent") as mock_get_agent:
+            mock_get_agent.return_value = sample_agent_entity
 
-            with patch.object(AgentDTO, "from_instance") as mock_from_instance:
+            with patch.object(AgentDTO, "from_entity") as mock_from_entity:
                 expected_dto = Mock(spec=AgentDTO)
-                mock_from_instance.return_value = expected_dto
+                mock_from_entity.return_value = expected_dto
 
                 result = await AgentService.get_agent(mock_nats, "TestAgent", "test_agent_1", mock_locale_handler)
 
-                mock_discover.assert_called_once_with(mock_nats, "TestAgent", "test_agent_1")
-                mock_from_instance.assert_called_once_with(sample_agent_instance, is_online=True, t=mock_locale_handler)
+                mock_get_agent.assert_called_once_with("TestAgent", "test_agent_1")
+                mock_from_entity.assert_called_once_with(sample_agent_entity, mock_locale_handler)
                 assert result == expected_dto
 
     @pytest.mark.asyncio
-    async def test_get_agent_offline_fallback(self, mock_nats, sample_agent_entity, mock_locale_handler):
-        """Test get_agent falls back to database when not discoverable."""
-        with patch.object(AgentService, "discover_agent_instance") as mock_discover:
-            mock_discover.side_effect = HTTPException(status_code=404, detail="Not found")
-
-            with patch.object(AgentEntity, "get_agent") as mock_get_agent:
-                mock_get_agent.return_value = sample_agent_entity
-
-                with patch.object(AgentDTO, "from_entity") as mock_from_entity:
-                    expected_dto = Mock(spec=AgentDTO)
-                    mock_from_entity.return_value = expected_dto
-
-                    result = await AgentService.get_agent(mock_nats, "TestAgent", "test_agent_1", mock_locale_handler)
-
-                    mock_discover.assert_called_once_with(mock_nats, "TestAgent", "test_agent_1")
-                    mock_get_agent.assert_called_once_with("TestAgent", "test_agent_1")
-                    mock_from_entity.assert_called_once_with(sample_agent_entity, mock_locale_handler, is_online=False)
-                    assert result == expected_dto
-
-    @pytest.mark.asyncio
     async def test_get_agent_not_found(self, mock_nats, mock_locale_handler):
-        """Test get_agent raises 404 when agent not found anywhere."""
-        with patch.object(AgentService, "discover_agent_instance") as mock_discover:
-            mock_discover.side_effect = HTTPException(status_code=404, detail="Not found")
+        """Test get_agent raises 404 when agent not found in database."""
+        with patch.object(AgentEntity, "get_agent") as mock_get_agent:
+            mock_get_agent.return_value = None
 
-            with patch.object(AgentEntity, "get_agent") as mock_get_agent:
-                mock_get_agent.return_value = None
+            with pytest.raises(HTTPException) as exc_info:
+                await AgentService.get_agent(mock_nats, "TestAgent", "nonexistent", mock_locale_handler)
 
-                with pytest.raises(HTTPException) as exc_info:
-                    await AgentService.get_agent(mock_nats, "TestAgent", "nonexistent", mock_locale_handler)
-
-                assert exc_info.value.status_code == 404
-                assert "Agent TestAgent.nonexistent not found" in str(exc_info.value.detail)
+            assert exc_info.value.status_code == 404
+            assert "Agent TestAgent.nonexistent not found" in str(exc_info.value.detail)
 
     @pytest.mark.asyncio
-    async def test_get_agents_success(self, mock_nats, sample_agent_instance, sample_agent_entity, mock_locale_handler):
-        """Test get_agents returns both discovered and saved agents."""
-        with patch.object(AgentService, "discover_agent_instances") as mock_discover:
-            mock_discover.return_value = [sample_agent_instance]
+    async def test_get_agents_success(self, mock_nats, sample_agent_entity, mock_locale_handler):
+        """Test get_agents returns all agents from database."""
+        with patch.object(AgentEntity, "get_agents") as mock_get_agents:
+            mock_get_agents.return_value = [sample_agent_entity]
 
-            with patch.object(AgentEntity, "get_agents") as mock_get_agents:
-                mock_get_agents.return_value = [sample_agent_entity]
+            with patch.object(AgentDTO, "from_entity") as mock_from_entity:
+                agent_dto = Mock(spec=AgentDTO)
+                agent_dto.agent_id = "test_agent_1"
+                agent_dto.agent_class = "TestAgent"
+                mock_from_entity.return_value = agent_dto
 
-                with patch.object(AgentDTO, "from_instance") as mock_from_instance:
-                    discovered_dto = Mock(spec=AgentDTO)
-                    discovered_dto.agent_id = "test_agent_1"
-                    discovered_dto.agent_class = "TestAgent"
-                    mock_from_instance.return_value = discovered_dto
+                result = await AgentService.get_agents(mock_nats, mock_locale_handler)
 
-                    with patch.object(AgentDTO, "from_entity") as mock_from_entity:
-                        saved_dto = Mock(spec=AgentDTO)
-                        saved_dto.agent_id = "different_agent"
-                        saved_dto.agent_class = "TestAgent"
-                        mock_from_entity.return_value = saved_dto
+                mock_get_agents.assert_called_once()
+                mock_from_entity.assert_called_once_with(sample_agent_entity, mock_locale_handler)
 
-                        result = await AgentService.get_agents(mock_nats, mock_locale_handler)
-
-                        mock_discover.assert_called_once_with(mock_nats)
-                        mock_get_agents.assert_called_once()
-                        mock_from_instance.assert_called_once_with(
-                            sample_agent_instance, is_online=True, t=mock_locale_handler
-                        )
-                        mock_from_entity.assert_called_once_with(
-                            sample_agent_entity, mock_locale_handler, is_online=False
-                        )
-
-                        assert len(result) == 2
-                        assert discovered_dto in result
-                        assert saved_dto in result
+                assert len(result) == 1
+                assert agent_dto in result
 
     @pytest.mark.asyncio
-    async def test_get_agents_deduplication(
-        self, mock_nats, sample_agent_instance, sample_agent_entity, mock_locale_handler
-    ):
-        """Test get_agents deduplicates agents found in both discovered and saved."""
-        with patch.object(AgentService, "discover_agent_instances") as mock_discover:
-            mock_discover.return_value = [sample_agent_instance]
+    async def test_get_agents_multiple(self, mock_nats, sample_agent_entity, mock_locale_handler):
+        """Test get_agents returns multiple agents from database."""
+        second_entity = Mock()
+        second_entity.agent_class = "TestAgent"
+        second_entity.agent_id = "test_agent_2"
 
-            with patch.object(AgentEntity, "get_agents") as mock_get_agents:
-                mock_get_agents.return_value = [sample_agent_entity]
+        with patch.object(AgentEntity, "get_agents") as mock_get_agents:
+            mock_get_agents.return_value = [sample_agent_entity, second_entity]
 
-                with patch.object(AgentDTO, "from_instance") as mock_from_instance:
-                    discovered_dto = Mock(spec=AgentDTO)
-                    discovered_dto.agent_id = "test_agent_1"
-                    discovered_dto.agent_class = "TestAgent"
-                    mock_from_instance.return_value = discovered_dto
+            with patch.object(AgentDTO, "from_entity") as mock_from_entity:
+                first_dto = Mock(spec=AgentDTO)
+                first_dto.agent_id = "test_agent_1"
+                first_dto.agent_class = "TestAgent"
+                second_dto = Mock(spec=AgentDTO)
+                second_dto.agent_id = "test_agent_2"
+                second_dto.agent_class = "TestAgent"
+                mock_from_entity.side_effect = [first_dto, second_dto]
 
-                    with patch.object(AgentDTO, "from_entity") as mock_from_entity:
-                        saved_dto = Mock(spec=AgentDTO)
-                        saved_dto.agent_id = "test_agent_1"  # Same as discovered
-                        saved_dto.agent_class = "TestAgent"
-                        mock_from_entity.return_value = saved_dto
+                result = await AgentService.get_agents(mock_nats, mock_locale_handler)
 
-                        result = await AgentService.get_agents(mock_nats, mock_locale_handler)
+                mock_get_agents.assert_called_once()
+                assert mock_from_entity.call_count == 2
 
-                        # Should only return discovered agent, not saved duplicate
-                        assert len(result) == 1
-                        assert discovered_dto in result
-                        assert saved_dto not in result
+                assert len(result) == 2
+                assert first_dto in result
+                assert second_dto in result
 
     @pytest.mark.asyncio
     async def test_discover_agent_instances_success(self, mock_nats, sample_agent_class, sample_agent_config):
@@ -618,16 +577,13 @@ class TestAgentServiceUnit:
     @pytest.mark.asyncio
     async def test_get_agent_database_exception(self, mock_nats, mock_locale_handler):
         """Test get_agent handles database exceptions properly."""
-        with patch.object(AgentService, "discover_agent_instance") as mock_discover:
-            mock_discover.side_effect = HTTPException(status_code=404, detail="Not found")
+        with patch.object(AgentEntity, "get_agent") as mock_get_agent:
+            mock_get_agent.side_effect = Exception("Database error")
 
-            with patch.object(AgentEntity, "get_agent") as mock_get_agent:
-                mock_get_agent.side_effect = Exception("Database error")
+            with pytest.raises(Exception) as exc_info:
+                await AgentService.get_agent(mock_nats, "TestAgent", "test_agent_1", mock_locale_handler)
 
-                with pytest.raises(Exception) as exc_info:
-                    await AgentService.get_agent(mock_nats, "TestAgent", "test_agent_1", mock_locale_handler)
-
-                assert str(exc_info.value) == "Database error"
+            assert str(exc_info.value) == "Database error"
 
     @pytest.mark.asyncio
     async def test_discover_agent_instances_no_results(self, mock_nats):

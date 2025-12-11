@@ -158,6 +158,7 @@ class ProcessRunner:
 
         connect(
             host=MongoSettings().CONNECTION_STRING.get_secret_value(),
+            uuidRepresentation="standard",
         )
 
         self.nc = NATS()

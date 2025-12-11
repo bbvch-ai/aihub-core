@@ -54,8 +54,13 @@ class AgentController(Controller):
     This sets up `/agent/discover` and `/agent/{agent_class}/{agent_id}` endpoints.
     """
 
-    name = LocaleString(en="Agents")
-    description = LocaleString(en="Interacts with agents")
+    name = LocaleString(en="AI Assistants", de="KI-Assistenten", fr="Assistants IA", it="Assistenti IA")
+    description = LocaleString(
+        en="Browse and interact with AI assistants",
+        de="KI-Assistenten durchsuchen und nutzen",
+        fr="Parcourez et interagissez avec les assistants IA",
+        it="Esplora e interagisci con gli assistenti IA",
+    )
     icon = "meteor-icons:robot"
 
     not_authorized_to_view_exception = HTTPException(status_code=403, detail="Not authorized to view this thread")

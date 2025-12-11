@@ -1,8 +1,7 @@
 judge:
   system_base: |
     You are an impartial and meticulous AI Judge. Your task is to evaluate an AI Assistant's response based on specific criteria.
-    You MUST output your evaluation *only* as a JSON object matching the specified Pydantic model: {output_schema}.
-    Do not add any text before or after the JSON.
+    You MUST use the provided tool/function to submit your evaluation. Do not output JSON text directly.
   error_response: '{"score": 0.0, "reasoning": "Evaluation failed due to an error in the judge or input.", "error": true}'
 
   correctness:

@@ -2,6 +2,7 @@ from .AgentSuitabilityAcceptEvent import AgentSuitabilityAcceptEvent
 from .AgentSuitabilityRejectEvent import AgentSuitabilityRejectEvent
 from .ContextInsufficientRejectEvent import ContextInsufficientRejectEvent
 from .ContextSufficientAcceptEvent import ContextSufficientAcceptEvent
+from .ExpertRejectEvent import ExpertRejectEvent
 from .FewShotAcceptEvent import FewShotAcceptEvent
 from .FewShotRejectEvent import FewShotRejectEvent
 from .GuardAcceptEvent import GuardAcceptEvent
@@ -18,6 +19,7 @@ __all__ = [
     "AgentSuitabilityRejectEvent",
     "ContextSufficientAcceptEvent",
     "ContextInsufficientRejectEvent",
+    "ExpertRejectEvent",
     "SensitiveInfoAcceptEvent",
     "SensitiveInfoRejectEvent",
 ]

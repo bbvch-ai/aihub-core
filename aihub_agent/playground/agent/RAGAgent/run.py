@@ -1,31 +1,27 @@
-# ruff: noqa: E402
-from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
-
-AihubInstrumentor().instrument()
-
 import asyncio
 
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
+from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
-from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig, LLMParameter
-from aihub_lib.generative_ai.resources.models.llm.RerankingModelConfig import RerankingModelConfig
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.nats.events.form import Checkbox, InputNumber, Select, Slider, Textarea
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
-from aihub_lib.testing.logging.logger import enable_logging
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
+from aihub_agent.agents.ExpertAskingAgent.ExpertAskingAgent import ExpertAskingAgent
+from aihub_agent.agents.RagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
 from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.agents.RagAgent.configs.RetrieveSummariesConfig import RetrieveSummariesConfig
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
 from aihub_agent.runners.AgentRunner import AgentRunner
 
-enable_logging(level=30)
+enable_logging()
 
 
 async def main():
@@ -210,18 +206,17 @@ async def main():
         agent_type=RAGAgent,
         default_agent_config=RAGAgentConfig(
             agent_class=RAGAgent.__name__,
-            agent_id="rag_agent",
-            name=LocaleString(en="RAG Agent", de="RAG Agent DE", fr="RAG Agent FR", it="RAG Agent IT"),
+            agent_id="rag_dev_agent",
+            name=LocaleString(en="RAG Dev Agent", de="RAG Dev Agent", fr="Agent RAG Dev", it="Agente RAG Dev"),
             description=LocaleString(
                 en="This is the default RAG Agent",
                 de="Dies ist der Standard RAG Agent",
                 fr="Ceci est l'agent RAG par défaut",
                 it="Questo è l'agente RAG predefinito",
             ),
-            # when using nano temp needs to be 1.0 and nothing else
-            llm=LLMConfig(model_name="text-generation/large", default_parameter=LLMParameter(temperature=1.0)),
-            check_context_sufficiency=False,
-            number_of_input_tokens=16384,
+            llm=LLMConfig(model_name="text-generation/mini"),
+            check_context_sufficiency=True,
+            number_of_input_tokens=100_000,
             system_prompt=LocaleString(
                 en="""
                 <persona>
@@ -317,26 +312,26 @@ async def main():
             ),
             retrieve_step_config=RetrieveStepConfig(
                 embed_model=EmbeddingModelConfig(model_name="embedding/large"),
-                index_namespaces=["simple"],
-                retrieve_k=20,
+                index_namespaces=["defaultnamespace"],
+                retrieve_k=10,
                 query_mode=VectorStoreQueryMode.HYBRID,
-                node_types=["content", "summary"],
+                node_types=["content"],
                 vector_store=MilvusVectorStoreConfig(
                     uri=MilvusSettings().URL,
+                    collection_name="defaultknowledge",
                     dimensions=MilvusSettings().DIMENSION,
-                    collection_name="playground",
                 ),
                 retrieve_prev_next=RetrievePrevNextConfig(
-                    num_nodes=5,
-                    mode="both",
+                    num_nodes=10,
+                    mode=ModeOptions.BOTH,
                 ),
                 retrieve_summaries=RetrieveSummariesConfig(
                     max_parent_levels=2,
                 ),
             ),
-            reranking_config=RerankingConfig(
-                enabled=True,
-                reranking_model=RerankingModelConfig(model_name="reranker", top_n=5),
+            expert_escalation=ExpertEscalationConfig(
+                expert_asking_agent_class=ExpertAskingAgent.__name__,
+                expert_asking_agent_id="expert_agent",
             ),
         ),
         redis_url=RedisSettings().URL,

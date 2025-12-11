@@ -35,12 +35,6 @@ cat > /tmp/s3.json <<EOF
         "List",
         "Tagging"
       ]
-    },
-    {
-      "name": "anonymous",
-      "actions": [
-        "Read"
-      ]
     }
   ]
 }

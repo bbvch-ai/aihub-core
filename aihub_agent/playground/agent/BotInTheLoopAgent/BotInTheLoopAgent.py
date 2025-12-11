@@ -16,20 +16,11 @@ class BotInTheLoopAgent(Agent):
         user = await run_context.get("user")
         question = "Are we there yet?"
 
-        if start_event.teams_config is not None:
-            return BotInTheLoop.invoke(
-                user=user,
-                question=question,
-                teams_config=start_event.teams_config,
-            )
-        elif start_event.slack_config is not None:
-            return BotInTheLoop.invoke(
-                user=user,
-                question=question,
-                slack_config=start_event.slack_config,
-            )
-        else:
-            raise ValueError("Either Slack channel or Teams channel must be provided")
+        return BotInTheLoop.invoke(
+            user=user,
+            question=question,
+            channel_config=start_event.channel_config,
+        )
 
     @step()
     async def end_step(self, event: BotInTheLoop.response) -> BotInTheLoop.request | StopEvent:
@@ -54,17 +45,8 @@ class BotInTheLoopAgent(Agent):
             return StopEvent()
         else:
             follow_up_question = "What about now?"
-            if event.request_event.teams_config is not None:
-                return BotInTheLoop.invoke(
-                    user=event.request_event.user,
-                    question=follow_up_question,
-                    teams_config=event.request_event.teams_config,
-                )
-            elif event.request_event.slack_config is not None:
-                return BotInTheLoop.invoke(
-                    user=event.request_event.user,
-                    question=follow_up_question,
-                    slack_config=event.request_event.slack_config,
-                )
-            else:
-                raise ValueError("Either Slack channel or Teams channel must be provided")
+            return BotInTheLoop.invoke(
+                user=event.request_event.user,
+                question=follow_up_question,
+                channel_config=event.request_event.channel_config,
+            )

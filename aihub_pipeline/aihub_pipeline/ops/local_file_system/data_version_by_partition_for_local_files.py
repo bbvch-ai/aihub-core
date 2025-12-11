@@ -16,6 +16,7 @@ def data_version_by_partition_for_local_files(
     asset_key: AssetKey,
     partition: DynamicPartitionsDefinition,
     local_files: list[MinimalSourceFile],
+    max_partitions: int,
 ) -> DataVersionsByPartition:
     """
     Generates a dynamic partition key for each file in the local filesystem,
@@ -29,6 +30,7 @@ def data_version_by_partition_for_local_files(
         context,
         partition.name,
         partition_keys,
+        max_partitions,
     )
 
     context.log.info(f"Found {len(local_files)} files in the local filesystem")
@@ -51,4 +53,11 @@ def data_version_by_partition_for_local_files(
     # This ensures that if a file is deleted and re-uploaded with the same content,
     # it will be detected as a new version and trigger reprocessing
     # Using Unix timestamp (int) for consistent string representation, matching DataLake pipeline pattern
-    return DataVersionsByPartition({file.path: f"{file.modified}-{file.size}" for file in local_files})
+    existing_partitions = set(context.instance.get_dynamic_partitions(partition.name))
+    files_with_partitions = [local_file for local_file in local_files if local_file.path in existing_partitions]
+
+    return DataVersionsByPartition(
+        {
+            local_file.path: f"{local_file.modified}-{local_file.size}" for local_file in files_with_partitions
+        }  # Only files with partitions
+    )

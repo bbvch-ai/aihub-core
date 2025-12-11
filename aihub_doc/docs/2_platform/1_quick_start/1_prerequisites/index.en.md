@@ -174,11 +174,11 @@ Create three app roles following this process:
 - **Display name**: `AIHubDeveloper`
 - **Allowed member types**: `Users/Groups`
 - **Value**: `AIHubDeveloper`
-- **Description**: `Developer access to AI-Hub platform services (Dagster, Data Lake)`
+- **Description**: `Developer access to AI-Hub platform services (Dagster, SeaweedFS data lake console)`
 
 ::: tip
 The `AIHubDeveloper` role is required to access the Dagster pipeline orchestration dashboard and the SeaweedFS data lake
-console. Users without this role can still use the main AI-Hub interface and OpenWebUI.
+console at `datalake.${DOMAIN}`. Users without this role can still use the main AI-Hub interface and OpenWebUI.
 :::
 
 **Step 6: Configure SPA redirect URIs**
@@ -252,8 +252,8 @@ Web application redirect URIs are required for integrated services (OpenWebUI, D
 The platform type configuration (SPA vs Web) is critical for OAuth2 flow selection:
 
 - **SPA platform**: Language-specific callbacks (`/de/`, `/en/`, `/fr/`, `/it/`) use PKCE flow without client secret
-- **Web platform**: Service callbacks (`openwebui`, `dagster`, `datalake`, `attu`) use authorization code flow with client
-  secret
+- **Web platform**: Service callbacks (`openwebui`, `dagster`, `datalake`, `attu`) use authorization code flow with
+  client secret
 
 Misconfigured platform types will cause authentication error
 `AADSTS9002326: Cross-origin token redemption is permitted only for the 'Single-Page Application' client-type`. Ensure

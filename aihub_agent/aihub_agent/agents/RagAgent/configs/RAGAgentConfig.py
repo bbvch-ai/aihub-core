@@ -6,6 +6,7 @@ from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
 
+from aihub_agent.agents.RagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
 from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 
@@ -56,3 +57,9 @@ class RAGAgentConfig(AgentConfig):
         RerankingConfig,
         Field(description="Configuration for reranking retrieved documents to improve relevance."),
     ] = RerankingConfig()
+    expert_escalation: Annotated[
+        ExpertEscalationConfig | None,
+        Field(
+            description="Expert escalation config. Enables escalation when context is insufficient.",
+        ),
+    ] = None

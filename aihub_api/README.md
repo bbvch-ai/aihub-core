@@ -388,7 +388,7 @@ Add logging to your API development.
 
 ```python
 # Add to your main.py or test files
-from aihub_lib.testing.logging.logger import enable_logging
+from aihub_lib.infrastructure.logging.logger import enable_logging
 enable_logging()
 ```
 

@@ -9,6 +9,7 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryMode,
 )
 
+from aihub_lib.generative_ai.processors.MinMaxScoreNormalizer import MinMaxScoreNormalizer
 from aihub_lib.generative_ai.processors.ScoreScalerPostProcessor import ScoreScalerPostProcessor
 from aihub_lib.persistence.rag.vectors.node_metadata import NAMESPACE, TYPE
 
@@ -54,5 +55,9 @@ def retrieve_nodes(
 
     if query_mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
         nodes = ScoreScalerPostProcessor(from_min=0, from_max=4).postprocess_nodes(nodes)
+    elif query_mode == VectorStoreQueryMode.HYBRID:
+        # Milvus hybrid search scores vary based on ranker and data distribution.
+        # Use dynamic min-max normalization to produce meaningful relevance percentages.
+        nodes = MinMaxScoreNormalizer().postprocess_nodes(nodes)
 
     return nodes

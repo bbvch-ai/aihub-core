@@ -15,10 +15,11 @@
 {%- set hardware = 'gpu' if gpu_enabled else 'cpu' -%}
 
 {# Check if we have local GPU services for this stage/hardware combo #}
-{%- set has_llama_cpp = gpu_enabled or stage == 'dev' -%}
-{%- set has_llama_cpp_embedding = gpu_enabled or stage == 'dev' -%}
-{%- set has_llama_cpp_reranker = gpu_enabled or stage == 'dev' -%}
-{%- set has_speaches = gpu_enabled or stage == 'dev' -%}
+{%- set has_llama_cpp = (gpu_enabled and stage in ['latest', 'nightly']) or stage == 'dev' -%}
+{%- set has_llama_cpp_embedding = (gpu_enabled and stage in ['latest', 'nightly']) or stage == 'dev' -%}
+{%- set has_llama_cpp_reranker = (gpu_enabled and stage in ['latest', 'nightly']) or stage == 'dev' -%}
+{%- set has_vllm_docling = gpu_enabled -%}
+{%- set has_speaches = (gpu_enabled and stage in ['latest', 'nightly']) or stage == 'dev' -%}
 
 {# Extract model aliases from service configs #}
 {%- set llama_cpp_alias = 'gemma-3-4b' -%}
@@ -60,7 +61,8 @@ model_list:
       api_base: http://llama-cpp:8182/
       api_key: XXX
 {%- else %}
-      model: azure/gpt-5-mini
+      # api has changed for gpt-5 models needs to be 4o for ingestion to work currently
+      model: azure/gpt-4o-mini
       api_base: os.environ/AZURE_OPENAI_BASE_URL
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2025-01-01-preview"
@@ -86,23 +88,21 @@ model_list:
 
   - model_name: text-generation/ocr
     litellm_params:
-{%- if gpu_enabled %}
+{%- if has_vllm_docling %}
       model: openai/{{ vllm_docling_alias }}
       api_base: http://vllm-docling:8182/v1
       api_key: XXX
 {%- else %}
-      model: azure/gpt-4o-mini
-      api_base: os.environ/AZURE_OPENAI_BASE_URL
-      api_key: os.environ/AZURE_OPENAI_KEY
-      api_version: "2025-01-01-preview"
+      model: litellm_proxy/granite-docling
+      api_base: https://docling.ai-agents.ch
+      api_key: os.environ/DOCLING_API_KEY
 {%- endif %}
     model_info:
       mode: chat
-{%- if gpu_enabled %}
       max_input_tokens: 8192
       max_output_tokens: 8192
       supports_function_calling: false
-{%- endif %}
+      supports_vision: true
 
   # ===================================================================
   # Embedding Models
@@ -125,10 +125,16 @@ model_list:
 
   - model_name: embedding/large
     litellm_params:
+{%- if has_llama_cpp_embedding %}
+      model: openai/qwen-3-embedding
+      api_base: http://llama-cpp-embedding:8182/v1
+      api_key: XXX
+{%- else %}
       model: azure/text-embedding-3-large
       api_base: os.environ/AZURE_OPENAI_BASE_URL
       api_key: os.environ/AZURE_OPENAI_KEY
-      api_version: "2024-02-01"
+      api_version: "2025-01-01-preview"
+{%- endif %}
     model_info:
       mode: embedding
 
@@ -244,9 +250,9 @@ general_settings:
 # LiteLLM Settings
 # ===================================================================
 litellm_settings:
-  callbacks: ["detect_prompt_injection", "otel"]
+  callbacks: [ "detect_prompt_injection", "otel" ]
   {%- if stage != "dev" %}
-  default_fallbacks: ["text-generation/nano", "text-generation/mini"]
+  default_fallbacks: [ "text-generation/nano", "text-generation/mini" ]
   {%- endif %}
   telemetry: true
   json_logs: true

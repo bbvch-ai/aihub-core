@@ -4,6 +4,7 @@ import pytest
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.nats.events.discovery.process.ProcessClassDiscoveryResponseEvent import (
     ProcessClassDiscoveryResponseEvent,
 )
@@ -11,7 +12,6 @@ from aihub_lib.persistence.process.ProcessConfigEntityDocument import ProcessCon
 from aihub_lib.persistence.process.ProcessEntity import ProcessEntity
 from aihub_lib.processes.ProcessConfig import ProcessConfig
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
-from aihub_lib.testing.logging.logger import enable_logging
 from bson import ObjectId
 from fastapi import HTTPException
 

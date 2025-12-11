@@ -1,9 +1,10 @@
+import logging
 from collections.abc import Callable
 from typing import Annotated, cast
 
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoopRequestEvent
-from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import TeamsConfig
+from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import SlackConfig, TeamsConfig
 from aihub_lib.nats.topics import AgentInstanceTopic
 from cachetools import TTLCache
 from fastapi import Request
@@ -15,6 +16,8 @@ from pydantic import BaseModel, Field
 from aihub_bot.persistence.entities.PathEntity import PathEntity
 from aihub_bot.routes.bot_in_the_loop.SlackUtils import SlackIds, SlackUtils
 from aihub_bot.routes.RoutesService import RoutesService
+
+logger = logging.getLogger(__name__)
 
 
 class BotInTheLoopThread(BaseModel):
@@ -85,10 +88,10 @@ class BotInTheLoopHandler:
         thread_id = event.topic.thread_id
         question = event.question
 
-        if event.slack_config is not None:
+        if isinstance(event.channel_config, SlackConfig):
             await self._handle_bot_in_the_loop_request_in_slack(event, thread_id, question)
 
-        elif event.teams_config is not None:
+        elif isinstance(event.channel_config, TeamsConfig):
             await self._handle_bot_in_the_loop_request_in_teams(event, thread_id, question)
 
         else:
@@ -98,8 +101,10 @@ class BotInTheLoopHandler:
         self, thread_id: str, conversation_id: str, event: BotInTheLoopRequestEvent
     ) -> BotInTheLoopThread:
         if thread_id in self.threads:
+            logger.info(f"[BITL-Handler] Updating existing thread: {thread_id}")
             self.threads[thread_id].last_request_event = event
         else:
+            logger.info(f"[BITL-Handler] Creating new thread: thread_id={thread_id}, conversation_id={conversation_id}")
             self.threads[thread_id] = BotInTheLoopThread(
                 thread_id=thread_id, conversation_id=conversation_id, last_request_event=event
             )
@@ -142,9 +147,9 @@ class BotInTheLoopHandler:
         thread_id: str,
         question: str,
     ):
-        teams_config: TeamsConfig = event.teams_config
+        channel_config: TeamsConfig = event.channel_config
 
-        thread = self._update_or_create_thread(thread_id, teams_config.channel_id, event)
+        thread = self._update_or_create_thread(thread_id, channel_config.channel_id, event)
 
         conversation_id = self._build_conversation_id_with_thread_identifier(thread, Channels.ms_teams)
 
@@ -154,9 +159,9 @@ class BotInTheLoopHandler:
                 id=conversation_id,
                 conversation_type="channel",
             ),
-            service_url=f"https://smba.trafficmanager.net/emea/{teams_config.tenant_id}/",
+            service_url=f"https://smba.trafficmanager.net/emea/{channel_config.tenant_id}/",
             bot=ChannelAccount(
-                id=teams_config.bot_framework_id,
+                id=channel_config.bot_framework_id,
             ),
             user=ChannelAccount(
                 id="bot-in-the-loop",  # Placeholder user for bot-initiated proactive messages
@@ -171,12 +176,21 @@ class BotInTheLoopHandler:
         thread_id: str,
         question: str,
     ):
+        logger.info(f"[BITL-Handler] Handling Slack BITL request: thread_id={thread_id}, question={question!r}")
+
         slack_ids = await self._get_slack_ids(self.path)
-        base_conversation_id = f"{slack_ids.bot_id}:{slack_ids.team_id}:{event.slack_config.channel_id}"
+        base_conversation_id = f"{slack_ids.bot_id}:{slack_ids.team_id}:{event.channel_config.channel_id}"
+
+        logger.info(
+            f"[BITL-Handler] Slack IDs: bot_id={slack_ids.bot_id}, team_id={slack_ids.team_id}, "
+            f"channel_id={event.channel_config.channel_id}"
+        )
+        logger.info(f"[BITL-Handler] Base conversation ID: {base_conversation_id}")
 
         thread = self._update_or_create_thread(thread_id, base_conversation_id, event)
 
         conversation_id = self._build_conversation_id_with_thread_identifier(thread, Channels.slack)
+        logger.info(f"[BITL-Handler] Full conversation ID (with thread): {conversation_id}")
 
         bot_team_id = f"{slack_ids.bot_id}:{slack_ids.team_id}"
 
@@ -185,7 +199,7 @@ class BotInTheLoopHandler:
             conversation=ConversationAccount(
                 id=conversation_id,
             ),
-            service_url=event.slack_config.service_url,
+            service_url=event.channel_config.service_url,
             bot=ChannelAccount(id=bot_team_id),
             user=ChannelAccount(
                 id="bot-in-the-loop",  # Placeholder user for bot-initiated proactive messages
@@ -193,6 +207,7 @@ class BotInTheLoopHandler:
         )
 
         await self._send_bot_in_the_loop_message(conversation, question, thread)
+        logger.info(f"[BITL-Handler] Message sent. Thread now has identifier: {thread.thread_identifier}")
 
     @staticmethod
     def _bot_in_the_loop_callback(question: str, thread: BotInTheLoopThread) -> Callable:

@@ -14,8 +14,8 @@ from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import t
 from aihub_lib.infrastructure.phoenix.PhoenixSettings import PhoenixSettings
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from nats.aio.client import Client as NATS
+from phoenix.client.resources.experiments.types import RanExperiment
 from phoenix.experiments.types import Dataset as PhoenixInternalDataset
-from phoenix.experiments.types import RanExperiment
 from phoenix.server.api.routers.v1.datasets import Dataset as PhoenixDataset
 from phoenix.server.api.routers.v1.datasets import DatasetWithExampleCount
 from phoenix.server.api.routers.v1.experiments import Experiment as PhoenixExperiment
@@ -330,17 +330,19 @@ class EvaluationService:
             eval_runs_for_summary.extend(annotations)
 
         # Calculate summary statistics for each evaluator.
+        # Only create a summary if there are valid scores to average.
         eval_summary: dict[str, EvaluationSummaryData] = {}
         evaluator_names = set(e.get("name") for e in eval_runs_for_summary if e.get("name"))
 
         for name in evaluator_names:
             specific_evals = [e for e in eval_runs_for_summary if e.get("name") == name]
             scores = [e.get("score") for e in specific_evals if e.get("score") is not None and not e.get("error")]
-            eval_summary[name.lower()] = EvaluationSummaryData(
-                evaluator=name,
-                n=len(specific_evals),
-                avg_score=sum(scores) / len(scores) if scores else None,
-            )
+            if scores:
+                eval_summary[name.lower()] = EvaluationSummaryData(
+                    evaluator=name,
+                    n=len(specific_evals),
+                    avg_score=sum(scores) / len(scores),
+                )
 
         agent_class = experiment_meta.metadata.get("agent_class")
         agent_id = experiment_meta.metadata.get("agent_id")
@@ -390,4 +392,5 @@ class EvaluationService:
         )
 
         # After running, fetch the detailed results using our existing method.
-        return await EvaluationService.get_experiment(ran_experiment.id, t)
+        # RanExperiment is a TypedDict, so access via dict syntax
+        return await EvaluationService.get_experiment(ran_experiment["experiment_id"], t)

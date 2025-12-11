@@ -69,44 +69,25 @@ class AgentService:
     @trace_fn
     async def get_agent(nc: NATS, agent_class: str, agent_id: str, t: LocaleHandler) -> AgentDTO:
         """
-        Returns details for a given agent. If agent is online, use live information reported by the agent,
-        otherwise, use saved information from the database.
+        Returns details for a given agent from the database.
+        Online status is derived from the last_discovered timestamp.
         """
-        try:
-            discovered_agent = await AgentService.discover_agent_instance(nc, agent_class, agent_id)
-            return AgentDTO.from_instance(discovered_agent, is_online=True, t=t)
-        except HTTPException:
-            agent = AgentEntity.get_agent(agent_class, agent_id)
-            if agent is None:
-                raise HTTPException(status_code=404, detail=f"Agent {agent_class}.{agent_id} not found.")
-            return AgentDTO.from_entity(agent, t, is_online=False)
+        agent = AgentEntity.get_agent(agent_class, agent_id)
+        if agent is None:
+            raise HTTPException(status_code=404, detail=f"Agent {agent_class}.{agent_id} not found.")
+        return AgentDTO.from_entity(agent, t)
 
     @staticmethod
     @trace_fn
     async def get_agents(nc: NATS, t: LocaleHandler) -> list[AgentDTO]:
         """
-        Returns both agents that are online (answer to a discovery broadcast) and agents
-        that are saved in the database.
+        Returns all registered agents from the database.
+
+        Online status is determined by the last_discovered timestamp - agents that responded
+        to a discovery broadcast within AgentEntity.ONLINE_THRESHOLD are considered online.
+        Discovery runs asynchronously via AgentEndpointsDiscoveryService every 60 seconds.
         """
-        discovered_agents = await AgentService.discover_agents(nc, t)
-        saved_agents = [AgentDTO.from_entity(agent, t, is_online=False) for agent in AgentEntity.get_agents()]
-
-        all_agents = discovered_agents.copy()
-        for saved_agent in saved_agents:
-            was_discovered = (
-                len(
-                    [
-                        a
-                        for a in discovered_agents
-                        if a.agent_id == saved_agent.agent_id and a.agent_class == saved_agent.agent_class
-                    ]
-                )
-                > 0
-            )
-            if not was_discovered:
-                all_agents.append(saved_agent)
-
-        return all_agents
+        return [AgentDTO.from_entity(agent, t) for agent in AgentEntity.get_agents()]
 
     @staticmethod
     @trace_fn

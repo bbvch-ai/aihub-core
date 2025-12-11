@@ -91,115 +91,11 @@ export const AgentConfigDTOSchema = {
             title: 'Icon',
             description: 'The icon representing the agent.',
             default: 'meteor-icons:robot'
-        },
-        form: {
-            anyOf: [
-                {
-                    items: {
-                        anyOf: [
-                            {
-                                '$ref': '#/components/schemas/HtmlElement'
-                            },
-                            {
-                                '$ref': '#/components/schemas/InputText'
-                            },
-                            {
-                                '$ref': '#/components/schemas/CascadeSelect'
-                            },
-                            {
-                                '$ref': '#/components/schemas/Checkbox'
-                            },
-                            {
-                                '$ref': '#/components/schemas/ColorPicker'
-                            },
-                            {
-                                '$ref': '#/components/schemas/DatePicker'
-                            },
-                            {
-                                '$ref': '#/components/schemas/InputMask'
-                            },
-                            {
-                                '$ref': '#/components/schemas/InputNumber'
-                            },
-                            {
-                                '$ref': '#/components/schemas/InputOtp'
-                            },
-                            {
-                                '$ref': '#/components/schemas/Knob'
-                            },
-                            {
-                                '$ref': '#/components/schemas/Listbox'
-                            },
-                            {
-                                '$ref': '#/components/schemas/MultiSelect'
-                            },
-                            {
-                                '$ref': '#/components/schemas/Password'
-                            },
-                            {
-                                '$ref': '#/components/schemas/RadioButton'
-                            },
-                            {
-                                '$ref': '#/components/schemas/Rating'
-                            },
-                            {
-                                '$ref': '#/components/schemas/Select'
-                            },
-                            {
-                                '$ref': '#/components/schemas/SelectButton'
-                            },
-                            {
-                                '$ref': '#/components/schemas/Slider'
-                            },
-                            {
-                                '$ref': '#/components/schemas/Textarea'
-                            },
-                            {
-                                '$ref': '#/components/schemas/ToggleButton'
-                            },
-                            {
-                                '$ref': '#/components/schemas/ToggleSwitch'
-                            }
-                        ]
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Form',
-            description: 'Dynamic form configuration for agent runtime settings.'
         }
     },
     type: 'object',
     required: ['agent_id', 'name', 'description'],
     title: 'AgentConfigDTO'
-} as const;
-
-export const AgentConfigurationDataDTOSchema = {
-    properties: {
-        agent_class: {
-            type: 'string',
-            title: 'Agent Class',
-            description: "The agent's class identifier."
-        },
-        agent_id: {
-            type: 'string',
-            title: 'Agent Id',
-            description: "The agent's instance identifier."
-        },
-        configuration: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Configuration',
-            description: "The current configuration values as key-value pairs. Keys match the 'name' fields from the agent's form elements."
-        }
-    },
-    type: 'object',
-    required: ['agent_class', 'agent_id', 'configuration'],
-    title: 'AgentConfigurationDataDTO',
-    description: 'Response containing the current configuration data for an agent.'
 } as const;
 
 export const AgentDTOSchema = {
@@ -215,14 +111,7 @@ export const AgentDTOSchema = {
             description: "Unique identifier for the agent instance (e.g., 'agent_123')."
         },
         agent_config: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/AgentConfigDTO'
-                },
-                {
-                    type: 'null'
-                }
-            ],
+            '$ref': '#/components/schemas/AgentConfigDTO',
             description: 'Configuration details of the agent, including name, description, and prompts.'
         },
         is_conversational: {
@@ -2843,9 +2732,6 @@ export const ChatMessageSchema = {
                         '$ref': '#/components/schemas/AudioBlock'
                     },
                     {
-                        '$ref': '#/components/schemas/VideoBlock'
-                    },
-                    {
                         '$ref': '#/components/schemas/DocumentBlock'
                     },
                     {
@@ -2856,12 +2742,6 @@ export const ChatMessageSchema = {
                     },
                     {
                         '$ref': '#/components/schemas/CitationBlock'
-                    },
-                    {
-                        '$ref': '#/components/schemas/ThinkingBlock'
-                    },
-                    {
-                        '$ref': '#/components/schemas/ToolCallBlock'
                     }
                 ],
                 discriminator: {
@@ -2873,10 +2753,7 @@ export const ChatMessageSchema = {
                         citation: '#/components/schemas/CitationBlock',
                         document: '#/components/schemas/DocumentBlock',
                         image: '#/components/schemas/ImageBlock',
-                        text: '#/components/schemas/TextBlock',
-                        thinking: '#/components/schemas/ThinkingBlock',
-                        tool_call: '#/components/schemas/ToolCallBlock',
-                        video: '#/components/schemas/VideoBlock'
+                        text: '#/components/schemas/TextBlock'
                     }
                 }
             },
@@ -9983,14 +9860,7 @@ export const MinimalAgentDTOSchema = {
             description: "Unique identifier for the agent instance (e.g., 'agent_123')."
         },
         agent_config: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/AgentConfigDTO'
-                },
-                {
-                    type: 'null'
-                }
-            ],
+            '$ref': '#/components/schemas/AgentConfigDTO',
             description: 'Configuration details of the agent, including name, description, and prompts.'
         },
         is_conversational: {
@@ -10192,7 +10062,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1764938421
+            default: 1764669803
         },
         owned_by: {
             type: 'string',
@@ -14493,50 +14363,6 @@ export const TextareaSchema = {
     description: 'https://formkit-primevue.netlify.app/inputs/Textarea'
 } as const;
 
-export const ThinkingBlockSchema = {
-    properties: {
-        block_type: {
-            type: 'string',
-            const: 'thinking',
-            title: 'Block Type',
-            default: 'thinking'
-        },
-        content: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Content',
-            description: 'Content of the reasoning/thinking process, if available'
-        },
-        num_tokens: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Num Tokens',
-            description: 'Number of token used for reasoning/thinking, if available'
-        },
-        additional_information: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Additional Information',
-            description: 'Additional information related to the thinking/reasoning process, if available'
-        }
-    },
-    type: 'object',
-    title: 'ThinkingBlock',
-    description: 'A representation of the content streamed from reasoning/thinking processes by LLMs'
-} as const;
-
 export const ThoughtEventSchema = {
     properties: {
         event_id: {
@@ -15218,50 +15044,6 @@ export const TokenResponseSchema = {
     title: 'TokenResponse'
 } as const;
 
-export const ToolCallBlockSchema = {
-    properties: {
-        block_type: {
-            type: 'string',
-            const: 'tool_call',
-            title: 'Block Type',
-            default: 'tool_call'
-        },
-        tool_call_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tool Call Id',
-            description: 'ID of the tool call, if provided'
-        },
-        tool_name: {
-            type: 'string',
-            title: 'Tool Name',
-            description: 'Name of the called tool'
-        },
-        tool_kwargs: {
-            anyOf: [
-                {
-                    additionalProperties: true,
-                    type: 'object'
-                },
-                {
-                    type: 'string'
-                }
-            ],
-            title: 'Tool Kwargs',
-            description: 'Arguments provided to the tool, if available'
-        }
-    },
-    type: 'object',
-    required: ['tool_name'],
-    title: 'ToolCallBlock'
-} as const;
-
 export const ToolEventSchema = {
     properties: {
         event_id: {
@@ -15570,21 +15352,6 @@ export const TranscriptionWordSchema = {
     type: 'object',
     required: ['end', 'start', 'word'],
     title: 'TranscriptionWord'
-} as const;
-
-export const UpdateAgentConfigurationDTOSchema = {
-    properties: {
-        configuration: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Configuration',
-            description: "The configuration values to update as key-value pairs. Keys should match the 'name' fields from the agent's form elements."
-        }
-    },
-    type: 'object',
-    required: ['configuration'],
-    title: 'UpdateAgentConfigurationDTO',
-    description: 'Request body for updating agent configuration.'
 } as const;
 
 export const UpdateNamespaceRequestSchema = {
@@ -16179,93 +15946,6 @@ export const ValidationErrorSchema = {
     type: 'object',
     required: ['loc', 'msg', 'type'],
     title: 'ValidationError'
-} as const;
-
-export const VideoBlockSchema = {
-    properties: {
-        block_type: {
-            type: 'string',
-            const: 'video',
-            title: 'Block Type',
-            default: 'video'
-        },
-        video: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'binary'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Video'
-        },
-        path: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'file-path'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Path'
-        },
-        url: {
-            anyOf: [
-                {
-                    type: 'string',
-                    minLength: 1,
-                    format: 'uri'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Url'
-        },
-        video_mimetype: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Video Mimetype'
-        },
-        detail: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Detail'
-        },
-        fps: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Fps'
-        }
-    },
-    type: 'object',
-    title: 'VideoBlock',
-    description: 'A representation of video data to directly pass to/from the LLM.'
 } as const;
 
 export const WorkflowGraphSchema = {

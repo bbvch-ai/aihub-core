@@ -281,9 +281,16 @@ knowledge:
   navigation:
     document:
       basic: "Übersicht"
+      original: "Original"
       content: "Inhalt"
       nodes: "Chunks"
       summary: "Zusammenfassungen"
+  original:
+    not_available: "Die Originalansicht ist nur für PDF-Dateien verfügbar."
+    load_error: "Das Originaldokument konnte nicht geladen werden."
+    view_button: "Original anzeigen"
+    open_new_tab: "In neuem Tab öffnen"
+    click_to_view: "Klicken Sie auf die Schaltfläche unten, um das Original-PDF anzuzeigen."
   documents:
     title: "Dokumente"
     upload:

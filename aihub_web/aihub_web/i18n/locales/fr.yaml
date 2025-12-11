@@ -280,9 +280,16 @@ knowledge:
   navigation:
     document:
       basic: "Aperçu"
+      original: "Original"
       content: "Contenu"
       nodes: "Morceaux"
       summary: "Résumés"
+  original:
+    not_available: "La vue du document original est uniquement disponible pour les fichiers PDF."
+    load_error: "Échec du chargement du document original."
+    view_button: "Voir l'original"
+    open_new_tab: "Ouvrir dans un nouvel onglet"
+    click_to_view: "Cliquez sur le bouton ci-dessous pour afficher le document PDF original."
   documents:
     title: "Documents"
     upload:

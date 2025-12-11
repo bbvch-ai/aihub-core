@@ -124,6 +124,6 @@ async def my_step(self, event: MyEvent, run_context: RunContext, thread_context:
 **Enable logging**:
 
 ```python
-from aihub_lib.testing.logging.logger import enable_logging
+from aihub_lib.infrastructure.logging.logger import enable_logging
 enable_logging()
 ```

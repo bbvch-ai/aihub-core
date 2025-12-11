@@ -10,10 +10,10 @@ import asyncio
 import nest_asyncio
 from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.routes.health.HealthController import HealthController
-from aihub_lib.testing.logging.logger import enable_logging
 
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.evaluation.EvaluationController import EvaluationController
@@ -70,7 +70,7 @@ async def main():
         TokenController(auth=auth).create_token().list_tokens().revoke_token(),
         RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
         OpenaiController(auth=auth)
-        .get_models_with_assistants(exclude_webui_agents=True)
+        .get_models()
         .get_model_with_assistants()
         .get_embeddings()
         .chat_completion_with_assistants()

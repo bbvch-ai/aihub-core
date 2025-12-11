@@ -3,9 +3,9 @@ from unittest.mock import Mock, patch
 import pytest
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
-from aihub_lib.testing.logging.logger import enable_logging
 
 from aihub_api.routes.agent.AgentService import AgentService
 

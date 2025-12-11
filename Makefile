@@ -6,7 +6,6 @@ lint:
 	@(cd aihub_process && make lint)
 	@(cd aihub_api && make lint)
 	@(cd aihub_bot && make lint)
-	@(cd aihub_integration && make lint)
 
 # Format code with Black
 format:
@@ -17,7 +16,6 @@ format:
 	@(cd aihub_process && make format)
 	@(cd aihub_api && make format)
 	@(cd aihub_bot && make format)
-	@(cd aihub_integration && make format)
 
 format-md:
 	@echo "Formatting markdown files..."
@@ -36,7 +34,6 @@ typecheck:
 	@(cd aihub_process && make typecheck)
 	@(cd aihub_api && make typecheck)
 	@(cd aihub_bot && make typecheck)
-	@(cd aihub_integration && make typecheck)
 
 # Run format, type-check, and test in sequence
 pr-ready:
@@ -47,7 +44,6 @@ pr-ready:
 	@(cd aihub_process &&  make pr-ready)
 	@(cd aihub_api &&  make pr-ready)
 	@(cd aihub_bot &&  make pr-ready)
-	@(cd aihub_integration &&  make pr-ready)
 	@(cd aihub_web && make pr-ready)
 	@poetry run mdformat --number $$(git ls-files '*.md')
 
@@ -61,7 +57,7 @@ use-local-core-without-install:
 	@echo "Switching to local cores without poetry install..."
 	poetry run python switch_dependencies.py local
 
-TAG ?= v0.254.10
+TAG ?= v0.255.0
 
 # Use remote cores (with poetry install)
 use-remote-core:

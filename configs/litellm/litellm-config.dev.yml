@@ -51,12 +51,15 @@ model_list:
 
   - model_name: text-generation/ocr
     litellm_params:
-      model: azure/gpt-4o-mini
-      api_base: os.environ/AZURE_OPENAI_BASE_URL
-      api_key: os.environ/AZURE_OPENAI_KEY
-      api_version: "2025-01-01-preview"
+      model: litellm_proxy/granite-docling
+      api_base: https://docling.ai-agents.ch
+      api_key: os.environ/DOCLING_API_KEY
     model_info:
       mode: chat
+      max_input_tokens: 8192
+      max_output_tokens: 8192
+      supports_function_calling: false
+      supports_vision: true
 
   # ===================================================================
   # Embedding Models
@@ -72,10 +75,9 @@ model_list:
 
   - model_name: embedding/large
     litellm_params:
-      model: azure/text-embedding-3-large
-      api_base: os.environ/AZURE_OPENAI_BASE_URL
-      api_key: os.environ/AZURE_OPENAI_KEY
-      api_version: "2024-02-01"
+      model: openai/qwen-3-embedding
+      api_base: http://llama-cpp-embedding:8182/v1
+      api_key: XXX
     model_info:
       mode: embedding
 
@@ -171,7 +173,7 @@ general_settings:
 # LiteLLM Settings
 # ===================================================================
 litellm_settings:
-  callbacks: ["detect_prompt_injection", "otel"]
+  callbacks: [ "detect_prompt_injection", "otel" ]
   telemetry: true
   json_logs: true
   drop_params: true

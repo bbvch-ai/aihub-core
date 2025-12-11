@@ -66,7 +66,7 @@ class AgentDTO(MinimalAgentDTO):
 
     @classmethod
     def from_entity(cls, entity: AgentEntity, t: LocaleHandler, is_online: bool | None = None) -> "AgentDTO":
-        """Converts an AgentEntity to an AgentDTO."""
+        """Converts an AgentEntity to an AgentDTO. Online status is derived from entity.last_discovered."""
         # Use agent_config_specs if available, otherwise fall back to default_agent_config
         agent_config_dto = AgentConfigDTO.from_agent_config_entity_specs(entity.agent_config_specs, t)
         if agent_config_dto is None:
@@ -120,5 +120,5 @@ class AgentDTO(MinimalAgentDTO):
             hitl_request_events=hitl_request_events,
             hitl_response_events=hitl_response_events,
             network_graph=network_graph,
-            is_online=is_online,
+            is_online=entity.is_online,
         )
