@@ -90,6 +90,10 @@ context_insufficient_reject_event:
   name: "Unzureichender Kontext verfügbar"
   description: "Mehr Kontext ist erforderlich, um die Benutzeranfrage ordnungsgemäss zu beantworten."
 
+expert_reject_event:
+  name: "Experten-Eskalation abgelehnt"
+  description: "Der Benutzer hat die Weiterleitung seiner Frage an einen menschlichen Experten abgelehnt."
+
 sensitive_info_accept_event:
   name: "Antwort sicher zu teilen"
   description: "Die Antwort enthält keine sensiblen Informationen und kann sicher geteilt werden."
@@ -102,9 +106,25 @@ hitl_request_event:
   name: "Rückfrage an Benutzer"
   description: "Der Agent benötigt zusätzliche Informationen vom Benutzer, um die Aufgabe fortsetzen zu können."
 
+hitl_input_request_event:
+  name: "Texteingabe angefordert"
+  description: "Der Agent benötigt eine Texteingabe vom Benutzer, um die Aufgabe fortsetzen zu können."
+
+hitl_confirmation_request_event:
+  name: "Bestätigung angefordert"
+  description: "Der Agent benötigt eine Ja/Nein-Bestätigung vom Benutzer, um die Aufgabe fortsetzen zu können."
+
 hitl_response_event:
   name: "Benutzerantwort erhalten"
   description: "Der Benutzer hat die Rückfrage beantwortet, und der Agent kann mit der Aufgabe fortfahren."
+
+hitl_input_response_event:
+  name: "Texteingabe erhalten"
+  description: "Der Benutzer hat eine Texteingabe gemacht, und der Agent kann mit der Aufgabe fortfahren."
+
+hitl_confirmation_response_event:
+  name: "Bestätigung erhalten"
+  description: "Der Benutzer hat bestätigt oder abgelehnt, und der Agent kann mit der Aufgabe fortfahren."
 
 router_event:
   name: "Optimaler Pfad gewählt"

@@ -1,0 +1,47 @@
+"""
+Script to add the bot_in_the_loop PathEntity to MongoDB.
+
+Usage:
+    poetry run python aihub_bot/add_path_entity.py
+
+Reads credentials from environment variables (or .env file):
+    - BOT_APP_ID
+    - BOT_APP_PASSWORD
+    - BOT_TENANT_ID
+    - MONGO_CONNECTION_STRING
+"""
+
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+from pymongo import MongoClient
+
+# Load .env from project root
+env_path = Path(__file__).parent.parent.parent / ".env"
+if env_path.exists():
+    load_dotenv(env_path)
+
+PATH = "/api/v1/bot_in_the_loop/response"
+
+
+def main():
+    client = MongoClient(os.environ["MONGO_CONNECTION_STRING"])
+    collection = client["aihub"]["bot_paths"]
+
+    document = {
+        "path": PATH,
+        "credentials": {
+            "APP_TYPE": "SingleTenant",
+            "APP_ID": os.environ["BOT_APP_ID"],
+            "APP_PASSWORD": os.environ["BOT_APP_PASSWORD"],
+            "APP_TENANTID": os.environ["BOT_TENANT_ID"],
+        },
+    }
+
+    result = collection.update_one({"path": PATH}, {"$set": document}, upsert=True)
+    print(f"{'Created' if result.upserted_id else 'Updated'} path entity for '{PATH}'")
+
+
+if __name__ == "__main__":
+    main()

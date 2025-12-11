@@ -16,8 +16,11 @@ from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewSh
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.generative_ai.resources.models.llm.RerankingModelConfig import RerankingModelConfig
+from aihub_lib.generative_ai.retrievers import InsightRetrieverConfig, KnowledgeRetrieverConfig
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.logging.logger import enable_logging
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.nats.events import LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_lib.nats.events.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
@@ -25,6 +28,7 @@ from aihub_lib.nats.events.guard.FewShotAcceptEvent import FewShotAcceptEvent
 from aihub_lib.nats.events.guard.FewShotRejectEvent import FewShotRejectEvent
 from aihub_lib.nats.events.semantic.reranker import RerankerEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
+from aihub_lib.persistence.insight.InsightEntity import InsightCreator, InsightEntity, InsightMessage, InsightSource
 from aihub_lib.persistence.rag.documents.stores.docstore import create_mongo_document_store
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.asyncio_utils.bdd import async_test
@@ -32,11 +36,11 @@ from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_
 from dotenv import load_dotenv
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
+from mongoengine import connect, disconnect
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
-from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
@@ -75,18 +79,62 @@ def build_rag_agent_config(
         name=LocaleString(en="RAG Agent"),
         description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
         llm=llm_config,
-        retrieve_step_config=RetrieveStepConfig(
-            embed_model=embedding_config,
-            index_namespaces=["ai_knowledge"],
-            retrieve_k=5,
-            query_mode=query_mode,
-            node_types=["content"],
-            vector_store=vector_store,
-            retrieve_prev_next=RetrievePrevNextConfig(
-                num_nodes=2,
-                mode=ModeOptions.BOTH,
+        retrievers=[
+            KnowledgeRetrieverConfig(
+                embed_model=embedding_config,
+                index_namespaces=["ai_knowledge"],
+                retrieve_k=5,
+                query_mode=query_mode,
+                node_types=["content"],
+                vector_store=vector_store,
+                retrieve_prev_next=RetrievePrevNextConfig(
+                    num_nodes=2,
+                    mode=ModeOptions.BOTH,
+                ),
             ),
-        ),
+        ],
+        number_of_input_tokens=8192,
+        check_context_sufficiency=False,
+        reranking_config=RerankingConfig(enabled=False, reranking_model=reranking_config),
+    )
+
+
+def build_rag_agent_config_with_insights(
+    llm_config,
+    reranking_config,
+    embedding_config,
+    vector_store,
+    query_mode: VectorStoreQueryMode,
+    insight_namespace: str,
+    insight_agent_class: str,
+    insight_agent_id: str,
+) -> RAGAgentConfig:
+    """Build RAGAgentConfig with both knowledge AND insight retrievers."""
+    return RAGAgentConfig(
+        agent_id="rag_agent",
+        agent_class=RAGAgent.__name__,
+        name=LocaleString(en="RAG Agent with Insights"),
+        description=LocaleString(en="RAG agent with expert insights"),
+        llm=llm_config,
+        retrievers=[
+            KnowledgeRetrieverConfig(
+                embed_model=embedding_config,
+                index_namespaces=["ai_knowledge"],
+                retrieve_k=5,
+                query_mode=query_mode,
+                node_types=["content"],
+                vector_store=vector_store,
+                retrieve_prev_next=RetrievePrevNextConfig(
+                    num_nodes=2,
+                    mode=ModeOptions.BOTH,
+                ),
+            ),
+            InsightRetrieverConfig(
+                namespace=insight_namespace,
+                agent_class=insight_agent_class,
+                agent_id=insight_agent_id,
+            ),
+        ],
         number_of_input_tokens=8192,
         check_context_sufficiency=False,
         reranking_config=RerankingConfig(enabled=False, reranking_model=reranking_config),
@@ -117,6 +165,69 @@ def test_collection(event_loop):
     yield
 
     drop_collection()
+
+
+# Insight test data helpers
+TEST_INSIGHT_NAMESPACE = "ai_knowledge"
+TEST_INSIGHT_AGENT_CLASS = "RAGAgent"
+TEST_INSIGHT_AGENT_ID = "rag_agent"
+
+
+def create_test_insights(namespace: str, agent_class: str, agent_id: str) -> list[InsightEntity]:
+    """Pre-seed MongoDB with test insights for retrieval tests."""
+    insights = []
+    insight1 = InsightEntity.create_insight(
+        question="What is machine learning?",
+        expert_answer="Machine learning is a subset of AI that enables systems to learn from data.",
+        conversation=[
+            InsightMessage(role=MessageRole.USER, content="What is machine learning?"),
+            InsightMessage(
+                role=MessageRole.ASSISTANT,
+                content="Machine learning is a subset of AI that enables systems to learn from data.",
+            ),
+        ],
+        namespace=namespace,
+        source=InsightSource(thread_id="test-thread-1", expert_user_id="expert-1", expert_name="Dr. AI Expert"),
+        creator=InsightCreator(agent_class=agent_class, agent_id=agent_id, user_id="test-user", user_name="Test User"),
+    )
+    insights.append(insight1)
+    return insights
+
+
+def delete_test_insights(namespace: str):
+    """Cleanup test insights after tests."""
+    InsightEntity.objects(namespace=namespace).delete()
+
+
+@pytest.fixture(scope="session")
+def mongo_connection(event_loop):
+    """Set up MongoEngine connection for InsightEntity tests."""
+    asyncio.set_event_loop(event_loop)
+    config = AIHubSettings()
+    connect(
+        db=config.MONGO_MAIN_DB_NAME,
+        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
+        uuidRepresentation="standard",
+    )
+    yield
+    disconnect()
+
+
+@pytest.fixture(scope="session")
+def test_insights(event_loop, test_collection, mongo_connection):
+    """Setup/teardown test insights for expert workflow tests."""
+    asyncio.set_event_loop(event_loop)
+    insights = create_test_insights(
+        namespace=TEST_INSIGHT_NAMESPACE,
+        agent_class=TEST_INSIGHT_AGENT_CLASS,
+        agent_id=TEST_INSIGHT_AGENT_ID,
+    )
+    yield insights
+    # Cleanup insights - wrapped in try/except in case mongo disconnects first
+    try:
+        delete_test_insights(namespace=TEST_INSIGHT_NAMESPACE)
+    except Exception:
+        pass  # Connection may already be closed during teardown
 
 
 @pytest.fixture(scope="session")
@@ -397,3 +508,46 @@ def _(agent_runner: AgentTestRunner, model_name: str):
     assert (
         reranker_event.rerank_model_name == model_name
     ), f"Expected model {model_name}, got {reranker_event.rerank_model_name}"
+
+
+# ====== Insight Retrieval Step Definitions ======
+
+
+@pytest.fixture(scope="session")
+def insight_enabled_agent_config(test_collection, test_insights):
+    """Return a RAGAgentConfig with insight retriever enabled."""
+    llm_config = LLMConfig(model_name="text-generation/mini")
+    reranking_config = RerankingModelConfig(model_name="reranker")
+    embedding_config = EmbeddingModelConfig(model_name="embedding/large")
+    vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
+        uri="http://localhost",
+        collection_name="development",
+        dimensions=1024,
+    )
+
+    return build_rag_agent_config_with_insights(
+        llm_config=llm_config,
+        reranking_config=reranking_config,
+        embedding_config=embedding_config,
+        vector_store=vector_store,
+        query_mode=VectorStoreQueryMode.HYBRID,
+        insight_namespace=TEST_INSIGHT_NAMESPACE,
+        insight_agent_class=TEST_INSIGHT_AGENT_CLASS,
+        insight_agent_id=TEST_INSIGHT_AGENT_ID,
+    )
+
+
+@pytest.mark.usefixtures("insight_enabled_agent_config")
+@given("a RAGAgent runner with insight retriever enabled", target_fixture="agent_runner")
+def _(insight_enabled_agent_config):
+    """Given a RAGAgent runner with insight retriever enabled."""
+    return AgentTestRunner(
+        agent_type=RAGAgent,
+        default_agent_config=insight_enabled_agent_config,
+    )
+
+
+@given("test insights are pre-seeded in the database")
+def _(test_insights):
+    """Ensure test insights are pre-seeded in the database (handled by fixture)."""
+    assert len(test_insights) > 0, "Test insights were not pre-seeded"

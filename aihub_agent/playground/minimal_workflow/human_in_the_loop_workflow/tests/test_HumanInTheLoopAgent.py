@@ -1,10 +1,12 @@
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent
-from aihub_lib.nats.events.human_in_the_loop import (
-    HumanInTheLoopRequestEvent,
-    HumanInTheLoopResponseEvent,
+from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoop import HumanInTheLoopInput
+from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
+    HumanInTheLoopInputRequestEvent,
 )
-from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoop import HumanInTheLoop
+from aihub_lib.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import (
+    HumanInTheLoopInputResponseEvent,
+)
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from pytest_bdd import given, parsers, scenarios, then, when
 
@@ -43,10 +45,10 @@ async def _(agent_runner: AgentTestRunner, response: str):
     async with agent_runner.test_run() as topic:
         # Send StartEvent
         await agent_runner.send_event_from_topic(start_event=StartEvent(), topic=topic)
-        # Get the HumanInTheLoopRequestEvent and send the corresponding response
-        hil_request_event = await agent_runner.wait_for_event(HumanInTheLoopRequestEvent)
+        # Get the HumanInTheLoopInputRequestEvent and send the corresponding response
+        hil_request_event = await agent_runner.wait_for_event(HumanInTheLoopInputRequestEvent)
         await agent_runner.send_event_from_topic(
-            start_event=HumanInTheLoop.response(response=response, request_event=hil_request_event),
+            start_event=HumanInTheLoopInput.response(response=response, request_event=hil_request_event),
             topic=hil_request_event.topic,
         )
 
@@ -58,14 +60,14 @@ def _(agent_runner: AgentTestRunner):
 
 @then("a HumanInTheLoopRequestEvent event is present")
 def _(agent_runner: AgentTestRunner):
-    # Make sure the agent emitted HumanInTheLoopRequestEvent
-    assert agent_runner.has_event_of_class(HumanInTheLoopRequestEvent)
+    # Make sure the agent emitted HumanInTheLoopInputRequestEvent
+    assert agent_runner.has_event_of_class(HumanInTheLoopInputRequestEvent)
 
 
 @then(parsers.parse('a HumanInTheLoopResponseEvent event with the response "{response}" is present'))
 def _(agent_runner: AgentTestRunner, response: str):
     assert (
-        agent_runner.get_event_of_class(HumanInTheLoopResponseEvent).response == response
+        agent_runner.get_event_of_class(HumanInTheLoopInputResponseEvent).response == response
     ), "Agent did not receive correct response"
 
 

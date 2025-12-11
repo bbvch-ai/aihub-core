@@ -3,23 +3,33 @@ from typing import Annotated
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from aihub_lib.generative_ai.retrievers import RetrieverConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
 
+from aihub_agent.agents.RagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
-from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 
 
 class RAGAgentConfig(AgentConfig):
     """
-    Configuration for a RAGAgent, specifying the LLM, retrieval parameters, and prompts used to generate responses.
+    Configuration for a RAGAgent with multiple retrieval sources and optional expert escalation.
+
+    Supports:
+    - Multiple retrievers (knowledge base + insights)
+    - Optional expert escalation when context is insufficient
     """
 
     llm: Annotated[
         LLMConfig,
         Field(description="The LLM configuration for the agent."),
     ]
-    retrieve_step_config: Annotated[RetrieveStepConfig, Field(description="The configuration for the retrieval step.")]
+
+    retrievers: Annotated[
+        list[RetrieverConfig],
+        Field(description="List of retriever configurations (knowledge, insight)."),
+    ]
+
     number_of_input_tokens: Annotated[
         int, Field(description="Maximum tokens allowed in input to manage context size or cost.")
     ]
@@ -56,3 +66,9 @@ class RAGAgentConfig(AgentConfig):
         RerankingConfig,
         Field(description="Configuration for reranking retrieved documents to improve relevance."),
     ] = RerankingConfig()
+    expert_escalation: Annotated[
+        ExpertEscalationConfig | None,
+        Field(
+            description="Expert escalation config. Enables escalation when context is insufficient.",
+        ),
+    ] = None

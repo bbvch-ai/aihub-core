@@ -10,12 +10,20 @@ from aihub_lib.generative_ai.rerank.rerank_nodes import rerank_nodes
 from aihub_lib.generative_ai.retrieval.retrieve_nodes import retrieve_nodes
 from aihub_lib.generative_ai.retrieval.retrieve_parent_summary_nodes import retrieve_parent_summary_nodes
 from aihub_lib.generative_ai.retrieval.retrieve_prev_next_nodes import retrieve_prev_next_nodes
+from aihub_lib.generative_ai.utils.retrieve_from_all_sources import retrieve_from_all_sources
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import LimitChatHistoryEvent, StandaloneQuestionCondenserEvent
+from aihub_lib.nats.events import (
+    AgentInTheLoop,
+    HumanInTheLoop,
+    LimitChatHistoryEvent,
+    StandaloneQuestionCondenserEvent,
+    StopEvent,
+)
 from aihub_lib.nats.events.guard import (
     ContextInsufficientRejectEvent,
     ContextSufficientAcceptEvent,
+    ExpertRejectEvent,
     FewShotAcceptEvent,
     FewShotRejectEvent,
 )
@@ -27,11 +35,15 @@ from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_agent.agents.Agent import Agent
+from aihub_agent.agents.ExpertAskingAgent.events.AnswerStopEvent import AnswerStopEvent
+from aihub_agent.agents.ExpertAskingAgent.events.AskExpertStartEvent import AskExpertStartEvent
+from aihub_agent.agents.ExpertAskingAgent.events.NoAnswerStopEvent import NoAnswerStopEvent
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.agents.RagAgent.events.ContextInsufficientWithQueryEvent import ContextInsufficientWithQueryEvent
+from aihub_agent.agents.RagAgent.events.ExpertAnswerContextEvent import ExpertAnswerContextEvent
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
+from aihub_agent.agents.RagAgent.events.UserRequestsExpertEvent import UserRequestsExpertEvent
 from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.workflow.decorators.precondition import precondition
 from aihub_agent.workflow.decorators.step import step
@@ -51,6 +63,52 @@ async def reranking_complete_or_disabled(event: RetrieverEvent | RerankerEvent, 
         return isinstance(event, RetrieverEvent)
     # If reranking is enabled, we must wait for RerankerEvent
     return isinstance(event, RerankerEvent)
+
+
+@precondition()
+async def is_answer_response(event: AgentInTheLoop.response) -> bool:
+    """Ensures agent in the loop response is a successful answer."""
+    return isinstance(event.stop_event, AnswerStopEvent)
+
+
+@precondition()
+async def is_no_answer_response(event: AgentInTheLoop.response) -> bool:
+    """Ensures agent in the loop response is an unsuccessful answer."""
+    return isinstance(event.stop_event, NoAnswerStopEvent)
+
+
+@precondition()
+async def has_expert_escalation(config: RAGAgentConfig) -> bool:
+    """Precondition to check if expert escalation is configured."""
+    return config.expert_escalation is not None
+
+
+@precondition()
+async def accepts_context_insufficient_reject(
+    event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ContextInsufficientRejectEvent | ExpertRejectEvent,
+    config: RAGAgentConfig,
+) -> bool:
+    """Accept ContextInsufficientRejectEvent only if no expert flow is configured."""
+    if isinstance(event, ContextInsufficientRejectEvent):
+        return config.expert_escalation is None
+    return True
+
+
+@precondition()
+async def context_ready_for_history_limit(
+    context_event: InOrderNodeCombinerEvent | ExpertAnswerContextEvent,
+    context_sufficient_event: ContextSufficientAcceptEvent | None = None,
+) -> bool:
+    """
+    Precondition for limit_chat_history_with_context_step.
+    Allows the step to run when:
+    - ExpertAnswerContextEvent is present (expert flow), OR
+    - InOrderNodeCombinerEvent is present AND ContextSufficientAcceptEvent is present (normal RAG flow)
+    """
+    if isinstance(context_event, ExpertAnswerContextEvent):
+        return True
+    # For InOrderNodeCombinerEvent, we need ContextSufficientAcceptEvent
+    return context_sufficient_event is not None
 
 
 class RAGAgent(Agent):
@@ -144,52 +202,25 @@ class RAGAgent(Agent):
 
     @step(
         name=LocaleString(en="Retrieve Nodes"),
-        description=LocaleString(en="Retrieves relevant nodes from the knowledge base."),
+        description=LocaleString(en="Retrieves relevant nodes from knowledge sources."),
     )
     async def retrieve_step(
         self,
         event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
         _: FewShotAcceptEvent,
-        retrieve_step_config: RetrieveStepConfig,
+        agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> RetrieverEvent:
-        """
-        Retrieves relevant nodes from the knowledge base.
-        """
-        await displayer.display_thought(t("agent.thought.searching_knowledge"))
-        embedding, _ = retrieve_step_config.embed_model.to_llama_index()
-
+        """Retrieves relevant nodes from multiple knowledge sources in parallel."""
         if isinstance(event, StandaloneQuestionCondenserEvent):
             query = event.condensed_chat_message.content
         else:
             query = event.new_query
 
-        vector_store = retrieve_step_config.vector_store.to_llama_index()
-
-        nodes = retrieve_nodes(
-            message=query,
-            retrieve_k=retrieve_step_config.retrieve_k,
-            embed_model=embedding,
-            index_namespaces=retrieve_step_config.index_namespaces,
-            query_mode=retrieve_step_config.query_mode,
-            node_types=retrieve_step_config.node_types,
-            vector_store=vector_store,
-        )
-        if retrieve_step_config.retrieve_prev_next:
-            nodes = retrieve_prev_next_nodes(
-                vector_store=vector_store,
-                nodes=nodes,
-                num_nodes=retrieve_step_config.retrieve_prev_next.num_nodes,
-                prev_next_mode=retrieve_step_config.retrieve_prev_next.mode,
-            )
-        if retrieve_step_config.retrieve_summaries:
-            nodes = retrieve_parent_summary_nodes(
-                vector_store=vector_store,
-                nodes=nodes,
-                max_levels=retrieve_step_config.retrieve_summaries.max_parent_levels,
-            )
-        return RetrieverEvent.from_nodes(nodes)
+        all_nodes = await retrieve_from_all_sources(query, agent_config.retrievers, displayer, t)
+        nodes_with_score = [node.to_llama_index_node_with_score() for node in all_nodes]
+        return RetrieverEvent.from_nodes(nodes_with_score)
 
     @step(
         name=LocaleString(en="Rerank Retrieved Nodes"),
@@ -301,23 +332,25 @@ class RAGAgent(Agent):
     @step(
         name=LocaleString(en="Limit Chat History with Context"),
         description=LocaleString(en="Includes the combined context and truncates chat history again."),
+        precondition=context_ready_for_history_limit,
     )
     async def limit_chat_history_with_context_step(
         self,
-        nodes_event: InOrderNodeCombinerEvent,
+        context_event: InOrderNodeCombinerEvent | ExpertAnswerContextEvent,
         chat_history_event: LimitChatHistoryEvent,
-        _: ContextSufficientAcceptEvent,
+        _: ContextSufficientAcceptEvent | None,
         start_event: UserMessageEvent,
         agent_config: RAGAgentConfig,
     ) -> LimitChatHistoryWithContextEvent:
         """
         Includes the combined context and truncates chat history again.
+        Accepts either retrieved nodes context or expert answer context.
         """
         chat_history = chat_history_event.limited_history
         system_messages = [msg for msg in chat_history if msg.role == MessageRole.SYSTEM]
         limited_chat_history = limit_chat_history_with_context(
             chat_history=chat_history_event.limited_history,
-            context_messages=[nodes_event.context_message],
+            context_messages=[context_event.context_message],
             system_messages=system_messages,
             last_user_message=start_event.last_user_message or ChatMessage(role=MessageRole.USER, content=""),
             tokenizer=agent_config.llm.token_counter,
@@ -326,12 +359,154 @@ class RAGAgent(Agent):
         return LimitChatHistoryWithContextEvent(limited_history_with_context=limited_chat_history)
 
     @step(
+        name=LocaleString(en="Handle Insufficient Context"),
+        description=LocaleString(en="Handle insufficient context by asking for expert consent."),
+        icon="akar-icons:chat-approve",
+        precondition=has_expert_escalation,
+    )
+    async def insufficient_context_ask_expert_step(
+        self,
+        _: ContextInsufficientRejectEvent,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> HumanInTheLoop.confirmation.request:
+        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.context_not_sufficient"))
+        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.asking_for_consent"))
+        return HumanInTheLoop.confirmation.invoke(question=t("agent.expert_grounded_agent.messages.consent_question"))
+
+    @step(
+        name=LocaleString(en="Consent Answer"),
+        description=LocaleString(en="User answered the question for consent."),
+        icon="carbon:question-answering",
+    )
+    async def user_expert_inquiry_response(
+        self,
+        event: HumanInTheLoop.confirmation.response,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> UserRequestsExpertEvent | ExpertRejectEvent:
+        if event.response is True:
+            await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.user_consented"))
+            return UserRequestsExpertEvent()
+        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.user_declined"))
+        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.waiting_for_instructions"))
+        return ExpertRejectEvent(reason="User declined expert escalation")
+
+    @step(
+        name=LocaleString(en="Invoke ExpertAskingAgent"),
+        description=LocaleString(en="Forwarding request to ExpertAskingAgent that will prompt experts."),
+        icon="hugeicons:robot-02",
+    )
+    async def forward_to_expert_asking_agent_step(
+        self,
+        user_message_event: UserMessageEvent,
+        _: UserRequestsExpertEvent,
+        displayer: EventDisplayer,
+        agent_config: RAGAgentConfig,
+        t: LocaleHandler,
+    ) -> AgentInTheLoop.request:
+        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.forwarding_to_expert"))
+        await displayer.display_chunk(
+            t("agent.expert_grounded_agent.messages.expert_forwarding_confirmation"), model_name="RAG Agent"
+        )
+        await displayer.display_chunk("\n", model_name="RAG Agent")
+        await displayer.display_chunk(
+            t("agent.expert_grounded_agent.messages.expert_answer_coming_soon"), model_name="RAG Agent"
+        )
+        return AgentInTheLoop.invoke(
+            agent_class=agent_config.expert_escalation.expert_asking_agent_class,
+            agent_id=agent_config.expert_escalation.expert_asking_agent_id,
+            start_event=AskExpertStartEvent(
+                question_to_expert=user_message_event.user_query,
+                locale=user_message_event.locale,
+                user=user_message_event.user,
+            ),
+        )
+
+    @step(
+        precondition=is_answer_response,
+        name=LocaleString(en="Expert Answer Positive"),
+        description=LocaleString(en="ExpertAskingAgent was able to extract information from expert."),
+        icon="ix:user-success-filled",
+    )
+    async def expert_answered_step(
+        self,
+        displayer: EventDisplayer,
+        event: AgentInTheLoop.response,
+        t: LocaleHandler,
+    ) -> ExpertAnswerContextEvent:
+        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.expert_answered"))
+        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.can_answer_question"))
+
+        # Format the expert conversation as context
+        expert_conversation = event.stop_event.expert_conversation
+        conversation_parts = []
+        for msg in expert_conversation:
+            role_label = "Agent" if msg.role == MessageRole.ASSISTANT else "Expert"
+            content = msg.content or ""
+            conversation_parts.append(f"{role_label}: {content}")
+        expert_conversation_text = "\n".join(conversation_parts)
+
+        context_content = t("agent.prompt.expert_context", expert_conversation=expert_conversation_text)
+        await displayer.display_thought(f"Expert context: {context_content}")
+
+        context_message = ChatMessage(
+            role=MessageRole.SYSTEM,
+            content=context_content,
+        )
+        return ExpertAnswerContextEvent(context_message=context_message)
+
+    @step(
+        precondition=is_no_answer_response,
+        name=LocaleString(en="Expert Answer Negative"),
+        description=LocaleString(en="ExpertAskingAgent was NOT able to extract information from expert."),
+        icon="ix:user-fail-filled",
+    )
+    async def expert_not_answered_step(
+        self,
+        displayer: EventDisplayer,
+        _: AgentInTheLoop.response,
+        t: LocaleHandler,
+    ) -> StopEvent:
+        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.expert_unable_to_answer"))
+        await displayer.display_chunk(
+            t("agent.expert_grounded_agent.messages.expert_unable_to_answer"), model_name="expert"
+        )
+        return StopEvent()
+
+    @step(
+        name=LocaleString(en="Expert Answer Error"),
+        description=LocaleString(en="ExpertAskingAgent encountered an error."),
+        icon="ix:error",
+    )
+    async def expert_exception_step(
+        self,
+        displayer: EventDisplayer,
+        exception_event: AgentInTheLoop.exception,
+        t: LocaleHandler,
+    ) -> StopEvent:
+        await displayer.display_thought(
+            t(
+                "agent.expert_grounded_agent.thoughts.expert_error",
+                error_code=exception_event.exception_event.http_status_code,
+                error_message=exception_event.exception_event.message,
+            )
+        )
+        await displayer.display_chunk(
+            t("agent.expert_grounded_agent.messages.expert_error_occurred"), model_name="RAG Agent"
+        )
+        return StopEvent()
+
+    @step(
         name=LocaleString(en="Respond with LLM"),
         description=LocaleString(en="Generates a response using the configured LLM."),
+        precondition=accepts_context_insufficient_reject,
     )
     async def respond_with_llm_step(
         self,
-        event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ContextInsufficientRejectEvent,
+        event: (
+            LimitChatHistoryWithContextEvent | FewShotRejectEvent | ContextInsufficientRejectEvent | ExpertRejectEvent
+        ),
         limited_history_without_context: LimitChatHistoryEvent,
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
@@ -340,7 +515,7 @@ class RAGAgent(Agent):
         """
         Generates a response using the configured LLM.
         """
-        if isinstance(event, FewShotRejectEvent) or isinstance(event, ContextInsufficientRejectEvent):
+        if isinstance(event, FewShotRejectEvent | ContextInsufficientRejectEvent | ExpertRejectEvent):
             messages = limited_history_without_context.limited_history + [
                 ChatMessage(
                     role=MessageRole.SYSTEM,

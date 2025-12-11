@@ -5,6 +5,205 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.255.2] - 2025-12-11 - Unlocking Knowledge: Expert Insights and Advanced RAG for Smarter Agents
+
+### Added
+
+- ✨ **Expert Insight Persistence**: Expert responses and conversations from the `ExpertAskingAgent` are now stored as
+  valuable 'insights' in MongoDB, enabling agents to learn from and leverage past expert interactions.
+- 🚀 **Modular Multi-Source Retrieval System**: Introduced a new, flexible system allowing RAG agents to retrieve
+  information from diverse sources, including traditional knowledge bases and newly persisted expert insights, in
+  parallel.
+- 💬 **Specialized Human-in-the-Loop (HITL) Events**: Enhanced human interaction capabilities with new event types
+  (`HumanInTheLoopInput` and `HumanInTheLoopConfirmation`), providing more explicit and structured dialogues for
+  free-form text input or yes/no confirmations.
+- 🌐 **Bot-in-the-Loop Path Entity**: A new MongoDB path entity has been added to streamline bot-in-the-loop responses,
+  improving the integration and handling of bot channel interactions.
+- 🧪 **Comprehensive Agent Test Suites**: New test coverage has been added for the `ExpertAskingAgent` and expanded for
+  the `RAGAgent`, specifically addressing expert escalation workflows and the new insight retrieval functionality.
+- 🖥️ **Robust MongoDB Connection Management**: Implemented enhanced connection management for MongoDB within both agent
+  and process runners, ensuring reliable data persistence and retrieval.
+
+### Changed
+
+- ⚙️ **RAG Agent Configuration**: The `RAGAgent`'s retrieval configuration has been modernized to utilize the new
+  multi-source retrieval system, replacing the singular `retrieve_step_config` with a flexible list of `retrievers`.
+- 🆔 **Detailed Expert Identification**: `ExpertAnswerSufficientEvent` and `ExpertAnswerInsufficientEvent` now include
+  the `expert_user_id`, allowing for more granular tracking and identification of expert contributions.
+- 🤝 **Mandatory Bot-in-the-Loop Responder Information**: The `responder` and `user_name` fields in
+  `BotInTheLoopResponseEvent` are now required, ensuring complete traceability of human responses from bot channels.
+- 🔄 **OpenWebUI Human-in-the-Loop Handler**: The OpenWebUI integration has been updated to fully support the new
+  specialized `HumanInTheLoopConfirmation` dialogs, providing a richer and more intuitive user experience for agent
+  confirmations.
+
+### Refactor
+
+- 🧹 **Centralized Retrieval Logic**: Core retrieval utilities and configurations, including `RetrieveSummariesConfig`
+  and helper functions for node retrieval, have been moved to a shared library (`aihub_lib`), promoting better code
+  organization and reusability across agents.
+- ⚡️ **Streamlined Human-in-the-Loop Event Structure**: The internal architecture of Human-in-the-Loop events has been
+  refined, abstracting common `Request` and `Response` patterns into base classes and introducing dedicated subclasses
+  for specific interaction types.
+
+---
+
+## [v0.255.1] - 2025-12-11 - Enhanced Database Connection Management with PgBouncer
+
+### Added
+
+- 🚀 **PgBouncer Integration:** Introduced PgBouncer connection pooling for Dagster deployments (all stages except `dev`)
+  to improve database connection management and prevent connection exhaustion.
+- ✨ **PgBouncer Service:** Added a dedicated PgBouncer service with robust health checks and configurable pooling
+  parameters to all non-development Docker Compose configurations.
+- 📄 **PgBouncer License Information:** Included the ISC license details for PgBouncer in the project's license
+  configuration.
+
+### Changed
+
+- 🔄 **Dagster Database Connectivity:** Updated Dagster's database configuration in `build`, `latest`, `local`, and
+  `nightly` stages to connect through PgBouncer (hostname `pgbouncer`, port `6432`) instead of directly to PostgreSQL.
+- ⚡️ **Service Dependencies:** Configured Dagster's `webserver` and `daemon` services in non-development environments to
+  explicitly depend on the `pgbouncer` service, ensuring correct startup order.
+
+### Refactor
+
+- 🧹 **Dynamic Dagster Configuration:** Refactored the Dagster configuration template (`dagster-config.yml.j2`) to
+  conditionally configure database connections: direct to PostgreSQL for `dev` stage, and via PgBouncer for all other
+  stages.
+
+---
+
+## [v0.255.0] - 2025-12-10 - Enhanced Platform Experience and High-Availability Storage
+
+### Added
+
+- ✨ **Enhanced User Interface Descriptions**: A comprehensive update across all API routes, introducing multi-language
+  support (German, French, Italian) and more descriptive names for key platform components, such as `AI Assistants`
+  (formerly `Agents`), `Quality Testing` (formerly `Evaluation`), `Activity Log` (formerly `Events`), `Knowledge Base`
+  (formerly `Knowledge`), `AI Models` (formerly `Models`), `Chat` (formerly `Open WebUI`), `Workflows` (formerly
+  `Processes`), and `Platform Overview` (formerly `Suite`).
+- 🔄 **New Document Conversion API**: Introduced a new `/docling/process` API endpoint and corresponding schemas
+  (`DocumentConversionMetadata`, `DocumentConversionResponse`) to provide advanced document conversion capabilities,
+  allowing direct processing of documents via the API.
+- 🚀 **Integrated `etcd` with SeaweedFS Filer**: Added `etcd` as the metadata backend for `SeaweedFS Filer`, enabling
+  high-availability deployments and robust metadata storage for the object storage service.
+- 🎨 **Improved Image Display in Documentation**: Added CSS rules to invert image colors in light mode within the
+  documentation, enhancing readability and visual consistency.
+- 📦 **Globally Available `NavigationBoxes` Component**: Made the `NavigationBoxes` component available globally in the
+  VitePress documentation theme.
+
+### Changed
+
+- ⚙️ **Refined OpenAI API Endpoints**: Updated OpenAI-compatible API routes to integrate `_with_assistants` versions for
+  `get_model` and `chat_completion`, streamlining interactions with AI assistants.
+- 📝 **Updated Image Generation Model Default**: Changed the default model for image generation from `dall-e-3` to a more
+  generic `image-generation` string, allowing greater flexibility in model selection.
+- 📚 **Comprehensive Documentation Overhaul**: Extensive updates to German and English documentation, including
+  terminology clarifications, vision alignment, updated feature descriptions, and rewritten FAQs to reflect the
+  platform's focus on open-source, data sovereignty, and the new SeaweedFS storage.
+- 💾 **Alphabetical Sorting of Services in Platform Overview**: The platform overview now sorts services alphabetically
+  by name, improving navigability and user experience.
+- 💄 **Theme and UI Enhancements**: Minor visual adjustments to the documentation, including updating tip box colors from
+  gray to green and refining gradients and font styles for navigation boxes.
+
+### Fixed
+
+- 🐛 **Docs Link Handling**: Set `ignoreDeadLinks: true` in VitePress configuration to prevent documentation build
+  failures due to temporary or external dead links.
+
+### Security
+
+- 🔒 **Removed Anonymous S3 Read Access**: Hardened security for the SeaweedFS S3 policy by removing anonymous read
+  actions, ensuring all S3 access requires proper authentication.
+
+### Refactor
+
+- 🧹 **Internal Development Configuration Cleanup**: Removed unused `<node-interpreter>` setting from
+  `.idea/runConfigurations/Docs_Dev.xml`.
+- 🔄 **Build System Configuration for SeaweedFS**: Updated `generate_compose.py` to include new
+  `seaweed-filer-config.toml.j2` templates, ensuring proper generation of SeaweedFS configurations across different
+  deployment stages and hardware types.
+- 🧹 **User Mock Data Adjustment**: Updated the user mock data to reflect the new `My Account` localization for service
+  names.
+
+---
+
+## [v0.254.19] - 2025-12-10 - Refined Contextual Chat History Management
+
+### Changed
+
+- 🔄 **Adjusted message ordering** within the `limit_chat_history_with_context` utility. Context messages are now placed
+  after the limited chat history but before the final user prompt, optimizing the input structure for generative AI
+  models to potentially enhance comprehension and response quality.
+
+---
+
+## [v0.254.18] - 2025-12-09 - Docling Loader Robustness and Development Workflow Enhancements
+
+### Fixed
+
+- 🐛 **Improved Docling Content Robustness:** Enhanced the Docling document loader to recursively handle and fix
+  malformed `null` meta fields within document content, ensuring better compatibility and preventing errors when
+  processing data from older Docling server deployments.
+
+### Changed
+
+- 🔄 **Expanded PR Branch Naming:** Updated CI/CD rules to allow feature branches prefixed with `claude/` to pass
+  semantic pull request checks, streamlining specific development workflows.
+
+---
+
+## [v0.254.17] - 2025-12-09 - Enhanced RAG Agent with Expert Escalation and Streamlined Bot Communication
+
+### Added
+
+- ✨ **Expert Escalation to RAG Agent**: Introduced a new capability for the **RAG Agent** to escalate questions to human
+  experts when the retrieved context is insufficient, improving answer reliability for complex queries.
+- 🦾 **Unified Channel Configuration for Bot-in-the-Loop**: Centralized bot communication setup with a new
+  `channel_config` for the **Bot-in-the-Loop** agent, enabling seamless integration with both Slack and Microsoft Teams.
+- 💬 **Expert Conversation Context Event**: Added `ExpertAnswerContextEvent` to seamlessly integrate expert responses
+  into the **RAG Agent**'s context for generating more informed answers.
+- 🚫 **Expert Rejection Event**: Introduced `ExpertRejectEvent` to gracefully handle scenarios where users decline human
+  expert assistance within the workflow.
+
+### Changed
+
+- 🔄 **RAG Agent Expert Escalation Flow**: The **RAG Agent** now includes new steps for user consent, invoking the
+  `ExpertAskingAgent`, and incorporating expert answers, integrating functionality previously handled by the standalone
+  `ExpertGroundedAgent`.
+- 🤖 **Expert Asking Agent Role Refinement**: The **Expert Asking Agent**'s responsibilities have been refined to focus
+  solely on posing questions to experts and validating their responses, removing the previous capability to generate and
+  save knowledge snippets to an OpenWebUI knowledge base.
+- 📝 **Improved Expert Answer Sufficiency Logic**: Refined the prompt and criteria used by the system to determine
+  whether an expert's answer is sufficient, leading to more accurate routing decisions in multi-turn expert
+  conversations.
+- 📊 **Enhanced Bot Logging**: Added more detailed logging for the **Bot-in-the-Loop** service to provide better
+  visibility into conversation handling and thread management across different channels.
+- 🖼️ **Refined Image Handling in Pipelines**: Updated the image processing logic within the **AI Hub Pipeline**'s
+  `MessageConverter` to directly pass data URLs, improving compatibility with LlamaIndex's image block handling.
+- ⚙️ **RAG Agent Configuration Defaults**: Adjusted default settings for the **RAG Agent**, including enabling context
+  sufficiency checks by default and increasing the maximum number of input tokens, leading to improved performance and
+  robustness.
+
+### Fixed
+
+- 🐛 **Docker Compose Configuration**: Addressed Docker Compose settings by including `LOG_LEVEL` environment variables
+  for agents and implementing Traefik labels and local port exposure (8001) for the **Bot** service, enhancing
+  debuggability and accessibility in various deployment stages.
+
+### Removed
+
+- 🗑️ **Deprecated Expert Grounded Agent**: The `ExpertGroundedAgent` and all its associated files and events have been
+  removed, as its core functionality has been refactored and integrated into the **RAG Agent**.
+- 🧹 **OpenWebUI Knowledge Snippet Features**: Eliminated the `ExpertAskingAgent`'s capabilities related to generating
+  and persisting knowledge snippets to OpenWebUI, streamlining its core function.
+- 📦 **Unused `aihub_integration` Module**: Removed references to the `aihub_integration` module from IDE configuration
+  files.
+- ✂️ **Unused `stringcase` Dependency**: Cleaned up the `stringcase` dependency from `pyproject.toml` as it was no
+  longer utilized.
+
+---
+
 ## [v0.254.16] - 2025-12-05 - Enhanced Data Versioning for Active Partitions
 
 ### Changed

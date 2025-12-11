@@ -8,9 +8,6 @@ from aihub_lib.nats.events import (
     AgentInTheLoop,
     EmbeddingEvent,
     ExceptionEvent,
-    HumanInTheLoop,
-    HumanInTheLoopRequestEvent,
-    HumanInTheLoopResponseEvent,
     RerankerEvent,
     RetrieverEvent,
     StopEvent,
@@ -28,6 +25,13 @@ from aihub_lib.nats.events.guard import (
     FewShotRejectEvent,
     SensitiveInfoAcceptEvent,
     SensitiveInfoRejectEvent,
+)
+from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoop import HumanInTheLoopInput
+from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
+    HumanInTheLoopInputRequestEvent,
+)
+from aihub_lib.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import (
+    HumanInTheLoopInputResponseEvent,
 )
 from aihub_lib.nats.events.router.RouteOptions import RouteOptions
 from aihub_lib.nats.events.router.RouterEvent import RouterEvent
@@ -50,15 +54,15 @@ from playground.agent.FrontendTestingAgent.events.FrontendTestingEventA import F
 from playground.agent.FrontendTestingAgent.events.FrontendTestingEventB import FrontendTestingEventB
 
 
-class CustomHumanInTheLoopRequestEvent(HumanInTheLoopRequestEvent):
+class CustomHumanInTheLoopRequestEvent(HumanInTheLoopInputRequestEvent):
     pass
 
 
-class CustomHumanInTheLoopResponseEvent(HumanInTheLoopResponseEvent):
+class CustomHumanInTheLoopResponseEvent(HumanInTheLoopInputResponseEvent):
     pass
 
 
-class CustomHumanInTheLoop(HumanInTheLoop):
+class CustomHumanInTheLoop(HumanInTheLoopInput):
     request = CustomHumanInTheLoopRequestEvent
     response = CustomHumanInTheLoopResponseEvent
 

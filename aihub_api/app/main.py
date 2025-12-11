@@ -57,7 +57,7 @@ runner.mount(
     RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
     OpenaiController(auth=auth)
     .get_models()
-    .get_model()
+    .get_model_with_assistants()
     .get_embeddings()
     .chat_completion_with_assistants()
     .generate_image()

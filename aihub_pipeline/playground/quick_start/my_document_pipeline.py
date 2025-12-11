@@ -33,7 +33,7 @@ DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])
 DOCUMENT_KEY = AssetKey(["playground", "documents"])
 NODES_KEY = AssetKey(["playground", "nodes"])
 
-CONTAINER_NAME = "playground"
+CONTAINER_NAME = "defaultknowledge"
 
 # LLM configuration for document parsing and node processing
 llm_config = LLMConfig(model_name="text-generation/nano")

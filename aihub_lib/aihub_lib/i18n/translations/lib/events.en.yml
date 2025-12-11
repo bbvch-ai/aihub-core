@@ -90,6 +90,10 @@ context_insufficient_reject_event:
   name: "Insufficient Context Available"
   description: "More context is needed to properly answer the user's query."
 
+expert_reject_event:
+  name: "Expert Escalation Declined"
+  description: "The user declined to escalate their question to a human expert."
+
 sensitive_info_accept_event:
   name: "Response Safe to Share"
   description: "The response does not contain sensitive information and can be safely shared."
@@ -102,9 +106,25 @@ hitl_request_event:
   name: "User Query"
   description: "The agent needs additional information from the user to continue with the task."
 
+hitl_input_request_event:
+  name: "User Input Request"
+  description: "The agent needs text input from the user to continue with the task."
+
+hitl_confirmation_request_event:
+  name: "User Confirmation Request"
+  description: "The agent needs a yes/no confirmation from the user to continue with the task."
+
 hitl_response_event:
   name: "User Response Received"
   description: "The user has answered the query, and the agent can proceed with the task."
+
+hitl_input_response_event:
+  name: "User Input Received"
+  description: "The user has provided text input, and the agent can proceed with the task."
+
+hitl_confirmation_response_event:
+  name: "User Confirmation Received"
+  description: "The user has confirmed or declined, and the agent can proceed with the task."
 
 router_event:
   name: "Decided for optimal next path"

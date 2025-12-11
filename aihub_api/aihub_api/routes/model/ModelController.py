@@ -20,8 +20,13 @@ class ModelController(Controller):
     - Retrieving information about a specific model.
     """
 
-    name = LocaleString(en="Models")
-    description = LocaleString(en="Shows all available models.")
+    name = LocaleString(en="AI Models", de="KI-Modelle", fr="Modèles IA", it="Modelli IA")
+    description = LocaleString(
+        en="View available AI models",
+        de="Verfügbare KI-Modelle anzeigen",
+        fr="Consultez les modèles IA disponibles",
+        it="Visualizza i modelli IA disponibili",
+    )
     icon = "meteor-icons:key"
 
     def __init__(

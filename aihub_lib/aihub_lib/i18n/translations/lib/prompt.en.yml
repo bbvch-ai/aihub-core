@@ -111,43 +111,28 @@ router:
       Analyze the user query carefully in relation to the chat history. Determine whether the query can be fulfilled based on the criteria above. Provide a clear yes/no decision with detailed reasoning.
 
     expert_answer_sufficient: |
-      You are given a chat history between an AI assistant and an expert. The goal of this conversation
-      is to answer a question originaly posed by a user. Determine whether the expert has already sufficiently
-      answered the question based on the chat history.
+      Does the expert's response answer the user's question?
 
-       <chat_history>
+      <expert_response>
       {% for message in chat_history %}
-      <message role="{{ message.role.value }}">
+      {% if message.role.value == 'user' %}
       {% for block in message.blocks %}
       {% if block.block_type == 'text' %}
       {{ block.text }}
       {% endif %}
       {% endfor %}
-      </message>
+      {% endif %}
       {% endfor %}
-      </chat_history>
+      </expert_response>
 
-      <user_query>
-      %{question}
-      </user_query>
+      <user_question>
+      {{ query }}
+      </user_question>
 
-      <answered_criteria>
-      <is_answered>
-      A question is considered answered if ANY of the following are true:
-      * The expert has provided a complete and accurate answer to the user's question
-      * The expert has provided a partial answer, but the user can still understand the main points
-      * The expert has indicated where the answer can be found
-      * The expert has provided context information, maybe in the systme message, that - directly or indirectly - answer the question
-      </is_answered>
-      <is_not_answered>
-      A question is considered not answered if ANY of the following are true:
-      * The expert has not provided any answer to the user's question
-      * The expert has provided an answer, but it is incomplete or inaccurate
-      * The expert has provided an answer, but it is not relevant to the user's question
-      * The expert has provided an answer, but it is not clear or understandable
-      * The expert indicates that they do not know the answer
-      </is_not_answered>
-      </answered_criteria>
+      The question IS answered if the expert provided information that directly responds to ALL parts of what was asked.
+      The question is NOT answered if:
+      - The expert explicitly says they don't know or refuses to answer
+      - The question has multiple parts and only some were answered
 
       Analyze the chat history carefully in relation to the user's question. Determine whether the expert has already sufficiently answered the question based on the criteria above. Provide a clear decision with detailed reasoning.
 summarizer:

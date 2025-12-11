@@ -7,7 +7,6 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 
 from aihub_agent.agents.Agent import Agent
-from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.RetrievalAgent.configs.RetrievalAgentConfig import RetrievalAgentConfig
 from aihub_agent.agents.RetrievalAgent.events.QuestionStartEvent import QuestionStartEvent
@@ -30,7 +29,7 @@ class RetrievalAgent(Agent):
     async def retrieve_step(
         self,
         event: QuestionStartEvent,
-        retrieve_step_config: RetrieveStepConfig,
+        agent_config: RetrievalAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> RetrieverEvent:
@@ -38,25 +37,26 @@ class RetrievalAgent(Agent):
         Retrieves relevant nodes from the knowledge base.
         """
         await displayer.display_thought(t("agent.thought.searching_knowledge"))
-        embedding, _ = retrieve_step_config.embed_model.to_llama_index()
+        retriever = agent_config.retriever
+        embedding, _ = retriever.embed_model.to_llama_index()
 
-        vector_store = retrieve_step_config.vector_store.to_llama_index()
+        vector_store = retriever.vector_store.to_llama_index()
 
         nodes = retrieve_nodes(
             message=event.question,
-            retrieve_k=retrieve_step_config.retrieve_k,
+            retrieve_k=retriever.retrieve_k,
             embed_model=embedding,
-            index_namespaces=retrieve_step_config.index_namespaces,
-            query_mode=retrieve_step_config.query_mode,
-            node_types=retrieve_step_config.node_types,
+            index_namespaces=retriever.index_namespaces,
+            query_mode=retriever.query_mode,
+            node_types=retriever.node_types,
             vector_store=vector_store,
         )
-        if retrieve_step_config.retrieve_prev_next:
+        if retriever.retrieve_prev_next:
             nodes = retrieve_prev_next_nodes(
                 vector_store=vector_store,
                 nodes=nodes,
-                num_nodes=retrieve_step_config.retrieve_prev_next.num_nodes,
-                prev_next_mode=retrieve_step_config.retrieve_prev_next.mode,
+                num_nodes=retriever.retrieve_prev_next.num_nodes,
+                prev_next_mode=retriever.retrieve_prev_next.mode,
             )
 
         return RetrieverEvent.from_nodes(nodes)
