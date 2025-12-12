@@ -1,6 +1,7 @@
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.chat_history.extend_chat_history_with_memory import extend_chat_history_with_memory
 from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import LLMEvent, NewMemoryEvent, StopEvent, UserMessageEvent
 from aihub_lib.nats.events.common.AddMemoryToChatHistoryEvent import AddMemoryToChatHistoryEvent
 from aihub_lib.nats.events.memory.RetrieveMemoryEvent import RetrieveMemoryEvent
@@ -37,13 +38,14 @@ class UserMemoryAgent(Agent):
 
     @step()
     async def add_memory_to_chat_history_step(
-        self, user_message_event: UserMessageEvent, memory_event: RetrieveMemoryEvent
+        self, user_message_event: UserMessageEvent, memory_event: RetrieveMemoryEvent, t: LocaleHandler
     ) -> AddMemoryToChatHistoryEvent:
         """Prepends memories as system message to guide LLM responses with long-term user context."""
         extended_chat_history = extend_chat_history_with_memory(
             chat_history=user_message_event.messages,
             memories=memory_event.memories,
             relations=memory_event.relations,
+            t=t,
         )
         return AddMemoryToChatHistoryEvent(extended_history=extended_chat_history)
 

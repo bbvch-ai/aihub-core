@@ -135,6 +135,24 @@ router:
       - La question comporte plusieurs parties et seules certaines ont été répondues
 
       Analysez soigneusement l'historique du chat par rapport à la question de l'utilisateur. Déterminez si l'expert a déjà suffisamment répondu à la question selon les critères ci-dessus. Fournissez une décision claire avec un raisonnement détaillé.
+memory:
+  system_message: |
+    <user_context>
+    {% if memories %}
+    Les informations suivantes ont été apprises sur l'utilisateur à partir de conversations précédentes :
+    {% for memory in memories %}
+    - {{ memory.memory }}
+    {% endfor %}
+    {% endif %}
+    {% if relations %}
+
+    Relations du graphe de connaissances :
+    {% for relation in relations %}
+    - {{ relation.source }} {{ relation.relation }} {{ relation.target }}
+    {% endfor %}
+    {% endif %}
+    </user_context>
+
 summarizer:
   summarize: |
     Tâche : Résume le texte suivant sous forme de TL;DR :

@@ -135,6 +135,24 @@ router:
       - La domanda ha più parti e solo alcune sono state risposte
 
       Analizza attentamente la cronologia della chat in relazione alla domanda dell'utente. Determina se l'esperto ha già risposto sufficientemente alla domanda in base ai criteri sopra indicati. Fornisci una decisione chiara con un ragionamento dettagliato.
+memory:
+  system_message: |
+    <user_context>
+    {% if memories %}
+    Le seguenti informazioni sull'utente sono state apprese da conversazioni precedenti:
+    {% for memory in memories %}
+    - {{ memory.memory }}
+    {% endfor %}
+    {% endif %}
+    {% if relations %}
+
+    Relazioni del grafo delle conoscenze:
+    {% for relation in relations %}
+    - {{ relation.source }} {{ relation.relation }} {{ relation.target }}
+    {% endfor %}
+    {% endif %}
+    </user_context>
+
 summarizer:
   summarize: |
     Compito: Riassumi il testo seguente come TL;DR:  

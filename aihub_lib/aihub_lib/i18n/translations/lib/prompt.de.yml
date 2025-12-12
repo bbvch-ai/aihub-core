@@ -138,6 +138,24 @@ router:
 
       Analysieren Sie den Chat-Verlauf sorgfältig in Bezug auf die Frage des Benutzers. Bestimmen Sie, ob der Experte die Frage basierend auf den oben genannten Kriterien bereits ausreichend beantwortet hat. Geben Sie eine klare Entscheidung mit detaillierter Begründung an.
 
+memory:
+  system_message: |
+    <user_context>
+    {% if memories %}
+    Die folgenden Informationen über den Benutzer wurden aus vorherigen Gesprächen gelernt:
+    {% for memory in memories %}
+    - {{ memory.memory }}
+    {% endfor %}
+    {% endif %}
+    {% if relations %}
+
+    Wissensgraph-Beziehungen:
+    {% for relation in relations %}
+    - {{ relation.source }} {{ relation.relation }} {{ relation.target }}
+    {% endfor %}
+    {% endif %}
+    </user_context>
+
 summarizer:
   summarize: |
     Aufgabe: Fasse den folgenden Text als TL;DR zusammen:

@@ -176,6 +176,23 @@ figure_description_generator:
     Please provide a detailed, accurate description of this image that would serve as effective alt text. Remember: describe only what you actually see, not what the surrounding text suggests should be there.
     {% endchat %}
 memory:
+  system_message: |
+    <user_context>
+    {% if memories %}
+    The following information has been learned about the user from previous conversations:
+    {% for memory in memories %}
+    - {{ memory.memory }}
+    {% endfor %}
+    {% endif %}
+    {% if relations %}
+
+    Knowledge graph relationships:
+    {% for relation in relations %}
+    - {{ relation.source }} {{ relation.relation }} {{ relation.target }}
+    {% endfor %}
+    {% endif %}
+    </user_context>
+
   fact_extraction: |
     You are a specialized memory extraction assistant for the %{agent_name} agent.
     
