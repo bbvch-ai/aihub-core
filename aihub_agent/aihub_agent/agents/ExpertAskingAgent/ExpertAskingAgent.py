@@ -138,19 +138,23 @@ class ExpertAskingAgent(Agent):
             chat_history = [ChatMessage(**message) for message in chat_history]
 
             # Create insight from expert conversation
+            # Use caller credentials if provided, otherwise use this agent's config
+            creds = initial_question_event.write_insight_credentials
+            namespace = initial_question_event.write_insight_namespace or agent_config.insight_namespace
+
             InsightEntity.create_insight(
                 question=initial_question_event.question_to_expert,
                 expert_answer=event.response,
                 conversation=[InsightMessage(role=msg.role, content=msg.content) for msg in chat_history],
-                namespace=agent_config.insight_namespace,
+                namespace=namespace,
                 source=InsightSource(
                     thread_id=thread_context.thread_id,
                     expert_user_id=event.expert_user_id,
                     expert_name=event.expert_name,
                 ),
                 creator=InsightCreator(
-                    agent_class=agent_config.agent_class,
-                    agent_id=agent_config.agent_id,
+                    agent_class=creds.agent_class if creds else agent_config.agent_class,
+                    agent_id=creds.agent_id if creds else agent_config.agent_id,
                     user_id=initial_question_event.user.id,
                     user_name=initial_question_event.user.name,
                 ),

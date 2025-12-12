@@ -3,9 +3,10 @@ from typing import Annotated
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.generative_ai.retrievers import RetrieverConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
+
+from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
 
 
 class RAGAgentConfig(AgentConfig):
@@ -13,13 +14,10 @@ class RAGAgentConfig(AgentConfig):
     Configuration for a simple RAGAgent without expert escalation.
 
     Supports:
+    - Multi-agent knowledge retrieval (0-n agents by ID)
+    - Multi-agent insight retrieval (0-n agents by ID)
     - Multi-hop retrieval for context sufficiency
-    - Shared retrieval via RetrievalAgent (configured separately)
-    - Optional retriever config override (passed to RetrievalAgent)
-
-    The retrieval settings can be configured either here (retrievers field)
-    or in the referenced RetrievalAgent's config. If both are configured,
-    this agent's retrievers take precedence.
+    - Shared reranking applied after combining all results
 
     Note: For expert escalation support, use ExpertRAGAgentConfig.
     """
@@ -29,21 +27,23 @@ class RAGAgentConfig(AgentConfig):
         Field(description="The LLM configuration for the agent."),
     ]
 
-    # RetrievalAgent reference for AgentInTheLoop invocation
-    retrieval_agent_class: Annotated[
-        str,
-        Field(description="Agent class name of the RetrievalAgent to invoke."),
-    ] = "RetrievalAgent"
-    retrieval_agent_id: Annotated[
-        str,
-        Field(description="Agent ID of the RetrievalAgent to invoke."),
-    ] = "default"
+    # Knowledge retrieval agents by ID (0-n)
+    knowledge_retrieval_agents: Annotated[
+        list[str],
+        Field(description="List of KnowledgeRetrievalAgent IDs to invoke for retrieval."),
+    ] = []
 
-    # Optional retriever config override
-    retrievers: Annotated[
-        list[RetrieverConfig] | None,
-        Field(description="Optional retriever configs to pass to RetrievalAgent. Overrides RetrievalAgent config."),
-    ] = None
+    # Insight retrieval agents by ID (0-n)
+    insight_retrieval_agents: Annotated[
+        list[str],
+        Field(description="List of InsightRetrievalAgent IDs to invoke for insight retrieval."),
+    ] = []
+
+    # Shared reranking (applied after combining all results)
+    reranking_config: Annotated[
+        RerankingConfig,
+        Field(description="Configuration for reranking combined results to improve relevance."),
+    ] = RerankingConfig()
 
     number_of_input_tokens: Annotated[
         int, Field(description="Maximum tokens allowed in input to manage context size or cost.")

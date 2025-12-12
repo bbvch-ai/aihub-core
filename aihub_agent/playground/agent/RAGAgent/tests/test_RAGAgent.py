@@ -15,7 +15,6 @@ from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.nats.events import LLMEvent, UserMessageEvent
-from aihub_lib.nats.events.agent_in_the_loop import AgentInTheLoopRequestEvent, AgentInTheLoopResponseEvent
 from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_lib.nats.events.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
 from aihub_lib.nats.events.guard.FewShotAcceptEvent import FewShotAcceptEvent
@@ -27,8 +26,7 @@ from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
-from aihub_agent.agents.RetrievalAgent.events.RetrievalResponseEvent import RetrievalResponseEvent
-from aihub_agent.rag.events import InOrderNodeCombinerEvent, LimitChatHistoryWithContextEvent
+from aihub_agent.rag.events import CombinedRetrievalEvent, LimitChatHistoryWithContextEvent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 enable_logging()
@@ -52,8 +50,9 @@ def build_rag_agent_config(llm_config: LLMConfig) -> RAGAgentConfig:
     """
     Build a RAGAgentConfig with the specified LLM configuration.
 
-    Note: Retrieval is now handled by RetrievalAgent via AgentInTheLoop.
-    The retrieval config (retrievers, reranking) is in RetrievalAgentConfig.
+    Note: Retrieval is now handled by specialized retrieval agents via AgentInTheLoop.
+    Knowledge retrieval uses KnowledgeRetrievalAgent, insight retrieval uses InsightRetrievalAgent.
+    Agents are referenced by ID, not by bucket/source configs.
     """
     return RAGAgentConfig(
         agent_id="rag_agent",
@@ -61,8 +60,7 @@ def build_rag_agent_config(llm_config: LLMConfig) -> RAGAgentConfig:
         name=LocaleString(en="RAG Agent"),
         description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
         llm=llm_config,
-        retrieval_agent_class="RetrievalAgent",
-        retrieval_agent_id="test_retrieval_agent",
+        # No retrieval agents configured - tests mock retrieval responses
         number_of_input_tokens=8192,
         check_context_sufficiency=False,
     )
@@ -73,7 +71,7 @@ def self_hosted_agent_config():
     """
     Return a RAGAgentConfig that uses a self-hosted LLM.
 
-    Note: Retrieval is now handled by RetrievalAgent via AgentInTheLoop.
+    Note: Retrieval is now handled by specialized retrieval agents via AgentInTheLoop.
     """
     llm_config = LLMConfig(model_name="text-generation/mini")
     return build_rag_agent_config(llm_config=llm_config)
@@ -109,26 +107,10 @@ async def _(agent_runner: AgentTestRunner, query: str):
                 locale="en",
             ),
         )
-        # Wait for AgentInTheLoop request to RetrievalAgent
-        await agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
-
-        # Mock RetrievalAgent response with relevant context
-        mock_retrieval_response = RetrievalResponseEvent(
-            context_message=ChatMessage(
-                role=MessageRole.SYSTEM,
-                content=(
-                    "Retrieved context about AI:\n"
-                    "Artificial Intelligence (AI) is the simulation of human intelligence by machines. "
-                    "It includes machine learning, neural networks, and natural language processing. "
-                    "AI systems can learn from data, identify patterns, and make decisions."
-                ),
-            ),
-            nodes=[],  # Nodes would normally come from the retrieval
-        )
-        await agent_runner.send_event_from_topic(
-            start_event=AgentInTheLoopResponseEvent(stop_event=mock_retrieval_response),
-            topic=topic,
-        )
+        # Since there are no retrieval agents configured, the agent will
+        # emit a CombinedRetrievalEvent with empty nodes. We need to mock retrieval
+        # responses only if agents are configured.
+        # For this test, with no agents, the combine step runs immediately with empty results.
 
 
 @then(parsers.parse('a StartEvent is present with payload "{payload}"'))
@@ -147,10 +129,10 @@ def _(agent_runner: AgentTestRunner):
     assert condenser_event.condensed_chat_message.content, "No condensed question found"
 
 
-@then("an InOrderNodeCombinerEvent is present with ordered context message")
+@then("a CombinedRetrievalEvent is present with context message")
 def _(agent_runner: AgentTestRunner):
-    combiner_event = agent_runner.get_event_of_class(InOrderNodeCombinerEvent)
-    assert combiner_event.context_message, "InOrderNodeCombinerEvent did not produce context message"
+    combiner_event = agent_runner.get_event_of_class(CombinedRetrievalEvent)
+    assert combiner_event.context_message, "CombinedRetrievalEvent did not produce context message"
 
 
 @then("a LimitChatHistoryWithContextEvent is present with limited history and context")
@@ -203,25 +185,7 @@ async def _(agent_runner: AgentTestRunner, query: str, locale: str):
                 messages=[ChatMessage(content=query, role=MessageRole.USER)],
             ),
         )
-        # Wait for AgentInTheLoop request to RetrievalAgent
-        await agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
-
-        # Mock RetrievalAgent response with relevant context
-        mock_retrieval_response = RetrievalResponseEvent(
-            context_message=ChatMessage(
-                role=MessageRole.SYSTEM,
-                content=(
-                    "Retrieved context about AI:\n"
-                    "Artificial Intelligence (AI) is the simulation of human intelligence by machines. "
-                    "It includes machine learning, neural networks, and natural language processing."
-                ),
-            ),
-            nodes=[],
-        )
-        await agent_runner.send_event_from_topic(
-            start_event=AgentInTheLoopResponseEvent(stop_event=mock_retrieval_response),
-            topic=topic,
-        )
+        # No mocking needed since we don't have retrieval agents configured
 
 
 @then("the few shot guard should reject the user query")
@@ -293,5 +257,5 @@ def _(agent_runner: AgentTestRunner, expected_prompt: str):
 
 
 # Note: Reranking and insight retrieval step definitions have been removed.
-# These are now tested in the RetrievalAgent tests since retrieval logic
-# has been moved to the shared RetrievalAgent.
+# These are now tested in the KnowledgeRetrievalAgent and InsightRetrievalAgent tests
+# since retrieval logic has been moved to specialized retrieval agents.

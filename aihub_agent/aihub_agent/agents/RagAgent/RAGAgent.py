@@ -17,14 +17,20 @@ from aihub_lib.nats.events.semantic.llm import LLMStopEvent
 from aihub_lib.nats.events.user import UserMessageEvent
 
 from aihub_agent.agents.Agent import Agent
+from aihub_agent.agents.InsightRetrievalAgent.events import (
+    InsightRetrievalResponseEvent,
+    InsightRetrievalStartEvent,
+)
+from aihub_agent.agents.KnowledgeRetrievalAgent.events import (
+    KnowledgeRetrievalResponseEvent,
+    KnowledgeRetrievalStartEvent,
+)
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.RagAgent.events import RAGUserMessageEvent
-from aihub_agent.agents.RetrievalAgent.events.QuestionStartEvent import QuestionStartEvent
-from aihub_agent.agents.RetrievalAgent.events.RetrievalResponseEvent import RetrievalResponseEvent
 from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.rag.events import (
+    CombinedRetrievalEvent,
     ContextInsufficientWithQueryEvent,
-    InOrderNodeCombinerEvent,
     LimitChatHistoryWithContextEvent,
 )
 from aihub_agent.rag.steps import (
@@ -33,6 +39,8 @@ from aihub_agent.rag.steps import (
     execute_few_shot_guard,
     execute_limit_chat_history,
     execute_limit_chat_history_with_context,
+    execute_order_nodes_by_documents,
+    execute_rerank_nodes,
     execute_respond_with_llm,
 )
 from aihub_agent.workflow.decorators.precondition import precondition
@@ -40,19 +48,37 @@ from aihub_agent.workflow.decorators.step import step
 
 
 @precondition()
-async def is_retrieval_success(event: AgentInTheLoop.response) -> bool:
-    """Precondition to check if retrieval was successful."""
-    return isinstance(event.stop_event, RetrievalResponseEvent)
+async def all_retrievals_complete(
+    agent_config: RAGAgentConfig,
+    knowledge_responses: list[AgentInTheLoop.response] | None = None,
+    insight_responses: list[AgentInTheLoop.response] | None = None,
+) -> bool:
+    """
+    Precondition that waits for all retrieval agents to complete.
+
+    Returns True when:
+    - All configured knowledge retrieval agents have returned responses
+    - All configured insight retrieval agents have returned responses
+    """
+    expected_knowledge = len(agent_config.knowledge_retrieval_agents)
+    actual_knowledge = len(knowledge_responses) if knowledge_responses else 0
+    knowledge_done = actual_knowledge >= expected_knowledge
+
+    expected_insights = len(agent_config.insight_retrieval_agents)
+    actual_insights = len(insight_responses) if insight_responses else 0
+    insights_done = actual_insights >= expected_insights
+
+    return knowledge_done and insights_done
 
 
 @precondition()
 async def context_ready_for_history_limit(
-    context_event: InOrderNodeCombinerEvent,
+    context_event: CombinedRetrievalEvent,
     context_sufficient_event: ContextSufficientAcceptEvent | None = None,
 ) -> bool:
     """
     Precondition for limit_chat_history_with_context_step.
-    Requires InOrderNodeCombinerEvent AND ContextSufficientAcceptEvent.
+    Requires CombinedRetrievalEvent AND ContextSufficientAcceptEvent.
     """
     return context_sufficient_event is not None
 
@@ -62,14 +88,15 @@ class RAGAgent(Agent):
     Implements a Retrieval-Augmented Generation (RAG) Agent.
 
     The RAGAgent orchestrates steps to process user input, retrieve relevant information
-    via a shared RetrievalAgent, condense questions, and generate responses using a
-    configured language model.
+    from multiple knowledge retrieval agents and insight retrieval agents, condense questions,
+    and generate responses using a configured language model.
 
     ### Features
     - Limit chat history to fit input token limits.
     - Condenses chat history into standalone question.
-    - Delegates retrieval to RetrievalAgent via AgentInTheLoop.
-    - Order retrieved nodes for better contextual relevance.
+    - Multi-agent knowledge retrieval via KnowledgeRetrievalAgent (referenced by ID).
+    - Multi-agent insight retrieval via InsightRetrievalAgent (referenced by ID).
+    - Combined reranking of all retrieved nodes.
     - Generate responses using an LLM based on the context and retrieved information.
 
     Note: This is the simple RAG agent without expert escalation.
@@ -135,11 +162,11 @@ class RAGAgent(Agent):
         )
 
     @step(
-        name=LocaleString(en="Invoke Retrieval Agent"),
-        description=LocaleString(en="Delegates retrieval to the shared RetrievalAgent."),
+        name=LocaleString(en="Invoke Knowledge Retrieval Agents"),
+        description=LocaleString(en="Invokes KnowledgeRetrievalAgent for each configured agent."),
         icon="hugeicons:robot-02",
     )
-    async def invoke_retrieval_agent_step(
+    async def invoke_knowledge_retrieval_step(
         self,
         event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
         _: FewShotAcceptEvent,
@@ -147,44 +174,153 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> AgentInTheLoop.request:
-        """Invokes the RetrievalAgent to retrieve relevant nodes."""
+    ) -> list[AgentInTheLoop.request] | None:
+        """Invokes KnowledgeRetrievalAgent for each configured agent ID."""
+        if not agent_config.knowledge_retrieval_agents:
+            return None
+
         await displayer.display_thought(t("agent.thought.searching_knowledge"))
 
-        if isinstance(event, StandaloneQuestionCondenserEvent):
-            query = event.condensed_chat_message.content
-        else:
-            query = event.new_query
+        query = (
+            event.condensed_chat_message.content
+            if isinstance(event, StandaloneQuestionCondenserEvent)
+            else event.new_query
+        )
 
-        # Get retrievers: start_event (if RAGUserMessageEvent) > agent_config > None
-        retrievers = getattr(start_event, "retrievers", None) or agent_config.retrievers
+        # Build override lookup from event if RAGUserMessageEvent
+        override_lookup: dict[str, list[str]] = {}
+        if isinstance(start_event, RAGUserMessageEvent) and start_event.knowledge_overrides:
+            override_lookup = {o.agent_id: o.namespaces for o in start_event.knowledge_overrides}
 
-        return AgentInTheLoop.invoke(
-            agent_class=agent_config.retrieval_agent_class,
-            agent_id=agent_config.retrieval_agent_id,
-            start_event=QuestionStartEvent(
-                question=query,
-                locale=start_event.locale,
-                retrievers=retrievers,
-            ),
+        requests = []
+        for agent_id in agent_config.knowledge_retrieval_agents:
+            # Use override namespaces if provided
+            namespaces = override_lookup.get(agent_id)
+
+            requests.append(
+                AgentInTheLoop.invoke(
+                    agent_class="KnowledgeRetrievalAgent",
+                    agent_id=agent_id,
+                    start_event=KnowledgeRetrievalStartEvent(
+                        question=query,
+                        locale=start_event.locale,
+                        namespaces=namespaces,
+                    ),
+                )
+            )
+
+        return requests
+
+    @step(
+        name=LocaleString(en="Invoke Insight Retrieval Agents"),
+        description=LocaleString(en="Invokes InsightRetrievalAgent for each configured agent."),
+        icon="hugeicons:robot-02",
+    )
+    async def invoke_insight_retrieval_step(
+        self,
+        event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
+        _: FewShotAcceptEvent,
+        start_event: UserMessageEvent | RAGUserMessageEvent,
+        agent_config: RAGAgentConfig,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> list[AgentInTheLoop.request] | None:
+        """Invokes InsightRetrievalAgent for each configured agent ID."""
+        if not agent_config.insight_retrieval_agents:
+            return None
+
+        query = (
+            event.condensed_chat_message.content
+            if isinstance(event, StandaloneQuestionCondenserEvent)
+            else event.new_query
+        )
+
+        # Use override sources if provided
+        sources = None
+        if isinstance(start_event, RAGUserMessageEvent) and start_event.insight_overrides:
+            sources = start_event.insight_overrides
+
+        requests = []
+        for agent_id in agent_config.insight_retrieval_agents:
+            requests.append(
+                AgentInTheLoop.invoke(
+                    agent_class="InsightRetrievalAgent",
+                    agent_id=agent_id,
+                    start_event=InsightRetrievalStartEvent(
+                        question=query,
+                        locale=start_event.locale,
+                        sources=sources,
+                    ),
+                )
+            )
+
+        return requests
+
+    @step(
+        name=LocaleString(en="Combine Retrieval Results"),
+        description=LocaleString(en="Combines results from all retrieval agents and applies reranking."),
+        precondition=all_retrievals_complete,
+    )
+    async def combine_retrieval_results_step(
+        self,
+        agent_config: RAGAgentConfig,
+        start_event: UserMessageEvent | RAGUserMessageEvent,
+        condenser_event: StandaloneQuestionCondenserEvent,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+        knowledge_responses: list[AgentInTheLoop.response] | None = None,
+        insight_responses: list[AgentInTheLoop.response] | None = None,
+    ) -> CombinedRetrievalEvent:
+        """Combines results from all retrieval agents and applies shared reranking."""
+        all_nodes = []
+        knowledge_agent_ids = []
+
+        # Collect nodes from knowledge responses
+        if knowledge_responses:
+            for response in knowledge_responses:
+                if isinstance(response.stop_event, KnowledgeRetrievalResponseEvent):
+                    all_nodes.extend(response.stop_event.nodes)
+                    knowledge_agent_ids.append(response.stop_event.agent_id)
+
+        # Collect nodes from insight responses
+        has_insights = False
+        if insight_responses:
+            for response in insight_responses:
+                if isinstance(response.stop_event, InsightRetrievalResponseEvent):
+                    all_nodes.extend(response.stop_event.nodes)
+                    has_insights = True
+
+        # Apply shared reranking if enabled
+        if agent_config.reranking_config.enabled and all_nodes:
+            query = condenser_event.condensed_chat_message.content
+            reranker_event = await execute_rerank_nodes(
+                nodes=all_nodes,
+                query=query,
+                reranking_model=agent_config.reranking_config.reranking_model,
+                displayer=displayer,
+                t=t.in_locale(start_event.locale),
+                reranking_enabled=True,
+            )
+            all_nodes = reranker_event.output_nodes
+
+        # Order nodes by documents and create context message
+        order_event = await execute_order_nodes_by_documents(
+            nodes=all_nodes,
+            t=t.in_locale(start_event.locale),
+            displayer=displayer,
+            context_prompt=None,
+        )
+
+        return CombinedRetrievalEvent(
+            context_message=order_event.context_message,
+            nodes=all_nodes,
+            knowledge_agent_ids=knowledge_agent_ids,
+            has_insights=has_insights,
         )
 
     @step(
-        name=LocaleString(en="Retrieval Complete"),
-        description=LocaleString(en="Processes the successful retrieval response."),
-        precondition=is_retrieval_success,
-    )
-    async def retrieval_complete_step(
-        self,
-        event: AgentInTheLoop.response,
-    ) -> InOrderNodeCombinerEvent:
-        """Processes the successful retrieval response from RetrievalAgent."""
-        retrieval_response: RetrievalResponseEvent = event.stop_event
-        return InOrderNodeCombinerEvent(context_message=retrieval_response.context_message)
-
-    @step(
         name=LocaleString(en="Retrieval Error"),
-        description=LocaleString(en="Handles errors from the RetrievalAgent."),
+        description=LocaleString(en="Handles errors from retrieval agents."),
     )
     async def retrieval_exception_step(
         self,
@@ -192,7 +328,7 @@ class RAGAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> StopEvent:
-        """Handles errors from the RetrievalAgent."""
+        """Handles errors from retrieval agents."""
         await displayer.display_thought(
             t(
                 "agent.rag_agent.thoughts.retrieval_error",
@@ -212,7 +348,7 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        event: InOrderNodeCombinerEvent,
+        event: CombinedRetrievalEvent,
         user_query_event: StandaloneQuestionCondenserEvent,
         run_context: RunContext,
     ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
@@ -235,7 +371,7 @@ class RAGAgent(Agent):
     )
     async def limit_chat_history_with_context_step(
         self,
-        context_event: InOrderNodeCombinerEvent,
+        context_event: CombinedRetrievalEvent,
         chat_history_event: LimitChatHistoryEvent,
         _: ContextSufficientAcceptEvent | None,
         start_event: UserMessageEvent | RAGUserMessageEvent,

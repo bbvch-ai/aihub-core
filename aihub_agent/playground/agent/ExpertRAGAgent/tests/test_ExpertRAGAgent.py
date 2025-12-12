@@ -32,7 +32,7 @@ from aihub_agent.agents.ExpertRagAgent.configs.ExpertEscalationConfig import Exp
 from aihub_agent.agents.ExpertRagAgent.configs.ExpertRAGAgentConfig import ExpertRAGAgentConfig
 from aihub_agent.agents.ExpertRagAgent.events.UserRequestsExpertEvent import UserRequestsExpertEvent
 from aihub_agent.agents.ExpertRagAgent.ExpertRAGAgent import ExpertRAGAgent
-from aihub_agent.agents.RetrievalAgent.events.RetrievalResponseEvent import RetrievalResponseEvent
+from aihub_agent.agents.InsightRetrievalAgent.events import InsightRetrievalResponseEvent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 enable_logging()
@@ -57,9 +57,9 @@ def event_loop():
 def expert_rag_agent_config():
     """Return an ExpertRAGAgentConfig with expert escalation (required).
 
-    Note: Retrieval is now handled by RetrievalAgent via AgentInTheLoop.
-    The retrieval config (retrievers, reranking) is in RetrievalAgentConfig.
-    This config just references the RetrievalAgent.
+    Note: Retrieval is now handled by specialized retrieval agents via AgentInTheLoop.
+    ExpertRAGAgent requires at least one insight retrieval agent for storing expert answers.
+    Agents are referenced by ID.
     """
     llm_config = LLMConfig(model_name="text-generation/mini")
 
@@ -69,8 +69,10 @@ def expert_rag_agent_config():
         name=LocaleString(en="Expert RAG Agent"),
         description=LocaleString(en="RAG agent with mandatory expert escalation"),
         llm=llm_config,
-        retrieval_agent_class="RetrievalAgent",
-        retrieval_agent_id="test_retrieval_agent",
+        # Required: at least one insight retrieval agent (referenced by ID)
+        insight_retrieval_agents=["test_insight_agent"],
+        # Required: where to write new insights
+        write_insight_namespace="test_namespace",
         number_of_input_tokens=8192,
         check_context_sufficiency=True,
         max_hops=1,
@@ -110,11 +112,11 @@ async def send_query_user_declines(expert_rag_agent_runner: AgentTestRunner, que
                 locale="en",
             ),
         )
-        # Wait for AgentInTheLoop request to RetrievalAgent
+        # Wait for AgentInTheLoop request to InsightRetrievalAgent
         await expert_rag_agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
 
-        # Mock RetrievalAgent response with minimal context (triggers context insufficient)
-        mock_retrieval_response = RetrievalResponseEvent(
+        # Mock InsightRetrievalAgent response with minimal context (triggers context insufficient)
+        mock_retrieval_response = InsightRetrievalResponseEvent(
             context_message=ChatMessage(
                 role=MessageRole.SYSTEM,
                 content="Retrieved context: No relevant information found.",
@@ -143,7 +145,7 @@ async def send_query_user_declines(expert_rag_agent_runner: AgentTestRunner, que
 async def send_query_user_accepts(expert_rag_agent_runner: AgentTestRunner, query: str):
     """Send a query that triggers expert escalation and user accepts.
 
-    This test mocks both the RetrievalAgent and ExpertAskingAgent responses via AgentInTheLoop.
+    This test mocks both the InsightRetrievalAgent and ExpertAskingAgent responses via AgentInTheLoop.
     """
     async with expert_rag_agent_runner.test_run(delay_before_stop=TIMEOUT) as topic:
         await expert_rag_agent_runner.send_event_from_topic(
@@ -154,11 +156,11 @@ async def send_query_user_accepts(expert_rag_agent_runner: AgentTestRunner, quer
                 locale="en",
             ),
         )
-        # Wait for AgentInTheLoop request to RetrievalAgent (first AITL)
+        # Wait for AgentInTheLoop request to InsightRetrievalAgent (first AITL)
         await expert_rag_agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
 
-        # Mock RetrievalAgent response with minimal context (triggers context insufficient)
-        mock_retrieval_response = RetrievalResponseEvent(
+        # Mock InsightRetrievalAgent response with minimal context (triggers context insufficient)
+        mock_retrieval_response = InsightRetrievalResponseEvent(
             context_message=ChatMessage(
                 role=MessageRole.SYSTEM,
                 content="Retrieved context: No relevant information found.",

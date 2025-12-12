@@ -2,22 +2,11 @@
 
 import asyncio
 
-from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
-from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
-from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.generative_ai.retrievers import (
-    InsightRetrieverConfig,
-    KnowledgeRetrieverConfig,
-    RetrieveSummariesConfig,
-)
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
-from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
-from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
-from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
 from aihub_agent.agents.ExpertAskingAgent.ExpertAskingAgent import ExpertAskingAgent
 from aihub_agent.agents.ExpertRagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
@@ -149,32 +138,9 @@ async def main():
                 </instructions>
                 """,
             ),
-            retrievers=[
-                KnowledgeRetrieverConfig(
-                    embed_model=EmbeddingModelConfig(model_name="embedding/large"),
-                    index_namespaces=["defaultnamespace"],
-                    retrieve_k=10,
-                    query_mode=VectorStoreQueryMode.HYBRID,
-                    node_types=["content"],
-                    vector_store=MilvusVectorStoreConfig(
-                        uri=MilvusSettings().URL,
-                        collection_name="defaultknowledge",
-                        dimensions=MilvusSettings().DIMENSION,
-                    ),
-                    retrieve_prev_next=RetrievePrevNextConfig(
-                        num_nodes=10,
-                        mode=ModeOptions.BOTH,
-                    ),
-                    retrieve_summaries=RetrieveSummariesConfig(
-                        max_parent_levels=2,
-                    ),
-                ),
-                InsightRetrieverConfig(
-                    namespace="default",
-                    agent_class="ExpertAskingAgent",
-                    agent_id="expert_agent",
-                ),
-            ],
+            knowledge_retrieval_agents=["knowledge_retrieval_dev_agent"],
+            insight_retrieval_agents=["insight_retrieval_dev_agent"],
+            write_insight_namespace="default",
             expert_escalation=ExpertEscalationConfig(
                 expert_asking_agent_class=ExpertAskingAgent.__name__,
                 expert_asking_agent_id="expert_agent",
