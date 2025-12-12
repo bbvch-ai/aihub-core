@@ -49,7 +49,7 @@ from aihub_pipeline.resources.factory import (
 from aihub_pipeline.resources.llm.EmbeddingModelResource import EmbeddingModelResource
 from aihub_pipeline.resources.llm.LanguageModelResource import LanguageModelResource
 from aihub_pipeline.resources.local_file_system.LocalFileSystemResource import LocalFileSystemResource
-from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource
+from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource, LoaderType
 from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
 from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
 from aihub_pipeline.resources.parser.TableRefinementResource import TableRefinementResource
@@ -88,6 +88,7 @@ def default_definitions(
     remove_job_minute: Annotated[int, "Minute to run daily removed documents cleanup job"] = 0,
     vector_store_dimensions: Annotated[int | None, "Embedding vector dimensions must match model"] = None,
     max_partitions: Annotated[int, "Maximum number of partitions to create or delete at once"] = 1000,
+    document_parser_loader_type: Annotated[LoaderType, "Document parser loader type"] = LoaderType.DOCLING,
 ) -> Definitions:
     """
     Creates a complete DataLake to vector store pipeline using local resources.
@@ -142,7 +143,7 @@ def default_definitions(
     dimensions = vector_store_dimensions if vector_store_dimensions is not None else milvus_settings.DIMENSION
 
     resources: dict = {
-        "document_parser": DocumentParserResource(),
+        "document_parser": DocumentParserResource(loader_type=document_parser_loader_type),
         "node_parser": MarkdownStructuralNodeParserResource(llm_config=llm_config),
         "summary_parser": RecursiveSummaryParserResource(),
         **default_io_manager_s3_datalake_resources(container_name=datalake_container_name),

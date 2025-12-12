@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.255.6] - 2025-12-12 - Smarter Data Lake Cleanup and Milvus Compatibility
+
+### Added
+
+- 🦾 **Introduced flexible document parser loader type:** The document parser can now be configured with different loader
+  types (e.g., `DOCLING`) directly via pipeline definitions, enhancing parsing capabilities.
+- 🗑️ **Automated figures folder cleanup:** When data lake files are deleted, their associated `__figures__` folders are
+  now automatically removed, improving data hygiene and ensuring complete data removal.
+- 📄 **Centralized Data Lake path building:** A new `build_path` utility method in `DataLakeResource` provides a
+  consistent way to construct relative paths within the data lake, including any configured directory prefixes.
+
+### Changed
+
+- ⚡️ **Enhanced Milvus vector store deletion:** The `PartitionAwareMilvusVectorStore` delete operation now includes a
+  backward compatibility check, ensuring correct fallback to the base class's delete method when manual partitions are
+  not in use, improving reliability.
+- 🔄 **Robust S3 directory operations:** The S3 Data Lake client now gracefully handles full S3 URIs (e.g.,
+  `s3://bucket/`) for directory existence, listing, and deletion checks, and ensures complete removal of S3 directory
+  marker objects.
+
+### Fixed
+
+- 🐛 **Corrected data lake file removal logic:** The process for identifying data lake files to remove now accurately
+  considers the configured `directory_name` prefix, ensuring that URIs are consistently built to prevent incorrect
+  deletion decisions.
+
+### Refactor
+
+- 🧹 **Streamlined figure folder naming:** The `create_figures_folder_name` utility has been refactored for cleaner and
+  more direct URI parsing, reducing reliance on `os.path` functions.
+
+---
+
 ## [v0.255.5] - 2025-12-12 - RAG Agent Rejection Message Customization
 
 ### Added
