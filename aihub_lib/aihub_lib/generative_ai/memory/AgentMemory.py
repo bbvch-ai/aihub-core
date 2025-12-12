@@ -12,7 +12,26 @@ from aihub_lib.infrastructure.mem0.types.MemoryType import MemoryType
 
 
 class AgentMemory:
+    """
+    Manages user and organization memories for agents, integrating mem0 for persistent context across conversations.
+
+    This class provides agents with long-term memory capabilities by wrapping mem0's memory management with
+    agent-specific context. It customizes memory extraction prompts based on each agent's identity and purpose,
+    ensuring that learned facts are relevant to the agent's domain.
+
+    Why agent-scoped memory? Different agents serve different purposes (e.g., RAG for documents, code assistant
+    for programming). Memories should be stored with agent context so retrieval is filtered by which agent
+    interacted with the user, enabling specialized memory banks per agent type.
+    """
+
     def __init__(self, agent_config: AgentConfig, t: LocaleHandler):
+        """
+        Initialize agent memory with customized fact extraction prompts.
+
+        Configures mem0 with agent-specific prompts that guide the LLM on what facts to extract from
+        conversations. This personalization ensures memories are relevant to the agent's domain and includes
+        temporal context (current date) for time-sensitive information.
+        """
         custom_fact_extraction_prompt = t(
             "lib.prompt.memory.fact_extraction",
             agent_name=t.extract(agent_config.name),
@@ -38,11 +57,24 @@ class AgentMemory:
 
     @property
     def agent_id(self):
+        """
+        Returns agent identifier in format 'agent_class/agent_id'.
+
+        This composite ID is used as the 'name' field in conversation history for mem0, distinguishing
+        agent messages from user messages and enabling memory filtering by which agent was involved.
+        """
         return f"{self._agent_config.agent_class}/{self._agent_config.agent_id}"
 
     def messages_to_dict(
         self, messages: list[ChatMessage], user_id: str, remove_system_message: bool = True
     ) -> list[dict[str, str]]:
+        """
+        Converts LlamaIndex ChatMessage objects to mem0-compatible dict format.
+
+        System messages are removed by default because they contain transient context (retrieval results,
+        injected memories) rather than conversational content worth persisting. We only want to store
+        the actual user-agent dialogue for memory extraction.
+        """
         conversation: list[dict[str, str]] = []
         for msg in messages:
             name = user_id if msg.role == MessageRole.USER else self.agent_id
@@ -59,6 +91,13 @@ class AgentMemory:
         display_id: str,
         run_id: str,
     ) -> MemoryAdded:
+        """
+        Extracts and stores user-scoped memories from conversation messages.
+
+        Memories are scoped to individual users, ensuring privacy - one user's memories never leak to another.
+        The thread/display/run IDs are preserved in metadata for traceability (knowing which conversation
+        generated which memory) and potential future filtering.
+        """
         return await self.mem0service.add_memory(
             messages=self.messages_to_dict(messages, user_id),
             owner_id=user_id,
@@ -80,6 +119,13 @@ class AgentMemory:
         organization_name: str,
         organization_namespace: str,
     ) -> MemoryAdded:
+        """
+        Extracts and stores organization-scoped memories shared across users.
+
+        Organization memories enable knowledge sharing within a company/team. Unlike user memories (private),
+        these are accessible to all users within the organization namespace. Use this for shared facts like
+        company policies, project details, or team conventions that should inform all agents serving that org.
+        """
         return await self.mem0service.add_memory(
             messages=self.messages_to_dict(messages, user_id),
             owner_id=organization_name,
@@ -104,6 +150,13 @@ class AgentMemory:
         threshold: float | None = None,
         rerank: bool = True,
     ) -> MemorySearchResult:
+        """
+        Retrieves relevant user memories via semantic search.
+
+        Reranking is enabled by default to improve relevance - the initial vector search returns candidates,
+        then a more sophisticated reranker (typically cross-encoder) refines the ordering. The threshold
+        filters low-relevance results, ensuring only sufficiently related memories are returned.
+        """
         return await self.mem0service.search(
             query=query,
             owner_id=user_id,
@@ -131,6 +184,13 @@ class AgentMemory:
         threshold: float | None = None,
         rerank: bool = True,
     ) -> MemorySearchResult:
+        """
+        Retrieves relevant organization memories via semantic search.
+
+        Organization namespace provides additional scoping for multi-tenant scenarios (e.g., different
+        departments within a company). If not provided, searches across all memories for the organization.
+        This enables both broad org-wide knowledge and department-specific context.
+        """
         return await self.mem0service.search(
             query=query,
             owner_id=organization_name,

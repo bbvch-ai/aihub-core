@@ -177,3 +177,15 @@ user_message_event:
 standalone_question_condenser_event:
   name: "Demande Indépendante Condensée"
   description: "Une demande complexe a été transformée en une demande indépendante plus claire et concise pour faciliter le traitement."
+
+new_memory_event:
+  name: "Mémoire Mise à Jour"
+  description: "L'agent a mis à jour les mémoires de l'utilisateur ou de l'organisation basées sur la conversation"
+
+retrieve_memory_event:
+  name: "Mémoire Récupérée"
+  description: "L'agent a récupéré les mémoires pertinentes pour le contexte"
+
+add_memory_to_chat_history_event:
+  name: "Mémoire Ajoutée au Contexte"
+  description: "L'agent a étendu l'historique de chat avec les mémoires de l'utilisateur"

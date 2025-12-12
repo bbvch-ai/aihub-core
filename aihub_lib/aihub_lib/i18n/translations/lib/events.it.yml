@@ -177,3 +177,15 @@ user_message_event:
 standalone_question_condenser_event:
   name: "Condensatore di Domande Autonome"
   description: "L'agente riformula una domanda autonoma per migliorarne la chiarezza e la pertinenza, facilitando una risposta più precisa."
+
+new_memory_event:
+  name: "Memoria Aggiornata"
+  description: "L'agente ha aggiornato le memorie dell'utente o dell'organizzazione basate sulla conversazione"
+
+retrieve_memory_event:
+  name: "Memoria Recuperata"
+  description: "L'agente ha recuperato memorie rilevanti per il contesto"
+
+add_memory_to_chat_history_event:
+  name: "Memoria Aggiunta al Contesto"
+  description: "L'agente ha esteso la cronologia chat con le memorie dell'utente"

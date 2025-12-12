@@ -33,7 +33,6 @@ class MemoryController(Controller):
             t: Annotated[LocaleHandler, Depends(use_locale)],
             limit: Annotated[int, Query(ge=1, le=1000, description="Maximum number of memories to return")] = 100,
         ) -> MemoriesResponse:
-            """Retrieves user memories with limit and optional filters."""
             return await MemoryService.get_memories_for_user(
                 user=user,
                 limit=limit,
@@ -52,7 +51,6 @@ class MemoryController(Controller):
             agent_id: Annotated[str | None, Query(description="Filter by agent ID")] = None,
             thread_id: Annotated[str | None, Query(description="Filter by thread ID")] = None,
         ) -> MemorySearchResponse:
-            """Searches memories using semantic search."""
             return await MemoryService.search_memories(
                 user=user,
                 query=query,
@@ -71,7 +69,6 @@ class MemoryController(Controller):
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> DeleteMemoryResponse:
-            """Deletes a single memory."""
             return await MemoryService.delete_memory(user=user, memory_id=memory_id, t=t)
 
         return self
@@ -82,7 +79,6 @@ class MemoryController(Controller):
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> DeleteAllMemoriesResponse:
-            """Deletes all memories for a user with optional filters."""
             return await MemoryService.delete_all_memories(
                 user=user,
                 t=t,
@@ -98,7 +94,6 @@ class MemoryController(Controller):
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> UpdateMemoryResponse:
-            """Updates a memory's content."""
             return await MemoryService.update_memory(user=user, memory_id=memory_id, data=request.data, t=t)
 
         return self

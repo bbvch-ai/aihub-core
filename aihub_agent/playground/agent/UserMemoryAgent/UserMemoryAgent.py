@@ -12,12 +12,26 @@ from playground.agent.UserMemoryAgent.UserMemoryAgentConfig import UserMemoryAge
 
 
 class UserMemoryAgent(Agent):
+    """
+    Memory-enhanced conversational agent that retrieves and persists user memories.
+
+    Features:
+    - Retrieves relevant memories from mem0 based on user query
+    - Extends chat history with memory context as system message
+    - Generates responses with memory awareness
+    - Persists new memories from conversation to mem0
+
+    Use this agent for personalized conversations requiring long-term context
+    beyond single session chat history.
+    """
+
     @step()
     async def retrieve_memory_step(
         self,
         event: UserMessageEvent,
         memory: AgentMemory,
     ) -> RetrieveMemoryEvent:
+        """Searches user memories to provide personalized context for the conversation."""
         memory_search_result = await memory.search_user_memory(query=event.user_query, user_id=event.user.id)
         return RetrieveMemoryEvent.from_memory_search_result(memory_search_result=memory_search_result)
 
@@ -25,6 +39,7 @@ class UserMemoryAgent(Agent):
     async def add_memory_to_chat_history_step(
         self, user_message_event: UserMessageEvent, memory_event: RetrieveMemoryEvent
     ) -> AddMemoryToChatHistoryEvent:
+        """Prepends memories as system message to guide LLM responses with long-term user context."""
         extended_chat_history = extend_chat_history_with_memory(
             chat_history=user_message_event.messages,
             memories=memory_event.memories,
@@ -39,6 +54,7 @@ class UserMemoryAgent(Agent):
         agent_config: UserMemoryAgentConfig,
         displayer: EventDisplayer,
     ) -> LLMEvent:
+        """Generates response using memory-enhanced chat history for personalized replies."""
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             return await displayer.display_llm_stream(agent_config.llm, llm, event.extended_history, as_stop_step=False)
 
@@ -50,6 +66,7 @@ class UserMemoryAgent(Agent):
         memory: AgentMemory,
         topic: AgentInstanceTopic,
     ) -> NewMemoryEvent:
+        """Persists conversation learnings to long-term memory for future interactions."""
         memory_added = await memory.add_user_memory(
             messages=llm_event.chat_messages,
             user_id=user_message_event.user.id,
@@ -61,4 +78,5 @@ class UserMemoryAgent(Agent):
 
     @step()
     async def stop_step(self, _: NewMemoryEvent) -> StopEvent:
+        """Marks workflow completion and returns final response to user."""
         return StopEvent()

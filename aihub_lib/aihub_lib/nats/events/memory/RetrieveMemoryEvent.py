@@ -1,7 +1,8 @@
-from typing import Annotated
+from typing import Annotated, ClassVar
 
 from pydantic import Field
 
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.mem0.types.Memory import Memory
 from aihub_lib.infrastructure.mem0.types.MemoryRelation import MemoryRelation
 from aihub_lib.infrastructure.mem0.types.MemorySearchResult import MemorySearchResult
@@ -9,6 +10,27 @@ from aihub_lib.nats.events import ControlAndDisplayEvent
 
 
 class RetrieveMemoryEvent(ControlAndDisplayEvent):
+    """
+    A control and display event emitted when an agent retrieves memories from long-term storage.
+
+    ### Why RetrieveMemoryEvent?
+    This event bridges the gap between stateless conversation and stateful user context:
+    - As a control event, it provides retrieved memories to downstream workflow steps
+    - As a display event, it shows users what context the agent is using from past interactions
+
+    Agents emit this event after semantic search through user/organization memories. The retrieved
+    memories are then typically prepended to chat history as system context, enabling personalized
+    responses. This transparency is crucial for user trust - they can see what the agent "remembers"
+    and correct inaccuracies if needed.
+
+    The event includes both individual memories and their relations in the knowledge graph, allowing
+    agents to understand not just isolated facts but how concepts connect.
+    """
+
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.retrieve_memory_event.name")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
+        "lib.events.retrieve_memory_event.description"
+    )
     memories: Annotated[list[Memory], Field(description="The list of memories that were retrieved.")] = []
     relations: Annotated[list[MemoryRelation], Field(description="The list of matching memory relations.")]
 

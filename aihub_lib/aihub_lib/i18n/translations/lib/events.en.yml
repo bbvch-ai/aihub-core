@@ -177,3 +177,15 @@ user_message_event:
 standalone_question_condenser_event:
   name: "Question Condensed"
   description: "The user's request has been condensed to a standalone question for better retrieval."
+
+new_memory_event:
+  name: "Memory Updated"
+  description: "Agent updated user or organization memories based on conversation"
+
+retrieve_memory_event:
+  name: "Memory Retrieved"
+  description: "Agent retrieved relevant memories for context"
+
+add_memory_to_chat_history_event:
+  name: "Memory Added to Context"
+  description: "Agent extended chat history with user memories"

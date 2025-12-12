@@ -177,3 +177,15 @@ user_message_event:
 standalone_question_condenser_event:
   name: "Kondensierte Einzelanfrage"
   description: "Eine komplexe Anfrage wurde in eine klarere und prägnantere Einzelanfrage umgewandelt, um die Bearbeitung zu erleichtern."
+
+new_memory_event:
+  name: "Erinnerungen Aktualisiert"
+  description: "Agent hat Benutzer- oder Organisationsspeicher basierend auf der Konversation aktualisiert"
+
+retrieve_memory_event:
+  name: "Erinnerungen Abgerufen"
+  description: "Agent hat relevante Erinnerungen für den Kontext abgerufen"
+
+add_memory_to_chat_history_event:
+  name: "Erinnerungen zum Kontext Hinzugefügt"
+  description: "Agent hat Chat-Verlauf mit Benutzererinnerungen erweitert"
