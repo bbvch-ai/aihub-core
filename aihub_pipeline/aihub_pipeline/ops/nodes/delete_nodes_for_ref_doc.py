@@ -1,3 +1,5 @@
+from aihub_lib.persistence.rag.vectors.node_metadata import NAMESPACE
+from aihub_lib.persistence.rag.vectors.stores.MilvusPartitionManager import get_partition_name_for_namespace
 from dagster import ResourceParam, op
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
@@ -9,6 +11,8 @@ def delete_nodes_for_ref_doc(
     vector_store: ResourceParam[BasePydanticVectorStore],
     ref_doc: RefDocDocument,
 ) -> RefDocDocument:
-    """Deletes nodes related to a given ref doc from the vector store."""
-    vector_store.delete(ref_doc.id_)
+    namespace = ref_doc.metadata.get(NAMESPACE, "")
+    partition_name = get_partition_name_for_namespace(namespace)
+    vector_store.delete(ref_doc.id_, partition_name=partition_name)
+
     return ref_doc

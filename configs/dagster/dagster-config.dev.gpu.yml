@@ -2,8 +2,7 @@
 # Dagster Configuration - Stage: dev
 # ===================================================================
 # Generated from template. Do not edit directly.
-# This configuration is used for containerized Dagster deployments.
-# Dev stage runs Dagster locally and does not use this config.
+# Connects directly to PostgreSQL (postgres:5432) without PgBouncer.
 # ===================================================================
 
 run_storage:

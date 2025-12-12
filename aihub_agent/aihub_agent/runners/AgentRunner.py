@@ -2,6 +2,8 @@ import asyncio
 import logging
 
 from aihub_lib.agents.AgentConfig import AgentConfig
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
     AgentClassDiscoveryResponseEvent,
@@ -19,6 +21,8 @@ from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentCla
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
 from aihub_lib.nats.workflow.visualizers.WorkflowVisualizer import WorkflowVisualizer
+from mongoengine import connect, disconnect
+from mongoengine.connection import get_connection
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import ConnectionPool, Redis
@@ -138,6 +142,16 @@ class AgentRunner:
         _, host, port = self.redis_url.split(":")
         self.redis = Redis(connection_pool=ConnectionPool(host=host[2:], port=port))
 
+        # Connect to MongoDB (skip if already connected)
+        try:
+            get_connection()
+        except Exception:
+            connect(
+                db=AIHubSettings().MONGO_MAIN_DB_NAME,
+                host=MongoSettings().CONNECTION_STRING.get_secret_value(),
+                uuidRepresentation="standard",
+            )
+
         # Initialize dispatcher
         self.dispatcher = AgentDispatcher(
             self.agent_type,
@@ -201,6 +215,8 @@ class AgentRunner:
 
         if self.redis:
             await self.redis.close()
+
+        disconnect()
 
     async def _run_loop(self):
         """A background task that keeps the runner alive until stopped."""

@@ -106,9 +106,25 @@ hitl_request_event:
   name: "Richiesta all'Utente"
   description: "L'agente ha bisogno di informazioni aggiuntive dall'utente per continuare con il compito."
 
+hitl_input_request_event:
+  name: "Richiesta di Input"
+  description: "L'agente ha bisogno di un input testuale dall'utente per continuare con il compito."
+
+hitl_confirmation_request_event:
+  name: "Richiesta di Conferma"
+  description: "L'agente ha bisogno di una conferma sì/no dall'utente per continuare con il compito."
+
 hitl_response_event:
   name: "Risposta dell'Utente Ricevuta"
   description: "L'utente ha risposto alla richiesta, e l'agente può procedere con il compito."
+
+hitl_input_response_event:
+  name: "Input Ricevuto"
+  description: "L'utente ha fornito un input testuale, e l'agente può procedere con il compito."
+
+hitl_confirmation_response_event:
+  name: "Conferma Ricevuta"
+  description: "L'utente ha confermato o rifiutato, e l'agente può procedere con il compito."
 
 router_event:
   name: "Percorso ottimale scelto"

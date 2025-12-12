@@ -2,8 +2,11 @@
 # Dagster Configuration - Stage: {{ stage }}
 # ===================================================================
 # Generated from template. Do not edit directly.
-# This configuration is used for containerized Dagster deployments.
-# Dev stage runs Dagster locally and does not use this config.
+{%- if stage != 'dev' %}
+# Uses PgBouncer (pgbouncer:6432) for connection pooling to prevent exhaustion.
+{%- else %}
+# Connects directly to PostgreSQL (postgres:5432) without PgBouncer.
+{%- endif %}
 # ===================================================================
 
 run_storage:
@@ -11,39 +14,63 @@ run_storage:
   class: PostgresRunStorage
   config:
     postgres_db:
+{%- if stage != 'dev' %}
+      hostname: pgbouncer
+{%- else %}
       hostname: postgres
+{%- endif %}
       username:
         env: POSTGRES_USER
       password:
         env: POSTGRES_PASSWORD
       db_name: dagster
+{%- if stage != 'dev' %}
+      port: 6432
+{%- else %}
       port: 5432
+{%- endif %}
 
 event_log_storage:
   module: dagster_postgres.event_log
   class: PostgresEventLogStorage
   config:
     postgres_db:
+{%- if stage != 'dev' %}
+      hostname: pgbouncer
+{%- else %}
       hostname: postgres
+{%- endif %}
       username:
         env: POSTGRES_USER
       password:
         env: POSTGRES_PASSWORD
       db_name: dagster
+{%- if stage != 'dev' %}
+      port: 6432
+{%- else %}
       port: 5432
+{%- endif %}
 
 schedule_storage:
   module: dagster_postgres.schedule_storage
   class: PostgresScheduleStorage
   config:
     postgres_db:
+{%- if stage != 'dev' %}
+      hostname: pgbouncer
+{%- else %}
       hostname: postgres
+{%- endif %}
       username:
         env: POSTGRES_USER
       password:
         env: POSTGRES_PASSWORD
       db_name: dagster
+{%- if stage != 'dev' %}
+      port: 6432
+{%- else %}
       port: 5432
+{%- endif %}
 
 compute_logs:
   module: dagster.core.storage.noop_compute_log_manager

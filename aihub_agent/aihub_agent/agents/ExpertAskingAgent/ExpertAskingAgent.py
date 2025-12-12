@@ -4,6 +4,7 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoop
 from aihub_lib.nats.events.router.RouteOptions import RouteOptions
 from aihub_lib.nats.events.router.RouterEvent import RouterEvent
+from aihub_lib.persistence.insight import InsightCreator, InsightEntity, InsightMessage, InsightSource
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 from llama_index.core.prompts import RichPromptTemplate
 
@@ -16,6 +17,7 @@ from aihub_agent.agents.ExpertAskingAgent.events.ExpertAnswerSufficientEvent imp
 from aihub_agent.agents.ExpertAskingAgent.events.NoAnswerStopEvent import NoAnswerStopEvent
 from aihub_agent.agents.ExpertAskingAgent.ExpertAskingAgentConfig import ExpertAskingAgentConfig
 from aihub_agent.context.run.RunContext import RunContext
+from aihub_agent.context.thread.ThreadContext import ThreadContext
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
 from aihub_agent.workflow.decorators.step import step
 
@@ -70,6 +72,7 @@ class ExpertAskingAgent(Agent):
         t: AgentLocaleHandler,
     ) -> RouterEvent:
         expert_response = expert_response_event.response
+        expert_user_id = expert_response_event.responder.user_id
         expert_name = expert_response_event.responder.user_name
         await displayer.display_thought(
             t("agent.expert_asking_agent.thoughts.expert_responded", response=expert_response)
@@ -92,11 +95,19 @@ class ExpertAskingAgent(Agent):
                 instructions=instructions,
                 routes=[
                     RouteOptions.for_event(
-                        ExpertAnswerSufficientEvent(response=expert_response, expert_name=expert_name),
+                        ExpertAnswerSufficientEvent(
+                            response=expert_response,
+                            expert_user_id=expert_user_id,
+                            expert_name=expert_name,
+                        ),
                         t("agent.expert_asking_agent.routes.answer_sufficient"),
                     ),
                     RouteOptions.for_event(
-                        ExpertAnswerInsufficientEvent(response=expert_response, expert_name=expert_name),
+                        ExpertAnswerInsufficientEvent(
+                            response=expert_response,
+                            expert_user_id=expert_user_id,
+                            expert_name=expert_name,
+                        ),
                         t("agent.expert_asking_agent.routes.answer_insufficient"),
                     ),
                 ],
@@ -111,9 +122,12 @@ class ExpertAskingAgent(Agent):
     )
     async def router_step(
         self,
+        initial_question_event: AskExpertStartEvent,
         router_event: RouterEvent,
+        agent_config: ExpertAskingAgentConfig,
         displayer: EventDisplayer,
         run_context: RunContext,
+        thread_context: ThreadContext,
         t: AgentLocaleHandler,
     ) -> AnswerStopEvent | ExpertAnswerInsufficientEvent:
         await displayer.display_thought(t("agent.expert_asking_agent.thoughts.determine_sufficient"))
@@ -122,6 +136,26 @@ class ExpertAskingAgent(Agent):
             await displayer.display_thought(t("agent.expert_asking_agent.thoughts.answer_sufficient"))
             chat_history = await run_context.get("chat_history", [])
             chat_history = [ChatMessage(**message) for message in chat_history]
+
+            # Create insight from expert conversation
+            InsightEntity.create_insight(
+                question=initial_question_event.question_to_expert,
+                expert_answer=event.response,
+                conversation=[InsightMessage(role=msg.role, content=msg.content) for msg in chat_history],
+                namespace=agent_config.insight_namespace,
+                source=InsightSource(
+                    thread_id=thread_context.thread_id,
+                    expert_user_id=event.expert_user_id,
+                    expert_name=event.expert_name,
+                ),
+                creator=InsightCreator(
+                    agent_class=agent_config.agent_class,
+                    agent_id=agent_config.agent_id,
+                    user_id=initial_question_event.user.id,
+                    user_name=initial_question_event.user.name,
+                ),
+            )
+
             return AnswerStopEvent(expert_answer=event.response, expert_conversation=chat_history)
         return event
 
