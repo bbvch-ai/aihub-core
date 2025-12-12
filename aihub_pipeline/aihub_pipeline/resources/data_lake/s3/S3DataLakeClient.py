@@ -249,14 +249,13 @@ class S3DataLakeClient(AbstractDataLakeClient):
                 for obj in page["Contents"]:
                     objects_to_delete.append({"Key": obj["Key"]})
 
-        # Also include the folder marker itself
-        # The folder marker is an empty object at "directory_path/" (with trailing slash)
-        objects_to_delete.append({"Key": f"{directory_path}/"})
+        if objects_to_delete:
+            objects_to_delete.append({"Key": f"{directory_path}/"})
 
-        # Delete objects in batches (S3 allows max 1000 per request)
-        for i in range(0, len(objects_to_delete), 1000):
-            batch = objects_to_delete[i : i + 1000]
-            self._client.delete_objects(Bucket=self.container_name, Delete={"Objects": batch})
+            # Delete objects in batches (S3 allows max 1000 per request)
+            for i in range(0, len(objects_to_delete), 1000):
+                batch = objects_to_delete[i : i + 1000]
+                self._client.delete_objects(Bucket=self.container_name, Delete={"Objects": batch})
 
     def _ensure_bucket_with_cors(self) -> None:
         """Ensure bucket exists and configure CORS for web access."""
