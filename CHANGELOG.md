@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.255.5] - 2025-12-12 - RAG Agent Rejection Message Customization
+
+### Added
+
+- ✨ **Configurable context insufficient prompt:** Introduced a new `context_insufficient_prompt` configuration option
+  for the **RAGAgent**, allowing customization of the leading message when the agent cannot answer due to insufficient
+  context.
+
+### Changed
+
+- 🔄 **Dynamic RAG Agent rejection messages:** The **RAGAgent** now dynamically constructs rejection messages based on
+  the new `context_insufficient_prompt` configuration, providing more flexible and user-friendly responses for few-shot,
+  context insufficient, or expert rejections.
+- 📄 **Flexible internationalized guard rejection prompts:** Updated the `guard.reject` translations to support a dynamic
+  `{prompt}` placeholder, enabling greater customization of rejection messages across all supported languages.
+
+---
+
 ## [v0.255.4] - 2025-12-11 - Smarter Standalone Questions: Multimodal Support and Centralized Prompts
 
 ### Added
