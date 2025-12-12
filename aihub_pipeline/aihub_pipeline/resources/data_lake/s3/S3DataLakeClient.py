@@ -193,6 +193,9 @@ class S3DataLakeClient(AbstractDataLakeClient):
     def directory_exists(self, directory_path: str) -> bool:
         """Check if a directory (prefix) exists in S3."""
         try:
+            # Strip s3://bucket/ prefix if present to get the storage key
+            if directory_path.startswith(S3_PROTOCOL_PREFIX):
+                directory_path = self._extract_storage_key(directory_path)
             # In S3, directories are just prefixes. Check if any objects exist with this prefix
             response = self._client.list_objects_v2(Bucket=self.container_name, Prefix=f"{directory_path}/", MaxKeys=1)
             return "Contents" in response
@@ -205,6 +208,9 @@ class S3DataLakeClient(AbstractDataLakeClient):
         List contents of a directory (prefix) in S3.
         """
         try:
+            # Strip s3://bucket/ prefix if present to get the storage key
+            if directory_path.startswith(S3_PROTOCOL_PREFIX):
+                directory_path = self._extract_storage_key(directory_path)
             response = self._client.list_objects_v2(
                 Bucket=self.container_name, Prefix=f"{directory_path}/", Delimiter="/"
             )
@@ -229,7 +235,10 @@ class S3DataLakeClient(AbstractDataLakeClient):
 
     def delete_directory(self, directory_path: str) -> None:
         """Delete a directory (prefix) and all its contents from S3."""
-        # List all objects with the prefix
+        # Strip s3://bucket/ prefix if present to get the storage key
+        if directory_path.startswith(S3_PROTOCOL_PREFIX):
+            directory_path = self._extract_storage_key(directory_path)
+        # List all objects with the prefix (includes contents)
         paginator = self._client.get_paginator("list_objects_v2")
         pages = paginator.paginate(Bucket=self.container_name, Prefix=f"{directory_path}/")
 
@@ -240,11 +249,14 @@ class S3DataLakeClient(AbstractDataLakeClient):
                 for obj in page["Contents"]:
                     objects_to_delete.append({"Key": obj["Key"]})
 
+        # Also include the folder marker itself
+        # The folder marker is an empty object at "directory_path/" (with trailing slash)
+        objects_to_delete.append({"Key": f"{directory_path}/"})
+
         # Delete objects in batches (S3 allows max 1000 per request)
-        if objects_to_delete:
-            for i in range(0, len(objects_to_delete), 1000):
-                batch = objects_to_delete[i : i + 1000]
-                self._client.delete_objects(Bucket=self.container_name, Delete={"Objects": batch})
+        for i in range(0, len(objects_to_delete), 1000):
+            batch = objects_to_delete[i : i + 1000]
+            self._client.delete_objects(Bucket=self.container_name, Delete={"Objects": batch})
 
     def _ensure_bucket_with_cors(self) -> None:
         """Ensure bucket exists and configure CORS for web access."""
