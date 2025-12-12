@@ -1,17 +1,17 @@
-from aihub_agent.agents.Agent import Agent
-from aihub_agent.workflow.decorators.step import step
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.chat_history.extend_chat_history_with_memory import extend_chat_history_with_memory
 from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
-from aihub_lib.nats.events import UserMessageEvent, StopEvent, LLMEvent, NewMemoryEvent
+from aihub_lib.nats.events import LLMEvent, NewMemoryEvent, StopEvent, UserMessageEvent
 from aihub_lib.nats.events.common.AddMemoryToChatHistoryEvent import AddMemoryToChatHistoryEvent
 from aihub_lib.nats.events.memory.RetrieveMemoryEvent import RetrieveMemoryEvent
 from aihub_lib.nats.topics import AgentInstanceTopic
+
+from aihub_agent.agents.Agent import Agent
+from aihub_agent.workflow.decorators.step import step
 from playground.agent.UserMemoryAgent.UserMemoryAgentConfig import UserMemoryAgentConfig
 
 
 class UserMemoryAgent(Agent):
-
     @step()
     async def retrieve_memory_step(
         self,

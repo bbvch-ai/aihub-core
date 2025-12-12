@@ -14,7 +14,7 @@ from aihub_lib.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent 
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from aihub_lib.nats.topics import Topic, PartialAgentTopic
+from aihub_lib.nats.topics import PartialAgentTopic, Topic
 from aihub_lib.nats.topics.agents.AgentClassTopic import AgentClassTopic
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from bson import ObjectId

@@ -87,6 +87,7 @@ markers = [
     "slow: mark a test as slow",
     "integration: mark a test as an integration test",
     "experimental: mark a test as experimental",
+    "flaky: mark a test as flaky (may fail intermittently)",
 ]
 addopts = "--strict-markers"
 

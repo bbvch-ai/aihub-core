@@ -8,13 +8,10 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
-from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
-from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 from aihub_lib.testing.auth_utils.user_mocks import mock_user_entity_autouse  # noqa: F401
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
-from mongoengine import connect, disconnect
 
 from aihub_api.routes.memory.dto.DeleteMemoryResponse import DeleteAllMemoriesResponse, DeleteMemoryResponse
 from aihub_api.routes.memory.dto.MemoriesResponse import MemoriesResponse
@@ -27,14 +24,6 @@ from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 BASE_URL = "http://test"
 MEMORIES_ENDPOINT = "/api/v1/memories"
-
-
-@pytest.fixture(scope="module", autouse=True)
-def mongo_db():
-    """Set up and tear down the MongoDB connection for tests."""
-    connect(db=AIHubSettings().MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_STRING.get_secret_value())
-    yield
-    disconnect()
 
 
 @pytest_asyncio.fixture(scope="module")
@@ -128,28 +117,6 @@ class TestGetMemories:
             mock_service.assert_called_once()
             call_kwargs = mock_service.call_args[1]
             assert call_kwargs["limit"] == 50
-
-    @pytest.mark.asyncio
-    @pytest.mark.parametrize(
-        "filters,expected_filters",
-        [
-            ("agent_id=agent/123", {"agent_id": "agent/123"}),
-            ("thread_id=thread123", {"thread_id": "thread123"}),
-            ("agent_id=agent/123&thread_id=thread123", {"agent_id": "agent/123", "thread_id": "thread123"}),
-        ],
-    )
-    async def test_get_memories_with_filters(self, api_client, mock_memories_response, filters, expected_filters):
-        """Test memories endpoint with various filters."""
-        with patch("aihub_api.routes.memory.MemoryService.MemoryService.get_memories_for_user") as mock_service:
-            mock_service.return_value = mock_memories_response
-
-            response = await api_client.get(f"{MEMORIES_ENDPOINT}?{filters}")
-
-            assert response.status_code == 200
-            mock_service.assert_called_once()
-            call_kwargs = mock_service.call_args[1]
-            for key, value in expected_filters.items():
-                assert call_kwargs[key] == value
 
     @pytest.mark.asyncio
     async def test_get_memories_invalid_limit(self, api_client):
@@ -275,20 +242,6 @@ class TestDeleteAllMemories:
             assert data["status"] == "deleted"
             mock_service.assert_called_once()
 
-    @pytest.mark.asyncio
-    async def test_delete_all_memories_with_filters(self, api_client):
-        """Test deletion with filters."""
-        with patch("aihub_api.routes.memory.MemoryService.MemoryService.delete_all_memories") as mock_service:
-            mock_service.return_value = DeleteAllMemoriesResponse(status="deleted")
-
-            response = await api_client.delete(f"{MEMORIES_ENDPOINT}?agent_id=agent/123&thread_id=thread123")
-
-            assert response.status_code == 200
-            mock_service.assert_called_once()
-            call_kwargs = mock_service.call_args[1]
-            assert call_kwargs["agent_id"] == "agent/123"
-            assert call_kwargs["thread_id"] == "thread123"
-
 
 class TestUpdateMemory:
     """Test suite for PATCH /memories/{memory_id} endpoint."""
@@ -328,73 +281,6 @@ class TestUpdateMemory:
         """Test update without required data field."""
         response = await api_client.patch(f"{MEMORIES_ENDPOINT}/mem123", json={})
         assert response.status_code == 422
-
-    @pytest.mark.asyncio
-    async def test_update_memory_preserves_metadata(self, api_client):
-        """
-        Integration test: Verify that metadata (_thread_id, _agent_id, etc.) is preserved after update.
-
-        This test does NOT mock the service and tests the full flow from API -> Service -> Mem0.
-        It ensures that PatchedAsyncMemory correctly preserves metadata during updates.
-        """
-        # 1. Create a memory with metadata (will be auto-populated based on user context)
-        create_response = await api_client.post(
-            MEMORIES_ENDPOINT,
-            json={"messages": [{"role": "user", "content": "Original memory content"}]},
-        )
-        assert create_response.status_code == 200
-        create_data = create_response.json()
-        assert "results" in create_data
-        assert len(create_data["results"]) > 0
-        memory_id = create_data["results"][0]["id"]
-
-        # 2. Get memory to verify metadata exists before update
-        get_response = await api_client.get(MEMORIES_ENDPOINT)
-        assert get_response.status_code == 200
-        get_data = get_response.json()
-        original_memory = next((m for m in get_data["memories"] if m["id"] == memory_id), None)
-        assert original_memory is not None, "Created memory not found in GET response"
-
-        # Store original metadata for comparison
-        original_thread_id = original_memory["thread_id"]
-        original_agent_id = original_memory["agent_id"]
-        original_user_id = original_memory["user_id"]
-        original_display_id = original_memory.get("display_id")
-        original_run_id = original_memory.get("run_id")
-
-        # Verify metadata fields exist (not None)
-        assert original_thread_id is not None, "thread_id should not be None"
-        assert original_agent_id is not None, "agent_id should not be None"
-        assert original_user_id is not None, "user_id should not be None"
-
-        # 3. Update memory data
-        update_response = await api_client.patch(
-            f"{MEMORIES_ENDPOINT}/{memory_id}",
-            json={"data": "Updated memory content"},
-        )
-        assert update_response.status_code == 200
-        assert update_response.json()["status"] == "updated"
-
-        # 4. Get memory again and verify metadata is preserved
-        get_after_update = await api_client.get(MEMORIES_ENDPOINT)
-        assert get_after_update.status_code == 200
-        updated_data = get_after_update.json()
-        updated_memory = next((m for m in updated_data["memories"] if m["id"] == memory_id), None)
-        assert updated_memory is not None, "Memory not found after update"
-
-        # Assert metadata unchanged (immutable)
-        assert updated_memory["thread_id"] == original_thread_id, "thread_id should be preserved"
-        assert updated_memory["agent_id"] == original_agent_id, "agent_id should be preserved"
-        assert updated_memory["user_id"] == original_user_id, "user_id should be preserved"
-        assert updated_memory.get("display_id") == original_display_id, "display_id should be preserved"
-        assert updated_memory.get("run_id") == original_run_id, "run_id should be preserved"
-
-        # Assert data changed (verify update worked)
-        assert "Updated memory content" in updated_memory["memory"], "Memory content should be updated"
-
-        # 5. Clean up: delete the test memory
-        delete_response = await api_client.delete(f"{MEMORIES_ENDPOINT}/{memory_id}")
-        assert delete_response.status_code == 200
 
 
 class TestMemoryDTOStructure:

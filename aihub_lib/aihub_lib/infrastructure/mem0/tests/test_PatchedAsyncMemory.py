@@ -1,13 +1,11 @@
 """
 Unit tests for PatchedAsyncMemory to verify metadata preservation during updates.
 """
-import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+
 import hashlib
-from datetime import datetime
+from unittest.mock import MagicMock, patch
 
 import pytest
-import pytz
 
 from aihub_lib.infrastructure.mem0.PatchedAsyncMemory import PatchedAsyncMemory
 
@@ -69,7 +67,7 @@ async def test_update_memory_preserves_custom_metadata(mock_config, mock_vector_
     especially underscore-prefixed ones like _thread_id, _user_id, etc.
     """
     # Create PatchedAsyncMemory instance with mocked dependencies
-    with patch('aihub_lib.infrastructure.mem0.PatchedAsyncMemory.AsyncMemory.__init__', return_value=None):
+    with patch("aihub_lib.infrastructure.mem0.PatchedAsyncMemory.AsyncMemory.__init__", return_value=None):
         memory = PatchedAsyncMemory(config=mock_config)
         memory.vector_store = mock_vector_store
         memory.embedding_model = mock_embedding_model
@@ -84,7 +82,7 @@ async def test_update_memory_preserves_custom_metadata(mock_config, mock_vector_
         memory_id=memory_id,
         data=new_data,
         existing_embeddings=existing_embeddings,
-        metadata=None  # This is what AsyncMemory.update() passes
+        metadata=None,  # This is what AsyncMemory.update() passes
     )
 
     # Verify vector_store.update was called
@@ -114,8 +112,10 @@ async def test_update_memory_preserves_custom_metadata(mock_config, mock_vector_
 
     for field_name, expected_value in expected_underscore_fields.items():
         assert field_name in actual_payload, f"Underscore field '{field_name}' should be preserved"
-        assert actual_payload[field_name] == expected_value, \
-            f"Underscore field '{field_name}' should have original value '{expected_value}', got '{actual_payload.get(field_name)}'"
+        assert actual_payload[field_name] == expected_value, (
+            f"Underscore field '{field_name}' should have original value '{expected_value}', "
+            f"got '{actual_payload.get(field_name)}'"
+        )
 
     # Verify that standard fields are updated correctly
     assert actual_payload["data"] == new_data, "data should be updated"
@@ -137,7 +137,7 @@ async def test_update_memory_with_metadata_parameter(mock_config, mock_vector_st
     without losing underscore-prefixed fields.
     """
     # Create PatchedAsyncMemory instance with mocked dependencies
-    with patch('aihub_lib.infrastructure.mem0.PatchedAsyncMemory.AsyncMemory.__init__', return_value=None):
+    with patch("aihub_lib.infrastructure.mem0.PatchedAsyncMemory.AsyncMemory.__init__", return_value=None):
         memory = PatchedAsyncMemory(config=mock_config)
         memory.vector_store = mock_vector_store
         memory.embedding_model = mock_embedding_model
@@ -152,10 +152,7 @@ async def test_update_memory_with_metadata_parameter(mock_config, mock_vector_st
     }
 
     await memory._update_memory(
-        memory_id=memory_id,
-        data=new_data,
-        existing_embeddings=existing_embeddings,
-        metadata=additional_metadata
+        memory_id=memory_id, data=new_data, existing_embeddings=existing_embeddings, metadata=additional_metadata
     )
 
     # Get the actual payload
@@ -163,19 +160,23 @@ async def test_update_memory_with_metadata_parameter(mock_config, mock_vector_st
     actual_payload = kwargs.get("payload")
 
     # Verify underscore fields are still preserved
-    assert actual_payload["_thread_id"] == "test_thread_789", "Underscore fields should be preserved even when metadata is provided"
+    assert (
+        actual_payload["_thread_id"] == "test_thread_789"
+    ), "Underscore fields should be preserved even when metadata is provided"
 
     # Verify new metadata is added
     assert actual_payload["custom_field"] == "custom_value", "New metadata should be added"
 
 
 @pytest.mark.asyncio
-async def test_update_memory_generates_new_embeddings_when_not_cached(mock_config, mock_vector_store, mock_embedding_model, mock_db):
+async def test_update_memory_generates_new_embeddings_when_not_cached(
+    mock_config, mock_vector_store, mock_embedding_model, mock_db
+):
     """
     Test that new embeddings are generated when not found in existing_embeddings cache.
     """
     # Create PatchedAsyncMemory instance with mocked dependencies
-    with patch('aihub_lib.infrastructure.mem0.PatchedAsyncMemory.AsyncMemory.__init__', return_value=None):
+    with patch("aihub_lib.infrastructure.mem0.PatchedAsyncMemory.AsyncMemory.__init__", return_value=None):
         memory = PatchedAsyncMemory(config=mock_config)
         memory.vector_store = mock_vector_store
         memory.embedding_model = mock_embedding_model
@@ -187,10 +188,7 @@ async def test_update_memory_generates_new_embeddings_when_not_cached(mock_confi
     existing_embeddings = {}  # Empty cache
 
     await memory._update_memory(
-        memory_id=memory_id,
-        data=new_data,
-        existing_embeddings=existing_embeddings,
-        metadata=None
+        memory_id=memory_id, data=new_data, existing_embeddings=existing_embeddings, metadata=None
     )
 
     # Verify embedding_model.embed was called
