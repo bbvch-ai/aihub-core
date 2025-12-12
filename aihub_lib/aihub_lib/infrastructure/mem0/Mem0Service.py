@@ -1,8 +1,8 @@
-from mem0 import AsyncMemory
 from mem0.configs.base import MemoryConfig
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.mem0.graph.PatchedMemoryGraph import PatchedMemoryGraph
+from aihub_lib.infrastructure.mem0.PatchedAsyncMemory import PatchedAsyncMemory
 from aihub_lib.infrastructure.mem0.types.Memory import Memory
 from aihub_lib.infrastructure.mem0.types.MemoryAdded import MemoryAdded
 from aihub_lib.infrastructure.mem0.types.MemorySearchResult import MemorySearchResult
@@ -16,7 +16,7 @@ class Mem0Service:
         t: LocaleHandler,
     ):
         self._config = config
-        self._memory = AsyncMemory(config=config)
+        self._memory = PatchedAsyncMemory(config=config)
         self._memory.graph = PatchedMemoryGraph.from_graph(self._memory.graph, t=t)
 
     @property
@@ -47,7 +47,7 @@ class Mem0Service:
             "_organization_name": organization_name,
             "_organization_namespace": organization_namespace,
         }
-        metadata = { k: str(v) for k, v in metadata.items() if v is not None}
+        metadata = {k: str(v) for k, v in metadata.items() if v is not None}
         added_memory = await self._memory.add(
             messages,
             user_id=owner_id,
@@ -70,18 +70,20 @@ class Mem0Service:
         added_memory["relations"]["added_entities"] = added_entities
         added_memory["relations"]["deleted_entities"] = deleted_entities
 
-        return MemoryAdded.model_validate({
-            **added_memory,
-            "owner_id": owner_id,
-            "_user_id": user_id,
-            "_agent_id": agent_id,
-            "_thread_id": thread_id,
-            "_display_id": display_id,
-            "_run_id": run_id,
-            "_organization_name": organization_name,
-            "_organization_namespace": organization_namespace,
-            "_type": memory_type.value,
-        })
+        return MemoryAdded.model_validate(
+            {
+                **added_memory,
+                "owner_id": owner_id,
+                "_user_id": user_id,
+                "_agent_id": agent_id,
+                "_thread_id": thread_id,
+                "_display_id": display_id,
+                "_run_id": run_id,
+                "_organization_name": organization_name,
+                "_organization_namespace": organization_namespace,
+                "_type": memory_type.value,
+            }
+        )
 
     async def get_memory(self, memory_id: str) -> Memory:
         memory = await self._memory.get(memory_id)

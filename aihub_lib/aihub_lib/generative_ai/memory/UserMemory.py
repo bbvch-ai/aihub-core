@@ -1,9 +1,9 @@
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.mem0.Mem0Service import Mem0Service
+from aihub_lib.infrastructure.mem0.Mem0Settings import Mem0Settings
 from aihub_lib.infrastructure.mem0.types.MemorySearchResult import MemorySearchResult
 from aihub_lib.infrastructure.mem0.types.MemoryType import MemoryType
-from aihub_lib.infrastructure.mem0.Mem0Settings import Mem0Settings
 
 
 class UserMemory:

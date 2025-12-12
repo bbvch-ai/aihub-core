@@ -329,6 +329,73 @@ class TestUpdateMemory:
         response = await api_client.patch(f"{MEMORIES_ENDPOINT}/mem123", json={})
         assert response.status_code == 422
 
+    @pytest.mark.asyncio
+    async def test_update_memory_preserves_metadata(self, api_client):
+        """
+        Integration test: Verify that metadata (_thread_id, _agent_id, etc.) is preserved after update.
+
+        This test does NOT mock the service and tests the full flow from API -> Service -> Mem0.
+        It ensures that PatchedAsyncMemory correctly preserves metadata during updates.
+        """
+        # 1. Create a memory with metadata (will be auto-populated based on user context)
+        create_response = await api_client.post(
+            MEMORIES_ENDPOINT,
+            json={"messages": [{"role": "user", "content": "Original memory content"}]},
+        )
+        assert create_response.status_code == 200
+        create_data = create_response.json()
+        assert "results" in create_data
+        assert len(create_data["results"]) > 0
+        memory_id = create_data["results"][0]["id"]
+
+        # 2. Get memory to verify metadata exists before update
+        get_response = await api_client.get(MEMORIES_ENDPOINT)
+        assert get_response.status_code == 200
+        get_data = get_response.json()
+        original_memory = next((m for m in get_data["memories"] if m["id"] == memory_id), None)
+        assert original_memory is not None, "Created memory not found in GET response"
+
+        # Store original metadata for comparison
+        original_thread_id = original_memory["thread_id"]
+        original_agent_id = original_memory["agent_id"]
+        original_user_id = original_memory["user_id"]
+        original_display_id = original_memory.get("display_id")
+        original_run_id = original_memory.get("run_id")
+
+        # Verify metadata fields exist (not None)
+        assert original_thread_id is not None, "thread_id should not be None"
+        assert original_agent_id is not None, "agent_id should not be None"
+        assert original_user_id is not None, "user_id should not be None"
+
+        # 3. Update memory data
+        update_response = await api_client.patch(
+            f"{MEMORIES_ENDPOINT}/{memory_id}",
+            json={"data": "Updated memory content"},
+        )
+        assert update_response.status_code == 200
+        assert update_response.json()["status"] == "updated"
+
+        # 4. Get memory again and verify metadata is preserved
+        get_after_update = await api_client.get(MEMORIES_ENDPOINT)
+        assert get_after_update.status_code == 200
+        updated_data = get_after_update.json()
+        updated_memory = next((m for m in updated_data["memories"] if m["id"] == memory_id), None)
+        assert updated_memory is not None, "Memory not found after update"
+
+        # Assert metadata unchanged (immutable)
+        assert updated_memory["thread_id"] == original_thread_id, "thread_id should be preserved"
+        assert updated_memory["agent_id"] == original_agent_id, "agent_id should be preserved"
+        assert updated_memory["user_id"] == original_user_id, "user_id should be preserved"
+        assert updated_memory.get("display_id") == original_display_id, "display_id should be preserved"
+        assert updated_memory.get("run_id") == original_run_id, "run_id should be preserved"
+
+        # Assert data changed (verify update worked)
+        assert "Updated memory content" in updated_memory["memory"], "Memory content should be updated"
+
+        # 5. Clean up: delete the test memory
+        delete_response = await api_client.delete(f"{MEMORIES_ENDPOINT}/{memory_id}")
+        assert delete_response.status_code == 200
+
 
 class TestMemoryDTOStructure:
     """Integration tests for memory DTO structure."""

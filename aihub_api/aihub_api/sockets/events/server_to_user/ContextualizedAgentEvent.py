@@ -3,6 +3,7 @@ from typing import Annotated, Any, override
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import (
+    AddMemoryToChatHistoryEvent,
     AgentEvent,
     AgentInTheLoopExceptionEvent,
     AgentInTheLoopRequestEvent,
@@ -16,11 +17,12 @@ from aihub_lib.nats.events import (
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
     LimitChatHistoryEvent,
-    AddMemoryToChatHistoryEvent,
     LLMCostEvent,
     LLMEvent,
     LLMStopEvent,
+    NewMemoryEvent,
     RerankerEvent,
+    RetrieveMemoryEvent,
     RetrieverEvent,
     StandaloneQuestionCondenserEvent,
     StartEvent,
@@ -28,8 +30,6 @@ from aihub_lib.nats.events import (
     ThoughtEvent,
     ToolEvent,
     UserMessageEvent,
-    NewMemoryEvent,
-    RetrieveMemoryEvent,
 )
 from aihub_lib.nats.events.guard import (
     AgentSuitabilityAcceptEvent,

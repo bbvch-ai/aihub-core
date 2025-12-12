@@ -1,4 +1,4 @@
-from typing import Annotated, ClassVar
+from typing import Annotated
 
 from llama_index.core.base.llms.types import ChatMessage
 from pydantic import Field

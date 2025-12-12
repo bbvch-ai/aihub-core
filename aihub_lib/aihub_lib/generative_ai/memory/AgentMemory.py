@@ -5,10 +5,10 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.mem0.Mem0Service import Mem0Service
+from aihub_lib.infrastructure.mem0.Mem0Settings import Mem0Settings
 from aihub_lib.infrastructure.mem0.types.MemoryAdded import MemoryAdded
 from aihub_lib.infrastructure.mem0.types.MemorySearchResult import MemorySearchResult
 from aihub_lib.infrastructure.mem0.types.MemoryType import MemoryType
-from aihub_lib.infrastructure.mem0.Mem0Settings import Mem0Settings
 
 
 class AgentMemory:

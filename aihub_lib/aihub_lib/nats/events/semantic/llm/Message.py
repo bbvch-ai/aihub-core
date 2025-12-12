@@ -6,6 +6,8 @@ from llama_index.core.base.llms.types import (
     ChatMessage,
     ImageBlock,
     TextBlock,
+)
+from llama_index.core.base.llms.types import (
     ContentBlock as LlamaIndexContentBlock,
 )
 from openinference.semconv.trace import AudioAttributes, ImageAttributes, MessageAttributes, MessageContentAttributes
