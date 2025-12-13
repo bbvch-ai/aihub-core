@@ -1,6 +1,6 @@
 # ruff: noqa: E402
 """Tests for ExpertRAGAgent with mandatory expert escalation workflow."""
-
+from aihub_agent.agents import KnowledgeRetrievalAgent, InsightRetrievalAgent
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
 
 AihubInstrumentor().instrument()
@@ -22,6 +22,7 @@ from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoop import HumanInTheLoo
 from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
     HumanInTheLoopConfirmationRequestEvent,
 )
+from aihub_lib.nats.events.semantic.retriever import RetrievalResponseEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from dotenv import load_dotenv
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -32,7 +33,7 @@ from aihub_agent.agents.ExpertRagAgent.configs.ExpertEscalationConfig import Exp
 from aihub_agent.agents.ExpertRagAgent.configs.ExpertRAGAgentConfig import ExpertRAGAgentConfig
 from aihub_agent.agents.ExpertRagAgent.events.UserRequestsExpertEvent import UserRequestsExpertEvent
 from aihub_agent.agents.ExpertRagAgent.ExpertRAGAgent import ExpertRAGAgent
-from aihub_agent.agents.InsightRetrievalAgent.events import InsightRetrievalResponseEvent
+from aihub_agent.agents.RagAgent.configs.RetrievalAgentReference import RetrievalAgentReference
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 enable_logging()
@@ -57,9 +58,9 @@ def event_loop():
 def expert_rag_agent_config():
     """Return an ExpertRAGAgentConfig with expert escalation (required).
 
-    Note: Retrieval is now handled by specialized retrieval agents via AgentInTheLoop.
-    ExpertRAGAgent requires at least one insight retrieval agent for storing expert answers.
-    Agents are referenced by ID.
+    Note: Retrieval is handled by specialized retrieval agents via AgentInTheLoop.
+    ExpertRAGAgent requires at least one retrieval agent (unified list).
+    Tests mock the retrieval agent responses.
     """
     llm_config = LLMConfig(model_name="text-generation/mini")
 
@@ -69,8 +70,11 @@ def expert_rag_agent_config():
         name=LocaleString(en="Expert RAG Agent"),
         description=LocaleString(en="RAG agent with mandatory expert escalation"),
         llm=llm_config,
-        # Required: at least one insight retrieval agent (referenced by ID)
-        insight_retrieval_agents=["test_insight_agent"],
+        # Required: at least one retrieval agent (one knowledge + one insight)
+        retrieval_agents=[
+            RetrievalAgentReference(agent_class=KnowledgeRetrievalAgent.__name__, agent_id="test_knowledge_agent"),
+            RetrievalAgentReference(agent_class=InsightRetrievalAgent.__name__, agent_id="test_insight_agent"),
+        ],
         # Required: where to write new insights
         write_insight_namespace="test_namespace",
         number_of_input_tokens=8192,
@@ -112,19 +116,36 @@ async def send_query_user_declines(expert_rag_agent_runner: AgentTestRunner, que
                 locale="en",
             ),
         )
-        # Wait for AgentInTheLoop request to InsightRetrievalAgent
+        # Wait for first AgentInTheLoop request (both are emitted together)
         await expert_rag_agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
 
-        # Mock InsightRetrievalAgent response with minimal context (triggers context insufficient)
-        mock_retrieval_response = InsightRetrievalResponseEvent(
+        # Mock KnowledgeRetrievalAgent response with minimal context
+        mock_knowledge_response = RetrievalResponseEvent(
             context_message=ChatMessage(
                 role=MessageRole.SYSTEM,
                 content="Retrieved context: No relevant information found.",
             ),
             nodes=[],  # Empty nodes to trigger context insufficiency
+            agent_id="test_knowledge_agent",
+            retrieval_type="knowledge",
         )
         await expert_rag_agent_runner.send_event_from_topic(
-            start_event=AgentInTheLoopResponseEvent(stop_event=mock_retrieval_response),
+            start_event=AgentInTheLoopResponseEvent(stop_event=mock_knowledge_response),
+            topic=topic,
+        )
+
+        # Mock InsightRetrievalAgent response with minimal context
+        mock_insight_response = RetrievalResponseEvent(
+            context_message=ChatMessage(
+                role=MessageRole.SYSTEM,
+                content="Retrieved context: No relevant insights found.",
+            ),
+            nodes=[],  # Empty nodes to trigger context insufficiency
+            agent_id="test_insight_agent",
+            retrieval_type="insight",
+        )
+        await expert_rag_agent_runner.send_event_from_topic(
+            start_event=AgentInTheLoopResponseEvent(stop_event=mock_insight_response),
             topic=topic,
         )
 
@@ -145,7 +166,7 @@ async def send_query_user_declines(expert_rag_agent_runner: AgentTestRunner, que
 async def send_query_user_accepts(expert_rag_agent_runner: AgentTestRunner, query: str):
     """Send a query that triggers expert escalation and user accepts.
 
-    This test mocks both the InsightRetrievalAgent and ExpertAskingAgent responses via AgentInTheLoop.
+    This test mocks the KnowledgeRetrievalAgent, InsightRetrievalAgent, and ExpertAskingAgent responses.
     """
     async with expert_rag_agent_runner.test_run(delay_before_stop=TIMEOUT) as topic:
         await expert_rag_agent_runner.send_event_from_topic(
@@ -156,19 +177,36 @@ async def send_query_user_accepts(expert_rag_agent_runner: AgentTestRunner, quer
                 locale="en",
             ),
         )
-        # Wait for AgentInTheLoop request to InsightRetrievalAgent (first AITL)
+        # Wait for first AgentInTheLoop request (both retrieval requests are emitted together)
         await expert_rag_agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
 
-        # Mock InsightRetrievalAgent response with minimal context (triggers context insufficient)
-        mock_retrieval_response = InsightRetrievalResponseEvent(
+        # Mock KnowledgeRetrievalAgent response with minimal context
+        mock_knowledge_response = RetrievalResponseEvent(
             context_message=ChatMessage(
                 role=MessageRole.SYSTEM,
                 content="Retrieved context: No relevant information found.",
             ),
             nodes=[],  # Empty nodes to trigger context insufficiency
+            agent_id="test_knowledge_agent",
+            retrieval_type="knowledge",
         )
         await expert_rag_agent_runner.send_event_from_topic(
-            start_event=AgentInTheLoopResponseEvent(stop_event=mock_retrieval_response),
+            start_event=AgentInTheLoopResponseEvent(stop_event=mock_knowledge_response),
+            topic=topic,
+        )
+
+        # Mock InsightRetrievalAgent response with minimal context
+        mock_insight_response = RetrievalResponseEvent(
+            context_message=ChatMessage(
+                role=MessageRole.SYSTEM,
+                content="Retrieved context: No relevant insights found.",
+            ),
+            nodes=[],  # Empty nodes to trigger context insufficiency
+            agent_id="test_insight_agent",
+            retrieval_type="insight",
+        )
+        await expert_rag_agent_runner.send_event_from_topic(
+            start_event=AgentInTheLoopResponseEvent(stop_event=mock_insight_response),
             topic=topic,
         )
 
@@ -184,7 +222,7 @@ async def send_query_user_accepts(expert_rag_agent_runner: AgentTestRunner, quer
             start_event=HumanInTheLoopConfirmation.response(response=True, request_event=hitl_request_event),
             topic=topic,
         )
-        # Wait for AgentInTheLoop request to ExpertAskingAgent (second AITL)
+        # Wait for AgentInTheLoop request to ExpertAskingAgent
         await expert_rag_agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
 
         # Mock expert response by sending AnswerStopEvent

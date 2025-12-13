@@ -1,13 +1,12 @@
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.retrieval import retrieve_insights
+from aihub_lib.generative_ai.retrievers import InsightRetrievalOverride, InsightSourceConfig, RetrievalOverride
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
+from aihub_lib.nats.events.semantic.retriever import RetrievalResponseEvent, RetrievalStartEvent, RetrieverEvent
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.agents.InsightRetrievalAgent.configs.InsightRetrievalAgentConfig import InsightRetrievalAgentConfig
-from aihub_agent.agents.InsightRetrievalAgent.events.InsightRetrievalResponseEvent import InsightRetrievalResponseEvent
-from aihub_agent.agents.InsightRetrievalAgent.events.InsightRetrievalStartEvent import InsightRetrievalStartEvent
 from aihub_agent.rag.events import InOrderNodeCombinerEvent
 from aihub_agent.rag.steps import execute_order_nodes_by_documents
 from aihub_agent.workflow.decorators.step import step
@@ -38,7 +37,7 @@ class InsightRetrievalAgent(Agent):
     )
     async def retrieve_step(
         self,
-        event: InsightRetrievalStartEvent,
+        event: RetrievalStartEvent,
         agent_config: InsightRetrievalAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
@@ -48,12 +47,25 @@ class InsightRetrievalAgent(Agent):
         await displayer.display_thought(locale_t("agent.thought.searching_insights"))
 
         # Use event sources if provided, otherwise fall back to step config
-        sources = event.sources or agent_config.retrieval.sources
+        sources = self._get_sources(event.override, agent_config)
 
         nodes = await retrieve_insights(sources=sources, t=locale_t)
 
         nodes_with_score = [node.to_llama_index_node_with_score() for node in nodes]
         return RetrieverEvent.from_nodes(nodes_with_score)
+
+    def _get_sources(
+        self,
+        override: RetrievalOverride | None,
+        config: InsightRetrievalAgentConfig,
+    ) -> list[InsightSourceConfig]:
+        """Extract sources from override or use config defaults."""
+        if override is None:
+            return config.retrieval.sources
+
+        if not isinstance(override, InsightRetrievalOverride):
+            raise ValueError(f"InsightRetrievalAgent expects InsightRetrievalOverride, got {type(override).__name__}")
+        return override.sources
 
     @step(
         name=LocaleString(en="Order Nodes by Documents"),
@@ -62,7 +74,7 @@ class InsightRetrievalAgent(Agent):
     async def order_nodes_by_documents_step(
         self,
         event: RetrieverEvent,
-        start_event: InsightRetrievalStartEvent,
+        start_event: RetrievalStartEvent,
         agent_config: InsightRetrievalAgentConfig,
         t: LocaleHandler,
         displayer: EventDisplayer,
@@ -83,9 +95,12 @@ class InsightRetrievalAgent(Agent):
         self,
         event: InOrderNodeCombinerEvent,
         retriever_event: RetrieverEvent,
-    ) -> InsightRetrievalResponseEvent:
-        """Returns the retrieval result with context message and raw nodes."""
-        return InsightRetrievalResponseEvent(
+        agent_config: InsightRetrievalAgentConfig,
+    ) -> RetrievalResponseEvent:
+        """Returns the retrieval result with context message, raw nodes, and agent ID."""
+        return RetrievalResponseEvent(
             context_message=event.context_message,
             nodes=retriever_event.nodes,
+            agent_id=agent_config.agent_id,
+            retrieval_type="insight",
         )

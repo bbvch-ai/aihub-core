@@ -81,6 +81,18 @@ image_tags:
     nightly: rag_agent:nightly
     latest: rag_agent:latest
 
+  knowledge_retrieval_agent:
+    build: localbuild
+    local: knowledge_retrieval_agent:latest
+    nightly: knowledge_retrieval_agent:nightly
+    latest: knowledge_retrieval_agent:latest
+
+  expert_rag_agent:
+    build: localbuild
+    local: expert_rag_agent:latest
+    nightly: expert_rag_agent:nightly
+    latest: expert_rag_agent:latest
+
   default_rag_pipeline:
     build: localbuild
     local: default_rag_pipeline:latest

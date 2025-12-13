@@ -10,7 +10,7 @@ from aihub_lib.generative_ai.resources.models.llm.RerankingModelConfig import Re
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.nats.events.semantic.reranker import RerankerEvent
-from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
+from aihub_lib.nats.events.semantic.retriever import RetrievalResponseEvent, RetrievalStartEvent, RetrieverEvent
 from aihub_lib.persistence.rag.documents.stores.docstore import create_mongo_document_store
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.asyncio_utils.bdd import async_test
@@ -22,10 +22,6 @@ from pytest_bdd import given, parsers, scenarios, then, when
 from aihub_agent.agents.KnowledgeRetrievalAgent.configs.KnowledgeRetrievalAgentConfig import (
     KnowledgeRetrievalAgentConfig,
 )
-from aihub_agent.agents.KnowledgeRetrievalAgent.events.KnowledgeRetrievalResponseEvent import (
-    KnowledgeRetrievalResponseEvent,
-)
-from aihub_agent.agents.KnowledgeRetrievalAgent.events.KnowledgeRetrievalStartEvent import KnowledgeRetrievalStartEvent
 from aihub_agent.agents.KnowledgeRetrievalAgent.KnowledgeRetrievalAgent import KnowledgeRetrievalAgent
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
 from aihub_agent.rag.events import InOrderNodeCombinerEvent
@@ -119,7 +115,7 @@ async def _(agent_runner: AgentTestRunner, query: str):
     async with agent_runner.test_run(delay_before_stop=120) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
-            start_event=KnowledgeRetrievalStartEvent(question=query, locale="en"),
+            start_event=RetrievalStartEvent(question=query, locale="en"),
         )
 
 
@@ -139,8 +135,8 @@ def _(agent_runner: AgentTestRunner):
 @then("the agent returns an event with this context message and stops")
 def _(agent_runner: AgentTestRunner):
     assert agent_runner.has_stop_event, "Agent did not produce StopEvent"
-    retrieval_response_event = agent_runner.get_event_of_class(KnowledgeRetrievalResponseEvent)
-    assert retrieval_response_event.context_message, "context message is not present in KnowledgeRetrievalResponseEvent"
+    retrieval_response_event = agent_runner.get_event_of_class(RetrievalResponseEvent)
+    assert retrieval_response_event.context_message, "context message is not present in RetrievalResponseEvent"
 
 
 # ==================== Reranking Scenario ====================

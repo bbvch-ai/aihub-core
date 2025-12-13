@@ -1,4 +1,5 @@
 # ruff: noqa: E402
+from aihub_agent.agents import KnowledgeRetrievalAgent
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
 
 AihubInstrumentor().instrument()
@@ -15,16 +16,19 @@ from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.nats.events import LLMEvent, UserMessageEvent
+from aihub_lib.nats.events.agent_in_the_loop import AgentInTheLoopRequestEvent, AgentInTheLoopResponseEvent
 from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_lib.nats.events.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
 from aihub_lib.nats.events.guard.FewShotAcceptEvent import FewShotAcceptEvent
 from aihub_lib.nats.events.guard.FewShotRejectEvent import FewShotRejectEvent
+from aihub_lib.nats.events.semantic.retriever import RetrievalResponseEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from dotenv import load_dotenv
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
+from aihub_agent.agents.RagAgent.configs.RetrievalAgentReference import RetrievalAgentReference
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
 from aihub_agent.rag.events import CombinedRetrievalEvent, LimitChatHistoryWithContextEvent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
@@ -46,13 +50,15 @@ load_dotenv(Path(__file__).parent / ".env")
 TIMEOUT = 120
 
 
+# ==================== RAG Agent Setup ====================
+
+
 def build_rag_agent_config(llm_config: LLMConfig) -> RAGAgentConfig:
     """
     Build a RAGAgentConfig with the specified LLM configuration.
 
-    Note: Retrieval is now handled by specialized retrieval agents via AgentInTheLoop.
-    Knowledge retrieval uses KnowledgeRetrievalAgent, insight retrieval uses InsightRetrievalAgent.
-    Agents are referenced by ID, not by bucket/source configs.
+    Note: Retrieval is handled by specialized retrieval agents via AgentInTheLoop.
+    Tests mock the retrieval agent responses.
     """
     return RAGAgentConfig(
         agent_id="rag_agent",
@@ -60,19 +66,17 @@ def build_rag_agent_config(llm_config: LLMConfig) -> RAGAgentConfig:
         name=LocaleString(en="RAG Agent"),
         description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
         llm=llm_config,
-        # No retrieval agents configured - tests mock retrieval responses
+        retrieval_agents=[
+            RetrievalAgentReference(agent_class=KnowledgeRetrievalAgent.__name__, agent_id="test_knowledge_agent"),
+        ],
         number_of_input_tokens=8192,
         check_context_sufficiency=False,
     )
 
 
 @pytest.fixture(scope="session")
-def self_hosted_agent_config():
-    """
-    Return a RAGAgentConfig that uses a self-hosted LLM.
-
-    Note: Retrieval is now handled by specialized retrieval agents via AgentInTheLoop.
-    """
+def rag_agent_config():
+    """Return a RAGAgentConfig that uses a self-hosted LLM."""
     llm_config = LLMConfig(model_name="text-generation/mini")
     return build_rag_agent_config(llm_config=llm_config)
 
@@ -83,21 +87,20 @@ def _(flag: bool, max_hops: int, agent_runner: AgentTestRunner):
     agent_runner.default_agent_config.max_hops = max_hops
 
 
-@pytest.mark.usefixtures("self_hosted_agent_config")
+@pytest.mark.usefixtures("rag_agent_config")
 @given("a RAGAgent runner with a valid self hosted configuration", target_fixture="agent_runner")
-def _(self_hosted_agent_config):
-    """
-    Given a RAGAgent runner with a valid self-hosted configuration.
-    """
+def _(rag_agent_config):
+    """Given a RAGAgent runner with a valid self-hosted configuration."""
     return AgentTestRunner(
         agent_type=RAGAgent,
-        default_agent_config=self_hosted_agent_config,
+        default_agent_config=rag_agent_config,
     )
 
 
 @when(parsers.parse('the start event is sent with a user query "{query}"'))
 @async_test
 async def _(agent_runner: AgentTestRunner, query: str):
+    """Send a user query and mock the retrieval agent response."""
     async with agent_runner.test_run(delay_before_stop=TIMEOUT) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
@@ -107,10 +110,27 @@ async def _(agent_runner: AgentTestRunner, query: str):
                 locale="en",
             ),
         )
-        # Since there are no retrieval agents configured, the agent will
-        # emit a CombinedRetrievalEvent with empty nodes. We need to mock retrieval
-        # responses only if agents are configured.
-        # For this test, with no agents, the combine step runs immediately with empty results.
+
+        # Wait for AgentInTheLoop request to KnowledgeRetrievalAgent
+        await agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
+
+        # Small delay to ensure agent is ready to receive response (CI timing)
+        await asyncio.sleep(1)
+
+        # Mock KnowledgeRetrievalAgent response with relevant context
+        mock_knowledge_response = RetrievalResponseEvent(
+            context_message=ChatMessage(
+                role=MessageRole.SYSTEM,
+                content="Retrieved context: AI-Hub is an enterprise-grade AI platform for integrating AI into business processes. It provides detailed documentation and transparent workflows.",
+            ),
+            nodes=[],
+            agent_id="test_knowledge_agent",
+            retrieval_type="knowledge",
+        )
+        await agent_runner.send_event_from_topic(
+            start_event=AgentInTheLoopResponseEvent(stop_event=mock_knowledge_response),
+            topic=topic,
+        )
 
 
 @then(parsers.parse('a StartEvent is present with payload "{payload}"'))
@@ -176,6 +196,7 @@ def _(agent_runner: AgentTestRunner, datatable):
 @when(parsers.parse('the start event is sent with a user query "{query}" and locale {locale}'))
 @async_test
 async def _(agent_runner: AgentTestRunner, query: str, locale: str):
+    """Send a user query with locale and mock the retrieval agent response."""
     async with agent_runner.test_run(delay_before_stop=TIMEOUT) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
@@ -185,7 +206,27 @@ async def _(agent_runner: AgentTestRunner, query: str, locale: str):
                 messages=[ChatMessage(content=query, role=MessageRole.USER)],
             ),
         )
-        # No mocking needed since we don't have retrieval agents configured
+
+        # Wait for AgentInTheLoop request to KnowledgeRetrievalAgent
+        await agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
+
+        # Small delay to ensure agent is ready to receive response (CI timing)
+        await asyncio.sleep(1)
+
+        # Mock KnowledgeRetrievalAgent response with relevant context
+        mock_knowledge_response = RetrievalResponseEvent(
+            context_message=ChatMessage(
+                role=MessageRole.SYSTEM,
+                content="Retrieved context: AI-Hub is an enterprise-grade AI platform.",
+            ),
+            nodes=[],
+            agent_id="test_knowledge_agent",
+            retrieval_type="knowledge",
+        )
+        await agent_runner.send_event_from_topic(
+            start_event=AgentInTheLoopResponseEvent(stop_event=mock_knowledge_response),
+            topic=topic,
+        )
 
 
 @then("the few shot guard should reject the user query")
@@ -254,8 +295,3 @@ def _(agent_runner: AgentTestRunner, expected_prompt: str):
 
     actual_prompt = config.system_prompt.in_locale(locale)
     assert actual_prompt == expected_prompt, f"Expected system prompt '{expected_prompt}', got '{actual_prompt}'"
-
-
-# Note: Reranking and insight retrieval step definitions have been removed.
-# These are now tested in the KnowledgeRetrievalAgent and InsightRetrievalAgent tests
-# since retrieval logic has been moved to specialized retrieval agents.

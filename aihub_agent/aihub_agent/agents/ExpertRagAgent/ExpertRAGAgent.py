@@ -27,14 +27,6 @@ from aihub_agent.agents.ExpertAskingAgent.events.NoAnswerStopEvent import NoAnsw
 from aihub_agent.agents.ExpertRagAgent.configs.ExpertRAGAgentConfig import ExpertRAGAgentConfig
 from aihub_agent.agents.ExpertRagAgent.events.ExpertAnswerContextEvent import ExpertAnswerContextEvent
 from aihub_agent.agents.ExpertRagAgent.events.UserRequestsExpertEvent import UserRequestsExpertEvent
-from aihub_agent.agents.InsightRetrievalAgent.events import (
-    InsightRetrievalResponseEvent,
-    InsightRetrievalStartEvent,
-)
-from aihub_agent.agents.KnowledgeRetrievalAgent.events import (
-    KnowledgeRetrievalResponseEvent,
-    KnowledgeRetrievalStartEvent,
-)
 from aihub_agent.agents.RagAgent.events import RAGUserMessageEvent
 from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.rag.events import (
@@ -42,14 +34,15 @@ from aihub_agent.rag.events import (
     ContextInsufficientWithQueryEvent,
     LimitChatHistoryWithContextEvent,
 )
+from aihub_agent.rag.preconditions import check_all_retrievals_complete, check_context_ready_for_history_limit
 from aihub_agent.rag.steps import (
+    execute_combine_retrieval_results,
     execute_condense_standalone_question,
     execute_context_sufficient_guard,
     execute_few_shot_guard,
+    execute_invoke_retrieval,
     execute_limit_chat_history,
     execute_limit_chat_history_with_context,
-    execute_order_nodes_by_documents,
-    execute_rerank_nodes,
     execute_respond_with_llm,
 )
 from aihub_agent.workflow.decorators.precondition import precondition
@@ -58,27 +51,11 @@ from aihub_agent.workflow.decorators.step import step
 
 @precondition()
 async def all_retrievals_complete(
+    retrieval_responses: list[AgentInTheLoop.response],
     agent_config: ExpertRAGAgentConfig,
-    knowledge_responses: list[AgentInTheLoop.response] | None = None,
-    insight_responses: list[AgentInTheLoop.response] | None = None,
 ) -> bool:
-    """
-    Precondition that waits for all retrieval agents to complete.
-
-    Returns True when:
-    - All configured knowledge retrieval agents have returned responses
-    - All configured insight retrieval agents have returned responses (always required for ExpertRAGAgent)
-    """
-    expected_knowledge = len(agent_config.knowledge_retrieval_agents)
-    actual_knowledge = len(knowledge_responses) if knowledge_responses else 0
-    knowledge_done = actual_knowledge >= expected_knowledge
-
-    # ExpertRAGAgent always requires insight retrieval agents
-    expected_insights = len(agent_config.insight_retrieval_agents)
-    actual_insights = len(insight_responses) if insight_responses else 0
-    insights_done = actual_insights >= expected_insights
-
-    return knowledge_done and insights_done
+    """Precondition that waits for all retrieval agents to complete."""
+    return check_all_retrievals_complete(retrieval_responses, len(agent_config.retrieval_agents))
 
 
 @precondition()
@@ -106,8 +83,7 @@ async def context_ready_for_history_limit(
     """
     if isinstance(context_event, ExpertAnswerContextEvent):
         return True
-    # For CombinedRetrievalEvent, we need ContextSufficientAcceptEvent
-    return context_sufficient_event is not None
+    return check_context_ready_for_history_limit(context_sufficient_event)
 
 
 class ExpertRAGAgent(Agent):
@@ -115,15 +91,13 @@ class ExpertRAGAgent(Agent):
     Implements a Retrieval-Augmented Generation (RAG) Agent with mandatory expert escalation.
 
     The ExpertRAGAgent orchestrates steps to process user input, retrieve relevant information
-    from multiple knowledge retrieval agents and insight retrieval agents, condense questions, and generate
-    responses. When context is insufficient, it automatically offers expert escalation to
-    human experts.
+    from multiple retrieval agents (any type), condense questions, and generate responses.
+    When context is insufficient, it automatically offers expert escalation to human experts.
 
     ### Features
     - Limit chat history to fit input token limits.
     - Condenses chat history into standalone question.
-    - Multi-agent knowledge retrieval via KnowledgeRetrievalAgent (referenced by ID).
-    - Multi-agent insight retrieval via InsightRetrievalAgent (REQUIRED, referenced by ID).
+    - Multi-agent retrieval via any retrieval agent type (requires at least one insight retrieval agent).
     - Combined reranking of all retrieved nodes.
     - Check context sufficiency and escalate to experts when needed.
     - Generate responses using an LLM based on the context and retrieved information.
@@ -193,61 +167,11 @@ class ExpertRAGAgent(Agent):
         )
 
     @step(
-        name=LocaleString(en="Invoke Knowledge Retrieval Agents"),
-        description=LocaleString(en="Invokes KnowledgeRetrievalAgent for each configured agent."),
+        name=LocaleString(en="Invoke Retrieval Agents"),
+        description=LocaleString(en="Invokes all configured retrieval agents (any type)."),
         icon="hugeicons:robot-02",
     )
-    async def invoke_knowledge_retrieval_step(
-        self,
-        event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
-        _: FewShotAcceptEvent,
-        start_event: UserMessageEvent | RAGUserMessageEvent,
-        agent_config: ExpertRAGAgentConfig,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-    ) -> list[AgentInTheLoop.request] | None:
-        """Invokes KnowledgeRetrievalAgent for each configured agent ID."""
-        if not agent_config.knowledge_retrieval_agents:
-            return None
-
-        await displayer.display_thought(t("agent.thought.searching_knowledge"))
-
-        query = (
-            event.condensed_chat_message.content
-            if isinstance(event, StandaloneQuestionCondenserEvent)
-            else event.new_query
-        )
-
-        # Build override lookup from event if RAGUserMessageEvent
-        override_lookup: dict[str, list[str]] = {}
-        if isinstance(start_event, RAGUserMessageEvent) and start_event.knowledge_overrides:
-            override_lookup = {o.agent_id: o.namespaces for o in start_event.knowledge_overrides}
-
-        requests = []
-        for agent_id in agent_config.knowledge_retrieval_agents:
-            # Use override namespaces if provided
-            namespaces = override_lookup.get(agent_id)
-
-            requests.append(
-                AgentInTheLoop.invoke(
-                    agent_class="KnowledgeRetrievalAgent",
-                    agent_id=agent_id,
-                    start_event=KnowledgeRetrievalStartEvent(
-                        question=query,
-                        locale=start_event.locale,
-                        namespaces=namespaces,
-                    ),
-                )
-            )
-
-        return requests
-
-    @step(
-        name=LocaleString(en="Invoke Insight Retrieval Agents"),
-        description=LocaleString(en="Invokes InsightRetrievalAgent for each configured agent."),
-        icon="hugeicons:robot-02",
-    )
-    async def invoke_insight_retrieval_step(
+    async def invoke_retrieval_step(
         self,
         event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
         _: FewShotAcceptEvent,
@@ -256,36 +180,27 @@ class ExpertRAGAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> list[AgentInTheLoop.request]:
-        """Invokes InsightRetrievalAgent for each configured agent ID.
+        """Invokes all configured retrieval agents with unified RetrievalStartEvent.
 
-        Note: ExpertRAGAgent requires at least one insight retrieval agent, so this always returns requests.
+        Note: ExpertRAGAgent requires at least one retrieval agent, so this always returns requests.
         """
+        await displayer.display_thought(t("agent.thought.searching_knowledge"))
+
         query = (
             event.condensed_chat_message.content
             if isinstance(event, StandaloneQuestionCondenserEvent)
             else event.new_query
         )
+        assert query is not None, "Query must not be None"
 
-        # Use override sources if provided
-        sources = None
-        if isinstance(start_event, RAGUserMessageEvent) and start_event.insight_overrides:
-            sources = start_event.insight_overrides
+        override_lookup = start_event.retrieval_overrides if isinstance(start_event, RAGUserMessageEvent) else None
 
-        requests = []
-        for agent_id in agent_config.insight_retrieval_agents:
-            requests.append(
-                AgentInTheLoop.invoke(
-                    agent_class="InsightRetrievalAgent",
-                    agent_id=agent_id,
-                    start_event=InsightRetrievalStartEvent(
-                        question=query,
-                        locale=start_event.locale,
-                        sources=sources,
-                    ),
-                )
-            )
-
-        return requests
+        return execute_invoke_retrieval(
+            query=query,
+            locale=start_event.locale,
+            retrieval_agents=agent_config.retrieval_agents,
+            retrieval_overrides=override_lookup,
+        )
 
     @step(
         name=LocaleString(en="Combine Retrieval Results"),
@@ -299,54 +214,17 @@ class ExpertRAGAgent(Agent):
         condenser_event: StandaloneQuestionCondenserEvent,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        knowledge_responses: list[AgentInTheLoop.response] | None = None,
-        insight_responses: list[AgentInTheLoop.response] | None = None,
+        retrieval_responses: list[AgentInTheLoop.response],
     ) -> CombinedRetrievalEvent:
         """Combines results from all retrieval agents and applies shared reranking."""
-        all_nodes = []
-        knowledge_agent_ids = []
-
-        # Collect nodes from knowledge responses
-        if knowledge_responses:
-            for response in knowledge_responses:
-                if isinstance(response.stop_event, KnowledgeRetrievalResponseEvent):
-                    all_nodes.extend(response.stop_event.nodes)
-                    knowledge_agent_ids.append(response.stop_event.agent_id)
-
-        # Collect nodes from insight responses (required for ExpertRAGAgent)
-        has_insights = False
-        if insight_responses:
-            for response in insight_responses:
-                if isinstance(response.stop_event, InsightRetrievalResponseEvent):
-                    all_nodes.extend(response.stop_event.nodes)
-                    has_insights = True
-
-        # Apply shared reranking if enabled
-        if agent_config.reranking_config.enabled and all_nodes:
-            query = condenser_event.condensed_chat_message.content
-            reranker_event = await execute_rerank_nodes(
-                nodes=all_nodes,
-                query=query,
-                reranking_model=agent_config.reranking_config.reranking_model,
-                displayer=displayer,
-                t=t.in_locale(start_event.locale),
-                reranking_enabled=True,
-            )
-            all_nodes = reranker_event.output_nodes
-
-        # Order nodes by documents and create context message
-        order_event = await execute_order_nodes_by_documents(
-            nodes=all_nodes,
-            t=t.in_locale(start_event.locale),
+        return await execute_combine_retrieval_results(
+            query=condenser_event.condensed_chat_message.content,
+            locale=start_event.locale,
+            t=t,
             displayer=displayer,
-            context_prompt=None,
-        )
-
-        return CombinedRetrievalEvent(
-            context_message=order_event.context_message,
-            nodes=all_nodes,
-            knowledge_agent_ids=knowledge_agent_ids,
-            has_insights=has_insights,
+            retrieval_responses=retrieval_responses,
+            reranking_enabled=agent_config.reranking_config.enabled,
+            reranking_model=agent_config.reranking_config.reranking_model,
         )
 
     @step(

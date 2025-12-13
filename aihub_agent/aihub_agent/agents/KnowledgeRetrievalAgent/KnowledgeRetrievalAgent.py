@@ -1,18 +1,15 @@
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.retrieval import retrieve_knowledge
+from aihub_lib.generative_ai.retrievers import KnowledgeRetrievalOverride, RetrievalOverride
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.semantic.reranker import RerankerEvent
-from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
+from aihub_lib.nats.events.semantic.retriever import RetrievalResponseEvent, RetrievalStartEvent, RetrieverEvent
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.agents.KnowledgeRetrievalAgent.configs.KnowledgeRetrievalAgentConfig import (
     KnowledgeRetrievalAgentConfig,
 )
-from aihub_agent.agents.KnowledgeRetrievalAgent.events.KnowledgeRetrievalResponseEvent import (
-    KnowledgeRetrievalResponseEvent,
-)
-from aihub_agent.agents.KnowledgeRetrievalAgent.events.KnowledgeRetrievalStartEvent import KnowledgeRetrievalStartEvent
 from aihub_agent.rag.events import InOrderNodeCombinerEvent
 from aihub_agent.rag.steps import execute_order_nodes_by_documents, execute_rerank_nodes
 from aihub_agent.workflow.decorators.precondition import precondition
@@ -61,7 +58,7 @@ class KnowledgeRetrievalAgent(Agent):
     )
     async def retrieve_step(
         self,
-        event: KnowledgeRetrievalStartEvent,
+        event: RetrievalStartEvent,
         agent_config: KnowledgeRetrievalAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
@@ -69,14 +66,30 @@ class KnowledgeRetrievalAgent(Agent):
         """Retrieves relevant nodes using the step configuration."""
         await displayer.display_thought(t.in_locale(event.locale)("agent.thought.searching_knowledge"))
 
+        namespaces = self._get_namespaces(event.override, agent_config)
         nodes = await retrieve_knowledge(
             query=event.question,
             config=agent_config.retrieval,
-            namespaces=event.namespaces,
+            namespaces=namespaces,
         )
 
         nodes_with_score = [node.to_llama_index_node_with_score() for node in nodes]
         return RetrieverEvent.from_nodes(nodes_with_score)
+
+    def _get_namespaces(
+        self,
+        override: RetrievalOverride | None,
+        config: KnowledgeRetrievalAgentConfig,
+    ) -> list[str] | None:
+        """Extract namespaces from override or use config defaults."""
+        if override is None:
+            return None
+
+        if not isinstance(override, KnowledgeRetrievalOverride):
+            raise ValueError(
+                f"KnowledgeRetrievalAgent expects KnowledgeRetrievalOverride, got {type(override).__name__}"
+            )
+        return override.namespaces
 
     @step(
         name=LocaleString(en="Rerank Retrieved Nodes"),
@@ -89,7 +102,7 @@ class KnowledgeRetrievalAgent(Agent):
     async def rerank_nodes_step(
         self,
         event: RetrieverEvent,
-        start_event: KnowledgeRetrievalStartEvent,
+        start_event: RetrievalStartEvent,
         agent_config: KnowledgeRetrievalAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
@@ -112,7 +125,7 @@ class KnowledgeRetrievalAgent(Agent):
     async def order_nodes_by_documents_step(
         self,
         event: RetrieverEvent | RerankerEvent,
-        start_event: KnowledgeRetrievalStartEvent,
+        start_event: RetrievalStartEvent,
         agent_config: KnowledgeRetrievalAgentConfig,
         t: LocaleHandler,
         displayer: EventDisplayer,
@@ -135,10 +148,11 @@ class KnowledgeRetrievalAgent(Agent):
         event: InOrderNodeCombinerEvent,
         retriever_event: RetrieverEvent,
         agent_config: KnowledgeRetrievalAgentConfig,
-    ) -> KnowledgeRetrievalResponseEvent:
+    ) -> RetrievalResponseEvent:
         """Returns the retrieval result with context message, raw nodes, and agent ID."""
-        return KnowledgeRetrievalResponseEvent(
+        return RetrievalResponseEvent(
             context_message=event.context_message,
             nodes=retriever_event.nodes,
             agent_id=agent_config.agent_id,
+            retrieval_type="knowledge",
         )

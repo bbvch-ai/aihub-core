@@ -22,6 +22,8 @@ from .semantic import (
     LLMEvent,
     LLMStopEvent,
     RerankerEvent,
+    RetrievalResponseEvent,
+    RetrievalStartEvent,
     RetrieverEvent,
     ToolEvent,
 )
@@ -56,6 +58,8 @@ __all__ = [
     "LLMEvent",
     "LLMStopEvent",
     "RerankerEvent",
+    "RetrievalResponseEvent",
+    "RetrievalStartEvent",
     "RetrieverEvent",
     "ToolEvent",
     "GuardEvent",

@@ -8,7 +8,7 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
-from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
+from aihub_lib.nats.events.semantic.retriever import RetrievalResponseEvent, RetrievalStartEvent, RetrieverEvent
 from aihub_lib.persistence.insight.InsightEntity import InsightCreator, InsightEntity, InsightMessage, InsightSource
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from dotenv import load_dotenv
@@ -17,8 +17,6 @@ from mongoengine import connect, disconnect
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_agent.agents.InsightRetrievalAgent.configs.InsightRetrievalAgentConfig import InsightRetrievalAgentConfig
-from aihub_agent.agents.InsightRetrievalAgent.events.InsightRetrievalResponseEvent import InsightRetrievalResponseEvent
-from aihub_agent.agents.InsightRetrievalAgent.events.InsightRetrievalStartEvent import InsightRetrievalStartEvent
 from aihub_agent.agents.InsightRetrievalAgent.InsightRetrievalAgent import InsightRetrievalAgent
 from aihub_agent.rag.events import InOrderNodeCombinerEvent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
@@ -157,7 +155,7 @@ async def _(agent_runner: AgentTestRunner, query: str):
     async with agent_runner.test_run(delay_before_stop=120) as topic:
         await agent_runner.send_event_from_topic(
             topic=topic,
-            start_event=InsightRetrievalStartEvent(question=query, locale="en"),
+            start_event=RetrievalStartEvent(question=query, locale="en"),
         )
 
 
@@ -176,5 +174,5 @@ def _(agent_runner: AgentTestRunner):
 @then("the agent returns an insight response event and stops")
 def _(agent_runner: AgentTestRunner):
     assert agent_runner.has_stop_event, "Agent did not produce StopEvent"
-    retrieval_response_event = agent_runner.get_event_of_class(InsightRetrievalResponseEvent)
-    assert retrieval_response_event.context_message, "context message is not present in InsightRetrievalResponseEvent"
+    retrieval_response_event = agent_runner.get_event_of_class(RetrievalResponseEvent)
+    assert retrieval_response_event.context_message, "context message is not present in RetrievalResponseEvent"

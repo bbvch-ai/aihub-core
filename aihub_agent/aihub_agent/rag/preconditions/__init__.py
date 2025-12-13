@@ -1,11 +1,11 @@
-"""Shared precondition functions for RAG workflows."""
+"""Shared precondition logic for RAG workflows."""
 
 from aihub_agent.rag.preconditions.rag_preconditions import (
-    reranking_complete_or_disabled,
-    reranking_enabled,
+    check_all_retrievals_complete,
+    check_context_ready_for_history_limit,
 )
 
 __all__ = [
-    "reranking_complete_or_disabled",
-    "reranking_enabled",
+    "check_all_retrievals_complete",
+    "check_context_ready_for_history_limit",
 ]

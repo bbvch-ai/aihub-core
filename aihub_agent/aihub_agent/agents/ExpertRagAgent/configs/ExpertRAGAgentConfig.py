@@ -8,20 +8,20 @@ from pydantic import Field, model_validator
 
 from aihub_agent.agents.ExpertRagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
+from aihub_agent.agents.RagAgent.configs.RetrievalAgentReference import RetrievalAgentReference
 
 
 class ExpertRAGAgentConfig(AgentConfig):
     """
-    Configuration for ExpertRAGAgent with mandatory expert escalation and insight retrieval.
+    Configuration for ExpertRAGAgent with mandatory expert escalation.
 
     Supports:
-    - Multi-agent knowledge retrieval (0-n agents by ID)
-    - Multi-agent insight retrieval (1-n agents by ID, REQUIRED)
+    - Multi-agent retrieval (1-n agents by ID) - requires at least one insight retrieval agent
     - Multi-hop retrieval for context sufficiency
     - MANDATORY expert escalation when context is insufficient
     - Explicit write_insight_namespace for storing new insights
 
-    Note: insight_retrieval_agents is REQUIRED (at least 1) since ExpertRAGAgent
+    Note: At least one insight retrieval agent is REQUIRED since ExpertRAGAgent
     needs an insight agent for retrieving and storing insights from expert answers.
 
     Important: For insights to be retrievable, at least one configured InsightRetrievalAgent
@@ -34,16 +34,10 @@ class ExpertRAGAgentConfig(AgentConfig):
         Field(description="The LLM configuration for the agent."),
     ]
 
-    # Knowledge retrieval agents by ID (0-n)
-    knowledge_retrieval_agents: Annotated[
-        list[str],
-        Field(description="List of KnowledgeRetrievalAgent IDs to invoke for retrieval."),
-    ] = []
-
-    # Insight retrieval agents by ID (1-n, REQUIRED)
-    insight_retrieval_agents: Annotated[
-        list[str],
-        Field(description="List of InsightRetrievalAgent IDs. REQUIRED for ExpertRAGAgent."),
+    # Unified retrieval agents - requires at least one insight retrieval agent
+    retrieval_agents: Annotated[
+        list[RetrievalAgentReference],
+        Field(description="List of retrieval agents. REQUIRED: at least one must be an insight retrieval agent."),
     ]
 
     # Where new insights are stored (REQUIRED)
@@ -94,8 +88,8 @@ class ExpertRAGAgentConfig(AgentConfig):
     ] = None
 
     @model_validator(mode="after")
-    def validate_insight_retrieval_agents_required(self) -> "ExpertRAGAgentConfig":
-        """Validate that at least one insight retrieval agent is configured."""
-        if not self.insight_retrieval_agents:
-            raise ValueError("ExpertRAGAgent requires at least one insight retrieval agent")
+    def validate_retrieval_agents_required(self) -> "ExpertRAGAgentConfig":
+        """Validate that at least one retrieval agent is configured."""
+        if not self.retrieval_agents:
+            raise ValueError("ExpertRAGAgent requires at least one retrieval agent (including insight retrieval)")
         return self

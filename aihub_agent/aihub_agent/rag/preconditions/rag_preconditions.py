@@ -1,22 +1,23 @@
-"""Shared precondition functions for RAG workflows."""
+"""Shared precondition logic for RAG workflows.
 
-from aihub_lib.nats.events.semantic.reranker import RerankerEvent
-from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
+These are plain helper functions, NOT decorated preconditions.
+Use these in @precondition() decorated functions within agent files.
+"""
 
-from aihub_agent.workflow.decorators.precondition import precondition
-
-
-@precondition()
-async def reranking_enabled(event: RetrieverEvent, config) -> bool:
-    """Precondition to check if reranking is enabled."""
-    return isinstance(event, RetrieverEvent) and config.reranking_config.enabled
+from aihub_lib.nats.events import AgentInTheLoop
+from aihub_lib.nats.events.guard import ContextSufficientAcceptEvent
 
 
-@precondition()
-async def reranking_complete_or_disabled(event: RetrieverEvent | RerankerEvent, config) -> bool:
-    """Precondition to ensure we only order nodes after reranking is complete (or if reranking is disabled)."""
-    # If reranking is disabled, we can proceed with RetrieverEvent
-    if not config.reranking_config.enabled:
-        return isinstance(event, RetrieverEvent)
-    # If reranking is enabled, we must wait for RerankerEvent
-    return isinstance(event, RerankerEvent)
+def check_all_retrievals_complete(
+    retrieval_responses: list[AgentInTheLoop.response],
+    expected_count: int,
+) -> bool:
+    """Helper to check if all retrieval agents have completed."""
+    return len(retrieval_responses) >= expected_count
+
+
+def check_context_ready_for_history_limit(
+    context_sufficient_event: ContextSufficientAcceptEvent | None,
+) -> bool:
+    """Helper to check if context is ready for history limiting."""
+    return context_sufficient_event is not None

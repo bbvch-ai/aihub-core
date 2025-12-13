@@ -7,6 +7,7 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
 
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
+from aihub_agent.agents.RagAgent.configs.RetrievalAgentReference import RetrievalAgentReference
 
 
 class RAGAgentConfig(AgentConfig):
@@ -14,8 +15,7 @@ class RAGAgentConfig(AgentConfig):
     Configuration for a simple RAGAgent without expert escalation.
 
     Supports:
-    - Multi-agent knowledge retrieval (0-n agents by ID)
-    - Multi-agent insight retrieval (0-n agents by ID)
+    - Multi-agent retrieval (0-n agents by ID) - any retrieval agent type
     - Multi-hop retrieval for context sufficiency
     - Shared reranking applied after combining all results
 
@@ -27,16 +27,10 @@ class RAGAgentConfig(AgentConfig):
         Field(description="The LLM configuration for the agent."),
     ]
 
-    # Knowledge retrieval agents by ID (0-n)
-    knowledge_retrieval_agents: Annotated[
-        list[str],
-        Field(description="List of KnowledgeRetrievalAgent IDs to invoke for retrieval."),
-    ] = []
-
-    # Insight retrieval agents by ID (0-n)
-    insight_retrieval_agents: Annotated[
-        list[str],
-        Field(description="List of InsightRetrievalAgent IDs to invoke for insight retrieval."),
+    # Unified retrieval agents (0-n) - any retrieval agent type
+    retrieval_agents: Annotated[
+        list[RetrievalAgentReference],
+        Field(description="List of retrieval agents to invoke (any type: knowledge, insight, sql, etc.)."),
     ] = []
 
     # Shared reranking (applied after combining all results)
