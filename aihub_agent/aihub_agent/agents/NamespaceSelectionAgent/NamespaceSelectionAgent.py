@@ -24,9 +24,6 @@ from aihub_agent.workflow.decorators.step import step
 # ThreadContext key for persisted namespace selections
 NAMESPACE_SELECTIONS_KEY = "namespace_selections"
 
-# ThreadContext key to track pending HITL requests (defense-in-depth)
-PENDING_HITL_KEY = "pending_hitl"
-
 # RunContext keys for within-run state
 AVAILABLE_NAMESPACES_KEY = "available_namespaces"
 PARTIAL_SELECTIONS_KEY = "partial_selections"
@@ -40,18 +37,10 @@ async def has_namespace_selection(thread_context: ThreadContext) -> bool:
 
 
 @precondition()
-async def no_namespace_selection_and_no_pending_hitl(thread_context: ThreadContext) -> bool:
-    """
-    Precondition: no namespace selection exists AND no pending HITL request.
-
-    This prevents ask_selection_step from re-triggering when we're waiting
-    for a HITL response but receive a UserMessageEvent instead (defense-in-depth).
-    """
+async def no_namespace_selection(thread_context: ThreadContext) -> bool:
+    """Precondition: no namespace selection exists yet."""
     selections = await thread_context.get(NAMESPACE_SELECTIONS_KEY)
-    pending_hitl = await thread_context.get(PENDING_HITL_KEY)
-    no_selection = selections is None or len(selections) == 0
-    no_pending = pending_hitl is None or pending_hitl is False
-    return no_selection and no_pending
+    return selections is None or len(selections) == 0
 
 
 class NamespaceSelectionAgent(Agent):
@@ -120,14 +109,13 @@ class NamespaceSelectionAgent(Agent):
     @step(
         name=LocaleString(en="Ask Namespace Selection"),
         description=LocaleString(en="Asks the user which namespace to use for each bucket."),
-        precondition=no_namespace_selection_and_no_pending_hitl,
+        precondition=no_namespace_selection,
         icon="mdi:folder-question",
     )
     async def ask_selection_step(
         self,
         event: UserMessageEvent,
         run_context: RunContext,
-        thread_context: ThreadContext,
         agent_config: NamespaceSelectionAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
@@ -149,9 +137,6 @@ class NamespaceSelectionAgent(Agent):
             displayer=displayer,
         )
 
-        # Mark that we're waiting for a HITL response (defense-in-depth)
-        await thread_context.set(PENDING_HITL_KEY, True)
-
         return HumanInTheLoop.chat.invoke(question)
 
     @step(
@@ -171,9 +156,6 @@ class NamespaceSelectionAgent(Agent):
         t: LocaleHandler,
     ) -> AgentInTheLoop.request | HumanInTheLoop.chat.request:
         """Parses user selection and either delegates or asks for clarification."""
-        # Clear pending HITL flag - we received the response
-        await thread_context.set(PENDING_HITL_KEY, False)
-
         await displayer.display_thought(t("agent.namespace_selection.thoughts.parsing_selection"))
 
         available_namespaces: dict[str, Any] = await run_context.get(AVAILABLE_NAMESPACES_KEY, {})
