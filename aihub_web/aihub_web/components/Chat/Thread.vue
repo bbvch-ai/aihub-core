@@ -121,7 +121,7 @@ const messages = computed<ExtendedChatMessage[]>(() => {
     }
 
     else if (types.includes('HumanInTheLoopRequestEvent')) {
-      msgs.push(createAssistantMessage(event.event.question, event, created_at))
+      msgs.push(createAssistantMessage(event.event.message, event, created_at))
     }
 
     else if (types.includes('ExceptionEvent')) {

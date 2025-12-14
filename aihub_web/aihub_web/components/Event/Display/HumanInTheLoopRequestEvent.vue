@@ -45,7 +45,7 @@ const message = computed<ChatMessageOutput>(() => {
     blocks: [
       {
         block_type: 'text',
-        text: props.event.event.question,
+        text: props.event.event.message,
       },
     ],
   }

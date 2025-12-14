@@ -717,9 +717,10 @@ class ToolEventHandler(EventHandler):
 class HumanInTheLoopHandler(EventHandler):
     """Handler for human-in-the-loop interactions.
 
-    Supports two types of HITL events:
+    Supports three types of HITL events:
     - HumanInTheLoopConfirmationRequestEvent: Yes/No confirmation dialog
     - HumanInTheLoopInputRequestEvent: Free-form text input dialog
+    - HumanInTheLoopChatRequestEvent: Chat-style interaction (normal message, not popup)
     """
 
     async def can_handle(
@@ -732,19 +733,31 @@ class HumanInTheLoopHandler(EventHandler):
         event: Annotated[dict[str, Any], "HITL event"],
         context: Annotated[EventContext, "Processing context"],
     ) -> Annotated[bool, "Always returns True"]:
-        question = event.get("question", "Please provide input")
+        message = event.get("message", "Please provide input")
         topic = event.get("topic", {})
         hitl_type = event.get("hitl_type", "input")
 
-        logger.info(f"Received HITL request (type={hitl_type}): {question}")
+        logger.info(f"Received HITL request (type={hitl_type}): {message}")
 
-        if hitl_type == "confirmation":
+        if hitl_type == "chat":
+            # Chat-style HITL: render as normal assistant message in the chat
+            # The backend (AgentDispatcher) handles routing the next UserMessageEvent
+            # as a HumanInTheLoopChatResponseEvent - no popup, no waiting here
+            context.state_manager.close_current_block()
+            context.state_manager.start_text_block(message)
+            await context.emitter({
+                "type": "replace",
+                "data": {"content": context.state_manager.serialize_to_html()},
+            })
+            # Don't call send_hitl_response - the next user message will be routed by backend
+            return True
+        elif hitl_type == "confirmation":
             result = await context.caller(
                 {
                     "type": "confirmation",
                     "data": {
                         "title": "Agent Question",
-                        "message": question,
+                        "message": message,
                     },
                 }
             )
@@ -754,7 +767,7 @@ class HumanInTheLoopHandler(EventHandler):
                     "type": "input",
                     "data": {
                         "title": "Agent Question",
-                        "message": question,
+                        "message": message,
                         "placeholder": "Enter your response...",
                     },
                 }
