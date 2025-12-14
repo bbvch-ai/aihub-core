@@ -154,7 +154,11 @@ class PersistedAgentEventEntity(Document):
     def human_in_the_loop_request_events_for_thread(cls, thread_id: str) -> list["PersistedAgentEventEntity"]:
         return list(
             cls.objects()
-            .filter(thread_id=thread_id, event_parents__contains="HumanInTheLoopRequestEvent")
+            .filter(
+                thread_id=thread_id,
+                event_parents__contains="HumanInTheLoopRequestEvent",
+                event_type=AgentTopicManager.CONTROL_EVENT,
+            )
             .order_by("event_data__created_at")
         )
 
