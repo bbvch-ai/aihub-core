@@ -103,8 +103,17 @@ class KnowledgeService:
         Files in the __figures__ directory are excluded as they are generated artifacts
         from document processing and should not be displayed in the knowledge interface.
         Files that have already been processed (exist in processed_sources) are also excluded.
+
+        Returns an empty list if the S3 bucket doesn't exist (graceful degradation for
+        bucket entities that reference non-existent storage).
         """
-        files_info = S3AnonymousFileAccessService().list_files(container=bucket_name, prefix=f"{namespace}/")
+        try:
+            files_info = S3AnonymousFileAccessService().list_files(container=bucket_name, prefix=f"{namespace}/")
+        except Exception as e:
+            if "NoSuchBucket" in str(e):
+                logger.warning(f"S3 bucket '{bucket_name}' does not exist, returning empty file list")
+                return []
+            raise
 
         unprocessed_files = []
         for file_info in files_info:
