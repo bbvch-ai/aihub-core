@@ -741,15 +741,17 @@ class HumanInTheLoopHandler(EventHandler):
 
         if hitl_type == "chat":
             # Chat-style HITL: render as normal assistant message in the chat
-            # The backend (AgentDispatcher) handles routing the next UserMessageEvent
-            # as a HumanInTheLoopChatResponseEvent - no popup, no waiting here
+            # Store the request so the next pipe() call can send a proper HITL response
+            # instead of a UserMessageEvent
+            Pipe._pending_chat_hitl[context.thread_id] = event
+
             context.state_manager.close_current_block()
             context.state_manager.start_text_block(message)
             await context.emitter({
                 "type": "replace",
                 "data": {"content": context.state_manager.serialize_to_html()},
             })
-            # Don't call send_hitl_response - the next user message will be routed by backend
+            logger.debug(f"Stored pending chat HITL for thread {context.thread_id}")
             return True
         elif hitl_type == "confirmation":
             result = await context.caller(
@@ -1373,6 +1375,11 @@ class Pipe:
     This is the entry point that orchestrates all services using the Facade pattern.
     """
 
+    # Store pending chat HITL requests by thread_id
+    # When a chat-type HITL request is received, we store it here so the next
+    # user message can be sent as a HumanInTheLoopChatResponseEvent instead of UserMessageEvent
+    _pending_chat_hitl: dict[str, dict[str, Any]] = {}
+
     class Valves(BaseModel):
         """Configuration valves for the pipeline"""
 
@@ -1561,11 +1568,39 @@ class Pipe:
                 # Process files
                 files = await self._file_service.prepare_files_for_event(__files__)
 
-                # Build event payload
-                event_payload: dict[str, Any] = {"messages": messages}
-                if files:
-                    event_payload["files"] = files
-                    logger.debug(f"Attached {len(files)} file(s) to UserMessageEvent")
+                # Check for pending chat HITL request for this thread
+                pending_hitl = Pipe._pending_chat_hitl.pop(thread_id, None)
+
+                if pending_hitl:
+                    # This is a response to a chat-type HITL request
+                    # Extract the user's latest message text as the response
+                    latest_message = ""
+                    if messages:
+                        last_msg_blocks = messages[-1].get("blocks", [])
+                        for block in last_msg_blocks:
+                            if block.get("block_type") == "text":
+                                latest_message = block.get("text", "")
+                                break
+
+                    # Get response event info from the pending request's topic
+                    topic = pending_hitl.get("topic", {})
+                    event_name = topic.get("event_name", "HumanInTheLoopChatResponseEvent")
+                    hitl_display_id = topic.get("display_id", display_id)
+
+                    # Build HITL response payload
+                    event_payload: dict[str, Any] = {
+                        "response": latest_message,
+                        "request_event": pending_hitl,
+                    }
+                    logger.info(f"Sending HITL response for thread {thread_id}: {event_name}")
+                else:
+                    # Normal flow - send UserMessageEvent
+                    event_name = "UserMessageEvent"
+                    hitl_display_id = display_id
+                    event_payload: dict[str, Any] = {"messages": messages}
+                    if files:
+                        event_payload["files"] = files
+                        logger.debug(f"Attached {len(files)} file(s) to UserMessageEvent")
 
                 # Emit initial status
                 await __event_emitter__(
@@ -1589,11 +1624,11 @@ class Pipe:
                 await self._streaming_service.stream_response(
                     agent_class,
                     agent_id,
-                    "UserMessageEvent",
+                    event_name,
                     event_payload,
                     headers,
                     thread_id,
-                    display_id,
+                    hitl_display_id,
                     __event_emitter__,
                     __event_call__,
                     state_manager,
