@@ -6,11 +6,13 @@ AihubInstrumentor().instrument()
 
 import asyncio
 from pathlib import Path
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
+from aihub_lib.generative_ai.guards.context_sufficient_guard import ContextGuardResult
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -19,6 +21,7 @@ from aihub_lib.nats.events import LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.agent_in_the_loop import AgentInTheLoopRequestEvent, AgentInTheLoopResponseEvent
 from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_lib.nats.events.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
+from aihub_lib.nats.events.guard.ContextSufficientAcceptEvent import ContextSufficientAcceptEvent
 from aihub_lib.nats.events.guard.FewShotAcceptEvent import FewShotAcceptEvent
 from aihub_lib.nats.events.guard.FewShotRejectEvent import FewShotRejectEvent
 from aihub_lib.nats.events.semantic.retriever import RetrievalResponseEvent
@@ -30,7 +33,7 @@ from pytest_bdd import given, parsers, scenarios, then, when
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.RagAgent.configs.RetrievalAgentReference import RetrievalAgentReference
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
-from aihub_agent.rag.events import CombinedRetrievalEvent, LimitChatHistoryWithContextEvent
+from aihub_agent.rag.events import CombinedRetrievalEvent, ContextInsufficientWithQueryEvent, LimitChatHistoryWithContextEvent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 enable_logging()
@@ -295,3 +298,120 @@ def _(agent_runner: AgentTestRunner, expected_prompt: str):
 
     actual_prompt = config.system_prompt.in_locale(locale)
     assert actual_prompt == expected_prompt, f"Expected system prompt '{expected_prompt}', got '{actual_prompt}'"
+
+
+# ==================== Multi-Hop Retrieval Tests ====================
+
+
+@given(parsers.parse("context sufficiency checking enabled with max_hops {max_hops:d}"))
+def _(agent_runner: AgentTestRunner, max_hops: int):
+    """Enable context sufficiency checking with the specified max_hops."""
+    agent_runner.default_agent_config.check_context_sufficiency = True
+    agent_runner.default_agent_config.max_hops = max_hops
+
+
+@when("a multi-hop query is sent with insufficient context on first retrieval")
+@async_test
+async def _(agent_runner: AgentTestRunner):
+    """
+    Send a query that triggers multi-hop retrieval.
+
+    Mocks the context_sufficient_guard to return insufficient on first call,
+    then sufficient on second call, simulating a multi-hop scenario.
+    """
+    call_count = 0
+
+    async def mock_context_guard(*args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            # First call: context insufficient, suggest a refined query
+            return ContextGuardResult(
+                success=False,
+                reasoning="The context lacks specific technical details about AI architecture.",
+                new_query="AI platform architecture and technical implementation details",
+            )
+        else:
+            # Second call: context is now sufficient
+            return ContextGuardResult(
+                success=True,
+                reasoning="The context now contains comprehensive technical details.",
+                new_query=None,
+            )
+
+    with patch(
+        "aihub_agent.rag.steps.context_sufficient_guard.context_sufficient_guard",
+        new=AsyncMock(side_effect=mock_context_guard),
+    ):
+        async with agent_runner.test_run(delay_before_stop=TIMEOUT) as topic:
+            await agent_runner.send_event_from_topic(
+                topic=topic,
+                start_event=UserMessageEvent(
+                    messages=[ChatMessage(content="Explain the technical architecture of AI systems", role=MessageRole.USER)],
+                    user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
+                    locale="en",
+                ),
+            )
+
+            # First retrieval round
+            await agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
+            await asyncio.sleep(0.5)
+
+            # Send first retrieval response with insufficient context
+            first_response = RetrievalResponseEvent(
+                context_message=ChatMessage(
+                    role=MessageRole.SYSTEM,
+                    content="AI is artificial intelligence. It involves machine learning.",
+                ),
+                nodes=[],
+                agent_id="test_knowledge_agent",
+                retrieval_type="knowledge",
+            )
+            await agent_runner.send_event_from_topic(
+                start_event=AgentInTheLoopResponseEvent(stop_event=first_response),
+                topic=topic,
+            )
+
+            # Wait for second retrieval round (triggered by ContextInsufficientWithQueryEvent)
+            await agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
+            await asyncio.sleep(0.5)
+
+            # Send second retrieval response with sufficient context
+            second_response = RetrievalResponseEvent(
+                context_message=ChatMessage(
+                    role=MessageRole.SYSTEM,
+                    content="AI architecture includes neural networks, transformers, and deep learning models. "
+                    "Modern AI systems use layered architectures with input, hidden, and output layers. "
+                    "Technical implementation involves tensor operations, backpropagation, and gradient descent.",
+                ),
+                nodes=[],
+                agent_id="test_knowledge_agent",
+                retrieval_type="knowledge",
+            )
+            await agent_runner.send_event_from_topic(
+                start_event=AgentInTheLoopResponseEvent(stop_event=second_response),
+                topic=topic,
+            )
+
+
+@then("a ContextInsufficientWithQueryEvent is present with a new query")
+def _(agent_runner: AgentTestRunner):
+    """Verify that a ContextInsufficientWithQueryEvent was emitted with a new query."""
+    event = agent_runner.get_event_of_class(ContextInsufficientWithQueryEvent)
+    assert event is not None, "ContextInsufficientWithQueryEvent was not produced"
+    assert event.new_query is not None, "ContextInsufficientWithQueryEvent should contain a new query"
+    assert len(event.new_query) > 0, "New query should not be empty"
+
+
+@then("two retrieval rounds were executed")
+def _(agent_runner: AgentTestRunner):
+    """Verify that two AgentInTheLoopRequestEvents were emitted (one per retrieval round)."""
+    events = agent_runner.get_events_of_class(AgentInTheLoopRequestEvent)
+    assert len(events) >= 2, f"Expected at least 2 retrieval rounds, got {len(events)}"
+
+
+@then("a ContextSufficientAcceptEvent is present after second retrieval")
+def _(agent_runner: AgentTestRunner):
+    """Verify that context was eventually deemed sufficient."""
+    event = agent_runner.get_event_of_class(ContextSufficientAcceptEvent)
+    assert event is not None, "ContextSufficientAcceptEvent was not produced after multi-hop retrieval"

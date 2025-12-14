@@ -29,3 +29,13 @@ Feature: RAG Agent
     * an LLMEvent is present with a generated response
     * a StopEvent is present
 
+  Scenario: Test RAGAgent multi-hop retrieval when context is insufficient
+    Given a RAGAgent runner with a valid self hosted configuration
+    * context sufficiency checking enabled with max_hops 3
+    When a multi-hop query is sent with insufficient context on first retrieval
+    Then a ContextInsufficientWithQueryEvent is present with a new query
+    * two retrieval rounds were executed
+    * a ContextSufficientAcceptEvent is present after second retrieval
+    * an LLMEvent is present with a generated response
+    * a StopEvent is present
+
