@@ -116,6 +116,15 @@ packages.
 - **Traefik**: Reverse proxy and API gateway
 - **OAuth2**: Enterprise authentication (Azure AD with superuser fallback for Docker deployments)
 
+**Docker Compose Conventions**:
+
+- **No default values**: NEVER use `${VAR:-default}` syntax in docker-compose files. All values must come from `.env`.
+- **Reason**: Defaults in compose files hide missing configuration and cause inconsistent behavior across environments.
+- **Correct**: `AIHUB_DEFAULT_KNOWLEDGE_BUCKET: ${AIHUB_DEFAULT_KNOWLEDGE_BUCKET}`
+- **Wrong**: `AIHUB_DEFAULT_KNOWLEDGE_BUCKET: ${AIHUB_DEFAULT_KNOWLEDGE_BUCKET:-defaultknowledge}`
+- **Template location**: `deployment/templates/docker-compose.yml.j2` (Jinja2 template)
+- **Regenerate**: Run `python deployment/generate_compose.py` after template changes
+
 ## Coding Style & Conventions
 
 **Key Principles**:
