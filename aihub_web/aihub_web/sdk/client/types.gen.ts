@@ -3701,7 +3701,7 @@ export type DocumentDto = {
     id: string;
     /**
      * Source
-     * Source URI of original document.
+     * Source path without protocol prefix (e.g., 'bucket/path/file.pdf').
      */
     source: string;
     /**
@@ -4127,7 +4127,7 @@ export type EvaluationSummaryData = {
      * Avg Score
      * Average score from this evaluator.
      */
-    avg_score?: number | null;
+    avg_score: number;
 };
 
 /**
@@ -5203,12 +5203,11 @@ export type HumanInDtoWritable = {
 
 /**
  * HumanInTheLoopRequestEvent
- * An event asking a human for input, guidance, or approval at a critical juncture in a workflow.
+ * Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
  *
- * ### Why HumanInTheLoopRequestEvent?
- * In automated workflows, certain decisions may require human validation. This event:
- * - Is a `DisplayEvent`, so it can appear in user interfaces.
- * - Carries a question and a topic indicating where the subsequent response should be sent.
+ * Use the specific subclasses:
+ * - `HumanInTheLoopInputRequestEvent` for free-form text input
+ * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation
  */
 export type HumanInTheLoopRequestEventReadable = {
     /**
@@ -5229,15 +5228,20 @@ export type HumanInTheLoopRequestEventReadable = {
      */
     display_description?: LocaleString | null;
     /**
-     * Question
-     * The query or prompt presented to the human operator.
+     * Message
+     * The message or prompt presented to the human operator.
      */
-    question: string;
+    message: string;
     /**
      * Topic
      * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
      */
     topic: PartialAgentTopic | AgentInstanceTopic;
+    /**
+     * Hitl Type
+     * The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no.
+     */
+    hitl_type: 'input' | 'confirmation' | 'chat';
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -5249,17 +5253,16 @@ export type HumanInTheLoopRequestEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation' | 'chat') | Array<string> | undefined;
 };
 
 /**
  * HumanInTheLoopRequestEvent
- * An event asking a human for input, guidance, or approval at a critical juncture in a workflow.
+ * Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
  *
- * ### Why HumanInTheLoopRequestEvent?
- * In automated workflows, certain decisions may require human validation. This event:
- * - Is a `DisplayEvent`, so it can appear in user interfaces.
- * - Carries a question and a topic indicating where the subsequent response should be sent.
+ * Use the specific subclasses:
+ * - `HumanInTheLoopInputRequestEvent` for free-form text input
+ * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation
  */
 export type HumanInTheLoopRequestEventWritable = {
     /**
@@ -5280,26 +5283,30 @@ export type HumanInTheLoopRequestEventWritable = {
      */
     display_description?: LocaleString | null;
     /**
-     * Question
-     * The query or prompt presented to the human operator.
+     * Message
+     * The message or prompt presented to the human operator.
      */
-    question: string;
+    message: string;
     /**
      * Topic
      * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
      */
     topic: PartialAgentTopic | AgentInstanceTopic;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | undefined;
+    /**
+     * Hitl Type
+     * The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no.
+     */
+    hitl_type: 'input' | 'confirmation' | 'chat';
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation' | 'chat') | undefined;
 };
 
 /**
  * HumanInTheLoopResponseEvent
- * A response from a human operator after a HITL request.
+ * Base response from a human operator after a HITL request.
  *
- * ### Why HumanInTheLoopResponseEvent?
- * Once a human operator provides an answer to a `HumanInTheLoopRequestEvent`, the response:
- * - Influences the workflow (since it's a `ControlEvent`), resuming or altering execution based on human input.
- * - Is visible to the UI (since it's also a `DisplayEvent`), allowing transparency and auditing.
+ * Use the specific subclasses:
+ * - `HumanInTheLoopInputResponseEvent` for text input responses
+ * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses
  */
 export type HumanInTheLoopResponseEventReadable = {
     /**
@@ -5321,9 +5328,9 @@ export type HumanInTheLoopResponseEventReadable = {
     display_description?: LocaleString | null;
     /**
      * Response
-     * The human operator's answer or decision.
+     * The human operator's response.
      */
-    response: string;
+    response: string | boolean;
     /**
      * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
      */
@@ -5339,17 +5346,16 @@ export type HumanInTheLoopResponseEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | HumanInTheLoopRequestEventReadable | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | boolean) | HumanInTheLoopRequestEventReadable | Array<string> | undefined;
 };
 
 /**
  * HumanInTheLoopResponseEvent
- * A response from a human operator after a HITL request.
+ * Base response from a human operator after a HITL request.
  *
- * ### Why HumanInTheLoopResponseEvent?
- * Once a human operator provides an answer to a `HumanInTheLoopRequestEvent`, the response:
- * - Influences the workflow (since it's a `ControlEvent`), resuming or altering execution based on human input.
- * - Is visible to the UI (since it's also a `DisplayEvent`), allowing transparency and auditing.
+ * Use the specific subclasses:
+ * - `HumanInTheLoopInputResponseEvent` for text input responses
+ * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses
  */
 export type HumanInTheLoopResponseEventWritable = {
     /**
@@ -5371,14 +5377,14 @@ export type HumanInTheLoopResponseEventWritable = {
     display_description?: LocaleString | null;
     /**
      * Response
-     * The human operator's answer or decision.
+     * The human operator's response.
      */
-    response: string;
+    response: string | boolean;
     /**
      * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
      */
     request_event: HumanInTheLoopRequestEventWritable;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | HumanInTheLoopRequestEventWritable | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | boolean) | HumanInTheLoopRequestEventWritable | undefined;
 };
 
 /**
@@ -13913,53 +13919,6 @@ export type RemoveUserFromThreadResponses = {
 
 export type RemoveUserFromThreadResponse = RemoveUserFromThreadResponses[keyof RemoveUserFromThreadResponses];
 
-export type GetModelsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/models';
-};
-
-export type GetModelsResponses = {
-    /**
-     * Response Get Models Models Get
-     * Successful Response
-     */
-    200: Array<ModelTypeGroupDtoReadable>;
-};
-
-export type GetModelsResponse = GetModelsResponses[keyof GetModelsResponses];
-
-export type GetModelData = {
-    body?: never;
-    path: {
-        /**
-         * Model Name
-         */
-        model_name: string;
-    };
-    query?: never;
-    url: '/models/{model_name}';
-};
-
-export type GetModelErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetModelError = GetModelErrors[keyof GetModelErrors];
-
-export type GetModelResponses = {
-    /**
-     * Successful Response
-     */
-    200: ModelDtoReadable;
-};
-
-export type GetModelResponse = GetModelResponses[keyof GetModelResponses];
-
 export type GetAgentData = {
     body?: never;
     path: {
@@ -14221,6 +14180,45 @@ export type GetProcessStartFormsResponses = {
 
 export type GetProcessStartFormsResponse = GetProcessStartFormsResponses[keyof GetProcessStartFormsResponses];
 
+export type GetProcessOpenFormsData = {
+    body?: never;
+    path: {
+        /**
+         * Process Class
+         */
+        process_class: string;
+        /**
+         * Process Id
+         */
+        process_id: string;
+        /**
+         * Process Walkthrough Id
+         */
+        process_walkthrough_id: string;
+    };
+    query?: never;
+    url: '/processes/{process_class}/{process_id}/{process_walkthrough_id}/open_forms';
+};
+
+export type GetProcessOpenFormsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetProcessOpenFormsError = GetProcessOpenFormsErrors[keyof GetProcessOpenFormsErrors];
+
+export type GetProcessOpenFormsResponses = {
+    /**
+     * Response Get Process Open Forms Processes  Process Class   Process Id   Process Walkthrough Id  Open Forms Get
+     * Successful Response
+     */
+    200: Array<HumanInDtoReadable>;
+};
+
+export type GetProcessOpenFormsResponse = GetProcessOpenFormsResponses[keyof GetProcessOpenFormsResponses];
+
 export type SendProcessStartFormData = {
     /**
      * Data
@@ -14320,45 +14318,6 @@ export type SendProcessOpenFormResponses = {
 };
 
 export type SendProcessOpenFormResponse = SendProcessOpenFormResponses[keyof SendProcessOpenFormResponses];
-
-export type GetProcessOpenFormsData = {
-    body?: never;
-    path: {
-        /**
-         * Process Class
-         */
-        process_class: string;
-        /**
-         * Process Id
-         */
-        process_id: string;
-        /**
-         * Process Walkthrough Id
-         */
-        process_walkthrough_id: string;
-    };
-    query?: never;
-    url: '/processes/{process_class}/{process_id}/{process_walkthrough_id}/open_forms';
-};
-
-export type GetProcessOpenFormsErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetProcessOpenFormsError = GetProcessOpenFormsErrors[keyof GetProcessOpenFormsErrors];
-
-export type GetProcessOpenFormsResponses = {
-    /**
-     * Response Get Process Open Forms Processes  Process Class   Process Id   Process Walkthrough Id  Open Forms Get
-     * Successful Response
-     */
-    200: Array<HumanInDtoReadable>;
-};
-
-export type GetProcessOpenFormsResponse = GetProcessOpenFormsResponses[keyof GetProcessOpenFormsResponses];
 
 export type ListTokensEndpointData = {
     body?: never;
@@ -14564,21 +14523,68 @@ export type CreateRoleResponses = {
 
 export type CreateRoleResponse = CreateRoleResponses[keyof CreateRoleResponses];
 
-export type GetModelsWithAssistantsData = {
+export type GetModelsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/models';
+};
+
+export type GetModelsResponses = {
+    /**
+     * Response Get Models Models Get
+     * Successful Response
+     */
+    200: Array<ModelTypeGroupDtoReadable>;
+};
+
+export type GetModelsResponse = GetModelsResponses[keyof GetModelsResponses];
+
+export type GetModelData = {
+    body?: never;
+    path: {
+        /**
+         * Model Name
+         */
+        model_name: string;
+    };
+    query?: never;
+    url: '/models/{model_name}';
+};
+
+export type GetModelErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetModelError = GetModelErrors[keyof GetModelErrors];
+
+export type GetModelResponses = {
+    /**
+     * Successful Response
+     */
+    200: ModelDtoReadable;
+};
+
+export type GetModelResponse = GetModelResponses[keyof GetModelResponses];
+
+export type GetModels2Data = {
     body?: never;
     path?: never;
     query?: never;
     url: '/openai/models';
 };
 
-export type GetModelsWithAssistantsResponses = {
+export type GetModels2Responses = {
     /**
      * Successful Response
      */
     200: ModelResponse;
 };
 
-export type GetModelsWithAssistantsResponse = GetModelsWithAssistantsResponses[keyof GetModelsWithAssistantsResponses];
+export type GetModels2Response = GetModels2Responses[keyof GetModels2Responses];
 
 export type GetModelWithAssistantsData = {
     body?: never;
@@ -15517,5 +15523,5 @@ export type ProcessDocumentResponses = {
 export type ProcessDocumentResponse = ProcessDocumentResponses[keyof ProcessDocumentResponses];
 
 export type ClientOptions = {
-    baseURL: `${string}://${string}/api/v1` | (string & {});
+    baseURL: 'http://localhost:8000' | (string & {});
 };
