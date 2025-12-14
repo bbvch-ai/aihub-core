@@ -1,0 +1,25 @@
+thoughts:
+  fetching_namespaces: "Récupération des espaces de noms disponibles depuis les buckets configurés"
+  parsing_selection: "Analyse de la sélection d'espace de noms à partir de la réponse de l'utilisateur"
+  selection_complete: "Sélection de l'espace de noms terminée, délégation à l'agent RAG"
+  delegating_to_rag: "Délégation à l'agent RAG avec les espaces de noms sélectionnés"
+  rag_error: "Erreur de l'agent RAG: %{error_code} - %{error_message}"
+
+messages:
+  default_question: "Veuillez sélectionner l'espace de noms que vous souhaitez utiliser pour votre recherche."
+  clarification_needed: "Je n'ai pas pu comprendre votre sélection. Pourriez-vous préciser quel espace de noms vous souhaitez utiliser?"
+  rag_error: "J'ai rencontré une erreur lors du traitement de votre demande. Veuillez réessayer."
+
+prompts:
+  ask_selection: |
+    Vous aidez l'utilisateur à choisir quelles sources de connaissances rechercher.
+    Générez une question amicale et concise demandant quel(s) espace(s) de noms il souhaite utiliser.
+    S'il y a plusieurs buckets, demandez une sélection par bucket.
+    Soyez conversationnel et serviable. Ne listez pas toutes les options sauf s'il n'y en a que quelques-unes.
+    Demandez simplement ce qu'ils souhaitent rechercher.
+
+  parse_selection: |
+    Extrayez la sélection d'espace de noms de l'utilisateur à partir de sa réponse.
+    Faites correspondre sa réponse aux espaces de noms disponibles.
+    Soyez flexible - acceptez les correspondances partielles, les synonymes ou les descriptions.
+    Si ce n'est pas clair, générez une question de suivi utile.

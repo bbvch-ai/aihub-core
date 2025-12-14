@@ -7,6 +7,7 @@ from pydantic import Field
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
 from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
+    HumanInTheLoopChatRequestEvent,
     HumanInTheLoopConfirmationRequestEvent,
     HumanInTheLoopInputRequestEvent,
     HumanInTheLoopRequestEvent,
@@ -83,4 +84,19 @@ class HumanInTheLoopConfirmationResponseEvent(HumanInTheLoopResponseEvent):
     request_event: Annotated[
         HumanInTheLoopConfirmationRequestEvent,
         Field(description="The original confirmation request event."),
+    ]
+
+
+class HumanInTheLoopChatResponseEvent(HumanInTheLoopResponseEvent):
+    """Response containing user's chat message text."""
+
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.hitl_chat_response_event.name")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
+        "lib.events.hitl_chat_response_event.description"
+    )
+
+    response: Annotated[str, Field(description="The user's chat message response.")]
+    request_event: Annotated[
+        HumanInTheLoopChatRequestEvent,
+        Field(description="The original chat request event."),
     ]

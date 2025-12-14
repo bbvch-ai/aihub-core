@@ -1,5 +1,6 @@
 # ruff: noqa: E402
 from aihub_agent.agents import KnowledgeRetrievalAgent
+
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
 
 AihubInstrumentor().instrument()
@@ -33,7 +34,11 @@ from pytest_bdd import given, parsers, scenarios, then, when
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.RagAgent.configs.RetrievalAgentReference import RetrievalAgentReference
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
-from aihub_agent.rag.events import CombinedRetrievalEvent, ContextInsufficientWithQueryEvent, LimitChatHistoryWithContextEvent
+from aihub_agent.rag.events import (
+    CombinedRetrievalEvent,
+    ContextInsufficientWithQueryEvent,
+    LimitChatHistoryWithContextEvent,
+)
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 enable_logging()
@@ -124,7 +129,10 @@ async def _(agent_runner: AgentTestRunner, query: str):
         mock_knowledge_response = RetrievalResponseEvent(
             context_message=ChatMessage(
                 role=MessageRole.SYSTEM,
-                content="Retrieved context: AI-Hub is an enterprise-grade AI platform for integrating AI into business processes. It provides detailed documentation and transparent workflows.",
+                content=(
+                    "Retrieved context: AI-Hub is an enterprise-grade AI platform for integrating AI into business "
+                    "processes. It provides detailed documentation and transparent workflows."
+                ),
             ),
             nodes=[],
             agent_id="test_knowledge_agent",
@@ -347,7 +355,9 @@ async def _(agent_runner: AgentTestRunner):
             await agent_runner.send_event_from_topic(
                 topic=topic,
                 start_event=UserMessageEvent(
-                    messages=[ChatMessage(content="Explain the technical architecture of AI systems", role=MessageRole.USER)],
+                    messages=[
+                        ChatMessage(content="Explain the technical architecture of AI systems", role=MessageRole.USER)
+                    ],
                     user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
                     locale="en",
                 ),

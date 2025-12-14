@@ -9,13 +9,13 @@ class HumanInTheLoopAgent(Agent):
     @step()
     async def start_step(self, event: StartEvent) -> HumanInTheLoopInput.request:
         print("[HumanInTheLoopAgent.start_step]")
-        return HumanInTheLoopInput.invoke(question="Shall I continue?")
+        return HumanInTheLoopInput.invoke(message="Shall I continue?")
 
     @step()
     async def end_step(self, event: HumanInTheLoopInput.response) -> StopEvent:
         print(
             "[HumanInTheLoopAgent.end_step]",
-            event.request_event.question,
+            event.request_event.message,
             event.response,
         )
         return StopEvent()

@@ -289,7 +289,7 @@ class ExpertRAGAgent(Agent):
         """Prompts user for consent to escalate to human expert."""
         await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.context_not_sufficient"))
         await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.asking_for_consent"))
-        return HumanInTheLoop.confirmation.invoke(question=t("agent.expert_grounded_agent.messages.consent_question"))
+        return HumanInTheLoop.confirmation.invoke(message=t("agent.expert_grounded_agent.messages.consent_question"))
 
     @step(
         name=LocaleString(en="Consent Answer"),

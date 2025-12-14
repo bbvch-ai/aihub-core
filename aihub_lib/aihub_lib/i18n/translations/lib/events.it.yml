@@ -126,6 +126,14 @@ hitl_confirmation_response_event:
   name: "Conferma Ricevuta"
   description: "L'utente ha confermato o rifiutato, e l'agente può procedere con il compito."
 
+hitl_chat_request_event:
+  name: "Messaggio dell'Agente"
+  description: "L'agente sta inviando un messaggio e attende la risposta dell'utente nella chat."
+
+hitl_chat_response_event:
+  name: "Risposta Chat dell'Utente"
+  description: "L'utente ha risposto al messaggio dell'agente nella chat, e l'agente può procedere."
+
 router_event:
   name: "Percorso ottimale scelto"
   description: "L'agente ha scelto il percorso ottimale per procedere da qui."

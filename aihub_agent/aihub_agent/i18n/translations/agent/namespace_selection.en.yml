@@ -1,0 +1,25 @@
+thoughts:
+  fetching_namespaces: "Fetching available namespaces from configured buckets"
+  parsing_selection: "Parsing namespace selection from user response"
+  selection_complete: "Namespace selection complete, delegating to RAG agent"
+  delegating_to_rag: "Delegating to RAG agent with selected namespaces"
+  rag_error: "RAG agent error: %{error_code} - %{error_message}"
+
+messages:
+  default_question: "Please select which namespace you would like to use for your search."
+  clarification_needed: "I couldn't understand your selection. Could you please specify which namespace you'd like to use?"
+  rag_error: "I encountered an error while processing your request. Please try again."
+
+prompts:
+  ask_selection: |
+    You are helping the user choose which knowledge sources to search.
+    Generate a friendly, concise question asking which namespace(s) they'd like to use.
+    If there are multiple buckets, ask for one selection per bucket.
+    Be conversational and helpful. Don't list all options unless there are only a few.
+    Just ask what they're interested in searching.
+
+  parse_selection: |
+    Extract the user's namespace selection from their response.
+    Match their response to the available namespaces.
+    Be flexible - accept partial matches, synonyms, or descriptions.
+    If unclear, generate a helpful follow-up question.

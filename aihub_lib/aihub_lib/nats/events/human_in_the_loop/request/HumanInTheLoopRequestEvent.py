@@ -8,7 +8,7 @@ from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 # Type discriminator for HITL request events
-HitlRequestType = Literal["input", "confirmation"]
+HitlRequestType = Literal["input", "confirmation", "chat"]
 
 
 class HumanInTheLoopRequestEvent(ControlAndDisplayEvent):
@@ -25,7 +25,7 @@ class HumanInTheLoopRequestEvent(ControlAndDisplayEvent):
         "lib.events.hitl_request_event.description"
     )
 
-    question: Annotated[str, Field(description="The query or prompt presented to the human operator.")]
+    message: Annotated[str, Field(description="The message or prompt presented to the human operator.")]
     topic: Annotated[
         PartialAgentTopic | AgentInstanceTopic,
         Field(
@@ -69,3 +69,25 @@ class HumanInTheLoopConfirmationRequestEvent(HumanInTheLoopRequestEvent):
         Literal["confirmation"],
         Field(default="confirmation", description="Fixed to 'confirmation' for yes/no requests."),
     ] = "confirmation"
+
+
+class HumanInTheLoopChatRequestEvent(HumanInTheLoopRequestEvent):
+    """
+    Request user input via normal chat message (not popup).
+
+    The UI renders the 'message' as a normal assistant message in the chat thread.
+    The user's next chat message becomes the response.
+
+    Uses the inherited 'message' field - the hitl_type="chat" discriminator tells
+    the UI to render it as a chat message rather than a popup.
+    """
+
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.hitl_chat_request_event.name")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
+        "lib.events.hitl_chat_request_event.description"
+    )
+
+    hitl_type: Annotated[
+        Literal["chat"],
+        Field(default="chat", description="Fixed to 'chat' for normal chat flow."),
+    ] = "chat"

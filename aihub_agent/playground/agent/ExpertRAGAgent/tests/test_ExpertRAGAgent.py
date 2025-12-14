@@ -1,6 +1,8 @@
 # ruff: noqa: E402
 """Tests for ExpertRAGAgent with mandatory expert escalation workflow."""
-from aihub_agent.agents import KnowledgeRetrievalAgent, InsightRetrievalAgent
+
+from aihub_agent.agents import InsightRetrievalAgent, KnowledgeRetrievalAgent
+
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
 
 AihubInstrumentor().instrument()

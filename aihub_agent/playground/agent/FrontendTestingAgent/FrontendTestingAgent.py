@@ -272,7 +272,7 @@ class FrontendTestingAgent(Agent):
     async def hitl_step(self, _: ToolEvent) -> CustomHumanInTheLoop.request:
         print("[HumanInTheLoopAgent.start_step]")
         await asyncio.sleep(1)
-        return CustomHumanInTheLoop.invoke(question="Shall I continue?")
+        return CustomHumanInTheLoop.invoke(message="Shall I continue?")
 
     # @step()
     # async def botl_start(

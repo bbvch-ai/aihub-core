@@ -391,7 +391,7 @@ This section provides a library of established patterns for building robust and 
   class HumanInTheLoopAgent(Agent):
       @step()
       async def start_step(self, event: StartEvent) -> HumanInTheLoop.request:
-          return HumanInTheLoop.invoke(question="Shall I continue?")
+          return HumanInTheLoop.invoke(message="Shall I continue?")
       @step()
       async def end_step(self, event: HumanInTheLoop.response) -> StopEvent: ...
   ```
@@ -417,10 +417,10 @@ This section provides a library of established patterns for building robust and 
   class MultistepHumanInTheLoopAgent(Agent):
       @step()
       async def start_step(self, event: StartEvent) -> FirstStepHumanInTheLoop.request:
-          return FirstStepHumanInTheLoop.invoke(question="Shall I continue?")
+          return FirstStepHumanInTheLoop.invoke(message="Shall I continue?")
       @step()
       async def second_hitl(self, event: FirstStepHumanInTheLoop.response) -> SecondStepHumanInTheLoop.request:
-          return SecondStepHumanInTheLoop.invoke(question="Are you sure?")
+          return SecondStepHumanInTheLoop.invoke(message="Are you sure?")
       @step()
       async def end_step(self, event: SecondStepHumanInTheLoop.response) -> StopEvent: ...
   ```

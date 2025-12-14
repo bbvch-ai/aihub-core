@@ -1,0 +1,25 @@
+thoughts:
+  fetching_namespaces: "Verfügbare Namespaces aus konfigurierten Buckets werden abgerufen"
+  parsing_selection: "Namespace-Auswahl aus Benutzerantwort wird analysiert"
+  selection_complete: "Namespace-Auswahl abgeschlossen, Weiterleitung an RAG-Agent"
+  delegating_to_rag: "Weiterleitung an RAG-Agent mit ausgewählten Namespaces"
+  rag_error: "RAG-Agent Fehler: %{error_code} - %{error_message}"
+
+messages:
+  default_question: "Bitte wählen Sie den Namespace, den Sie für Ihre Suche verwenden möchten."
+  clarification_needed: "Ich konnte Ihre Auswahl nicht verstehen. Könnten Sie bitte angeben, welchen Namespace Sie verwenden möchten?"
+  rag_error: "Bei der Verarbeitung Ihrer Anfrage ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut."
+
+prompts:
+  ask_selection: |
+    Du hilfst dem Benutzer bei der Auswahl der Wissensquellen für die Suche.
+    Stelle eine freundliche, kurze Frage, welche Namespace(s) er verwenden möchte.
+    Bei mehreren Buckets frage nach einer Auswahl pro Bucket.
+    Sei gesprächig und hilfsbereit. Liste nicht alle Optionen auf, es sei denn, es sind nur wenige.
+    Frage einfach, wonach sie suchen möchten.
+
+  parse_selection: |
+    Extrahiere die Namespace-Auswahl des Benutzers aus seiner Antwort.
+    Ordne seine Antwort den verfügbaren Namespaces zu.
+    Sei flexibel - akzeptiere Teilübereinstimmungen, Synonyme oder Beschreibungen.
+    Falls unklar, generiere eine hilfreiche Nachfrage.

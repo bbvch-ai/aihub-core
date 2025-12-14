@@ -33,7 +33,7 @@ class ApprovalAgent(Agent):
     @step()
     async def request_approval(self, event: StartEvent) -> HumanInTheLoop.request:
         # 1. Pause the workflow and ask a question.
-        return HumanInTheLoop.invoke(question="Should I proceed with this action?")
+        return HumanInTheLoop.invoke(message="Should I proceed with this action?")
 
     @step()
     async def handle_response(self, event: HumanInTheLoop.response) -> StopEvent:
@@ -54,13 +54,13 @@ class MultistepApprovalAgent(Agent):
     @step()
     async def request_initial_approval(self, event: StartEvent) -> FirstStepHumanInTheLoop.request:
         # First checkpoint
-        return FirstStepHumanInTheLoop.invoke(question="Shall I continue?")
+        return FirstStepHumanInTheLoop.invoke(message="Shall I continue?")
 
     @step()
     async def request_final_confirmation(self, event: FirstStepHumanInTheLoop.response) -> SecondStepHumanInTheLoop.request:
         # Second checkpoint, only reached after the first is approved
         if event.response.lower() == "yes":
-            return SecondStepHumanInTheLoop.invoke(question="Are you absolutely sure?")
+            return SecondStepHumanInTheLoop.invoke(message="Are you absolutely sure?")
         return StopEvent(final_message="Process cancelled at first step.")
 
     @step()

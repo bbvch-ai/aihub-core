@@ -14,22 +14,22 @@ class MultistepHumanInTheLoopAgent(Agent):
     @step()
     async def start_step(self, event: StartEvent) -> FirstStepHumanInTheLoop.request:
         print("[MultistepHumanInTheLoopAgent.start_step]")
-        return FirstStepHumanInTheLoop.invoke(question="Shall I continue?")
+        return FirstStepHumanInTheLoop.invoke(message="Shall I continue?")
 
     @step()
     async def second_hitl(self, event: FirstStepHumanInTheLoop.response) -> SecondStepHumanInTheLoop.request:
         print(
             "[FirstStepHumanInTheLoop.second_hitl]",
-            event.request_event.question,
+            event.request_event.message,
             event.response,
         )
-        return SecondStepHumanInTheLoop.invoke(question="Are you sure?")
+        return SecondStepHumanInTheLoop.invoke(message="Are you sure?")
 
     @step()
     async def end_step(self, event: SecondStepHumanInTheLoop.response) -> StopEvent:
         print(
             "[MultistepHumanInTheLoopAgent.end_step]",
-            event.request_event.question,
+            event.request_event.message,
             event.response,
         )
         return StopEvent()

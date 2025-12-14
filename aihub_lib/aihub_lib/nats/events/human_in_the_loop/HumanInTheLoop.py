@@ -1,9 +1,11 @@
 from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
+    HumanInTheLoopChatRequestEvent,
     HumanInTheLoopConfirmationRequestEvent,
     HumanInTheLoopInputRequestEvent,
     HumanInTheLoopRequestEvent,
 )
 from aihub_lib.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import (
+    HumanInTheLoopChatResponseEvent,
     HumanInTheLoopConfirmationResponseEvent,
     HumanInTheLoopInputResponseEvent,
     HumanInTheLoopResponseEvent,
@@ -19,10 +21,10 @@ class HumanInTheLoopInput:
     response = HumanInTheLoopInputResponseEvent
 
     @classmethod
-    def invoke(cls, question: str) -> HumanInTheLoopInputRequestEvent:
+    def invoke(cls, message: str) -> HumanInTheLoopInputRequestEvent:
         """Create a request for free-form text input from a human operator."""
         return cls.request(
-            question=question,
+            message=message,
             topic=PartialAgentTopic(
                 event_type=AgentTopicManager.CONTROL_EVENT,
                 event_name=cls.response.event_name_from_class(),
@@ -37,10 +39,33 @@ class HumanInTheLoopConfirmation:
     response = HumanInTheLoopConfirmationResponseEvent
 
     @classmethod
-    def invoke(cls, question: str) -> HumanInTheLoopConfirmationRequestEvent:
+    def invoke(cls, message: str) -> HumanInTheLoopConfirmationRequestEvent:
         """Create a request for yes/no confirmation from a human operator."""
         return cls.request(
-            question=question,
+            message=message,
+            topic=PartialAgentTopic(
+                event_type=AgentTopicManager.CONTROL_EVENT,
+                event_name=cls.response.event_name_from_class(),
+            ),
+        )
+
+
+class HumanInTheLoopChat:
+    """
+    Helper for chat-style HITL (normal messages, not popups).
+
+    The request is rendered as a normal assistant message in the chat thread.
+    The user's next chat message becomes the response.
+    """
+
+    request = HumanInTheLoopChatRequestEvent
+    response = HumanInTheLoopChatResponseEvent
+
+    @classmethod
+    def invoke(cls, message: str) -> HumanInTheLoopChatRequestEvent:
+        """Create a chat-style request - rendered as a normal assistant message."""
+        return cls.request(
+            message=message,
             topic=PartialAgentTopic(
                 event_type=AgentTopicManager.CONTROL_EVENT,
                 event_name=cls.response.event_name_from_class(),
@@ -53,8 +78,9 @@ class HumanInTheLoop:
     A helper for triggering human-in-the-loop (HITL) steps within a workflow.
 
     Use the specific helpers for type-safe interactions:
-    - `HumanInTheLoop.input` for free-form text input
-    - `HumanInTheLoop.confirmation` for yes/no confirmation
+    - `HumanInTheLoop.input` for free-form text input (popup)
+    - `HumanInTheLoop.confirmation` for yes/no confirmation (popup)
+    - `HumanInTheLoop.chat` for chat-style interaction (normal messages, not popups)
 
     Or use the base classes directly via `request` and `response` attributes.
     """
@@ -65,3 +91,4 @@ class HumanInTheLoop:
     # Typed helpers
     input = HumanInTheLoopInput
     confirmation = HumanInTheLoopConfirmation
+    chat = HumanInTheLoopChat
