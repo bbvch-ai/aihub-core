@@ -10,9 +10,6 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher, EventsAndKwargs
 from aihub_lib.nats.events import BaseEvent, ControlEvent, ExceptionEvent, StartEvent
 from aihub_lib.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent import AgentInTheLoopRequestEvent
-from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import HumanInTheLoopChatRequestEvent
-from aihub_lib.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import HumanInTheLoopChatResponseEvent
-from aihub_lib.nats.events.user.UserMessageEvent import UserMessageEvent
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
@@ -88,34 +85,6 @@ class AgentDispatcher(BaseDispatcher):
         run_context = RunContext.for_topic(self.redis, topic)
         thread_context = ThreadContext.for_topic(self.redis, topic)
         agent_config_dict: dict[str, Any] | None = None
-
-        # Check for pending chat HITL when receiving a UserMessageEvent
-        # Convert it to HumanInTheLoopChatResponseEvent and route to the waiting step
-        if isinstance(event, UserMessageEvent):
-            pending_hitl_json = await thread_context.get("_pending_chat_hitl")
-            if pending_hitl_json:
-                logger.debug(f"Found pending chat HITL for thread {topic.thread_id}, converting UserMessageEvent")
-                pending_request = HumanInTheLoopChatRequestEvent.model_validate_json(pending_hitl_json)
-                await thread_context.delete("_pending_chat_hitl")
-
-                # Create the response event
-                response_event = HumanInTheLoopChatResponseEvent(
-                    response=event.user_query,
-                    request_event=pending_request,
-                )
-                # Copy the sequence number from the original event for event store filtering
-                response_event._jetstream_sequence = event._jetstream_sequence
-
-                # Route the response event using the original request's topic
-                # This continues the existing run instead of starting a new one
-                topic = pending_request.topic
-
-                # Store the converted event in the event store so step readiness checks can find it
-                await self.event_store.ensure_event_stored(topic.execution_context_id, response_event)
-
-                event = response_event
-                run_context = RunContext.for_topic(self.redis, topic)
-                logger.debug(f"Converted to HumanInTheLoopChatResponseEvent, routing to run {topic.run_id}")
 
         if event.is_start_event:
             agent_config_dict: dict[str, Any] = event.agent_config or self.default_agent_config.model_dump()
@@ -318,12 +287,6 @@ class AgentDispatcher(BaseDispatcher):
                             display_id=topic.display_id,
                             event_id=event.event_id,
                         )
-
-                        # For chat-type HITL, store in ThreadContext so the next UserMessageEvent
-                        # can be converted to a HumanInTheLoopChatResponseEvent
-                        if isinstance(event, HumanInTheLoopChatRequestEvent):
-                            logger.debug(f"Storing pending chat HITL request for thread {topic.thread_id}")
-                            await thread_context.set("_pending_chat_hitl", event.model_dump_json())
 
                     if event.is_bitl_request_event:
                         logger.debug(f"Handling special event: BotInTheLoopRequestEvent: {event}")
