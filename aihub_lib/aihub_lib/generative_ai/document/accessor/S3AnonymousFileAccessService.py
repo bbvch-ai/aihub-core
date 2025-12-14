@@ -172,6 +172,38 @@ class S3AnonymousFileAccessService:
             logger.error(f"Failed to verify file existence {container}/{file_path}: {e}")
             raise Exception(f"Failed to verify file existence: {e}")
 
+    def ensure_bucket_exists(self, bucket_name: str) -> bool:
+        """
+        Ensure that an S3 bucket exists, creating it if necessary.
+
+        Returns True if the bucket was created, False if it already existed.
+        """
+        if not bucket_name or not bucket_name.strip():
+            raise ValueError("Bucket name cannot be empty")
+
+        try:
+            self._s3_client.head_bucket(Bucket=bucket_name)
+            logger.debug(f"Bucket '{bucket_name}' already exists")
+            return False
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "")
+            if error_code in ["404", "NoSuchBucket"]:
+                try:
+                    self._s3_client.create_bucket(Bucket=bucket_name)
+                    logger.info(f"Created bucket '{bucket_name}'")
+                    return True
+                except ClientError as create_error:
+                    create_error_code = create_error.response.get("Error", {}).get("Code", "")
+                    # Handle race condition or SeaweedFS inconsistency where bucket exists but head_bucket fails
+                    if create_error_code in ["BucketAlreadyExists", "BucketAlreadyOwnedByYou"]:
+                        logger.warning(f"Bucket '{bucket_name}' already exists (detected during creation attempt)")
+                        return False
+                    logger.error(f"Failed to create bucket '{bucket_name}': {create_error}")
+                    raise Exception(f"Failed to create bucket: {create_error}")
+            else:
+                logger.error(f"Failed to check bucket '{bucket_name}': {e}")
+                raise Exception(f"Failed to check bucket: {e}")
+
     def list_files(self, container: str, prefix: str = "") -> list[dict]:
         """
         List files in S3/MinIO storage with optional prefix filtering.
