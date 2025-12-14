@@ -95,7 +95,6 @@ class NamespaceSelectionAgent(Agent):
         # Create RAGUserMessageEvent with overrides
         rag_event = RAGUserMessageEvent(
             messages=event.messages,
-            user_query=event.user_query,
             locale=event.locale,
             user=event.user,
             retrieval_overrides=overrides,
@@ -190,7 +189,6 @@ class NamespaceSelectionAgent(Agent):
             # Create RAGUserMessageEvent with overrides
             rag_event = RAGUserMessageEvent(
                 messages=start_event.messages,
-                user_query=start_event.user_query,
                 locale=start_event.locale,
                 user=start_event.user,
                 retrieval_overrides=overrides,
