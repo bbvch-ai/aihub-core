@@ -137,7 +137,6 @@ class ExpertAskingAgent(Agent):
             chat_history = await run_context.get("chat_history", [])
             chat_history = [ChatMessage(**message) for message in chat_history]
 
-            # Create insight from expert conversation
             # Use caller credentials if provided, otherwise use this agent's config
             creds = initial_question_event.write_insight_credentials
             namespace = initial_question_event.write_insight_namespace or agent_config.insight_namespace

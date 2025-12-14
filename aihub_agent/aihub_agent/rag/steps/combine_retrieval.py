@@ -22,33 +22,17 @@ async def execute_combine_retrieval_results(
     reranking_enabled: bool = False,
     reranking_model: RerankingModelConfig | None = None,
 ) -> CombinedRetrievalEvent:
-    """
-    Combines results from all retrieval agents and applies shared reranking.
-
-    Args:
-        query: The search query used for reranking.
-        locale: The locale for display messages.
-        t: The locale handler.
-        displayer: The event displayer.
-        retrieval_responses: List of responses from retrieval agents.
-        reranking_enabled: Whether to apply reranking to combined results.
-        reranking_model: Configuration for the reranking model (required if reranking enabled).
-
-    Returns:
-        CombinedRetrievalEvent with context message, nodes, and metadata.
-    """
+    """Combines results from all retrieval agents and applies shared reranking."""
     all_nodes: list[IngestedNode] = []
     agent_ids: list[str] = []
     retrieval_types: set[str] = set()
 
-    # Collect nodes from all retrieval responses
     for response in retrieval_responses:
         if isinstance(response.stop_event, RetrievalResponseEvent):
             all_nodes.extend(response.stop_event.nodes)
             agent_ids.append(response.stop_event.agent_id)
             retrieval_types.add(response.stop_event.retrieval_type)
 
-    # Apply shared reranking if enabled
     if reranking_enabled and all_nodes:
         reranker_event = await execute_rerank_nodes(
             nodes=all_nodes,
@@ -60,7 +44,6 @@ async def execute_combine_retrieval_results(
         )
         all_nodes = reranker_event.output_nodes
 
-    # Order nodes by documents and create context message
     order_event = await execute_order_nodes_by_documents(
         nodes=all_nodes,
         t=t.in_locale(locale),

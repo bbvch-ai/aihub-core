@@ -71,11 +71,9 @@ async def initialize_knowledge_buckets() -> None:
     bucket_name = settings.DEFAULT_KNOWLEDGE_BUCKET
     namespace_name = settings.DEFAULT_KNOWLEDGE_NAMESPACE
 
-    # Create MongoDB entities
     bucket = _get_or_create_bucket(bucket_name)
     _get_or_create_namespace(bucket, namespace_name)
 
-    # Ensure S3 bucket exists
     try:
         s3_service = S3AnonymousFileAccessService()
         _ensure_s3_bucket_exists(s3_service, bucket_name)

@@ -12,17 +12,7 @@ async def retrieve_knowledge(
     config: KnowledgeRetrievalStepConfig,
     namespaces: list[str] | None = None,
 ) -> list[IngestedNode]:
-    """
-    Retrieve knowledge nodes from a vector store.
-
-    Args:
-        query: The search query
-        config: Step configuration with retrieval settings
-        namespaces: Optional override for namespaces (uses config.namespaces if not provided)
-
-    Returns:
-        List of retrieved nodes
-    """
+    """Retrieve knowledge nodes from a vector store."""
     effective_namespaces = namespaces or config.namespaces
 
     embed_model, _ = config.embed_model.to_llama_index()

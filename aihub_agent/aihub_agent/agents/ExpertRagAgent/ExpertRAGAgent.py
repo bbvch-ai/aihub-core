@@ -371,7 +371,6 @@ class ExpertRAGAgent(Agent):
         await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.expert_answered"))
         await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.can_answer_question"))
 
-        # Format the expert conversation as context
         expert_conversation = event.stop_event.expert_conversation
         conversation_parts = []
         for msg in expert_conversation:

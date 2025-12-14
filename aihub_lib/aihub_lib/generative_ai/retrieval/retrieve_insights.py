@@ -14,16 +14,7 @@ async def retrieve_insights(
     sources: list[InsightSourceConfig],
     t: LocaleHandler,
 ) -> list[IngestedNode]:
-    """
-    Retrieve insights from MongoDB for the given sources.
-
-    Args:
-        sources: List of insight sources (namespace, agent_class, agent_id) to query
-        t: Locale handler for translations
-
-    Returns:
-        List of retrieved insight nodes
-    """
+    """Retrieve insights from MongoDB for the given sources."""
     all_nodes: list[IngestedNode] = []
 
     for source in sources:
