@@ -19,7 +19,17 @@ prompts:
     Just ask what they're interested in searching.
 
   parse_selection: |
-    Extract the user's namespace selection from their response.
-    Match their response to the available namespaces.
-    Be flexible - accept partial matches, synonyms, or descriptions.
-    If unclear, generate a helpful follow-up question.
+    You are extracting the user's namespace selection from their response.
+
+    User's response: {user_response}
+
+    Available namespaces:
+    {namespace_options}
+
+    Select the namespace that best matches what the user wants.
+    If the user's intent is clear, set selected_namespace to the matching namespace name.
+    If unclear, set selected_namespace to null and provide a helpful follow_up question.
+
+fields:
+  selected_namespace: "The internal name (from the 'name' field) of the namespace the user selected, or null if the selection is unclear"
+  follow_up: "A clarifying question to ask if the user's selection is unclear. Empty string if selection is clear."

@@ -19,7 +19,17 @@ prompts:
     Frage einfach, wonach sie suchen möchten.
 
   parse_selection: |
-    Extrahiere die Namespace-Auswahl des Benutzers aus seiner Antwort.
-    Ordne seine Antwort den verfügbaren Namespaces zu.
-    Sei flexibel - akzeptiere Teilübereinstimmungen, Synonyme oder Beschreibungen.
-    Falls unklar, generiere eine hilfreiche Nachfrage.
+    Du extrahierst die Namespace-Auswahl des Benutzers aus seiner Antwort.
+
+    Benutzerantwort: {user_response}
+
+    Verfügbare Namespaces:
+    {namespace_options}
+
+    Wähle den Namespace, der am besten zu dem passt, was der Benutzer möchte.
+    Wenn die Absicht des Benutzers klar ist, setze selected_namespace auf den passenden Namespace-Namen.
+    Falls unklar, setze selected_namespace auf null und stelle eine hilfreiche Nachfrage in follow_up.
+
+fields:
+  selected_namespace: "Der interne Name (aus dem 'name'-Feld) des vom Benutzer gewählten Namespaces, oder null wenn die Auswahl unklar ist"
+  follow_up: "Eine klärende Frage, falls die Auswahl des Benutzers unklar ist. Leerer String wenn die Auswahl klar ist."

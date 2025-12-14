@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Annotated, Any
 
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.retrievers.RetrievalOverride import KnowledgeRetrievalOverride
@@ -9,7 +9,9 @@ from aihub_lib.nats.events.semantic.llm import LLMStopEvent
 from aihub_lib.nats.events.user import UserMessageEvent
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
 from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
+from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
+from pydantic import BaseModel, Field
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.agents.NamespaceSelectionAgent.configs.NamespaceSelectionAgentConfig import (
@@ -27,6 +29,47 @@ NAMESPACE_SELECTIONS_KEY = "namespace_selections"
 # RunContext keys for within-run state
 AVAILABLE_NAMESPACES_KEY = "available_namespaces"
 PARTIAL_SELECTIONS_KEY = "partial_selections"
+
+
+class NamespaceSelectionResult(BaseModel):
+    """Result of parsing a user's namespace selection response."""
+
+    selected_namespace: str | None
+    follow_up: str
+
+
+def namespace_selection_result_factory(
+    t: LocaleHandler,
+    valid_namespaces: list[str],
+) -> type[NamespaceSelectionResult]:
+    """
+    Creates a localized NamespaceSelectionResult class with constrained namespace options.
+
+    Uses Literal type to constrain selected_namespace to only valid options,
+    improving LLM accuracy with structured output.
+    """
+    # Build enum-like constraint for valid namespaces
+    if valid_namespaces:
+        from typing import Literal
+
+        # Create a Literal type with all valid namespace names
+        namespace_options = tuple(valid_namespaces)
+        NamespaceLiteral = Literal[namespace_options]  # type: ignore[valid-type]
+    else:
+        NamespaceLiteral = str  # type: ignore[misc]
+
+    class LocalizedNamespaceSelectionResult(NamespaceSelectionResult):
+        selected_namespace: Annotated[
+            NamespaceLiteral | None,
+            Field(description=t("agent.namespace_selection.fields.selected_namespace")),
+        ]
+        follow_up: Annotated[
+            str,
+            Field(description=t("agent.namespace_selection.fields.follow_up")),
+        ]
+
+    LocalizedNamespaceSelectionResult.__doc__ = t("agent.namespace_selection.prompts.parse_selection")
+    return LocalizedNamespaceSelectionResult
 
 
 @precondition()
@@ -320,7 +363,10 @@ class NamespaceSelectionAgent(Agent):
         displayer: EventDisplayer,
     ) -> dict[str, Any]:
         """
-        Parses user's selection response.
+        Parses user's selection response using structured LLM output.
+
+        Processes each bucket that still needs a selection, using the LLM's
+        structured_predict to reliably extract namespace choices.
 
         Returns:
             {
@@ -329,67 +375,57 @@ class NamespaceSelectionAgent(Agent):
                 "follow_up": str (question if incomplete)
             }
         """
-        formatted_options = self._format_namespace_options(available_namespaces, t)
+        merged_selections = {**partial_selections}
+        last_follow_up = ""
 
-        prompt = t("agent.namespace_selection.prompts.parse_selection")
-        messages = [
-            ChatMessage(
-                role=MessageRole.SYSTEM,
-                content=prompt,
-            ),
-            ChatMessage(
-                role=MessageRole.USER,
-                content=(
-                    f'User said: "{user_response}"\n\n'
-                    f"Available namespaces:\n{formatted_options}\n\n"
-                    f"Previous selections: {partial_selections}\n\n"
-                    f"Number of buckets to select from: {len(available_namespaces)}\n\n"
-                    "Respond with valid JSON containing:\n"
-                    '- "selections": object mapping bucket_id to namespace_name (string or null if not selected)\n'
-                    '- "complete": true if all buckets have a selection, false otherwise\n'
-                    '- "follow_up": question to ask if incomplete/unclear (empty string if complete)'
-                ),
-            ),
-        ]
+        # Process each bucket that doesn't have a selection yet
+        for bucket_id, bucket_info in available_namespaces.items():
+            if bucket_id in merged_selections:
+                continue  # Already have a selection for this bucket
 
-        async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            response: ChatResponse = await llm.achat(messages)
-            content = response.message.content or ""
+            # Get valid namespace names for this bucket
+            valid_namespaces = [ns["name"] for ns in bucket_info["namespaces"]]
+            formatted_options = self._format_single_bucket_options(bucket_info, t)
 
-            # Parse JSON from response
-            try:
-                import json
+            # Create constrained result model
+            result_class = namespace_selection_result_factory(t, valid_namespaces)
+            prompt_template = PromptTemplate(t("agent.namespace_selection.prompts.parse_selection"))
 
-                # Try to extract JSON from the response
-                start_idx = content.find("{")
-                end_idx = content.rfind("}") + 1
-                if start_idx >= 0 and end_idx > start_idx:
-                    json_str = content[start_idx:end_idx]
-                    result = json.loads(json_str)
+            async with agent_config.llm.cost_reporting_llm(displayer) as llm:
+                result: NamespaceSelectionResult = llm.structured_predict(
+                    result_class,
+                    prompt_template,
+                    user_response=user_response,
+                    namespace_options=formatted_options,
+                )
 
-                    # Merge with partial selections
-                    merged_selections = {**partial_selections}
-                    for bucket_id, namespace in result.get("selections", {}).items():
-                        if namespace:
-                            merged_selections[bucket_id] = namespace
+            if result.selected_namespace:
+                merged_selections[bucket_id] = result.selected_namespace
+            else:
+                last_follow_up = result.follow_up
+                break  # Stop processing more buckets, ask for clarification first
 
-                    # Check if all buckets are selected
-                    complete = len(merged_selections) >= len(available_namespaces)
+        # Check if all buckets have selections
+        complete = len(merged_selections) >= len(available_namespaces)
 
-                    return {
-                        "complete": complete,
-                        "selections": merged_selections,
-                        "follow_up": result.get("follow_up", ""),
-                    }
-            except (json.JSONDecodeError, KeyError):
-                pass
+        return {
+            "complete": complete,
+            "selections": merged_selections,
+            "follow_up": last_follow_up if not complete else "",
+        }
 
-            # Fallback: couldn't parse, ask for clarification
-            return {
-                "complete": False,
-                "selections": partial_selections,
-                "follow_up": t("agent.namespace_selection.messages.clarification_needed"),
-            }
+    def _format_single_bucket_options(
+        self,
+        bucket_info: dict[str, Any],
+        t: LocaleHandler,
+    ) -> str:
+        """Formats namespace options for a single bucket."""
+        lines = []
+        for ns in bucket_info["namespaces"]:
+            ns_display = ns.get("display_name", {})
+            ns_name = t.extract(LocaleString.model_validate(ns_display)) if ns_display else ns["name"]
+            lines.append(f"- {ns_name} (name: {ns['name']})")
+        return "\n".join(lines)
 
     def _format_namespace_options(
         self,

@@ -19,7 +19,17 @@ prompts:
     Chiedi semplicemente cosa vogliono cercare.
 
   parse_selection: |
-    Estrai la selezione dello spazio dei nomi dell'utente dalla sua risposta.
-    Abbina la sua risposta agli spazi dei nomi disponibili.
-    Sii flessibile - accetta corrispondenze parziali, sinonimi o descrizioni.
-    Se non è chiaro, genera una domanda di follow-up utile.
+    Stai estraendo la selezione dello spazio dei nomi dell'utente dalla sua risposta.
+
+    Risposta dell'utente: {user_response}
+
+    Spazi dei nomi disponibili:
+    {namespace_options}
+
+    Seleziona lo spazio dei nomi che meglio corrisponde a ciò che l'utente desidera.
+    Se l'intenzione dell'utente è chiara, imposta selected_namespace sul nome dello spazio dei nomi corrispondente.
+    Se non è chiaro, imposta selected_namespace su null e fornisci una domanda di follow-up utile in follow_up.
+
+fields:
+  selected_namespace: "Il nome interno (dal campo 'name') dello spazio dei nomi selezionato dall'utente, o null se la selezione non è chiara"
+  follow_up: "Una domanda di chiarimento se la selezione dell'utente non è chiara. Stringa vuota se la selezione è chiara."
