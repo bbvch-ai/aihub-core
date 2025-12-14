@@ -15,6 +15,18 @@ class AIHubSettings(EnvironmentSettings):
         bool, Field(description="Creates default roles like AI-Hub Admin and AI-Hub User")
     ] = True
 
+    CREATE_DEFAULT_KNOWLEDGE: Annotated[
+        bool, Field(description="Creates default knowledge bucket and namespace at startup")
+    ] = True
+
+    DEFAULT_KNOWLEDGE_BUCKET: Annotated[str, Field(description="Name of the default knowledge bucket to create")] = (
+        "defaultknowledge"
+    )
+
+    DEFAULT_KNOWLEDGE_NAMESPACE: Annotated[
+        str, Field(description="Name of the default namespace within the knowledge bucket")
+    ] = "defaultnamespace"
+
     FRONTEND_ORIGIN: Annotated[str, Field(description="Comma separated list of origins to allow CORS")]
 
     MONGO_MAIN_DB_NAME: Annotated[
