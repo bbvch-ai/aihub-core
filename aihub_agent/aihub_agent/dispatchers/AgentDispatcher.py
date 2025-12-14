@@ -108,8 +108,12 @@ class AgentDispatcher(BaseDispatcher):
 
                 # Route the response event using the original request's topic
                 # This continues the existing run instead of starting a new one
-                event = response_event
                 topic = pending_request.topic
+
+                # Store the converted event in the event store so step readiness checks can find it
+                await self.event_store.ensure_event_stored(topic.execution_context_id, response_event)
+
+                event = response_event
                 run_context = RunContext.for_topic(self.redis, topic)
                 logger.debug(f"Converted to HumanInTheLoopChatResponseEvent, routing to run {topic.run_id}")
 
