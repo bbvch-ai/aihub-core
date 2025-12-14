@@ -103,6 +103,8 @@ class AgentDispatcher(BaseDispatcher):
                     response=event.user_query,
                     request_event=pending_request,
                 )
+                # Copy the sequence number from the original event for event store filtering
+                response_event._jetstream_sequence = event._jetstream_sequence
 
                 # Route the response event using the original request's topic
                 # This continues the existing run instead of starting a new one
