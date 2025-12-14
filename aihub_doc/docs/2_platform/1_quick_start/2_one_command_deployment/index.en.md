@@ -196,6 +196,9 @@ MILVUS_DIMENSION="3072"
 # -----------------------------------------------------------------------------
 AIHUB_API_VERSION="latest"
 AIHUB_CREATE_DEFAULT_ROLES="True"
+AIHUB_CREATE_DEFAULT_KNOWLEDGE="True"
+AIHUB_DEFAULT_KNOWLEDGE_BUCKET="defaultknowledge"
+AIHUB_DEFAULT_KNOWLEDGE_NAMESPACE="defaultnamespace"
 
 # Admin Settings
 ADMIN_EMAIL="admin@your-company.com"

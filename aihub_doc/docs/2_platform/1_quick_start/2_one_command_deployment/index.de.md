@@ -136,6 +136,9 @@ SUPERUSER_TOKEN="REPLACE_WITH_RANDOM_STRING"
 AIHUB_API_VERSION="dev"
 AIHUB_FRONTEND_ORIGIN="https://REPLACE_WITH_YOUR_DOMAIN"
 AIHUB_CREATE_DEFAULT_ROLES="True"
+AIHUB_CREATE_DEFAULT_KNOWLEDGE="True"
+AIHUB_DEFAULT_KNOWLEDGE_BUCKET="defaultknowledge"
+AIHUB_DEFAULT_KNOWLEDGE_NAMESPACE="defaultnamespace"
 
 # =============================================================================
 # AI MODEL ACCESS (Configure at least one)
