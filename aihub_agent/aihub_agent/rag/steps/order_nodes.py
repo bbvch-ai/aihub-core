@@ -1,14 +1,14 @@
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
-from llama_index.core.schema import NodeWithScore
 
 from aihub_agent.rag.events import InOrderNodeCombinerEvent
 
 
 async def execute_order_nodes_by_documents(
-    nodes: list[NodeWithScore],
+    nodes: list[IngestedNode],
     t: LocaleHandler,
     displayer: EventDisplayer,
     context_prompt: LocaleString | None = None,

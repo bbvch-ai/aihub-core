@@ -3,10 +3,10 @@
 from typing import Literal
 
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.resources.models.llm.RerankingModelConfig import RerankingModelConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import AgentInTheLoop, RetrievalResponseEvent
-from llama_index.core.schema import NodeWithScore
 
 from aihub_agent.rag.events import CombinedRetrievalEvent
 from aihub_agent.rag.steps.order_nodes import execute_order_nodes_by_documents
@@ -37,7 +37,7 @@ async def execute_combine_retrieval_results(
     Returns:
         CombinedRetrievalEvent with context message, nodes, and metadata.
     """
-    all_nodes: list[NodeWithScore] = []
+    all_nodes: list[IngestedNode] = []
     agent_ids: list[str] = []
     retrieval_types: set[str] = set()
 

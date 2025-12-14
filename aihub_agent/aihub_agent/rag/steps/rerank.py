@@ -1,13 +1,13 @@
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.resources.models.llm.RerankingModelConfig import RerankingModelConfig
 from aihub_lib.generative_ai.utils.rerank_nodes import rerank_nodes
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events.semantic.reranker import RerankerEvent
-from llama_index.core.schema import NodeWithScore
 
 
 async def execute_rerank_nodes(
-    nodes: list[NodeWithScore],
+    nodes: list[IngestedNode],
     query: str,
     reranking_model: RerankingModelConfig,
     displayer: EventDisplayer,

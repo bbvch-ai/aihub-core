@@ -1,8 +1,8 @@
 from typing import Annotated
 
+from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.nats.events import ControlEvent
 from llama_index.core.base.llms.types import ChatMessage
-from llama_index.core.schema import NodeWithScore
 from pydantic import Field
 
 
@@ -17,7 +17,7 @@ class CombinedRetrievalEvent(ControlEvent):
     context_message: Annotated[
         ChatMessage, Field(description="The combined context message from all retrieval sources.")
     ]
-    nodes: Annotated[list[NodeWithScore], Field(description="All retrieved nodes combined from all sources.")]
+    nodes: Annotated[list[IngestedNode], Field(description="All retrieved nodes combined from all sources.")]
     knowledge_agent_ids: Annotated[
         list[str], Field(description="List of knowledge retrieval agent IDs that contributed to the results.")
     ]
