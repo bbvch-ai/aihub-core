@@ -15,6 +15,6 @@ Feature: Namespace Selection Agent
 
   Scenario: Test subsequent messages delegate to RAG agent
     Given a NamespaceSelectionAgent runner with existing namespace selection
-    When the user sends a message "Tell me about vacation policies"
+    When the user sends a subsequent message "Tell me about vacation policies"
     Then an AgentInTheLoopRequestEvent is present for RAGAgent
     * the RAGUserMessageEvent includes namespace overrides

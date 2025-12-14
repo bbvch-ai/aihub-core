@@ -32,6 +32,7 @@ from aihub_agent.agents.NamespaceSelectionAgent.configs.NamespaceSelectionAgentC
 )
 from aihub_agent.agents.RagAgent import RAGAgent
 from aihub_agent.agents.RagAgent.configs.RetrievalAgentReference import RetrievalAgentReference
+from aihub_agent.context.thread.ThreadContext import ThreadContext
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 enable_logging()
@@ -191,16 +192,40 @@ async def _(agent_runner: AgentTestRunner, namespace: str):
             await agent_runner.send_event_from_topic(start_event=user_event, topic=topic)
 
             # Wait for HITL chat request
-            hitl_request = await agent_runner.wait_for_event(HumanInTheLoopChatRequestEvent)
+            hitl_request = await agent_runner.wait_for_event(HumanInTheLoopChatRequestEvent, timeout=TIMEOUT)
 
-            # Send user's selection
+            # Send user's selection response
+            response_event = HumanInTheLoop.chat.response(
+                response=f"I want to use {namespace}",
+                request_event=hitl_request,
+            )
             await agent_runner.send_event_from_topic(
-                start_event=HumanInTheLoop.chat.response(
-                    response=f"I want to use {namespace}",
-                    request_event=hitl_request,
-                ),
+                start_event=response_event,
                 topic=hitl_request.topic,
             )
+
+            # Wait for agent to process and emit AgentInTheLoopRequestEvent
+            await agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
+
+
+@when(parsers.parse('the user sends a subsequent message "{query}"'))
+@async_test
+async def _(agent_runner: AgentTestRunner, query: str):
+    """When the user sends a subsequent message (with existing namespace selection)."""
+    async with agent_runner.test_run() as topic:
+        # Pre-populate ThreadContext with namespace selection BEFORE sending the message
+        thread_context = ThreadContext(agent_runner.redis, topic.thread_id)
+        await thread_context.set("namespace_selections", {"test_bucket_id": "hr"})
+
+        user_event = UserMessageEvent(
+            messages=[ChatMessage(role=MessageRole.USER, content=query)],
+            user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
+            locale="en",
+        )
+        await agent_runner.send_event_from_topic(start_event=user_event, topic=topic)
+
+        # Should delegate directly to RAG without asking for selection
+        await agent_runner.wait_for_event(AgentInTheLoopRequestEvent, timeout=TIMEOUT)
 
 
 # ==================== Then Steps ====================
