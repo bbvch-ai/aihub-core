@@ -116,15 +116,7 @@ router:
       Beantwortet die Antwort des Experten die Frage des Benutzers?
 
       <expert_response>
-      {% for message in chat_history %}
-      {% if message.role.value == 'user' %}
-      {% for block in message.blocks %}
-      {% if block.block_type == 'text' %}
-      {{ block.text }}
-      {% endif %}
-      {% endfor %}
-      {% endif %}
-      {% endfor %}
+      {{ expert_response }}
       </expert_response>
 
       <user_question>
@@ -136,7 +128,7 @@ router:
       - Der Experte ausdrücklich sagt, dass er es nicht weiss oder die Antwort verweigert
       - Die Frage mehrere Teile hat und nur einige beantwortet wurden
 
-      Analysieren Sie den Chat-Verlauf sorgfältig in Bezug auf die Frage des Benutzers. Bestimmen Sie, ob der Experte die Frage basierend auf den oben genannten Kriterien bereits ausreichend beantwortet hat. Geben Sie eine klare Entscheidung mit detaillierter Begründung an.
+      Analysieren Sie die Antwort des Experten sorgfältig in Bezug auf die Frage des Benutzers. Bestimmen Sie, ob der Experte die Frage basierend auf den oben genannten Kriterien ausreichend beantwortet hat. Geben Sie eine klare Entscheidung mit detaillierter Begründung an.
 
 summarizer:
   summarize: |

@@ -114,15 +114,7 @@ router:
       La réponse de l'expert répond-elle à la question de l'utilisateur ?
 
       <expert_response>
-      {% for message in chat_history %}
-      {% if message.role.value == 'user' %}
-      {% for block in message.blocks %}
-      {% if block.block_type == 'text' %}
-      {{ block.text }}
-      {% endif %}
-      {% endfor %}
-      {% endif %}
-      {% endfor %}
+      {{ expert_response }}
       </expert_response>
 
       <user_question>
@@ -134,7 +126,7 @@ router:
       - L'expert dit explicitement qu'il ne sait pas ou refuse de répondre
       - La question comporte plusieurs parties et seules certaines ont été répondues
 
-      Analysez soigneusement l'historique du chat par rapport à la question de l'utilisateur. Déterminez si l'expert a déjà suffisamment répondu à la question selon les critères ci-dessus. Fournissez une décision claire avec un raisonnement détaillé.
+      Analysez soigneusement la réponse de l'expert par rapport à la question de l'utilisateur. Déterminez si l'expert a suffisamment répondu à la question selon les critères ci-dessus. Fournissez une décision claire avec un raisonnement détaillé.
 summarizer:
   summarize: |
     Tâche : Résume le texte suivant sous forme de TL;DR :

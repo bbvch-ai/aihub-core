@@ -114,15 +114,7 @@ router:
       La risposta dell'esperto risponde alla domanda dell'utente?
 
       <expert_response>
-      {% for message in chat_history %}
-      {% if message.role.value == 'user' %}
-      {% for block in message.blocks %}
-      {% if block.block_type == 'text' %}
-      {{ block.text }}
-      {% endif %}
-      {% endfor %}
-      {% endif %}
-      {% endfor %}
+      {{ expert_response }}
       </expert_response>
 
       <user_question>
@@ -134,7 +126,7 @@ router:
       - L'esperto dice esplicitamente che non sa o rifiuta di rispondere
       - La domanda ha più parti e solo alcune sono state risposte
 
-      Analizza attentamente la cronologia della chat in relazione alla domanda dell'utente. Determina se l'esperto ha già risposto sufficientemente alla domanda in base ai criteri sopra indicati. Fornisci una decisione chiara con un ragionamento dettagliato.
+      Analizza attentamente la risposta dell'esperto in relazione alla domanda dell'utente. Determina se l'esperto ha risposto sufficientemente alla domanda in base ai criteri sopra indicati. Fornisci una decisione chiara con un ragionamento dettagliato.
 summarizer:
   summarize: |
     Compito: Riassumi il testo seguente come TL;DR:  

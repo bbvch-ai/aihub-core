@@ -148,7 +148,7 @@ async def _(agent_runner: AgentTestRunner):
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=AskExpertStartEvent(
-                question_to_expert="What are the specific steps to configure SSL certificates in nginx?",
+                question_to_expert="What is the capital of Switzerland and what is its population?",
                 locale="en",
                 user=user,
             ),
@@ -180,17 +180,10 @@ async def _(agent_runner: AgentTestRunner):
         await agent_runner.send_event_from_topic(
             topic=bitl_request_2.topic,
             start_event=BotInTheLoopResponseEvent(
-                response="Here are the specific steps to configure SSL in nginx:\n"
-                "1. Obtain SSL certificate files (cert.pem and key.pem)\n"
-                "2. Place them in /etc/nginx/ssl/\n"
-                "3. Edit /etc/nginx/sites-available/your-site with:\n"
-                "   server {\n"
-                "     listen 443 ssl;\n"
-                "     ssl_certificate /etc/nginx/ssl/cert.pem;\n"
-                "     ssl_certificate_key /etc/nginx/ssl/key.pem;\n"
-                "   }\n"
-                "4. Test config with 'nginx -t'\n"
-                "5. Reload nginx with 'systemctl reload nginx'",
+                response="The capital of Switzerland is Bern (de facto capital, officially the Federal City). "
+                "Bern has a population of approximately 133,000 in the city proper, and about 420,000 in the "
+                "greater metropolitan area as of 2023. Note that Switzerland does not have a de jure capital, "
+                "but Bern serves as the seat of government.",
                 request_event=bitl_request_2,
                 responder=create_expert_responder(),
             ),
@@ -208,7 +201,7 @@ async def _(agent_runner: AgentTestRunner):
         await agent_runner.send_event_from_topic(
             topic=topic,
             start_event=AskExpertStartEvent(
-                question_to_expert="Explain the complete architecture of distributed consensus algorithms.",
+                question_to_expert="What is the capital of Switzerland and what is its population?",
                 locale="en",
                 user=user,
             ),

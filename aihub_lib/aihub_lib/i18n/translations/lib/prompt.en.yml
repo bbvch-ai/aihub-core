@@ -114,15 +114,7 @@ router:
       Does the expert's response answer the user's question?
 
       <expert_response>
-      {% for message in chat_history %}
-      {% if message.role.value == 'user' %}
-      {% for block in message.blocks %}
-      {% if block.block_type == 'text' %}
-      {{ block.text }}
-      {% endif %}
-      {% endfor %}
-      {% endif %}
-      {% endfor %}
+      {{ expert_response }}
       </expert_response>
 
       <user_question>
@@ -134,7 +126,7 @@ router:
       - The expert explicitly says they don't know or refuses to answer
       - The question has multiple parts and only some were answered
 
-      Analyze the chat history carefully in relation to the user's question. Determine whether the expert has already sufficiently answered the question based on the criteria above. Provide a clear decision with detailed reasoning.
+      Analyze the expert's response carefully in relation to the user's question. Determine whether the expert has sufficiently answered the question based on the criteria above. Provide a clear decision with detailed reasoning.
 summarizer:
   summarize: |
     Task: Summarize the following text as a TL;DR:

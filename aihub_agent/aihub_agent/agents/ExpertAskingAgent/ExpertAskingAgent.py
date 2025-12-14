@@ -88,7 +88,7 @@ class ExpertAskingAgent(Agent):
 
         instructions = RichPromptTemplate(
             template_str=t("lib.prompt.router.instructions.expert_answer_sufficient"),
-        ).format(chat_history=chat_history, query=initial_question_event.question_to_expert)
+        ).format(expert_response=expert_response, query=initial_question_event.question_to_expert)
 
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             return await route_to_event_using_llm(
