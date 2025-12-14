@@ -2,6 +2,7 @@ import asyncio
 
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
@@ -19,6 +20,7 @@ enable_logging()
 
 
 async def main():
+    settings = AIHubSettings()
     servers_list = [NatsSettings().ENDPOINT]
     runner = AgentRunner(
         agent_type=NamespaceSelectionAgent,
@@ -40,7 +42,7 @@ async def main():
             llm=LLMConfig(model_name="text-generation/mini"),
             # Reference the default bucket by name - this should match the bucket configured in the database
             buckets=[
-                BucketReference(bucket_name="defaultknowledge"),
+                BucketReference(bucket_name=settings.DEFAULT_KNOWLEDGE_BUCKET),
             ],
             # Delegate to the RAG agent after namespace selection
             rag_agent=RetrievalAgentReference(

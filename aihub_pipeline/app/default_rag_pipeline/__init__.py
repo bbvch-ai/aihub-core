@@ -1,11 +1,14 @@
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.logging import enable_logging
 
 from aihub_pipeline.util.definitions_util import default_definitions
 
 enable_logging()
 
+settings = AIHubSettings()
+
 defs = default_definitions(
-    datalake_container_name="defaultknowledge",
+    datalake_container_name=settings.DEFAULT_KNOWLEDGE_BUCKET,
     embedding_model_name="embedding/large",
     llm_model_name="text-generation/mini",
     with_summary_nodes=True,

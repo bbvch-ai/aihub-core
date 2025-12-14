@@ -6,6 +6,7 @@ from aihub_lib.generative_ai.processors.models.RetrieveSummariesConfig import Re
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
@@ -23,6 +24,7 @@ enable_logging()
 
 
 async def main():
+    settings = AIHubSettings()
     servers_list = [NatsSettings().ENDPOINT]
     runner = AgentRunner(
         agent_type=KnowledgeRetrievalAgent,
@@ -45,10 +47,10 @@ async def main():
                 embed_model=EmbeddingModelConfig(model_name="embedding/large"),
                 vector_store=MilvusVectorStoreConfig(
                     uri=MilvusSettings().URL,
-                    collection_name="defaultknowledge",
+                    collection_name=settings.DEFAULT_KNOWLEDGE_BUCKET,
                     dimensions=MilvusSettings().DIMENSION,
                 ),
-                namespaces=["defaultnamespace"],
+                namespaces=[settings.DEFAULT_KNOWLEDGE_NAMESPACE],
                 retrieve_k=10,
                 query_mode=VectorStoreQueryMode.HYBRID,
                 node_types=["content"],
