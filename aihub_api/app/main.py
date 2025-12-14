@@ -12,6 +12,7 @@ from aihub_api.routes.event.EventController import EventController
 from aihub_api.routes.file.FileController import FileController
 from aihub_api.routes.i18n.I18nController import I18nController
 from aihub_api.routes.knowledge.KnowledgeController import KnowledgeController
+from aihub_api.routes.model.ModelController import ModelController
 from aihub_api.routes.notification.NotificationController import NotificationController
 from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_api.routes.process.ProcessController import ProcessController
@@ -48,12 +49,14 @@ runner.mount(
     .get_process()
     .get_processes()
     .discover_processes()
+    .get_process_walkthroughs()
     .get_process_start_forms()
     .get_process_open_forms()
     .send_process_start_form()
     .send_process_open_form(),
     TokenController(auth=auth).create_token().list_tokens().revoke_token(),
     RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
+    ModelController(auth=auth).get_models().get_model(),
     OpenaiController(auth=auth)
     .get_models()
     .get_model_with_assistants()
