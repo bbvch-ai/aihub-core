@@ -1899,6 +1899,58 @@ services:
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
   {%- endif %}
 
+  {% if image_tags.insight_retrieval_agent[stage] %}
+  insight_retrieval_agent:
+    container_name: insight-retrieval-agent
+    restart: always
+    {%- if image_tags.insight_retrieval_agent[stage] == 'localbuild' %}
+    build:
+      context: .
+      dockerfile: ./aihub_agent/app/insight_retrieval_agent/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.insight_retrieval_agent[stage] }}
+    {%- endif %}
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # MILVUS
+      MILVUS_URL: {{ MILVUS_ENDPOINT }}
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+
+      # S3 Access connection
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      S3_STORAGE_PUBLIC_ENDPOINT: {{ S3_STORAGE_PUBLIC_ENDPOINT }}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+
+      # NATs
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+
+      # REDIS
+      REDIS_URL: {{ VALKEY_ENDPOINT }}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+      OTEL_RESOURCE_SERVICE_NAME: insight-retrieval-agent
+      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+  {%- endif %}
+
   {% if image_tags.expert_rag_agent[stage] %}
   expert_rag_agent:
     container_name: expert-rag-agent
@@ -1947,6 +1999,58 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
       OTEL_RESOURCE_SERVICE_NAME: expert-rag-agent
+      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+  {%- endif %}
+
+  {% if image_tags.namespace_selection_agent[stage] %}
+  namespace_selection_agent:
+    container_name: namespace-selection-agent
+    restart: always
+    {%- if image_tags.namespace_selection_agent[stage] == 'localbuild' %}
+    build:
+      context: .
+      dockerfile: ./aihub_agent/app/namespace_selection_agent/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.namespace_selection_agent[stage] }}
+    {%- endif %}
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # MILVUS
+      MILVUS_URL: {{ MILVUS_ENDPOINT }}
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+
+      # S3 Access connection
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      S3_STORAGE_PUBLIC_ENDPOINT: {{ S3_STORAGE_PUBLIC_ENDPOINT }}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+
+      # NATs
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+
+      # REDIS
+      REDIS_URL: {{ VALKEY_ENDPOINT }}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+      OTEL_RESOURCE_SERVICE_NAME: namespace-selection-agent
       OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
   {%- endif %}

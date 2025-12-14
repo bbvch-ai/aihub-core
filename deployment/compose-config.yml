@@ -87,11 +87,23 @@ image_tags:
     nightly: knowledge_retrieval_agent:nightly
     latest: knowledge_retrieval_agent:latest
 
+  insight_retrieval_agent:
+    build: localbuild
+    local: insight_retrieval_agent:latest
+    nightly: insight_retrieval_agent:nightly
+    latest: insight_retrieval_agent:latest
+
   expert_rag_agent:
     build: localbuild
     local: expert_rag_agent:latest
     nightly: expert_rag_agent:nightly
     latest: expert_rag_agent:latest
+
+  namespace_selection_agent:
+    build: localbuild
+    local: namespace_selection_agent:latest
+    nightly: namespace_selection_agent:nightly
+    latest: namespace_selection_agent:latest
 
   default_rag_pipeline:
     build: localbuild
