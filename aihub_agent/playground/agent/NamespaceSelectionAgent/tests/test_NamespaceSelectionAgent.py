@@ -31,7 +31,7 @@ from aihub_agent.agents.NamespaceSelectionAgent.configs.NamespaceSelectionAgentC
     NamespaceSelectionAgentConfig,
 )
 from aihub_agent.agents.RagAgent import RAGAgent
-from aihub_agent.agents.RagAgent.configs.RetrievalAgentReference import RetrievalAgentReference
+from aihub_agent.agents.RagAgent.configs.AgentReference import AgentReference
 from aihub_agent.context.thread.ThreadContext import ThreadContext
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
@@ -96,7 +96,7 @@ def build_namespace_selection_agent_config(llm_config: LLMConfig) -> NamespaceSe
         buckets=[
             BucketReference(bucket_id="test_bucket_id"),
         ],
-        rag_agent=RetrievalAgentReference(
+        rag_agent=AgentReference(
             agent_class=RAGAgent.__name__,
             agent_id="test_rag_agent",
         ),

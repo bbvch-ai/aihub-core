@@ -6,8 +6,8 @@ from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
 
+from aihub_agent.agents.RagAgent.configs.AgentReference import AgentReference
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
-from aihub_agent.agents.RagAgent.configs.RetrievalAgentReference import RetrievalAgentReference
 
 
 class RAGAgentConfig(AgentConfig):
@@ -29,7 +29,7 @@ class RAGAgentConfig(AgentConfig):
 
     # Unified retrieval agents (0-n) - any retrieval agent type
     retrieval_agents: Annotated[
-        list[RetrievalAgentReference],
+        list[AgentReference],
         Field(description="List of retrieval agents to invoke (any type: knowledge, insight, sql, etc.)."),
     ] = []
 

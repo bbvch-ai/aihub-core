@@ -3,12 +3,9 @@ from typing import Annotated
 from pydantic import BaseModel, Field
 
 
-class RetrievalAgentReference(BaseModel):
+class AgentReference(BaseModel):
     """
-    Reference to a retrieval agent, containing both agent class and ID.
-
-    Used by RAGAgent and ExpertRAGAgent to specify which retrieval agents to invoke
-    during the retrieval step. Both fields are required for AgentInTheLoop invocation.
+    Reference to an agent, containing both agent class and ID.
     """
 
     agent_class: Annotated[

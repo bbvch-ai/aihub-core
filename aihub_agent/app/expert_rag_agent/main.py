@@ -9,7 +9,7 @@ from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_agent.agents import ExpertRAGAgent, InsightRetrievalAgent, KnowledgeRetrievalAgent
 from aihub_agent.agents.ExpertRagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
 from aihub_agent.agents.ExpertRagAgent.configs.ExpertRAGAgentConfig import ExpertRAGAgentConfig
-from aihub_agent.agents.RagAgent.configs.RetrievalAgentReference import RetrievalAgentReference
+from aihub_agent.agents.RagAgent.configs.AgentReference import AgentReference
 from aihub_agent.runners.AgentRunner import AgentRunner
 
 enable_logging()
@@ -137,10 +137,8 @@ async def main():
                 """,
             ),
             retrieval_agents=[
-                RetrievalAgentReference(
-                    agent_class=KnowledgeRetrievalAgent.__name__, agent_id="knowledge_retrieval_agent"
-                ),
-                RetrievalAgentReference(agent_class=InsightRetrievalAgent.__name__, agent_id="insight_retrieval_agent"),
+                AgentReference(agent_class=KnowledgeRetrievalAgent.__name__, agent_id="knowledge_retrieval_agent"),
+                AgentReference(agent_class=InsightRetrievalAgent.__name__, agent_id="insight_retrieval_agent"),
             ],
         ),
         redis_url=RedisSettings().URL,

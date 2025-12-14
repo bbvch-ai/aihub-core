@@ -31,8 +31,8 @@ from dotenv import load_dotenv
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
 
+from aihub_agent.agents.RagAgent.configs.AgentReference import AgentReference
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.RagAgent.configs.RetrievalAgentReference import RetrievalAgentReference
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
 from aihub_agent.rag.events import (
     CombinedRetrievalEvent,
@@ -75,7 +75,7 @@ def build_rag_agent_config(llm_config: LLMConfig) -> RAGAgentConfig:
         description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
         llm=llm_config,
         retrieval_agents=[
-            RetrievalAgentReference(agent_class=KnowledgeRetrievalAgent.__name__, agent_id="test_knowledge_agent"),
+            AgentReference(agent_class=KnowledgeRetrievalAgent.__name__, agent_id="test_knowledge_agent"),
         ],
         number_of_input_tokens=8192,
         check_context_sufficiency=False,

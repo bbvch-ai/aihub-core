@@ -13,7 +13,7 @@ from aihub_agent.agents.NamespaceSelectionAgent.configs.NamespaceSelectionAgentC
     NamespaceSelectionAgentConfig,
 )
 from aihub_agent.agents.RagAgent import RAGAgent
-from aihub_agent.agents.RagAgent.configs.RetrievalAgentReference import RetrievalAgentReference
+from aihub_agent.agents.RagAgent.configs.AgentReference import AgentReference
 from aihub_agent.runners.AgentRunner import AgentRunner
 
 enable_logging()
@@ -45,7 +45,7 @@ async def main():
                 BucketReference(bucket_name=settings.DEFAULT_KNOWLEDGE_BUCKET),
             ],
             # Delegate to the dev RAG agent after namespace selection
-            rag_agent=RetrievalAgentReference(
+            rag_agent=AgentReference(
                 agent_class=RAGAgent.__name__,
                 agent_id="rag_dev_agent",
             ),

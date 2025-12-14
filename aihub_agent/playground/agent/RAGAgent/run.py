@@ -7,8 +7,8 @@ from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 
 from aihub_agent.agents import KnowledgeRetrievalAgent
+from aihub_agent.agents.RagAgent.configs.AgentReference import AgentReference
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.RagAgent.configs.RetrievalAgentReference import RetrievalAgentReference
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
 from aihub_agent.runners.AgentRunner import AgentRunner
 
@@ -126,9 +126,7 @@ async def main():
                 """,
             ),
             retrieval_agents=[
-                RetrievalAgentReference(
-                    agent_class=KnowledgeRetrievalAgent.__name__, agent_id="knowledge_retrieval_dev_agent"
-                )
+                AgentReference(agent_class=KnowledgeRetrievalAgent.__name__, agent_id="knowledge_retrieval_dev_agent")
             ],
         ),
         redis_url=RedisSettings().URL,

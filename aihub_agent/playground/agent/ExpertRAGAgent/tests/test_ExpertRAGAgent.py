@@ -35,7 +35,7 @@ from aihub_agent.agents.ExpertRagAgent.configs.ExpertEscalationConfig import Exp
 from aihub_agent.agents.ExpertRagAgent.configs.ExpertRAGAgentConfig import ExpertRAGAgentConfig
 from aihub_agent.agents.ExpertRagAgent.events.UserRequestsExpertEvent import UserRequestsExpertEvent
 from aihub_agent.agents.ExpertRagAgent.ExpertRAGAgent import ExpertRAGAgent
-from aihub_agent.agents.RagAgent.configs.RetrievalAgentReference import RetrievalAgentReference
+from aihub_agent.agents.RagAgent.configs.AgentReference import AgentReference
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 enable_logging()
@@ -74,8 +74,8 @@ def expert_rag_agent_config():
         llm=llm_config,
         # Required: at least one retrieval agent (one knowledge + one insight)
         retrieval_agents=[
-            RetrievalAgentReference(agent_class=KnowledgeRetrievalAgent.__name__, agent_id="test_knowledge_agent"),
-            RetrievalAgentReference(agent_class=InsightRetrievalAgent.__name__, agent_id="test_insight_agent"),
+            AgentReference(agent_class=KnowledgeRetrievalAgent.__name__, agent_id="test_knowledge_agent"),
+            AgentReference(agent_class=InsightRetrievalAgent.__name__, agent_id="test_insight_agent"),
         ],
         # Required: where to write new insights
         write_insight_namespace="test_namespace",

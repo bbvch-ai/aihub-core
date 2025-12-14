@@ -7,8 +7,8 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field, model_validator
 
 from aihub_agent.agents.ExpertRagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
+from aihub_agent.agents.RagAgent.configs.AgentReference import AgentReference
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
-from aihub_agent.agents.RagAgent.configs.RetrievalAgentReference import RetrievalAgentReference
 
 
 class ExpertRAGAgentConfig(AgentConfig):
@@ -36,7 +36,7 @@ class ExpertRAGAgentConfig(AgentConfig):
 
     # Unified retrieval agents - requires at least one insight retrieval agent
     retrieval_agents: Annotated[
-        list[RetrievalAgentReference],
+        list[AgentReference],
         Field(description="List of retrieval agents. REQUIRED: at least one must be an insight retrieval agent."),
     ]
 

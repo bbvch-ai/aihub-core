@@ -5,13 +5,13 @@ from typing import Literal
 from aihub_lib.generative_ai.retrievers import RetrievalOverride
 from aihub_lib.nats.events import AgentInTheLoop, RetrievalStartEvent
 
-from aihub_agent.agents.RagAgent.configs.RetrievalAgentReference import RetrievalAgentReference
+from aihub_agent.agents.RagAgent.configs.AgentReference import AgentReference
 
 
 def execute_invoke_retrieval(
     query: str,
     locale: Literal["de", "en", "fr", "it"],
-    retrieval_agents: list[RetrievalAgentReference],
+    retrieval_agents: list[AgentReference],
     retrieval_overrides: dict[str, RetrievalOverride] | None = None,
 ) -> list[AgentInTheLoop.request]:
     """

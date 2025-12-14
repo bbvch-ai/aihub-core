@@ -6,7 +6,7 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
 
 from aihub_agent.agents.NamespaceSelectionAgent.configs.BucketReference import BucketReference
-from aihub_agent.agents.RagAgent.configs.RetrievalAgentReference import RetrievalAgentReference
+from aihub_agent.agents.RagAgent.configs.AgentReference import AgentReference
 
 
 class NamespaceSelectionAgentConfig(AgentConfig):
@@ -27,7 +27,7 @@ class NamespaceSelectionAgentConfig(AgentConfig):
     ]
 
     rag_agent: Annotated[
-        RetrievalAgentReference,
+        AgentReference,
         Field(description="The RAG agent to delegate to after namespace selection is complete."),
     ]
 
