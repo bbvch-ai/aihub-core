@@ -8,6 +8,9 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
+)
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
@@ -155,10 +158,13 @@ async def _(agent_runner: AgentTestRunner, query: str):
         async with agent_runner.test_run() as topic:
             user_event = UserMessageEvent(
                 messages=[ChatMessage(role=MessageRole.USER, content=query)],
-                user_query=query,
+                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
                 locale="en",
             )
             await agent_runner.send_event_from_topic(start_event=user_event, topic=topic)
+
+            # Wait for the HITL chat request event
+            await agent_runner.wait_for_event(HumanInTheLoopChatRequestEvent, timeout=TIMEOUT)
 
 
 @when(parsers.parse('the user sends a message and selects "{namespace}" namespace'))
@@ -179,7 +185,7 @@ async def _(agent_runner: AgentTestRunner, namespace: str):
         async with agent_runner.test_run() as topic:
             user_event = UserMessageEvent(
                 messages=[ChatMessage(role=MessageRole.USER, content="Search HR documents")],
-                user_query="Search HR documents",
+                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
                 locale="en",
             )
             await agent_runner.send_event_from_topic(start_event=user_event, topic=topic)

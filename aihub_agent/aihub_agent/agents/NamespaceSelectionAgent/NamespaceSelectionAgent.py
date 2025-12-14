@@ -272,13 +272,13 @@ class NamespaceSelectionAgent(Agent):
             for ns in namespaces:
                 ns_info = {
                     "name": ns.namespace_name,
-                    "display_name": ns.display_name.to_locale_string().to_dict() if ns.display_name else None,
+                    "display_name": (ns.display_name.to_locale_string().model_dump() if ns.display_name else None),
                 }
                 namespace_list.append(ns_info)
 
             result[bucket_id] = {
                 "bucket_name": bucket.bucket_name,
-                "bucket_display_name": bucket.name.to_locale_string().to_dict() if bucket.name else None,
+                "bucket_display_name": bucket.name.to_locale_string().model_dump() if bucket.name else None,
                 "namespaces": namespace_list,
             }
 
@@ -403,7 +403,7 @@ class NamespaceSelectionAgent(Agent):
         for bucket_id, bucket_info in available_namespaces.items():
             bucket_display = bucket_info.get("bucket_display_name", {})
             if bucket_display:
-                bucket_name = t.extract(LocaleString.from_dict(bucket_display))
+                bucket_name = t.extract(LocaleString.model_validate(bucket_display))
             else:
                 bucket_name = bucket_info["bucket_name"]
             lines.append(f"\nBucket: {bucket_name} (ID: {bucket_id})")
@@ -411,7 +411,7 @@ class NamespaceSelectionAgent(Agent):
 
             for ns in bucket_info["namespaces"]:
                 ns_display = ns.get("display_name", {})
-                ns_name = t.extract(LocaleString.from_dict(ns_display)) if ns_display else ns["name"]
+                ns_name = t.extract(LocaleString.model_validate(ns_display)) if ns_display else ns["name"]
                 lines.append(f"  - {ns_name} (name: {ns['name']})")
 
         return "\n".join(lines)
