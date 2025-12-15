@@ -86,6 +86,15 @@ class ExpertRAGAgentConfig(AgentConfig):
         LocaleString | None,
         Field(description="System prompt to guide the agent's behavior and responses."),
     ] = None
+    context_insufficient_prompt: Annotated[
+        LocaleString | None,
+        Field(description="Prompt used when the retrieved context is insufficient to answer the user's question."),
+    ] = LocaleString(
+        en=("Inform the user that you can not answer the question due to the following reason:"),
+        de=("Informiere den Benutzer, dass du die Frage nicht beantworten kannst, aufgrund des folgenden Grundes:"),
+        fr=("Informez l'utilisateur que vous ne pouvez pas répondre à la question pour la raison suivante :"),
+        it=("Informa l'utente che non puoi rispondere alla domanda per il seguente motivo:"),
+    )
 
     @model_validator(mode="after")
     def validate_retrieval_agents_required(self) -> "ExpertRAGAgentConfig":

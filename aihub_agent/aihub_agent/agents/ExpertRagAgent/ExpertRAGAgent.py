@@ -482,4 +482,5 @@ class ExpertRAGAgent(Agent):
             displayer=displayer,
             system_prompt=agent_config.system_prompt,
             reject_reason=reject_reason,
+            context_insufficient_prompt=agent_config.context_insufficient_prompt,
         )

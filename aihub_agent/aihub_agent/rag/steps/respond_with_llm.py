@@ -4,7 +4,6 @@ from aihub_lib.generative_ai.resources.models.llm.message_preprocessor import me
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.semantic.llm import LLMStopEvent
-from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 
@@ -15,16 +14,19 @@ async def execute_respond_with_llm(
     displayer: EventDisplayer,
     system_prompt: LocaleString | None = None,
     reject_reason: str | None = None,
+    context_insufficient_prompt: LocaleString | None = None,
 ) -> LLMStopEvent:
     """
     Generates a response using the configured LLM.
     """
     # Add rejection context if provided
     if reject_reason:
+        context_insufficient_text = t.extract(context_insufficient_prompt)
+        prompt_text = t("agent.prompt.guard.reject").format(prompt=context_insufficient_text, reason=reject_reason)
         messages = messages + [
             ChatMessage(
                 role=MessageRole.SYSTEM,
-                content=PromptTemplate(t("agent.prompt.guard.reject")).format(reason=reject_reason),
+                content=prompt_text,
             ),
         ]
 
