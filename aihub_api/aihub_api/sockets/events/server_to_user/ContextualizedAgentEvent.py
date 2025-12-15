@@ -23,10 +23,13 @@ from aihub_lib.nats.events import (
     NewMemoryEvent,
     RerankerEvent,
     RetrieveMemoryEvent,
+    RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
+    RetrieveUserMemoryEvent,
     StandaloneQuestionCondenserEvent,
     StartEvent,
     StopEvent,
+    StoreOrganizationMemoryEvent,
     ThoughtEvent,
     ToolEvent,
     UserMessageEvent,
@@ -89,6 +92,9 @@ DisplayEvents = (
     | Annotated[SensitiveInfoRejectEvent, Tag("SensitiveInfoRejectEvent")]
     | Annotated[NewMemoryEvent, Tag("NewMemoryEvent")]
     | Annotated[RetrieveMemoryEvent, Tag("RetrieveMemoryEvent")]
+    | Annotated[RetrieveOrganizationMemoryEvent, Tag("RetrieveOrganizationMemoryEvent")]
+    | Annotated[RetrieveUserMemoryEvent, Tag("RetrieveUserMemoryEvent")]
+    | Annotated[StoreOrganizationMemoryEvent, Tag("StoreOrganizationMemoryEvent")]
 )
 
 

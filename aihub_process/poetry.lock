@@ -62,7 +62,7 @@ url = "../aihub_agent"
 
 [[package]]
 name = "aihub-lib"
-version = "v0.255.2"
+version = "v0.255.6"
 description = ""
 optional = false
 python-versions = ">=3.13, <3.14"

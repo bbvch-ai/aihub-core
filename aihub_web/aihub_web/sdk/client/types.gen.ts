@@ -2899,7 +2899,7 @@ export type ContextualizedAgentEventReadable = {
      * Event
      * Data of the event itself.
      */
-    event: StartEventReadable | AgentInTheLoopResponseEventReadable | HumanInTheLoopRequestEventReadable | AgentInTheLoopRequestEventReadable | AgentInTheLoopExceptionEventReadable | HumanInTheLoopResponseEventReadable | LimitChatHistoryEventReadable | AddMemoryToChatHistoryEventReadable | StandaloneQuestionCondenserEventReadable | LlmCostEventReadable | ChunkEventReadable | ThoughtEventReadable | GuardEventReadable | RouterEventReadable | GuardRejectionEventReadable | SemanticEventReadable | AgentEventReadable | ChainEventReadable | EmbeddingEventReadable | LlmEventReadable | LlmStopEventReadable | RerankerEventReadable | RetrieverEventReadable | ToolEventReadable | UserMessageEventReadable | ExceptionEventReadable | StopEventReadable | DisplayEventReadable | GuardAcceptEventReadable | AgentSuitabilityAcceptEventReadable | AgentSuitabilityRejectEventReadable | ContextSufficientAcceptEventReadable | ContextInsufficientRejectEventReadable | FewShotAcceptEventReadable | FewShotRejectEventReadable | SensitiveInfoAcceptEventReadable | SensitiveInfoRejectEventReadable | NewMemoryEventReadable | RetrieveMemoryEventReadable;
+    event: StartEventReadable | AgentInTheLoopResponseEventReadable | HumanInTheLoopRequestEventReadable | AgentInTheLoopRequestEventReadable | AgentInTheLoopExceptionEventReadable | HumanInTheLoopResponseEventReadable | LimitChatHistoryEventReadable | AddMemoryToChatHistoryEventReadable | StandaloneQuestionCondenserEventReadable | LlmCostEventReadable | ChunkEventReadable | ThoughtEventReadable | GuardEventReadable | RouterEventReadable | GuardRejectionEventReadable | SemanticEventReadable | AgentEventReadable | ChainEventReadable | EmbeddingEventReadable | LlmEventReadable | LlmStopEventReadable | RerankerEventReadable | RetrieverEventReadable | ToolEventReadable | UserMessageEventReadable | ExceptionEventReadable | StopEventReadable | DisplayEventReadable | GuardAcceptEventReadable | AgentSuitabilityAcceptEventReadable | AgentSuitabilityRejectEventReadable | ContextSufficientAcceptEventReadable | ContextInsufficientRejectEventReadable | FewShotAcceptEventReadable | FewShotRejectEventReadable | SensitiveInfoAcceptEventReadable | SensitiveInfoRejectEventReadable | NewMemoryEventReadable | RetrieveMemoryEventReadable | RetrieveOrganizationMemoryEventReadable | RetrieveUserMemoryEventReadable | StoreOrganizationMemoryEventReadable;
 };
 
 /**
@@ -2970,7 +2970,7 @@ export type ContextualizedAgentEventWritable = {
      * Event
      * Data of the event itself.
      */
-    event: StartEventWritable | AgentInTheLoopResponseEventWritable | HumanInTheLoopRequestEventWritable | AgentInTheLoopRequestEventWritable | AgentInTheLoopExceptionEventWritable | HumanInTheLoopResponseEventWritable | LimitChatHistoryEventWritable | AddMemoryToChatHistoryEventWritable | StandaloneQuestionCondenserEventWritable | LlmCostEventWritable | ChunkEventWritable | ThoughtEventWritable | GuardEventWritable | RouterEventWritable | GuardRejectionEventWritable | SemanticEventWritable | AgentEventWritable | ChainEventWritable | EmbeddingEventWritable | LlmEventWritable | LlmStopEventWritable | RerankerEventWritable | RetrieverEventWritable | ToolEventWritable | UserMessageEventWritable | ExceptionEventWritable | StopEventWritable | DisplayEventWritable | GuardAcceptEventWritable | AgentSuitabilityAcceptEventWritable | AgentSuitabilityRejectEventWritable | ContextSufficientAcceptEventWritable | ContextInsufficientRejectEventWritable | FewShotAcceptEventWritable | FewShotRejectEventWritable | SensitiveInfoAcceptEventWritable | SensitiveInfoRejectEventWritable | NewMemoryEventWritable | RetrieveMemoryEventWritable;
+    event: StartEventWritable | AgentInTheLoopResponseEventWritable | HumanInTheLoopRequestEventWritable | AgentInTheLoopRequestEventWritable | AgentInTheLoopExceptionEventWritable | HumanInTheLoopResponseEventWritable | LimitChatHistoryEventWritable | AddMemoryToChatHistoryEventWritable | StandaloneQuestionCondenserEventWritable | LlmCostEventWritable | ChunkEventWritable | ThoughtEventWritable | GuardEventWritable | RouterEventWritable | GuardRejectionEventWritable | SemanticEventWritable | AgentEventWritable | ChainEventWritable | EmbeddingEventWritable | LlmEventWritable | LlmStopEventWritable | RerankerEventWritable | RetrieverEventWritable | ToolEventWritable | UserMessageEventWritable | ExceptionEventWritable | StopEventWritable | DisplayEventWritable | GuardAcceptEventWritable | AgentSuitabilityAcceptEventWritable | AgentSuitabilityRejectEventWritable | ContextSufficientAcceptEventWritable | ContextInsufficientRejectEventWritable | FewShotAcceptEventWritable | FewShotRejectEventWritable | SensitiveInfoAcceptEventWritable | SensitiveInfoRejectEventWritable | NewMemoryEventWritable | RetrieveMemoryEventWritable | RetrieveOrganizationMemoryEventWritable | RetrieveUserMemoryEventWritable | StoreOrganizationMemoryEventWritable;
 };
 
 /**
@@ -10788,6 +10788,180 @@ export type RetrieveMemoryEventWritable = {
 };
 
 /**
+ * RetrieveOrganizationMemoryEvent
+ * Specialized RetrieveMemoryEvent for organization-wide memories.
+ *
+ * Emitted when an agent retrieves shared organizational memories from long-term storage.
+ * These memories are accessible to all users within the organization namespace.
+ */
+export type RetrieveOrganizationMemoryEventReadable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Memories
+     * The list of memories that were retrieved.
+     */
+    memories?: Array<Memory>;
+    /**
+     * Relations
+     * The list of matching memory relations.
+     */
+    relations: Array<MemoryRelation>;
+    /**
+     * Event Name
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<Memory> | Array<MemoryRelation> | Array<string> | undefined;
+};
+
+/**
+ * RetrieveOrganizationMemoryEvent
+ * Specialized RetrieveMemoryEvent for organization-wide memories.
+ *
+ * Emitted when an agent retrieves shared organizational memories from long-term storage.
+ * These memories are accessible to all users within the organization namespace.
+ */
+export type RetrieveOrganizationMemoryEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Memories
+     * The list of memories that were retrieved.
+     */
+    memories?: Array<Memory>;
+    /**
+     * Relations
+     * The list of matching memory relations.
+     */
+    relations: Array<MemoryRelation>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<Memory> | Array<MemoryRelation> | undefined;
+};
+
+/**
+ * RetrieveUserMemoryEvent
+ * Specialized RetrieveMemoryEvent for user-specific memories.
+ *
+ * Emitted when an agent retrieves private user memories from long-term storage.
+ * These memories are scoped to individual users and never shared across users.
+ */
+export type RetrieveUserMemoryEventReadable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Memories
+     * The list of memories that were retrieved.
+     */
+    memories?: Array<Memory>;
+    /**
+     * Relations
+     * The list of matching memory relations.
+     */
+    relations: Array<MemoryRelation>;
+    /**
+     * Event Name
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<Memory> | Array<MemoryRelation> | Array<string> | undefined;
+};
+
+/**
+ * RetrieveUserMemoryEvent
+ * Specialized RetrieveMemoryEvent for user-specific memories.
+ *
+ * Emitted when an agent retrieves private user memories from long-term storage.
+ * These memories are scoped to individual users and never shared across users.
+ */
+export type RetrieveUserMemoryEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Memories
+     * The list of memories that were retrieved.
+     */
+    memories?: Array<Memory>;
+    /**
+     * Relations
+     * The list of matching memory relations.
+     */
+    relations: Array<MemoryRelation>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<Memory> | Array<MemoryRelation> | undefined;
+};
+
+/**
  * RetrieverEvent
  */
 export type RetrieverEventReadable = {
@@ -12318,6 +12492,141 @@ export type StopEventWritable = {
      */
     display_description?: LocaleString | null;
     [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+};
+
+/**
+ * StoreOrganizationMemoryEvent
+ * A control and display event emitted when an agent stores an explicit organization memory.
+ *
+ * ### Why StoreOrganizationMemoryEvent?
+ * This event serves dual purposes in the Swiss AI Agent Protocol:
+ * - As a control event, it passes the stored organization memory to downstream workflow steps
+ * - As a display event, it provides transparency to users about what organizational fact was persisted
+ *
+ * Unlike user memories (which are inferred from chat history), organization memories are explicit
+ * facts provided by users. This event confirms successful storage and makes the operation auditable.
+ *
+ * Organization memories are shared across all users within the organization namespace, making
+ * this event critical for tracking what shared knowledge has been added to the organization's
+ * knowledge base.
+ */
+export type StoreOrganizationMemoryEventReadable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Added Memories
+     * Newly added organization memory texts
+     */
+    added_memories: Array<string>;
+    /**
+     * Updated Memories
+     * Updated organization memory texts
+     */
+    updated_memories: Array<string>;
+    /**
+     * Deleted Memories
+     * Deleted organization memory texts
+     */
+    deleted_memories: Array<string>;
+    /**
+     * Added Relations
+     * Newly added relations
+     */
+    added_relations: Array<MemoryRelation>;
+    /**
+     * Deleted Relations
+     * Deleted relations
+     */
+    deleted_relations: Array<MemoryRelation>;
+    /**
+     * Event Name
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | Array<string> | Array<string> | Array<MemoryRelation> | Array<MemoryRelation> | Array<string> | undefined;
+};
+
+/**
+ * StoreOrganizationMemoryEvent
+ * A control and display event emitted when an agent stores an explicit organization memory.
+ *
+ * ### Why StoreOrganizationMemoryEvent?
+ * This event serves dual purposes in the Swiss AI Agent Protocol:
+ * - As a control event, it passes the stored organization memory to downstream workflow steps
+ * - As a display event, it provides transparency to users about what organizational fact was persisted
+ *
+ * Unlike user memories (which are inferred from chat history), organization memories are explicit
+ * facts provided by users. This event confirms successful storage and makes the operation auditable.
+ *
+ * Organization memories are shared across all users within the organization namespace, making
+ * this event critical for tracking what shared knowledge has been added to the organization's
+ * knowledge base.
+ */
+export type StoreOrganizationMemoryEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Added Memories
+     * Newly added organization memory texts
+     */
+    added_memories: Array<string>;
+    /**
+     * Updated Memories
+     * Updated organization memory texts
+     */
+    updated_memories: Array<string>;
+    /**
+     * Deleted Memories
+     * Deleted organization memory texts
+     */
+    deleted_memories: Array<string>;
+    /**
+     * Added Relations
+     * Newly added relations
+     */
+    added_relations: Array<MemoryRelation>;
+    /**
+     * Deleted Relations
+     * Deleted relations
+     */
+    deleted_relations: Array<MemoryRelation>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | Array<string> | Array<string> | Array<MemoryRelation> | Array<MemoryRelation> | undefined;
 };
 
 /**
