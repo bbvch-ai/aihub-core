@@ -721,7 +721,7 @@ async def ask_selection_step(self, event: UserMessageEvent, ...) -> HumanInTheLo
 **File**: `agents/NamespaceSelectionAgent/namespace_data.py:42-74`
 
 For each `BucketReference` in the agent config:
-1. Look up the bucket by `bucket_id` or `bucket_name`
+1. Look up the bucket by `bucket_name`
 2. Query database: `NamespaceEntity.get_namespaces_by_bucket(bucket_id)`
 3. Build `BucketInfo` objects containing all available namespaces
 

@@ -40,9 +40,10 @@ async def main():
                 it="Agente dev che chiede agli utenti di selezionare quale namespace di conoscenza cercare",
             ),
             llm=LLMConfig(model_name="text-generation/mini"),
-            # Reference the default bucket by name - matches playground/dev setup
+            # Reference buckets by name - matches playground/dev setup
             buckets=[
                 BucketReference(bucket_name=settings.DEFAULT_KNOWLEDGE_BUCKET),
+                BucketReference(bucket_name=settings.SHARED_KNOWLEDGE_BUCKET),
             ],
             # Delegate to the dev RAG agent after namespace selection
             rag_agent=AgentReference(

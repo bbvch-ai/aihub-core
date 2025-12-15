@@ -49,35 +49,46 @@ def _ensure_s3_bucket_exists(s3_service: S3AnonymousFileAccessService, bucket_na
         logger.error(f"Failed to ensure S3 bucket '{bucket_name}' exists: {e}")
 
 
+def _initialize_bucket(s3_service: S3AnonymousFileAccessService | None, bucket_name: str, namespace_name: str) -> None:
+    """Initialize a single bucket with its default namespace."""
+    bucket = _get_or_create_bucket(bucket_name)
+    _get_or_create_namespace(bucket, namespace_name)
+
+    if s3_service:
+        _ensure_s3_bucket_exists(s3_service, bucket_name)
+
+
 @no_trace
 async def initialize_knowledge_buckets() -> None:
     """
-    Initialize the default knowledge bucket and namespace.
+    Initialize the default and shared knowledge buckets and namespaces.
 
     This function:
-    1. Creates the default BucketEntity in MongoDB if it doesn't exist
-    2. Creates the default NamespaceEntity in MongoDB if it doesn't exist
+    1. Creates the BucketEntity in MongoDB if it doesn't exist
+    2. Creates the NamespaceEntity in MongoDB if it doesn't exist
     3. Ensures the corresponding S3 bucket exists in SeaweedFS
 
-    Controlled by AIHubSettings.CREATE_DEFAULT_KNOWLEDGE (default: True).
+    Controlled by AIHubSettings.CREATE_DEFAULT_KNOWLEDGE and CREATE_SHARED_KNOWLEDGE.
     This initialization is idempotent and safe to call multiple times.
     """
     settings = AIHubSettings()
 
-    if not settings.CREATE_DEFAULT_KNOWLEDGE:
-        logger.info("Default knowledge creation is disabled, skipping initialization")
-        return
-
-    bucket_name = settings.DEFAULT_KNOWLEDGE_BUCKET
-    namespace_name = settings.DEFAULT_KNOWLEDGE_NAMESPACE
-
-    bucket = _get_or_create_bucket(bucket_name)
-    _get_or_create_namespace(bucket, namespace_name)
-
     try:
-        s3_service = S3AnonymousFileAccessService()
-        _ensure_s3_bucket_exists(s3_service, bucket_name)
+        s3_service: S3AnonymousFileAccessService | None = S3AnonymousFileAccessService()
     except Exception as e:
         logger.warning(f"S3 service not available, skipping S3 bucket creation: {e}")
+        s3_service = None
+
+    if settings.CREATE_DEFAULT_KNOWLEDGE:
+        _initialize_bucket(s3_service, settings.DEFAULT_KNOWLEDGE_BUCKET, settings.DEFAULT_KNOWLEDGE_NAMESPACE)
+        logger.info(f"Default knowledge bucket '{settings.DEFAULT_KNOWLEDGE_BUCKET}' initialization complete")
+    else:
+        logger.info("Default knowledge creation is disabled, skipping initialization")
+
+    if settings.CREATE_SHARED_KNOWLEDGE:
+        _initialize_bucket(s3_service, settings.SHARED_KNOWLEDGE_BUCKET, settings.SHARED_KNOWLEDGE_NAMESPACE)
+        logger.info(f"Shared knowledge bucket '{settings.SHARED_KNOWLEDGE_BUCKET}' initialization complete")
+    else:
+        logger.info("Shared knowledge creation is disabled, skipping initialization")
 
     logger.info("Knowledge bucket initialization complete")

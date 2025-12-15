@@ -46,11 +46,7 @@ async def fetch_available_namespaces(
     result: list[BucketInfo] = []
 
     for bucket_ref in agent_config.buckets:
-        if bucket_ref.bucket_id:
-            bucket = BucketEntity.get_bucket_by_id(bucket_ref.bucket_id)
-        else:
-            assert bucket_ref.bucket_name is not None
-            bucket = BucketEntity.get_bucket_by_bucket_name(bucket_ref.bucket_name)
+        bucket = BucketEntity.get_bucket_by_bucket_name(bucket_ref.bucket_name)
 
         bucket_id = str(bucket.id)
         namespaces = NamespaceEntity.get_namespaces_by_bucket(bucket_id)

@@ -94,7 +94,7 @@ def build_namespace_selection_agent_config(llm_config: LLMConfig) -> NamespaceSe
         name=LocaleString(en="Namespace Selection Agent"),
         description=LocaleString(en="Agent that asks users to select namespaces"),
         buckets=[
-            BucketReference(bucket_id="test_bucket_id"),
+            BucketReference(bucket_name="test_bucket"),
         ],
         rag_agent=AgentReference(
             agent_class=RAGAgent.__name__,
@@ -146,10 +146,10 @@ async def _(agent_runner: AgentTestRunner, query: str):
     """When the user sends a message."""
     with (
         patch(
-            "aihub_agent.agents.NamespaceSelectionAgent.NamespaceSelectionAgent.BucketEntity.get_bucket_by_id"
+            "aihub_agent.agents.NamespaceSelectionAgent.namespace_data.BucketEntity.get_bucket_by_bucket_name"
         ) as mock_get_bucket,
         patch(
-            "aihub_agent.agents.NamespaceSelectionAgent.NamespaceSelectionAgent.NamespaceEntity.get_namespaces_by_bucket"
+            "aihub_agent.agents.NamespaceSelectionAgent.namespace_data.NamespaceEntity.get_namespaces_by_bucket"
         ) as mock_get_namespaces,
     ):
         mock_get_bucket.return_value = create_mock_bucket()
@@ -173,10 +173,10 @@ async def _(agent_runner: AgentTestRunner, namespace: str):
     """When the user sends a message and selects a namespace."""
     with (
         patch(
-            "aihub_agent.agents.NamespaceSelectionAgent.NamespaceSelectionAgent.BucketEntity.get_bucket_by_id"
+            "aihub_agent.agents.NamespaceSelectionAgent.namespace_data.BucketEntity.get_bucket_by_bucket_name"
         ) as mock_get_bucket,
         patch(
-            "aihub_agent.agents.NamespaceSelectionAgent.NamespaceSelectionAgent.NamespaceEntity.get_namespaces_by_bucket"
+            "aihub_agent.agents.NamespaceSelectionAgent.namespace_data.NamespaceEntity.get_namespaces_by_bucket"
         ) as mock_get_namespaces,
     ):
         mock_get_bucket.return_value = create_mock_bucket()

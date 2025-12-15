@@ -133,6 +133,11 @@ async def main():
                     agent_id="knowledge_retrieval_agent",
                     bucket_name=settings.DEFAULT_KNOWLEDGE_BUCKET,
                 ),
+                KnowledgeRetrievalAgentReference(
+                    agent_class=KnowledgeRetrievalAgent.__name__,
+                    agent_id="shared_knowledge_retrieval_agent",
+                    bucket_name=settings.SHARED_KNOWLEDGE_BUCKET,
+                ),
             ],
         ),
         redis_url=RedisSettings().URL,

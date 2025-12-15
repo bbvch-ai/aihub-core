@@ -27,6 +27,18 @@ class AIHubSettings(EnvironmentSettings):
         str, Field(description="Name of the default namespace within the knowledge bucket")
     ] = "defaultnamespace"
 
+    CREATE_SHARED_KNOWLEDGE: Annotated[
+        bool, Field(description="Creates shared knowledge bucket and namespace at startup")
+    ] = True
+
+    SHARED_KNOWLEDGE_BUCKET: Annotated[str, Field(description="Name of the shared knowledge bucket to create")] = (
+        "sharedknowledge"
+    )
+
+    SHARED_KNOWLEDGE_NAMESPACE: Annotated[
+        str, Field(description="Name of the default namespace within the shared knowledge bucket")
+    ] = "defaultnamespace"
+
     FRONTEND_ORIGIN: Annotated[str, Field(description="Comma separated list of origins to allow CORS")]
 
     MONGO_MAIN_DB_NAME: Annotated[

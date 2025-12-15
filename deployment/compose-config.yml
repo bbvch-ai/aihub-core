@@ -111,6 +111,12 @@ image_tags:
     nightly: default_rag_pipeline:nightly
     latest: default_rag_pipeline:latest
 
+  shared_knowledge_pipeline:
+    build: localbuild
+    local: shared_knowledge_pipeline:latest
+    nightly: shared_knowledge_pipeline:nightly
+    latest: shared_knowledge_pipeline:latest
+
   bot:
     build: localbuild
     local: bot:latest

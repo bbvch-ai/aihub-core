@@ -2128,6 +2128,65 @@ services:
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
   {%- endif %}
 
+  {% if image_tags.shared_knowledge_pipeline[stage] %}
+  shared_knowledge_pipeline:
+    container_name: shared-knowledge-pipeline
+    restart: always
+    {%- if image_tags.shared_knowledge_pipeline[stage] == 'localbuild' %}
+    build:
+      context: .
+      dockerfile: ./aihub_pipeline/app/shared_knowledge_pipeline/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.shared_knowledge_pipeline[stage] }}
+    {%- endif %}
+    environment:
+      PYTHONUNBUFFERED: 1
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      AIHUB_SHARED_KNOWLEDGE_BUCKET: ${AIHUB_SHARED_KNOWLEDGE_BUCKET}
+      AIHUB_SHARED_KNOWLEDGE_NAMESPACE: ${AIHUB_SHARED_KNOWLEDGE_NAMESPACE}
+
+      # NATS
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+
+      # LiteLLM Proxy Server Settings
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # Docling
+      DOCLING_BASE_API_URL: {{ DOCLING_BASE_API_URL }}
+      DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
+      DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
+      DOCLING_HOSTED_VLM_API_ENDPOINT: {{ LITE_LLM_PROXY_BASE_URL }}
+      DOCLING_HOSTED_VLM_API_KEY: ${LITELLM_MASTER_KEY}
+      DOCLING_VLM_MODEL_NAME: ${DOCLING_VLM_MODEL_NAME}
+
+      # Postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # MILVUS
+      MILVUS_URL: {{ MILVUS_ENDPOINT }}
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+
+      # DAGSTER
+      DAGSTER_HOME: /dagster_home
+
+      # S3 Access connection (access and secret key same as SeaweedFS)
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      S3_STORAGE_PUBLIC_ENDPOINT: {{ S3_STORAGE_PUBLIC_ENDPOINT }}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+  {%- endif %}
+
   {% if image_tags.bot[stage] %}
   # ===================================================================
   # Bot Service (MS Teams Integration)
