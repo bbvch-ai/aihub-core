@@ -26,7 +26,7 @@ tests = ["arrow", "dask[dataframe]", "docker", "pytest", "pytest-mock"]
 
 [[package]]
 name = "aihub-lib"
-version = "v0.254.16"
+version = "v0.255.2"
 description = ""
 optional = false
 python-versions = ">=3.13, <3.14"
@@ -42,7 +42,7 @@ azure-storage-file-datalake = "^12.18.1"
 boto3 = "^1.35.0"
 cachetools = "^5.5.2"
 colorlog = "^6.9.0"
-docling-core = "^2.38.0"
+docling-core = "^2.54.1"
 fastapi = "^0.115.8"
 flatdict = "^4.0.1"
 fsspec = "^2024.10.0"
@@ -1437,14 +1437,14 @@ wmi = ["wmi (>=1.5.1) ; platform_system == \"Windows\""]
 
 [[package]]
 name = "docling-core"
-version = "2.51.1"
+version = "2.55.0"
 description = "A python library to define and validate data types in Docling."
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["main"]
 files = [
-    {file = "docling_core-2.51.1-py3-none-any.whl", hash = "sha256:76ca2b4c5c1d33475583671fe584b390e769152cac48d1fb24bf5a7457864a66"},
-    {file = "docling_core-2.51.1.tar.gz", hash = "sha256:f5b0d8ead535c8451f67f9545af007f5bebfda72744a8e90af6e83fb6a483a99"},
+    {file = "docling_core-2.55.0-py3-none-any.whl", hash = "sha256:dac64cd56d7f2fb471da1286dc9112c8c160bc69e451fcc12b97dd5019b38284"},
+    {file = "docling_core-2.55.0.tar.gz", hash = "sha256:184a61552d5947b0fb035d48231ae03d3165c4a749e961737652a0d110d53a3f"},
 ]
 
 [package.dependencies]
