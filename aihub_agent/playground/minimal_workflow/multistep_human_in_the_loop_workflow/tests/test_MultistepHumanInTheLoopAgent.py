@@ -46,7 +46,7 @@ async def test_multistep_human_in_the_loop_workflow(agent_runner: AgentTestRunne
     event = await agent_runner.wait_for_event(FirstStepHumanInTheLoopRequestEvent)
 
     # Assert the first step
-    assert event.question == "Shall I continue?", f"Expected question 'Shall I continue?', but got '{event.question}'."
+    assert event.message == "Shall I continue?", f"Expected question 'Shall I continue?', but got '{event.message}'."
 
     # Answer the first step
     await agent_runner.send_event_from_topic(
@@ -57,7 +57,7 @@ async def test_multistep_human_in_the_loop_workflow(agent_runner: AgentTestRunne
     event = await agent_runner.wait_for_event(SecondStepHumanInTheLoopRequestEvent)
 
     # Assert the second step
-    assert event.question == "Are you sure?", f"Expected question 'Are you sure?', but got '{event.question}'."
+    assert event.message == "Are you sure?", f"Expected question 'Are you sure?', but got '{event.message}'."
 
     # Answer the second step
     await agent_runner.send_event_from_topic(
