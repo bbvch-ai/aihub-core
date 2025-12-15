@@ -27,24 +27,24 @@ from aihub_agent.workflow.decorators.step import step
 class NamespaceInfo(BaseModel):
     """Information about a single namespace."""
 
-    name: str
-    display_name: LocaleString | None = None
+    name: Annotated[str, Field(description="Namespace identifier")]
+    display_name: Annotated[LocaleString | None, Field(default=None, description="Localized display name")]
 
 
 class BucketInfo(BaseModel):
     """Information about a bucket and its namespaces."""
 
-    bucket_name: str
-    bucket_display_name: LocaleString | None = None
-    namespaces: list[NamespaceInfo]
+    bucket_name: Annotated[str, Field(description="Bucket identifier")]
+    bucket_display_name: Annotated[LocaleString | None, Field(default=None, description="Localized bucket display name")]
+    namespaces: Annotated[list[NamespaceInfo], Field(description="List of namespaces in this bucket")]
 
 
 class SelectionParseResult(BaseModel):
     """Result of parsing namespace selections from user response."""
 
-    complete: bool
-    selections: dict[str, str]
-    follow_up: str = ""
+    complete: Annotated[bool, Field(description="Whether all bucket selections are complete")]
+    selections: Annotated[dict[str, str], Field(description="Map of bucket ID to selected namespace")]
+    follow_up: Annotated[str, Field(default="", description="Follow-up message if selections incomplete")]
 
 
 # ThreadContext key for persisted namespace selections
@@ -58,8 +58,8 @@ PARTIAL_SELECTIONS_KEY = "partial_selections"
 class NamespaceSelectionResult(BaseModel):
     """Result of parsing a user's namespace selection response."""
 
-    selected_namespace: str | None
-    follow_up: str
+    selected_namespace: Annotated[str | None, Field(description="Selected namespace name or None if unclear")]
+    follow_up: Annotated[str, Field(description="Follow-up question if selection unclear")]
 
 
 def namespace_selection_result_factory(
