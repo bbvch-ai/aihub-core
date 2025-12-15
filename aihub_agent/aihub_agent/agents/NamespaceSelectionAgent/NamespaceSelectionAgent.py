@@ -110,7 +110,7 @@ class NamespaceSelectionAgent(Agent):
         """Fetches namespaces and asks user to select."""
         await displayer.display_thought(t("agent.namespace_selection.thoughts.fetching_namespaces"))
 
-        available_namespaces = await fetch_available_namespaces(agent_config)
+        available_namespaces = fetch_available_namespaces(agent_config)
         available_namespaces_serialized = [ns.model_dump() for ns in available_namespaces]
         # Store in both RunContext (for current run) and ThreadContext (for subsequent runs)
         await run_context.set(AVAILABLE_NAMESPACES_KEY, available_namespaces_serialized)
