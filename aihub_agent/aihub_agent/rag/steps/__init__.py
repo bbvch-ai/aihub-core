@@ -1,5 +1,3 @@
-"""Extracted step functions for RAG workflows."""
-
 from aihub_agent.rag.steps.combine_retrieval import execute_combine_retrieval_results
 from aihub_agent.rag.steps.condense_question import execute_condense_standalone_question
 from aihub_agent.rag.steps.context_sufficient_guard import execute_context_sufficient_guard

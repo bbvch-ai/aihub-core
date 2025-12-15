@@ -1,5 +1,3 @@
-"""Shared events for RAG workflows."""
-
 from aihub_agent.rag.events.CombinedRetrievalEvent import CombinedRetrievalEvent
 from aihub_agent.rag.events.ContextInsufficientWithQueryEvent import ContextInsufficientWithQueryEvent
 from aihub_agent.rag.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent

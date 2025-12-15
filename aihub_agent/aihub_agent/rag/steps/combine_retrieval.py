@@ -1,5 +1,3 @@
-"""Extracted function for combining retrieval results."""
-
 from typing import Literal
 
 from aihub_lib.displayers.EventDisplayer import EventDisplayer

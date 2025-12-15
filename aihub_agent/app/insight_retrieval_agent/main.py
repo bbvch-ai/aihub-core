@@ -23,7 +23,7 @@ async def main():
             agent_id="insight_retrieval_agent",
             name=LocaleString(
                 en="Insight Retrieval Agent",
-                de="Einblickabruf Agent",
+                de="Einsichts-Abruf Agent",
                 fr="Agent de récupération d'insights",
                 it="Agente di recupero insight",
             ),

@@ -151,6 +151,7 @@ class RAGAgent(Agent):
     ) -> list[AgentInTheLoop.request] | None:
         """Invokes all configured retrieval agents with unified RetrievalStartEvent."""
         if not agent_config.retrieval_agents:
+            # No retrieval agents configured - combine step runs with empty results
             return None
 
         await displayer.display_thought(t("agent.thought.searching_knowledge"))

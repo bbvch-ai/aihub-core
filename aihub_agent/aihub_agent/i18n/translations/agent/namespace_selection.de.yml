@@ -3,7 +3,7 @@ thoughts:
   parsing_selection: "Namespace-Auswahl aus Benutzerantwort wird analysiert"
   selection_complete: "Namespace-Auswahl abgeschlossen, Weiterleitung an RAG-Agent"
   delegating_to_rag: "Weiterleitung an RAG-Agent mit ausgewählten Namespaces"
-  rag_error: "RAG-Agent Fehler: %{error_code} - %{error_message}"
+  rag_error: "Bei der Verarbeitung ist ein Fehler aufgetreten"
 
 messages:
   default_question: "Bitte wählen Sie den Namespace, den Sie für Ihre Suche verwenden möchten."

@@ -1,5 +1,3 @@
-"""Interactive runner for ExpertRAGAgent with mandatory expert escalation."""
-
 import asyncio
 
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig

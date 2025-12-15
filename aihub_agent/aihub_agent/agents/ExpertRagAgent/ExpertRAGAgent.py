@@ -326,11 +326,11 @@ class ExpertRAGAgent(Agent):
         """Invokes ExpertAskingAgent to prompt human experts."""
         await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.forwarding_to_expert"))
         await displayer.display_chunk(
-            t("agent.expert_grounded_agent.messages.expert_forwarding_confirmation"), model_name="RAG Agent"
+            t("agent.expert_grounded_agent.messages.expert_forwarding_confirmation"), model_name="Expert RAG Agent"
         )
-        await displayer.display_chunk("\n", model_name="RAG Agent")
+        await displayer.display_chunk("\n", model_name="Expert RAG Agent")
         await displayer.display_chunk(
-            t("agent.expert_grounded_agent.messages.expert_answer_coming_soon"), model_name="RAG Agent"
+            t("agent.expert_grounded_agent.messages.expert_answer_coming_soon"), model_name="Expert RAG Agent"
         )
 
         # Use caller's credentials if provided, otherwise use this agent's identity

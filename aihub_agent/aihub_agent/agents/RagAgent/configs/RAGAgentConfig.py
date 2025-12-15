@@ -27,13 +27,11 @@ class RAGAgentConfig(AgentConfig):
         Field(description="The LLM configuration for the agent."),
     ]
 
-    # Unified retrieval agents (0-n) - any retrieval agent type
     retrieval_agents: Annotated[
         list[AgentReference],
         Field(description="List of retrieval agents to invoke (any type: knowledge, insight, sql, etc.)."),
     ] = []
 
-    # Shared reranking (applied after combining all results)
     reranking_config: Annotated[
         RerankingConfig,
         Field(description="Configuration for reranking combined results to improve relevance."),

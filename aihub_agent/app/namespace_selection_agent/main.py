@@ -53,7 +53,7 @@ async def main():
             knowledge_retrieval_agent_id="knowledge_retrieval_agent",
             selection_prompt=LocaleString(
                 en="Please select which knowledge area you'd like to search.",
-                de="Bitte waehlen Sie den Wissensbereich aus, den Sie durchsuchen moechten.",
+                de="Bitte wählen Sie den Wissensbereich aus, den Sie durchsuchen möchten.",
                 fr="Veuillez selectionner le domaine de connaissances que vous souhaitez rechercher.",
                 it="Seleziona l'area di conoscenza che desideri cercare.",
             ),
