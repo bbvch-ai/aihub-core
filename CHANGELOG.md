@@ -5,6 +5,117 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.255.6] - 2025-12-12 - Smarter Data Lake Cleanup and Milvus Compatibility
+
+### Added
+
+- 🦾 **Introduced flexible document parser loader type:** The document parser can now be configured with different loader
+  types (e.g., `DOCLING`) directly via pipeline definitions, enhancing parsing capabilities.
+- 🗑️ **Automated figures folder cleanup:** When data lake files are deleted, their associated `__figures__` folders are
+  now automatically removed, improving data hygiene and ensuring complete data removal.
+- 📄 **Centralized Data Lake path building:** A new `build_path` utility method in `DataLakeResource` provides a
+  consistent way to construct relative paths within the data lake, including any configured directory prefixes.
+
+### Changed
+
+- ⚡️ **Enhanced Milvus vector store deletion:** The `PartitionAwareMilvusVectorStore` delete operation now includes a
+  backward compatibility check, ensuring correct fallback to the base class's delete method when manual partitions are
+  not in use, improving reliability.
+- 🔄 **Robust S3 directory operations:** The S3 Data Lake client now gracefully handles full S3 URIs (e.g.,
+  `s3://bucket/`) for directory existence, listing, and deletion checks, and ensures complete removal of S3 directory
+  marker objects.
+
+### Fixed
+
+- 🐛 **Corrected data lake file removal logic:** The process for identifying data lake files to remove now accurately
+  considers the configured `directory_name` prefix, ensuring that URIs are consistently built to prevent incorrect
+  deletion decisions.
+
+### Refactor
+
+- 🧹 **Streamlined figure folder naming:** The `create_figures_folder_name` utility has been refactored for cleaner and
+  more direct URI parsing, reducing reliance on `os.path` functions.
+
+---
+
+## [v0.255.5] - 2025-12-12 - RAG Agent Rejection Message Customization
+
+### Added
+
+- ✨ **Configurable context insufficient prompt:** Introduced a new `context_insufficient_prompt` configuration option
+  for the **RAGAgent**, allowing customization of the leading message when the agent cannot answer due to insufficient
+  context.
+
+### Changed
+
+- 🔄 **Dynamic RAG Agent rejection messages:** The **RAGAgent** now dynamically constructs rejection messages based on
+  the new `context_insufficient_prompt` configuration, providing more flexible and user-friendly responses for few-shot,
+  context insufficient, or expert rejections.
+- 📄 **Flexible internationalized guard rejection prompts:** Updated the `guard.reject` translations to support a dynamic
+  `{prompt}` placeholder, enabling greater customization of rejection messages across all supported languages.
+
+---
+
+## [v0.255.4] - 2025-12-11 - Smarter Standalone Questions: Multimodal Support and Centralized Prompts
+
+### Added
+
+- 🧪 **Comprehensive Tests for Question Condensation**: Introduced new test cases for the `condense_standalone_question`
+  utility, ensuring robust functionality for text-only and multimodal inputs, and proper handling of chat history.
+
+### Changed
+
+- 🖼️ **Enabled Multimodal Question Condensation**: The `condense_standalone_question` utility now supports multimodal
+  input (e.g., text and images) by accepting a `ChatMessage` object directly, allowing agents to understand and rephrase
+  questions that refer to visual content.
+- ⚙️ **Standardized Standalone Question Prompt**: The prompt for generating standalone questions is now centralized and
+  embedded within `aihub_lib`, removing the configurable `condense_question_prompt` option from `FewShotAgentConfig` and
+  `RAGAgentConfig` to ensure consistent and optimized behavior across all agents.
+- 🚀 **Upgraded LLM Interaction for Condensation**: The internal mechanism for condensing questions transitioned from
+  simple `llm.predict` to `llm.chat`, utilizing system messages to provide more structured instructions to the LLM for
+  improved accuracy and multimodal processing.
+- 💬 **Enhanced User Message Handling**: Agents now leverage the `last_user_message` property to retrieve the complete
+  user input, including any multimodal content, ensuring all relevant information is considered during question
+  condensation.
+- 📄 **Improved Standalone Question Prompt Logic**: Updated the default prompt translations (`lib/prompt.*.yml`) for
+  standalone question condensation with explicit instructions, including directives for image analysis and replacing
+  pronouns with precise textual descriptions of visible objects.
+
+### Removed
+
+- 🗑️ **Deprecated Configurable Condense Prompt**: The `condense_question_prompt` configuration field has been removed
+  from `FewShotAgentConfig` and `RAGAgentConfig`, streamlining agent configuration by relying on the new centralized
+  prompt definition.
+
+---
+
+## [v0.255.3] - 2025-12-11 - Enhanced Milvus Performance and Smarter Data Management
+
+### Added
+
+- ✨ **Introduced Partition-Aware Deletion for Milvus**: Implemented a new deletion mechanism in
+  `PartitionAwareMilvusVectorStore` that enables more granular and efficient removal of vector nodes associated with a
+  reference document within specific Milvus partitions.
+- 🦾 **Enabled Upsert Mode for Milvus Vector Stores**: Configured the Milvus vector store factory to use
+  `upsert_mode=True`, which automatically overwrites existing nodes when new data with matching IDs is added,
+  streamlining data synchronization and preventing duplicates.
+
+### Changed
+
+- 🚀 **Optimized Milvus Configuration for Performance and Resource Management**: Significantly adjusted Milvus parameters
+  across all configurations (including `rocksmq`, `queryNode`, and `quotaAndLimits`) to improve memory usage, enhance
+  data eviction policies, and optimize query processing, leading to better stability and efficiency.
+- 🧹 **Streamlined Milvus Node Addition Workflow**: Updated the `VectorStoreIOManager` to leverage Milvus's
+  `upsert_mode`, removing the explicit pre-deletion of nodes before adding new ones. This simplifies the data ingestion
+  pipeline and prevents potential memory leaks.
+- 🎯 **Enhanced Reference Document Deletion Op**: The `delete_nodes_for_ref_doc` operation now utilizes partition-aware
+  deletion, ensuring that nodes related to a reference document are targeted precisely within their respective Milvus
+  partitions.
+- ⚙️ **Upgraded Core Infrastructure Components**: Updated **Milvus** to `v2.6.7` and **Etcd** to `v3.5.25`,
+  incorporating performance improvements, bug fixes, and new features from these latest versions.
+
+---
+
 ## [v0.255.2] - 2025-12-11 - Unlocking Knowledge: Expert Insights and Advanced RAG for Smarter Agents
 
 ### Added
