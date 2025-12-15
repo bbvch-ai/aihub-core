@@ -111,7 +111,7 @@ class AgentMemory:
 
     async def add_organization_memory(
         self,
-        messages: list[ChatMessage],
+        memory: str,
         user_id: str,
         thread_id: str,
         display_id: str,
@@ -125,9 +125,13 @@ class AgentMemory:
         Organization memories enable knowledge sharing within a company/team. Unlike user memories (private),
         these are accessible to all users within the organization namespace. Use this for shared facts like
         company policies, project details, or team conventions that should inform all agents serving that org.
+
+        Note that for organization memories, the caller of the function is responsible for creating a clean
+        memory, it is NOT inferred from the chat history.
         """
+        messages = [{"role": MessageRole.USER, "content": memory, "name": user_id}]
         return await self.mem0service.add_memory(
-            messages=self.messages_to_dict(messages, user_id),
+            messages=messages,
             owner_id=organization_name,
             memory_type=MemoryType.ORGANIZATION_MEMORY,
             user_id=user_id,
@@ -137,6 +141,7 @@ class AgentMemory:
             run_id=run_id,
             organization_name=organization_name,
             organization_namespace=organization_namespace,
+            infer=False,
         )
 
     async def search_user_memory(

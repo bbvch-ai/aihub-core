@@ -13,10 +13,10 @@ from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
-from aihub_lib.nats.events import LLMEvent, StopEvent, UserMessageEvent
-from aihub_lib.nats.events.common.AddMemoryToChatHistoryEvent import AddMemoryToChatHistoryEvent
+from aihub_lib.nats.events import LLMEvent, UserMessageEvent
+from aihub_lib.nats.events.common.AddUserMemoryToChatHistoryEvent import AddUserMemoryToChatHistoryEvent
 from aihub_lib.nats.events.memory.NewMemoryEvent import NewMemoryEvent
-from aihub_lib.nats.events.memory.RetrieveMemoryEvent import RetrieveMemoryEvent
+from aihub_lib.nats.events.memory.RetrieveUserMemoryEvent import RetrieveUserMemoryEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
@@ -53,9 +53,7 @@ def agent_config():
         agent_id="memory_test",
         agent_class=UserMemoryAgent.__name__,
         name=LocaleString(en="Memory Test Agent", de="Speicher Test Agent"),
-        description=LocaleString(
-            en="Test agent for memory integration", de="Testagent für Speicherintegration"
-        ),
+        description=LocaleString(en="Test agent for memory integration", de="Testagent für Speicherintegration"),
         llm=LLMConfig(model_name="text-generation/mini"),
     )
 
@@ -149,32 +147,32 @@ async def _(agent_runner: AgentTestRunner, query: str, locale: str):
 
 @then("a RetrieveMemoryEvent is present")
 def _(agent_runner: AgentTestRunner):
-    """Check that RetrieveMemoryEvent exists (regardless of memory count)."""
-    event = agent_runner.get_event_of_class(RetrieveMemoryEvent)
-    assert event is not None, "RetrieveMemoryEvent not found"
+    """Check that RetrieveUserMemoryEvent exists (regardless of memory count)."""
+    event = agent_runner.get_event_of_class(RetrieveUserMemoryEvent)
+    assert event is not None, "RetrieveUserMemoryEvent not found"
 
 
 @then(parsers.parse("a RetrieveMemoryEvent is present with {count:d} or more memories"))
 def _(agent_runner: AgentTestRunner, count: int):
-    """Check that RetrieveMemoryEvent has expected number of memories."""
-    event = agent_runner.get_event_of_class(RetrieveMemoryEvent)
-    assert event is not None, "RetrieveMemoryEvent not found"
+    """Check that RetrieveUserMemoryEvent has expected number of memories."""
+    event = agent_runner.get_event_of_class(RetrieveUserMemoryEvent)
+    assert event is not None, "RetrieveUserMemoryEvent not found"
     assert len(event.memories) >= count, f"Expected {count}+ memories, got {len(event.memories)}"
 
 
 @then(parsers.parse("a RetrieveMemoryEvent is present with {count:d} memories"))
 def _(agent_runner: AgentTestRunner, count: int):
-    """Check that RetrieveMemoryEvent has exact number of memories."""
-    event = agent_runner.get_event_of_class(RetrieveMemoryEvent)
-    assert event is not None, "RetrieveMemoryEvent not found"
+    """Check that RetrieveUserMemoryEvent has exact number of memories."""
+    event = agent_runner.get_event_of_class(RetrieveUserMemoryEvent)
+    assert event is not None, "RetrieveUserMemoryEvent not found"
     assert len(event.memories) == count, f"Expected {count} memories, got {len(event.memories)}"
 
 
 @then(parsers.parse('the memory content contains "{text}"'))
 def _(agent_runner: AgentTestRunner, text: str):
     """Verify that retrieved memories contain specific text."""
-    event = agent_runner.get_event_of_class(RetrieveMemoryEvent)
-    assert event is not None, "RetrieveMemoryEvent not found"
+    event = agent_runner.get_event_of_class(RetrieveUserMemoryEvent)
+    assert event is not None, "RetrieveUserMemoryEvent not found"
 
     # Check if any memory contains the text (case-insensitive)
     found = any(text.lower() in memory.memory.lower() for memory in event.memories)
@@ -184,15 +182,15 @@ def _(agent_runner: AgentTestRunner, text: str):
 @then("an AddMemoryToChatHistoryEvent is present")
 def _(agent_runner: AgentTestRunner):
     """Check that chat history was extended with memory context."""
-    event = agent_runner.get_event_of_class(AddMemoryToChatHistoryEvent)
-    assert event is not None, "AddMemoryToChatHistoryEvent not found"
+    event = agent_runner.get_event_of_class(AddUserMemoryToChatHistoryEvent)
+    assert event is not None, "AddUserMemoryToChatHistoryEvent not found"
 
 
 @then("the extended history has a system message with memory context")
 def _(agent_runner: AgentTestRunner):
     """Verify extended history contains memory system message."""
-    event = agent_runner.get_event_of_class(AddMemoryToChatHistoryEvent)
-    assert event is not None, "AddMemoryToChatHistoryEvent not found"
+    event = agent_runner.get_event_of_class(AddUserMemoryToChatHistoryEvent)
+    assert event is not None, "AddUserMemoryToChatHistoryEvent not found"
 
     # Check for system message with memory context
     system_messages = [msg for msg in event.extended_history if msg.role == MessageRole.SYSTEM]
@@ -206,8 +204,8 @@ def _(agent_runner: AgentTestRunner):
 @then("the memory system message is after any existing system messages")
 def _(agent_runner: AgentTestRunner):
     """Verify memory system message comes after other system messages."""
-    event = agent_runner.get_event_of_class(AddMemoryToChatHistoryEvent)
-    assert event is not None, "AddMemoryToChatHistoryEvent not found"
+    event = agent_runner.get_event_of_class(AddUserMemoryToChatHistoryEvent)
+    assert event is not None, "AddUserMemoryToChatHistoryEvent not found"
 
     # Find the memory system message (contains <user_context>)
     memory_msg_index = None
@@ -279,8 +277,8 @@ def _(agent_runner: AgentTestRunner):
 @then("the memory system message uses German formatting")
 def _(agent_runner: AgentTestRunner):
     """Verify German locale formatting in memory system message."""
-    event = agent_runner.get_event_of_class(AddMemoryToChatHistoryEvent)
-    assert event is not None, "AddMemoryToChatHistoryEvent not found"
+    event = agent_runner.get_event_of_class(AddUserMemoryToChatHistoryEvent)
+    assert event is not None, "AddUserMemoryToChatHistoryEvent not found"
 
     # Find memory system message
     memory_msg = None
@@ -296,8 +294,8 @@ def _(agent_runner: AgentTestRunner):
 @then(parsers.parse('the memory system message contains "{text}"'))
 def _(agent_runner: AgentTestRunner, text: str):
     """Verify memory system message contains specific German text."""
-    event = agent_runner.get_event_of_class(AddMemoryToChatHistoryEvent)
-    assert event is not None, "AddMemoryToChatHistoryEvent not found"
+    event = agent_runner.get_event_of_class(AddUserMemoryToChatHistoryEvent)
+    assert event is not None, "AddUserMemoryToChatHistoryEvent not found"
 
     # Find memory system message
     memory_msg = None

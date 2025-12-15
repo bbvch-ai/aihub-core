@@ -186,6 +186,26 @@ retrieve_memory_event:
   name: "Mémoire Récupérée"
   description: "L'agent a récupéré les mémoires pertinentes pour le contexte"
 
+retrieve_user_memory_event:
+  name: "Mémoire Utilisateur Récupérée"
+  description: "L'agent a récupéré les mémoires utilisateur privées pour un contexte personnalisé"
+
+retrieve_organization_memory_event:
+  name: "Mémoire d'Organisation Récupérée"
+  description: "L'agent a récupéré les mémoires organisationnelles partagées pour le contexte"
+
+store_organization_memory_event:
+  name: "Mémoire d'Organisation Stockée"
+  description: "L'agent a stocké un fait organisationnel explicite partagé entre tous les utilisateurs"
+
 add_memory_to_chat_history_event:
   name: "Mémoire Ajoutée au Contexte"
-  description: "L'agent a étendu l'historique de chat avec les mémoires de l'utilisateur"
+  description: "L'agent a étendu l'historique de chat avec les mémoires"
+
+add_user_memory_to_chat_history_event:
+  name: "Mémoire Utilisateur Ajoutée au Contexte"
+  description: "L'agent a étendu l'historique de chat avec les mémoires utilisateur privées"
+
+add_organization_memory_to_chat_history_event:
+  name: "Mémoire d'Organisation Ajoutée au Contexte"
+  description: "L'agent a étendu l'historique de chat avec les mémoires organisationnelles partagées"

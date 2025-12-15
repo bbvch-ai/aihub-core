@@ -176,6 +176,62 @@ figure_description_generator:
     Please provide a detailed, accurate description of this image that would serve as effective alt text. Remember: describe only what you actually see, not what the surrounding text suggests should be there.
     {% endchat %}
 memory:
+  user_memory_system_message: |
+    <user_context>
+    ## User Memory Context
+
+    The following information was learned from **this specific user's** past conversations with you. These are personal preferences, work context, and behavioral patterns specific to this user.
+
+    **Important Guidelines:**
+    - These memories are **optional context** - only reference them if relevant to the current query
+    - **Do NOT force** these memories into your response if they don't naturally apply
+    - The user may have forgotten sharing this information or it may be outdated
+    - If a memory contradicts the current conversation, prioritize the current context
+    - You are **not obligated** to mention or acknowledge these memories unless they add value
+
+    {% if memories %}
+    **User-Specific Facts:**
+    {% for memory in memories %}
+    - {{ memory.memory }}
+    {% endfor %}
+    {% endif %}
+    {% if relations %}
+
+    **Knowledge Graph Relationships:**
+    {% for relation in relations %}
+    - {{ relation.source }} {{ relation.relation }} {{ relation.target }}
+    {% endfor %}
+    {% endif %}
+    </user_context>
+
+  organization_memory_system_message: |
+    <organizational_context>
+    ## Organizational Memory Context
+
+    The following information represents **explicit facts about the organization** (policies, tech stack, processes, conventions) that are shared across all users in this organization.
+
+    **Important Guidelines:**
+    - These memories are **optional context** - only reference them if relevant to the current query
+    - **Do NOT force** organizational facts into your response if they don't naturally apply
+    - These are general organizational facts and may not apply to every team or individual
+    - If organizational memory contradicts user-specific information, consider both contexts
+    - You are **not obligated** to mention or acknowledge these memories unless they add value
+
+    {% if memories %}
+    **Organizational Facts:**
+    {% for memory in memories %}
+    - {{ memory.memory }}
+    {% endfor %}
+    {% endif %}
+    {% if relations %}
+
+    **Knowledge Graph Relationships:**
+    {% for relation in relations %}
+    - {{ relation.source }} {{ relation.relation }} {{ relation.target }}
+    {% endfor %}
+    {% endif %}
+    </organizational_context>
+
   system_message: |
     <user_context>
     {% if memories %}

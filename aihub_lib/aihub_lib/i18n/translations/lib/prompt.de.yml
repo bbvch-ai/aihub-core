@@ -139,6 +139,62 @@ router:
       Analysieren Sie den Chat-Verlauf sorgfältig in Bezug auf die Frage des Benutzers. Bestimmen Sie, ob der Experte die Frage basierend auf den oben genannten Kriterien bereits ausreichend beantwortet hat. Geben Sie eine klare Entscheidung mit detaillierter Begründung an.
 
 memory:
+  user_memory_system_message: |
+    <user_context>
+    ## Benutzerspeicher-Kontext
+
+    Die folgenden Informationen wurden aus **den vergangenen Gesprächen dieses spezifischen Benutzers** mit Ihnen gelernt. Dies sind persönliche Präferenzen, Arbeitskontext und Verhaltensmuster, die spezifisch für diesen Benutzer sind.
+
+    **Wichtige Richtlinien:**
+    - Diese Erinnerungen sind **optionaler Kontext** - verwenden Sie sie nur, wenn sie für die aktuelle Anfrage relevant sind
+    - **Erzwingen Sie NICHT**, dass diese Erinnerungen in Ihre Antwort einfließen, wenn sie nicht natürlich passen
+    - Der Benutzer hat möglicherweise vergessen, diese Informationen geteilt zu haben, oder sie sind möglicherweise veraltet
+    - Wenn eine Erinnerung dem aktuellen Gespräch widerspricht, priorisieren Sie den aktuellen Kontext
+    - Sie sind **nicht verpflichtet**, diese Erinnerungen zu erwähnen oder anzuerkennen, es sei denn, sie bieten Mehrwert
+
+    {% if memories %}
+    **Benutzerspezifische Fakten:**
+    {% for memory in memories %}
+    - {{ memory.memory }}
+    {% endfor %}
+    {% endif %}
+    {% if relations %}
+
+    **Wissensgraph-Beziehungen:**
+    {% for relation in relations %}
+    - {{ relation.source }} {{ relation.relation }} {{ relation.target }}
+    {% endfor %}
+    {% endif %}
+    </user_context>
+
+  organization_memory_system_message: |
+    <organizational_context>
+    ## Organisationsspeicher-Kontext
+
+    Die folgenden Informationen stellen **explizite Fakten über die Organisation** (Richtlinien, Tech-Stack, Prozesse, Konventionen) dar, die von allen Benutzern in dieser Organisation geteilt werden.
+
+    **Wichtige Richtlinien:**
+    - Diese Erinnerungen sind **optionaler Kontext** - verwenden Sie sie nur, wenn sie für die aktuelle Anfrage relevant sind
+    - **Erzwingen Sie NICHT**, dass organisatorische Fakten in Ihre Antwort einfließen, wenn sie nicht natürlich passen
+    - Dies sind allgemeine organisatorische Fakten und gelten möglicherweise nicht für jedes Team oder jede Person
+    - Wenn Organisationsspeicher benutzerspezifischen Informationen widerspricht, berücksichtigen Sie beide Kontexte
+    - Sie sind **nicht verpflichtet**, diese Erinnerungen zu erwähnen oder anzuerkennen, es sei denn, sie bieten Mehrwert
+
+    {% if memories %}
+    **Organisatorische Fakten:**
+    {% for memory in memories %}
+    - {{ memory.memory }}
+    {% endfor %}
+    {% endif %}
+    {% if relations %}
+
+    **Wissensgraph-Beziehungen:**
+    {% for relation in relations %}
+    - {{ relation.source }} {{ relation.relation }} {{ relation.target }}
+    {% endfor %}
+    {% endif %}
+    </organizational_context>
+
   system_message: |
     <user_context>
     {% if memories %}

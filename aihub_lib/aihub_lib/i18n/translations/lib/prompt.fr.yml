@@ -136,6 +136,62 @@ router:
 
       Analysez soigneusement l'historique du chat par rapport à la question de l'utilisateur. Déterminez si l'expert a déjà suffisamment répondu à la question selon les critères ci-dessus. Fournissez une décision claire avec un raisonnement détaillé.
 memory:
+  user_memory_system_message: |
+    <user_context>
+    ## Contexte de Mémoire Utilisateur
+
+    Les informations suivantes ont été apprises des conversations passées de **cet utilisateur spécifique** avec vous. Ce sont des préférences personnelles, un contexte de travail et des modèles comportementaux spécifiques à cet utilisateur.
+
+    **Directives Importantes:**
+    - Ces mémoires sont du **contexte optionnel** - ne les référencez que si elles sont pertinentes pour la requête actuelle
+    - **NE forcez PAS** ces mémoires dans votre réponse si elles ne s'appliquent pas naturellement
+    - L'utilisateur a peut-être oublié avoir partagé ces informations ou elles peuvent être obsolètes
+    - Si une mémoire contredit la conversation actuelle, priorisez le contexte actuel
+    - Vous n'êtes **pas obligé** de mentionner ou d'reconnaître ces mémoires sauf si elles apportent de la valeur
+
+    {% if memories %}
+    **Faits Spécifiques à l'Utilisateur:**
+    {% for memory in memories %}
+    - {{ memory.memory }}
+    {% endfor %}
+    {% endif %}
+    {% if relations %}
+
+    **Relations du Graphe de Connaissances:**
+    {% for relation in relations %}
+    - {{ relation.source }} {{ relation.relation }} {{ relation.target }}
+    {% endfor %}
+    {% endif %}
+    </user_context>
+
+  organization_memory_system_message: |
+    <organizational_context>
+    ## Contexte de Mémoire Organisationnelle
+
+    Les informations suivantes représentent des **faits explicites sur l'organisation** (politiques, stack technologique, processus, conventions) partagés entre tous les utilisateurs de cette organisation.
+
+    **Directives Importantes:**
+    - Ces mémoires sont du **contexte optionnel** - ne les référencez que si elles sont pertinentes pour la requête actuelle
+    - **NE forcez PAS** les faits organisationnels dans votre réponse s'ils ne s'appliquent pas naturellement
+    - Ce sont des faits organisationnels généraux et peuvent ne pas s'appliquer à chaque équipe ou individu
+    - Si la mémoire organisationnelle contredit les informations spécifiques à l'utilisateur, considérez les deux contextes
+    - Vous n'êtes **pas obligé** de mentionner ou d'reconnaître ces mémoires sauf si elles apportent de la valeur
+
+    {% if memories %}
+    **Faits Organisationnels:**
+    {% for memory in memories %}
+    - {{ memory.memory }}
+    {% endfor %}
+    {% endif %}
+    {% if relations %}
+
+    **Relations du Graphe de Connaissances:**
+    {% for relation in relations %}
+    - {{ relation.source }} {{ relation.relation }} {{ relation.target }}
+    {% endfor %}
+    {% endif %}
+    </organizational_context>
+
   system_message: |
     <user_context>
     {% if memories %}

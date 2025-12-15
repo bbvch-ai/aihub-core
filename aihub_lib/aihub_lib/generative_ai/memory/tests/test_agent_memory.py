@@ -110,9 +110,9 @@ class TestAgentMemory:
 
         # Verify that EITHER memories OR relations were extracted
         # (Dual architecture: vector memories OR graph relationships)
-        assert len(memory_added.results) > 0 or len(memory_added.relations.added_entities) > 0, (
-            "Memory extraction should produce either vector memories (results) or graph relationships (relations)"
-        )
+        assert (
+            len(memory_added.results) > 0 or len(memory_added.relations.added_entities) > 0
+        ), "Memory extraction should produce either vector memories (results) or graph relationships (relations)"
 
         # Verify metadata fields are set
         assert memory_added.user_id == "test_user_memory_integration"
@@ -184,12 +184,8 @@ class TestAgentMemory:
     @pytest.mark.slow
     async def test_add_organization_memory_scoping(self, agent_memory):
         """Organization memories should be scoped to org namespace."""
-        messages = [
-            ChatMessage(role=MessageRole.USER, content="ACME Corp uses microservices architecture"),
-        ]
-
         memory_added = await agent_memory.add_organization_memory(
-            messages=messages,
+            memory="ACME Corp uses microservices architecture",
             user_id="test_user_memory_integration",
             thread_id="thread_org_1",
             display_id="display_org_1",
@@ -200,9 +196,9 @@ class TestAgentMemory:
 
         # Verify that EITHER memories OR relations were extracted
         # (Dual architecture: vector memories OR graph relationships)
-        assert len(memory_added.results) > 0 or len(memory_added.relations.added_entities) > 0, (
-            "Memory extraction should produce either vector memories (results) or graph relationships (relations)"
-        )
+        assert (
+            len(memory_added.results) > 0 or len(memory_added.relations.added_entities) > 0
+        ), "Memory extraction should produce either vector memories (results) or graph relationships (relations)"
 
         # Verify org scoping
         assert memory_added.owner_id == "ACME Corp"
@@ -216,9 +212,7 @@ class TestAgentMemory:
         """Should search organization memories correctly."""
         # Add org memory
         await agent_memory.add_organization_memory(
-            messages=[
-                ChatMessage(role=MessageRole.USER, content="ACME Corp uses Docker for containerization"),
-            ],
+            memory="ACME Corp uses Docker for containerization",
             user_id="test_user_memory_integration",
             thread_id="thread_org_search_1",
             display_id="display_org_search_1",

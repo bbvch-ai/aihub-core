@@ -1,10 +1,12 @@
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.generative_ai.chat_history.extend_chat_history_with_memory import extend_chat_history_with_memory
+from aihub_lib.generative_ai.chat_history.extend_chat_history_with_user_memory import (
+    extend_chat_history_with_user_memory,
+)
 from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import LLMEvent, NewMemoryEvent, StopEvent, UserMessageEvent
-from aihub_lib.nats.events.common.AddMemoryToChatHistoryEvent import AddMemoryToChatHistoryEvent
-from aihub_lib.nats.events.memory.RetrieveMemoryEvent import RetrieveMemoryEvent
+from aihub_lib.nats.events.common.AddUserMemoryToChatHistoryEvent import AddUserMemoryToChatHistoryEvent
+from aihub_lib.nats.events.memory.RetrieveUserMemoryEvent import RetrieveUserMemoryEvent
 from aihub_lib.nats.topics import AgentInstanceTopic
 
 from aihub_agent.agents.Agent import Agent
@@ -31,28 +33,28 @@ class UserMemoryAgent(Agent):
         self,
         event: UserMessageEvent,
         memory: AgentMemory,
-    ) -> RetrieveMemoryEvent:
+    ) -> RetrieveUserMemoryEvent:
         """Searches user memories to provide personalized context for the conversation."""
         memory_search_result = await memory.search_user_memory(query=event.user_query, user_id=event.user.id)
-        return RetrieveMemoryEvent.from_memory_search_result(memory_search_result=memory_search_result)
+        return RetrieveUserMemoryEvent.from_memory_search_result(memory_search_result=memory_search_result)
 
     @step()
     async def add_memory_to_chat_history_step(
-        self, user_message_event: UserMessageEvent, memory_event: RetrieveMemoryEvent, t: LocaleHandler
-    ) -> AddMemoryToChatHistoryEvent:
+        self, user_message_event: UserMessageEvent, memory_event: RetrieveUserMemoryEvent, t: LocaleHandler
+    ) -> AddUserMemoryToChatHistoryEvent:
         """Prepends memories as system message to guide LLM responses with long-term user context."""
-        extended_chat_history = extend_chat_history_with_memory(
+        extended_chat_history = extend_chat_history_with_user_memory(
             chat_history=user_message_event.messages,
             memories=memory_event.memories,
             relations=memory_event.relations,
             t=t,
         )
-        return AddMemoryToChatHistoryEvent(extended_history=extended_chat_history)
+        return AddUserMemoryToChatHistoryEvent(extended_history=extended_chat_history)
 
     @step()
     async def respond_with_memory_step(
         self,
-        event: AddMemoryToChatHistoryEvent,
+        event: AddUserMemoryToChatHistoryEvent,
         agent_config: UserMemoryAgentConfig,
         displayer: EventDisplayer,
     ) -> LLMEvent:

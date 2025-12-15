@@ -136,6 +136,62 @@ router:
 
       Analizza attentamente la cronologia della chat in relazione alla domanda dell'utente. Determina se l'esperto ha già risposto sufficientemente alla domanda in base ai criteri sopra indicati. Fornisci una decisione chiara con un ragionamento dettagliato.
 memory:
+  user_memory_system_message: |
+    <user_context>
+    ## Contesto di Memoria Utente
+
+    Le seguenti informazioni sono state apprese dalle conversazioni passate di **questo utente specifico** con te. Queste sono preferenze personali, contesto lavorativo e modelli comportamentali specifici di questo utente.
+
+    **Linee Guida Importanti:**
+    - Queste memorie sono **contesto opzionale** - fai riferimento ad esse solo se pertinenti alla query corrente
+    - **NON forzare** queste memorie nella tua risposta se non si applicano naturalmente
+    - L'utente potrebbe aver dimenticato di aver condiviso queste informazioni o potrebbero essere obsolete
+    - Se una memoria contraddice la conversazione corrente, dai priorità al contesto corrente
+    - **Non sei obbligato** a menzionare o riconoscere queste memorie a meno che non aggiungano valore
+
+    {% if memories %}
+    **Fatti Specifici dell'Utente:**
+    {% for memory in memories %}
+    - {{ memory.memory }}
+    {% endfor %}
+    {% endif %}
+    {% if relations %}
+
+    **Relazioni del Grafo della Conoscenza:**
+    {% for relation in relations %}
+    - {{ relation.source }} {{ relation.relation }} {{ relation.target }}
+    {% endfor %}
+    {% endif %}
+    </user_context>
+
+  organization_memory_system_message: |
+    <organizational_context>
+    ## Contesto di Memoria Organizzativa
+
+    Le seguenti informazioni rappresentano **fatti espliciti sull'organizzazione** (politiche, stack tecnologico, processi, convenzioni) condivisi tra tutti gli utenti in questa organizzazione.
+
+    **Linee Guida Importanti:**
+    - Queste memorie sono **contesto opzionale** - fai riferimento ad esse solo se pertinenti alla query corrente
+    - **NON forzare** fatti organizzativi nella tua risposta se non si applicano naturalmente
+    - Questi sono fatti organizzativi generali e potrebbero non applicarsi a ogni team o individuo
+    - Se la memoria organizzativa contraddice informazioni specifiche dell'utente, considera entrambi i contesti
+    - **Non sei obbligato** a menzionare o riconoscere queste memorie a meno che non aggiungano valore
+
+    {% if memories %}
+    **Fatti Organizzativi:**
+    {% for memory in memories %}
+    - {{ memory.memory }}
+    {% endfor %}
+    {% endif %}
+    {% if relations %}
+
+    **Relazioni del Grafo della Conoscenza:**
+    {% for relation in relations %}
+    - {{ relation.source }} {{ relation.relation }} {{ relation.target }}
+    {% endfor %}
+    {% endif %}
+    </organizational_context>
+
   system_message: |
     <user_context>
     {% if memories %}
