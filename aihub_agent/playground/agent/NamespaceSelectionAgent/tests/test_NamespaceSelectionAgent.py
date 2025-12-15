@@ -37,6 +37,9 @@ from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 enable_logging()
 
+# Mark all tests as azure (requires function calling support)
+pytestmark = pytest.mark.azure
+
 
 @pytest.fixture(scope="session")
 def event_loop():
@@ -107,7 +110,7 @@ def build_namespace_selection_agent_config(llm_config: LLMConfig) -> NamespaceSe
 @pytest.fixture(scope="session")
 def namespace_selection_agent_config():
     """Return a NamespaceSelectionAgentConfig that uses a self-hosted LLM."""
-    llm_config = LLMConfig(model_name="text-generation/mini")
+    llm_config = LLMConfig(model_name="text-generation/large")
     return build_namespace_selection_agent_config(llm_config=llm_config)
 
 
