@@ -31,6 +31,7 @@ from aihub_api.routes.thread.dto.statistics.DisplayStatistics import DisplayStat
 from aihub_api.routes.thread.dto.statistics.IntermediateDisplayStats import IntermediateDisplayStats
 from aihub_api.routes.thread.dto.statistics.ProcessedRunResults import ProcessedRunResults
 from aihub_api.routes.thread.dto.statistics.RunStatistics import RunStatistics
+from aihub_api.routes.thread.dto.PendingHITLRequestDTO import HITLTopicDTO, PendingHITLRequestDTO
 from aihub_api.routes.thread.dto.ThreadAgentDTO import ThreadAgentDTO
 from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.user.dto.MinimalUserDTO import MinimalUserDTO
@@ -226,6 +227,46 @@ class ThreadService:
     async def delete_thread(thread_id: str, t: LocaleHandler) -> ThreadDTO:
         thread = ThreadEntity.delete_thread(thread_id)
         return await ThreadService.thread_response_from_entity(thread, t)
+
+    @staticmethod
+    @trace_fn
+    def get_pending_hitl_request(thread_id: str) -> PendingHITLRequestDTO | None:
+        """Get the pending (unanswered) HITL request for a thread, if any.
+
+        Returns the most recent unanswered HITL request of any type (chat, input, confirmation).
+        """
+        requests = PersistedAgentEventEntity.human_in_the_loop_request_events_for_thread(thread_id)
+        responses = PersistedAgentEventEntity.human_in_the_loop_response_events_for_thread(thread_id)
+
+        # Build set of answered request event IDs
+        answered_request_ids = set()
+        for response in responses:
+            request_event = response.event_data.get("request_event", {})
+            if request_event_id := request_event.get("event_id"):
+                answered_request_ids.add(request_event_id)
+
+        # Find most recent unanswered HITL request (any type)
+        for request in reversed(requests):
+            event_data = request.event_data
+            event_id = event_data.get("event_id")
+            if event_id not in answered_request_ids:
+                topic_data = event_data.get("topic", {})
+                return PendingHITLRequestDTO(
+                    event_id=event_id,
+                    message=event_data.get("message", ""),
+                    hitl_type=event_data.get("hitl_type", "input"),
+                    topic=HITLTopicDTO(
+                        event_name=topic_data.get("event_name"),
+                        display_id=topic_data.get("display_id"),
+                        thread_id=topic_data.get("thread_id"),
+                        run_id=topic_data.get("run_id"),
+                        agent_class=topic_data.get("agent_class"),
+                        agent_id=topic_data.get("agent_id"),
+                    ),
+                    created_at=event_data.get("created_at", 0),
+                )
+
+        return None
 
     @staticmethod
     @cached(TTLCache(maxsize=128, ttl=60))

@@ -741,17 +741,14 @@ class HumanInTheLoopHandler(EventHandler):
 
         if hitl_type == "chat":
             # Chat-style HITL: render as normal assistant message in the chat
-            # Store the request so the next pipe() call can send a proper HITL response
-            # instead of a UserMessageEvent
-            Pipe._pending_chat_hitl[context.thread_id] = event
-
+            # The request is persisted in the event store - no need to store locally
             context.state_manager.close_current_block()
             context.state_manager.start_text_block(message)
             await context.emitter({
                 "type": "replace",
                 "data": {"content": context.state_manager.serialize_to_html()},
             })
-            logger.debug(f"Stored pending chat HITL for thread {context.thread_id}")
+            logger.debug(f"Chat HITL request rendered for thread {context.thread_id}")
             return True
         elif hitl_type == "confirmation":
             result = await context.caller(
@@ -1296,6 +1293,55 @@ class AgentDiscoveryService:
 
 
 # ============================================================================
+# HITL Service
+# ============================================================================
+
+
+class HITLService:
+    """Service for fetching pending HITL requests from the API"""
+
+    def __init__(
+        self,
+        base_url: Annotated[str, "AI-Hub base URL"],
+        api_key: Annotated[str, "API key"],
+        timeout: Annotated[int, "Request timeout"],
+    ):
+        self._base_url = base_url
+        self._api_key = api_key
+        self._timeout = timeout
+
+    async def get_pending_hitl_request(
+        self,
+        thread_id: Annotated[str, "Thread ID"],
+    ) -> Annotated[Optional[dict[str, Any]], "Pending HITL request or None"]:
+        """Fetch pending HITL request for a thread from the API"""
+        try:
+            headers = {
+                "Authorization": f"Bearer {self._api_key}",
+                "Accept": "application/json",
+            }
+
+            async with httpx.AsyncClient(
+                timeout=self._timeout, follow_redirects=True
+            ) as client:
+                response = await client.get(
+                    f"{self._base_url}/api/v1/threads/{thread_id}/pending-hitl",
+                    headers=headers,
+                )
+                response.raise_for_status()
+                return response.json()
+
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                return None
+            logger.exception(f"Error fetching pending HITL: {e}")
+            return None
+        except Exception as e:
+            logger.exception(f"Error fetching pending HITL: {e}")
+            return None
+
+
+# ============================================================================
 # File Processing Service
 # ============================================================================
 
@@ -1375,11 +1421,6 @@ class Pipe:
     This is the entry point that orchestrates all services using the Facade pattern.
     """
 
-    # Store pending chat HITL requests by thread_id
-    # When a chat-type HITL request is received, we store it here so the next
-    # user message can be sent as a HumanInTheLoopChatResponseEvent instead of UserMessageEvent
-    _pending_chat_hitl: dict[str, dict[str, Any]] = {}
-
     class Valves(BaseModel):
         """Configuration valves for the pipeline"""
 
@@ -1455,6 +1496,13 @@ class Pipe:
         # Streaming
         self._streaming_service = StreamingService(
             self.valves.AIHUB_BASE_URL, self.valves.AIHUB_REQUEST_TIMEOUT
+        )
+
+        # HITL Service
+        self._hitl_service = HITLService(
+            self.valves.AIHUB_BASE_URL,
+            self.valves.AIHUB_SUPERUSER_API_KEY,
+            self.valves.AIHUB_REQUEST_TIMEOUT,
         )
 
     async def pipes(
@@ -1568,11 +1616,11 @@ class Pipe:
                 # Process files
                 files = await self._file_service.prepare_files_for_event(__files__)
 
-                # Check for pending chat HITL request for this thread
-                pending_hitl = Pipe._pending_chat_hitl.pop(thread_id, None)
+                # Check for pending HITL request via API (supports chat, input, confirmation types)
+                pending_hitl = await self._hitl_service.get_pending_hitl_request(thread_id)
 
                 if pending_hitl:
-                    # This is a response to a chat-type HITL request
+                    # This is a response to a pending HITL request
                     # Extract the user's latest message text as the response
                     latest_message = ""
                     if messages:

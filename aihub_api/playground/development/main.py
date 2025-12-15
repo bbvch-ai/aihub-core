@@ -52,6 +52,7 @@ async def main():
         .get_user_threads()
         .create_thread()
         .get_thread()
+        .get_pending_hitl_request()
         .add_agent_to_thread()
         .remove_agent_from_thread()
         .add_user_to_thread()
