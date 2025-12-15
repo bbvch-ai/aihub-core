@@ -39,7 +39,7 @@ AVAILABLE_NAMESPACES_KEY = "available_namespaces"
 PARTIAL_SELECTIONS_KEY = "partial_selections"
 
 
-async def fetch_available_namespaces(
+def fetch_available_namespaces(
     agent_config: NamespaceSelectionAgentConfig,
 ) -> list[BucketInfo]:
     """Fetches namespaces for all configured buckets."""
