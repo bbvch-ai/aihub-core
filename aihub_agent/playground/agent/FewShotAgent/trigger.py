@@ -23,7 +23,6 @@ async def main():
             description=LocaleString(en="This is an agent can transfer movie titles into emojis"),
             llm=LLMConfig(model_name="text-generation/mini"),
             number_of_input_tokens=100000,
-            condense_question_prompt=LocaleString(en="""return the last user message"""),
             few_shot=FewShotStepConfig(
                 few_shot_examples=[
                     FewShotExample(

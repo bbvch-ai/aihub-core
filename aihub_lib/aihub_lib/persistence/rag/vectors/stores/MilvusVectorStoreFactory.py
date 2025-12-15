@@ -106,4 +106,5 @@ def create_milvus_vector_store(
         doc_id_field=DOCUMENT_ID,
         enable_sparse=True,
         sparse_embedding_function=BM25BuiltInFunction(),
+        upsert_mode=True,
     )

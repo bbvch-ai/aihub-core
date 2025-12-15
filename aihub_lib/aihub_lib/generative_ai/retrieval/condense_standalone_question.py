@@ -3,7 +3,6 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms import LLM
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.i18n.LocaleString import LocaleString
 
 
 def _messages_to_history_str(messages: list[ChatMessage]) -> str:
@@ -22,22 +21,25 @@ def _messages_to_history_str(messages: list[ChatMessage]) -> str:
 
 
 def condense_standalone_question(
-    message: str,
+    message: ChatMessage,
     chat_history: list[ChatMessage],
     t: LocaleHandler,
     llm: LLM,
-    condense_prompt: LocaleString = None,
 ) -> ChatMessage:
+    """
+    Condenses a follow-up user question into a standalone question using chat history and a language model.
+
+    This function takes a user message (as a ChatMessage, which may include text and multimodal content such as
+    images) and reformulates it into a self-contained question that can be understood without the conversation
+    history. The chat history provides context for resolving references and pronouns in the user's message.
+    System messages are filtered out from the chat history before processing.
+    """
     chat_history_without_system_messages = [msg for msg in chat_history if msg.role != MessageRole.SYSTEM]
     chat_history_str = _messages_to_history_str(chat_history_without_system_messages)
-    if condense_prompt:
-        condense_prompt_locale = LocaleHandler(t.locale).extract(condense_prompt, t.locale)
-    else:
-        condense_prompt_locale = t("lib.prompt.condenser.standalone_question")
 
-    response = llm.predict(
-        prompt=PromptTemplate(condense_prompt_locale),
-        question=message,
-        chat_history=chat_history_str,
-    )
-    return ChatMessage(role=MessageRole.USER, content=response)
+    prompt_template = PromptTemplate(t("lib.prompt.condenser.standalone_question"))
+    instruction_content = prompt_template.format(chat_history=chat_history_str)
+    messages = [ChatMessage(role=MessageRole.SYSTEM, content=instruction_content), message]
+    response = llm.chat(messages=messages)
+
+    return ChatMessage(role=MessageRole.USER, content=response.message.content)

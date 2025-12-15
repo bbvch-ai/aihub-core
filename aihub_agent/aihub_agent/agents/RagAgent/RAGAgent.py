@@ -28,7 +28,6 @@ from aihub_lib.nats.events.semantic.llm import LLMStopEvent
 from aihub_lib.nats.events.semantic.reranker import RerankerEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.nats.events.user import UserMessageEvent
-from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_agent.agents.Agent import Agent
@@ -159,14 +158,9 @@ class RAGAgent(Agent):
         Condenses the chat history and user query into a standalone question.
         """
         await displayer.display_thought(t("agent.thought.condense_question"))
-        user_query = start_event.user_query
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             condensed_question = condense_standalone_question(
-                chat_history=event.limited_history,
-                message=user_query,
-                t=t,
-                llm=llm,
-                condense_prompt=agent_config.condense_question_prompt,
+                chat_history=event.limited_history, message=start_event.last_user_message, t=t, llm=llm
             )
             return StandaloneQuestionCondenserEvent(condensed_chat_message=condensed_question)
 
@@ -513,10 +507,12 @@ class RAGAgent(Agent):
         Generates a response using the configured LLM.
         """
         if isinstance(event, FewShotRejectEvent | ContextInsufficientRejectEvent | ExpertRejectEvent):
+            context_insufficient_prompt = t.extract(agent_config.context_insufficient_prompt)
+            prompt_text = t("agent.prompt.guard.reject").format(prompt=context_insufficient_prompt, reason=event.reason)
             messages = limited_history_without_context.limited_history + [
                 ChatMessage(
                     role=MessageRole.SYSTEM,
-                    content=PromptTemplate(t("agent.prompt.guard.reject")).format(reason=event.reason),
+                    content=prompt_text,
                 ),
             ]
         else:

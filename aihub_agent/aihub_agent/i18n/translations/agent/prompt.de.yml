@@ -1,6 +1,6 @@
 guard:
   reject: |
-    Informiere den Benutzer, dass du die Frage nicht beantworten kannst, aufgrund des folgenden Grundes:
+    {prompt}
     <Grund>
     {reason}
     </Grund>
