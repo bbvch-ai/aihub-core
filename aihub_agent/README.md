@@ -665,3 +665,278 @@ This glossary defines terms, concepts, and technologies that have specific meani
 | **Thread Context**        | Persistent storage for state across multiple agent runs within the same conversation thread. Maintains conversational history and user preferences with 30-day TTL.                                                                    |
 | **Trigger Script**        | A Python script (`trigger.py`) that programmatically starts an agent, sends it a specific event, and terminates. Essential for focused debugging and testing specific scenarios.                                                       |
 | **Workflow**              | The fundamental design pattern for agents. A task broken down into a series of structured, explicit `@step`-decorated methods ensuring testability and transparency.                                                                   |
+
+---
+
+## 5. Production Workflow: Namespace Selection to RAG
+
+This section traces a complete production workflow through the codebase: from namespace selection across multiple
+buckets to RAG answer generation. Understanding this flow demonstrates how multi-agent systems coordinate in practice.
+
+### Architecture Overview
+
+The workflow involves three agents working in sequence:
+
+```
+┌─────────────────────────┐     ┌──────────────┐     ┌────────────────────────────┐
+│ NamespaceSelectionAgent │────>│   RAGAgent   │────>│ KnowledgeRetrievalAgent(s) │
+│                         │     │              │     │                            │
+│ - Ask user which        │     │ - Condense   │     │ - Query vector store       │
+│   collections to search │     │   question   │     │   with namespace filters   │
+│ - Parse selection       │     │ - Orchestrate│     │ - Return relevant nodes    │
+│ - Delegate to RAG       │     │   retrieval  │     │                            │
+└─────────────────────────┘     │ - Generate   │     └────────────────────────────┘
+                                │   answer     │
+                                └──────────────┘
+```
+
+### Key Data Structures
+
+Understanding these data structures is essential for working with the namespace selection flow:
+
+| Structure | Purpose | File |
+|-----------|---------|------|
+| `BucketReference` | Config-time reference to a bucket (by ID or name) | `agents/NamespaceSelectionAgent/configs/BucketReference.py` |
+| `BucketInfo` | Runtime info with available namespaces for selection UI | `agents/NamespaceSelectionAgent/configs/BucketInfo.py` |
+| `BucketNamespaceSelection` | User's selection: bucket_name + list of namespace names | `agents/NamespaceSelectionAgent/configs/BucketNamespaceSelection.py` |
+| `KnowledgeRetrievalAgentReference` | Links a retrieval agent to a specific bucket via `bucket_name` | `agents/configs/KnowledgeRetrievalAgentReference.py` |
+| `KnowledgeRetrievalOverride` | Passes selected namespaces to retrieval agent | `rag/events/RetrievalStartEvent.py` |
+
+### Step-by-Step Flow with Code References
+
+#### Step 1: NamespaceSelectionAgent - Check Precondition
+
+**File**: `agents/NamespaceSelectionAgent/NamespaceSelectionAgent.py`
+
+The agent first checks if namespace selections already exist in `ThreadContext`:
+
+```python
+@step(precondition=need_namespace_selection)
+async def ask_selection_step(self, event: UserMessageEvent, ...) -> HumanInTheLoop.chat:
+    # Only runs if no selection exists in ThreadContext
+```
+
+#### Step 2: Fetch Available Namespaces from Database
+
+**File**: `agents/NamespaceSelectionAgent/namespace_data.py:42-74`
+
+For each `BucketReference` in the agent config:
+1. Look up the bucket by `bucket_id` or `bucket_name`
+2. Query database: `NamespaceEntity.get_namespaces_by_bucket(bucket_id)`
+3. Build `BucketInfo` objects containing all available namespaces
+
+#### Step 3: Human-in-the-Loop - Ask User Selection
+
+The agent generates a friendly question using an LLM and returns `HumanInTheLoop.chat.invoke()`. This pauses the
+workflow until the user responds with their selection.
+
+#### Step 4: Parse User Selection
+
+**File**: `agents/NamespaceSelectionAgent/selection_parsing.py:70-119`
+
+The agent uses LLM structured output to extract namespace names from the user's response:
+1. For each bucket without a selection, parse user's response
+2. Validate selected namespace names against available options
+3. Create `BucketNamespaceSelection` objects
+4. Retry HITL if response is unclear (up to `max_selection_attempts`)
+
+#### Step 5: Create RAGUserMessageEvent and Delegate
+
+**File**: `agents/NamespaceSelectionAgent/namespace_data.py:77-96`
+
+The agent creates a `RAGUserMessageEvent` containing the namespace selections:
+
+```python
+RAGUserMessageEvent(
+    messages=original_user_event.messages,
+    locale=original_user_event.locale,
+    user=original_user_event.user,
+    bucket_namespace_selections=[
+        BucketNamespaceSelection(bucket_name="knowledge", namespaces=["hr-policies"]),
+        BucketNamespaceSelection(bucket_name="insights", namespaces=["legal"]),
+    ]
+)
+```
+
+This event is passed to the RAG agent via `AgentInTheLoop.invoke()`.
+
+#### Step 6: RAGAgent - Multi-Step Pipeline
+
+**File**: `agents/RagAgent/RAGAgent.py`
+
+The RAG agent executes its pipeline:
+1. **Limit chat history** - Truncate to fit token limits
+2. **Condense question** - Convert chat + query to standalone question
+3. **Few-shot guard** - Validate question appropriateness
+4. **Invoke retrieval agents** - This is where namespace selections are applied
+
+#### Step 7: Resolve Namespace Overrides for Retrieval
+
+**File**: `rag/steps/invoke_retrieval.py:27-52`
+
+This is the critical step where selections become retrieval filters:
+
+```python
+def execute_invoke_retrieval(
+    query: str,
+    locale: Literal["de", "en", "fr", "it"],
+    retrieval_agents: list[AgentReference],
+    bucket_namespace_selections: list[BucketNamespaceSelection] | None = None,
+) -> list[AgentInTheLoop.request]:
+```
+
+For each retrieval agent:
+1. Check if it's a `KnowledgeRetrievalAgentReference` (has `bucket_name` field)
+2. Find matching `BucketNamespaceSelection` with same `bucket_name`
+3. Create `KnowledgeRetrievalOverride` containing selected namespaces
+4. Package in `RetrievalStartEvent` and invoke the retrieval agent
+
+#### Step 8: KnowledgeRetrievalAgent - Extract Namespaces
+
+**File**: `agents/KnowledgeRetrievalAgent/KnowledgeRetrievalAgent.py:55-77`
+
+The retrieval agent extracts namespaces from the override:
+
+```python
+def _get_namespaces(
+    override: RetrievalOverride | None,
+    config: KnowledgeRetrievalAgentConfig,
+) -> list[str] | None:
+    if override and isinstance(override, KnowledgeRetrievalOverride):
+        return override.namespaces  # User's selected namespaces
+    return None  # Fall back to config defaults
+```
+
+#### Step 9: Vector Store Query with Namespace Filtering
+
+**File**: `aihub_lib/generative_ai/utils/retrieve_nodes.py:17-42`
+
+The actual filtering happens at the vector store level:
+
+```python
+def retrieve_nodes(
+    message: str,
+    embed_model: BaseEmbedding,
+    retrieve_k: int,
+    index_namespaces: list[str],  # Selected namespaces from user
+    query_mode: VectorStoreQueryMode,
+    node_types: list[str],
+    vector_store: BasePydanticVectorStore,
+) -> list[NodeWithScore] | None:
+    # Build metadata filters for namespace/node_type combinations
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilters(
+                filters=[
+                    MetadataFilter(key=NAMESPACE, value=ns),
+                    MetadataFilter(key=TYPE, value=nt),
+                ],
+                condition=FilterCondition.AND,
+            )
+            for ns in index_namespaces  # User-selected namespaces
+            for nt in node_types
+        ],
+        condition=FilterCondition.OR,
+    )
+
+    # Query returns only nodes matching selected namespaces
+    return vector_store.query(VectorStoreQuery(filters=filters, ...))
+```
+
+### Complete Event Flow
+
+```
+UserMessageEvent
+    │
+    ▼
+NamespaceSelectionAgent.ask_selection_step
+    │
+    ▼
+[HITL: User selects namespaces from available options]
+    │
+    ▼
+NamespaceSelectionAgent.parse_selection_step
+    │
+    ▼
+BucketNamespaceSelection[] created
+    │
+    ▼
+NamespaceSelectionAgent.delegate_to_rag_step
+    │
+    ▼
+RAGUserMessageEvent(bucket_namespace_selections=[...])
+    │
+    ▼
+RAGAgent.invoke_retrieval_step
+    │
+    ├──────────────────────────────────────────┐
+    ▼                                          ▼
+RetrievalStartEvent                    RetrievalStartEvent
+(bucket: "knowledge",                  (bucket: "insights",
+ namespaces: ["hr-policies"])           namespaces: ["legal"])
+    │                                          │
+    ▼                                          ▼
+KnowledgeRetrievalAgent                KnowledgeRetrievalAgent
+    │                                          │
+    ▼                                          ▼
+Vector query with                      Vector query with
+NAMESPACE="hr-policies" filter         NAMESPACE="legal" filter
+    │                                          │
+    └──────────────────────────────────────────┘
+                        │
+                        ▼
+               RAGAgent.respond_with_llm_step
+                        │
+                        ▼
+               LLMStopEvent (answer using only
+               retrieved context from selected namespaces)
+```
+
+### What is a "Bucket"?
+
+A **bucket** is a logical organizational unit for knowledge bases:
+
+- **Data lake concept**: Buckets partition organizational knowledge (HR, Finance, Engineering, etc.)
+- **Namespace container**: Each bucket contains multiple namespaces (e.g., HR bucket → "policies", "benefits", "payroll")
+- **Database entity**: Defined in `BucketEntity` (FerretDB/MongoDB)
+- **Retrieval agent mapping**: Each `KnowledgeRetrievalAgentReference` maps to exactly one bucket via its `bucket_name` field
+- **Multi-bucket support**: NamespaceSelectionAgent can configure multiple buckets, asking users to select namespaces from each
+
+### Key Implementation Patterns
+
+#### Agent-in-the-Loop for Delegation
+
+The NamespaceSelectionAgent delegates to RAGAgent using the AITL pattern:
+
+```python
+@step()
+async def delegate_to_rag_step(self, event: ...) -> AgentInTheLoop.request:
+    return AgentInTheLoop.invoke(
+        agent_id=config.rag_agent.agent_id,
+        agent_class=config.rag_agent.agent_class,
+        start_event=RAGUserMessageEvent(
+            bucket_namespace_selections=selections,
+            ...
+        )
+    )
+```
+
+#### ThreadContext for Persistent Selection
+
+User selections are stored in `ThreadContext` so follow-up questions in the same thread don't require re-selection:
+
+```python
+await thread_context.set(NAMESPACE_SELECTIONS_KEY, selections)
+```
+
+#### Configuration-Driven Bucket Mapping
+
+The mapping from retrieval agent to bucket is defined in configuration, not code:
+
+```python
+class NamespaceSelectionAgentConfig(AgentConfig):
+    buckets: list[BucketReference]  # Which buckets to offer for selection
+    rag_agent: RAGAgentReference    # Contains retrieval_agents with bucket_name
+```
+
+This allows the same workflow to be deployed with different bucket configurations without code changes.
