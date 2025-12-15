@@ -226,7 +226,10 @@ class RAGAgent(Agent):
                 error_message=event.exception_event.message,
             )
         )
-        await displayer.display_chunk(t("agent.rag_agent.messages.retrieval_error"), model_name="RAG Agent")
+        await displayer.display_chunk(
+            t("agent.rag_agent.messages.retrieval_error"),
+            model_name=RAGAgent.__name__,
+        )
         return StopEvent()
 
     @step(
