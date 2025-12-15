@@ -61,10 +61,6 @@ class ExpertRAGAgentConfig(AgentConfig):
     number_of_input_tokens: Annotated[
         int, Field(description="Maximum tokens allowed in input to manage context size or cost.")
     ]
-    condense_question_prompt: Annotated[
-        LocaleString | None,
-        Field(description="Prompt template for transforming a user query into a standalone question."),
-    ] = None
     few_shot_guard_examples: Annotated[
         list[FewShotGuardExample],
         Field(description="Examples for the few-shot guard to define which user requests are accepted."),

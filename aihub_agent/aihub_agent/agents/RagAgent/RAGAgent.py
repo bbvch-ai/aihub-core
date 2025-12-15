@@ -118,11 +118,10 @@ class RAGAgent(Agent):
         """Condenses the chat history and user query into a standalone question."""
         return await execute_condense_standalone_question(
             limited_history=event.limited_history,
-            user_query=start_event.user_query,
+            last_user_message=start_event.last_user_message,
             llm_config=agent_config.llm,
             t=t,
             displayer=displayer,
-            condense_prompt=agent_config.condense_question_prompt,
         )
 
     @step(
