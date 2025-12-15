@@ -173,13 +173,15 @@ class RAGAgent(Agent):
         )
         assert query is not None, "Query must not be None"
 
-        override_lookup = start_event.retrieval_overrides if isinstance(start_event, RAGUserMessageEvent) else None
+        bucket_selections = (
+            start_event.bucket_namespace_selections if isinstance(start_event, RAGUserMessageEvent) else None
+        )
 
         return execute_invoke_retrieval(
             query=query,
             locale=start_event.locale,
             retrieval_agents=agent_config.retrieval_agents,
-            retrieval_overrides=override_lookup,
+            bucket_namespace_selections=bucket_selections,
         )
 
     @step(

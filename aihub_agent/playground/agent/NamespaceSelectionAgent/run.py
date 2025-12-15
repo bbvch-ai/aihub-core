@@ -7,13 +7,13 @@ from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 
+from aihub_agent.agents.configs import AgentReference
 from aihub_agent.agents.NamespaceSelectionAgent import NamespaceSelectionAgent
 from aihub_agent.agents.NamespaceSelectionAgent.configs.BucketReference import BucketReference
 from aihub_agent.agents.NamespaceSelectionAgent.configs.NamespaceSelectionAgentConfig import (
     NamespaceSelectionAgentConfig,
 )
 from aihub_agent.agents.RagAgent import RAGAgent
-from aihub_agent.agents.RagAgent.configs.AgentReference import AgentReference
 from aihub_agent.runners.AgentRunner import AgentRunner
 
 enable_logging()
@@ -49,8 +49,6 @@ async def main():
                 agent_class=RAGAgent.__name__,
                 agent_id="rag_dev_agent",
             ),
-            # The knowledge retrieval agent ID within the RAG agent config
-            knowledge_retrieval_agent_id="knowledge_retrieval_dev_agent",
             selection_prompt=LocaleString(
                 en="Please select which knowledge area you'd like to search.",
                 de="Bitte waehlen Sie den Wissensbereich aus, den Sie durchsuchen moechten.",

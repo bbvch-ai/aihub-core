@@ -30,12 +30,12 @@ from dotenv import load_dotenv
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
 
+from aihub_agent.agents.configs import AgentReference
 from aihub_agent.agents.ExpertAskingAgent.events.AnswerStopEvent import AnswerStopEvent
 from aihub_agent.agents.ExpertRagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
 from aihub_agent.agents.ExpertRagAgent.configs.ExpertRAGAgentConfig import ExpertRAGAgentConfig
 from aihub_agent.agents.ExpertRagAgent.events.UserRequestsExpertEvent import UserRequestsExpertEvent
 from aihub_agent.agents.ExpertRagAgent.ExpertRAGAgent import ExpertRAGAgent
-from aihub_agent.agents.RagAgent.configs.AgentReference import AgentReference
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 enable_logging()

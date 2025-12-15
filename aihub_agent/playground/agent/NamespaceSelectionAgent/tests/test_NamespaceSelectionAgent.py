@@ -25,13 +25,13 @@ from dotenv import load_dotenv
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
 
+from aihub_agent.agents.configs import AgentReference
 from aihub_agent.agents.NamespaceSelectionAgent import NamespaceSelectionAgent
 from aihub_agent.agents.NamespaceSelectionAgent.configs.BucketReference import BucketReference
 from aihub_agent.agents.NamespaceSelectionAgent.configs.NamespaceSelectionAgentConfig import (
     NamespaceSelectionAgentConfig,
 )
 from aihub_agent.agents.RagAgent import RAGAgent
-from aihub_agent.agents.RagAgent.configs.AgentReference import AgentReference
 from aihub_agent.context.thread.ThreadContext import ThreadContext
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
@@ -100,7 +100,6 @@ def build_namespace_selection_agent_config(llm_config: LLMConfig) -> NamespaceSe
             agent_class=RAGAgent.__name__,
             agent_id="test_rag_agent",
         ),
-        knowledge_retrieval_agent_id="test_knowledge_retrieval_agent",
         llm=llm_config,
     )
 
@@ -213,9 +212,22 @@ async def _(agent_runner: AgentTestRunner, namespace: str):
 async def _(agent_runner: AgentTestRunner, query: str):
     """When the user sends a subsequent message (with existing namespace selection)."""
     async with agent_runner.test_run() as topic:
-        # Pre-populate ThreadContext with namespace selection BEFORE sending the message
+        # Pre-populate ThreadContext with namespace selection and available namespaces
         thread_context = ThreadContext(agent_runner.redis, topic.thread_id)
-        await thread_context.set("namespace_selections", {"test_bucket_id": "hr"})
+        await thread_context.set(
+            "namespace_selections",
+            [{"bucket_name": "test_bucket", "namespaces": ["hr"]}],
+        )
+        await thread_context.set(
+            "available_namespaces",
+            [
+                {
+                    "bucket_name": "test_bucket",
+                    "bucket_display_name": {"en": "Test Bucket"},
+                    "namespaces": [{"name": "hr", "display_name": {"en": "Human Resources"}}],
+                }
+            ],
+        )
 
         user_event = UserMessageEvent(
             messages=[ChatMessage(role=MessageRole.USER, content=query)],
@@ -264,8 +276,10 @@ def _(agent_runner: AgentTestRunner):
 def _(agent_runner: AgentTestRunner):
     """Then the RAGUserMessageEvent includes namespace overrides."""
     event = agent_runner.get_event_of_class(AgentInTheLoopRequestEvent)
-    # Check that the start_event is a RAGUserMessageEvent with overrides
+    # Check that the start_event is a RAGUserMessageEvent with bucket_namespace_selections
     from aihub_agent.agents.RagAgent.events import RAGUserMessageEvent
 
     assert isinstance(event.start_event, RAGUserMessageEvent), "Start event is not RAGUserMessageEvent"
-    assert event.start_event.retrieval_overrides is not None, "RAGUserMessageEvent has no overrides"
+    assert (
+        event.start_event.bucket_namespace_selections is not None
+    ), "RAGUserMessageEvent has no bucket_namespace_selections"

@@ -5,6 +5,7 @@ Re-exported here for backwards compatibility.
 """
 
 # Re-export shared events for backwards compatibility
+from aihub_agent.agents.RagAgent.events.BucketNamespaceSelection import BucketNamespaceSelection
 from aihub_agent.agents.RagAgent.events.RAGUserMessageEvent import RAGUserMessageEvent
 from aihub_agent.rag.events import (
     ContextInsufficientWithQueryEvent,
@@ -13,6 +14,7 @@ from aihub_agent.rag.events import (
 )
 
 __all__ = [
+    "BucketNamespaceSelection",
     "ContextInsufficientWithQueryEvent",
     "InOrderNodeCombinerEvent",
     "LimitChatHistoryWithContextEvent",

@@ -5,8 +5,8 @@ from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
 
+from aihub_agent.agents.configs import AgentReference
 from aihub_agent.agents.NamespaceSelectionAgent.configs.BucketReference import BucketReference
-from aihub_agent.agents.RagAgent.configs.AgentReference import AgentReference
 
 
 class NamespaceSelectionAgentConfig(AgentConfig):
@@ -29,14 +29,6 @@ class NamespaceSelectionAgentConfig(AgentConfig):
     rag_agent: Annotated[
         AgentReference,
         Field(description="The RAG agent to delegate to after namespace selection is complete."),
-    ]
-
-    knowledge_retrieval_agent_id: Annotated[
-        str,
-        Field(
-            description="The ID of the KnowledgeRetrievalAgent in the RAG agent's config. "
-            "Used to set namespace overrides when delegating."
-        ),
     ]
 
     llm: Annotated[

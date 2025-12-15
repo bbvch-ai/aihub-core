@@ -12,13 +12,14 @@ from aihub_agent.agents.NamespaceSelectionAgent.configs.NamespaceSelectionAgentC
 )
 from aihub_agent.agents.NamespaceSelectionAgent.namespace_data import BucketInfo
 from aihub_agent.agents.NamespaceSelectionAgent.namespace_formatting import format_single_bucket_options
+from aihub_agent.agents.RagAgent.events import BucketNamespaceSelection
 
 
 class SelectionParseResult(BaseModel):
     """Result of parsing namespace selections from user response."""
 
     complete: Annotated[bool, Field(description="Whether all bucket selections are complete")]
-    selections: Annotated[dict[str, str], Field(description="Map of bucket ID to selected namespace")]
+    selections: Annotated[list[BucketNamespaceSelection], Field(description="List of bucket namespace selections")]
     follow_up: Annotated[str, Field(default="", description="Follow-up message if selections incomplete")]
 
 
@@ -61,20 +62,26 @@ def namespace_selection_result_factory(
     return LocalizedNamespaceSelectionResult
 
 
+def _get_selected_bucket_names(selections: list[BucketNamespaceSelection]) -> set[str]:
+    """Returns set of bucket names that have been selected."""
+    return {s.bucket_name for s in selections}
+
+
 async def parse_selection_response(
     user_response: str,
-    available_namespaces: dict[str, BucketInfo],
-    partial_selections: dict[str, str],
+    available_namespaces: list[BucketInfo],
+    partial_selections: list[BucketNamespaceSelection],
     agent_config: NamespaceSelectionAgentConfig,
     t: LocaleHandler,
     displayer: EventDisplayer,
 ) -> SelectionParseResult:
     """Parses user's selection response using structured LLM output."""
-    merged_selections = {**partial_selections}
+    merged_selections = list(partial_selections)
+    selected_buckets = _get_selected_bucket_names(merged_selections)
     last_follow_up = ""
 
-    for bucket_id, bucket_info in available_namespaces.items():
-        if bucket_id in merged_selections:
+    for bucket_info in available_namespaces:
+        if bucket_info.bucket_name in selected_buckets:
             continue
 
         valid_namespaces = [ns.name for ns in bucket_info.namespaces]
@@ -92,7 +99,13 @@ async def parse_selection_response(
             )
 
         if result.selected_namespace:
-            merged_selections[bucket_id] = result.selected_namespace
+            merged_selections.append(
+                BucketNamespaceSelection(
+                    bucket_name=bucket_info.bucket_name,
+                    namespaces=[result.selected_namespace],
+                )
+            )
+            selected_buckets.add(bucket_info.bucket_name)
         else:
             last_follow_up = result.follow_up
             break

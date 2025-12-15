@@ -31,7 +31,7 @@ from dotenv import load_dotenv
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from aihub_agent.agents.RagAgent.configs.AgentReference import AgentReference
+from aihub_agent.agents.configs import AgentReference
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
 from aihub_agent.rag.events import (

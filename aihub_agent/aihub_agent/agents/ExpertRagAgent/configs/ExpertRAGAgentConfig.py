@@ -6,8 +6,8 @@ from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field, model_validator
 
+from aihub_agent.agents.configs import AgentReference
 from aihub_agent.agents.ExpertRagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
-from aihub_agent.agents.RagAgent.configs.AgentReference import AgentReference
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
 
 

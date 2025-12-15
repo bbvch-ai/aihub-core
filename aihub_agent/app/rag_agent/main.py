@@ -2,12 +2,13 @@ import asyncio
 
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 
 from aihub_agent.agents import KnowledgeRetrievalAgent
-from aihub_agent.agents.RagAgent.configs.AgentReference import AgentReference
+from aihub_agent.agents.configs import KnowledgeRetrievalAgentReference
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
 from aihub_agent.runners.AgentRunner import AgentRunner
@@ -16,6 +17,7 @@ enable_logging()
 
 
 async def main():
+    settings = AIHubSettings()
     servers_list = [NatsSettings().ENDPOINT]
     runner = AgentRunner(
         agent_type=RAGAgent,
@@ -126,7 +128,11 @@ async def main():
                 """,
             ),
             retrieval_agents=[
-                AgentReference(agent_class=KnowledgeRetrievalAgent.__name__, agent_id="knowledge_retrieval_agent"),
+                KnowledgeRetrievalAgentReference(
+                    agent_class=KnowledgeRetrievalAgent.__name__,
+                    agent_id="knowledge_retrieval_agent",
+                    bucket_name=settings.DEFAULT_KNOWLEDGE_BUCKET,
+                ),
             ],
         ),
         redis_url=RedisSettings().URL,

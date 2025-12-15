@@ -14,11 +14,12 @@ from aihub_agent.agents.NamespaceSelectionAgent.namespace_data import (
     NAMESPACE_SELECTIONS_KEY,
     PARTIAL_SELECTIONS_KEY,
     BucketInfo,
-    create_rag_event_with_overrides,
+    create_rag_event_with_bucket_selections,
     fetch_available_namespaces,
 )
 from aihub_agent.agents.NamespaceSelectionAgent.namespace_formatting import generate_selection_question
 from aihub_agent.agents.NamespaceSelectionAgent.selection_parsing import parse_selection_response
+from aihub_agent.agents.RagAgent.events import BucketNamespaceSelection
 from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.context.thread.ThreadContext import ThreadContext
 from aihub_agent.workflow.decorators.precondition import precondition
@@ -75,16 +76,14 @@ class NamespaceSelectionAgent(Agent):
         t: LocaleHandler,
     ) -> AgentInTheLoop.request:
         """Delegates to RAG agent when namespace selection already exists."""
-        selections: dict[str, str] = await thread_context.get(NAMESPACE_SELECTIONS_KEY, {})
+        selections_raw = await thread_context.get(NAMESPACE_SELECTIONS_KEY, [])
+        selections = [BucketNamespaceSelection.model_validate(s) for s in selections_raw]
 
         await displayer.display_thought(t("agent.namespace_selection.thoughts.delegating_to_rag"))
 
-        rag_event, _ = create_rag_event_with_overrides(
+        rag_event = create_rag_event_with_bucket_selections(
             event=event,
             selections=selections,
-            knowledge_retrieval_agent_id=agent_config.knowledge_retrieval_agent_id,
-            rag_agent_class=agent_config.rag_agent.agent_class,
-            rag_agent_id=agent_config.rag_agent.agent_id,
         )
 
         return AgentInTheLoop.invoke(
@@ -103,6 +102,7 @@ class NamespaceSelectionAgent(Agent):
         self,
         event: UserMessageEvent,
         run_context: RunContext,
+        thread_context: ThreadContext,
         agent_config: NamespaceSelectionAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
@@ -111,9 +111,11 @@ class NamespaceSelectionAgent(Agent):
         await displayer.display_thought(t("agent.namespace_selection.thoughts.fetching_namespaces"))
 
         available_namespaces = await fetch_available_namespaces(agent_config)
-        available_namespaces_serialized = {k: v.model_dump() for k, v in available_namespaces.items()}
+        available_namespaces_serialized = [ns.model_dump() for ns in available_namespaces]
+        # Store in both RunContext (for current run) and ThreadContext (for subsequent runs)
         await run_context.set(AVAILABLE_NAMESPACES_KEY, available_namespaces_serialized)
-        await run_context.set(PARTIAL_SELECTIONS_KEY, {})
+        await thread_context.set(AVAILABLE_NAMESPACES_KEY, available_namespaces_serialized)
+        await run_context.set(PARTIAL_SELECTIONS_KEY, [])
 
         question = await generate_selection_question(
             available_namespaces=available_namespaces,
@@ -144,11 +146,11 @@ class NamespaceSelectionAgent(Agent):
         """Parses user selection and either delegates or asks for clarification."""
         await displayer.display_thought(t("agent.namespace_selection.thoughts.parsing_selection"))
 
-        available_namespaces_raw = await run_context.get(AVAILABLE_NAMESPACES_KEY, {})
-        available_namespaces: dict[str, BucketInfo] = {
-            k: BucketInfo.model_validate(v) for k, v in available_namespaces_raw.items()
-        }
-        partial_selections: dict[str, str] = await run_context.get(PARTIAL_SELECTIONS_KEY, {})
+        available_namespaces_raw = await run_context.get(AVAILABLE_NAMESPACES_KEY, [])
+        available_namespaces = [BucketInfo.model_validate(ns) for ns in available_namespaces_raw]
+
+        partial_selections_raw = await run_context.get(PARTIAL_SELECTIONS_KEY, [])
+        partial_selections = [BucketNamespaceSelection.model_validate(s) for s in partial_selections_raw]
 
         result = await parse_selection_response(
             user_response=event.response,
@@ -160,15 +162,13 @@ class NamespaceSelectionAgent(Agent):
         )
 
         if result.complete:
-            await thread_context.set(NAMESPACE_SELECTIONS_KEY, result.selections)
+            selections_serialized = [s.model_dump() for s in result.selections]
+            await thread_context.set(NAMESPACE_SELECTIONS_KEY, selections_serialized)
             await displayer.display_thought(t("agent.namespace_selection.thoughts.selection_complete"))
 
-            rag_event, _ = create_rag_event_with_overrides(
+            rag_event = create_rag_event_with_bucket_selections(
                 event=start_event,
                 selections=result.selections,
-                knowledge_retrieval_agent_id=agent_config.knowledge_retrieval_agent_id,
-                rag_agent_class=agent_config.rag_agent.agent_class,
-                rag_agent_id=agent_config.rag_agent.agent_id,
             )
 
             return AgentInTheLoop.invoke(
@@ -177,7 +177,8 @@ class NamespaceSelectionAgent(Agent):
                 start_event=rag_event,
             )
         else:
-            await run_context.set(PARTIAL_SELECTIONS_KEY, result.selections)
+            partial_serialized = [s.model_dump() for s in result.selections]
+            await run_context.set(PARTIAL_SELECTIONS_KEY, partial_serialized)
             return HumanInTheLoop.chat.invoke(result.follow_up)
 
     @step(

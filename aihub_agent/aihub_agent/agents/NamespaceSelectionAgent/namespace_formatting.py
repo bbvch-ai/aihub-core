@@ -24,17 +24,17 @@ def format_single_bucket_options(
 
 
 def format_namespace_options(
-    available_namespaces: dict[str, BucketInfo],
+    available_namespaces: list[BucketInfo],
     t: LocaleHandler,
 ) -> str:
     """Formats namespace options for LLM prompt."""
     lines = []
-    for bucket_id, bucket_info in available_namespaces.items():
+    for bucket_info in available_namespaces:
         if bucket_info.bucket_display_name:
             bucket_name = t.extract(LocaleString.model_validate(bucket_info.bucket_display_name))
         else:
             bucket_name = bucket_info.bucket_name
-        lines.append(f"\nBucket: {bucket_name} (ID: {bucket_id})")
+        lines.append(f"\nBucket: {bucket_name}")
         lines.append("Namespaces:")
 
         for ns in bucket_info.namespaces:
@@ -45,7 +45,7 @@ def format_namespace_options(
 
 
 async def generate_selection_question(
-    available_namespaces: dict[str, BucketInfo],
+    available_namespaces: list[BucketInfo],
     user_query: str,
     agent_config: NamespaceSelectionAgentConfig,
     t: LocaleHandler,

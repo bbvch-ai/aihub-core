@@ -2,22 +2,24 @@ import asyncio
 
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 
 from aihub_agent.agents import InsightRetrievalAgent, KnowledgeRetrievalAgent
+from aihub_agent.agents.configs import AgentReference, KnowledgeRetrievalAgentReference
 from aihub_agent.agents.ExpertAskingAgent.ExpertAskingAgent import ExpertAskingAgent
 from aihub_agent.agents.ExpertRagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
 from aihub_agent.agents.ExpertRagAgent.configs.ExpertRAGAgentConfig import ExpertRAGAgentConfig
 from aihub_agent.agents.ExpertRagAgent.ExpertRAGAgent import ExpertRAGAgent
-from aihub_agent.agents.RagAgent.configs.AgentReference import AgentReference
 from aihub_agent.runners.AgentRunner import AgentRunner
 
 enable_logging()
 
 
 async def main():
+    settings = AIHubSettings()
     servers_list = [NatsSettings().ENDPOINT]
     runner = AgentRunner(
         agent_type=ExpertRAGAgent,
@@ -139,8 +141,15 @@ async def main():
                 """,
             ),
             retrieval_agents=[
-                AgentReference(agent_class=KnowledgeRetrievalAgent.__name__, agent_id="knowledge_retrieval_dev_agent"),
-                AgentReference(agent_class=InsightRetrievalAgent.__name__, agent_id="insight_retrieval_dev_agent"),
+                KnowledgeRetrievalAgentReference(
+                    agent_class=KnowledgeRetrievalAgent.__name__,
+                    agent_id="knowledge_retrieval_dev_agent",
+                    bucket_name=settings.DEFAULT_KNOWLEDGE_BUCKET,
+                ),
+                AgentReference(
+                    agent_class=InsightRetrievalAgent.__name__,
+                    agent_id="insight_retrieval_dev_agent",
+                ),
             ],
             write_insight_namespace="default",
             expert_escalation=ExpertEscalationConfig(
