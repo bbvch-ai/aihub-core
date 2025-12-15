@@ -1,102 +1,164 @@
 # Kapitel 13: AI-Agenten und Kernkonzepte
 
-## Jenseits der Black Box: Deterministische Prozesssicherheit
+Während die vorangegangenen Kapitel die Infrastruktur, Sicherheit und Integration beleuchtet haben, widmet sich dieser
+Abschnitt dem Herzstück der Wertschöpfung: den KI-Agenten selbst. In der öffentlichen Wahrnehmung werden Agenten oft mit
+autonomen Chatbots gleichgesetzt, die frei improvisieren. Im Unternehmenskontext ist Improvisation jedoch ein Risiko.
+Geschäftsprozesse verlangen nach Konsistenz, Nachvollziehbarkeit und Kontrolle.
 
-Der Einsatz von künstlicher Intelligenz in geschäftskritischen Bereichen scheitert oft an einem fundamentalen
-Vertrauensproblem: Klassische KI-Modelle agieren als intransparente «Black Box». Ein Anwender stellt eine Frage, und das
-System generiert eine Antwort – doch der Weg dorthin bleibt im Dunkeln. Für Schweizer Unternehmen, die strengen
-Compliance-Vorgaben und Revisionsanforderungen unterliegen, ist diese Unvorhersehbarkeit inakzeptabel. Ein System, das
-heute so und morgen anders entscheidet, lässt sich nicht auditieren.
+Der Swiss AI Hub bricht mit dem Paradigma der undurchsichtigen «Black Box». Anstatt monolithische Modelle entscheiden zu
+lassen, setzt die Plattform auf eine Architektur aus spezialisierten, workflow-basierten Komponenten. Dieses Kapitel
+beschreibt, wie durch deterministische Baupläne, strikte Protokolle und menschliche Interventionsmöglichkeiten
+(«Human-in-the-Loop») verlässliche KI-Systeme entstehen, die auch komplexen Anforderungen in regulierten Branchen
+genügen.
 
-Der Swiss AI Hub bricht mit diesem Paradigma der unkontrollierten Autonomie. Die Plattform betrachtet KI-Agenten nicht
-als magische Orakel, sondern als Software-Komponenten, die strikten, deterministischen Workflows folgen. Anstatt einem
-Sprachmodell lediglich Werkzeuge bereitzustellen und ihm die Wahl der Vorgehensweise zu überlassen, definiert der
-**Agenten-Bauplan** präzise Prozessschritte. Diese Workflow-basierte Steuerung garantiert, dass sich die KI stets
-innerhalb definierter Leitplanken bewegt.
+## Auf einen Blick
 
-Fachlich bedeutet dies den Übergang von probabilistischer Improvisation zu deterministischer Prozessausführung. Ein
-Agent auf der Plattform ist ein spezialisierter Assistent, der eine Aufgabe durch eine vordefinierte Sequenz von
-Operationen löst. Technisch realisiert der Swiss AI Hub dies durch das proprietäre **Swiss AI Agent Protokoll**. Dieses
-ereignisgesteuerte Framework trennt strikt zwischen der Steuerungslogik («Control Events») und der Ausgabe («Display
-Events»). Während der Agent im Hintergrund komplexe Entscheidungsbäume durchläuft oder Datenbanken abfragt, dienen
-Display-Ereignisse wie `ThoughtEvent` oder `ChunkEvent` dazu, dem Benutzer den «Gedankengang» des Agenten transparent zu
-machen, ohne die logische Ausführung zu beeinflussen.
+- **Deterministische Workflows:** Agenten folgen fest definierten Pfaden (Closed Workflows) statt autonomer
+  Improvisation, was das Verhalten vorhersagbar und auditierbar macht.
+- **Transparenz durch Protokoll:** Das Swiss AI Agent Protokoll trennt strikt zwischen Steuerungslogik («Control
+  Events») und Benutzerinformation («Display Events») für lückenlose Nachvollziehbarkeit.
+- **Human-in-the-Loop:** Kritische Prozesse können asynchron pausieren, um eine menschliche Genehmigung einzuholen,
+  bevor der Agent seine Arbeit fortsetzt.
+- **Multi-Agenten-Orchestrierung:** Komplexe Aufgaben werden durch das «Agent-in-the-Loop»-Muster in spezialisierte
+  Teilaufgaben zerlegt, die von dedizierten Worker-Agenten bearbeitet werden.
+- **Aktive Qualitätssicherung:** Integrierte «Guardrails» validieren Eingaben und prüfen Antworten auf Faktenbasis
+  (Context Sufficiency), um Halluzinationen technisch zu unterbinden.
 
-Zentral für die Sicherheit ist hierbei das hierarchische Kontext-Management. Das Protokoll unterscheidet zwischen dem
-**Run-Kontext** (für die isolierte Ausführung eines einzelnen Workflows), dem **Display-Kontext** (für die Darstellung
-in der Benutzeroberfläche) und dem **Thread-Kontext**. Letzterer speichert den Zustand einer Konversation sicher über
-bis zu 30 Tage. Dies gewährleistet, dass ein Agent sich an frühere Interaktionen erinnert, ohne dass Daten
-unkontrolliert zwischen verschiedenen Mandanten oder Prozessen diffundieren.
+## Deterministische Workflow-Steuerung statt «Black Box»
 
-## Integration von Unternehmenswissen durch RAG-Agenten
+### Geschäftlicher Nutzen
 
-Ein häufiges Missverständnis bei der Einführung von KI ist die Annahme, man müsse Modelle mit eigenen Daten
-«trainieren», um sie nutzbar zu machen. Dieser Ansatz ist nicht nur kostenintensiv, sondern führt dazu, dass veraltetes
-Wissen im Modell eingefroren wird. Unternehmen benötigen jedoch Antworten, die auf den aktuellen Richtlinien,
-Preislisten und Verträgen basieren, nicht auf dem Stand des letzten Trainings vor sechs Monaten.
+Ein fundamentaler Hinderungsgrund für den KI-Einsatz in kritischen Bereichen ist die Unvorhersehbarkeit. Wenn ein
+Sprachmodell halluziniert oder eine Entscheidung auf einer undurchsichtigen Basis trifft, entstehen Haftungsrisiken.
+Unternehmen und Behörden benötigen die Gewissheit, dass ein Agent definierten Regeln folgt. Ein «Workflow-basierter
+Agent» bietet diese Sicherheit. Er garantiert, dass Prozesse immer denselben validierten Pfaden folgen,
+Audit-Anforderungen erfüllen und nicht vom vorgesehenen Skript abweichen. Dies verwandelt KI von einem unberechenbaren
+Experiment in ein stabiles Werkzeug für die Prozessautomatisierung.
 
-Der Swiss AI Hub setzt daher auf spezialisierte **RAG-Agenten (Retrieval-Augmented Generation)**. Diese Agenten besitzen
-kein statisches Wissen, sondern die Fähigkeit, dynamisch auf aktuelle Unternehmensdaten zuzugreifen, die über die
-**Daten-zu-Wissen-Pipeline** in einer **Wissensdatenbank** bereitgestellt werden. Der Workflow beginnt mit dem
-Verständnis der Frage und der gezielten Suche in den zugewiesenen Sammlungen. Erst wenn relevante Informationen
-abgerufen wurden, synthetisiert das Sprachmodell eine Antwort, die ausschliesslich auf diesen Fakten basiert.
+### Konzeptioneller Ansatz
 
-Dieser Ansatz bietet zwei entscheidende Vorteile: Aktualität und Quellen-Transparenz. Sobald ein Dokument in der
-Wissensdatenbank aktualisiert wird, nutzt der Agent sofort die neue Version, ohne dass eine Zeile Code geändert werden
-muss. Zudem liefert der Agent stets die Referenz zur Quelle mit. Ein Nutzer muss nicht blind vertrauen, sondern kann
-verifizieren, aus welchem Abschnitt welcher Richtlinie die Information stammt. Technisch wird dies durch semantische
-Suche und Re-Ranking-Modelle unterstützt, wobei spezialisierte Events (`RetrieverEvent`) genau protokollieren, welche
-Dokumente für eine Antwort herangezogen wurden.
+Das Konzept unterscheidet strikt zwischen der «Intelligenz» des Sprachmodells und der «Steuerung» des Prozesses. Anstatt
+dem Modell eine vage Anweisung zu geben und auf das Beste zu hoffen, wird der Agent in einen «Closed Workflow»
+eingebettet. Dieser Workflow definiert eine Kette von Schritten, die deterministisch ausgeführt werden. Das Sprachmodell
+wird dabei lediglich als kognitiver Motor innerhalb einzelner Schritte genutzt – etwa um Text zu analysieren oder zu
+formulieren –, während die Entscheidungslogik über den nächsten Schritt (Verzweigungen, Schleifen, Abbruchbedingungen)
+fest im Code verankert ist. Die Ausführung erfolgt ereignisgesteuert, wobei der Zustand zwischen Schritten sicher
+verwaltet wird.
 
-## Die menschliche Kontrollinstanz (Human-in-the-Loop)
+### Technische Umsetzung im Swiss AI Hub
 
-Trotz aller Automatisierung gibt es Entscheidungspunkte, die nicht vollständig an eine Maschine delegiert werden dürfen
-– sei es aus ethischen Gründen, zur Qualitätssicherung oder aufgrund regulatorischer Vorschriften (z.B.
-Vier-Augen-Prinzip). Ein rein autonomes System, das Aktionen ohne Rücksprache ausführt, stellt in solchen Szenarien ein
-Compliance-Risiko dar.
+Im Swiss AI Hub wird dieses Konzept durch die Trennung von **Agenten-Bauplan** und **Agenten-Profil** sowie den **Agent
+Dispatcher** realisiert:
 
-Die Architektur des Swiss AI Hub integriert daher das **Human-in-the-Loop (HITL)** Muster als native Kernfunktion. Ein
-Agenten-Workflow kann so konfiguriert werden, dass er an kritischen Punkten seine Ausführung technisch pausiert
-(«suspendiert»). Der gesamte Zustand des Agenten – sein Kontext, die bisher gesammelten Daten und der geplante nächste
-Schritt – wird sicher persistiert. Das System generiert daraufhin über ein `HumanInTheLoopRequestEvent` eine Aufgabe für
-einen menschlichen Benutzer.
+- **Agenten-Bauplan (Blueprint):** Dies ist der unveränderliche Python-Code, der die Logik und die Abfolge der Schritte
+  (`@step`) definiert. Der Bauplan legt fest, wie Ereignisse verarbeitet werden und welche Aktionen (z.B.
+  Datenbankabfrage, API-Call) erlaubt sind.
+- **Agenten-Profil:** Dies ist die instanziierte Konfiguration eines Bauplans via `AgentConfig`. Ein Profil bestimmt,
+  auf welche spezifischen Datenquellen oder Modelle der Agent zugreifen darf. So können auf demselben Bauplan basierend
+  ein «HR-Agent» und ein «IT-Support-Agent» erstellt werden, die strikt getrennt operieren.
+- **Agent Dispatcher:** Diese Komponente orchestriert die Ausführung zur Laufzeit. Der Dispatcher analysiert die
+  Typ-Signaturen der Schritt-Methoden und injiziert automatisch notwendige Abhängigkeiten wie die Konfiguration
+  (`StepConfig`) oder Kontext-Speicher (`RunContext`, `ThreadContext`). Dies stellt sicher, dass der Agent niemals
+  ausserhalb der definierten Parameter agieren kann und jeder Schritt isoliert testbar ist.
 
-Erst wenn die autorisierte Person die Aktion genehmigt, korrigiert oder ablehnt, wird der Prozess fortgesetzt.
-Bemerkenswert ist hierbei die zeitliche Entkopplung: Die Wartezeit kann Sekunden, Stunden oder Tage betragen, ohne dass
-Systemressourcen blockiert werden. Das System nimmt den Arbeitsprozess exakt dort wieder auf, wo er unterbrochen wurde.
-Damit wird revisionssicher im Audit-Trail dokumentiert, wer wann welche Entscheidung der KI freigegeben hat.
+## Transparenz durch das Swiss AI Agent Protokoll
 
-## Orchestrierung und Interoperabilität
+### Geschäftlicher Nutzen
 
-Komplexe Geschäftsprobleme lassen sich selten von einem einzelnen Generalisten lösen. Analog zu menschlichen Teams setzt
-der Swiss AI Hub auf die Kollaboration spezialisierter Agenten. Ein Orchestrierungs-Agent kann Aufgaben an Sub-Agenten
-delegieren («Agent-to-Agent Delegation»).
+Um Vertrauen in automatisierte Systeme zu schaffen, muss jede Aktion erklärbar sein. Auditoren und
+Compliance-Beauftragte müssen rekonstruieren können, warum ein Agent zu einem bestimmten Ergebnis kam. Proprietäre
+Agenten-Frameworks verstecken diese internen Abläufe oft. Eine offene Standardisierung der Kommunikation ermöglicht
+hingegen eine lückenlose Überwachung («Observability») und Fehleranalyse. Dies ist essenziell, um regulatorische
+Anforderungen an die Erklärbarkeit von KI-Entscheidungen (z.B. im Rahmen des EU AI Acts) zu erfüllen, ohne sich in
+proprietäre Abhängigkeiten zu begeben.
 
-Das System unterstützt dabei komplexe Muster wie **Fan-Out/Fan-In**, bei dem ein Orchestrator eine Aufgabe in mehrere
-parallele Teilaufgaben zerlegt (z.B. die gleichzeitige Analyse von fünf Vertragsdokumenten durch fünf parallele
-Instanzen eines Analyse-Agenten) und die Ergebnisse anschliessend aggregiert. Ein spezifischer Anwendungsfall ist der
-**Expert Asking Agent**: Stösst ein RAG-Agent an seine Grenzen, halluziniert er keine Antwort, sondern eskaliert den
-Fall via Slack oder Teams an einen menschlichen Experten. Die Antwort des Experten fliesst automatisch in die
-Wissensdatenbank zurück, wodurch implizites Kopf-Wissen in explizites Unternehmenswissen umgewandelt wird.
+### Konzeptioneller Ansatz
 
-Um nicht in einem geschlossenen System gefangen zu sein, unterstützt der Swiss AI Hub zudem offene Standards für die
-Interoperabilität. Während das interne Protokoll die Sicherheit der Plattform garantiert, ermöglicht die Unterstützung
-des **Model Context Protocol (MCP)** die standardisierte Anbindung externer Tools und Datenquellen. Ein Agent kann so
-über MCP-Adapter sicher auf externe APIs zugreifen, ohne dass die interne Sicherheitsarchitektur kompromittiert wird.
+Die Plattform nutzt für die interne Kommunikation das **Swiss AI Agent Protokoll**. Dieses ereignisgesteuerte Modell
+definiert eine klare Sprache für alle Interaktionen innerhalb der Plattform. Es unterscheidet sich von Protokollen wie
+dem «Model Context Protocol» (MCP), welches für die Anbindung externer Tools gedacht ist, indem es den Fokus auf die
+interne Orchestrierung und Beobachtbarkeit legt. Kernprinzip ist die strikte Unterscheidung zwischen Steuerung und
+Anzeige. Während Steuerungsereignisse den logischen Fluss vorantreiben (z.B. «Suche gestartet», «Entscheidung
+getroffen»), dienen Anzeigeereignisse der Information des Nutzers (z.B. «Gedankenprotokoll», «Antwort-Stream»).
 
-## Qualitätssicherung durch Guards und automatisiertes Testen
+### Technische Umsetzung im Swiss AI Hub
 
-Vertrauen in KI entsteht durch die Abwesenheit von Fehlern. Um das Risiko von Halluzinationen zu minimieren,
-implementiert die Plattform ein mehrschichtiges System von **Guards (Schutzmechanismen)**.
+Das Protokoll wird über einen zentralen Message Bus (NATS) abgewickelt und definiert präzise Ereignis-Typen und Scopes:
 
-Bevor eine Anfrage bearbeitet wird, validieren Eingangs-Guards («Topic Adherence»), ob die Frage in den
-Zuständigkeitsbereich des Agenten fällt. Noch kritischer ist die Prüfung der Ausgabe: Der **Context Sufficiency Guard**
-analysiert bei RAG-Anfragen, ob die gefundenen Dokumente tatsächlich ausreichen, um die Frage zu beantworten. Ist die
-Faktenlage zu dünn, wird die Antwort unterdrückt. Ergänzend prüfen Ausgangs-Guards auf sensible Daten (PII) und
-schwärzen diese bei Bedarf («Redaction»), selbst wenn der Agent berechtigten Zugriff auf das Quelldokument hatte.
+- **Control Events:** Diese Ereignisse (wie `RetrieveEvent` oder `StopEvent`) sind die einzigen Trigger, die einen
+  Zustandsübergang im Workflow auslösen dürfen. Sie bilden den auditierbaren Pfad der Entscheidung.
+- **Display Events:** Ereignisse wie `ThoughtEvent` oder `ChunkEvent` streamen Zwischenstände oder «Überlegungen» des
+  Agenten an das Frontend, ohne den Prozessstatus zu ändern.
+- **Hierarchische Scopes:** Jedes Ereignis ist in eine dreistufige Kontext-Hierarchie eingebettet, die im Topic kodiert
+  ist:
+  - **Thread-Kontext:** Hält den langfristigen Zustand einer Konversation (bis zu 30 Tage).
+  - **Display-Kontext:** Gruppiert UI-Interaktionen, was besonders bei der Zusammenarbeit mehrerer Agenten wichtig ist,
+    um dem Nutzer eine nahtlose Ansicht zu bieten.
+  - **Run-Kontext:** Isoliert die technische Ausführung eines einzelnen Workflow-Durchlaufs für präzises Tracing.
 
-Qualitätssicherung beginnt jedoch bereits vor dem Betrieb. Mit dem **AgentTestRunner** bietet die Plattform eine
-Umgebung für **Behavior-Driven Development (BDD)**. Entwickler können Test-Szenarien in natürlicher Sprache definieren
-(z.B. «Wenn der Nutzer nach X fragt, muss der Agent Y tun»). Diese Tests laufen automatisiert ab und verifizieren, dass
-der Agent deterministisch reagiert, bevor er produktiv geschaltet wird. Dies verschiebt die Kontrolle von der reaktiven
-Überwachung hin zur proaktiven Garantie von Verhaltensweisen.
+## Spezialisierung und Multi-Agenten-Kollaboration
+
+### Geschäftlicher Nutzen
+
+Der Versuch, einen einzigen «Super-Agenten» für alle Unternehmensaufgaben zu bauen, führt zu komplexen, fehleranfälligen
+und schwer wartbaren Systemen. Effizienter ist der Einsatz spezialisierter Experten-Agenten, die jeweils eine Aufgabe
+perfekt beherrschen – sei es die Analyse von Rechtsdokumenten oder die Berechnung von Offerten. Die Fähigkeit, diese
+Spezialisten dynamisch zu Teams zu verknüpfen, ermöglicht die Lösung komplexer Probleme durch Arbeitsteilung, ähnlich
+wie in einer menschlichen Organisation. Dies erhöht die Wiederverwendbarkeit von Modulen und die Robustheit des
+Gesamtsystems.
+
+### Konzeptioneller Ansatz
+
+Die Architektur unterstützt **Multi-Agenten-Systeme** durch das «Agent-in-the-Loop»-Muster. Ein primärer
+Orchestrator-Agent zerlegt eine komplexe Anfrage in Teilaufgaben und delegiert diese an spezialisierte Worker-Agenten.
+Diese Worker operieren in ihren eigenen isolierten Workflows und geben lediglich das Ergebnis zurück. Dieser modulare
+Ansatz verhindert Seiteneffekte, da der Worker keinen direkten Zugriff auf den internen Speicher des Orchestrators hat,
+sondern nur über definierte Schnittstellen kommuniziert.
+
+### Technische Umsetzung im Swiss AI Hub
+
+Die Plattform stellt verschiedene vorgefertigte Agenten-Typen und Muster bereit:
+
+- **RAG-Agent:** Dieser Spezialist nutzt «Retrieval-Augmented Generation», um Antworten ausschliesslich auf Basis der in
+  der Wissensdatenbank gefundenen Vektoren zu generieren. Er nutzt Mechanismen wie «Re-Ranking» und
+  «Multi-Hop-Retrieval», um auch verstreute Informationen über mehrere Dokumente hinweg zu synthetisieren.
+- **Expert Asking Agent:** Wenn die Wissensbasis nicht ausreicht, kann dieser Agent über eine Slack- oder
+  Teams-Integration proaktiv menschliche Experten befragen. Die Antwort wird nicht nur an den Nutzer weitergeleitet,
+  sondern auch in die Wissensdatenbank zurückgespeist, wodurch das System organisch lernt.
+- **Orchestrierung:** Über Ereignisse wie `AgentInTheLoop.request` kann ein Agent einen anderen aufrufen. Die Plattform
+  verwaltet dabei die Kontext-Übergabe (`share_thread_id`), sodass für den Endanwender die Illusion einer nahtlosen
+  Konversation entsteht, während im Hintergrund ein Team von Spezialisten arbeitet.
+
+## Menschliche Kontrolle (Human-in-the-Loop) und Qualitätssicherung
+
+### Geschäftlicher Nutzen
+
+Trotz aller Fortschritte gibt es Situationen, in denen eine KI nicht autonom entscheiden darf – sei es bei hohen
+finanziellen Freigabegrenzen oder ethisch sensiblen Fragen. Unternehmen benötigen einen «Not-Aus-Schalter» und
+Freigabeprozesse. Das Prinzip «Human-in-the-Loop» integriert menschliche Entscheider direkt in den technischen Workflow.
+Dies ermöglicht Automatisierung bis zum Entscheidungspunkt, reduziert die Bearbeitungszeit drastisch und wahrt
+gleichzeitig die menschliche Hoheit über kritische Resultate.
+
+### Konzeptioneller Ansatz
+
+Ein Agenten-Workflow im Swiss AI Hub ist nicht auf sofortige Ausführung beschränkt. Er kann asynchron pausieren und in
+einen Wartezustand übergehen. Der Agent sendet eine Anfrage an einen Menschen und friert seinen aktuellen Zustand
+(Speicher, Variablen) ein. Dieser Zustand kann Minuten oder Tage persistiert werden. Erst wenn die menschliche
+Interaktion erfolgt – etwa eine Genehmigung per Klick –, wird der Agent «aufgeweckt» und setzt seine Arbeit mit den
+neuen Eingaben fort.
+
+### Technische Umsetzung im Swiss AI Hub
+
+Die Qualitätssicherung wird durch zwei komplementäre Mechanismen durchgesetzt:
+
+- **Interaktive Unterbrechung:** Durch das `HumanInTheLoop.request` wird der Workflow gestoppt und eine Aufgabe im
+  Frontend generiert. Die Antwort (`HumanInTheLoop.response`) rehydriert den Prozess. Dies ist essenziell für
+  Genehmigungsprozesse oder wenn der Agent bei Unsicherheit Rückfragen stellen muss.
+- **Guardrails (Schutzmechanismen):** Um die Qualität der Antworten automatisch zu sichern, kommen **Input-** und
+  **Output-Guards** zum Einsatz, die zusätzlich zum plattformweiten PII-Schutz (Presidio) agieren:
+  - *Input Guards* (z.B. Few-Shot-Guard oder Agentenbeschreibungs-Guard) validieren, ob eine Frage thematisch zulässig
+    ist und den Richtlinien entspricht.
+  - *Output Guards* (z.B. Context Sufficiency Guard) analysieren vor dem Absenden der Antwort, ob die gefundenen Quellen
+    die Aussage tatsächlich belegen. Ist die Faktenbasis zu dünn, wird die Antwort unterdrückt, um Halluzinationen zu
+    verhindern. Zudem kann ein spezifischer *Sensitive-Info-Guard* Daten redigieren, die zwar im Dokument stehen, aber
+    dem Nutzer nicht angezeigt werden sollen.

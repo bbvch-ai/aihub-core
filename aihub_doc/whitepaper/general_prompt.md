@@ -19,23 +19,83 @@ Analysiere die Input-Daten für das Kapitel. Identifiziere **logische thematisch
 darf nicht aus einem einzigen langen Textblock bestehen, sondern muss in sinnvolle Unterkapitel (Sections) mit eigenen
 Zwischenüberschriften gegliedert werden.
 
-### Phase B: Mikro-Struktur (Der 4-Schritt-Rhythmus)
+### Phase B: Mikro-Struktur (Die sichtbare Dreiteilung)
 
-**Innerhalb JEDES Unterkapitels/Abschnitts** musst du zwingend folgende argumentative Reihenfolge einhalten (keine
-Sprünge!):
+**Innerhalb JEDES Hauptabschnitts (H2)** musst du zwingend eine dreiteilige Struktur mit **SICHTBAREN H3-ÜBERSCHRIFTEN** implementieren. Diese Struktur muss für den Leser klar erkennbar sein.
 
-- **Mehrwert / Nutzen (Wozu?)**
+Jeder Hauptabschnitt muss in drei klar strukturierte Unterabschnitte gegliedert werden:
+
+**1. Mehrwert / Nutzen (H3-Überschrift)**
   - Welche Herausforderung oder Schmerzpunkte haben Unternehmen aktuell in diesem spezifischen Teilbereich?
   - Was ist der geschäftliche und technische Vorteil einer Lösung?
   - Adressierung an C-Level (Effizienz, Kosten, Compliance) und IT (Stabilität, Speed).
-- **Konzepte & Prozesse (Wie funktioniert es fachlich?)**
+
+**2. Konzept & Ansatz (H3-Überschrift)**
   - Beschreibung der zugrundeliegenden Konzepte, Rollen, Workflows und Governance-Aspekte.
   - Abstrakt und lösungsorientiert, noch ohne tiefe Code-Ebene.
-- **Technische Umsetzung im Swiss AI Hub (Die Lösung)**
-  - Konkrete Implementierung: Architektur, Komponenten, Module.
-  - Wie setzt der Swiss AI Hub die oben genannten Konzepte technisch um?
+  - Wie funktioniert die Lösung fachlich und methodisch?
 
-*Wichtig: Beginne jeden Abschnitt allgemein (Problemstellung) und ende technisch (Swiss AI Hub Lösung).*
+**3. Technische Umsetzung im Swiss AI Hub (H3-Überschrift)**
+  - Konkrete Implementierung: Architektur, Komponenten, Module, Technologien.
+  - Wie setzt der Swiss AI Hub die oben genannten Konzepte technisch um?
+  - Welche konkreten Features und Funktionen werden bereitgestellt?
+
+**KRITISCH**: Diese Dreiteilung muss durch H3-Überschriften (###) für den Leser sichtbar gemacht werden. Die exakten Titel können je nach Thema variieren (z.B. «Geschäftlicher Nutzen», «Lösungsansatz», «Plattform-Implementation»), aber die logische Abfolge **Nutzen → Konzept → Technik** muss in jedem Hauptabschnitt eingehalten und durch Überschriften strukturiert werden.
+
+**Beispiel-Struktur:**
+```
+## Hauptthema (z.B. «Nachvollziehbarkeit von KI-Entscheidungen»)
+
+### Geschäftlicher Nutzen
+[Fliesstext über Business Value, Schmerzpunkte, ROI...]
+
+### Konzeptioneller Ansatz
+[Fliesstext über die Methodik, Konzepte, Workflows...]
+
+### Technische Umsetzung
+[Fliesstext über konkrete Implementation im Swiss AI Hub...]
+```
+
+### Phase C: Kapitel-Einstieg und Abschluss
+
+**Kapitel-Einstieg:**
+
+Jedes Kapitel muss nach der Hauptüberschrift (H1) mit einem einleitenden Abschnitt beginnen, der aus zwei Teilen besteht:
+
+1. **Einleitungstext (1-2 Absätze, kein Extra-Heading):**
+   - Führt das Leser in das Thema ein
+   - Erklärt die Relevanz und den Kontext
+   - Stellt die Verbindung zwischen Business-Herausforderung und technischer Lösung her
+
+2. **«Auf einen Blick» (H2-Überschrift):**
+   - Kompakte Zusammenfassung der wichtigsten Erkenntnisse des Kapitels
+   - 3-5 prägnante Bulletpoints, die die Kernbotschaften des Kapitels hervorheben
+   - Ermöglicht C-Level-Lesern schnelles Erfassen der Hauptpunkte
+   - Jeder Bulletpoint sollte eine konkrete Aussage sein, keine vagen Formulierungen
+
+**Beispiel-Struktur Kapitel-Einstieg:**
+```
+# Kapitel-Titel
+
+[Einleitungstext: 1-2 Absätze Fliesstext ohne Überschrift]
+
+## Auf einen Blick
+
+- Konkrete Kernaussage 1 über das Hauptthema
+- Konkrete Kernaussage 2 über einen zentralen Aspekt
+- Konkrete Kernaussage 3 über die technische Umsetzung
+- [Optional: weitere Kernaussagen]
+
+## [Erster Hauptabschnitt beginnt hier]
+...
+```
+
+**Kapitel-Abschluss:**
+
+- **VERBOT**: Erstelle KEINE separaten Zusammenfassungs- oder Fazit-Abschnitte am Ende des Kapitels
+- Das Kapitel endet mit dem letzten inhaltlichen Hauptabschnitt
+- Keine Wiederholungen von bereits Gesagtem
+- Die «Auf einen Blick»-Sektion am Anfang dient bereits als Zusammenfassung
 
 ---
 

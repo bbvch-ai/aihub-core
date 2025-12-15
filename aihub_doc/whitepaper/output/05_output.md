@@ -1,194 +1,176 @@
 # Kapitel 05: Administration und Governance
 
-## Zentrale Steuerung in einer dezentralen Realität
+Der operative Betrieb einer Enterprise-KI-Plattform erfordert weit mehr als nur die Bereitstellung von Modellen und
+Rechenleistung. Für Schweizer Unternehmen, die in einem streng regulierten Umfeld agieren, sind Nachvollziehbarkeit,
+Kostentransparenz und die Durchsetzung interner Richtlinien (Governance) entscheidende Erfolgsfaktoren. Eine
+unkontrollierte KI-Nutzung führt unweigerlich zu Schatten-IT, unvorhersehbaren Kosten und Compliance-Verstössen.
 
-Mit der Einführung von KI-Systemen in die Unternehmenslandschaft verschiebt sich der Fokus zwangsläufig von der
-technischen Machbarkeit hin zur operativen Beherrschbarkeit. Während die vorangegangenen Kapitel die Transparenz und
-Datensouveränität beleuchteten, adressiert dieses Kapitel die Werkzeuge und Prozesse, die notwendig sind, um diese
-Prinzipien im täglichen Betrieb durchzusetzen. Für IT-Leiter, Compliance-Verantwortliche und das C-Level stellt sich
-nicht mehr die Frage, *ob* KI genutzt wird, sondern *wer* sie *wie*, in *welcher Qualität* und zu *welchen Kosten*
-nutzen darf.
+Dieses Kapitel beschreibt die administrativen Werkzeuge des Swiss AI Hub, die es ermöglichen, die Plattform zentral zu
+steuern, in bestehende Unternehmensprozesse zu integrieren und dabei höchste Sicherheitsstandards zu wahren. Der Fokus
+liegt auf der Balance zwischen technologischer Freiheit für Innovation und strikter Kontrolle für den sicheren,
+revisionssicheren Betrieb.
 
-Eine unregulierte KI-Landschaft tendiert zur Entropie: Unklare Zugriffsberechtigungen führen zu Sicherheitslücken,
-unüberwachte Kostenmodelle sprengen Budgets und mangelnde Qualitätssicherung erodiert das Vertrauen der Nutzer. Der
-Swiss AI Hub begegnet diesen Herausforderungen mit einem zentralisierten Ansatz für Administration und Governance. Die
-Plattform bietet ein einheitliches Kontrollzentrum, das Identitätsmanagement, granulare Zugriffskontrollen,
-Budgetsteuerung und Qualitätsüberwachung integriert, ohne die Agilität der Fachabteilungen einzuschränken.
+## Auf einen Blick
 
-## Identitätsmanagement und nahtlose Integration
+- **Granulare Zugriffskontrolle (RBAC):** Ein hierarchisches Berechtigungssystem steuert den Zugriff bis auf die Ebene
+  einzelner Agenten-Instanzen und blendet nicht autorisierte Dienste in der UI dynamisch aus («Security by
+  Invisibility»).
+- **Integrierte Kostenbremse:** Das LLM-Gateway erzwingt technisch definierte Budgets und Ratenlimits (Tokens per
+  Minute) pro Benutzer oder Abteilung, um Kostenexplosionen proaktiv zu verhindern.
+- **Evidenzbasierte Qualitätssicherung:** Automatisierte Experimente mit «Golden Record»-Datasets und KI-Richtern messen
+  Korrektheit und Vollständigkeit von Antworten vor jedem Deployment.
+- **Datenschutz-Automation:** Automatische Löschzyklen für ephemere Daten (30 Tage) und API-gestützte Prozesse für
+  Betroffenenrechte unterstützen die Einhaltung von DSGVO und revDSG.
+- **Nahtlose Observability:** Die Plattform liefert Metriken und Logs im OpenTelemetry-Standard, standardmässig
+  visualisiert über SigNoz, aber kompatibel mit jeder Enterprise-Monitoring-Lösung.
 
-### Die Identität als neuer Perimeter
+## Zentralisierte Zugriffskontrolle und Identitätsmanagement
 
-In modernen Enterprise-Architekturen ist nicht mehr das physische Netzwerk, sondern die digitale Identität der primäre
-Sicherheitsperimeter. Die Einführung einer KI-Plattform darf daher keinesfalls den Aufbau einer parallelen
-Benutzerverwaltung («Schatten-Verzeichnis») bedeuten. Isolierte Benutzerdatenbanken erhöhen nicht nur den
-administrativen Aufwand, sondern stellen durch asynchrone Austrittsprozesse (Offboarding) ein erhebliches
-Sicherheitsrisiko dar.
+### Geschäftlicher Nutzen
 
-### Integration bestehender Verzeichnisdienste
+In grossen Organisationen ist die Verwaltung von Benutzerrechten eine komplexe Herausforderung. Das Risiko, dass
+Mitarbeiter Zugriff auf sensible Daten oder teure KI-Modelle erhalten, für die sie nicht autorisiert sind, muss
+systemisch ausgeschlossen werden. Manuelle Benutzerverwaltung ist fehleranfällig und skaliert nicht. Unternehmen
+benötigen eine Lösung, die sich nahtlos in ihre bestehende Mitarbeiterverwaltung (Identity Provider) einfügt und das
+Prinzip der minimalen Rechtevergabe («Least Privilege») automatisch durchsetzt. Dies reduziert den administrativen
+Aufwand und minimiert die Angriffsfläche für internen Datenabfluss.
 
-Der Swiss AI Hub integriert sich nahtlos in die bestehende Identity-Provider-Landschaft (IdP) des Unternehmens. Die
-Plattform implementiert Authentifizierung basierend auf den Industriestandards OpenID Connect (OIDC) und OAuth 2.0.
-Anstatt eigene Passwörter zu speichern, delegiert das System die Überprüfung der Anmeldeinformationen an bewährte
-Enterprise-Lösungen wie Microsoft Entra ID (Azure Active Directory), Keycloak oder andere OIDC-konforme Dienste.
+### Konzeptioneller Ansatz
 
-Dies ermöglicht die sofortige und unternehmensweite Durchsetzung von Sicherheitsstandards. Wenn Ihre Organisation
-Multi-Faktor-Authentifizierung (MFA) oder passwortlose Anmeldeverfahren (Passkeys) vorschreibt, gelten diese Richtlinien
-automatisch auch für den Zugang zum Swiss AI Hub. Sitzungsdauer und Timeouts werden zentral gesteuert. Ein Mitarbeiter,
-der im zentralen Verzeichnis deaktiviert wird, verliert im selben Moment den Zugriff auf alle Agenten-Profile und
-Wissensdatenbanken, da die Plattform bei jeder Anfrage die Gültigkeit der Token (JWT) kryptografisch validiert.
+Der Swiss AI Hub verfolgt den Ansatz einer föderierten Identität mit granularer Rollenbasierter Zugriffskontrolle
+(RBAC). Anstatt eine isolierte Benutzerdatenbank zu pflegen, delegiert die Plattform die Authentifizierung an
+vertrauenswürdige Unternehmenssysteme (z.B. via OIDC). Die Autorisierung hingegen erfolgt innerhalb der Plattform über
+ein hierarchisches Berechtigungsmodell.
 
-## Granulare Zugriffskontrolle (RBAC) und dynamische Sichtbarkeit
+Ein zentrales Konzept ist hierbei die «Dynamische Dienstsichtbarkeit» (Dynamic Service Visibility). Die
+Benutzeroberfläche der Plattform passt sich in Echtzeit an die Berechtigungen des angemeldeten Benutzers an. Funktionen,
+Datenquellen oder Agenten-Profile, für die ein Nutzer keine Freigabe besitzt, werden nicht ausgegraut, sondern gar nicht
+erst angezeigt. Dies eliminiert «Access Denied»-Frustrationen und erhöht die Sicherheit durch Unsichtbarkeit. Zudem
+unterstützt das System Multi-Tenancy, wodurch verschiedene Abteilungen oder Mandanten auf derselben Infrastruktur
+logisch strikt voneinander getrennt arbeiten können.
 
-### Das Prinzip der minimalen Rechte (Least Privilege)
+### Technische Umsetzung im Swiss AI Hub
 
-Die pauschale Vergabe von Zugriffsrechten («Jeder sieht alles») ist in einem Umfeld, das potenziell Zugriff auf sensible
-Personaldaten oder strategische Dokumente hat, inakzeptabel. Governance erfordert Präzision. Der Swiss AI Hub
-implementiert hierfür ein hierarchisches, rollenbasiertes Zugriffskontrollsystem (RBAC), das sowohl auf der
-Benutzeroberfläche als auch auf der API-Ebene greift.
+Die Authentifizierung erfolgt über die Industriestandards OpenID Connect (OIDC) und OAuth 2.0. Dies ermöglicht eine
+native Integration mit Microsoft Entra ID (ehemals Azure AD), Keycloak oder anderen Enterprise-Identity-Providern.
+Funktionen wie Single Sign-On (SSO) und Multi-Faktor-Authentifizierung (MFA) werden somit direkt vom Identity Provider
+übernommen.
 
-Das System nutzt eine strukturierte Syntax in Punkt-Notation (`aihub.[user|admin].<service>.<resource>`), um
-Berechtigungen exakt abzubilden. Diese Struktur erlaubt sowohl extreme Granularität als auch effiziente Verwaltung durch
-Wildcards. Ein Administrator kann einer Abteilung mit einem einzigen Eintrag wie `aihub.user.agent.marketing.*` Zugriff
-auf alle Marketing-Bots gewähren oder mittels `aihub.user.agent.>` den Zugriff auf alle Agenten-Ressourcen in beliebiger
-Tiefe erlauben. Umgekehrt kann der Zugriff auf einen spezifischen Finanz-Agenten
-(`aihub.user.agent.finance.budget_2024`) strikt auf den CFO und Controller beschränkt bleiben.
+Das interne Berechtigungssystem nutzt eine präzise Punkt-Notation-Syntax, die Administratoren erlaubt, Zugriffsrechte
+extrem feingliedrig zu definieren:
 
-Diese Berechtigungslogik ist tief in der Architektur verankert («Defense in Depth»). Selbst wenn ein Nutzer die
-Benutzeroberfläche umgehen würde, prüft der **Access Checker** im Backend bei jeder Anfrage die Berechtigungsvorlagen
-gegen die Benutzerrolle. API-Endpunkte sind durch Controller geschützt, die dynamisch Pfadparameter auflösen und
-validieren, sodass eine unautorisierte Ressourcenabfrage bereits auf Protokollebene scheitert.
+- **Hierarchische Struktur:** Berechtigungen folgen dem Schema `aihub.[user|admin].<service>.<resource_id>`. Ein
+  Administrator kann beispielsweise einem Teamleiter Zugriff auf alle Support-Agenten gewähren
+  (`aihub.user.agent.support.>`), während ein Sachbearbeiter nur Zugriff auf eine spezifische Instanz erhält
+  (`aihub.user.agent.support.bot_v1`).
+- **Access Checker:** Die Prüfung der Rechte erfolgt ausschliesslich im Backend über eine «Access Checker»-Komponente.
+  Diese validiert bei jedem API-Aufruf die Berechtigungen gegen die im Token übermittelten Rollen.
+- **Sofortige Wirksamkeit:** Änderungen an Rollenzuweisungen werden ohne Cache-Verzögerung wirksam. Die
+  Benutzeroberfläche fragt beim Laden den autorisierten Dienstkatalog ab und rendert nur die erlaubten Elemente.
 
-### Sicherheit durch dynamische Dienstsichtbarkeit
+## Ressourcensteuerung und finanzielle Governance
 
-Ein häufiges Problem komplexer Enterprise-Software sind überfrachtete Benutzeroberflächen, die Nutzern Funktionen
-anzeigen, die sie gar nicht ausführen dürfen – oft resultierend in frustrierenden «Zugriff verweigert»-Meldungen. Der
-Swiss AI Hub verfolgt hier den Ansatz der «Dynamischen Dienstsichtbarkeit».
+### Geschäftlicher Nutzen
 
-Beim Start der Anwendung prüft das Backend den autorisierten Dienstkatalog des Nutzers. Die Benutzeroberfläche rendert
-daraufhin ausschliesslich jene Elemente, für die eine explizite Berechtigung vorliegt. Ein Data Scientist sieht
-Werkzeuge für Experimente und Evaluationen, während ein Sachbearbeiter im Kundendienst lediglich die für ihn relevanten
-Support-Agenten sieht. Nicht autorisierte Dienste sind nicht nur ausgeblendet, sondern existieren für die Sitzung des
-Nutzers faktisch nicht. Dieser Ansatz eliminiert Bedienungsfehler und reduziert die Angriffsfläche («Security through
-Invisibility»), da potenzielle Angreifer keine Informationen über vorhandene, aber gesperrte Systemteile erhalten.
+Die Abrechnungsmodelle kommerzieller LLM-Anbieter basieren meist auf dem verbrauchsabhängigen «Pay-per-Token»-Prinzip.
+Ohne strikte Kontrollen kann ein fehlerhaft konfigurierter Agent oder eine exzessive Nutzung durch eine einzelne
+Abteilung das IT-Budget innerhalb weniger Tage aufbrauchen. Finanzverantwortliche benötigen daher Instrumente, um Kosten
+nicht nur nachträglich zu analysieren, sondern proaktiv zu begrenzen und intern verursachergerecht zu verrechnen
+(Chargeback). Transparenz über die tatsächlichen Kosten pro Anwendungsfall ist die Basis für jede ROI-Betrachtung von
+KI-Projekten.
 
-## Datenschutz-Compliance und Betroffenenrechte
+### Konzeptioneller Ansatz
 
-### Unterstützung regulatorischer Anforderungen (DSGVO/DSG)
+Die Plattform implementiert ein mehrstufiges Kostenkontrollsystem, das Transparenz mit harten Limits («Circuit
+Breakers») kombiniert. Kosten werden granular erfasst – unterschieden nach Eingabe (Prompt) und Ausgabe (Completion), da
+diese oft unterschiedliche Preispunkte haben. Das System erlaubt die Definition von Budgets auf verschiedenen Ebenen:
+global für den Mandanten oder individuell pro Benutzer.
 
-Unternehmen agieren bei der Nutzung der Plattform als Datenverantwortliche und müssen die Einhaltung von
-Datenschutzgesetzen wie der DSGVO oder dem Schweizer DSG gewährleisten. Ein kritischer Aspekt hierbei ist die Wahrung
-der Betroffenenrechte, insbesondere das Recht auf Löschung («Recht auf Vergessenwerden») und das Auskunftsrecht.
+Zusätzlich zu finanziellen Limits kommen technische Ratenbegrenzungen (Rate Limiting) zum Einsatz. Diese verhindern,
+dass einzelne Akteure die Systemressourcen monopolisieren und die Performance für andere Nutzer beeinträchtigen, was
+besonders bei der Nutzung von kapazitätsbegrenzten lokalen Modellen kritisch ist.
 
-Der Swiss AI Hub unterstützt diese Anforderungen durch technische Massnahmen («Privacy by Design»). So werden ephemere
-Daten, die keinen dauerhaften Geschäftswert haben, automatisch nach einer konfigurierbaren Frist (Standard: 30 Tage)
-gelöscht. Für dauerhafte Daten, wie Benutzerprofile oder persistierte Chat-Verläufe, stellt die Plattform APIs bereit,
-die Administratoren erlauben, gezielte Berichtigungen oder Löschungen vorzunehmen, ohne die Integrität der Audit-Trails
-zu gefährden.
+### Technische Umsetzung im Swiss AI Hub
 
-### Transparenz und Einwilligung
+Die technische Durchsetzung erfolgt direkt im LLM-Gateway. Da jeglicher Modellverkehr diesen zentralen Punkt passiert,
+können hier Regeln (Policies) effektiv angewendet werden:
 
-Um der Rechenschaftspflicht nachzukommen, protokolliert das System alle wesentlichen Verarbeitungsschritte. Dies
-ermöglicht es Organisationen, Auskunftsersuchen effizient zu beantworten, indem Export-Funktionen für benutzerbezogene
-Daten genutzt werden. Da die Plattform die Rechtsgrundlage der Verarbeitung (z. B. Einwilligung oder Vertragserfüllung)
-nicht selbst festlegt, stellt sie die notwendigen Werkzeuge bereit, um den Status von Nutzern zu verwalten. Über die
-RBAC-Steuerung können Zugriffe im Falle eines Widerspruchs sofort entzogen werden, was die Verarbeitung effektiv stoppt,
-während die Datenbasis für gesetzliche Aufbewahrungspflichten erhalten bleibt.
+- **Harte Budgets:** Über Umgebungsvariablen wie `LITE_LLM_PROXY_USER_MAX_BUDGET` werden Obergrenzen definiert. Erreicht
+  ein Nutzer dieses Limit innerhalb einer Periode (z.B. `30d`), werden weitere Anfragen automatisch blockiert. «Soft
+  Budgets» ermöglichen Warnmeldungen vor Erreichen des Limits.
+- **Granulares Rate Limiting:** Administratoren können Parameter wie `TPM_LIMIT` (Tokens per Minute) oder `RPM_LIMIT`
+  (Requests per Minute) konfigurieren, um die Last zu steuern.
+- **Echtzeit-Tracking:** Das System protokolliert jeden API-Aufruf und berechnet die Kosten basierend auf den aktuellen
+  Modellpreisen. Diese Informationen werden direkt im Konversations-Thread angezeigt, sodass auch Endanwender ein Gefühl
+  für die verursachten Kosten entwickeln.
 
-## Wirtschaftliche Steuerung und Kostenkontrolle
+## Qualitätssicherung und Compliance-Tools
 
-### Transparenz in der Kostenstruktur
+### Geschäftlicher Nutzen
 
-Der Betrieb von Large Language Models (LLMs) führt eine neue Kostenvariable in die IT-Budgets ein: die Token-basierte
-Abrechnung. Da jede Interaktion – vom simplen «Hallo» bis zur Analyse eines 50-seitigen Dokuments – Kosten verursacht,
-ist die Gefahr unkontrollierter Ausgaben («Bill Shock») real. Traditionelle Pauschalmodelle greifen hier nicht.
+Die Einhaltung gesetzlicher Vorgaben wie des Schweizer Datenschutzgesetzes (revDSG) oder der EU-DSGVO ist zwingend.
+Insbesondere die Rechte von Betroffenen auf Löschung («Right to be Forgotten») stellen bei KI-Systemen eine
+Herausforderung dar. Gleichzeitig müssen Unternehmen sicherstellen, dass Agenten qualitativ hochwertige und korrekte
+Antworten liefern, bevor sie auf Kunden losgelassen werden. Ein Agent, der halluziniert, verursacht Reputationsschäden.
+Die Qualitätssicherung darf sich daher nicht auf subjektives «Ausprobieren» verlassen, sondern muss messbar sein.
 
-Der Swiss AI Hub bietet eine detaillierte Aufschlüsselung der Kostenstruktur. Das System unterscheidet zwischen
-verschiedenen Token-Typen (Prompt, Completion, Embedding) und Modellklassen. Es macht transparent, dass ein
-«Flaggschiff-Modell» (z.B. GPT-4-Klasse) für komplexe Denkaufgaben signifikant teurer ist als ein «effizientes Modell»
-(z.B. GPT-4o-mini-Klasse), das für Klassifizierungsaufgaben oft völlig ausreicht. Diese Daten werden pro Konversation
-erfasst und sind direkt im Thread einsehbar, was das Kostenbewusstsein der Nutzer schärft. Auch bei lokal gehosteten
-Modellen (CAPEX-Modell) können fiktive Token-Preise hinterlegt werden, um die Ressourcennutzung intern vergleichbar zu
-machen und eine Schatten-Rechnung (Shadow Accounting) zu ermöglichen.
+### Konzeptioneller Ansatz
 
-### Budgetierung und Limits
+Der Swiss AI Hub integriert Compliance- und Qualitätswerkzeuge direkt in den administrativen Workflow. Anstatt sich auf
+Bauchgefühl zu verlassen, ermöglicht die Plattform eine evidenzbasierte Bewertung mittels definierter Datasets («Golden
+Records»). Hierbei bewerten automatisierte KI-Richter die Antworten des Agenten anhand von Metriken wie Korrektheit,
+Vollständigkeit und Prägnanz.
 
-Um Budgetsicherheit zu gewährleisten, ermöglicht die Plattform die Definition harter und weicher Limits über den
-integrierten LiteLLM-Proxy. Administratoren können Obergrenzen auf Benutzer- oder Zeitebene festlegen, die durch
-Umgebungsvariablen gesteuert werden:
+Für den Datenschutz verfolgt die Plattform den Ansatz der Datensparsamkeit («Privacy by Design»). Daten werden mit
+Lebenszyklen versehen, sodass temporäre Daten automatisch aus dem System entfernt werden, ohne dass ein manueller
+Eingriff erforderlich ist.
 
-- **Maximales Budget (Hard Limit):** Ein harter Deckel (konfigurierbar via `LITE_LLM_PROXY_USER_MAX_BUDGET`). Ist dieser
-  erreicht, werden weitere Anfragen des Nutzers für den definierten Zeitraum (z.B. `30d`) blockiert.
-- **Warnschwelle (Soft Limit):** Ein Schwellenwert (`LITE_LLM_PROXY_USER_SOFT_BUDGET`), der Benachrichtigungen auslöst,
-  ohne den Betrieb zu stoppen, um frühzeitig intervenieren zu können.
-- **Ratenbegrenzung (Rate Limiting):** Technische Drosselung von Tokens pro Minute (TPM) oder Anfragen pro Minute (RPM).
-  Dies verhindert Missbrauch oder fehlerhafte Skripte, die in kurzer Zeit enorme Kosten verursachen könnten.
+### Technische Umsetzung im Swiss AI Hub
 
-Diese Mechanismen ermöglichen eine verursachergerechte interne Verrechnung (Chargeback) und verhindern, dass einzelne
-«Power-User» das Budget ganzer Abteilungen aufzehren.
+Die Plattform stellt spezifische Dienste bereit, um diese Anforderungen technisch abzubilden:
 
-## Qualitätssicherung und Bewertungs-Framework
+- **Automatisierte Experimente:** Administratoren erstellen Datasets mit Frage-Antwort-Paaren. Ein Experimentier-Lauf
+  testet den Agenten gegen diese Fälle. KI-Modelle fungieren als Richter und vergeben 0 bis 5 Sterne für die Qualität
+  der Antwort im Vergleich zur Referenz. Dies deckt Regressionen nach Updates der Wissensdatenbank sofort auf.
+- **Benutzerfeedback (Elo-Rating):** Nutzer können Antworten via Daumen-hoch/runter bewerten. Im «Arena-Modus» werden
+  Antworten verschiedener Modelle blind verglichen. Dies speist eine Bestenliste (Elo-Rating), die zeigt, welche Modelle
+  in der Praxis am besten performen.
+- **Datenschutz-Automation:** Ephemere Daten verfallen standardmässig automatisch nach 30 Tagen. Für permanente Daten
+  existieren APIs, um Benutzerprofile zu bereinigen oder Nutzer aus Konversations-Threads zu entfernen, was die
+  Umsetzung von Löschbegehren gemäss Art. 17 DSGVO technisch ermöglicht.
+- **Rechtsgrundlage:** Vor der ersten Nutzung können Nutzungsbedingungen und Datenschutzerklärungen eingeblendet werden
+  (Consent Management), deren Zustimmung protokolliert wird.
 
-### Vom «Bauchgefühl» zur messbaren Metrik
+## Operative Exzellenz und Überwachung
 
-Governance beschränkt sich nicht auf Zugriff und Kosten, sondern umfasst zwingend die Ergebnisqualität. In einem
-Unternehmenskontext muss verifizierbar sein, dass ein Agent korrekt, vollständig und prägnant antwortet. Das blosse
-Vertrauen darauf, dass ein Modell «meistens gut klingt», ist kein tragfähiges Fundament für Geschäftsprozesse.
+### Geschäftlicher Nutzen
 
-Der Swiss AI Hub integriert hierfür ein systematisches Bewertungs-Framework (Evaluations). Administratoren und
-Entwickler können **Golden Datasets** anlegen – kuratierte Sammlungen von repräsentativen Fragen und idealen
-Referenzantworten (Ground Truth). Automatisierte Experimente prüfen neue Versionen eines Agenten gegen diese Datensätze.
-Dabei fungieren spezialisierte LLMs als neutrale «Richter», die die Antwort des Agenten mit der Referenz vergleichen und
-Bewertungen auf einer Skala von 0 bis 5 Sternen in drei Dimensionen vergeben:
+Im produktiven Betrieb («Day 2 Operations») ist die Verfügbarkeit und Stabilität der Plattform entscheidend. IT-Teams
+müssen Probleme erkennen, bevor sie den Endanwender beeinträchtigen. Eine isolierte KI-Plattform, die ihre eigenen
+proprietären Monitoring-Tools mitbringt, erzeugt Datensilos. CIOs fordern daher Lösungen, die sich nahtlos in die
+bestehende Überwachungslandschaft integrieren lassen, um einen zentralen Blick auf die gesamte IT-Gesundheit zu
+gewährleisten.
 
-1. **Korrektheit:** Ist die Aussage faktisch richtig und frei von Halluzinationen oder Widersprüchen im Vergleich zur
-   Referenz?
-2. **Vollständigkeit:** Wurden alle Aspekte der Frage und impliziten Bedürfnisse beantwortet?
-3. **Prägnanz:** Ist die Antwort effizient formuliert oder unnötig weitschweifig?
+### Konzeptioneller Ansatz
 
-Dies ermöglicht ein empirisches Vorgehen («Test-Driven Development» für KI). Ein Agenten-Profil geht erst produktiv,
-wenn es im Testlauf eine definierte Qualitätsstufe erreicht hat.
+Die Observability-Strategie des Swiss AI Hub basiert auf den drei Säulen: Health Checks, Metriken und Logs. Das System
+ist so konzipiert, dass es vollständige Transparenz über den Zustand der Infrastruktur und der Applikation bietet.
 
-### Nutzer-Feedback und Elo-Ranking
+Entscheidend ist hierbei die Vermeidung von Herstellerabhängigkeiten (Vendor Lock-in). Die Plattform schreibt nicht vor,
+welches Monitoring-Tool verwendet werden muss, sondern stellt die Daten im offenen OpenTelemetry-Standard bereit. Dies
+ermöglicht es Unternehmen, ihre bestehenden Investitionen in Tools wie Splunk, Datadog oder Dynatrace weiter zu nutzen.
 
-Auch nach dem Deployment endet die Qualitätssicherung nicht. Die Plattform erlaubt es Nutzern, Antworten direkt im Chat
-mittels «Daumen hoch» oder «Daumen runter» zu bewerten. Im «Arena-Modus» können Nutzer sogar blind Antworten
-verschiedener Modelle vergleichen.
+### Technische Umsetzung im Swiss AI Hub
 
-Dieses Feedback fliesst in eine zentrale Bestenliste ein, die auf einem Elo-Rating-System basiert – ähnlich wie im
-Schachsport oder E-Sport. Diese Daten sind für die Governance von unschätzbarem Wert: Sie zeigen objektiv auf, welche
-Modelle in der Praxis am besten performen. Dies liefert Indikatoren für notwendige Nachschärfungen an der
-Wissensdatenbank (RAG) oder den System-Prompts und unterstützt datenbasierte Entscheidungen bei der Modellauswahl.
+Das technische Fundament bildet der **OpenTelemetry (OTel) Collector**, der als zentrale Datendrehscheibe fungiert.
 
-## Operative Überwachung (Monitoring & Alerting)
-
-### Health Checks und Systemgesundheit
-
-Ein Ausfall des KI-Systems kann kritische Geschäftsprozesse zum Erliegen bringen. Die operative Governance erfordert
-daher eine lückenlose Überwachung der Systemgesundheit. Der Swiss AI Hub setzt auf einen mehrschichtigen Ansatz der
-Observability:
-
-- **Native Docker Checks** überwachen auf unterster Ebene, ob Prozess-Container laufen.
-- **Anwendungsspezifische Health-Endpunkte** (`/health`) validieren darüber hinaus, ob Dienste tatsächlich bereit sind,
-  Anfragen zu verarbeiten (Readiness Probes), und ob Abhängigkeiten wie Datenbanken erreichbar sind.
-
-Jede Statusänderung wird protokolliert, was eine schnelle Reaktion bei Störungen ermöglicht.
-
-### Duale Observability-Strategie mit OpenTelemetry
-
-Um den administrativen Aufwand zu minimieren und «Monitoring-Silos» zu vermeiden, basiert die gesamte Telemetrie der
-Plattform auf dem offenen Industriestandard OpenTelemetry (OTel). Ein zentraler **OpenTelemetry Collector** fungiert als
-Datendrehscheibe, die Telemetriedaten von allen Diensten empfängt, anreichert und intelligent weiterleitet.
-
-Die Plattform verfolgt dabei eine **Duale Observability-Strategie**, die unterschiedliche Zielgruppen bedient:
-
-1. **Operatives Monitoring (via SigNoz):** Strukturierte Logs, Metriken und Traces werden standardmässig an **SigNoz**
-   gesendet, das als offizielles Backend fungiert. Hier überwachen IT-Teams Infrastruktur-Metriken (CPU, RAM),
-   Fehlerraten und die allgemeine Systemstabilität. Dank OTel können diese Daten jedoch auch problemlos an externe
-   Systeme wie Datadog, Splunk oder Grafana ausgeleitet werden.
-2. **LLM-Observability (via Phoenix):** Parallel dazu werden KI-spezifische Daten über eine dedizierte Pipeline an
-   **Phoenix** gesendet. Dieses Tool ist spezialisiert auf die Analyse von LLM-Interaktionen und visualisiert
-   Token-Verbrauch, Latenz pro Denkschritt, RAG-Retrieval-Qualität und Kosten.
-
-Durch diese Trennung erhalten sowohl das IT-Operations-Team als auch die KI-Entwickler massgeschneiderte Einblicke, ohne
-sich gegenseitig zu behindern, während die Datenhoheit vollständig beim Unternehmen verbleibt.
+- **SigNoz Integration:** Als offiziell unterstütztes Backend wird **SigNoz** für die Visualisierung von Logs, Metriken
+  und Traces bereitgestellt. Es kann als Cloud-Service oder selbst gehostet (Self-Hosted) betrieben werden, um
+  Datenhoheit zu gewährleisten.
+- **Health Checks:** Die Plattform bietet mehrstufige Gesundheitsprüfungen. Von einfachen Docker-Checks («Läuft der
+  Container?») bis zu synthetischen Probes, die die Reaktionsfähigkeit der Vektordatenbank prüfen.
+- **Zentraler Export:** Über einfache Konfigurationsänderungen im OTel Collector können Telemetriedaten an beliebige
+  externe Backends gesendet werden. Das System unterstützt Batching und Komprimierung, um die Netzwerklast zu
+  minimieren.
+- **Proaktives Alerting:** Kritische Ereignisse – wie das Erreichen von Budget-Limits oder Ausfälle von Komponenten –
+  können Alarme auslösen, die via Webhook an Slack, Microsoft Teams oder PagerDuty weitergeleitet werden.

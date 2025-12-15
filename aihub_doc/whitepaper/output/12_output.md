@@ -1,141 +1,178 @@
 # Kapitel 12: User Experience und Interaktion
 
-## Die Brücke zwischen Technologie und Anwender
+Die Akzeptanz einer Enterprise-KI-Plattform steht und fällt mit ihrer Benutzerfreundlichkeit. Selbst die
+leistungsfähigsten Modelle und sichersten Architekturen bleiben wirkungslos, wenn die Bedienung komplex ist oder
+etablierte Arbeitsweisen stört. Mitarbeitende erwarten heute von Unternehmenssoftware denselben Komfort («Consumer Grade
+Experience»), den sie von privaten Apps gewohnt sind – ohne dabei Kompromisse bei der Datensicherheit einzugehen.
 
-Die leistungsfähigste KI-Infrastruktur im Backend bleibt wirkungslos, wenn sie an der «letzten Meile» scheitert: der
-Akzeptanz durch die Mitarbeitenden. In der Praxis werden KI-Projekte selten durch technische Mängel der Modelle
-ausgebremst, sondern durch Benutzeroberflächen, die unintuitiv sind, hohe Schulungsaufwände erfordern oder sich wie ein
-Fremdkörper in den Arbeitsalltag drängen. Ein System, das kognitive Hürden aufbaut, wird umgangen.
+Dieses Kapitel beleuchtet die Interaktionsschicht des Swiss AI Hub. Es zeigt auf, wie die Plattform durch eine
+integrierte Suite, multimodale Eingaben und eine radikale Transparenz Vertrauen schafft und Barrieren abbaut, um KI von
+einem Expertenwerkzeug zu einem intuitiven Begleiter für die gesamte Belegschaft zu transformieren.
 
-Der Swiss AI Hub begegnet dieser Herausforderung mit einem kompromisslosen Fokus auf User Experience (UX). Die Plattform
-stellt nicht nur eine technische Schnittstelle bereit, sondern liefert eine vollständige, integrierte Arbeitsumgebung.
-Das Ziel ist es, die Barriere zwischen menschlicher Absicht und maschineller Ausführung so weit zu senken, dass die
-Interaktion mit KI-Agenten so natürlich wird wie der Umgang mit E-Mail oder Textverarbeitung.
+## Auf einen Blick
 
-## Einheitliche Suite statt Applikations-Fragmentierung
+- **Integrierte Produktivitäts-Suite:** Eine einheitliche Benutzeroberfläche bündelt Chat, Wissensverwaltung und
+  Agenten-Steuerung, um Kontextwechsel zu minimieren und die Lernkurve flach zu halten.
+- **Barrierefreie Multimodalität:** Nahtlose Unterstützung von Spracheingabe, Dokumenten-Uploads und direkter
+  Bildschirmfreigabe ermöglicht natürliche Interaktionen jenseits von reinem Text.
+- **Evidenzbasierte Transparenz:** KI-Antworten werden durch interaktive Zitationen direkt mit den Quellen aus der
+  Wissensdatenbank verknüpft, was eine sofortige Faktenprüfung ermöglicht.
+- **Kanal-Unabhängigkeit:** Durch native Integrationen in Microsoft Teams und Slack holt die Plattform den Nutzer dort
+  ab, wo die Zusammenarbeit stattfindet, inklusive Experten-Eskalation («Bot-in-the-Loop»).
+- **Schweizer Mehrsprachigkeit:** Die Oberfläche und Verarbeitung unterstützen nativ Deutsch, Französisch, Italienisch
+  und Englisch, um den Anforderungen nationaler Organisationen gerecht zu werden.
 
-### Reduktion der kognitiven Last
+## Eine integrierte Suite statt isolierter Tools
 
-Mitarbeitende sind heute oft mit einer Vielzahl isolierter Tools konfrontiert, was zu ständigen Kontextwechseln und
-einer steilen Lernkurve führt. Eine Enterprise-KI-Plattform sollte nicht als «noch ein weiteres Tool» wahrgenommen
-werden, sondern als zentraler Hub, der verschiedene Assistenzfunktionen bündelt. Konsistenz in Design und Bedienung ist
-dabei der Schlüssel zur Produktivität: Wer eine Funktion beherrscht, beherrscht intuitiv das gesamte System.
+### Geschäftlicher Nutzen
 
-### Das integrierte Service-Portal
+In vielen Unternehmen führt die Einführung von KI zu einer Fragmentierung der Tool-Landschaft. Mitarbeitende müssen
+zwischen verschiedenen Anwendungen wechseln – hier ein Chatbot für HR-Fragen, dort ein separates Tool für
+Dokumentenanalyse. Dieser ständige Kontextwechsel («Context Switching») vernichtet Produktivität und erhöht den
+Schulungsaufwand. Unternehmen benötigen eine zentrale Anlaufstelle, die verschiedene KI-Funktionalitäten unter einer
+einheitlichen Oberfläche bündelt. Dies reduziert die Lernkurve drastisch, da Navigationskonzepte und Designsprache
+konsistent bleiben, unabhängig davon, ob ein Agenten-Profil konfiguriert oder eine Wissensdatenbank durchsucht wird.
 
-Der Swiss AI Hub realisiert diesen Anspruch durch eine Suite-Architektur, die stark an moderne Produktivitätsumgebungen
-wie Microsoft Office oder Google Workspace angelehnt ist. Anstatt lose gekoppelter Einzelanwendungen authentifiziert
-sich der Benutzer einmalig und erhält Zugriff auf ein kohärentes Ökosystem. Eine persistente Navigation und eine
-durchgängige Designsprache verbinden die verschiedenen Module – von der Interaktion mit Agenten über die Verwaltung von
-Wissensdatenbanken bis hin zur Analyse von Geschäftsprozessen.
+### Konzeptioneller Ansatz
 
-Technisch bildet die Plattform eine stark erweiterte Version der **Open WebUI** als primäre Schnittstelle. Diese
-Entscheidung ermöglicht es Unternehmen, von einer weltweit aktiven Open-Source-Community zu profitieren, während der
-Swiss AI Hub unternehmensspezifische Erweiterungen für Sicherheit, Governance und RAG-Integration hinzufügt. Die
-Oberfläche ist responsive gestaltet und kann als Progressive Web App (PWA) installiert werden. Dies garantiert, dass
-Mitarbeitende auf Tablets oder Smartphones denselben Funktionsumfang nutzen können wie am Desktop, inklusive
-Offline-Fähigkeiten und Push-Benachrichtigungen, ohne auf native App-Stores angewiesen zu sein.
+Der Swiss AI Hub verfolgt den Ansatz einer integrierten Produktivitäts-Suite, vergleichbar mit modernen
+Office-Umgebungen. Die Benutzeroberfläche ist nicht als Ansammlung loser Werkzeuge konzipiert, sondern als kohärentes
+Ökosystem. Ein zentraler Service-Katalog dient als Einstiegspunkt. Das Design-Prinzip der Kontext-Persistenz stellt
+sicher, dass Nutzer nahtlos zwischen Aufgaben – etwa der Analyse eines Dokuments und der anschliessenden Abfrage eines
+Agenten – wechseln können, ohne den Faden zu verlieren. Die Authentifizierung erfolgt einmalig (Single Sign-On),
+woraufhin alle autorisierten Dienste zur Verfügung stehen.
 
-## Multimodale Interaktion: Sprache, Bild und Dokumente
+### Technische Umsetzung im Swiss AI Hub
 
-### Natürliche Eingabeformen für effiziente Arbeit
+Die Benutzeroberfläche basiert auf einer tief integrierten Implementierung der Open WebUI, die um
+unternehmensspezifische Funktionen erweitert wurde:
 
-Die traditionelle Eingabe per Tastatur ist nicht immer der effizienteste Weg, um komplexe Sachverhalte zu kommunizieren.
-In vielen Situationen – sei es unterwegs, bei der Analyse visueller Daten oder im kreativen Fluss – bremsen reine
-Textinterfaces den Workflow. Eine moderne KI-Plattform muss daher multimodal agieren, also verschiedene Eingabeformen
-parallel verstehen und verarbeiten.
+- **Service-Katalog:** Nutzer finden hier alle verfügbaren Agenten, visualisiert mit Statusindikatoren und
+  Beschreibungen. Ein Klick genügt, um eine Chat-Sitzung zu initiieren oder die zugrundeliegende Workflow-Logik
+  einzusehen.
+- **Persistente Navigation:** Eine permanente Seitenleiste ermöglicht den Zugriff auf Chat-Historie, Wissensverwaltung
+  und Agenten-Steuerung von überall in der Applikation.
+- **Intelligentes UI:** Die Oberfläche nutzt moderne Web-Technologien (WebSockets) für Echtzeit-Updates.
+  Skeleton-Screens sorgen für eine gefühlte hohe Performance, während Agenten-Antworten als Stream («Token-by-Token»)
+  dargestellt werden, sodass der Nutzer bereits lesen kann, während die Antwort noch generiert wird.
+- **Artefakt-Verwaltung:** Nutzer können vergangene Chat-Verläufe durchsuchen, umbenennen, exportieren oder
+  unwiderruflich löschen. Auch das Bearbeiten der eigenen letzten Nachricht ist möglich, um die Antwort des Agenten neu
+  zu generieren.
 
-### Flexible Eingabemethoden
+## Multimodale Interaktion und Barrierefreiheit
 
-Der Swiss AI Hub unterstützt eine breite Palette an Interaktionsmodi, die sich den Bedürfnissen des Nutzers anpassen:
+### Geschäftlicher Nutzen
 
-- **Spracheingabe:** Über die integrierte Spracherkennung können Anweisungen diktiert statt getippt werden. Eine
-  visuelle Zeitleiste zeigt die Dauer der Aufnahme an, bevor diese transkribiert wird. Die Modelle sind für Deutsch,
-  Englisch, Französisch, Italienisch und spezifisch auch für Schweizerdeutsch optimiert. KI-Antworten können ebenfalls
-  per Text-to-Speech vorgelesen werden, was Barrierefreiheit und «Eyes-free»-Szenarien ermöglicht.
-- **Bildschirmfreigabe und Vision:** Nutzer können direkt aus dem Chat heraus Browser-Tabs, Fenster oder den gesamten
-  Bildschirm freigeben. Die Plattform erfasst den Bildschirminhalt und ermöglicht es dem Nutzer, Fragen dazu zu stellen
-  («Was zeigt dieser Graph?», «Fasse diese Tabelle zusammen»). Vision-fähige Modelle analysieren den visuellen Kontext
-  und antworten direkt.
-- **Dokumenten-Analyse:** Dateien (PDF, Office, Text) lassen sich per Drag-and-Drop in den Chat ziehen. Die KI
-  verarbeitet diese Dokumente ad-hoc, um Fragen zu Inhalten zu beantworten oder Zusammenfassungen zu erstellen, ohne
-  dass diese Dateien dauerhaft in einer Wissensdatenbank indiziert werden müssen.
+Menschliche Kommunikation ist nicht auf getippten Text beschränkt. In vielen Arbeitssituationen – etwa im Aussendienst,
+im Spital oder bei der schnellen Erfassung von Ideen – ist die Tastatur ein Hindernis. Eine inklusive Plattform muss
+verschiedene Eingabekanäle unterstützen, um Barrieren abzubauen und die Effizienz zu steigern. Zudem ist in der
+mehrsprachigen Schweiz die Unterstützung der lokalen Landessprachen kein Luxus, sondern eine Grundvoraussetzung für die
+breite Akzeptanz in der Verwaltung und in national tätigen Unternehmen.
 
-## Kontext-Management und Nutzerkontrolle
+### Konzeptioneller Ansatz
 
-### Kontinuität über Sitzungen hinweg
+Die Plattform löst sich von der reinen Text-Eingabe und ermöglicht eine multimodale Interaktion. Nutzer können mit dem
+System sprechen, Bilder zeigen oder Dokumente hochladen. Das Konzept sieht vor, dass die KI den Kontext unabhängig vom
+Eingabemedium versteht. Ein gesprochener Satz wird ebenso präzise verarbeitet wie ein hochgeladener Screenshot einer
+Fehlermeldung. Dies fördert nicht nur die Effizienz, sondern auch die Barrierefreiheit für Menschen mit Einschränkungen.
 
-Geschäftsprozesse sind selten nach einer einzigen Frage abgeschlossen. Sie entwickeln sich über Tage oder Wochen. Ein
-häufiges Defizit einfacher Chatbots ist die «Amnesie» – das Verlieren des Kontexts, sobald ein Fenster geschlossen wird.
-Der Swiss AI Hub implementiert ein robustes Thread-Management, das alle Konversationen persistent speichert. Benutzer
-können vergangene Diskussionen jederzeit wiederaufnehmen, Themenbereiche taggen (z.B. «Projekt X», «Recherche») oder
-Unterhaltungen archivieren.
+### Technische Umsetzung im Swiss AI Hub
 
-### Granulare Historienverwaltung
+Der Swiss AI Hub integriert fortschrittliche Eingabetechnologien direkt in die Chat-Oberfläche:
 
-Die Plattform gewährt dem Nutzer die volle Souveränität über seine Historie. Nachrichten können nachträglich bearbeitet
-werden, um Missverständnisse zu korrigieren, woraufhin die KI ihre Antwort basierend auf dem neuen Kontext regeneriert
-(«Time Travel»). Diese Flexibilität verhindert, dass bei einem Tippfehler der gesamte Dialog neu gestartet werden muss.
+- **Spracheingabe:** Über das Mikrofon-Symbol können Nachrichten diktiert werden. Die Plattform unterstützt
+  Transkription in Deutsch (inklusive Schweizerdeutsch), Englisch, Französisch und Italienisch. Antworten können auf
+  Wunsch via Text-to-Speech vorgelesen werden, was insbesondere sehbehinderten Nutzern zugutekommt.
+- **Bildschirmfreigabe und Vision:** Nutzer können über die Funktion «Aufnehmen» direkt Browser-Tabs, Fenster oder den
+  gesamten Bildschirm teilen. Modelle mit Vision-Fähigkeiten analysieren diese visuellen Informationen – beispielsweise
+  um Diagramme zu erklären oder Text aus einem Screenshot zu extrahieren.
+- **Dokumenten-Interaktion:** Dateien (PDF, Office, Text) lassen sich per Drag-and-Drop in den Chat ziehen. Dies erlaubt
+  «Ad-hoc RAG», bei dem Nutzer Fragen zu einem spezifischen Dokument stellen können, ohne es permanent in eine
+  Wissensdatenbank ingestieren zu müssen.
 
-Aus Datenschutzperspektive ist die Kontrolle über diese Daten entscheidend. Die Plattform bietet Funktionen zum
-Exportieren von Chat-Verläufen sowie zum unwiderruflichen Löschen einzelner Threads oder des gesamten Benutzerprofils.
-Dies stellt sicher, dass die Anforderungen des revDSG und der DSGVO direkt durch den Endanwender umgesetzt werden
-können.
+## Vertrauen durch Quellentransparenz und Kontrolle
 
-## Transparenz und Quellen-Attribution
+### Geschäftlicher Nutzen
 
-### Vertrauen durch Verifizierbarkeit
+In einem geschäftlichen Kontext ist eine KI-Antwort wertlos, wenn ihre Herkunft unklar ist. Nutzer müssen verifizieren
+können, ob eine Aussage auf aktuellen Unternehmensrichtlinien basiert oder eine Halluzination des Modells ist. Mangelnde
+Transparenz führt zu Misstrauen und verhindert den Einsatz in kritischen Prozessen. Zudem ist es für die kontinuierliche
+Verbesserung der Systeme essenziell, dass Nutzer Feedback zur Qualität der Antworten geben können.
 
-In einem geschäftlichen Kontext ist eine KI-Antwort nur so wertvoll wie ihre Glaubwürdigkeit. Mitarbeitende müssen in
-der Lage sein, die Aussagen der KI gegen interne Originaldokumente zu prüfen, um fundierte Entscheidungen zu treffen.
-Eine «Black Box», die Ergebnisse ohne Begründung liefert, wird in qualitätskritischen Prozessen nicht akzeptiert.
+### Konzeptioneller Ansatz
 
-### Interaktive Zitation
+Um dem «Black-Box»-Phänomen entgegenzuwirken, implementiert die Plattform Mechanismen zur evidenzbasierten Interaktion.
+Jede Behauptung eines Agenten, die auf Retrieval-Augmented Generation (RAG) beruht, muss belegbar sein. Das Interface
+stellt diese Belege proaktiv zur Verfügung, ohne den Lesefluss zu stören. Gleichzeitig werden Nutzer in den
+Qualitätssicherungsprozess eingebunden, indem sie Antworten bewerten können, was wiederum die Optimierung der
+Agenten-Profile steuert.
 
-Der Swiss AI Hub integriert Mechanismen zur Quellen-Transparenz direkt in die Benutzeroberfläche. Sobald ein Agent auf
-eine **Wissensdatenbank** zugreift (Retrieval-Augmented Generation), wird die Antwort mit interaktiven Fussnoten
-versehen. Ein Klick auf eine Referenz öffnet ein seitliches Panel, das nicht nur den Namen des Quelldokuments anzeigt,
-sondern die exakte Textpassage hervorhebt, die zur Generierung der Antwort verwendet wurde. Dies ermöglicht einen
-sofortigen Faktencheck, ohne den Lesefluss zu unterbrechen.
+### Technische Umsetzung im Swiss AI Hub
 
-### Feedback-System und Evaluation
+Die Transparenz wird durch spezifische UI-Komponenten sichergestellt:
 
-Um die Qualität der Agenten kontinuierlich zu verbessern, können Nutzer Antworten direkt bewerten (Daumen hoch/runter).
-Im erweiterten Modus können detaillierte Rückmeldungen zur Qualität (z.B. «zu lang», «faktisch falsch») gegeben werden.
+- **Interaktive Zitation:** Wenn ein Agent Wissen aus einer Wissensdatenbank nutzt, werden die verwendeten Referenzen
+  direkt unter der Antwort angezeigt. Ein Klick auf die Zitation öffnet ein Seiten-Panel, das das Originaldokument, den
+  exakten Textausschnitt («Chunk») und die Relevanz-Scores anzeigt. Dies ermöglicht eine sofortige Faktenprüfung.
+- **Feedback-Schleife & Elo-Rating:** Nutzer können Antworten mit «Daumen hoch/runter» bewerten und schriftliches
+  Feedback geben. Diese Daten fliessen in eine interne Bestenliste (Elo-Rating) ein, die Administratoren hilft, die
+  effektivsten Modelle für spezifische Aufgaben zu identifizieren.
+- **Gedanken-Protokoll:** Für komplexe Agenten-Workflows kann der Nutzer die «Gedankenschritte» (Thought Events)
+  aufklappen. Dies visualisiert, welche Tools der Agent aufgerufen hat und wie er Schritt für Schritt zu seiner
+  Schlussfolgerung gelangt ist.
 
-Zusätzlich unterstützt die Plattform einen «Arena-Modus» für den objektiven Modellvergleich. Hierbei werden Antworten
-verschiedener Modelle (z.B. GPT-4o vs. Mistral Large) anonymisiert gegenübergestellt. Die Nutzerwahl fliesst in ein
-internes Elo-Rating-System ein. Diese datengestützte Evaluation hilft Administratoren, die effektivsten Modelle für
-spezifische Anwendungsfälle zu identifizieren, basierend auf der tatsächlichen Zufriedenheit der Mitarbeitenden und
-nicht nur auf synthetischen Benchmarks.
+## Nahtlose Integration in Kollaborations-Tools
 
-## Omni-Channel-Integration: Teams und Slack
+### Geschäftlicher Nutzen
 
-### KI dort, wo die Zusammenarbeit stattfindet
+Die Einführung neuer Software scheitert oft an der Gewohnheit der Nutzer. Wenn Mitarbeitende ihren gewohnten
+Arbeitsplatz – sei es Microsoft Teams oder Slack – verlassen müssen, um eine KI zu konsultieren, entsteht eine Hürde.
+Die effektivste KI ist jene, die als «virtueller Kollege» dort präsent ist, wo die Zusammenarbeit im Team bereits
+stattfindet. Dies senkt die Hemmschwelle zur Nutzung und ermöglicht es, KI-Support direkt in Gruppendiskussionen
+einzubinden.
 
-Während die Web-Oberfläche für komplexe Analysen ideal ist, finden schnelle Abstimmungen oft in Kollaborationstools
-statt. Um Medienbrüche zu vermeiden, integriert der Swiss AI Hub Agenten nativ in **Microsoft Teams** und **Slack**.
+### Konzeptioneller Ansatz
 
-Über die Integration des Azure Bot Service agieren Agenten als natürliche Teammitglieder. Ein Nutzer kann einen Agenten
-in einem Teams-Kanal erwähnen («@Helpdesk, wie ist der Status von Ticket 123?»), und der Agent antwortet direkt im
-Thread. Dank Streaming-Unterstützung wird die Antwort in Echtzeit aufgebaut, was die gefühlte Latenz minimiert. Diese
-Integration unterstützt auch «Human-in-the-Loop»-Szenarien: Agenten können bei Unsicherheiten proaktiv Experten in einem
-Slack-Kanal um Rat fragen, deren Antwort verarbeiten und den Workflow autonom fortsetzen.
+Der Swiss AI Hub verfolgt eine Strategie der Kanal-Unabhängigkeit. Die Benutzeroberfläche ist nicht auf den Webbrowser
+beschränkt. Durch die Integration in Messenger-Dienste wird die KI Teil des Teams. Das Konzept unterstützt dabei auch
+hybride Arbeitsweisen: Ein Agent kann eine Aufgabe in Teams entgegennehmen, bei Unsicherheit einen menschlichen Experten
+in einem definierten Kanal um Rat fragen («Bot-in-the-Loop») und nach Erhalt der Antwort den Prozess autonom fortsetzen.
 
-## Internationalisierung und Schweizer Lokalisierung
+### Technische Umsetzung im Swiss AI Hub
 
-### Mehrsprachigkeit als Standard
+Die Anbindung erfolgt über den integrierten Azure Bot Service, der als Brücke zwischen der Plattform und den Kanälen
+fungiert:
 
-Für Schweizer Organisationen ist die Unterstützung der Landessprachen keine Zusatzfunktion, sondern eine
-Grundvoraussetzung. Eine Benutzeroberfläche, die nur auf Englisch verfügbar ist, führt zu Akzeptanzproblemen und kann
-regulatorische Vorgaben verletzen.
+- **Native Clients:** In Microsoft Teams und Slack agiert der Agent als normaler Kontakt. Er unterstützt
+  Rich-Text-Formatierung, Datei-Uploads und Streaming-Antworten (Tipp-Indikator), sodass sich die Interaktion natürlich
+  anfühlt.
+- **Kontext-Erhalt:** Die Plattform speichert den Konversationszustand persistent. Ein Nutzer kann eine Diskussion
+  beginnen und später fortsetzen, da der Agent Zugriff auf die Historie hat.
+- **Experten-Eskalation:** Über strukturierte Workflows können Agenten Fragen in Experten-Channels posten. Die Antwort
+  des menschlichen Experten wird vom System erfasst und in den Wissenskontext des Agenten integriert, wodurch ein
+  organisatorischer Lerneffekt entsteht.
 
-Die Architektur des Swiss AI Hub ist von Grund auf internationalisiert. Die gesamte Benutzeroberfläche – von Menüs über
-Hilfetexte bis hin zu Fehlermeldungen – ist vollständig in Deutsch, Französisch, Italienisch und Englisch lokalisiert.
-Die Sprachwahl erfolgt pro Benutzerprofil, kann aber bei Bedarf temporär für eine Sitzung gewechselt werden.
+## Lokalisierung und Internationalisierung
 
-Wichtiger als die Übersetzung der Oberfläche ist die linguistische Kompetenz bei der Verarbeitung: Die Plattform
-berücksichtigt bei der Suche und Indexierung von Dokumenten die Besonderheiten der jeweiligen Sprache (z.B. Stemming).
-Auch Datums-, Zeit- und Zahlenformate passen sich automatisch den regionalen Konventionen an (z.B. 31.12.2024 vs.
-12/31/2024). Dies garantiert, dass sich die Plattform für einen Nutzer in der Romandie genauso nativ anfühlt wie für
-einen Kollegen in der Deutschschweiz oder im Tessin.
+### Geschäftlicher Nutzen
+
+Für Schweizer Organisationen ist die Unterstützung der Landessprachen essenziell. Eine Plattform, die nur auf Englisch
+verfügbar ist oder schlechte Übersetzungen liefert, wird von der Belegschaft nicht akzeptiert. Behörden und Unternehmen
+müssen sicherstellen, dass Mitarbeiter in der Deutschschweiz, der Romandie und im Tessin gleichberechtigten Zugang zu
+den KI-Diensten haben.
+
+### Konzeptioneller Ansatz
+
+Internationalisierung ist tief im System verankert. Die Plattform unterscheidet zwischen der Sprache der
+Benutzeroberfläche (statische Elemente) und der Sprache der generierten Inhalte. Nutzer können ihre bevorzugte Sprache
+im Profil wählen, was sofortige Auswirkungen auf die gesamte Interaktion hat. Das System ist darauf ausgelegt, dynamisch
+generierte Inhalte – wie Beschreibungen von Agenten oder Fehlermeldungen – ebenfalls in der Zielsprache auszugeben.
+
+### Technische Umsetzung im Swiss AI Hub
+
+- **Vollständige UI-Übersetzung:** Alle Menüs, Dialoge und Hilfetexte sind in Deutsch, Englisch, Französisch und
+  Italienisch verfügbar. Fehlt eine Übersetzung, greift das System auf Deutsch zurück.
+- **Formatierung:** Zahlen, Datumsangaben und Währungen werden automatisch gemäss den regionalen Konventionen der
+  gewählten Sprache formatiert (z.B. «31.12.2024» für Deutsch vs. «12/31/2024» für Englisch).
+- **Inhaltliche Adaption:** Dynamische Inhalte wie Namespace-Namen oder Agenten-Beschreibungen passen sich der gewählten
+  Sprache an. Dies stellt sicher, dass Nutzer keine Sprachmischung erleben und sich intuitiv zurechtfinden.

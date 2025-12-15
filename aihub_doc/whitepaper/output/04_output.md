@@ -1,174 +1,193 @@
-# Plattform-Transparenz und Prüfbarkeit
+# Kapitel 04: Plattform-Transparenz und Prüfbarkeit
 
-## Vom «Black Box»-Mythos zur auditierbaren Gewissheit
+Eine der grössten Hürden für den produktiven Einsatz generativer KI in Schweizer Unternehmen ist das
+«Black-Box»-Problem. Wenn ein KI-Modell eine Entscheidung trifft, eine Empfehlung ausspricht oder einen Text generiert,
+bleibt oft unklar, wie dieses Ergebnis zustande kam. Für regulierte Branchen, die öffentliche Verwaltung und
+sicherheitsbewusste Unternehmen ist dieser Zustand inakzeptabel. Compliance-Vorgaben, interne Revisionsrichtlinien und
+das revidierte Datenschutzgesetz (revDSG) verlangen lückenlose Nachvollziehbarkeit.
 
-Der Einsatz generativer KI in Unternehmen wird oft von einer fundamentalen Sorge begleitet: der Unsicherheit gegenüber
-der sogenannten «Black Box». In vielen kommerziellen KI-Produkten geben Benutzer einen Prompt ein und erhalten eine
-Antwort, ohne jeglichen Einblick in die dahinterliegenden Entscheidungsprozesse oder die verwendeten Datenquellen. Für
-ein experimentelles Startup mag dies akzeptabel sein, doch für Schweizer Finanzinstitute, Versicherungen oder die
-öffentliche Verwaltung stellt dieser Mangel an Transparenz ein inakzeptables Risiko dar. Wenn eine KI eine
-Kreditentscheidung vorbereitet oder patientenbezogene Daten zusammenfasst, muss der Weg zur Antwort ebenso klar belegbar
-sein wie das Ergebnis selbst.
+Der Swiss AI Hub begegnet dieser Herausforderung mit einem fundamentalen Architekturprinzip: Radikale Transparenz durch
+einen «White-Box»-Ansatz. Dieses Kapitel beschreibt, wie die Plattform technische Abläufe, Datenflüsse und
+Entscheidungsketten nicht nur ausführt, sondern lückenlos und auditierbar dokumentiert, um Vertrauen durch technische
+Beweisbarkeit zu ersetzen.
 
-Der Swiss AI Hub begegnet dieser Herausforderung mit einem Architekturansatz der radikalen Transparenz. Die Plattform
-behandelt KI nicht als undurchsichtiges Orakel, sondern als eine Abfolge deterministischer, technischer Prozessschritte.
-Durch die Implementierung von «Deep Observability» wird jeder Denkschritt, jeder Datenbankzugriff und jede externe
-API-Interaktion protokolliert. Dies verwandelt die Black Box in ein «Glass Box»-System, das Auditoren,
-Compliance-Beauftragten und IT-Administratoren jederzeit Rede und Antwort stehen kann.
+## Auf einen Blick
 
-## Nachvollziehbarkeit durch das Swiss AI Agent Protokoll
+- **Lückenlose Kausalkette:** Durch das Swiss AI Agent Protokoll wird jeder logische Schritt eines Agenten als
+  unveränderliches Ereignis dokumentiert, wodurch Entscheidungen deterministisch nachvollziehbar werden.
+- **Beweisbare Datenherkunft:** Data Lineage verknüpft jede KI-Antwort direkt mit den verwendeten Quell-Dokumenten
+  (Chunks), um Halluzinationen auditierbar auszuschliessen.
+- **Dual-Pipeline Observability:** Eine innovative Architektur trennt Entwickler-Tracing (Phoenix) von operativem
+  Monitoring (SigNoz), um sowohl tiefe KI-Inspektion als auch stabilen Betrieb zu gewährleisten.
+- **Vendor-Neutralität:** Dank OpenTelemetry-Standard können Audit-Daten ohne Anpassung in bestehende SIEM-Systeme wie
+  Datadog, Splunk oder Dynatrace exportiert werden.
+- **Integrierte Finanzkontrolle:** Das LLM-Gateway erzwingt Budgets und Ratenlimits technisch, um Kostenexplosionen
+  proaktiv zu verhindern.
 
-### Deterministische Abläufe statt chaotischer Autonomie
+## Nachvollziehbarkeit von KI-Entscheidungen
 
-In geschäftskritischen Szenarien reicht ein korrektes Ergebnis allein oft nicht aus; die Herleitung muss validierbar
-sein. Führungskräfte müssen verstehen, warum ein Agent eine bestimmte Empfehlung ausgesprochen hat oder warum eine
-Anfrage abgelehnt wurde. Fehlt diese Erklärbarkeit (Explainability), sinkt das Vertrauen der Nutzer, und die
-Fehleranalyse bei inkorrekten Antworten («Halluzinationen») wird unmöglich. Ein System, das seine interne Logik
-verbirgt, entzieht sich der effektiven Steuerung.
+### Geschäftlicher Nutzen
 
-### Trennung von Steuerung und Beobachtung
+In kritischen Geschäftsprozessen reicht ein korrektes Ergebnis allein nicht aus; der Weg dorthin muss erklärbar sein
+(«Explainability»). Wenn ein Agent einen Kreditantrag ablehnt oder eine medizinische Empfehlung zusammenfasst, müssen
+Fachabteilungen und Auditoren verstehen, welche logischen Schritte durchlaufen wurden. Mangelnde Erklärbarkeit ist ein
+massives Haftungsrisiko. Der Swiss AI Hub eliminiert dieses Risiko, indem er die internen Denkprozesse der KI sichtbar
+macht. Dies schafft Vertrauen bei den Anwendern und ermöglicht es Compliance-Beauftragten, die Einhaltung von
+Richtlinien zu verifizieren, ohne sich auf das Wort der KI verlassen zu müssen.
 
-Der Swiss AI Hub löst dieses Problem durch das zugrundeliegende **Swiss AI Agent Protokoll**. Dieses Protokoll definiert
-eine strikte Ereignisarchitektur, die sicherstellt, dass die Beobachtung eines Agenten dessen Arbeitsweise niemals
-beeinflusst. Anders als monolithische Chatbots, die lediglich Text generieren, emittieren Agenten auf der Plattform
-während ihrer Arbeit kontinuierlich strukturierte Ereignisse.
+### Konzeptioneller Ansatz
 
-Technisch unterscheidet das Protokoll strikt zwischen zwei Ereignistypen:
+Die Lösung verabschiedet sich vom Konzept monolithischer, undurchsichtiger Chatbots. Stattdessen setzt die Plattform auf
+Workflow-basierte Agenten. Ein Agent folgt keinem Zufallspfad, sondern einem definierten Agenten-Bauplan, der in
+einzelne, diskrete Schritte unterteilt ist. Jeder dieser Schritte – sei es das Analysieren einer Eingabe, das Suchen von
+Informationen oder das Formulieren einer Antwort – erzeugt ein unveränderliches Ereignis. Die Summe dieser Ereignisse
+bildet einen lückenlosen Pfad, der exakt aufzeigt, was der Agent zu welchem Zeitpunkt «gedacht» und getan hat. Durch
+eine hierarchische Kontext-Struktur (Thread, Display, Run) lassen sich dabei komplexe, langlaufende Prozesse logisch
+gruppieren und bis auf die einzelne Ausführung hinunterbrechen.
 
-1. **Control Events (Steuerung):** Diese Ereignisse treiben den Workflow voran und ändern den Zustand des Systems (z.B.
-   `StartEvent`, `StopEvent` oder Datenbankabfragen). Sie sind die technische «Wahrheit» des Prozessablaufs.
-2. **Display Events (Beobachtung):** Diese Ereignisse dienen rein der Information für den Benutzer oder Auditor (z.B.
-   `ThoughtEvent` oder `ChunkEvent`). Sie legen die internen Überlegungen («Reasoning») des Sprachmodells offen, ohne
-   den technischen Ablauf zu verändern.
+### Technische Umsetzung im Swiss AI Hub
 
-Diese Trennung ermöglicht es einem Auditor oder Administrator, exakt nachzuvollziehen, wie der Agent eine
-Benutzeranfrage interpretiert hat («Thought Process»), welche Zwischenschritte er geplant hat und warum er sich für eine
-bestimmte Aktion entschied.
+Technisch basiert diese Transparenz auf dem **Swiss AI Agent Protokoll**. Dieses interne Kommunikationsmodell definiert
+eine strikte Trennung zwischen Steuerungs- und Anzeigeinformationen mittels typisierter Events, die über NATS publiziert
+werden:
 
-### Hierarchische Kontext-Sicherheit
+- **Control Events:** Diese Ereignisse (z.B. `CondenseQuestionEvent`, `RetrieveEvent`) steuern die Geschäftslogik. Sie
+  sind die «Befehle», die den Workflow vorantreiben und dokumentieren jeden Zustandsübergang im Backend. Sie machen den
+  internen Entscheidungspfad sichtbar, auch wenn dieser dem Endnutzer in der Benutzeroberfläche verborgen bleibt.
+- **Display Events:** Diese Ereignisse (z.B. `ThoughtEvent`, `ChunkEvent`) dienen der reinen Information («Kommentar»)
+  und Kommunikation mit dem Benutzer. Sie zeigen beispielsweise Zwischenergebnisse oder «Gedanken» des Agenten an,
+  dürfen aber niemals den logischen Fluss des Workflows beeinflussen.
 
-Die Nachvollziehbarkeit wird durch eine dreistufige Hierarchie im Protokoll strukturiert, die auch das Sicherheitsmodell
-definiert. Ein `Thread` bündelt langfristige Konversationen oder Prozesse und regelt die Zugriffskontrolle – nur wer
-Zugriff auf den Thread hat, darf die Daten sehen. Darunter gruppiert der `Display`-Kontext zusammengehörige
-Interaktionen für die Benutzeroberfläche, während der `Run`-Kontext die technische Ausführung eines einzelnen Workflows
-kapselt. Diese Granularität stellt sicher, dass selbst bei komplexen Multi-Agenten-Systemen jede einzelne Aktion
-zweifelsfrei einem Auslöser und einem Kontext zugeordnet werden kann.
+Jedes Ereignis ist in einer dreistufigen Hierarchie verankert: Der **Thread-Kontext** hält den langfristen Status einer
+Konversation, der **Display-Kontext** gruppiert zusammengehörige UI-Interaktionen (auch über mehrere Agenten hinweg),
+und der **Run-Kontext** isoliert die technische Ausführung eines einzelnen Workflow-Durchlaufs. Dies ermöglicht eine
+forensische Analyse bis auf die Millisekunde genau.
 
-## Lückenlose Auditierung mit OpenTelemetry
+## Revisionssichere Datenherkunft (Data Lineage)
 
-### Der Anspruch an Revisionssicherheit
+### Geschäftlicher Nutzen
 
-Regulatorische Vorgaben (wie FINMA-Rundschreiben oder DSG) verlangen oft den Nachweis, wer wann auf welche Daten
-zugegriffen hat. In einer verteilten KI-Architektur ist dies komplex, da eine einzelne Benutzeranfrage Dutzende von
-internen Service-Aufrufen auslösen kann. Herkömmliche Logging-Ansätze scheitern hier oft, da sie die Zusammenhänge
-zwischen diesen isolierten Ereignissen verlieren. Ohne eine durchgängige Verbindung («Correlation») zwischen der Eingabe
-eines Nutzers und der Datenbankabfrage im Backend bleibt die Beweiskette lückenhaft.
+Bei der Nutzung von Retrieval-Augmented Generation (RAG) ist die häufigste Frage von Auditoren: «Woher stammt diese
+Information genau?» Halluzinationen – das Erfinden von Fakten durch die KI – stellen ein signifikantes Qualitätsrisiko
+dar. Unternehmen müssen sicherstellen, dass Antworten ausschliesslich auf validierten Unternehmensdaten basieren und
+nicht auf dem allgemeinen Trainingswissen des Modells. Für rechtliche Prüfungen ist es unerlässlich beweisen zu können,
+welches spezifische Dokument in welcher Version zu einem bestimmten Zeitpunkt als Grundlage für eine Auskunft diente.
 
-### Standardisierung und Dual-Backend-Strategie
+### Konzeptioneller Ansatz
 
-Um eine lückenlose Beweiskette zu garantieren, setzt der Swiss AI Hub konsequent auf den Industriestandard
-**OpenTelemetry (OTel)**. Anstatt proprietäre Log-Formate zu erfinden, die einen Vendor Lock-in erzeugen, instrumentiert
-die Plattform sämtliche Komponenten – vom API-Gateway über den `AgentRunTracer` bis hin zu Datenbank-Clients und
-LLM-Aufrufen via `LlamaIndexInstrumentor`.
+Das Konzept der Datenherkunft (Data Lineage) wird im Swiss AI Hub durch eine strikte Referenzierung und semantische
+Konventionen umgesetzt. Eine generierte Antwort steht niemals für sich allein. Sie ist untrennbar mit den Quellen
+verknüpft, die zu ihrer Erstellung herangezogen wurden. Das System protokolliert nicht nur, *dass* gesucht wurde,
+sondern exakt *was* gefunden wurde (inklusive Relevanz-Scores). Dies ermöglicht eine Rekonstruktion der
+Informationsbasis: Auditoren können sehen, welche Wissensschnipsel dem Modell zur Verfügung standen und ob veraltete
+oder nicht freigegebene Dokumente fälschlicherweise berücksichtigt wurden.
 
-Jede Interaktion erhält beim Eintritt in das System eine eindeutige Trace-ID. Der zentrale **OpenTelemetry Collector**
-fungiert dabei als intelligente Drehscheibe, die Telemetriedaten über zwei spezialisierte Pipelines verarbeitet:
+### Technische Umsetzung im Swiss AI Hub
 
-1. **Operatives Monitoring (traces/cloud):** Technische Metriken und Logs werden an Systeme wie **SigNoz** oder
-   bestehende Unternehmens-SIEMs (z.B. Splunk, Datadog) geleitet. Hier überwacht der IT-Betrieb Latenzen, Fehlerraten
-   und Systemressourcen («Ist das System gesund?»).
-2. **LLM-Observability (traces/phoenix):** KI-spezifische Daten – inklusive Prompts, Token-Nutzung und RAG-Retrievals –
-   werden parallel an spezialisierte Tools wie **Phoenix** gesendet. Dies ermöglicht KI-Entwicklern und
-   Fachverantwortlichen eine tiefe Inspektion der KI-Logik («Warum hat das Modell so geantwortet?»).
+In der technischen Implementierung nutzt die Plattform **OpenInference Semantic Conventions**, um KI-spezifische
+Operationen standardisiert zu erfassen. RAG-Operationen erzeugen spezialisierte **Retriever-Spans** innerhalb des
+Tracing-Systems:
 
-Diese Dual-Strategie stellt sicher, dass sowohl operative Stabilität als auch inhaltliche Qualität überwacht werden,
-ohne dass sensible KI-Inhalte zwingend mit allgemeinen Infrastruktur-Logs vermischt werden.
+- **Quellennachweis:** Sobald ein Agent die Wissensdatenbank abfragt, wird ein `RetrieverEvent` generiert. Dieses
+  enthält die IDs der abgerufenen Dokumenten-Chunks («Nodes») sowie deren Ähnlichkeits-Scores.
+- **Attributierung:** Die Plattform verknüpft die Antwort (Output) semantisch mit den abgerufenen Kontextdaten. In der
+  Tracing-Oberfläche (Phoenix) wird sichtbar, welche Textpassagen an das LLM übergeben wurden.
+- **Embedding-Transparenz:** Auch der Schritt der Vektorisierung wird getraced, um sicherzustellen, dass die semantische
+  Suche technisch korrekt funktioniert hat. Dies garantiert, dass die «Grounding»-Qualität – also die Verankerung der
+  Antwort in Fakten – jederzeit messbar und beweisbar ist.
 
-## Datenherkunft und Quellen-Transparenz (Data Lineage)
+## Deep Observability und Integration in Enterprise-Monitoring
 
-### Validierung der Informationsbasis
+### Geschäftlicher Nutzen
 
-Eine der grössten Herausforderungen bei Retrieval-Augmented Generation (RAG) Systemen ist die Quellenprüfung. Wenn ein
-Agent behauptet: «Gemäss der HR-Richtlinie haben Sie Anspruch auf 25 Tage Urlaub», muss verifizierbar sein, auf welchem
-Dokument diese Aussage beruht. In intransparenten Systemen bleibt unklar, ob die KI diese Information tatsächlich in den
-Unternehmensdaten gefunden oder halluziniert hat.
+Eine KI-Plattform darf keine isolierte Insel («Black Box») in der IT-Landschaft sein. Betriebsteams benötigen eine
+zentrale Sicht auf die Gesundheit aller Systeme, um Ausfälle proaktiv zu verhindern. Proprietäre Monitoring-Tools von
+KI-Herstellern führen oft zu Datensilos und erschweren die Fehleranalyse («Root Cause Analysis»). CIOs fordern daher
+Lösungen, die sich nahtlos in bestehende SIEM- und Monitoring-Landschaften integrieren lassen, um die Hoheit über die
+operativen Daten zu behalten und langfristige Trendanalysen ohne Vendor-Lock-in zu ermöglichen.
 
-### Granulare Nachverfolgung der Dokumenten-Chunks
+### Konzeptioneller Ansatz
 
-Der Swiss AI Hub implementiert eine präzise Nachverfolgung der Datenherkunft (Data Lineage). Wenn ein Agent eine
-Wissensdatenbank konsultiert, wird dies durch ein `RetrieveEvent` protokolliert. Dieses Ereignis speichert nicht nur die
-Tatsache des Zugriffs, sondern die exakten Metadaten der abgerufenen Informationen:
+Der Swiss AI Hub verfolgt eine Strategie der maximalen Interoperabilität durch offene Standards. Die Plattform setzt
+konsequent auf **OpenTelemetry (OTel)** als universelle Sprache für Telemetriedaten. Dieser Industriestandard stellt
+sicher, dass Metriken (Zahlen), Logs (Text) und Traces (Abläufe) einheitlich erfasst und korreliert werden. Der Kunde
+entscheidet selbst, wohin diese Daten fliessen – sei es in eine lokale Analyseinstanz oder in unternehmensweite
+Dashboards.
 
-1. **Dokumenten-ID:** Welches spezifische PDF oder Word-Dokument wurde verwendet?
-2. **Versionierung:** War es die aktuelle Richtlinie oder eine veraltete Version aus der Sammlung?
-3. **Chunk-Referenz:** Welcher Textabschnitt (Paragraph) innerhalb des Dokuments diente als Grundlage?
+### Technische Umsetzung im Swiss AI Hub
 
-Diese Informationen werden direkt mit der Antwort verknüpft. Im Audit-Trail ist somit ersichtlich, dass die Antwort auf
-Benutzerfrage X zu 80% auf Abschnitt Y des Dokuments Z basiert. Diese Transparenz ist entscheidend für die
-Qualitätssicherung und ermöglicht es Fachabteilungen, fehlerhafte Antworten auf unklare Formulierungen in den
-Quelldokumenten der Daten-zu-Wissen-Pipeline zurückzuführen, anstatt pauschal der «Technik» die Schuld zu geben.
+Das Herzstück der Observability-Architektur ist der zentrale **OpenTelemetry Collector**. Er fungiert als
+Datendrehscheibe, die Telemetrie aus Containern, Datenbanken und Agenten sammelt und über zwei spezialisierte Pipelines
+routet:
 
-## Menschliche Kontrolle im Loop (Human-in-the-Loop)
+- **Pipeline `traces/phoenix` (KI-Analyse):** Diese Pipeline filtert KI-spezifische Traces und sendet sie an
+  **Phoenix**. Phoenix ist ein spezialisiertes Tool für LLM-Observability, das Entwicklern erlaubt, Prompt-Templates,
+  Retrieval-Qualität und Token-Nutzung im Detail zu debuggen.
+- **Pipeline `traces/cloud` (Operations):** Diese Pipeline bereinigt die Daten von Rauschen (z.B. Health Checks) und
+  sendet operative Metriken an ein Langzeit-Backend. Standardmässig wird **SigNoz** unterstützt, aber durch reine
+  Konfigurationsänderung kann der Export auf jedes OTLP-kompatible System wie Datadog, Splunk, Dynatrace oder Grafana
+  umgestellt werden.
 
-### Das 4-Augen-Prinzip für KI
+Diese Dual-Backend-Strategie ermöglicht es, Entwicklern tiefe Einblicke zu geben, ohne das operative Monitoring-System
+der IT-Abteilung mit Debugging-Daten zu überfluten.
 
-Trotz aller Automatisierung gibt es Entscheidungen, die nicht allein einer KI überlassen werden dürfen – sei es die
-Freigabe einer Pressemitteilung oder die Genehmigung einer Transaktion. Ein rein technisches System ohne menschliche
-Interventionsmöglichkeit stellt in solchen Fällen ein Compliance-Risiko dar. Es muss möglich sein, den automatisierten
-Prozess anzuhalten und eine menschliche Bestätigung einzufordern, ohne den digitalen Audit-Pfad zu unterbrechen.
+## Menschliche Kontrolle (Human-in-the-Loop)
 
-### Protokollierte Interventionen
+### Geschäftlicher Nutzen
 
-Die Plattform integriert hierfür das **Human-in-the-Loop (HITL)** Muster tief in die Protokollebene. Ein Agent kann so
-konfiguriert werden, dass er an kritischen Punkten ein `HumanInTheLoopRequestEvent` auslöst. Der Workflow wird in diesem
-Moment technisch pausiert ("suspendiert"), und der gesamte Kontext des bisherigen Verlaufs wird sicher gespeichert
-(State Persistence).
+Trotz fortschrittlicher Modelle gibt es Entscheidungen, die nicht vollständig automatisiert werden dürfen – sei es aus
+ethischen Gründen, wegen hohem finanziellem Risiko oder aufgrund regulatorischer Vorschriften (z.B. Art. 22 DSGVO).
+Unternehmen benötigen einen Mechanismus, der die Effizienz der KI nutzt, aber die Letztentscheidung beim Menschen
+belässt. Ein «Human-in-the-Loop»-Prozess verhindert, dass automatisierte Systeme aus dem Ruder laufen, und stellt
+sicher, dass kritische Aktionen (z.B. das Versenden einer Vertragsänderung) explizit freigegeben werden.
 
-Das System wartet nun auf eine explizite Interaktion eines berechtigten Benutzers. Sobald dieser die Aktion genehmigt
-oder ablehnt, wird ein `HumanInTheLoopResponseEvent` generiert. Entscheidend ist hierbei die Nachvollziehbarkeit: Das
-Audit-Log verzeichnet nicht nur die Entscheidung der KI, sondern auch die Identität des genehmigenden Mitarbeiters und
-den exakten Zeitstempel der Freigabe. Damit wird die hybride Zusammenarbeit von Mensch und Maschine revisionssicher
-dokumentiert. Sollte es später zu Rückfragen kommen, ist beweisbar, dass die kritische Entscheidung letztlich durch
-einen Menschen autorisiert wurde.
+### Konzeptioneller Ansatz
 
-## Proaktive Qualitätssicherung: Testen vor dem Betrieb
+Das System integriert den Menschen als aktive Komponente in den Workflow. Ein Agenten-Prozess ist nicht zwingend eine
+durchlaufende Kette von Maschinenbefehlen. Er kann an definierten Punkten pausieren und den Zustand «einfrieren». Erst
+wenn eine autorisierte menschliche Interaktion erfolgt – eine Bestätigung, eine Korrektur oder eine Ablehnung – wird der
+Prozess fortgesetzt. Wichtig ist dabei die lückenlose Dokumentation: Auch der menschliche Eingriff wird als Ereignis im
+Audit-Trail festgehalten, sodass später klar ersichtlich ist, wer die Entscheidung getroffen hat.
 
-Transparenz bedeutet nicht nur, Fehler im Nachhinein zu finden, sondern sie proaktiv zu vermeiden. Während herkömmliche
-Chatbots oft manuell getestet werden ("Trial and Error"), ermöglicht der Swiss AI Hub durch das
-**AgentTestRunner**-Framework eine automatisierte Qualitätssicherung.
+### Technische Umsetzung im Swiss AI Hub
 
-Entwickler und QA-Teams können Szenarien in natürlicher Sprache definieren (Behavior-Driven Development), die
-beschreiben, wie sich ein Agent verhalten soll. Diese Tests werden automatisch ausgeführt, wobei der `AgentTestRunner`
-eine Sandbox-Umgebung bereitstellt. So lässt sich vor jedem Deployment verifizieren, dass ein Agent Compliance-Regeln
-einhält, Iterations-Limits respektiert und in definierten Szenarien die korrekten Ereignisse auslöst. Dies verschiebt
-die "Prüfbarkeit" vom reaktiven Audit hin zur präventiven Qualitätssicherung.
+Die Umsetzung erfolgt über asynchrone Ereignismuster im Swiss AI Agent Protokoll, die persistente Zustände unterstützen:
 
-## Finanzielle Transparenz und FinOps
+- **Unterbrechung:** Ein Agent sendet ein `HumanInTheLoopRequestEvent`. Der Workflow stoppt, und der gesamte Kontext
+  (Variablen, bisherige Ergebnisse) wird sicher im Redis-basierten Run-Kontext persistiert.
+- **Interaktion:** Das System generiert eine Aufgabe für den Benutzer. Der Prozess kann Minuten oder Tage in diesem
+  Wartezustand verbleiben, ohne Rechenressourcen zu blockieren.
+- **Wiederaufnahme:** Sobald der Benutzer reagiert, wird ein `HumanInTheLoopResponseEvent` in den Event Bus gespeist.
+  Der Agent wird rehydriert – also in seinen vorherigen Zustand versetzt – und setzt die Arbeit mit den menschlichen
+  Eingaben fort. Diese Architektur ermöglicht komplexe Genehmigungsketten, ohne dass Entwickler eigene Statusmaschinen
+  bauen müssen.
 
-### Kostenkontrolle statt Blindflug
+## Finanzielle Transparenz und Kostenkontrolle
 
-In vielen Organisationen werden KI-Kosten als Gemeinkosten betrachtet, die schwer zuzuordnen sind. Da LLM-Anbieter pro
-Token (Wortteil) abrechnen, kann die intensive Nutzung durch eine einzelne Abteilung das IT-Budget unverhältnismässig
-belasten. Ohne detaillierte Einsicht ist es unmöglich, Verursacher hoher Kosten zu identifizieren oder den ROI (Return
-on Investment) von KI-Projekten zu berechnen.
+### Geschäftlicher Nutzen
 
-### Verursachergerechte Abrechnung und Budgetierung
+Die Abrechnungsmodelle grosser Sprachmodelle (Pay-per-Token) bergen ein erhebliches Kostenrisiko. Eine fehlerhafte
+Schleife in einem Agenten oder die exzessive Nutzung durch eine Abteilung kann Budgets innert kürzester Zeit sprengen.
+CFOs benötigen daher nicht nur eine nachträgliche Rechnung, sondern Echtzeit-Transparenz und harte Limits («Circuit
+Breakers»), um die Kosten pro Abteilung, Projekt oder Benutzer steuern zu können. Dies ist die Grundlage für eine
+verursachergerechte interne Leistungsverrechnung (Chargeback).
 
-Der Swiss AI Hub nutzt seine tiefe Instrumentierung auch für finanzielle Transparenz (FinOps). Da jeder Aufruf an ein
-Sprachmodell durch das zentrale LLM-Gateway und die Tracing-Infrastruktur läuft, werden Metriken zur Token-Nutzung
-(Prompt- und Completion-Tokens) automatisch erfasst und über `LLMCostEvent` mit dem Benutzerkontext angereichert.
+### Konzeptioneller Ansatz
 
-Über Dashboards oder exportierte Daten lässt sich exakt aufschlüsseln, welche Kosten ein spezifischer Benutzer, ein Team
-oder ein bestimmter Agent im Zeitverlauf verursacht hat. Zusätzlich ermöglicht der integrierte Proxy die Durchsetzung
-harter Budgetgrenzen über Umgebungsvariablen, um Kostensicherheit zu garantieren:
+Kostenkontrolle ist im Swiss AI Hub keine nachgelagerte Analyse, sondern in den Kern des Routings integriert. Jede
+Interaktion mit einem Modell wird vermessen, bewertet und einem Verursacher zugeordnet. Das System unterscheidet dabei
+zwischen verschiedenen Kostenarten (Prompt- vs. Completion-Tokens). Durch die Definition von Budgets und Ratenlimits
+(Rate Limiting) wird sichergestellt, dass die Ressourcennutzung innerhalb der definierten Leitplanken bleibt.
 
-- **Hard Limits:** Festlegung eines maximalen Budgets pro User (z.B. via `LITE_LLM_PROXY_USER_MAX_BUDGET`), bei dessen
-  Überschreitung Anfragen blockiert werden.
-- **Soft Limits:** Konfiguration von Warnschwellen (`LITE_LLM_PROXY_USER_SOFT_BUDGET`), um Administratoren proaktiv zu
-  benachrichtigen, bevor Kosten aus dem Ruder laufen.
-- **Rate Limiting:** Technische Begrenzung von Anfragen pro Minute (RPM) oder Tokens pro Minute (TPM) zur Verhinderung
-  von Missbrauch oder versehentlichen Endlosschleifen.
+### Technische Umsetzung im Swiss AI Hub
 
-Diese Kostentransparenz verwandelt KI von einem unvorhersehbaren Kostenrisiko in eine planbare und steuerbare Ressource.
-Unternehmen behalten die wirtschaftliche Kontrolle und können Investitionen gezielt dort tätigen, wo sie nachweisbaren
-Mehrwert schaffen.
+Das **LLM-Gateway** (LiteLLM) agiert als zentraler Wächter über die Kosten und setzt Limits technisch durch:
+
+- **Budget-Durchsetzung:** Administratoren können über Umgebungsvariablen harte Obergrenzen (z.B.
+  `LITE_LLM_PROXY_USER_MAX_BUDGET`) und Warnschwellen (`SOFT_BUDGET`) definieren. Wird ein Limit erreicht, blockiert das
+  Gateway weitere Anfragen automatisch.
+- **Rate Limiting:** Um Missbrauch oder fehlerhafte Skripte zu stoppen, können Limits für Tokens pro Minute (TPM) oder
+  Anfragen pro Minute (RPM) gesetzt werden.
+- **Echtzeit-Tracking:** Jeder Aufruf erzeugt `LLMCostEvents`, die Token-Anzahlen und berechnete Kosten enthalten. Diese
+  fliessen in die Monitoring-Dashboards und ermöglichen granulare Reports darüber, welche Anwendungsfälle den grössten
+  Wert im Verhältnis zu den Kosten liefern.

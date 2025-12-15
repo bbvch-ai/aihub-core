@@ -1,78 +1,115 @@
 # Plattform-Überblick - Die Swiss AI-Hub-Lösung
 
-## Enterprise-KI-Infrastruktur als Produkt
+Der Swiss AI Hub definiert sich grundlegend anders als die gängigen Angebote am Markt. Er ist weder ein reines
+Software-Framework, das jahrelange interne Entwicklungsarbeit erfordert, noch ein externer SaaS-Dienst, der die
+Datenhoheit untergräbt. Vielmehr handelt es sich um eine vollständige Enterprise-KI-Infrastruktur, die als Produkt
+konzipiert ist. Sie erhalten eine schlüsselfertige Plattform, die Sie besitzen, kontrollieren und innerhalb kürzester
+Zeit in Ihrer eigenen Umgebung deployen können. Dieser Ansatz schliesst die Lücke zwischen einem ersten Prototyp und
+einem skalierbaren Produktionsbetrieb.
 
-Die Fragmentierung der IT-Landschaft stellt IT-Entscheidungsträger heute vor enorme Herausforderungen. Oft müssen
-Komponenten wie Vektordatenbanken, API-Gateways, Ingestion-Pipelines und Benutzeroberflächen separat evaluiert,
-lizensiert und mühsam integriert werden. Dies bindet Ressourcen und verzögert die Wertschöpfung. Unternehmen benötigen
-eine Lösung, welche die Lücke zwischen reinen Software-Frameworks – die Entwickler erst zusammensetzen müssen – und
-externen SaaS-Diensten, die keine Datenkontrolle bieten, schliesst.
+## Auf einen Blick
 
-Der Swiss AI Hub beantwortet diese Anforderung als vollständige, produktionsreife KI-Infrastruktur, die Organisationen
-als Produkt erwerben. Anstatt Basisinfrastruktur neu zu erfinden, liefert die Plattform ein harmonisiertes Gesamtsystem.
-Technisch wird dies durch eine containerisierte Architektur realisiert, die mittels Docker Compose oder Kubernetes
-bereitgestellt wird. Sie transformiert KI-Modelle in sichere, nutzbare Unternehmensanwendungen und übergibt die volle
-Kontrolle über Deployment und Betrieb an den Kunden.
+- **Infrastruktur als Produkt:** Eine vollständige «Batteries-Included»-Plattform, die alle notwendigen Komponenten für
+  den sofortigen Betrieb (Gateway, Datenbanken, Monitoring) integriert mitbringt.
+- **Skalierbares Reifegradmodell:** Ein integriertes Stufenkonzept ermöglicht den organischen Übergang von einfacher
+  Chat-Nutzung über RAG bis hin zur komplexen Prozessautomatisierung.
+- **Strategische Unabhängigkeit:** Durch Open-Source-Architektur (Apache 2.0) und offene Standards wird ein
+  Vendor-Lock-in effektiv ausgeschlossen und langfristiger Investitionsschutz gesichert.
+- **Nahtlose Integration:** Das System verbindet sich über das Azure Bot Framework und das Model Context Protocol (MCP)
+  direkt mit bestehenden Arbeitsumgebungen wie MS Teams oder externen Tools.
 
-## Der «Batteries Included»-Ansatz: Sofortige Betriebsbereitschaft
+## Enterprise-Infrastruktur «Out-of-the-Box»
 
-Ein Sprachmodell allein bildet noch keine Geschäftsanwendung; oft fehlen essentielle Hilfssysteme wie Authentifizierung
-oder Dokumentenverarbeitung. Dies führt dazu, dass Unternehmen Monate in Beschaffungsprozessen und Integrationsarbeit
-verlieren. Um die Implementierungszeit drastisch zu verkürzen, verfolgt der Swiss AI Hub einen konsequenten «Batteries
-Included»-Ansatz: Die Plattform integriert Best-in-Class Open-Source-Komponenten, die vorkonfiguriert und aufeinander
-abgestimmt sind.
+### Geschäftlicher Nutzen
 
-In der technischen Umsetzung im Swiss AI Hub bedeutet dies, dass komplexe Integrationsarbeit bereits geleistet wurde:
+Für Unternehmen stellt die Zusammenstellung eines KI-Stacks oft eine unüberwindbare Einstiegshürde dar. Die Evaluierung,
+Beschaffung und Integration von Vektordatenbanken, API-Gateways und Monitoring-Tools bindet wertvolle IT-Ressourcen über
+Monate hinweg. Der Swiss AI Hub eliminiert diese «Integrationssteuer». Da die Plattform alle für den Betrieb notwendigen
+Komponenten bereits vorkonfiguriert mitbringt, reduziert sich die Zeit bis zur Produktivsetzung drastisch. Dies
+ermöglicht es Unternehmen, sich sofort auf die wertschöpfende Entwicklung von Use Cases zu konzentrieren, anstatt
+Infrastruktur-Puzzles zu lösen. Zudem entfallen versteckte Kosten und Lizenzgebühren für separate
+Drittanbieter-Komponenten.
 
-- **LiteLLM** fungiert als vereinheitlichtes LLM-Gateway zur Anbindung beliebiger Modelle mit integriertem Failover und
-  Kosten-Tracking.
-- **Milvus** steht als leistungsfähige Vektordatenbank für die semantische Suche bereit.
-- **Dagster** orchestriert robuste Datenpipelines, während **Docling** die Dokumentenverarbeitung (Parsing von PDFs und
-  Office-Dateien) übernimmt.
-- **NATS** sorgt als Messaging-System für eine skalierbare, ereignisgesteuerte Architektur.
-- **Phoenix** gewährleistet vollständige Observability und Tracing bis in die tiefsten Agenten-Entscheidungen.
-- **Presidio** übernimmt die automatische Erkennung und Maskierung von PII (Personenidentifizierbare Informationen).
+### Konzeptioneller Ansatz
 
-## Skalierbare Fähigkeiten durch das Stufenmodell
+Das Prinzip lautet «Infrastructure as Product». Die Plattform wird nicht als loser Baukasten geliefert, sondern als
+harmonisiertes Gesamtsystem. Der Ansatz trennt strikt zwischen der stabilen Plattform-Ebene und der flexiblen
+Anwendungs-Ebene (SDK). Während das SDK Entwicklern erlaubt, massgeschneiderte Agenten und Workflows zu bauen, übernimmt
+die Plattform im Hintergrund automatisch die Schwerarbeit: Authentifizierung, Datenpersistenz, Skalierung und
+Sicherheit. Ein Agent muss sich nicht um seine eigene Überwachung oder Zugriffskontrolle kümmern – er erbt diese
+Fähigkeiten automatisch durch den Betrieb auf dem Swiss AI Hub.
 
-Die Einführung von KI ist ein Reifeprozess, der eine Organisation nicht überfordern darf. Es gilt, KI-Kompetenzen
-schrittweise aufzubauen und Medienbrüche zu vermeiden. Der Swiss AI Hub unterstützt diesen Pfad durch eine Architektur,
-die in logischen Stufen (Tiers) mit den Anforderungen wächst:
+### Technische Umsetzung im Swiss AI Hub
 
-- **Stufe 1 (Zugang & Kompetenz):** Die Plattform bietet über eine sichere Web-Oberfläche (Open-WebUI) Zugang zu
-  Sprachmodellen. Alle Anfragen werden zentral authentifiziert und via LiteLLM geleitet, um Prompting-Kompetenzen sicher
-  aufzubauen.
-- **Stufe 1+ (Integration):** Um KI direkt in den Arbeitsfluss zu bringen, bindet das System über das **Azure Bot
-  Framework** Kanäle wie Microsoft Teams, Slack oder Outlook an. Die KI agiert dort, wo die Mitarbeitenden arbeiten.
-- **Stufe 2 (Kontext & Wissen):** Für unternehmensspezifisches Wissen aktiviert die Plattform RAG-Fähigkeiten. Agenten
-  greifen auf die Wissensdatenbank zu, die durch die Daten-zu-Wissen-Pipeline gespeist wird. Über das **Model Context
-  Protocol (MCP)** können sich Agenten zudem sicher und standardisiert mit externen Tools verbinden.
-- **Stufe 3 (Prozess-Orchestrierung):** Die höchste Ausbaustufe automatisiert komplexe Geschäftsprozesse. Ein
-  dedizierter Orchestrator koordiniert Workflows, in denen KI-Agenten, Menschen und externe Systeme interagieren.
-  Integrationen zu Power Automate oder UiPath (via n8n) ermöglichen hierbei die Einbindung von Legacy-Systemen.
+Technisch manifestiert sich dieser Ansatz in einer containerisierten Architektur, die typischerweise via
+`docker compose` oder Kubernetes orchestriert wird. Der Stack integriert Best-in-Class Open-Source-Komponenten zu einer
+nahtlosen Einheit:
 
-## Plattform und SDK: Das Komplettpaket für Entwickler
+- **LLM-Gateway:** LiteLLM abstrahiert alle Modell-Provider, verwaltet Failover-Logik und trackt Kosten zentral.
+- **Daten-Infrastruktur:** Eine vorintegrierte Vektordatenbank (Milvus) für semantische Suche und Objektspeicher
+  (S3-kompatibel via SeaweedFS oder MinIO) stehen bereit.
+- **Sicherheit & Compliance:** Presidio ist fest für die PII-Erkennung integriert, während die Authentifizierung über
+  OAuth2 direkt an bestehende Unternehmensverzeichnisse (wie Azure AD) andockt.
+- **Observability:** Ein vollständiger Monitoring-Stack auf Basis von OpenTelemetry sammelt Metriken, während Phoenix
+  spezifische Traces für LLM-Interaktionen (RAG-Retrievals, Embedding-Qualität) visualisiert.
 
-Um «Schatten-IT» und Sicherheitslücken zu vermeiden, ist eine strikte Trennung zwischen Infrastruktur und
-Anwendungslogik notwendig. Entwickler sollten sich nicht mit Authentifizierungsprotokollen oder Datenbankverbindungen
-aufhalten müssen. Die Plattform stellt daher die fundamentale Basis bereit (Authentifizierung via OAuth2, Monitoring,
-Zugriffskontrollen), während das zugehörige Software Development Kit (SDK) die Entwicklung der Geschäftslogik
-fokussiert.
+## Ein Stufenmodell für skalierbare KI-Adoption
 
-Wer mit dem SDK des Swiss AI Hub entwickelt, erbt automatisch die Fähigkeiten der Plattform. Ein neuer Agent muss keine
-eigene Benutzerverwaltung implementieren; er nutzt die bereitgestellten Ressourcen sicher und konform. Dies reduziert
-die Komplexität massiv: Sie schreiben die Logik für den Agenten, die Plattform kümmert sich um Security, Skalierung und
-Audit-Trails.
+### Geschäftlicher Nutzen
 
-## Unabhängigkeit und Investitionsschutz durch Open Source
+Die Einführung von KI im Unternehmen scheitert oft an einem «Alles oder Nichts»-Ansatz. Organisationen versuchen,
+komplexe autonome Systeme zu bauen, bevor die Grundlagen etabliert sind. Der Swiss AI Hub begegnet diesem Risiko mit
+einem in die Architektur integrierten Reifegradmodell. Dies erlaubt Unternehmen, mit geringem Risiko zu starten und die
+Komplexität schrittweise zu steigern. Mitarbeiter bauen Vertrauen in die Technologie auf, während die Organisation
+sukzessive die notwendige Kompetenz entwickelt. Investitionen wachsen linear mit dem geschäftlichen Mehrwert, nicht
+exponentiell mit der technischen Komplexität.
 
-Aus kaufmännischer Sicht eliminieren Unternehmen mit dieser Lösung die Risiken klassischer Cloud-Modelle, wie laufende
-Lizenzgebühren pro Benutzer (Per-User-Fees) oder undurchsichtige Kostenstrukturen. Investitionssicherheit entsteht durch
-Unabhängigkeit. Da der Swiss AI Hub auf der Apache 2.0 Lizenz basiert, gehört der Quellcode Ihnen. Sie investieren in
-Ihre eigene Infrastruktur, nicht in die Miete einer Software.
+### Konzeptioneller Ansatz
 
-Dies verhindert einen Vendor-Lock-in effektiv. Sollte sich die Preisstrategie eines Modell-Anbieters ändern, erlaubt die
-modulare Architektur den Austausch einzelner Komponenten – etwa den Wechsel von einem OpenAI-Modell zu einem lokalen
-Mistral-Modell via vLLM – ohne Anpassung der Applikationslogik. Da die Plattform auf offenen Standards wie S3, OAuth2
-und OpenTelemetry basiert, bleibt Ihre Organisation jederzeit kompatibel und handlungsfähig. Selbst wenn der
-Plattform-Anbieter vom Markt verschwinden würde, besitzen Sie ein funktionierendes, wartbares System.
+Die Plattform unterstützt vier logische Evolutionsstufen, die nahtlos ineinandergreifen:
+
+1. **Stufe 1 (Zugang):** Sicherer, protokollierter Zugang zu LLMs über eine Web-Oberfläche als Alternative zu ChatGPT.
+2. **Stufe 1+ (Integration):** KI-Funktionen werden dort bereitgestellt, wo Nutzer arbeiten – in Microsoft Teams, Slack
+   oder Outlook – um den Kontextwechsel zu minimieren.
+3. **Stufe 2 (Kontext):** Einführung von RAG (Retrieval-Augmented Generation). Agenten erhalten Zugriff auf
+   Unternehmensdaten, um fachspezifische Aufgaben zu lösen.
+4. **Stufe 3 (Prozesse):** Orchestrierung komplexer Geschäftsprozesse, in denen KI-Agenten, menschliche Mitarbeiter und
+   externe IT-Systeme zusammenarbeiten.
+
+### Technische Umsetzung im Swiss AI Hub
+
+Die Architektur bildet diese Stufen modular ab. Für **Stufe 1** bietet die Plattform eine reaktionsschnelle Open-WebUI,
+die Streaming-Antworten via WebSockets unterstützt. In **Stufe 1+** fungiert das integrierte Azure Bot Framework als
+Brücke zu Kommunikationskanälen, normalisiert Nachrichtenformate und ermöglicht Interaktionen direkt aus Teams oder
+Slack. In **Stufe 2** kommen Daten-zu-Wissen-Pipelines zum Einsatz, orchestriert durch Dagster. Dokumente werden mittels
+Docling geparst, gechunked und als Vektoren in Milvus abgelegt. **Stufe 3** aktiviert die
+Prozess-Orchestrierungs-Engine, die Zustände in MongoDB verwaltet und Aufgaben zwischen KI-Agenten und menschlichen
+Benutzern über eine dedizierte Prozess-UI koordiniert. Integrationen zu Power Automate, n8n oder UiPath ermöglichen
+hierbei die Anbindung an Legacy-Systeme.
+
+## Strategische Unabhängigkeit und Erweiterbarkeit
+
+### Geschäftlicher Nutzen
+
+Ein zentrales Versprechen des Swiss AI Hub ist der Investitionsschutz durch Vermeidung von Vendor-Lock-in. Proprietäre
+Plattformen binden Kunden oft durch geschlossene Ökosysteme und undurchsichtige Lizenzmodelle, die bei Skalierung
+explodieren (z.B. «Per-User»-Gebühren). Der Swiss AI Hub wird unter der Apache 2.0 Lizenz bereitgestellt. Das bedeutet:
+Der Code gehört Ihnen. Es fallen keine Lizenzgebühren für die Nutzung der Software an. Sollte der Anbieter hypothetisch
+vom Markt verschwinden, läuft Ihre Plattform uneingeschränkt weiter.
+
+### Konzeptioneller Ansatz
+
+Die Plattform ist radikal «modell-agnostisch» konzipiert. Sie erzwingt keine Bindung an einen spezifischen
+KI-Modell-Anbieter. Die Architektur abstrahiert die Intelligenz (das LLM) von der Anwendung. Dies ermöglicht es
+Unternehmen, flexibel zwischen Anbietern wie OpenAI, Anthropic, Google oder lokal gehosteten Modellen (wie Mistral via
+vLLM) zu wechseln. Zudem ist das System durch offene Protokolle nach aussen hin anschlussfähig, ohne interne APIs
+unsicher exponieren zu müssen.
+
+### Technische Umsetzung im Swiss AI Hub
+
+Diese Freiheit wird durch die konsequente Nutzung offener Standards realisiert. Die interne Kommunikation erfolgt
+ereignisgesteuert über NATS, nicht über proprietäre Kanäle. Eine Besonderheit ist die Implementierung des **Model
+Context Protocol (MCP)**. Über MCP können externe Tools (z.B. in VSCode) oder andere KI-Systeme sicher mit den Agenten
+des Swiss AI Hub interagieren. Daten werden in Standardformaten (PostgreSQL, JSON, Parquet) gespeichert, was eine
+jederzeitige Migration gewährleistet. Da der gesamte Stack auf bewährten Open-Source-Technologien basiert, ist die
+Plattform vollständig auditierbar und kann von internen Sicherheitsteams bis auf die Code-Ebene geprüft werden.

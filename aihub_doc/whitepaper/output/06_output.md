@@ -1,136 +1,159 @@
 # Kapitel 06: Datenmanagement, Integration und Ingestion
 
-## Vom Dokumenten-Silo zum aktiven Unternehmenswissen
+Die Qualität einer KI-Lösung korreliert direkt mit der Qualität der Daten, auf die sie zugreift. Selbst das
+leistungsfähigste Sprachmodell ist nutzlos, wenn es mit veralteten, fragmentierten oder unleserlichen Informationen
+gefüttert wird. Während das vorherige Kapitel die Governance behandelte, fokussiert sich dieser Abschnitt auf den
+technologischen Maschinenraum: Wie werden unstrukturierte Unternehmensdaten – von der PDF-Rechnung bis zum
+SharePoint-Wiki – effizient, sicher und automatisiert in nutzbares Wissen für KI-Agenten transformiert?
 
-Die Leistungsfähigkeit einer generativen KI-Lösung korreliert direkt mit der Qualität, Aktualität und Struktur der
-Daten, auf die sie zugreifen kann. In vielen Schweizer Unternehmen liegt wertvolles Wissen jedoch fragmentiert vor:
-versteckt in PDF-Handbüchern auf Netzlaufwerken, verteilt in SharePoint-Bibliotheken oder isoliert in
-E-Mail-Postfächern. Die Herausforderung für IT-Entscheider besteht nicht nur darin, diese Daten technisch zugänglich zu
-machen, sondern sie so aufzubereiten, dass Sprachmodelle sie semantisch korrekt interpretieren können, ohne dabei
-Sicherheitsgrenzen zu verletzen.
+Der Swiss AI Hub implementiert hierfür keine einfachen Upload-Skripte, sondern vollständige, industriell gefertigte
+Daten-zu-Wissen-Pipelines. Dieser Ansatz garantiert, dass das Unternehmenswissen nicht als statischer Datenfriedhof
+endet, sondern als dynamischer, semantisch durchsuchbarer Wissensgraph zur Verfügung steht.
 
-Der Swiss AI Hub begegnet dieser Herausforderung mit einer hochentwickelten Ingestion-Engine. Diese Komponente
-transformiert passive Dokumentenablagen in eine aktive, abfragbare Wissensarchitektur. Dabei verlässt sich die Plattform
-nicht auf simple Text-Extraktion, sondern implementiert intelligente Pipelines, die Layouts verstehen, hierarchische
-Zusammenfassungen generieren und Daten kontinuierlich synchronisieren.
+## Auf einen Blick
+
+- **Hierarchische Isolation:** Eine strikte Trennung von Daten in Wissensdatenbanken und Sammlungen verhindert
+  Kontext-Vermischung und setzt Zugriffsbeschränkungen technisch durch.
+- **Semantisches Verständnis:** Die Pipeline nutzt «Docling» und «Intelligent Chunking», um Layouts, Tabellen und
+  Hierarchien in Dokumenten zu verstehen, statt nur rohen Text zu extrahieren.
+- **Änderungsgetriebene Automatisierung:** Dank «Observable Assets» werden Pipelines nur bei tatsächlichen
+  Datenänderungen angestossen, was Ressourcen spart und Aktualität garantiert.
+- **Integrierte Sicherheit:** Jede Datei durchläuft strikte Validierungen (MIME-Type, Path Traversal), bevor sie
+  verarbeitet wird, um die Integrität der Plattform zu schützen.
+- **Strukturelle Verlinkung:** Dokumententeile werden logisch miteinander verknüpft (sequentiell und hierarchisch), um
+  Agenten einen erweiterten Kontext für präzisere Antworten zu liefern.
 
 ## Strukturierte Wissensarchitektur und Isolation
 
-### Logische Trennung für maximale Sicherheit
+### Geschäftlicher Nutzen
 
-Ein zentrales Risiko bei der Einführung von RAG-Systemen (Retrieval-Augmented Generation) ist die ungewollte Vermischung
-von Kontexten. Ein Engineering-Bot sollte keine HR-Lohndaten indizieren, und ein öffentlicher Kunden-Bot darf keinen
-Zugriff auf interne Strategiepapiere haben. Um dies zu verhindern, organisiert der Swiss AI Hub Unternehmensdaten in
-einer strikten Hierarchie, die als unveränderliches Fundament für die Zugriffssteuerung dient.
+Ein häufiges Problem bei frühen RAG-Implementierungen (Retrieval-Augmented Generation) ist die «Kontext-Vermischung».
+Wenn ein KI-Agent Zugriff auf alle Dokumente hat, antwortet der HR-Bot auf Fragen zur Lohnbuchhaltung möglicherweise mit
+Informationen aus der IT-Budgetplanung. Dies führt zu Verwirrung und Sicherheitsrisiken. Unternehmen benötigen eine
+strikte logische Trennung von Datenbeständen, die analog zu ihren Abteilungs- und Projektstrukturen funktioniert. Dies
+stellt sicher, dass KI-Antworten präzise im richtigen Kontext verankert sind und Zugriffsrechte («Need-to-know») auch
+auf Datenebene technisch durchgesetzt werden.
 
-Auf der obersten Ebene operieren **Wissensdatenbanken**. Diese fungieren als isolierte Container, typischerweise
-getrennt nach Mandanten, Abteilungen oder hohen Sicherheitsklassifizierungen. Technisch sind diese Datenbanken
-vollständig voneinander entkoppelt; sie besitzen eigene Berechtigungssets und separate Verarbeitungspipelines. Eine
-Vermischung von Daten zwischen einer «HR-Datenbank» und einer «Engineering-Datenbank» ist architektonisch
-ausgeschlossen. Das System nutzt hierfür eine konsistente Abbildung: Ein S3-Bucket im Backend (SeaweedFS) entspricht
-einer Datenbank, was eine starke physische Datenisolation gewährleistet. Zudem unterstützt die Plattform explizit die
-Mehrsprachigkeit (DE, EN, FR, IT) bei der Benennung dieser Strukturen, um den Anforderungen mehrsprachiger Schweizer
-Organisationen gerecht zu werden.
+### Konzeptioneller Ansatz
 
-Innerhalb dieser Datenbanken erfolgt die feinere Gliederung über **Sammlungen** (technisch: Namespaces). Diese
-Sammlungen gruppieren thematisch zusammengehörige Dokumente, wie etwa «Produkthandbücher» oder «Vertragsentwürfe».
-Technisch handelt es sich hierbei um flache Metadaten-Attribute, die direkt an jeden Dokumenten-Chunk im Vektor-Store
-angeheftet werden. Dies erlaubt ein präzises **Collection-Scoping**: Administratoren konfigurieren KI-Agenten so, dass
-sie exklusiv auf definierte Sammlungen zugreifen dürfen. Ein Support-Agent sieht somit nur Dokumente in der Sammlung
-«Support-Richtlinien», selbst wenn in derselben Datenbank noch andere, für ihn gesperrte Sammlungen existieren.
+Die Plattform organisiert Wissen in einer dreistufigen Hierarchie, die Isolation mit Flexibilität verbindet. Auf der
+obersten Ebene stehen isolierte Container («Wissensdatenbanken»), die physisch und logisch getrennte Datenräume
+darstellen. Innerhalb dieser Container werden Dokumente in thematische Gruppen («Sammlungen») unterteilt. Diese
+Architektur ermöglicht ein präzises «Scoping»: Ein Administrator definiert exakt, welche Sammlungen ein spezifisches
+Agenten-Profil sehen darf. Die KI sucht also nicht im gesamten Universum der Unternehmensdaten, sondern nur in den für
+den Anwendungsfall autorisierten Sektoren.
 
-Wichtig für die Governance ist die strikte Trennung der Modi: Eine Wissensdatenbank wird entweder manuell verwaltet
-(Upload via UI) oder automatisch synchronisiert (Auto-Sync via Pipeline). Ein Mischbetrieb ist ausgeschlossen, um
-Mehrdeutigkeiten bezüglich der «Source of Truth» zu verhindern.
+### Technische Umsetzung im Swiss AI Hub
 
-## Automatisierte Pipelines und Integration
+Die technische Realisierung erfolgt über **Wissensdatenbanken** und **Sammlungen**.
 
-### Effizienz durch hybride Automatisierungsstrategie
+- **Wissensdatenbanken:** Diese fungieren als Top-Level-Container. Jede Datenbank verfügt über eigene Konfigurationen
+  und Berechtigungen. Technisch werden diese oft pro Abteilung (z.B. «Legal», «Engineering») angelegt.
+- **Sammlungen (Namespaces):** Innerhalb einer Datenbank werden Dokumente in Sammlungen gruppiert. Technisch handelt es
+  sich dabei um Metadaten-Tags (Namespaces) in der Vektordatenbank (Milvus). Da diese Struktur flach und nicht
+  verschachtelt ist, können Agenten hochperformant über mehrere Sammlungen hinweg suchen, ohne komplexe Ordnerpfade
+  traversieren zu müssen.
+- **Technische Isolation:** Die Datenhaltung erfolgt strikt getrennt. Vektoren liegen in Milvus, Metadaten in FerretDB
+  und die Rohdaten in S3-kompatiblen Objektspeichern (SeaweedFS). Diese Trennung erlaubt eine unabhängige Skalierung der
+  Komponenten.
 
-In der Praxis scheitern viele Wissensmanagement-Projekte an der Veraltung der Daten oder explodierenden
-Infrastrukturkosten durch ineffiziente Synchronisation. Der Swiss AI Hub setzt daher auf eine **hybride
-Automatisierungsstrategie**, die externe Systeme (wie SharePoint oder Dateisysteme) zur Quelle der Wahrheit erklärt, die
-Verarbeitung jedoch ressourcenschonend steuert.
+## Von Daten zu Wissen: Die Verarbeitungspipeline
 
-Anstatt riesige Datenmengen jede Nacht blind neu zu verarbeiten, trennt die Plattform die Überwachung von der
-Verarbeitung:
+### Geschäftlicher Nutzen
 
-1. **Zeitgesteuerte Überwachung (Der Puls):** Ein leichtgewichtiger Job prüft periodisch die Quellsysteme. Er vergleicht
-   lediglich Metadaten wie Zeitstempel und Inhalts-Hashes, um Änderungen zu erkennen.
-2. **Ereignisgesteuerte Verarbeitung (Der Sensor):** Nur wenn dieser Job eine tatsächliche Änderung (Delta) registriert,
-   löst ein Sensor die rechenintensiven Pipelines für Parsing und Embedding aus.
+Unstrukturierte Daten sind für Computer oft «tote» Materie. Ein gescanntes PDF, eine PowerPoint-Präsentation mit
+komplexen Tabellen oder ein verschachteltes Word-Dokument stellen herkömmliche Suchalgorithmen vor massive Probleme.
+Einfaches Text-Extrahieren zerstört oft den Kontext – eine Tabellenzelle ohne ihre Spaltenüberschrift ist wertlos.
+Unternehmen benötigen eine Technologie, die das Layout und die Struktur von Dokumenten versteht, um sicherzustellen,
+dass die KI nicht nur Wörter liest, sondern den Sinnzusammenhang erfasst. Nur so lassen sich Halluzinationen reduzieren,
+die durch aus dem Zusammenhang gerissene Textfragmente entstehen.
 
-Dies erfolgt über das Muster der **Observable Assets**. Diese überwachen externe Quellen kontinuierlich. Sobald eine
-Datei hinzugefügt oder modifiziert wird, startet die Verarbeitung exakt für dieses Dokument. Ändert sich ein
-Quelldokument, entfernt die Pipeline automatisch alle veralteten Chunks, bevor die neue Version verarbeitet wird. Wird
-ein Dokument gelöscht (z.B. in SharePoint), bereinigt das System restlos alle zugehörigen Vektoren und Metadaten, um
-sicherzustellen, dass Agenten niemals auf veraltete Informationen zugreifen.
+### Konzeptioneller Ansatz
 
-### Zweistufige Architektur mit Data Lake
+Der Swiss AI Hub verwendet eine hochentwickelte **Daten-zu-Wissen-Pipeline**, die weit über einfaches Text-Parsing
+hinausgeht. Der Prozess transformiert Rohdokumente in einen semantischen Graphen. Das Konzept basiert auf «Intelligent
+Chunking». Anstatt ein Dokument stur nach fester Zeichenanzahl abzuschneiden, analysiert das System die logische
+Struktur (Kapitel, Absätze) und teilt den Text an sinngemässen Grenzen. Zusätzlich werden Metadaten (Autor, Datum)
+extrahiert und der Inhalt durch Vektorembeddings für die semantische Suche zugänglich gemacht.
 
-Für maximale Robustheit im Enterprise-Umfeld implementiert das System standardmässig einen zweistufigen Prozess, der
-über SDK-Factories (`default_sharepoint_to_datalake_definitions` und `default_definitions`) bereitgestellt wird.
+### Technische Umsetzung im Swiss AI Hub
 
-In der ersten Phase synchronisiert ein Konnektor Dateien aus der Quelle in einen internen, zentralen S3-Data-Lake. In
-der zweiten Phase überwacht die RAG-Pipeline diesen Data Lake und verarbeitet neue Dateien in durchsuchbare Vektoren.
-Diese Entkopplung sorgt für Stabilität: Ein Ausfall der externen Quelle oder Netzwerkprobleme beeinträchtigen nicht die
-Suchfähigkeit der bestehenden Daten. Die Steuerung dieser komplexen Datenflüsse übernimmt **Dagster** als
-Orchestrierungs-Layer, der Planung, Retries und lückenlose Protokollierung zentral verwaltet.
+Die Pipeline setzt auf einen mehrstufigen Prozess, der durch das SDK bereitgestellt und orchestriert wird:
 
-## Intelligente Dokumentenverarbeitung
+- **Deep Parsing (Docling):** Die Plattform nutzt «Docling» für die Dokumentenanalyse. Dieses Tool extrahiert nicht nur
+  Text, sondern erkennt Tabellenstrukturen, Überschriftenhierarchien und Bildunterschriften in PDFs und Office-Dateien.
+  Das Layout wird rekonstruiert, um den Lesefluss beizubehalten.
+- **Strukturelle Verlinkung:** Beim Chunking werden nicht nur isolierte Schnipsel erzeugt. Das System erstellt
+  **sequentielle Links** (Verbindung zum vorherigen/nächsten Chunk) und **hierarchische Links** (Verbindung zur
+  Zusammenfassung des übergeordneten Kapitels). Dies ermöglicht dem Agenten, bei einem Treffer den Kontext zu erweitern
+  («Context Window Expansion»).
+- **Vektorisierung und Summary Nodes:** Textknoten werden mittels Embedding-Modellen in Vektoren transformiert und in
+  Milvus gespeichert. Die Pipeline unterstützt dabei automatisch die Generierung von hierarchischen Zusammenfassungen
+  (Summary Nodes) via LLM, um Agenten einen schnellen Überblick über grosse Dokumentenmengen zu geben, bevor sie in
+  Details eintauchen.
 
-### Jenseits von reinem Text: Parsing, Linking und Summaries
+## Automatisierte Integration und Synchronisation
 
-Für eine KI ist ein PDF zunächst nur eine Ansammlung von Zeichen ohne Bedeutung. Die Qualität der Antwort hängt
-massgeblich davon ab, wie gut das System die Struktur des Dokuments versteht. Der Swiss AI Hub nutzt eine mehrstufige
-Daten-zu-Wissen-Pipeline, um aus unstrukturierten Dateien einen navigierbaren Wissensgraphen zu erstellen:
+### Geschäftlicher Nutzen
 
-1. **Parsing mit Docling:** Die Technologie **Docling** analysiert das visuelle Layout und die logische Struktur.
-   Überschriften, Listen, Tabellen und Abbildungen werden erkannt und in ihrem Kontext bewahrt, statt als reiner
-   Textbrei extrahiert zu werden.
-2. **Strukturelles Chunking:** Ein intelligenter Parser zerlegt Dokumente an logischen Grenzen (wie Kapitelenden oder
-   Absatzumbrüchen) statt starr nach Zeichenanzahl. Dies bewahrt den Sinnzusammenhang innerhalb eines Textblocks.
-3. **Strukturelle Verlinkung (Structural Linking):** Das System erstellt nicht nur isolierte Vektoren, sondern verknüpft
-   diese aktiv. **Sequentielle Links** verbinden einen Chunk mit seinem Vorgänger und Nachfolger, um den Lesefluss
-   abzubilden. **Hierarchische Links** verbinden Details mit der übergeordneten Kapitel-Zusammenfassung.
-4. **Generierung von Summary Nodes:** Zusätzlich werden automatisch hierarchische Zusammenfassungen für
-   Dokumentabschnitte erstellt. Dies hilft der KI, das «grosse Ganze» eines Abschnitts zu verstehen, bevor sie in
-   spezifische Details eintaucht.
+In vielen Unternehmen scheitern Wissensmanagement-Initiativen daran, dass Dokumente manuell hochgeladen werden müssen.
+Sobald die Datei auf der Plattform ist, ist sie oft schon veraltet («Stale Data»). Eine Enterprise-Lösung muss
+sicherstellen, dass die Wissensbasis der KI stets synchron mit der «Source of Truth» (z.B. dem Fileserver, SharePoint
+oder Intranet) ist. Manuelle Prozesse sind hier fehleranfällig und unwirtschaftlich. Die Anforderung lautet: «Set and
+forget». Einmal konfiguriert, muss sich das System selbstständig aktualisieren.
 
-Diese tiefe semantische Strukturierung ermöglicht fortschrittliche RAG-Techniken. Wenn ein Agent einen relevanten
-Textabschnitt findet, kann er über die Verlinkungen navigieren, um den vollständigen Kontext zu rekonstruieren, was die
-Präzision der Antworten drastisch erhöht.
+### Konzeptioneller Ansatz
 
-### Technische Umsetzung der Persistenz
+Der Swiss AI Hub verfolgt eine Strategie der **änderungsgetriebenen Automatisierung** (Change-Driven Automation).
+Anstatt jede Nacht blind alle Dokumente neu zu verarbeiten (was Rechenleistung verschwendet und Kosten verursacht),
+überwacht das System die Quellen intelligent. Nur wenn ein Dokument hinzugefügt, geändert oder gelöscht wurde, wird die
+Verarbeitungskette angestossen. Dies garantiert Aktualität bei minimalem Ressourcenverbrauch. Das System unterscheidet
+dabei zwischen manuell verwalteten Datenbanken für statische Inhalte und Auto-Sync-Datenbanken für dynamische
+Unternehmensablagen.
 
-Die Plattform realisiert diese Architektur durch spezialisierte Komponenten, die jeweils für ihre Aufgabe optimiert
-sind: **SeaweedFS** dient als S3-kompatibler Objektspeicher für Rohdaten, **FerretDB** hält Metadaten und
-Verarbeitungsstatus, während **Milvus** als Vektordatenbank die semantischen Embeddings speichert. Durch spezialisierte
-**I/O Manager** innerhalb der Pipeline wird die Speicherlogik abstrahiert, was die Wartbarkeit und Erweiterbarkeit der
-Architektur sichert.
+### Technische Umsetzung im Swiss AI Hub
 
-## Integrität, Sicherheit und Nachvollziehbarkeit
+Die Orchestrierung erfolgt durch **Dagster**, eine spezialisierte Workflow-Engine für Data Engineering.
 
-### Validierung und Schutz der Datenbasis
+- **SharePoint-Konnektor:** Eine dedizierte Pipeline-Factory (`default_sharepoint_to_datalake_definitions`)
+  synchronisiert Dateien aus SharePoint-Bibliotheken in den internen Data Lake (S3).
+- **Beobachtbare Assets:** Die Pipeline nutzt das Konzept der «Observable Assets». Ein leichtgewichtiger Job prüft
+  regelmässig die Quelle auf Änderungen anhand von Hashes und Zeitstempeln.
+- **Ereignisgesteuerte Verarbeitung:** Sobald eine Änderung erkannt wird, löst ein Sensor (`default_automation_sensor`)
+  oder eine `AutomationCondition` die nachgelagerte Verarbeitung (Parsing, Embedding) aus. Dies geschieht partitioniert
+  pro Dokument, sodass ein Fehler in einer Datei nicht den gesamten Prozess stoppt.
+- **Lebenszyklus-Management:** Bei Löschung eines Dokuments in der Quelle entfernt die Pipeline automatisch alle
+  zugehörigen Artefakte (Chunks, Vektoren, Zusammenfassungen) aus der Wissensdatenbank, um zu verhindern, dass die KI
+  auf veraltetes Wissen zugreift.
 
-Die Ingestion-Pipeline fungiert als erstes Bollwerk gegen korrupte oder schädliche Daten. Bevor Inhalte verarbeitet
-werden, durchlaufen sie eine strenge **Eingabevalidierung**. Die Plattform erzwingt eine Whitelist von ca. 40
-genehmigten Dateierweiterungen (PDF, Office, Markdown, Bilder, Audio, JSON/XML) und verifiziert, dass der tatsächliche
-MIME-Typ mit der Endung übereinstimmt, um «Extension Spoofing» zu verhindern. Zudem werden Dateinamen auf
-Path-Traversal-Angriffe geprüft und bereinigt.
+## Validierung und Sicherheit beim Import
 
-Die Verarbeitung selbst erfolgt isoliert mittels **Partitionierung**. Jedes Dokument wird in einer eigenen Partition
-verarbeitet. Ein Fehler in einer einzelnen Datei – beispielsweise ein korruptes PDF – führt lediglich zum Abbruch dieser
-spezifischen Partition («Skipping»), ohne den Gesamtprozess für Tausende anderer Dokumente zu stoppen. Dies ermöglicht
-zudem eine massive Parallelisierung der Verarbeitung durch Dagster.
+### Geschäftlicher Nutzen
 
-### Transparenz durch Data Lineage
+Die Funktion, beliebige Dokumente hochzuladen, ist ein potenzielles Einfallstor für Cyberangriffe. Bösartige Akteure
+könnten versuchen, über manipulierte Dateien Schadcode einzuschleusen oder Systeme zum Absturz zu bringen. Zudem muss
+verhindert werden, dass korrupte oder nicht lesbare Dateien die Qualität der Wissensdatenbank verwässern.
+Sicherheitsverantwortliche (CISOs) verlangen daher, dass jede Datei validiert und bereinigt wird, *bevor* sie tiefere
+Verarbeitungsschichten der Plattform erreicht.
 
-Für Compliance und Vertrauen ist es unerlässlich zu wissen, woher eine Information stammt. Der Swiss AI Hub generiert
-bereits während der Aufnahme eine lückenlose **Data Lineage**. Metadaten wie Erstellungsdatum, Autor, Quellsystem,
-Versionsnummer und der exakte Speicherort werden extrahiert und untrennbar mit den Vektordaten verknüpft.
+### Konzeptioneller Ansatz
 
-Wenn ein RAG-Agent später eine Antwort generiert, greift er auf diese Metadaten zurück, um präzise Quellenangaben zu
-liefern. Dies ermöglicht nicht nur die Überprüfung der Fakten durch den Nutzer, sondern stellt auch sicher, dass Agenten
-Informationen korrekt zitieren können. Dank der Integration in Dagster ist zudem jeder Verarbeitungsschritt auditierbar:
-Administratoren können exakt nachvollziehen, wann welches Dokument importiert, geparst und indexiert wurde.
+Sicherheit ist integraler Bestandteil der Ingestion-Pipeline («Secure by Design»). Der Ansatz basiert auf dem Prinzip
+«Trust no Input». Jede Datei wird als potenziell feindlich betrachtet, bis sie validiert wurde. Dies umfasst die Prüfung
+auf Dateitypen (Whitelisting), die Konsistenzprüfung von Metadaten und den Schutz vor Angriffen auf das Dateisystem.
+Fehlerhafte Dateien werden isoliert und protokolliert, ohne den Gesamtprozess zu stoppen (Dokumentenebenen-Isolation).
+
+### Technische Umsetzung im Swiss AI Hub
+
+Die Plattform implementiert rigorose Sicherheitschecks an der Eingangs-Schleuse:
+
+- **MIME-Type Validierung:** Es wird geprüft, ob der tatsächliche Inhalt einer Datei mit ihrer Erweiterung
+  übereinstimmt, um «Extension Spoofing» (z.B. eine `.exe` getarnt als `.pdf`) zu verhindern.
+- **Strikte Whitelist:** Nur definierte Formate (PDF, DOCX, TXT, MD, JSON etc.) werden akzeptiert. Die Liste umfasst ca.
+  40 sichere Enterprise-Formate.
+- **Path Traversal Schutz:** Dateinamen werden sanitisiert, um zu verhindern, dass Angreifer durch Sequenzen wie `../`
+  auf geschützte Systemverzeichnisse zugreifen.
+- **Ressourcen-Limits:** Grössenbeschränkungen und Validierungen verhindern «Denial of Service»-Attacken durch extrem
+  grosse oder komplexe Dateien («Zip-Bomben»).
+- **Audit-Trail:** Jeder Ingestion-Versuch, ob erfolgreich oder blockiert, wird via Dagster protokolliert, was eine
+  vollständige Nachvollziehbarkeit der Datenherkunft und eventueller Sicherheitsvorfälle ermöglicht.

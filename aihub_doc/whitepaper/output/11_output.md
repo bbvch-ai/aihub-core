@@ -1,137 +1,164 @@
 # Kapitel 11: Integration und Interoperabilität
 
-## Das Ende der Datensilos: Vernetzung als Strategie
+In einer modernen Enterprise-IT-Landschaft darf eine KI-Plattform keine isolierte Insel sein. Der wahre Wert künstlicher
+Intelligenz entfaltet sich erst dann, wenn sie tief in die bestehenden Systeme, Datenquellen und Kommunikationskanäle
+eines Unternehmens eingebettet ist. Datensilos und proprietäre Schnittstellen sind die grössten Feinde der digitalen
+Transformation.
 
-Der Wert einer Enterprise-KI-Plattform bemisst sich nicht isoliert an der Leistungsfähigkeit der verwendeten
-Sprachmodelle, sondern an ihrer Fähigkeit, sich nahtlos in die bestehende IT-Landschaft einzufügen. Eine isolierte
-KI-Lösung, die keinen Zugriff auf operative Daten hat oder neue Login-Hürden schafft, verkommt schnell zu einer
-«Insel-Lösung» ohne nachhaltigen geschäftlichen Nutzen. Die wahre Effizienzsteigerung entsteht erst, wenn KI als
-intelligenter «Bindestoff» zwischen fragmentierten Systemen, Datenbanken und Kommunikationskanälen fungiert.
+Der Swiss AI Hub begegnet dieser Herausforderung mit einer Strategie der radikalen Offenheit. Dieses Kapitel beschreibt,
+wie sich die Plattform nahtlos in heterogene Umgebungen einfügt. Von der API-Kompatibilität, die eine Migration
+bestehender Anwendungen in Minuten ermöglicht, bis hin zur nativen Präsenz in Microsoft Teams und Slack: Die Architektur
+ist darauf ausgelegt, technische Hürden abzubauen und KI dort bereitzustellen, wo die Arbeit tatsächlich stattfindet.
 
-Der Swiss AI Hub verfolgt daher eine Strategie der radikalen Interoperabilität. Das Ziel ist es, Investitionen in
-bestehende Infrastrukturen zu schützen und Medienbrüche zu eliminieren. Anstatt dass Mitarbeitende ihre gewohnten
-Arbeitsumgebungen verlassen müssen, um «die KI zu fragen», kommt die Intelligenz dorthin, wo die Arbeit stattfindet –
-sei es in Microsoft Teams, im Intranet oder in Fachapplikationen. Gleichzeitig ermöglicht die offene Architektur eine
-nahtlose technische Integration in Legacy-Systeme und Automatisierungswerkzeuge, ohne dass proprietäre Schnittstellen
-die Flexibilität einschränken.
+## Auf einen Blick
 
-## Standardisierte API-Architektur und Investitionsschutz
+- **API-First Strategie:** Eine vollständige OpenAI-Kompatibilität ermöglicht die sofortige Migration bestehender
+  Anwendungen, während native APIs tiefen Zugriff auf Agenten-Workflows bieten.
+- **Model Context Protocol (MCP):** Die Unterstützung des MCP-Standards erlaubt externen Entwicklungstools (wie Cursor
+  oder Windsurf), den Plattform-Status direkt abzufragen und zu nutzen.
+- **Bot-in-the-Loop:** Integration in Microsoft Teams und Slack ermöglicht nicht nur Chats, sondern auch die Eskalation
+  von Agenten-Fragen an menschliche Experten direkt im Channel.
+- **Echtzeit-Streaming:** WebSockets garantieren reaktive Benutzeroberflächen mit sofortigem Feedback und Einblick in
+  den Denkprozess der KI.
+- **Föderierte Identität:** Nahtloses Single Sign-On (SSO) via OIDC und OAuth 2.0 (z.B. Entra ID) ohne separate
+  Passwortverwaltung.
 
-### Die OpenAI-Kompatibilitätsschicht
+## Standardisierte API-Architektur und Entwickler-Tools
 
-Viele Unternehmen haben bereits erste Erfahrungen mit KI-Prototypen gesammelt, die oft auf den Standard-Bibliotheken
-(SDKs) von OpenAI basieren. Ein Wechsel auf eine souveräne, selbst gehostete Plattform scheitert oft an den befürchteten
-Migrationskosten («Refactoring»). Um dieses Hindernis zu beseitigen, implementiert der Swiss AI Hub einen
-«API-First»-Ansatz mit strikter Standard-Kompatibilität.
+### Geschäftlicher Nutzen
 
-Die Plattform stellt eine **OpenAI-kompatible REST-Schnittstelle** bereit. Für Entwickler bedeutet dies, dass bestehende
-Applikationen – ob Chatbots, Analyse-Tools oder RAG-Pipelines – ohne Code-Änderungen weiterverwendet werden können. Es
-genügt, die Basis-URL auf die Swiss AI Hub Instanz umzustellen und den API-Schlüssel auszutauschen. Diese Kompatibilität
-deckt das gesamte Spektrum ab: von synchronen Chat Completions über Streaming-Antworten bis hin zu Embeddings und
-multimodaler Verarbeitung (Bild/Audio).
+Für Unternehmen, die bereits erste Erfahrungen mit KI-Entwicklung gesammelt haben, stellt der Wechsel auf eine neue
+Plattform oft ein Risiko dar. Investitionen in bestehenden Code, der auf den Schnittstellen von Marktführern wie OpenAI
+basiert, drohen verloren zu gehen («Sunk Costs»). IT-Leiter benötigen die Sicherheit, dass eine Migration auf eine
+souveräne Schweizer Plattform kein komplettes Neuschreiben der Applikationen erfordert. Gleichzeitig muss die
+Schnittstelle zukunftssicher sein, um auch komplexe, proprietäre Agenten-Workflows und moderne Entwicklungsumgebungen
+(IDEs) unterstützen zu können.
 
-### Agenten-Orchestrierung und Echtzeit-Streaming
+### Konzeptioneller Ansatz
 
-Jenseits der Standard-Migration bietet die Plattform native Schnittstellen für tiefgreifende Integrationen. Die
-**Agenten-Interaktions-REST-API** erlaubt externen Systemen, die volle Kraft der Plattform zu nutzen:
-Multi-Agenten-Kollaboration, langlebige Geschäftsprozesse und umfassendes Wissensmanagement. Dies ist entscheidend für
-Szenarien, in denen externe Fachanwendungen (z.B. ein CRM oder ERP) nicht nur Text generieren, sondern einen komplexen
-KI-Prozess anstossen und strukturierte Ergebnisse zurückerhalten müssen.
+Die Integrationsstrategie verfolgt einen hybriden API-Ansatz. Einerseits bietet die Plattform volle Kompatibilität zu
+etablierten Industriestandards, um die Einstiegshürde so niedrig wie möglich zu halten. Das System verhält sich nach
+aussen wie ein Standard-LLM-Provider, was den Austausch der Backend-Infrastruktur ohne Anpassung der Geschäftslogik
+ermöglicht. Andererseits stehen erweiterte, plattformspezifische Schnittstellen bereit, um die volle Macht der
+Agenten-Orchestrierung zu nutzen. Ein besonderer Fokus liegt auf der Unterstützung offener Protokolle für
+Entwicklungswerkzeuge, um die Plattform transparent in den Coding-Workflow zu integrieren.
 
-Für interaktive Benutzeroberflächen, die eine hohe Reaktionsfreudigkeit erfordern, stellt die Plattform eine
-**WebSocket-API** bereit. Im Gegensatz zum traditionellen Request-Response-Modell ermöglicht dieser bidirektionale Kanal
-das Echtzeit-Streaming von Ereignissen. Frontend-Anwendungen erhalten so nicht nur den generierten Text Zeichen für
-Zeichen, sondern auch Einblicke in den «Denkprozess» der Agenten (Reasoning Steps) sowie Status-Updates zu laufenden
-Hintergrundprozessen. Dies schafft Transparenz und erhöht das Vertrauen der Nutzer, da die sonst undurchsichtige «Black
-Box» beobachtbar wird.
+### Technische Umsetzung im Swiss AI Hub
 
-## Integration in die Arbeitswelt (Collaboration)
+Der Swiss AI Hub implementiert vier spezifische Schnittstellentypen auf Basis von FastAPI, um unterschiedliche
+Integrationsbedürfnisse abzudecken:
 
-### KI dort, wo die Teams sind
+- **OpenAI-kompatible REST-API:** Diese Schnittstelle spiegelt die Spezifikationen der OpenAI API exakt wider.
+  Bestehende Anwendungen, die mit Standard-SDKs (Python oder Node.js) entwickelt wurden, müssen lediglich die Basis-URL
+  und den API-Schlüssel ändern. Dies umfasst Chat Completions, Embeddings sowie Audioverarbeitung (Speech-to-Text).
+- **Agenten-Interaktions-REST-API:** Für native Anwendungen bietet diese API tiefen Zugriff auf die Plattformlogik.
+  Entwickler können hierüber Agenten-Workflows steuern, Prozesse starten und den Status von langlaufenden Aufgaben
+  abfragen. Sie fungiert als Gateway zum internen NATS-Event-System.
+- **WebSocket-API:** Um moderne, reaktive Benutzeroberflächen zu ermöglichen, unterstützt die Plattform bidirektionale
+  Echtzeit-Kommunikation. Dies erlaubt das Streaming von Antworten («Token-by-Token») sowie die Übermittlung von
+  Zwischenschritten («Thought Events»), sodass der Nutzer den Denkprozess des Agenten live verfolgen kann.
+- **Model Context Protocol (MCP) Server:** Die Plattform implementiert den aufkommenden MCP-Standard. Der integrierte
+  MCP-Server übersetzt FastAPI-Endpunkte automatisch in MCP-Ressourcen. Dies erlaubt es KI-gestützten
+  Entwicklungsumgebungen (wie Claude Code oder JetBrains), die Fähigkeiten, verfügbaren Agenten und den Status des Swiss
+  AI Hubs während der Entwicklung direkt abzufragen.
 
-Die Einführung neuer Software scheitert oft am Widerstand der Nutzer, die nicht zwischen verschiedenen Browser-Tabs und
-Anwendungen wechseln wollen. Um die Akzeptanz zu maximieren, integriert der Swiss AI Hub KI-Funktionen direkt in die
-primären Kollaborationsplattformen. Über die Anbindung an den **Azure Bot Service** werden Agenten als native Teilnehmer
-in **Microsoft Teams** oder **Slack** verfügbar.
+## Integration in Kommunikations- und Arbeitsplattformen
 
-Dieser Ansatz ermöglicht natürliche Interaktionsmuster. Ein Mitarbeiter kann einen Agenten direkt in einem Gruppenchat
-erwähnen («@AI-Bot, fasse die Diskussion zusammen»), ohne den Kontext der Unterhaltung zu verlassen. Die Architektur
-abstrahiert dabei die Komplexität der verschiedenen Kanäle: Ein einmal konfigurierter Agent kann gleichzeitig über
-Teams, Slack und Web-Widgets angesprochen werden.
+### Geschäftlicher Nutzen
 
-### Bot-in-the-Loop Workflows
+Die Akzeptanz neuer Technologien scheitert oft daran, dass Mitarbeiter gezwungen werden, ihre gewohnten
+Arbeitsumgebungen zu verlassen. Ein separates Webportal für KI-Anfragen erzeugt einen Medienbruch, der die Produktivität
+senkt. Um dies zu vermeiden, muss die KI als virtueller Kollege dort präsent sein, wo die tägliche Kommunikation
+stattfindet. Dies erhöht die Nutzungsrate drastisch und senkt den Schulungsaufwand. Zudem ermöglicht die Integration in
+Kollaborationstools neuartige «Human-in-the-Loop»-Szenarien, bei denen die KI bei Unsicherheiten proaktiv Experten in
+einem Chat-Kanal um Rat fragen kann.
 
-Ein besonderer Mehrwert dieser Integration ist die Umsetzung von «Human-in-the-Loop»-Szenarien direkt im Chat,
-unterstützt durch die **Bot-in-the-Loop Infrastruktur**. Wenn ein Agent bei einer Aufgabe unsicher ist oder eine
-Genehmigung benötigt (z.B. für eine Bestellung), kann er proaktiv eine strukturierte Nachricht in einen definierten
-Experten-Kanal in Slack oder Teams senden.
+### Konzeptioneller Ansatz
 
-Ein menschlicher Mitarbeiter kann den Vorgang direkt im Chat genehmigen oder korrigieren. Der Agent erfasst diese
-Antwort automatisch, nimmt das Feedback auf und setzt seine Arbeit im Hintergrund fort. Dies verbindet die
-Skalierbarkeit der KI mit der Sicherheit menschlicher Aufsicht, ohne dass separate Genehmigungs-Tools oder
-Workflow-Engines notwendig sind.
+Anstatt für jeden Messenger eine eigene Integration zu bauen, setzt der Swiss AI Hub auf eine Abstraktionsschicht für
+Konversationskanäle. Das Ziel ist eine «Write Once, Deploy Anywhere»-Strategie. Ein Agenten-Profil wird einmal
+konfiguriert und kann anschliessend flexibel verschiedenen Kanälen zugewiesen werden. Die Plattform behandelt externe
+Chat-Nachrichten technisch identisch zu internen API-Aufrufen, übersetzt jedoch die spezifischen Formate der
+Drittanbieter (wie Adaptive Cards in Teams oder Block Kit in Slack) automatisch.
 
-## Systemintegration und Automatisierung
+### Technische Umsetzung im Swiss AI Hub
 
-Der Swiss AI Hub ist nicht nur ein Chatbot-System, sondern eine Automatisierungsplattform. Die Integration mit externen
-Systemen erfolgt dabei über vier definierte Muster, je nach Anforderung an Latenz und Datenrichtung:
+Die technische Brücke bildet die Integration des **Azure Bot Service** in Kombination mit einer Ereignis-gesteuerten
+Architektur via NATS.
 
-1. **Ausgehende Agenten-Aufrufe (Outbound):** Agenten können innerhalb ihres Workflows aktiv externe APIs aufrufen (z.B.
-   via REST oder GraphQL). Ein Service-Agent kann so den Status eines Tickets in Jira abfragen oder Kundendaten im CRM
-   validieren, bevor er eine Antwort generiert.
-2. **Plattform-API-Integration (Inbound):** Externe Systeme können KI-Fähigkeiten via REST API triggern. Ein
-   Dokumentenmanagementsystem kann beispielsweise bei jedem Upload automatisch eine Klassifizierung und Zusammenfassung
-   durch den Swiss AI Hub anfordern.
-3. **Daten-Pipelines (Batch):** Für die kontinuierliche Synchronisation grosser Datenmengen – etwa aus SharePoint,
-   S3-Speichern oder Netzlaufwerken – kommen die integrierten Dagster-Pipelines zum Einsatz. Diese sorgen dafür, dass
-   die Wissensdatenbank stets den aktuellen Stand der Unternehmensdaten widerspiegelt.
-4. **Entwickler-Integration (MCP):** Für die technische Integration und Wartung unterstützt die Plattform das **Model
-   Context Protocol (MCP)**.
+- **Multichannel-Support:** Der Bot Service verbindet den Swiss AI Hub nativ mit Microsoft Teams, Slack und Outlook. Die
+  Authentifizierung erfolgt dabei über die bestehende Azure AD (Entra ID) Infrastruktur des Unternehmens, sodass
+  Sicherheitsrichtlinien gewahrt bleiben.
+- **Bot-in-the-Loop:** Ein Alleinstellungsmerkmal ist die Fähigkeit von Agenten, ihre Ausführung zu pausieren und eine
+  Frage in einen definierten Slack- oder Teams-Kanal zu posten (Experten-Eskalation). Antwortet ein menschlicher Experte
+  im Thread, nimmt der Agent diese Information auf und setzt den Workflow fort. Dieser Zustand wird persistent in
+  MongoDB oder Cosmos DB verwaltet, sodass auch bei längeren Wartezeiten kein Kontext verloren geht.
+- **Streaming & Rich Media:** Auch in Teams und Slack werden Streaming-Antworten unterstützt, um Wartezeiten subjektiv
+  zu verkürzen. Die Integration erlaubt zudem den Austausch von Dokumenten und Bildern, die direkt in die Daten-Pipeline
+  des Agenten fliessen.
 
-## Entwicklungseffizienz mit MCP
+## Anbindung externer Fachsysteme und Prozessautomatisierung
 
-Die Geschwindigkeit, mit der KI-Lösungen entwickelt und gewartet werden, hängt massgeblich von den verfügbaren
-Werkzeugen ab. Der Swiss AI Hub unterstützt den aufkommenden Standard des **Model Context Protocol (MCP)**. Dieser
-Standard ermöglicht es KI-gestützten Coding-Assistenten (wie Cursor, Claude Code oder Gemini CLI), standardisiert mit
-der Plattform zu kommunizieren.
+### Geschäftlicher Nutzen
 
-Der integrierte MCP-Server übersetzt die API-Endpunkte der Plattform automatisch in Ressourcen, die von externen
-Entwicklungs-Tools verstanden werden. Ein Entwickler kann seinen KI-Assistenten somit beauftragen, den aktuellen Zustand
-der Plattform zu analysieren, Fehler in Agenten-Konfigurationen zu finden oder Performance-Metriken abzufragen. Dies
-ermöglicht eine Art «Introspektion», bei der KI-Tools helfen, die KI-Plattform selbst zu optimieren und zu debuggen, was
-die Entwicklerproduktivität signifikant steigert.
+KI entfaltet ihren grössten Nutzen, wenn sie nicht nur redet, sondern handelt. Isolierte Chatbots können zwar Fragen
+beantworten, aber keine Geschäftsprozesse auslösen. Unternehmen benötigen eine Plattform, die als intelligenter
+Orchestrator fungiert und bestehende Fachanwendungen (ERP, CRM, Ticketsysteme) aktiv steuert. Dies ermöglicht einen
+hohen Automatisierungsgrad, bei dem die KI Routineaufgaben übernimmt – wie das Auslesen einer Rechnung und das
+anschliessende Verbuchen im SAP-System – und den Menschen von repetitiven Tätigkeiten entlastet.
 
-## Authentifizierung und Identitätsmanagement
+### Konzeptioneller Ansatz
 
-### Nahtloses Single Sign-On (SSO)
+Die Interoperabilität mit Drittsystemen erfolgt bidirektional und richtet sich nach Latenz und Datenvolumen. Zum einen
+können Agenten externe Systeme aktiv aufrufen («Outbound»), um Aktionen auszuführen. Zum anderen können externe Systeme
+die KI als Dienst ansprechen («Inbound»), beispielsweise um bei Eingang eines neuen Dokuments automatisch eine
+Klassifizierung zu triggern. Die Architektur vermeidet dabei starre Punkt-zu-Punkt-Verbindungen und setzt auf
+standardisierte Protokolle.
 
-In einer heterogenen Enterprise-Umgebung ist die Verwaltung von Benutzeridentitäten sicherheitskritisch. Der Swiss AI
-Hub verzichtet bewusst auf eine isolierte Benutzerdatenbank und integriert sich stattdessen vollständig in bestehende
-Identity Provider (IdP). Durch die Unterstützung der Industriestandards **OpenID Connect (OIDC)** und **OAuth 2.0**
-lässt sich die Plattform nahtlos an zentrale Verzeichnisdienste wie **Microsoft Entra ID** (Azure AD), Keycloak oder
-Okta anbinden.
+### Technische Umsetzung im Swiss AI Hub
 
-Für Organisationen der öffentlichen Verwaltung ist die Kompatibilität zu spezifischen Standards wie **AGOV**
-(Behörden-Login) essenziell. Die Plattform übernimmt dabei nicht nur die Authentifizierung, sondern auch die
-Autorisierung durch das Mapping von Gruppenansprüchen (Claims) auf interne Rollen. Ein Benutzer, der im Active Directory
-der Gruppe «Finance» angehört, erhält beim Login im Swiss AI Hub automatisch Zugriff auf die entsprechenden
-Finanz-Agenten und Datenräume. Dies reduziert den administrativen Aufwand beim On- und Offboarding von Mitarbeitenden
-drastisch und schliesst Sicherheitslücken durch verwaiste Accounts.
+Der Swiss AI Hub unterscheidet vier etablierte Integrationsmuster:
 
-## Frontend-Integration und Web-Komponenten
+- **Direkte Agenten-API-Aufrufe (Echtzeit/Outbound):** Innerhalb eines Agenten-Workflows können Python-Bibliotheken (wie
+  `httpx`) genutzt werden, um REST-, SOAP- oder GraphQL-Schnittstellen externer Systeme anzusprechen. Dies ist ideal für
+  synchrone Abfragen, etwa den Abruf eines Kundendatensatzes aus dem CRM während eines Chats.
+- **Plattform-API-Integration (Echtzeit/Inbound):** Externe Systeme (z.B. ein Dokumentenmanagementsystem) rufen die
+  Agenten-API auf, um KI-Analysen auszulösen. Der Traefik-Proxy regelt hierbei Rate-Limiting und Authentifizierung.
+- **Daten-Pipelines (Batch/Inbound):** Für den Massendatenabgleich synchronisieren Dagster-Pipelines (siehe Kapitel 6)
+  Daten aus Quellen wie SharePoint oder S3-Buckets in die Wissensdatenbank. Dies geschieht im Hintergrund, sodass die KI
+  stets auf dem aktuellen Stand der Unternehmensdaten operiert.
+- **Webhook-Integration:** Externe Automatisierungs-Tools (wie Power Automate, UiPath oder n8n) können als Event-Trigger
+  fungieren, um asynchrone Prozesse zu starten und Ergebnisse entgegenzunehmen.
 
-Für Unternehmen, die KI-Funktionalitäten in ihre eigenen Portale – etwa ein Intranet, ein eGov-Bürgerportal oder eine
-Kunden-App – integrieren möchten, bietet die Plattform flexible Frontend-Komponenten. Über die Web-Chat-Schnittstellen
-des Azure Bot Service oder die Open WebUI Integration können Chat-Oberflächen eingebettet werden.
+## Identitätsintegration und Single Sign-On (SSO)
 
-Diese Integration ist nicht nur kosmetisch, sondern funktional tiefgreifend. Da die Kommunikation über standardisierte
-Webhooks und APIs läuft, kann der Swiss AI Hub als intelligente Komponente in übergeordnete Prozessautomatisierungen
-eingebunden werden. Tools wie UiPath, Power Automate oder n8n können Agenten als Entscheidungsknoten in ihre Workflows
-aufnehmen. So kann beispielsweise ein RPA-Bot (Robotic Process Automation), der Rechnungen einscannt, die extrahierten
-Daten an den Swiss AI Hub zur Validierung senden und basierend auf der KI-Antwort den weiteren Verbuchungsprozess
-steuern.
+### Geschäftlicher Nutzen
 
-Zusammenfassend bietet der Swiss AI Hub keine monolithische «Black Box», sondern ein modulares Ökosystem an
-Schnittstellen. Ob durch direkte API-Aufrufe, eingebettete Chat-Widgets oder native Teams-Integration – die Architektur
-stellt sicher, dass KI dort verfügbar ist, wo sie den grössten Mehrwert stiftet, unter Wahrung höchster Sicherheits- und
-Integrationsstandards.
+In der Enterprise-IT ist die Verwaltung von Benutzeridentitäten sicherheitskritisch. Eine KI-Plattform, die eine
+separate Benutzerdatenbank mit eigenen Passwörtern erfordert, erhöht den administrativen Aufwand und das
+Sicherheitsrisiko. CIOs und CISOs fordern eine nahtlose Einbindung in das zentrale Identity Access Management (IAM).
+Mitarbeiter sollen sich mit ihren gewohnten Zugangsdaten anmelden können (Single Sign-On), und beim Austritt eines
+Mitarbeiters muss der Zugriff auf die KI-Plattform automatisch entzogen werden.
+
+### Konzeptioneller Ansatz
+
+Der Swiss AI Hub speichert keine Passwörter. Die Architektur basiert auf dem Prinzip der föderierten Identität
+(Federated Identity). Die Plattform delegiert den Authentifizierungsprozess vollständig an den vertrauenswürdigen
+Identity Provider (IdP) des Unternehmens. Nach erfolgreicher Anmeldung erhält die Plattform lediglich ein signiertes
+Token, das die Identität und die Gruppenzugehörigkeiten des Benutzers bestätigt. Dies ermöglicht eine zentrale Steuerung
+von Zugriffsrichtlinien, wie etwa die Erzwingung von Multi-Faktor-Authentifizierung (MFA), direkt im IdP.
+
+### Technische Umsetzung im Swiss AI Hub
+
+Die technische Realisierung stützt sich auf die Industriestandards **OpenID Connect (OIDC)** und **OAuth 2.0**.
+
+- **Standard-Konformität:** Die Plattform integriert sich out-of-the-box mit Microsoft Entra ID (ehemals Azure AD),
+  Keycloak, Okta oder Zitadel.
+- **Token-Validierung:** Bei jedem API-Aufruf validiert das System das übergebene JSON Web Token (JWT) kryptografisch
+  (RSA-256) gegen den öffentlichen Schlüssel des IdP.
+- **Automatisches Rollen-Mapping:** Benutzergruppen aus dem Verzeichnisdienst werden automatisch auf interne Rollen
+  (z.B. *AgentVerwender-Rolle*) abgebildet. Dies geschieht durch Abfrage der Microsoft Graph API nach erfolgreicher
+  Authentifizierung. Ein neuer Mitarbeiter hat somit ab dem ersten Tag Zugriff auf die relevanten Agenten, ohne dass ein
+  Administrator im AI Hub tätig werden muss.
+- **Service-Accounts:** Für technische Benutzer, beispielsweise für ETL-Prozesse, unterstützt die Plattform den OAuth
+  2.0 Client Credentials Flow, um auch automatisierte Zugriffe sicher und auditierbar zu gestalten.

@@ -1,184 +1,224 @@
 # Kapitel 10: Deployment, Betrieb
 
-## Betriebliche Exzellenz und architektonische Flexibilität
+Der Übergang von einem funktionierenden Prototypen zu einer stabilen Enterprise-Lösung markiert oft die kritischste
+Phase in KI-Projekten. Während in der Entwicklungsphase Agilität und Schnelligkeit dominieren, erfordert der produktive
+Betrieb («Day 2 Operations») Stabilität, Skalierbarkeit und die nahtlose Integration in bestehende IT-Landschaften. CIOs
+und IT-Leiter stehen vor der Herausforderung, eine KI-Infrastruktur bereitzustellen, die nicht nur heute funktioniert,
+sondern auch unter Last skaliert, Ausfälle toleriert und strengen Sicherheitsvorgaben genügt.
 
-Die Entscheidung für eine Enterprise-KI-Plattform wird nicht allein durch deren Funktionsumfang getroffen, sondern
-massgeblich durch ihre Betriebsfähigkeit bestimmt. Für CIOs und IT-Leiter stellt sich die fundamentale Frage, wie sich
-eine komplexe KI-Infrastruktur in die bestehende IT-Landschaft integrieren lässt, ohne dabei Sicherheitsstandards zu
-kompromittieren oder operative Risiken zu erhöhen. Eine Lösung, die in der Pilotphase glänzt, aber im Rechenzentrum
-schwerfällig ist, wird langfristig scheitern.
+Dieses Kapitel beleuchtet die betrieblichen Aspekte des Swiss AI Hub. Es zeigt auf, wie die Architektur flexible
+Bereitstellungsmodelle unterstützt – von der eigenen Private Cloud über Managed Services bis zum isolierten
+Hochsicherheitsrechenzentrum – und wie moderne Container-Technologien einen wartungsarmen, hochverfügbaren 24/7-Betrieb
+gewährleisten.
 
-Der Swiss AI Hub adressiert diese Anforderung durch einen konsequenten «Operations-First»-Ansatz. Die Plattform ist
-darauf ausgelegt, vom ersten Tag an als robustes, wartbares Produktivsystem zu fungieren. Sie bricht mit der starren
-Doktrin reiner SaaS-Angebote und bietet stattdessen eine flexible Architektur, die sich den Infrastruktur-Vorgaben des
-Kunden anpasst. Dies beginnt bereits bei der Initialisierung: Die gesamte Infrastruktur – bestehend aus Datenbanken,
-Vektorspeichern und API-Diensten – lässt sich dank optimierter Docker-Compose-Konfigurationen mit einem einzigen Befehl
-bereitstellen. Dieser «One-Command Deployment»-Ansatz reduziert die «Time-to-Value» von Wochen auf Minuten, indem er
-komplexe Abhängigkeiten automatisiert auflöst.
+## Auf einen Blick
 
-## Flexible Deployment-Modelle für maximale Souveränität
+- **Infrastruktur-Agnostik:** Volle Flexibilität zwischen On-Premise, Private Cloud (BYOC) oder Schweizer SaaS-Hosting,
+  ohne Anpassung der Applikationslogik.
+- **Air-Gap-Fähigkeit:** Unterstützung für komplett isolierte Offline-Umgebungen ohne ausgehende Internetverbindung
+  durch lokale LLM-Inferenz.
+- **Skalierung durch Design:** Ereignisgesteuerte Architektur (Event-Driven) ermöglicht horizontale Skalierung von
+  Workern für hohe Lastspitzen.
+- **Zero-Downtime-Updates:** Trennung von Kernplattform und Kundencode erlaubt Updates ohne Unterbruch des laufenden
+  Betriebs.
+- **Vollständige Observability:** Native Integration von OpenTelemetry, SigNoz und Phoenix für lückenloses Monitoring
+  von Infrastruktur und KI-Performance.
 
-### Vom Managed Service bis zum Air-Gap
+## Flexible Betriebsmodelle und Datensouveränität
 
-Unterschiedliche Branchen unterliegen höchst diversen regulatorischen Drücken und strategischen Zielen. Ein
-Medienunternehmen priorisiert möglicherweise Geschwindigkeit und Skalierbarkeit, während eine Strafverfolgungsbehörde
-absolute Isolation benötigt. Ein «One-Size-Fits-All»-Ansatz ist hier zum Scheitern verurteilt. Die Wahl des
-Deployment-Modells ist daher kein rein technisches Detail, sondern eine strategische Entscheidung über
-Datensouveränität.
+### Geschäftlicher Nutzen
 
-Der Swiss AI Hub unterstützt dieses Spektrum durch drei primäre Hosting-Optionen, die auf einer einheitlichen
-containerisierten Architektur basieren:
+Es gibt im Schweizer Markt keine «One-Size-Fits-All»-Lösung für das Hosting. Eine Kantonalbank unterliegt anderen
+regulatorischen Zwängen als ein Industrieunternehmen oder ein Start-up. Die Entscheidung über den Speicherort der Daten
+und den Betrieb der Infrastruktur muss allein beim Kunden liegen und darf nicht durch die Architektur der Software
+diktiert werden. Die Fähigkeit, die Plattform exakt dort zu betreiben, wo die Datenhoheit am besten gewahrt wird – sei
+es im eigenen Keller oder in einer zertifizierten Schweizer Cloud – ist ein entscheidender Wettbewerbsvorteil. Sie
+eliminiert Compliance-Risiken und ermöglicht den Einsatz von KI auch in Szenarien, die bisher aufgrund von
+Cloud-Verboten undenkbar waren.
 
-1. **On-Premise (Eigene Server):** Für Organisationen mit strikten Datenresidenz-Vorgaben läuft die Plattform auf
-   Standard-x86_64-Servern im Unternehmens-Rechenzentrum. Hierbei entfallen externe Cloud-Abhängigkeiten. Für
-   Hochsicherheitsbereiche unterstützt die Plattform **Air-Gapped-Deployments**. In diesem Szenario ist das System
-   physisch vom Internet getrennt. Anstelle externer APIs kommen lokal gehostete Sprachmodelle (wie Llama, Mistral oder
-   DeepSeek) zum Einsatz, die über interne Inferenz-Server (z.B. vLLM oder llama.cpp) und GPU-Ressourcen bereitgestellt
-   werden.
-2. **Private Cloud (Bring Your Own Cloud):** Die Infrastruktur wird in der eigenen Cloud-Subscription des Kunden (z.B.
-   Azure Switzerland, AWS Zurich oder GCP) provisioniert. Governance-Richtlinien und Sicherheitsperimeter greifen
-   nahtlos, während die Skalierbarkeit der Hyperscaler genutzt wird. Die Datenhoheit verbleibt dabei durch eigene
-   Verschlüsselungsschlüssel (BYOK) beim Kunden.
-3. **SaaS (Schweizer Cloud-Hosting):** Als Managed Service übernimmt der Anbieter den Betrieb, die Updates und das
-   Monitoring auf einer in der Schweiz ansässigen Cloud-Infrastruktur. Dies reduziert den operativen Aufwand für das
-   interne IT-Team auf ein Minimum, während die Daten rechtssicher in der Schweiz verbleiben.
+### Konzeptioneller Ansatz
 
-### Multi-Instancing für harte Isolation
+Der Swiss AI Hub folgt dem Prinzip «Bring Your Own Infrastructure». Die Plattform ist als infrastruktur-agnostische
+Lösung konzipiert. Dies bedeutet, dass die Software nicht an eine spezifische Hardware oder einen bestimmten
+Cloud-Anbieter gebunden ist. Das Spektrum der unterstützten Betriebsmodelle umfasst drei Hauptszenarien:
 
-Sicherheit durch Architektur bedeutet auch, dass interne Grenzen respektiert werden. Während Multi-Tenancy eine logische
-Trennung innerhalb einer Software bietet, benötigen bestimmte Szenarien eine physische Isolation, um das Risiko von
-Datenlecks («Spillover») vollständig zu eliminieren.
+1. **On-Premise / Private Cloud:** Der Betrieb erfolgt im eigenen Rechenzentrum oder in einer kontrollierten Umgebung
+   bei Hyperscalern (Azure, AWS, GCP) unter voller Kontrolle der internen IT.
+2. **SaaS (Schweizer Cloud-Hosting):** Ein Managed Service, gehostet auf einer in der Schweiz ansässigen Infrastruktur,
+   bei dem Betrieb, Updates und Backups als Dienstleistung erbracht werden, die Datenhoheit jedoch in der Schweiz
+   verbleibt.
+3. **Air-Gapped:** Für höchste Sicherheitsanforderungen kann die Plattform vollständig offline ohne Internetverbindung
+   betrieben werden.
 
-Der Swiss AI Hub implementiert hierfür das Konzept des **Multi-Instancings**. Anstatt alle Mandanten in eine riesige
-Datenbank zu zwingen, können Organisationen mehrere vollständig isolierte Instanzen der Plattform parallel betreiben.
-Jede Instanz verfügt über eigene Datenbanken (PostgreSQL, FerretDB), Vektor-Speicher (Milvus oder Azure AI Search) und
-Dateispeicher (SeaweedFS). Eine Instanz für die Forschung kann somit völlig getrennt von einer Instanz für HR-Daten
-laufen. Dennoch erlaubt die Architektur Synergien: Verschiedene Instanzen können über ihren jeweiligen LiteLLM-Proxy auf
-ein geteiltes, zustandsloses LLM-Backend zugreifen. Dies ermöglicht eine zentrale Verwaltung von API-Schlüsseln und
-Ressourcen, während die sensiblen Nutzdaten (Prompts, Dokumente, Vektoren) strikt innerhalb der isolierten
-Instanzgrenzen verbleiben.
+### Technische Umsetzung im Swiss AI Hub
 
-## Hochverfügbarkeit und Skalierung
+Technisch basiert die Bereitstellung auf Containerisierung mittels Docker. Dies abstrahiert die Anwendung von der
+darunterliegenden Infrastruktur.
 
-### Ereignisgesteuerte Architektur als Skalierungsfaktor
+- **Standardisiertes Deployment:** Die gesamte Plattform lässt sich mit einem einzigen Orchestrierungs-Befehl
+  (`docker compose up`) bereitstellen. Dies umfasst alle Komponenten wie API, Datenbanken (PostgreSQL/FerretDB),
+  Vektorspeicher (Milvus) und das LLM-Gateway.
+- **Profil-basiertes Setup:** Über spezifische Konfigurationsprofile (`docker-compose.latest.yml` für Produktion vs.
+  `.local.yml` für Entwicklung) passt sich das System an. In der Produktion werden automatisch Let's Encrypt
+  SSL-Zertifikate verwaltet, während lokal selbstsignierte Zertifikate (via mkcert) zum Einsatz kommen.
+- **Netzwerk-Isolation:** Der Zugang erfolgt zentral über einen Reverse Proxy (Traefik) auf Port 443 (HTTPS). Alle
+  internen Dienste kommunizieren in isolierten Docker-Netzwerken und sind nicht direkt exponiert.
+- **Air-Gap-Fähigkeit:** Da die Plattform lokale Modelle (via vLLM, llama.cpp oder Hugging Face TEI) unterstützt, ist
+  keine ausgehende Verbindung zu externen APIs notwendig. Der Betrieb erfolgt autark innerhalb des
+  Sicherheitsperimeters.
 
-KI-Workloads sind naturgemäss volatil. Die Lastkurve eines Chatbots oder einer Daten-zu-Wissen-Pipeline ist selten
-linear; sie ist geprägt von Spitzenlasten und Ruhephasen. Eine starre Architektur würde in Spitzenzeiten kapitulieren
-und in Ruhephasen unnötig Ressourcen binden. Die betriebliche Anforderung lautet daher Elastizität: Das System muss
-atmen können.
+## Skalierbarkeit und Performance unter Last
 
-Der Swiss AI Hub löst dies durch eine asynchrone, ereignisgesteuerte Architektur. Komponenten wie KI-Agenten oder
-Ingestion-Pipelines sind zustandslos («stateless») konzipiert. Sie halten keinen lokalen State, der bei einem Absturz
-verloren gehen könnte, sondern verarbeiten Ereignisse aus einer zentralen Message Queue (NATS). Dies ermöglicht eine
-horizontale Skalierung ohne komplexe Synchronisation. Wenn die Warteschlange für zu verarbeitende Dokumente anwächst,
-können automatisiert oder manuell zusätzliche Worker-Container gestartet werden. Diese übernehmen sofort Arbeitspakete,
-ohne dass Load-Balancer neu konfiguriert werden müssen.
+### Geschäftlicher Nutzen
 
-### Resilienz und Selbstheilung
+KI-Systeme unterliegen oft stark schwankenden Lastprofilen. Ein Monatsabschluss, eine Marketingkampagne oder ein akutes
+Ereignis können die Anfragen an das System kurzfristig vervielfachen. Eine starre Infrastruktur würde hier entweder zu
+teuren Überkapazitäten im Leerlauf oder zu Systemabstürzen unter Last führen. Unternehmen benötigen eine Architektur,
+die «atmet» – also Ressourcen dynamisch dort bereitstellt, wo sie benötigt werden, um Service-Level-Agreements (SLAs)
+und Antwortzeiten stabil zu halten, ohne dass die Kosten explodieren.
 
-Betriebsstabilität bedeutet auch, dass der Ausfall einer einzelnen Komponente nicht zum Stillstand des Gesamtsystems
-führen darf. Durch die Container-Orchestrierung verfügt die Plattform über native Selbstheilungskräfte («Self-Healing»).
+### Konzeptioneller Ansatz
 
-Health Checks überwachen kontinuierlich auf mehreren Ebenen:
+Die Skalierungsstrategie des Swiss AI Hub basiert auf einer ereignisgesteuerten Architektur (Event-Driven Architecture)
+und Zustandslosigkeit (Statelessness). Anstatt monolithische Server zu betreiben, besteht die Plattform aus vielen
+kleinen, spezialisierten Worker-Prozessen. Da die Agenten-Logik keinen Zustand lokal im Arbeitsspeicher hält (sondern in
+der Datenbank persistiert), kann jede Anfrage von jedem beliebigen Worker verarbeitet werden. Dies eliminiert den
+Koordinationsaufwand und ermöglicht eine horizontale Skalierung: Wenn die Warteschlange wächst, werden einfach mehr
+Worker hinzugefügt.
 
-1. **Native Docker Checks:** Prüfen, ob der Prozess physisch läuft («Liveness»).
-2. **Applikations-Checks:** Validieren über dedizierte Endpunkte (`/health`), ob der Service bereit ist, Anfragen zu
-   verarbeiten («Readiness»).
-3. **Synthetische Probes:** Testen aktiv die Funktionalität komplexer Abhängigkeiten, etwa die Erreichbarkeit der
-   Vektordatenbank.
+### Technische Umsetzung im Swiss AI Hub
 
-Ein abgestürzter Agent-Prozess wird automatisch neu gestartet. Da die Verarbeitung via NATS JetStream auf einer
-«At-Least-Once»-Logik basiert, gehen dabei keine Aufgaben verloren: Ein Auftrag, der durch einen Absturz unterbrochen
-wurde, wird von der Queue erneut an die nächste freie Instanz zugewiesen (Retry-Mechanismus).
+Zentrales Nervensystem für die Skalierung ist der Nachrichtendienst **NATS**.
 
-## Modell-Unabhängigkeit und Vendor-Neutralität
+- **Horizontale Skalierung:** Dienste wie die Dokumentenverarbeitung (Ingestion) oder die Agenten-Ausführung können
+  mehrfach instanziiert werden. NATS verteilt die anfallenden Aufgaben (Events) automatisch auf die verfügbaren
+  Instanzen (Load Balancing).
+- **Asynchrone Verarbeitung:** Zeitintensive Aufgaben blockieren nicht den Webserver. Wenn ein Benutzer ein grosses PDF
+  hochlädt, nimmt die API die Datei entgegen und übergibt die Verarbeitung an den Hintergrund. Der Benutzer kann sofort
+  weiterarbeiten.
+- **Ressourcen-Trennung:** Die Plattform unterstützt die Trennung von rechenintensiven Aufgaben. Inferenz-Server für
+  lokale Modelle können auf GPU-Instanzen laufen, während die Verwaltungsdienste und die Business-Logik auf
+  kostengünstigen CPU-Knoten operieren. Dies optimiert das Kosten-Nutzen-Verhältnis der Infrastruktur massgeblich.
 
-### Vermeidung des Vendor-Lock-ins im Betrieb
+## Hochverfügbarkeit und Disaster Recovery
 
-Eine der grössten operativen Gefahren im KI-Betrieb ist die Abhängigkeit von einem einzigen Modell-Anbieter. Fällt
-dieser Anbieter aus, ändert er seine Preise oder seine Nutzungsbedingungen, steht der Betrieb still. Eine robuste
-Betriebsstrategie erfordert daher Diversifikation und Abstraktion.
+### Geschäftlicher Nutzen
 
-Der Swiss AI Hub integriert einen leistungsfähigen Abstraktionslayer, das **LLM-Gateway** (implementiert durch LiteLLM).
-Dieses fungiert als zentraler Proxy für alle Modell-Anfragen. Aus Sicht der Applikation ist es irrelevant, ob im
-Hintergrund Azure OpenAI, Google Gemini oder ein lokales Open-Source-Modell antwortet. Dies ermöglicht im laufenden
-Betrieb ein nahtloses Routing und Failover. Sollte der primäre Provider Performance-Probleme haben, kann der Traffic
-durch eine Konfigurationsänderung auf einen alternativen Anbieter umgeleitet werden, ohne dass Code angepasst oder
-Deployments durchgeführt werden müssen.
+Für geschäftskritische Anwendungen ist Ausfallsicherheit (High Availability) keine Option, sondern Pflicht. Der Ausfall
+einer KI-Komponente darf nicht dazu führen, dass Kundenservice-Mitarbeiter arbeitsunfähig sind oder Prozesse
+stillstehen. IT-Verantwortliche benötigen Garantien für kurze Wiederherstellungszeiten (RTO) und minimale Datenverluste
+(RPO). Ein robustes System muss Fehler auf Infrastrukturebene tolerieren und sich selbst heilen können, um einen
+24/7-Betrieb zu gewährleisten.
 
-Zusätzlich ermöglicht dies eine Kostenoptimierung durch intelligentes Routing: Einfache Aufgaben werden an günstige
-Modelle geleitet, während komplexe Anfragen an leistungsfähigere «Flagship-Modelle» gehen. Administratoren behalten
-durch diese zentrale Komponente stets die Kontrolle über Budgets und Quotas pro Instanz und Nutzer.
+### Konzeptioneller Ansatz
 
-## Updates, Wartung und Lifecycle-Management
+Der Ansatz zur Ausfallsicherheit beruht auf Redundanz und Isolation. Die Plattform unterscheidet zwischen
+**Multi-Instancing** (physisch getrennte Installationen für maximale Isolation zwischen Mandanten) und Redundanz
+innerhalb einer Instanz. Wichtige Komponenten wie Datenbanken und API-Gateways sind darauf ausgelegt, im Cluster-Betrieb
+zu laufen. Die Backup-Strategie ermöglicht sowohl vollständige System-Snapshots als auch granulare
+Komponentensicherungen.
 
-### Entkopplung von Kern und Individualisierung
+### Technische Umsetzung im Swiss AI Hub
 
-Ein häufiges Problem bei Enterprise-Software ist die «Update-Angst»: Systeme werden nicht aktualisiert, weil befürchtet
-wird, dass individuelle Anpassungen überschrieben werden oder Inkompatibilitäten auftreten. Dies führt zu veralteten,
-unsicheren Systemen.
+Die Plattform setzt auf bewährte Mechanismen zur Sicherung der Geschäftskontinuität:
 
-Der Swiss AI Hub begegnet diesem Risiko durch eine strikte architektonische Trennung von **Core Platform** und
-**Customer Code**. Die Kernkomponenten (API, Web-UI, Workflow-Engine) werden als standardisierte Docker-Images
-bereitgestellt. Kundenspezifische Anpassungen – wie eigene Agenten-Baupläne oder spezialisierte Pipelines – residieren
-in separaten Repositories. Über `pyproject.toml` wird der Kundencode explizit an spezifische Core-Versionen gepinnt.
-Dies garantiert Stabilität: Die Plattform-Basis kann für Sicherheitsupdates gepatcht werden, ohne die Business-Logik zu
-gefährden.
+- **Granulare Backup-Strategien:** Neben vollständigen VM-Snapshots unterstützt das System spezifische Backups für jede
+  Kernkomponente:
+  - **PostgreSQL/FerretDB:** Nutzung von `pg_basebackup` und WAL-Archivierung für Point-in-Time-Recovery der
+    relationalen Daten.
+  - **Milvus:** Export der Vektorsammlungen in S3-kompatiblen Speicher.
+  - **SeaweedFS:** Sichern der physischen Dokumentenablage.
+- **Daten-Persistenz:** Kritische Daten liegen auf persistenten, verschlüsselten Docker-Volumes (LUKS), die unabhängig
+  vom Lebenszyklus der Container sind. Selbst bei einem Container-Absturz bleiben Daten erhalten.
+- **Self-Healing:** Docker Health Checks und externe Load Balancer überwachen die Dienste kontinuierlich und starten
+  nicht reagierende Container automatisch neu.
+- **Isolierte Instanzen:** Bei einem Multi-Instanz-Setup («Shared Nothing») beeinflusst der Ausfall oder die Wartung
+  einer Instanz (z.B. HR) nicht die Verfügbarkeit anderer Instanzen (z.B. Engineering).
 
-Das System nutzt dabei semantische Versionierung. Breaking Changes werden klar in Major-Releases isoliert, während
-Patch-Updates risikolos eingespielt werden können.
+## Updates und Wartung ohne Stillstand
 
-### Zero-Downtime-Strategien und Rollbacks
+### Geschäftlicher Nutzen
 
-Für den produktiven Betrieb unterstützt die Architektur moderne Deployment-Strategien. Da die Services zustandslos sind,
-können Updates im Rolling-Update-Verfahren eingespielt werden, bei dem Container nacheinander ausgetauscht werden, um
-Downtimes zu minimieren. Sollte ein Update dennoch Probleme verursachen, ermöglicht die Containerisierung ein sofortiges
-Rollback auf die vorherige Version durch einfaches Ändern des Image-Tags in der Konfiguration. Die Datenpersistenz
-bleibt davon unberührt, da Datenbanken auf persistenten Volumes liegen, die vom Applikations-Lifecycle entkoppelt sind.
+Die Innovationszyklen in der KI sind extrem kurz. Unternehmen müssen in der Lage sein, neue Funktionen,
+Sicherheits-Patches und verbesserte Modelle schnell zu adaptieren, ohne den laufenden Betrieb zu stören. Monolithische
+Updates, die lange Wartungsfenster am Wochenende erfordern, sind nicht mehr zeitgemäss. Eine moderne Plattform muss es
+ermöglichen, Updates inkrementell und risikoarm einzuspielen, sodass die IT-Abteilung agil auf Geschäftsanforderungen
+reagieren kann.
 
-## Observability: Transparenz bis in die Tiefe
+### Konzeptioneller Ansatz
 
-### Mehr als nur «Up» oder «Down»
+Der Swiss AI Hub trennt architektonisch strikt zwischen der stabilen **Kernplattform** (Core) und dem flexiblen
+**Kundencode** (Custom Agents). Beide Bereiche verfügen über unabhängige Lebenszyklen und Versionierungen. Dies
+verhindert, dass ein Update der Basisinfrastruktur ungewollt die Geschäftslogik eines spezifischen Agenten bricht.
+Updates können granular durchgeführt werden: Ein neuer Agent kann deployt werden, ohne die Datenbank neu zu starten.
 
-In einer komplexen KI-Architektur reicht es nicht zu wissen, ob der Server läuft. Operative Teams müssen verstehen,
-*wie* das System performt. Der Swiss AI Hub integriert hierfür einen vollständigen **Observability Stack** basierend auf
-dem Industriestandard OpenTelemetry (OTel).
+### Technische Umsetzung im Swiss AI Hub
 
-Das Monitoring deckt vier kritische Ebenen ab:
+Das Update-Management nutzt semantische Versionierung und Container-Tags:
 
-1. **Infrastruktur-Metriken:** CPU, RAM, Disk I/O und Netzwerk-Durchsatz der Container geben Aufschluss über die
-   Ressourcenauslastung.
-2. **Applikations-Logs:** Strukturierte Logs aller Services werden zentral aggregiert. Dies verhindert das mühsame
-   Suchen in verteilten Server-Logs.
-3. **Distributed Tracing:** Jede Anfrage erhält eine Trace-ID. Dies erlaubt es, den Weg einer Nutzeranfrage über das
-   API-Gateway bis hin zur Datenbank millisekundengenau nachzuverfolgen.
-4. **KI-Observability:** Spezialisierte Tools (wie Phoenix) überwachen die Qualität der KI-Antworten, die Token-Nutzung
-   und die RAG-Retrieval-Performance.
+- **Unabhängige Versionierung:** Kundencode ist in der `pyproject.toml` an eine spezifische Core-Version gebunden
+  (Pinned Dependency). Wenn die Plattform ein Update erhält (z.B. von v1.2 auf v1.3), läuft der bestehende Kundencode
+  stabil weiter, bis er explizit migriert wird.
+- **Rolling Updates:** In Container-Orchestrierungs-Umgebungen können neue Versionen von Diensten parallel zu alten
+  gestartet werden. Der Verkehr wird erst umgeleitet, wenn die neue Instanz als «gesund» (healthy) gemeldet wird.
+- **Rollback-Fähigkeit:** Da jede Version als immutables Docker-Image vorliegt, ist ein Rollback bei Fehlern trivial. Es
+  genügt, das Versions-Tag in der `docker-compose.yml` zurückzusetzen und die Container neu zu starten.
+- **Release-Kanäle:** Kunden können zwischen `stable` (für Produktion) und `nightly` (für Entwicklung) wählen, um neue
+  Features frühzeitig in Staging-Umgebungen zu testen.
 
-Als zentrales Dashboard dient standardmässig **SigNoz**, welches Health-Daten, Metriken und Logs visualisiert. Da
-OpenTelemetry ein offener Standard ist, lassen sich diese Daten jedoch auch nahtlos in bestehende
-Unternehmens-Monitoringsysteme wie Datadog, Splunk oder Grafana exportieren.
+## Operative Transparenz und Monitoring
 
-## Netzwerksicherheit, Backup und Disaster Recovery
+### Geschäftlicher Nutzen
 
-### Minimierte Angriffsfläche
+«Man kann nicht managen, was man nicht misst.» Im Betrieb einer KI-Plattform ist Blindflug fatal. Performance-Engpässe,
+schleichende Kostenanstiege oder Modell-Fehler müssen erkannt werden, bevor sie zum Problem werden. Ein integriertes
+Monitoring reduziert die Mean Time to Resolution (MTTR) bei Vorfällen drastisch und liefert die Datenbasis für
+Kapazitätsplanung und Budgetierung.
 
-Sicherheit im Betrieb beginnt beim Netzwerk. Die Plattform verfolgt eine strikte «Default Deny»-Politik für eingehende
-Verbindungen. Lediglich Port 443 (HTTPS) ist für den regulären Zugriff geöffnet (optional Port 80 für Redirects und Port
-22 für SSH-Administration). Alle internen Dienste (Datenbanken, LLM-Proxy) kommunizieren in einem isolierten Netzwerk
-und sind niemals direkt dem Internet ausgesetzt.
+### Konzeptioneller Ansatz
 
-### Strategien zur Wiederherstellung
+Die Observability-Strategie der Plattform basiert auf den drei Säulen: **Health Checks** (Ist es an?), **Metriken** (Wie
+schnell ist es?) und **Logs** (Was ist passiert?). Anstatt proprietäre Tools zu erzwingen, setzt der Swiss AI Hub auf
+offene Standards. Dies ermöglicht eine nahtlose Integration in bestehende Enterprise-Monitoring-Lösungen wie Datadog
+oder Splunk, liefert aber standardmässig einen vollständigen Open-Source-Stack mit.
 
-Datenverlust ist keine Option. Die Backup-Strategie des Swiss AI Hubs unterstützt zwei Ansätze, die je nach Recovery
-Time Objective (RTO) gewählt werden können:
+### Technische Umsetzung im Swiss AI Hub
 
-1. **VM-Snapshots:** Einfrieren des gesamten Systemzustands für eine schnelle «Bare-Metal»-Wiederherstellung. Dies ist
-   ideal für Disaster Recovery Szenarien, bei denen die gesamte Instanz wiederhergestellt werden muss.
-2. **Komponentenspezifische Backups:** Für granulare Wiederherstellung bietet die Plattform spezifische Routinen:
-   Relationale Daten werden via `pg_basebackup` gesichert, Vektor-Indizes (Milvus) und Dokumenten-Speicher (SeaweedFS)
-   werden auf S3-kompatible Ziele repliziert.
+Das Monitoring-Fundament bildet **OpenTelemetry (OTel)**:
 
-Da die gesamte Infrastruktur als Code (Infrastructure as Code via Docker Compose) definiert ist, lässt sich im
-Katastrophenfall die Applikationsumgebung innerhalb kürzester Zeit auf neuer Hardware provisionieren. Die
-Wiederherstellung wird dabei primär durch die Datenmenge, nicht durch komplexe Installationsprozesse bestimmt.
+- **Integrierte Dashboards:** Out-of-the-box wird **SigNoz** als Visualisierungsplattform mitgeliefert. Administratoren
+  sehen sofort CPU/RAM-Auslastung, API-Latenzen und Fehlerquoten.
+- **KI-spezifisches Tracing:** Für die tiefe Analyse von LLM-Interaktionen ist **Phoenix** integriert. Es visualisiert
+  Token-Verbrauch, Latenz und den vollständigen Kontext von RAG-Abfragen (Retrieval-Augmented Generation).
+- **Proaktive Health Checks:** Jeder Dienst exponiert `/health`-Endpunkte. Docker nutzt diese für automatische Restarts,
+  während externe Monitoring-Systeme sie für Verfügbarkeitsalarme abfragen können.
+- **Exportierbarkeit:** Über den zentralen OTel-Collector können alle Telemetriedaten an bestehende Systeme
+  weitergeleitet werden, ohne dass Code-Änderungen nötig sind.
+
+## Technologische Unabhängigkeit (Model Agnostic)
+
+### Geschäftlicher Nutzen
+
+Die Abhängigkeit von einem einzelnen KI-Modell-Anbieter (Vendor Lock-in) ist ein strategisches Risiko. Preiserhöhungen,
+Service-Änderungen oder Ausfälle eines US-Providers können direkte Auswirkungen auf das Schweizer Geschäft haben. Der
+Swiss AI Hub mitigiert dieses Risiko durch technologische Neutralität. Die Plattform erlaubt es, Modelle wie Bausteine
+auszutauschen oder redundant auszulegen, um die Verhandlungsmacht zu behalten und die Geschäftskontinuität zu sichern.
+
+### Konzeptioneller Ansatz
+
+Die Plattform fungiert als Abstraktionsschicht zwischen der Anwendung und der Intelligenz. Ein Agent kommuniziert nie
+direkt mit «GPT-4» oder «Gemini», sondern mit dem internen LLM-Gateway. Dieses Gateway entscheidet anhand von Regeln,
+welches Modell die Anfrage tatsächlich bearbeitet. Dies ermöglicht Failover-Szenarien: Fällt der primäre Provider aus,
+kann der Verkehr automatisch auf einen sekundären Provider oder ein lokales Modell umgeleitet werden.
+
+### Technische Umsetzung im Swiss AI Hub
+
+Das **LiteLLM-Proxy** ist die zentrale Schaltstelle für diese Unabhängigkeit:
+
+- **Unified API:** Alle Modelle werden über eine einheitliche, OpenAI-kompatible Schnittstelle angesprochen. Ein
+  Modellwechsel erfordert lediglich eine Konfigurationsänderung, kein Umschreiben des Codes.
+- **Multi-Provider-Support:** Die Plattform unterstützt parallel Azure OpenAI, Google Gemini, Anthropic, die Swiss LLM
+  Cloud sowie lokale Modelle via vLLM.
+- **Load Balancing & Failover:** Administratoren können mehrere API-Keys oder Endpunkte für dasselbe logische Modell
+  hinterlegen. Das Gateway verteilt die Last und schaltet bei Fehlern automatisch auf gesunde Endpunkte um, was die
+  Zuverlässigkeit der Gesamtanwendung massiv erhöht.
