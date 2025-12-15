@@ -45,17 +45,27 @@ async def all_retrievals_complete(
     retrieval_responses: list[AgentInTheLoop.response],
     agent_config: RAGAgentConfig,
 ) -> bool:
-    """Precondition that waits for all retrieval agents to complete."""
     return check_all_retrievals_complete(retrieval_responses, len(agent_config.retrieval_agents))
+
+
+@precondition()
+async def should_check_context_sufficiency(
+    _: CombinedRetrievalEvent,
+    agent_config: RAGAgentConfig,
+) -> bool:
+    return agent_config.check_context_sufficiency is True
 
 
 @precondition()
 async def context_ready_for_history_limit(
     context_event: CombinedRetrievalEvent,
+    agent_config: RAGAgentConfig,
     context_sufficient_event: ContextSufficientAcceptEvent | None = None,
 ) -> bool:
-    """Precondition: requires CombinedRetrievalEvent AND ContextSufficientAcceptEvent."""
-    return check_context_ready_for_history_limit(context_sufficient_event)
+    return check_context_ready_for_history_limit(
+        context_sufficient_event,
+        agent_config.check_context_sufficiency or False,
+    )
 
 
 class RAGAgent(Agent):
@@ -221,6 +231,7 @@ class RAGAgent(Agent):
     @step(
         name=LocaleString(en="Context Sufficient Guard"),
         description=LocaleString(en="Guards the context to ensure it is sufficient for generating a response."),
+        precondition=should_check_context_sufficiency,
     )
     async def context_sufficient_guard_step(
         self,
@@ -235,7 +246,6 @@ class RAGAgent(Agent):
         return await execute_context_sufficient_guard(
             context_content=event.context_message.content or "",
             user_query=user_query_event.condensed_chat_message.content or "",
-            check_context_sufficiency=agent_config.check_context_sufficiency or False,
             max_hops=agent_config.max_hops,
             llm_config=agent_config.llm,
             t=t,

@@ -71,19 +71,33 @@ async def is_expert_no_answer_response(event: AgentInTheLoop.response) -> bool:
 
 
 @precondition()
+async def should_check_context_sufficiency(
+    _: CombinedRetrievalEvent,
+    agent_config: ExpertRAGAgentConfig,
+) -> bool:
+    """Only run context sufficiency guard when enabled in config."""
+    return agent_config.check_context_sufficiency is True
+
+
+@precondition()
 async def context_ready_for_history_limit(
     context_event: CombinedRetrievalEvent | ExpertAnswerContextEvent,
+    agent_config: ExpertRAGAgentConfig,
     context_sufficient_event: ContextSufficientAcceptEvent | None = None,
 ) -> bool:
     """
     Precondition for limit_chat_history_with_context_step.
     Allows the step to run when:
     - ExpertAnswerContextEvent is present (expert flow), OR
-    - CombinedRetrievalEvent is present AND ContextSufficientAcceptEvent is present (normal RAG flow)
+    - ContextSufficientAcceptEvent is present (guard passed), OR
+    - check_context_sufficiency is disabled (guard was skipped)
     """
     if isinstance(context_event, ExpertAnswerContextEvent):
         return True
-    return check_context_ready_for_history_limit(context_sufficient_event)
+    return check_context_ready_for_history_limit(
+        context_sufficient_event,
+        agent_config.check_context_sufficiency or False,
+    )
 
 
 class ExpertRAGAgent(Agent):
@@ -251,6 +265,7 @@ class ExpertRAGAgent(Agent):
     @step(
         name=LocaleString(en="Context Sufficient Guard"),
         description=LocaleString(en="Guards the context to ensure it is sufficient for generating a response."),
+        precondition=should_check_context_sufficiency,
     )
     async def context_sufficient_guard_step(
         self,
@@ -265,7 +280,6 @@ class ExpertRAGAgent(Agent):
         return await execute_context_sufficient_guard(
             context_content=event.context_message.content or "",
             user_query=user_query_event.condensed_chat_message.content or "",
-            check_context_sufficiency=agent_config.check_context_sufficiency or False,
             max_hops=agent_config.max_hops,
             llm_config=agent_config.llm,
             t=t,

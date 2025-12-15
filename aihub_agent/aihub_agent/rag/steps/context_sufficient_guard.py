@@ -11,7 +11,6 @@ from aihub_agent.rag.events import ContextInsufficientWithQueryEvent
 async def execute_context_sufficient_guard(
     context_content: str,
     user_query: str,
-    check_context_sufficiency: bool,
     max_hops: int,
     llm_config: LLMConfig,
     t: LocaleHandler,
@@ -21,10 +20,10 @@ async def execute_context_sufficient_guard(
     """
     Guards the context to ensure it is sufficient for generating a response.
     Supports multi-hop retrieval if context is insufficient.
-    """
-    if not check_context_sufficiency:
-        return ContextSufficientAcceptEvent(reason=t("agent.thought.no_context_sufficiency_check"))
 
+    Note: This step is only called when check_context_sufficiency is enabled.
+    The precondition skips this step entirely when disabled.
+    """
     prev_queries = await run_context.get("prev_queries", [])
     hop_count = await run_context.get("hop_count", 1)
     more_hops_available = hop_count < max_hops
