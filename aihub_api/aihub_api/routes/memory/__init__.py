@@ -1,6 +1,6 @@
 """Memory management routes."""
 
-from aihub_api.routes.memory.MemoryController import MemoryController
-from aihub_api.routes.memory.MemoryService import MemoryService
+from aihub_api.routes.memory.OrganizationMemoryController import OrganizationMemoryController
+from aihub_api.routes.memory.UserMemoryController import UserMemoryController
 
-__all__ = ["MemoryController", "MemoryService"]
+__all__ = ["UserMemoryController", "OrganizationMemoryController"]

@@ -23,7 +23,7 @@ from aihub_api.routes.memory.MemoryController import MemoryController
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 BASE_URL = "http://test"
-MEMORIES_ENDPOINT = "/api/v1/memories"
+MEMORIES_ENDPOINT = "/api/v1/memories/user"
 
 
 @pytest_asyncio.fixture(scope="module")
@@ -32,7 +32,7 @@ async def api_client():
     runner = ApiTestRunner()
     auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
     controller = MemoryController(auth=auth)
-    controller.get_memories().search_memories().delete_memory().delete_all_memories().update_memory()
+    controller.get_user_memories().search_user_memories().delete_user_memory().delete_all_user_memories().update_user_memory()
     runner.mount(controller)
     app = runner.create_app()
     async with LifespanManager(app) as lifespan:
@@ -357,12 +357,11 @@ class TestMemoryIntegration:
 
         TODO: Investigate MemoryService.search_memories to understand user scoping behavior.
         """
-        from llama_index.core.base.llms.types import ChatMessage, MessageRole
-
         from aihub_lib.agents.AgentConfig import AgentConfig
         from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
         from aihub_lib.i18n.LocaleHandler import LocaleHandler
         from aihub_lib.i18n.LocaleString import LocaleString
+        from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
         user_id = "test_user_api_integration"
 
@@ -378,7 +377,9 @@ class TestMemoryIntegration:
 
         memory_added = await agent_memory.add_user_memory(
             messages=[
-                ChatMessage(content="I love Python programming and use it daily for data science", role=MessageRole.USER)
+                ChatMessage(
+                    content="I love Python programming and use it daily for data science", role=MessageRole.USER
+                )
             ],
             user_id=user_id,
             thread_id="thread_api_integration",
@@ -432,12 +433,11 @@ class TestMemoryIntegration:
     @pytest.mark.slow
     async def test_user_isolation(self, api_client):
         """User A should not see User B's memories via API."""
-        from llama_index.core.base.llms.types import ChatMessage, MessageRole
-
         from aihub_lib.agents.AgentConfig import AgentConfig
         from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
         from aihub_lib.i18n.LocaleHandler import LocaleHandler
         from aihub_lib.i18n.LocaleString import LocaleString
+        from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
         user_a_id = "user_a_api_isolation"
         user_b_id = "user_b_api_isolation"
@@ -466,6 +466,4 @@ class TestMemoryIntegration:
         assert response.status_code == 200
         data = response.json()
         # User B should not see User A's memories
-        assert data["total"] == 0 or all(
-            mem.get("user_id") != user_a_id for mem in data.get("memories", [])
-        )
+        assert data["total"] == 0 or all(mem.get("user_id") != user_a_id for mem in data.get("memories", []))

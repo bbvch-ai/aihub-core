@@ -190,8 +190,8 @@ class TestAgentMemory:
             thread_id="thread_org_1",
             display_id="display_org_1",
             run_id="run_org_1",
-            organization_name="ACME Corp",
-            organization_namespace="acme_corp",
+            tenant_id="ACME Corp",
+            tenant_namespace="acme_corp",
         )
 
         # Verify that EITHER memories OR relations were extracted
@@ -202,8 +202,8 @@ class TestAgentMemory:
 
         # Verify org scoping
         assert memory_added.owner_id == "ACME Corp"
-        assert memory_added.organization_name == "ACME Corp"
-        assert memory_added.organization_namespace == "acme_corp"
+        assert memory_added.tenant_id == "ACME Corp"
+        assert memory_added.tenant_namespace == "acme_corp"
         assert memory_added.type == MemoryType.ORGANIZATION_MEMORY
 
     @pytest.mark.asyncio
@@ -217,15 +217,15 @@ class TestAgentMemory:
             thread_id="thread_org_search_1",
             display_id="display_org_search_1",
             run_id="run_org_search_1",
-            organization_name="ACME Corp",
-            organization_namespace="acme_corp",
+            tenant_id="ACME Corp",
+            tenant_namespace="acme_corp",
         )
 
         # Search org memories
         result = await agent_memory.search_organization_memory(
             query="What containerization technology does ACME use?",
-            organization_name="ACME Corp",
-            organization_namespace="acme_corp",
+            tenant_id="ACME Corp",
+            tenant_namespace="acme_corp",
         )
 
         assert len(result.results) > 0

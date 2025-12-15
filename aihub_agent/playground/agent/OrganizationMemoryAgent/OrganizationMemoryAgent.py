@@ -33,7 +33,7 @@ class OrganizationMemoryAgent(Agent):
     ### Key Differences from UserMemoryAgent:
     - **Input**: Explicit facts (user provides clean memory text) vs. inferred from chat
     - **Scope**: Organization-wide (shared) vs. user-private
-    - **Namespace**: Supports department-level scoping via organization_namespace
+    - **Namespace**: Supports department-level scoping via tenant_namespace
     """
 
     @step()
@@ -51,8 +51,8 @@ class OrganizationMemoryAgent(Agent):
             thread_id=topic.thread_id,
             display_id=topic.display_id,
             run_id=topic.run_id,
-            organization_name=agent_config.organization_name,
-            organization_namespace=agent_config.organization_namespace,
+            tenant_id=agent_config.tenant_id,
+            tenant_namespace=agent_config.tenant_namespace,
         )
         return StoreOrganizationMemoryEvent.from_memory_added_object(memory_added=memory_added)
 
@@ -66,8 +66,8 @@ class OrganizationMemoryAgent(Agent):
         """Searches organization memories to provide shared organizational context for the conversation."""
         memory_search_result = await memory.search_organization_memory(
             query=event.user_query,
-            organization_name=agent_config.organization_name,
-            organization_namespace=agent_config.organization_namespace,
+            tenant_id=agent_config.tenant_id,
+            tenant_namespace=agent_config.tenant_namespace,
             user_id=event.user.id,
         )
         return RetrieveOrganizationMemoryEvent.from_memory_search_result(memory_search_result=memory_search_result)

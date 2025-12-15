@@ -58,8 +58,8 @@ def agent_config():
             de="Testagent für Organisationsspeicherintegration",
         ),
         llm=LLMConfig(model_name="text-generation/mini"),
-        organization_name="AIHub",
-        organization_namespace="Engineering",
+        tenant_id="AIHub",
+        tenant_namespace="Engineering",
     )
 
 
@@ -77,7 +77,7 @@ def _(agent_config):
 @given(parsers.parse('organization namespace is "{namespace}"'))
 def _(agent_config, namespace: str):
     """Set organization namespace in config."""
-    agent_config.organization_namespace = namespace
+    agent_config.tenant_namespace = namespace
 
 
 @given(parsers.parse('pre-seeded organization memory: "{memory_text}"'))
@@ -100,8 +100,8 @@ async def _(memory_text: str, agent_runner: AgentTestRunner):
         thread_id="test_thread_seed",
         display_id="test_display_seed",
         run_id="test_run_seed",
-        organization_name=agent_runner.default_agent_config.organization_name,
-        organization_namespace=agent_runner.default_agent_config.organization_namespace,
+        tenant_id=agent_runner.default_agent_config.tenant_id,
+        tenant_namespace=agent_runner.default_agent_config.tenant_namespace,
     )
 
 
@@ -125,8 +125,8 @@ async def _(memory_text: str, namespace: str, agent_runner: AgentTestRunner):
         thread_id="test_thread_seed",
         display_id="test_display_seed",
         run_id="test_run_seed",
-        organization_name=agent_runner.default_agent_config.organization_name,
-        organization_namespace=namespace,
+        tenant_id=agent_runner.default_agent_config.tenant_id,
+        tenant_namespace=namespace,
     )
 
 
@@ -226,7 +226,7 @@ def _(agent_runner: AgentTestRunner, text: str):
 
     # Check if any memory contains the text and is from Engineering namespace
     found = any(
-        text.lower() in memory.memory.lower() and memory.metadata.organization_namespace == "Engineering"
+        text.lower() in memory.memory.lower() and memory.metadata.tenant_namespace == "Engineering"
         for memory in event.memories
     )
     assert found, f"No memory from Engineering namespace contains '{text}'"
@@ -239,7 +239,7 @@ def _(agent_runner: AgentTestRunner, text: str):
     assert event is not None, "RetrieveOrganizationMemoryEvent not found"
 
     # Check that no memory from Marketing namespace is present
-    marketing_memories = [memory for memory in event.memories if memory.metadata.organization_namespace == "Marketing"]
+    marketing_memories = [memory for memory in event.memories if memory.metadata.tenant_namespace == "Marketing"]
     assert len(marketing_memories) == 0, f"Found {len(marketing_memories)} memories from Marketing namespace"
 
 

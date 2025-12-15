@@ -30,17 +30,19 @@ class MemoryMetadata(BaseModel):
         MemoryType,
         Field(description="The type of the memory.", validation_alias=AliasChoices("type", "_type")),
     ]
-    organization_name: Annotated[
+    tenant_id: Annotated[
         str | None,
         Field(
-            description="The organization memory database.",
-            validation_alias=AliasChoices("organization_name", "_organization_name"),
+            description="The tenant ID for multi-tenancy support.",
+            validation_alias=AliasChoices("tenant_id", "_tenant_id", "organization_name", "_organization_name"),
         ),
     ] = None
-    organization_namespace: Annotated[
+    tenant_namespace: Annotated[
         str | None,
         Field(
-            description="The organization memory namespace.",
-            validation_alias=AliasChoices("organization_namespace", "_organization_namespace"),
+            description="The tenant namespace for department-level scoping.",
+            validation_alias=AliasChoices(
+                "tenant_namespace", "_tenant_namespace", "organization_namespace", "_organization_namespace"
+            ),
         ),
     ] = None

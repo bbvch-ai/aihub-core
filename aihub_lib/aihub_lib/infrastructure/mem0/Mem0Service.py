@@ -33,8 +33,8 @@ class Mem0Service:
         thread_id: str,
         display_id: str,
         run_id: str,
-        organization_name: str | None = None,
-        organization_namespace: str | None = None,
+        tenant_id: str | None = None,
+        tenant_namespace: str | None = None,
         infer: bool = True,
     ) -> MemoryAdded:
         metadata = {
@@ -44,8 +44,8 @@ class Mem0Service:
             "_thread_id": thread_id,
             "_display_id": display_id,
             "_run_id": run_id,
-            "_organization_name": organization_name,
-            "_organization_namespace": organization_namespace,
+            "_tenant_id": tenant_id,
+            "_tenant_namespace": tenant_namespace,
         }
         metadata = {k: str(v) for k, v in metadata.items() if v is not None}
         added_memory = await self._memory.add(
@@ -79,8 +79,8 @@ class Mem0Service:
                 "_thread_id": thread_id,
                 "_display_id": display_id,
                 "_run_id": run_id,
-                "_organization_name": organization_name,
-                "_organization_namespace": organization_namespace,
+                "_tenant_id": tenant_id,
+                "_tenant_namespace": tenant_namespace,
                 "_type": memory_type.value,
             }
         )
@@ -105,8 +105,8 @@ class Mem0Service:
         memory_type: MemoryType | None = None,
         user_id: str | None = None,
         agent_id: str | None = None,
-        organization_name: str | None = None,
-        organization_namespace: str | None = None,
+        tenant_id: str | None = None,
+        tenant_namespace: str | None = None,
         limit: int = 100,
         threshold: float | None = None,
         rerank: bool = True,
@@ -118,8 +118,8 @@ class Mem0Service:
             "_thread_id": thread_id,
             "_display_id": display_id,
             "_run_id": run_id,
-            "_organization_name": organization_name,
-            "_organization_namespace": organization_namespace,
+            "_tenant_id": tenant_id,
+            "_tenant_namespace": tenant_namespace,
         }
         filters = {k: str(v) for k, v in filters.items() if v is not None}
         memories = await self._memory.search(

@@ -11,12 +11,12 @@ const localePath = useLocalePath()
 const { t } = useI18n()
 
 const subPath = (path: string) => {
-  return `/service/memories/${path}`
+  return `/service/organization-memories/${path}`
 }
 
 onMounted(() => {
   // Redirect to graph view by default
-  if (route.path === localePath('/service/memories')) {
+  if (route.path === localePath('/service/organization-memories')) {
     router.push({
       path: localePath(subPath('graph')),
       query: route.query,

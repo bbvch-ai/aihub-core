@@ -118,7 +118,21 @@ Used during deserialization to decide which subclass to instantiate.`,
     additionalProperties: true,
     type: 'object',
     required: ['extended_history', '_event_name', '_parent_event_names'],
-    title: 'AddMemoryToChatHistoryEvent'
+    title: 'AddMemoryToChatHistoryEvent',
+    description: `A control and display event emitted when an agent extends chat history with retrieved memories.
+
+### Why AddMemoryToChatHistoryEvent?
+Large language models are stateless - they don't remember past conversations unless explicitly provided.
+This event signals that the agent has enriched the conversation context with relevant memories from
+previous interactions.
+
+By prepending memories as a system message, we:
+- Give the LLM access to long-term context beyond the current session
+- Maintain user privacy (memories are scoped to user/organization)
+- Keep the prompt construction process transparent and auditable
+
+This event serves both workflow control (passing extended context to LLM steps) and user transparency
+(showing what background information influenced the agent's response).`
 } as const;
 
 export const AddUserRequestSchema = {
@@ -4534,7 +4548,7 @@ export const DeleteAllMemoriesResponseSchema = {
         status: {
             type: 'string',
             title: 'Status',
-            description: 'Deletion status.'
+            description: "Operation status. Always 'deleted_all' on success; errors raise HTTPException."
         }
     },
     type: 'object',
@@ -4548,12 +4562,12 @@ export const DeleteMemoryResponseSchema = {
         status: {
             type: 'string',
             title: 'Status',
-            description: 'Deletion status.'
+            description: "Operation status. Always 'deleted' on success; errors raise HTTPException."
         },
         memory_id: {
             type: 'string',
             title: 'Memory Id',
-            description: 'ID of the deleted memory.'
+            description: 'ID of the memory that was deleted. Echoed from request path.'
         }
     },
     type: 'object',
@@ -9985,7 +9999,7 @@ export const MemoryMetadataSchema = {
             '$ref': '#/components/schemas/MemoryType',
             description: 'The type of the memory.'
         },
-        organization_name: {
+        tenant_id: {
             anyOf: [
                 {
                     type: 'string'
@@ -9994,10 +10008,10 @@ export const MemoryMetadataSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Organization Name',
-            description: 'The organization memory database.'
+            title: 'Tenant Id',
+            description: 'The tenant ID for multi-tenancy support.'
         },
-        organization_namespace: {
+        tenant_namespace: {
             anyOf: [
                 {
                     type: 'string'
@@ -10006,8 +10020,8 @@ export const MemoryMetadataSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Organization Namespace',
-            description: 'The organization memory namespace.'
+            title: 'Tenant Namespace',
+            description: 'The tenant namespace for department-level scoping.'
         }
     },
     type: 'object',
@@ -10492,7 +10506,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1765464383
+            default: 1765807515
         },
         owned_by: {
             type: 'string',
@@ -11422,7 +11436,20 @@ Used during deserialization to decide which subclass to instantiate.`,
     additionalProperties: true,
     type: 'object',
     required: ['added_memories', 'updated_memories', 'deleted_memories', 'added_relations', 'deleted_relations', '_event_name', '_parent_event_names'],
-    title: 'NewMemoryEvent'
+    title: 'NewMemoryEvent',
+    description: `A control and display event emitted when an agent updates user or organization memories.
+
+### Why NewMemoryEvent?
+This event serves dual purposes in the Swiss AI Agent Protocol:
+- As a control event, it notifies downstream systems that memory state has changed
+- As a display event, it provides transparency to users about what was learned from their conversation
+
+Agents use this event after processing conversation context to persist insights. The event captures
+both the semantic changes (added/updated/deleted memories) and the knowledge graph updates
+(new/removed relations between entities). This enables:
+- Real-time UI updates showing memory modifications
+- Audit trails of what agents learned and when
+- Triggering downstream workflows that depend on memory state`
 } as const;
 
 export const NodeDataSchema = {
@@ -13205,7 +13232,21 @@ Used during deserialization to decide which subclass to instantiate.`,
     additionalProperties: true,
     type: 'object',
     required: ['relations', '_event_name', '_parent_event_names'],
-    title: 'RetrieveMemoryEvent'
+    title: 'RetrieveMemoryEvent',
+    description: `A control and display event emitted when an agent retrieves memories from long-term storage.
+
+### Why RetrieveMemoryEvent?
+This event bridges the gap between stateless conversation and stateful user context:
+- As a control event, it provides retrieved memories to downstream workflow steps
+- As a display event, it shows users what context the agent is using from past interactions
+
+Agents emit this event after semantic search through user/organization memories. The retrieved
+memories are then typically prepended to chat history as system context, enabling personalized
+responses. This transparency is crucial for user trust - they can see what the agent "remembers"
+and correct inaccuracies if needed.
+
+The event includes both individual memories and their relations in the knowledge graph, allowing
+agents to understand not just isolated facts but how concepts connect.`
 } as const;
 
 export const RetrieverEventSchema = {
@@ -15972,12 +16013,12 @@ export const UpdateMemoryResponseSchema = {
         status: {
             type: 'string',
             title: 'Status',
-            description: 'Update status.'
+            description: "Operation status. Always 'updated' on success; errors raise HTTPException."
         },
         memory_id: {
             type: 'string',
             title: 'Memory Id',
-            description: 'ID of the updated memory.'
+            description: 'ID of the memory that was updated. Echoed from request path.'
         }
     },
     type: 'object',

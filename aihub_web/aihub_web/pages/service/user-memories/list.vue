@@ -11,6 +11,11 @@ const localePath = useLocalePath()
 const confirm = useConfirm()
 const toast = useToast()
 
+// Create user memory composables using factory
+const { useMemories, useMemorySearch, useDeleteMemory } = createMemoryComposables({
+  type: 'user',
+})
+
 const {
   paginatedMemories,
   currentPage,
@@ -28,45 +33,32 @@ const {
   clearSearch,
 } = useMemorySearch()
 
-const { deleteAllMemories } = useDeleteAllMemories()
+const { deleteAllMemories } = useDeleteMemory()
 
-const searchInput = useRouteQuery('q', '')
-const isSearchButtonLoading = computed(() => isSearchActive.value && searchIsLoading.value)
-
-// Sync URL query param with search on mount
-onMounted(() => {
-  if (searchInput.value) {
-    setSearchQuery(searchInput.value as string)
-  }
+// Use shared search filter composable
+const {
+  searchInput,
+  isSearchButtonLoading,
+  displayedMemories,
+  displayedCurrentPage,
+  displayedTotalPages,
+  handleSearch,
+  handleClearSearch,
+} = useMemorySearchFilter({
+  searchData,
+  paginatedMemories,
+  isSearchActive,
+  setSearchQuery,
+  clearSearch,
+  searchIsLoading,
+  currentPage,
+  totalPages,
 })
 
 const selectedMemoryId = computed(() => route.params.memory_id as string | undefined)
 
-const displayedMemories = computed(() => {
-  return isSearchActive.value && searchData.value
-    ? searchData.value.memories
-    : paginatedMemories.value
-})
-
-const displayedCurrentPage = computed(() => {
-  return isSearchActive.value ? 1 : currentPage.value
-})
-
-const displayedTotalPages = computed(() => {
-  return isSearchActive.value ? 1 : totalPages.value
-})
-
 const handleSelectMemory = (memory: { id: string }) => {
-  router.push(localePath(`/service/memories/list/${memory.id}?q=${searchInput.value ?? ''}`))
-}
-
-const handleSearch = () => {
-  setSearchQuery(searchInput.value)
-}
-
-const handleClearSearch = () => {
-  searchInput.value = null
-  clearSearch()
+  router.push(localePath(`/service/user-memories/list/${memory.id}?q=${searchInput.value ?? ''}`))
 }
 
 const handleDeleteAll = () => {

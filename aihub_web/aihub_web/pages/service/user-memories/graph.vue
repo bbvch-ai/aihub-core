@@ -6,6 +6,11 @@ const router = useRouter()
 const route = useRoute()
 const localePath = useLocalePath()
 
+// Create user memory composables using factory
+const { useMemories, useMemorySearch } = createMemoryComposables({
+  type: 'user',
+})
+
 const {
   paginatedMemories,
   allRelations,
@@ -20,14 +25,19 @@ const {
   clearSearch,
 } = useMemorySearch()
 
-const searchInput = useRouteQuery('q', '')
-const isSearchButtonLoading = computed(() => isSearchActive.value && searchIsLoading.value)
-
-// Sync URL query param with search on mount
-onMounted(() => {
-  if (searchInput.value) {
-    setSearchQuery(searchInput.value as string)
-  }
+// Use shared search filter composable
+const {
+  searchInput,
+  isSearchButtonLoading,
+  handleSearch,
+  handleClearSearch,
+} = useMemorySearchFilter({
+  searchData,
+  paginatedMemories,
+  isSearchActive,
+  setSearchQuery,
+  clearSearch,
+  searchIsLoading,
 })
 
 const selectedMemoryId = computed(() => route.params.memory_id as string | undefined)
@@ -35,17 +45,8 @@ const selectedMemoryId = computed(() => route.params.memory_id as string | undef
 const handleSelectNode = (nodeId: string) => {
   const memory = paginatedMemories.value.find(m => m.id === nodeId)
   if (memory) {
-    router.push(localePath(`/service/memories/graph/${memory.id}`))
+    router.push(localePath(`/service/user-memories/graph/${memory.id}`))
   }
-}
-
-const handleSearch = () => {
-  setSearchQuery(searchInput.value)
-}
-
-const handleClearSearch = () => {
-  searchInput.value = null
-  clearSearch()
 }
 </script>
 

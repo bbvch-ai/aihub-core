@@ -116,31 +116,31 @@ class AgentMemory:
         thread_id: str,
         display_id: str,
         run_id: str,
-        organization_name: str,
-        organization_namespace: str,
+        tenant_id: str,
+        tenant_namespace: str,
     ) -> MemoryAdded:
         """
-        Extracts and stores organization-scoped memories shared across users.
+        Extracts and stores tenant-scoped memories shared across users.
 
-        Organization memories enable knowledge sharing within a company/team. Unlike user memories (private),
-        these are accessible to all users within the organization namespace. Use this for shared facts like
-        company policies, project details, or team conventions that should inform all agents serving that org.
+        Tenant memories enable knowledge sharing within a company/team. Unlike user memories (private),
+        these are accessible to all users within the tenant namespace. Use this for shared facts like
+        company policies, project details, or team conventions that should inform all agents serving that tenant.
 
-        Note that for organization memories, the caller of the function is responsible for creating a clean
+        Note that for tenant memories, the caller of the function is responsible for creating a clean
         memory, it is NOT inferred from the chat history.
         """
         messages = [{"role": MessageRole.USER, "content": memory, "name": user_id}]
         return await self.mem0service.add_memory(
             messages=messages,
-            owner_id=organization_name,
+            owner_id=tenant_id,
             memory_type=MemoryType.ORGANIZATION_MEMORY,
             user_id=user_id,
             agent_id=self.agent_id,
             thread_id=thread_id,
             display_id=display_id,
             run_id=run_id,
-            organization_name=organization_name,
-            organization_namespace=organization_namespace,
+            tenant_id=tenant_id,
+            tenant_namespace=tenant_namespace,
             infer=False,
         )
 
@@ -179,8 +179,8 @@ class AgentMemory:
     async def search_organization_memory(
         self,
         query: str,
-        organization_name: str,
-        organization_namespace: str | None = None,
+        tenant_id: str,
+        tenant_namespace: str | None = None,
         user_id: str | None = None,
         thread_id: str | None = None,
         display_id: str | None = None,
@@ -190,23 +190,23 @@ class AgentMemory:
         rerank: bool = True,
     ) -> MemorySearchResult:
         """
-        Retrieves relevant organization memories via semantic search.
+        Retrieves relevant tenant memories via semantic search.
 
-        Organization namespace provides additional scoping for multi-tenant scenarios (e.g., different
-        departments within a company). If not provided, searches across all memories for the organization.
-        This enables both broad org-wide knowledge and department-specific context.
+        Tenant namespace provides additional scoping for multi-tenant scenarios (e.g., different
+        departments within a company). If not provided, searches across all memories for the tenant.
+        This enables both broad tenant-wide knowledge and department-specific context.
         """
         return await self.mem0service.search(
             query=query,
-            owner_id=organization_name,
+            owner_id=tenant_id,
             thread_id=thread_id,
             display_id=display_id,
             run_id=run_id,
             memory_type=MemoryType.ORGANIZATION_MEMORY,
             user_id=user_id,
             agent_id=self.agent_id,
-            organization_namespace=organization_namespace,
-            organization_name=organization_name,
+            tenant_namespace=tenant_namespace,
+            tenant_id=tenant_id,
             limit=limit,
             threshold=threshold,
             rerank=rerank,

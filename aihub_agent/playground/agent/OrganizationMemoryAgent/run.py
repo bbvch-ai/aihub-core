@@ -27,8 +27,8 @@ async def main():
                 en="Agent for storing and retrieving explicit organizational facts shared across all users"
             ),
             llm=LLMConfig(model_name="text-generation/nano", default_parameter=LLMParameter(temperature=1.0)),
-            organization_name="AIHub",
-            organization_namespace="Engineering",
+            tenant_id="AIHub",
+            tenant_namespace="Engineering",
         ),
     )
 

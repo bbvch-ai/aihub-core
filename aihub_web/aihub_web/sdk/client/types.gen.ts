@@ -53,6 +53,20 @@ export type AddAgentRequest = {
 
 /**
  * AddMemoryToChatHistoryEvent
+ * A control and display event emitted when an agent extends chat history with retrieved memories.
+ *
+ * ### Why AddMemoryToChatHistoryEvent?
+ * Large language models are stateless - they don't remember past conversations unless explicitly provided.
+ * This event signals that the agent has enriched the conversation context with relevant memories from
+ * previous interactions.
+ *
+ * By prepending memories as a system message, we:
+ * - Give the LLM access to long-term context beyond the current session
+ * - Maintain user privacy (memories are scoped to user/organization)
+ * - Keep the prompt construction process transparent and auditable
+ *
+ * This event serves both workflow control (passing extended context to LLM steps) and user transparency
+ * (showing what background information influenced the agent's response).
  */
 export type AddMemoryToChatHistoryEventReadable = {
     /**
@@ -93,6 +107,20 @@ export type AddMemoryToChatHistoryEventReadable = {
 
 /**
  * AddMemoryToChatHistoryEvent
+ * A control and display event emitted when an agent extends chat history with retrieved memories.
+ *
+ * ### Why AddMemoryToChatHistoryEvent?
+ * Large language models are stateless - they don't remember past conversations unless explicitly provided.
+ * This event signals that the agent has enriched the conversation context with relevant memories from
+ * previous interactions.
+ *
+ * By prepending memories as a system message, we:
+ * - Give the LLM access to long-term context beyond the current session
+ * - Maintain user privacy (memories are scoped to user/organization)
+ * - Keep the prompt construction process transparent and auditable
+ *
+ * This event serves both workflow control (passing extended context to LLM steps) and user transparency
+ * (showing what background information influenced the agent's response).
  */
 export type AddMemoryToChatHistoryEventWritable = {
     /**
@@ -3535,7 +3563,7 @@ export type DatePickerWritable = {
 export type DeleteAllMemoriesResponse = {
     /**
      * Status
-     * Deletion status.
+     * Operation status. Always 'deleted_all' on success; errors raise HTTPException.
      */
     status: string;
 };
@@ -3547,12 +3575,12 @@ export type DeleteAllMemoriesResponse = {
 export type DeleteMemoryResponse = {
     /**
      * Status
-     * Deletion status.
+     * Operation status. Always 'deleted' on success; errors raise HTTPException.
      */
     status: string;
     /**
      * Memory Id
-     * ID of the deleted memory.
+     * ID of the memory that was deleted. Echoed from request path.
      */
     memory_id: string;
 };
@@ -8111,15 +8139,15 @@ export type MemoryMetadata = {
      */
     type: MemoryType;
     /**
-     * Organization Name
-     * The organization memory database.
+     * Tenant Id
+     * The tenant ID for multi-tenancy support.
      */
-    organization_name?: string | null;
+    tenant_id?: string | null;
     /**
-     * Organization Namespace
-     * The organization memory namespace.
+     * Tenant Namespace
+     * The tenant namespace for department-level scoping.
      */
-    organization_namespace?: string | null;
+    tenant_namespace?: string | null;
 };
 
 /**
@@ -9061,6 +9089,19 @@ export type NamespaceResponse = {
 
 /**
  * NewMemoryEvent
+ * A control and display event emitted when an agent updates user or organization memories.
+ *
+ * ### Why NewMemoryEvent?
+ * This event serves dual purposes in the Swiss AI Agent Protocol:
+ * - As a control event, it notifies downstream systems that memory state has changed
+ * - As a display event, it provides transparency to users about what was learned from their conversation
+ *
+ * Agents use this event after processing conversation context to persist insights. The event captures
+ * both the semantic changes (added/updated/deleted memories) and the knowledge graph updates
+ * (new/removed relations between entities). This enables:
+ * - Real-time UI updates showing memory modifications
+ * - Audit trails of what agents learned and when
+ * - Triggering downstream workflows that depend on memory state
  */
 export type NewMemoryEventReadable = {
     /**
@@ -9121,6 +9162,19 @@ export type NewMemoryEventReadable = {
 
 /**
  * NewMemoryEvent
+ * A control and display event emitted when an agent updates user or organization memories.
+ *
+ * ### Why NewMemoryEvent?
+ * This event serves dual purposes in the Swiss AI Agent Protocol:
+ * - As a control event, it notifies downstream systems that memory state has changed
+ * - As a display event, it provides transparency to users about what was learned from their conversation
+ *
+ * Agents use this event after processing conversation context to persist insights. The event captures
+ * both the semantic changes (added/updated/deleted memories) and the knowledge graph updates
+ * (new/removed relations between entities). This enables:
+ * - Real-time UI updates showing memory modifications
+ * - Audit trails of what agents learned and when
+ * - Triggering downstream workflows that depend on memory state
  */
 export type NewMemoryEventWritable = {
     /**
@@ -10628,6 +10682,20 @@ export type ResponseFormatText = {
 
 /**
  * RetrieveMemoryEvent
+ * A control and display event emitted when an agent retrieves memories from long-term storage.
+ *
+ * ### Why RetrieveMemoryEvent?
+ * This event bridges the gap between stateless conversation and stateful user context:
+ * - As a control event, it provides retrieved memories to downstream workflow steps
+ * - As a display event, it shows users what context the agent is using from past interactions
+ *
+ * Agents emit this event after semantic search through user/organization memories. The retrieved
+ * memories are then typically prepended to chat history as system context, enabling personalized
+ * responses. This transparency is crucial for user trust - they can see what the agent "remembers"
+ * and correct inaccuracies if needed.
+ *
+ * The event includes both individual memories and their relations in the knowledge graph, allowing
+ * agents to understand not just isolated facts but how concepts connect.
  */
 export type RetrieveMemoryEventReadable = {
     /**
@@ -10673,6 +10741,20 @@ export type RetrieveMemoryEventReadable = {
 
 /**
  * RetrieveMemoryEvent
+ * A control and display event emitted when an agent retrieves memories from long-term storage.
+ *
+ * ### Why RetrieveMemoryEvent?
+ * This event bridges the gap between stateless conversation and stateful user context:
+ * - As a control event, it provides retrieved memories to downstream workflow steps
+ * - As a display event, it shows users what context the agent is using from past interactions
+ *
+ * Agents emit this event after semantic search through user/organization memories. The retrieved
+ * memories are then typically prepended to chat history as system context, enabling personalized
+ * responses. This transparency is crucial for user trust - they can see what the agent "remembers"
+ * and correct inaccuracies if needed.
+ *
+ * The event includes both individual memories and their relations in the knowledge graph, allowing
+ * agents to understand not just isolated facts but how concepts connect.
  */
 export type RetrieveMemoryEventWritable = {
     /**
@@ -13376,12 +13458,12 @@ export type UpdateMemoryRequest = {
 export type UpdateMemoryResponse = {
     /**
      * Status
-     * Update status.
+     * Operation status. Always 'updated' on success; errors raise HTTPException.
      */
     status: string;
     /**
      * Memory Id
-     * ID of the updated memory.
+     * ID of the memory that was updated. Echoed from request path.
      */
     memory_id: string;
 };
@@ -16059,23 +16141,23 @@ export type UpdateNotificationResponses = {
 
 export type UpdateNotificationResponse = UpdateNotificationResponses[keyof UpdateNotificationResponses];
 
-export type DeleteAllMemoriesData = {
+export type DeleteAllUserMemoriesData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/memories';
+    url: '/user-memories';
 };
 
-export type DeleteAllMemoriesResponses = {
+export type DeleteAllUserMemoriesResponses = {
     /**
      * Successful Response
      */
     200: DeleteAllMemoriesResponse;
 };
 
-export type DeleteAllMemoriesResponse2 = DeleteAllMemoriesResponses[keyof DeleteAllMemoriesResponses];
+export type DeleteAllUserMemoriesResponse = DeleteAllUserMemoriesResponses[keyof DeleteAllUserMemoriesResponses];
 
-export type GetMemoriesData = {
+export type GetUserMemoriesData = {
     body?: never;
     path?: never;
     query?: {
@@ -16085,28 +16167,28 @@ export type GetMemoriesData = {
          */
         limit?: number;
     };
-    url: '/memories';
+    url: '/user-memories';
 };
 
-export type GetMemoriesErrors = {
+export type GetUserMemoriesErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type GetMemoriesError = GetMemoriesErrors[keyof GetMemoriesErrors];
+export type GetUserMemoriesError = GetUserMemoriesErrors[keyof GetUserMemoriesErrors];
 
-export type GetMemoriesResponses = {
+export type GetUserMemoriesResponses = {
     /**
      * Successful Response
      */
     200: MemoriesResponse;
 };
 
-export type GetMemoriesResponse = GetMemoriesResponses[keyof GetMemoriesResponses];
+export type GetUserMemoriesResponse = GetUserMemoriesResponses[keyof GetUserMemoriesResponses];
 
-export type SearchMemoriesData = {
+export type SearchUserMemoriesData = {
     body?: never;
     path?: never;
     query: {
@@ -16131,28 +16213,28 @@ export type SearchMemoriesData = {
          */
         thread_id?: string | null;
     };
-    url: '/memories/search';
+    url: '/user-memories/search';
 };
 
-export type SearchMemoriesErrors = {
+export type SearchUserMemoriesErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type SearchMemoriesError = SearchMemoriesErrors[keyof SearchMemoriesErrors];
+export type SearchUserMemoriesError = SearchUserMemoriesErrors[keyof SearchUserMemoriesErrors];
 
-export type SearchMemoriesResponses = {
+export type SearchUserMemoriesResponses = {
     /**
      * Successful Response
      */
     200: MemorySearchResponse;
 };
 
-export type SearchMemoriesResponse = SearchMemoriesResponses[keyof SearchMemoriesResponses];
+export type SearchUserMemoriesResponse = SearchUserMemoriesResponses[keyof SearchUserMemoriesResponses];
 
-export type DeleteMemoryData = {
+export type DeleteUserMemoryData = {
     body?: never;
     path: {
         /**
@@ -16162,28 +16244,28 @@ export type DeleteMemoryData = {
         memory_id: string;
     };
     query?: never;
-    url: '/memories/{memory_id}';
+    url: '/user-memories/{memory_id}';
 };
 
-export type DeleteMemoryErrors = {
+export type DeleteUserMemoryErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type DeleteMemoryError = DeleteMemoryErrors[keyof DeleteMemoryErrors];
+export type DeleteUserMemoryError = DeleteUserMemoryErrors[keyof DeleteUserMemoryErrors];
 
-export type DeleteMemoryResponses = {
+export type DeleteUserMemoryResponses = {
     /**
      * Successful Response
      */
     200: DeleteMemoryResponse;
 };
 
-export type DeleteMemoryResponse2 = DeleteMemoryResponses[keyof DeleteMemoryResponses];
+export type DeleteUserMemoryResponse = DeleteUserMemoryResponses[keyof DeleteUserMemoryResponses];
 
-export type UpdateMemoryData = {
+export type UpdateUserMemoryData = {
     body: UpdateMemoryRequest;
     path: {
         /**
@@ -16193,26 +16275,181 @@ export type UpdateMemoryData = {
         memory_id: string;
     };
     query?: never;
-    url: '/memories/{memory_id}';
+    url: '/user-memories/{memory_id}';
 };
 
-export type UpdateMemoryErrors = {
+export type UpdateUserMemoryErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type UpdateMemoryError = UpdateMemoryErrors[keyof UpdateMemoryErrors];
+export type UpdateUserMemoryError = UpdateUserMemoryErrors[keyof UpdateUserMemoryErrors];
 
-export type UpdateMemoryResponses = {
+export type UpdateUserMemoryResponses = {
     /**
      * Successful Response
      */
     200: UpdateMemoryResponse;
 };
 
-export type UpdateMemoryResponse2 = UpdateMemoryResponses[keyof UpdateMemoryResponses];
+export type UpdateUserMemoryResponse = UpdateUserMemoryResponses[keyof UpdateUserMemoryResponses];
+
+export type DeleteAllOrganizationMemoriesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/organization-memories';
+};
+
+export type DeleteAllOrganizationMemoriesResponses = {
+    /**
+     * Successful Response
+     */
+    200: DeleteAllMemoriesResponse;
+};
+
+export type DeleteAllOrganizationMemoriesResponse = DeleteAllOrganizationMemoriesResponses[keyof DeleteAllOrganizationMemoriesResponses];
+
+export type GetOrganizationMemoriesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Limit
+         * Maximum number of memories to return
+         */
+        limit?: number;
+    };
+    url: '/organization-memories';
+};
+
+export type GetOrganizationMemoriesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetOrganizationMemoriesError = GetOrganizationMemoriesErrors[keyof GetOrganizationMemoriesErrors];
+
+export type GetOrganizationMemoriesResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemoriesResponse;
+};
+
+export type GetOrganizationMemoriesResponse = GetOrganizationMemoriesResponses[keyof GetOrganizationMemoriesResponses];
+
+export type SearchOrganizationMemoriesData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Query
+         * Search query for semantic search
+         */
+        query: string;
+        /**
+         * Limit
+         * Maximum number of results to return
+         */
+        limit?: number;
+        /**
+         * Agent Id
+         * Filter by agent ID
+         */
+        agent_id?: string | null;
+        /**
+         * Thread Id
+         * Filter by thread ID
+         */
+        thread_id?: string | null;
+    };
+    url: '/organization-memories/search';
+};
+
+export type SearchOrganizationMemoriesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SearchOrganizationMemoriesError = SearchOrganizationMemoriesErrors[keyof SearchOrganizationMemoriesErrors];
+
+export type SearchOrganizationMemoriesResponses = {
+    /**
+     * Successful Response
+     */
+    200: MemorySearchResponse;
+};
+
+export type SearchOrganizationMemoriesResponse = SearchOrganizationMemoriesResponses[keyof SearchOrganizationMemoriesResponses];
+
+export type DeleteOrganizationMemoryData = {
+    body?: never;
+    path: {
+        /**
+         * Memory Id
+         * Memory ID to delete
+         */
+        memory_id: string;
+    };
+    query?: never;
+    url: '/organization-memories/{memory_id}';
+};
+
+export type DeleteOrganizationMemoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteOrganizationMemoryError = DeleteOrganizationMemoryErrors[keyof DeleteOrganizationMemoryErrors];
+
+export type DeleteOrganizationMemoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: DeleteMemoryResponse;
+};
+
+export type DeleteOrganizationMemoryResponse = DeleteOrganizationMemoryResponses[keyof DeleteOrganizationMemoryResponses];
+
+export type UpdateOrganizationMemoryData = {
+    body: UpdateMemoryRequest;
+    path: {
+        /**
+         * Memory Id
+         * Memory ID to update
+         */
+        memory_id: string;
+    };
+    query?: never;
+    url: '/organization-memories/{memory_id}';
+};
+
+export type UpdateOrganizationMemoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateOrganizationMemoryError = UpdateOrganizationMemoryErrors[keyof UpdateOrganizationMemoryErrors];
+
+export type UpdateOrganizationMemoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: UpdateMemoryResponse;
+};
+
+export type UpdateOrganizationMemoryResponse = UpdateOrganizationMemoryResponses[keyof UpdateOrganizationMemoryResponses];
 
 export type ProcessDocumentData = {
     body?: never;

@@ -1,3 +1,4 @@
+from aihub_lib.generative_ai.memory.MemorySettings import MemorySettings
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.mem0.Mem0Service import Mem0Service
 from aihub_lib.infrastructure.mem0.Mem0Settings import Mem0Settings
@@ -7,17 +8,18 @@ from aihub_lib.infrastructure.mem0.types.MemoryType import MemoryType
 
 class OrganizationMemory:
     """
-    Provides organization-scoped memory management for shared knowledge across users.
+    Provides tenant-scoped memory management for shared knowledge across users.
 
-    Organization memories differ from user memories in scope - they're accessible to all users within
-    an organization. Use this for managing company-wide facts, policies, or shared context that should
-    inform all agents serving the organization.
+    Tenant memories differ from user memories in scope - they're accessible to all users within
+    a tenant. Use this for managing company-wide facts, policies, or shared context that should
+    inform all agents serving the tenant. Tenant scoping replaces organization scoping for multi-tenancy support.
     """
 
-    def __init__(self, organization_name: str, t: LocaleHandler):
-        """Initialize organization memory manager for a specific organization."""
+    def __init__(self, t: LocaleHandler):
+        """Initialize tenant memory manager using default tenant from settings."""
         self._config = Mem0Settings().get_config()
-        self._organization_name = organization_name
+        self._tenant_id = MemorySettings().DEFAULT_TENANT_ID
+        self._tenant_namespace = MemorySettings().DEFAULT_TENANT_NAMESPACE
         self._t = t
         self.mem0service = Mem0Service(
             self._config,
@@ -26,8 +28,8 @@ class OrganizationMemory:
 
     @property
     def owner_id(self):
-        """Returns the organization name as the owner for memory scoping."""
-        return self._organization_name
+        """Returns the tenant ID as the owner for memory scoping."""
+        return self._tenant_id
 
     async def delete_all(
         self,
@@ -50,7 +52,6 @@ class OrganizationMemory:
     async def search_organization_memory(
         self,
         query: str,
-        organization_namespace: str | None = None,
         agent_id: str | None = None,
         user_id: str | None = None,
         thread_id: str | None = None,
@@ -61,10 +62,8 @@ class OrganizationMemory:
         rerank: bool = True,
     ) -> MemorySearchResult:
         """
-        Searches organization memories semantically, with optional namespace/agent/user filtering.
-
-        Namespace filtering enables department-specific searches within an org. Agent/user/thread filtering
-        helps debug which memories specific agents or users contributed.
+        Searches tenant memories semantically.
+        Tenant ID and namespace are from settings (not user-controllable).
         """
         return await self.mem0service.search(
             query=query,
@@ -75,8 +74,8 @@ class OrganizationMemory:
             memory_type=MemoryType.ORGANIZATION_MEMORY,
             user_id=user_id,
             agent_id=agent_id,
-            organization_namespace=organization_namespace,
-            organization_name=self._organization_name,
+            tenant_namespace=self._tenant_namespace,
+            tenant_id=self._tenant_id,
             limit=limit,
             threshold=threshold,
             rerank=rerank,

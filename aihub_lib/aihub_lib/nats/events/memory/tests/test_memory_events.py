@@ -38,8 +38,8 @@ class TestNewMemoryEvent:
             _display_id="display_456",
             _run_id="run_789",
             _type=MemoryType.USER_MEMORY,
-            _organization_name=None,
-            _organization_namespace=None,
+            _tenant_id=None,
+            _tenant_namespace=None,
             results=[
                 ModifiedMemory(id="mem_1", memory="User likes Python", event=MemoryEventType.ADD),
                 ModifiedMemory(id="mem_2", memory="User works at ACME", event=MemoryEventType.ADD),
@@ -65,8 +65,8 @@ class TestNewMemoryEvent:
             _display_id="display_456",
             _run_id="run_789",
             _type=MemoryType.USER_MEMORY,
-            _organization_name=None,
-            _organization_namespace=None,
+            _tenant_id=None,
+            _tenant_namespace=None,
             results=[
                 ModifiedMemory(
                     id="mem_1",
@@ -95,8 +95,8 @@ class TestNewMemoryEvent:
             _display_id="display_456",
             _run_id="run_789",
             _type=MemoryType.USER_MEMORY,
-            _organization_name=None,
-            _organization_namespace=None,
+            _tenant_id=None,
+            _tenant_namespace=None,
             results=[
                 ModifiedMemory(id="mem_1", memory="Deleted memory", event=MemoryEventType.DELETE),
             ],
@@ -120,8 +120,8 @@ class TestNewMemoryEvent:
             _display_id="display_456",
             _run_id="run_789",
             _type=MemoryType.USER_MEMORY,
-            _organization_name=None,
-            _organization_namespace=None,
+            _tenant_id=None,
+            _tenant_namespace=None,
             results=[],
             relations=ModifiedRelations(
                 added_entities=[
@@ -152,8 +152,8 @@ class TestNewMemoryEvent:
             _display_id="display_456",
             _run_id="run_789",
             _type=MemoryType.USER_MEMORY,
-            _organization_name=None,
-            _organization_namespace=None,
+            _tenant_id=None,
+            _tenant_namespace=None,
             results=[
                 ModifiedMemory(id="mem_1", memory="New memory", event=MemoryEventType.ADD),
                 ModifiedMemory(id="mem_2", memory="Updated memory", event=MemoryEventType.UPDATE),

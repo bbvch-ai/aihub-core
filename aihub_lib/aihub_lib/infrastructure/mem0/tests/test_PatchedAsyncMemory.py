@@ -35,8 +35,8 @@ def mock_vector_store():
         "_thread_id": "test_thread_789",
         "_display_id": "test_display_abc",
         "_run_id": "test_run_def",
-        "_organization_name": "test_org",
-        "_organization_namespace": "test_namespace",
+        "_tenant_id": "test_org",
+        "_tenant_namespace": "test_namespace",
     }
     mock_store.get.return_value = mock_memory
 
@@ -106,8 +106,8 @@ async def test_update_memory_preserves_custom_metadata(mock_config, mock_vector_
         "_thread_id": "test_thread_789",
         "_display_id": "test_display_abc",
         "_run_id": "test_run_def",
-        "_organization_name": "test_org",
-        "_organization_namespace": "test_namespace",
+        "_tenant_id": "test_org",
+        "_tenant_namespace": "test_namespace",
     }
 
     for field_name, expected_value in expected_underscore_fields.items():
