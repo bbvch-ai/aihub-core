@@ -34,6 +34,7 @@ jobs:
           - llm_wrapping_agent
           - rag_agent
           - knowledge_retrieval_agent
+          - shared_knowledge_retrieval_agent
           - insight_retrieval_agent
           - expert_rag_agent
           - namespace_selection_agent

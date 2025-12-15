@@ -87,6 +87,12 @@ image_tags:
     nightly: knowledge_retrieval_agent:nightly
     latest: knowledge_retrieval_agent:latest
 
+  shared_knowledge_retrieval_agent:
+    build: localbuild
+    local: shared_knowledge_retrieval_agent:latest
+    nightly: shared_knowledge_retrieval_agent:nightly
+    latest: shared_knowledge_retrieval_agent:latest
+
   insight_retrieval_agent:
     build: localbuild
     local: insight_retrieval_agent:latest
