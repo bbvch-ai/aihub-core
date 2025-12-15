@@ -47,6 +47,7 @@ class UserMemoryAgent(Agent):
             chat_history=user_message_event.messages,
             memories=memory_event.memories,
             relations=memory_event.relations,
+            user=user_message_event.user,
             t=t,
         )
         return AddUserMemoryToChatHistoryEvent(extended_history=extended_chat_history)

@@ -183,6 +183,11 @@ memory:
     <user_context>
     ## User Memory Context
 
+    **Current User Information:**
+    - User ID: {{ user.id }}
+    - Name: {{ user.name }}
+    - Email: {{ user.email }}
+
     The following information was learned from **this specific user's** past conversations with you. These are personal preferences, work context, and behavioral patterns specific to this user.
 
     **Important Guidelines:**

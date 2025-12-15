@@ -1,6 +1,7 @@
 from jinja2 import Template
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.mem0.types.Memory import Memory
 from aihub_lib.infrastructure.mem0.types.MemoryRelation import MemoryRelation
@@ -10,6 +11,7 @@ def extend_chat_history_with_user_memory(
     chat_history: list[ChatMessage],
     memories: list[Memory],
     relations: list[MemoryRelation] | None,
+    user: UserIdentity,
     t: LocaleHandler,
 ) -> list[ChatMessage]:
     """
@@ -30,7 +32,11 @@ def extend_chat_history_with_user_memory(
 
     template_string = t("lib.prompt.memory.user_memory_system_message")
     template = Template(template_string)
-    memory_content = template.render(memories=memories, relations=relations or [])
+    memory_content = template.render(
+        user=user,
+        memories=memories,
+        relations=relations or [],
+    )
     memory_message = ChatMessage(role=MessageRole.SYSTEM, content=memory_content)
 
     # Find the index after the last system message at the start of chat history

@@ -143,6 +143,11 @@ memory:
     <user_context>
     ## Contesto di Memoria Utente
 
+    **Informazioni Utente Corrente:**
+    - ID Utente: {{ user.id }}
+    - Nome: {{ user.name }}
+    - E-mail: {{ user.email }}
+
     Le seguenti informazioni sono state apprese dalle conversazioni passate di **questo utente specifico** con te. Queste sono preferenze personali, contesto lavorativo e modelli comportamentali specifici di questo utente.
 
     **Linee Guida Importanti:**

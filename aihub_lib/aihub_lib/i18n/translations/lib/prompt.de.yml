@@ -145,6 +145,11 @@ memory:
     <user_context>
     ## Benutzerspeicher-Kontext
 
+    **Aktuelle Benutzerinformationen:**
+    - Benutzer-ID: {{ user.id }}
+    - Name: {{ user.name }}
+    - E-Mail: {{ user.email }}
+
     Die folgenden Informationen wurden aus **den vergangenen Gesprächen dieses spezifischen Benutzers** mit Ihnen gelernt. Dies sind persönliche Präferenzen, Arbeitskontext und Verhaltensmuster, die spezifisch für diesen Benutzer sind.
 
     **Wichtige Richtlinien:**
