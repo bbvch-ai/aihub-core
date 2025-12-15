@@ -1,5 +1,3 @@
-"""Extracted function for invoking retrieval agents."""
-
 from typing import Literal
 
 from aihub_lib.generative_ai.retrievers import RetrievalOverride
