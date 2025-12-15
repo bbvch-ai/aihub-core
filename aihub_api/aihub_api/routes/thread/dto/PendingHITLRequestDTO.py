@@ -21,7 +21,10 @@ class PendingHITLRequestDTO(BaseModel):
     message: Annotated[str, Field(description="The message or prompt presented to the human operator")]
     hitl_type: Annotated[
         Literal["input", "confirmation", "chat"],
-        Field(description="Type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no, 'chat' for normal chat flow"),
+        Field(
+            description="Type of HITL interaction: 'input' for free-form text, "
+            "'confirmation' for yes/no, 'chat' for normal chat flow"
+        ),
     ]
     topic: Annotated[HITLTopicDTO, Field(description="Topic information for routing the response")]
     created_at: Annotated[int, Field(description="Timestamp when the request was created (microseconds since epoch)")]

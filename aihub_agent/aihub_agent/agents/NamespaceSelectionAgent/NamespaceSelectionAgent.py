@@ -35,7 +35,9 @@ class BucketInfo(BaseModel):
     """Information about a bucket and its namespaces."""
 
     bucket_name: Annotated[str, Field(description="Bucket identifier")]
-    bucket_display_name: Annotated[LocaleString | None, Field(default=None, description="Localized bucket display name")]
+    bucket_display_name: Annotated[
+        LocaleString | None, Field(default=None, description="Localized bucket display name")
+    ]
     namespaces: Annotated[list[NamespaceInfo], Field(description="List of namespaces in this bucket")]
 
 

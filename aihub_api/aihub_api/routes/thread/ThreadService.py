@@ -26,12 +26,12 @@ from aihub_api.routes.agent.dto.AgentIdentifier import AgentIdentifier
 from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
 from aihub_api.routes.event.EventService import EventService
 from aihub_api.routes.openai.dto.HistoryResponse import HistoryResponse
+from aihub_api.routes.thread.dto.PendingHITLRequestDTO import HITLTopicDTO, PendingHITLRequestDTO
 from aihub_api.routes.thread.dto.statistics.CalculatedThreadStats import CalculatedThreadStats
 from aihub_api.routes.thread.dto.statistics.DisplayStatistics import DisplayStatistics
 from aihub_api.routes.thread.dto.statistics.IntermediateDisplayStats import IntermediateDisplayStats
 from aihub_api.routes.thread.dto.statistics.ProcessedRunResults import ProcessedRunResults
 from aihub_api.routes.thread.dto.statistics.RunStatistics import RunStatistics
-from aihub_api.routes.thread.dto.PendingHITLRequestDTO import HITLTopicDTO, PendingHITLRequestDTO
 from aihub_api.routes.thread.dto.ThreadAgentDTO import ThreadAgentDTO
 from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.user.dto.MinimalUserDTO import MinimalUserDTO
