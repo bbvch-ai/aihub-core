@@ -93,8 +93,8 @@ ask you to confirm or update your selection for each question.
 
 ### Changing selections
 
-You can request to change your collection selection at any time by asking the agent to search different collections.
-The agent will present the selection interface again.
+You can request to change your collection selection at any time by asking the agent to search different collections. The
+agent will present the selection interface again.
 
 ## When namespace selection is not needed
 

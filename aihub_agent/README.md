@@ -694,13 +694,13 @@ The workflow involves three agents working in sequence:
 
 Understanding these data structures is essential for working with the namespace selection flow:
 
-| Structure | Purpose | File |
-|-----------|---------|------|
-| `BucketReference` | Config-time reference to a bucket (by ID or name) | `agents/NamespaceSelectionAgent/configs/BucketReference.py` |
-| `BucketInfo` | Runtime info with available namespaces for selection UI | `agents/NamespaceSelectionAgent/configs/BucketInfo.py` |
-| `BucketNamespaceSelection` | User's selection: bucket_name + list of namespace names | `agents/NamespaceSelectionAgent/configs/BucketNamespaceSelection.py` |
-| `KnowledgeRetrievalAgentReference` | Links a retrieval agent to a specific bucket via `bucket_name` | `agents/configs/KnowledgeRetrievalAgentReference.py` |
-| `KnowledgeRetrievalOverride` | Passes selected namespaces to retrieval agent | `rag/events/RetrievalStartEvent.py` |
+| Structure                          | Purpose                                                        | File                                                                 |
+| ---------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `BucketReference`                  | Config-time reference to a bucket (by ID or name)              | `agents/NamespaceSelectionAgent/configs/BucketReference.py`          |
+| `BucketInfo`                       | Runtime info with available namespaces for selection UI        | `agents/NamespaceSelectionAgent/configs/BucketInfo.py`               |
+| `BucketNamespaceSelection`         | User's selection: bucket_name + list of namespace names        | `agents/NamespaceSelectionAgent/configs/BucketNamespaceSelection.py` |
+| `KnowledgeRetrievalAgentReference` | Links a retrieval agent to a specific bucket via `bucket_name` | `agents/configs/KnowledgeRetrievalAgentReference.py`                 |
+| `KnowledgeRetrievalOverride`       | Passes selected namespaces to retrieval agent                  | `rag/events/RetrievalStartEvent.py`                                  |
 
 ### Step-by-Step Flow with Code References
 
@@ -721,6 +721,7 @@ async def ask_selection_step(self, event: UserMessageEvent, ...) -> HumanInTheLo
 **File**: `agents/NamespaceSelectionAgent/namespace_data.py:42-74`
 
 For each `BucketReference` in the agent config:
+
 1. Look up the bucket by `bucket_name`
 2. Query database: `NamespaceEntity.get_namespaces_by_bucket(bucket_id)`
 3. Build `BucketInfo` objects containing all available namespaces
@@ -735,6 +736,7 @@ workflow until the user responds with their selection.
 **File**: `agents/NamespaceSelectionAgent/selection_parsing.py:70-119`
 
 The agent uses LLM structured output to extract namespace names from the user's response:
+
 1. For each bucket without a selection, parse user's response
 2. Validate selected namespace names against available options
 3. Create `BucketNamespaceSelection` objects
@@ -765,6 +767,7 @@ This event is passed to the RAG agent via `AgentInTheLoop.invoke()`.
 **File**: `agents/RagAgent/RAGAgent.py`
 
 The RAG agent executes its pipeline:
+
 1. **Limit chat history** - Truncate to fit token limits
 2. **Condense question** - Convert chat + query to standalone question
 3. **Few-shot guard** - Validate question appropriateness
@@ -786,6 +789,7 @@ def execute_invoke_retrieval(
 ```
 
 For each retrieval agent:
+
 1. Check if it's a `KnowledgeRetrievalAgentReference` (has `bucket_name` field)
 2. Find matching `BucketNamespaceSelection` with same `bucket_name`
 3. Create `KnowledgeRetrievalOverride` containing selected namespaces

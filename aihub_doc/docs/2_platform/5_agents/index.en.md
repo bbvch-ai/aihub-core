@@ -77,8 +77,8 @@ This lets you automate routine parts while maintaining control over decisions.
 
 The platform includes several specialized agent types:
 
-- [**RAG agent**](./2_rag_agent/): Answers questions using your organization's documents through
-  retrieval-augmented generation.
+- [**RAG agent**](./2_rag_agent/): Answers questions using your organization's documents through retrieval-augmented
+  generation.
 - [**Expert asking agent**](./3_expert_asking_agent/): Routes questions to appropriate human experts when AI cannot
   provide sufficient answers.
 - [**Namespace selection agent**](./4_namespace_selection/): Lets users choose which knowledge collections to search
