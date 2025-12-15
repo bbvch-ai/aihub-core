@@ -6,7 +6,7 @@
     <p class="text-xs dark:text-surface-500">
       {{ description }}
     </p>
-    <div class="content pt-6 max-w-2xl">
+    <div class="content max-w-2xl pt-6">
       <FormKit
         id="form"
         v-model="data"
@@ -25,7 +25,7 @@
         />
       </FormKit>
     </div>
-    <pre class="overflow-auto max-h-96 max-w-2xl text-xs bg-surface-900 p-4 rounded-lg mt-4">{{ data }}</pre>
+    <pre class="mt-4 max-h-96 max-w-2xl overflow-auto rounded-lg bg-surface-900 p-4 text-xs">{{ data }}</pre>
   </Panel>
 </template>
 
@@ -118,7 +118,6 @@ const schema = computed<FormKitSchemaDefinition>(() => {
         return data.value[key] || match
       })
     }
-
 
     // Recursively transform children for any other elements with children
     const nodeRecord = formkitNode as Record<string, unknown>

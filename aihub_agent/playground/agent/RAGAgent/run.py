@@ -6,8 +6,6 @@ from aihub_agent.agents.ExpertAskingAgent.ExpertAskingAgent import ExpertAskingA
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
 from aihub_agent.agents.RagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
-from aihub_agent.agents.RagAgent.configs.RetrieveSummariesConfig import RetrieveSummariesConfig
 from aihub_agent.runners.AgentRunner import AgentRunner
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
@@ -23,15 +21,8 @@ from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
-from aihub_lib.nats.events.form import Checkbox, Group, InputNumber, Select, Slider, Textarea
+from aihub_lib.nats.events.form import Checkbox, Group, InputNumber, InputText, Select, Slider, Textarea
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
-from llama_index.core.vector_stores.types import VectorStoreQueryMode
-
-from aihub_agent.agents.ExpertAskingAgent.ExpertAskingAgent import ExpertAskingAgent
-from aihub_agent.agents.RagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
-from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
-from aihub_agent.runners.AgentRunner import AgentRunner
 
 enable_logging()
 
@@ -39,10 +30,171 @@ enable_logging()
 async def main():
     servers_list = [NatsSettings().ENDPOINT]
 
-    # Define form elements explicitly using Groups for nested configuration
-    # TODO create full default config
+    # Complete form definition covering all RAGAgentConfig options
     form = [
-        # LLM Configuration Group
+        # =============================================================================
+        # Agent Identity Group
+        # =============================================================================
+        Group(
+            name="name",
+            label=LocaleString(
+                en="Agent Name",
+                de="Agent-Name",
+                fr="Nom de l'agent",
+                it="Nome dell'agente",
+            ),
+            children=[
+                InputText(
+                    name="en",
+                    label=LocaleString(en="English", de="Englisch", fr="Anglais", it="Inglese"),
+                    help=LocaleString(
+                        en="Display name for the agent (English)",
+                        de="Anzeigename des Agenten (Englisch)",
+                        fr="Nom d'affichage de l'agent (Anglais)",
+                        it="Nome visualizzato dell'agente (Inglese)",
+                    ),
+                ),
+                InputText(
+                    name="de",
+                    label=LocaleString(en="German", de="Deutsch", fr="Allemand", it="Tedesco"),
+                    help=LocaleString(
+                        en="Display name for the agent (German)",
+                        de="Anzeigename des Agenten (Deutsch)",
+                        fr="Nom d'affichage de l'agent (Allemand)",
+                        it="Nome visualizzato dell'agente (Tedesco)",
+                    ),
+                ),
+                InputText(
+                    name="fr",
+                    label=LocaleString(en="French", de="Französisch", fr="Français", it="Francese"),
+                    help=LocaleString(
+                        en="Display name for the agent (French)",
+                        de="Anzeigename des Agenten (Französisch)",
+                        fr="Nom d'affichage de l'agent (Français)",
+                        it="Nome visualizzato dell'agente (Francese)",
+                    ),
+                ),
+                InputText(
+                    name="it",
+                    label=LocaleString(en="Italian", de="Italienisch", fr="Italien", it="Italiano"),
+                    help=LocaleString(
+                        en="Display name for the agent (Italian)",
+                        de="Anzeigename des Agenten (Italienisch)",
+                        fr="Nom d'affichage de l'agent (Italien)",
+                        it="Nome visualizzato dell'agente (Italiano)",
+                    ),
+                ),
+            ],
+        ),
+        Group(
+            name="description",
+            label=LocaleString(
+                en="Agent Description",
+                de="Agent-Beschreibung",
+                fr="Description de l'agent",
+                it="Descrizione dell'agente",
+            ),
+            children=[
+                Textarea(
+                    name="en",
+                    label=LocaleString(en="English", de="Englisch", fr="Anglais", it="Inglese"),
+                    help=LocaleString(
+                        en="Description of the agent's purpose (English)",
+                        de="Beschreibung des Agentenzwecks (Englisch)",
+                        fr="Description de l'objectif de l'agent (Anglais)",
+                        it="Descrizione dello scopo dell'agente (Inglese)",
+                    ),
+                    rows=3,
+                    auto_resize=True,
+                ),
+                Textarea(
+                    name="de",
+                    label=LocaleString(en="German", de="Deutsch", fr="Allemand", it="Tedesco"),
+                    help=LocaleString(
+                        en="Description of the agent's purpose (German)",
+                        de="Beschreibung des Agentenzwecks (Deutsch)",
+                        fr="Description de l'objectif de l'agent (Allemand)",
+                        it="Descrizione dello scopo dell'agente (Tedesco)",
+                    ),
+                    rows=3,
+                    auto_resize=True,
+                ),
+                Textarea(
+                    name="fr",
+                    label=LocaleString(en="French", de="Französisch", fr="Français", it="Francese"),
+                    help=LocaleString(
+                        en="Description of the agent's purpose (French)",
+                        de="Beschreibung des Agentenzwecks (Französisch)",
+                        fr="Description de l'objectif de l'agent (Français)",
+                        it="Descrizione dello scopo dell'agente (Francese)",
+                    ),
+                    rows=3,
+                    auto_resize=True,
+                ),
+                Textarea(
+                    name="it",
+                    label=LocaleString(en="Italian", de="Italienisch", fr="Italien", it="Italiano"),
+                    help=LocaleString(
+                        en="Description of the agent's purpose (Italian)",
+                        de="Beschreibung des Agentenzwecks (Italienisch)",
+                        fr="Description de l'objectif de l'agent (Italien)",
+                        it="Descrizione dello scopo dell'agente (Italiano)",
+                    ),
+                    rows=3,
+                    auto_resize=True,
+                ),
+            ],
+        ),
+        InputText(
+            name="icon",
+            label=LocaleString(
+                en="Icon",
+                de="Symbol",
+                fr="Icône",
+                it="Icona",
+            ),
+            help=LocaleString(
+                en="Icon identifier for the agent (e.g., 'meteor-icons:robot')",
+                de="Symbol-Bezeichner für den Agenten (z.B. 'meteor-icons:robot')",
+                fr="Identifiant d'icône pour l'agent (par ex. 'meteor-icons:robot')",
+                it="Identificatore icona per l'agente (es. 'meteor-icons:robot')",
+            ),
+        ),
+        InputText(
+            name="agent_class",
+            label=LocaleString(
+                en="Agent Class",
+                de="Agent-Klasse",
+                fr="Classe de l'agent",
+                it="Classe dell'agente",
+            ),
+            help=LocaleString(
+                en="The class name of the agent (read-only)",
+                de="Der Klassenname des Agenten (schreibgeschützt)",
+                fr="Le nom de la classe de l'agent (lecture seule)",
+                it="Il nome della classe dell'agente (sola lettura)",
+            ),
+            disabled=True,
+        ),
+        InputText(
+            name="agent_id",
+            label=LocaleString(
+                en="Agent ID",
+                de="Agent-ID",
+                fr="ID de l'agent",
+                it="ID dell'agente",
+            ),
+            help=LocaleString(
+                en="The unique identifier of the agent (read-only)",
+                de="Die eindeutige Kennung des Agenten (schreibgeschützt)",
+                fr="L'identifiant unique de l'agent (lecture seule)",
+                it="L'identificatore univoco dell'agente (sola lettura)",
+            ),
+            disabled=True,
+        ),
+        # =============================================================================
+        # LLM Configuration Group (LLMConfig)
+        # =============================================================================
         Group(
             name="llm",
             label=LocaleString(
@@ -75,8 +227,15 @@ async def main():
                     option_label="label",
                     option_value="value",
                 ),
+                # LLMParameter nested config
                 Group(
                     name="default_parameter",
+                    label=LocaleString(
+                        en="LLM Parameters",
+                        de="LLM-Parameter",
+                        fr="Paramètres LLM",
+                        it="Parametri LLM",
+                    ),
                     children=[
                         Slider(
                             name="temperature",
@@ -87,51 +246,76 @@ async def main():
                                 it="Temperatura",
                             ),
                             help=LocaleString(
-                                en="Controls randomness in responses. Lower = more deterministic, higher = more creative.",
-                                de="Steuert die Zufälligkeit der Antworten. Niedriger = deterministischer, höher = kreativer.",
-                                fr="Contrôle l'aléatoire des réponses. Bas = déterministe, haut = créatif.",
-                                it="Controlla la casualità nelle risposte. Basso = deterministico, alto = creativo.",
+                                en="Controls randomness in responses. Lower = more deterministic, higher = more creative. Default: 0.0",
+                                de="Steuert die Zufälligkeit der Antworten. Niedriger = deterministischer, höher = kreativer. Standard: 0.0",
+                                fr="Contrôle l'aléatoire des réponses. Bas = déterministe, haut = créatif. Par défaut: 0.0",
+                                it="Controlla la casualità nelle risposte. Basso = deterministico, alto = creativo. Default: 0.0",
                             ),
                             min=0.0,
                             max=2.0,
                             step=0.1,
                         ),
+                        Checkbox(
+                            name="logprobs",
+                            label=LocaleString(
+                                en="Return Log Probabilities",
+                                de="Log-Wahrscheinlichkeiten zurückgeben",
+                                fr="Retourner les probabilités logarithmiques",
+                                it="Restituisci probabilità logaritmiche",
+                            ),
+                            help=LocaleString(
+                                en="Whether to return log probabilities per token. Default: None (disabled)",
+                                de="Ob Log-Wahrscheinlichkeiten pro Token zurückgegeben werden sollen. Standard: None (deaktiviert)",
+                                fr="Retourner ou non les probabilités logarithmiques par token. Par défaut: None (désactivé)",
+                                it="Se restituire le probabilità logaritmiche per token. Default: None (disabilitato)",
+                            ),
+                            binary=True,
+                        ),
+                        InputNumber(
+                            name="top_logprobs",
+                            label=LocaleString(
+                                en="Top Log Probabilities",
+                                de="Top-Log-Wahrscheinlichkeiten",
+                                fr="Top probabilités logarithmiques",
+                                it="Top probabilità logaritmiche",
+                            ),
+                            help=LocaleString(
+                                en="Number of top token log probs to return (0-20). Default: 0",
+                                de="Anzahl der zurückzugebenden Top-Token-Log-Wahrscheinlichkeiten (0-20). Standard: 0",
+                                fr="Nombre de probabilités logarithmiques des tokens principaux à retourner (0-20). Par défaut: 0",
+                                it="Numero di probabilità logaritmiche dei token principali da restituire (0-20). Default: 0",
+                            ),
+                            min=0,
+                            max=20,
+                            step=1,
+                            show_buttons=True,
+                        ),
+                        InputNumber(
+                            name="timeout",
+                            label=LocaleString(
+                                en="API Timeout (seconds)",
+                                de="API-Timeout (Sekunden)",
+                                fr="Délai d'attente API (secondes)",
+                                it="Timeout API (secondi)",
+                            ),
+                            help=LocaleString(
+                                en="Timeout in seconds for API requests. Default: 600.0",
+                                de="Timeout in Sekunden für API-Anfragen. Standard: 600.0",
+                                fr="Délai d'attente en secondes pour les requêtes API. Par défaut: 600.0",
+                                it="Timeout in secondi per le richieste API. Default: 600.0",
+                            ),
+                            min=0,
+                            max=3600,
+                            step=10,
+                            show_buttons=True,
+                        ),
                     ],
                 ),
             ],
         ),
-        # Retrieval Configuration Group
-        Group(
-            name="retrieve_step_config",
-            label=LocaleString(
-                en="Retrieval Configuration",
-                de="Abruf-Konfiguration",
-                fr="Configuration de récupération",
-                it="Configurazione recupero",
-            ),
-            children=[
-                InputNumber(
-                    name="retrieve_k",
-                    label=LocaleString(
-                        en="Retrieve K Documents",
-                        de="K Dokumente abrufen",
-                        fr="Récupérer K documents",
-                        it="Recupera K documenti",
-                    ),
-                    help=LocaleString(
-                        en="Number of documents to retrieve from the vector store.",
-                        de="Anzahl der Dokumente, die aus dem Vektorspeicher abgerufen werden.",
-                        fr="Nombre de documents à récupérer du magasin de vecteurs.",
-                        it="Numero di documenti da recuperare dal vector store.",
-                    ),
-                    min=1,
-                    max=100,
-                    step=1,
-                    show_buttons=True,
-                ),
-            ],
-        ),
-        # Context Settings (top-level fields)
+        # =============================================================================
+        # Context & Retrieval Settings (RAGAgentConfig top-level fields)
+        # =============================================================================
         InputNumber(
             name="number_of_input_tokens",
             label=LocaleString(
@@ -141,10 +325,10 @@ async def main():
                 it="Token di input massimi",
             ),
             help=LocaleString(
-                en="Maximum number of tokens allowed in input to manage context size.",
-                de="Maximale Anzahl der Tokens in der Eingabe zur Verwaltung der Kontextgröße.",
-                fr="Nombre maximum de tokens autorisés en entrée pour gérer la taille du contexte.",
-                it="Numero massimo di token consentiti in input per gestire la dimensione del contesto.",
+                en="Maximum number of tokens allowed in input to manage context size or cost.",
+                de="Maximale Anzahl der Tokens in der Eingabe zur Verwaltung der Kontextgröße oder Kosten.",
+                fr="Nombre maximum de tokens autorisés en entrée pour gérer la taille du contexte ou les coûts.",
+                it="Numero massimo di token consentiti in input per gestire la dimensione del contesto o i costi.",
             ),
             min=1024,
             max=128000,
@@ -160,10 +344,10 @@ async def main():
                 it="Verifica sufficienza contesto",
             ),
             help=LocaleString(
-                en="When enabled, the agent will verify if the retrieved context contains enough information.",
-                de="Wenn aktiviert, prüft der Agent, ob der abgerufene Kontext genügend Informationen enthält.",
-                fr="Lorsqu'activé, l'agent vérifie si le contexte récupéré contient suffisamment d'informations.",
-                it="Se abilitato, l'agente verifica se il contesto recuperato contiene informazioni sufficienti.",
+                en="When enabled, the agent will verify if the retrieved context contains enough information to answer. Default: False",
+                de="Wenn aktiviert, prüft der Agent, ob der abgerufene Kontext genügend Informationen enthält. Standard: False",
+                fr="Lorsqu'activé, l'agent vérifie si le contexte récupéré contient suffisamment d'informations. Par défaut: False",
+                it="Se abilitato, l'agente verifica se il contesto recuperato contiene informazioni sufficienti. Default: False",
             ),
             binary=True,
         ),
@@ -176,17 +360,19 @@ async def main():
                 it="Salti di recupero massimi",
             ),
             help=LocaleString(
-                en="Maximum number of additional retrieval attempts if context is insufficient.",
-                de="Maximale Anzahl zusätzlicher Abrufversuche, wenn der Kontext unzureichend ist.",
-                fr="Nombre maximum de tentatives de récupération supplémentaires si le contexte est insuffisant.",
-                it="Numero massimo di tentativi di recupero aggiuntivi se il contesto è insufficiente.",
+                en="Maximum number of retrieval attempts if context is insufficient (1-10). Default: 1",
+                de="Maximale Anzahl der Abrufversuche, wenn der Kontext unzureichend ist (1-10). Standard: 1",
+                fr="Nombre maximum de tentatives de récupération si le contexte est insuffisant (1-10). Par défaut: 1",
+                it="Numero massimo di tentativi di recupero se il contesto è insufficiente (1-10). Default: 1",
             ),
             min=1,
             max=10,
             step=1,
             show_buttons=True,
         ),
-        # Reranking Configuration Group
+        # =============================================================================
+        # Reranking Configuration Group (RerankingConfig + RerankingModelConfig)
+        # =============================================================================
         Group(
             name="reranking_config",
             label=LocaleString(
@@ -205,32 +391,59 @@ async def main():
                         it="Abilita riordinamento",
                     ),
                     help=LocaleString(
-                        en="When enabled, retrieved documents will be reranked for improved relevance.",
-                        de="Wenn aktiviert, werden abgerufene Dokumente für bessere Relevanz neu geordnet.",
-                        fr="Lorsqu'activé, les documents récupérés seront reclassés pour une meilleure pertinence.",
-                        it="Se abilitato, i documenti recuperati verranno riordinati per una migliore rilevanza.",
+                        en="When enabled, retrieved documents will be reranked for improved relevance. Default: False",
+                        de="Wenn aktiviert, werden abgerufene Dokumente für bessere Relevanz neu geordnet. Standard: False",
+                        fr="Lorsqu'activé, les documents récupérés seront reclassés pour une meilleure pertinence. Par défaut: False",
+                        it="Se abilitato, i documenti recuperati verranno riordinati per una migliore rilevanza. Default: False",
                     ),
                     binary=True,
                 ),
+                # RerankingModelConfig nested config
                 Group(
                     name="reranking_model",
+                    label=LocaleString(
+                        en="Reranking Model",
+                        de="Reranking-Modell",
+                        fr="Modèle de reclassement",
+                        it="Modello di riordinamento",
+                    ),
                     children=[
+                        Select(
+                            name="model_name",
+                            label=LocaleString(
+                                en="Reranking Model",
+                                de="Reranking-Modell",
+                                fr="Modèle de reclassement",
+                                it="Modello di riordinamento",
+                            ),
+                            help=LocaleString(
+                                en="The model to use for reranking documents.",
+                                de="Das Modell für das Reranking von Dokumenten.",
+                                fr="Le modèle à utiliser pour le reclassement des documents.",
+                                it="Il modello da utilizzare per il riordinamento dei documenti.",
+                            ),
+                            options=[
+                                {"label": "Rerank Model", "value": "reranking/default"},
+                            ],
+                            option_label="label",
+                            option_value="value",
+                        ),
                         InputNumber(
                             name="top_n",
                             label=LocaleString(
-                                en="Reranking Top N",
-                                de="Reranking Top N",
-                                fr="Top N du reclassement",
-                                it="Top N riordinamento",
+                                en="Top N Documents",
+                                de="Top N Dokumente",
+                                fr="Top N documents",
+                                it="Top N documenti",
                             ),
                             help=LocaleString(
-                                en="Number of top documents to keep after reranking.",
-                                de="Anzahl der Top-Dokumente, die nach dem Reranking behalten werden.",
-                                fr="Nombre de documents principaux à conserver après le reclassement.",
-                                it="Numero di documenti principali da mantenere dopo il riordinamento.",
+                                en="Number of top documents to keep after reranking (1-100). Default: 5",
+                                de="Anzahl der Top-Dokumente, die nach dem Reranking behalten werden (1-100). Standard: 5",
+                                fr="Nombre de documents principaux à conserver après le reclassement (1-100). Par défaut: 5",
+                                it="Numero di documenti principali da mantenere dopo il riordinamento (1-100). Default: 5",
                             ),
                             min=1,
-                            max=50,
+                            max=100,
                             step=1,
                             show_buttons=True,
                         ),
@@ -238,7 +451,53 @@ async def main():
                 ),
             ],
         ),
-        # System Prompt Group
+        # =============================================================================
+        # Expert Escalation Configuration Group (ExpertEscalationConfig)
+        # =============================================================================
+        Group(
+            name="expert_escalation",
+            label=LocaleString(
+                en="Expert Escalation",
+                de="Experten-Eskalation",
+                fr="Escalade vers expert",
+                it="Escalation esperto",
+            ),
+            children=[
+                InputText(
+                    name="expert_asking_agent_class",
+                    label=LocaleString(
+                        en="Expert Agent Class",
+                        de="Experten-Agent-Klasse",
+                        fr="Classe d'agent expert",
+                        it="Classe agente esperto",
+                    ),
+                    help=LocaleString(
+                        en="The agent class name for expert escalation when context is insufficient.",
+                        de="Der Agentenklassenname für die Experten-Eskalation bei unzureichendem Kontext.",
+                        fr="Le nom de la classe d'agent pour l'escalade vers expert lorsque le contexte est insuffisant.",
+                        it="Il nome della classe dell'agente per l'escalation all'esperto quando il contesto è insufficiente.",
+                    ),
+                ),
+                InputText(
+                    name="expert_asking_agent_id",
+                    label=LocaleString(
+                        en="Expert Agent ID",
+                        de="Experten-Agent-ID",
+                        fr="ID de l'agent expert",
+                        it="ID agente esperto",
+                    ),
+                    help=LocaleString(
+                        en="The unique agent ID for expert escalation.",
+                        de="Die eindeutige Agent-ID für die Experten-Eskalation.",
+                        fr="L'ID unique de l'agent pour l'escalade vers expert.",
+                        it="L'ID univoco dell'agente per l'escalation all'esperto.",
+                    ),
+                ),
+            ],
+        ),
+        # =============================================================================
+        # System Prompt Group (LocaleString)
+        # =============================================================================
         Group(
             name="system_prompt",
             label=LocaleString(
@@ -257,12 +516,227 @@ async def main():
                         it="Inglese",
                     ),
                     help=LocaleString(
-                        en="The system prompt that guides the agent's behavior and responses.",
-                        de="Der Systemprompt, der das Verhalten und die Antworten des Agenten steuert.",
-                        fr="Le prompt système qui guide le comportement et les réponses de l'agent.",
-                        it="Il prompt di sistema che guida il comportamento e le risposte dell'agente.",
+                        en="The system prompt that guides the agent's behavior and responses (English).",
+                        de="Der Systemprompt, der das Verhalten und die Antworten des Agenten steuert (Englisch).",
+                        fr="Le prompt système qui guide le comportement et les réponses de l'agent (Anglais).",
+                        it="Il prompt di sistema che guida il comportamento e le risposte dell'agente (Inglese).",
                     ),
                     rows=10,
+                    auto_resize=True,
+                ),
+                Textarea(
+                    name="de",
+                    label=LocaleString(
+                        en="German",
+                        de="Deutsch",
+                        fr="Allemand",
+                        it="Tedesco",
+                    ),
+                    help=LocaleString(
+                        en="The system prompt that guides the agent's behavior and responses (German).",
+                        de="Der Systemprompt, der das Verhalten und die Antworten des Agenten steuert (Deutsch).",
+                        fr="Le prompt système qui guide le comportement et les réponses de l'agent (Allemand).",
+                        it="Il prompt di sistema che guida il comportamento e le risposte dell'agente (Tedesco).",
+                    ),
+                    rows=10,
+                    auto_resize=True,
+                ),
+                Textarea(
+                    name="fr",
+                    label=LocaleString(
+                        en="French",
+                        de="Französisch",
+                        fr="Français",
+                        it="Francese",
+                    ),
+                    help=LocaleString(
+                        en="The system prompt that guides the agent's behavior and responses (French).",
+                        de="Der Systemprompt, der das Verhalten und die Antworten des Agenten steuert (Französisch).",
+                        fr="Le prompt système qui guide le comportement et les réponses de l'agent (Français).",
+                        it="Il prompt di sistema che guida il comportamento e le risposte dell'agente (Francese).",
+                    ),
+                    rows=10,
+                    auto_resize=True,
+                ),
+                Textarea(
+                    name="it",
+                    label=LocaleString(
+                        en="Italian",
+                        de="Italienisch",
+                        fr="Italien",
+                        it="Italiano",
+                    ),
+                    help=LocaleString(
+                        en="The system prompt that guides the agent's behavior and responses (Italian).",
+                        de="Der Systemprompt, der das Verhalten und die Antworten des Agenten steuert (Italienisch).",
+                        fr="Le prompt système qui guide le comportement et les réponses de l'agent (Italien).",
+                        it="Il prompt di sistema che guida il comportamento e le risposte dell'agente (Italiano).",
+                    ),
+                    rows=10,
+                    auto_resize=True,
+                ),
+            ],
+        ),
+        # =============================================================================
+        # Context Prompt Group (LocaleString) - Optional template for context
+        # =============================================================================
+        Group(
+            name="context_prompt",
+            label=LocaleString(
+                en="Context Prompt",
+                de="Kontextprompt",
+                fr="Prompt de contexte",
+                it="Prompt di contesto",
+            ),
+            children=[
+                Textarea(
+                    name="en",
+                    label=LocaleString(
+                        en="English",
+                        de="Englisch",
+                        fr="Anglais",
+                        it="Inglese",
+                    ),
+                    help=LocaleString(
+                        en="Prompt template for providing context (e.g., retrieved documents) to the LLM.",
+                        de="Prompt-Vorlage für die Bereitstellung von Kontext (z.B. abgerufene Dokumente) an das LLM.",
+                        fr="Modèle de prompt pour fournir le contexte (par ex. documents récupérés) au LLM.",
+                        it="Template del prompt per fornire contesto (es. documenti recuperati) all'LLM.",
+                    ),
+                    rows=5,
+                    auto_resize=True,
+                ),
+                Textarea(
+                    name="de",
+                    label=LocaleString(
+                        en="German",
+                        de="Deutsch",
+                        fr="Allemand",
+                        it="Tedesco",
+                    ),
+                    help=LocaleString(
+                        en="Context prompt template (German).",
+                        de="Kontextprompt-Vorlage (Deutsch).",
+                        fr="Modèle de prompt de contexte (Allemand).",
+                        it="Template del prompt di contesto (Tedesco).",
+                    ),
+                    rows=5,
+                    auto_resize=True,
+                ),
+                Textarea(
+                    name="fr",
+                    label=LocaleString(
+                        en="French",
+                        de="Französisch",
+                        fr="Français",
+                        it="Francese",
+                    ),
+                    help=LocaleString(
+                        en="Context prompt template (French).",
+                        de="Kontextprompt-Vorlage (Französisch).",
+                        fr="Modèle de prompt de contexte (Français).",
+                        it="Template del prompt di contesto (Francese).",
+                    ),
+                    rows=5,
+                    auto_resize=True,
+                ),
+                Textarea(
+                    name="it",
+                    label=LocaleString(
+                        en="Italian",
+                        de="Italienisch",
+                        fr="Italien",
+                        it="Italiano",
+                    ),
+                    help=LocaleString(
+                        en="Context prompt template (Italian).",
+                        de="Kontextprompt-Vorlage (Italienisch).",
+                        fr="Modèle de prompt de contexte (Italien).",
+                        it="Template del prompt di contesto (Italiano).",
+                    ),
+                    rows=5,
+                    auto_resize=True,
+                ),
+            ],
+        ),
+        # =============================================================================
+        # Context Insufficient Prompt Group (LocaleString)
+        # =============================================================================
+        Group(
+            name="context_insufficient_prompt",
+            label=LocaleString(
+                en="Context Insufficient Prompt",
+                de="Unzureichender-Kontext-Prompt",
+                fr="Prompt contexte insuffisant",
+                it="Prompt contesto insufficiente",
+            ),
+            children=[
+                Textarea(
+                    name="en",
+                    label=LocaleString(
+                        en="English",
+                        de="Englisch",
+                        fr="Anglais",
+                        it="Inglese",
+                    ),
+                    help=LocaleString(
+                        en="Prompt used when the retrieved context is insufficient to answer the user's question.",
+                        de="Prompt, der verwendet wird, wenn der abgerufene Kontext nicht ausreicht.",
+                        fr="Prompt utilisé lorsque le contexte récupéré est insuffisant pour répondre.",
+                        it="Prompt utilizzato quando il contesto recuperato è insufficiente per rispondere.",
+                    ),
+                    rows=3,
+                    auto_resize=True,
+                ),
+                Textarea(
+                    name="de",
+                    label=LocaleString(
+                        en="German",
+                        de="Deutsch",
+                        fr="Allemand",
+                        it="Tedesco",
+                    ),
+                    help=LocaleString(
+                        en="Context insufficient prompt (German).",
+                        de="Unzureichender-Kontext-Prompt (Deutsch).",
+                        fr="Prompt contexte insuffisant (Allemand).",
+                        it="Prompt contesto insufficiente (Tedesco).",
+                    ),
+                    rows=3,
+                    auto_resize=True,
+                ),
+                Textarea(
+                    name="fr",
+                    label=LocaleString(
+                        en="French",
+                        de="Französisch",
+                        fr="Français",
+                        it="Francese",
+                    ),
+                    help=LocaleString(
+                        en="Context insufficient prompt (French).",
+                        de="Unzureichender-Kontext-Prompt (Französisch).",
+                        fr="Prompt contexte insuffisant (Français).",
+                        it="Prompt contesto insufficiente (Francese).",
+                    ),
+                    rows=3,
+                    auto_resize=True,
+                ),
+                Textarea(
+                    name="it",
+                    label=LocaleString(
+                        en="Italian",
+                        de="Italienisch",
+                        fr="Italien",
+                        it="Italiano",
+                    ),
+                    help=LocaleString(
+                        en="Context insufficient prompt (Italian).",
+                        de="Unzureichender-Kontext-Prompt (Italienisch).",
+                        fr="Prompt contexte insuffisant (Italien).",
+                        it="Prompt contesto insufficiente (Italiano).",
+                    ),
+                    rows=3,
                     auto_resize=True,
                 ),
             ],

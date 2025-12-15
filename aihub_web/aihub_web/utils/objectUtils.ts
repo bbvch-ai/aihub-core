@@ -24,7 +24,8 @@ export function flattenObject(obj: NestedObject, prefix = ''): FlatObject {
     if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
       // Recursively flatten nested objects
       Object.assign(result, flattenObject(value as NestedObject, newKey))
-    } else {
+    }
+    else {
       // Leaf value (primitive, array, or null)
       result[newKey] = value
     }
@@ -70,7 +71,7 @@ export function unflattenObject(obj: FlatObject): NestedObject {
  * // Returns: { a: { b: 3, c: 2 } }
  */
 export function deepMerge(base: NestedObject, override: NestedObject): NestedObject {
-  const result = {...base}
+  const result = { ...base }
 
   for (const [key, value] of Object.entries(override)) {
     if (
@@ -83,7 +84,8 @@ export function deepMerge(base: NestedObject, override: NestedObject): NestedObj
       && !Array.isArray(value)
     ) {
       result[key] = deepMerge(result[key] as NestedObject, value as NestedObject)
-    } else {
+    }
+    else {
       result[key] = value
     }
   }
