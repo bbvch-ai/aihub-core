@@ -4,13 +4,14 @@ Shared step functions for RAG-based agents.
 These functions extract reusable logic from RAG agent steps.
 """
 
-from typing import TYPE_CHECKING
+from collections.abc import Callable
 
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
 from aihub_lib.generative_ai.guards.few_shot_guard import few_shot_guard
 from aihub_lib.generative_ai.resources.models.llm.message_preprocessor import merge_consecutive_messages
+from aihub_lib.generative_ai.retrievers import BaseRetrieverConfig
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
 from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
 from aihub_lib.generative_ai.utils.rerank_nodes import rerank_nodes
@@ -29,17 +30,11 @@ from aihub_lib.nats.events.semantic.reranker import RerankerEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms import LLM
-from llama_index.core.schema import NodeWithScore
 
+from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
 from aihub_agent.agents.RagAgent.events.ContextInsufficientWithQueryEvent import ContextInsufficientWithQueryEvent
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
-
-if TYPE_CHECKING:
-    from aihub_lib.generative_ai.resources.models.configs.RerankingConfig import RerankingConfig
-    from aihub_lib.generative_ai.resources.models.llm.TokenCounter import TokenCounter
-    from aihub_lib.generative_ai.resources.retriever.BaseRetriever import BaseRetriever
-
-    from aihub_agent.context.run.RunContext import RunContext
+from aihub_agent.context.run.RunContext import RunContext
 
 
 def get_query_from_event(event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent) -> str:
@@ -49,7 +44,7 @@ def get_query_from_event(event: StandaloneQuestionCondenserEvent | ContextInsuff
     return event.new_query
 
 
-def get_nodes_from_event(event: RetrieverEvent | RerankerEvent) -> list[NodeWithScore]:
+def get_nodes_from_event(event: RetrieverEvent | RerankerEvent) -> list[IngestedNode]:
     """Extract nodes from a retriever or reranker event."""
     if isinstance(event, RerankerEvent):
         return event.output_nodes
@@ -122,7 +117,7 @@ async def do_few_shot_guard(
 
 async def do_retrieve(
     query: str,
-    retrievers: list["BaseRetriever"],
+    retrievers: list[BaseRetrieverConfig],
     displayer: EventDisplayer,
     t: LocaleHandler,
 ) -> RetrieverEvent:
@@ -135,7 +130,7 @@ async def do_retrieve(
 async def do_rerank_nodes(
     nodes: list[IngestedNode],
     query: str | None,
-    reranking_config: "RerankingConfig",
+    reranking_config: RerankingConfig,
 ) -> RerankerEvent:
     """Rerank nodes and build RerankerEvent."""
     reranked_nodes = await rerank_nodes(
@@ -173,7 +168,7 @@ async def do_context_sufficient_guard(
     context: str | None,
     check_context_sufficiency: bool | None,
     max_hops: int,
-    run_context: "RunContext",
+    run_context: RunContext,
     llm: LLM,
     displayer: EventDisplayer,
     t: LocaleHandler,
@@ -214,7 +209,7 @@ def do_limit_chat_history_with_context(
     context_message: ChatMessage,
     chat_history: list[ChatMessage],
     last_user_message: ChatMessage | None,
-    tokenizer: "TokenCounter",
+    tokenizer: Callable[[str], list[int]],
     number_of_input_tokens: int,
 ) -> list[ChatMessage]:
     """Limit chat history including context and return limited history."""

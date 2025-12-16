@@ -3,7 +3,7 @@ from typing import Annotated
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.generative_ai.retrievers import RetrieverConfig
+from aihub_lib.generative_ai.retrievers import BaseRetrieverConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
 
@@ -29,7 +29,7 @@ class ExpertRAGAgentConfig(AgentConfig):
     ]
 
     retrievers: Annotated[
-        list[RetrieverConfig],
+        list[BaseRetrieverConfig],
         Field(description="List of retriever configurations (knowledge, insight)."),
     ]
 

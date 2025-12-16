@@ -4,13 +4,13 @@ import asyncio
 
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
-from aihub_lib.generative_ai.retrievers import RetrieverConfig, create_retriever
+from aihub_lib.generative_ai.retrievers import BaseRetrieverConfig, create_retriever
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 
 
 async def retrieve_from_all_sources(
     query: str,
-    retriever_configs: list[RetrieverConfig],
+    retriever_configs: list[BaseRetrieverConfig],
     displayer: EventDisplayer,
     t: LocaleHandler,
 ) -> list[IngestedNode]:
