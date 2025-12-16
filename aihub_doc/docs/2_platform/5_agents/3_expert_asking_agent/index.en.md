@@ -55,11 +55,11 @@ sequenceDiagram
 
 The sequence diagram shows the complete consultation workflow.
 
-The user asks the Expert RAG Agent a question. The agent searches the knowledge base. If the search returns
-insufficient information, the agent informs the user and requests permission to consult an expert.
+The user asks the Expert RAG Agent a question. The agent searches the knowledge base. If the search returns insufficient
+information, the agent informs the user and requests permission to consult an expert.
 
-With user consent, the RAG Agent delegates to the Expert Asking Agent using the agent-in-the-loop pattern. The
-Asking Agent posts the question to a configured Teams or Slack channel, notifying the designated expert.
+With user consent, the RAG Agent delegates to the Expert Asking Agent using the agent-in-the-loop pattern. The Asking
+Agent posts the question to a configured Teams or Slack channel, notifying the designated expert.
 
 The expert provides an answer in the channel thread. The Asking Agent can evaluate response completeness and ask
 follow-up questions if needed. Once satisfied, it stores the answer in the knowledge base and returns the response to
@@ -127,8 +127,8 @@ To find these values:
 
 - **SLACK_CHANNEL_ID**: In Slack, right-click the channel name and select "Copy link". The channel ID is the last part
   of the URL (starts with "C").
-- **SLACK_SERVICE_URL**: Use `https://slack.botframework.com` for global or
-  `https://europe.slack.botframework.com` for EU data residency.
+- **SLACK_SERVICE_URL**: Use `https://slack.botframework.com` for global or `https://europe.slack.botframework.com` for
+  EU data residency.
 
 ## Deployment
 
