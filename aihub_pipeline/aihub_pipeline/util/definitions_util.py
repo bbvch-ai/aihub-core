@@ -98,7 +98,7 @@ def default_definitions(
 
     Pipeline: S3 → Document Processing → Mongo → Node Chunking → Summary Generation → Milvus
     """
-    document_partitions = DynamicPartitionsDefinition(name="document_partitions")
+    document_partitions = DynamicPartitionsDefinition(name=f"{datalake_container_name}_document_partitions")
 
     data_lake_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "data_lake"])
     document_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "documents"])
@@ -211,7 +211,7 @@ def default_sharepoint_to_datalake_definitions(
     This is the first step - combine with default_definitions() to process files into
     embeddings for RAG applications.
     """
-    sharepoint_partitions = DynamicPartitionsDefinition(name="sharepoint_partitions")
+    sharepoint_partitions = DynamicPartitionsDefinition(name=f"{datalake_container_name}_sharepoint_partitions")
 
     sharepoint_key = AssetKey([datalake_container_name, "sharepoint_to_datalake", "sharepoint"])
     data_lake_files_key = AssetKey([datalake_container_name, "sharepoint_to_datalake", "data_lake_files"])
@@ -305,7 +305,7 @@ def default_local_filesystem_to_datalake_definitions(
     This is the first step - combine with default_definitions() to process files into
     embeddings for RAG applications.
     """
-    filesystem_partitions = DynamicPartitionsDefinition(name="local_fs_partitions")
+    filesystem_partitions = DynamicPartitionsDefinition(name=f"{datalake_container_name}_local_fs_partitions")
 
     filesystem_key = AssetKey([datalake_container_name, "local_fs_to_datalake", "local_fs"])
     data_lake_files_key = AssetKey([datalake_container_name, "local_fs_to_datalake", "data_lake_files"])

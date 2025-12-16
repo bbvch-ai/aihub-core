@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_pipeline"
-version = "v0.255.6"
+version = "v0.256.0"
 description = "pipeline core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -27,7 +27,7 @@ boto3 = "^1.35.0"
 
 [tool.poetry.dependencies.aihub_lib]
 git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.255.6"
+tag = "v0.256.0"
 subdirectory = "aihub_lib"
 
 [tool.poetry.group.dev.dependencies]

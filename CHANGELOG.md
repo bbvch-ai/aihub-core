@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.256.0] - 2025-12-16 - Enhanced Dynamic Partition Naming for Clarity
+
+### Refactor
+
+- 🔄 **Improved Dynamic Partition Naming:** Dynamic partition definitions for various data sources (documents,
+  SharePoint, and local filesystem) now automatically incorporate the `datalake_container_name` as a prefix. This
+  ensures unique and contextually relevant partition names, enhancing system clarity and preventing potential naming
+  collisions in complex environments.
+
+---
+
 ## [v0.255.6] - 2025-12-12 - Smarter Data Lake Cleanup and Milvus Compatibility
 
 ### Added
