@@ -37,7 +37,6 @@ from aihub_agent.rag.step_functions import (
     do_order_nodes_by_documents,
     do_rerank_nodes,
     do_retrieve,
-    get_query_from_event,
 )
 from aihub_agent.workflow.decorators.precondition import precondition
 from aihub_agent.workflow.decorators.step import step
@@ -157,8 +156,7 @@ class RAGAgent(Agent):
         t: LocaleHandler,
     ) -> RetrieverEvent:
         """Retrieves relevant nodes from multiple knowledge sources in parallel."""
-        query = get_query_from_event(event)
-        return await do_retrieve(query, agent_config.retrievers, displayer, t)
+        return await do_retrieve(event, agent_config.retrievers, displayer, t)
 
     @step(
         name=LocaleString(en="Rerank Retrieved Nodes"),

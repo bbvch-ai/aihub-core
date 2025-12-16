@@ -15,8 +15,6 @@ from aihub_agent.rag.step_functions import (
     do_rerank_nodes,
     do_retrieve,
     format_expert_conversation,
-    get_nodes_from_event,
-    get_query_from_event,
 )
 
 __all__ = [
@@ -28,8 +26,6 @@ __all__ = [
     "check_context_ready_for_history_limit",
     "check_context_ready_for_history_limit_with_expert",
     # Step functions - utility functions
-    "get_query_from_event",
-    "get_nodes_from_event",
     "format_expert_conversation",
     "build_llm_response_messages",
     # Step functions - business logic

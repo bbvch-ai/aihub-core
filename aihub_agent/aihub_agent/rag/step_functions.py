@@ -37,20 +37,6 @@ from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import 
 from aihub_agent.context.run.RunContext import RunContext
 
 
-def get_query_from_event(event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent) -> str:
-    """Extract query string from a condenser or insufficient context event."""
-    if isinstance(event, StandaloneQuestionCondenserEvent):
-        return event.condensed_chat_message.content or ""
-    return event.new_query
-
-
-def get_nodes_from_event(event: RetrieverEvent | RerankerEvent) -> list[IngestedNode]:
-    """Extract nodes from a retriever or reranker event."""
-    if isinstance(event, RerankerEvent):
-        return event.output_nodes
-    return event.nodes
-
-
 def format_expert_conversation(conversation: list[ChatMessage]) -> str:
     """Format an expert conversation as a text string for context."""
     conversation_parts = []
@@ -116,12 +102,16 @@ async def do_few_shot_guard(
 
 
 async def do_retrieve(
-    query: str,
+    event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
     retrievers: list[BaseRetrieverConfig],
     displayer: EventDisplayer,
     t: LocaleHandler,
 ) -> RetrieverEvent:
     """Retrieve nodes from all sources and return RetrieverEvent."""
+    if isinstance(event, StandaloneQuestionCondenserEvent):
+        query = event.condensed_chat_message.content or ""
+    else:
+        query = event.new_query
     all_nodes = await retrieve_from_all_sources(query, retrievers, displayer, t)
     nodes_with_score = [node.to_llama_index_node_with_score() for node in all_nodes]
     return RetrieverEvent.from_nodes(nodes_with_score)
@@ -155,7 +145,7 @@ def do_order_nodes_by_documents(
     context_prompt: LocaleString | None,
 ) -> ChatMessage:
     """Order nodes and return context message."""
-    nodes = get_nodes_from_event(event)
+    nodes = event.output_nodes if isinstance(event, RerankerEvent) else event.nodes
     return combine_nodes_in_order(
         context_nodes=nodes,
         t=t,
