@@ -7,17 +7,20 @@ from aihub_lib.generative_ai.retrievers import RetrieverConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
 
+from aihub_agent.agents.RagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
 
 
-class RAGAgentConfig(AgentConfig):
+class ExpertRAGAgentConfig(AgentConfig):
     """
-    Configuration for a RAGAgent with multiple retrieval sources.
+    Configuration for an ExpertRAGAgent with multiple retrieval sources and expert escalation.
 
     Supports:
     - Multiple retrievers (knowledge base + insights)
+    - Expert escalation when context is insufficient (required)
 
-    Note: For expert escalation functionality, use ExpertRAGAgentConfig instead.
+    The expert escalation workflow allows the agent to consult human experts
+    when the retrieved context is insufficient to answer the user's question.
     """
 
     llm: Annotated[
@@ -33,6 +36,12 @@ class RAGAgentConfig(AgentConfig):
     number_of_input_tokens: Annotated[
         int, Field(description="Maximum tokens allowed in input to manage context size or cost.")
     ]
+
+    expert_escalation: Annotated[
+        ExpertEscalationConfig,
+        Field(description="Expert escalation config. Required for ExpertRAGAgent."),
+    ]
+
     context_prompt: Annotated[
         LocaleString | None,
         Field(description="Prompt template for providing context (e.g., retrieved documents) to the LLM."),
