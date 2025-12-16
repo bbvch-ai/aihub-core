@@ -30,12 +30,12 @@ from aihub_agent.rag.preconditions import (
     check_reranking_enabled,
 )
 from aihub_agent.rag.step_functions import (
-    build_llm_response_messages,
     do_context_sufficient_guard,
     do_few_shot_guard,
     do_limit_chat_history_with_context,
     do_order_nodes_by_documents,
     do_rerank_nodes,
+    do_respond_with_llm,
     do_retrieve,
 )
 from aihub_agent.workflow.decorators.precondition import precondition
@@ -267,18 +267,13 @@ class RAGAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> LLMStopEvent:
-        """
-        Generates a response using the configured LLM.
-        """
-        await displayer.display_thought(t("agent.thought.write_answer_based_on_information"))
-
-        messages = build_llm_response_messages(
+        """Generates a response using the configured LLM."""
+        return await do_respond_with_llm(
             event=event,
             limited_history_without_context=limited_history_without_context.limited_history,
             context_insufficient_prompt=agent_config.context_insufficient_prompt,
             system_prompt=agent_config.system_prompt,
+            llm_config=agent_config.llm,
+            displayer=displayer,
             t=t,
         )
-
-        async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            return await displayer.display_llm_stream(agent_config.llm, llm, messages, as_stop_step=True)

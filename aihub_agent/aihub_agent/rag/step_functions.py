@@ -4,6 +4,7 @@ from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
 from aihub_lib.generative_ai.guards.few_shot_guard import few_shot_guard
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.generative_ai.resources.models.llm.message_preprocessor import merge_consecutive_messages
 from aihub_lib.generative_ai.retrievers import BaseRetrieverConfig
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
@@ -20,6 +21,7 @@ from aihub_lib.nats.events.guard import (
     FewShotAcceptEvent,
     FewShotRejectEvent,
 )
+from aihub_lib.nats.events.semantic.llm import LLMStopEvent
 from aihub_lib.nats.events.semantic.reranker import RerankerEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -31,14 +33,18 @@ from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import 
 from aihub_agent.context.run.RunContext import RunContext
 
 
-def build_llm_response_messages(
+async def do_respond_with_llm(
     event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ContextInsufficientRejectEvent | ExpertRejectEvent,
     limited_history_without_context: list[ChatMessage],
     context_insufficient_prompt: LocaleString | None,
     system_prompt: LocaleString | None,
+    llm_config: LLMConfig,
+    displayer: EventDisplayer,
     t: LocaleHandler,
-) -> list[ChatMessage]:
-    """Build the messages list for LLM response generation."""
+) -> LLMStopEvent:
+    """Generate LLM response with proper message building and streaming."""
+    await displayer.display_thought(t("agent.thought.write_answer_based_on_information"))
+
     if isinstance(event, FewShotRejectEvent | ContextInsufficientRejectEvent | ExpertRejectEvent):
         context_insufficient_prompt_text = t.extract(context_insufficient_prompt)
         prompt_text = t("agent.prompt.guard.reject").format(
@@ -59,7 +65,10 @@ def build_llm_response_messages(
         messages = [system_message] + messages
 
     # Merge consecutive messages with the same role (required by LiteLLM)
-    return merge_consecutive_messages(messages)
+    messages = merge_consecutive_messages(messages)
+
+    async with llm_config.cost_reporting_llm(displayer) as llm:
+        return await displayer.display_llm_stream(llm_config, llm, messages, as_stop_step=True)
 
 
 async def do_few_shot_guard(
@@ -96,7 +105,7 @@ async def do_retrieve(
         query = event.condensed_chat_message.content or ""
     else:
         query = event.new_query
-    all_nodes = await retrieve_from_all_sources(query, retrievers, displayer, t)
+    all_nodes = await retrieve_from_all_sources(query, retrievers, t)
     nodes_with_score = [node.to_llama_index_node_with_score() for node in all_nodes]
     return RetrieverEvent.from_nodes(nodes_with_score)
 
