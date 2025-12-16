@@ -1,12 +1,6 @@
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
-from aihub_lib.generative_ai.guards.few_shot_guard import few_shot_guard
-from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
 from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
 from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
-from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
-from aihub_lib.generative_ai.utils.rerank_nodes import rerank_nodes
-from aihub_lib.generative_ai.utils.retrieve_from_all_sources import retrieve_from_all_sources
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import (
@@ -23,7 +17,6 @@ from aihub_lib.nats.events.semantic.llm import LLMStopEvent
 from aihub_lib.nats.events.semantic.reranker import RerankerEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from aihub_lib.nats.events.user import UserMessageEvent
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
@@ -36,7 +29,16 @@ from aihub_agent.rag.preconditions import (
     check_reranking_complete_or_disabled,
     check_reranking_enabled,
 )
-from aihub_agent.rag.step_functions import build_llm_response_messages, get_nodes_from_event, get_query_from_event
+from aihub_agent.rag.step_functions import (
+    build_llm_response_messages,
+    do_context_sufficient_guard,
+    do_few_shot_guard,
+    do_limit_chat_history_with_context,
+    do_order_nodes_by_documents,
+    do_rerank_nodes,
+    do_retrieve,
+    get_query_from_event,
+)
 from aihub_agent.workflow.decorators.precondition import precondition
 from aihub_agent.workflow.decorators.step import step
 
@@ -134,21 +136,13 @@ class RAGAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> FewShotRejectEvent | FewShotAcceptEvent:
-        if not agent_config.few_shot_guard_examples:
-            return FewShotAcceptEvent(reason=t("agent.thought.no_few_shot_examples"))
-
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            guard_result = await few_shot_guard(
+            return await do_few_shot_guard(
+                condensed_question=event.condensed_chat_message.content,
+                examples=agent_config.few_shot_guard_examples,
                 llm=llm,
                 t=t,
-                user_query=event.condensed_chat_message.content,
-                examples=agent_config.few_shot_guard_examples,
             )
-
-        if not guard_result.success:
-            return FewShotRejectEvent(reason=guard_result.reasoning)
-
-        return FewShotAcceptEvent(reason=guard_result.reasoning)
 
     @step(
         name=LocaleString(en="Retrieve Nodes"),
@@ -164,9 +158,7 @@ class RAGAgent(Agent):
     ) -> RetrieverEvent:
         """Retrieves relevant nodes from multiple knowledge sources in parallel."""
         query = get_query_from_event(event)
-        all_nodes = await retrieve_from_all_sources(query, agent_config.retrievers, displayer, t)
-        nodes_with_score = [node.to_llama_index_node_with_score() for node in all_nodes]
-        return RetrieverEvent.from_nodes(nodes_with_score)
+        return await do_retrieve(query, agent_config.retrievers, displayer, t)
 
     @step(
         name=LocaleString(en="Rerank Retrieved Nodes"),
@@ -185,20 +177,10 @@ class RAGAgent(Agent):
         t: LocaleHandler,
     ) -> RerankerEvent:
         await displayer.display_thought(t("agent.thought.reranking_results"))
-
-        reranked_nodes = await rerank_nodes(
+        return await do_rerank_nodes(
             nodes=event.nodes,
             query=condense_event.condensed_chat_message.content,
-            reranking_model=agent_config.reranking_config.reranking_model,
-        )
-
-        return RerankerEvent(
-            query=condense_event.condensed_chat_message.content,
-            rerank_model_name=agent_config.reranking_config.reranking_model.model_name,
-            top_n=agent_config.reranking_config.reranking_model.top_n,
-            input_nodes=event.nodes,
-            output_nodes=reranked_nodes,
-            reranked=agent_config.reranking_config.enabled,
+            reranking_config=agent_config.reranking_config,
         )
 
     @step(
@@ -217,12 +199,7 @@ class RAGAgent(Agent):
         Orders the retrieved nodes based on their source documents.
         """
         await displayer.display_thought(t("agent.thought.searching_knowledge"))
-        nodes = get_nodes_from_event(event)
-        ordered_nodes = combine_nodes_in_order(
-            context_nodes=nodes,
-            t=t,
-            context_prompt=agent_config.context_prompt,
-        )
+        ordered_nodes = do_order_nodes_by_documents(event, t, agent_config.context_prompt)
         return InOrderNodeCombinerEvent(context_message=ordered_nodes)
 
     @step(
@@ -243,36 +220,17 @@ class RAGAgent(Agent):
         If it is insufficient a new query is generated to find more data in order
         to generate the response.
         """
-        if not agent_config.check_context_sufficiency:
-            return ContextSufficientAcceptEvent(reason=t("agent.thought.no_context_sufficiency_check"))
-
-        prev_queries = await run_context.get("prev_queries", [])
-        hop_count = await run_context.get("hop_count", 1)
-        more_hops_available = hop_count < agent_config.max_hops
-
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            guard_result = await context_sufficient_guard(
-                llm=llm,
-                t=t,
+            return await do_context_sufficient_guard(
                 user_query=user_query_event.condensed_chat_message.content,
                 context=event.context_message.content,
-                prev_queries=prev_queries,
-                more_hops_available=more_hops_available,
+                check_context_sufficiency=agent_config.check_context_sufficiency,
+                max_hops=agent_config.max_hops,
+                run_context=run_context,
+                llm=llm,
+                displayer=displayer,
+                t=t,
             )
-
-        if guard_result.success:
-            await displayer.display_thought(t("agent.thought.context_sufficient"))
-            return ContextSufficientAcceptEvent(reason=guard_result.reasoning)
-
-        if not more_hops_available:
-            return ContextInsufficientRejectEvent(reason=guard_result.reasoning)
-
-        await run_context.set("hop_count", hop_count + 1)
-        new_query = guard_result.new_query
-        prev_queries.append(new_query)
-        await run_context.set("prev_queries", prev_queries)
-        await displayer.display_thought(t("agent.thought.trying_another_retrieval_hop"))
-        return ContextInsufficientWithQueryEvent(reason=guard_result.reasoning, new_query=new_query)
 
     @step(
         name=LocaleString(en="Limit Chat History with Context"),
@@ -290,13 +248,10 @@ class RAGAgent(Agent):
         """
         Includes the combined context and truncates chat history again.
         """
-        chat_history = chat_history_event.limited_history
-        system_messages = [msg for msg in chat_history if msg.role == MessageRole.SYSTEM]
-        limited_chat_history = limit_chat_history_with_context(
+        limited_chat_history = do_limit_chat_history_with_context(
+            context_message=context_event.context_message,
             chat_history=chat_history_event.limited_history,
-            context_messages=[context_event.context_message],
-            system_messages=system_messages,
-            last_user_message=start_event.last_user_message or ChatMessage(role=MessageRole.USER, content=""),
+            last_user_message=start_event.last_user_message,
             tokenizer=agent_config.llm.token_counter,
             number_of_input_tokens=agent_config.number_of_input_tokens,
         )

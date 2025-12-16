@@ -1,9 +1,3 @@
-"""
-Shared RAG utilities for RAGAgent and ExpertRAGAgent.
-
-This module contains reusable step functions and precondition logic used by RAG-based agents.
-"""
-
 from aihub_agent.rag.preconditions import (
     check_context_ready_for_history_limit,
     check_context_ready_for_history_limit_with_expert,
@@ -14,6 +8,12 @@ from aihub_agent.rag.preconditions import (
 )
 from aihub_agent.rag.step_functions import (
     build_llm_response_messages,
+    do_context_sufficient_guard,
+    do_few_shot_guard,
+    do_limit_chat_history_with_context,
+    do_order_nodes_by_documents,
+    do_rerank_nodes,
+    do_retrieve,
     format_expert_conversation,
     get_nodes_from_event,
     get_query_from_event,
@@ -27,9 +27,16 @@ __all__ = [
     "check_is_no_answer_response",
     "check_context_ready_for_history_limit",
     "check_context_ready_for_history_limit_with_expert",
-    # Step functions
+    # Step functions - utility functions
     "get_query_from_event",
     "get_nodes_from_event",
     "format_expert_conversation",
     "build_llm_response_messages",
+    # Step functions - business logic
+    "do_few_shot_guard",
+    "do_retrieve",
+    "do_rerank_nodes",
+    "do_order_nodes_by_documents",
+    "do_context_sufficient_guard",
+    "do_limit_chat_history_with_context",
 ]

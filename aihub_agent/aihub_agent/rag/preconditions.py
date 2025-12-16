@@ -18,58 +18,24 @@ from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderN
 
 
 def check_reranking_enabled(event: RetrieverEvent, reranking_enabled: bool) -> bool:
-    """
-    Logic to check if reranking step should run.
-
-    Args:
-        event: The retriever event
-        reranking_enabled: Whether reranking is enabled in config
-
-    Returns:
-        True if reranking should run
-    """
+    """Check if reranking step should run."""
     return isinstance(event, RetrieverEvent) and reranking_enabled
 
 
 def check_reranking_complete_or_disabled(event: RetrieverEvent | RerankerEvent, reranking_enabled: bool) -> bool:
-    """
-    Logic to ensure ordering only happens after reranking is complete (or if disabled).
-
-    Args:
-        event: The retriever or reranker event
-        reranking_enabled: Whether reranking is enabled in config
-
-    Returns:
-        True if ordering step should run
-    """
+    """Ensure ordering only happens after reranking is complete (or if disabled)."""
     if not reranking_enabled:
         return isinstance(event, RetrieverEvent)
     return isinstance(event, RerankerEvent)
 
 
 def check_is_answer_response(event: AgentInTheLoop.response) -> bool:
-    """
-    Logic to check if agent-in-the-loop response is a successful answer.
-
-    Args:
-        event: The agent-in-the-loop response event
-
-    Returns:
-        True if the response contains an AnswerStopEvent
-    """
+    """Check if agent-in-the-loop response is a successful answer."""
     return isinstance(event.stop_event, AnswerStopEvent)
 
 
 def check_is_no_answer_response(event: AgentInTheLoop.response) -> bool:
-    """
-    Logic to check if agent-in-the-loop response is an unsuccessful answer.
-
-    Args:
-        event: The agent-in-the-loop response event
-
-    Returns:
-        True if the response contains a NoAnswerStopEvent
-    """
+    """Check if agent-in-the-loop response is an unsuccessful answer."""
     return isinstance(event.stop_event, NoAnswerStopEvent)
 
 
@@ -77,18 +43,7 @@ def check_context_ready_for_history_limit(
     context_event: InOrderNodeCombinerEvent,
     context_sufficient_event: ContextSufficientAcceptEvent | None,
 ) -> bool:
-    """
-    Logic to check if context is ready for history limiting (RAGAgent version).
-
-    For RAGAgent (no expert flow), we need ContextSufficientAcceptEvent.
-
-    Args:
-        context_event: The context event (InOrderNodeCombinerEvent)
-        context_sufficient_event: The context sufficient event (optional)
-
-    Returns:
-        True if history limiting step should run
-    """
+    """Check if context is ready for history limiting (RAGAgent version)."""
     return context_sufficient_event is not None
 
 
@@ -96,20 +51,7 @@ def check_context_ready_for_history_limit_with_expert(
     context_event: InOrderNodeCombinerEvent | ExpertAnswerContextEvent,
     context_sufficient_event: ContextSufficientAcceptEvent | None,
 ) -> bool:
-    """
-    Logic to check if context is ready for history limiting (ExpertRAGAgent version).
-
-    For ExpertRAGAgent, we allow either:
-    - ExpertAnswerContextEvent (expert flow), OR
-    - InOrderNodeCombinerEvent with ContextSufficientAcceptEvent (normal RAG flow)
-
-    Args:
-        context_event: The context event (InOrderNodeCombinerEvent or ExpertAnswerContextEvent)
-        context_sufficient_event: The context sufficient event (optional)
-
-    Returns:
-        True if history limiting step should run
-    """
+    """Check if context is ready for history limiting (ExpertRAGAgent version)."""
     if isinstance(context_event, ExpertAnswerContextEvent):
         return True
     return context_sufficient_event is not None

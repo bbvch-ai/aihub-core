@@ -4,64 +4,59 @@ Shared step functions for RAG-based agents.
 These functions extract reusable logic from RAG agent steps.
 """
 
+from typing import TYPE_CHECKING
+
+from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
+from aihub_lib.generative_ai.guards.few_shot_guard import few_shot_guard
 from aihub_lib.generative_ai.resources.models.llm.message_preprocessor import merge_consecutive_messages
+from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
+from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
+from aihub_lib.generative_ai.utils.rerank_nodes import rerank_nodes
+from aihub_lib.generative_ai.utils.retrieve_from_all_sources import retrieve_from_all_sources
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StandaloneQuestionCondenserEvent
 from aihub_lib.nats.events.guard import (
     ContextInsufficientRejectEvent,
+    ContextSufficientAcceptEvent,
     ExpertRejectEvent,
+    FewShotAcceptEvent,
     FewShotRejectEvent,
 )
 from aihub_lib.nats.events.semantic.reranker import RerankerEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.llms import LLM
 from llama_index.core.schema import NodeWithScore
 
 from aihub_agent.agents.RagAgent.events.ContextInsufficientWithQueryEvent import ContextInsufficientWithQueryEvent
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 
+if TYPE_CHECKING:
+    from aihub_lib.generative_ai.resources.models.configs.RerankingConfig import RerankingConfig
+    from aihub_lib.generative_ai.resources.models.llm.TokenCounter import TokenCounter
+    from aihub_lib.generative_ai.resources.retriever.BaseRetriever import BaseRetriever
+
+    from aihub_agent.context.run.RunContext import RunContext
+
 
 def get_query_from_event(event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent) -> str:
-    """
-    Extract query string from a condenser or insufficient context event.
-
-    Args:
-        event: Either a StandaloneQuestionCondenserEvent or ContextInsufficientWithQueryEvent
-
-    Returns:
-        The query string to use for retrieval
-    """
+    """Extract query string from a condenser or insufficient context event."""
     if isinstance(event, StandaloneQuestionCondenserEvent):
         return event.condensed_chat_message.content or ""
     return event.new_query
 
 
 def get_nodes_from_event(event: RetrieverEvent | RerankerEvent) -> list[NodeWithScore]:
-    """
-    Extract nodes from a retriever or reranker event.
-
-    Args:
-        event: Either a RetrieverEvent or RerankerEvent
-
-    Returns:
-        List of nodes with scores
-    """
+    """Extract nodes from a retriever or reranker event."""
     if isinstance(event, RerankerEvent):
         return event.output_nodes
     return event.nodes
 
 
 def format_expert_conversation(conversation: list[ChatMessage]) -> str:
-    """
-    Format an expert conversation as a text string for context.
-
-    Args:
-        conversation: List of chat messages from expert conversation
-
-    Returns:
-        Formatted conversation text with Agent:/Expert: labels
-    """
+    """Format an expert conversation as a text string for context."""
     conversation_parts = []
     for msg in conversation:
         role_label = "Agent" if msg.role == MessageRole.ASSISTANT else "Expert"
@@ -77,21 +72,7 @@ def build_llm_response_messages(
     system_prompt: LocaleString | None,
     t: LocaleHandler,
 ) -> list[ChatMessage]:
-    """
-    Build the messages list for LLM response generation.
-
-    Handles both normal responses (with context) and reject responses (few-shot, context insufficient, expert reject).
-
-    Args:
-        event: The event containing response data or rejection info
-        limited_history_without_context: Chat history without context (for reject responses)
-        context_insufficient_prompt: Prompt for context insufficient cases
-        system_prompt: Optional system prompt
-        t: Locale handler for translations
-
-    Returns:
-        List of ChatMessages ready for LLM
-    """
+    """Build the messages list for LLM response generation."""
     if isinstance(event, FewShotRejectEvent | ContextInsufficientRejectEvent | ExpertRejectEvent):
         context_insufficient_prompt_text = t.extract(context_insufficient_prompt)
         prompt_text = t("agent.prompt.guard.reject").format(
@@ -113,3 +94,135 @@ def build_llm_response_messages(
 
     # Merge consecutive messages with the same role (required by LiteLLM)
     return merge_consecutive_messages(messages)
+
+
+async def do_few_shot_guard(
+    condensed_question: str | None,
+    examples: list | None,
+    llm: LLM,
+    t: LocaleHandler,
+) -> FewShotRejectEvent | FewShotAcceptEvent:
+    """Execute few-shot guard logic and return appropriate event."""
+    if not examples:
+        return FewShotAcceptEvent(reason=t("agent.thought.no_few_shot_examples"))
+
+    guard_result = await few_shot_guard(
+        llm=llm,
+        t=t,
+        user_query=condensed_question,
+        examples=examples,
+    )
+
+    if not guard_result.success:
+        return FewShotRejectEvent(reason=guard_result.reasoning)
+
+    return FewShotAcceptEvent(reason=guard_result.reasoning)
+
+
+async def do_retrieve(
+    query: str,
+    retrievers: list["BaseRetriever"],
+    displayer: EventDisplayer,
+    t: LocaleHandler,
+) -> RetrieverEvent:
+    """Retrieve nodes from all sources and return RetrieverEvent."""
+    all_nodes = await retrieve_from_all_sources(query, retrievers, displayer, t)
+    nodes_with_score = [node.to_llama_index_node_with_score() for node in all_nodes]
+    return RetrieverEvent.from_nodes(nodes_with_score)
+
+
+async def do_rerank_nodes(
+    nodes: list[NodeWithScore],
+    query: str | None,
+    reranking_config: "RerankingConfig",
+) -> RerankerEvent:
+    """Rerank nodes and build RerankerEvent."""
+    reranked_nodes = await rerank_nodes(
+        nodes=nodes,
+        query=query,
+        reranking_model=reranking_config.reranking_model,
+    )
+
+    return RerankerEvent(
+        query=query,
+        rerank_model_name=reranking_config.reranking_model.model_name,
+        top_n=reranking_config.reranking_model.top_n,
+        input_nodes=nodes,
+        output_nodes=reranked_nodes,
+        reranked=reranking_config.enabled,
+    )
+
+
+def do_order_nodes_by_documents(
+    event: RetrieverEvent | RerankerEvent,
+    t: LocaleHandler,
+    context_prompt: LocaleString | None,
+) -> ChatMessage:
+    """Order nodes and return context message."""
+    nodes = get_nodes_from_event(event)
+    return combine_nodes_in_order(
+        context_nodes=nodes,
+        t=t,
+        context_prompt=context_prompt,
+    )
+
+
+async def do_context_sufficient_guard(
+    user_query: str | None,
+    context: str | None,
+    check_context_sufficiency: bool | None,
+    max_hops: int,
+    run_context: "RunContext",
+    llm: LLM,
+    displayer: EventDisplayer,
+    t: LocaleHandler,
+) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
+    """Execute context sufficient guard with hop management."""
+    if not check_context_sufficiency:
+        return ContextSufficientAcceptEvent(reason=t("agent.thought.no_context_sufficiency_check"))
+
+    prev_queries = await run_context.get("prev_queries", [])
+    hop_count = await run_context.get("hop_count", 1)
+    more_hops_available = hop_count < max_hops
+
+    guard_result = await context_sufficient_guard(
+        llm=llm,
+        t=t,
+        user_query=user_query,
+        context=context,
+        prev_queries=prev_queries,
+        more_hops_available=more_hops_available,
+    )
+
+    if guard_result.success:
+        await displayer.display_thought(t("agent.thought.context_sufficient"))
+        return ContextSufficientAcceptEvent(reason=guard_result.reasoning)
+
+    if not more_hops_available:
+        return ContextInsufficientRejectEvent(reason=guard_result.reasoning)
+
+    await run_context.set("hop_count", hop_count + 1)
+    new_query = guard_result.new_query
+    prev_queries.append(new_query)
+    await run_context.set("prev_queries", prev_queries)
+    await displayer.display_thought(t("agent.thought.trying_another_retrieval_hop"))
+    return ContextInsufficientWithQueryEvent(reason=guard_result.reasoning, new_query=new_query)
+
+
+def do_limit_chat_history_with_context(
+    context_message: ChatMessage,
+    chat_history: list[ChatMessage],
+    last_user_message: ChatMessage | None,
+    tokenizer: "TokenCounter",
+    number_of_input_tokens: int,
+) -> list[ChatMessage]:
+    """Limit chat history including context and return limited history."""
+    system_messages = [msg for msg in chat_history if msg.role == MessageRole.SYSTEM]
+    return limit_chat_history_with_context(
+        chat_history=chat_history,
+        context_messages=[context_message],
+        system_messages=system_messages,
+        last_user_message=last_user_message or ChatMessage(role=MessageRole.USER, content=""),
+        tokenizer=tokenizer,
+        number_of_input_tokens=number_of_input_tokens,
+    )
