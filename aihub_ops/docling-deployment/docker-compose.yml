@@ -148,12 +148,44 @@ services:
       - "traefik.http.routers.litellm.middlewares=security-headers"
 
   # ===================================================================
+  # Docling Model Downloader (Init Container)
+  # ===================================================================
+  # Downloads all required models on first run, then exits
+  # Runs before docling-serve to ensure models are available
+  # ===================================================================
+  docling-init:
+    container_name: docling-init
+    image: quay.io/docling-project/docling-serve-cu128:v1.9.0
+    user: root
+    volumes:
+      - docling-models:/models
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        if [ -f /models/.initialized ]; then
+          echo "Models already downloaded, skipping..."
+        else
+          echo "Downloading Docling models (layout, tableformer, code_formula, picture_classifier, rapidocr, easyocr)..."
+          docling-tools models download layout tableformer code_formula picture_classifier rapidocr easyocr -o /models
+          chown -R 1001:0 /models
+          chmod -R g+rwX /models
+          touch /models/.initialized
+          echo "Models downloaded successfully!"
+        fi
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+
+  # ===================================================================
   # Docling Serve - Document Processing API
   # ===================================================================
   # Provides document conversion via Docling with GPU acceleration
   # Subdomain: serve.docling.ai-agents.ch
   # Auth: IP allowlist via Traefik middleware
   # Image: cu128 for CUDA 12.8+ (compatible with host CUDA 13.0)
+  # Models: Pre-downloaded to avoid cache path issues with HuggingFace
   # ===================================================================
   docling-serve:
     container_name: docling-serve
@@ -161,6 +193,12 @@ services:
     restart: always
     environment:
       DOCLING_SERVE_ENABLE_UI: "true"
+      DOCLING_SERVE_ARTIFACTS_PATH: /models
+    volumes:
+      - docling-models:/models
+    depends_on:
+      docling-init:
+        condition: service_completed_successfully
     deploy:
       resources:
         reservations:
@@ -200,4 +238,6 @@ volumes:
   postgres-data:
     driver: local
   huggingface-cache:
+    driver: local
+  docling-models:
     driver: local
