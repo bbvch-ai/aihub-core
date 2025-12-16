@@ -2,13 +2,11 @@ import asyncio
 
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
+from aihub_lib.generative_ai.processors.models.RetrieveSummariesConfig import RetrieveSummariesConfig
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.generative_ai.retrievers import (
-    InsightRetrieverConfig,
-    KnowledgeRetrieverConfig,
-    RetrieveSummariesConfig,
-)
+from aihub_lib.generative_ai.retrievers.InsightRetrieverConfig import InsightRetrieverConfig
+from aihub_lib.generative_ai.retrievers.KnowledgeRetrieverConfig import KnowledgeRetrieverConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings

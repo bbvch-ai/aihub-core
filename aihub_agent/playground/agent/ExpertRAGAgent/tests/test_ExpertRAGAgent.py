@@ -1,4 +1,6 @@
 # ruff: noqa: E402
+from aihub_lib.generative_ai.retrievers.KnowledgeRetrieverConfig import KnowledgeRetrieverConfig
+
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
 
 AihubInstrumentor().instrument()
@@ -15,7 +17,6 @@ from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeO
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.generative_ai.resources.models.llm.RerankingModelConfig import RerankingModelConfig
-from aihub_lib.generative_ai.retrievers import KnowledgeRetrieverConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.logging.logger import enable_logging

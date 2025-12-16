@@ -1,9 +1,8 @@
-"""Helper function to retrieve from multiple configured sources in parallel."""
-
 import asyncio
 
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
-from aihub_lib.generative_ai.retrievers import BaseRetrieverConfig, create_retriever
+from aihub_lib.generative_ai.retrievers.BaseRetrieverConfig import BaseRetrieverConfig
+from aihub_lib.generative_ai.retrievers.create_retriever import create_retriever
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 
 
