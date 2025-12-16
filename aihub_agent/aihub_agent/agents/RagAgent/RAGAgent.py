@@ -1,6 +1,4 @@
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
-from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import (
@@ -30,8 +28,10 @@ from aihub_agent.rag.preconditions import (
     check_reranking_enabled,
 )
 from aihub_agent.rag.step_functions import (
+    do_condense_standalone_question,
     do_context_sufficient_guard,
     do_few_shot_guard,
+    do_limit_chat_history,
     do_limit_chat_history_with_context,
     do_order_nodes_by_documents,
     do_rerank_nodes,
@@ -93,14 +93,7 @@ class RAGAgent(Agent):
         event: UserMessageEvent,
         agent_config: RAGAgentConfig,
     ) -> LimitChatHistoryEvent:
-        """
-        Truncates incoming chat messages to fit within the configured token limit
-        """
-        limited_chat_history = limit_chat_history(
-            chat_history=event.messages,
-            number_of_input_tokens=agent_config.number_of_input_tokens,
-        )
-        return LimitChatHistoryEvent(limited_history=limited_chat_history)
+        return do_limit_chat_history(event.messages, agent_config.number_of_input_tokens)
 
     @step(
         name=LocaleString(en="Condense Standalone Question"),
@@ -114,15 +107,9 @@ class RAGAgent(Agent):
         t: LocaleHandler,
         displayer: EventDisplayer,
     ) -> StandaloneQuestionCondenserEvent:
-        """
-        Condenses the chat history and user query into a standalone question.
-        """
-        await displayer.display_thought(t("agent.thought.condense_question"))
-        async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            condensed_question = condense_standalone_question(
-                chat_history=event.limited_history, message=start_event.last_user_message, t=t, llm=llm
-            )
-            return StandaloneQuestionCondenserEvent(condensed_chat_message=condensed_question)
+        return await do_condense_standalone_question(
+            event.limited_history, start_event.last_user_message, agent_config.llm, displayer, t
+        )
 
     @step(
         name=LocaleString(en="Few Shot Guard"),
@@ -135,13 +122,9 @@ class RAGAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> FewShotRejectEvent | FewShotAcceptEvent:
-        async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            return await do_few_shot_guard(
-                condensed_question=event.condensed_chat_message.content,
-                examples=agent_config.few_shot_guard_examples,
-                llm=llm,
-                t=t,
-            )
+        return await do_few_shot_guard(
+            event.condensed_chat_message.content, agent_config.few_shot_guard_examples, agent_config.llm, displayer, t
+        )
 
     @step(
         name=LocaleString(en="Retrieve Nodes"),
@@ -173,11 +156,8 @@ class RAGAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> RerankerEvent:
-        await displayer.display_thought(t("agent.thought.reranking_results"))
         return await do_rerank_nodes(
-            nodes=event.nodes,
-            query=condense_event.condensed_chat_message.content,
-            reranking_config=agent_config.reranking_config,
+            event.nodes, condense_event.condensed_chat_message.content, agent_config.reranking_config, displayer, t
         )
 
     @step(
@@ -192,12 +172,7 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
     ) -> InOrderNodeCombinerEvent:
-        """
-        Orders the retrieved nodes based on their source documents.
-        """
-        await displayer.display_thought(t("agent.thought.searching_knowledge"))
-        ordered_nodes = do_order_nodes_by_documents(event, t, agent_config.context_prompt)
-        return InOrderNodeCombinerEvent(context_message=ordered_nodes)
+        return await do_order_nodes_by_documents(event, t, agent_config.context_prompt, displayer)
 
     @step(
         name=LocaleString(en="Context Sufficient Guard"),
@@ -212,22 +187,16 @@ class RAGAgent(Agent):
         user_query_event: StandaloneQuestionCondenserEvent,
         run_context: RunContext,
     ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
-        """
-        Guards the context to ensure it is sufficient for generating a response.
-        If it is insufficient a new query is generated to find more data in order
-        to generate the response.
-        """
-        async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            return await do_context_sufficient_guard(
-                user_query=user_query_event.condensed_chat_message.content,
-                context=event.context_message.content,
-                check_context_sufficiency=agent_config.check_context_sufficiency,
-                max_hops=agent_config.max_hops,
-                run_context=run_context,
-                llm=llm,
-                displayer=displayer,
-                t=t,
-            )
+        return await do_context_sufficient_guard(
+            user_query_event.condensed_chat_message.content,
+            event.context_message.content,
+            agent_config.check_context_sufficiency,
+            agent_config.max_hops,
+            run_context,
+            agent_config.llm,
+            displayer,
+            t,
+        )
 
     @step(
         name=LocaleString(en="Limit Chat History with Context"),
@@ -242,17 +211,13 @@ class RAGAgent(Agent):
         start_event: UserMessageEvent,
         agent_config: RAGAgentConfig,
     ) -> LimitChatHistoryWithContextEvent:
-        """
-        Includes the combined context and truncates chat history again.
-        """
-        limited_chat_history = do_limit_chat_history_with_context(
-            context_message=context_event.context_message,
-            chat_history=chat_history_event.limited_history,
-            last_user_message=start_event.last_user_message,
-            tokenizer=agent_config.llm.token_counter,
-            number_of_input_tokens=agent_config.number_of_input_tokens,
+        return do_limit_chat_history_with_context(
+            context_event.context_message,
+            chat_history_event.limited_history,
+            start_event.last_user_message,
+            agent_config.llm.token_counter,
+            agent_config.number_of_input_tokens,
         )
-        return LimitChatHistoryWithContextEvent(limited_history_with_context=limited_chat_history)
 
     @step(
         name=LocaleString(en="Respond with LLM"),
@@ -266,13 +231,12 @@ class RAGAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> LLMStopEvent:
-        """Generates a response using the configured LLM."""
         return await do_respond_with_llm(
-            event=event,
-            limited_history_without_context=limited_history_without_context.limited_history,
-            context_insufficient_prompt=agent_config.context_insufficient_prompt,
-            system_prompt=agent_config.system_prompt,
-            llm_config=agent_config.llm,
-            displayer=displayer,
-            t=t,
+            event,
+            limited_history_without_context.limited_history,
+            agent_config.context_insufficient_prompt,
+            agent_config.system_prompt,
+            agent_config.llm,
+            displayer,
+            t,
         )

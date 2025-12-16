@@ -8,12 +8,14 @@ from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.generative_ai.resources.models.llm.message_preprocessor import merge_consecutive_messages
 from aihub_lib.generative_ai.retrievers.RetrieverConfig import RetrieverConfig
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
+from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
+from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
 from aihub_lib.generative_ai.utils.rerank_nodes import rerank_nodes
 from aihub_lib.generative_ai.utils.retrieve_from_all_sources import retrieve_from_all_sources
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import StandaloneQuestionCondenserEvent
+from aihub_lib.nats.events import LimitChatHistoryEvent, StandaloneQuestionCondenserEvent
 from aihub_lib.nats.events.guard import (
     ContextInsufficientRejectEvent,
     ContextSufficientAcceptEvent,
@@ -25,12 +27,35 @@ from aihub_lib.nats.events.semantic.llm import LLMStopEvent
 from aihub_lib.nats.events.semantic.reranker import RerankerEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.llms import LLM
 
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
 from aihub_agent.agents.RagAgent.events.ContextInsufficientWithQueryEvent import ContextInsufficientWithQueryEvent
+from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 from aihub_agent.context.run.RunContext import RunContext
+
+
+def do_limit_chat_history(
+    messages: list[ChatMessage],
+    number_of_input_tokens: int,
+) -> LimitChatHistoryEvent:
+    """Truncate chat messages to fit within token limit."""
+    limited = limit_chat_history(chat_history=messages, number_of_input_tokens=number_of_input_tokens)
+    return LimitChatHistoryEvent(limited_history=limited)
+
+
+async def do_condense_standalone_question(
+    limited_history: list[ChatMessage],
+    last_user_message: ChatMessage,
+    llm_config: LLMConfig,
+    displayer: EventDisplayer,
+    t: LocaleHandler,
+) -> StandaloneQuestionCondenserEvent:
+    """Condense chat history and user query into standalone question."""
+    await displayer.display_thought(t("agent.thought.condense_question"))
+    async with llm_config.cost_reporting_llm(displayer) as llm:
+        condensed = condense_standalone_question(chat_history=limited_history, message=last_user_message, t=t, llm=llm)
+        return StandaloneQuestionCondenserEvent(condensed_chat_message=condensed)
 
 
 async def do_respond_with_llm(
@@ -74,19 +99,21 @@ async def do_respond_with_llm(
 async def do_few_shot_guard(
     condensed_question: str | None,
     examples: list | None,
-    llm: LLM,
+    llm_config: LLMConfig,
+    displayer: EventDisplayer,
     t: LocaleHandler,
 ) -> FewShotRejectEvent | FewShotAcceptEvent:
     """Execute few-shot guard logic and return appropriate event."""
     if not examples:
         return FewShotAcceptEvent(reason=t("agent.thought.no_few_shot_examples"))
 
-    guard_result = await few_shot_guard(
-        llm=llm,
-        t=t,
-        user_query=condensed_question,
-        examples=examples,
-    )
+    async with llm_config.cost_reporting_llm(displayer) as llm:
+        guard_result = await few_shot_guard(
+            llm=llm,
+            t=t,
+            user_query=condensed_question,
+            examples=examples,
+        )
 
     if not guard_result.success:
         return FewShotRejectEvent(reason=guard_result.reasoning)
@@ -113,8 +140,11 @@ async def do_rerank_nodes(
     nodes: list[IngestedNode],
     query: str | None,
     reranking_config: RerankingConfig,
+    displayer: EventDisplayer,
+    t: LocaleHandler,
 ) -> RerankerEvent:
     """Rerank nodes and build RerankerEvent."""
+    await displayer.display_thought(t("agent.thought.reranking_results"))
     reranked_nodes = await rerank_nodes(
         nodes=nodes,
         query=query,
@@ -131,18 +161,21 @@ async def do_rerank_nodes(
     )
 
 
-def do_order_nodes_by_documents(
+async def do_order_nodes_by_documents(
     event: RetrieverEvent | RerankerEvent,
     t: LocaleHandler,
     context_prompt: LocaleString | None,
-) -> ChatMessage:
-    """Order nodes and return context message."""
+    displayer: EventDisplayer,
+) -> InOrderNodeCombinerEvent:
+    """Order nodes and return InOrderNodeCombinerEvent."""
+    await displayer.display_thought(t("agent.thought.searching_knowledge"))
     nodes = event.output_nodes if isinstance(event, RerankerEvent) else event.nodes
-    return combine_nodes_in_order(
+    context_message = combine_nodes_in_order(
         context_nodes=nodes,
         t=t,
         context_prompt=context_prompt,
     )
+    return InOrderNodeCombinerEvent(context_message=context_message)
 
 
 async def do_context_sufficient_guard(
@@ -151,7 +184,7 @@ async def do_context_sufficient_guard(
     check_context_sufficiency: bool | None,
     max_hops: int,
     run_context: RunContext,
-    llm: LLM,
+    llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
 ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
@@ -163,14 +196,15 @@ async def do_context_sufficient_guard(
     hop_count = await run_context.get("hop_count", 1)
     more_hops_available = hop_count < max_hops
 
-    guard_result = await context_sufficient_guard(
-        llm=llm,
-        t=t,
-        user_query=user_query,
-        context=context,
-        prev_queries=prev_queries,
-        more_hops_available=more_hops_available,
-    )
+    async with llm_config.cost_reporting_llm(displayer) as llm:
+        guard_result = await context_sufficient_guard(
+            llm=llm,
+            t=t,
+            user_query=user_query,
+            context=context,
+            prev_queries=prev_queries,
+            more_hops_available=more_hops_available,
+        )
 
     if guard_result.success:
         await displayer.display_thought(t("agent.thought.context_sufficient"))
@@ -193,10 +227,10 @@ def do_limit_chat_history_with_context(
     last_user_message: ChatMessage | None,
     tokenizer: Callable[[str], list[int]],
     number_of_input_tokens: int,
-) -> list[ChatMessage]:
-    """Limit chat history including context and return limited history."""
+) -> LimitChatHistoryWithContextEvent:
+    """Limit chat history including context and return event."""
     system_messages = [msg for msg in chat_history if msg.role == MessageRole.SYSTEM]
-    return limit_chat_history_with_context(
+    limited_history = limit_chat_history_with_context(
         chat_history=chat_history,
         context_messages=[context_message],
         system_messages=system_messages,
@@ -204,3 +238,4 @@ def do_limit_chat_history_with_context(
         tokenizer=tokenizer,
         number_of_input_tokens=number_of_input_tokens,
     )
+    return LimitChatHistoryWithContextEvent(limited_history_with_context=limited_history)
