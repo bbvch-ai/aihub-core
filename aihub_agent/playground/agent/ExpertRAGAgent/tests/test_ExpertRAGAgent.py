@@ -48,8 +48,6 @@ from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 enable_logging()
 
-pytestmark = pytest.mark.flaky
-
 scenarios("./features/expert_rag_agent.feature")
 load_dotenv(Path(__file__).parent / ".env")
 
@@ -189,6 +187,9 @@ async def _(expert_rag_agent_runner: AgentTestRunner, query: str):
     to the expert agent's topic, which the ExpertRAGAgent's internal subscription picks up.
     """
     async with expert_rag_agent_runner.test_run(delay_before_stop=TIMEOUT) as topic:
+        # Ensure the ExpertAskingAgent stream exists for agent-in-the-loop delegation
+        await expert_rag_agent_runner.ensure_dependent_agent_stream("ExpertAskingAgent")
+
         await expert_rag_agent_runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
