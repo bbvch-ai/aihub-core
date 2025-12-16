@@ -1,9 +1,3 @@
-"""
-Shared step functions for RAG-based agents.
-
-These functions extract reusable logic from RAG agent steps.
-"""
-
 from collections.abc import Callable
 
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
@@ -13,7 +7,6 @@ from aihub_lib.generative_ai.guards.few_shot_guard import few_shot_guard
 from aihub_lib.generative_ai.resources.models.llm.message_preprocessor import merge_consecutive_messages
 from aihub_lib.generative_ai.retrievers import BaseRetrieverConfig
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
-from aihub_lib.generative_ai.utils.format_expert_conversation import format_expert_conversation
 from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
 from aihub_lib.generative_ai.utils.rerank_nodes import rerank_nodes
 from aihub_lib.generative_ai.utils.retrieve_from_all_sources import retrieve_from_all_sources

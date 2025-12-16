@@ -1,11 +1,3 @@
-"""
-Shared precondition logic functions for RAG-based agents.
-
-These are regular functions containing the precondition logic.
-Each agent should define its own @precondition() decorated functions
-that call these shared logic functions with the appropriate config types.
-"""
-
 from aihub_lib.nats.events import AgentInTheLoop
 from aihub_lib.nats.events.guard import ContextSufficientAcceptEvent
 from aihub_lib.nats.events.semantic.reranker import RerankerEvent
