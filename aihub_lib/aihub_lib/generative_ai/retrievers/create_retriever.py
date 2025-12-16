@@ -1,12 +1,12 @@
 from aihub_lib.generative_ai.retrievers.BaseRetriever import BaseRetriever
-from aihub_lib.generative_ai.retrievers.BaseRetrieverConfig import BaseRetrieverConfig
 from aihub_lib.generative_ai.retrievers.InsightRetriever import InsightRetriever
 from aihub_lib.generative_ai.retrievers.InsightRetrieverConfig import InsightRetrieverConfig
 from aihub_lib.generative_ai.retrievers.KnowledgeRetriever import KnowledgeRetriever
 from aihub_lib.generative_ai.retrievers.KnowledgeRetrieverConfig import KnowledgeRetrieverConfig
+from aihub_lib.generative_ai.retrievers.RetrieverConfig import RetrieverConfig
 
 
-def create_retriever(config: BaseRetrieverConfig) -> BaseRetriever:
+def create_retriever(config: RetrieverConfig) -> BaseRetriever:
     """Factory function to create the appropriate retriever based on config type."""
     if isinstance(config, KnowledgeRetrieverConfig):
         return KnowledgeRetriever(config)

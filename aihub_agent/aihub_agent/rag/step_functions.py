@@ -6,7 +6,7 @@ from aihub_lib.generative_ai.guards.context_sufficient_guard import context_suff
 from aihub_lib.generative_ai.guards.few_shot_guard import few_shot_guard
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.generative_ai.resources.models.llm.message_preprocessor import merge_consecutive_messages
-from aihub_lib.generative_ai.retrievers.BaseRetrieverConfig import BaseRetrieverConfig
+from aihub_lib.generative_ai.retrievers.RetrieverConfig import RetrieverConfig
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
 from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
 from aihub_lib.generative_ai.utils.rerank_nodes import rerank_nodes
@@ -96,7 +96,7 @@ async def do_few_shot_guard(
 
 async def do_retrieve(
     event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
-    retrievers: list[BaseRetrieverConfig],
+    retrievers: list[RetrieverConfig],
     t: LocaleHandler,
 ) -> RetrieverEvent:
     """Retrieve nodes from all sources and return RetrieverEvent."""

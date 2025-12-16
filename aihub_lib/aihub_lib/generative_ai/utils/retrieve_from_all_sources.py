@@ -1,14 +1,14 @@
 import asyncio
 
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
-from aihub_lib.generative_ai.retrievers.BaseRetrieverConfig import BaseRetrieverConfig
 from aihub_lib.generative_ai.retrievers.create_retriever import create_retriever
+from aihub_lib.generative_ai.retrievers.RetrieverConfig import RetrieverConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 
 
 async def retrieve_from_all_sources(
     query: str,
-    retriever_configs: list[BaseRetrieverConfig],
+    retriever_configs: list[RetrieverConfig],
     t: LocaleHandler,
 ) -> list[IngestedNode]:
     """
