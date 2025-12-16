@@ -5,6 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.256.1] - 2025-12-16 - Empowering RAG with Human Expertise: Introducing Expert RAG and Asking Agents
+
+### Added
+
+- 🦾 **Introduced Expert RAG Agent**: A new agent specifically designed for Retrieval-Augmented Generation with
+  integrated human expert escalation capabilities. This agent facilitates consulting human experts when the knowledge
+  base is insufficient.
+- 💬 **New Expert Asking Agent**: A dedicated agent to manage the end-to-end process of engaging human experts via
+  communication platforms like Microsoft Teams or Slack, capturing their responses, and integrating them into the
+  knowledge base.
+- ⚙️ **Expert Escalation Configuration**: Added new environment variables (`EXPERT_ASKING_CHANNEL_TYPE`,
+  `TEAMS_CHANNEL_ID`, `TEAMS_TENANT_ID`, `TEAMS_BOT_ID`, `SLACK_CHANNEL_ID`, `SLACK_SERVICE_URL`) to configure the
+  Expert Asking Agent for communication with human experts.
+- 🚀 **Deployment Support for Expert Agents**: Integrated `expert_rag_agent` and `expert_asking_agent` into the CI/CD
+  pipeline and Docker Compose configurations, enabling seamless building and deployment of these new agents.
+- 📄 **Expert Escalation Documentation**: Updated quick start and agent-specific documentation to guide users through
+  configuring and utilizing the new Expert RAG and Expert Asking Agents.
+- 🛠️ **Agent Test Runner Enhancement**: Added `ensure_dependent_agent_stream` method to the `AgentTestRunner` to better
+  support testing of agent-in-the-loop delegation scenarios.
+- 🔄 **Expert Conversation Formatting Utility**: Introduced a new utility function (`format_expert_conversation`) to
+  consistently format expert chat messages for use as context within agents.
+
+### Changed
+
+- 🔄 **RAG Agent Redefined**: The original RAG Agent has been streamlined to focus solely on standard RAG functionality,
+  removing its previous expert escalation logic and configuration. Expert escalation is now exclusively handled by the
+  new Expert RAG Agent.
+- 📝 **Docstring Guidelines Update**: Revised `AGENTS.md` to update docstring best practices, advising against `Args:` or
+  `Returns:` sections for conciseness.
+- 🧪 **Playground Test Restructuring**: Moved expert escalation-related playground examples and tests from the generic
+  RAG Agent to the new, dedicated Expert RAG Agent's test suite for clearer separation of concerns.
+
+### Refactor
+
+- 🧹 **Centralized RAG Logic**: Extracted common RAG preconditioning and step functions into new shared modules
+  (`aihub_agent/aihub_agent/rag/preconditions.py` and `aihub_agent/aihub_agent/rag/step_functions.py`) to promote code
+  reuse and improve modularity across RAG-based agents.
+- 🗂️ **Retriever Module Organization**: Refactored the `aihub_lib/aihub_lib/generative_ai/retrievers` module by moving
+  `RetrieverConfig` and `create_retriever` into their own dedicated files for better clarity and maintainability.
+- ⚡️ **Simplified Retrieval Event Display**: Streamlined the `retrieve_from_all_sources` utility by removing the direct
+  `displayer` argument, centralizing thought message handling at the agent step level.
+
+---
+
 ## [v0.256.0] - 2025-12-16 - Enhanced Dynamic Partition Naming for Clarity
 
 ### Refactor

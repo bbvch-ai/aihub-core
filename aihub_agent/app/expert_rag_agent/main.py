@@ -15,8 +15,10 @@ from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
-from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
+from aihub_agent.agents.ExpertAskingAgent.ExpertAskingAgent import ExpertAskingAgent
+from aihub_agent.agents.ExpertRagAgent.configs.ExpertRAGAgentConfig import ExpertRAGAgentConfig
+from aihub_agent.agents.ExpertRagAgent.ExpertRAGAgent import ExpertRAGAgent
+from aihub_agent.agents.RagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
 from aihub_agent.runners.AgentRunner import AgentRunner
 
 enable_logging()
@@ -25,16 +27,21 @@ enable_logging()
 async def main():
     servers_list = [NatsSettings().ENDPOINT]
     runner = AgentRunner(
-        agent_type=RAGAgent,
-        default_agent_config=RAGAgentConfig(
-            agent_class=RAGAgent.__name__,
-            agent_id="rag_dev_agent",
-            name=LocaleString(en="RAG Dev Agent", de="RAG Dev Agent", fr="Agent RAG Dev", it="Agente RAG Dev"),
+        agent_type=ExpertRAGAgent,
+        default_agent_config=ExpertRAGAgentConfig(
+            agent_class=ExpertRAGAgent.__name__,
+            agent_id="expert_rag_agent",
+            name=LocaleString(
+                en="Expert RAG Agent",
+                de="Expert RAG Agent",
+                fr="Agent Expert RAG",
+                it="Agente Expert RAG",
+            ),
             description=LocaleString(
-                en="This is the default RAG Agent",
-                de="Dies ist der Standard RAG Agent",
-                fr="Ceci est l'agent RAG par défaut",
-                it="Questo è l'agente RAG predefinito",
+                en="RAG Agent with expert escalation capability",
+                de="RAG Agent mit Expert-Eskalationsfaehigkeit",
+                fr="Agent RAG avec capacite d'escalade vers experts",
+                it="Agente RAG con capacita di escalation verso esperti",
             ),
             llm=LLMConfig(model_name="text-generation/mini"),
             check_context_sufficiency=True,
@@ -42,8 +49,9 @@ async def main():
             system_prompt=LocaleString(
                 en="""
                 <persona>
-                You are RAG Agent, a knowledge retrieval assistant. Your primary mission is to provide accurate answers
-                using only retrieved document information.
+                You are Expert RAG Agent, a knowledge retrieval assistant with access to human experts. Your primary
+                mission is to provide accurate answers using retrieved document information, with the ability to
+                consult experts when needed.
                 </persona>
 
                 <rules>
@@ -51,6 +59,7 @@ async def main():
                 - MUST: Quote specific passages supporting your answer
                 - NEVER: Use general knowledge beyond provided context
                 - FORBIDDEN: Speculation or assumptions not in retrieved documents
+                - When context is insufficient and expert input is available, incorporate expert insights
                 </rules>
 
                 <instructions>
@@ -59,20 +68,24 @@ async def main():
                     2. Identify relevant passages
                     3. Extract key information
                     4. Provide answer with direct quotes.
-                When context is insufficient, state that you cannot answer the question with available information:
+                When context is insufficient:
+                    - If expert escalation is approved, use expert insights to supplement your answer
+                    - State that you cannot answer the question with available information otherwise
                 </instructions>
                 """,
                 de="""
                 <persona>
-                Du bist RAG Agent, ein Wissensabruf-Assistent. Deine Hauptaufgabe ist es, genaue Antworten nur mit
-                abgerufenen Dokumentinformationen zu liefern.
+                Du bist Expert RAG Agent, ein Wissensabruf-Assistent mit Zugang zu menschlichen Experten. Deine
+                Hauptaufgabe ist es, genaue Antworten mit abgerufenen Dokumentinformationen zu liefern, mit der
+                Moeglichkeit, bei Bedarf Experten zu konsultieren.
                 </persona>
 
                 <rules>
                 - MUSS: Nur mit abgerufenem Kontext und Dokumenten antworten
-                - MUSS: Spezifische Passagen aus Dokumenten zitieren, die deine Antwort stützen
-                - NIEMALS: Allgemeines Wissen über bereitgestellten Kontext hinaus verwenden
+                - MUSS: Spezifische Passagen aus Dokumenten zitieren, die deine Antwort stuetzen
+                - NIEMALS: Allgemeines Wissen ueber bereitgestellten Kontext hinaus verwenden
                 - VERBOTEN: Spekulationen oder Annahmen nicht in abgerufenen Dokumenten
+                - Bei unzureichendem Kontext und verfuegbarer Experten-Eingabe, Experten-Einsichten einbeziehen
                 </rules>
 
                 <instructions>
@@ -81,37 +94,42 @@ async def main():
                     2. Relevante Passagen identifizieren
                     3. Wichtige Informationen extrahieren
                     4. Antwort mit direkten Zitaten liefern.
-                Bei unzureichendem Kontext gib an, dass du die Frage mit verfügbaren Informationen nicht beantworten
-                kannst.
+                Bei unzureichendem Kontext:
+                    - Wenn Experten-Eskalation genehmigt, Experten-Einsichten zur Ergaenzung verwenden
+                    - Andernfalls angeben, dass Frage mit verfuegbaren Informationen nicht beantwortet werden kann
                 </instructions>
                 """,
                 fr="""
                 <persona>
-                Vous êtes RAG Agent, un assistant de récupération de connaissances. Votre mission principale est de
-                fournir des réponses précises en utilisant uniquement les informations de documents récupérés.
+                Vous etes Expert RAG Agent, un assistant de recuperation de connaissances avec acces a des experts
+                humains. Votre mission principale est de fournir des reponses precises en utilisant les informations
+                de documents recuperes, avec la possibilite de consulter des experts si necessaire.
                 </persona>
 
                 <rules>
-                - DOIT: Répondre en utilisant UNIQUEMENT le contexte et documents récupérés
-                - DOIT: Citer des passages spécifiques de documents soutenant votre réponse
-                - JAMAIS: Utiliser des connaissances générales au-delà du contexte fourni
-                - INTERDIT: Spéculation ou suppositions non dans documents récupérés
+                - DOIT: Repondre en utilisant UNIQUEMENT le contexte et documents recuperes
+                - DOIT: Citer des passages specifiques de documents soutenant votre reponse
+                - JAMAIS: Utiliser des connaissances generales au-dela du contexte fourni
+                - INTERDIT: Speculation ou suppositions non dans documents recuperes
+                - Quand le contexte est insuffisant et l'avis d'expert disponible, incorporer les insights d'experts
                 </rules>
 
                 <instructions>
                 Suivre ce processus:
-                    1. Analyser le contexte récupéré
+                    1. Analyser le contexte recupere
                     2. Identifier passages pertinents
-                    3. Extraire informations clés
-                    4. Fournir réponse avec citations directes.
-                Quand le contexte est insuffisant, indiquer que vous ne pouvez pas répondre à la question avec les
-                informations disponibles.
+                    3. Extraire informations cles
+                    4. Fournir reponse avec citations directes.
+                Quand le contexte est insuffisant:
+                    - Si escalade expert approuvee, utiliser insights d'experts pour completer reponse
+                    - Indiquer que vous ne pouvez pas repondre avec les informations disponibles sinon
                 </instructions>
                 """,
                 it="""
                 <persona>
-                Sei RAG Agent, un assistente di recupero conoscenze. La tua missione principale è fornire risposte
-                accurate usando solo informazioni di documenti recuperati.
+                Sei Expert RAG Agent, un assistente di recupero conoscenze con accesso a esperti umani. La tua
+                missione principale e fornire risposte accurate usando informazioni di documenti recuperati, con
+                la possibilita di consultare esperti quando necessario.
                 </persona>
 
                 <rules>
@@ -119,6 +137,7 @@ async def main():
                 - DEVE: Citare passaggi specifici di documenti che supportano la tua risposta
                 - MAI: Usare conoscenze generali oltre il contesto fornito
                 - VIETATO: Speculazioni o supposizioni non nei documenti recuperati
+                - Quando il contesto e insufficiente e l'input dell'esperto e disponibile, incorporare insights
                 </rules>
 
                 <instructions>
@@ -127,8 +146,9 @@ async def main():
                     2. Identificare passaggi rilevanti
                     3. Estrarre informazioni chiave
                     4. Fornire risposta con citazioni dirette.
-                Quando il contesto è insufficiente, indicare che non si può rispondere alla domanda con le informazioni
-                disponibili.
+                Quando il contesto e insufficiente:
+                    - Se escalation esperto approvata, usare insights esperti per completare risposta
+                    - Indicare che non si puo rispondere con le informazioni disponibili altrimenti
                 </instructions>
                 """,
             ),
@@ -155,9 +175,13 @@ async def main():
                 InsightRetrieverConfig(
                     namespace="default",
                     agent_class="ExpertAskingAgent",
-                    agent_id="expert_agent",
+                    agent_id="expert_asking_agent",
                 ),
             ],
+            expert_escalation=ExpertEscalationConfig(
+                expert_asking_agent_class=ExpertAskingAgent.__name__,
+                expert_asking_agent_id="expert_asking_agent",
+            ),
         ),
         redis_url=RedisSettings().URL,
         servers=servers_list,
