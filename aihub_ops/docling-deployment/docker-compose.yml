@@ -13,7 +13,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: litellm
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - /data/volumes/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
@@ -67,7 +67,7 @@ services:
     image: ghcr.io/bbvch-ai/aihub-core/vllm-openai:v0.11.0
     restart: always
     volumes:
-      - huggingface-cache:/root/.cache/huggingface
+      - /data/volumes/huggingface:/root/.cache/huggingface
     environment:
       HF_HOME: /root/.cache/huggingface
       HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
@@ -158,7 +158,7 @@ services:
     image: quay.io/docling-project/docling-serve-cu128:v1.9.0
     user: root
     volumes:
-      - docling-models:/models
+      - /data/volumes/docling-models:/models
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
@@ -195,7 +195,7 @@ services:
       DOCLING_SERVE_ENABLE_UI: "true"
       DOCLING_SERVE_ARTIFACTS_PATH: /models
     volumes:
-      - docling-models:/models
+      - /data/volumes/docling-models:/models
     depends_on:
       docling-init:
         condition: service_completed_successfully
@@ -234,10 +234,3 @@ services:
       # Apply middlewares
       - "traefik.http.routers.docling-serve.middlewares=docling-serve-ipallowlist,docling-serve-headers"
 
-volumes:
-  postgres-data:
-    driver: local
-  huggingface-cache:
-    driver: local
-  docling-models:
-    driver: local
