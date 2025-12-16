@@ -13,6 +13,7 @@ from aihub_lib.generative_ai.guards.few_shot_guard import few_shot_guard
 from aihub_lib.generative_ai.resources.models.llm.message_preprocessor import merge_consecutive_messages
 from aihub_lib.generative_ai.retrievers import BaseRetrieverConfig
 from aihub_lib.generative_ai.utils.combine_nodes_in_order import combine_nodes_in_order
+from aihub_lib.generative_ai.utils.format_expert_conversation import format_expert_conversation
 from aihub_lib.generative_ai.utils.limit_chat_history_with_context import limit_chat_history_with_context
 from aihub_lib.generative_ai.utils.rerank_nodes import rerank_nodes
 from aihub_lib.generative_ai.utils.retrieve_from_all_sources import retrieve_from_all_sources
@@ -35,16 +36,6 @@ from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
 from aihub_agent.agents.RagAgent.events.ContextInsufficientWithQueryEvent import ContextInsufficientWithQueryEvent
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 from aihub_agent.context.run.RunContext import RunContext
-
-
-def format_expert_conversation(conversation: list[ChatMessage]) -> str:
-    """Format an expert conversation as a text string for context."""
-    conversation_parts = []
-    for msg in conversation:
-        role_label = "Agent" if msg.role == MessageRole.ASSISTANT else "Expert"
-        content = msg.content or ""
-        conversation_parts.append(f"{role_label}: {content}")
-    return "\n".join(conversation_parts)
 
 
 def build_llm_response_messages(

@@ -14,7 +14,6 @@ from aihub_agent.rag.step_functions import (
     do_order_nodes_by_documents,
     do_rerank_nodes,
     do_retrieve,
-    format_expert_conversation,
 )
 
 __all__ = [
@@ -26,7 +25,6 @@ __all__ = [
     "check_context_ready_for_history_limit",
     "check_context_ready_for_history_limit_with_expert",
     # Step functions - utility functions
-    "format_expert_conversation",
     "build_llm_response_messages",
     # Step functions - business logic
     "do_few_shot_guard",

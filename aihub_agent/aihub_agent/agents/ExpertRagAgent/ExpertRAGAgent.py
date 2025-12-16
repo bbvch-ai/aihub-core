@@ -1,5 +1,6 @@
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
+from aihub_lib.generative_ai.utils.format_expert_conversation import format_expert_conversation
 from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -47,7 +48,6 @@ from aihub_agent.rag.step_functions import (
     do_order_nodes_by_documents,
     do_rerank_nodes,
     do_retrieve,
-    format_expert_conversation,
 )
 from aihub_agent.workflow.decorators.precondition import precondition
 from aihub_agent.workflow.decorators.step import step
@@ -332,11 +332,16 @@ class ExpertRAGAgent(Agent):
     ) -> AgentInTheLoop.request:
         await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.forwarding_to_expert"))
         await displayer.display_chunk(
-            t("agent.expert_grounded_agent.messages.expert_forwarding_confirmation"), model_name="RAG Agent"
+            t("agent.expert_grounded_agent.messages.expert_forwarding_confirmation"),
+            model_name=ExpertRAGAgent.__name__,
         )
-        await displayer.display_chunk("\n", model_name="RAG Agent")
         await displayer.display_chunk(
-            t("agent.expert_grounded_agent.messages.expert_answer_coming_soon"), model_name="RAG Agent"
+            "\n",
+            model_name=ExpertRAGAgent.__name__,
+        )
+        await displayer.display_chunk(
+            t("agent.expert_grounded_agent.messages.expert_answer_coming_soon"),
+            model_name=ExpertRAGAgent.__name__,
         )
         return AgentInTheLoop.invoke(
             agent_class=agent_config.expert_escalation.expert_asking_agent_class,
@@ -390,7 +395,8 @@ class ExpertRAGAgent(Agent):
     ) -> StopEvent:
         await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.expert_unable_to_answer"))
         await displayer.display_chunk(
-            t("agent.expert_grounded_agent.messages.expert_unable_to_answer"), model_name="expert"
+            t("agent.expert_grounded_agent.messages.expert_unable_to_answer"),
+            model_name=ExpertRAGAgent.__name__,
         )
         return StopEvent()
 
@@ -413,7 +419,8 @@ class ExpertRAGAgent(Agent):
             )
         )
         await displayer.display_chunk(
-            t("agent.expert_grounded_agent.messages.expert_error_occurred"), model_name="RAG Agent"
+            t("agent.expert_grounded_agent.messages.expert_error_occurred"),
+            model_name=ExpertRAGAgent.__name__,
         )
         return StopEvent()
 
