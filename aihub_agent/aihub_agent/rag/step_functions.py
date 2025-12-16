@@ -7,6 +7,7 @@ These functions extract reusable logic from RAG agent steps.
 from typing import TYPE_CHECKING
 
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
 from aihub_lib.generative_ai.guards.few_shot_guard import few_shot_guard
 from aihub_lib.generative_ai.resources.models.llm.message_preprocessor import merge_consecutive_messages
@@ -132,7 +133,7 @@ async def do_retrieve(
 
 
 async def do_rerank_nodes(
-    nodes: list[NodeWithScore],
+    nodes: list[IngestedNode],
     query: str | None,
     reranking_config: "RerankingConfig",
 ) -> RerankerEvent:
