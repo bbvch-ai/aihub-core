@@ -97,7 +97,6 @@ async def do_few_shot_guard(
 async def do_retrieve(
     event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
     retrievers: list[BaseRetrieverConfig],
-    displayer: EventDisplayer,
     t: LocaleHandler,
 ) -> RetrieverEvent:
     """Retrieve nodes from all sources and return RetrieverEvent."""

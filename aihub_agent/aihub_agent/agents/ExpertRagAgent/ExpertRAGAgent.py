@@ -178,11 +178,10 @@ class ExpertRAGAgent(Agent):
         event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
         _: FewShotAcceptEvent,
         agent_config: ExpertRAGAgentConfig,
-        displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> RetrieverEvent:
         """Retrieves relevant nodes from multiple knowledge sources in parallel."""
-        return await do_retrieve(event, agent_config.retrievers, displayer, t)
+        return await do_retrieve(event, agent_config.retrievers, t)
 
     @step(
         name=LocaleString(en="Rerank Retrieved Nodes"),
