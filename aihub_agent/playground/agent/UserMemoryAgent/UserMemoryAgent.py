@@ -4,7 +4,7 @@ from aihub_lib.generative_ai.chat_history.extend_chat_history_with_user_memory i
 )
 from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.events import LLMEvent, NewMemoryEvent, StopEvent, UserMessageEvent
+from aihub_lib.nats.events import LLMEvent, StoreUserMemoryEvent, StopEvent, UserMessageEvent
 from aihub_lib.nats.events.common.AddUserMemoryToChatHistoryEvent import AddUserMemoryToChatHistoryEvent
 from aihub_lib.nats.events.memory.RetrieveUserMemoryEvent import RetrieveUserMemoryEvent
 from aihub_lib.nats.topics import AgentInstanceTopic
@@ -70,7 +70,7 @@ class UserMemoryAgent(Agent):
         llm_event: LLMEvent,
         memory: AgentMemory,
         topic: AgentInstanceTopic,
-    ) -> NewMemoryEvent:
+    ) -> StoreUserMemoryEvent:
         """Persists conversation learnings to long-term memory for future interactions."""
         memory_added = await memory.add_user_memory(
             messages=llm_event.chat_messages,
@@ -79,9 +79,9 @@ class UserMemoryAgent(Agent):
             display_id=topic.display_id,
             run_id=topic.run_id,
         )
-        return NewMemoryEvent.from_memory_added_object(memory_added=memory_added)
+        return StoreUserMemoryEvent.from_memory_added_object(memory_added=memory_added)
 
     @step()
-    async def stop_step(self, _: NewMemoryEvent) -> StopEvent:
+    async def stop_step(self, _: StoreUserMemoryEvent) -> StopEvent:
         """Marks workflow completion and returns final response to user."""
         return StopEvent()

@@ -1,7 +1,8 @@
 from typing import ClassVar
 
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.common.AddMemoryToChatHistoryEvent import AddMemoryToChatHistoryEvent
+
+from .AddMemoryToChatHistoryEvent import AddMemoryToChatHistoryEvent
 
 
 class AddOrganizationMemoryToChatHistoryEvent(AddMemoryToChatHistoryEvent):

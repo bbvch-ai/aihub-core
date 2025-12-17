@@ -1,12 +1,13 @@
 from typing import ClassVar
 
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.memory.RetrieveMemoryEvent import RetrieveMemoryEvent
+
+from .BaseRetrieveMemoryEvent import BaseRetrieveMemoryEvent
 
 
-class RetrieveOrganizationMemoryEvent(RetrieveMemoryEvent):
+class RetrieveOrganizationMemoryEvent(BaseRetrieveMemoryEvent):
     """
-    Specialized RetrieveMemoryEvent for organization-wide memories.
+    Specialized BaseRetrieveMemoryEvent for organization-wide memories.
 
     Emitted when an agent retrieves shared organizational memories from long-term storage.
     These memories are accessible to all users within the organization namespace.

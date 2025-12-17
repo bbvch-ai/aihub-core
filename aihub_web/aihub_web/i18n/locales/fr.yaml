@@ -181,6 +181,27 @@ event:
     contentChunk: "{count} fragment de contenu | {count} fragments de contenu"
     noChunksFound: "Aucun fragment trouvé"
     noChunksFoundDescription: "La recherche de récupération n'a trouvé aucun fragment de contenu pertinent."
+  retrieveMemory:
+    title: "Mémoire récupérée"
+    memories: "Mémoires"
+    relations: "Graphe de connaissances"
+    score: "Pertinence"
+    noMemories: "Aucune mémoire récupérée"
+  storeMemory:
+    title: "Modifications de mémoire"
+    added: "Ajouté"
+    updated: "Mis à jour"
+    deleted: "Supprimé"
+    addedRelations: "relations ajoutées"
+    deletedRelations: "relations supprimées"
+    relationChanges: "Modifications des relations"
+    noChanges: "Aucune modification"
+  addMemoryToChatHistory:
+    summary: "{count} message de mémoire ajouté à l'historique | {count} messages de mémoire ajoutés à l'historique"
+    description: "L'historique de chat a été enrichi avec des mémoires pertinentes des interactions précédentes"
+    assistant: "Assistant"
+    system: "Système"
+    user: "Utilisateur"
   standaloneQuestionCondenser:
     summary: "Question affinée et condensée"
     condensedQuestion: "Question Condensée"

@@ -16,7 +16,7 @@ Feature: UserMemoryAgent - Memory-Enhanced Conversational Agent
     And the memory system message is after any existing system messages
     And an LLMEvent is present
     And the LLM response mentions "Python"
-    And a NewMemoryEvent is present with memory updates
+    And a StoreUserMemoryEvent is present with memory updates
     And a StopEvent is present
 
   Scenario: Agent with no existing memories
@@ -25,7 +25,7 @@ Feature: UserMemoryAgent - Memory-Enhanced Conversational Agent
     Then a RetrieveMemoryEvent is present
     And an AddMemoryToChatHistoryEvent is present
     And an LLMEvent is present
-    And a NewMemoryEvent is present with memory updates
+    And a StoreUserMemoryEvent is present with memory updates
     And a StopEvent is present
 
   Scenario: Locale-specific memory formatting

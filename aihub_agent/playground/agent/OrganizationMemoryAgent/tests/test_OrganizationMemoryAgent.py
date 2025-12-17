@@ -192,14 +192,14 @@ def _(agent_runner: AgentTestRunner, text1: str, text2: str):
     assert found_text2, f"No memory contains '{text2}'"
 
 
-@then("a RetrieveMemoryEvent is present")
+@then("a BaseRetrieveMemoryEvent is present")
 def _(agent_runner: AgentTestRunner):
     """Check that RetrieveOrganizationMemoryEvent exists (regardless of memory count)."""
     event = agent_runner.get_event_of_class(RetrieveOrganizationMemoryEvent)
     assert event is not None, "RetrieveOrganizationMemoryEvent not found"
 
 
-@then(parsers.parse("a RetrieveMemoryEvent is present with {count:d} or more memories"))
+@then(parsers.parse("a BaseRetrieveMemoryEvent is present with {count:d} or more memories"))
 def _(agent_runner: AgentTestRunner, count: int):
     """Check that RetrieveOrganizationMemoryEvent has expected number of memories."""
     event = agent_runner.get_event_of_class(RetrieveOrganizationMemoryEvent)

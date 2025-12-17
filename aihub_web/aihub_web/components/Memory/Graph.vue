@@ -1,7 +1,8 @@
 <template>
   <div
     ref="container"
-    class="size-full min-h-[800px]"
+    class="size-full"
+    :style="{ minHeight: props.height }"
   />
 </template>
 
@@ -14,15 +15,13 @@ import Sigma from 'sigma'
 import { createEdgeArrowProgram } from 'sigma/rendering'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 
-import type { MemoryDto, MemoryRelationDto } from '@core/sdk/client'
+import type { MemoryRelationDto } from '@core/sdk/client'
 
 interface Props {
   relations: MemoryRelationDto[]
   selectedMemoryId?: string
-  searchResults?: {
-    memories: MemoryDto[]
-    relations: MemoryRelationDto[]
-  } | null
+  highlightedRelations?: MemoryRelationDto[]
+  height?: string
 }
 
 interface Colors {
@@ -34,7 +33,9 @@ interface Colors {
   labelColor: string
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  height: '800px',
+})
 const emit = defineEmits<{ selectNode: [nodeId: string] }>()
 
 const { myUser } = useMyUser()
@@ -53,23 +54,12 @@ const CustomArrowProgram = createEdgeArrowProgram({
   lengthToThicknessRatio: 4,
 })
 
-const isSearchActive = computed(() => !!props.searchResults)
-
-const relevantNodeIds = computed(() => {
-  if (!props.searchResults) return new Set<string>()
-  const ids = new Set<string>()
-  props.searchResults.memories.forEach(m => ids.add(m.id))
-  props.searchResults.relations.forEach((r) => {
-    ids.add(r.source)
-    ids.add(r.target)
-  })
-  return ids
-})
+const isHighlightActive = computed(() => !!props.highlightedRelations)
 
 const relevantRelationKeys = computed(() => {
-  if (!props.searchResults) return new Set<string>()
+  if (!props.highlightedRelations) return new Set<string>()
   return new Set(
-    props.searchResults.relations.map((r, i) => `${r.source}-${r.relation}-${r.target}-${i}`),
+    props.highlightedRelations.map((r, i) => `${r.source}-${r.relation}-${r.target}-${i}`),
   )
 })
 
@@ -103,11 +93,13 @@ const getColors = (): Colors => ({
 })
 
 const isNodeRelevant = (nodeId: string): boolean => {
-  return !isSearchActive.value || relevantNodeIds.value.has(nodeId)
+  if (!isHighlightActive.value) return true
+  // A node is relevant if it appears in any highlighted relation
+  return props.highlightedRelations?.some(r => r.source === nodeId || r.target === nodeId) ?? false
 }
 
 const isEdgeRelevant = (edgeKey: string): boolean => {
-  return !isSearchActive.value || relevantRelationKeys.value.has(edgeKey)
+  return !isHighlightActive.value || relevantRelationKeys.value.has(edgeKey)
 }
 
 const lerp = (min: number, max: number, t: number): number => {
@@ -272,7 +264,7 @@ const renderGraph = (): void => {
 }
 
 watch(
-  () => [props.relations, props.searchResults],
+  () => [props.relations, props.highlightedRelations],
   () => renderGraph(),
   { deep: true },
 )

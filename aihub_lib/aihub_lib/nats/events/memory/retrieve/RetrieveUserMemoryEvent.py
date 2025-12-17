@@ -1,12 +1,13 @@
 from typing import ClassVar
 
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.memory.RetrieveMemoryEvent import RetrieveMemoryEvent
+
+from .BaseRetrieveMemoryEvent import BaseRetrieveMemoryEvent
 
 
-class RetrieveUserMemoryEvent(RetrieveMemoryEvent):
+class RetrieveUserMemoryEvent(BaseRetrieveMemoryEvent):
     """
-    Specialized RetrieveMemoryEvent for user-specific memories.
+    Specialized BaseRetrieveMemoryEvent for user-specific memories.
 
     Emitted when an agent retrieves private user memories from long-term storage.
     These memories are scoped to individual users and never shared across users.

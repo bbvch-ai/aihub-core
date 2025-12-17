@@ -9,11 +9,11 @@ from aihub_lib.infrastructure.mem0.types.MemorySearchResult import MemorySearchR
 from aihub_lib.nats.events import ControlAndDisplayEvent
 
 
-class RetrieveMemoryEvent(ControlAndDisplayEvent):
+class BaseRetrieveMemoryEvent(ControlAndDisplayEvent):
     """
     A control and display event emitted when an agent retrieves memories from long-term storage.
 
-    ### Why RetrieveMemoryEvent?
+    ### Why BaseRetrieveMemoryEvent?
     This event bridges the gap between stateless conversation and stateful user context:
     - As a control event, it provides retrieved memories to downstream workflow steps
     - As a display event, it shows users what context the agent is using from past interactions

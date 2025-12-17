@@ -3,13 +3,7 @@ from .agent_in_the_loop.exception.AgentInTheLoopExceptionEvent import AgentInThe
 from .agent_in_the_loop.request.AgentInTheLoopRequestEvent import AgentInTheLoopRequestEvent
 from .agent_in_the_loop.response.AgentInTheLoopResponseEvent import AgentInTheLoopResponseEvent
 from .BaseEvent import BaseEvent
-from .common import (
-    AddMemoryToChatHistoryEvent,
-    AddOrganizationMemoryToChatHistoryEvent,
-    AddUserMemoryToChatHistoryEvent,
-    LimitChatHistoryEvent,
-    StandaloneQuestionCondenserEvent,
-)
+from .common import LimitChatHistoryEvent, StandaloneQuestionCondenserEvent
 from .control import ControlEvent, ExceptionEvent, StartEvent, StopEvent
 from .ControlAndDisplayEvent import ControlAndDisplayEvent
 from .cost import CostEvent, LLMCostEvent
@@ -20,11 +14,15 @@ from .human_in_the_loop import HumanInTheLoop
 from .human_in_the_loop.request import HumanInTheLoopRequestEvent
 from .human_in_the_loop.response import HumanInTheLoopResponseEvent
 from .memory import (
-    NewMemoryEvent,
-    RetrieveMemoryEvent,
+    AddMemoryToChatHistoryEvent,
+    AddOrganizationMemoryToChatHistoryEvent,
+    AddUserMemoryToChatHistoryEvent,
+    BaseRetrieveMemoryEvent,
+    BaseStoreMemoryEvent,
     RetrieveOrganizationMemoryEvent,
     RetrieveUserMemoryEvent,
     StoreOrganizationMemoryEvent,
+    StoreUserMemoryEvent,
 )
 from .process import ProcessEvent, ProcessExceptionEvent, ProcessStartEvent, ProcessStopEvent
 from .semantic import (
@@ -91,9 +89,10 @@ __all__ = [
     "ProcessExceptionEvent",
     "ProcessStartEvent",
     "ProcessStopEvent",
-    "NewMemoryEvent",
-    "RetrieveMemoryEvent",
+    "BaseRetrieveMemoryEvent",
+    "BaseStoreMemoryEvent",
     "RetrieveOrganizationMemoryEvent",
     "RetrieveUserMemoryEvent",
     "StoreOrganizationMemoryEvent",
+    "StoreUserMemoryEvent",
 ]

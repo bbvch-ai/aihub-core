@@ -1,35 +1,34 @@
-from typing import Annotated, ClassVar
+from abc import ABC
+from typing import Annotated
 
 from pydantic import Field
 
-from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.mem0.types.MemoryAdded import MemoryAdded
 from aihub_lib.infrastructure.mem0.types.MemoryEventType import MemoryEventType
 from aihub_lib.infrastructure.mem0.types.MemoryRelation import MemoryRelation
 from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
 
 
-class NewMemoryEvent(ControlAndDisplayEvent):
+class BaseStoreMemoryEvent(ControlAndDisplayEvent, ABC):
     """
-    A control and display event emitted when an agent updates user or organization memories.
+    Abstract base class for memory storage events.
 
-    ### Why NewMemoryEvent?
+    ### Why BaseStoreMemoryEvent?
     This event serves dual purposes in the Swiss AI Agent Protocol:
     - As a control event, it notifies downstream systems that memory state has changed
-    - As a display event, it provides transparency to users about what was learned from their conversation
+    - As a display event, it provides transparency to users about what was learned or stored
 
-    Agents use this event after processing conversation context to persist insights. The event captures
+    Agents emit this event after persisting insights to long-term memory storage. The event captures
     both the semantic changes (added/updated/deleted memories) and the knowledge graph updates
-    (new/removed relations between entities). This enables:
-    - Real-time UI updates showing memory modifications
-    - Audit trails of what agents learned and when
-    - Triggering downstream workflows that depend on memory state
+    (new/removed relations between entities). This transparency is crucial for user trust - they can
+    see what the agent learned and verify accuracy.
+
+    The event structure follows mem0's MemoryAdded response format, enabling real-time UI updates,
+    audit trails, and triggering downstream workflows that depend on memory state.
+
+    Concrete subclasses differentiate between user-scoped and organization-scoped memory storage.
     """
 
-    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.new_memory_event.name")
-    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
-        "lib.events.new_memory_event.description"
-    )
     added_memories: Annotated[list[str], Field(description="Newly added memory texts")]
     updated_memories: Annotated[list[str], Field(description="Updated memory texts")]
     deleted_memories: Annotated[list[str], Field(description="Deleted memory texts")]
@@ -38,7 +37,8 @@ class NewMemoryEvent(ControlAndDisplayEvent):
     deleted_relations: Annotated[list[MemoryRelation], Field(description="Deleted relations")]
 
     @classmethod
-    def from_memory_added_object(cls, memory_added: MemoryAdded):
+    def from_memory_added_object(cls, memory_added: MemoryAdded) -> "BaseStoreMemoryEvent":
+        """Create event from mem0's MemoryAdded response object."""
         return cls(
             added_memories=[m.memory for m in memory_added.results if m.event == MemoryEventType.ADD],
             updated_memories=[m.memory for m in memory_added.results if m.event == MemoryEventType.UPDATE],

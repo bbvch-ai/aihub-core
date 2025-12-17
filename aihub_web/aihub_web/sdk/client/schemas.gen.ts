@@ -1158,6 +1158,205 @@ export const AudioContentSchema = {
     title: 'AudioContent'
 } as const;
 
+export const BaseRetrieveMemoryEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        memories: {
+            items: {
+                '$ref': '#/components/schemas/Memory'
+            },
+            type: 'array',
+            title: 'Memories',
+            description: 'The list of memories that were retrieved.',
+            default: []
+        },
+        relations: {
+            items: {
+                '$ref': '#/components/schemas/MemoryRelation'
+            },
+            type: 'array',
+            title: 'Relations',
+            description: 'The list of matching memory relations.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['relations', '_event_name', '_parent_event_names'],
+    title: 'BaseRetrieveMemoryEvent',
+    description: `A control and display event emitted when an agent retrieves memories from long-term storage.
+
+### Why BaseRetrieveMemoryEvent?
+This event bridges the gap between stateless conversation and stateful user context:
+- As a control event, it provides retrieved memories to downstream workflow steps
+- As a display event, it shows users what context the agent is using from past interactions
+
+Agents emit this event after semantic search through user/organization memories. The retrieved
+memories are then typically prepended to chat history as system context, enabling personalized
+responses. This transparency is crucial for user trust - they can see what the agent "remembers"
+and correct inaccuracies if needed.
+
+The event includes both individual memories and their relations in the knowledge graph, allowing
+agents to understand not just isolated facts but how concepts connect.`
+} as const;
+
+export const BaseStoreMemoryEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        added_memories: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Added Memories',
+            description: 'Newly added memory texts'
+        },
+        updated_memories: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Updated Memories',
+            description: 'Updated memory texts'
+        },
+        deleted_memories: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Deleted Memories',
+            description: 'Deleted memory texts'
+        },
+        added_relations: {
+            items: {
+                '$ref': '#/components/schemas/MemoryRelation'
+            },
+            type: 'array',
+            title: 'Added Relations',
+            description: 'Newly added relations'
+        },
+        deleted_relations: {
+            items: {
+                '$ref': '#/components/schemas/MemoryRelation'
+            },
+            type: 'array',
+            title: 'Deleted Relations',
+            description: 'Deleted relations'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['added_memories', 'updated_memories', 'deleted_memories', 'added_relations', 'deleted_relations', '_event_name', '_parent_event_names'],
+    title: 'BaseStoreMemoryEvent',
+    description: `Abstract base class for memory storage events.
+
+### Why BaseStoreMemoryEvent?
+This event serves dual purposes in the Swiss AI Agent Protocol:
+- As a control event, it notifies downstream systems that memory state has changed
+- As a display event, it provides transparency to users about what was learned or stored
+
+Agents emit this event after persisting insights to long-term memory storage. The event captures
+both the semantic changes (added/updated/deleted memories) and the knowledge graph updates
+(new/removed relations between entities). This transparency is crucial for user trust - they can
+see what the agent learned and verify accuracy.
+
+The event structure follows mem0's MemoryAdded response format, enabling real-time UI updates,
+audit trails, and triggering downstream workflows that depend on memory state.
+
+Concrete subclasses differentiate between user-scoped and organization-scoped memory storage.`
+} as const;
+
 export const Body_create_transcription_openai_audio_transcriptions_postSchema = {
     properties: {
         file: {
@@ -3798,10 +3997,13 @@ export const ContextualizedAgentEventSchema = {
                     '$ref': '#/components/schemas/SensitiveInfoRejectEvent'
                 },
                 {
-                    '$ref': '#/components/schemas/NewMemoryEvent'
+                    '$ref': '#/components/schemas/StoreUserMemoryEvent'
                 },
                 {
-                    '$ref': '#/components/schemas/RetrieveMemoryEvent'
+                    '$ref': '#/components/schemas/BaseRetrieveMemoryEvent'
+                },
+                {
+                    '$ref': '#/components/schemas/BaseStoreMemoryEvent'
                 },
                 {
                     '$ref': '#/components/schemas/RetrieveOrganizationMemoryEvent'
@@ -10515,7 +10717,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1765812410
+            default: 1765879027
         },
         owned_by: {
             type: 'string',
@@ -11350,115 +11552,6 @@ export const NamespaceResponseSchema = {
     type: 'object',
     required: ['id', 'bucket_id', 'namespace_name', 'folder_name'],
     title: 'NamespaceResponse'
-} as const;
-
-export const NewMemoryEventSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'The time (in ns since epoch) the event was stored in the event store'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        },
-        added_memories: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Added Memories',
-            description: 'Newly added memory texts'
-        },
-        updated_memories: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Updated Memories',
-            description: 'Updated memory texts'
-        },
-        deleted_memories: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Deleted Memories',
-            description: 'Deleted memory texts'
-        },
-        added_relations: {
-            items: {
-                '$ref': '#/components/schemas/MemoryRelation'
-            },
-            type: 'array',
-            title: 'Added Relations',
-            description: 'Newly added relations'
-        },
-        deleted_relations: {
-            items: {
-                '$ref': '#/components/schemas/MemoryRelation'
-            },
-            type: 'array',
-            title: 'Deleted Relations',
-            description: 'Deleted relations'
-        },
-        _event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
-Used during deserialization to decide which subclass to instantiate.`,
-            readOnly: true
-        },
-        _parent_event_names: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['added_memories', 'updated_memories', 'deleted_memories', 'added_relations', 'deleted_relations', '_event_name', '_parent_event_names'],
-    title: 'NewMemoryEvent',
-    description: `A control and display event emitted when an agent updates user or organization memories.
-
-### Why NewMemoryEvent?
-This event serves dual purposes in the Swiss AI Agent Protocol:
-- As a control event, it notifies downstream systems that memory state has changed
-- As a display event, it provides transparency to users about what was learned from their conversation
-
-Agents use this event after processing conversation context to persist insights. The event captures
-both the semantic changes (added/updated/deleted memories) and the knowledge graph updates
-(new/removed relations between entities). This enables:
-- Real-time UI updates showing memory modifications
-- Audit trails of what agents learned and when
-- Triggering downstream workflows that depend on memory state`
 } as const;
 
 export const NodeDataSchema = {
@@ -13171,93 +13264,6 @@ export const ResponseFormatTextSchema = {
     title: 'ResponseFormatText'
 } as const;
 
-export const RetrieveMemoryEventSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'The time (in ns since epoch) the event was stored in the event store'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        },
-        memories: {
-            items: {
-                '$ref': '#/components/schemas/Memory'
-            },
-            type: 'array',
-            title: 'Memories',
-            description: 'The list of memories that were retrieved.',
-            default: []
-        },
-        relations: {
-            items: {
-                '$ref': '#/components/schemas/MemoryRelation'
-            },
-            type: 'array',
-            title: 'Relations',
-            description: 'The list of matching memory relations.'
-        },
-        _event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
-Used during deserialization to decide which subclass to instantiate.`,
-            readOnly: true
-        },
-        _parent_event_names: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['relations', '_event_name', '_parent_event_names'],
-    title: 'RetrieveMemoryEvent',
-    description: `A control and display event emitted when an agent retrieves memories from long-term storage.
-
-### Why RetrieveMemoryEvent?
-This event bridges the gap between stateless conversation and stateful user context:
-- As a control event, it provides retrieved memories to downstream workflow steps
-- As a display event, it shows users what context the agent is using from past interactions
-
-Agents emit this event after semantic search through user/organization memories. The retrieved
-memories are then typically prepended to chat history as system context, enabling personalized
-responses. This transparency is crucial for user trust - they can see what the agent "remembers"
-and correct inaccuracies if needed.
-
-The event includes both individual memories and their relations in the knowledge graph, allowing
-agents to understand not just isolated facts but how concepts connect.`
-} as const;
-
 export const RetrieveOrganizationMemoryEventSchema = {
     properties: {
         event_id: {
@@ -13329,7 +13335,7 @@ Used during deserialization to decide which subclass to instantiate.`,
     type: 'object',
     required: ['relations', '_event_name', '_parent_event_names'],
     title: 'RetrieveOrganizationMemoryEvent',
-    description: `Specialized RetrieveMemoryEvent for organization-wide memories.
+    description: `Specialized BaseRetrieveMemoryEvent for organization-wide memories.
 
 Emitted when an agent retrieves shared organizational memories from long-term storage.
 These memories are accessible to all users within the organization namespace.`
@@ -13406,7 +13412,7 @@ Used during deserialization to decide which subclass to instantiate.`,
     type: 'object',
     required: ['relations', '_event_name', '_parent_event_names'],
     title: 'RetrieveUserMemoryEvent',
-    description: `Specialized RetrieveMemoryEvent for user-specific memories.
+    description: `Specialized BaseRetrieveMemoryEvent for user-specific memories.
 
 Emitted when an agent retrieves private user memories from long-term storage.
 These memories are scoped to individual users and never shared across users.`
@@ -14914,7 +14920,7 @@ export const StoreOrganizationMemoryEventSchema = {
             },
             type: 'array',
             title: 'Added Memories',
-            description: 'Newly added organization memory texts'
+            description: 'Newly added memory texts'
         },
         updated_memories: {
             items: {
@@ -14922,7 +14928,7 @@ export const StoreOrganizationMemoryEventSchema = {
             },
             type: 'array',
             title: 'Updated Memories',
-            description: 'Updated organization memory texts'
+            description: 'Updated memory texts'
         },
         deleted_memories: {
             items: {
@@ -14930,7 +14936,7 @@ export const StoreOrganizationMemoryEventSchema = {
             },
             type: 'array',
             title: 'Deleted Memories',
-            description: 'Deleted organization memory texts'
+            description: 'Deleted memory texts'
         },
         added_relations: {
             items: {
@@ -14969,19 +14975,112 @@ Used during deserialization to decide which subclass to instantiate.`,
     type: 'object',
     required: ['added_memories', 'updated_memories', 'deleted_memories', 'added_relations', 'deleted_relations', '_event_name', '_parent_event_names'],
     title: 'StoreOrganizationMemoryEvent',
-    description: `A control and display event emitted when an agent stores an explicit organization memory.
+    description: `Specialized BaseStoreMemoryEvent for organization-wide memories.
 
-### Why StoreOrganizationMemoryEvent?
-This event serves dual purposes in the Swiss AI Agent Protocol:
-- As a control event, it passes the stored organization memory to downstream workflow steps
-- As a display event, it provides transparency to users about what organizational fact was persisted
+Emitted when an agent stores shared organizational memories to long-term storage.
+These memories are accessible to all users within the organization namespace.
+Unlike user memories (inferred from chat), organization memories are explicit facts provided by users.`
+} as const;
 
-Unlike user memories (which are inferred from chat history), organization memories are explicit
-facts provided by users. This event confirms successful storage and makes the operation auditable.
+export const StoreUserMemoryEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        added_memories: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Added Memories',
+            description: 'Newly added memory texts'
+        },
+        updated_memories: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Updated Memories',
+            description: 'Updated memory texts'
+        },
+        deleted_memories: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Deleted Memories',
+            description: 'Deleted memory texts'
+        },
+        added_relations: {
+            items: {
+                '$ref': '#/components/schemas/MemoryRelation'
+            },
+            type: 'array',
+            title: 'Added Relations',
+            description: 'Newly added relations'
+        },
+        deleted_relations: {
+            items: {
+                '$ref': '#/components/schemas/MemoryRelation'
+            },
+            type: 'array',
+            title: 'Deleted Relations',
+            description: 'Deleted relations'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
+Used during deserialization to decide which subclass to instantiate.`,
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['added_memories', 'updated_memories', 'deleted_memories', 'added_relations', 'deleted_relations', '_event_name', '_parent_event_names'],
+    title: 'StoreUserMemoryEvent',
+    description: `Specialized BaseStoreMemoryEvent for user-specific memories.
 
-Organization memories are shared across all users within the organization namespace, making
-this event critical for tracking what shared knowledge has been added to the organization's
-knowledge base.`
+Emitted when an agent stores private user memories to long-term storage.
+These memories are scoped to individual users and never shared across users.
+User memories are typically inferred from conversation context.`
 } as const;
 
 export const SubmittedFormDTOSchema = {

@@ -15,7 +15,7 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.nats.events import LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.common.AddUserMemoryToChatHistoryEvent import AddUserMemoryToChatHistoryEvent
-from aihub_lib.nats.events.memory.NewMemoryEvent import NewMemoryEvent
+from aihub_lib.nats.events.memory.StoreUserMemoryEvent import StoreUserMemoryEvent
 from aihub_lib.nats.events.memory.RetrieveUserMemoryEvent import RetrieveUserMemoryEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -145,14 +145,14 @@ async def _(agent_runner: AgentTestRunner, query: str, locale: str):
 # ============================================================================
 
 
-@then("a RetrieveMemoryEvent is present")
+@then("a BaseRetrieveMemoryEvent is present")
 def _(agent_runner: AgentTestRunner):
     """Check that RetrieveUserMemoryEvent exists (regardless of memory count)."""
     event = agent_runner.get_event_of_class(RetrieveUserMemoryEvent)
     assert event is not None, "RetrieveUserMemoryEvent not found"
 
 
-@then(parsers.parse("a RetrieveMemoryEvent is present with {count:d} or more memories"))
+@then(parsers.parse("a BaseRetrieveMemoryEvent is present with {count:d} or more memories"))
 def _(agent_runner: AgentTestRunner, count: int):
     """Check that RetrieveUserMemoryEvent has expected number of memories."""
     event = agent_runner.get_event_of_class(RetrieveUserMemoryEvent)
@@ -160,7 +160,7 @@ def _(agent_runner: AgentTestRunner, count: int):
     assert len(event.memories) >= count, f"Expected {count}+ memories, got {len(event.memories)}"
 
 
-@then(parsers.parse("a RetrieveMemoryEvent is present with {count:d} memories"))
+@then(parsers.parse("a BaseRetrieveMemoryEvent is present with {count:d} memories"))
 def _(agent_runner: AgentTestRunner, count: int):
     """Check that RetrieveUserMemoryEvent has exact number of memories."""
     event = agent_runner.get_event_of_class(RetrieveUserMemoryEvent)
@@ -240,25 +240,25 @@ def _(agent_runner: AgentTestRunner, text: str):
     assert text.lower() in response_content, f"LLM response doesn't mention '{text}'"
 
 
-@then("a NewMemoryEvent is present with memory updates")
+@then("a StoreUserMemoryEvent is present with memory updates")
 def _(agent_runner: AgentTestRunner):
     """Check that new memories were persisted."""
-    event = agent_runner.get_event_of_class(NewMemoryEvent)
-    assert event is not None, "NewMemoryEvent not found"
+    event = agent_runner.get_event_of_class(StoreUserMemoryEvent)
+    assert event is not None, "StoreUserMemoryEvent not found"
 
 
-@then("a NewMemoryEvent is present")
+@then("a StoreUserMemoryEvent is present")
 def _(agent_runner: AgentTestRunner):
-    """Check that NewMemoryEvent was emitted."""
-    event = agent_runner.get_event_of_class(NewMemoryEvent)
-    assert event is not None, "NewMemoryEvent not found"
+    """Check that StoreUserMemoryEvent was emitted."""
+    event = agent_runner.get_event_of_class(StoreUserMemoryEvent)
+    assert event is not None, "StoreUserMemoryEvent not found"
 
 
 @then(parsers.parse('the new memory event contains a memory mentioning "{text1}" or "{text2}"'))
 def _(agent_runner: AgentTestRunner, text1: str, text2: str):
     """Verify new memories contain expected information."""
-    event = agent_runner.get_event_of_class(NewMemoryEvent)
-    assert event is not None, "NewMemoryEvent not found"
+    event = agent_runner.get_event_of_class(StoreUserMemoryEvent)
+    assert event is not None, "StoreUserMemoryEvent not found"
 
     # Check all memory types (added, updated)
     all_memories = event.added_memories + event.updated_memories

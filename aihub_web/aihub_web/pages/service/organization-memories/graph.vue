@@ -88,7 +88,7 @@ const handleSelectNode = (nodeId: string) => {
         <MemoryGraph
           :relations="allRelations"
           :selected-memory-id="selectedMemoryId"
-          :search-results="isSearchActive ? searchData : null"
+          :highlighted-relations="isSearchActive ? searchData?.relations : undefined"
           @select-node="handleSelectNode"
         />
       </div>

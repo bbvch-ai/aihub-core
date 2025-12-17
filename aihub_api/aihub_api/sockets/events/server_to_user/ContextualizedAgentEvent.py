@@ -4,6 +4,8 @@ from typing import Annotated, Any, override
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import (
     AddMemoryToChatHistoryEvent,
+    AddUserMemoryToChatHistoryEvent,
+    AddOrganizationMemoryToChatHistoryEvent,
     AgentEvent,
     AgentInTheLoopExceptionEvent,
     AgentInTheLoopRequestEvent,
@@ -20,9 +22,10 @@ from aihub_lib.nats.events import (
     LLMCostEvent,
     LLMEvent,
     LLMStopEvent,
-    NewMemoryEvent,
+    StoreUserMemoryEvent,
     RerankerEvent,
-    RetrieveMemoryEvent,
+    BaseRetrieveMemoryEvent,
+    BaseStoreMemoryEvent,
     RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
     RetrieveUserMemoryEvent,
@@ -61,6 +64,8 @@ DisplayEvents = (
     | Annotated[HumanInTheLoopResponseEvent, Tag("HumanInTheLoopResponseEvent")]
     | Annotated[LimitChatHistoryEvent, Tag("LimitChatHistoryEvent")]
     | Annotated[AddMemoryToChatHistoryEvent, Tag("AddMemoryToChatHistoryEvent")]
+    | Annotated[AddUserMemoryToChatHistoryEvent, Tag("AddUserMemoryToChatHistoryEvent")]
+    | Annotated[AddOrganizationMemoryToChatHistoryEvent, Tag("AddOrganizationMemoryToChatHistoryEvent")]
     | Annotated[StandaloneQuestionCondenserEvent, Tag("StandaloneQuestionCondenserEvent")]
     | Annotated[LLMCostEvent, Tag("LLMCostEvent")]
     | Annotated[ChunkEvent, Tag("ChunkEvent")]
@@ -90,8 +95,9 @@ DisplayEvents = (
     | Annotated[FewShotRejectEvent, Tag("FewShotRejectEvent")]
     | Annotated[SensitiveInfoAcceptEvent, Tag("SensitiveInfoAcceptEvent")]
     | Annotated[SensitiveInfoRejectEvent, Tag("SensitiveInfoRejectEvent")]
-    | Annotated[NewMemoryEvent, Tag("NewMemoryEvent")]
-    | Annotated[RetrieveMemoryEvent, Tag("RetrieveMemoryEvent")]
+    | Annotated[StoreUserMemoryEvent, Tag("StoreUserMemoryEvent")]
+    | Annotated[BaseRetrieveMemoryEvent, Tag("BaseRetrieveMemoryEvent")]
+    | Annotated[BaseStoreMemoryEvent, Tag("BaseStoreMemoryEvent")]
     | Annotated[RetrieveOrganizationMemoryEvent, Tag("RetrieveOrganizationMemoryEvent")]
     | Annotated[RetrieveUserMemoryEvent, Tag("RetrieveUserMemoryEvent")]
     | Annotated[StoreOrganizationMemoryEvent, Tag("StoreOrganizationMemoryEvent")]

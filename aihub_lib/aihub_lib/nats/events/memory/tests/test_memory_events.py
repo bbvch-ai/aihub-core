@@ -9,12 +9,11 @@ from aihub_lib.infrastructure.mem0.types.MemorySearchResult import MemorySearchR
 from aihub_lib.infrastructure.mem0.types.MemoryType import MemoryType
 from aihub_lib.infrastructure.mem0.types.ModifiedMemory import ModifiedMemory
 from aihub_lib.infrastructure.mem0.types.ModifiedRelations import ModifiedRelations
-from aihub_lib.nats.events.memory.NewMemoryEvent import NewMemoryEvent
-from aihub_lib.nats.events.memory.RetrieveMemoryEvent import RetrieveMemoryEvent
+from aihub_lib.nats.events.memory import BaseRetrieveMemoryEvent, StoreUserMemoryEvent
 
 
-class TestNewMemoryEvent:
-    """Tests for NewMemoryEvent factory method."""
+class TestStoreUserMemoryEvent:
+    """Tests for StoreUserMemoryEvent factory method."""
 
     @pytest.fixture
     def sample_metadata(self):
@@ -47,7 +46,7 @@ class TestNewMemoryEvent:
             relations=ModifiedRelations(),
         )
 
-        event = NewMemoryEvent.from_memory_added_object(memory_added)
+        event = StoreUserMemoryEvent.from_memory_added_object(memory_added)
 
         assert len(event.added_memories) == 2
         assert "User likes Python" in event.added_memories
@@ -78,7 +77,7 @@ class TestNewMemoryEvent:
             relations=ModifiedRelations(),
         )
 
-        event = NewMemoryEvent.from_memory_added_object(memory_added)
+        event = StoreUserMemoryEvent.from_memory_added_object(memory_added)
 
         assert len(event.added_memories) == 0
         assert len(event.updated_memories) == 1
@@ -103,7 +102,7 @@ class TestNewMemoryEvent:
             relations=ModifiedRelations(),
         )
 
-        event = NewMemoryEvent.from_memory_added_object(memory_added)
+        event = StoreUserMemoryEvent.from_memory_added_object(memory_added)
 
         assert len(event.added_memories) == 0
         assert len(event.updated_memories) == 0
@@ -133,7 +132,7 @@ class TestNewMemoryEvent:
             ),
         )
 
-        event = NewMemoryEvent.from_memory_added_object(memory_added)
+        event = StoreUserMemoryEvent.from_memory_added_object(memory_added)
 
         assert len(event.added_relations) == 1
         assert event.added_relations[0].source == "Alice"
@@ -162,7 +161,7 @@ class TestNewMemoryEvent:
             relations=ModifiedRelations(),
         )
 
-        event = NewMemoryEvent.from_memory_added_object(memory_added)
+        event = StoreUserMemoryEvent.from_memory_added_object(memory_added)
 
         assert len(event.added_memories) == 1
         assert len(event.updated_memories) == 1
@@ -170,7 +169,7 @@ class TestNewMemoryEvent:
 
 
 class TestRetrieveMemoryEvent:
-    """Tests for RetrieveMemoryEvent factory method."""
+    """Tests for BaseRetrieveMemoryEvent factory method."""
 
     @pytest.fixture
     def sample_metadata(self):
@@ -210,7 +209,7 @@ class TestRetrieveMemoryEvent:
             ],
         )
 
-        event = RetrieveMemoryEvent.from_memory_search_result(search_result)
+        event = BaseRetrieveMemoryEvent.from_memory_search_result(search_result)
 
         assert len(event.memories) == 2
         assert event.memories[0].memory == "User likes Python"
@@ -223,7 +222,7 @@ class TestRetrieveMemoryEvent:
         """Should handle empty search results gracefully."""
         search_result = MemorySearchResult(results=[], relations=[])
 
-        event = RetrieveMemoryEvent.from_memory_search_result(search_result)
+        event = BaseRetrieveMemoryEvent.from_memory_search_result(search_result)
 
         assert len(event.memories) == 0
         assert len(event.relations) == 0
@@ -244,7 +243,7 @@ class TestRetrieveMemoryEvent:
             relations=[],
         )
 
-        event = RetrieveMemoryEvent.from_memory_search_result(search_result)
+        event = BaseRetrieveMemoryEvent.from_memory_search_result(search_result)
 
         memory = event.memories[0]
         assert memory.metadata.user_id == "test_user"

@@ -181,6 +181,27 @@ event:
     contentChunk: "{count} frammento di contenuto | {count} frammenti di contenuto"
     noChunksFound: "Nessun frammento trovato"
     noChunksFoundDescription: "La ricerca di recupero non ha trovato frammenti di contenuto rilevanti."
+  retrieveMemory:
+    title: "Memoria recuperata"
+    memories: "Memorie"
+    relations: "Grafo della conoscenza"
+    score: "Rilevanza"
+    noMemories: "Nessuna memoria recuperata"
+  storeMemory:
+    title: "Modifiche alla memoria"
+    added: "Aggiunto"
+    updated: "Aggiornato"
+    deleted: "Eliminato"
+    addedRelations: "relazioni aggiunte"
+    deletedRelations: "relazioni eliminate"
+    relationChanges: "Modifiche alle relazioni"
+    noChanges: "Nessuna modifica"
+  addMemoryToChatHistory:
+    summary: "{count} messaggio di memoria aggiunto alla cronologia | {count} messaggi di memoria aggiunti alla cronologia"
+    description: "La cronologia della chat è stata arricchita con memorie rilevanti dalle interazioni precedenti"
+    assistant: "Assistente"
+    system: "Sistema"
+    user: "Utente"
   standaloneQuestionCondenser:
     summary: "Domanda rifinita e condensata"
     condensedQuestion: "Domanda Condensata"
