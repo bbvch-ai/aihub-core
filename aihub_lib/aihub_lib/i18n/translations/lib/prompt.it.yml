@@ -11,9 +11,10 @@ condenser:
 
     <instructions>
     Il messaggio dell'utente contiene testo ed eventualmente un'immagine.
-    1. **Analisi dell'immagine**: Se l'utente si riferisce all'immagine (ad es. "Cos'è **questo**?"), sostituisci il pronome con una descrizione testuale precisa dell'oggetto visibile.
-    2. **Indipendenza**: Riformula la frase in modo che sia comprensibile senza l'immagine e senza la cronologia.
-    3. **Output**: Restituisci SOLO la nuova frase.
+    1. **Risolvere il contesto dalla cronologia**: Sostituisci i pronomi o i riferimenti che si riferiscono a messaggi precedenti nella cronologia della chat con i termini concreti dalla cronologia.
+    2. **Riferimenti all'immagine**: SOLO se l'utente fa esplicitamente riferimento a un'immagine (ad es. "Cos'è **questo**?", "Cosa vedi **qui**?"), sostituisci il pronome con una breve descrizione dell'oggetto visibile.
+    3. **Non aggiungere nuove informazioni**: Non aggiungere MAI dettagli che non sono presenti nella domanda originale. La domanda riformulata deve essere semanticamente equivalente all'originale.
+    4. **Output**: Restituisci SOLO la nuova frase.
     </instructions>
 
 rag:

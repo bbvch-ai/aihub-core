@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.256.3] - 2025-12-17 - Enhanced Knowledge Management with Shared RAG Pipelines and Dynamic Buckets
+
+### Added
+
+- ✨ **Shared RAG Pipeline:** Introduced a new `shared_rag_pipeline` to process and manage shared knowledge, complete
+  with its own Docker image, Dagster configuration, and deployment setup.
+- 📦 **Dynamic Knowledge Bucket Configuration:** Added new environment variables (`AIHUB_CREATE_DEFAULT_BUCKETS`,
+  `AIHUB_DEFAULT_BUCKET_NAME`, `AIHUB_SHARED_BUCKET_NAME`, `AIHUB_DEFAULT_NAMESPACE_NAME`,
+  `AIHUB_SHARED_NAMESPACE_NAME`) to allow flexible naming and conditional creation of knowledge buckets and namespaces.
+- 🌱 **Automated Knowledge Bucket Initialization:** Implemented API startup logic to automatically create default
+  knowledge buckets and namespaces in MongoDB, ensuring consistent setup.
+- 📄 **New Docker Compose Conventions:** Added a section to `AGENTS.md` outlining best practices for Docker Compose
+  templates and environment variable usage.
+
+### Changed
+
+- ⚙️ **RAG Agent Knowledge Retrieval:** Updated `RAGAgent` and `ExpertRAGAgent` to simultaneously retrieve information
+  from both default and shared knowledge buckets and namespaces, enhancing retrieval capabilities.
+- 🔄 **Dynamic Pipeline Datalake Naming:** Configured existing RAG pipelines (`default_rag_pipeline`, playground
+  pipeline) to use dynamically defined datalake container names from `AIHubSettings`, improving configurability.
+- 💬 **Refined Condenser Prompt Instructions:** Improved the prompt instructions for the standalone question condenser
+  across all supported languages, focusing on better context resolution and preventing the addition of new information.
+  This leads to more accurate and self-contained queries.
+- 🚀 **Conditional S3 Bucket Creation:** Modified the S3 initialization script (`init-buckets.sh`) to conditionally
+  create default and shared knowledge buckets based on `AIHUB_CREATE_DEFAULT_BUCKETS` settings.
+- 💡 **Unified RAG Pipelines Development Setup:** Replaced the specific "Default RAG Pipeline Dev" run configuration with
+  a consolidated "RAG Pipelines Dev" setup to streamline development for all RAG pipelines.
+
+---
+
 ## [v0.256.2] - 2025-12-17 - Platform-wide Observability Boost
 
 ### Added
