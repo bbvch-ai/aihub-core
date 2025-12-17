@@ -1,3 +1,4 @@
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.logging import enable_logging
 
 from aihub_pipeline.util.definitions_util import default_definitions
@@ -5,7 +6,7 @@ from aihub_pipeline.util.definitions_util import default_definitions
 enable_logging()
 
 defs = default_definitions(
-    datalake_container_name="sharedknowledge",
+    datalake_container_name=AIHubSettings().SHARED_BUCKET_NAME,
     embedding_model_name="embedding/large",
     llm_model_name="text-generation/mini",
     with_summary_nodes=True,

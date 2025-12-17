@@ -140,9 +140,15 @@ async def initialize_knowledge_buckets() -> None:
     Creates the required bucket and namespace entries in MongoDB for the RAG system.
     S3 buckets are created separately by the init-buckets.sh script.
     """
+    settings = AIHubSettings()
+
+    if not settings.CREATE_DEFAULT_BUCKETS:
+        logger.info("Bucket initialization disabled, skipping")
+        return
+
     buckets_config = [
-        {"bucket_name": "defaultknowledge", "namespace": "defaultnamespace"},
-        {"bucket_name": "sharedknowledge", "namespace": "sharednamespace"},
+        {"bucket_name": settings.DEFAULT_BUCKET_NAME, "namespace": settings.DEFAULT_NAMESPACE_NAME},
+        {"bucket_name": settings.SHARED_BUCKET_NAME, "namespace": settings.SHARED_NAMESPACE_NAME},
     ]
 
     for config in buckets_config:

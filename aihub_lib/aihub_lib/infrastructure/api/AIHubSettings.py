@@ -15,6 +15,26 @@ class AIHubSettings(EnvironmentSettings):
         bool, Field(description="Creates default roles like AI-Hub Admin and AI-Hub User")
     ] = True
 
+    CREATE_DEFAULT_BUCKETS: Annotated[
+        bool, Field(description="Creates default knowledge buckets and namespaces")
+    ] = True
+
+    DEFAULT_BUCKET_NAME: Annotated[
+        str, Field(description="Name of the default knowledge bucket")
+    ] = "defaultknowledge"
+
+    SHARED_BUCKET_NAME: Annotated[
+        str, Field(description="Name of the shared knowledge bucket")
+    ] = "sharedknowledge"
+
+    DEFAULT_NAMESPACE_NAME: Annotated[
+        str, Field(description="Name of the default namespace")
+    ] = "defaultnamespace"
+
+    SHARED_NAMESPACE_NAME: Annotated[
+        str, Field(description="Name of the shared namespace")
+    ] = "sharednamespace"
+
     FRONTEND_ORIGIN: Annotated[str, Field(description="Comma separated list of origins to allow CORS")]
 
     MONGO_MAIN_DB_NAME: Annotated[

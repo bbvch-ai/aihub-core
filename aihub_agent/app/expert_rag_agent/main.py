@@ -13,6 +13,7 @@ from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.generative_ai.retrievers.InsightRetrieverConfig import InsightRetrieverConfig
 from aihub_lib.generative_ai.retrievers.KnowledgeRetrieverConfig import KnowledgeRetrieverConfig
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
@@ -31,6 +32,7 @@ enable_logging()
 
 async def main():
     servers_list = [NatsSettings().ENDPOINT]
+    aihub_settings = AIHubSettings()
     runner = AgentRunner(
         agent_type=ExpertRAGAgent,
         default_agent_config=ExpertRAGAgentConfig(
@@ -160,13 +162,13 @@ async def main():
             retrievers=[
                 KnowledgeRetrieverConfig(
                     embed_model=EmbeddingModelConfig(model_name="embedding/large"),
-                    index_namespaces=["defaultnamespace"],
+                    index_namespaces=[aihub_settings.DEFAULT_NAMESPACE_NAME],
                     retrieve_k=10,
                     query_mode=VectorStoreQueryMode.HYBRID,
                     node_types=["content"],
                     vector_store=MilvusVectorStoreConfig(
                         uri=MilvusSettings().URL,
-                        collection_name="defaultknowledge",
+                        collection_name=aihub_settings.DEFAULT_BUCKET_NAME,
                         dimensions=MilvusSettings().DIMENSION,
                     ),
                     retrieve_prev_next=RetrievePrevNextConfig(
@@ -179,13 +181,13 @@ async def main():
                 ),
                 KnowledgeRetrieverConfig(
                     embed_model=EmbeddingModelConfig(model_name="embedding/large"),
-                    index_namespaces=["sharednamespace"],
+                    index_namespaces=[aihub_settings.SHARED_NAMESPACE_NAME],
                     retrieve_k=10,
                     query_mode=VectorStoreQueryMode.HYBRID,
                     node_types=["content"],
                     vector_store=MilvusVectorStoreConfig(
                         uri=MilvusSettings().URL,
-                        collection_name="sharedknowledge",
+                        collection_name=aihub_settings.SHARED_BUCKET_NAME,
                         dimensions=MilvusSettings().DIMENSION,
                     ),
                     retrieve_prev_next=RetrievePrevNextConfig(
