@@ -116,6 +116,14 @@ packages.
 - **Traefik**: Reverse proxy and API gateway
 - **OAuth2**: Enterprise authentication (Azure AD with superuser fallback for Docker deployments)
 
+**Docker Compose Conventions**:
+
+- **No default values in env var assignments**: Never use `${VAR:-default}` syntax in docker-compose templates. Define
+  all default values in `.env.dev` and `.env.prod` files instead. This keeps defaults centralized and explicit.
+- **Template location**: `deployment/templates/docker-compose.yml.j2` (Jinja2 template)
+- **Config location**: `deployment/compose-config.yml` (image tags, stage-specific values)
+- **Regenerate after changes**: Run `make generate-compose` after modifying templates or config
+
 ## Coding Style & Conventions
 
 **Key Principles**:
