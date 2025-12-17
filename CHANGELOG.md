@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.256.2] - 2025-12-17 - Platform-wide Observability Boost
+
+### Added
+
+- 📈 **Enhanced System Observability:** Integrated `AihubInstrumentor` across all core agent applications
+  (`ExpertAskingAgent`, `ExpertRAGAgent`, `LLMWrappingAgent`, `RAGAgent`) and the main API. This crucial update enables
+  comprehensive OpenTelemetry instrumentation, significantly improving distributed tracing and telemetry for better
+  system monitoring and debugging capabilities.
+
+---
+
 ## [v0.256.1] - 2025-12-16 - Empowering RAG with Human Expertise: Introducing Expert RAG and Asking Agents
 
 ### Added

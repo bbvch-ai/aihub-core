@@ -1,6 +1,4 @@
 # ruff: noqa: E402
-from aihub_api.routes.docling.DoclingController import DoclingController
-
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
 
 AihubInstrumentor().instrument()
@@ -16,6 +14,7 @@ from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import cr
 from aihub_lib.routes.health.HealthController import HealthController
 
 from aihub_api.routes.agent.AgentController import AgentController
+from aihub_api.routes.docling.DoclingController import DoclingController
 from aihub_api.routes.evaluation.EvaluationController import EvaluationController
 from aihub_api.routes.event.EventController import EventController
 from aihub_api.routes.file.FileController import FileController
