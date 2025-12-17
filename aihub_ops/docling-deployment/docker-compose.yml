@@ -77,17 +77,22 @@ services:
     environment:
       DOCLING_SERVE_ENABLE_UI: "true"
       DOCLING_SERVE_ARTIFACTS_PATH: /models
-      # === Worker & Concurrency Limits ===
-      # Allow up to 5 concurrent worker threads
-      DOCLING_SERVE_ENG_LOC_NUM_WORKERS: "5"
-      # Share models across worker threads (critical for memory efficiency)
+      # === Worker & Concurrency ===
+      DOCLING_SERVE_ENG_LOC_NUM_WORKERS: "8"
       DOCLING_SERVE_ENG_LOC_SHARE_MODELS: "true"
-      # Limit cached DocumentConverter objects (each holds loaded models)
       DOCLING_SERVE_CONVERTER_CACHE_SIZE: "2"
-      # Increase pages queue for concurrent large PDFs (plenty of RAM available)
-      DOCLING_SERVE_ENG_LOC_PAGES_QUEUE_SIZE: "200"
-      # Increase sync wait timeout for large documents (10 minutes)
+      DOCLING_SERVE_ENG_LOC_PAGES_QUEUE_SIZE: "300"
       DOCLING_SERVE_MAX_SYNC_WAIT: "600"
+      # === CPU Threading (16 cores available, use half) ===
+      DOCLING_NUM_THREADS: "8"
+      OMP_NUM_THREADS: "8"
+      MKL_NUM_THREADS: "8"
+      # === GPU Batch Sizes (L4 23GB VRAM) ===
+      DOCLING_SERVE_LAYOUT_BATCH_SIZE: "48"
+      DOCLING_SERVE_TABLE_BATCH_SIZE: "12"
+      DOCLING_SERVE_OCR_BATCH_SIZE: "24"
+      # === Page Processing ===
+      DOCLING_PERF_PAGE_BATCH_SIZE: "8"
     volumes:
       - /data/volumes/docling-models:/models
     depends_on:
