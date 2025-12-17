@@ -19,6 +19,8 @@ sync:
 		--include='litellm/**' \
 		--exclude='*' \
 		./ test-gpu-instance:~/docling-deployment/
+	@echo "Fixing acme.json permissions..."
+	ssh test-gpu-instance 'touch ~/docling-deployment/traefik/acme.json && chmod 600 ~/docling-deployment/traefik/acme.json'
 	@echo "✅ Sync complete!"
 	@echo ""
 	@echo "Next steps:"
