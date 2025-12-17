@@ -157,6 +157,25 @@ async def main():
                         max_parent_levels=2,
                     ),
                 ),
+                KnowledgeRetrieverConfig(
+                    embed_model=EmbeddingModelConfig(model_name="embedding/large"),
+                    index_namespaces=["sharednamespace"],
+                    retrieve_k=10,
+                    query_mode=VectorStoreQueryMode.HYBRID,
+                    node_types=["content"],
+                    vector_store=MilvusVectorStoreConfig(
+                        uri=MilvusSettings().URL,
+                        collection_name="sharedknowledge",
+                        dimensions=MilvusSettings().DIMENSION,
+                    ),
+                    retrieve_prev_next=RetrievePrevNextConfig(
+                        num_nodes=10,
+                        mode=ModeOptions.BOTH,
+                    ),
+                    retrieve_summaries=RetrieveSummariesConfig(
+                        max_parent_levels=2,
+                    ),
+                ),
                 InsightRetrieverConfig(
                     namespace="default",
                     agent_class="ExpertAskingAgent",

@@ -7,10 +7,14 @@ including roles, permissions, and other essential entities needed for the hub to
 
 import logging
 
+from mongoengine import DoesNotExist
+
 from aihub_lib.auth.dependencies.SuperuserAuthHandler.SuperuserSettings import SuperuserSettings
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.no_trace import no_trace
 from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
+from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
+from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
 from aihub_lib.persistence.user.UserEntity import UserEntity
 
 logger = logging.getLogger(__name__)
@@ -127,3 +131,52 @@ async def initialize_superuser() -> None:
     except Exception as e:
         logger.error(f"Failed to initialize superuser: {e}")
         raise
+
+
+@no_trace
+async def initialize_knowledge_buckets() -> None:
+    """
+    Initialize the default knowledge buckets and namespaces.
+
+    Creates the required bucket and namespace entries in MongoDB for the RAG system.
+    S3 buckets are created separately by the init-buckets.sh script.
+    """
+    buckets_config = [
+        {"bucket_name": "defaultknowledge", "namespace": "defaultnamespace"},
+        {"bucket_name": "sharedknowledge", "namespace": "sharednamespace"},
+    ]
+
+    for config in buckets_config:
+        bucket = await _ensure_bucket_exists(config["bucket_name"])
+        await _ensure_namespace_exists(bucket, config["namespace"])
+
+    logger.info("Knowledge bucket initialization completed successfully")
+
+
+async def _ensure_bucket_exists(bucket_name: str) -> BucketEntity:
+    """Ensure a bucket exists in the database, creating it if necessary."""
+    try:
+        bucket = BucketEntity.get_bucket_by_bucket_name(bucket_name)
+        logger.info(f"Bucket '{bucket_name}' already exists, skipping creation")
+        return bucket
+    except DoesNotExist:
+        bucket = BucketEntity.create_bucket(bucket_name=bucket_name, db_name=bucket_name)
+        logger.info(f"Successfully created bucket '{bucket_name}'")
+        return bucket
+
+
+async def _ensure_namespace_exists(bucket: BucketEntity, namespace_name: str) -> NamespaceEntity:
+    """Ensure a namespace exists for the given bucket, creating it if necessary."""
+    bucket_id = str(bucket.id)
+    try:
+        namespace = NamespaceEntity.get_namespace_by_bucket_and_name(bucket_id=bucket_id, namespace_name=namespace_name)
+        logger.info(f"Namespace '{namespace_name}' already exists in bucket '{bucket.bucket_name}', skipping creation")
+        return namespace
+    except DoesNotExist:
+        namespace = NamespaceEntity.create_namespace(
+            bucket_id=bucket_id,
+            namespace_name=namespace_name,
+            folder_name=namespace_name,
+        )
+        logger.info(f"Successfully created namespace '{namespace_name}' in bucket '{bucket.bucket_name}'")
+        return namespace

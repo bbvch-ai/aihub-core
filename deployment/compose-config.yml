@@ -99,6 +99,12 @@ image_tags:
     nightly: default_rag_pipeline:nightly
     latest: default_rag_pipeline:latest
 
+  shared_rag_pipeline:
+    build: localbuild
+    local: shared_rag_pipeline:latest
+    nightly: shared_rag_pipeline:nightly
+    latest: shared_rag_pipeline:latest
+
   bot:
     build: localbuild
     local: bot:latest
