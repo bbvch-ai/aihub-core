@@ -7,8 +7,6 @@ including roles, permissions, and other essential entities needed for the hub to
 
 import logging
 
-from mongoengine import DoesNotExist
-
 from aihub_lib.auth.dependencies.SuperuserAuthHandler.SuperuserSettings import SuperuserSettings
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.no_trace import no_trace
@@ -16,6 +14,7 @@ from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
 from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
 from aihub_lib.persistence.user.UserEntity import UserEntity
+from mongoengine import DoesNotExist
 
 logger = logging.getLogger(__name__)
 
