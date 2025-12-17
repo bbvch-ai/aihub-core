@@ -8,8 +8,21 @@ set -e
 echo "Waiting for S3 to be ready..."
 sleep 5
 
-ENDPOINT=${S3_ENDPOINT:-"http://seaweedfs-s3:9000"}
-BUCKETS=${DEFAULT_BUCKETS:-"open-webui milvus defaultknowledge sharedknowledge"}
+ENDPOINT=${S3_ENDPOINT}
+CREATE_DEFAULT_BUCKETS=${AIHUB_CREATE_DEFAULT_BUCKETS}
+DEFAULT_BUCKET=${AIHUB_DEFAULT_BUCKET_NAME}
+SHARED_BUCKET=${AIHUB_SHARED_BUCKET_NAME}
+
+# Always create core infrastructure buckets
+BUCKETS="open-webui milvus"
+
+# Conditionally add knowledge buckets
+if [ "$CREATE_DEFAULT_BUCKETS" = "True" ] || [ "$CREATE_DEFAULT_BUCKETS" = "true" ]; then
+  BUCKETS="$BUCKETS $DEFAULT_BUCKET $SHARED_BUCKET"
+  echo "Knowledge buckets enabled: $DEFAULT_BUCKET, $SHARED_BUCKET"
+else
+  echo "Knowledge bucket creation disabled (AIHUB_CREATE_DEFAULT_BUCKETS=$CREATE_DEFAULT_BUCKETS)"
+fi
 
 # Create CORS configuration file
 cat > /tmp/cors.json <<EOF
