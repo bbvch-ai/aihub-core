@@ -15,8 +15,6 @@ sync:
 		--include='.env' \
 		--include='traefik/' \
 		--include='traefik/**' \
-		--include='litellm/' \
-		--include='litellm/**' \
 		--exclude='*' \
 		./ test-gpu-instance:~/docling-deployment/
 	@echo "✅ Sync complete!"
