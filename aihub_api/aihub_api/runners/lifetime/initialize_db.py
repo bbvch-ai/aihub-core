@@ -165,9 +165,13 @@ async def _ensure_bucket_exists(bucket_name: str) -> BucketEntity:
         logger.info(f"Bucket '{bucket_name}' already exists, skipping creation")
         return bucket
     except DoesNotExist:
-        bucket = BucketEntity.create_bucket(bucket_name=bucket_name, db_name=bucket_name)
-        logger.info(f"Successfully created bucket '{bucket_name}'")
-        return bucket
+        try:
+            bucket = BucketEntity.create_bucket(bucket_name=bucket_name, db_name=bucket_name)
+            logger.info(f"Successfully created bucket '{bucket_name}'")
+            return bucket
+        except Exception as e:
+            logger.error(f"Failed to create bucket '{bucket_name}': {e}")
+            raise
 
 
 async def _ensure_namespace_exists(bucket: BucketEntity, namespace_name: str) -> NamespaceEntity:
@@ -178,10 +182,14 @@ async def _ensure_namespace_exists(bucket: BucketEntity, namespace_name: str) ->
         logger.info(f"Namespace '{namespace_name}' already exists in bucket '{bucket.bucket_name}', skipping creation")
         return namespace
     except DoesNotExist:
-        namespace = NamespaceEntity.create_namespace(
-            bucket_id=bucket_id,
-            namespace_name=namespace_name,
-            folder_name=namespace_name,
-        )
-        logger.info(f"Successfully created namespace '{namespace_name}' in bucket '{bucket.bucket_name}'")
-        return namespace
+        try:
+            namespace = NamespaceEntity.create_namespace(
+                bucket_id=bucket_id,
+                namespace_name=namespace_name,
+                folder_name=namespace_name,
+            )
+            logger.info(f"Successfully created namespace '{namespace_name}' in bucket '{bucket.bucket_name}'")
+            return namespace
+        except Exception as e:
+            logger.error(f"Failed to create namespace '{namespace_name}' in bucket '{bucket.bucket_name}': {e}")
+            raise
