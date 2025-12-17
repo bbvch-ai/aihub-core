@@ -138,9 +138,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         discovered_agents: list[AgentInstanceDTO] = await AgentService.discover_agent_instances(self.nc)
 
         # Step 2: Get what SHOULD be registered (online agents from database)
-        online_agent_keys = {
-            (agent.agent_class, agent.agent_id) for agent in AgentEntity.get_agents() if agent.is_online
-        }
+        agents_list = await asyncio.to_thread(AgentEntity.get_agents)
+        online_agent_keys = {(agent.agent_class, agent.agent_id) for agent in agents_list if agent.is_online}
 
         # Step 3: Deregister endpoints for agents no longer online (5-min threshold)
         for agent_class, agent_id in list(self.registered_entities):
