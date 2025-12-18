@@ -4,7 +4,7 @@ from aihub_lib.generative_ai.chat_history.extend_chat_history_with_user_memory i
 )
 from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.events import LLMEvent, StoreUserMemoryEvent, StopEvent, UserMessageEvent
+from aihub_lib.nats.events import LLMEvent, StopEvent, StoreUserMemoryEvent, UserMessageEvent
 from aihub_lib.nats.events.common.AddUserMemoryToChatHistoryEvent import AddUserMemoryToChatHistoryEvent
 from aihub_lib.nats.events.memory.RetrieveUserMemoryEvent import RetrieveUserMemoryEvent
 from aihub_lib.nats.topics import AgentInstanceTopic

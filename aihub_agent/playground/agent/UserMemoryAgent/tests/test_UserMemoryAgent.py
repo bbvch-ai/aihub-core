@@ -15,8 +15,8 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.nats.events import LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.common.AddUserMemoryToChatHistoryEvent import AddUserMemoryToChatHistoryEvent
-from aihub_lib.nats.events.memory.StoreUserMemoryEvent import StoreUserMemoryEvent
 from aihub_lib.nats.events.memory.RetrieveUserMemoryEvent import RetrieveUserMemoryEvent
+from aihub_lib.nats.events.memory.StoreUserMemoryEvent import StoreUserMemoryEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
