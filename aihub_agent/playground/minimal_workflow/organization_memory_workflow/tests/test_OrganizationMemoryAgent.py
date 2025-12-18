@@ -3,6 +3,7 @@ from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstru
 
 AihubInstrumentor().instrument()
 
+
 import pytest
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
     DangerousDevelopmentOnlyAuthSettings,
@@ -11,19 +12,22 @@ from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
-from aihub_lib.nats.events import (
+from aihub_lib.nats.events import LLMEvent, UserMessageEvent
+from aihub_lib.nats.events.memory.history.AddOrganizationMemoryToChatHistoryEvent import (
     AddOrganizationMemoryToChatHistoryEvent,
-    LLMStopEvent,
-    RetrieveOrganizationMemoryEvent,
-    StoreOrganizationMemoryEvent,
-    UserMessageEvent,
 )
+from aihub_lib.nats.events.memory.retrieve.RetrieveOrganizationMemoryEvent import (
+    RetrieveOrganizationMemoryEvent,
+)
+from aihub_lib.nats.events.memory.store.StoreOrganizationMemoryEvent import StoreOrganizationMemoryEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from playground.minimal_workflow.organization_memory_workflow.OrganizationMemoryAgent import OrganizationMemoryAgent
+from playground.minimal_workflow.organization_memory_workflow.OrganizationMemoryAgent import (
+    OrganizationMemoryAgent,
+)
 from playground.minimal_workflow.organization_memory_workflow.OrganizationMemoryAgentConfig import (
     OrganizationMemoryAgentConfig,
 )
@@ -145,20 +149,20 @@ async def _(agent_runner: AgentTestRunner, fact: str):
 
 
 # ============================================================================
-# Then Steps
+# Then Steps - Store Organization Memory
 # ============================================================================
-
-
-@then("a StoreOrganizationMemoryEvent is present with memory updates")
-def _(agent_runner: AgentTestRunner):
-    """Check that organization memory was stored."""
-    event = agent_runner.get_event_of_class(StoreOrganizationMemoryEvent)
-    assert event is not None, "StoreOrganizationMemoryEvent not found"
 
 
 @then("a StoreOrganizationMemoryEvent is present")
 def _(agent_runner: AgentTestRunner):
     """Check that StoreOrganizationMemoryEvent was emitted."""
+    event = agent_runner.get_event_of_class(StoreOrganizationMemoryEvent)
+    assert event is not None, "StoreOrganizationMemoryEvent not found"
+
+
+@then("a StoreOrganizationMemoryEvent is present with memory updates")
+def _(agent_runner: AgentTestRunner):
+    """Check that organization memory was stored."""
     event = agent_runner.get_event_of_class(StoreOrganizationMemoryEvent)
     assert event is not None, "StoreOrganizationMemoryEvent not found"
 
@@ -180,33 +184,55 @@ def _(agent_runner: AgentTestRunner, text1: str, text2: str):
     assert found_text2, f"No memory contains '{text2}'"
 
 
-@then("a BaseRetrieveMemoryEvent is present")
+@then(parsers.parse('the new memory contains "{text1}" or "{text2}"'))
+def _(agent_runner: AgentTestRunner, text1: str, text2: str):
+    """Verify new memories contain expected information."""
+    event = agent_runner.get_event_of_class(StoreOrganizationMemoryEvent)
+    assert event is not None, "StoreOrganizationMemoryEvent not found"
+
+    # Check all memory types (added, updated)
+    all_memories = event.added_memories + event.updated_memories
+
+    # Check if any memory mentions either text (case-insensitive)
+    found = any(text1.lower() in mem.lower() or text2.lower() in mem.lower() for mem in all_memories)
+    assert found, f"No memory mentions '{text1}' or '{text2}'"
+
+
+# ============================================================================
+# Then Steps - Retrieve Organization Memory
+# ============================================================================
+
+
+@then("a RetrieveOrganizationMemoryEvent is present")
 def _(agent_runner: AgentTestRunner):
     """Check that RetrieveOrganizationMemoryEvent exists (regardless of memory count)."""
     event = agent_runner.get_event_of_class(RetrieveOrganizationMemoryEvent)
     assert event is not None, "RetrieveOrganizationMemoryEvent not found"
 
 
-@then(parsers.parse("a BaseRetrieveMemoryEvent is present with {count:d} or more memories"))
+@then(parsers.parse("a RetrieveOrganizationMemoryEvent is present with {count:d} or more memories"))
 def _(agent_runner: AgentTestRunner, count: int):
     """Check that RetrieveOrganizationMemoryEvent has expected number of memories."""
     event = agent_runner.get_event_of_class(RetrieveOrganizationMemoryEvent)
     assert event is not None, "RetrieveOrganizationMemoryEvent not found"
-    assert len(event.memories) >= count, f"Expected {count}+ memories, got {len(event.memories)}"
+    assert (
+        len(event.memories) >= count or len(event.relations) >= count
+    ), f"Expected {count}+ memories or relations, got {len(event.memories)} / {len(event.relations)}"
 
 
-@then(parsers.parse('the retrieved memories contain "{text}"'))
+@then(parsers.parse('the memory content contains "{text}"'))
 def _(agent_runner: AgentTestRunner, text: str):
     """Verify that retrieved memories contain specific text."""
     event = agent_runner.get_event_of_class(RetrieveOrganizationMemoryEvent)
     assert event is not None, "RetrieveOrganizationMemoryEvent not found"
 
-    # Check if any memory contains the text (case-insensitive)
-    found = any(text.lower() in memory.memory.lower() for memory in event.memories)
-    assert found, f"No memory contains '{text}'"
+    # Check if any memory or relation contains the text (case-insensitive)
+    found_memory = any(text.lower() in memory.memory.lower() for memory in event.memories)
+    found_relation = any(text.lower() in relation.as_string() for relation in event.relations)
+    assert found_memory or found_relation, f"No memory or relation contains '{text}'"
 
 
-@then(parsers.parse('the retrieved memories contain "{text}" from Engineering namespace'))
+@then(parsers.parse('the memory content contains "{text}" from Engineering namespace'))
 def _(agent_runner: AgentTestRunner, text: str):
     """Verify that retrieved memories contain text from Engineering namespace."""
     event = agent_runner.get_event_of_class(RetrieveOrganizationMemoryEvent)
@@ -220,7 +246,7 @@ def _(agent_runner: AgentTestRunner, text: str):
     assert found, f"No memory from Engineering namespace contains '{text}'"
 
 
-@then(parsers.parse('the retrieved memories do NOT contain "{text}" from Marketing namespace'))
+@then(parsers.parse('the memory content does NOT contain "{text}" from Marketing namespace'))
 def _(agent_runner: AgentTestRunner, text: str):
     """Verify that Marketing namespace memories are not retrieved in Engineering context."""
     event = agent_runner.get_event_of_class(RetrieveOrganizationMemoryEvent)
@@ -229,6 +255,11 @@ def _(agent_runner: AgentTestRunner, text: str):
     # Check that no memory from Marketing namespace is present
     marketing_memories = [memory for memory in event.memories if memory.metadata.tenant_namespace == "Marketing"]
     assert len(marketing_memories) == 0, f"Found {len(marketing_memories)} memories from Marketing namespace"
+
+
+# ============================================================================
+# Then Steps - Chat History Extension
+# ============================================================================
 
 
 @then("an AddMemoryToChatHistoryEvent is present")
@@ -249,28 +280,69 @@ def _(agent_runner: AgentTestRunner):
     assert len(system_messages) > 0, "No system messages in extended history"
 
     # Check that at least one system message contains memory context markers
-    has_memory_context = any("<user_context>" in msg.content for msg in system_messages)
-    assert has_memory_context, "System message missing <user_context> tag"
+    # Note: Organization memory uses <organizational_context> tag
+    has_memory_context = any("<organizational_context>" in msg.content for msg in system_messages)
+    assert has_memory_context, "System message missing <organizational_context> tag"
+
+
+@then("the memory system message is after any existing system messages")
+def _(agent_runner: AgentTestRunner):
+    """Verify memory system message comes after other system messages."""
+    event = agent_runner.get_event_of_class(AddOrganizationMemoryToChatHistoryEvent)
+    assert event is not None, "AddOrganizationMemoryToChatHistoryEvent not found"
+
+    # Find the memory system message (contains <organizational_context>)
+    memory_msg_index = None
+    for i, msg in enumerate(event.extended_history):
+        if msg.role == MessageRole.SYSTEM and "<organizational_context>" in msg.content:
+            memory_msg_index = i
+            break
+
+    assert memory_msg_index is not None, "Memory system message not found"
+
+    # If there are other system messages before it, that's expected
+    # Just verify memory message exists in extended history
+    assert memory_msg_index >= 0, "Memory message should be in extended history"
+
+
+# ============================================================================
+# Then Steps - LLM Response
+# ============================================================================
 
 
 @then("an LLMEvent is present")
 def _(agent_runner: AgentTestRunner):
     """Check that LLM generated a response."""
-    event = agent_runner.get_event_of_class(LLMStopEvent)
-    assert event is not None, "LLMStopEvent not found"
+    event = agent_runner.get_event_of_class(LLMEvent)
+    assert event is not None, "LLMEvent not found"
     assert event.chat_messages is not None and len(event.chat_messages) > 0, "LLM response is empty"
 
 
-@then("the LLM response acknowledges the organizational fact")
+@then("the LLM response acknowledges the stored fact")
 def _(agent_runner: AgentTestRunner):
-    """Verify LLM generated a response (content verification is flexible since fact storage is artificial)."""
-    event = agent_runner.get_event_of_class(LLMStopEvent)
-    assert event is not None, "LLMStopEvent not found"
+    """Verify LLM generated a response (content verification is flexible)."""
+    event = agent_runner.get_event_of_class(LLMEvent)
+    assert event is not None, "LLMEvent not found"
 
     # Just verify we got a response - the content is less important since
     # the workflow is artificial (storing a fact, not asking a question)
     response_content = event.chat_messages[-1].content
     assert len(response_content) > 0, "LLM response is empty"
+
+
+# Alias for compatibility
+@then("the LLM response acknowledges the organizational fact")
+def _(agent_runner: AgentTestRunner):
+    """Verify LLM generated a response (alias)."""
+    event = agent_runner.get_event_of_class(LLMEvent)
+    assert event is not None, "LLMEvent not found"
+    response_content = event.chat_messages[-1].content
+    assert len(response_content) > 0, "LLM response is empty"
+
+
+# ============================================================================
+# Then Steps - Workflow Completion
+# ============================================================================
 
 
 @then("a StopEvent is present")

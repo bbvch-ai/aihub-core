@@ -6,8 +6,9 @@ from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import (
     AddOrganizationMemoryToChatHistoryEvent,
-    LLMStopEvent,
+    LLMEvent,
     RetrieveOrganizationMemoryEvent,
+    StopEvent,
     StoreOrganizationMemoryEvent,
     UserMessageEvent,
 )
@@ -97,7 +98,12 @@ class OrganizationMemoryAgent(Agent):
         event: AddOrganizationMemoryToChatHistoryEvent,
         agent_config: OrganizationMemoryAgentConfig,
         displayer: EventDisplayer,
-    ) -> LLMStopEvent:
+    ) -> LLMEvent:
         """Generates response using memory-enhanced chat history with organizational context."""
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            return await displayer.display_llm_stream(agent_config.llm, llm, event.extended_history, as_stop_step=True)
+            return await displayer.display_llm_stream(agent_config.llm, llm, event.extended_history, as_stop_step=False)
+
+    @step()
+    async def stop_step(self, _: LLMEvent) -> StopEvent:
+        """Marks workflow completion and returns final response to user."""
+        return StopEvent()
