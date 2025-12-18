@@ -7,8 +7,8 @@ from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoop import (
 )
 
 from aihub_agent.agents.Agent import Agent
+from aihub_agent.agents.HitlDemoAgent.events.HitlTypeSelection import HitlTypeSelection
 from aihub_agent.workflow.decorators.step import step
-from playground.minimal_workflow.hitl_demo_workflow.HitlTypeSelection import HitlTypeSelection
 
 
 class HitlDemoAgent(Agent):

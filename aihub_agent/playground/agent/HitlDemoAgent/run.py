@@ -1,11 +1,15 @@
+# ruff: noqa: E402
+from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
+
+AihubInstrumentor().instrument()
+
 import asyncio
 
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
 
+from aihub_agent.agents.HitlDemoAgent import HitlDemoAgent, HitlDemoAgentConfig
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from playground.minimal_workflow.hitl_demo_workflow.HitlDemoAgent import HitlDemoAgent
-from playground.minimal_workflow.hitl_demo_workflow.HitlDemoAgentConfig import HitlDemoAgentConfig
 
 enable_logging()
 
