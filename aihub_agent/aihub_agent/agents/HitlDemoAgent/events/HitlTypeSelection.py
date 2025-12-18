@@ -11,7 +11,6 @@ from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 class HitlTypeSelectionRequestEvent(HumanInTheLoopInputRequestEvent):
     """Custom request for HITL type selection."""
-
     pass
 
 
