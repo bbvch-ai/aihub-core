@@ -5,6 +5,8 @@ from datetime import UTC, datetime
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.nats.events import BaseEvent
+from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import HumanInTheLoopRequestEvent
+from aihub_lib.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import HumanInTheLoopResponseEvent
 from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
 from bson import ObjectId
@@ -203,27 +205,20 @@ class ThreadService:
         A chat HITL is open when it has not been responded to. Only HITL requests
         with hitl_type == "chat" are considered.
         """
-        hitl_requests = PersistedAgentEventEntity.human_in_the_loop_request_events_for_thread(thread_id)
-        hitl_responses = PersistedAgentEventEntity.human_in_the_loop_response_events_for_thread(thread_id)
+        hitl_request_entities = PersistedAgentEventEntity.human_in_the_loop_request_events_for_thread(thread_id)
+        hitl_response_entities = PersistedAgentEventEntity.human_in_the_loop_response_events_for_thread(thread_id)
 
-        # Build set of responded request event IDs
-        responded_request_ids: set[str] = set()
-        for response in hitl_responses:
-            request_event = response.event_data.get("request_event", {})
-            request_id = request_event.get("event_id")
-            if request_id:
-                responded_request_ids.add(request_id)
+        # Deserialize to typed Pydantic objects
+        hitl_requests = [HumanInTheLoopRequestEvent.deserialize_event(e.event_data) for e in hitl_request_entities]
+        hitl_responses = [HumanInTheLoopResponseEvent.deserialize_event(e.event_data) for e in hitl_response_entities]
+
+        # Build set of responded request event IDs using typed access
+        responded_request_ids: set[str] = {response.request_event.event_id for response in hitl_responses}
 
         # Find the first open chat HITL request
         for request in hitl_requests:
-            event_id = request.event_data.get("event_id")
-            hitl_type = request.event_data.get("hitl_type")
-
-            if hitl_type == "chat" and event_id not in responded_request_ids:
-                return OpenChatHitlResponse(
-                    has_open_chat_hitl=True,
-                    hitl_request=request.event_data,
-                )
+            if request.hitl_type == "chat" and request.event_id not in responded_request_ids:
+                return OpenChatHitlResponse(has_open_chat_hitl=True, hitl_request=request)
 
         return OpenChatHitlResponse(has_open_chat_hitl=False, hitl_request=None)
 
