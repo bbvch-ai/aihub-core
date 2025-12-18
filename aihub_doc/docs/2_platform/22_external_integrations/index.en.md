@@ -21,7 +21,7 @@ implementation patterns and examples.
 
 ### 2. Platform API integration (external systems calling in)
 
-External systems can trigger AI-Hub agents through the [Agent Interaction REST API](../17_api/2_agent_interaction_api/).
+External systems can trigger AI-Hub agents through the [Agent Interaction REST API](../18_api/2_agent_interaction_api/).
 The API authenticates incoming HTTP requests, translates them into internal events, and streams agent responses back as
 structured results.
 
@@ -42,7 +42,7 @@ service agents.
 
 ### 4. MCP integration (development tools)
 
-[Model Context Protocol (MCP)](../18_mcp/) lets AI coding assistants like Claude Code, Gemini CLI, and Cursor interact
+[Model Context Protocol (MCP)](../19_mcp/) lets AI coding assistants like Claude Code, Gemini CLI, and Cursor interact
 with AI-Hub during development. This provides read-only observation of platform state for development and debugging
 workflows.
 
@@ -71,22 +71,22 @@ External systems connect to AI-Hub using standard HTTPS (port 443). Authenticati
 or Azure AD integration. Traefik reverse proxy provides built-in rate limiting protection, and Let's Encrypt handles
 automatic certificate management for TLS termination.
 
-[Network Security](../19_security/4_network_security/) covers the security architecture.
+[Network Security](../20_security/4_network_security/) covers the security architecture.
 
 ## General integration principles
 
 Match your integration approach to latency, volume, and direction requirements. Deploy AI-Hub in Switzerland if you need
 Swiss data residency. Use TLS encryption, RBAC, and comprehensive audit logging. Leverage enterprise SSO through OAuth
 2.0, SAML, or Azure AD. Configure proper firewall rules for inbound and outbound connectivity. Follow
-[Swiss Data Protection](../20_compliance/3_dsg/) guidelines.
+[Swiss Data Protection](../21_compliance/3_dsg/) guidelines.
 
 ## Related documentation
 
 - Agents: [Agent Developer Guide](https://github.com/bbvch-ai/aihub-core/tree/main/aihub_agent) - Implementing direct
   API calls
-- API: [Agent Interaction REST API](../17_api/2_agent_interaction_api/) - Platform HTTP interface
+- API: [Agent Interaction REST API](../18_api/2_agent_interaction_api/) - Platform HTTP interface
 - Pipelines: [Data Pipelines](../6_pipelines/) - Automated data synchronization
-- MCP: [Model Context Protocol](../18_mcp/) - AI assistant integration
+- MCP: [Model Context Protocol](../19_mcp/) - AI assistant integration
 - Network: [Network Requirements](../3_deployment_guide/7_network_requirements/) - Firewall and connectivity
-- Security: [Network Security](../19_security/4_network_security/) - Security architecture
+- Security: [Network Security](../20_security/4_network_security/) - Security architecture
 - Authentication: [Authentication Setup](../11_access_management/1_authentication_setup/) - Configure SSO

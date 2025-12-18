@@ -3,8 +3,6 @@ from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstru
 
 AihubInstrumentor().instrument()
 
-import asyncio
-
 import pytest
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
     DangerousDevelopmentOnlyAuthSettings,
@@ -14,11 +12,11 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.nats.events import (
-    LLMStopEvent,
-    UserMessageEvent,
-    StoreOrganizationMemoryEvent,
-    RetrieveOrganizationMemoryEvent,
     AddOrganizationMemoryToChatHistoryEvent,
+    LLMStopEvent,
+    RetrieveOrganizationMemoryEvent,
+    StoreOrganizationMemoryEvent,
+    UserMessageEvent,
 )
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -32,23 +30,7 @@ from playground.minimal_workflow.organization_memory_workflow.OrganizationMemory
 
 enable_logging()
 
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create an instance of the default event loop for the test session."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
-
 scenarios("./features/organization_memory_agent.feature")
-
-
-@pytest.fixture(scope="session", autouse=True)
-def setup_event_loop(event_loop):
-    """Set the session event loop as the active event loop for all async operations."""
-    asyncio.set_event_loop(event_loop)
-    yield
 
 
 @pytest.fixture(scope="session")

@@ -5,11 +5,11 @@ from aihub_lib.generative_ai.chat_history.extend_chat_history_with_organization_
 from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import (
-    LLMStopEvent,
-    UserMessageEvent,
-    StoreOrganizationMemoryEvent,
-    RetrieveOrganizationMemoryEvent,
     AddOrganizationMemoryToChatHistoryEvent,
+    LLMStopEvent,
+    RetrieveOrganizationMemoryEvent,
+    StoreOrganizationMemoryEvent,
+    UserMessageEvent,
 )
 from aihub_lib.nats.topics import AgentInstanceTopic
 

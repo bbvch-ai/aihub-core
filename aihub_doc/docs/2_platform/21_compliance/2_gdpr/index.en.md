@@ -119,7 +119,7 @@ stops processing.
 
 The platform implements privacy by design with mandatory TLS/SSL encryption, default-deny access control, automatic
 audit logging, 30-day ephemeral data deletion, and minimal data collection. See
-[Authentication](../../19_security/1_authentication/), [Encryption](../../19_security/5_data_encryption/), and
+[Authentication](../../20_security/1_authentication/), [Encryption](../../20_security/5_data_encryption/), and
 [Access Control](../../11_access_management/) for details.
 
 ## International data transfers

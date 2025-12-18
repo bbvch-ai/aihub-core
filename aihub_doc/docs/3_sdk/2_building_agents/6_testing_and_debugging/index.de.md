@@ -1,12 +1,12 @@
 ---
-title: Testen und Debuggen
-source_sha: 0d7ba1c5f7571d1f0b851e3e2f59201efd1222f5ead6df1aeb29d37510b81afd
+title: Testen und Debugging
+source_sha: 7ab571afc092f5e43eae79c0561ccfb698772b9f987b74cbe1d3700e04351da1
 ---
 
-# Testen und Debuggen
+# Testen und Debugging
 
 Das Testen und Debuggen von Agents erfordert aufgrund ihrer ereignisgesteuerten, asynchronen Natur einen anderen Ansatz
-als bei traditionellen Anwendungen.
+als bei herkömmlichen Anwendungen.
 
 ## Test-Framework: pytest-bdd + AgentTestRunner
 
@@ -14,7 +14,7 @@ Nutzen Sie Behavior-Driven Development (BDD) mit `pytest-bdd` zum Testen von Age
 
 ### Grundlegende Teststruktur
 
-1. **Feature-Datei** - Beschreiben Sie das Verhalten in natürlicher Sprache
+1. **Feature-Datei** – Beschreiben Sie das Verhalten in natürlicher Sprache
 
 ```gherkin
 # tests/features/iterative_agent.feature
@@ -29,10 +29,10 @@ Feature: Iterative Processing Agent
     And the processing should be successful
 ```
 
-2. **Test-Implementierung** - Verbinden Sie Gherkin mit Code
+2. **Testimplementierung** – Verbinden Sie Gherkin mit Code
 
 ::: code-group
-```python [Test-Setup]
+```python [Test setup]
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from pytest_bdd import given, parsers, scenarios, then, when
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
@@ -50,7 +50,7 @@ def _(max_iterations: int):
     )
 ```
 
-```python [Test-Ausführung]
+```python [Test execution]
 @when("I ask the agent to process some data")
 @async_test
 async def _(agent_runner: AgentTestRunner):
@@ -70,11 +70,11 @@ def _(agent_runner: AgentTestRunner):
 ```
 :::
 
-## AgentTestRunner: zentrales Testwerkzeug
+## AgentTestRunner: zentrales Test-Tool
 
 `AgentTestRunner` bietet eine Sandbox-Umgebung zum Testen von Agents.
 
-### Grundlegende Nutzung
+### Grundlegende Verwendung
 
 ```python
 async def test_simple_agent():
@@ -118,20 +118,20 @@ event_count = len(runner.get_events_of_class(ProcessingEvent))
 
 ## Debugging-Strategie: Trace-gesteuerte Entwicklung
 
-Traditionelles Debugging mit Breakpoints funktioniert bei ereignisgesteuerten Agents nicht gut. Verwenden Sie
-stattdessen Trace-gesteuertes Debugging.
+Herkömmliches Debugging mit Breakpoints funktioniert bei ereignisgesteuerten Agents nicht gut. Verwenden Sie stattdessen
+Trace-gesteuertes Debugging.
 
 > [!TIPP] Ihr Debugging-Toolkit: Phoenix Tracing (primär), umfassendes Logging, Trigger-Skripte,
 > Ereignisfluss-Inspektion.
 
-### Essenzielles Werkzeug: trigger.py Skripte
+### Essentielles Tool: trigger.py Skripte
 
-Erstellen Sie `trigger.py` Skripte, um bestimmte Szenarien zu testen:
+Erstellen Sie `trigger.py`-Skripte, um bestimmte Szenarien zu testen:
 
 ```python
 # my_agent/trigger.py
 import asyncio
-from aihub_lib.testing.logging.logger import enable_logging
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 # ALWAYS enable logging for debugging
@@ -165,7 +165,7 @@ Für Agents, die kontinuierlich laufen müssen:
 ```python
 # my_agent/run.py
 import asyncio
-from aihub_lib.testing.logging.logger import enable_logging
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 enable_logging()
@@ -189,18 +189,18 @@ Phoenix bietet eine Schritt-für-Schritt-Visualisierung der Agent-Ausführung un
 
 **Hauptmerkmale:**
 
-- **Trace-Ansicht** - Sehen Sie die vollständige Workflow-Ausführung
-- **Schrittdetails** - Klicken Sie auf Schritte, um Ein-/Ausgaben zu inspizieren
-- **Timing-Analyse** - Identifizieren Sie Leistungsengpässe
-- **Fehlerverfolgung** - Lokalisieren Sie, wo Fehler auftreten
+- **Trace-Ansicht** – Sehen Sie die vollständige Workflow-Ausführung
+- **Schrittdetails** – Klicken Sie auf Schritte, um Ein- und Ausgaben zu überprüfen
+- **Timing-Analyse** – Identifizieren Sie Leistungsengpässe
+- **Fehlerverfolgung** – Lokalisieren Sie, wo Fehler auftreten
 
 **Debugging-Workflow:**
 
-1. Führen Sie Ihr `trigger.py` Skript aus
+1. Führen Sie Ihr `trigger.py`-Skript aus
 2. Öffnen Sie die Phoenix UI unter `localhost:6006`
 3. Finden Sie den Ausführungs-Trace Ihres Agents
-4. Klicken Sie sich durch die Schritte, um den Ereignisfluss zu inspizieren
-5. Identifizieren Sie, wo etwas schiefgeht
+4. Klicken Sie sich durch die Schritte, um den Ereignisfluss zu überprüfen
+5. Identifizieren Sie, wo Fehler auftreten
 
 ## Tests ausführen
 

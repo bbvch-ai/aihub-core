@@ -1,36 +1,36 @@
 ---
 title: Ihr erster Agent
-source_sha: 85dbc7dcf09c689c21e9b6a899e56a1b458d5535df0aeb7967127b563eec4a21
+source_sha: c1bf103653e2c3cf96f5fb1d2e7283496ce7ab7a844722b4fb31cddb56c3085b
 ---
 
 # Ihr erster Agent
 
-Erstellen Sie Ihren ersten Agenten mit dem AI-Hub Agent (`aihub_agent`) SDK – einem einfachen
-Nachrichtenverarbeitungs-Agenten mit einem zweistufigen Workflow.
+Erstellen Sie Ihren ersten Agenten mit dem AI-Hub Agent (`aihub_agent`) SDK – ein einfacher
+Nachrichtenverarbeitungs-Agent mit einem 2-Schritte-Workflow.
 
 ## Was Sie lernen werden
 
-Dieser Schnellstart behandelt die wesentlichen Bausteine:
+Diese Schnellstartanleitung behandelt die wesentlichen Bausteine:
 
-- **Agentenstruktur**: Wie Agenten Nachrichten in Schritten verarbeiten
-- **Ereignisfluss**: Daten, die zwischen Workflow-Schritten fließen
-- **Konfiguration**: Einstellungen, die das Verhalten des Agenten steuern
+- **Agentenstruktur**: Wie Agents Nachrichten in Steps verarbeiten
+- **Event-Fluss**: Datenfluss zwischen Workflow-Schritten
+- **Konfiguration**: Einstellungen, die das Agentenverhalten steuern
 - **Testen**: Ihren Agenten lokal ausführen
 
 ## Voraussetzungen
 
-Sie benötigen die laufende AI-Hub Entwicklungsumgebung. Bevor Sie beginnen, stellen Sie sicher, dass Sie die Schritte
-zur [Einrichtung der Entwicklungsumgebung](../1_dev_environment_setup/) abgeschlossen haben.
+Sie benötigen die AI-Hub Entwicklungsumgebung. Bevor Sie beginnen, stellen Sie sicher, dass Sie die Schritte zur
+[Einrichtung der Entwicklungsumgebung](../1_dev_environment_setup/) abgeschlossen haben.
 
-## Wie Agenten funktionieren
+## Wie Agents funktionieren
 
-AI-Hub Agenten sind **ereignisgesteuerte Workflows** mit drei wesentlichen Teilen:
+AI-Hub Agents sind **ereignisgesteuerte Workflows** mit drei wesentlichen Teilen:
 
-- **Schritte**: Funktionen, die mit `@step()` dekoriert sind und Ereignisse verarbeiten
-- **Ereignisse**: Datenobjekte, die zwischen Schritten fließen
-- **Konfiguration**: Typisierte Einstellungen, die das Verhalten des Agenten steuern
+- **Steps**: Mit `@step()` dekorierte Funktionen, die Events verarbeiten
+- **Events**: Datenobjekte, die zwischen Steps fließen
+- **Konfiguration**: Typisierte Einstellungen, die das Agentenverhalten steuern
 
-## Einige Grundkonzepte zum Einstieg!
+## Einige grundlegende Konzepte zum Starten!
 
 Betrachten wir den Standard-Agenten, der bei der Einrichtung der Entwicklungsumgebung erstellt wurde:
 
@@ -58,20 +58,20 @@ class MyCustomAgent(Agent):
         return StopEvent(final_message=hello_world_message)
 ```
 
-Wenn Sie die Benutzeroberfläche starten und versuchen, den Agenten in OpenWebUI zu verwenden, stellen Sie fest, dass der
-Agent nicht antwortet.
+Wenn Sie die Benutzeroberfläche starten und versuchen, den Agenten in der OpenWebUI zu verwenden, stellen Sie fest, dass
+der Agent nicht antwortet.
 
 ![image](../../../../media/sdk/your_first_agent/pre_chunk_event.png)
 
 ### Chunk-Events zur Anzeige von Live-Chat-Antworten verwenden
 
-Der Grund, warum Sie keine Antwort in der Chat-Oberfläche sehen, ist, dass nur spezielle Ereignisse (`DisplayEvents`) in
-der Benutzeroberfläche angezeigt werden. Und bei Chat-Oberflächen insbesondere wird die Antwort aus `ChunkEvent`s
-zusammengesetzt. Lassen Sie uns also unseren Schritt so konfigurieren, dass er ein solches `ChunkEvent` anzeigt. Dazu
-müssen wir den `EventDisplayer` in der Schrittfunktion verwenden und die Methode `display_chunk` mit dem anzuzeigenden
-Inhalt als erstem Argument und der Quelle dieses Chunks als zweitem Argument aufrufen. Normalerweise ist dies der
-Modellname oder das Sprachmodell, das diesen Chunk produziert. Da wir den Chunk in unserem Fall vorerst fest codieren,
-verwenden wir einfach den Klassennamen des Agenten als Quelle.
+Der Grund, warum Sie keine Antwort in der Chat-Oberfläche sehen, ist, dass nur spezielle Events (`DisplayEvents`) in der
+UI angezeigt werden. Und bei Chat-Oberflächen setzt sich die Antwort insbesondere aus `ChunkEvent`s zusammen. Lassen Sie
+uns daher unseren Step so konfigurieren, dass er ein solches `ChunkEvent` anzeigt. Dafür müssen wir den `EventDisplayer`
+in der Step-Funktion verwenden und die `display_chunk`-Methode mit dem anzuzeigenden Inhalt als erstem Argument und der
+Quelle dieses Chunks als zweitem Argument aufrufen. Üblicherweise ist dies der Modellname oder das Sprachmodell, das
+diesen Chunk erzeugt. Da wir den Chunk in unserem Fall vorerst hart codieren, verwenden wir einfach den `ClassName` des
+Agenten als Quelle.
 
 ```python
 import logging
@@ -100,15 +100,15 @@ class MyCustomAgent(Agent):
         return StopEvent(final_message=hello_world_message)
 ```
 
-So sehen wir, dass der Agent mit einer tatsächlichen Nachricht antwortet.
+Nun sehen wir, dass der Agent mit einer tatsächlichen Nachricht antwortet.
 
 ![image](../../../../media/sdk/your_first_agent/post_chunk_event.png)
 
-### Die Macht des Streamings erleben
+### Die Leistung des Streamings sehen
 
-Wie Sie vielleicht von anderen KI-Tools wissen, produzieren große Sprachmodelle ihre Antworten Stück für Stück. Anstatt
-die Antwort am Ende als Ganzes anzuzeigen, können wir die endgültige Antwort schrittweise aufbauen, was es uns
-ermöglicht, dem Benutzer so schnell wie möglich Teile der Antwort zu zeigen. Lassen Sie es uns demonstrieren:
+Wie Sie vielleicht von anderen KI-Tools wissen, erzeugen große Sprachmodelle ihre Antworten Stück für Stück. Anstatt die
+Antwort am Ende als Ganzes anzuzeigen, können wir die endgültige Antwort Stück für Stück aufbauen, was es uns
+ermöglicht, dem Benutzer so schnell wie möglich einen Teil der Antwort zu zeigen. Lassen Sie uns dies demonstrieren:
 
 ```python
 import logging
@@ -141,15 +141,15 @@ class MyCustomAgent(Agent):
         return StopEvent(final_message=hello_world_message)
 ```
 
-Wir haben soeben einen zweiten Chunk hinzugefügt, der angezeigt wird. Wenn Sie den Agenten nun erneut ausführen, sehen
-Sie, dass er zuerst mit `Hello World!` antwortet und nach 2 Sekunden mit `You said: Hello!`\
+Wir haben gerade einen zweiten Chunk hinzugefügt, der angezeigt wird. Wenn Sie den Agenten nun erneut ausführen, sehen
+Sie, dass er zuerst mit `Hello World!` antwortet und nach 2 Sekunden mit `You said: Hello!` antwortet.
 <video controls="controls" src="../../../../media/sdk/your_first_agent/show_chunk_delay.mp4" type="video/mp4" />
 
-### Denkphasen hinzufügen
+### Denkschritte hinzufügen
 
-Gerade wenn der Agent länger braucht, um sein Ergebnis zu finalisieren, ist es eine gute Praxis, den Benutzer darüber zu
-informieren, was im Agenten vor sich geht. Um dies zu ermöglichen, können Sie `ThoughtEvent`s anzeigen. Auch hier
-verwenden wir den `EventDisplayer`, diesmal jedoch mit der Methode `display_thought`.
+Besonders wenn der Agent länger braucht, um sein Ergebnis zu finalisieren, ist es eine gute Praxis, den Benutzer darüber
+zu informieren, was im Agenten vor sich geht. Um dies zu ermöglichen, können Sie `ThoughtEvent`s anzeigen. Auch hier
+verwenden wir den `EventDisplayer`, diesmal jedoch mit der `display_thought`-Methode.
 
 ```python
 import logging
@@ -183,15 +183,15 @@ class MyCustomAgent(Agent):
         return StopEvent(final_message=hello_world_message)
 ```
 
-Nun sehen Sie einen zusätzlichen Abschnitt in der Antwort namens `Thinking...` Wenn Sie ihn erweitern, können Sie
-unseren Gedanken sehen, der mit dem Inhalt `Drinking coffee...` erstellt wurde.
+Nun sehen Sie, dass es einen zusätzlichen Abschnitt in der Antwort namens `Thinking...` gibt. Wenn Sie diesen erweitern,
+sehen Sie unseren Gedanken, der mit dem Inhalt `Drinking coffee...` erstellt wurde.
 ![image](../../../../media/sdk/your_first_agent/show_thought.png)
 
-## Erstellen Sie Ihren ersten mehrstufigen Agenten
+## Erstellen Sie Ihren ersten Multistep-Agenten
 
-### 1. Erstellen eines benutzerdefinierten Ereignisses (`events/MyCustomAgentEvent.py`):
+### 1. Erstellen Sie ein benutzerdefiniertes Event (`events/MyCustomAgentEvent.py`):
 
-Erstellen Sie zunächst ein Ereignis, um Daten zwischen den Schritten zu übergeben:
+Erstellen Sie zunächst ein Event, um Daten zwischen Steps zu übergeben:
 
 ```python
 from typing import Annotated
@@ -252,23 +252,23 @@ class MyCustomAgent(Agent):
         return StopEvent() # [!code ++]
 ```
 
-Nun haben Sie einen ersten Agenten, der in zwei Schritten agiert. Im ersten Schritt tun wir alles, was wir bisher getan
-haben, aber zusätzlich zählen wir die Anzahl der Wörter in der Benutzernachricht. Diese Information wird dann an einen
-zweiten Schritt weitergeleitet, wo wir auch zur Antwort „Die Wortanzahl beträgt X Wörter" hinzufügen, wobei X die Anzahl
-der Wörter ist, die wir im ersten Schritt gezählt haben. Wir haben die beiden Schritte verbunden, indem wir unser neues
-Ereignis `MyCustomAgentEvent` als Ausgabe des ersten Schritts und als Eingabe für den zweiten Schritt definiert haben.
+Nun haben Sie einen ersten Agenten, der in zwei Steps agiert. Im ersten Step erledigen wir alles, was wir zuvor getan
+haben, aber wir zählen auch die Anzahl der Wörter in der Benutzernachricht. Diese Information wird dann an einen zweiten
+Step weitergegeben, wo wir der Antwort zusätzlich `The word count is X words` hinzufügen, wobei X die Anzahl der Wörter
+ist, die wir im ersten Step gezählt haben. Wir haben die beiden Steps verbunden, indem wir unser neues Event
+`MyCustomAgentEvent` als Output des ersten Steps und als Input für den zweiten Step definiert haben.
 
 Wenn Sie zur Agentenübersicht navigieren, dort Ihren Agenten auswählen und dann zu `Workflow` gehen, können Sie den
-Workflow und die Schritte Ihres Agenten sehen. Sie können sehen, welche Schritte definiert sind und welche Eingabe- und
-Ausgabeereignisse diese Schritte haben.
+Workflow und die Steps Ihres Agenten sehen. Sie können sehen, welche Steps definiert sind und welche Input- und
+Output-Events diese Steps haben.
 
 ![image](../../../../media/sdk/your_first_agent/simple_workflow.png)
 
-### 3. Agentenkonfiguration hinzufügen (`MyCustomAgentConfig.py`):
+### 3. Agenten-Konfiguration hinzufügen (`MyCustomAgentConfig.py`):
 
-Oft möchten Sie Ihren Agenten beim Start konfigurieren können. Dazu können Sie die Konfigurationsklasse verwenden. Wenn
-Sie Ihren Agenten über die CLI eingerichtet haben, wurde bereits eine grundlegende Konfigurationsdatei für Sie erstellt,
-die wie folgt aussieht:
+Oft möchten Sie Ihren Agenten beim Start konfigurierbar machen. Dafür können Sie die Konfigurationsklasse verwenden.
+Wenn Sie Ihren Agenten über die CLI eingerichtet haben, wurde bereits eine grundlegende Konfigurationsdatei für Sie
+erstellt, die wie folgt aussieht:
 
 ```python
 from typing import Annotated
@@ -286,10 +286,10 @@ class MyCustomAgentConfig(AgentConfig):
     )]
 ```
 
-Wir können auf diese Konfiguration in jedem Schritt zugreifen, wenn wir sie benötigen. Zum Beispiel können wir den
-Inhalt des Feldes `config_value` im zweiten Schritt unseres Agenten lesen und seinen String-Wert ebenfalls als Chunk
-posten. Normalerweise verwenden Sie die Konfiguration jedoch, um eine Logik in Ihren Schritten zu konfigurieren,
-entweder mit System-Prompts oder Konfigurationen für bestimmte Methoden.
+Wir können auf diese Konfiguration in jedem Step zugreifen, falls wir dies benötigen. Zum Beispiel können wir den Inhalt
+des Feldes `config_value` im zweiten Step unseres Agenten lesen und seinen String-Wert ebenfalls als Chunk posten.
+Normalerweise verwenden Sie die Konfiguration jedoch, um eine Logik in Ihren Steps zu konfigurieren, sei es mit
+System-Prompts oder Konfigurationen für bestimmte Methoden.
 
 ```python
 import logging
@@ -338,7 +338,7 @@ class MyCustomAgent(Agent):
         return StopEvent()
 ```
 
-Sie können die Konfigurationswerte in Ihrer `trigger.py` oder beim Erstellen des Agenten in der `main.py` festlegen.
+Sie können die Konfigurationswerte in Ihrer `trigger.py` oder beim Bauen des Agenten in der `main.py` festlegen.
 
 ```python{10}
 async def main():
@@ -365,12 +365,12 @@ if __name__ == "__main__":
 
 ### 4. Testskript (`trigger.py`):
 
-## Agenten ausführen und debuggen
+## Ihren Agenten ausführen und debuggen
 
-1. **Testskript ausführen**:
+1. **Führen Sie das Testskript aus**:
 
 Um Ihren Agenten schnell zu testen, können Sie ein `trigger.py`-Skript schreiben, das den Agenten startet und sein
-StartEvent postet. Auf diese Weise können Sie den Agenten ohne Benutzeroberfläche testen.
+StartEvent sendet. Auf diese Weise können Sie den Agenten ohne Benutzeroberfläche testen.
 
 ::: code-group
 
@@ -379,7 +379,7 @@ import asyncio
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.testing.auth_utils.fake_user import fake_user
-from aihub_lib.testing.logging.logger import enable_logging
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
@@ -433,39 +433,39 @@ Erwartete Ausgabe:
 Agent completed: True
 ```
 
-2. **Mit Phoenix Tracing debuggen** – Öffnen Sie `http://localhost:6006`, um Folgendes zu sehen:
+2. **Debuggen mit Phoenix Tracing** – Öffnen Sie `http://localhost:6006`, um Folgendes zu sehen:
 
    - Schritt-für-Schritt-Ausführungsfluss
-   - Ereignisdaten, die zwischen den Schritten fließen
-   - Zeit- und Leistungsmetriken
-   - Details der Ereignis-Payload
+   - Event-Datenfluss zwischen Steps
+   - Timing- und Performance-Metriken
+   - Event-Payload-Details
 
-3. **Logs überprüfen** – Der Aufruf `enable_logging()` zeigt den Ereignisfluss in Echtzeit und hilft bei der
+3. **Überprüfen Sie die Logs** – Der Aufruf von `enable_logging()` zeigt den Event-Fluss in Echtzeit und hilft bei der
    Fehlersuche.
 
 ## Den Workflow verstehen
 
-Ihr Agent folgt diesem Ereignisfluss:
+Ihr Agent folgt diesem Event-Fluss:
 
 1. **UserMessageEvent** → `process_message()` → **MessageEvent**
 2. **MessageEvent** → `create_response()` → **StopEvent**
 
-Jeder Schritt:
+Jeder Step:
 
-- Empfängt ein Ereignis als Eingabe
+- Empfängt ein Event als Input
 - Verarbeitet die Daten
-- Gibt ein neues Ereignis zurück
-- Die Workflow-Engine leitet Ereignisse an den nächsten Schritt weiter
+- Gibt ein neues Event zurück
+- Die Workflow-Engine leitet Events an den nächsten Step weiter
 
 ## Was Sie gelernt haben
 
-- **Ereignisgesteuerte Workflows**: Schritte verarbeiten Ereignisse und erzeugen neue Ereignisse
-- **Benutzerdefinierte Ereignisse**: Erstellen von typisierten Datenobjekten zur Übergabe zwischen Schritten
+- **Ereignisgesteuerte Workflows**: Steps verarbeiten Events und erzeugen neue Events
+- **Benutzerdefinierte Events**: Erstellen von typisierten Datenobjekten zur Übergabe zwischen Steps
 - **Konfiguration**: Verwenden von typisierten Einstellungen zur Steuerung des Agentenverhaltens
 - **Testen**: Verwenden Sie `AgentTestRunner` für isolierte Tests
-- **Debugging**: Phoenix Tracing und Logging für die Beobachtbarkeit
+- **Debugging**: Phoenix Tracing und Logging für Observability
 
 ## Nächste Schritte
 
-- [Ihre erste Pipeline](../4_your_first_pipeline/) -
-- [Agenten erstellen](../../2_building_agents/) - Erfahren Sie mehr über fortgeschrittene Agentenmuster
+- [Ihre erste Pipeline](../4_your_first_pipeline/)
+- [Agents bauen](../../2_building_agents/) – Erfahren Sie mehr über fortgeschrittene Agentenmuster

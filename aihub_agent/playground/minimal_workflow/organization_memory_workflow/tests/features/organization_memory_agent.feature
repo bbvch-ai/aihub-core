@@ -11,7 +11,7 @@ Feature: OrganizationMemoryAgent - Organization Memory Management
     When the start event is sent with organizational fact "Our company uses Python and Django for backend development"
     Then a StoreOrganizationMemoryEvent is present with memory updates
     And the stored memory contains "Python" and "Django"
-    And a RetrieveMemoryEvent is present
+    And a BaseRetrieveMemoryEvent is present
     And an AddMemoryToChatHistoryEvent is present
     And an LLMEvent is present
     And the LLM response acknowledges the organizational fact
@@ -21,7 +21,7 @@ Feature: OrganizationMemoryAgent - Organization Memory Management
     Given pre-seeded organization memory: "Our company follows agile methodology with 2-week sprints"
     When the start event is sent with organizational fact "We use JIRA for project management"
     Then a StoreOrganizationMemoryEvent is present
-    And a RetrieveMemoryEvent is present with 1 or more memories
+    And a BaseRetrieveMemoryEvent is present with 1 or more memories
     And the retrieved memories contain "agile"
     And an AddMemoryToChatHistoryEvent is present
     And the extended history has a system message with memory context
@@ -33,6 +33,6 @@ Feature: OrganizationMemoryAgent - Organization Memory Management
     And pre-seeded tenant memory in "Engineering" namespace: "We use Python for backend"
     And pre-seeded tenant memory in "Marketing" namespace: "We use HubSpot for campaigns"
     When the start event is sent with organizational fact "We deploy on AWS EKS"
-    Then a RetrieveMemoryEvent is present
+    Then a BaseRetrieveMemoryEvent is present
     And the retrieved memories contain "Python" from Engineering namespace
     And the retrieved memories do NOT contain "HubSpot" from Marketing namespace

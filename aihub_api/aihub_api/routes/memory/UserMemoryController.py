@@ -26,7 +26,7 @@ class UserMemoryController(Controller):
     def __init__(self, *, auth: AuthHandler, route: str = "/user-memories", **kwargs):
         super().__init__(auth=auth, route=route, **kwargs)
 
-    def get_user_memories(self, route: str = "")-> Self:
+    def get_user_memories(self, route: str = "") -> Self:
         @self.router.get(route, tags=self.tags, response_model=MemoriesResponse)
         async def get_user_memories(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.memory.user"))],
@@ -41,7 +41,7 @@ class UserMemoryController(Controller):
 
         return self
 
-    def search_user_memories(self, route: str = "/search")-> Self:
+    def search_user_memories(self, route: str = "/search") -> Self:
         @self.router.get(route, tags=self.tags, response_model=MemorySearchResponse)
         async def search_user_memories(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.memory.user"))],
@@ -62,7 +62,7 @@ class UserMemoryController(Controller):
 
         return self
 
-    def delete_user_memory(self, route: str = "/{memory_id}")-> Self:
+    def delete_user_memory(self, route: str = "/{memory_id}") -> Self:
         @self.router.delete(route, tags=self.tags, response_model=DeleteMemoryResponse)
         async def delete_user_memory(
             memory_id: Annotated[str, Path(description="Memory ID to delete")],
@@ -73,7 +73,7 @@ class UserMemoryController(Controller):
 
         return self
 
-    def delete_all_user_memories(self, route: str = "")-> Self:
+    def delete_all_user_memories(self, route: str = "") -> Self:
         @self.router.delete(route, tags=self.tags, response_model=DeleteAllMemoriesResponse)
         async def delete_all_user_memories(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.memory.user"))],
@@ -86,7 +86,7 @@ class UserMemoryController(Controller):
 
         return self
 
-    def update_user_memory(self, route: str = "/{memory_id}")-> Self:
+    def update_user_memory(self, route: str = "/{memory_id}") -> Self:
         @self.router.patch(route, tags=self.tags, response_model=UpdateMemoryResponse)
         async def update_user_memory(
             memory_id: Annotated[str, Path(description="Memory ID to update")],

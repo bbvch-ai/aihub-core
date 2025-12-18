@@ -3,7 +3,6 @@ from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstru
 
 AihubInstrumentor().instrument()
 
-import asyncio
 
 import pytest
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
@@ -27,23 +26,7 @@ from playground.minimal_workflow.user_memory_workflow.UserMemoryAgentConfig impo
 
 enable_logging()
 
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create an instance of the default event loop for the test session."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
-
 scenarios("./features/user_memory_agent.feature")
-
-
-@pytest.fixture(scope="session", autouse=True)
-def setup_event_loop(event_loop):
-    """Set the session event loop as the active event loop for all async operations."""
-    asyncio.set_event_loop(event_loop)
-    yield
 
 
 @pytest.fixture(scope="session")
