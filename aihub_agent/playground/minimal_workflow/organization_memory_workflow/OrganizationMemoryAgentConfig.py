@@ -10,5 +10,5 @@ class OrganizationMemoryAgentConfig(AgentConfig):
     """
 
     llm: LLMConfig
-    tenant_id: str = "AIHub"
-    tenant_namespace: str = "Engineering"
+    tenant_id: str
+    tenant_namespace: str

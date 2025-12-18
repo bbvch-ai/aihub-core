@@ -28,10 +28,10 @@ Feature: OrganizationMemoryAgent - Organization Memory Management
     And an LLMEvent is present
     And a StopEvent is present
 
-  Scenario: Organization namespace scoping
-    Given organization namespace is "Engineering"
-    And pre-seeded organization memory in "Engineering" namespace: "We use Python for backend"
-    And pre-seeded organization memory in "Marketing" namespace: "We use HubSpot for campaigns"
+  Scenario: Tenant namespace scoping
+    Given tenant namespace is "Engineering"
+    And pre-seeded tenant memory in "Engineering" namespace: "We use Python for backend"
+    And pre-seeded tenant memory in "Marketing" namespace: "We use HubSpot for campaigns"
     When the start event is sent with organizational fact "We deploy on AWS EKS"
     Then a RetrieveMemoryEvent is present
     And the retrieved memories contain "Python" from Engineering namespace

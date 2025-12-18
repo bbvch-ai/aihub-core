@@ -1,7 +1,9 @@
 # ruff: noqa: E402
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
-from playground.agent.OrganizationMemoryAgent.OrganizationMemoryAgent import OrganizationMemoryAgent
-from playground.agent.OrganizationMemoryAgent.OrganizationMemoryAgentConfig import OrganizationMemoryAgentConfig
+from playground.minimal_workflow.organization_memory_workflow.OrganizationMemoryAgent import OrganizationMemoryAgent
+from playground.minimal_workflow.organization_memory_workflow.OrganizationMemoryAgentConfig import (
+    OrganizationMemoryAgentConfig,
+)
 
 AihubInstrumentor().instrument()
 
@@ -27,8 +29,8 @@ async def main():
                 en="Agent for storing and retrieving explicit organizational facts shared across all users"
             ),
             llm=LLMConfig(model_name="text-generation/nano", default_parameter=LLMParameter(temperature=1.0)),
-            tenant_id="AIHub",
-            tenant_namespace="Engineering",
+            tenant_id="default_tenant",
+            tenant_namespace="default_namespace",
         ),
     )
 

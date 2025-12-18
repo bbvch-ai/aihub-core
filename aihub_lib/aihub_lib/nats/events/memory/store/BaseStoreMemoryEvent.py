@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Annotated
+from typing import Annotated, Self
 
 from pydantic import Field
 
@@ -37,7 +37,7 @@ class BaseStoreMemoryEvent(ControlAndDisplayEvent, ABC):
     deleted_relations: Annotated[list[MemoryRelation], Field(description="Deleted relations")]
 
     @classmethod
-    def from_memory_added_object(cls, memory_added: MemoryAdded) -> "BaseStoreMemoryEvent":
+    def from_memory_added_object(cls, memory_added: MemoryAdded) -> Self:
         """Create event from mem0's MemoryAdded response object."""
         return cls(
             added_memories=[m.memory for m in memory_added.results if m.event == MemoryEventType.ADD],

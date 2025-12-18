@@ -13,17 +13,22 @@ from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
-from aihub_lib.nats.events import LLMStopEvent, UserMessageEvent
-from aihub_lib.nats.events.common.AddOrganizationMemoryToChatHistoryEvent import AddOrganizationMemoryToChatHistoryEvent
-from aihub_lib.nats.events.memory.RetrieveOrganizationMemoryEvent import RetrieveOrganizationMemoryEvent
-from aihub_lib.nats.events.memory.StoreOrganizationMemoryEvent import StoreOrganizationMemoryEvent
+from aihub_lib.nats.events import (
+    LLMStopEvent,
+    UserMessageEvent,
+    StoreOrganizationMemoryEvent,
+    RetrieveOrganizationMemoryEvent,
+    AddOrganizationMemoryToChatHistoryEvent,
+)
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from playground.agent.OrganizationMemoryAgent.OrganizationMemoryAgent import OrganizationMemoryAgent
-from playground.agent.OrganizationMemoryAgent.OrganizationMemoryAgentConfig import OrganizationMemoryAgentConfig
+from playground.minimal_workflow.organization_memory_workflow.OrganizationMemoryAgent import OrganizationMemoryAgent
+from playground.minimal_workflow.organization_memory_workflow.OrganizationMemoryAgentConfig import (
+    OrganizationMemoryAgentConfig,
+)
 
 enable_logging()
 
@@ -58,8 +63,8 @@ def agent_config():
             de="Testagent für Organisationsspeicherintegration",
         ),
         llm=LLMConfig(model_name="text-generation/mini"),
-        tenant_id="AIHub",
-        tenant_namespace="Engineering",
+        tenant_id="default_tenant",
+        tenant_namespace="default_namespace",
     )
 
 
@@ -74,9 +79,9 @@ def _(agent_config):
     return AgentTestRunner(agent_type=OrganizationMemoryAgent, default_agent_config=agent_config)
 
 
-@given(parsers.parse('organization namespace is "{namespace}"'))
+@given(parsers.parse('tenant namespace is "{namespace}"'))
 def _(agent_config, namespace: str):
-    """Set organization namespace in config."""
+    """Set tenant namespace in config."""
     agent_config.tenant_namespace = namespace
 
 
@@ -105,10 +110,10 @@ async def _(memory_text: str, agent_runner: AgentTestRunner):
     )
 
 
-@given(parsers.parse('pre-seeded organization memory in "{namespace}" namespace: "{memory_text}"'))
+@given(parsers.parse('pre-seeded tenant memory in "{namespace}" namespace: "{memory_text}"'))
 @async_test
 async def _(memory_text: str, namespace: str, agent_runner: AgentTestRunner):
-    """Pre-seed an organization memory in specific namespace for testing."""
+    """Pre-seed a tenant memory in specific namespace for testing."""
     from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
 
     # Get test user from auth settings
@@ -118,7 +123,7 @@ async def _(memory_text: str, namespace: str, agent_runner: AgentTestRunner):
     locale_handler = LocaleHandler(locale="en")
     agent_memory = AgentMemory(agent_config=agent_runner.default_agent_config, t=locale_handler)
 
-    # Add the organization memory with specific namespace
+    # Add the tenant memory with specific namespace
     await agent_memory.add_organization_memory(
         memory=memory_text,
         user_id=test_user.id,

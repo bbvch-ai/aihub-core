@@ -8343,7 +8343,7 @@ export type MemoryDto = {
     thread_id?: string | null;
     /**
      * Display Id
-     * The unique identifier of the memory for display purposes.
+     * The unique identifier of the display in which this memory was created..
      */
     display_id?: string | null;
     /**

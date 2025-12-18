@@ -10158,7 +10158,7 @@ export const MemoryDTOSchema = {
                 }
             ],
             title: 'Display Id',
-            description: 'The unique identifier of the memory for display purposes.'
+            description: 'The unique identifier of the display in which this memory was created..'
         },
         run_id: {
             anyOf: [

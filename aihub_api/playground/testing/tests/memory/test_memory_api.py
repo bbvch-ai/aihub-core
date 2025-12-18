@@ -342,21 +342,8 @@ class TestMemoryIntegration:
 
     @pytest.mark.asyncio
     @pytest.mark.slow
-    @pytest.mark.skip(
-        reason="Known issue: Search endpoint may use authenticated user instead of user_id parameter. "
-        "Needs investigation of MemoryService.search_memories implementation."
-    )
     async def test_add_search_update_delete_workflow(self, api_client):
-        """Full CRUD workflow with real infrastructure.
-
-        NOTE: Currently skipped due to search endpoint behavior with user_id parameter.
-        The test successfully adds memories but search returns 0 results, possibly because:
-        1. The API uses authenticated user from token instead of user_id query param
-        2. Vector search indexing may need time to complete
-        3. Search filters may be applied differently than expected
-
-        TODO: Investigate MemoryService.search_memories to understand user scoping behavior.
-        """
+        """Full CRUD workflow with real infrastructure."""
         from aihub_lib.agents.AgentConfig import AgentConfig
         from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
         from aihub_lib.i18n.LocaleHandler import LocaleHandler

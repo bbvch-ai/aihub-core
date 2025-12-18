@@ -4,15 +4,20 @@ from aihub_lib.generative_ai.chat_history.extend_chat_history_with_organization_
 )
 from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.events import LLMStopEvent, UserMessageEvent
-from aihub_lib.nats.events.common.AddOrganizationMemoryToChatHistoryEvent import AddOrganizationMemoryToChatHistoryEvent
-from aihub_lib.nats.events.memory.RetrieveOrganizationMemoryEvent import RetrieveOrganizationMemoryEvent
-from aihub_lib.nats.events.memory.StoreOrganizationMemoryEvent import StoreOrganizationMemoryEvent
+from aihub_lib.nats.events import (
+    LLMStopEvent,
+    UserMessageEvent,
+    StoreOrganizationMemoryEvent,
+    RetrieveOrganizationMemoryEvent,
+    AddOrganizationMemoryToChatHistoryEvent,
+)
 from aihub_lib.nats.topics import AgentInstanceTopic
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
-from playground.agent.OrganizationMemoryAgent.OrganizationMemoryAgentConfig import OrganizationMemoryAgentConfig
+from playground.minimal_workflow.organization_memory_workflow.OrganizationMemoryAgentConfig import (
+    OrganizationMemoryAgentConfig,
+)
 
 
 class OrganizationMemoryAgent(Agent):

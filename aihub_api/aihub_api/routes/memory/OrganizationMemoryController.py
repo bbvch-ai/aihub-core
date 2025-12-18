@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -26,7 +26,7 @@ class OrganizationMemoryController(Controller):
     def __init__(self, *, auth: AuthHandler, route: str = "/organization-memories", **kwargs):
         super().__init__(auth=auth, route=route, **kwargs)
 
-    def get_organization_memories(self, route: str = "") -> "OrganizationMemoryController":
+    def get_organization_memories(self, route: str = "") -> Self:
         @self.router.get(route, tags=self.tags, response_model=MemoriesResponse)
         async def get_organization_memories(
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.memory.organization"))],
@@ -40,7 +40,7 @@ class OrganizationMemoryController(Controller):
 
         return self
 
-    def search_organization_memories(self, route: str = "/search") -> "OrganizationMemoryController":
+    def search_organization_memories(self, route: str = "/search") -> Self:
         @self.router.get(route, tags=self.tags, response_model=MemorySearchResponse)
         async def search_organization_memories(
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.memory.organization"))],
@@ -60,7 +60,7 @@ class OrganizationMemoryController(Controller):
 
         return self
 
-    def delete_organization_memory(self, route: str = "/{memory_id}") -> "OrganizationMemoryController":
+    def delete_organization_memory(self, route: str = "/{memory_id}") -> Self:
         @self.router.delete(route, tags=self.tags, response_model=DeleteMemoryResponse)
         async def delete_organization_memory(
             memory_id: Annotated[str, Path(description="Memory ID to delete")],
@@ -74,7 +74,7 @@ class OrganizationMemoryController(Controller):
 
         return self
 
-    def delete_all_organization_memories(self, route: str = "") -> "OrganizationMemoryController":
+    def delete_all_organization_memories(self, route: str = "") -> Self:
         @self.router.delete(route, tags=self.tags, response_model=DeleteAllMemoriesResponse)
         async def delete_all_organization_memories(
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.memory.organization"))],
@@ -86,7 +86,7 @@ class OrganizationMemoryController(Controller):
 
         return self
 
-    def update_organization_memory(self, route: str = "/{memory_id}") -> "OrganizationMemoryController":
+    def update_organization_memory(self, route: str = "/{memory_id}") -> Self:
         @self.router.patch(route, tags=self.tags, response_model=UpdateMemoryResponse)
         async def update_organization_memory(
             memory_id: Annotated[str, Path(description="Memory ID to update")],

@@ -4,14 +4,15 @@ from aihub_lib.generative_ai.chat_history.extend_chat_history_with_user_memory i
 )
 from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.nats.events import LLMEvent, StopEvent, StoreUserMemoryEvent, UserMessageEvent
-from aihub_lib.nats.events.common.AddUserMemoryToChatHistoryEvent import AddUserMemoryToChatHistoryEvent
-from aihub_lib.nats.events.memory.RetrieveUserMemoryEvent import RetrieveUserMemoryEvent
+from aihub_lib.nats.events import LLMEvent, StopEvent, UserMessageEvent
+from aihub_lib.nats.events.memory.history.AddUserMemoryToChatHistoryEvent import AddUserMemoryToChatHistoryEvent
+from aihub_lib.nats.events.memory.retrieve.RetrieveUserMemoryEvent import RetrieveUserMemoryEvent
+from aihub_lib.nats.events.memory.store.StoreUserMemoryEvent import StoreUserMemoryEvent
 from aihub_lib.nats.topics import AgentInstanceTopic
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
-from playground.agent.UserMemoryAgent.UserMemoryAgentConfig import UserMemoryAgentConfig
+from playground.minimal_workflow.user_memory_workflow.UserMemoryAgentConfig import UserMemoryAgentConfig
 
 
 class UserMemoryAgent(Agent):

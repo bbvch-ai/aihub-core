@@ -1,7 +1,7 @@
 # ruff: noqa: E402
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
-from playground.agent.UserMemoryAgent.UserMemoryAgent import UserMemoryAgent
-from playground.agent.UserMemoryAgent.UserMemoryAgentConfig import UserMemoryAgentConfig
+from playground.minimal_workflow.user_memory_workflow.UserMemoryAgent import UserMemoryAgent
+from playground.minimal_workflow.user_memory_workflow.UserMemoryAgentConfig import UserMemoryAgentConfig
 
 AihubInstrumentor().instrument()
 
@@ -22,9 +22,8 @@ async def main():
         default_agent_config=UserMemoryAgentConfig(
             agent_class=UserMemoryAgent.__name__,
             agent_id="memory_agent",
-            name=LocaleString(en="Memory Agent"),
+            name=LocaleString(en="User Memory Agent"),
             description=LocaleString(en="This is the Memory Agent config"),
-            # when using nano temp needs to be 1.0 and nothing else
             llm=LLMConfig(model_name="text-generation/nano", default_parameter=LLMParameter(temperature=1.0)),
         ),
     )

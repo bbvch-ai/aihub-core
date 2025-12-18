@@ -22,7 +22,7 @@ class MemoryDTO(BaseModel):
         str | None, Field(description="The unique identifier of the thread in which this memory was created.")
     ] = None
     display_id: Annotated[
-        str | None, Field(description="The unique identifier of the memory for display purposes.")
+        str | None, Field(description="The unique identifier of the display in which this memory was created..")
     ] = None
     run_id: Annotated[
         str | None, Field(description="The unique identifier of the run in which this memory was created.")
