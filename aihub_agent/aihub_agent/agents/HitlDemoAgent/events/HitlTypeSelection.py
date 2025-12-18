@@ -16,7 +16,6 @@ class HitlTypeSelectionRequestEvent(HumanInTheLoopInputRequestEvent):
 
 class HitlTypeSelectionResponseEvent(HumanInTheLoopInputResponseEvent):
     """Custom response for HITL type selection."""
-
     pass
 
 
