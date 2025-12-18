@@ -208,14 +208,11 @@ class ThreadService:
         hitl_request_entities = PersistedAgentEventEntity.human_in_the_loop_request_events_for_thread(thread_id)
         hitl_response_entities = PersistedAgentEventEntity.human_in_the_loop_response_events_for_thread(thread_id)
 
-        # Deserialize to typed Pydantic objects
         hitl_requests = [HumanInTheLoopRequestEvent.deserialize_event(e.event_data) for e in hitl_request_entities]
         hitl_responses = [HumanInTheLoopResponseEvent.deserialize_event(e.event_data) for e in hitl_response_entities]
 
-        # Build set of responded request event IDs using typed access
         responded_request_ids: set[str] = {response.request_event.event_id for response in hitl_responses}
 
-        # Find the first open chat HITL request
         for request in hitl_requests:
             if request.hitl_type == "chat" and request.event_id not in responded_request_ids:
                 return OpenChatHitlResponse(has_open_chat_hitl=True, hitl_request=request)
