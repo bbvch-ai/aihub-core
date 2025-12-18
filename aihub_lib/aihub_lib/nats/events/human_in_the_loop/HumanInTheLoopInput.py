@@ -1,28 +1,18 @@
-from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopInput
 from aihub_lib.nats.events.human_in_the_loop.request import HumanInTheLoopInputRequestEvent
 from aihub_lib.nats.events.human_in_the_loop.response import HumanInTheLoopInputResponseEvent
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 
-class HitlTypeSelectionRequestEvent(HumanInTheLoopInputRequestEvent):
-    """Custom request for HITL type selection."""
-    pass
+class HumanInTheLoopInput:
+    """Helper for triggering text input HITL steps within a workflow."""
 
-
-class HitlTypeSelectionResponseEvent(HumanInTheLoopInputResponseEvent):
-    """Custom response for HITL type selection."""
-    pass
-
-
-class HitlTypeSelection(HumanInTheLoopInput):
-    """Helper for the HITL type selection step."""
-
-    request = HitlTypeSelectionRequestEvent
-    response = HitlTypeSelectionResponseEvent
+    request = HumanInTheLoopInputRequestEvent
+    response = HumanInTheLoopInputResponseEvent
 
     @classmethod
-    def invoke(cls, question: str) -> HitlTypeSelectionRequestEvent:
+    def invoke(cls, question: str) -> HumanInTheLoopInputRequestEvent:
+        """Create a request for free-form text input from a human operator."""
         return cls.request(
             question=question,
             topic=PartialAgentTopic(

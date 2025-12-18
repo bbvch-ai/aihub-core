@@ -1,4 +1,7 @@
-from .HumanInTheLoop import HumanInTheLoop, HumanInTheLoopChat, HumanInTheLoopConfirmation, HumanInTheLoopInput
+from .HumanInTheLoop import HumanInTheLoop
+from .HumanInTheLoopChat import HumanInTheLoopChat
+from .HumanInTheLoopConfirmation import HumanInTheLoopConfirmation
+from .HumanInTheLoopInput import HumanInTheLoopInput
 from .request import (
     HumanInTheLoopChatRequestEvent,
     HumanInTheLoopConfirmationRequestEvent,

@@ -1,6 +1,6 @@
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.nats.events import StopEvent, UserMessageEvent
-from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoop import (
+from aihub_lib.nats.events.human_in_the_loop import (
     HumanInTheLoopChat,
     HumanInTheLoopConfirmation,
     HumanInTheLoopInput,

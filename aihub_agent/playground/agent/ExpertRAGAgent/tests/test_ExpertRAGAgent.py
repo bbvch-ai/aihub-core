@@ -24,10 +24,8 @@ from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.nats.events import LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.agent_in_the_loop import AgentInTheLoopRequestEvent, AgentInTheLoopResponseEvent
 from aihub_lib.nats.events.guard import ExpertRejectEvent
-from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoop import HumanInTheLoopConfirmation
-from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
-    HumanInTheLoopConfirmationRequestEvent,
-)
+from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopConfirmation
+from aihub_lib.nats.events.human_in_the_loop.request import HumanInTheLoopConfirmationRequestEvent
 from aihub_lib.persistence.rag.documents.stores.docstore import create_mongo_document_store
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.asyncio_utils.bdd import async_test

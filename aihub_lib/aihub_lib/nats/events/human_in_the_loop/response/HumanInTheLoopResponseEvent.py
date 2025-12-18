@@ -6,12 +6,7 @@ from pydantic import Field
 
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
-from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
-    HumanInTheLoopChatRequestEvent,
-    HumanInTheLoopConfirmationRequestEvent,
-    HumanInTheLoopInputRequestEvent,
-    HumanInTheLoopRequestEvent,
-)
+from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import HumanInTheLoopRequestEvent
 
 
 class HumanInTheLoopResponseEvent(ControlAndDisplayEvent):
@@ -54,54 +49,3 @@ class HumanInTheLoopResponseEvent(ControlAndDisplayEvent):
             "_event_name": start_event_name,
         }
         return cls.deserialize_event(json_data)
-
-
-class HumanInTheLoopInputResponseEvent(HumanInTheLoopResponseEvent):
-    """Response containing free-form text input from a human operator."""
-
-    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.hitl_input_response_event.name")
-    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
-        "lib.events.hitl_input_response_event.description"
-    )
-
-    response: Annotated[str, Field(description="The human operator's text input.")]
-    request_event: Annotated[
-        HumanInTheLoopInputRequestEvent,
-        Field(description="The original input request event."),
-    ]
-
-
-class HumanInTheLoopConfirmationResponseEvent(HumanInTheLoopResponseEvent):
-    """Response containing yes/no confirmation from a human operator."""
-
-    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path(
-        "lib.events.hitl_confirmation_response_event.name"
-    )
-    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
-        "lib.events.hitl_confirmation_response_event.description"
-    )
-
-    response: Annotated[bool, Field(description="The human operator's confirmation (True for yes, False for no).")]
-    request_event: Annotated[
-        HumanInTheLoopConfirmationRequestEvent,
-        Field(description="The original confirmation request event."),
-    ]
-
-
-class HumanInTheLoopChatResponseEvent(HumanInTheLoopResponseEvent):
-    """Response containing chat-style input from a human operator.
-
-    This response is sent when a user replies to a chat HITL request via
-    a normal chat message instead of a popup dialog.
-    """
-
-    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.hitl_chat_response_event.name")
-    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
-        "lib.events.hitl_chat_response_event.description"
-    )
-
-    response: Annotated[str, Field(description="The human operator's chat message.")]
-    request_event: Annotated[
-        HumanInTheLoopChatRequestEvent,
-        Field(description="The original chat request event."),
-    ]

@@ -1,75 +1,8 @@
-from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
-    HumanInTheLoopChatRequestEvent,
-    HumanInTheLoopConfirmationRequestEvent,
-    HumanInTheLoopInputRequestEvent,
-    HumanInTheLoopRequestEvent,
-)
-from aihub_lib.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import (
-    HumanInTheLoopChatResponseEvent,
-    HumanInTheLoopConfirmationResponseEvent,
-    HumanInTheLoopInputResponseEvent,
-    HumanInTheLoopResponseEvent,
-)
-from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
-from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
-
-
-class HumanInTheLoopInput:
-    """Helper for triggering text input HITL steps within a workflow."""
-
-    request = HumanInTheLoopInputRequestEvent
-    response = HumanInTheLoopInputResponseEvent
-
-    @classmethod
-    def invoke(cls, question: str) -> HumanInTheLoopInputRequestEvent:
-        """Create a request for free-form text input from a human operator."""
-        return cls.request(
-            question=question,
-            topic=PartialAgentTopic(
-                event_type=AgentTopicManager.CONTROL_EVENT,
-                event_name=cls.response.event_name_from_class(),
-            ),
-        )
-
-
-class HumanInTheLoopConfirmation:
-    """Helper for triggering yes/no confirmation HITL steps within a workflow."""
-
-    request = HumanInTheLoopConfirmationRequestEvent
-    response = HumanInTheLoopConfirmationResponseEvent
-
-    @classmethod
-    def invoke(cls, question: str) -> HumanInTheLoopConfirmationRequestEvent:
-        """Create a request for yes/no confirmation from a human operator."""
-        return cls.request(
-            question=question,
-            topic=PartialAgentTopic(
-                event_type=AgentTopicManager.CONTROL_EVENT,
-                event_name=cls.response.event_name_from_class(),
-            ),
-        )
-
-
-class HumanInTheLoopChat:
-    """Helper for triggering chat-style HITL steps within a workflow.
-
-    Unlike input/confirmation types that show popup dialogs, chat requests appear
-    as regular chat messages. The user responds by typing a normal chat message.
-    """
-
-    request = HumanInTheLoopChatRequestEvent
-    response = HumanInTheLoopChatResponseEvent
-
-    @classmethod
-    def invoke(cls, question: str) -> HumanInTheLoopChatRequestEvent:
-        """Create a request for chat-style input from a human operator."""
-        return cls.request(
-            question=question,
-            topic=PartialAgentTopic(
-                event_type=AgentTopicManager.CONTROL_EVENT,
-                event_name=cls.response.event_name_from_class(),
-            ),
-        )
+from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoopChat import HumanInTheLoopChat
+from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoopConfirmation import HumanInTheLoopConfirmation
+from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoopInput import HumanInTheLoopInput
+from aihub_lib.nats.events.human_in_the_loop.request import HumanInTheLoopRequestEvent
+from aihub_lib.nats.events.human_in_the_loop.response import HumanInTheLoopResponseEvent
 
 
 class HumanInTheLoop:
