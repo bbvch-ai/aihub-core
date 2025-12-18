@@ -8,8 +8,9 @@ import asyncio
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
 
-from aihub_agent.agents.HitlDemoAgent import HitlDemoAgent, HitlDemoAgentConfig
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from playground.agent.HitlDemoAgent.HitlDemoAgent import HitlDemoAgent
+from playground.agent.HitlDemoAgent.HitlDemoAgentConfig import HitlDemoAgentConfig
 
 enable_logging()
 

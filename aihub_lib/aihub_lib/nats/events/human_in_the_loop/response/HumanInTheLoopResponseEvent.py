@@ -9,7 +9,7 @@ from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
 from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import HumanInTheLoopRequestEvent
 
 
-class HumanInTheLoopResponseEvent(ControlAndDisplayEvent):
+class HumanInTheLoopResponseEvent[THitlRequestEvent: HumanInTheLoopRequestEvent](ControlAndDisplayEvent):
     """
     Base response from a human operator after a HITL request.
 
@@ -26,7 +26,7 @@ class HumanInTheLoopResponseEvent(ControlAndDisplayEvent):
 
     response: Annotated[str | bool, Field(description="The human operator's response.")]
     request_event: Annotated[
-        HumanInTheLoopRequestEvent,
+        THitlRequestEvent,
         Field(
             description="The original `HumanInTheLoopRequestEvent` that led to this response, providing context "
             "for where and why the workflow paused.",

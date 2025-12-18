@@ -9,7 +9,7 @@ from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopChatRequestEv
 from aihub_lib.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import HumanInTheLoopResponseEvent
 
 
-class HumanInTheLoopChatResponseEvent(HumanInTheLoopResponseEvent):
+class HumanInTheLoopChatResponseEvent(HumanInTheLoopResponseEvent[HumanInTheLoopChatRequestEvent]):
     """Response containing chat-style input from a human operator.
 
     This response is sent when a user replies to a chat HITL request via
@@ -22,7 +22,3 @@ class HumanInTheLoopChatResponseEvent(HumanInTheLoopResponseEvent):
     )
 
     response: Annotated[str, Field(description="The human operator's chat message.")]
-    request_event: Annotated[
-        HumanInTheLoopChatRequestEvent,
-        Field(description="The original chat request event."),
-    ]

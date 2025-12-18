@@ -9,7 +9,7 @@ from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopInputRequestE
 from aihub_lib.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import HumanInTheLoopResponseEvent
 
 
-class HumanInTheLoopInputResponseEvent(HumanInTheLoopResponseEvent):
+class HumanInTheLoopInputResponseEvent(HumanInTheLoopResponseEvent[HumanInTheLoopInputRequestEvent]):
     """Response containing free-form text input from a human operator."""
 
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.hitl_input_response_event.name")
@@ -18,7 +18,3 @@ class HumanInTheLoopInputResponseEvent(HumanInTheLoopResponseEvent):
     )
 
     response: Annotated[str, Field(description="The human operator's text input.")]
-    request_event: Annotated[
-        HumanInTheLoopInputRequestEvent,
-        Field(description="The original input request event."),
-    ]

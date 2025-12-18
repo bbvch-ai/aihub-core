@@ -1,18 +1,9 @@
 from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopInput
-from aihub_lib.nats.events.human_in_the_loop.request import HumanInTheLoopInputRequestEvent
-from aihub_lib.nats.events.human_in_the_loop.response import HumanInTheLoopInputResponseEvent
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
-
-class HitlTypeSelectionRequestEvent(HumanInTheLoopInputRequestEvent):
-    """Custom request for HITL type selection."""
-    pass
-
-
-class HitlTypeSelectionResponseEvent(HumanInTheLoopInputResponseEvent):
-    """Custom response for HITL type selection."""
-    pass
+from playground.agent.HitlDemoAgent.events.HitlTypeSelectionRequestEvent import HitlTypeSelectionRequestEvent
+from playground.agent.HitlDemoAgent.events.HitlTypeSelectionResponseEvent import HitlTypeSelectionResponseEvent
 
 
 class HitlTypeSelection(HumanInTheLoopInput):
