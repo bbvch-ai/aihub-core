@@ -65,6 +65,7 @@ class OrganizationMemoryAgent(Agent):
     async def retrieve_organization_memory_step(
         self,
         event: UserMessageEvent,
+        _: StoreOrganizationMemoryEvent,
         memory: AgentMemory,
         agent_config: OrganizationMemoryAgentConfig,
     ) -> RetrieveOrganizationMemoryEvent:

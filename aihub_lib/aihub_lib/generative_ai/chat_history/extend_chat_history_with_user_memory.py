@@ -27,7 +27,7 @@ def extend_chat_history_with_user_memory(
     Why after existing system messages? Agent behavior/personality system messages come first to establish
     foundational context, with user-specific memory context layered on top.
     """
-    if not memories:
+    if not (memories or relations):
         return chat_history
 
     template_string = t("lib.prompt.memory.user_memory_system_message")

@@ -21,3 +21,6 @@ class MemoryRelation(BaseModel):
             validation_alias=AliasChoices("target", "destination"),
         ),
     ]
+
+    def as_string(self) -> str:
+        return f"{self.source} -> {self.relation} -> {self.target}"

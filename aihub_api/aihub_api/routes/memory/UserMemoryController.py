@@ -21,7 +21,7 @@ class UserMemoryController(Controller):
 
     name = LocaleString(en="User Memories")
     description = LocaleString(en="View and manage your personal memories from mem0")
-    icon = "mdi:account-brain"
+    icon = "material-symbols:remember-me-outline"
 
     def __init__(self, *, auth: AuthHandler, route: str = "/user-memories", **kwargs):
         super().__init__(auth=auth, route=route, **kwargs)

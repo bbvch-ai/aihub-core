@@ -33,7 +33,7 @@ enable_logging()
 scenarios("./features/organization_memory_agent.feature")
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def agent_config():
     """Default OrganizationMemoryAgentConfig for tests."""
     return OrganizationMemoryAgentConfig(
@@ -61,10 +61,11 @@ def _(agent_config):
     return AgentTestRunner(agent_type=OrganizationMemoryAgent, default_agent_config=agent_config)
 
 
-@given(parsers.parse('tenant namespace is "{namespace}"'))
+@given(parsers.parse('tenant namespace is "{namespace}"'), target_fixture="agent_runner")
 def _(agent_config, namespace: str):
-    """Set tenant namespace in config."""
+    """Create AgentTestRunner with specified tenant namespace."""
     agent_config.tenant_namespace = namespace
+    return AgentTestRunner(agent_type=OrganizationMemoryAgent, default_agent_config=agent_config)
 
 
 @given(parsers.parse('pre-seeded organization memory: "{memory_text}"'))

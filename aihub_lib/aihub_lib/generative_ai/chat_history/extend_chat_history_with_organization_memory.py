@@ -25,7 +25,7 @@ def extend_chat_history_with_organization_memory(
     Why after existing system messages? Agent behavior/personality system messages come first to establish
     foundational context, with organizational memory context layered on top.
     """
-    if not memories:
+    if not (memories or relations):
         return chat_history
 
     template_string = t("lib.prompt.memory.organization_memory_system_message")

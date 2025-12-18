@@ -21,6 +21,11 @@ def enable_logging(level: int | None = None) -> logging.Logger:
         "urllib3",
         "pymongo",
         "httpx",
+        "neo4j",
+        "openai",
+        "mem0",
+        "opentelemetry",
+        "asyncio",
         "httpcore",
     ]
 

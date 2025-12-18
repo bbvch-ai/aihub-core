@@ -29,11 +29,11 @@ enable_logging()
 scenarios("./features/user_memory_agent.feature")
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def agent_config():
     """Default UserMemoryAgentConfig for tests."""
     return UserMemoryAgentConfig(
-        agent_id="memory_test",
+        agent_id="user_memory_test_3",
         agent_class=UserMemoryAgent.__name__,
         name=LocaleString(en="Memory Test Agent", de="Speicher Test Agent"),
         description=LocaleString(en="Test agent for memory integration", de="Testagent für Speicherintegration"),
@@ -128,38 +128,43 @@ async def _(agent_runner: AgentTestRunner, query: str, locale: str):
 # ============================================================================
 
 
-@then("a BaseRetrieveMemoryEvent is present")
+@then("a RetrieveUserMemoryEvent is present")
 def _(agent_runner: AgentTestRunner):
     """Check that RetrieveUserMemoryEvent exists (regardless of memory count)."""
     event = agent_runner.get_event_of_class(RetrieveUserMemoryEvent)
     assert event is not None, "RetrieveUserMemoryEvent not found"
 
 
-@then(parsers.parse("a BaseRetrieveMemoryEvent is present with {count:d} or more memories"))
+@then(parsers.parse("a RetrieveUserMemoryEvent is present with {count:d} or more memories or relations"))
 def _(agent_runner: AgentTestRunner, count: int):
     """Check that RetrieveUserMemoryEvent has expected number of memories."""
     event = agent_runner.get_event_of_class(RetrieveUserMemoryEvent)
     assert event is not None, "RetrieveUserMemoryEvent not found"
-    assert len(event.memories) >= count, f"Expected {count}+ memories, got {len(event.memories)}"
+    assert (
+        len(event.memories) >= count or len(event.relations) >= count
+    ), f"Expected {count}+ memories or relations, got {len(event.memories)} / {len(event.relations)}"
 
 
-@then(parsers.parse("a BaseRetrieveMemoryEvent is present with {count:d} memories"))
+@then(parsers.parse("a RetrieveUserMemoryEvent is present with {count:d} memories or relations"))
 def _(agent_runner: AgentTestRunner, count: int):
     """Check that RetrieveUserMemoryEvent has exact number of memories."""
     event = agent_runner.get_event_of_class(RetrieveUserMemoryEvent)
     assert event is not None, "RetrieveUserMemoryEvent not found"
-    assert len(event.memories) == count, f"Expected {count} memories, got {len(event.memories)}"
+    assert (
+        len(event.memories) == count or len(event.relations) == count
+    ), f"Expected {count}+ memories or relations, got {len(event.memories)} / {len(event.relations)}"
 
 
-@then(parsers.parse('the memory content contains "{text}"'))
+@then(parsers.parse('the memory or relation content contains "{text}"'))
 def _(agent_runner: AgentTestRunner, text: str):
     """Verify that retrieved memories contain specific text."""
     event = agent_runner.get_event_of_class(RetrieveUserMemoryEvent)
     assert event is not None, "RetrieveUserMemoryEvent not found"
 
     # Check if any memory contains the text (case-insensitive)
-    found = any(text.lower() in memory.memory.lower() for memory in event.memories)
-    assert found, f"No memory contains '{text}'"
+    found_memory = any(text.lower() in memory.memory.lower() for memory in event.memories)
+    found_relation = any(text.lower() in relation.as_string() for relation in event.relations)
+    assert found_memory or found_relation, f"No memory / relation contains '{text}'"
 
 
 @then("an AddMemoryToChatHistoryEvent is present")
