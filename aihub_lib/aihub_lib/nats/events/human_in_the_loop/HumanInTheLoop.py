@@ -1,9 +1,11 @@
 from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
+    HumanInTheLoopChatRequestEvent,
     HumanInTheLoopConfirmationRequestEvent,
     HumanInTheLoopInputRequestEvent,
     HumanInTheLoopRequestEvent,
 )
 from aihub_lib.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import (
+    HumanInTheLoopChatResponseEvent,
     HumanInTheLoopConfirmationResponseEvent,
     HumanInTheLoopInputResponseEvent,
     HumanInTheLoopResponseEvent,
@@ -48,13 +50,36 @@ class HumanInTheLoopConfirmation:
         )
 
 
+class HumanInTheLoopChat:
+    """Helper for triggering chat-style HITL steps within a workflow.
+
+    Unlike input/confirmation types that show popup dialogs, chat requests appear
+    as regular chat messages. The user responds by typing a normal chat message.
+    """
+
+    request = HumanInTheLoopChatRequestEvent
+    response = HumanInTheLoopChatResponseEvent
+
+    @classmethod
+    def invoke(cls, question: str) -> HumanInTheLoopChatRequestEvent:
+        """Create a request for chat-style input from a human operator."""
+        return cls.request(
+            question=question,
+            topic=PartialAgentTopic(
+                event_type=AgentTopicManager.CONTROL_EVENT,
+                event_name=cls.response.event_name_from_class(),
+            ),
+        )
+
+
 class HumanInTheLoop:
     """
     A helper for triggering human-in-the-loop (HITL) steps within a workflow.
 
     Use the specific helpers for type-safe interactions:
-    - `HumanInTheLoop.input` for free-form text input
-    - `HumanInTheLoop.confirmation` for yes/no confirmation
+    - `HumanInTheLoop.input` for free-form text input (popup dialog)
+    - `HumanInTheLoop.confirmation` for yes/no confirmation (popup dialog)
+    - `HumanInTheLoop.chat` for chat-style input (appears as regular message)
 
     Or use the base classes directly via `request` and `response` attributes.
     """
@@ -65,3 +90,4 @@ class HumanInTheLoop:
     # Typed helpers
     input = HumanInTheLoopInput
     confirmation = HumanInTheLoopConfirmation
+    chat = HumanInTheLoopChat

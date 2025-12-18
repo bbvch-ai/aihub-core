@@ -26,6 +26,7 @@ from aihub_api.routes.agent.dto.AgentIdentifier import AgentIdentifier
 from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
 from aihub_api.routes.event.EventService import EventService
 from aihub_api.routes.openai.dto.HistoryResponse import HistoryResponse
+from aihub_api.routes.thread.dto.OpenChatHitlResponse import OpenChatHitlResponse
 from aihub_api.routes.thread.dto.statistics.CalculatedThreadStats import CalculatedThreadStats
 from aihub_api.routes.thread.dto.statistics.DisplayStatistics import DisplayStatistics
 from aihub_api.routes.thread.dto.statistics.IntermediateDisplayStats import IntermediateDisplayStats
@@ -192,6 +193,39 @@ class ThreadService:
                     )
 
         return HistoryResponse(messages=messages)
+
+    @staticmethod
+    @trace_fn
+    def get_open_chat_hitl(thread_id: str) -> OpenChatHitlResponse:
+        """
+        Returns the oldest open chat HITL request for a thread, if any.
+
+        A chat HITL is open when it has not been responded to. Only HITL requests
+        with hitl_type == "chat" are considered.
+        """
+        hitl_requests = PersistedAgentEventEntity.human_in_the_loop_request_events_for_thread(thread_id)
+        hitl_responses = PersistedAgentEventEntity.human_in_the_loop_response_events_for_thread(thread_id)
+
+        # Build set of responded request event IDs
+        responded_request_ids: set[str] = set()
+        for response in hitl_responses:
+            request_event = response.event_data.get("request_event", {})
+            request_id = request_event.get("event_id")
+            if request_id:
+                responded_request_ids.add(request_id)
+
+        # Find the first open chat HITL request
+        for request in hitl_requests:
+            event_id = request.event_data.get("event_id")
+            hitl_type = request.event_data.get("hitl_type")
+
+            if hitl_type == "chat" and event_id not in responded_request_ids:
+                return OpenChatHitlResponse(
+                    has_open_chat_hitl=True,
+                    hitl_request=request.event_data,
+                )
+
+        return OpenChatHitlResponse(has_open_chat_hitl=False, hitl_request=None)
 
     @staticmethod
     @trace_fn

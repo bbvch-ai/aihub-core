@@ -16,6 +16,7 @@ from aihub_api.routes.openai.dto.HistoryResponse import HistoryResponse
 from aihub_api.routes.thread.dto.AddAgentRequest import AddAgentRequest
 from aihub_api.routes.thread.dto.AddUserRequest import AddUserRequest
 from aihub_api.routes.thread.dto.CreateThreadRequest import CreateThreadRequest
+from aihub_api.routes.thread.dto.OpenChatHitlResponse import OpenChatHitlResponse
 from aihub_api.routes.thread.dto.PaginatedThreadsResponse import PaginatedThreadsResponse
 from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
@@ -264,5 +265,31 @@ class ThreadController(Controller):
                 raise self.not_authorized_to_modify_exception
 
             return await ThreadService.remove_user_from_thread(thread_id, remove_user_id, t=t)
+
+        return self
+
+    def get_open_chat_hitl(self, route: str = "/{thread_id}/open-chat-hitl") -> "ThreadController":
+        @self.router.get(route, tags=self.tags)
+        async def get_open_chat_hitl(
+            thread_id: Annotated[str, Path(title="Thread ID", pattern=r"^[a-f0-9]{24}$")],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> OpenChatHitlResponse:
+            """
+            Returns the open chat HITL request for a thread, if any.
+
+            Chat HITLs are HITL requests where the question appears as a regular chat message
+            and the user responds by typing a normal chat message (not via popup dialog).
+            """
+            thread = await ThreadService.get_thread_by_id(thread_id, t=t)
+
+            user_in_thread = user.id in [u.id for u in thread.users]
+            thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
+                thread.process_class, thread.process_id
+            )
+            if not (user_in_thread or thread_belongs_to_users_process):
+                raise self.not_authorized_to_view_exception
+
+            return ThreadService.get_open_chat_hitl(thread_id)
 
         return self

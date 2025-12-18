@@ -7,6 +7,7 @@ from pydantic import Field
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
 from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
+    HumanInTheLoopChatRequestEvent,
     HumanInTheLoopConfirmationRequestEvent,
     HumanInTheLoopInputRequestEvent,
     HumanInTheLoopRequestEvent,
@@ -18,8 +19,9 @@ class HumanInTheLoopResponseEvent(ControlAndDisplayEvent):
     Base response from a human operator after a HITL request.
 
     Use the specific subclasses:
-    - `HumanInTheLoopInputResponseEvent` for text input responses
-    - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses
+    - `HumanInTheLoopInputResponseEvent` for text input responses (popup dialog)
+    - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses (popup dialog)
+    - `HumanInTheLoopChatResponseEvent` for chat-style responses (regular message)
     """
 
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.hitl_response_event.name")
@@ -83,4 +85,23 @@ class HumanInTheLoopConfirmationResponseEvent(HumanInTheLoopResponseEvent):
     request_event: Annotated[
         HumanInTheLoopConfirmationRequestEvent,
         Field(description="The original confirmation request event."),
+    ]
+
+
+class HumanInTheLoopChatResponseEvent(HumanInTheLoopResponseEvent):
+    """Response containing chat-style input from a human operator.
+
+    This response is sent when a user replies to a chat HITL request via
+    a normal chat message instead of a popup dialog.
+    """
+
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.hitl_chat_response_event.name")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
+        "lib.events.hitl_chat_response_event.description"
+    )
+
+    response: Annotated[str, Field(description="The human operator's chat message.")]
+    request_event: Annotated[
+        HumanInTheLoopChatRequestEvent,
+        Field(description="The original chat request event."),
     ]
