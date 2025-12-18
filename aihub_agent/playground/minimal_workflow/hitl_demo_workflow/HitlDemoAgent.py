@@ -5,47 +5,10 @@ from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoop import (
     HumanInTheLoopConfirmation,
     HumanInTheLoopInput,
 )
-from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
-    HumanInTheLoopInputRequestEvent,
-)
-from aihub_lib.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import (
-    HumanInTheLoopInputResponseEvent,
-)
-from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
-from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.workflow.decorators.step import step
-
-
-# Custom HITL type for selecting which HITL to demo (avoids event type collision)
-class HitlTypeSelectionRequest(HumanInTheLoopInputRequestEvent):
-    """Custom request for HITL type selection."""
-
-    pass
-
-
-class HitlTypeSelectionResponse(HumanInTheLoopInputResponseEvent):
-    """Custom response for HITL type selection."""
-
-    pass
-
-
-class HitlTypeSelection(HumanInTheLoopInput):
-    """Helper for the HITL type selection step."""
-
-    request = HitlTypeSelectionRequest
-    response = HitlTypeSelectionResponse
-
-    @classmethod
-    def invoke(cls, question: str) -> HitlTypeSelectionRequest:
-        return cls.request(
-            question=question,
-            topic=PartialAgentTopic(
-                event_type=AgentTopicManager.CONTROL_EVENT,
-                event_name=cls.response.event_name_from_class(),
-            ),
-        )
+from playground.minimal_workflow.hitl_demo_workflow.HitlTypeSelection import HitlTypeSelection
 
 
 class HitlDemoAgent(Agent):
