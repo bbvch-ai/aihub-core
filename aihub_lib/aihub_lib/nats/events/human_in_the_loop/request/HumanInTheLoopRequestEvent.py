@@ -11,7 +11,7 @@ from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 HitlRequestType = Literal["input", "confirmation", "chat"]
 
 
-class HumanInTheLoopRequestEvent[THitlRequestType: HitlRequestType](ControlAndDisplayEvent):
+class HumanInTheLoopRequestEvent(ControlAndDisplayEvent):
     """
     Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
 
@@ -35,8 +35,8 @@ class HumanInTheLoopRequestEvent[THitlRequestType: HitlRequestType](ControlAndDi
         ),
     ]
     hitl_type: Annotated[
-        THitlRequestType,
+        HitlRequestType,
         Field(
-            description="The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no.",
+            description="HITL type: 'input' (free-form text), 'confirmation' (yes/no), 'chat' (chat-style).",
         ),
     ]
