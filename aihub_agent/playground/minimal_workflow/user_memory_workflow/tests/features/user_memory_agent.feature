@@ -35,3 +35,9 @@ Feature: UserMemoryAgent - Memory-Enhanced Conversational Agent
     Then an AddMemoryToChatHistoryEvent is present
     And the memory system message uses German formatting
     And the memory system message contains "Die folgenden Informationen"
+
+  Scenario: Verify stored memory content
+    Given no pre-seeded memories
+    When the start event is sent with user query "My favorite color is blue and I enjoy hiking"
+    Then a StoreUserMemoryEvent is present
+    And the new memory event contains a memory or relation mentioning "blue" or "hiking"

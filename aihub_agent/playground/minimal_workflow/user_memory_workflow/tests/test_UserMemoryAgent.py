@@ -145,16 +145,6 @@ def _(agent_runner: AgentTestRunner, count: int):
     ), f"Expected {count}+ memories or relations, got {len(event.memories)} / {len(event.relations)}"
 
 
-@then(parsers.parse("a RetrieveUserMemoryEvent is present with {count:d} memories or relations"))
-def _(agent_runner: AgentTestRunner, count: int):
-    """Check that RetrieveUserMemoryEvent has exact number of memories."""
-    event = agent_runner.get_event_of_class(RetrieveUserMemoryEvent)
-    assert event is not None, "RetrieveUserMemoryEvent not found"
-    assert (
-        len(event.memories) == count or len(event.relations) == count
-    ), f"Expected {count}+ memories or relations, got {len(event.memories)} / {len(event.relations)}"
-
-
 @then(parsers.parse('the memory or relation content contains "{text}"'))
 def _(agent_runner: AgentTestRunner, text: str):
     """Verify that retrieved memories contain specific text."""
@@ -242,7 +232,7 @@ def _(agent_runner: AgentTestRunner):
     assert event is not None, "StoreUserMemoryEvent not found"
 
 
-@then(parsers.parse('the new memory event contains a memory mentioning "{text1}" or "{text2}"'))
+@then(parsers.parse('the new memory event contains a memory or relation mentioning "{text1}" or "{text2}"'))
 def _(agent_runner: AgentTestRunner, text1: str, text2: str):
     """Verify new memories contain expected information."""
     event = agent_runner.get_event_of_class(StoreUserMemoryEvent)
@@ -252,8 +242,13 @@ def _(agent_runner: AgentTestRunner, text1: str, text2: str):
     all_memories = event.added_memories + event.updated_memories
 
     # Check if any memory mentions either text (case-insensitive)
-    found = any(text1.lower() in mem.lower() or text2.lower() in mem.lower() for mem in all_memories)
-    assert found, f"No memory mentions '{text1}' or '{text2}'"
+    found_memory = any(text1.lower() in mem.lower() or text2.lower() in mem.lower() for mem in all_memories)
+    found_relation = any(
+        text1.lower() in relation.as_string() or text2.lower() in relation.as_string()
+        for relation in event.added_relations
+    )
+
+    assert found_memory or found_relation, f"No memory mentions '{text1}' or '{text2}'"
 
 
 @then("a StopEvent is present")
