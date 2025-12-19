@@ -4,7 +4,6 @@ import html
 import logging
 import os
 import re
-import time
 from typing import Any
 
 import httpx
@@ -15,6 +14,14 @@ from fsspec import AbstractFileSystem
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
+from tenacity import (
+    AsyncRetrying,
+    RetryError,
+    Retrying,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from aihub_lib.generative_ai.document.tables.markdown_table import create_markdown_table, wrap_tables_with_tags
 from aihub_lib.generative_ai.utils.path_utils import create_figures_folder_name
@@ -174,25 +181,34 @@ class DoclingLoader(BaseReader):
 
         raise ValueError(f"Unsupported pipeline type: {self.config.PIPELINE_TYPE}")
 
+    def _retry_kwargs(self) -> dict:
+        """Return retry configuration for tenacity."""
+
+        def log_retry(retry_state) -> None:  # type: ignore[no-untyped-def]
+            logger.warning(
+                f"Docling conversion failed (attempt {retry_state.attempt_number}), "
+                f"retrying in {retry_state.next_action.sleep}s: {retry_state.outcome.exception()}"
+            )
+
+        return {
+            "stop": stop_after_attempt(self.config.HTTP_RETRIES + 1),
+            "wait": wait_exponential(multiplier=1, min=1, max=64),
+            "retry": retry_if_exception_type(DoclingTransientError),
+            "before_sleep": log_retry,
+            "reraise": True,
+        }
+
     def convert_document(
         self, file_content: str, filename: str, include_images: bool, to_formats: list[str] | None = None
     ) -> dict:
         request_body = self._build_request_body(file_content, filename, include_images, to_formats)
-        last_error: Exception | None = None
-
-        for attempt in range(self.config.HTTP_RETRIES + 1):
-            try:
-                return self._execute_sync_conversion(request_body)
-            except DoclingTransientError as e:
-                last_error = e
-                if attempt < self.config.HTTP_RETRIES:
-                    wait_time = 2**attempt
-                    logger.warning(f"Docling conversion failed (attempt {attempt + 1}), retrying in {wait_time}s: {e}")
-                    time.sleep(wait_time)
-
-        if last_error is None:
-            raise RuntimeError("Retry loop completed without success or error")
-        raise last_error
+        try:
+            for attempt in Retrying(**self._retry_kwargs()):
+                with attempt:
+                    return self._execute_sync_conversion(request_body)
+        except RetryError as e:
+            raise e.last_attempt.exception() from None
+        raise RuntimeError("Retry loop completed without success or error")
 
     def _execute_sync_conversion(self, request_body: dict) -> dict:
         """Execute the sync conversion request."""
@@ -221,21 +237,13 @@ class DoclingLoader(BaseReader):
         to_formats: list[str] | None = None,
     ) -> dict:
         request_body = self._build_request_body(file_content, filename, include_images, to_formats)
-        last_error: Exception | None = None
-
-        for attempt in range(self.config.HTTP_RETRIES + 1):
-            try:
-                return await self._execute_async_conversion(request_body)
-            except DoclingTransientError as e:
-                last_error = e
-                if attempt < self.config.HTTP_RETRIES:
-                    wait_time = 2**attempt
-                    logger.warning(f"Docling conversion failed (attempt {attempt + 1}), retrying in {wait_time}s: {e}")
-                    await asyncio.sleep(wait_time)
-
-        if last_error is None:
-            raise RuntimeError("Retry loop completed without success or error")
-        raise last_error
+        try:
+            async for attempt in AsyncRetrying(**self._retry_kwargs()):
+                with attempt:
+                    return await self._execute_async_conversion(request_body)
+        except RetryError as e:
+            raise e.last_attempt.exception() from None
+        raise RuntimeError("Retry loop completed without success or error")
 
     async def _execute_async_conversion(self, request_body: dict) -> dict:
         """Execute the async conversion request and poll for completion."""
