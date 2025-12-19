@@ -81,6 +81,7 @@ def default_definitions(
     llm_model_name: Annotated[str, "LiteLLM model name for text generation"] = "text-generation/mini",
     with_summary_nodes: Annotated[bool, "Generate recursive summaries for hierarchical RAG"] = True,
     with_table_refinement: Annotated[bool, "Refine tables with LLM to detect structure and split"] = True,
+    with_figure_descriptions: Annotated[bool, "Generate figure descriptions with vision LLM"] = True,
     auto_sync: Annotated[bool, "Whether the S3 bucket is auto-synced (i.e. with local fs pipeline)"] = False,
     observe_job_hour: Annotated[int, "Hour to run daily data lake observation job"] = 2,
     observe_job_minute: Annotated[int, "Minute to run daily data lake observation job"] = 0,
@@ -114,6 +115,7 @@ def default_definitions(
             data_lake_key=data_lake_key,
             partitions=document_partitions,
             enable_table_refinement=with_table_refinement,
+            enable_figure_descriptions=with_figure_descriptions,
         ),
         nodes_factory(nodes_key, document_key=document_key, partitions=document_partitions),
     ]

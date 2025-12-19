@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.256.4] - 2025-12-19 - Enhanced Document Processing: Configurable Figure Descriptions and Robustness
+
+### Added
+
+- ✨ **Configurable Figure Description Generation:** Introduced a new option to enable or disable the generation of
+  figure descriptions using a vision LLM, providing more control over document processing, with the feature enabled by
+  default.
+
+### Fixed
+
+- 🐛 **Improved Figure Description Robustness:** Added a safeguard to prevent errors when generating figure descriptions
+  for documents that lack text content, ensuring smoother processing and logging a warning instead.
+
+### Changed
+
+- ⚙️ **Updated Quick Start Pipeline:** The `my_document_pipeline` example now explicitly enables both table refinement
+  and figure description generation, showcasing recommended best practices and demonstrating the new feature.
+
+---
+
 ## [v0.256.3] - 2025-12-17 - Enhanced Knowledge Management with Shared RAG Pipelines and Dynamic Buckets
 
 ### Added

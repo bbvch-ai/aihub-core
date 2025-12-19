@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_api"
-version = "v0.256.3"
+version = "v0.256.4"
 description = "api core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -56,7 +56,7 @@ tag = "v0.4.0"
 
 [tool.poetry.dependencies.aihub_lib]
 git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.256.3"
+tag = "v0.256.4"
 subdirectory = "aihub_lib"
 
 [build-system]
