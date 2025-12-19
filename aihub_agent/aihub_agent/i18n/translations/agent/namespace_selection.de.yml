@@ -1,0 +1,39 @@
+thoughts:
+  starting_selection: "Starte Namespace-Auswahl-Analyse."
+  reusing_selection: "Thema unverändert, verwende vorherige Namespace-Auswahl wieder."
+  topic_changed: "Themenwechsel erkannt, werte Namespace-Auswahl neu aus."
+  analyzing_query: "Analysiere Benutzeranfrage, um relevante Wissensquellen zu bestimmen."
+  confident_selection: "Sicher bei der Namespace-Auswahl, fahre mit RAG fort."
+  max_rounds_reached: "Maximale Klärungsrunden erreicht, fahre mit bester Auswahl fort."
+  need_clarification: "Auswahlkonfidenz zu niedrig, fordere Klärung vom Benutzer an."
+  asking_clarification: "Stelle Klärungsfrage (Runde %{round})."
+  processing_response: "Verarbeite Benutzerantwort: %{response}"
+  invoking_rag: "Rufe RAG-Agenten mit Quellen auf: %{sources}"
+  forwarding_response: "Leite RAG-Antwort an Benutzer weiter."
+
+messages:
+  clarification_question: "Ich habe einige potenziell relevante Wissensquellen gefunden (%{sources}), bin mir aber nicht sicher, welche am besten zu Ihrer Frage passen. Könnten Sie bitte klären, zu welchem Thema oder Bereich Sie fragen?"
+  rag_error: "Bei der Verarbeitung Ihrer Frage ist ein Fehler aufgetreten: %{error}"
+
+prompts:
+  selection_system: |
+    Du bist ein Wissensquellen-Selektor. Deine Aufgabe ist es, zu bestimmen, welche Wissensquellen für die Frage eines Benutzers am relevantesten sind.
+
+    Verfügbare Wissensquellen:
+    %{namespaces}
+    %{context}
+
+    Antworte mit einem JSON-Objekt, das enthält:
+    - "selected_sources": Array von Objekten mit "bucket_name" und "namespace_name" für jede relevante Quelle
+    - "confidence": Eine Zahl zwischen 0.0 und 1.0, die dein Vertrauen in die Auswahl angibt
+    - "reasoning": Eine kurze Erklärung, warum du diese Quellen ausgewählt hast
+    - "clarification_question": Optional - eine Frage an den Benutzer, wenn die Auswahl unklar ist
+
+    Beispielantwort:
+    {
+      "selected_sources": [{"bucket_name": "knowledge", "namespace_name": "hr-policies"}],
+      "confidence": 0.85,
+      "reasoning": "Die Anfrage bezieht sich auf Mitarbeiterrichtlinien, was zum HR-Richtlinien-Namespace passt."
+    }
+
+  selection_user: "Benutzerfrage: %{query}"

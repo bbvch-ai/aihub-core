@@ -1,11 +1,15 @@
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.generative_ai.retrievers.KnowledgeRetrieverConfig import KnowledgeRetrieverConfig
+from aihub_lib.generative_ai.retrievers.RetrieverConfig import RetrieverConfig
 from aihub_lib.generative_ai.utils.format_expert_conversation import format_expert_conversation
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import (
     AgentInTheLoop,
     HumanInTheLoop,
+    KnowledgeSource,
     LimitChatHistoryEvent,
+    RAGWithSourcesStartEvent,
     StandaloneQuestionCondenserEvent,
     StopEvent,
 )
@@ -116,7 +120,7 @@ class ExpertRAGAgent(Agent):
     )
     async def limit_chat_history_step(
         self,
-        event: UserMessageEvent,
+        event: UserMessageEvent | RAGWithSourcesStartEvent,
         agent_config: ExpertRAGAgentConfig,
     ) -> LimitChatHistoryEvent:
         return do_limit_chat_history(event.messages, agent_config.number_of_input_tokens)
@@ -128,7 +132,7 @@ class ExpertRAGAgent(Agent):
     async def condense_standalone_question_step(
         self,
         event: LimitChatHistoryEvent,
-        start_event: UserMessageEvent,
+        start_event: UserMessageEvent | RAGWithSourcesStartEvent,
         agent_config: ExpertRAGAgentConfig,
         t: LocaleHandler,
         displayer: EventDisplayer,
@@ -160,11 +164,13 @@ class ExpertRAGAgent(Agent):
         self,
         event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
         _: FewShotAcceptEvent,
+        start_event: UserMessageEvent | RAGWithSourcesStartEvent,
         agent_config: ExpertRAGAgentConfig,
         t: LocaleHandler,
     ) -> RetrieverEvent:
         """Retrieves relevant nodes from multiple knowledge sources in parallel."""
-        return await do_retrieve(event, agent_config.retrievers, t)
+        retrievers = self._get_retrievers(start_event, agent_config)
+        return await do_retrieve(event, retrievers, t)
 
     @step(
         name=LocaleString(en="Rerank Retrieved Nodes"),
@@ -234,7 +240,7 @@ class ExpertRAGAgent(Agent):
         context_event: InOrderNodeCombinerEvent | ExpertAnswerContextEvent,
         chat_history_event: LimitChatHistoryEvent,
         _: ContextSufficientAcceptEvent | None,
-        start_event: UserMessageEvent,
+        start_event: UserMessageEvent | RAGWithSourcesStartEvent,
         agent_config: ExpertRAGAgentConfig,
     ) -> LimitChatHistoryWithContextEvent:
         return do_limit_chat_history_with_context(
@@ -287,7 +293,7 @@ class ExpertRAGAgent(Agent):
     )
     async def forward_to_expert_asking_agent_step(
         self,
-        user_message_event: UserMessageEvent,
+        start_event: UserMessageEvent | RAGWithSourcesStartEvent,
         _: UserRequestsExpertEvent,
         displayer: EventDisplayer,
         agent_config: ExpertRAGAgentConfig,
@@ -310,9 +316,9 @@ class ExpertRAGAgent(Agent):
             agent_class=agent_config.expert_escalation.expert_asking_agent_class,
             agent_id=agent_config.expert_escalation.expert_asking_agent_id,
             start_event=AskExpertStartEvent(
-                question_to_expert=user_message_event.user_query,
-                locale=user_message_event.locale,
-                user=user_message_event.user,
+                question_to_expert=start_event.user_query,
+                locale=start_event.locale,
+                user=start_event.user,
             ),
         )
 
@@ -408,3 +414,76 @@ class ExpertRAGAgent(Agent):
             displayer,
             t,
         )
+
+    def _get_retrievers(
+        self,
+        start_event: UserMessageEvent | RAGWithSourcesStartEvent,
+        agent_config: ExpertRAGAgentConfig,
+    ) -> list[RetrieverConfig]:
+        """
+        Get retrievers based on start event type.
+
+        - UserMessageEvent: Uses static retriever configuration from agent config.
+        - RAGWithSourcesStartEvent: Builds dynamic retrievers from knowledge sources.
+        """
+        if isinstance(start_event, RAGWithSourcesStartEvent):
+            return self._build_retrievers_from_sources(start_event.knowledge_sources, agent_config)
+        return agent_config.retrievers
+
+    def _build_retrievers_from_sources(
+        self,
+        sources: list[KnowledgeSource],
+        agent_config: ExpertRAGAgentConfig,
+    ) -> list[KnowledgeRetrieverConfig]:
+        """
+        Build KnowledgeRetrieverConfig list from KnowledgeSource list.
+
+        Uses existing retriever configurations from agent_config and only overrides
+        the index_namespaces field. Each bucket must have a corresponding retriever
+        configured in the agent config.
+        """
+        # Build lookup of existing retrievers by bucket name
+        bucket_retrievers: dict[str, KnowledgeRetrieverConfig] = {}
+        for retriever in agent_config.retrievers:
+            if isinstance(retriever, KnowledgeRetrieverConfig):
+                bucket_name = retriever.vector_store.collection_name
+                bucket_retrievers[bucket_name] = retriever
+
+        if not bucket_retrievers:
+            raise ValueError(
+                "Cannot build dynamic retrievers: no KnowledgeRetrieverConfig found in agent config. "
+                "At least one KnowledgeRetrieverConfig is required."
+            )
+
+        # Group sources by bucket
+        bucket_namespaces: dict[str, list[str]] = {}
+        for source in sources:
+            if source.bucket_name not in bucket_namespaces:
+                bucket_namespaces[source.bucket_name] = []
+            bucket_namespaces[source.bucket_name].append(source.namespace_name)
+
+        # Build retrievers by copying existing config and overriding namespaces
+        retrievers: list[KnowledgeRetrieverConfig] = []
+
+        for bucket_name, namespaces in bucket_namespaces.items():
+            if bucket_name not in bucket_retrievers:
+                raise ValueError(
+                    f"No retriever configured for bucket '{bucket_name}'. "
+                    "Each bucket used in RAGWithSourcesStartEvent must have a corresponding retriever in agent config."
+                )
+
+            base_retriever = bucket_retrievers[bucket_name]
+            retrievers.append(
+                KnowledgeRetrieverConfig(
+                    embed_model=base_retriever.embed_model,
+                    index_namespaces=namespaces,
+                    retrieve_k=base_retriever.retrieve_k,
+                    query_mode=base_retriever.query_mode,
+                    node_types=base_retriever.node_types,
+                    vector_store=base_retriever.vector_store,
+                    retrieve_prev_next=base_retriever.retrieve_prev_next,
+                    retrieve_summaries=base_retriever.retrieve_summaries,
+                )
+            )
+
+        return retrievers

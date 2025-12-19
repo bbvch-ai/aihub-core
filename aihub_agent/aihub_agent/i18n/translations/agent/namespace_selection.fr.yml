@@ -1,0 +1,39 @@
+thoughts:
+  starting_selection: "Démarrage de l'analyse de sélection de namespace."
+  reusing_selection: "Sujet inchangé, réutilisation de la sélection de namespace précédente."
+  topic_changed: "Changement de sujet détecté, réévaluation de la sélection de namespace."
+  analyzing_query: "Analyse de la requête utilisateur pour déterminer les sources de connaissances pertinentes."
+  confident_selection: "Confiant dans la sélection de namespace, poursuite vers RAG."
+  max_rounds_reached: "Nombre maximum de tours de clarification atteint, poursuite avec la meilleure sélection."
+  need_clarification: "Confiance de sélection trop faible, demande de clarification à l'utilisateur."
+  asking_clarification: "Question de clarification (tour %{round})."
+  processing_response: "Traitement de la réponse utilisateur: %{response}"
+  invoking_rag: "Invocation de l'agent RAG avec les sources: %{sources}"
+  forwarding_response: "Transmission de la réponse RAG à l'utilisateur."
+
+messages:
+  clarification_question: "J'ai trouvé des sources de connaissances potentiellement pertinentes (%{sources}), mais je ne suis pas certain lesquelles correspondent le mieux à votre question. Pourriez-vous préciser le sujet ou le domaine de votre question?"
+  rag_error: "Une erreur s'est produite lors du traitement de votre question: %{error}"
+
+prompts:
+  selection_system: |
+    Vous êtes un sélecteur de sources de connaissances. Votre tâche est de déterminer quelles sources de connaissances sont les plus pertinentes pour la question d'un utilisateur.
+
+    Sources de connaissances disponibles:
+    %{namespaces}
+    %{context}
+
+    Répondez avec un objet JSON contenant:
+    - "selected_sources": Tableau d'objets avec "bucket_name" et "namespace_name" pour chaque source pertinente
+    - "confidence": Un nombre entre 0.0 et 1.0 indiquant votre confiance dans la sélection
+    - "reasoning": Une brève explication de pourquoi vous avez sélectionné ces sources
+    - "clarification_question": Optionnel - une question à poser à l'utilisateur si la sélection n'est pas claire
+
+    Exemple de réponse:
+    {
+      "selected_sources": [{"bucket_name": "knowledge", "namespace_name": "hr-policies"}],
+      "confidence": 0.85,
+      "reasoning": "La requête concerne les politiques des employés, ce qui correspond au namespace des politiques RH."
+    }
+
+  selection_user: "Question utilisateur: %{query}"

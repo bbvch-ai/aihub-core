@@ -1,0 +1,39 @@
+thoughts:
+  starting_selection: "Avvio dell'analisi di selezione namespace."
+  reusing_selection: "Argomento invariato, riutilizzo della selezione namespace precedente."
+  topic_changed: "Cambio di argomento rilevato, rivalutazione della selezione namespace."
+  analyzing_query: "Analisi della richiesta utente per determinare le fonti di conoscenza rilevanti."
+  confident_selection: "Sicuro della selezione namespace, procedo con RAG."
+  max_rounds_reached: "Numero massimo di round di chiarimento raggiunto, procedo con la migliore selezione."
+  need_clarification: "Confidenza di selezione troppo bassa, richiesta chiarimento all'utente."
+  asking_clarification: "Domanda di chiarimento (round %{round})."
+  processing_response: "Elaborazione risposta utente: %{response}"
+  invoking_rag: "Invocazione agente RAG con fonti: %{sources}"
+  forwarding_response: "Inoltro risposta RAG all'utente."
+
+messages:
+  clarification_question: "Ho trovato alcune fonti di conoscenza potenzialmente rilevanti (%{sources}), ma non sono certo quali corrispondano meglio alla tua domanda. Potresti chiarire l'argomento o l'area di cui stai chiedendo?"
+  rag_error: "Si è verificato un errore durante l'elaborazione della tua domanda: %{error}"
+
+prompts:
+  selection_system: |
+    Sei un selettore di fonti di conoscenza. Il tuo compito è determinare quali fonti di conoscenza sono più rilevanti per la domanda di un utente.
+
+    Fonti di conoscenza disponibili:
+    %{namespaces}
+    %{context}
+
+    Rispondi con un oggetto JSON contenente:
+    - "selected_sources": Array di oggetti con "bucket_name" e "namespace_name" per ogni fonte rilevante
+    - "confidence": Un numero tra 0.0 e 1.0 che indica la tua fiducia nella selezione
+    - "reasoning": Una breve spiegazione del perché hai selezionato queste fonti
+    - "clarification_question": Opzionale - una domanda da porre all'utente se la selezione non è chiara
+
+    Esempio di risposta:
+    {
+      "selected_sources": [{"bucket_name": "knowledge", "namespace_name": "hr-policies"}],
+      "confidence": 0.85,
+      "reasoning": "La richiesta riguarda le politiche dei dipendenti, che corrisponde al namespace delle politiche HR."
+    }
+
+  selection_user: "Domanda utente: %{query}"

@@ -1,0 +1,39 @@
+thoughts:
+  starting_selection: "Starting namespace selection analysis."
+  reusing_selection: "Topic unchanged, reusing previous namespace selection."
+  topic_changed: "Topic change detected, re-evaluating namespace selection."
+  analyzing_query: "Analyzing user query to determine relevant knowledge sources."
+  confident_selection: "Confident in namespace selection, proceeding to RAG."
+  max_rounds_reached: "Maximum clarification rounds reached, proceeding with best selection."
+  need_clarification: "Selection confidence too low, requesting clarification from user."
+  asking_clarification: "Asking clarification question (round %{round})."
+  processing_response: "Processing user response: %{response}"
+  invoking_rag: "Invoking RAG agent with sources: %{sources}"
+  forwarding_response: "Forwarding RAG response to user."
+
+messages:
+  clarification_question: "I found some potentially relevant knowledge sources (%{sources}), but I'm not certain which ones best match your question. Could you please clarify what topic or area you're asking about?"
+  rag_error: "An error occurred while processing your question: %{error}"
+
+prompts:
+  selection_system: |
+    You are a knowledge source selector. Your task is to determine which knowledge sources are most relevant for a user's question.
+
+    Available knowledge sources:
+    %{namespaces}
+    %{context}
+
+    Respond with a JSON object containing:
+    - "selected_sources": Array of objects with "bucket_name" and "namespace_name" for each relevant source
+    - "confidence": A number between 0.0 and 1.0 indicating your confidence in the selection
+    - "reasoning": A brief explanation of why you selected these sources
+    - "clarification_question": Optional - a question to ask the user if the selection is unclear
+
+    Example response:
+    {
+      "selected_sources": [{"bucket_name": "knowledge", "namespace_name": "hr-policies"}],
+      "confidence": 0.85,
+      "reasoning": "The query is about employee policies which matches the HR policies namespace."
+    }
+
+  selection_user: "User question: %{query}"

@@ -14,6 +14,7 @@ from .human_in_the_loop import HumanInTheLoop
 from .human_in_the_loop.request import HumanInTheLoopRequestEvent
 from .human_in_the_loop.response import HumanInTheLoopResponseEvent
 from .process import ProcessEvent, ProcessExceptionEvent, ProcessStartEvent, ProcessStopEvent
+from .rag import KnowledgeSource, RAGWithSourcesStartEvent
 from .semantic import (
     AgentEvent,
     ChainEvent,
@@ -60,6 +61,8 @@ __all__ = [
     "ToolEvent",
     "GuardEvent",
     "UserMessageEvent",
+    "KnowledgeSource",
+    "RAGWithSourcesStartEvent",
     "GuardRejectionEvent",
     "LimitChatHistoryEvent",
     "StandaloneQuestionCondenserEvent",
