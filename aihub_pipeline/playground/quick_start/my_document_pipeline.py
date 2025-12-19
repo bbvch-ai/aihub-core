@@ -53,7 +53,8 @@ assets = [
         DOCUMENT_KEY,
         data_lake_key=DATA_LAKE_KEY,
         partitions=document_partitions,
-        enable_table_refinement=False,
+        enable_table_refinement=True,
+        enable_figure_descriptions=True,
     ),
     # Nodes factory chunks documents into searchable nodes with embeddings
     nodes_factory(NODES_KEY, document_key=DOCUMENT_KEY, partitions=document_partitions),

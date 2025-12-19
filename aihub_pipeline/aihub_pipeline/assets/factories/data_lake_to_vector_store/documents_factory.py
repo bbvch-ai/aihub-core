@@ -15,6 +15,7 @@ def documents_factory(
     data_lake_key: str | AssetKey,
     partitions: DynamicPartitionsDefinition,
     enable_table_refinement: bool,
+    enable_figure_descriptions: bool,
 ) -> graph_asset:
     """
     Creates a document asset that represents a Ref Doc in the Document Store.
@@ -23,6 +24,7 @@ def documents_factory(
     downstream assets.
 
     When enable_table_refinement is True, the TableRefinementResource must be provided in the resources.
+    When enable_figure_descriptions is True (default), a vision LLM generates descriptions for figures.
     """
 
     @graph_asset(
@@ -37,14 +39,14 @@ def documents_factory(
         data_lake_file: DataLakeFile,
     ) -> Output[RefDocDocument]:
         parsed = parse_document_from_data_lake(data_lake_file)
-        with_figures = generate_figure_descriptions(parsed)
 
-        current = with_figures
+        if enable_figure_descriptions:
+            parsed = generate_figure_descriptions(parsed)
 
         if enable_table_refinement:
-            current = refine_document_tables(current)
+            parsed = refine_document_tables(parsed)
 
-        validated = ensure_refdoc_default_metadata(current)
+        validated = ensure_refdoc_default_metadata(parsed)
 
         return insert_ref_doc_into_docstore(validated)
 
