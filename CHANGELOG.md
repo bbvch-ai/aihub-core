@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.256.6] - 2025-12-19 - Optimized Streaming for Real-time Interactions
+
+### Changed
+
+- 🚀 **Improved Streaming Robustness:** Enhanced server-sent event (SSE) and streaming responses across chat completions
+  and agent event endpoints by adding critical HTTP headers. This prevents caching and buffering issues from
+  intermediary proxies, ensuring more reliable, real-time data delivery and a smoother user experience.
+
+---
+
 ## [v0.256.5] - 2025-12-19 - Enhanced Docling Reliability with Automatic Retries
 
 ### Added
