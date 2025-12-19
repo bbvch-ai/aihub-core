@@ -40,15 +40,13 @@ def documents_factory(
     ) -> Output[RefDocDocument]:
         parsed = parse_document_from_data_lake(data_lake_file)
 
-        current = parsed
-
         if enable_figure_descriptions:
-            current = generate_figure_descriptions(current)
+            parsed = generate_figure_descriptions(parsed)
 
         if enable_table_refinement:
-            current = refine_document_tables(current)
+            parsed = refine_document_tables(parsed)
 
-        validated = ensure_refdoc_default_metadata(current)
+        validated = ensure_refdoc_default_metadata(parsed)
 
         return insert_ref_doc_into_docstore(validated)
 
