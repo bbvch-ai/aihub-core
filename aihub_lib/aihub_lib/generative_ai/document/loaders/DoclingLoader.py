@@ -186,7 +186,7 @@ class DoclingLoader(BaseReader):
             except DoclingTransientError as e:
                 last_error = e
                 if attempt < self.config.HTTP_RETRIES:
-                    wait_time = 2 ** attempt
+                    wait_time = 2**attempt
                     logger.warning(f"Docling conversion failed (attempt {attempt + 1}), retrying in {wait_time}s: {e}")
                     time.sleep(wait_time)
 
@@ -229,7 +229,7 @@ class DoclingLoader(BaseReader):
             except DoclingTransientError as e:
                 last_error = e
                 if attempt < self.config.HTTP_RETRIES:
-                    wait_time = 2 ** attempt
+                    wait_time = 2**attempt
                     logger.warning(f"Docling conversion failed (attempt {attempt + 1}), retrying in {wait_time}s: {e}")
                     await asyncio.sleep(wait_time)
 
