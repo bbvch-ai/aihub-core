@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.256.5] - 2025-12-19 - Enhanced Docling Reliability with Automatic Retries
+
+### Added
+
+- ✨ **Docling API Retry Mechanism:** Introduced an automatic retry mechanism for Docling API calls, significantly
+  improving resilience against transient network errors and temporary service unresponsiveness during document
+  processing.
+- ⚙️ **`DOCLING_HTTP_RETRIES` Configuration:** Added a new configuration setting `DOCLING_HTTP_RETRIES` (defaulting to
+  3\) to control the number of retries attempted for Docling API requests, providing more control over system behavior.
+
+### Changed
+
+- 🚀 **Improved Docling Request Resilience:** Docling document conversion processes (both synchronous and asynchronous)
+  now incorporate retry logic with exponential backoff, automatically handling HTTP connection issues, timeouts, and
+  specific transient API errors.
+- 🛡️ **Refined Docling Error Handling:** Enhanced the classification of Docling API errors to differentiate between
+  transient failures (which trigger retries) and permanent issues, leading to more robust document processing.
+
+### Refactor
+
+- 🧹 **Streamlined Docling API Execution:** The underlying HTTP request execution logic for Docling API interactions has
+  been refactored into dedicated internal methods, improving code clarity and maintainability.
+
+---
+
 ## [v0.256.4] - 2025-12-19 - Enhanced Document Processing: Configurable Figure Descriptions and Robustness
 
 ### Added

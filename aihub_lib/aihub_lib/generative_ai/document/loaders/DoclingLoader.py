@@ -1,6 +1,7 @@
 import asyncio
 import base64
 import html
+import logging
 import os
 import re
 from typing import Any
@@ -13,6 +14,13 @@ from fsspec import AbstractFileSystem
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
+from tenacity import (
+    AsyncRetrying,
+    Retrying,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from aihub_lib.generative_ai.document.tables.markdown_table import create_markdown_table, wrap_tables_with_tags
 from aihub_lib.generative_ai.utils.path_utils import create_figures_folder_name
@@ -22,6 +30,14 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     NODE_CONTENT_TYPE_FIGURE,
     NUMBER_OF_PAGES,
 )
+
+logger = logging.getLogger(__name__)
+
+
+class DoclingTransientError(Exception):
+    """Raised when Docling API returns an error that can be retried."""
+
+    pass
 
 
 class DoclingLoader(BaseReader):
@@ -164,46 +180,87 @@ class DoclingLoader(BaseReader):
 
         raise ValueError(f"Unsupported pipeline type: {self.config.PIPELINE_TYPE}")
 
+    def _retry_kwargs(self) -> dict:
+        """Return retry configuration for tenacity."""
+
+        def log_retry(retry_state) -> None:
+            logger.warning(
+                f"Docling conversion failed (attempt {retry_state.attempt_number}), "
+                f"retrying in {retry_state.next_action.sleep}s: {retry_state.outcome.exception()}"
+            )
+
+        return {
+            "stop": stop_after_attempt(self.config.HTTP_RETRIES + 1),
+            "wait": wait_exponential(multiplier=1, min=1, max=64),
+            "retry": retry_if_exception_type(DoclingTransientError),
+            "before_sleep": log_retry,
+            "reraise": True,
+        }
+
     def convert_document(
         self, file_content: str, filename: str, include_images: bool, to_formats: list[str] | None = None
     ) -> dict:
         request_body = self._build_request_body(file_content, filename, include_images, to_formats)
+        for attempt in Retrying(**self._retry_kwargs()):
+            with attempt:
+                return self._execute_sync_conversion(request_body)
+        raise RuntimeError("Retry loop exited unexpectedly")
 
-        response = httpx.post(
-            f"{self.config.BASE_API_URL}/v1/convert/source",
-            json=request_body,
-            headers={"Content-Type": "application/json"},
-            timeout=self.config.API_TIMEOUT,
-        )
-
-        if response.status_code != 200:
-            raise ValueError(
-                f"Docling sync API request failed with status code {response.status_code}: {response.text}"
-            )
-
-        return response.json()
-
-    async def convert_document_async(
-        self, file_content: str, filename: str, include_images: bool, to_formats: list[str] | None = None
-    ) -> dict:
-        request_body = self._build_request_body(file_content, filename, include_images, to_formats)
-
-        async with httpx.AsyncClient(timeout=self.config.API_TIMEOUT) as client:
-            response = await client.post(
-                f"{self.config.BASE_API_URL}/v1/convert/source/async",
-                json=request_body,
-                headers={"Content-Type": "application/json"},
-            )
-
-            if response.status_code != 200:
-                raise ValueError(
-                    f"Docling async API request failed with status code {response.status_code}: {response.text}"
+    def _execute_sync_conversion(self, request_body: dict) -> dict:
+        """Execute the sync conversion request."""
+        try:
+            with httpx.Client(timeout=self.config.API_TIMEOUT) as client:
+                response = client.post(
+                    f"{self.config.BASE_API_URL}/v1/convert/source",
+                    json=request_body,
+                    headers={"Content-Type": "application/json"},
                 )
 
-            job_response = response.json()
-            task_id = job_response["task_id"]
+                if response.status_code != 200:
+                    raise DoclingTransientError(
+                        f"Docling sync API request failed with status code {response.status_code}: {response.text}"
+                    )
 
-            return await self._poll_job_completion(client, task_id)
+                return response.json()
+        except (httpx.ReadError, httpx.ConnectError, httpx.TimeoutException) as e:
+            raise DoclingTransientError(f"Network error: {e}") from e
+
+    async def convert_document_async(
+        self,
+        file_content: str,
+        filename: str,
+        include_images: bool,
+        to_formats: list[str] | None = None,
+    ) -> dict:
+        request_body = self._build_request_body(file_content, filename, include_images, to_formats)
+        async for attempt in AsyncRetrying(**self._retry_kwargs()):
+            with attempt:
+                return await self._execute_async_conversion(request_body)
+        raise RuntimeError("Retry loop exited unexpectedly")
+
+    async def _execute_async_conversion(self, request_body: dict) -> dict:
+        """Execute the async conversion request and poll for completion."""
+        try:
+            async with httpx.AsyncClient(timeout=self.config.API_TIMEOUT) as client:
+                response = await client.post(
+                    f"{self.config.BASE_API_URL}/v1/convert/source/async",
+                    json=request_body,
+                    headers={"Content-Type": "application/json"},
+                )
+
+                if response.status_code != 200:
+                    raise DoclingTransientError(
+                        f"Docling async API request failed with status code {response.status_code}: {response.text}"
+                    )
+
+                job_response = response.json()
+                if not job_response or "task_id" not in job_response:
+                    raise DoclingTransientError(f"Docling API returned invalid job response: {job_response}")
+
+                task_id = job_response["task_id"]
+                return await self._poll_job_completion(client, task_id)
+        except (httpx.ReadError, httpx.ConnectError, httpx.TimeoutException) as e:
+            raise DoclingTransientError(f"Network error: {e}") from e
 
     async def _poll_job_completion(self, client: httpx.AsyncClient, task_id: str) -> dict:
         """Poll the task status until completion and return the result."""
@@ -214,12 +271,15 @@ class DoclingLoader(BaseReader):
             )
 
             if status_response.status_code != 200:
-                raise ValueError(
+                raise DoclingTransientError(
                     f"Docling task status request failed with status code {status_response.status_code}: "
                     f"{status_response.text}"
                 )
 
             task_status = status_response.json()
+
+            if not task_status or "task_status" not in task_status:
+                raise DoclingTransientError(f"Docling API returned invalid response: {task_status}")
 
             if task_status["task_status"] == "success":
                 result_response = await client.get(
@@ -228,7 +288,7 @@ class DoclingLoader(BaseReader):
                 )
 
                 if result_response.status_code != 200:
-                    raise ValueError(
+                    raise DoclingTransientError(
                         f"Docling result request failed with status code {result_response.status_code}: "
                         f"{result_response.text}"
                     )
@@ -236,18 +296,19 @@ class DoclingLoader(BaseReader):
                 return result_response.json()
 
             elif task_status["task_status"] == "failure":
-                raise ValueError(
-                    f"Docling conversion task failed: {task_status.get('task_meta', {}).get('error', 'Unknown error')}"
-                )
+                error_msg = "Unknown error"
+                if task_status.get("task_meta"):
+                    error_msg = task_status["task_meta"].get("error", error_msg)
+                raise DoclingTransientError(f"Docling conversion task failed: {error_msg}")
             elif task_status["task_status"] in ["pending", "started"]:
                 await asyncio.sleep(self.config.POLL_INTERVAL)
             elif task_status["task_status"] == "skipped":
-                raise ValueError(
+                raise DoclingTransientError(
                     f"Docling conversion task was skipped: "
                     f"{task_status.get('task_meta', {}).get('reason', 'Unknown reason')}"
                 )
             else:
-                raise ValueError(f"Unknown task status: {task_status['task_status']}")
+                raise DoclingTransientError(f"Unknown task status: {task_status['task_status']}")
 
         raise TimeoutError(f"Docling conversion task {task_id} did not complete within the timeout period")
 
