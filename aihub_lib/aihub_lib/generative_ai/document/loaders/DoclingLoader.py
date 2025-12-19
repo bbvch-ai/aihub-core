@@ -183,7 +183,7 @@ class DoclingLoader(BaseReader):
     def _retry_kwargs(self) -> dict:
         """Return retry configuration for tenacity."""
 
-        def log_retry(retry_state) -> None:  # type: ignore[no-untyped-def]
+        def log_retry(retry_state) -> None:
             logger.warning(
                 f"Docling conversion failed (attempt {retry_state.attempt_number}), "
                 f"retrying in {retry_state.next_action.sleep}s: {retry_state.outcome.exception()}"
