@@ -87,4 +87,4 @@ class DoclingSettings(EnvironmentSettings):
     MAX_POLLS: Annotated[int, Field(description="Maximum number of polling attempts")] = 300
 
     # --- Retry Settings ---
-    HTTP_RETRIES: Annotated[int, Field(description="Number of retries for transient HTTP errors")] = 5
+    HTTP_RETRIES: Annotated[int, Field(description="Number of retries for transient HTTP errors")] = 3

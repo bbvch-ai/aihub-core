@@ -4,6 +4,7 @@ import html
 import logging
 import os
 import re
+import time
 from typing import Any
 
 import httpx
@@ -177,21 +178,40 @@ class DoclingLoader(BaseReader):
         self, file_content: str, filename: str, include_images: bool, to_formats: list[str] | None = None
     ) -> dict:
         request_body = self._build_request_body(file_content, filename, include_images, to_formats)
+        last_error: Exception | None = None
 
-        transport = httpx.HTTPTransport(retries=self.config.HTTP_RETRIES)
-        with httpx.Client(timeout=self.config.API_TIMEOUT, transport=transport) as client:
-            response = client.post(
-                f"{self.config.BASE_API_URL}/v1/convert/source",
-                json=request_body,
-                headers={"Content-Type": "application/json"},
-            )
+        for attempt in range(self.config.HTTP_RETRIES + 1):
+            try:
+                return self._execute_sync_conversion(request_body)
+            except DoclingTransientError as e:
+                last_error = e
+                if attempt < self.config.HTTP_RETRIES:
+                    wait_time = 2 ** attempt
+                    logger.warning(f"Docling conversion failed (attempt {attempt + 1}), retrying in {wait_time}s: {e}")
+                    time.sleep(wait_time)
 
-            if response.status_code != 200:
-                raise DoclingTransientError(
-                    f"Docling sync API request failed with status code {response.status_code}: {response.text}"
+        if last_error is None:
+            raise RuntimeError("Retry loop completed without success or error")
+        raise last_error
+
+    def _execute_sync_conversion(self, request_body: dict) -> dict:
+        """Execute the sync conversion request."""
+        try:
+            with httpx.Client(timeout=self.config.API_TIMEOUT) as client:
+                response = client.post(
+                    f"{self.config.BASE_API_URL}/v1/convert/source",
+                    json=request_body,
+                    headers={"Content-Type": "application/json"},
                 )
 
-            return response.json()
+                if response.status_code != 200:
+                    raise DoclingTransientError(
+                        f"Docling sync API request failed with status code {response.status_code}: {response.text}"
+                    )
+
+                return response.json()
+        except (httpx.ReadError, httpx.ConnectError, httpx.TimeoutException) as e:
+            raise DoclingTransientError(f"Network error: {e}") from e
 
     async def convert_document_async(
         self,
@@ -209,18 +229,18 @@ class DoclingLoader(BaseReader):
             except DoclingTransientError as e:
                 last_error = e
                 if attempt < self.config.HTTP_RETRIES:
-                    wait_time = 3 ** (attempt + 1)
+                    wait_time = 2 ** attempt
                     logger.warning(f"Docling conversion failed (attempt {attempt + 1}), retrying in {wait_time}s: {e}")
                     await asyncio.sleep(wait_time)
 
-        assert last_error is not None
+        if last_error is None:
+            raise RuntimeError("Retry loop completed without success or error")
         raise last_error
 
     async def _execute_async_conversion(self, request_body: dict) -> dict:
         """Execute the async conversion request and poll for completion."""
         try:
-            transport = httpx.AsyncHTTPTransport(retries=self.config.HTTP_RETRIES)
-            async with httpx.AsyncClient(timeout=self.config.API_TIMEOUT, transport=transport) as client:
+            async with httpx.AsyncClient(timeout=self.config.API_TIMEOUT) as client:
                 response = await client.post(
                     f"{self.config.BASE_API_URL}/v1/convert/source/async",
                     json=request_body,
