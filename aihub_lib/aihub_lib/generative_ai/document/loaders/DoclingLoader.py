@@ -16,7 +16,6 @@ from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
 from tenacity import (
     AsyncRetrying,
-    RetryError,
     Retrying,
     retry_if_exception_type,
     stop_after_attempt,
@@ -202,13 +201,10 @@ class DoclingLoader(BaseReader):
         self, file_content: str, filename: str, include_images: bool, to_formats: list[str] | None = None
     ) -> dict:
         request_body = self._build_request_body(file_content, filename, include_images, to_formats)
-        try:
-            for attempt in Retrying(**self._retry_kwargs()):
-                with attempt:
-                    return self._execute_sync_conversion(request_body)
-        except RetryError as e:
-            raise e.last_attempt.exception() from None
-        raise RuntimeError("Retry loop completed without success or error")
+        for attempt in Retrying(**self._retry_kwargs()):
+            with attempt:
+                return self._execute_sync_conversion(request_body)
+        raise RuntimeError("Retry loop exited unexpectedly")
 
     def _execute_sync_conversion(self, request_body: dict) -> dict:
         """Execute the sync conversion request."""
@@ -237,13 +233,10 @@ class DoclingLoader(BaseReader):
         to_formats: list[str] | None = None,
     ) -> dict:
         request_body = self._build_request_body(file_content, filename, include_images, to_formats)
-        try:
-            async for attempt in AsyncRetrying(**self._retry_kwargs()):
-                with attempt:
-                    return await self._execute_async_conversion(request_body)
-        except RetryError as e:
-            raise e.last_attempt.exception() from None
-        raise RuntimeError("Retry loop completed without success or error")
+        async for attempt in AsyncRetrying(**self._retry_kwargs()):
+            with attempt:
+                return await self._execute_async_conversion(request_body)
+        raise RuntimeError("Retry loop exited unexpectedly")
 
     async def _execute_async_conversion(self, request_body: dict) -> dict:
         """Execute the async conversion request and poll for completion."""
