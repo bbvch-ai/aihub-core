@@ -205,7 +205,11 @@ class DoclingLoader(BaseReader):
             return response.json()
 
     async def convert_document_async(
-        self, file_content: str, filename: str, include_images: bool, to_formats: list[str] | None = None
+        self,
+        file_content: str,
+        filename: str,
+        include_images: bool,
+        to_formats: list[str] | None = None,
     ) -> dict:
         request_body = self._build_request_body(file_content, filename, include_images, to_formats)
         last_error: Exception | None = None
@@ -220,7 +224,8 @@ class DoclingLoader(BaseReader):
                     logger.warning(f"Docling conversion failed (attempt {attempt + 1}), retrying in {wait_time}s: {e}")
                     await asyncio.sleep(wait_time)
 
-        raise last_error or DoclingTransientError("Docling conversion failed after all retries")
+        assert last_error is not None
+        raise last_error
 
     async def _execute_async_conversion(self, request_body: dict) -> dict:
         """Execute the async conversion request and poll for completion."""
