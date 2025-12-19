@@ -28,13 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 class DoclingTransientError(Exception):
-    """Raised when Docling API returns a transient error that can be retried."""
-
-    pass
-
-
-class DoclingPermanentError(Exception):
-    """Raised when Docling API returns a permanent error that should not be retried."""
+    """Raised when Docling API returns an error that can be retried."""
 
     pass
 
@@ -177,7 +171,7 @@ class DoclingLoader(BaseReader):
                 "sources": [{"base64_string": file_content, "filename": filename, "kind": "file"}],
             }
 
-        raise DoclingPermanentError(f"Unsupported pipeline type: {self.config.PIPELINE_TYPE}")
+        raise ValueError(f"Unsupported pipeline type: {self.config.PIPELINE_TYPE}")
 
     def convert_document(
         self, file_content: str, filename: str, include_images: bool, to_formats: list[str] | None = None
@@ -192,13 +186,8 @@ class DoclingLoader(BaseReader):
                 headers={"Content-Type": "application/json"},
             )
 
-            if response.status_code >= 500 or response.status_code == 404:
-                raise DoclingTransientError(
-                    f"Docling sync API request failed with status code {response.status_code}: {response.text}"
-                )
-
             if response.status_code != 200:
-                raise DoclingPermanentError(
+                raise DoclingTransientError(
                     f"Docling sync API request failed with status code {response.status_code}: {response.text}"
                 )
 
@@ -238,13 +227,8 @@ class DoclingLoader(BaseReader):
                     headers={"Content-Type": "application/json"},
                 )
 
-                if response.status_code >= 500 or response.status_code == 404:
-                    raise DoclingTransientError(
-                        f"Docling async API request failed with status code {response.status_code}: {response.text}"
-                    )
-
                 if response.status_code != 200:
-                    raise DoclingPermanentError(
+                    raise DoclingTransientError(
                         f"Docling async API request failed with status code {response.status_code}: {response.text}"
                     )
 
@@ -265,16 +249,8 @@ class DoclingLoader(BaseReader):
                 headers={"Content-Type": "application/json"},
             )
 
-            if status_response.status_code >= 500:
-                raise DoclingTransientError(
-                    f"Docling server error (status {status_response.status_code}): {status_response.text}"
-                )
-
-            if status_response.status_code == 404:
-                raise DoclingTransientError(f"Docling task {task_id} not found - service may have restarted")
-
             if status_response.status_code != 200:
-                raise DoclingPermanentError(
+                raise DoclingTransientError(
                     f"Docling task status request failed with status code {status_response.status_code}: "
                     f"{status_response.text}"
                 )
@@ -290,19 +266,8 @@ class DoclingLoader(BaseReader):
                     headers={"Content-Type": "application/json"},
                 )
 
-                if result_response.status_code >= 500:
-                    raise DoclingTransientError(
-                        f"Docling server error fetching result (status {result_response.status_code}): "
-                        f"{result_response.text}"
-                    )
-
-                if result_response.status_code == 404:
-                    raise DoclingTransientError(
-                        f"Docling result for task {task_id} not found - service may have restarted"
-                    )
-
                 if result_response.status_code != 200:
-                    raise DoclingPermanentError(
+                    raise DoclingTransientError(
                         f"Docling result request failed with status code {result_response.status_code}: "
                         f"{result_response.text}"
                     )
@@ -313,11 +278,11 @@ class DoclingLoader(BaseReader):
                 error_msg = "Unknown error"
                 if task_status.get("task_meta"):
                     error_msg = task_status["task_meta"].get("error", error_msg)
-                raise DoclingPermanentError(f"Docling conversion task failed: {error_msg}")
+                raise DoclingTransientError(f"Docling conversion task failed: {error_msg}")
             elif task_status["task_status"] in ["pending", "started"]:
                 await asyncio.sleep(self.config.POLL_INTERVAL)
             elif task_status["task_status"] == "skipped":
-                raise DoclingPermanentError(
+                raise DoclingTransientError(
                     f"Docling conversion task was skipped: "
                     f"{task_status.get('task_meta', {}).get('reason', 'Unknown reason')}"
                 )
