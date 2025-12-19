@@ -156,7 +156,7 @@ memory:
     - **NE forcez PAS** ces mémoires dans votre réponse si elles ne s'appliquent pas naturellement
     - L'utilisateur a peut-être oublié avoir partagé ces informations ou elles peuvent être obsolètes
     - Si une mémoire contredit la conversation actuelle, priorisez le contexte actuel
-    - Vous n'êtes **pas obligé** de mentionner ou d'reconnaître ces mémoires sauf si elles apportent de la valeur
+    - Vous n'êtes **pas obligé** de mentionner ou de reconnaître ces mémoires sauf si elles apportent de la valeur
 
     {% if memories %}
     **Faits Spécifiques à l'Utilisateur:**
