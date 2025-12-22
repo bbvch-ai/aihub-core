@@ -295,6 +295,14 @@ knowledge:
       actions:
         upload: "Télécharger"
         cancel: "Annuler"
+    delete:
+      button: "Supprimer le document"
+      confirm_title: "Supprimer le document"
+      confirm_message: "Êtes-vous sûr de vouloir supprimer ce document ? Cette action est irréversible."
+      confirm_accept: "Supprimer"
+      confirm_reject: "Annuler"
+      success: "Document supprimé avec succès"
+      error: "Échec de la suppression du document"
   nodes:
     title: "Morceaux de document"
   summary:

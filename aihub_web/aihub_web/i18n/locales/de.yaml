@@ -296,6 +296,14 @@ knowledge:
       actions:
         upload: "Hochladen"
         cancel: "Abbrechen"
+    delete:
+      button: "Dokument löschen"
+      confirm_title: "Dokument löschen"
+      confirm_message: "Sind Sie sicher, dass Sie dieses Dokument löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
+      confirm_accept: "Löschen"
+      confirm_reject: "Abbrechen"
+      success: "Dokument erfolgreich gelöscht"
+      error: "Dokument konnte nicht gelöscht werden"
   nodes:
     title: "Dokument-Chunks"
   summary:

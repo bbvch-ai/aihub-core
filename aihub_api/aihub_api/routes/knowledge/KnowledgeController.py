@@ -289,3 +289,40 @@ class KnowledgeController(Controller):
             return KnowledgeService.get_supported_file_types()
 
         return self
+
+    def delete_document(
+        self, route: str = "/databases/{database}/namespaces/{namespace}/documents/{document_id}"
+    ) -> "KnowledgeController":
+        @self.router.delete(route, tags=self.tags, summary="Delete a document")
+        async def delete_document(
+            database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
+            namespace: Annotated[str, Path(title="Namespace", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
+            document_id: Annotated[str, Path(title="Document ID")],
+            nc: Annotated[NATS, Depends(use_nats)],
+            _: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}.{namespace}"))
+            ],
+        ) -> dict[str, bool]:
+            """
+            Deletes a document from the knowledge base.
+
+            This endpoint permanently removes:
+            - The document from the vector store (Milvus)
+            - The document from the document store (MongoDB)
+            - The source file from the datalake (S3/MinIO)
+            - Associated figure images from the datalake
+
+            Requires admin permission for the namespace.
+            """
+            if database in ["admin", "local", "config"]:
+                raise HTTPException(status_code=403, detail="Not authorized to modify this database")
+            await KnowledgeService.delete_document(
+                nc=nc,
+                database=database,
+                namespace=namespace,
+                document_id=document_id,
+                vector_store_factory=self.vector_store_factory,
+            )
+            return {"success": True}
+
+        return self

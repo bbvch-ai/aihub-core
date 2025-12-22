@@ -219,3 +219,61 @@ class S3AnonymousFileAccessService:
         except Exception as e:
             logger.error(f"Failed to list files in {container} with prefix '{prefix}': {e}")
             raise Exception(f"Failed to list files: {e}")
+
+    @trace_fn
+    def delete_file(self, container: str, file_path: str) -> None:
+        """
+        Delete a file from S3/MinIO storage.
+
+        Permanently removes the specified file from the storage bucket.
+        This operation cannot be undone.
+        """
+        if not container or not container.strip():
+            raise ValueError("Container name cannot be empty")
+        if not file_path or not file_path.strip():
+            raise ValueError("File path cannot be empty")
+
+        try:
+            self._s3_client.delete_object(Bucket=container, Key=file_path)
+            logger.debug(f"Deleted file: {container}/{file_path}")
+        except ClientError as e:
+            logger.error(f"Failed to delete file {container}/{file_path}: {e}")
+            raise Exception(f"Failed to delete file: {e}")
+
+    @trace_fn
+    def delete_directory(self, container: str, directory_path: str) -> None:
+        """
+        Delete a directory and all its contents from S3/MinIO storage.
+
+        Recursively deletes all files within the specified directory prefix.
+        This operation cannot be undone.
+        """
+        if not container or not container.strip():
+            raise ValueError("Container name cannot be empty")
+        if not directory_path or not directory_path.strip():
+            raise ValueError("Directory path cannot be empty")
+
+        try:
+            # Ensure path ends with / for proper prefix matching
+            prefix = directory_path.rstrip("/") + "/"
+
+            # List all objects with the prefix
+            paginator = self._s3_client.get_paginator("list_objects_v2")
+            pages = paginator.paginate(Bucket=container, Prefix=prefix)
+
+            objects_to_delete = []
+            for page in pages:
+                if "Contents" in page:
+                    for obj in page["Contents"]:
+                        objects_to_delete.append({"Key": obj["Key"]})
+
+            if objects_to_delete:
+                # Delete objects in batches (S3 allows max 1000 per request)
+                for i in range(0, len(objects_to_delete), 1000):
+                    batch = objects_to_delete[i : i + 1000]
+                    self._s3_client.delete_objects(Bucket=container, Delete={"Objects": batch})
+
+            logger.debug(f"Deleted directory: {container}/{directory_path} ({len(objects_to_delete)} objects)")
+        except ClientError as e:
+            logger.error(f"Failed to delete directory {container}/{directory_path}: {e}")
+            raise Exception(f"Failed to delete directory: {e}")

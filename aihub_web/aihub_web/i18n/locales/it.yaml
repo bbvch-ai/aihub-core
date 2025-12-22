@@ -295,6 +295,14 @@ knowledge:
       actions:
         upload: "Carica"
         cancel: "Annulla"
+    delete:
+      button: "Elimina documento"
+      confirm_title: "Elimina documento"
+      confirm_message: "Sei sicuro di voler eliminare questo documento? Questa azione non può essere annullata."
+      confirm_accept: "Elimina"
+      confirm_reject: "Annulla"
+      success: "Documento eliminato con successo"
+      error: "Impossibile eliminare il documento"
   nodes:
     title: "Chunk di documento"
   summary:

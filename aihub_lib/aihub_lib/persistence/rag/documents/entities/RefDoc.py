@@ -160,3 +160,15 @@ class RefDoc(Document):
 
         with switch_db(cls, db_alias) as SwitchedRefDoc:
             return list(SwitchedRefDoc.objects.aggregate(pipeline))
+
+    @classmethod
+    @trace_fn
+    def delete_by_id(cls, db_alias: str, doc_id: str) -> bool:
+        """
+        Deletes a document by its ID from the specified database.
+
+        Returns True if the document was deleted, False if it was not found.
+        """
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            result = SwitchedRefDoc.objects.filter(id=doc_id).delete()
+            return result > 0

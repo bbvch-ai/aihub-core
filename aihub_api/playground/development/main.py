@@ -103,7 +103,8 @@ async def main():
         .get_summary_nodes_for_document()
         .initiate_document_upload()
         .validate_document_upload()
-        .get_supported_file_types(),
+        .get_supported_file_types()
+        .delete_document(),
         FileController(auth=auth)
         .get_file_url()
         .get_file_redirect()

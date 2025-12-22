@@ -9,11 +9,12 @@ from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService impo
 from aihub_lib.generative_ai.document.types.FileTypeConfig import FileTypeConfig
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.generative_ai.utils.path_utils import FIGURES_DIRECTORY_NAME
+from aihub_lib.generative_ai.utils.path_utils import FIGURES_DIRECTORY_NAME, create_figures_folder_name
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+from aihub_lib.nats.events.pipeline.SourceDeletedEvent import SourceDeletedEvent
 from aihub_lib.nats.events.pipeline.SourceUpdatedEvent import SourceUpdatedEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
@@ -517,3 +518,142 @@ class KnowledgeService:
     @staticmethod
     def get_supported_file_types() -> list[str]:
         return FileTypeConfig().get_unique_extensions()
+
+    @staticmethod
+    @trace_fn
+    async def _publish_source_deleted_event(
+        nc: Annotated[NATS, Field(description="NATS client connection")],
+        database: Annotated[str, Field(description="Target knowledge database name")],
+        container: Annotated[str, Field(description="Container/bucket name")],
+        file_path: Annotated[str, Field(description="Path to the deleted file")],
+        document_id: Annotated[str | None, Field(description="Document ID if known")] = None,
+    ) -> None:
+        """
+        Publishes a SourceDeletedEvent to NATS when a file is deleted.
+
+        This event can be used for observability and downstream cleanup operations.
+        """
+        topic_manager = PipelineInstanceTopicManager(
+            source_type="datalake",
+            source_id=container,
+            target_type="knowledge",
+            target_id=database,
+        )
+
+        event = SourceDeletedEvent(path=file_path, document_id=document_id)
+        subject = topic_manager.get_subject_for_specific_event_in_pipeline_instance(
+            run_key=event.event_id,
+            event_name=event.event_name,
+            event_id=event.event_id,
+        )
+
+        publisher = NCPublisher(name="KnowledgeService", nc=nc)
+        await publisher.publish_event(event, subject)
+
+        logger.info(f"Published SourceDeletedEvent for file {file_path} to subject {subject}")
+
+    @staticmethod
+    @trace_fn
+    async def delete_document(
+        nc: NATS,
+        database: str,
+        namespace: str,
+        document_id: str,
+        vector_store_factory: VectorStoreFactory,
+    ) -> bool:
+        """
+        Deletes a document from the knowledge base.
+
+        This method performs a complete deletion including:
+        1. Deleting nodes from the vector store (Milvus)
+        2. Deleting the RefDoc from the document store (MongoDB)
+        3. Deleting the source file from the datalake (S3)
+        4. Deleting associated figures from the datalake
+        5. Publishing a SourceDeletedEvent to NATS
+        6. Invalidating the cache
+
+        Returns True if the document was successfully deleted, False if not found.
+        """
+        KnowledgeService._ensure_db_exists(database)
+
+        # Get the document to extract its source path
+        try:
+            ref_doc = RefDoc.by_id(db_alias=database, doc_id=document_id)
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail=f"Document '{document_id}' not found")
+
+        source = ref_doc.data.metadata.source
+        doc_namespace = ref_doc.data.metadata.namespace
+
+        # Verify the document belongs to the requested namespace
+        if doc_namespace != namespace:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Document '{document_id}' does not belong to namespace '{namespace}'",
+            )
+
+        # Get bucket info for S3 operations
+        try:
+            bucket_entity = BucketEntity.get_bucket_by_db_name(database)
+        except Exception as e:
+            raise HTTPException(status_code=404, detail=f"Database '{database}' not found") from e
+
+        container = bucket_entity.bucket_name
+        s3_service = S3AnonymousFileAccessService()
+
+        # Extract file path from source (remove s3:// prefix and bucket name)
+        # Source format: s3://bucket/namespace/filename or bucket/namespace/filename
+        file_path = source.removeprefix(S3_PROTOCOL_PREFIX)
+        if file_path.startswith(f"{container}/"):
+            file_path = file_path[len(container) + 1 :]
+
+        # 1. Delete nodes from vector store
+        try:
+            vector_store = vector_store_factory(database)
+            vector_store.delete(document_id, partition_name=namespace)
+            logger.info(f"Deleted nodes for document {document_id} from vector store")
+        except Exception as e:
+            logger.warning(f"Failed to delete nodes from vector store for document {document_id}: {e}")
+            # Continue with deletion even if vector store deletion fails
+
+        # 2. Delete the RefDoc from MongoDB
+        deleted = RefDoc.delete_by_id(db_alias=database, doc_id=document_id)
+        if not deleted:
+            logger.warning(f"Document {document_id} was not found in docstore during deletion")
+
+        # 3. Delete the source file from S3
+        try:
+            s3_service.delete_file(container=container, file_path=file_path)
+            logger.info(f"Deleted file {file_path} from datalake")
+        except Exception as e:
+            logger.warning(f"Failed to delete file from datalake for document {document_id}: {e}")
+
+        # 4. Delete figures folder from S3
+        try:
+            figures_folder = create_figures_folder_name(source)
+            # Remove s3://bucket/ prefix from figures folder path
+            figures_path = figures_folder.removeprefix(S3_PROTOCOL_PREFIX)
+            if figures_path.startswith(f"{container}/"):
+                figures_path = figures_path[len(container) + 1 :]
+
+            s3_service.delete_directory(container=container, directory_path=figures_path)
+            logger.info(f"Deleted figures folder {figures_path} from datalake")
+        except Exception as e:
+            logger.debug(f"No figures folder to delete or deletion failed for document {document_id}: {e}")
+
+        # 5. Publish SourceDeletedEvent to NATS
+        try:
+            await KnowledgeService._publish_source_deleted_event(
+                nc=nc,
+                database=database,
+                container=container,
+                file_path=file_path,
+                document_id=document_id,
+            )
+        except Exception as e:
+            logger.warning(f"Failed to publish SourceDeletedEvent for document {document_id}: {e}")
+
+        # 6. Invalidate cache
+        KnowledgeService.invalidate_cache()
+
+        return True

@@ -94,7 +94,8 @@ runner.mount(
     .get_summary_nodes_for_document()
     .initiate_document_upload()
     .validate_document_upload()
-    .get_supported_file_types(),
+    .get_supported_file_types()
+    .delete_document(),
     FileController(auth=auth).get_file_url().get_file_redirect().get_anonymous_file_url().get_anonymous_file_redirect(),
     NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
     DoclingController(auth=auth).parse_document(),
