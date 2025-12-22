@@ -41,9 +41,9 @@ def verify_parallel_events_payloads(agent_runner: AgentTestRunner, payloads: str
     events = agent_runner.get_events_of_class(ParallelEvent)
     actual_payloads = [event.payload for event in events]
     assert len(events) == 5, f"Expected 5 ParallelEvent events but found {len(events)}"
-    assert sorted(actual_payloads) == sorted(
-        expected_payloads
-    ), f"Expected ParallelEvent payloads {expected_payloads} but found {actual_payloads}"
+    assert sorted(actual_payloads) == sorted(expected_payloads), (
+        f"Expected ParallelEvent payloads {expected_payloads} but found {actual_payloads}"
+    )
 
 
 @then("a StopEvent is present")
