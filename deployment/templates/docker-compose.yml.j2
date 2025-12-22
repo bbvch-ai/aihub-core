@@ -134,6 +134,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
 
   seaweedfs-volume:
     container_name: seaweedfs-volume
@@ -161,6 +163,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
 
   seaweedfs-filer:
     container_name: seaweedfs-filer
@@ -193,6 +197,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
+      - data  # For etcd access
 
   seaweedfs-s3:
     container_name: seaweedfs-s3
@@ -243,6 +250,12 @@ services:
       - "traefik.http.routers.seaweedfs-s3.middlewares=security-headers@file"
       - "traefik.http.services.seaweedfs-s3.loadbalancer.server.port=9000"
     {%- endif %}
+    networks:
+      - storage
+      - backend  # Internal access from application services
+      {%- if stage != 'dev' %}
+      - proxy    # External S3 API access via Traefik
+      {%- endif %}
 
   seaweedfs-init:
     container_name: seaweedfs-init
@@ -266,6 +279,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
+      - backend
 
   {% if stage != 'dev' -%}
   oauth2proxy-seaweed:
@@ -310,6 +326,9 @@ services:
       {%- endif %}
       - "traefik.http.routers.seaweedfs-filer.middlewares=security-headers@file"
       - "traefik.http.services.seaweedfs-filer.loadbalancer.server.port=4181"
+    networks:
+      - proxy
+      - storage
   {% endif %}
 
   # ===================================================================
@@ -341,6 +360,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
+      - storage  # Used by SeaweedFS filer for metadata
 
   milvus-standalone:
     container_name: milvus
@@ -375,6 +397,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
+      - storage  # For S3 access to SeaweedFS
 
   attu:
     container_name: attu
@@ -395,6 +420,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   {% if stage != 'dev' -%}
   oauth2proxy-attu:
@@ -438,6 +465,9 @@ services:
       {%- endif %}
       - "traefik.http.routers.attu.middlewares=security-headers@file"
       - "traefik.http.services.attu.loadbalancer.server.port=4182"
+    networks:
+      - proxy
+      - data
   {% endif %}
 
   # ===================================================================
@@ -469,6 +499,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   {% if stage != 'dev' %}
   # ===================================================================
@@ -509,6 +541,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
   {% endif %}
 
   # ===================================================================
@@ -537,6 +571,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   ferretdb:
     container_name: ferretdb
@@ -556,6 +592,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   # ===================================================================
   # Phoenix Stack (ML Observability)
@@ -585,6 +623,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
+      - data  # For PostgreSQL access
 
   # ===================================================================
   # Nats & Valkey Stack (Messaging and Caching)
@@ -613,6 +654,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data  # Message broker is part of data infrastructure
 
   valkey:
     container_name: valkey
@@ -633,6 +676,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data  # Cache is part of data infrastructure
 
   {%- if (gpu_enabled and stage in ['nightly', 'latest']) or stage == 'dev' %}
   # ===================================================================
@@ -691,6 +736,8 @@ services:
               device_ids: [ '0' ]
               capabilities: [ gpu ]
     {%- endif %}
+    networks:
+      - backend
 
   llama-cpp-embedding:
     container_name: llama-cpp-embedding
@@ -739,6 +786,8 @@ services:
               device_ids: [ '0' ]
               capabilities: [ gpu ]
     {%- endif %}
+    networks:
+      - backend
 
   llama-cpp-reranker:
     container_name: llama-cpp-reranker
@@ -787,6 +836,8 @@ services:
               device_ids: [ '0' ]
               capabilities: [ gpu ]
     {%- endif %}
+    networks:
+      - backend
 
   # ===================================================================
   # Audio Model Serving (SST/TTS)
@@ -826,6 +877,8 @@ services:
               device_ids: [ '0' ]
               capabilities: [ gpu ]
     {%- endif %}
+    networks:
+      - backend
   {%- endif %}
 
   # ===================================================================
@@ -844,6 +897,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   presidio-anonymizer:
     container_name: presidio-anonymizer
@@ -854,6 +909,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   litellm:
     container_name: litellm
@@ -918,6 +975,12 @@ services:
       - "traefik.http.routers.litellm.tls=true"
       {%- endif %}
     {%- endif %}
+    networks:
+      - backend
+      - data  # For PostgreSQL access
+      {%- if stage != 'dev' %}
+      - proxy  # For external API access via Traefik
+      {%- endif %}
 
   # ===================================================================
   # Utility & Code Execution Services
@@ -944,6 +1007,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   playwright:
     container_name: playwright-server
@@ -967,6 +1032,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   # ===================================================================
   # Document Processing Stack
@@ -1005,6 +1072,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   {% if gpu_enabled %}
   vllm-docling:
@@ -1048,6 +1117,8 @@ services:
             - driver: nvidia
               device_ids: [ '0' ]
               capabilities: [ gpu ]
+    networks:
+      - backend
   {%- endif %}
 
   # ===================================================================
@@ -1081,6 +1152,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   # ===================================================================
   # Open WebUI Stack (Primary User Interface)
@@ -1361,6 +1434,13 @@ services:
       - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customRequestHeaders.X-Forwarded-Port=443"
       - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customRequestHeaders.X-Real-IP=%{remote_addr}"
     {%- endif %}
+    {%- if stage != 'dev' %}
+    networks:
+      - proxy
+      - backend
+      - data
+      - storage
+    {%- endif %}
 
   openwebui-init:
     container_name: openwebui-init
@@ -1384,6 +1464,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   {% if image_tags.dagster[stage] %}
   # ===================================================================
@@ -1430,6 +1512,9 @@ services:
       {%- else %}
       - "traefik.http.routers.dagster.tls=true"
       {%- endif %}
+    networks:
+      - proxy
+      - backend
 
   dagster-webserver:
     container_name: dagster-webserver
@@ -1470,6 +1555,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
+      - data
 
   dagster-daemon:
     container_name: dagster-daemon
@@ -1501,6 +1589,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
+      - data
   {%- endif %}
 
   {% if stage != 'dev' %}
@@ -1559,6 +1650,9 @@ services:
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:${ADMIN_PASSWORD_HASH}"
       - "traefik.http.routers.traefik.middlewares=traefik-auth"
+    networks:
+      - proxy
+      - backend  # Traefik routes to backend services
   {%- endif %}
 
   {% if image_tags.api[stage] %}
@@ -1691,6 +1785,11 @@ services:
       {%- else %}
       - "traefik.http.routers.api.tls=true"
       {%- endif %}
+    networks:
+      - proxy
+      - backend
+      - data
+      - storage
   {%- endif %}
 
   {% if image_tags.web[stage] %}
@@ -1720,6 +1819,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - proxy  # Static frontend only needs proxy access
     labels:
       - "traefik.enable=true"
       # --- Routers ---
@@ -1803,6 +1904,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
+      - data
   {%- endif %}
 
   {% if image_tags.rag_agent[stage] %}
@@ -1859,6 +1963,10 @@ services:
       OTEL_RESOURCE_SERVICE_NAME: rag-agent
       OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    networks:
+      - backend
+      - data
+      - storage
   {%- endif %}
 
   {% if image_tags.expert_rag_agent[stage] %}
@@ -1915,6 +2023,10 @@ services:
       OTEL_RESOURCE_SERVICE_NAME: expert-rag-agent
       OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    networks:
+      - backend
+      - data
+      - storage
   {%- endif %}
 
   {% if image_tags.expert_asking_agent[stage] %}
@@ -1960,6 +2072,9 @@ services:
       OTEL_RESOURCE_SERVICE_NAME: expert-asking-agent
       OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    networks:
+      - backend
+      - data
   {%- endif %}
 
   {% if image_tags.default_rag_pipeline[stage] %}
@@ -2019,6 +2134,10 @@ services:
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+    networks:
+      - backend
+      - data
+      - storage
   {%- endif %}
 
   {% if image_tags.shared_rag_pipeline[stage] %}
@@ -2078,6 +2197,10 @@ services:
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+    networks:
+      - backend
+      - data
+      - storage
   {%- endif %}
 
   {% if image_tags.bot[stage] %}
@@ -2129,4 +2252,43 @@ services:
       - "traefik.http.routers.bot.middlewares=security-headers@file"
       - "traefik.http.services.bot.loadbalancer.server.port=8000"
     {%- endif %}
+    networks:
+      - proxy
+      - backend
+      - data
   {%- endif %}
+
+# ===================================================================
+# Network Configuration
+# ===================================================================
+# Network isolation provides defense-in-depth security by limiting
+# which services can communicate with each other. Each network zone
+# serves a specific purpose:
+#
+# - proxy:   External traffic ingress (Traefik routes here)
+# - backend: Internal application and processing services
+# - data:    Databases, caches, and message broker
+# - storage: SeaweedFS distributed object storage
+#
+# Services are assigned to only the networks they require.
+# Networks marked with 'internal: true' cannot be accessed from
+# outside the Docker network, even if ports are exposed.
+# ===================================================================
+networks:
+  proxy:
+    driver: bridge
+  backend:
+    driver: bridge
+    {%- if stage != 'dev' %}
+    internal: true
+    {%- endif %}
+  data:
+    driver: bridge
+    {%- if stage != 'dev' %}
+    internal: true
+    {%- endif %}
+  storage:
+    driver: bridge
+    {%- if stage != 'dev' %}
+    internal: true
+    {%- endif %}

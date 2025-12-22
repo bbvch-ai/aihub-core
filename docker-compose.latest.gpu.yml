@@ -92,6 +92,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
 
   seaweedfs-volume:
     container_name: seaweedfs-volume
@@ -114,6 +116,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
 
   seaweedfs-filer:
     container_name: seaweedfs-filer
@@ -141,6 +145,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
+      - data  # For etcd access
 
   seaweedfs-s3:
     container_name: seaweedfs-s3
@@ -181,6 +188,10 @@ services:
       - "traefik.http.routers.seaweedfs-s3.tls.certresolver=letsencrypt"
       - "traefik.http.routers.seaweedfs-s3.middlewares=security-headers@file"
       - "traefik.http.services.seaweedfs-s3.loadbalancer.server.port=9000"
+    networks:
+      - storage
+      - backend  # Internal access from application services
+      - proxy    # External S3 API access via Traefik
 
   seaweedfs-init:
     container_name: seaweedfs-init
@@ -204,6 +215,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
+      - backend
 
   oauth2proxy-seaweed:
     container_name: oauth2proxy-seaweed
@@ -243,6 +257,9 @@ services:
       - "traefik.http.routers.seaweedfs-filer.tls.certresolver=letsencrypt"
       - "traefik.http.routers.seaweedfs-filer.middlewares=security-headers@file"
       - "traefik.http.services.seaweedfs-filer.loadbalancer.server.port=4181"
+    networks:
+      - proxy
+      - storage
   
 
   # ===================================================================
@@ -270,6 +287,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
+      - storage  # Used by SeaweedFS filer for metadata
 
   milvus-standalone:
     container_name: milvus
@@ -299,6 +319,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
+      - storage  # For S3 access to SeaweedFS
 
   attu:
     container_name: attu
@@ -315,6 +338,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   oauth2proxy-attu:
     container_name: oauth2proxy-attu
@@ -353,6 +378,9 @@ services:
       - "traefik.http.routers.attu.tls.certresolver=letsencrypt"
       - "traefik.http.routers.attu.middlewares=security-headers@file"
       - "traefik.http.services.attu.loadbalancer.server.port=4182"
+    networks:
+      - proxy
+      - data
   
 
   # ===================================================================
@@ -380,6 +408,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   
   # ===================================================================
@@ -420,6 +450,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
   
 
   # ===================================================================
@@ -448,6 +480,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   ferretdb:
     container_name: ferretdb
@@ -463,6 +497,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   # ===================================================================
   # Phoenix Stack (ML Observability)
@@ -487,6 +523,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
+      - data  # For PostgreSQL access
 
   # ===================================================================
   # Nats & Valkey Stack (Messaging and Caching)
@@ -510,6 +549,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data  # Message broker is part of data infrastructure
 
   valkey:
     container_name: valkey
@@ -526,6 +567,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data  # Cache is part of data infrastructure
   # ===================================================================
   # AI Model Serving (Local Inference)
   # ===================================================================
@@ -569,6 +612,8 @@ services:
             - driver: nvidia
               device_ids: [ '0' ]
               capabilities: [ gpu ]
+    networks:
+      - backend
 
   llama-cpp-embedding:
     container_name: llama-cpp-embedding
@@ -609,6 +654,8 @@ services:
             - driver: nvidia
               device_ids: [ '0' ]
               capabilities: [ gpu ]
+    networks:
+      - backend
 
   llama-cpp-reranker:
     container_name: llama-cpp-reranker
@@ -649,6 +696,8 @@ services:
             - driver: nvidia
               device_ids: [ '0' ]
               capabilities: [ gpu ]
+    networks:
+      - backend
 
   # ===================================================================
   # Audio Model Serving (SST/TTS)
@@ -680,6 +729,8 @@ services:
             - driver: nvidia
               device_ids: [ '0' ]
               capabilities: [ gpu ]
+    networks:
+      - backend
 
   # ===================================================================
   # LiteLLM Stack (Model Proxy and Guardrails)
@@ -697,6 +748,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   presidio-anonymizer:
     container_name: presidio-anonymizer
@@ -707,6 +760,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   litellm:
     container_name: litellm
@@ -758,6 +813,10 @@ services:
       - "traefik.http.routers.litellm.middlewares=security-headers@file"
       - "traefik.http.services.litellm.loadbalancer.server.port=4000"
       - "traefik.http.routers.litellm.tls.certresolver=letsencrypt"
+    networks:
+      - backend
+      - data  # For PostgreSQL access
+      - proxy  # For external API access via Traefik
 
   # ===================================================================
   # Utility & Code Execution Services
@@ -780,6 +839,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   playwright:
     container_name: playwright-server
@@ -799,6 +860,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   # ===================================================================
   # Document Processing Stack
@@ -828,6 +891,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   
   vllm-docling:
@@ -867,6 +932,8 @@ services:
             - driver: nvidia
               device_ids: [ '0' ]
               capabilities: [ gpu ]
+    networks:
+      - backend
 
   # ===================================================================
   # Observability Stack
@@ -892,6 +959,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   # ===================================================================
   # Open WebUI Stack (Primary User Interface)
@@ -1155,6 +1224,11 @@ services:
       - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customrequestheaders.X-Forwarded-Host=openwebui.${DOMAIN}"
       - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customRequestHeaders.X-Forwarded-Port=443"
       - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customRequestHeaders.X-Real-IP=%{remote_addr}"
+    networks:
+      - proxy
+      - backend
+      - data
+      - storage
 
   openwebui-init:
     container_name: openwebui-init
@@ -1178,6 +1252,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   
   # ===================================================================
@@ -1220,6 +1296,9 @@ services:
       - "traefik.http.routers.dagster.middlewares=security-headers@file"
       - "traefik.http.services.dagster.loadbalancer.server.port=4180"
       - "traefik.http.routers.dagster.tls.certresolver=letsencrypt"
+    networks:
+      - proxy
+      - backend
 
   dagster-webserver:
     container_name: dagster-webserver
@@ -1250,6 +1329,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
+      - data
 
   dagster-daemon:
     container_name: dagster-daemon
@@ -1275,6 +1357,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
+      - data
 
   
   # ===================================================================
@@ -1318,6 +1403,9 @@ services:
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:${ADMIN_PASSWORD_HASH}"
       - "traefik.http.routers.traefik.middlewares=traefik-auth"
+    networks:
+      - proxy
+      - backend  # Traefik routes to backend services
 
   
   # ===================================================================
@@ -1439,6 +1527,11 @@ services:
       - "traefik.http.routers.api.middlewares=security-headers@file"
       - "traefik.http.services.api.loadbalancer.server.port=8000"
       - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+    networks:
+      - proxy
+      - backend
+      - data
+      - storage
 
   
   # ===================================================================
@@ -1461,6 +1554,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - proxy  # Static frontend only needs proxy access
     labels:
       - "traefik.enable=true"
       # --- Routers ---
@@ -1528,6 +1623,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
+      - data
 
   
   rag_agent:
@@ -1577,6 +1675,10 @@ services:
       OTEL_RESOURCE_SERVICE_NAME: rag-agent
       OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    networks:
+      - backend
+      - data
+      - storage
 
   
   expert_rag_agent:
@@ -1626,6 +1728,10 @@ services:
       OTEL_RESOURCE_SERVICE_NAME: expert-rag-agent
       OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    networks:
+      - backend
+      - data
+      - storage
 
   
   expert_asking_agent:
@@ -1664,6 +1770,9 @@ services:
       OTEL_RESOURCE_SERVICE_NAME: expert-asking-agent
       OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    networks:
+      - backend
+      - data
 
   
   default_rag_pipeline:
@@ -1716,6 +1825,10 @@ services:
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+    networks:
+      - backend
+      - data
+      - storage
 
   
   shared_rag_pipeline:
@@ -1768,6 +1881,10 @@ services:
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+    networks:
+      - backend
+      - data
+      - storage
 
   
   # ===================================================================
@@ -1806,3 +1923,36 @@ services:
       - "traefik.http.routers.bot.tls=true"
       - "traefik.http.routers.bot.middlewares=security-headers@file"
       - "traefik.http.services.bot.loadbalancer.server.port=8000"
+    networks:
+      - proxy
+      - backend
+      - data
+
+# ===================================================================
+# Network Configuration
+# ===================================================================
+# Network isolation provides defense-in-depth security by limiting
+# which services can communicate with each other. Each network zone
+# serves a specific purpose:
+#
+# - proxy:   External traffic ingress (Traefik routes here)
+# - backend: Internal application and processing services
+# - data:    Databases, caches, and message broker
+# - storage: SeaweedFS distributed object storage
+#
+# Services are assigned to only the networks they require.
+# Networks marked with 'internal: true' cannot be accessed from
+# outside the Docker network, even if ports are exposed.
+# ===================================================================
+networks:
+  proxy:
+    driver: bridge
+  backend:
+    driver: bridge
+    internal: true
+  data:
+    driver: bridge
+    internal: true
+  storage:
+    driver: bridge
+    internal: true

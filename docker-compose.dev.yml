@@ -41,6 +41,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
 
   seaweedfs-volume:
     container_name: seaweedfs-volume
@@ -66,6 +68,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
 
   seaweedfs-filer:
     container_name: seaweedfs-filer
@@ -96,6 +100,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
+      - data  # For etcd access
 
   seaweedfs-s3:
     container_name: seaweedfs-s3
@@ -130,6 +137,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
+      - backend  # Internal access from application services
 
   seaweedfs-init:
     container_name: seaweedfs-init
@@ -153,6 +163,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
+      - backend
 
   
 
@@ -181,6 +194,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
+      - storage  # Used by SeaweedFS filer for metadata
 
   milvus-standalone:
     container_name: milvus
@@ -213,6 +229,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
+      - storage  # For S3 access to SeaweedFS
 
   attu:
     container_name: attu
@@ -231,6 +250,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   
 
@@ -261,6 +282,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   
 
@@ -290,6 +313,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   ferretdb:
     container_name: ferretdb
@@ -307,6 +332,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   # ===================================================================
   # Phoenix Stack (ML Observability)
@@ -334,6 +361,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
+      - data  # For PostgreSQL access
 
   # ===================================================================
   # Nats & Valkey Stack (Messaging and Caching)
@@ -360,6 +390,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data  # Message broker is part of data infrastructure
 
   valkey:
     container_name: valkey
@@ -378,6 +410,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data  # Cache is part of data infrastructure
   # ===================================================================
   # AI Model Serving (Local Inference)
   # ===================================================================
@@ -415,6 +449,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   llama-cpp-embedding:
     container_name: llama-cpp-embedding
@@ -449,6 +485,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   llama-cpp-reranker:
     container_name: llama-cpp-reranker
@@ -483,6 +521,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   # ===================================================================
   # Audio Model Serving (SST/TTS)
@@ -509,6 +549,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 5s
+    networks:
+      - backend
 
   # ===================================================================
   # LiteLLM Stack (Model Proxy and Guardrails)
@@ -526,6 +568,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   presidio-anonymizer:
     container_name: presidio-anonymizer
@@ -536,6 +580,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   litellm:
     container_name: litellm
@@ -583,6 +629,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
+      - data  # For PostgreSQL access
 
   # ===================================================================
   # Utility & Code Execution Services
@@ -607,6 +656,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   playwright:
     container_name: playwright-server
@@ -628,6 +679,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   # ===================================================================
   # Document Processing Stack
@@ -658,6 +711,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   
 
@@ -690,6 +745,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   # ===================================================================
   # Open WebUI Stack (Primary User Interface)
@@ -934,6 +991,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   
 
@@ -961,3 +1020,29 @@ services:
   
 
   
+
+# ===================================================================
+# Network Configuration
+# ===================================================================
+# Network isolation provides defense-in-depth security by limiting
+# which services can communicate with each other. Each network zone
+# serves a specific purpose:
+#
+# - proxy:   External traffic ingress (Traefik routes here)
+# - backend: Internal application and processing services
+# - data:    Databases, caches, and message broker
+# - storage: SeaweedFS distributed object storage
+#
+# Services are assigned to only the networks they require.
+# Networks marked with 'internal: true' cannot be accessed from
+# outside the Docker network, even if ports are exposed.
+# ===================================================================
+networks:
+  proxy:
+    driver: bridge
+  backend:
+    driver: bridge
+  data:
+    driver: bridge
+  storage:
+    driver: bridge
