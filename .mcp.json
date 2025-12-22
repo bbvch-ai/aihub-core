@@ -1,5 +1,9 @@
 {
   "mcpServers": {
+    "aihub_agents": {
+      "type": "http",
+      "url": "http://localhost:8001/mcp/"
+    },
     "phoenix": {
       "command": "docker",
       "args": [

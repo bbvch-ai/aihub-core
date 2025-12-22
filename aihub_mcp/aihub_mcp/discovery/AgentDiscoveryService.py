@@ -7,6 +7,9 @@ import time
 import uuid
 from typing import TYPE_CHECKING, Any
 
+from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
+
 if TYPE_CHECKING:
     from aihub_mcp.server.AgentToolRegistry import AgentToolRegistry
     from aihub_mcp.server.MCPServer import MCPServer
@@ -39,6 +42,7 @@ class AgentDiscoveryService:
         self._mcp_server = mcp_server
         self._tool_registry = tool_registry
         self._resource_registry = resource_registry
+        self._topic_manager = AgentTopicManager()
 
         self._nc: Any = None  # NATS connection
         self._running = False
@@ -52,9 +56,14 @@ class AgentDiscoveryService:
         self._nc = await nats.connect(self._settings.NATS_URL)
         self._running = True
 
-        # Subscribe to discovery responses
+        # Subscribe to discovery responses using platform topic pattern
+        # Pattern: class_discovery.agent.{agent_class}.*.response.{call_id}
+        response_pattern = self._topic_manager.get_agent_class_discovery_subject_response(
+            call_id="*",
+            agent_class="*",
+        )
         await self._nc.subscribe(
-            "aihub.agents.discovery.response.call.*.*",
+            response_pattern,
             cb=self._handle_discovery_response,
         )
 
@@ -96,18 +105,20 @@ class AgentDiscoveryService:
 
     async def _broadcast_discovery_request(self) -> None:
         """Broadcast a discovery request to all agents."""
-        request_id = uuid.uuid4().hex[:12]
-        subject = f"aihub.agents.discovery.request.{request_id}.call.{request_id}"
+        call_id = uuid.uuid4().hex[:12]
 
-        event = {
-            "event_id": str(uuid.uuid4()),
-            "created_at": time.time_ns(),
-            "_event_name": "ClassDiscoveryRequestEvent",
-            "_parent_event_names": ["BaseEvent", "ClassDiscoveryRequestEvent"],
-        }
+        # Use platform topic manager to get correct subject
+        # Pattern: class_discovery.agent.*.*.request.{call_id}
+        subject = self._topic_manager.get_agent_class_discovery_subject_request(
+            call_id=call_id,
+            agent_class="*",
+        )
 
-        await self._nc.publish(subject, json.dumps(event).encode())
-        logger.debug(f"Broadcast discovery request: {request_id}")
+        # Use proper ClassDiscoveryRequestEvent from aihub_lib
+        event = ClassDiscoveryRequestEvent()
+
+        await self._nc.publish(subject, event.model_dump_json().encode())
+        logger.debug(f"Broadcast discovery request: {call_id} on {subject}")
 
     async def _handle_discovery_response(self, msg: Any) -> None:
         """Handle a discovery response from an agent."""

@@ -166,9 +166,9 @@ class MCPServer:
 
         @asynccontextmanager
         async def combined_lifespan(app: Starlette) -> AsyncIterator[None]:
-            async with self.lifespan(app):
-                mcp_lifespan = mcp_app.lifespan(mcp_app)
-                async with mcp_lifespan:
+            # Critical: MCP lifespan must initialize FIRST for session management
+            async with mcp_app.lifespan(mcp_app):
+                async with self.lifespan(app):
                     yield
 
         app = Starlette(

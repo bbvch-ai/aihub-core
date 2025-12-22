@@ -16,6 +16,14 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Synthetic user identity for MCP clients (no authentication context)
+MCP_USER_IDENTITY = {
+    "id": "mcp-client",
+    "name": "MCP Client",
+    "email": "mcp@localhost",
+    "roles": ["user"],
+}
+
 
 class EventTranslator:
     """
@@ -76,6 +84,7 @@ class EventTranslator:
         5. Returns final result on StopEvent/ExceptionEvent
         """
         # Generate identifiers for this execution
+        agent_id = f"mcp_{uuid.uuid4().hex[:8]}"
         thread_id = f"mcp_{uuid.uuid4().hex[:12]}"
         display_id = f"d_{uuid.uuid4().hex[:8]}"
         run_id = f"r_{uuid.uuid4().hex[:8]}"
@@ -94,6 +103,7 @@ class EventTranslator:
         # Build the NATS subject for publishing
         subject = self._build_subject(
             agent_class=agent_class,
+            agent_id=agent_id,
             thread_id=thread_id,
             display_id=display_id,
             run_id=run_id,
@@ -105,6 +115,7 @@ class EventTranslator:
         # Subscribe to display events before publishing
         display_subject = self._build_display_subscription_pattern(
             agent_class=agent_class,
+            agent_id=agent_id,
             thread_id=thread_id,
             display_id=display_id,
         )
@@ -138,6 +149,7 @@ class EventTranslator:
                         # Publish response back to NATS
                         await self._publish_hitl_response(
                             agent_class=agent_class,
+                            agent_id=agent_id,
                             thread_id=thread_id,
                             display_id=display_id,
                             run_id=run_id,
@@ -187,17 +199,35 @@ class EventTranslator:
         event_id: str,
     ) -> dict[str, Any]:
         """Build a SAAP start event from MCP tool parameters."""
-        return {
+        base_event = {
             "event_id": event_id,
             "created_at": time.time_ns(),
             "_event_name": event_name,
             "_parent_event_names": event_parents,
-            **event_data,
         }
+
+        # Handle UserMessageEvent specifically - requires user identity and messages format
+        if "UserMessageEvent" in event_name:
+            base_event["user"] = MCP_USER_IDENTITY
+
+            # Convert message string to proper messages format if needed
+            if "message" in event_data and "messages" not in event_data:
+                message_content = event_data.pop("message")
+                base_event["messages"] = [
+                    {
+                        "role": "user",
+                        "content": message_content,
+                    }
+                ]
+
+        # Merge remaining event data
+        base_event.update(event_data)
+        return base_event
 
     def _build_subject(
         self,
         agent_class: str,
+        agent_id: str,
         thread_id: str,
         display_id: str,
         run_id: str,
@@ -206,22 +236,27 @@ class EventTranslator:
         event_id: str,
     ) -> str:
         """Build a NATS subject for publishing events."""
-        # Format: agent.<AgentClass>.<thread_id>.<display_id>.<run_id>.<event_type>.<event_name>.<event_id>
-        return f"agent.{agent_class}.{thread_id}.{display_id}.{run_id}.{event_type}.{event_name}.{event_id}"
+        # Format: agent.<agent_class>.<agent_id>.<thread_id>.<display_id>.<run_id>.<event_type>.<event_name>.<event_id>
+        return f"agent.{agent_class}.{agent_id}.{thread_id}.{display_id}.{run_id}.{event_type}.{event_name}.{event_id}"
 
     def _build_display_subscription_pattern(
         self,
         agent_class: str,
+        agent_id: str,
         thread_id: str,
         display_id: str,
     ) -> str:
         """Build a NATS subject pattern for subscribing to display events."""
         # Subscribe to all display events for this display context
-        return f"agent.{agent_class}.{thread_id}.{display_id}.*.display_event.>"
+        # Format: agent.<agent_class>.<agent_id>.<thread_id>.<display_id>.<run_id>.display_event.<event_name>.<event_id>
+        # Note: Use wildcard for agent_id because the actual agent uses its configured ID (e.g., "rag_dev_agent")
+        # rather than the MCP-generated ID we used when publishing
+        return f"agent.{agent_class}.*.{thread_id}.{display_id}.*.display_event.>"
 
     async def _publish_hitl_response(
         self,
         agent_class: str,
+        agent_id: str,
         thread_id: str,
         display_id: str,
         run_id: str,
@@ -265,6 +300,7 @@ class EventTranslator:
 
         subject = self._build_subject(
             agent_class=agent_class,
+            agent_id=agent_id,
             thread_id=thread_id,
             display_id=display_id,
             run_id=run_id,

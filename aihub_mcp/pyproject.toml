@@ -37,6 +37,7 @@ toml-sort = "^0.24.2"
 black = { extras = ["jupyter"], version = "^25.1.0" }
 pytest-cov = "^6.0.0"
 pip-licenses = "^5.0.0"
+sqlean-py = "3.49.1"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
