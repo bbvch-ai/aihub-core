@@ -1,5 +1,8 @@
 import asyncio
+import json
 import logging
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
@@ -47,6 +50,7 @@ class AgentRunner:
         agent_type: type[Agent],
         default_agent_config: AgentConfig,
         locale_paths: list[str] | None = None,
+        health_port: int = 8080,
     ):
         if not isinstance(agent_type, type):
             raise ValueError("agent_type must be a class, not an instance or module.")
@@ -68,6 +72,7 @@ class AgentRunner:
 
         self.nc: NATS | None = None
         self.js: JetStreamContext | None = None
+        self.redis: Redis | None = None
 
         self.dispatcher: AgentDispatcher | None = None
 
@@ -76,6 +81,81 @@ class AgentRunner:
         self.nc_publisher: NCPublisher[AgentClassDiscoveryResponseEvent] | None = None
 
         self.locale_handler = AgentLocaleHandler(locale_paths=locale_paths)
+
+        self.health_port = health_port
+        self._health_server: HTTPServer | None = None
+        self._health_thread: threading.Thread | None = None
+
+    def _create_health_handler(self) -> type[BaseHTTPRequestHandler]:
+        """Creates a health check HTTP request handler with access to the runner instance."""
+        runner = self
+
+        class HealthHandler(BaseHTTPRequestHandler):
+            def log_message(self, format: str, *args: object) -> None:
+                # Suppress default logging to avoid cluttering logs
+                pass
+
+            def do_GET(self) -> None:
+                if self.path == "/health":
+                    self._handle_health_check()
+                else:
+                    self.send_error(404, "Not Found")
+
+            def _handle_health_check(self) -> None:
+                checks: dict[str, bool] = {}
+                is_healthy = True
+
+                # Check if runner is running
+                checks["running"] = runner.running
+                if not runner.running:
+                    is_healthy = False
+
+                # Check NATS connection
+                nats_connected = runner.nc is not None and runner.nc.is_connected
+                checks["nats"] = nats_connected
+                if not nats_connected:
+                    is_healthy = False
+
+                # Check Redis connection (simple check - connection pool exists)
+                redis_available = runner.redis is not None
+                checks["redis"] = redis_available
+                if not redis_available:
+                    is_healthy = False
+
+                health_status = {
+                    "status": "healthy" if is_healthy else "unhealthy",
+                    "agent_class": runner.agent_class,
+                    "checks": checks,
+                }
+
+                status_code = 200 if is_healthy else 503
+                response_body = json.dumps(health_status).encode("utf-8")
+
+                self.send_response(status_code)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(response_body)))
+                self.end_headers()
+                self.wfile.write(response_body)
+
+        return HealthHandler
+
+    def _start_health_server(self) -> None:
+        """Starts the HTTP health check server in a background thread."""
+        handler_class = self._create_health_handler()
+        self._health_server = HTTPServer(("0.0.0.0", self.health_port), handler_class)
+        self._health_thread = threading.Thread(target=self._health_server.serve_forever, daemon=True)
+        self._health_thread.start()
+        logger.debug(f"Health check server started on port {self.health_port}")
+
+    def _stop_health_server(self) -> None:
+        """Stops the HTTP health check server."""
+        if self._health_server:
+            self._health_server.shutdown()
+            self._health_server = None
+        if self._health_thread:
+            self._health_thread.join(timeout=5)
+            self._health_thread = None
+        logger.debug("Health check server stopped")
 
     async def discovery_handler(self, event: ClassDiscoveryRequestEvent, topic: AgentClassDiscoveryTopic):
         """
@@ -184,6 +264,9 @@ class AgentRunner:
         logger.debug(f"{self.agent_class} is now running and subscribed to incoming messages.")
         self._loop_task = asyncio.create_task(self._run_loop())
 
+        # Start health check server
+        self._start_health_server()
+
     async def stop(self):
         """
         Stops the agent by setting a stop event, unsubscribing, and closing the NATS connection.
@@ -193,6 +276,9 @@ class AgentRunner:
             return
 
         logger.debug(f"Shutting down {self.agent_class}...")
+
+        # Stop health check server first
+        self._stop_health_server()
         self._stop_signal.set()
 
         if self._loop_task is not None:
