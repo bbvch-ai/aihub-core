@@ -9,6 +9,12 @@ extensions:
   health_check:
     endpoint: 0.0.0.0:13133
 
+  # Basic auth extension for Langfuse authentication
+  basicauth/langfuse:
+    client_auth:
+      username: "${LANGFUSE_PUBLIC_KEY}"
+      password: "${LANGFUSE_SECRET_KEY}"
+
 receivers:
   otlp:
     protocols:
@@ -34,28 +40,13 @@ processors:
         - 'resource.attributes["service.name"] == "litellm" and attributes["service"] == "postgres"'
         - 'resource.attributes["service.name"] == "litellm" and attributes["service"] == "auth"'
 
-  # Filter to identify ONLY OpenInference spans for Phoenix
-  filter/phoenix:
+  # Filter to identify ONLY OpenInference spans for Langfuse
+  filter/langfuse:
     error_mode: ignore
     traces:
       span:
         # DROP spans that DON'T have OpenInference semantic conventions
         - 'attributes["openinference.span.kind"] == nil'
-
-  # Transform processor for Phoenix-specific modifications
-  transform/phoenix:
-    error_mode: ignore
-    trace_statements:
-      - context: span
-        statements:
-          # Remove parent span ID for spans marked as Phoenix roots
-          - set(parent_span_id, SpanID(0x0000000000000000)) where attributes["phoenix.is_root"] == true
-          # Clean up the marker attribute
-          - delete_key(attributes, "phoenix.is_root")
-      - context: resource
-        statements:
-          # Add project name as a resource attribute
-          - set(attributes["openinference.project.name"], attributes["service.name"])
 
 exporters:
   # Generic cloud exporter with configurable headers
@@ -74,9 +65,12 @@ exporters:
       initial_interval: 5s
       max_interval: 60s
 
-  # Local Phoenix for development and debugging
-  otlp/phoenix:
-    endpoint: "phoenix:6007"
+  # Langfuse OTLP exporter for local development and debugging
+  # Langfuse accepts OTLP traces via HTTP with basic auth
+  otlphttp/langfuse:
+    endpoint: "http://langfuse-web:3000/api/public/otel"
+    auth:
+      authenticator: basicauth/langfuse
     tls:
       insecure: true
     timeout: 10s
@@ -86,13 +80,13 @@ exporters:
       max_interval: 30s
 
 service:
-  extensions: [ health_check ]
+  extensions: [ health_check, basicauth/langfuse ]
   pipelines:
-    # Always send OpenInference traces to local Phoenix for development
-    traces/phoenix:
+    # Always send OpenInference traces to local Langfuse for development
+    traces/langfuse:
       receivers: [ otlp ]
-      processors: [ filter/phoenix, transform/phoenix, batch ]
-      exporters: [ otlp/phoenix ]
+      processors: [ filter/langfuse, batch ]
+      exporters: [ otlphttp/langfuse ]
     # Send traces to cloud backend
     traces/cloud:
       receivers: [otlp]

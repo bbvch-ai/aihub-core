@@ -30,12 +30,12 @@ from .EvaluationService import EvaluationService
 
 class EvaluationController(Controller):
     """
-    Manages evaluation datasets and experiments, primarily interfacing with Arize Phoenix.
+    Manages evaluation datasets and experiments, primarily interfacing with Langfuse.
 
     This controller provides a structured way to handle operations related to LLM evaluations.
     It allows users to create, retrieve, and update evaluation datasets, as well as manage
     and run evaluation experiments against these datasets. It uses the `EvaluationService`
-    to interact with the underlying evaluation framework (Arize Phoenix).
+    to interact with the underlying evaluation framework (Langfuse).
     """
 
     name = LocaleString(en="Quality Testing", de="Qualitätsprüfung", fr="Tests de qualité", it="Test di qualità")

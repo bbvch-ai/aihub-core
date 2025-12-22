@@ -31,7 +31,7 @@ llama-index-embeddings-text-embeddings-inference = "^0.3.2"
 python-multipart = "^0.0.20"
 stringcase = "^1.2.0"
 pydub = "^0.25.1"
-arize-phoenix = "^10.0.0"
+langfuse = "^3.0.0"
 # audioop-lts is required as a compatibility shim for Python 3.13,
 # since the standard library's audioop module was removed in Python 3.13.
 audioop-lts = "^0.2.1"

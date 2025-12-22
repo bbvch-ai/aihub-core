@@ -29,9 +29,9 @@ class AudioChunkingService:
     # Conservative limits (20MB + 5MB buffer stays under OpenAI's 25MB limit)
     MAX_CHUNK_SIZE: Annotated[int, "bytes"] = 20 * 1024 * 1024
     MIN_SILENCE_LEN: Annotated[int, "ms"] = 500  # 500 ms is the typical minimum pause in natural speech
-    SILENCE_THRESH: Annotated[
-        int, "dB"
-    ] = -40  # -40dB threshold identifies most speech pauses without excessive chunking
+    SILENCE_THRESH: Annotated[int, "dB"] = (
+        -40
+    )  # -40dB threshold identifies most speech pauses without excessive chunking
 
     @staticmethod
     async def chunk_audio(audio: AudioSegment) -> list[AudioSegment]:

@@ -688,12 +688,16 @@ class ProcessService:
                             involved_humans[user_id] = MinimalUserDTO.model_validate(
                                 {
                                     "id": user_id,
-                                    "name": submitted_by.get("name")
-                                    if isinstance(submitted_by, dict)
-                                    else getattr(submitted_by, "name", ""),
-                                    "email": submitted_by.get("email")
-                                    if isinstance(submitted_by, dict)
-                                    else getattr(submitted_by, "email", ""),
+                                    "name": (
+                                        submitted_by.get("name")
+                                        if isinstance(submitted_by, dict)
+                                        else getattr(submitted_by, "name", "")
+                                    ),
+                                    "email": (
+                                        submitted_by.get("email")
+                                        if isinstance(submitted_by, dict)
+                                        else getattr(submitted_by, "email", "")
+                                    ),
                                     "profile_image": profile_image,
                                 }
                             )

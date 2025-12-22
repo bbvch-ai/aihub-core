@@ -50,9 +50,9 @@ class ThreadDTO(BaseModel):
     duration: Annotated[float | None, Field(description="Overall duration of interactions in seconds")] = None
 
     # Enhanced statistics / Contents
-    displays: Annotated[
-        list[DisplayStatistics], Field(description="Displays in this thread, sorted by start time")
-    ] = []
+    displays: Annotated[list[DisplayStatistics], Field(description="Displays in this thread, sorted by start time")] = (
+        []
+    )
     participating_agents: Annotated[
         list[MinimalAgentDTO], Field(description="All unique agents that participated in the thread's events")
     ] = []

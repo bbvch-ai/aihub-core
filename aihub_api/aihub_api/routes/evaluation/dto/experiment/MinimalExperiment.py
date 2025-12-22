@@ -8,7 +8,7 @@ from aihub_api.routes.evaluation.dto.dataset.MinimalDataset import MinimalDatase
 
 
 class MinimalExperiment(BaseModel):
-    id: Annotated[str, Field(description="The unique identifier of the experiment in Phoenix.")]
+    id: Annotated[str, Field(description="The unique identifier of the experiment in Langfuse.")]
     name: Annotated[str, Field(description="The name of the experiment.")]
     description: Annotated[str | None, Field(description="The description of the experiment.")] = None
     agent: Annotated[MinimalAgentDTO, Field(description="Agent that was evaluated")]

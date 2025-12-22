@@ -3,38 +3,32 @@ from datetime import UTC, datetime
 from typing import Any
 
 from bson import ObjectId
+from langfuse import Evaluation, get_client
 from llama_index.core.llms import ChatMessage, MessageRole
 from llama_index.core.prompts import ChatPromptTemplate, PromptTemplate, RichPromptTemplate
 from nats.aio.client import Client as NATS
-from phoenix.client import AsyncClient as PhoenixAsyncClient
-from phoenix.client.experiments import async_run_experiment
-from phoenix.client.resources.datasets import Dataset as PhoenixDataset
-from phoenix.client.resources.experiments.types import RanExperiment
-from phoenix.experiments.evaluators import create_evaluator
-from phoenix.experiments.types import EvaluationResult as PhoenixEvaluationResult
-from phoenix.experiments.types import Example as PhoenixExample
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.evaluation.JudgeOutput import JudgeOutput
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.infrastructure.phoenix.PhoenixSettings import PhoenixSettings
+from aihub_lib.infrastructure.langfuse.LangfuseSettings import LangfuseSettings
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.routes.chat.ChatService import ChatContent, ChatService, JsonResources
 
 logger = logging.getLogger(__name__)
 
 
-class PhoenixExperimentEvaluator:
+class LangfuseExperimentEvaluator:
     """
-    Orchestrates evaluations of agents using Arize Phoenix experiments.
+    Orchestrates evaluations of agents using Langfuse experiments.
 
     ### Why this Evaluator?
     It bridges the gap between our agent interaction mechanism (ChatService via NATS)
-    and the Phoenix evaluation framework. It standardizes how we:
+    and the Langfuse evaluation framework. It standardizes how we:
     1.  Run agents against test datasets.
     2.  Evaluate their responses using LLM-based judges.
-    3.  Log these results back to Phoenix for analysis.
+    3.  Log these results back to Langfuse for analysis.
 
     It uses a "Judge LLM" with structured prompts and few-shot examples (loaded via i18n)
     to provide consistent, automated evaluations on dimensions like correctness,
@@ -52,7 +46,10 @@ class PhoenixExperimentEvaluator:
         """
         Initializes the evaluator.
         """
-        self.phoenix_client = PhoenixAsyncClient(base_url=PhoenixSettings().ENDPOINT)
+        # Validate settings are configured - will raise if not
+        _ = LangfuseSettings()
+        self.langfuse_client = get_client()
+        self.langfuse_client.auth_check()  # Verify credentials are valid
         self.nats_client = nats_client
         self.external_agent_event_distributor = external_agent_event_distributor
         self.user = authenticated_user
@@ -67,7 +64,7 @@ class PhoenixExperimentEvaluator:
         agent_id: str,
     ) -> dict[str, Any]:
         """
-        Task function for Phoenix: sends a question to the agent and returns its response.
+        Task function for Langfuse: sends a question to the agent and returns its response.
         Encapsulates the complex NATS-based communication, needed to interact with our agents,
         handling event streams and responses.
         """
@@ -144,10 +141,11 @@ class PhoenixExperimentEvaluator:
         )
 
     async def _run_single_evaluation(
-        self, evaluator_type: str, task_output: dict[str, Any], **kwargs
-    ) -> PhoenixEvaluationResult:
+        self, evaluator_type: str, task_output: dict[str, Any], **kwargs: Any
+    ) -> Evaluation:
         """
         Generic function to run a single evaluation type (Correctness, Completeness, etc.).
+        Returns a Langfuse Evaluation object.
         """
         agent_response = task_output.get("agent_response", "")
 
@@ -158,10 +156,10 @@ class PhoenixExperimentEvaluator:
         prompt_template = self._build_judge_prompt_template(evaluator_type, user_input_structure)
         judge_output = await self._evaluate_with_judge(prompt_template, prompt_vars)
 
-        return PhoenixEvaluationResult(
-            score=judge_output.score,
-            explanation=judge_output.reasoning,
-            metadata={"judge_had_error": judge_output.error},
+        return Evaluation(
+            name=evaluator_type.capitalize(),
+            value=judge_output.score,
+            comment=judge_output.reasoning,
         )
 
     async def run_evaluation_experiment(
@@ -172,69 +170,27 @@ class PhoenixExperimentEvaluator:
         experiment_name: str | None = None,
         experiment_description: str | None = None,
         experiment_metadata: dict[str, Any] | None = None,
-    ) -> RanExperiment:
+    ) -> dict[str, Any]:
         """
-        Runs a full evaluation experiment using Arize Phoenix.
+        Runs a full evaluation experiment using Langfuse.
 
         It fetches the dataset, sets up the agent interaction task, defines
-        Phoenix evaluators using our LLM judge functions, and runs the
-        Phoenix experiment, logging all results.
+        evaluators using our LLM judge functions, and runs the
+        Langfuse experiment, logging all results.
+
+        Returns a dictionary with the experiment results.
         """
+        # Fetch the dataset from Langfuse
         try:
-            dataset: PhoenixDataset = await self.phoenix_client.datasets.get_dataset(dataset=dataset_id)
+            dataset = self.langfuse_client.get_dataset(dataset_id)
         except Exception as e:
-            logger.exception(f"CRITICAL: Failed to load dataset ID '{dataset_id}' from Phoenix: {e}")
+            logger.exception(f"CRITICAL: Failed to load dataset ID '{dataset_id}' from Langfuse: {e}")
             raise ValueError(f"Failed to load dataset ID '{dataset_id}': {e}") from e
 
-        if not dataset or not dataset.examples:
-            message = f"Dataset ID '{dataset_id}' not found or is empty in Phoenix."
+        if not dataset or not dataset.items:
+            message = f"Dataset ID '{dataset_id}' not found or is empty in Langfuse."
             logger.error(message)
             raise ValueError(message)
-
-        # Wrapper function to match Phoenix's expected task signature.
-        async def task_for_phoenix(example: PhoenixExample) -> dict[str, Any]:
-            return await self._agent_interaction_task(
-                example_input=example.input,
-                agent_class=agent_class,
-                agent_id=agent_id,
-            )
-
-        @create_evaluator(name="Correctness", kind="LLM")
-        async def correctness_phoenix_eval(
-            output: dict[str, Any], reference: dict[str, Any], input: dict[str, Any]
-        ) -> PhoenixEvaluationResult:
-            """Evaluates correctness and returns a PhoenixEvaluationResult."""
-            reference_answer = reference.get("answer")
-            return await self._run_single_evaluation(
-                "correctness",
-                output,
-                question=input.get("question"),
-                reference_answer=reference_answer,
-            )
-
-        @create_evaluator(name="Completeness", kind="LLM")
-        async def completeness_phoenix_eval(output: dict[str, Any], input: dict[str, Any]) -> PhoenixEvaluationResult:
-            """Evaluates completeness and returns a PhoenixEvaluationResult."""
-            return await self._run_single_evaluation(
-                "completeness",
-                output,
-                question=input.get("question"),
-            )
-
-        @create_evaluator(name="Conciseness", kind="LLM")
-        async def conciseness_phoenix_eval(output: dict[str, Any], input: dict[str, Any]) -> PhoenixEvaluationResult:
-            """Evaluates conciseness and returns a PhoenixEvaluationResult."""
-            return await self._run_single_evaluation(
-                "conciseness",
-                output,
-                question=input.get("question"),
-            )
-
-        evaluators_list = [
-            correctness_phoenix_eval,
-            completeness_phoenix_eval,
-            conciseness_phoenix_eval,
-        ]
 
         final_experiment_name = experiment_name or (
             f"Eval_{agent_class}_{agent_id}_on_{dataset_id}_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}"
@@ -249,16 +205,72 @@ class PhoenixExperimentEvaluator:
             **(experiment_metadata or {}),
         }
 
-        logger.info(f"Starting Phoenix experiment: {final_experiment_name}")
-        experiment_result: RanExperiment = await async_run_experiment(
-            dataset=dataset,
-            task=task_for_phoenix,
-            evaluators=evaluators_list,
-            experiment_name=final_experiment_name,
-            experiment_description=experiment_description,
-            experiment_metadata=final_metadata,
-        )
-        url = getattr(experiment_result, "url", "URL not available")
-        logger.info(f"Phoenix experiment '{final_experiment_name}' completed. View at: {url}")
+        # Define the task function for Langfuse experiment runner
+        async def task_for_langfuse(*, item: Any, **kwargs: Any) -> str:
+            """Task that runs agent interaction and returns the response."""
+            input_data = item.input if hasattr(item, "input") else item.get("input", {})
+            result = await self._agent_interaction_task(
+                example_input=input_data,
+                agent_class=agent_class,
+                agent_id=agent_id,
+            )
+            return result.get("agent_response", "")
 
-        return experiment_result
+        # Define evaluators for Langfuse
+        async def correctness_evaluator(
+            *, input: Any, output: Any, expected_output: Any, metadata: Any, **kwargs: Any
+        ) -> Evaluation:
+            """Evaluates correctness and returns a Langfuse Evaluation."""
+            input_data = input if isinstance(input, dict) else {}
+            expected_data = expected_output if isinstance(expected_output, dict) else {}
+            reference_answer = expected_data.get("answer")
+            return await self._run_single_evaluation(
+                "correctness",
+                {"agent_response": output},
+                question=input_data.get("question"),
+                reference_answer=reference_answer,
+            )
+
+        async def completeness_evaluator(
+            *, input: Any, output: Any, expected_output: Any, metadata: Any, **kwargs: Any
+        ) -> Evaluation:
+            """Evaluates completeness and returns a Langfuse Evaluation."""
+            input_data = input if isinstance(input, dict) else {}
+            return await self._run_single_evaluation(
+                "completeness",
+                {"agent_response": output},
+                question=input_data.get("question"),
+            )
+
+        async def conciseness_evaluator(
+            *, input: Any, output: Any, expected_output: Any, metadata: Any, **kwargs: Any
+        ) -> Evaluation:
+            """Evaluates conciseness and returns a Langfuse Evaluation."""
+            input_data = input if isinstance(input, dict) else {}
+            return await self._run_single_evaluation(
+                "conciseness",
+                {"agent_response": output},
+                question=input_data.get("question"),
+            )
+
+        logger.info(f"Starting Langfuse experiment: {final_experiment_name}")
+
+        # Run the experiment using Langfuse's experiment runner
+        # Note: run_experiment blocks until completion and stores results in Langfuse
+        self.langfuse_client.run_experiment(
+            name=final_experiment_name,
+            description=experiment_description,
+            data=dataset,
+            task=task_for_langfuse,
+            evaluators=[correctness_evaluator, completeness_evaluator, conciseness_evaluator],
+            metadata=final_metadata,
+        )
+
+        logger.info(f"Langfuse experiment '{final_experiment_name}' completed.")
+
+        # Return experiment metadata for API response
+        return {
+            "experiment_id": final_experiment_name,
+            "dataset_id": dataset_id,
+            "metadata": final_metadata,
+        }

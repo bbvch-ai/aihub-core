@@ -63,7 +63,6 @@ class AgentRunTracer:
         ) as span:
             span.set_attributes(
                 {
-                    "phoenix.is_root": True,
                     SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.AGENT.value,
                     SpanAttributes.INPUT_VALUE: user_input,
                     SpanAttributes.INPUT_MIME_TYPE: OpenInferenceMimeTypeValues.TEXT.value,

@@ -183,9 +183,7 @@ class PersistedProcessEventEntity(Document):
                     "process_id": process_id,
                 }
             },
-            {
-                "$sort": {"event_data.created_at": 1}  # Sort events by creation time
-            },
+            {"$sort": {"event_data.created_at": 1}},  # Sort events by creation time
             {
                 "$group": {
                     "_id": "$process_walkthrough_id",
@@ -208,9 +206,7 @@ class PersistedProcessEventEntity(Document):
                     "event_count": {"$sum": 1},
                 }
             },
-            {
-                "$sort": {"last_event_timestamp": -1}  # Sort walkthroughs by most recent activity
-            },
+            {"$sort": {"last_event_timestamp": -1}},  # Sort walkthroughs by most recent activity
             {"$skip": skip},
             {"$limit": page_size},
             {

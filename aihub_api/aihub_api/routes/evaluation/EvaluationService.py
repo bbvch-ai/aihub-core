@@ -3,22 +3,15 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
-import httpx
-import pandas as pd
-import phoenix as px
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.generative_ai.evaluation.PhoenixExperimentEvaluator import PhoenixExperimentEvaluator
+from aihub_lib.generative_ai.evaluation.LangfuseExperimentEvaluator import LangfuseExperimentEvaluator
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.langfuse.LangfuseSettings import LangfuseSettings
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from aihub_lib.infrastructure.phoenix.PhoenixSettings import PhoenixSettings
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
+from langfuse import get_client
 from nats.aio.client import Client as NATS
-from phoenix.client.resources.experiments.types import RanExperiment
-from phoenix.experiments.types import Dataset as PhoenixInternalDataset
-from phoenix.server.api.routers.v1.datasets import Dataset as PhoenixDataset
-from phoenix.server.api.routers.v1.datasets import DatasetWithExampleCount
-from phoenix.server.api.routers.v1.experiments import Experiment as PhoenixExperiment
 
 from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.routes.evaluation.dto.dataset.Dataset import Dataset
@@ -43,142 +36,76 @@ OUTPUT_KEY_ANSWER = "answer"
 
 
 @dataclass
-class DataFrameCreationResult:
-    dataframe: pd.DataFrame
-    input_keys: list[str]
-    output_keys: list[str]
+class DatasetItemData:
+    input: dict[str, Any]
+    expected_output: dict[str, Any]
+    metadata: dict[str, Any] | None = None
 
 
 class EvaluationService:
     """
-    Handles business logic for interacting with Arize Phoenix for LLM evaluations.
+    Handles business logic for interacting with Langfuse for LLM evaluations.
 
-    This service abstracts the complexities of interacting with the Phoenix client and its API.
-    It separates the data transformation (Pandas DataFrames), HTTP requests, and experiment execution
+    This service abstracts the complexities of interacting with the Langfuse client and its API.
+    It separates the data transformation, HTTP requests, and experiment execution
     logic from the API controller, ensuring a clean and maintainable architecture. It provides
     methods for managing evaluation datasets and running/retrieving experiments.
     """
 
     @staticmethod
-    def _get_phoenix_client() -> px.Client:
-        """Initializes and returns a Phoenix client."""
-        return px.Client(endpoint=PhoenixSettings().ENDPOINT, warn_if_server_not_running=False)
+    def _get_langfuse_client() -> Any:
+        """Initializes and returns a Langfuse client."""
+        # Validate settings are configured - will raise if not
+        _ = LangfuseSettings()
+        return get_client()
 
     @staticmethod
-    def _get_phoenix_request_config() -> tuple[str, dict[str, str]]:
-        """Resolves the Phoenix base endpoint and authentication headers."""
-        auth_token = PhoenixSettings().AUTH_TOKEN
-        headers = {"authorization": f"Bearer {auth_token.get_secret_value()}"} if auth_token else {}
-        return PhoenixSettings().ENDPOINT, headers
-
-    @staticmethod
-    async def _fetch_datasets_from_phoenix() -> list[PhoenixDataset]:
-        """Fetches the list of all datasets directly from the Phoenix API."""
-        base_url, headers = EvaluationService._get_phoenix_request_config()
-        url = f"{base_url}/v1/datasets"
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(url, headers=headers)
-            response.raise_for_status()
-            response_data = response.json()
-            return [PhoenixDataset(**dataset) for dataset in response_data.get("data", [])]
-
-    @staticmethod
-    async def _fetch_dataset_metadata_from_phoenix(dataset_id: str) -> DatasetWithExampleCount:
-        """
-        Fetches detailed metadata for a specific dataset_id directly from the Phoenix API.
-        # Why direct fetching? The standard phoenix.Client().get_dataset() often returns
-        # minimal information, necessitating direct API calls for richer metadata.
-        """
-        base_url, headers = EvaluationService._get_phoenix_request_config()
-        url = f"{base_url}/v1/datasets/{dataset_id}"
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(url, headers=headers)
-            response.raise_for_status()
-            response_json = response.json()
-            return DatasetWithExampleCount(**response_json.get("data", response_json))
-
-    @staticmethod
-    async def _fetch_experiments_for_dataset_from_phoenix(dataset_id: str) -> list[PhoenixExperiment]:
-        """Fetches all experiments associated with a specific dataset ID."""
-        base_url, headers = EvaluationService._get_phoenix_request_config()
-        url = f"{base_url}/v1/datasets/{dataset_id}/experiments"
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(url, headers=headers)
-            response.raise_for_status()
-            response_data = response.json()
-            return [PhoenixExperiment(**exp) for exp in response_data.get("data", [])]
-
-    @staticmethod
-    async def _fetch_experiment_meta_from_phoenix(experiment_id: str) -> PhoenixExperiment:
-        """Fetches the metadata for a specific experiment ID."""
-        base_url, headers = EvaluationService._get_phoenix_request_config()
-        url = f"{base_url}/v1/experiments/{experiment_id}"
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(url, headers=headers)
-            response.raise_for_status()
-            return PhoenixExperiment(**response.json().get("data"))
-
-    @staticmethod
-    async def _fetch_experiment_json_from_phoenix(experiment_id: str) -> list[dict[str, Any]]:
-        """Fetches the detailed run records (JSON output) for a specific experiment ID."""
-        base_url, headers = EvaluationService._get_phoenix_request_config()
-        url = f"{base_url}/v1/experiments/{experiment_id}/json"
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(url, headers=headers)
-            response.raise_for_status()
-            return response.json()
-
-    @staticmethod
-    def _prepare_dataframe_for_upload(items: list[DatasetItemCreate]) -> DataFrameCreationResult:
-        """
-        Converts DatasetItemCreate DTOs to a Pandas DataFrame.
-        # Why Pandas? The Phoenix client library primarily uses Pandas DataFrames
-        # for dataset uploads and manipulations.
-        """
-        input_keys = [INPUT_KEY_QUESTION]
-        output_keys = [OUTPUT_KEY_ANSWER]
-
+    def _prepare_items_for_upload(items: list[DatasetItemCreate]) -> list[DatasetItemData]:
+        """Converts DatasetItemCreate DTOs to Langfuse-compatible format."""
         if not items:
-            return DataFrameCreationResult(
-                dataframe=pd.DataFrame(columns=input_keys + output_keys), input_keys=input_keys, output_keys=output_keys
+            return []
+
+        return [
+            DatasetItemData(
+                input={INPUT_KEY_QUESTION: item.question},
+                expected_output={OUTPUT_KEY_ANSWER: item.answer},
             )
-
-        df_data = [{INPUT_KEY_QUESTION: item.question, OUTPUT_KEY_ANSWER: item.answer} for item in items]
-        df = pd.DataFrame(df_data)
-
-        # Ensure standard columns exist even if no data is provided.
-        for key in input_keys + output_keys:
-            if key not in df.columns:
-                df[key] = None
-        return DataFrameCreationResult(dataframe=df, input_keys=input_keys, output_keys=output_keys)
+            for item in items
+        ]
 
     @staticmethod
     @trace_fn
     async def create_dataset(create_dto: DatasetCreate) -> Dataset:
-        """Creates a new dataset in Arize Phoenix."""
-        client = EvaluationService._get_phoenix_client()
-        upload_content = EvaluationService._prepare_dataframe_for_upload(create_dto.items)
+        """Creates a new dataset in Langfuse."""
+        client = EvaluationService._get_langfuse_client()
 
-        phoenix_dataset_internal: PhoenixInternalDataset = client.upload_dataset(
-            dataframe=upload_content.dataframe,
-            dataset_name=create_dto.dataset_name,
-            input_keys=upload_content.input_keys,
-            output_keys=upload_content.output_keys,
-            metadata_keys=[],
-            dataset_description=create_dto.description,
+        # Create the dataset
+        langfuse_dataset = client.create_dataset(
+            name=create_dto.dataset_name,
+            description=create_dto.description,
         )
 
-        items_dto = [
-            DatasetItem(
-                id=str(ex_data.id) if ex_data.id else str(ex_id),
-                question=ex_data.input.get(INPUT_KEY_QUESTION, ""),
-                answer=ex_data.output.get(OUTPUT_KEY_ANSWER, ""),
+        # Add items to the dataset
+        items_dto: list[DatasetItem] = []
+        for idx, item in enumerate(create_dto.items):
+            dataset_item = client.create_dataset_item(
+                dataset_name=create_dto.dataset_name,
+                input={INPUT_KEY_QUESTION: item.question},
+                expected_output={OUTPUT_KEY_ANSWER: item.answer},
             )
-            for ex_id, ex_data in (phoenix_dataset_internal.examples or {}).items()
-        ]
+            items_dto.append(
+                DatasetItem(
+                    id=dataset_item.id,
+                    question=item.question,
+                    answer=item.answer,
+                )
+            )
+
+        # Flush to ensure all items are created
+        client.flush()
 
         return Dataset(
-            id=str(phoenix_dataset_internal.id),
+            id=langfuse_dataset.id,
             dataset_name=create_dto.dataset_name,
             description=create_dto.description,
             items=items_dto,
@@ -188,69 +115,92 @@ class EvaluationService:
     @staticmethod
     @trace_fn
     async def update_dataset(dataset_id: str, append_dto: DatasetUpdate) -> Dataset:
-        """Appends new items to an existing dataset in Arize Phoenix."""
-        client = EvaluationService._get_phoenix_client()
-        dataset_meta = await EvaluationService._fetch_dataset_metadata_from_phoenix(dataset_id)
-        append_content = EvaluationService._prepare_dataframe_for_upload(append_dto.items)
+        """Appends new items to an existing dataset in Langfuse."""
+        client = EvaluationService._get_langfuse_client()
 
-        phoenix_dataset_internal: PhoenixInternalDataset = client.append_to_dataset(
-            dataset_name=dataset_meta.name,
-            dataframe=append_content.dataframe,
-            input_keys=append_content.input_keys,
-            output_keys=append_content.output_keys,
-            metadata_keys=[],
-        )
+        # Get the existing dataset
+        dataset = client.get_dataset(dataset_id)
 
-        items_dto = [
-            DatasetItem(
-                id=str(ex_data.id) if ex_data.id else str(ex_id),
-                question=ex_data.input.get(INPUT_KEY_QUESTION, ""),
-                answer=ex_data.output.get(OUTPUT_KEY_ANSWER, ""),
+        # Add new items to the dataset
+        new_items: list[DatasetItem] = []
+        for item in append_dto.items:
+            dataset_item = client.create_dataset_item(
+                dataset_name=dataset.name,
+                input={INPUT_KEY_QUESTION: item.question},
+                expected_output={OUTPUT_KEY_ANSWER: item.answer},
             )
-            for ex_id, ex_data in (phoenix_dataset_internal.examples or {}).items()
-        ]
+            new_items.append(
+                DatasetItem(
+                    id=dataset_item.id,
+                    question=item.question,
+                    answer=item.answer,
+                )
+            )
+
+        # Flush to ensure all items are created
+        client.flush()
+
+        # Fetch all items for the complete dataset
+        all_items: list[DatasetItem] = []
+        for langfuse_item in dataset.items:
+            input_data = langfuse_item.input if isinstance(langfuse_item.input, dict) else {}
+            output_data = langfuse_item.expected_output if isinstance(langfuse_item.expected_output, dict) else {}
+            all_items.append(
+                DatasetItem(
+                    id=langfuse_item.id,
+                    question=input_data.get(INPUT_KEY_QUESTION, ""),
+                    answer=output_data.get(OUTPUT_KEY_ANSWER, ""),
+                )
+            )
+        all_items.extend(new_items)
 
         return Dataset(
-            id=str(phoenix_dataset_internal.id),
-            dataset_name=dataset_meta.name,
-            description=dataset_meta.description,
-            items=items_dto,
-            created_at=dataset_meta.created_at,
+            id=dataset.id,
+            dataset_name=dataset.name,
+            description=dataset.description,
+            items=all_items,
+            created_at=dataset.created_at,
             updated_at=datetime.now(UTC),
         )
 
     @staticmethod
     @trace_fn
     async def get_dataset(dataset_id: str) -> Dataset:
-        """Retrieves detailed information for a specific dataset from Arize Phoenix."""
-        client = EvaluationService._get_phoenix_client()
-        metadata = await EvaluationService._fetch_dataset_metadata_from_phoenix(dataset_id)
-        # Fetch examples separately, as metadata doesn't include them.
-        phoenix_examples_set: PhoenixInternalDataset = client.get_dataset(id=dataset_id)
+        """Retrieves detailed information for a specific dataset from Langfuse."""
+        client = EvaluationService._get_langfuse_client()
+        dataset = client.get_dataset(dataset_id)
 
-        items_dto = [
-            DatasetItem(
-                id=str(ex_data.id) if ex_data.id else str(ex_id),
-                question=ex_data.input.get(INPUT_KEY_QUESTION, ""),
-                answer=ex_data.output.get(OUTPUT_KEY_ANSWER, ""),
+        items_dto: list[DatasetItem] = []
+        for langfuse_item in dataset.items:
+            input_data = langfuse_item.input if isinstance(langfuse_item.input, dict) else {}
+            output_data = langfuse_item.expected_output if isinstance(langfuse_item.expected_output, dict) else {}
+            items_dto.append(
+                DatasetItem(
+                    id=langfuse_item.id,
+                    question=input_data.get(INPUT_KEY_QUESTION, ""),
+                    answer=output_data.get(OUTPUT_KEY_ANSWER, ""),
+                )
             )
-            for ex_id, ex_data in (phoenix_examples_set.examples or {}).items()
-        ]
 
         return Dataset(
-            id=dataset_id,
-            dataset_name=metadata.name,
-            description=metadata.description,
+            id=dataset.id,
+            dataset_name=dataset.name,
+            description=dataset.description,
             items=items_dto,
-            created_at=metadata.created_at,
-            updated_at=metadata.updated_at,
+            created_at=dataset.created_at,
+            updated_at=dataset.updated_at,
         )
 
     @staticmethod
     @trace_fn
     async def get_datasets() -> list[MinimalDataset]:
-        """Retrieves a list of summary information for all datasets from Arize Phoenix."""
-        datasets = await EvaluationService._fetch_datasets_from_phoenix()
+        """Retrieves a list of summary information for all datasets from Langfuse."""
+        client = EvaluationService._get_langfuse_client()
+
+        # Use Langfuse API to get all datasets
+        datasets_response = client.client.datasets.list()
+        datasets = datasets_response.data if hasattr(datasets_response, "data") else []
+
         return [
             MinimalDataset(
                 id=dataset.id,
@@ -265,72 +215,145 @@ class EvaluationService:
     @staticmethod
     @trace_fn
     async def get_experiments(t: LocaleHandler) -> list[MinimalExperiment]:
-        """Retrieves a list of summary information for all experiments from Arize Phoenix."""
-        experiments_list = []
+        """Retrieves a list of summary information for all experiments from Langfuse."""
+        experiments_list: list[MinimalExperiment] = []
+        client = EvaluationService._get_langfuse_client()
+
+        # Get all datasets first
         datasets = await EvaluationService.get_datasets()
 
-        # Phoenix API organizes experiments under datasets,
-        # so we must fetch per-dataset and then aggregate.
+        # Langfuse organizes experiments (dataset runs) under datasets
         for dataset in datasets:
-            phoenix_experiments = await EvaluationService._fetch_experiments_for_dataset_from_phoenix(dataset.id)
-            for experiment in phoenix_experiments:
-                agent_class = experiment.metadata.get("agent_class")
-                agent_id = experiment.metadata.get("agent_id")
-                locale = experiment.metadata.get("locale")
-                agent_dto = AgentService.get_minimal_agent(agent_class, agent_id, t)
-                experiments_list.append(
-                    MinimalExperiment(
-                        id=experiment.id,
-                        name=experiment.metadata.get("experiment_name"),
-                        description=experiment.metadata.get("description"),
-                        locale=locale,
-                        agent=agent_dto,
-                        created_at=experiment.created_at,
-                        dataset=dataset,
+            try:
+                langfuse_dataset = client.get_dataset(dataset.id)
+                # Get runs for this dataset
+                runs = langfuse_dataset.runs if hasattr(langfuse_dataset, "runs") else []
+
+                for run in runs:
+                    metadata = run.metadata if hasattr(run, "metadata") and run.metadata else {}
+                    agent_class = metadata.get("agent_class")
+                    agent_id = metadata.get("agent_id")
+                    locale = metadata.get("locale")
+                    agent_dto = AgentService.get_minimal_agent(agent_class, agent_id, t)
+                    experiments_list.append(
+                        MinimalExperiment(
+                            id=run.id if hasattr(run, "id") else run.name,
+                            name=metadata.get("experiment_name", run.name if hasattr(run, "name") else ""),
+                            description=metadata.get("experiment_description"),
+                            locale=locale,
+                            agent=agent_dto,
+                            created_at=run.created_at if hasattr(run, "created_at") else None,
+                            dataset=dataset,
+                        )
                     )
-                )
+            except Exception as e:
+                logger.warning(f"Failed to fetch experiments for dataset {dataset.id}: {e}")
+                continue
+
         return experiments_list
 
     @staticmethod
     @trace_fn
     async def get_experiment(experiment_id: str, t: LocaleHandler) -> Experiment:
         """Retrieves detailed run results and evaluations for a specific experiment."""
-        experiment_meta = await EvaluationService._fetch_experiment_meta_from_phoenix(experiment_id)
-        dataset = await EvaluationService.get_dataset(experiment_meta.dataset_id)
-        raw_run_records = await EvaluationService._fetch_experiment_json_from_phoenix(experiment_id)
+        client = EvaluationService._get_langfuse_client()
 
+        # Find the experiment (dataset run) across all datasets
+        datasets = await EvaluationService.get_datasets()
+
+        experiment_run = None
+        parent_dataset = None
+
+        for dataset_meta in datasets:
+            try:
+                langfuse_dataset = client.get_dataset(dataset_meta.id)
+                runs = langfuse_dataset.runs if hasattr(langfuse_dataset, "runs") else []
+
+                for run in runs:
+                    run_id = run.id if hasattr(run, "id") else run.name
+                    if run_id == experiment_id or (hasattr(run, "name") and run.name == experiment_id):
+                        experiment_run = run
+                        parent_dataset = dataset_meta
+                        break
+
+                if experiment_run:
+                    break
+            except Exception:
+                continue
+
+        if not experiment_run or not parent_dataset:
+            raise ValueError(f"Experiment ID '{experiment_id}' not found in Langfuse.")
+
+        # Fetch the full dataset with items
+        dataset = await EvaluationService.get_dataset(parent_dataset.id)
+
+        # Get run items and scores from Langfuse
         all_run_records: list[ExperimentRunRecord] = []
         eval_runs_for_summary: list[dict[str, Any]] = []
 
-        # The JSON output provides the richest data, including all
-        # annotations and I/O, requiring manual processing to fit our DTOs.
-        for record in raw_run_records:
-            annotations = record.get("annotations", [])
-            conciseness = next((a for a in annotations if a.get("name") == "Conciseness"), None)
-            correctness = next((a for a in annotations if a.get("name") == "Correctness"), None)
-            completeness = next((a for a in annotations if a.get("name") == "Completeness"), None)
+        # Access run items
+        run_items = experiment_run.dataset_run_items if hasattr(experiment_run, "dataset_run_items") else []
+
+        for run_item in run_items:
+            # Extract evaluation scores from the trace
+            scores = run_item.scores if hasattr(run_item, "scores") else []
+            conciseness_score = None
+            correctness_score = None
+            completeness_score = None
+
+            for score in scores:
+                score_name = score.name if hasattr(score, "name") else ""
+                score_value = score.value if hasattr(score, "value") else None
+                score_comment = score.comment if hasattr(score, "comment") else None
+
+                eval_data = EvaluationData(
+                    name=score_name,
+                    score=score_value,
+                    label=score_comment,
+                )
+
+                if score_name.lower() == "conciseness":
+                    conciseness_score = eval_data
+                elif score_name.lower() == "correctness":
+                    correctness_score = eval_data
+                elif score_name.lower() == "completeness":
+                    completeness_score = eval_data
+
+                eval_runs_for_summary.append({"name": score_name, "score": score_value, "error": None})
+
+            # Get item input/output
+            dataset_item = run_item.dataset_item if hasattr(run_item, "dataset_item") else None
+            input_data = dataset_item.input if dataset_item and hasattr(dataset_item, "input") else {}
+            expected_output = (
+                dataset_item.expected_output if dataset_item and hasattr(dataset_item, "expected_output") else {}
+            )
+            output_data = run_item.output if hasattr(run_item, "output") else {}
 
             all_run_records.append(
                 ExperimentRunRecord(
-                    example_id=record.get("example_id"),
-                    question=record.get("input", {}).get(INPUT_KEY_QUESTION),
-                    reference_answer=record.get("reference_output", {}).get(OUTPUT_KEY_ANSWER),
-                    assistant_answer=record.get("output", {}).get("agent_response"),
-                    thread_id=record.get("output", {}).get("thread_id"),
-                    display_id=record.get("output", {}).get("display_id"),
-                    error=record.get("error"),
-                    latency_ms=record.get("latency_ms"),
-                    start_time=datetime.fromisoformat(st) if (st := record.get("start_time")) else None,
-                    end_time=datetime.fromisoformat(et) if (et := record.get("end_time")) else None,
-                    conciseness=EvaluationData(**conciseness) if conciseness else None,
-                    correctness=EvaluationData(**correctness) if correctness else None,
-                    completeness=EvaluationData(**completeness) if completeness else None,
+                    example_id=run_item.id if hasattr(run_item, "id") else None,
+                    question=input_data.get(INPUT_KEY_QUESTION) if isinstance(input_data, dict) else None,
+                    reference_answer=(
+                        expected_output.get(OUTPUT_KEY_ANSWER) if isinstance(expected_output, dict) else None
+                    ),
+                    assistant_answer=(
+                        output_data
+                        if isinstance(output_data, str)
+                        else output_data.get("agent_response") if isinstance(output_data, dict) else None
+                    ),
+                    thread_id=output_data.get("thread_id") if isinstance(output_data, dict) else None,
+                    display_id=output_data.get("display_id") if isinstance(output_data, dict) else None,
+                    error=run_item.error if hasattr(run_item, "error") else None,
+                    latency_ms=run_item.latency if hasattr(run_item, "latency") else None,
+                    start_time=run_item.start_time if hasattr(run_item, "start_time") else None,
+                    end_time=run_item.end_time if hasattr(run_item, "end_time") else None,
+                    conciseness=conciseness_score,
+                    correctness=correctness_score,
+                    completeness=completeness_score,
                 )
             )
-            eval_runs_for_summary.extend(annotations)
 
-        # Calculate summary statistics for each evaluator.
-        # Only create a summary if there are valid scores to average.
+        # Calculate summary statistics for each evaluator
         eval_summary: dict[str, EvaluationSummaryData] = {}
         evaluator_names = set(e.get("name") for e in eval_runs_for_summary if e.get("name"))
 
@@ -344,16 +367,17 @@ class EvaluationService:
                     avg_score=sum(scores) / len(scores),
                 )
 
-        agent_class = experiment_meta.metadata.get("agent_class")
-        agent_id = experiment_meta.metadata.get("agent_id")
-        locale = experiment_meta.metadata.get("locale")
+        metadata = experiment_run.metadata if hasattr(experiment_run, "metadata") and experiment_run.metadata else {}
+        agent_class = metadata.get("agent_class")
+        agent_id = metadata.get("agent_id")
+        locale = metadata.get("locale")
         agent_dto = AgentService.get_minimal_agent(agent_class, agent_id, t)
 
         return Experiment(
             id=experiment_id,
-            name=experiment_meta.metadata.get("experiment_name"),
-            description=experiment_meta.metadata.get("experiment_description"),
-            created_at=experiment_meta.created_at,
+            name=metadata.get("experiment_name", experiment_id),
+            description=metadata.get("experiment_description"),
+            created_at=experiment_run.created_at if hasattr(experiment_run, "created_at") else None,
             agent=agent_dto,
             locale=locale,
             dataset=dataset,
@@ -373,8 +397,8 @@ class EvaluationService:
         authenticated_user: UserIdentity,
         t: LocaleHandler,
     ) -> Experiment:
-        """Runs a new evaluation experiment using the PhoenixExperimentEvaluator."""
-        evaluator = PhoenixExperimentEvaluator(
+        """Runs a new evaluation experiment using the LangfuseExperimentEvaluator."""
+        evaluator = LangfuseExperimentEvaluator(
             nats_client=nats_client,
             external_agent_event_distributor=external_agent_event_distributor,
             judge=judge,
@@ -382,7 +406,7 @@ class EvaluationService:
             t=t,
         )
 
-        ran_experiment: RanExperiment = await evaluator.run_evaluation_experiment(
+        experiment_result = await evaluator.run_evaluation_experiment(
             agent_class=create_dto.agent_class,
             agent_id=create_dto.agent_id,
             dataset_id=create_dto.dataset_id,
@@ -391,6 +415,5 @@ class EvaluationService:
             experiment_metadata=create_dto.experiment_metadata,
         )
 
-        # After running, fetch the detailed results using our existing method.
-        # RanExperiment is a TypedDict, so access via dict syntax
-        return await EvaluationService.get_experiment(ran_experiment["experiment_id"], t)
+        # After running, fetch the detailed results using our existing method
+        return await EvaluationService.get_experiment(experiment_result["experiment_id"], t)
