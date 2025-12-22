@@ -1,21 +1,21 @@
+from typing import Any
+
 import pytest
 from fastapi import HTTPException, Request
-from fastapi.security import HTTPBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 # --- Dummy authentication handler implementations ---
 
 
-class DummySuccessAuth(AuthHandler):
-    async def __call__(self, *args, **kwargs) -> UserIdentity:
+class DummySuccessAuth:
+    async def __call__(
+        self, request: Request, bearer_token: HTTPAuthorizationCredentials | None = None
+    ) -> UserIdentity:
         """Return a successful authenticated user."""
         return await self.authenticate_token("dummy_token")
 
@@ -29,12 +29,14 @@ class DummySuccessAuth(AuthHandler):
         )
 
 
-class DummyFailureAuth(AuthHandler):
-    def __init__(self, detail: str, status_code: int = 401):
+class DummyFailureAuth:
+    def __init__(self, detail: str, status_code: int = 401) -> None:
         self.detail = detail
         self.status_code = status_code
 
-    async def __call__(self, *args, **kwargs) -> UserIdentity:
+    async def __call__(
+        self, request: Request, bearer_token: HTTPAuthorizationCredentials | None = None
+    ) -> UserIdentity:
         """Raise HTTPException with a 401 error."""
         raise HTTPException(status_code=self.status_code, detail=self.detail)
 
@@ -43,11 +45,13 @@ class DummyFailureAuth(AuthHandler):
         raise HTTPException(status_code=self.status_code, detail=self.detail)
 
 
-class DummyFailureNon401(AuthHandler):
-    def __init__(self, detail: str):
+class DummyFailureNon401:
+    def __init__(self, detail: str) -> None:
         self.detail = detail
 
-    async def __call__(self, *args, **kwargs) -> UserIdentity:
+    async def __call__(
+        self, request: Request, bearer_token: HTTPAuthorizationCredentials | None = None
+    ) -> UserIdentity:
         """Raise HTTPException with a non-401 error."""
         raise HTTPException(status_code=500, detail=self.detail)
 
@@ -60,13 +64,13 @@ class DummyFailureNon401(AuthHandler):
 
 
 @pytest.fixture
-def multi_auth_result() -> dict:
+def multi_auth_result() -> dict[str, Any]:
     """Container for storing the multi auth handler result."""
     return {}
 
 
 @pytest.fixture
-def multi_auth_error() -> dict:
+def multi_auth_error() -> dict[str, Any]:
     """Container for storing the multi auth handler error."""
     return {}
 
@@ -74,7 +78,7 @@ def multi_auth_error() -> dict:
 @pytest.fixture
 def dummy_request() -> Request:
     """Create and return a dummy Request object."""
-    scope = {"type": "http", "headers": [], "method": "GET", "path": "/"}
+    scope: dict[str, Any] = {"type": "http", "headers": [], "method": "GET", "path": "/"}
     return Request(scope)
 
 
@@ -91,7 +95,7 @@ scenarios("features/token_and_oauth2_handler.feature")
     parsers.parse('an OAuth2 configuration with client_id "{client_id}", and authority_url "{authority_url}"'),
     target_fixture="oauth2_config",
 )
-def oauth2_config(monkeypatch, client_id: str, authority_url: str) -> OAuth2Settings:
+def oauth2_config(monkeypatch: pytest.MonkeyPatch, client_id: str, authority_url: str) -> OAuth2Settings:
     """Set the OAuth2 configuration environment variables."""
     monkeypatch.setenv("OAUTH_CLIENT_ID", client_id)
     monkeypatch.setenv("OAUTH_AUTHORITY_URL", authority_url)
@@ -99,18 +103,18 @@ def oauth2_config(monkeypatch, client_id: str, authority_url: str) -> OAuth2Sett
 
 
 @given(parsers.parse("a multi auth handler composed of:"), target_fixture="multi_auth_instance")
-def given_multi_auth_handler(datatable: list[list[str]]) -> "TokenAndOauth2Handler":  # noqa: F821
+def given_multi_auth_handler(datatable: list[list[str]]) -> "TokenAndOauth2Handler":  # type: ignore[name-defined] # noqa: F821
     from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
 
     """Build a MultiAuthHandler from the provided table."""
     headers = datatable[0]
-    handlers: list[AuthHandler] = []
+    handlers: list[DummySuccessAuth | DummyFailureAuth | DummyFailureNon401] = []
     for row in datatable[1:]:
-        row_data = dict(zip(headers, row))
+        row_data = dict(zip(headers, row, strict=False))
         behavior = row_data["behavior"].strip().lower()
         detail = row_data["detail"].strip() if row_data["detail"] else ""
         if behavior == "success":
-            handlers.append(DummySuccessAuth(identity_provider=DangerousDevelopmentOnlyIdentityProvider()))
+            handlers.append(DummySuccessAuth())
         elif behavior == "failure_401":
             handlers.append(DummyFailureAuth(detail=detail, status_code=401))
         elif behavior == "failure_non_401":
@@ -124,10 +128,10 @@ def given_multi_auth_handler(datatable: list[list[str]]) -> "TokenAndOauth2Handl
 @when("I invoke the multi auth handler")
 @async_test
 async def invoke_multi_auth(
-    multi_auth_instance: "TokenAndOauth2Handler",  # noqa: F821
-    multi_auth_result: dict,
-    dummy_request: Request,  # noqa: F821
-):
+    multi_auth_instance: "TokenAndOauth2Handler",  # type: ignore[name-defined] # noqa: F821
+    multi_auth_result: dict[str, Any],
+    dummy_request: Request,
+) -> None:
     """Invoke the multi auth handler and store the returned user."""
     try:
         bearer_security = await HTTPBearer(auto_error=False)(dummy_request)
@@ -142,7 +146,7 @@ async def invoke_multi_auth(
 
 
 @then(parsers.parse('the returned user should have name "{expected_name}"'))
-def check_multi_auth_user_name(multi_auth_result: dict, expected_name: str):
+def check_multi_auth_user_name(multi_auth_result: dict[str, Any], expected_name: str) -> None:
     """Check that the returned user has the expected name."""
     user = multi_auth_result.get("user")
     assert user is not None, "No user was returned"
