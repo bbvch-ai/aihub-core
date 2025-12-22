@@ -38,8 +38,29 @@ class AccessChecker:
         return self.valid_access_rules
 
     @classmethod
-    def from_user(cls, user: UserIdentity):
-        user_access_rules = RoleEntity.get_access_rules_for_roles(user.roles)
+    def from_user(cls, user: UserIdentity, tenant_id: str | None = None):
+        """
+        Creates an AccessChecker from a user's roles.
+
+        In single-tenant mode (tenant_id is None), uses the roles from user.roles
+        which are cached from the default tenant. In multi-tenant mode, pass the
+        tenant_id to resolve roles with tenant-specific access rules.
+        """
+        user_access_rules = RoleEntity.get_access_rules_for_roles(user.roles, tenant_id=tenant_id)
+        return cls(user_access_rules=list(user_access_rules))
+
+    @classmethod
+    def from_user_in_tenant(cls, user_id: str, tenant_id: str):
+        """
+        Creates an AccessChecker for a user in a specific tenant.
+
+        This resolves roles directly from the UserTenantRoleEntity, ensuring
+        accurate role information for multi-tenant scenarios.
+        """
+        from aihub_lib.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
+
+        roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant_id)
+        user_access_rules = RoleEntity.get_access_rules_for_roles(roles, tenant_id=tenant_id)
         return cls(user_access_rules=list(user_access_rules))
 
     @staticmethod

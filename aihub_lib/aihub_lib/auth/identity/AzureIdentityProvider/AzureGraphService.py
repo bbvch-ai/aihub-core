@@ -225,17 +225,17 @@ class AzureGraphService:
     async def get_user_identity_by_oid(self, user_oid: str) -> UserIdentity:
         """
         The primary method to build a complete UserIdentity object.
-        It composes user profile, roles, and image from other methods.
-        This is the preferred entry point for getting a user's full context.
-        """
-        logger.info(f"Building full UserIdentity for OID {user_oid} in context of app {self.client_id}.")
 
-        # Concurrently fetch all pieces of information
+        Fetches user profile and image from Microsoft Graph. Roles are NOT fetched
+        from the identity provider - they are managed locally in the platform's
+        multi-tenant role system.
+        """
+        logger.info(f"Building UserIdentity for OID {user_oid} (roles managed locally).")
+
         profile_task = self._get_user_profile(user_oid)
-        roles_task = self.get_user_roles(user_oid)
         image_task = self.get_user_profile_image_data_url(user_oid)
 
-        user_profile, user_roles, profile_image = await asyncio.gather(profile_task, roles_task, image_task)
+        user_profile, profile_image = await asyncio.gather(profile_task, image_task)
 
         if not user_profile:
             raise ValueError(f"Could not construct UserIdentity, profile not found for OID {user_oid}.")
@@ -244,7 +244,7 @@ class AzureGraphService:
             id=user_oid,
             name=user_profile.get("displayName"),
             email=user_profile.get("mail") or user_profile.get("userPrincipalName"),
-            roles=user_roles,
+            roles=[],
             profile_image=profile_image,
         )
 

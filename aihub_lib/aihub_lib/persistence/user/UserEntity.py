@@ -1,3 +1,4 @@
+import logging
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -14,6 +15,8 @@ from mongoengine import (
 )
 
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+
+logger = logging.getLogger(__name__)
 
 
 class DashboardItem(EmbeddedDocument):
@@ -157,3 +160,87 @@ class UserEntity(Document):
     def get_paginated_users(cls, skip: int = 0, limit: int = 20) -> list["UserEntity"]:
         """Get a paginated list of users, ordered by name."""
         return cls.objects.order_by("name").skip(skip).limit(limit)
+
+    @classmethod
+    @trace_fn
+    def ensure_user_exists_for_auth(
+        cls,
+        oid: str,
+        name: str,
+        email: str,
+        profile_image: str | None = None,
+    ) -> "UserEntity":
+        """
+        Ensures a user exists during authentication, with proper tenant assignment.
+
+        For existing users: Updates profile info (name, email, image) without modifying roles.
+        For new users: Creates the user and assigns them to the default tenant with
+        appropriate roles (admin roles for first user, standard roles for others).
+
+        The roles field is synced from UserTenantRoleEntity for the default tenant.
+        """
+        from aihub_lib.infrastructure.api.TenantSettings import TenantSettings
+        from aihub_lib.persistence.access.entities.TenantEntity import TenantEntity
+        from aihub_lib.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
+
+        try:
+            user = cls.objects.get(id=oid)
+            user.name = name
+            user.email = email
+            user.profile_image = profile_image
+            user.last_updated = datetime.now(UTC)
+            user.save()
+            logger.info(f"Updated existing user: {email}")
+            return user
+        except DoesNotExist:
+            pass
+
+        settings = TenantSettings()
+        default_tenant = TenantEntity.get_default_tenant()
+
+        if not default_tenant:
+            logger.warning("Default tenant not found. User will be created without tenant assignment.")
+            return cls.create_user(oid=oid, name=name, email=email, roles=[], profile_image=profile_image)
+
+        is_first_user = cls.count_users() == 0
+        if is_first_user:
+            roles_to_assign = settings.first_user_signup_default_roles_list
+            logger.info(f"First user signup, assigning admin roles: {roles_to_assign}")
+        else:
+            roles_to_assign = settings.user_signup_default_roles_list
+            logger.info(f"Regular user signup, assigning default roles: {roles_to_assign}")
+
+        user = cls.create_user(
+            oid=oid,
+            name=name,
+            email=email,
+            roles=roles_to_assign,
+            profile_image=profile_image,
+        )
+
+        UserTenantRoleEntity.create_or_update(
+            user_id=oid,
+            tenant_id=default_tenant.id,
+            roles=roles_to_assign,
+        )
+
+        logger.info(f"Created new user {email} in tenant {default_tenant.name} with roles: {roles_to_assign}")
+        return user
+
+    @classmethod
+    @trace_fn
+    def sync_roles_from_tenant(cls, user_oid: str, tenant_id: str) -> "UserEntity":
+        """
+        Syncs the user's roles field from the UserTenantRoleEntity for a given tenant.
+
+        This updates the cached roles on UserEntity to match the authoritative
+        roles stored in UserTenantRoleEntity.
+        """
+        from aihub_lib.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
+
+        user = cls.objects.get(id=user_oid)
+        roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_oid, tenant_id)
+        user.roles = roles
+        user.last_updated = datetime.now(UTC)
+        user.save()
+        return user
