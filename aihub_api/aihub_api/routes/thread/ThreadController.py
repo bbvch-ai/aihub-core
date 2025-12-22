@@ -6,6 +6,7 @@ from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
+from aihub_lib.persistence.user.UserEntity import UserEntity
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Path, Security
 
@@ -91,8 +92,8 @@ class ThreadController(Controller):
                 create_request_dto.user_ids.append(user.id)
 
             for user_id in create_request_dto.user_ids:
-                user_roles = await self.auth.identity_provider.get_user_roles(user_id)
-                access_rules = RoleEntity.get_access_rules_for_roles(user_roles)
+                thread_user = UserEntity.by_oid(user_id)
+                access_rules = RoleEntity.get_access_rules_for_roles(thread_user.roles)
                 access = AccessChecker(list(access_rules))
                 for agent in create_request_dto.agents:
                     if not access.has_access_to_agent(agent.agent_class, agent.agent_id):
@@ -154,8 +155,8 @@ class ThreadController(Controller):
                 raise self.not_authorized_to_modify_exception
 
             for thread_user in thread.users:
-                user_roles = await self.auth.identity_provider.get_user_roles(thread_user.id)
-                access_rules = RoleEntity.get_access_rules_for_roles(user_roles)
+                user_entity = UserEntity.by_oid(thread_user.id)
+                access_rules = RoleEntity.get_access_rules_for_roles(user_entity.roles)
                 access = AccessChecker(list(access_rules))
                 if not access.has_access_to_agent(req.agent_class, req.agent_id):
                     raise HTTPException(
@@ -230,8 +231,8 @@ class ThreadController(Controller):
             if user.id not in [u.id for u in thread.users]:
                 raise self.not_authorized_to_modify_exception
 
-            user_to_add_roles = await self.auth.identity_provider.get_user_roles(add_user_dto.user_id)
-            access_rules = RoleEntity.get_access_rules_for_roles(user_to_add_roles)
+            user_to_add = UserEntity.by_oid(add_user_dto.user_id)
+            access_rules = RoleEntity.get_access_rules_for_roles(user_to_add.roles)
             for agent in thread.agents:
                 if not AccessChecker(list(access_rules)).has_access_to_agent(agent.agent_class, agent.agent_id):
                     raise HTTPException(

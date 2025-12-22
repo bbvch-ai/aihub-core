@@ -4,9 +4,6 @@ from os.path import abspath, dirname, join
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.routes.health.HealthController import HealthController
 
@@ -20,7 +17,7 @@ enable_logging()
 async def main():
     runner = SimulatedAgentBotTestRunner(agent_class="my_agent_class", agent_id="my_agent_id")
     runner.with_simple_chunk_events()
-    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    auth = DangerousDevelopmentOnlyAuthHandler()
 
     runner.mount(
         HealthController(auth=auth).get_health(),

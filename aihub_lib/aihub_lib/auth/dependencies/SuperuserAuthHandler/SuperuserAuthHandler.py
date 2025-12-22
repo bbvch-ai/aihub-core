@@ -3,16 +3,18 @@ import logging
 from fastapi import HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from aihub_lib.auth.dependencies.BearerAuthHandler import BearerAuthHandler
 from aihub_lib.auth.dependencies.SuperuserAuthHandler.SuperuserSettings import SuperuserSettings
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 
 logger = logging.getLogger(__name__)
 
 
-class SuperuserAuthHandler(BearerAuthHandler):
+class SuperuserAuthHandler:
     """
-    A FastAPI dependency that checks whether the accessor is the global ai-hub superuser.
+    A FastAPI dependency for superuser authentication.
+
+    Validates that the token matches the configured superuser token
+    and returns the superuser identity from configuration.
     """
 
     async def __call__(
@@ -22,14 +24,12 @@ class SuperuserAuthHandler(BearerAuthHandler):
         return await self.authenticate_token(token_str)
 
     async def authenticate_token(self, token_str: str) -> UserIdentity:
-        """
-        Authenticates a user using a bearer token string directly.
-        Used for WebSocket authentication.
-        """
+        """Authenticates the superuser using the configured token."""
         if not token_str:
             raise HTTPException(status_code=401, detail="Token missing.")
 
-        if token_str != SuperuserSettings().TOKEN.get_secret_value():
+        settings = SuperuserSettings()
+        if token_str != settings.TOKEN.get_secret_value():
             raise HTTPException(status_code=401, detail="Invalid token.")
 
-        return await self._identity_provider.get_user_identity_by_oid(SuperuserSettings().OID)
+        return settings.get_user_identity()

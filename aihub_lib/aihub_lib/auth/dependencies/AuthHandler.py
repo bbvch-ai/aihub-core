@@ -2,17 +2,15 @@ from abc import ABC, abstractmethod
 
 from fastapi import Request
 
-from aihub_lib.auth.identity.IdentityProvider import IdentityProvider
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 
 
 class AuthHandler(ABC):
-    def __init__(self, identity_provider: IdentityProvider):
-        self._identity_provider = identity_provider
+    """
+    Base class for authentication handlers.
 
-    @property
-    def identity_provider(self) -> IdentityProvider:
-        return self._identity_provider
+    Authentication handlers validate credentials and return user identities.
+    """
 
     @abstractmethod
     async def __call__(self, request: Request) -> UserIdentity:

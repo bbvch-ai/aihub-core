@@ -1,9 +1,6 @@
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.routes.health.HealthController import HealthController
 
@@ -20,7 +17,7 @@ runner = BotRunner()
 # stored in the database (RoutesService.get_adapter).
 # DangerousDevelopmentOnlyAuthHandler is used here as a placeholder since bot endpoints are not directly accessible -
 # they only process authenticated Bot Framework activities.
-auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+auth = DangerousDevelopmentOnlyAuthHandler()
 
 runner.mount(
     HealthController(auth=auth).get_health(),

@@ -13,7 +13,7 @@ def mock_role_entity_methods():
     Mock RoleEntity methods to ensure the 'TestOnlyFullAdminAccess' role is recognized during tests.
 
     This fixture addresses the issue where tests fail because the 'TestOnlyFullAdminAccess' role
-    (used by DangerousDevelopmentOnlyIdentityProvider) is not in the RoleEntity database.
+    (used by DangerousDevelopmentOnlyAuthHandler) is not in the RoleEntity database.
     """
     original_filter_existing_roles = RoleEntity.filter_existing_roles
     original_get_access_rules_for_roles = RoleEntity.get_access_rules_for_roles

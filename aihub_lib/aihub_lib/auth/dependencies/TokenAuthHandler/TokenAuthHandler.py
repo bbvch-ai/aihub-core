@@ -2,27 +2,21 @@ import logging
 
 from fastapi import HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from mongoengine import DoesNotExist
 
-from aihub_lib.auth.dependencies.BearerAuthHandler import BearerAuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
+from aihub_lib.persistence.user.UserEntity import UserEntity
 
 logger = logging.getLogger(__name__)
 
 
-class TokenAuthHandler(BearerAuthHandler):
+class TokenAuthHandler:
     """
-    A FastAPI dependency that implements token-based authentication.
+    A FastAPI dependency for token-based authentication.
 
-    This dependency expects a Bearer token in the `Authorization` header of the incoming request.
-    It performs the following steps:
-      1. Extracts the token from the header.
-      2. Validates the token by performing a database lookup via `AccessToken.verify_token`.
-      3. Checks that the token is correctly formatted, exists in the database, and is not expired.
-      4. Maps the token's stored API user data onto an `UserIdentity` instance.
-
-    If any of these checks fail (e.g., if the token is missing, malformed, not found, or expired),
-    an `HTTPException` with a 401 Unauthorized status is raised.
+    Validates bearer tokens from the database and returns user identity
+    directly from UserEntity.
     """
 
     async def __call__(
@@ -32,10 +26,7 @@ class TokenAuthHandler(BearerAuthHandler):
         return await self.authenticate_token(token_str)
 
     async def authenticate_token(self, token_str: str) -> UserIdentity:
-        """
-        Authenticates a user using a bearer token string directly.
-        Used for WebSocket authentication.
-        """
+        """Authenticates a user using a bearer token string."""
         if not token_str:
             raise HTTPException(status_code=401, detail="Token missing.")
 
@@ -45,4 +36,15 @@ class TokenAuthHandler(BearerAuthHandler):
             logger.warning(f"Token authentication failed: {e}")
             raise HTTPException(status_code=401, detail=str(e))
 
-        return await self._identity_provider.get_user_identity_by_oid(access_token.user_oid)
+        try:
+            user = UserEntity.by_oid(access_token.user_oid)
+        except DoesNotExist:
+            raise HTTPException(status_code=401, detail="User not found.")
+
+        return UserIdentity(
+            id=user.id,
+            name=user.name,
+            email=user.email,
+            roles=user.roles,
+            profile_image=user.profile_image,
+        )
