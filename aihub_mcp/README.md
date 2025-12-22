@@ -25,12 +25,21 @@ make run
 Set environment variables or use `.env`:
 
 ```bash
-MCP_HOST=0.0.0.0
+# Server binding (default 127.0.0.1 for security; use 0.0.0.0 for network access)
+MCP_HOST=127.0.0.1
 MCP_PORT=8001
 MCP_PATH=/mcp
 MCP_TRANSPORT=http
+
+# Authentication (required in production when DEBUG=False)
 MCP_API_KEY=your-api-key
-NATS_URL=nats://localhost:4222
+MCP_REQUIRE_AUTH=true
+
+# Optional settings
+MCP_DEBUG=false
+MCP_NATS_URL=nats://localhost:4222
+MCP_RATE_LIMIT_REQUESTS_PER_MINUTE=60
+MCP_MASK_SENSITIVE_DATA=true
 ```
 
 ## MCP Client Configuration

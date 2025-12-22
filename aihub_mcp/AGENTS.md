@@ -95,12 +95,26 @@ sampling_response = await ctx.sample(
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `MCP_HOST` | Server host | `0.0.0.0` |
+| `MCP_HOST` | Server host (use `0.0.0.0` for network access) | `127.0.0.1` |
 | `MCP_PORT` | Server port | `8001` |
 | `MCP_PATH` | Endpoint path | `/mcp` |
 | `MCP_TRANSPORT` | Transport type (`http`, `sse`) | `http` |
-| `MCP_API_KEY` | API key for authentication | Required |
-| `NATS_URL` | NATS server URL | `nats://localhost:4222` |
+| `MCP_DEBUG` | Enable debug mode | `false` |
+| `MCP_API_KEY` | API key for authentication | Required in production |
+| `MCP_API_KEYS` | Additional API keys (comma-separated) | `[]` |
+| `MCP_REQUIRE_AUTH` | Require authentication | `true` |
+| `MCP_RATE_LIMIT_REQUESTS_PER_MINUTE` | Rate limit (0 to disable) | `60` |
+| `MCP_MASK_SENSITIVE_DATA` | Mask sensitive data in logs | `true` |
+| `MCP_AGENT_TIMEOUT_SECONDS` | Agent execution timeout | `300.0` |
+| `MCP_NATS_URL` | NATS server URL | `nats://localhost:4222` |
+| `MCP_TRACING_ENABLED` | Enable OpenTelemetry tracing | `true` |
+
+### Security Notes
+
+- **Production Mode**: When `MCP_DEBUG=false` (default), API keys are required unless `MCP_REQUIRE_AUTH=false`
+- **Network Access**: Default host is `127.0.0.1` (localhost only). Set to `0.0.0.0` for external access, but ensure authentication is configured
+- **Rate Limiting**: Enabled by default at 60 requests/minute per client
+- **Data Masking**: Sensitive data (API keys, passwords, emails, etc.) is automatically masked in logs
 
 ## Running the Server
 
