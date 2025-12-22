@@ -1,0 +1,86 @@
+[tool.poetry]
+name = "aihub_mcp"
+version = "v0.256.6"
+description = "Full-featured MCP server bridging Swiss AI Agent Protocol with Model Context Protocol"
+authors = [
+    "Joel Barmettler <joel.barmettler@bbv.ch>",
+    "Marius Högger <marius.hoegger@bbv.ch>",
+    "Michèle Fundneider <michele.fundneider@bbv.ch>",
+    "Thomas Mannhart <thomas.mannhart@bbv.ch>",
+    "Noah Hermann <noah.hermann@bbv.ch>",
+]
+license = "Proprietary"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.13, <3.14"
+fastmcp = "^2.11.2"
+nats-py = "^2.9.0"
+pydantic = "^2.10.3"
+pydantic-settings = "^2.7.0"
+opentelemetry-api = "^1.32.1"
+opentelemetry-sdk = "^1.32.1"
+opentelemetry-exporter-otlp = "^1.32.1"
+colorlog = "^6.9.0"
+
+[tool.poetry.dependencies.aihub_lib]
+git = "https://github.com/bbvch-ai/aihub-core.git"
+tag = "v0.256.6"
+subdirectory = "aihub_lib"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.4.1"
+pytest-asyncio = "^0.24.0"
+ruff = "^0.8.1"
+mypy = "^1.13.0"
+toml-sort = "^0.24.2"
+black = { extras = ["jupyter"], version = "^25.1.0" }
+pytest-cov = "^6.0.0"
+pip-licenses = "^5.0.0"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 120
+target-version = 'py313'
+
+[tool.ruff.lint]
+select = ["E", "F", "UP", "I"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_any_generics = true
+check_untyped_defs = true
+no_implicit_reexport = true
+plugins = ['pydantic.mypy']
+
+[tool.black]
+line-length = 120
+target-version = ['py313']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: mark a test as slow",
+    "integration: mark a test as an integration test",
+]
+addopts = "--strict-markers"
+pythonpath = ["."]

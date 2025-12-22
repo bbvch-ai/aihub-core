@@ -1,0 +1,66 @@
+# aihub_mcp
+
+Full-featured MCP (Model Context Protocol) server for Swiss AI Hub, bridging the Swiss AI Agent Protocol with MCP.
+
+## Features
+
+- **Agents as MCP Tools**: Each registered agent is exposed as an MCP tool with dynamically generated schemas
+- **Human-in-the-Loop via Elicitation**: HITL requests translate seamlessly to MCP elicitation
+- **LLM Sampling**: Agents can request completions from the MCP client's LLM
+- **Progress Streaming**: Real-time streaming of agent thoughts and output chunks
+- **Dual Transport**: Streamable HTTP (recommended) and SSE for backward compatibility
+
+## Quick Start
+
+```bash
+# Install dependencies
+poetry install
+
+# Run the MCP server
+make run
+```
+
+## Configuration
+
+Set environment variables or use `.env`:
+
+```bash
+MCP_HOST=0.0.0.0
+MCP_PORT=8001
+MCP_PATH=/mcp
+MCP_TRANSPORT=http
+MCP_API_KEY=your-api-key
+NATS_URL=nats://localhost:4222
+```
+
+## MCP Client Configuration
+
+Add to your MCP client's configuration (e.g., Claude Code `.mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "aihub_agents": {
+      "type": "http",
+      "url": "http://localhost:8001/mcp"
+    }
+  }
+}
+```
+
+## Development
+
+```bash
+# Format and lint
+make pr-ready
+
+# Run tests
+make test
+
+# Run with coverage
+make test-cov
+```
+
+## Architecture
+
+See [AGENTS.md](./AGENTS.md) for detailed architecture documentation.
