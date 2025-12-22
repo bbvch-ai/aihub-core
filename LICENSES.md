@@ -63,7 +63,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | aiohttp                                      | 3.13.2            | Apache-2.0 AND MIT                                |       |
 | ✅     | cryptography                                 | 46.0.3            | Apache-2.0 OR BSD-3-Clause                        |       |
 | ✅     | orjson                                       | 3.11.4            | Apache-2.0 OR MIT                                 |       |
-| ✅     | arize-phoenix-otel                           | 0.13.1            | Apache-2.0                                        |       |
+| ✅     | langfuse                                     | 3.0.0             | MIT License                                       |       |
 | ✅     | boto3                                        | 1.40.66           | Apache-2.0                                        |       |
 | ✅     | botocore                                     | 1.40.66           | Apache-2.0                                        |       |
 | ✅     | coverage                                     | 7.11.0            | Apache-2.0                                        |       |
@@ -138,9 +138,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | scikit-learn                                 | 1.7.2             | BSD-3-Clause (override)                           |       |
 | ✅     | starlette                                    | 0.46.2            | BSD-3-Clause                                      |       |
 | ✅     | uvicorn                                      | 0.38.0            | BSD-3-Clause                                      |       |
-| ✅     | arize-phoenix                                | 10.15.0           | Elastic-2.0                                       |       |
-| ✅     | arize-phoenix-client                         | 1.21.0            | Elastic-2.0                                       |       |
-| ✅     | arize-phoenix-evals                          | 2.5.0             | Elastic-2.0                                       |       |
 | ✅     | dnspython                                    | 2.8.0             | ISC License (ISCL)                                |       |
 | ✅     | pexpect                                      | 4.9.0             | ISC License (ISCL)                                |       |
 | ✅     | ptyprocess                                   | 0.7.0             | ISC License (ISCL)                                |       |
@@ -499,7 +496,9 @@ This document contains license information for all dependencies across the monor
 | ✅     | speaches                        | `ghcr.io/bbvch-ai/aihub-core/speaches:0.8.3-cpu`                            | MIT                | Permissive license                                                |
 | ✅     | pgbouncer                       | `ghcr.io/bbvch-ai/aihub-core/pgbouncer:v1.24.1-p1`                          | ISC                | Based on edoburu/pgbouncer (MIT wrapper); permissive licenses     |
 | ✅     | aws-cli-alpine                  | `ghcr.io/bbvch-ai/aihub-core/aws-cli-alpine:3.22.1`                         | Apache-2.0         | Permissive license                                                |
-| ⚠️     | phoenix                         | `ghcr.io/bbvch-ai/aihub-core/phoenix:version-10.0.4`                        | ELv2               | Source-available; cannot offer as a service, internal use allowed |
+| ✅     | langfuse-web                    | `langfuse/langfuse:3`                                                       | MIT                | Open-source LLM observability and evaluation platform             |
+| ✅     | langfuse-worker                 | `langfuse/langfuse-worker:3`                                                | MIT                | Langfuse background worker                                        |
+| ✅     | clickhouse                      | `clickhouse/clickhouse-server:24.11`                                        | Apache-2.0         | Used by Langfuse for analytics storage                            |
 | ✅     | dagster                         | `ghcr.io/bbvch-ai/aihub-core/dagster:nightly`                               | Apache-2.0         | Permissive license                                                |
 | ✅     | opentelemetry-collector-contrib | `otel/opentelemetry-collector-contrib:latest`                               | Apache-2.0         | Permissive license                                                |
 

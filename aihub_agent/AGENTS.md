@@ -27,7 +27,7 @@ aihub_agent/
 
 - `Agent` inherits from `DispatchableWorkflow`
 - Structured operations: `@step()` methods consume events → produce events
-- Transparent: Every step traceable in Phoenix
+- Transparent: Every step traceable in Langfuse
 
 **Step Decorator**:
 
@@ -44,7 +44,7 @@ aihub_agent/
 
 - Agents consume/produce events (from `aihub_lib.nats.events`)
 - `StartEvent` → workflow steps → `StopEvent`
-- Phoenix visualizes flow: http://localhost:6006
+- Langfuse visualizes flow: http://localhost:6006
 
 ## Common Patterns
 
@@ -66,7 +66,7 @@ aihub_agent/
 3. **Create events**: Custom events if needed
 4. **Test**: `AgentTestRunner` + `pytest-bdd` (Gherkin features in `tests/features/`)
 5. **Debug**: `trigger.py` (one-shot test) or `run.py` (interactive)
-6. **Observe**: Phoenix tracing (http://localhost:6006)
+6. **Observe**: Langfuse tracing (http://localhost:6006)
 
 ## Testing
 
@@ -80,7 +80,7 @@ aihub_agent/
 
 - `trigger.py`: Focused one-shot testing
 - `run.py`: Interactive multi-run testing
-- Phoenix MCP: Programmatic trace access
+- Langfuse: Programmatic trace access
 
 ## Pre-Commit
 

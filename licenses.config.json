@@ -188,10 +188,22 @@
       "notes": "Permissive license"
     },
     {
-      "service": "phoenix",
-      "license": "ELv2",
-      "status": "⚠️",
-      "notes": "Source-available; cannot offer as a service, internal use allowed"
+      "service": "langfuse-web",
+      "license": "MIT",
+      "status": "✅",
+      "notes": "Open-source LLM observability and evaluation platform"
+    },
+    {
+      "service": "langfuse-worker",
+      "license": "MIT",
+      "status": "✅",
+      "notes": "Langfuse background worker"
+    },
+    {
+      "service": "clickhouse",
+      "license": "Apache-2.0",
+      "status": "✅",
+      "notes": "Permissive license, used by Langfuse for analytics"
     },
     {
       "service": "jupyter",
