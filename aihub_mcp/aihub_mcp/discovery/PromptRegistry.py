@@ -3,7 +3,7 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from fastmcp.prompts.prompt import PromptMessage, TextContent
+from fastmcp.prompts.prompt import PromptMessage, TextContent  # type: ignore[attr-defined]
 
 if TYPE_CHECKING:
     from aihub_mcp.server.MCPServer import MCPServer
@@ -44,7 +44,7 @@ class PromptRegistry:
     def _register_chat_prompt(self, mcp: Any, agent_class: str) -> None:
         """Register a chat prompt for conversational agents."""
 
-        @mcp.prompt(name=f"chat_with_{agent_class.lower()}")
+        @mcp.prompt(name=f"chat_with_{agent_class.lower()}")  # type: ignore[untyped-decorator]
         def chat_prompt(message: str) -> PromptMessage:
             """Start a conversation with this agent."""
             text = (
@@ -56,7 +56,7 @@ class PromptRegistry:
     def _register_analysis_prompt(self, mcp: Any, agent_class: str) -> None:
         """Register an analysis prompt for all agents."""
 
-        @mcp.prompt(name=f"analyze_with_{agent_class.lower()}")
+        @mcp.prompt(name=f"analyze_with_{agent_class.lower()}")  # type: ignore[untyped-decorator]
         def analysis_prompt(content: str, task: str = "analyze") -> PromptMessage:
             """Use this agent to analyze content."""
             text = (

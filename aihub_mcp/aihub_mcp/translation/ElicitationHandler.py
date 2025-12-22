@@ -1,12 +1,24 @@
 """Handle HITL requests via MCP elicitation."""
 
+import html
 import logging
+import re
 from dataclasses import dataclass
 from typing import Any
 
 from fastmcp import Context
 
 logger = logging.getLogger(__name__)
+
+# Maximum length for displayed questions
+MAX_QUESTION_LENGTH = 1000
+
+# Pattern for potentially dangerous content in questions
+DANGEROUS_PATTERNS = [
+    re.compile(r"<script[^>]*>.*?</script>", re.I | re.S),
+    re.compile(r"javascript:", re.I),
+    re.compile(r"on\w+\s*=", re.I),
+]
 
 
 @dataclass
@@ -23,6 +35,30 @@ class ConfirmationResponse:
     confirmed: bool
 
 
+def sanitize_question(question: str, max_length: int = MAX_QUESTION_LENGTH) -> str:
+    """
+    Sanitize a question string for safe display.
+
+    - Removes potentially dangerous content
+    - Escapes HTML entities
+    - Truncates to max length
+    """
+    sanitized = question
+
+    # Remove dangerous patterns
+    for pattern in DANGEROUS_PATTERNS:
+        sanitized = pattern.sub("", sanitized)
+
+    # Escape HTML entities
+    sanitized = html.escape(sanitized)
+
+    # Truncate if too long
+    if len(sanitized) > max_length:
+        sanitized = sanitized[:max_length] + "..."
+
+    return sanitized
+
+
 class ElicitationHandler:
     """
     Translates SAAP HumanInTheLoopRequestEvent to MCP elicitation.
@@ -32,6 +68,8 @@ class ElicitationHandler:
     2. Translates to appropriate MCP elicitation request
     3. Receives the user's response
     4. Returns it for publishing back to SAAP
+
+    Security: Questions are sanitized before display to prevent injection.
     """
 
     async def handle_request(
@@ -44,8 +82,11 @@ class ElicitationHandler:
 
         Returns the user's response (string for input, bool for confirmation).
         """
-        question = request_event.get("question", "Please provide input:")
+        raw_question = request_event.get("question", "Please provide input:")
         hitl_type = request_event.get("hitl_type", "input")
+
+        # Sanitize the question for safe display
+        question = sanitize_question(raw_question)
 
         logger.info(f"Handling HITL request: type={hitl_type}, question={question[:50]}...")
 
@@ -58,13 +99,15 @@ class ElicitationHandler:
         """Handle a free-form text input request."""
         try:
             # Use MCP elicitation to get user input
+            # Note: FastMCP elicit API is experimental and types are not fully defined
             result = await ctx.elicit(
                 message=question,
-                response_type=InputResponse,
+                response_type=InputResponse,  # type: ignore[arg-type]
             )
 
             if result.action == "accept" and result.data:
-                return result.data.text
+                data: Any = result.data
+                return str(data.text)
             elif result.action == "decline":
                 return "[User declined to provide input]"
             else:  # cancel
@@ -80,13 +123,15 @@ class ElicitationHandler:
         """Handle a yes/no confirmation request."""
         try:
             # Use MCP elicitation to get confirmation
+            # Note: FastMCP elicit API is experimental and types are not fully defined
             result = await ctx.elicit(
                 message=question,
-                response_type=ConfirmationResponse,
+                response_type=ConfirmationResponse,  # type: ignore[arg-type]
             )
 
             if result.action == "accept" and result.data:
-                return result.data.confirmed
+                data: Any = result.data
+                return bool(data.confirmed)
             elif result.action == "decline":
                 return False
             else:  # cancel

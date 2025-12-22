@@ -10,18 +10,20 @@ from typing import TYPE_CHECKING, Any
 from fastmcp import Context
 
 if TYPE_CHECKING:
+    from aihub_mcp.tracing.MCPTracer import MCPTracer
     from aihub_mcp.translation.ElicitationHandler import ElicitationHandler
     from aihub_mcp.translation.ProgressStreamer import ProgressStreamer
     from aihub_mcp.translation.SamplingBridge import SamplingBridge
 
 logger = logging.getLogger(__name__)
 
-# Synthetic user identity for MCP clients (no authentication context)
-MCP_USER_IDENTITY = {
-    "id": "mcp-client",
-    "name": "MCP Client",
-    "email": "mcp@localhost",
+# Default user identity when none provided (auth disabled)
+DEFAULT_USER_IDENTITY = {
+    "id": "anonymous",
+    "name": "Anonymous (No Auth)",
+    "email": "anonymous@aihub.local",
     "roles": ["user"],
+    "source": "no_auth",
 }
 
 
@@ -35,6 +37,8 @@ class EventTranslator:
     - HumanInTheLoopRequestEvent → Elicitation request
     - StopEvent → Tool success response
     - ExceptionEvent → Tool error response
+
+    Each invocation creates unique thread_id and run_id for proper tracing in Phoenix.
     """
 
     def __init__(
@@ -43,11 +47,17 @@ class EventTranslator:
         elicitation_handler: "ElicitationHandler | None" = None,
         progress_streamer: "ProgressStreamer | None" = None,
         sampling_bridge: "SamplingBridge | None" = None,
+        tracer: "MCPTracer | None" = None,
+        agent_timeout_seconds: float = 300.0,
+        mask_sensitive_data: bool = True,
     ) -> None:
         self._nats_url = nats_url
         self._elicitation_handler = elicitation_handler
         self._progress_streamer = progress_streamer
         self._sampling_bridge = sampling_bridge
+        self._tracer = tracer
+        self._agent_timeout = agent_timeout_seconds
+        self._mask_sensitive_data = mask_sensitive_data
 
         self._nc: Any = None  # NATS connection
         self._js: Any = None  # JetStream context
@@ -73,24 +83,48 @@ class EventTranslator:
         event_parents: list[str],
         event_data: dict[str, Any],
         ctx: Context,
+        user_identity: dict[str, Any] | None = None,
+        tool_name: str | None = None,
     ) -> str:
         """
         Execute an agent by translating MCP tool call to SAAP events.
 
-        1. Creates a thread and run context
-        2. Publishes the start event to NATS
-        3. Subscribes to display events for progress
-        4. Handles HITL requests via elicitation
-        5. Returns final result on StopEvent/ExceptionEvent
+        1. Creates a thread and run context (unique per invocation)
+        2. Starts an OpenTelemetry span with thread/run IDs for Phoenix
+        3. Publishes the start event to NATS
+        4. Subscribes to display events for progress
+        5. Handles HITL requests via elicitation
+        6. Returns final result on StopEvent/ExceptionEvent
         """
-        # Generate identifiers for this execution
+        # Use provided identity or default
+        identity = user_identity or DEFAULT_USER_IDENTITY
+
+        # Generate UNIQUE identifiers for THIS execution
+        # Each MCP tool invocation gets its own thread_id and run_id
         agent_id = f"mcp_{uuid.uuid4().hex[:8]}"
-        thread_id = f"mcp_{uuid.uuid4().hex[:12]}"
-        display_id = f"d_{uuid.uuid4().hex[:8]}"
-        run_id = f"r_{uuid.uuid4().hex[:8]}"
+        thread_id = f"mcp_thread_{uuid.uuid4().hex[:12]}"
+        display_id = f"mcp_display_{uuid.uuid4().hex[:8]}"
+        run_id = f"mcp_run_{uuid.uuid4().hex[:8]}"
         event_id = str(uuid.uuid4())
 
-        await ctx.info(f"Starting agent execution: thread={thread_id}")
+        await ctx.info(
+            f"Starting agent execution: agent={agent_class}, "
+            f"thread={thread_id}, run={run_id}, user={identity.get('id', 'unknown')}"
+        )
+
+        # Start tracing span with full context for Phoenix
+        span = None
+        if self._tracer:
+            user_id_value = identity.get("id")
+            span = self._tracer.start_agent_execution_span(
+                tool_name=tool_name or event_name,
+                agent_class=agent_class,
+                thread_id=thread_id,
+                run_id=run_id,
+                display_id=display_id,
+                agent_id=agent_id,
+                user_id=str(user_id_value) if user_id_value is not None else None,
+            )
 
         # Build the start event
         start_event = self._build_start_event(
@@ -98,6 +132,7 @@ class EventTranslator:
             event_parents=event_parents,
             event_data=event_data,
             event_id=event_id,
+            user_identity=identity,
         )
 
         # Build the NATS subject for publishing
@@ -182,14 +217,29 @@ class EventTranslator:
             await self._js.publish(subject, json.dumps(start_event).encode())
             logger.info(f"Published start event to {subject}")
 
-            # Wait for result with timeout
-            result = await asyncio.wait_for(result_future, timeout=300.0)  # 5 minute timeout
+            # Wait for result with configurable timeout
+            result = await asyncio.wait_for(result_future, timeout=self._agent_timeout)
+
+            # End span with success
+            if self._tracer and span:
+                self._tracer.end_span(span, success=True)
+
             return result
 
         except TimeoutError:
-            return "Agent execution timed out"
+            error_msg = f"Agent execution timed out after {self._agent_timeout} seconds"
+            if self._tracer and span:
+                self._tracer.end_span(span, success=False, error_message=error_msg)
+            return error_msg
+
+        except Exception as e:
+            if self._tracer and span:
+                self._tracer.end_span(span, success=False, error_message=str(e))
+            raise
+
         finally:
             await sub.unsubscribe()
+            logger.info(f"Agent execution completed: thread={thread_id}, run={run_id}")
 
     def _build_start_event(
         self,
@@ -197,6 +247,7 @@ class EventTranslator:
         event_parents: list[str],
         event_data: dict[str, Any],
         event_id: str,
+        user_identity: dict[str, Any],
     ) -> dict[str, Any]:
         """Build a SAAP start event from MCP tool parameters."""
         base_event = {
@@ -208,7 +259,7 @@ class EventTranslator:
 
         # Handle UserMessageEvent specifically - requires user identity and messages format
         if "UserMessageEvent" in event_name:
-            base_event["user"] = MCP_USER_IDENTITY
+            base_event["user"] = user_identity
 
             # Convert message string to proper messages format if needed
             if "message" in event_data and "messages" not in event_data:

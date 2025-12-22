@@ -1,5 +1,3 @@
-"""Bridge for routing agent LLM requests to MCP client's LLM."""
-
 import logging
 from typing import Any
 
@@ -46,8 +44,9 @@ class SamplingBridge:
             formatted_messages = self._format_messages(messages)
 
             # Call the MCP client's LLM
+            # Note: ctx.sample expects string or Sequence[SamplingMessage]
             result = await ctx.sample(
-                messages=formatted_messages,
+                messages=formatted_messages,  # type: ignore[arg-type]
                 system_prompt=system_prompt,
                 max_tokens=max_tokens,
             )

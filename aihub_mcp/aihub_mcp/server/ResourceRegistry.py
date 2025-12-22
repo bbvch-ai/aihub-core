@@ -39,7 +39,8 @@ class ResourceRegistry:
         @mcp.resource(f"agents://{agent_class}/config")
         async def get_agent_config() -> dict[str, Any]:
             """Get configuration schema for the agent."""
-            return agent_metadata.get("agent_config_specs", {})
+            config: dict[str, Any] = agent_metadata.get("agent_config_specs", {})
+            return config
 
         # Register events resource
         @mcp.resource(f"agents://{agent_class}/events")

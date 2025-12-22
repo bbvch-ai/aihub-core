@@ -7,8 +7,12 @@ import time
 import uuid
 from typing import TYPE_CHECKING, Any
 
-from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
-from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
+from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import (  # type: ignore[import-untyped]
+    ClassDiscoveryRequestEvent,
+)
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import (  # type: ignore[import-untyped]
+    AgentTopicManager,
+)
 
 if TYPE_CHECKING:
     from aihub_mcp.server.AgentToolRegistry import AgentToolRegistry

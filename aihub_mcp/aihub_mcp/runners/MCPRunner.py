@@ -1,5 +1,3 @@
-"""Standalone runner for the MCP server."""
-
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -39,18 +37,26 @@ class MCPRunner:
 
         # Core components
         self._mcp_server = MCPServer(self._settings)
-        self._auth = ApiKeyAuth(self._settings.API_KEY)
+        self._auth = ApiKeyAuth(
+            api_keys=self._settings.get_all_api_keys(),
+            rate_limit_per_minute=self._settings.RATE_LIMIT_REQUESTS_PER_MINUTE,
+        )
         self._tracer = MCPTracer(enabled=self._settings.TRACING_ENABLED)
 
         # Translation layer
         self._elicitation_handler = ElicitationHandler()
-        self._progress_streamer = ProgressStreamer()
+        self._progress_streamer = ProgressStreamer(
+            mask_sensitive_data=self._settings.MASK_SENSITIVE_DATA,
+        )
         self._sampling_bridge = SamplingBridge()
         self._event_translator = EventTranslator(
             nats_url=self._settings.NATS_URL,
             elicitation_handler=self._elicitation_handler,
             progress_streamer=self._progress_streamer,
             sampling_bridge=self._sampling_bridge,
+            tracer=self._tracer,  # Pass tracer for Phoenix integration
+            agent_timeout_seconds=self._settings.AGENT_TIMEOUT_SECONDS,
+            mask_sensitive_data=self._settings.MASK_SENSITIVE_DATA,
         )
 
         # Registries
@@ -112,7 +118,7 @@ class MCPRunner:
         mcp = self._mcp_server.mcp
 
         if self._settings.TRANSPORT == "sse":
-            mcp_app = mcp.sse_app(path="/")
+            mcp_app = mcp.sse_app(path="/")  # type: ignore[attr-defined]
             logger.info("Using SSE transport")
         else:
             mcp_app = mcp.http_app(path="/")

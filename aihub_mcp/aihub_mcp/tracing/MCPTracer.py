@@ -1,6 +1,7 @@
 """OpenTelemetry tracing instrumentation for MCP requests."""
 
 import logging
+from contextvars import ContextVar
 from typing import Any
 
 from opentelemetry import trace
@@ -9,6 +10,21 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.trace import SpanKind, Status, StatusCode
 
 logger = logging.getLogger(__name__)
+
+# Context variables for thread/run tracking across async boundaries
+current_thread_id: ContextVar[str | None] = ContextVar("current_thread_id", default=None)
+current_run_id: ContextVar[str | None] = ContextVar("current_run_id", default=None)
+
+# OpenInference semantic convention attribute names
+OPENINFERENCE_SESSION_ID = "session.id"
+OPENINFERENCE_USER_ID = "user.id"
+OPENINFERENCE_SPAN_KIND = "openinference.span.kind"
+
+# Additional MCP-specific attributes
+MCP_THREAD_ID = "mcp.thread_id"
+MCP_RUN_ID = "mcp.run_id"
+MCP_DISPLAY_ID = "mcp.display_id"
+MCP_AGENT_ID = "mcp.agent_id"
 
 
 class MCPTracer:
@@ -70,13 +86,66 @@ class MCPTracer:
             return trace.get_tracer(self.TRACER_NAME)
         return self._tracer
 
+    def start_agent_execution_span(
+        self,
+        tool_name: str,
+        agent_class: str,
+        thread_id: str,
+        run_id: str,
+        display_id: str,
+        agent_id: str,
+        user_id: str | None = None,
+        attributes: dict[str, Any] | None = None,
+    ) -> Any:
+        """
+        Start a span for agent execution with full context.
+
+        Sets OpenInference attributes for Phoenix integration:
+        - session.id: thread_id for grouping related traces
+        - user.id: authenticated user identity
+        - openinference.span.kind: CHAIN for agent workflows
+        """
+        if not self._enabled:
+            return None
+
+        # Set context variables for child spans
+        current_thread_id.set(thread_id)
+        current_run_id.set(run_id)
+
+        span_attributes = {
+            # OpenInference semantic conventions
+            OPENINFERENCE_SESSION_ID: thread_id,
+            OPENINFERENCE_SPAN_KIND: "CHAIN",
+            # MCP-specific attributes
+            MCP_THREAD_ID: thread_id,
+            MCP_RUN_ID: run_id,
+            MCP_DISPLAY_ID: display_id,
+            MCP_AGENT_ID: agent_id,
+            # Tool/agent info
+            "mcp.tool.name": tool_name,
+            "mcp.agent.class": agent_class,
+            "mcp.operation": "agent_execution",
+        }
+
+        if user_id:
+            span_attributes[OPENINFERENCE_USER_ID] = user_id
+
+        if attributes:
+            span_attributes.update(attributes)
+
+        return self.tracer.start_span(
+            name=f"mcp.agent.{agent_class}",
+            kind=SpanKind.SERVER,
+            attributes=span_attributes,
+        )
+
     def start_tool_span(
         self,
         tool_name: str,
         agent_class: str,
         attributes: dict[str, Any] | None = None,
     ) -> Any:
-        """Start a span for tool invocation."""
+        """Start a span for tool invocation (legacy, prefer start_agent_execution_span)."""
         if not self._enabled:
             return None
 
@@ -85,6 +154,16 @@ class MCPTracer:
             "mcp.agent.class": agent_class,
             "mcp.operation": "tool_invocation",
         }
+
+        # Include thread/run context if available
+        thread_id = current_thread_id.get()
+        run_id = current_run_id.get()
+        if thread_id:
+            span_attributes[OPENINFERENCE_SESSION_ID] = thread_id
+            span_attributes[MCP_THREAD_ID] = thread_id
+        if run_id:
+            span_attributes[MCP_RUN_ID] = run_id
+
         if attributes:
             span_attributes.update(attributes)
 

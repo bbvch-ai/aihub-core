@@ -1,6 +1,6 @@
-"""Dynamic agent to MCP tool registration."""
-
+import json
 import logging
+import re
 from typing import TYPE_CHECKING, Any
 
 from fastmcp import Context
@@ -10,6 +10,82 @@ if TYPE_CHECKING:
     from aihub_mcp.translation.EventTranslator import EventTranslator
 
 logger = logging.getLogger(__name__)
+
+# Maximum sizes for input validation
+MAX_MESSAGE_LENGTH = 100_000  # 100KB max message
+MAX_JSON_DEPTH = 10  # Maximum nesting depth for JSON
+
+# Patterns that might indicate injection attempts
+SUSPICIOUS_PATTERNS = [
+    re.compile(r"__proto__", re.I),
+    re.compile(r"constructor\s*\[", re.I),
+    re.compile(r"\$\{.*\}", re.I),  # Template injection
+]
+
+
+class InputValidationError(ValueError):
+    """Raised when input validation fails."""
+
+    pass
+
+
+def validate_event_data(data: dict[str, Any], schema: dict[str, Any] | None = None) -> dict[str, Any]:
+    """
+    Validate event data for security issues.
+
+    Checks:
+    - Size limits
+    - Dangerous patterns
+    - Schema compliance (if provided)
+    """
+    # Convert to string to check total size
+    data_str = json.dumps(data)
+    if len(data_str) > MAX_MESSAGE_LENGTH:
+        raise InputValidationError(f"Input too large: {len(data_str)} bytes (max {MAX_MESSAGE_LENGTH})")
+
+    # Check for suspicious patterns
+    for pattern in SUSPICIOUS_PATTERNS:
+        if pattern.search(data_str):
+            logger.warning(f"Suspicious pattern detected in input: {pattern.pattern}")
+            raise InputValidationError("Input contains potentially dangerous patterns")
+
+    # Check nesting depth
+    def check_depth(obj: Any, current_depth: int = 0) -> None:
+        if current_depth > MAX_JSON_DEPTH:
+            raise InputValidationError(f"Input nesting too deep (max {MAX_JSON_DEPTH})")
+        if isinstance(obj, dict):
+            for v in obj.values():
+                check_depth(v, current_depth + 1)
+        elif isinstance(obj, list):
+            for item in obj:
+                check_depth(item, current_depth + 1)
+
+    check_depth(data)
+
+    # Schema validation (if provided)
+    if schema:
+        required_fields = schema.get("required", [])
+        properties = schema.get("properties", {})
+
+        for field in required_fields:
+            if field not in data:
+                raise InputValidationError(f"Missing required field: {field}")
+
+        for field, value in data.items():
+            if field in properties:
+                field_type = properties[field].get("type")
+                if field_type == "string" and not isinstance(value, str):
+                    raise InputValidationError(f"Field '{field}' must be a string")
+                elif field_type == "number" and not isinstance(value, int | float):
+                    raise InputValidationError(f"Field '{field}' must be a number")
+                elif field_type == "boolean" and not isinstance(value, bool):
+                    raise InputValidationError(f"Field '{field}' must be a boolean")
+                elif field_type == "array" and not isinstance(value, list):
+                    raise InputValidationError(f"Field '{field}' must be an array")
+                elif field_type == "object" and not isinstance(value, dict):
+                    raise InputValidationError(f"Field '{field}' must be an object")
+
+    return data
 
 
 class AgentToolRegistry:
@@ -147,6 +223,7 @@ class AgentToolRegistry:
                     event_parents=event_parents,
                     event_data=kwargs,
                     ctx=ctx,
+                    tool_name=tool_name,
                 )
 
                 return result
@@ -172,8 +249,6 @@ class AgentToolRegistry:
             For conversational agents, this is the user's message.
             For other agents, this should contain the required event data as JSON.
             """
-            import json
-
             # Parse message as JSON if it looks like JSON, otherwise treat as message
             try:
                 if message.strip().startswith("{"):
@@ -182,6 +257,12 @@ class AgentToolRegistry:
                     event_data = {"message": message}
             except json.JSONDecodeError:
                 event_data = {"message": message}
+
+            try:
+                event_data = validate_event_data(event_data, event_schema)
+            except InputValidationError as e:
+                await ctx.error(f"Input validation failed: {e}")
+                raise ValueError(f"Input validation failed: {e}") from e
 
             return await tool_handler(ctx, **event_data)
 

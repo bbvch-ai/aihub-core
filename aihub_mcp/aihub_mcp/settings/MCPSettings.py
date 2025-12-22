@@ -1,9 +1,10 @@
-"""Configuration settings for the MCP server."""
+import logging
+from typing import Literal, Self
 
-from typing import Literal
-
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+logger = logging.getLogger(__name__)
 
 
 class MCPSettings(BaseSettings):
@@ -12,6 +13,10 @@ class MCPSettings(BaseSettings):
 
     All settings can be configured via environment variables with the MCP_ prefix,
     or via a .env file.
+
+    Security notes:
+    - API_KEY is required in production (DEBUG=False)
+    - HOST defaults to 127.0.0.1 for security; set to 0.0.0.0 for network access
     """
 
     model_config = SettingsConfigDict(
@@ -23,8 +28,8 @@ class MCPSettings(BaseSettings):
 
     # Server configuration
     HOST: str = Field(
-        default="0.0.0.0",
-        description="Host address to bind the MCP server",
+        default="127.0.0.1",
+        description="Host address to bind the MCP server. Use 0.0.0.0 for network access.",
     )
     PORT: int = Field(
         default=8001,
@@ -42,7 +47,15 @@ class MCPSettings(BaseSettings):
     # Authentication
     API_KEY: SecretStr | None = Field(
         default=None,
-        description="API key for authenticating MCP clients. If None, authentication is disabled.",
+        description="API key for authenticating MCP clients. Required in production (DEBUG=False).",
+    )
+    API_KEYS: list[SecretStr] = Field(
+        default_factory=list,
+        description="Additional API keys for multiple clients. Each can be mapped to a user identity.",
+    )
+    REQUIRE_AUTH: bool = Field(
+        default=True,
+        description="Require authentication. Auto-disabled in DEBUG mode if no API keys configured.",
     )
 
     # NATS configuration
@@ -67,8 +80,55 @@ class MCPSettings(BaseSettings):
         description="Interval between agent discovery refreshes",
     )
 
+    # Agent execution
+    AGENT_TIMEOUT_SECONDS: float = Field(
+        default=300.0,
+        description="Maximum time to wait for agent execution (5 minutes default)",
+    )
+
+    # Rate limiting
+    RATE_LIMIT_REQUESTS_PER_MINUTE: int = Field(
+        default=60,
+        description="Maximum requests per minute per client. 0 to disable.",
+    )
+
+    # Logging security
+    MASK_SENSITIVE_DATA: bool = Field(
+        default=True,
+        description="Mask potentially sensitive data in logs",
+    )
+
     # Server behavior
     DEBUG: bool = Field(
         default=False,
         description="Enable debug mode with verbose logging",
     )
+
+    @model_validator(mode="after")
+    def validate_security_settings(self) -> Self:
+        """Validate security configuration based on environment."""
+        has_api_keys = self.API_KEY is not None or len(self.API_KEYS) > 0
+
+        if not self.DEBUG and self.REQUIRE_AUTH and not has_api_keys:
+            raise ValueError(
+                "API key required in production mode. "
+                "Set MCP_API_KEY or MCP_API_KEYS, or set MCP_REQUIRE_AUTH=false to disable "
+                "(not recommended for production)."
+            )
+
+        if self.DEBUG and not has_api_keys:
+            logger.warning("Running in DEBUG mode without authentication. " "Do not expose to untrusted networks.")
+
+        if self.HOST == "0.0.0.0" and not has_api_keys:
+            logger.warning(
+                "Server bound to all interfaces (0.0.0.0) without authentication. " "This is a security risk!"
+            )
+
+        return self
+
+    def get_all_api_keys(self) -> list[SecretStr]:
+        """Get all configured API keys."""
+        keys = list(self.API_KEYS)
+        if self.API_KEY:
+            keys.insert(0, self.API_KEY)
+        return keys

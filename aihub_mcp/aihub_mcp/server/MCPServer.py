@@ -86,7 +86,7 @@ class MCPServer:
 
     def _register_prompts(self) -> None:
         """Register static MCP prompts for common operations."""
-        from fastmcp.prompts.prompt import PromptMessage, TextContent
+        from fastmcp.prompts.prompt import PromptMessage, TextContent  # type: ignore[attr-defined]
 
         @self.mcp.prompt
         def analyze_with_agent(agent_name: str, query: str) -> PromptMessage:
@@ -158,7 +158,7 @@ class MCPServer:
 
         # Create the MCP HTTP app based on transport setting
         if self._settings.TRANSPORT == "sse":
-            mcp_app = self.mcp.sse_app(path="/")
+            mcp_app = self.mcp.sse_app(path="/")  # type: ignore[attr-defined]
             logger.info("Using SSE transport (legacy)")
         else:
             mcp_app = self.mcp.http_app(path="/")
