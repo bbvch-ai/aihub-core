@@ -294,6 +294,8 @@ services:
       MINIO_ADDRESS: seaweedfs-s3:9000
       MINIO_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
       MINIO_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
+      # Token-based authentication - root password for Milvus
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/milvus-data:/var/lib/milvus
       - ./configs/milvus/milvus-config.local.yml:/milvus/configs/milvus.yaml
@@ -324,6 +326,9 @@ services:
       - "3003:3000"
     environment:
       MILVUS_URL: milvus-standalone:19530
+      # Milvus authentication credentials
+      ATTU_LOGIN_USERNAME: root
+      ATTU_LOGIN_PASSWORD: ${MILVUS_ROOT_PASSWORD}
     healthcheck:
       test: ["NONE"]
     logging:
@@ -523,6 +528,9 @@ services:
     image: ghcr.io/bbvch-ai/aihub-core/nats:2.11.4
     restart: always
     command: -c /etc/nats/nats-server.conf
+    environment:
+      # Token-based authentication for NATS clients
+      NATS_TOKEN: ${NATS_TOKEN}
     volumes:
       - ./configs/nats/nats-config.local.conf:/etc/nats/nats-server.conf
       - ${VOLUME_ROOT:-./.docker-volumes}/nats:/data/nats
@@ -541,14 +549,18 @@ services:
     container_name: valkey
     image: ghcr.io/bbvch-ai/aihub-core/valkey:8.0.5
     restart: always
-    command: valkey-server --save 30 1 --loglevel warning
+    # Password authentication enabled via --requirepass
+    command: valkey-server --save 30 1 --loglevel warning --requirepass ${VALKEY_PASSWORD}
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/valkey-data:/data
     ports:
       - "6379:6379"
     healthcheck:
-      test: [ "CMD", "valkey-cli", "ping" ]
+      # Use REDISCLI_AUTH to authenticate for health check
+      test: [ "CMD-SHELL", "REDISCLI_AUTH=${VALKEY_PASSWORD} valkey-cli ping" ]
       start_period: 5s
+    environment:
+      VALKEY_PASSWORD: ${VALKEY_PASSWORD}
     logging:
       driver: json-file
       options:
@@ -869,14 +881,16 @@ services:
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
       DATABASE_NAME: openwebui
-      REDIS_URL: redis://valkey:6379/1
+      # Redis with password authentication
+      REDIS_URL: redis://default:${VALKEY_PASSWORD}@valkey:6379/1
       REDIS_KEY_PREFIX: open-webui
 
       # --- Web Server ---
       UVICORN_WORKERS: 8
       ENABLE_WEBSOCKET_SUPPORT: True
       WEBSOCKET_MANAGER: redis
-      WEBSOCKET_REDIS_URL: redis://valkey:6379/1
+      # Redis with password authentication
+      WEBSOCKET_REDIS_URL: redis://default:${VALKEY_PASSWORD}@valkey:6379/1
       THREAD_POOL_SIZE: 32
       CORS_ALLOW_ORIGIN: "*" # TODO: Make this more secure
 
@@ -900,6 +914,8 @@ services:
       VECTOR_DB: milvus
       MILVUS_DB: default
       MILVUS_URI: http://milvus-standalone:19530
+      # Milvus authentication token (format: username:password)
+      MILVUS_TOKEN: root:${MILVUS_ROOT_PASSWORD}
       MILVUS_INDEX_TYPE: HNSW
       MILVUS_METRIC_TYPE: COSINE
       MILVUS_HNSW_M: 16
@@ -1236,6 +1252,8 @@ services:
       # MILVUS
       MILVUS_URL: http://milvus-standalone:19530
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      # Milvus authentication token (format: username:password)
+      MILVUS_TOKEN: root:${MILVUS_ROOT_PASSWORD}
 
       # S3 Access connection
       S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
@@ -1250,9 +1268,13 @@ services:
 
       # NATs
       NATS_ENDPOINT: nats://nats:4222
+      # NATS authentication token
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # REDIS
       REDIS_URL: redis://valkey:6379
+      # Redis/Valkey password
+      REDIS_PASSWORD: ${VALKEY_PASSWORD}
 
       # Jupyter (for open-webui code interpreter)
       JUPYTER_URL: http://jupyter:8888
@@ -1362,9 +1384,13 @@ services:
 
       # NATs
       NATS_ENDPOINT: nats://nats:4222
+      # NATS authentication token
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # REDIS
       REDIS_URL: redis://valkey:6379
+      # Redis/Valkey password
+      REDIS_PASSWORD: ${VALKEY_PASSWORD}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -1405,6 +1431,8 @@ services:
       # MILVUS
       MILVUS_URL: http://milvus-standalone:19530
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      # Milvus authentication token (format: username:password)
+      MILVUS_TOKEN: root:${MILVUS_ROOT_PASSWORD}
 
       # S3 Access connection
       S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
@@ -1416,9 +1444,13 @@ services:
 
       # NATs
       NATS_ENDPOINT: nats://nats:4222
+      # NATS authentication token
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # REDIS
       REDIS_URL: redis://valkey:6379
+      # Redis/Valkey password
+      REDIS_PASSWORD: ${VALKEY_PASSWORD}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -1454,6 +1486,8 @@ services:
       # MILVUS
       MILVUS_URL: http://milvus-standalone:19530
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      # Milvus authentication token (format: username:password)
+      MILVUS_TOKEN: root:${MILVUS_ROOT_PASSWORD}
 
       # S3 Access connection
       S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
@@ -1465,9 +1499,13 @@ services:
 
       # NATs
       NATS_ENDPOINT: nats://nats:4222
+      # NATS authentication token
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # REDIS
       REDIS_URL: redis://valkey:6379
+      # Redis/Valkey password
+      REDIS_PASSWORD: ${VALKEY_PASSWORD}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -1495,9 +1533,13 @@ services:
 
       # NATs
       NATS_ENDPOINT: nats://nats:4222
+      # NATS authentication token
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # REDIS
       REDIS_URL: redis://valkey:6379
+      # Redis/Valkey password
+      REDIS_PASSWORD: ${VALKEY_PASSWORD}
 
       # Channel Configuration (Teams or Slack)
       EXPERT_ASKING_CHANNEL_TYPE: ${EXPERT_ASKING_CHANNEL_TYPE}
@@ -1531,6 +1573,8 @@ services:
 
       # NATS
       NATS_ENDPOINT: nats://nats:4222
+      # NATS authentication token
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # LiteLLM Proxy Server Settings
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
@@ -1555,6 +1599,8 @@ services:
       # MILVUS
       MILVUS_URL: http://milvus-standalone:19530
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      # Milvus authentication token (format: username:password)
+      MILVUS_TOKEN: root:${MILVUS_ROOT_PASSWORD}
 
       # DAGSTER
       DAGSTER_HOME: /dagster_home
@@ -1583,6 +1629,8 @@ services:
 
       # NATS
       NATS_ENDPOINT: nats://nats:4222
+      # NATS authentication token
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # LiteLLM Proxy Server Settings
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
@@ -1607,6 +1655,8 @@ services:
       # MILVUS
       MILVUS_URL: http://milvus-standalone:19530
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      # Milvus authentication token (format: username:password)
+      MILVUS_TOKEN: root:${MILVUS_ROOT_PASSWORD}
 
       # DAGSTER
       DAGSTER_HOME: /dagster_home
@@ -1637,6 +1687,8 @@ services:
       - "8001:8001"
     environment:
       NATS_ENDPOINT: nats://nats:4222
+      # NATS authentication token
+      NATS_TOKEN: ${NATS_TOKEN}
       MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
       LOG_LEVEL: ${LOG_LEVEL}
       NUM_WORKERS: 1

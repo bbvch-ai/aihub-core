@@ -37,7 +37,9 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
     try:
         # Connect to NATS and setup JetStream
-        await nc.connect(servers=[NatsSettings().ENDPOINT])
+        nats_settings = NatsSettings()
+        token = nats_settings.TOKEN.get_secret_value() if nats_settings.TOKEN else None
+        await nc.connect(servers=[nats_settings.ENDPOINT], token=token)
         js = nc.jetstream()
 
         topic_manager = AgentTopicManager()

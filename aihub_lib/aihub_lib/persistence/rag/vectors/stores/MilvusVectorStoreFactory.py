@@ -35,6 +35,7 @@ def create_milvus_vector_store(
     index_type: Annotated[MilvusIndexType, Field(description="Vector index type for the embedding field")] = (
         MilvusIndexType.HNSW
     ),
+    token: Annotated[str | None, Field(description="Authentication token in format 'username:password'")] = None,
 ) -> MilvusVectorStore:
     """
     Factory for namespace-partitioned vector stores optimized for RAG workloads.
@@ -48,7 +49,7 @@ def create_milvus_vector_store(
     - DISKANN: Use when vectors exceed available RAM (requires NVMe SSD)
     - IVF_FLAT: Middle ground if HNSW too memory-intensive and DISKANN unavailable
     """
-    client = MilvusClient(uri=uri)
+    client = MilvusClient(uri=uri, token=token)
     if not client.has_collection(collection_name):
         fields = [
             FieldSchema(name="id", dtype=DataType.VARCHAR, is_primary=True, auto_id=False, max_length=255),
@@ -100,6 +101,7 @@ def create_milvus_vector_store(
 
     return PartitionAwareMilvusVectorStore(
         uri=uri,
+        token=token,
         collection_name=collection_name,
         dim=embedding_vector_dimension,
         overwrite=False,

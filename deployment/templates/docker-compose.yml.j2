@@ -354,6 +354,8 @@ services:
       MINIO_ADDRESS: {{ SEAWEEDFS_S3_ENDPOINT }}
       MINIO_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
       MINIO_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
+      # Token-based authentication - root password for Milvus
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
     volumes:
       - {{ global.volume_root }}/milvus-data:/var/lib/milvus
       - ./configs/milvus/milvus-config.{{ stage_postfix }}.yml:/milvus/configs/milvus.yaml
@@ -388,6 +390,9 @@ services:
     {%- endif %}
     environment:
       MILVUS_URL: {{ MILVUS_HOST }}:{{ MILVUS_PORT }}
+      # Milvus authentication credentials
+      ATTU_LOGIN_USERNAME: root
+      ATTU_LOGIN_PASSWORD: ${MILVUS_ROOT_PASSWORD}
     healthcheck:
       test: ["NONE"]
     logging:
@@ -598,6 +603,9 @@ services:
     image: {{ global.registry_prefix }}{{ image_tags.nats }}
     restart: always
     command: -c /etc/nats/nats-server.conf
+    environment:
+      # Token-based authentication for NATS clients
+      NATS_TOKEN: ${NATS_TOKEN}
     volumes:
       - ./configs/nats/nats-config.{{ stage_postfix }}.conf:/etc/nats/nats-server.conf
       - {{ global.volume_root }}/nats:/data/nats
@@ -618,7 +626,8 @@ services:
     container_name: valkey
     image: {{ global.registry_prefix }}{{ image_tags.valkey }}
     restart: always
-    command: valkey-server --save 30 1 --loglevel warning
+    # Password authentication enabled via --requirepass
+    command: valkey-server --save 30 1 --loglevel warning --requirepass ${VALKEY_PASSWORD}
     volumes:
       - {{ global.volume_root }}/valkey-data:/data
     {%- if stage in ['dev', 'local', 'build'] %}
@@ -626,8 +635,11 @@ services:
       - "6379:6379"
     {%- endif %}
     healthcheck:
-      test: [ "CMD", "valkey-cli", "ping" ]
+      # Use REDISCLI_AUTH to authenticate for health check
+      test: [ "CMD-SHELL", "REDISCLI_AUTH=${VALKEY_PASSWORD} valkey-cli ping" ]
       start_period: 5s
+    environment:
+      VALKEY_PASSWORD: ${VALKEY_PASSWORD}
     logging:
       driver: json-file
       options:
@@ -1215,14 +1227,16 @@ services:
       DATABASE_HOST: {{ 'localhost' if stage == 'dev' else 'postgres' }}
       DATABASE_PORT: 5432
       DATABASE_NAME: openwebui
-      REDIS_URL: redis://{{ 'localhost' if stage == 'dev' else 'valkey' }}:6379/1
+      # Redis with password authentication
+      REDIS_URL: redis://default:${VALKEY_PASSWORD}@{{ 'localhost' if stage == 'dev' else 'valkey' }}:6379/1
       REDIS_KEY_PREFIX: open-webui
 
       # --- Web Server ---
       UVICORN_WORKERS: {{ '1' if stage == 'dev' else '8' }}
       ENABLE_WEBSOCKET_SUPPORT: True
       WEBSOCKET_MANAGER: redis
-      WEBSOCKET_REDIS_URL: redis://{{ 'localhost' if stage == 'dev' else 'valkey' }}:6379/1
+      # Redis with password authentication
+      WEBSOCKET_REDIS_URL: redis://default:${VALKEY_PASSWORD}@{{ 'localhost' if stage == 'dev' else 'valkey' }}:6379/1
       THREAD_POOL_SIZE: {{ '8' if stage == 'dev' else '32' }}
       CORS_ALLOW_ORIGIN: "*" # TODO: Make this more secure
 
@@ -1246,6 +1260,8 @@ services:
       VECTOR_DB: milvus
       MILVUS_DB: default
       MILVUS_URI: http://{{ 'localhost' if stage == 'dev' else 'milvus-standalone' }}:19530
+      # Milvus authentication token (format: username:password)
+      MILVUS_TOKEN: root:${MILVUS_ROOT_PASSWORD}
       MILVUS_INDEX_TYPE: HNSW
       MILVUS_METRIC_TYPE: COSINE
       MILVUS_HNSW_M: 16
@@ -1634,6 +1650,8 @@ services:
       # MILVUS
       MILVUS_URL: {{ MILVUS_ENDPOINT }}
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      # Milvus authentication token (format: username:password)
+      MILVUS_TOKEN: root:${MILVUS_ROOT_PASSWORD}
 
       # S3 Access connection
       S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
@@ -1648,9 +1666,13 @@ services:
 
       # NATs
       NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      # NATS authentication token
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # REDIS
       REDIS_URL: {{ VALKEY_ENDPOINT }}
+      # Redis/Valkey password
+      REDIS_PASSWORD: ${VALKEY_PASSWORD}
 
       # Jupyter (for open-webui code interpreter)
       JUPYTER_URL: {{ JUPYTER_URL }}
@@ -1787,9 +1809,13 @@ services:
 
       # NATs
       NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      # NATS authentication token
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # REDIS
       REDIS_URL: {{ VALKEY_ENDPOINT }}
+      # Redis/Valkey password
+      REDIS_PASSWORD: ${VALKEY_PASSWORD}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -1837,6 +1863,8 @@ services:
       # MILVUS
       MILVUS_URL: {{ MILVUS_ENDPOINT }}
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      # Milvus authentication token (format: username:password)
+      MILVUS_TOKEN: root:${MILVUS_ROOT_PASSWORD}
 
       # S3 Access connection
       S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
@@ -1848,9 +1876,13 @@ services:
 
       # NATs
       NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      # NATS authentication token
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # REDIS
       REDIS_URL: {{ VALKEY_ENDPOINT }}
+      # Redis/Valkey password
+      REDIS_PASSWORD: ${VALKEY_PASSWORD}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -1893,6 +1925,8 @@ services:
       # MILVUS
       MILVUS_URL: {{ MILVUS_ENDPOINT }}
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      # Milvus authentication token (format: username:password)
+      MILVUS_TOKEN: root:${MILVUS_ROOT_PASSWORD}
 
       # S3 Access connection
       S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
@@ -1904,9 +1938,13 @@ services:
 
       # NATs
       NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      # NATS authentication token
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # REDIS
       REDIS_URL: {{ VALKEY_ENDPOINT }}
+      # Redis/Valkey password
+      REDIS_PASSWORD: ${VALKEY_PASSWORD}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -1941,9 +1979,13 @@ services:
 
       # NATs
       NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      # NATS authentication token
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # REDIS
       REDIS_URL: {{ VALKEY_ENDPOINT }}
+      # Redis/Valkey password
+      REDIS_PASSWORD: ${VALKEY_PASSWORD}
 
       # Channel Configuration (Teams or Slack)
       EXPERT_ASKING_CHANNEL_TYPE: ${EXPERT_ASKING_CHANNEL_TYPE}
@@ -1984,6 +2026,8 @@ services:
 
       # NATS
       NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      # NATS authentication token
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # LiteLLM Proxy Server Settings
       LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
@@ -2008,6 +2052,8 @@ services:
       # MILVUS
       MILVUS_URL: {{ MILVUS_ENDPOINT }}
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      # Milvus authentication token (format: username:password)
+      MILVUS_TOKEN: root:${MILVUS_ROOT_PASSWORD}
 
       # DAGSTER
       DAGSTER_HOME: /dagster_home
@@ -2043,6 +2089,8 @@ services:
 
       # NATS
       NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      # NATS authentication token
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # LiteLLM Proxy Server Settings
       LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
@@ -2067,6 +2115,8 @@ services:
       # MILVUS
       MILVUS_URL: {{ MILVUS_ENDPOINT }}
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      # Milvus authentication token (format: username:password)
+      MILVUS_TOKEN: root:${MILVUS_ROOT_PASSWORD}
 
       # DAGSTER
       DAGSTER_HOME: /dagster_home
@@ -2106,6 +2156,8 @@ services:
     {%- endif %}
     environment:
       NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      # NATS authentication token
+      NATS_TOKEN: ${NATS_TOKEN}
       MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
       LOG_LEVEL: ${LOG_LEVEL}
       NUM_WORKERS: 1

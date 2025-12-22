@@ -4,6 +4,8 @@ import logging
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
+from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
+from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
     AgentClassDiscoveryResponseEvent,
@@ -24,7 +26,7 @@ from mongoengine import connect, disconnect
 from mongoengine.connection import get_connection
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
-from redis.asyncio import ConnectionPool, Redis
+from redis.asyncio import Redis
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.dispatchers.AgentDispatcher import AgentDispatcher
@@ -133,11 +135,16 @@ class AgentRunner:
         self._stop_signal.clear()
 
         self.nc = NATS()
-        await self.nc.connect(servers=self.servers)
+        # Get NATS token from settings for authentication
+        nats_settings = NatsSettings()
+        token = nats_settings.TOKEN.get_secret_value() if nats_settings.TOKEN else None
+        await self.nc.connect(servers=self.servers, token=token)
 
         self.js = self.nc.jetstream(timeout=60, publish_async_max_pending=10_000)
-        _, host, port = self.redis_url.split(":")
-        self.redis = Redis(connection_pool=ConnectionPool(host=host[2:], port=port))
+        # Use Redis.from_url() to properly handle password in connection URL
+        redis_settings = RedisSettings()
+        redis_url = redis_settings.get_connection_url()
+        self.redis = Redis.from_url(redis_url)
 
         # Connect to MongoDB (skip if already connected)
         try:

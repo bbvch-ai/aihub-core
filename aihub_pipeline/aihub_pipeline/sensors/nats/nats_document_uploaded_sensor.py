@@ -37,7 +37,9 @@ def nats_document_uploaded_sensor(
         async def check_for_events():
             nc = NATS()
             try:
-                await nc.connect(servers=[NatsSettings().ENDPOINT])
+                nats_settings = NatsSettings()
+                token = nats_settings.TOKEN.get_secret_value() if nats_settings.TOKEN else None
+                await nc.connect(servers=[nats_settings.ENDPOINT], token=token)
                 js = nc.jetstream()
 
                 stream_name, stream_subject = topic_manager.get_stream()

@@ -35,6 +35,16 @@ listen: 0.0.0.0:4222
 # Monitoring Endpoint
 http: 8222
 
+# ===================================================================
+# Token-Based Authentication
+# ===================================================================
+# All clients must provide this token to connect.
+# Token is read from environment variable NATS_TOKEN.
+# ===================================================================
+authorization {
+  token: $NATS_TOKEN
+}
+
 # Performance Settings
 # Conservative for dev, aggressive for production
 max_control_line: 4KB
