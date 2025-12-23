@@ -21,7 +21,7 @@ class DocumentUploadRequest(BaseModel):
     @field_validator("filename")
     def validate_filename_format(cls, v: str) -> str:
         v = v.strip()
-        filename_pattern = r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*(\.[a-zA-Z0-_ \-]+)*\.[a-zA-Z0-9]+$"
+        filename_pattern = r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*(\.[a-zA-Z0-9_ \-]+)*\.[a-zA-Z0-9]+$"
         if not re.match(filename_pattern, v):
             raise ValueError("Invalid filename format.")
         if any(pattern in v for pattern in ["..", "/", "\\", "\x00"]):
@@ -48,8 +48,7 @@ class DocumentUploadRequest(BaseModel):
         if not file_type.is_extension_supported(file_ext):
             supported_extensions = file_type.get_unique_extensions()
             raise ValueError(
-                f"File extension '{file_ext}' is not supported. "
-                f"Supported extensions: {', '.join(supported_extensions)}"
+                f"File extension '{file_ext}' is not supported. Supported extensions: {', '.join(supported_extensions)}"
             )
 
         # Second check: Does the MIME type match what we expect for this extension?
