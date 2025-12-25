@@ -8,14 +8,13 @@ from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
-from aihub_lib.routes.health.HealthController import HealthController
 
-from aihub_api.health.checkers import check_mongodb, check_nats
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.docling.DoclingController import DoclingController
 from aihub_api.routes.evaluation.EvaluationController import EvaluationController
 from aihub_api.routes.event.EventController import EventController
 from aihub_api.routes.file.FileController import FileController
+from aihub_api.routes.health.ApiHealthController import ApiHealthController
 from aihub_api.routes.i18n.I18nController import I18nController
 from aihub_api.routes.knowledge.KnowledgeController import KnowledgeController
 from aihub_api.routes.notification.NotificationController import NotificationController
@@ -36,7 +35,7 @@ auth = TokenAndOauth2Handler.from_auth_settings()
 
 
 runner.mount(
-    HealthController(auth=auth).get_health().get_ready(checkers={"nats": check_nats, "mongodb": check_mongodb}),
+    ApiHealthController(auth=auth).get_health().get_ready(),
     SuiteController(auth=auth).get_suite(),
     UserController(auth=auth).get_my_user().get_user().get_users().get_my_dashboard().update_my_dashboard(),
     I18nController(auth=auth).get_my_locale(),
