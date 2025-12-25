@@ -188,7 +188,7 @@ class AgentRunner:
         else:
             # Default port occupied, find a free one
             port = self._find_free_port()
-            logger.info(f"Default health port {self.health_port} occupied, using port {port}")
+            logger.warning(f"Default health port {self.health_port} is occupied, falling back to port {port}")
 
         handler_class = self._create_health_handler()
         self._health_server = HTTPServer(("0.0.0.0", port), handler_class)
