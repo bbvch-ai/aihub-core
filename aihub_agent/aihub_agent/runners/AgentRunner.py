@@ -49,6 +49,18 @@ def _check_redis(redis: Redis | None) -> bool:
         return False
 
 
+def _check_nats(nc: NATS | None) -> bool:
+    """Check if NATS connection is healthy by flushing (sends PING, waits for PONG)."""
+    if nc is None:
+        return False
+    try:
+        # Run async flush in sync context (health handler runs in separate thread)
+        asyncio.run(nc.flush(timeout=5))
+        return True
+    except Exception:
+        return False
+
+
 class AgentRunner:
     """
     An agent runner is responsible for connecting with external services like NATs, JetStream, and Redis, as well
@@ -140,10 +152,10 @@ class AgentRunner:
                 if not runner.running:
                     is_healthy = False
 
-                # Check NATS connection
-                nats_connected = runner.nc is not None and runner.nc.is_connected
-                checks["nats"] = nats_connected
-                if not nats_connected:
+                # Check NATS connection by flushing (sends PING, waits for PONG)
+                nats_healthy = _check_nats(runner.nc)
+                checks["nats"] = nats_healthy
+                if not nats_healthy:
                     is_healthy = False
 
                 # Check Redis connection by pinging

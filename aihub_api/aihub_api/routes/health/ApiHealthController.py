@@ -46,11 +46,17 @@ class ApiHealthController(HealthController):
 
 
 async def _check_nats(request: Request) -> bool:
-    """Check if NATS connection is established and connected."""
+    """Check if NATS connection is healthy by flushing (sends PING, waits for PONG)."""
     if not hasattr(request.app.state, "nc"):
         return False
     nc = request.app.state.nc
-    return nc is not None and nc.is_connected
+    if nc is None:
+        return False
+    try:
+        await nc.flush(timeout=5)
+        return True
+    except Exception:
+        return False
 
 
 async def _check_mongodb() -> bool:
