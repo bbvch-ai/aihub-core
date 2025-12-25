@@ -14,18 +14,27 @@ authorization model based on hierarchical permissions.
 
 ### Core Components
 
-The authentication system is built around three main abstractions:
+The authentication system is built around these main abstractions:
 
-- **AuthHandlers**: Extract and validate authentication credentials from requests
-- **IdentityProviders**: Retrieve user information from identity systems
+- **AuthHandlers**: Validate credentials and return user identities (standalone classes, no inheritance required)
+- **UserEntity**: Persistent user data with local role management
+- **UserIdentity**: Lightweight DTO for authenticated users
 - **AccessChecker**: Enforces hierarchical permission-based authorization
+- **Multi-Tenant Roles**: Roles are managed locally, not fetched from identity providers
 
 ### Authentication Flow
 
 1. **Credential Extraction**: AuthHandlers extract tokens/credentials from HTTP requests
-2. **Token Validation**: Handlers validate tokens against their respective authorities
-3. **Identity Resolution**: IdentityProviders fetch detailed user information
-4. **Permission Evaluation**: AccessChecker determines user access levels
+2. **Token Validation**: Handlers validate tokens against their respective authorities (OAuth2, database tokens, etc.)
+3. **User Resolution**: User data is fetched from UserEntity (local database)
+4. **Identity Creation**: UserIdentity DTO is created from UserEntity
+5. **Permission Evaluation**: AccessChecker determines user access levels based on locally-managed roles
+
+### Key Design Decisions
+
+- **Local Role Management**: Roles are stored in UserEntity and UserTenantRoleEntity, not fetched from identity providers
+- **No Identity Provider Abstraction**: Auth handlers directly handle authentication without an intermediate IdentityProvider layer
+- **Multi-Tenant Support**: Users can belong to multiple tenants with different roles in each
 
 ## Permission System
 
@@ -56,13 +65,20 @@ The system supports two types of permission checks:
 
 - JWT token validation using JWKS
 - Automatic token caching and RSA key management
-- Claims mapping to user identity
+- User profile fetched from Microsoft Graph API
+- Roles managed locally (not synced from Azure AD)
 
 ### Token-Based Authentication
 
 - Bearer token lookup in database
 - Token expiration validation
-- Direct user identity mapping
+- User identity from UserEntity
+
+### Superuser Authentication
+
+- Static token-based authentication for administrative access
+- Configurable via environment variables
+- Bypasses normal authentication flow
 
 ### Development Authentication
 
@@ -72,32 +88,41 @@ The system supports two types of permission checks:
 
 ### Multi-Strategy Support
 
-- Combines OAuth2 and token authentication
+- Combines OAuth2 and token authentication via TokenAndOauth2Handler
 - Fallback authentication mechanisms
 - Flexible deployment configurations
 
-## Identity Providers
+## User & Role Management
 
-### Azure Identity Provider
+### UserEntity
 
-- Microsoft Graph API integration
-- Automatic user profile synchronization
-- Role and permission mapping from Azure AD
+- Persisted in MongoDB users collection
+- Contains profile info (name, email, profile_image)
+- Contains cached roles list (synced from tenant memberships)
+- Additional user preferences (dashboard, favorite_modules)
 
-### Token Identity Provider
+### UserIdentity
 
-- Database-driven user management
-- Custom role assignment
-- Offline authentication support
+- Lightweight Pydantic DTO for API responses
+- Created from UserEntity via `UserIdentity.from_user_entity()`
+- No database dependencies
+
+### Multi-Tenant Roles
+
+- TenantEntity: Organization/tenant definitions
+- UserTenantRoleEntity: User-tenant-role associations
+- RoleEntity: Role definitions with access rules
+- First user signup automatically gets admin roles
 
 ## Key Features
 
 - **Stateless Architecture**: All authentication state is contained in tokens
-- **Caching**: Intelligent caching of JWKS keys and user data
+- **Caching**: Intelligent caching of JWKS keys and user profiles
 - **Multi-Language Support**: Error messages support internationalization
 - **Extensible Design**: Easy to add new authentication strategies
 - **Enterprise Integration**: Native support for OAuth2 and enterprise identity systems
 - **Security by Design**: Comprehensive validation and error handling
+- **Local Role Management**: No dependency on external role providers
 
 ## Usage Context
 
@@ -105,7 +130,8 @@ This authentication system is designed for enterprise environments requiring:
 
 - Multiple authentication methods
 - Fine-grained authorization control
-- Integration with existing identity providers
+- Local role management independent of identity providers
+- Multi-tenant support
 - Scalable, stateless operation
 - Comprehensive audit trails
 
