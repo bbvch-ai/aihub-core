@@ -1,6 +1,8 @@
 import asyncio
 import json
 import logging
+import os
+import socket
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -156,13 +158,43 @@ class AgentRunner:
 
         return HealthHandler
 
+    def _is_port_available(self, port: int) -> bool:
+        """Check if a port is available for binding."""
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind(("0.0.0.0", port))
+                return True
+            except OSError:
+                return False
+
+    def _find_free_port(self) -> int:
+        """Find a random available port."""
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(("0.0.0.0", 0))
+            return s.getsockname()[1]
+
     def _start_health_server(self) -> None:
         """Starts the HTTP health check server in a background thread."""
+        env_port = os.environ.get("AGENT_HEALTH_PORT")
+
+        if env_port is not None:
+            # User explicitly set port - use it or fail
+            port = int(env_port)
+            if not self._is_port_available(port):
+                raise OSError(f"AGENT_HEALTH_PORT={port} is not available. Port is already in use.")
+        elif self._is_port_available(self.health_port):
+            # Default port is available
+            port = self.health_port
+        else:
+            # Default port occupied, find a free one
+            port = self._find_free_port()
+            logger.info(f"Default health port {self.health_port} occupied, using port {port}")
+
         handler_class = self._create_health_handler()
-        self._health_server = HTTPServer(("0.0.0.0", self.health_port), handler_class)
+        self._health_server = HTTPServer(("0.0.0.0", port), handler_class)
         self._health_thread = threading.Thread(target=self._health_server.serve_forever, daemon=True)
         self._health_thread.start()
-        logger.debug(f"Health check server started on port {self.health_port}")
+        logger.info(f"Health check server started on port {port}")
 
     def _stop_health_server(self) -> None:
         """Stops the HTTP health check server."""
