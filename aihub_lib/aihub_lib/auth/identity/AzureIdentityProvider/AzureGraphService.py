@@ -41,10 +41,8 @@ class AzureGraphService:
         self.graph_scope = "https://graph.microsoft.com/.default"
 
         # Consolidated and configurable caching
-        self.user_profile_cache = TTLCache(maxsize=128, ttl=default_ttl)
-        self.profile_image_cache = TTLCache(maxsize=128, ttl=default_ttl * 5)  # Images change less often
-        self.service_principal_cache = TTLCache(maxsize=64, ttl=default_ttl)
-        self.app_role_assignments_cache = TTLCache(maxsize=128, ttl=600)  # Assignments can change more frequently
+        self.user_profile_cache: TTLCache[str, dict[str, Any]] = TTLCache(maxsize=128, ttl=default_ttl)
+        self.profile_image_cache: TTLCache[str, str | None] = TTLCache(maxsize=128, ttl=default_ttl * 5)
 
     async def _get_token(self) -> str:
         """Acquires an OAuth2 token for the Microsoft Graph API."""
@@ -168,59 +166,6 @@ class AzureGraphService:
 
         self.profile_image_cache[cache_key] = image_data_url
         return image_data_url
-
-    async def get_user_roles(self, user_oid: str) -> list[str]:
-        """
-        Calculates the effective application roles for a user for this specific application.
-        """
-        # 1. Get the Service Principal of our own application
-        sp_cache_key = f"service_principal_app_id_{self.client_id}"
-        if sp_cache_key in self.service_principal_cache:
-            app_sp_data = self.service_principal_cache[sp_cache_key]
-        else:
-            sp_url = f"{self.MS_GRAPH_BASE_URL}/servicePrincipals?$filter=appId eq '{self.client_id}'"
-            sp_response = await self._make_graph_request("GET", sp_url)
-            principals = sp_response.get("value", [])
-            app_sp_data = principals[0] if principals else None
-            self.service_principal_cache[sp_cache_key] = app_sp_data
-
-        if not app_sp_data or not app_sp_data.get("id"):
-            logger.warning(
-                f"Could not find Service Principal for app client_id {self.client_id}. Cannot determine roles."
-            )
-            return []
-
-        # 2. Map role definitions from the Service Principal
-        target_app_sp_id = app_sp_data["id"]
-        app_role_definitions = {
-            role["id"]: role["value"]
-            for role in app_sp_data.get("appRoles", [])
-            if role.get("isEnabled") and role.get("id") and role.get("value")
-        }
-
-        if not app_role_definitions:
-            logger.info("No enabled app roles are defined on the application SP.")
-            return []
-
-        # 3. Get the user's role assignments for our application's SP
-        assignments_cache_key = f"assignments_{user_oid}_for_sp_{target_app_sp_id}"
-        if assignments_cache_key in self.app_role_assignments_cache:
-            assigned_role_ids = self.app_role_assignments_cache[assignments_cache_key]
-        else:
-            assign_url = (
-                f"{self.MS_GRAPH_BASE_URL}/users/{user_oid}/appRoleAssignments?"
-                f"$filter=resourceId eq {target_app_sp_id}&$select=appRoleId"
-            )
-            assignments_response = await self._make_graph_request("GET", assign_url)
-            assigned_role_ids = [a["appRoleId"] for a in assignments_response.get("value", [])]
-            self.app_role_assignments_cache[assignments_cache_key] = assigned_role_ids
-
-        # 4. Map the assigned IDs back to role names
-        effective_roles = [
-            app_role_definitions[role_id] for role_id in assigned_role_ids if role_id in app_role_definitions
-        ]
-
-        return sorted(list(set(effective_roles)))
 
     async def get_user_identity_by_oid(self, user_oid: str) -> UserIdentity:
         """

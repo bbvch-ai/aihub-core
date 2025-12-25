@@ -4,9 +4,6 @@ import pytest
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
@@ -38,7 +35,7 @@ def mongodb():
 def api_client(mongodb):
     """Create test client with ApiTokenController mounted."""
     runner = ApiTestRunner()
-    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    auth = DangerousDevelopmentOnlyAuthHandler()
     runner.mount(TokenController(auth=auth).create_token().list_tokens().revoke_token())
     with TestClient(runner.create_app(), raise_server_exceptions=True) as client:
         yield client

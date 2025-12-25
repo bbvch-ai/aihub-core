@@ -3,9 +3,6 @@ import pytest_asyncio
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
@@ -21,7 +18,7 @@ DEFAULT_LANG_KEY = "lang"
 @pytest_asyncio.fixture(scope="module")
 async def api_client():
     """Create an API client with I18nController mounted using DangerousDevelopmentOnlyAuthHandler."""
-    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    auth = DangerousDevelopmentOnlyAuthHandler()
     controller = I18nController(auth=auth).get_my_locale()
     runner = ApiTestRunner()
     runner.mount(controller)

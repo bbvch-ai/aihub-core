@@ -8,9 +8,6 @@ import requests
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
@@ -121,7 +118,7 @@ async def test_runner(captured_responses):
     runner = SimulatedAgentBotTestRunner(agent_class=AGENT_CLASS, agent_id=AGENT_ID)
     runner.with_simple_chunk_events()
     runner.responses = captured_responses  # Wire captured responses to test_runner
-    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    auth = DangerousDevelopmentOnlyAuthHandler()
     runner.mount(
         HealthController(auth=auth).get_health(), AgentChatController(auth=auth).completions_json().completions_stream()
     )

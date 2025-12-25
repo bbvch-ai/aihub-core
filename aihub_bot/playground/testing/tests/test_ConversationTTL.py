@@ -9,9 +9,6 @@ import requests
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.routes.health.HealthController import HealthController
@@ -100,7 +97,7 @@ async def test_runner():
     """Create a test runner with a very short TTL"""
     runner = SimulatedAgentBotTestRunner(agent_class=AGENT_CLASS, agent_id=AGENT_ID, conversation_ttl_days=TTL_DAYS)
     runner.with_simple_chunk_events()
-    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    auth = DangerousDevelopmentOnlyAuthHandler()
     runner.mount(HealthController(auth=auth).get_health(), AgentChatController(auth=auth).completions_json())
     await runner.start_simulation()
     return runner

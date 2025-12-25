@@ -1,6 +1,7 @@
 import base64
 import json
 from datetime import UTC, datetime, timedelta
+from typing import Any
 from unittest.mock import AsyncMock
 
 import jwt
@@ -8,9 +9,6 @@ import pytest
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.auth_utils.oauth2_utils.oauth2_test_utils import (
     base64url_encode,
@@ -26,7 +24,7 @@ scenarios("features/oauth2_auth_handler.feature")
 
 
 @pytest.fixture
-def rsa_keys() -> dict:
+def rsa_keys() -> dict[str, Any]:
     """Return a test RSA key pair with a fixed key ID and its JWK representation."""
     private_key, public_key = generate_rsa_keypair()
     kid = "test-key-id"
@@ -35,13 +33,13 @@ def rsa_keys() -> dict:
 
 
 @pytest.fixture
-def fake_jwks_response(rsa_keys: dict) -> dict:
+def fake_jwks_response(rsa_keys: dict[str, Any]) -> dict[str, Any]:
     """Return a fake JWKS response using the generated public key."""
     return {"keys": [rsa_keys["jwk"]]}
 
 
 @pytest.fixture
-def oauth2_context() -> dict:
+def oauth2_context() -> dict[str, Any]:
     """Container for storing OAuth2-related data across steps."""
     return {}
 
@@ -53,7 +51,7 @@ def oauth2_context() -> dict:
     parsers.parse('an OAuth2 configuration client_id "{client_id}", and authority_url "{authority_url}"'),
     target_fixture="oauth2_config",
 )
-def oauth2_config(monkeypatch, client_id: str, authority_url: str) -> OAuth2Settings:
+def oauth2_config(monkeypatch: pytest.MonkeyPatch, client_id: str, authority_url: str) -> OAuth2Settings:
     """Set the OAuth2 configuration environment variables."""
     monkeypatch.setenv("OAUTH_CLIENT_ID", client_id)
     monkeypatch.setenv("OAUTH_AUTHORITY_URL", authority_url)
@@ -65,7 +63,7 @@ def oauth2_config(monkeypatch, client_id: str, authority_url: str) -> OAuth2Sett
     target_fixture="generated_token",
 )
 def generated_token(
-    monkeypatch, oauth2_config: OAuth2Settings, rsa_keys: dict, name: str, email: str, roles: str
+    monkeypatch: pytest.MonkeyPatch, oauth2_config: OAuth2Settings, rsa_keys: dict[str, Any], name: str, email: str, roles: str
 ) -> str:
     """Generate a valid OAuth2 JWT with the specified claims."""
     now = datetime.now(UTC)
@@ -86,12 +84,12 @@ def generated_token(
         "exp": exp,
     }
     headers = {"kid": rsa_keys["kid"]}
-    token = jwt.encode(payload, rsa_keys["private_key"], algorithm="RS256", headers=headers)
+    token: str = jwt.encode(payload, rsa_keys["private_key"], algorithm="RS256", headers=headers)
     return token
 
 
 @given(parsers.parse('an invalid OAuth2 token "{token}"'))
-def given_invalid_token(oauth2_context: dict, token: str) -> None:
+def given_invalid_token(oauth2_context: dict[str, Any], token: str) -> None:
     """Store an invalid OAuth2 token in the context."""
     oauth2_context["token"] = token
 
@@ -101,7 +99,7 @@ def given_invalid_token(oauth2_context: dict, token: str) -> None:
     target_fixture="generated_token",
 )
 def generated_expired_token(
-    monkeypatch, oauth2_config: OAuth2Settings, rsa_keys: dict, oauth2_context: dict, name: str, email: str, roles: str
+    monkeypatch: pytest.MonkeyPatch, oauth2_config: OAuth2Settings, rsa_keys: dict[str, Any], oauth2_context: dict[str, Any], name: str, email: str, roles: str
 ) -> str:
     """Generate an expired OAuth2 JWT and store it in the context."""
     now = datetime.now(UTC)
@@ -122,13 +120,13 @@ def generated_expired_token(
         "exp": exp,
     }
     headers = {"kid": rsa_keys["kid"]}
-    token = jwt.encode(payload, rsa_keys["private_key"], algorithm="RS256", headers=headers)
+    token: str = jwt.encode(payload, rsa_keys["private_key"], algorithm="RS256", headers=headers)
     oauth2_context["token"] = token
     return token
 
 
 @given('I modify the token\'s header to use kid "unknown-key-id"')
-def modify_token_unknown_kid(oauth2_context: dict, generated_token: str) -> None:
+def modify_token_unknown_kid(oauth2_context: dict[str, Any], generated_token: str) -> None:
     """Modify the generated token's header to use an unknown key ID."""
     parts = generated_token.split(".")
     if len(parts) != 3:
@@ -143,17 +141,17 @@ def modify_token_unknown_kid(oauth2_context: dict, generated_token: str) -> None
 
 
 @given("I re-sign the token with a different private key")
-def resign_token_with_different_key(oauth2_context: dict, oauth2_config: OAuth2Settings, generated_token: str) -> None:
+def resign_token_with_different_key(oauth2_context: dict[str, Any], oauth2_config: OAuth2Settings, generated_token: str) -> None:
     """Re-sign the token using a different RSA private key."""
     unverified = jwt.get_unverified_header(generated_token)
     payload = jwt.decode(generated_token, options={"verify_signature": False})
     new_private_key, _ = generate_rsa_keypair()
-    new_token = jwt.encode(payload, new_private_key, algorithm="RS256", headers=unverified)
+    new_token: str = jwt.encode(payload, new_private_key, algorithm="RS256", headers=unverified)
     oauth2_context["token"] = new_token
 
 
 @given("no modification is applied to the token")
-def store_generated_token(oauth2_context: dict, generated_token: str) -> None:
+def store_generated_token(oauth2_context: dict[str, Any], generated_token: str) -> None:
     """Store the generated token in the context without modifications."""
     oauth2_context["token"] = generated_token
 
@@ -163,7 +161,7 @@ def store_generated_token(oauth2_context: dict, generated_token: str) -> None:
 
 @when("I invoke the OAuth2AuthHandler with the token")
 @async_test
-async def invoke_oauth2_handler(monkeypatch, oauth2_context: dict, fake_jwks_response: dict) -> None:
+async def invoke_oauth2_handler(monkeypatch: pytest.MonkeyPatch, oauth2_context: dict[str, Any], fake_jwks_response: dict[str, Any]) -> None:
     """Invoke the OAuth2AuthHandler with the stored token and store the authenticated user."""
     from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
 
@@ -174,14 +172,14 @@ async def invoke_oauth2_handler(monkeypatch, oauth2_context: dict, fake_jwks_res
     if token is None:
         pytest.fail("No token found in context")
     token_bytes = token if isinstance(token, bytes) else token.encode("utf-8")
-    handler = OAuth2AuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    handler = OAuth2AuthHandler()
     user = await handler(token_bytes)
     oauth2_context["user"] = user
 
 
 @when("I invoke the OAuth2AuthHandler with the token expecting error")
 @async_test
-async def invoke_oauth2_handler_expect_error(monkeypatch, oauth2_context: dict, fake_jwks_response: dict) -> None:
+async def invoke_oauth2_handler_expect_error(monkeypatch: pytest.MonkeyPatch, oauth2_context: dict[str, Any], fake_jwks_response: dict[str, Any]) -> None:
     """Invoke the OAuth2AuthHandler with the stored token and capture the error."""
     from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
 
@@ -192,7 +190,7 @@ async def invoke_oauth2_handler_expect_error(monkeypatch, oauth2_context: dict, 
     if token is None:
         pytest.fail("No token found in context")
     token_bytes = token if isinstance(token, bytes) else token.encode("utf-8")
-    handler = OAuth2AuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    handler = OAuth2AuthHandler()
     try:
         await handler(token_bytes)
         pytest.fail("OAuth2AuthHandler did not raise an exception")
@@ -204,7 +202,7 @@ async def invoke_oauth2_handler_expect_error(monkeypatch, oauth2_context: dict, 
 
 
 @then(parsers.parse('the returned user should have name "{expected_name}"'))
-def check_oauth2_user_name(oauth2_context: dict, expected_name: str) -> None:
+def check_oauth2_user_name(oauth2_context: dict[str, Any], expected_name: str) -> None:
     """Check that the authenticated user has the expected name."""
     user = oauth2_context.get("user")
     assert user is not None, "No user was returned by OAuth2AuthHandler"
@@ -212,7 +210,7 @@ def check_oauth2_user_name(oauth2_context: dict, expected_name: str) -> None:
 
 
 @then(parsers.parse('the returned user should have preferred_username "{expected_email}"'))
-def check_oauth2_user_email(oauth2_context: dict, expected_email: str) -> None:
+def check_oauth2_user_email(oauth2_context: dict[str, Any], expected_email: str) -> None:
     """Check that the authenticated user has the expected preferred username."""
     user = oauth2_context.get("user")
     assert user is not None, "No user was returned by OAuth2AuthHandler"
@@ -220,7 +218,7 @@ def check_oauth2_user_email(oauth2_context: dict, expected_email: str) -> None:
 
 
 @then(parsers.parse('the returned user should have roles "{role1}" and "{role2}"'))
-def check_oauth2_user_roles(oauth2_context: dict, role1: str, role2: str) -> None:
+def check_oauth2_user_roles(oauth2_context: dict[str, Any], role1: str, role2: str) -> None:
     """Check that the authenticated user has the expected roles."""
     user = oauth2_context.get("user")
     assert user is not None, "No user was returned by OAuth2AuthHandler"
@@ -228,7 +226,7 @@ def check_oauth2_user_roles(oauth2_context: dict, role1: str, role2: str) -> Non
 
 
 @then(parsers.parse('I should receive an HTTP error with detail "{expected_detail}"'))
-def check_oauth2_error(oauth2_context: dict, expected_detail: str) -> None:
+def check_oauth2_error(oauth2_context: dict[str, Any], expected_detail: str) -> None:
     """Check that the error message contains the expected detail."""
     error = oauth2_context.get("error")
     assert error is not None, "No error was captured"
