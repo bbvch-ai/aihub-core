@@ -1,13 +1,14 @@
 import hashlib
 import hmac
 import logging
+import uuid
 
 from fastapi import HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from aihub_lib.auth.dependencies.AuthSettings import AuthSettings
-from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.persistence.user.UserEntity import UserEntity
 
 logger = logging.getLogger(__name__)
 
@@ -16,8 +17,8 @@ class OpenWebuiAuthHandler:
     """
     A FastAPI dependency for OpenWebUI authentication.
 
-    Validates HMAC signature from OpenWebUI headers and fetches user identity
-    by email from Azure Graph.
+    Validates HMAC signature from OpenWebUI headers and resolves user identity
+    from the local database.
     """
 
     def __init__(self, base_auth_handler):
@@ -26,7 +27,6 @@ class OpenWebuiAuthHandler:
             base_auth_handler: The auth handler to validate the bearer token.
         """
         self.base_auth_handler = base_auth_handler
-        self.oauth2_handler = OAuth2AuthHandler()
 
         secret = AuthSettings().OPEN_WEBUI_SIGNING_SECRET.get_secret_value()
         self.signing_secret = secret.encode("utf-8")
@@ -60,7 +60,15 @@ class OpenWebuiAuthHandler:
             raise HTTPException(status_code=401, detail="Invalid OpenWebUI signature.")
 
         logger.info("Successfully authenticated OpenWebUI user via signature")
-        return await self.oauth2_handler.get_user_identity_by_email(user_email)
+
+        # Generate a deterministic OID from email for OpenWebUI users
+        oid = str(uuid.uuid5(uuid.NAMESPACE_DNS, user_email))
+        user_entity = UserEntity.ensure_user_exists_for_auth(
+            oid=oid,
+            name=user_name,
+            email=user_email,
+        )
+        return UserIdentity.from_user_entity(user_entity)
 
     async def authenticate_token(self, token_str: str) -> UserIdentity:
         raise NotImplementedError("OpenWebuiAuthHandler does not support token authentication without request context")

@@ -1,14 +1,18 @@
 import base64
 import json
+import os
+from collections.abc import Generator
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from unittest.mock import AsyncMock
 
 import jwt
 import pytest
+from mongoengine import connect, disconnect
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
+from aihub_lib.persistence.user.UserEntity import UserEntity
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 from aihub_lib.testing.auth_utils.oauth2_utils.oauth2_test_utils import (
     base64url_encode,
@@ -19,6 +23,23 @@ from aihub_lib.testing.auth_utils.oauth2_utils.oauth2_test_utils import (
 # --- Scenario Declarations ---
 
 scenarios("features/oauth2_auth_handler.feature")
+
+
+# --- MongoDB Connection Fixture ---
+
+
+@pytest.fixture(autouse=True)
+def mongo_connection() -> Generator[None, None, None]:
+    """Set up a MongoDB connection for testing and disconnect after."""
+    mongo_uri = os.environ.get("MONGO_CONNECTION_STRING", "mongodb://admin:admin@localhost:27017/aihub_test")
+    connect(db="aihub_test", host=mongo_uri)
+    yield
+    # Clean up test user
+    try:
+        UserEntity.objects(id="test-oid").delete()
+    except Exception:
+        pass
+    disconnect()
 
 # --- Fixtures ---
 

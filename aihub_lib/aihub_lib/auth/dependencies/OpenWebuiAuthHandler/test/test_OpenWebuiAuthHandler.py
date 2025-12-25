@@ -33,44 +33,6 @@ def mongo_connection(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, N
     disconnect()
 
 
-# --- Mocking Fixtures ---
-
-
-class MockTokenResponse:
-    def __init__(self) -> None:
-        self.token = "mock-access-token"
-
-
-class MockCredential:
-    def __init__(self) -> None:
-        self._token = MockTokenResponse()
-
-    def get_token(self, scope: str) -> MockTokenResponse:
-        # Return a token object that has a token attribute, not a coroutine
-        return self._token
-
-
-@pytest.fixture(autouse=True)
-def mock_azure_credential(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Mock the DefaultAzureCredential to prevent actual Azure authentication."""
-    monkeypatch.setattr(
-        "aihub_lib.auth.identity.AzureIdentityProvider.AzureGraphService.AsyncDefaultAzureCredential",
-        lambda: MockCredential(),
-    )
-
-
-@pytest.fixture
-def mock_get_user_by_email(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
-    """Mock the get_user_by_email method of OpenWebuiAuthHandler."""
-    original_method = OpenWebuiAuthHandler.get_user_by_email
-
-    # Store the original method to restore it later
-    yield
-
-    # Restore the original method after test
-    monkeypatch.setattr(OpenWebuiAuthHandler, "get_user_by_email", original_method)
-
-
 # --- Scenario Declarations ---
 
 scenarios("features/openwebui_auth_handler.feature")

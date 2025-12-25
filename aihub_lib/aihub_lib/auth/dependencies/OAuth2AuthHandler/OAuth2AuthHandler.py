@@ -5,10 +5,8 @@ import jwt
 from cachetools import TTLCache
 from fastapi import HTTPException, Security
 from jwt.algorithms import RSAAlgorithm
-from pydantic import ValidationError
 
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
-from aihub_lib.auth.identity.AzureIdentityProvider.AzureGraphService import AzureGraphService
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.persistence.user.UserEntity import UserEntity
 
@@ -19,8 +17,8 @@ class OAuth2AuthHandler:
     """
     A FastAPI dependency for OAuth2 authentication via Azure AD.
 
-    Validates JWT tokens using JWKS from Microsoft Identity Platform, then fetches
-    user profile from Azure Graph and ensures the user exists locally.
+    Validates JWT tokens using JWKS from Microsoft Identity Platform. User data
+    is extracted directly from JWT claims - no external Graph API calls needed.
     """
 
     _jwks_cache: TTLCache = TTLCache(maxsize=100, ttl=21600)
@@ -28,7 +26,6 @@ class OAuth2AuthHandler:
 
     def __init__(self):
         self.config = OAuth2Settings()
-        self.graph_service = AzureGraphService(self.config.CLIENT_ID)
 
     async def __call__(self, oauth_token: str = Security(OAuth2Settings().SCHEMA)) -> UserIdentity:
         return await self.authenticate_token(oauth_token)
@@ -90,12 +87,21 @@ class OAuth2AuthHandler:
                 issuer=f"{OAuth2Settings().AUTHORITY_URL}/v2.0",
             )
 
-            try:
-                oid = decoded_token.get("oid")
-                return await self._get_user_identity(oid)
-            except ValidationError:
-                logger.exception("Token validation error")
-                raise HTTPException(status_code=422, detail="Invalid token claims")
+            oid = decoded_token.get("oid")
+            name = decoded_token.get("name", "")
+            email = decoded_token.get("preferred_username", "")
+
+            if not oid:
+                logger.warning("Token missing oid claim")
+                raise HTTPException(status_code=401, detail="Invalid token claims")
+
+            user_entity = UserEntity.ensure_user_exists_for_auth(
+                oid=oid,
+                name=name,
+                email=email,
+            )
+
+            return UserIdentity.from_user_entity(user_entity)
 
         except jwt.ExpiredSignatureError:
             logger.info("Token expired")
@@ -106,33 +112,6 @@ class OAuth2AuthHandler:
         except httpx.HTTPError:
             logger.exception("HTTP error during token validation")
             raise HTTPException(status_code=500, detail="Authentication service unavailable")
-        except ValueError as e:
-            logger.exception("Unexpected error during token validation: %s", str(e))
-            raise HTTPException(status_code=500, detail="User identity error")
         except Exception as e:
             logger.exception("Unexpected error during token validation: %s", str(e))
             raise HTTPException(status_code=500, detail="Authentication error")
-
-    async def _get_user_identity(self, oid: str) -> UserIdentity:
-        """Fetches user profile from Azure Graph and ensures user exists locally."""
-        graph_identity = await self.graph_service.get_user_identity_by_oid(oid)
-
-        user_entity = UserEntity.ensure_user_exists_for_auth(
-            oid=graph_identity.id,
-            name=graph_identity.name,
-            email=graph_identity.email,
-            profile_image=graph_identity.profile_image,
-        )
-
-        return UserIdentity(
-            id=user_entity.id,
-            name=user_entity.name,
-            email=user_entity.email,
-            roles=user_entity.roles,
-            profile_image=user_entity.profile_image,
-        )
-
-    async def get_user_identity_by_email(self, email: str) -> UserIdentity:
-        """Fetches user identity by email from Azure Graph."""
-        graph_identity = await self.graph_service.get_user_identity_by_email(email)
-        return await self._get_user_identity(graph_identity.id)
