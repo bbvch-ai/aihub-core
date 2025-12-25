@@ -41,10 +41,4 @@ class TokenAuthHandler:
         except DoesNotExist:
             raise HTTPException(status_code=401, detail="User not found.")
 
-        return UserIdentity(
-            id=user.id,
-            name=user.name,
-            email=user.email,
-            roles=user.roles,
-            profile_image=user.profile_image,
-        )
+        return UserIdentity.from_user_entity(user)
