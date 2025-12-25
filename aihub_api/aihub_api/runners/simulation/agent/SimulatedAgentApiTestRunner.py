@@ -191,7 +191,9 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         assert len(self.simulated_events) > 0, "No simulated events provided"
 
         self.nc = NATS()
-        await self.nc.connect(servers=[NatsSettings().ENDPOINT])
+        nats_settings = NatsSettings()
+        token = nats_settings.TOKEN.get_secret_value() if nats_settings.TOKEN else None
+        await self.nc.connect(servers=[nats_settings.ENDPOINT], token=token)
 
         if self.start_events is None:
             self.start_events = [

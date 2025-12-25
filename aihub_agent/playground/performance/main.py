@@ -37,8 +37,10 @@ async def benchmark_jetstream(n_events: int, payload_kb: int) -> dict[str, Any]:
     """
     Benchmark NATS JetStream performance.
     """
-    # Connect to NATS
-    nc = await nats.connect("nats://localhost:4222")
+    # Connect to NATS with token authentication
+    nats_settings = NatsSettings()
+    token = nats_settings.TOKEN.get_secret_value() if nats_settings.TOKEN else None
+    nc = await nats.connect(nats_settings.ENDPOINT, token=token)
     js = nc.jetstream()
 
     # Create a random stream name
@@ -165,9 +167,11 @@ async def run_system_test(process_count: int, n_events: int, payload_kb: int) ->
         # Allow time for processes to initialize
         await asyncio.sleep(2)
 
-        # Set up NATS connection for test coordination
+        # Set up NATS connection for test coordination with token authentication
         nc = NATS()
-        await nc.connect(servers=[NatsSettings().ENDPOINT])
+        nats_settings = NatsSettings()
+        token = nats_settings.TOKEN.get_secret_value() if nats_settings.TOKEN else None
+        await nc.connect(servers=[nats_settings.ENDPOINT], token=token)
         js = nc.jetstream()
 
         # Generate unique IDs for this test run
