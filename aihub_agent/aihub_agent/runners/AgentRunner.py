@@ -38,6 +38,17 @@ from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
 logger = logging.getLogger(__name__)
 
 
+def _check_redis(redis: Redis | None) -> bool:
+    """Check if Redis connection is healthy by pinging the server."""
+    if redis is None:
+        return False
+    try:
+        # Run async ping in sync context (health handler runs in separate thread)
+        return asyncio.run(redis.ping())
+    except Exception:
+        return False
+
+
 class AgentRunner:
     """
     An agent runner is responsible for connecting with external services like NATs, JetStream, and Redis, as well
@@ -135,10 +146,10 @@ class AgentRunner:
                 if not nats_connected:
                     is_healthy = False
 
-                # Check Redis connection (simple check - connection pool exists)
-                redis_available = runner.redis is not None
-                checks["redis"] = redis_available
-                if not redis_available:
+                # Check Redis connection by pinging
+                redis_healthy = _check_redis(runner.redis)
+                checks["redis"] = redis_healthy
+                if not redis_healthy:
                     is_healthy = False
 
                 health_status = {
