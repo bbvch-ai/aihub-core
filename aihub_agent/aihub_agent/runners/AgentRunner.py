@@ -97,11 +97,28 @@ class AgentRunner:
 
             def do_GET(self) -> None:
                 if self.path == "/health":
-                    self._handle_health_check()
+                    self._handle_liveness()
+                elif self.path == "/health/ready":
+                    self._handle_readiness()
                 else:
                     self.send_error(404, "Not Found")
 
-            def _handle_health_check(self) -> None:
+            def _handle_liveness(self) -> None:
+                """Simple liveness check - just confirms the process is running."""
+                health_status = {
+                    "status": "ok",
+                    "agent_class": runner.agent_class,
+                }
+                response_body = json.dumps(health_status).encode("utf-8")
+
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(response_body)))
+                self.end_headers()
+                self.wfile.write(response_body)
+
+            def _handle_readiness(self) -> None:
+                """Readiness check - verifies all dependencies are available."""
                 checks: dict[str, bool] = {}
                 is_healthy = True
 
@@ -123,7 +140,7 @@ class AgentRunner:
                     is_healthy = False
 
                 health_status = {
-                    "status": "healthy" if is_healthy else "unhealthy",
+                    "status": "ok" if is_healthy else "unhealthy",
                     "agent_class": runner.agent_class,
                     "checks": checks,
                 }
