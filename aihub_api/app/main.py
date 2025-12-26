@@ -6,8 +6,6 @@ AihubInstrumentor().instrument()
 from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.infrastructure.logging.logger import enable_logging
-from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
-from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.docling.DoclingController import DoclingController
@@ -80,9 +78,6 @@ runner.mount(
     .run_experiment(),
     KnowledgeController(
         auth=auth,
-        vector_store_factory=lambda collection: create_milvus_vector_store(
-            MilvusSettings().URL, collection, MilvusSettings().DIMENSION
-        ),
         translation_llm_config=LLMConfig(model_name="text-generation/mini"),
     )
     .create_namespace()
