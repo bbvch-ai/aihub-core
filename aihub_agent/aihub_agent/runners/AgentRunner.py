@@ -38,26 +38,28 @@ from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
 logger = logging.getLogger(__name__)
 
 
-def _check_redis(redis: Redis | None) -> bool:
+def _check_redis(redis: Redis | None, loop: asyncio.AbstractEventLoop) -> bool:
     """Check if Redis connection is healthy by pinging the server."""
     if redis is None:
         return False
     try:
-        # Run async ping in sync context (health handler runs in separate thread)
-        return asyncio.run(redis.ping())
-    except Exception:
+        future = asyncio.run_coroutine_threadsafe(redis.ping(), loop)
+        return future.result(timeout=5)
+    except Exception as e:
+        logger.debug(f"Redis health check failed: {e}")
         return False
 
 
-def _check_nats(nc: NATS | None) -> bool:
+def _check_nats(nc: NATS | None, loop: asyncio.AbstractEventLoop) -> bool:
     """Check if NATS connection is healthy by flushing (sends PING, waits for PONG)."""
     if nc is None:
         return False
     try:
-        # Run async flush in sync context (health handler runs in separate thread)
-        asyncio.run(nc.flush(timeout=5))
+        future = asyncio.run_coroutine_threadsafe(nc.flush(timeout=5), loop)
+        future.result(timeout=5)
         return True
-    except Exception:
+    except Exception as e:
+        logger.debug(f"NATS health check failed: {e}")
         return False
 
 
@@ -110,6 +112,7 @@ class AgentRunner:
         self.health_port = health_port
         self._health_server: HTTPServer | None = None
         self._health_thread: threading.Thread | None = None
+        self._loop: asyncio.AbstractEventLoop | None = None
 
     def _create_health_handler(self) -> type[BaseHTTPRequestHandler]:
         """Creates a health check HTTP request handler with access to the runner instance."""
@@ -153,13 +156,13 @@ class AgentRunner:
                     is_healthy = False
 
                 # Check NATS connection by flushing (sends PING, waits for PONG)
-                nats_healthy = _check_nats(runner.nc)
+                nats_healthy = _check_nats(runner.nc, runner._loop) if runner._loop else False
                 checks["nats"] = nats_healthy
                 if not nats_healthy:
                     is_healthy = False
 
                 # Check Redis connection by pinging
-                redis_healthy = _check_redis(runner.redis)
+                redis_healthy = _check_redis(runner.redis, runner._loop) if runner._loop else False
                 checks["redis"] = redis_healthy
                 if not redis_healthy:
                     is_healthy = False
@@ -283,6 +286,7 @@ class AgentRunner:
 
         self.running = True
         self._stop_signal.clear()
+        self._loop = asyncio.get_running_loop()
 
         self.nc = NATS()
         await self.nc.connect(servers=self.servers)

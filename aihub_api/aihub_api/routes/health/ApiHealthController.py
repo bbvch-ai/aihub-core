@@ -1,9 +1,13 @@
+import logging
+
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.routes.health.dto.HealthResponse import HealthResponse
 from aihub_lib.routes.health.HealthController import HealthController
 from fastapi import Request, Response
 from mongoengine.connection import get_connection
 from starlette.status import HTTP_200_OK, HTTP_503_SERVICE_UNAVAILABLE
+
+logger = logging.getLogger(__name__)
 
 
 class ApiHealthController(HealthController):
@@ -55,7 +59,8 @@ async def _check_nats(request: Request) -> bool:
     try:
         await nc.flush(timeout=5)
         return True
-    except Exception:
+    except Exception as e:
+        logger.debug(f"NATS health check failed: {e}")
         return False
 
 
@@ -65,5 +70,6 @@ async def _check_mongodb() -> bool:
         conn = get_connection()
         conn.admin.command("ping")
         return True
-    except Exception:
+    except Exception as e:
+        logger.debug(f"MongoDB health check failed: {e}")
         return False
