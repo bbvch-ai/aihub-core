@@ -4,8 +4,8 @@ import math
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
-from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+from aihub_lib.infrastructure.s3.use_s3 import create_s3_service
 from fastapi import HTTPException, status
 from fastapi.responses import RedirectResponse
 
@@ -23,7 +23,7 @@ class FileService:
         """
         For logged-in users. Generates a temporary URL and returns a redirect response.
         """
-        sas_url = S3AnonymousFileAccessService().generate_sas_url(container, file_path)
+        sas_url = create_s3_service().generate_sas_url(container, file_path)
         return RedirectResponse(url=sas_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 
     @staticmethod
@@ -47,7 +47,7 @@ class FileService:
         remaining_seconds = expires - now_timestamp
         lifetime_hours = math.ceil(remaining_seconds / 3600)
 
-        return S3AnonymousFileAccessService().generate_sas_url(container, file_path, lifetime_hours=lifetime_hours)
+        return create_s3_service().generate_sas_url(container, file_path, lifetime_hours=lifetime_hours)
 
     @staticmethod
     @trace_fn
@@ -63,7 +63,7 @@ class FileService:
     @trace_fn
     def _generate_internal_signature(container: str, path: str, expires: int) -> str:
         """Generates an HMAC signature for our internal anonymous URL."""
-        secret = S3AnonymousFileAccessService().get_url_signing_secret()
+        secret = create_s3_service().get_url_signing_secret()
         msg = f"{container}{path}{expires}".encode()
         return hmac.new(secret.encode("utf-8"), msg, hashlib.sha256).hexdigest()
 

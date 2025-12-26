@@ -1,11 +1,13 @@
 import logging
+from typing import TYPE_CHECKING, Any
 
-import boto3
-from botocore.config import Config
 from botocore.exceptions import ClientError
 
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.infrastructure.s3.S3StorageSettings import S3StorageSettings
+
+if TYPE_CHECKING:
+    from mypy_boto3_s3 import S3Client
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +19,8 @@ class S3AnonymousFileAccessService:
     This service provides secure, temporary access to S3 objects through presigned URLs.
     It supports both AWS S3 and SeaweedFS (S3-compatible) storage backends.
 
-    The service uses boto3 for S3 interactions and relies on S3StorageSettings for
-    connection parameters including endpoint URL, access keys, and region.
+    The service uses boto3 for S3 interactions and accepts pre-configured clients
+    for dependency injection, enabling connection reuse and proper health checking.
 
     Two S3 clients are maintained:
     - Internal client: Uses the internal endpoint for server-side operations
@@ -26,39 +28,21 @@ class S3AnonymousFileAccessService:
       browsers can access (e.g., via Traefik-routed domain)
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+        s3_client: "S3Client | Any",
+        s3_public_client: "S3Client | Any",
+        s3_settings: S3StorageSettings,
+    ):
         """
-        Initialize the S3 anonymous file access service.
+        Initialize the S3 anonymous file access service with injected clients.
 
-        Loads S3 configuration and creates boto3 client instances for both
-        internal operations and public URL generation.
+        Accepts pre-configured boto3 clients for both internal operations and
+        public URL generation, enabling proper dependency injection.
         """
-        try:
-            self._s3_config = S3StorageSettings()
-            self._s3_client = self._create_s3_client(self._s3_config.ENDPOINT)
-            self._s3_public_client = self._create_s3_client(self._s3_config.get_public_endpoint())
-        except Exception as e:
-            logger.error(f"Failed to initialize S3 service: {e}")
-            raise
-
-    def _create_s3_client(self, endpoint_url: str):
-        """
-        Create and configure an S3 client for MinIO or AWS S3.
-
-        Uses configuration from S3StorageSettings to set up the boto3 client with
-        appropriate endpoint URL, credentials, and region settings.
-
-        Signature v4 is explicitly configured for consistent URL encoding behavior
-        with presigned URLs, particularly for filenames containing spaces.
-        """
-        return boto3.client(
-            "s3",
-            endpoint_url=endpoint_url,
-            aws_access_key_id=self._s3_config.ACCESS_KEY,
-            aws_secret_access_key=self._s3_config.SECRET_KEY.get_secret_value(),
-            region_name=self._s3_config.REGION,
-            config=Config(signature_version="s3v4"),
-        )
+        self._s3_client = s3_client
+        self._s3_public_client = s3_public_client
+        self._s3_config = s3_settings
 
     @trace_fn
     def generate_sas_url(self, container: str, file_path: str, lifetime_hours: int = 24) -> str:
