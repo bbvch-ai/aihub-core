@@ -15,7 +15,7 @@ class ApiHealthController(HealthController):
     API-specific health controller with liveness and readiness endpoints.
 
     Extends the base HealthController with a readiness check that verifies
-    NATS and MongoDB connectivity.
+    NATS, MongoDB, Redis, and Milvus connectivity.
     """
 
     def __init__(
@@ -24,7 +24,7 @@ class ApiHealthController(HealthController):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def get_ready(self, route: str = "/ready") -> "ApiHealthController":
-        """Adds a readiness endpoint that checks NATS and MongoDB connectivity."""
+        """Adds a readiness endpoint that checks all API dependencies."""
 
         @self.router.get(route, tags=self.tags)
         async def get_ready(request: Request, response: Response) -> HealthResponse:
@@ -34,8 +34,10 @@ class ApiHealthController(HealthController):
             """
             nats_healthy = await _check_nats(request)
             mongodb_healthy = await _check_mongodb()
+            redis_healthy = await _check_redis(request)
+            milvus_healthy = _check_milvus(request)
 
-            all_healthy = nats_healthy and mongodb_healthy
+            all_healthy = nats_healthy and mongodb_healthy and redis_healthy and milvus_healthy
             status = "ok" if all_healthy else "unhealthy"
             code = HTTP_200_OK if all_healthy else HTTP_503_SERVICE_UNAVAILABLE
             response.status_code = code
@@ -43,7 +45,12 @@ class ApiHealthController(HealthController):
             return HealthResponse(
                 status=status,
                 code=code,
-                checks={"nats": nats_healthy, "mongodb": mongodb_healthy},
+                checks={
+                    "nats": nats_healthy,
+                    "mongodb": mongodb_healthy,
+                    "redis": redis_healthy,
+                    "milvus": milvus_healthy,
+                },
             )
 
         return self
@@ -72,4 +79,35 @@ async def _check_mongodb() -> bool:
         return True
     except Exception as e:
         logger.debug(f"MongoDB health check failed: {e}")
+        return False
+
+
+async def _check_redis(request: Request) -> bool:
+    """Check if Redis connection is healthy by pinging."""
+    if not hasattr(request.app.state, "redis"):
+        return False
+    redis = request.app.state.redis
+    if redis is None:
+        return False
+    try:
+        await redis.ping()
+        return True
+    except Exception as e:
+        logger.debug(f"Redis health check failed: {e}")
+        return False
+
+
+def _check_milvus(request: Request) -> bool:
+    """Check if Milvus connection is healthy by listing collections."""
+    if not hasattr(request.app.state, "milvus_client"):
+        return False
+    milvus_client = request.app.state.milvus_client
+    if milvus_client is None:
+        return False
+    try:
+        # list_collections is a lightweight operation to verify connectivity
+        milvus_client.list_collections()
+        return True
+    except Exception as e:
+        logger.debug(f"Milvus health check failed: {e}")
         return False

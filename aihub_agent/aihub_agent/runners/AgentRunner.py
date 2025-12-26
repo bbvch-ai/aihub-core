@@ -8,6 +8,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
@@ -29,6 +30,7 @@ from mongoengine import connect, disconnect
 from mongoengine.connection import get_connection
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
+from pymilvus import MilvusClient
 from redis.asyncio import ConnectionPool, Redis
 
 from aihub_agent.agents.Agent import Agent
@@ -60,6 +62,18 @@ def _check_nats(nc: NATS | None, loop: asyncio.AbstractEventLoop) -> bool:
         return True
     except Exception as e:
         logger.debug(f"NATS health check failed: {e}")
+        return False
+
+
+def _check_milvus(milvus_client: MilvusClient | None) -> bool:
+    """Check if Milvus connection is healthy by listing collections."""
+    if milvus_client is None:
+        return False
+    try:
+        milvus_client.list_collections()
+        return True
+    except Exception as e:
+        logger.debug(f"Milvus health check failed: {e}")
         return False
 
 
@@ -100,6 +114,7 @@ class AgentRunner:
         self.nc: NATS | None = None
         self.js: JetStreamContext | None = None
         self.redis: Redis | None = None
+        self.milvus_client: MilvusClient | None = None
 
         self.dispatcher: AgentDispatcher | None = None
 
@@ -165,6 +180,12 @@ class AgentRunner:
                 redis_healthy = _check_redis(runner.redis, runner._loop) if runner._loop else False
                 checks["redis"] = redis_healthy
                 if not redis_healthy:
+                    is_healthy = False
+
+                # Check Milvus connection
+                milvus_healthy = _check_milvus(runner.milvus_client)
+                checks["milvus"] = milvus_healthy
+                if not milvus_healthy:
                     is_healthy = False
 
                 health_status = {
@@ -295,6 +316,9 @@ class AgentRunner:
         _, host, port = self.redis_url.split(":")
         self.redis = Redis(connection_pool=ConnectionPool(host=host[2:], port=port))
 
+        # Connect to Milvus
+        self.milvus_client = MilvusClient(uri=MilvusSettings().URL)
+
         # Connect to MongoDB (skip if already connected)
         try:
             get_connection()
@@ -374,6 +398,9 @@ class AgentRunner:
 
         if self.redis:
             await self.redis.close()
+
+        if self.milvus_client:
+            self.milvus_client.close()
 
         disconnect()
 
