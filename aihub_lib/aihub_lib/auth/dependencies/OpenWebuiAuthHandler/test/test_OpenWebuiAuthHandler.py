@@ -23,7 +23,7 @@ from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 
 @pytest.fixture(autouse=True)
-def mongo_connection(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+def mongo_connection(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
     """Set up a MongoDB connection for testing and disconnect after."""
     connect(
         db=AIHubSettings().MONGO_MAIN_DB_NAME,
@@ -60,7 +60,7 @@ def error_context() -> dict[str, Any]:
 
 
 @pytest.fixture
-def cleanup_document() -> Generator[list[Any], None, None]:
+def cleanup_document() -> Generator[list[Any]]:
     """Collect inserted token documents for cleanup after the test."""
     inserted_tokens: list[Any] = []
     yield inserted_tokens
@@ -100,7 +100,12 @@ def oauth2_config(monkeypatch: pytest.MonkeyPatch, client_id: str, authority_url
     )
 )
 def insert_token_document(
-    token_context: dict[str, Any], cleanup_document: list[Any], name: str, email: str, roles: str, monkeypatch: pytest.MonkeyPatch
+    token_context: dict[str, Any],
+    cleanup_document: list[Any],
+    name: str,
+    email: str,
+    roles: str,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Insert a token document in the database with the given user details."""
     roles_list = [r.strip() for r in roles.split(",")]
@@ -242,7 +247,9 @@ async def invoke_openwebui_auth_handler(token_context: dict[str, Any], token_con
 
 @when("I invoke the OpenWebuiAuthHandler with the required headers and a token expecting error")
 @async_test
-async def invoke_openwebui_auth_handler_expect_error(token_context: dict[str, Any], error_context: dict[str, Any]) -> None:
+async def invoke_openwebui_auth_handler_expect_error(
+    token_context: dict[str, Any], error_context: dict[str, Any]
+) -> None:
     """Invoke the OpenWebuiAuthHandler with the open-webui headers and the token, capturing any error."""
     token_str = token_context["token_str"]
 

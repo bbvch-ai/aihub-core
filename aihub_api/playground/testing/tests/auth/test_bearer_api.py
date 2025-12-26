@@ -7,6 +7,23 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
     DangerousDevelopmentOnlyAuthSettings,
 )
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
+from aihub_lib.persistence.access.entities.BearerToken import BearerToken
+from aihub_lib.persistence.user.UserEntity import UserEntity
+from asgi_lifespan import LifespanManager
+from httpx import ASGITransport, AsyncClient
+from mongoengine import connect, disconnect
+
+from aihub_api.routes.user.UserController import UserController
+from aihub_api.testing.ApiTestRunner import ApiTestRunner
+
+BASE_URL = "http://test"
+USER_ENDPOINT = "/user/me"
+EXPECTED_USER_FIELDS = ["id", "name", "email", "roles", "profile_image", "favorite_modules"]
+
+
+@pytest.fixture
 def mongo_db():
     """Set up and tear down the MongoDB connection for tests."""
     connect(

@@ -56,7 +56,9 @@ def mock_bearer_token() -> HTTPAuthorizationCredentials:
         'a superuser configuration with name "{name}", email "{email}", oid "{oid}", role "{role}", and token "{token}"'
     )
 )
-def setup_superuser_config(monkeypatch: pytest.MonkeyPatch, name: str, email: str, oid: str, role: str, token: str) -> None:
+def setup_superuser_config(
+    monkeypatch: pytest.MonkeyPatch, name: str, email: str, oid: str, role: str, token: str
+) -> None:
     """Set up the superuser configuration using environment variables."""
     monkeypatch.setenv("SUPERUSER_NAME", name)
     monkeypatch.setenv("SUPERUSER_EMAIL", email)
@@ -79,7 +81,9 @@ def setup_bearer_token(
 
 @when(parsers.parse('I authenticate with token "{token}"'))
 @async_test
-async def authenticate_with_token(superuser_handler: SuperuserAuthHandler, token: str, result_container: dict[str, object]) -> None:
+async def authenticate_with_token(
+    superuser_handler: SuperuserAuthHandler, token: str, result_container: dict[str, object]
+) -> None:
     """Authenticate using a token and store the result."""
     try:
         user = await superuser_handler.authenticate_token(token)
@@ -92,7 +96,9 @@ async def authenticate_with_token(superuser_handler: SuperuserAuthHandler, token
 
 @when("I authenticate with an empty token")
 @async_test
-async def authenticate_with_empty_token(superuser_handler: SuperuserAuthHandler, result_container: dict[str, object]) -> None:
+async def authenticate_with_empty_token(
+    superuser_handler: SuperuserAuthHandler, result_container: dict[str, object]
+) -> None:
     """Authenticate using an empty token and store the result."""
     try:
         user = await superuser_handler.authenticate_token("")

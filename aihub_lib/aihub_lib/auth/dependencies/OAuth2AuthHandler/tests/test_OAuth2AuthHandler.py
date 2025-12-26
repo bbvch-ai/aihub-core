@@ -29,7 +29,7 @@ scenarios("features/oauth2_auth_handler.feature")
 
 
 @pytest.fixture(autouse=True)
-def mongo_connection() -> Generator[None, None, None]:
+def mongo_connection() -> Generator[None]:
     """Set up a MongoDB connection for testing and disconnect after."""
     mongo_uri = os.environ.get("MONGO_CONNECTION_STRING", "mongodb://admin:admin@localhost:27017/aihub_test")
     connect(db="aihub_test", host=mongo_uri)
@@ -40,6 +40,7 @@ def mongo_connection() -> Generator[None, None, None]:
     except Exception:
         pass
     disconnect()
+
 
 # --- Fixtures ---
 
@@ -84,7 +85,12 @@ def oauth2_config(monkeypatch: pytest.MonkeyPatch, client_id: str, authority_url
     target_fixture="generated_token",
 )
 def generated_token(
-    monkeypatch: pytest.MonkeyPatch, oauth2_config: OAuth2Settings, rsa_keys: dict[str, Any], name: str, email: str, roles: str
+    monkeypatch: pytest.MonkeyPatch,
+    oauth2_config: OAuth2Settings,
+    rsa_keys: dict[str, Any],
+    name: str,
+    email: str,
+    roles: str,
 ) -> str:
     """Generate a valid OAuth2 JWT with the specified claims."""
     now = datetime.now(UTC)
@@ -120,7 +126,13 @@ def given_invalid_token(oauth2_context: dict[str, Any], token: str) -> None:
     target_fixture="generated_token",
 )
 def generated_expired_token(
-    monkeypatch: pytest.MonkeyPatch, oauth2_config: OAuth2Settings, rsa_keys: dict[str, Any], oauth2_context: dict[str, Any], name: str, email: str, roles: str
+    monkeypatch: pytest.MonkeyPatch,
+    oauth2_config: OAuth2Settings,
+    rsa_keys: dict[str, Any],
+    oauth2_context: dict[str, Any],
+    name: str,
+    email: str,
+    roles: str,
 ) -> str:
     """Generate an expired OAuth2 JWT and store it in the context."""
     now = datetime.now(UTC)
@@ -162,7 +174,9 @@ def modify_token_unknown_kid(oauth2_context: dict[str, Any], generated_token: st
 
 
 @given("I re-sign the token with a different private key")
-def resign_token_with_different_key(oauth2_context: dict[str, Any], oauth2_config: OAuth2Settings, generated_token: str) -> None:
+def resign_token_with_different_key(
+    oauth2_context: dict[str, Any], oauth2_config: OAuth2Settings, generated_token: str
+) -> None:
     """Re-sign the token using a different RSA private key."""
     unverified = jwt.get_unverified_header(generated_token)
     payload = jwt.decode(generated_token, options={"verify_signature": False})
@@ -182,7 +196,9 @@ def store_generated_token(oauth2_context: dict[str, Any], generated_token: str) 
 
 @when("I invoke the OAuth2AuthHandler with the token")
 @async_test
-async def invoke_oauth2_handler(monkeypatch: pytest.MonkeyPatch, oauth2_context: dict[str, Any], fake_jwks_response: dict[str, Any]) -> None:
+async def invoke_oauth2_handler(
+    monkeypatch: pytest.MonkeyPatch, oauth2_context: dict[str, Any], fake_jwks_response: dict[str, Any]
+) -> None:
     """Invoke the OAuth2AuthHandler with the stored token and store the authenticated user."""
     from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
 
@@ -200,7 +216,9 @@ async def invoke_oauth2_handler(monkeypatch: pytest.MonkeyPatch, oauth2_context:
 
 @when("I invoke the OAuth2AuthHandler with the token expecting error")
 @async_test
-async def invoke_oauth2_handler_expect_error(monkeypatch: pytest.MonkeyPatch, oauth2_context: dict[str, Any], fake_jwks_response: dict[str, Any]) -> None:
+async def invoke_oauth2_handler_expect_error(
+    monkeypatch: pytest.MonkeyPatch, oauth2_context: dict[str, Any], fake_jwks_response: dict[str, Any]
+) -> None:
     """Invoke the OAuth2AuthHandler with the stored token and capture the error."""
     from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
 
