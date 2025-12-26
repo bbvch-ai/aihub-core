@@ -42,7 +42,6 @@ def valid_token(mongo_db):
         oid=os.getenv("OID", DangerousDevelopmentOnlyAuthSettings().OID),
         name=os.getenv("NAME", DangerousDevelopmentOnlyAuthSettings().NAME),
         email=os.getenv("EMAIL", DangerousDevelopmentOnlyAuthSettings().EMAIL),
-        roles=DangerousDevelopmentOnlyAuthSettings().ROLES,
     )
     expiry = datetime.now(UTC) + timedelta(hours=1)
     token_obj = BearerToken.create_new_token(name="token-name", expiry_date=expiry, user_oid=user.id)

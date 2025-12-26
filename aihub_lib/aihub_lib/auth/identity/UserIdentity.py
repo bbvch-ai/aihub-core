@@ -23,12 +23,12 @@ class UserIdentity(BaseModel):
     profile_image: Annotated[str | None, Field(description="Data URL (base64) representation of profile image")] = None
 
     @classmethod
-    def from_user_entity(cls, user: UserEntity) -> UserIdentity:
+    def from_user_entity(cls, user: UserEntity, tenant_id: str | None = None) -> UserIdentity:
         """Create a UserIdentity from a UserEntity database object."""
         return cls(
             id=user.id,
             name=user.name,
             email=user.email,
-            roles=user.roles,
+            roles=user.get_roles(tenant_id),
             profile_image=user.profile_image,
         )

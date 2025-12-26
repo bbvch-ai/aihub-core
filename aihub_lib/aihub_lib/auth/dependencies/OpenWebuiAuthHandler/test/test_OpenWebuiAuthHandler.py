@@ -114,7 +114,6 @@ def insert_token_document(
         oid=user_oid,
         name=name,
         email=email,
-        roles=roles_list,
     )
     expiry = datetime.now(UTC) + timedelta(hours=1)
     token_doc = BearerToken.create_new_token(

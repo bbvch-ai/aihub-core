@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from mongoengine import Document, ListField, StringField
+from mongoengine import BooleanField, Document, ListField, StringField
 
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
@@ -29,7 +29,7 @@ class RoleEntity(Document):
     description = StringField(required=True)
     access_rules = ListField(StringField(), default=list)
     tenant_id = StringField(null=True, default=None)
-    is_system_role = StringField(default="false")
+    is_system_role = BooleanField(default=False)
 
     @classmethod
     @trace_fn
@@ -103,7 +103,7 @@ class RoleEntity(Document):
             description=description,
             access_rules=access_rules,
             tenant_id=None,
-            is_system_role="true",
+            is_system_role=True,
         )
         role.save()
         return role
@@ -123,7 +123,7 @@ class RoleEntity(Document):
             description=description,
             access_rules=access_rules,
             tenant_id=tenant_id,
-            is_system_role="false",
+            is_system_role=False,
         )
         role.save()
         return role

@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from mongoengine import DateTimeField, Document, ListField, StringField
+from mongoengine import BooleanField, DateTimeField, Document, ListField, StringField
 
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
@@ -31,7 +31,7 @@ class TenantEntity(Document):
     name = StringField(required=True, unique=True)
     description = StringField(default="")
     access_rules = ListField(StringField(), default=list)
-    is_default = StringField(default="false")
+    is_default = BooleanField(default=False)
     created_at = DateTimeField(default=lambda: datetime.now(UTC))
     updated_at = DateTimeField(default=lambda: datetime.now(UTC))
 
@@ -51,7 +51,7 @@ class TenantEntity(Document):
     @trace_fn
     def get_default_tenant(cls) -> TenantEntity | None:
         """Fetches the default tenant. Returns None if no default tenant exists."""
-        return cls.objects(is_default="true").first()
+        return cls.objects(is_default=True).first()
 
     @classmethod
     @trace_fn
@@ -67,7 +67,7 @@ class TenantEntity(Document):
             name=name,
             description=description,
             access_rules=access_rules or [],
-            is_default="true" if is_default else "false",
+            is_default=is_default,
         )
         tenant.save()
         return tenant
@@ -84,7 +84,7 @@ class TenantEntity(Document):
         Ensures a default tenant exists, creating it if necessary.
 
         This is idempotent - if a default tenant already exists, it is returned.
-        The default tenant has is_default set to 'true' and cannot be deleted.
+        The default tenant has is_default set to True and cannot be deleted.
         """
         existing = cls.get_default_tenant()
         if existing:

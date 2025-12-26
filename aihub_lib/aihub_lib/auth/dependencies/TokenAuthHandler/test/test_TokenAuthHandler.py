@@ -98,7 +98,6 @@ def insert_token_document(
         oid=user_oid,
         name=name,
         email=email,
-        roles=roles_list,
     )
     expiry = datetime.now(UTC) + timedelta(hours=1)
     token_doc = BearerToken.create_new_token(
@@ -109,6 +108,7 @@ def insert_token_document(
     token_context["token_str"] = token_doc.token
     token_context["expected_user_oid"] = user_oid
     token_context["token_doc"] = token_doc
+    token_context["user_roles"] = roles_list
     cleanup_document.append(user)
     cleanup_document.append(token_doc)
 

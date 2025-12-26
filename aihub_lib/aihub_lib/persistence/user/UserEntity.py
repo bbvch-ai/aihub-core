@@ -46,7 +46,6 @@ class UserEntity(Document):
         "strict": False,
         "indexes": [
             {"fields": ["email"], "unique": True},
-            {"fields": ["roles"]},
             {"fields": ["last_updated"]},
             {"fields": ["name"]},
         ],
@@ -56,7 +55,6 @@ class UserEntity(Document):
     email = StringField(required=True)
     profile_image = StringField(null=True)
     last_updated = DateTimeField(required=True)
-    roles = ListField(StringField(), default=list)
     favorite_modules = ListField(StringField(), default=list)
     dashboard = EmbeddedDocumentField(Dashboard)
 
@@ -104,15 +102,12 @@ class UserEntity(Document):
 
     @classmethod
     @trace_fn
-    def create_user(
-        cls, oid: str, name: str, email: str, roles: list[str], profile_image: str | None = None
-    ) -> "UserEntity":
+    def create_user(cls, oid: str, name: str, email: str, profile_image: str | None = None) -> "UserEntity":
         default_dashboard = cls.create_default_dashboard()
         user = cls(
             id=oid,
             name=name,
             email=email,
-            roles=roles,
             profile_image=profile_image,
             favorite_modules=[],
             dashboard=default_dashboard,
@@ -121,23 +116,38 @@ class UserEntity(Document):
         user.save()
         return user
 
+    @trace_fn
+    def get_roles(self, tenant_id: str | None = None) -> list[str]:
+        """
+        Retrieves the user's roles from the authoritative UserTenantRoleEntity.
+
+        If tenant_id is None, uses the default tenant. Returns an empty list
+        if no tenant assignment exists.
+        """
+        from aihub_lib.persistence.access.entities.TenantEntity import TenantEntity
+        from aihub_lib.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
+
+        if tenant_id is None:
+            default_tenant = TenantEntity.get_default_tenant()
+            if not default_tenant:
+                return []
+            tenant_id = default_tenant.id
+
+        return UserTenantRoleEntity.get_roles_for_user_in_tenant(self.id, tenant_id)
+
     @classmethod
     @trace_fn
-    def ensure_user_exists(
-        cls, oid: str, name: str, email: str, roles: list[str], profile_image: str | None = None
-    ) -> "UserEntity":
+    def ensure_user_exists(cls, oid: str, name: str, email: str, profile_image: str | None = None) -> "UserEntity":
         try:
             user = cls.objects.get(id=oid)
             user.name = name
             user.email = email
-            user.roles = roles
             user.profile_image = profile_image
-
             user.last_updated = datetime.now(UTC)
             user.save()
             return user
         except DoesNotExist:
-            return cls.create_user(oid=oid, name=name, email=email, roles=roles, profile_image=profile_image)
+            return cls.create_user(oid=oid, name=name, email=email, profile_image=profile_image)
 
     @classmethod
     @trace_fn
@@ -173,11 +183,11 @@ class UserEntity(Document):
         """
         Ensures a user exists during authentication, with proper tenant assignment.
 
-        For existing users: Updates profile info (name, email, image) without modifying roles.
+        For existing users: Updates profile info (name, email, image).
         For new users: Creates the user and assigns them to the default tenant with
         appropriate roles (admin roles for first user, standard roles for others).
 
-        The roles field is synced from UserTenantRoleEntity for the default tenant.
+        Roles are stored in UserTenantRoleEntity and retrieved via get_roles().
         """
         from aihub_lib.infrastructure.api.TenantSettings import TenantSettings
         from aihub_lib.persistence.access.entities.TenantEntity import TenantEntity
@@ -200,7 +210,7 @@ class UserEntity(Document):
 
         if not default_tenant:
             logger.warning("Default tenant not found. User will be created without tenant assignment.")
-            return cls.create_user(oid=oid, name=name, email=email, roles=[], profile_image=profile_image)
+            return cls.create_user(oid=oid, name=name, email=email, profile_image=profile_image)
 
         is_first_user = cls.count_users() == 0
         if is_first_user:
@@ -214,7 +224,6 @@ class UserEntity(Document):
             oid=oid,
             name=name,
             email=email,
-            roles=roles_to_assign,
             profile_image=profile_image,
         )
 
@@ -225,22 +234,4 @@ class UserEntity(Document):
         )
 
         logger.info(f"Created new user {email} in tenant {default_tenant.name} with roles: {roles_to_assign}")
-        return user
-
-    @classmethod
-    @trace_fn
-    def sync_roles_from_tenant(cls, user_oid: str, tenant_id: str) -> "UserEntity":
-        """
-        Syncs the user's roles field from the UserTenantRoleEntity for a given tenant.
-
-        This updates the cached roles on UserEntity to match the authoritative
-        roles stored in UserTenantRoleEntity.
-        """
-        from aihub_lib.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
-
-        user = cls.objects.get(id=user_oid)
-        roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_oid, tenant_id)
-        user.roles = roles
-        user.last_updated = datetime.now(UTC)
-        user.save()
         return user

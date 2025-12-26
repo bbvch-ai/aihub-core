@@ -91,9 +91,13 @@ class ThreadController(Controller):
             if user.id not in create_request_dto.user_ids:
                 create_request_dto.user_ids.append(user.id)
 
+            # Batch load all users to avoid N+1 queries
+            users = {u.id: u for u in UserEntity.objects(id__in=create_request_dto.user_ids)}
             for user_id in create_request_dto.user_ids:
-                thread_user = UserEntity.by_oid(user_id)
-                access_rules = RoleEntity.get_access_rules_for_roles(thread_user.roles)
+                thread_user = users.get(user_id)
+                if not thread_user:
+                    raise HTTPException(status_code=404, detail=f"User {user_id} not found")
+                access_rules = RoleEntity.get_access_rules_for_roles(thread_user.get_roles())
                 access = AccessChecker(list(access_rules))
                 for agent in create_request_dto.agents:
                     if not access.has_access_to_agent(agent.agent_class, agent.agent_id):
@@ -154,9 +158,14 @@ class ThreadController(Controller):
             if user.id not in [u.id for u in thread.users]:
                 raise self.not_authorized_to_modify_exception
 
+            # Batch load all users to avoid N+1 queries
+            user_ids = [u.id for u in thread.users]
+            users = {u.id: u for u in UserEntity.objects(id__in=user_ids)}
             for thread_user in thread.users:
-                user_entity = UserEntity.by_oid(thread_user.id)
-                access_rules = RoleEntity.get_access_rules_for_roles(user_entity.roles)
+                user_entity = users.get(thread_user.id)
+                if not user_entity:
+                    raise HTTPException(status_code=404, detail=f"User {thread_user.id} not found")
+                access_rules = RoleEntity.get_access_rules_for_roles(user_entity.get_roles())
                 access = AccessChecker(list(access_rules))
                 if not access.has_access_to_agent(req.agent_class, req.agent_id):
                     raise HTTPException(
@@ -232,7 +241,7 @@ class ThreadController(Controller):
                 raise self.not_authorized_to_modify_exception
 
             user_to_add = UserEntity.by_oid(add_user_dto.user_id)
-            access_rules = RoleEntity.get_access_rules_for_roles(user_to_add.roles)
+            access_rules = RoleEntity.get_access_rules_for_roles(user_to_add.get_roles())
             for agent in thread.agents:
                 if not AccessChecker(list(access_rules)).has_access_to_agent(agent.agent_class, agent.agent_id):
                     raise HTTPException(
