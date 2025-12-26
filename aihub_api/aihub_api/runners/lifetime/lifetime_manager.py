@@ -3,8 +3,10 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
+from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
@@ -14,6 +16,8 @@ from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTop
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from nats.aio.client import Client as NATS
+from pymilvus import MilvusClient
+from redis.asyncio import Redis
 
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.persistance.events.EventPersister import EventPersister
@@ -77,6 +81,12 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         uuidRepresentation="standard",
     )
 
+    # Connect to Redis
+    redis = Redis.from_url(RedisSettings().URL)
+
+    # Connect to Milvus
+    milvus_client = MilvusClient(uri=MilvusSettings().URL)
+
     try:
         # Connect to NATS and setup JetStream
         await nc.connect(servers=[NatsSettings().ENDPOINT])
@@ -119,6 +129,8 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         # Store resources in app state
         app.state.nc = nc
         app.state.js = js
+        app.state.redis = redis
+        app.state.milvus_client = milvus_client
         app.state.ws_manager = ws_manager
         app.state.ws_sender = ws_sender
         app.state.external_agent_event_distributor = external_agent_event_distributor
@@ -173,6 +185,12 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             await app.state.process_discovery_service.stop()
 
         disconnect()
+
+        # Close Redis connection
+        await redis.aclose()
+
+        # Close Milvus connection
+        milvus_client.close()
 
     finally:
         # Close NATS connection on exit
