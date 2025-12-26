@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_process"
-version = "v0.256.6"
+version = "v0.256.7"
 description = "agentic process automation"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -35,7 +35,7 @@ pip-licenses = "^5.0.0"
 
 [tool.poetry.dependencies.aihub_lib]
 git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.256.6"
+tag = "v0.256.7"
 subdirectory = "aihub_lib"
 
 [tool.poetry.group.dev.dependencies.aihub_agent]
