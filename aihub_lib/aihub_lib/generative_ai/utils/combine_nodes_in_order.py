@@ -4,10 +4,10 @@ from collections import defaultdict
 from llama_index.core.base.llms.types import ChatMessage, ImageBlock, TextBlock
 from llama_index.core.prompts import RichPromptTemplate
 
-from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.s3.use_s3 import create_s3_service
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     DOCUMENT_TITLE,
@@ -105,7 +105,7 @@ def combine_nodes_in_order(
                     # Azure format: container/path
                     container, blob_path = image_path.split("/", 1)
 
-                image_url = S3AnonymousFileAccessService().generate_sas_url(container, blob_path, lifetime_hours=1)
+                image_url = create_s3_service().generate_sas_url(container, blob_path, lifetime_hours=1)
                 context_blocks.append(ImageBlock(url=image_url))
             else:
                 tag = n.type if n.type else NODE_TYPE_CONTENT

@@ -15,7 +15,7 @@ class ApiHealthController(HealthController):
     API-specific health controller with liveness and readiness endpoints.
 
     Extends the base HealthController with a readiness check that verifies
-    NATS, MongoDB, Redis, and Milvus connectivity.
+    NATS, MongoDB, Redis, Milvus, and S3 connectivity.
     """
 
     def __init__(
@@ -36,8 +36,9 @@ class ApiHealthController(HealthController):
             mongodb_healthy = await _check_mongodb()
             redis_healthy = await _check_redis(request)
             milvus_healthy = _check_milvus(request)
+            s3_healthy = _check_s3(request)
 
-            all_healthy = nats_healthy and mongodb_healthy and redis_healthy and milvus_healthy
+            all_healthy = nats_healthy and mongodb_healthy and redis_healthy and milvus_healthy and s3_healthy
             status = "ok" if all_healthy else "unhealthy"
             code = HTTP_200_OK if all_healthy else HTTP_503_SERVICE_UNAVAILABLE
             response.status_code = code
@@ -50,6 +51,7 @@ class ApiHealthController(HealthController):
                     "mongodb": mongodb_healthy,
                     "redis": redis_healthy,
                     "milvus": milvus_healthy,
+                    "s3": s3_healthy,
                 },
             )
 
@@ -110,4 +112,20 @@ def _check_milvus(request: Request) -> bool:
         return True
     except Exception as e:
         logger.debug(f"Milvus health check failed: {e}")
+        return False
+
+
+def _check_s3(request: Request) -> bool:
+    """Check if S3 connection is healthy by listing buckets."""
+    if not hasattr(request.app.state, "s3_client"):
+        return False
+    s3_client = request.app.state.s3_client
+    if s3_client is None:
+        return False
+    try:
+        # list_buckets is a lightweight operation to verify connectivity
+        s3_client.list_buckets()
+        return True
+    except Exception as e:
+        logger.debug(f"S3 health check failed: {e}")
         return False

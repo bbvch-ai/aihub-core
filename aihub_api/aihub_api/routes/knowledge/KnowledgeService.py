@@ -5,7 +5,6 @@ from functools import lru_cache, wraps
 from typing import Annotated
 
 import mongoengine
-from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
 from aihub_lib.generative_ai.document.types.FileTypeConfig import FileTypeConfig
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
@@ -14,6 +13,7 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+from aihub_lib.infrastructure.s3.use_s3 import create_s3_service
 from aihub_lib.nats.events.pipeline.SourceUpdatedEvent import SourceUpdatedEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
@@ -104,7 +104,7 @@ class KnowledgeService:
         from document processing and should not be displayed in the knowledge interface.
         Files that have already been processed (exist in processed_sources) are also excluded.
         """
-        files_info = S3AnonymousFileAccessService().list_files(container=bucket_name, prefix=f"{namespace}/")
+        files_info = create_s3_service().list_files(container=bucket_name, prefix=f"{namespace}/")
 
         unprocessed_files = []
         for file_info in files_info:
@@ -428,7 +428,7 @@ class KnowledgeService:
         upload_id = str(uuid.uuid4())
         object_key = f"{folder}/{request.filename}"
 
-        presigned_url = S3AnonymousFileAccessService().generate_upload_url(
+        presigned_url = create_s3_service().generate_upload_url(
             container=container,
             file_path=object_key,
             content_type=request.content_type,
@@ -498,7 +498,7 @@ class KnowledgeService:
         container = bucket_entity.bucket_name
         object_key = request.file_path
 
-        exists = S3AnonymousFileAccessService().verify_file_exists(container=container, file_path=object_key)
+        exists = create_s3_service().verify_file_exists(container=container, file_path=object_key)
 
         if exists:
             try:

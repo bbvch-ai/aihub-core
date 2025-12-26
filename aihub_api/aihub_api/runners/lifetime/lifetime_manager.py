@@ -2,17 +2,20 @@ import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
+import boto3
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
+from aihub_lib.infrastructure.s3.S3StorageSettings import S3StorageSettings
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
+from botocore.config import Config
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from nats.aio.client import Client as NATS
@@ -87,6 +90,26 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
     # Connect to Milvus
     milvus_client = MilvusClient(uri=MilvusSettings().URL)
 
+    # Connect to S3 (SeaweedFS)
+    s3_settings = S3StorageSettings()
+    s3_client = boto3.client(
+        "s3",
+        endpoint_url=s3_settings.ENDPOINT,
+        aws_access_key_id=s3_settings.ACCESS_KEY,
+        aws_secret_access_key=s3_settings.SECRET_KEY.get_secret_value(),
+        region_name=s3_settings.REGION,
+        config=Config(signature_version="s3v4"),
+    )
+    # Public client for generating presigned URLs accessible from browsers
+    s3_public_client = boto3.client(
+        "s3",
+        endpoint_url=s3_settings.get_public_endpoint(),
+        aws_access_key_id=s3_settings.ACCESS_KEY,
+        aws_secret_access_key=s3_settings.SECRET_KEY.get_secret_value(),
+        region_name=s3_settings.REGION,
+        config=Config(signature_version="s3v4"),
+    )
+
     try:
         # Connect to NATS and setup JetStream
         await nc.connect(servers=[NatsSettings().ENDPOINT])
@@ -131,6 +154,9 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         app.state.js = js
         app.state.redis = redis
         app.state.milvus_client = milvus_client
+        app.state.s3_client = s3_client
+        app.state.s3_public_client = s3_public_client
+        app.state.s3_settings = s3_settings
         app.state.ws_manager = ws_manager
         app.state.ws_sender = ws_sender
         app.state.external_agent_event_distributor = external_agent_event_distributor
