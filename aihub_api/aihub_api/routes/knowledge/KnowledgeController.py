@@ -7,6 +7,7 @@ from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.milvus.use_vector_store_factory import use_vector_store_factory
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.persistence.rag.vectors import VectorStoreFactory
@@ -47,7 +48,6 @@ class KnowledgeController(Controller):
         self,
         *,
         auth: AuthHandler,
-        vector_store_factory: VectorStoreFactory,
         route: str = "/knowledge",
         additionally_required_permission: str | None = None,
         translation_llm_config: LLMConfig | None = None,
@@ -57,7 +57,6 @@ class KnowledgeController(Controller):
             host=MongoSettings().CONNECTION_STRING.get_secret_value(), alias="docstore", uuidRepresentation="standard"
         )
 
-        self.vector_store_factory = vector_store_factory
         self.translation_llm_config = translation_llm_config
 
     def get_databases(self, route: str = "/databases") -> "KnowledgeController":
@@ -154,6 +153,7 @@ class KnowledgeController(Controller):
             _: Annotated[
                 UserIdentity, Security(self.user_with_permission("aihub.user.knowledge.{database}.{namespace}"))
             ],
+            vector_store_factory: Annotated[VectorStoreFactory, Depends(use_vector_store_factory)],
         ) -> list[IngestedNode]:
             """
             Returns nodes for a given document.
@@ -164,7 +164,7 @@ class KnowledgeController(Controller):
                 db=database,
                 namespace=namespace,
                 document_id=document_id,
-                vector_store_factory=self.vector_store_factory,
+                vector_store_factory=vector_store_factory,
             )
 
         return self
@@ -180,6 +180,7 @@ class KnowledgeController(Controller):
             _: Annotated[
                 UserIdentity, Security(self.user_with_permission("aihub.user.knowledge.{database}.{namespace}"))
             ],
+            vector_store_factory: Annotated[VectorStoreFactory, Depends(use_vector_store_factory)],
         ) -> list[NodeSummaryDTO]:
             """
             Returns nodes for a given document.
@@ -190,7 +191,7 @@ class KnowledgeController(Controller):
                 db=database,
                 namespace=namespace,
                 document_id=document_id,
-                vector_store_factory=self.vector_store_factory,
+                vector_store_factory=vector_store_factory,
             )
 
         return self

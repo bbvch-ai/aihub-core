@@ -84,16 +84,17 @@ def _get_embedding_index(collection: Collection):
 
 def _create_vector_store(context, **kwargs):
     """Centralized vector store creation with error handling."""
-    create_milvus_vector_store.cache_clear()
-
     defaults = {
-        "uri": context["milvus_uri"],
         "collection_name": context["collection_name"],
         "embedding_vector_dimension": context["embedding_dimension"],
         "index_type": MilvusIndexType.FLAT,
     }
 
-    context["vector_store"] = create_milvus_vector_store(**(defaults | kwargs))
+    # Create or reuse client
+    if not context.get("client"):
+        context["client"] = MilvusClient(uri=context["milvus_uri"])
+
+    context["vector_store"] = create_milvus_vector_store(client=context["client"], **(defaults | kwargs))
     context["error"] = None
 
 
