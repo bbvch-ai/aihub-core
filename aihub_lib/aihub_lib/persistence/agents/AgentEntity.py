@@ -113,7 +113,10 @@ class AgentEntity(Document):
     meta = {
         "collection": "agents",
         "strict": False,
-        "indexes": [{"fields": ["agent_class", "agent_id"], "unique": True}],
+        "indexes": [
+            {"fields": ["agent_class", "agent_id"], "unique": True},
+            {"fields": ["agent_class"]},
+        ],
     }
     agent_class = StringField(required=True)
     agent_id = StringField(required=True)

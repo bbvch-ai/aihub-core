@@ -18,6 +18,7 @@ class PersistedProcessEventEntity(Document):
         "strict": False,
         "indexes": [
             {"fields": ["process_class", "process_id", "process_walkthrough_id", "event_parents"]},
+            {"fields": ["process_class", "process_id"]},
             {"fields": ["event_data.forms._event_name"]},
         ],
     }
