@@ -339,7 +339,9 @@ class EvaluationService:
                     assistant_answer=(
                         output_data
                         if isinstance(output_data, str)
-                        else output_data.get("agent_response") if isinstance(output_data, dict) else None
+                        else output_data.get("agent_response")
+                        if isinstance(output_data, dict)
+                        else None
                     ),
                     thread_id=output_data.get("thread_id") if isinstance(output_data, dict) else None,
                     display_id=output_data.get("display_id") if isinstance(output_data, dict) else None,
