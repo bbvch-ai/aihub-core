@@ -49,6 +49,7 @@ image_tags:
   speaches_gpu: speaches:0.8.3-cuda-12.6.3
   speaches_cpu: speaches:0.8.3-cpu
   pgbouncer: pgbouncer:v1.24.1-p1
+  keycloak: keycloak:26.0
 
   # --- Custom Application Services ---
   api:

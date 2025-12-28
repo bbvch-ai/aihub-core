@@ -71,16 +71,23 @@ class TokenAndOauth2Handler:
     @classmethod
     def from_auth_settings(cls):
         bearer_handlers: list = []
-        oauth2_handlers: list[OAuth2AuthHandler] = []
+        oauth2_handlers: list = []
 
         config = AuthSettings()
 
-        if config.IDENTITY_PROVIDER == "azure":
-            logger.info("Using Azure identity provider")
-            oauth2_handler = OAuth2AuthHandler()
-            oauth2_handlers.append(oauth2_handler)
-        else:
-            raise ValueError(f"Unknown identity provider: {config.IDENTITY_PROVIDER}")
+        match config.IDENTITY_PROVIDER:
+            case "azure":
+                logger.info("Using Azure identity provider")
+                oauth2_handler = OAuth2AuthHandler()
+                oauth2_handlers.append(oauth2_handler)
+            case "keycloak":
+                logger.info("Using Keycloak identity provider")
+                from aihub_lib.auth.dependencies.KeycloakAuthHandler.KeycloakAuthHandler import KeycloakAuthHandler
+
+                keycloak_handler = KeycloakAuthHandler()
+                oauth2_handlers.append(keycloak_handler)
+            case _:
+                raise ValueError(f"Unknown identity provider: {config.IDENTITY_PROVIDER}")
 
         if SuperuserSettings().ENABLED:
             logger.info("Using superuser authentication")

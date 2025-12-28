@@ -36,6 +36,8 @@
 {%- set PLAYWRIGHT_WS_URL = "ws://playwright:3000" %}
 {%- set DAGSTER_WEBSERVER_URL = "http://dagster-webserver:3000" %}
 {%- set OTEL_EXPORTER_OTLP_ENDPOINT = "http://otel-collector:4317" %}
+{%- set KEYCLOAK_INTERNAL_URL = "http://keycloak:8080" %}
+{%- set KEYCLOAK_REALM = "aihub" %}
 
 {% if stage != 'dev' %}
 # ===================================================================
@@ -453,7 +455,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_MULTIPLE_DATABASES: openwebui,phoenix,dagster,litellm
+      POSTGRES_MULTIPLE_DATABASES: openwebui,phoenix,dagster,litellm,keycloak
     volumes:
       - {{ global.volume_root }}/postgres-data:/var/lib/postgresql/data
       - ./configs/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
@@ -585,6 +587,75 @@ services:
       options:
         max-size: 10m
         max-file: 2
+
+  # ===================================================================
+  # Keycloak Stack (Identity and Access Management)
+  # ===================================================================
+  # Keycloak provides OIDC/OAuth2 authentication for all services.
+  # In dev: Local users for development and E2E testing.
+  # In prod: Identity broker for Azure AD and other providers.
+  # ===================================================================
+
+  keycloak:
+    container_name: keycloak
+    image: quay.io/keycloak/{{ image_tags.keycloak }}
+    restart: unless-stopped
+    {%- if stage == 'dev' %}
+    ports:
+      - "8180:8080"
+    command:
+      - start-dev
+      - --import-realm
+    {%- else %}
+    command:
+      - start
+      - --import-realm
+      - --hostname=auth.${DOMAIN}
+      - --proxy-headers=xforwarded
+      - --http-enabled=true
+    {%- endif %}
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN_USER}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_FEATURES: token-exchange,admin-fine-grained-authz
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+      # Dev user configuration (passed to realm template)
+      KEYCLOAK_DEV_USER_USERNAME: ${KEYCLOAK_DEV_USER_USERNAME}
+      KEYCLOAK_DEV_USER_PASSWORD: ${KEYCLOAK_DEV_USER_PASSWORD}
+      KEYCLOAK_DEV_USER_EMAIL: ${KEYCLOAK_DEV_USER_EMAIL}
+      KEYCLOAK_DEV_USER_FIRSTNAME: ${KEYCLOAK_DEV_USER_FIRSTNAME}
+      KEYCLOAK_DEV_USER_LASTNAME: ${KEYCLOAK_DEV_USER_LASTNAME}
+      KEYCLOAK_DEV_USER_ROLES_JSON: ${KEYCLOAK_DEV_USER_ROLES_JSON}
+    volumes:
+      - ./configs/keycloak/aihub-realm.{{ stage_postfix }}.json:/opt/keycloak/data/import/aihub-realm.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080;echo -e 'GET /health/ready HTTP/1.1\r\nhost: localhost\r\nConnection: close\r\n\r\n' >&3;grep -q '200 OK' <&3"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    {%- if stage != 'dev' %}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.keycloak.rule=Host(`auth.${DOMAIN}`)"
+      - "traefik.http.routers.keycloak.entrypoints=websecure"
+      - "traefik.http.routers.keycloak.tls.certresolver={{ 'letsencrypt' if stage in ['nightly', 'latest'] else 'local' }}"
+      - "traefik.http.routers.keycloak.priority=7000"
+      - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
+    {%- endif %}
 
   # ===================================================================
   # Nats & Valkey Stack (Messaging and Caching)
@@ -1112,6 +1183,8 @@ services:
         condition: service_healthy
       docling:
         condition: service_healthy
+      keycloak:
+        condition: service_healthy
     environment:
       # --- General Settings ---
       WEBUI_NAME: Swiss AI-Hub
@@ -1141,27 +1214,32 @@ services:
       OTEL_EXPORTER_OTLP_INSECURE: True
       OTEL_SERVICE_NAME: open-webui
 
-      # --- Auth & OIDC ---
+      # --- Auth & OIDC (Keycloak) ---
       WEBUI_AUTH: True
       DEFAULT_USER_ROLE: user
       OAUTH_MERGE_ACCOUNTS_BY_EMAIL: True
       ENABLE_API_KEY: False
       WEBUI_SESSION_COOKIE_SAME_SITE: lax
-      WEBUI_SESSION_COOKIE_SECURE: False
+      WEBUI_SESSION_COOKIE_SECURE: {{ 'False' if stage == 'dev' else 'True' }}
       ENABLE_OAUTH_SIGNUP: True
       OAUTH_PROVIDER_NAME: ${OAUTH_PROVIDER_NAME}
-      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
-      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
-      OPENID_PROVIDER_URL: ${OAUTH_AUTHORITY_URL}/v2.0/.well-known/openid-configuration
-      OPENID_REDIRECT_URI: {{ 'http' if stage == 'dev' else 'https' }}://{{ 'localhost:8080' if stage == 'dev' else 'openwebui.${DOMAIN}' }}/oauth/oidc/callback
+      OAUTH_CLIENT_ID: openwebui
+      OAUTH_CLIENT_SECRET: ${KEYCLOAK_OPENWEBUI_CLIENT_SECRET}
+      {%- if stage == 'dev' %}
+      OPENID_PROVIDER_URL: {{ KEYCLOAK_INTERNAL_URL }}/realms/{{ KEYCLOAK_REALM }}/.well-known/openid-configuration
+      OPENID_REDIRECT_URI: http://localhost:8080/oauth/oidc/callback
+      {%- else %}
+      OPENID_PROVIDER_URL: https://auth.${DOMAIN}/realms/{{ KEYCLOAK_REALM }}/.well-known/openid-configuration
+      OPENID_REDIRECT_URI: https://openwebui.${DOMAIN}/oauth/oidc/callback
+      {%- endif %}
       OAUTH_ALLOWED_DOMAINS: '*'
       OAUTH_SCOPES: openid email profile
       OAUTH_TIMEOUT: 60
       OAUTH_CODE_CHALLENGE_METHOD: S256
-      OAUTH_USERNAME_CLAIM: name
+      OAUTH_USERNAME_CLAIM: preferred_username
       OAUTH_PICTURE_CLAIM: picture
       OAUTH_EMAIL_CLAIM: email
-      OAUTH_GROUP_CLAIM: email
+      OAUTH_GROUP_CLAIM: roles
 
       # --- Data Storage (S3) ---
       STORAGE_PROVIDER: s3

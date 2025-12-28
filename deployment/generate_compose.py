@@ -31,6 +31,8 @@ CONFIG_SPECS = [
     ("templates/configs/traefik-config.yml.j2", "configs/traefik", "traefik-config.{stage}{hardware}.yml"),
     ("templates/configs/traefik-middlewares.yml.j2", "configs/traefik", "middlewares.{stage}{hardware}.yml"),
     ("templates/configs/traefik-tls.yml.j2", "configs/traefik", "tls.{stage}{hardware}.yml"),
+    # Keycloak realm config - stage/hardware variations
+    ("templates/configs/keycloak-realm.json.j2", "configs/keycloak", "aihub-realm.{stage}{hardware}.json"),
     # SeaweedFS Filer config - stage/hardware variations
     ("templates/configs/seaweed-filer-config.toml.j2", "configs/seaweedfs", "seaweed-filer-config.{stage}{hardware}.toml"),
     # Static scripts - no stage/hardware variations

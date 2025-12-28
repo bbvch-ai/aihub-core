@@ -10,4 +10,7 @@ class AuthSettings(EnvironmentSettings):
 
     ENABLE_API_ACCESS: Annotated[bool, Field(description="Enable API access")] = True
     OPEN_WEBUI_SIGNING_SECRET: Annotated[SecretStr, Field(description="OpenWebUI signing secret", min_length=64)]
-    IDENTITY_PROVIDER: Annotated[Literal["azure"], Field(description="OAuth provider")] = "azure"
+    IDENTITY_PROVIDER: Annotated[
+        Literal["azure", "keycloak"],
+        Field(description="Identity provider: azure (Azure AD) or keycloak"),
+    ] = "keycloak"
