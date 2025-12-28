@@ -5,19 +5,23 @@ import { defineNuxtPlugin } from '#app'
 export default defineNuxtPlugin(async ({ $i18n, $router }) => {
   const config = useRuntimeConfig()
 
+  // Keycloak-compatible OIDC configuration
+  // Authority URL is the Keycloak realm URL (e.g., http://localhost:8180/realms/aihub)
   const auth = new UserManager({
-    authority: `${config.public.oidc.authorityUrl}/v2.0`,
+    authority: config.public.oidc.authorityUrl,
     client_id: config.public.oidc.clientId,
     redirect_uri: `${window.location.origin}/${$i18n.locale.value}/auth/callback`,
     silent_redirect_uri: `${window.location.origin}/${$i18n.locale.value}/auth/renew`,
     post_logout_redirect_uri: window.location.origin,
     response_type: 'code',
-    scope: `openid profile email api://${config.public.oidc.clientId}/access`,
+    scope: 'openid profile email',
     filterProtocolClaims: true,
     automaticSilentRenew: true,
-    silentRequestTimeoutInSeconds: 30, // Increase timeout
-    accessTokenExpiringNotificationTimeInSeconds: 120, // Notify 2 minutes before expiration
+    silentRequestTimeoutInSeconds: 30,
+    accessTokenExpiringNotificationTimeInSeconds: 120,
     userStore: new WebStorageStateStore({ store: window?.localStorage }),
+    // Keycloak supports PKCE
+    disablePKCE: false,
   })
 
   // Add event handlers for token lifecycle events

@@ -395,17 +395,28 @@ Once running, access the AI-Hub services at:
 
 - **Main Web Interface**: https://127.0.0.1.nip.io
 - **OpenWebUI**: https://openwebui.127.0.0.1.nip.io
+- **Keycloak Admin**: http://localhost:8180 (admin / admin)
 - **LiteLLM**: https://litellm.127.0.0.1.nip.io
 - **Dagster**: https://dagster.127.0.0.1.nip.io
 - **SeaweedFS Console**: https://datalake.127.0.0.1.nip.io
 - **Attu (Milvus UI)**: https://attu.127.0.0.1.nip.io
 - **Traefik Dashboard**: https://traefik.localhost (admin credentials required)
 
+::: tip :key: Default Development Credentials
+The dev environment includes a pre-configured Keycloak user for development and testing:
+- **Username**: `admin`
+- **Password**: `admin`
+- **Role**: `AIHubAdmin`
+
+These credentials can be customized via environment variables (`KEYCLOAK_DEV_USER_*`).
+:::
+
 ::: tip :bulb: Local Development Tips
 - The `.nip.io` domain automatically resolves to your localhost, providing a production-like domain experience
 - SSL certificates are valid for both `*.127.0.0.1.nip.io` and `*.localhost` domains
 - All services use Traefik for SSL termination and routing
 - Volume data is stored in `${VOLUME_ROOT:-./.docker-volumes}/` (defaults to `.docker-volumes/`)
+- All OAuth2/OIDC authentication goes through Keycloak, which can broker to Azure AD in production
 :::
 
 ### :key: Configure Environment Variables

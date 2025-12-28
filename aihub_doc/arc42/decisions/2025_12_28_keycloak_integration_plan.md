@@ -1,6 +1,6 @@
-# Keycloak Integration Plan for Swiss AI-Hub
+# Keycloak Integration for Swiss AI-Hub
 
-**Status**: Proposed
+**Status**: Implemented
 **Date**: 2025-12-28
 **Authors**: Claude (AI)
 **Related ADRs**:
@@ -11,73 +11,59 @@
 
 ## Executive Summary
 
-This document outlines a comprehensive plan to integrate Keycloak as the identity provider for Swiss AI-Hub. The integration addresses three primary use cases:
+Keycloak is now the **sole identity provider** for Swiss AI-Hub. All OAuth2/OIDC authentication goes through Keycloak, which acts as an identity broker for upstream providers (Azure AD, Google, etc.).
 
-1. **Development Environment**: Local Keycloak with pre-configured default users for seamless development without external IdP dependencies
-2. **E2E Testing**: Automated testing with consistent, reproducible user credentials
-3. **Production Flexibility**: Keycloak as an identity broker supporting Azure AD, Google, SAML providers, and local users
+**Key Benefits**:
+1. **Development Environment**: Local Keycloak with configurable dev user - no external IdP needed
+2. **E2E Testing**: Consistent, reproducible authentication with known credentials
+3. **Production Flexibility**: Keycloak brokers to Azure AD, Google, SAML - one integration point
+4. **Swiss Sovereignty**: Self-hosted identity management
 
 ---
 
-## Context
+## Architecture
 
-### Current State
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Swiss AI-Hub                           │
+├─────────────────────────────────────────────────────────────┤
+│  Admin UI  │  OpenWebUI  │  API  │  Agents  │  Pipelines   │
+└──────┬─────┴──────┬──────┴───┬───┴─────┬────┴──────┬───────┘
+       │            │          │         │           │
+       └────────────┴──────────┴────┬────┴───────────┘
+                                    │
+                              ┌─────▼─────┐
+                              │ Keycloak  │ (Identity Broker)
+                              └─────┬─────┘
+                                    │
+          ┌─────────────────────────┼─────────────────────────┐
+          │                         │                         │
+    ┌─────▼─────┐            ┌──────▼──────┐           ┌──────▼──────┐
+    │ Azure AD  │            │   Google    │           │ Local Users │
+    │(Production)│            │  (Optional) │           │    (Dev)    │
+    └───────────┘            └─────────────┘           └─────────────┘
+```
 
-The Swiss AI-Hub currently uses **Azure AD** as the primary identity provider with several authentication mechanisms:
+### Authentication Flow
 
-| Handler | Purpose | Enabled By |
-|---------|---------|------------|
-| `OAuth2AuthHandler` | Azure AD JWT validation | `AUTH_IDENTITY_PROVIDER=azure` |
+1. User accesses AI-Hub application
+2. Application redirects to Keycloak
+3. Keycloak handles authentication (local user or federated IdP)
+4. Keycloak issues JWT token
+5. Application validates JWT via Keycloak JWKS endpoint
+
+### Authentication Handlers
+
+| Handler | Purpose | Configuration |
+|---------|---------|---------------|
+| `KeycloakAuthHandler` | OIDC JWT validation via Keycloak | `KEYCLOAK_URL`, `KEYCLOAK_REALM` |
 | `SuperuserAuthHandler` | Token-based admin access | `SUPERUSER_ENABLED=True` |
 | `TokenAuthHandler` | API bearer tokens | `AUTH_ENABLE_API_ACCESS=True` |
-| `DangerousDevelopmentOnlyAuthHandler` | No-auth dev mode | `DANGEROUS_DEV_ONLY_AUTH_FAKE_*` vars |
 | `OpenWebuiAuthHandler` | HMAC-signed requests from OpenWebUI | `AUTH_OPEN_WEBUI_SIGNING_SECRET` |
-
-**Pain Points**:
-- Development requires Azure AD credentials or bypasses auth entirely with fake users
-- E2E tests cannot run without external IdP or rely on fragile fake auth
-- Production deployments are tightly coupled to Azure AD
-- No easy path for customers using other identity providers
-
-### Why Keycloak
-
-Keycloak is an open-source identity and access management solution that provides:
-
-- **Standards-based**: OpenID Connect, OAuth 2.0, SAML 2.0
-- **Identity Brokering**: Federation with Azure AD, Google, GitHub, LDAP, SAML
-- **Local Users**: Create and manage users directly in Keycloak
-- **Realm Import**: Reproducible configuration via JSON export/import
-- **Docker-Native**: Official containers with startup realm import
-- **Swiss Sovereignty**: Self-hosted, no external dependencies
-- **Single Sign-On**: Unified login across all AI-Hub services
 
 ---
 
-## Decision
-
-Integrate Keycloak into Swiss AI-Hub with a phased approach:
-
-### Phase 1: Development Environment (Priority: High)
-
-Add Keycloak to `docker-compose.dev.yml` with:
-- Pre-configured realm (`aihub`) with a single configurable admin user
-- Automatic realm import on container startup
-- Environment variable configuration for user credentials
-- No external IdP dependencies
-
-### Phase 2: E2E Testing Infrastructure (Priority: High)
-
-Leverage the dev Keycloak setup for:
-- Same configurable user for E2E tests
-- Reproducible authentication flows
-- Integration with Playwright/pytest for automated testing
-
-### Phase 3: Production Identity Broker (Priority: Medium)
-
-Configure Keycloak as an identity broker for production:
-- Azure AD federation (primary)
-- Optional: Google, GitHub, SAML providers
-- Local user fallback for break-glass scenarios
+## Implementation Details
 
 ---
 
@@ -302,11 +288,11 @@ KEYCLOAK_URL="http://localhost:8180"
 KEYCLOAK_REALM="aihub"
 ```
 
-#### 3.2 Updated OAuth Variables
+#### 3.2 OAuth Variables (Keycloak)
 
 ```bash
-# OAuth2 / OIDC Configuration (Keycloak in dev, Azure AD in prod)
-AUTH_IDENTITY_PROVIDER="keycloak"  # Changed from "azure" in dev
+# OAuth2 / OIDC Configuration
+# All authentication goes through Keycloak (which brokers to Azure AD, etc.)
 OAUTH_PROVIDER_NAME="Keycloak"
 OAUTH_CLIENT_ID="aihub-frontend"
 OAUTH_CLIENT_SECRET=""  # Public client for frontend
@@ -393,20 +379,23 @@ class KeycloakSettings(EnvironmentSettings):
         return f"{self.ISSUER_URL}/.well-known/openid-configuration"
 ```
 
-#### 4.2 Update AuthSettings
+#### 4.2 AuthSettings (Simplified)
 
-Modify `aihub_lib/aihub_lib/auth/dependencies/AuthSettings.py`:
+The `AuthSettings` class no longer has an `IDENTITY_PROVIDER` field since Keycloak is the only OAuth2/OIDC provider:
 
 ```python
-from typing import Literal
-
 class AuthSettings(EnvironmentSettings):
+    """
+    Authentication settings for the API.
+
+    All OAuth2/OIDC authentication goes through Keycloak, which acts as an
+    identity broker for upstream providers (Azure AD, Google, etc.).
+    """
+
     model_config = EnvironmentSettings.create_settings_config("AUTH_")
 
-    IDENTITY_PROVIDER: Annotated[
-        Literal["azure", "keycloak", "none"],
-        Field(description="Identity provider to use")
-    ] = "keycloak"  # Changed default from "azure"
+    ENABLE_API_ACCESS: Annotated[bool, Field(description="Enable API access")] = True
+    OPEN_WEBUI_SIGNING_SECRET: Annotated[SecretStr, Field(description="OpenWebUI signing secret", min_length=64)]
 ```
 
 ### 5. Auth Handler Updates
@@ -501,28 +490,37 @@ class KeycloakAuthHandler(AuthHandler):
         )
 ```
 
-#### 5.2 Update TokenAndOauth2Handler Factory
+#### 5.2 TokenAndOauth2Handler Factory (Simplified)
 
-Modify `TokenAndOauth2Handler.from_auth_settings()` to support Keycloak:
+The factory now directly uses `KeycloakAuthHandler` - no provider switching needed:
 
 ```python
 @classmethod
 def from_auth_settings(cls) -> "TokenAndOauth2Handler":
-    auth_settings = AuthSettings()
+    """Creates a handler with Keycloak OAuth2 and configured bearer handlers."""
+    bearer_handlers: list[Any] = []
+    oauth2_handlers: list[KeycloakAuthHandler] = []
 
-    match auth_settings.IDENTITY_PROVIDER:
-        case "keycloak":
-            from aihub_lib.auth.dependencies.KeycloakAuthHandler import KeycloakAuthHandler
-            oauth_handler = KeycloakAuthHandler()
-        case "azure":
-            from aihub_lib.auth.dependencies.OAuth2AuthHandler import OAuth2AuthHandler
-            oauth_handler = OAuth2AuthHandler()
-        case "none":
-            oauth_handler = None
-        case _:
-            raise ValueError(f"Unknown identity provider: {auth_settings.IDENTITY_PROVIDER}")
+    config = AuthSettings()
 
-    # ... rest of factory logic
+    # All OAuth2/OIDC goes through Keycloak (which brokers to Azure AD, etc.)
+    logger.info("Using Keycloak as identity provider")
+    keycloak_handler = KeycloakAuthHandler()
+    oauth2_handlers.append(keycloak_handler)
+
+    if SuperuserSettings().ENABLED:
+        logger.info("Using superuser authentication")
+        superuser_handler = SuperuserAuthHandler()
+        bearer_handlers.append(OpenWebuiAuthHandler(base_auth_handler=superuser_handler))
+        bearer_handlers.append(superuser_handler)
+
+    if config.ENABLE_API_ACCESS:
+        logger.info("Using token authentication")
+        token_handler = TokenAuthHandler()
+        bearer_handlers.append(OpenWebuiAuthHandler(base_auth_handler=token_handler))
+        bearer_handlers.append(token_handler)
+
+    return cls(bearer_handlers=bearer_handlers, oauth2_handlers=oauth2_handlers)
 ```
 
 ### 6. OpenWebUI Integration
@@ -660,23 +658,24 @@ Add to realm configuration for production:
 
 ### 10. Migration Strategy
 
-#### 10.1 Backwards Compatibility
+#### 10.1 Keycloak as Single IdP
 
-Maintain support for Azure AD direct authentication during transition:
+All OAuth2/OIDC authentication now goes exclusively through Keycloak:
 
-1. Keep `AUTH_IDENTITY_PROVIDER` configurable
-2. Support both `azure` and `keycloak` values
-3. Deprecation timeline:
-   - Phase 1: Keycloak default in dev, Azure AD in prod
-   - Phase 2: Keycloak with Azure AD broker in prod
-   - Phase 3: Remove direct Azure AD support (optional)
+1. **Development**: Keycloak with local users (no external IdP needed)
+2. **Production**: Keycloak with Azure AD identity broker
 
-#### 10.2 Data Migration
+No `IDENTITY_PROVIDER` switching - Keycloak is the only OAuth2 handler.
 
-For existing users:
-- Keycloak identity broker imports users on first login
-- User OIDs are preserved (sub claim = Azure AD oid)
-- Roles and permissions remain in local database
+#### 10.2 Azure AD Migration
+
+For production environments currently using Azure AD directly:
+
+1. Configure Keycloak with Azure AD as an identity provider
+2. Update application OAuth URLs to point to Keycloak
+3. Users authenticate via Keycloak → Azure AD federation
+4. User OIDs are preserved (Keycloak uses Azure AD's `sub` claim)
+5. Roles and permissions remain in local database
 
 ---
 
@@ -713,22 +712,22 @@ This document serves as the ADR. Additional ADRs may be needed for:
 | Path | Description |
 |------|-------------|
 | `deployment/templates/configs/keycloak-realm.json.j2` | Keycloak realm configuration template |
-| `aihub_lib/aihub_lib/auth/dependencies/KeycloakAuthHandler/` | Keycloak auth handler package |
-| `aihub_lib/aihub_lib/auth/dependencies/KeycloakSettings.py` | Keycloak settings class |
-| `tests/e2e/auth-helpers.ts` | E2E authentication utilities |
+| `configs/keycloak/aihub-realm.*.json` | Generated realm configs for all stages |
+| `aihub_lib/.../KeycloakAuthHandler/KeycloakAuthHandler.py` | Keycloak JWT validation handler |
+| `aihub_lib/.../KeycloakAuthHandler/KeycloakSettings.py` | Keycloak OIDC settings |
 
 ### Modified Files
 
 | Path | Changes |
 |------|---------|
-| `deployment/templates/docker-compose.yml.j2` | Add Keycloak service, update OIDC config |
+| `deployment/templates/docker-compose.yml.j2` | Add Keycloak service, update OpenWebUI OIDC |
 | `deployment/compose-config.yml` | Add Keycloak image version |
-| `deployment/templates/configs/pg-init-multiple-dbs.sh.j2` | Add keycloak database |
-| `.env.dev` | Add Keycloak variables, update OAuth config |
-| `.env.prod` | Add Keycloak production variables |
-| `aihub_lib/aihub_lib/auth/dependencies/AuthSettings.py` | Add Keycloak provider option |
-| `aihub_lib/aihub_lib/auth/dependencies/TokenAndOauth2Handler/` | Support Keycloak handler |
-| `aihub_web/aihub_web/plugins/oidc-client.ts` | Keycloak-compatible settings |
+| `deployment/generate_compose.py` | Add realm config generation |
+| `.env.dev` | Add Keycloak variables, remove IDENTITY_PROVIDER |
+| `aihub_lib/.../AuthSettings.py` | Remove IDENTITY_PROVIDER (Keycloak is the only IdP) |
+| `aihub_lib/.../TokenAndOauth2Handler.py` | Use KeycloakAuthHandler directly |
+| `aihub_web/aihub_web/plugins/oidc-client.ts` | Keycloak-compatible OIDC settings |
+| `docker-compose.*.yml` | Regenerated with Keycloak service |
 
 ---
 
