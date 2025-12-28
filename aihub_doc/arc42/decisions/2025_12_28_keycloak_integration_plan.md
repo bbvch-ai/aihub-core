@@ -60,15 +60,15 @@ Integrate Keycloak into Swiss AI-Hub with a phased approach:
 ### Phase 1: Development Environment (Priority: High)
 
 Add Keycloak to `docker-compose.dev.yml` with:
-- Pre-configured realm (`aihub`) with default users
+- Pre-configured realm (`aihub`) with a single configurable admin user
 - Automatic realm import on container startup
-- Default development user for immediate login
+- Environment variable configuration for user credentials
 - No external IdP dependencies
 
 ### Phase 2: E2E Testing Infrastructure (Priority: High)
 
 Leverage the dev Keycloak setup for:
-- Consistent test user credentials
+- Same configurable user for E2E tests
 - Reproducible authentication flows
 - Integration with Playwright/pytest for automated testing
 
@@ -244,52 +244,20 @@ Create `deployment/templates/configs/keycloak-realm.json.j2`:
   {%- if stage == 'dev' %}
   "users": [
     {
-      "username": "dev-user",
-      "email": "dev-user@ai-hub.local",
-      "firstName": "Development",
-      "lastName": "User",
+      "username": "${KEYCLOAK_DEV_USER_USERNAME}",
+      "email": "${KEYCLOAK_DEV_USER_EMAIL}",
+      "firstName": "${KEYCLOAK_DEV_USER_FIRSTNAME}",
+      "lastName": "${KEYCLOAK_DEV_USER_LASTNAME}",
       "enabled": true,
       "emailVerified": true,
       "credentials": [
         {
           "type": "password",
-          "value": "dev-password",
+          "value": "${KEYCLOAK_DEV_USER_PASSWORD}",
           "temporary": false
         }
       ],
-      "realmRoles": ["AIHubUser", "AIHubDeveloper"]
-    },
-    {
-      "username": "dev-admin",
-      "email": "dev-admin@ai-hub.local",
-      "firstName": "Development",
-      "lastName": "Admin",
-      "enabled": true,
-      "emailVerified": true,
-      "credentials": [
-        {
-          "type": "password",
-          "value": "dev-password",
-          "temporary": false
-        }
-      ],
-      "realmRoles": ["AIHubAdmin", "AIHubUser", "AIHubDeveloper"]
-    },
-    {
-      "username": "e2e-test-user",
-      "email": "e2e@ai-hub.local",
-      "firstName": "E2E",
-      "lastName": "Test User",
-      "enabled": true,
-      "emailVerified": true,
-      "credentials": [
-        {
-          "type": "password",
-          "value": "e2e-test-password",
-          "temporary": false
-        }
-      ],
-      "realmRoles": ["AIHubUser"]
+      "realmRoles": ${KEYCLOAK_DEV_USER_ROLES_JSON}
     }
   ],
   {%- endif %}
@@ -308,15 +276,26 @@ Create `deployment/templates/configs/keycloak-realm.json.j2`:
 # -----------------------------------------------------------------------------
 # Keycloak Configuration
 # -----------------------------------------------------------------------------
+# Keycloak Admin Console credentials
 KEYCLOAK_ADMIN_USER="admin"
 KEYCLOAK_ADMIN_PASSWORD="admin-dev-password-changeme"
+
+# Client secrets for OIDC clients
 KEYCLOAK_API_CLIENT_SECRET="aihub-api-secret-dev-changeme"
 KEYCLOAK_OPENWEBUI_CLIENT_SECRET="openwebui-secret-dev-changeme"
 
-# Development Login Credentials (for documentation)
-# Username: dev-user | Password: dev-password | Role: AIHubUser, AIHubDeveloper
-# Username: dev-admin | Password: dev-password | Role: AIHubAdmin, AIHubUser, AIHubDeveloper
-# Username: e2e-test-user | Password: e2e-test-password | Role: AIHubUser
+# -----------------------------------------------------------------------------
+# Keycloak Development User (configurable)
+# -----------------------------------------------------------------------------
+# This user is auto-created in the Keycloak realm for development and E2E testing
+KEYCLOAK_DEV_USER_USERNAME="admin"
+KEYCLOAK_DEV_USER_PASSWORD="admin"
+KEYCLOAK_DEV_USER_EMAIL="admin@ai-hub.local"
+KEYCLOAK_DEV_USER_FIRSTNAME="Admin"
+KEYCLOAK_DEV_USER_LASTNAME="User"
+KEYCLOAK_DEV_USER_ROLES="AIHubAdmin"
+# JSON array format for realm import (generated from KEYCLOAK_DEV_USER_ROLES)
+KEYCLOAK_DEV_USER_ROLES_JSON='["AIHubAdmin"]'
 
 # Keycloak Endpoints (for local development outside Docker)
 KEYCLOAK_URL="http://localhost:8180"
@@ -602,13 +581,16 @@ const settings: UserManagerSettings = {
 
 #### 8.1 Test User Credentials
 
-Document in `aihub_doc/docs/2_platform/3_deployment_guide/`:
+The development user is configured via environment variables and used for both development and E2E testing:
 
-| Username | Password | Roles | Use Case |
-|----------|----------|-------|----------|
-| `dev-user` | `dev-password` | AIHubUser, AIHubDeveloper | Development testing |
-| `dev-admin` | `dev-password` | AIHubAdmin, AIHubUser, AIHubDeveloper | Admin testing |
-| `e2e-test-user` | `e2e-test-password` | AIHubUser | Automated E2E tests |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `KEYCLOAK_DEV_USER_USERNAME` | `admin` | Login username |
+| `KEYCLOAK_DEV_USER_PASSWORD` | `admin` | Login password |
+| `KEYCLOAK_DEV_USER_EMAIL` | `admin@ai-hub.local` | User email |
+| `KEYCLOAK_DEV_USER_ROLES` | `AIHubAdmin` | Comma-separated roles |
+
+For E2E tests, these credentials are read from environment variables ensuring consistency.
 
 #### 8.2 Playwright Configuration
 
@@ -616,15 +598,18 @@ Create test helper for E2E authentication:
 
 ```typescript
 // tests/e2e/auth-helpers.ts
-export async function loginAsTestUser(page: Page) {
+export async function loginAsDevUser(page: Page) {
+  const username = process.env.KEYCLOAK_DEV_USER_USERNAME || 'admin';
+  const password = process.env.KEYCLOAK_DEV_USER_PASSWORD || 'admin';
+
   await page.goto('/auth/login');
 
   // Click "Login with Keycloak" button
   await page.click('button:has-text("Keycloak")');
 
   // Fill Keycloak login form
-  await page.fill('#username', 'e2e-test-user');
-  await page.fill('#password', 'e2e-test-password');
+  await page.fill('#username', username);
+  await page.fill('#password', password);
   await page.click('#kc-login');
 
   // Wait for redirect back to app
@@ -807,11 +792,26 @@ docker compose -f docker-compose.dev.yml up -d
 # Verify Keycloak is running
 curl http://localhost:8180/health/ready
 
-# Access Keycloak admin
+# Access Keycloak admin console
 open http://localhost:8180  # admin / admin-dev-password-changeme
 
-# Login to OpenWebUI with dev user
-open http://localhost:8080  # dev-user / dev-password
+# Login to OpenWebUI with configurable dev user (defaults: admin / admin)
+open http://localhost:8080
+```
+
+### Customize Development User
+
+```bash
+# Override user credentials in .env or directly
+export KEYCLOAK_DEV_USER_USERNAME="myuser"
+export KEYCLOAK_DEV_USER_PASSWORD="mypassword"
+export KEYCLOAK_DEV_USER_EMAIL="myuser@example.com"
+export KEYCLOAK_DEV_USER_ROLES="AIHubAdmin"
+export KEYCLOAK_DEV_USER_ROLES_JSON='["AIHubAdmin"]'
+
+# Regenerate and restart
+make generate-compose
+docker compose -f docker-compose.dev.yml up -d --force-recreate keycloak
 ```
 
 ### Run E2E Tests
@@ -838,7 +838,7 @@ docker compose exec keycloak /opt/keycloak/bin/kc.sh export \
   --realm aihub \
   --users realm_file
 
-# Create new user via CLI
+# Create additional user via CLI (if needed)
 docker compose exec keycloak /opt/keycloak/bin/kcadm.sh create users \
   --realm aihub \
   -s username=newuser \
@@ -848,11 +848,20 @@ docker compose exec keycloak /opt/keycloak/bin/kcadm.sh create users \
   --user admin \
   --password admin-dev-password-changeme
 
-# Reset user password
+# Reset dev user password
 docker compose exec keycloak /opt/keycloak/bin/kcadm.sh set-password \
   --realm aihub \
-  --username dev-user \
+  --username ${KEYCLOAK_DEV_USER_USERNAME:-admin} \
   --new-password new-password \
+  --server http://localhost:8080 \
+  --user admin \
+  --password admin-dev-password-changeme
+
+# Add role to user
+docker compose exec keycloak /opt/keycloak/bin/kcadm.sh add-roles \
+  --realm aihub \
+  --uusername ${KEYCLOAK_DEV_USER_USERNAME:-admin} \
+  --rolename AIHubDeveloper \
   --server http://localhost:8080 \
   --user admin \
   --password admin-dev-password-changeme
