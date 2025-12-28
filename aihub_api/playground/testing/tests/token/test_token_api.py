@@ -154,6 +154,6 @@ def test_create_token_validation(
     assert response.status_code == expected_status
     error_response = response.json()
     error_details = [error["msg"] for error in error_response["detail"]]
-    assert any(
-        expected_error in error for error in error_details
-    ), f"Expected error '{expected_error}' not found in {error_details}"
+    assert any(expected_error in error for error in error_details), (
+        f"Expected error '{expected_error}' not found in {error_details}"
+    )

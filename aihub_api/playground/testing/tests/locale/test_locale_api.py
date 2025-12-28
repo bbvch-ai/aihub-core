@@ -49,7 +49,7 @@ async def test_get_locale_parametrized(api_client, headers, params, expected_loc
     response = await api_client.get(API_ENDPOINT, headers=headers, params=params)
     assert response.status_code == 200, f"Response: {response.text}"
     data = response.json()
-    assert (
-        data.get(DEFAULT_LANG_KEY) == expected_locale
-    ), f"Expected locale '{expected_locale}', got '{data.get(DEFAULT_LANG_KEY)}'"
+    assert data.get(DEFAULT_LANG_KEY) == expected_locale, (
+        f"Expected locale '{expected_locale}', got '{data.get(DEFAULT_LANG_KEY)}'"
+    )
     assert "test" in data and data["test"]

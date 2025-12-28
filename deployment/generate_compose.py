@@ -20,26 +20,82 @@ GPU_MODES = {False: "", True: ".gpu"}
 # Configuration specs: (template_path, output_dir, output_name_pattern)
 CONFIG_SPECS = [
     # Docker Compose - always required
-    ("templates/docker-compose.yml.j2", ROOT_DIR, "docker-compose.{stage}{hardware}.yml"),
+    (
+        "templates/docker-compose.yml.j2",
+        ROOT_DIR,
+        "docker-compose.{stage}{hardware}.yml",
+    ),
     # Service configs - optional, skipped if template missing
-    ("templates/configs/litellm-config.yml.j2", "configs/litellm", "litellm-config.{stage}{hardware}.yml"),
-    ("templates/configs/milvus-config.yml.j2", "configs/milvus", "milvus-config.{stage}{hardware}.yml"),
-    ("templates/configs/nats-config.conf.j2", "configs/nats", "nats-config.{stage}{hardware}.conf"),
-    ("templates/configs/dagster-config.yml.j2", "configs/dagster", "dagster-config.{stage}{hardware}.yml"),
-    ("templates/configs/workspace.yml.j2", "configs/dagster", "workspace.{stage}{hardware}.yml"),
-    ("templates/configs/otel-config.yml.j2", "configs/otel", "otel-config.{stage}{hardware}.yml"),
-    ("templates/configs/traefik-config.yml.j2", "configs/traefik", "traefik-config.{stage}{hardware}.yml"),
-    ("templates/configs/traefik-middlewares.yml.j2", "configs/traefik", "middlewares.{stage}{hardware}.yml"),
-    ("templates/configs/traefik-tls.yml.j2", "configs/traefik", "tls.{stage}{hardware}.yml"),
+    (
+        "templates/configs/litellm-config.yml.j2",
+        "configs/litellm",
+        "litellm-config.{stage}{hardware}.yml",
+    ),
+    (
+        "templates/configs/milvus-config.yml.j2",
+        "configs/milvus",
+        "milvus-config.{stage}{hardware}.yml",
+    ),
+    (
+        "templates/configs/nats-config.conf.j2",
+        "configs/nats",
+        "nats-config.{stage}{hardware}.conf",
+    ),
+    (
+        "templates/configs/dagster-config.yml.j2",
+        "configs/dagster",
+        "dagster-config.{stage}{hardware}.yml",
+    ),
+    (
+        "templates/configs/workspace.yml.j2",
+        "configs/dagster",
+        "workspace.{stage}{hardware}.yml",
+    ),
+    (
+        "templates/configs/otel-config.yml.j2",
+        "configs/otel",
+        "otel-config.{stage}{hardware}.yml",
+    ),
+    (
+        "templates/configs/traefik-config.yml.j2",
+        "configs/traefik",
+        "traefik-config.{stage}{hardware}.yml",
+    ),
+    (
+        "templates/configs/traefik-middlewares.yml.j2",
+        "configs/traefik",
+        "middlewares.{stage}{hardware}.yml",
+    ),
+    (
+        "templates/configs/traefik-tls.yml.j2",
+        "configs/traefik",
+        "tls.{stage}{hardware}.yml",
+    ),
     # Keycloak realm config - stage/hardware variations
-    ("templates/configs/keycloak-realm.json.j2", "configs/keycloak", "aihub-realm.{stage}{hardware}.json"),
+    (
+        "templates/configs/keycloak-realm.json.j2",
+        "configs/keycloak",
+        "aihub-realm.{stage}{hardware}.json",
+    ),
     # SeaweedFS Filer config - stage/hardware variations
-    ("templates/configs/seaweed-filer-config.toml.j2", "configs/seaweedfs", "seaweed-filer-config.{stage}{hardware}.toml"),
+    (
+        "templates/configs/seaweed-filer-config.toml.j2",
+        "configs/seaweedfs",
+        "seaweed-filer-config.{stage}{hardware}.toml",
+    ),
     # Static scripts - no stage/hardware variations
     ("templates/configs/s3-entrypoint.sh.j2", "configs/seaweedfs", "s3-entrypoint.sh"),
     ("templates/configs/s3-init-buckets.sh.j2", "configs/seaweedfs", "init-buckets.sh"),
-    ("templates/configs/pg-init-multiple-dbs.sh.j2", "configs/postgres", "init-multiple-dbs.sh"),
-    ("templates/configs/openwebui-init-functions.sh.j2", "configs/openwebui", "init-functions.sh"),
+    (
+        "templates/configs/pg-init-multiple-dbs.sh.j2",
+        "configs/postgres",
+        "init-multiple-dbs.sh",
+    ),
+    (
+        "templates/configs/openwebui-init-functions.sh.j2",
+        "configs/openwebui",
+        "init-functions.sh",
+    ),
 ]
 
 
@@ -80,7 +136,9 @@ def main():
             print(f"⚠️  Skipping {template_path} (not found)")
             continue
 
-        config_name = template_path.split("/")[-1].replace(".j2", "").replace("-config", "")
+        config_name = (
+            template_path.split("/")[-1].replace(".j2", "").replace("-config", "")
+        )
         stats[config_name] = 0
 
         print(f"✅ Loaded template: {template_path}")
@@ -95,7 +153,11 @@ def main():
             # Generate for each stage × hardware combination
             for gpu_enabled, hardware in GPU_MODES.items():
                 for stage in STAGES:
-                    context = {"stage": stage, "gpu_enabled": gpu_enabled, **config_data}
+                    context = {
+                        "stage": stage,
+                        "gpu_enabled": gpu_enabled,
+                        **config_data,
+                    }
                     filename = name_pattern.format(hardware=hardware, stage=stage)
                     output_path = out_dir / filename
 
@@ -119,11 +181,13 @@ def main():
             shutil.copy2(py_file, functions_dst / py_file.name)
             function_count += 1
         if function_count > 0:
-            print(f"✅ Copied {function_count} OpenWebUI functions to configs/openwebui/functions/")
+            print(
+                f"✅ Copied {function_count} OpenWebUI functions to configs/openwebui/functions/"
+            )
             stats["openwebui-functions"] = function_count
 
     # Print summary
-    print(f"\n✨ Generation complete!")
+    print("\n✨ Generation complete!")
     for name, count in stats.items():
         icon = "📦" if "docker-compose" in name else "🔧"
         print(f"   {icon} {count} {name} files")

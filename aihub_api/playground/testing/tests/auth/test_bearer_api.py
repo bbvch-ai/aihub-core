@@ -3,6 +3,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 import pytest_asyncio
+from aihub_api.testing.ApiTestRunner import ApiTestRunner
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
@@ -16,7 +17,6 @@ from httpx import ASGITransport, AsyncClient
 from mongoengine import connect, disconnect
 
 from aihub_api.routes.user.UserController import UserController
-from aihub_api.testing.ApiTestRunner import ApiTestRunner
 
 BASE_URL = "http://test"
 USER_ENDPOINT = "/user/me"

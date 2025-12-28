@@ -87,9 +87,9 @@ async def test_chat_completions_stream(api_client):
         assert data.get("object") == "chat.completion.chunk", f"Unexpected object type: {data.get('object')}"
         assert data.get("choices"), "No choices returned in the response"
         delta = data.get("choices")[0].get("delta", {})
-        assert (
-            delta.get("content") == expected_content[index]
-        ), f"Expected message content '{expected_content[index]}' but got '{delta.get('content')}'"
+        assert delta.get("content") == expected_content[index], (
+            f"Expected message content '{expected_content[index]}' but got '{delta.get('content')}'"
+        )
         assert delta.get("role") == "assistant", f"Expected role 'assistant' but got '{delta.get('role')}'"
 
 
@@ -111,9 +111,9 @@ async def test_chat_completions_json(api_client):
     assert choices, "No choices returned in the response"
     message = choices[0].get("message", {})
     expected = "First chunk.\nSecond chunk"
-    assert (
-        message.get("content") == expected
-    ), f"Expected message content '{expected}' but got '{message.get('content')}'"
+    assert message.get("content") == expected, (
+        f"Expected message content '{expected}' but got '{message.get('content')}'"
+    )
 
 
 @pytest.mark.asyncio(loop_scope="module")
@@ -144,6 +144,6 @@ async def test_chat_completions_json_with_custom_agent_config(api_client):
     assert choices, "No choices returned in the response"
     message = choices[0].get("message", {})
     expected = "First chunk.\nSecond chunk"
-    assert (
-        message.get("content") == expected
-    ), f"Expected message content '{expected}' but got '{message.get('content')}'"
+    assert message.get("content") == expected, (
+        f"Expected message content '{expected}' but got '{message.get('content')}'"
+    )
