@@ -44,13 +44,9 @@ def _get_s3_service() -> S3AnonymousFileAccessService:
 
 def _parse_image_path(image_path: str) -> tuple[str, str]:
     """Parse S3 image path into container and blob_path."""
-    if image_path.startswith("s3://"):
-        # S3 URI format: s3://bucket/path
-        uri_parts = image_path[5:].split("/", 1)  # Remove 's3://' prefix
-        return uri_parts[0], uri_parts[1] if len(uri_parts) > 1 else ""
-    else:
-        # Azure format: container/path
-        return image_path.split("/", 1)
+    path = image_path.removeprefix("s3://")
+    container, _, blob_path = path.partition("/")
+    return container, blob_path
 
 
 def _generate_presigned_url(container: str, blob_path: str) -> str:
