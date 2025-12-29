@@ -113,9 +113,6 @@ def _mark_entity_ingested(uri: str, namespace: str) -> DatalakeFileEntity | None
         else:
             logger.debug(f"Cannot mark as ingested - entity not found for {uri}")
         return entity
-    except DatalakeFileEntity.DoesNotExist:
-        logger.debug(f"Cannot mark as ingested - entity not found for {uri}")
-        return None
     except (PyMongoError, MongoEngineException) as e:
         logger.warning(f"Database error marking file as ingested: {uri}, error: {e}")
         return None
