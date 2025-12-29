@@ -75,7 +75,7 @@ class RetrievalAgent(Agent):
         """
         Orders the retrieved nodes based on their source documents.
         """
-        ordered_nodes = combine_nodes_in_order(
+        ordered_nodes = await combine_nodes_in_order(
             context_nodes=event.nodes,
             t=t.in_locale(start_event.locale),
             context_prompt=agent_config.context_prompt,

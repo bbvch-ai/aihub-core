@@ -170,7 +170,7 @@ async def do_order_nodes_by_documents(
     """Order nodes and return InOrderNodeCombinerEvent."""
     await displayer.display_thought(t("agent.thought.searching_knowledge"))
     nodes = event.output_nodes if isinstance(event, RerankerEvent) else event.nodes
-    context_message = combine_nodes_in_order(
+    context_message = await combine_nodes_in_order(
         context_nodes=nodes,
         t=t,
         context_prompt=context_prompt,

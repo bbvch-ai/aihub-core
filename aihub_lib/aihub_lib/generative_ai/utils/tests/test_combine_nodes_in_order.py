@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.schema import NodeWithScore, TextNode
@@ -143,8 +145,10 @@ def _():
 @when("the combine_nodes_in_order function is called", target_fixture="the_result")
 def _(the_context_nodes, the_locale_handler, the_context_prompt: LocaleString):
     try:
-        return combine_nodes_in_order(
-            context_nodes=the_context_nodes, t=the_locale_handler, context_prompt=the_context_prompt
+        return asyncio.run(
+            combine_nodes_in_order(
+                context_nodes=the_context_nodes, t=the_locale_handler, context_prompt=the_context_prompt
+            )
         )
     except ValueError as e:
         return e
