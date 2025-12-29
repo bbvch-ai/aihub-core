@@ -25,7 +25,11 @@ class DocumentUploadRequest(BaseModel):
         filename_pattern = r"^[^\x00-\x1f/\\][^\x00-\x1f/\\]*\.[a-zA-Z0-9]+$"
         if not re.match(filename_pattern, v):
             raise ValueError("Invalid filename format.")
-        extension = v.rsplit(".", 1)[-1]
+        parts = v.rsplit(".", 1)
+        if len(parts) < 2 or not parts[1]:
+            raise ValueError("Filename must have a valid extension.")
+
+        extension = parts[1]
         if len(extension) > 10:
             raise ValueError("File extension is too long.")
         return v
