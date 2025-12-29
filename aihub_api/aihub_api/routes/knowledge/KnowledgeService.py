@@ -1,7 +1,5 @@
 import logging
-import time
 import uuid
-from functools import lru_cache, wraps
 from typing import Annotated
 
 import mongoengine
@@ -9,7 +7,6 @@ from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService impo
 from aihub_lib.generative_ai.document.types.FileTypeConfig import FileTypeConfig
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.generative_ai.utils.path_utils import FIGURES_DIRECTORY_NAME
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
@@ -19,6 +16,7 @@ from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
+from aihub_lib.persistence.rag.datalake.entities.DatalakeFileEntity import DatalakeFileEntity
 from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
 from aihub_lib.persistence.rag.documents.entities.RefDoc import RefDoc
 from aihub_lib.persistence.rag.vectors import VectorStoreFactory
@@ -38,7 +36,7 @@ from pydantic import Field
 
 from aihub_api.routes.knowledge.dto.CreateNamespaceRequest import CreateNamespaceRequest
 from aihub_api.routes.knowledge.dto.DatabaseDTO import DatabaseDTO
-from aihub_api.routes.knowledge.dto.DocumentDTO import S3_PROTOCOL_PREFIX, DocumentDTO
+from aihub_api.routes.knowledge.dto.DocumentDTO import DocumentDTO
 from aihub_api.routes.knowledge.dto.DocumentUploadRequest import DocumentUploadRequest
 from aihub_api.routes.knowledge.dto.DocumentUploadResponse import DocumentUploadResponse
 from aihub_api.routes.knowledge.dto.DocumentUploadValidationRequest import DocumentUploadValidationRequest
@@ -50,32 +48,6 @@ from aihub_api.routes.knowledge.dto.UpdateNamespaceRequest import UpdateNamespac
 from aihub_api.services.TranslationService import TranslationService
 
 logger = logging.getLogger(__name__)
-
-
-def ttl_cache(seconds: int, maxsize: int = 128):
-    def decorator(func):
-        func = lru_cache(maxsize=maxsize)(func)
-        func.lifetime = seconds
-        func.expiration = time.time() + seconds
-
-        @wraps(func)
-        def wrapped_func(*args, **kwargs):
-            if time.time() >= func.expiration:
-                func.cache_clear()
-                func.expiration = time.time() + func.lifetime
-            return func(*args, **kwargs)
-
-        def invalidate():
-            func.cache_clear()
-            func.expiration = time.time() + func.lifetime
-
-        wrapped_func.invalidate = invalidate
-        wrapped_func.cache_info = func.cache_info
-        wrapped_func.cache_clear = func.cache_clear
-
-        return wrapped_func
-
-    return decorator
 
 
 class KnowledgeService:
@@ -92,84 +64,31 @@ class KnowledgeService:
             )
 
     @staticmethod
-    def _get_unprocessed_datalake_files(
-        bucket_name: str,
+    def _get_processing_files_from_db(
+        bucket: BucketEntity,
         namespace: str,
-        processed_sources: set[str],
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[DocumentDTO]:
         """
-        Get unprocessed files from datalake in a specific namespace.
-
-        Files in the __figures__ directory are excluded as they are generated artifacts
-        from document processing and should not be displayed in the knowledge interface.
-        Files that have already been processed (exist in processed_sources) are also excluded.
+        Get processing files from DatalakeFileEntity.
+        Files that are already ingested are excluded (they're shown via RefDoc).
         """
-        files_info = S3AnonymousFileAccessService().list_files(container=bucket_name, prefix=f"{namespace}/")
-
-        unprocessed_files = []
-        for file_info in files_info:
-            key = file_info["key"]
-
-            if f"/{FIGURES_DIRECTORY_NAME}/" in key:
-                continue
-
-            source = f"{bucket_name}/{key}"
-            if f"{S3_PROTOCOL_PREFIX}{source}" in processed_sources:
-                continue
-
-            filename = key.split("/")[-1]
-            file_namespace = key.split("/")[0]
-
-            unprocessed_files.append(
-                DocumentDTO(
-                    id=key,
-                    document_title=filename,
-                    namespace=file_namespace,
-                    updated_at=file_info.get("last_modified", ""),
-                    created_at=file_info.get("last_modified", ""),
-                    inserted_at="",
-                    source=source,
-                    is_ingested=False,
-                )
-            )
-
-        return unprocessed_files
+        processing_files = DatalakeFileEntity.get_processing_files_by_namespace(
+            bucket_id=str(bucket.id),
+            namespace_name=namespace,
+            skip=skip,
+            limit=limit,
+        )
+        return [DocumentDTO.from_datalake_file(f, bucket.bucket_name) for f in processing_files]
 
     @staticmethod
-    @ttl_cache(seconds=300, maxsize=256)  # 5 minutes TTL, 256 max entries
-    def _get_processed_sources(db: str, namespace: str) -> set[str]:
-        count = RefDoc.count_by_namespace(db_alias=db, namespace=namespace)
-        if count == 0:
-            return set()
-
-        docs = RefDoc.get_paginated_by_namespace(db_alias=db, namespace=namespace, skip=0, limit=count)
-        return {doc.data.metadata.source for doc in docs}
-
-    @staticmethod
-    @ttl_cache(seconds=300, maxsize=256)  # 5 minutes TTL, 256 max entries
-    def _get_processed_documents_sorted(db: str, namespace: str) -> list[DocumentDTO]:
-        count = RefDoc.count_by_namespace(db_alias=db, namespace=namespace)
-        if count == 0:
-            return []
-
-        docs = RefDoc.get_paginated_by_namespace(db_alias=db, namespace=namespace, skip=0, limit=count)
-        documents = [DocumentDTO.from_ref_doc(doc) for doc in docs]
-        documents.sort(key=lambda doc: doc.updated_at, reverse=True)
-        return documents
-
-    @classmethod
-    @ttl_cache(seconds=300, maxsize=256)  # 5 minutes TTL, 256 max entries
-    def _get_unprocessed_files(cls, db: str, namespace: str, bucket_name: str) -> list[DocumentDTO]:
-        processed_sources = cls._get_processed_sources(db, namespace)
-        unprocessed = cls._get_unprocessed_datalake_files(bucket_name, namespace, processed_sources)
-        unprocessed.sort(key=lambda doc: doc.updated_at, reverse=True)
-        return unprocessed
-
-    @staticmethod
-    def invalidate_cache():
-        KnowledgeService._get_processed_sources.invalidate()
-        KnowledgeService._get_processed_documents_sorted.invalidate()
-        KnowledgeService._get_unprocessed_files.invalidate()
+    def _count_processing_files(bucket: BucketEntity, namespace: str) -> int:
+        """Count files that are still processing (not yet ingested)."""
+        return DatalakeFileEntity.count_processing_by_namespace(
+            bucket_id=str(bucket.id),
+            namespace_name=namespace,
+        )
 
     @staticmethod
     @trace_fn
@@ -177,36 +96,39 @@ class KnowledgeService:
         db: str, namespace: str, page: int = 1, page_size: int = 20
     ) -> tuple[int, list[DocumentDTO]]:
         """
-        Retrieves paginated documents for a given namespace, including both processed (docstore)
-        and processing (datalake only) documents.
+        Retrieves paginated documents for a given namespace, including both ingested (docstore)
+        and processing files (from DatalakeFileEntity).
+
+        Uses indexed MongoDB queries instead of S3 listing for better performance.
+        Processing files are shown first, followed by ingested documents.
         """
         skip = (page - 1) * page_size
 
         KnowledgeService._ensure_db_exists(db)
         bucket = BucketEntity.get_bucket_by_db_name(db)
 
-        unprocessed = KnowledgeService._get_unprocessed_files(db, namespace, bucket.bucket_name)
-        unprocessed_count = len(unprocessed)
-
-        processed = KnowledgeService._get_processed_documents_sorted(db, namespace)
-        processed_count = len(processed)
-
-        total = unprocessed_count + processed_count
+        processing_count = KnowledgeService._count_processing_files(bucket, namespace)
+        processed_count = RefDoc.count_by_namespace(db_alias=db, namespace=namespace)
+        total = processing_count + processed_count
 
         if skip >= total:
             return total, []
 
-        if skip + page_size <= unprocessed_count:
-            return total, unprocessed[skip : skip + page_size]
+        # Calculate how many docs to fetch from each source
+        processing_to_fetch = max(0, min(page_size, processing_count - skip))
+        processed_to_fetch = page_size - processing_to_fetch
+        processed_skip = max(0, skip - processing_count)
 
-        if skip < unprocessed_count:
-            result = unprocessed[skip:]
-            remaining = page_size - len(result)
-            result.extend(processed[:remaining])
-            return total, result
+        docs: list[DocumentDTO] = []
+        if processing_to_fetch > 0:
+            docs.extend(KnowledgeService._get_processing_files_from_db(bucket, namespace, skip, processing_to_fetch))
+        if processed_to_fetch > 0:
+            processed_docs = RefDoc.get_paginated_by_namespace(
+                db_alias=db, namespace=namespace, skip=processed_skip, limit=processed_to_fetch
+            )
+            docs.extend([DocumentDTO.from_ref_doc(doc) for doc in processed_docs])
 
-        processed_skip = skip - unprocessed_count
-        return total, processed[processed_skip : processed_skip + page_size]
+        return total, docs
 
     @staticmethod
     @trace_fn
@@ -223,8 +145,9 @@ class KnowledgeService:
     def get_databases(t: LocaleHandler) -> list[DatabaseDTO]:
         """
         Retrieves all databases (buckets) with their available namespaces with the number of documents in each.
+
         Gets buckets from BucketEntity and namespaces from NamespaceEntity in MongoDB,
-        then enriches with document stats from docstore. Returns format compatible with web frontend.
+        then enriches with document stats from DatalakeFileEntity (processing) and RefDoc (ingested).
         """
         database_dtos: list[DatabaseDTO] = []
         buckets = BucketEntity.get_all_buckets()
@@ -237,11 +160,9 @@ class KnowledgeService:
 
             namespaces = []
             for ns_entity in namespace_entities:
-                unprocessed = KnowledgeService._get_unprocessed_files(
-                    db_name, ns_entity.namespace_name, bucket.bucket_name
-                )
+                processing_count = KnowledgeService._count_processing_files(bucket, ns_entity.namespace_name)
                 processed_count = RefDoc.count_by_namespace(db_alias=db_name, namespace=ns_entity.namespace_name)
-                total_count = len(unprocessed) + processed_count
+                total_count = processing_count + processed_count
 
                 namespaces.append(NamespaceDTO.from_entity(entity=ns_entity, t=t, number_of_documents=total_count))
 
@@ -352,8 +273,6 @@ class KnowledgeService:
             description=description_entity,
         )
 
-        KnowledgeService.invalidate_cache()
-
         return NamespaceResponse(
             id=str(namespace_entity.id),
             bucket_id=namespace_entity.bucket_id,
@@ -387,8 +306,6 @@ class KnowledgeService:
             display_name=display_name_entity,
             description=description_entity,
         )
-
-        KnowledgeService.invalidate_cache()
 
         return NamespaceResponse(
             id=str(updated_entity.id),
@@ -484,8 +401,9 @@ class KnowledgeService:
         """
         Validates whether a file was successfully uploaded to the globally configured datalake.
 
-        This method verifies that the uploaded file exists in the datalake storage and publishes
-        a SourceUpdatedEvent to NATS to trigger downstream pipeline processing via Dagster sensors.
+        This method verifies that the uploaded file exists in the datalake storage, creates
+        a DatalakeFileEntity to track the file, and publishes a SourceUpdatedEvent to NATS
+        to trigger downstream pipeline processing via Dagster sensors.
         """
         try:
             bucket_entity = BucketEntity.get_bucket_by_db_name(database)
@@ -502,7 +420,12 @@ class KnowledgeService:
 
         if exists:
             try:
-                KnowledgeService.invalidate_cache()
+                DatalakeFileEntity.get_or_create_file(
+                    bucket_id=str(bucket_entity.id),
+                    namespace_name=namespace,
+                    file_path=object_key,
+                )
+
                 await KnowledgeService._publish_source_updated_event(
                     nc=nc,
                     database=database,
@@ -510,7 +433,7 @@ class KnowledgeService:
                     file_path=object_key,
                 )
             except Exception as e:
-                logger.exception(f"Failed to publish SourceUpdatedEvent for {object_key}: {e}")
+                logger.exception(f"Failed to process upload for {object_key}: {e}")
                 # Don't fail the validation - file was successfully uploaded
         return DocumentUploadValidationResponse(exists=exists, file_path=object_key, container=container)
 

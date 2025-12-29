@@ -4,6 +4,7 @@ from fsspec import AbstractFileSystem
 from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
+from aihub_pipeline.util.datalake_file_status import mark_file_processing
 
 
 @op(code_version="v1")
@@ -14,6 +15,9 @@ async def parse_document_from_data_lake(
     document_parser: DocumentParserResource,
 ) -> RefDocDocument:
     """Loads and parses the document from data lake storage."""
+    # Mark file as PROCESSING in DatalakeFileEntity (creates record if doesn't exist)
+    mark_file_processing(uri=data_lake_file.uri, namespace=data_lake_file.namespace)
+
     reader = document_parser.get_document_parser_for_filetype(data_lake_file.filetype)
     reader_name = reader.__class__.__name__
     context.log.info(f"Using reader {reader_name} for document of type {data_lake_file.filetype}")

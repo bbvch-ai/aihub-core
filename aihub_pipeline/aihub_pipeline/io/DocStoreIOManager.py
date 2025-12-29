@@ -2,6 +2,7 @@ from dagster import ConfigurableIOManager, InputContext, OutputContext, Resource
 from llama_index.core.storage.docstore.keyval_docstore import KVDocumentStore
 
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
+from aihub_pipeline.util.datalake_file_status import mark_files_ingested
 from aihub_pipeline.util.id_utils import uri_to_id
 
 
@@ -77,6 +78,13 @@ class DocStoreIOManager(ConfigurableIOManager):
             context.log.info(f"Adding document to docstore: {document.id_}")
 
         self.doc_store.add_documents(documents)
+
+        # Mark files as INGESTED in DatalakeFileEntity after successful docstore insertion
+        files_to_mark = [(doc.uri, doc.namespace) for doc in documents if doc.uri and doc.namespace]
+        if files_to_mark:
+            marked = mark_files_ingested(files_to_mark)
+            for entity in marked:
+                context.log.info(f"Marked file as INGESTED: {entity.file_path}")
 
     def get_ref_doc(self, uri_or_id: str, context: InputContext):
         doc_id = self._convert_partition_key_to_doc_id(uri_or_id, context)
