@@ -21,15 +21,16 @@ class DocumentUploadRequest(BaseModel):
     @field_validator("filename")
     def validate_filename_format(cls, v: str) -> str:
         v = v.strip()
-        filename_pattern = r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*(\.[a-zA-Z0-_ \-]+)*\.[a-zA-Z0-9]+$"
+        # Regex enforces: Starts with safe char, no path chars, must end in .extension
+        filename_pattern = r"^[^\x00-\x1f/\\][^\x00-\x1f/\\]*\.[a-zA-Z0-9]+$"
         if not re.match(filename_pattern, v):
             raise ValueError("Invalid filename format.")
-        if any(pattern in v for pattern in ["..", "/", "\\", "\x00"]):
-            raise ValueError("Filename contains forbidden characters or sequences.")
-        parts = v.split(".")
-        if len(parts) > 3:
-            raise ValueError("Filename has too many extensions.")
-        if len(parts[-1]) > 10:
+        parts = v.rsplit(".", 1)
+        if len(parts) < 2 or not parts[1]:
+            raise ValueError("Filename must have a valid extension.")
+
+        extension = parts[1]
+        if len(extension) > 10:
             raise ValueError("File extension is too long.")
         return v
 
@@ -40,7 +41,7 @@ class DocumentUploadRequest(BaseModel):
         """
         try:
             mime_type = self.content_type.lower().split(";")[0].strip()
-            file_ext = "." + self.filename.split(".")[-1].lower()
+            file_ext = "." + self.filename.rsplit(".", 1)[-1].lower()
         except (AttributeError, IndexError):
             raise ValueError("Invalid filename or content_type format.")
         file_type = FileTypeConfig()
