@@ -463,7 +463,7 @@ services:
     networks:
       - default
     healthcheck:
-      test: ["CMD", "rclone", "rc", "--rc-addr=localhost:5572", "core/version"]
+      test: ["CMD", "rclone", "rc", "--rc-addr=localhost:5572", "--rc-user=${RCLONE_RC_USER}", "--rc-pass=${RCLONE_RC_PASS}", "core/version"]
       interval: 30s
       timeout: 10s
       retries: 3

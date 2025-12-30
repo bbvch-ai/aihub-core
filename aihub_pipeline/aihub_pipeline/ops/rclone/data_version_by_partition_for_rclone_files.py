@@ -39,10 +39,12 @@ def data_version_by_partition_for_rclone_files(
     context.log.info("Materializing external rclone source asset")
 
     if len(rclone_files) > 0:
+        # Sort files by path to ensure deterministic partition selection for materialization
+        sorted_files = sorted(rclone_files, key=lambda f: f.path)
         context.instance.report_runless_asset_event(
             AssetMaterialization(
                 asset_key=asset_key,
-                partition=rclone_files[-1].path,
+                partition=sorted_files[-1].path,
                 metadata={
                     "Number of Files": len(rclone_files),
                     "Total File Size (MB)": sum([file.size for file in rclone_files]) / 1e6,

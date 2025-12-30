@@ -78,12 +78,12 @@ pipeline code, and setup instructions.
 
 | Template | Use Case | Environment Prefix |
 |----------|----------|-------------------|
-| **SharePoint** | Microsoft 365 document libraries | `SHAREPOINT_*` |
-| **OneDrive** | Microsoft 365 personal/business storage | `ONEDRIVE_*` |
-| **Google Drive** | Google Workspace organizations | `GDRIVE_*` |
-| **S3** | AWS S3, MinIO, S3-compatible storage | `S3_*` |
-| **Azure Blob** | Azure Blob Storage | `AZUREBLOB_*` |
-| **SFTP** | Legacy systems, secure file transfers | `SFTP_*` |
+| **SharePoint** | Microsoft 365 document libraries | `RCLONE_SHAREPOINT_*` |
+| **OneDrive** | Microsoft 365 personal/business storage | `RCLONE_ONEDRIVE_*` |
+| **Google Drive** | Google Workspace organizations | `RCLONE_GDRIVE_*` |
+| **S3** | AWS S3, MinIO, S3-compatible storage | `RCLONE_S3_*` |
+| **Azure Blob** | Azure Blob Storage | `RCLONE_AZUREBLOB_*` |
+| **SFTP** | Legacy systems, secure file transfers | `RCLONE_SFTP_*` |
 | **Local FS** | Mounted network shares (NFS, SMB) | Direct path |
 
 Templates are located in `aihub_pipeline/templates/sources/`.
@@ -93,13 +93,13 @@ Templates are located in `aihub_pipeline/templates/sources/`.
 **1. Configure environment variables** (copy from `templates/sources/sharepoint/.env.template`):
 
 ```bash
-SHAREPOINT_NAME=sharepoint
-SHAREPOINT_TYPE=onedrive
-SHAREPOINT_CLIENT_ID=your-client-id
-SHAREPOINT_CLIENT_SECRET=your-secret
-SHAREPOINT_TENANT=your-tenant-id
-SHAREPOINT_SITE_URL=https://your-tenant.sharepoint.com/sites/your-site
-SHAREPOINT_DRIVE_TYPE=documentLibrary
+RCLONE_SHAREPOINT_NAME=sharepoint
+RCLONE_SHAREPOINT_TYPE=onedrive
+RCLONE_SHAREPOINT_CLIENT_ID=your-client-id
+RCLONE_SHAREPOINT_CLIENT_SECRET=your-secret
+RCLONE_SHAREPOINT_TENANT=your-tenant-id
+RCLONE_SHAREPOINT_SITE_URL=https://your-tenant.sharepoint.com/sites/your-site
+RCLONE_SHAREPOINT_DRIVE_TYPE=documentLibrary
 ```
 
 **2. Create your pipeline**:
@@ -155,36 +155,50 @@ The `RcloneSourceFactory` provides convenience functions that read from environm
 
 ```python
 from aihub_lib.infrastructure.rclone.RcloneSourceFactory import (
-    sharepoint_source,    # Reads SHAREPOINT_* env vars
-    onedrive_source,      # Reads ONEDRIVE_* env vars
-    google_drive_source,  # Reads GDRIVE_* env vars
-    s3_source,            # Reads S3_* env vars
-    azure_blob_source,    # Reads AZUREBLOB_* env vars
-    sftp_source,          # Reads SFTP_* env vars
-    local_fs_source,      # Reads LOCAL_FS_* env vars
+    sharepoint_source,    # Reads RCLONE_SHAREPOINT_* env vars
+    onedrive_source,      # Reads RCLONE_ONEDRIVE_* env vars
+    google_drive_source,  # Reads RCLONE_GDRIVE_* env vars
+    s3_source,            # Reads RCLONE_S3_* env vars
+    azure_blob_source,    # Reads RCLONE_AZUREBLOB_* env vars
+    sftp_source,          # Reads RCLONE_SFTP_* env vars
+    local_fs_source,      # Reads RCLONE_LOCAL_FS_* env vars
 )
 ```
 
 ### Environment Variable Pattern
 
-All source configurations follow a consistent pattern:
+All source configurations follow a consistent pattern with the `RCLONE_` prefix:
 
 ```bash
-<PREFIX>_NAME=remote-name       # Rclone remote name
-<PREFIX>_TYPE=backend-type      # Rclone backend (onedrive, drive, s3, etc.)
-<PREFIX>_CLIENT_ID=...          # OAuth client ID (if applicable)
-<PREFIX>_CLIENT_SECRET=...      # OAuth client secret (if applicable)
-<PREFIX>_TENANT=...             # Azure AD tenant (Microsoft sources)
-<PREFIX>_OPTION_<KEY>=value     # Additional rclone options
+RCLONE_<SOURCE>_NAME=remote-name       # Rclone remote name
+RCLONE_<SOURCE>_TYPE=backend-type      # Rclone backend (onedrive, drive, s3, etc.)
+RCLONE_<SOURCE>_CLIENT_ID=...          # OAuth client ID (if applicable)
+RCLONE_<SOURCE>_CLIENT_SECRET=...      # OAuth client secret (if applicable)
+RCLONE_<SOURCE>_TENANT=...             # Azure AD tenant (Microsoft sources)
+RCLONE_<SOURCE>_<OPTION>=value         # Additional rclone options
 ```
 
-Extra options use the `<PREFIX>_OPTION_` pattern and are passed directly to rclone:
+Additional options are passed directly to rclone as backend-specific parameters:
 
 ```bash
-S3_OPTION_REGION=eu-west-1
-S3_OPTION_ENDPOINT=https://minio.example.com
-SFTP_OPTION_HOST=sftp.example.com
-SFTP_OPTION_PORT=22
+RCLONE_S3_REGION=eu-west-1
+RCLONE_S3_ENDPOINT=https://minio.example.com
+RCLONE_SFTP_HOST=sftp.example.com
+RCLONE_SFTP_PORT=22
+```
+
+### Rclone Service Authentication
+
+In production environments, the rclone service requires authentication via `RCLONE_RC_USER` and `RCLONE_RC_PASS`
+environment variables.
+
+> **Security Warning**: The default credentials (`admin`/`changeme`) are intended for development only.
+> **Always change these credentials in production deployments** to prevent unauthorized access to your data sources.
+
+```bash
+# Production environment - set strong, unique credentials
+RCLONE_RC_USER=your-secure-username
+RCLONE_RC_PASS=your-strong-password
 ```
 
 ## 2. The Data Lake to Vector Store Pipeline

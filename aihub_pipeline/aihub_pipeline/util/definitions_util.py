@@ -418,7 +418,13 @@ def default_rclone_to_datalake_definitions(
     """
     rclone_partitions = DynamicPartitionsDefinition(name="rclone_partitions")
 
-    source_name = rclone_config.name if rclone_config else None
+    # Extract source name from config or from source_remote (e.g., "onedrive:Documents" -> "onedrive")
+    if rclone_config:
+        source_name = rclone_config.name
+    else:
+        # Extract remote name before the colon, or use full path for local filesystem
+        source_name = source_remote.split(":", 1)[0] if ":" in source_remote else "local_fs"
+
     pipeline_group = f"{source_name}_to_datalake"
 
     rclone_key = AssetKey([datalake_container_name, pipeline_group, source_name])

@@ -548,7 +548,11 @@ services:
     networks:
       - default
     healthcheck:
+      {%- if stage == 'dev' %}
       test: ["CMD", "rclone", "rc", "--rc-addr=localhost:5572", "core/version"]
+      {%- else %}
+      test: ["CMD", "rclone", "rc", "--rc-addr=localhost:5572", "--rc-user=${RCLONE_RC_USER}", "--rc-pass=${RCLONE_RC_PASS}", "core/version"]
+      {%- endif %}
       interval: 30s
       timeout: 10s
       retries: 3

@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from urllib.parse import quote
 
 import aiohttp
 import httpx
@@ -16,12 +17,26 @@ class RcloneClient:
 
     - Uses `httpx` (Sync) for configuration management (create/check remotes).
     - Uses `aiohttp` (Async) for high-performance file operations (list/download).
+
+    Authentication:
+        When RCLONE_RC_USER and RCLONE_RC_PASS are set, all requests are
+        authenticated using HTTP Basic Auth. This is required in non-dev
+        environments where rclone is started with --rc-user and --rc-pass.
     """
 
     def __init__(self, base_url: str | None = None, default_remote: str | None = None, timeout: int = 30):
-        self.base_url = (base_url or RcloneSettings().URL).rstrip("/")
+        settings = RcloneSettings()
+        self.base_url = (base_url or settings.URL).rstrip("/")
         self.default_remote = default_remote
         self.timeout = timeout
+
+        # Configure authentication if credentials are provided
+        if settings.RC_USER and settings.RC_PASS:
+            self._httpx_auth = httpx.BasicAuth(settings.RC_USER, settings.RC_PASS.get_secret_value())
+            self._aiohttp_auth = aiohttp.BasicAuth(settings.RC_USER, settings.RC_PASS.get_secret_value())
+        else:
+            self._httpx_auth = None
+            self._aiohttp_auth = None
 
     def upsert_remote(self, config: RcloneSourceConfig) -> None:
         """
@@ -31,7 +46,7 @@ class RcloneClient:
         payload = config.to_rclone_params()
 
         logger.info(f"Configuring remote: {config.name}")
-        with httpx.Client(timeout=self.timeout) as client:
+        with httpx.Client(timeout=self.timeout, auth=self._httpx_auth) as client:
             response = client.post(url, json=payload)
             response.raise_for_status()
 
@@ -41,7 +56,7 @@ class RcloneClient:
         """
         url = f"{self.base_url}/config/get"
         try:
-            with httpx.Client(timeout=self.timeout) as client:
+            with httpx.Client(timeout=self.timeout, auth=self._httpx_auth) as client:
                 response = client.post(url, json={"name": name})
 
                 if response.status_code != 200:
@@ -106,11 +121,14 @@ class RcloneClient:
         item = stat.get("item", {})
 
         # Construct the download url: http://host:port/[remote]/path
-        download_url = f"{self.base_url}/[{target_remote}]/{clean_path}"
+        # URL-encode remote and path to handle special characters (spaces, etc.)
+        remote_quoted = quote(target_remote, safe="")
+        path_quoted = quote(clean_path, safe="/")
+        download_url = f"{self.base_url}/[{remote_quoted}]/{path_quoted}"
 
         timeout_config = aiohttp.ClientTimeout(total=None, sock_read=600, sock_connect=30)
 
-        async with aiohttp.ClientSession(timeout=timeout_config) as session:
+        async with aiohttp.ClientSession(timeout=timeout_config, auth=self._aiohttp_auth) as session:
             async with session.get(download_url) as resp:
                 resp.raise_for_status()
                 content = await resp.read()
@@ -139,7 +157,7 @@ class RcloneClient:
 
     async def _async_post(self, endpoint: str, params: dict) -> dict:
         """Helper for async JSON requests."""
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(auth=self._aiohttp_auth) as session:
             async with session.post(f"{self.base_url}/{endpoint}", json=params) as resp:
                 resp.raise_for_status()
                 return await resp.json()
