@@ -68,7 +68,11 @@ rclone:
 RCLONE_SFTP_KNOWN_HOSTS_FILE=/secrets/known_hosts
 ```
 
-**Disable host key checking (not recommended for production):**
+**Skip symbolic links during transfer:**
 ```bash
 RCLONE_SFTP_SKIP_LINKS=true
 ```
+
+> **Note on host key verification**: By default, rclone uses the system's known_hosts file.
+> To skip host key verification in development (not recommended for production),
+> set `RCLONE_SFTP_KNOWN_HOSTS_FILE` to an empty or non-existent file.
