@@ -1,13 +1,9 @@
 """Main MCP server implementation using FastMCP."""
 
 import logging
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 from typing import Any
 
 from fastmcp import FastMCP
-from starlette.applications import Starlette
-from starlette.routing import Mount
 
 from aihub_mcp.settings.MCPSettings import MCPSettings
 
@@ -26,6 +22,9 @@ class MCPServer:
     - Human-in-the-loop via MCP elicitation
     - LLM sampling from MCP client
     - Progress streaming for agent thoughts and outputs
+
+    Note: Use MCPRunner.create_app() to create the full application with
+    authentication and tracing middleware.
     """
 
     def __init__(self, settings: MCPSettings | None = None) -> None:
@@ -136,57 +135,3 @@ class MCPServer:
         if agent_class in self._agent_registry:
             del self._agent_registry[agent_class]
             logger.info(f"Agent unregistered: {agent_class}")
-
-    @asynccontextmanager
-    async def lifespan(self, app: Starlette) -> AsyncIterator[None]:
-        """Lifecycle manager for the MCP server."""
-        logger.info("MCP server starting up...")
-
-        # Initialize connections (NATS, etc.) will be done by discovery service
-        yield
-
-        logger.info("MCP server shutting down...")
-
-    def create_app(self) -> Starlette:
-        """
-        Create the Starlette application with MCP mounted.
-
-        Returns a Starlette app that can be run with uvicorn or mounted in another app.
-        """
-        if self._mcp is None:
-            self.create_mcp()
-
-        # Create the MCP HTTP app based on transport setting
-        if self._settings.TRANSPORT == "sse":
-            mcp_app = self.mcp.sse_app(path="/")  # type: ignore[attr-defined]
-            logger.info("Using SSE transport (legacy)")
-        else:
-            mcp_app = self.mcp.http_app(path="/")
-            logger.info("Using Streamable HTTP transport (recommended)")
-
-        @asynccontextmanager
-        async def combined_lifespan(app: Starlette) -> AsyncIterator[None]:
-            # Critical: MCP lifespan must initialize FIRST for session management
-            async with mcp_app.lifespan(mcp_app):
-                async with self.lifespan(app):
-                    yield
-
-        app = Starlette(
-            routes=[Mount(self._settings.PATH, app=mcp_app)],
-            lifespan=combined_lifespan,
-        )
-
-        logger.info(f"MCP app created at path: {self._settings.PATH}")
-        return app
-
-    def run(self) -> None:
-        """Run the MCP server standalone using uvicorn."""
-        import uvicorn
-
-        app = self.create_app()
-        uvicorn.run(
-            app,
-            host=self._settings.HOST,
-            port=self._settings.PORT,
-            log_level="debug" if self._settings.DEBUG else "info",
-        )
