@@ -1,3 +1,5 @@
+import logging
+
 from llama_index.core.schema import NodeWithScore
 
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
@@ -9,6 +11,8 @@ from aihub_lib.generative_ai.utils.retrieve_prev_next_nodes import retrieve_prev
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.rag.vectors.node_metadata import NODE_CONTENT_TYPE, SOURCE
+
+logger = logging.getLogger(__name__)
 
 # File extensions that indicate a standalone image file (not embedded in a document)
 _STANDALONE_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".tiff", ".svg"}
@@ -66,7 +70,13 @@ class KnowledgeRetriever(BaseRetriever):
 
         # Filter out excluded content types before prev/next retrieval
         # This allows excluded types to still be retrieved via prev/next context
+        original_count = len(nodes)
         nodes = self._filter_excluded_content_types(nodes)
+        if len(nodes) < original_count:
+            logger.debug(
+                f"Filtered {original_count - len(nodes)} nodes with excluded content types "
+                f"({self.config.exclude_content_types}), {len(nodes)} remaining"
+            )
 
         if not nodes:
             return []
