@@ -36,7 +36,7 @@ class RcloneResource(ConfigurableResource):
     Universal cloud storage access via rclone RC API.
 
     Wraps the RcloneClient to make it usable as a Dagster resource.
-    Handles automatic remote configuration (upsert) if config is provided.
+    Handles automatic remote configuration (upsert) if rclone_config_dict is provided.
 
     Note:
         This resource provides synchronous methods that wrap async operations.

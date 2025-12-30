@@ -1,7 +1,7 @@
 """
 Local Filesystem Pipeline
 
-1. Set RCLONE_DATA_PATH in your .env.dev to point to your documents folder
+1. Set RCLONE_DATA_PATH in your .env to point to your documents folder
 2. Run: make playground
 3. Open http://localhost:3000
 

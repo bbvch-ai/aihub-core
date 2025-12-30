@@ -157,7 +157,8 @@ class RcloneClient:
 
     async def _async_post(self, endpoint: str, params: dict) -> dict:
         """Helper for async JSON requests."""
-        async with aiohttp.ClientSession(auth=self._aiohttp_auth) as session:
+        timeout_config = aiohttp.ClientTimeout(total=None, sock_read=600, sock_connect=30)
+        async with aiohttp.ClientSession(timeout=timeout_config, auth=self._aiohttp_auth) as session:
             async with session.post(f"{self.base_url}/{endpoint}", json=params) as resp:
                 resp.raise_for_status()
                 return await resp.json()

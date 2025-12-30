@@ -435,11 +435,17 @@ def default_rclone_to_datalake_definitions(
     rclone_partitions = DynamicPartitionsDefinition(name="rclone_partitions")
 
     # Extract source name from config or from source_remote (e.g., "onedrive:Documents" -> "onedrive")
-    if rclone_config:
+    # Ensure we always derive a non-empty, stable source_name for asset keys
+    if rclone_config and rclone_config.name:
         source_name = rclone_config.name
     else:
-        # Extract remote name before the colon, or use full path for local filesystem
-        source_name = source_remote.split(":", 1)[0] if ":" in source_remote else "local_fs"
+        # Extract remote name before the colon if present and non-empty; otherwise use local_fs fallback
+        source_remote_str = (source_remote or "").strip()
+        if ":" in source_remote_str:
+            candidate = source_remote_str.split(":", 1)[0].strip()
+            source_name = candidate if candidate else "local_fs"
+        else:
+            source_name = "local_fs"
 
     pipeline_group = f"{source_name}_to_datalake"
 
