@@ -126,6 +126,17 @@ class EventTranslator:
                 user_id=str(user_id_value) if user_id_value is not None else None,
             )
 
+        if self._tracer and span:
+            self._tracer.add_event(
+                span,
+                "execution_started",
+                {
+                    "thread_id": thread_id,
+                    "display_id": display_id,
+                    "run_id": run_id,
+                },
+            )
+
         # Build the start event
         start_event = self._build_start_event(
             event_name=event_name,
@@ -179,6 +190,15 @@ class EventTranslator:
 
                 # Handle HumanInTheLoopRequestEvent - elicitation
                 elif "HumanInTheLoopRequestEvent" in event_type:
+                    if self._tracer and span:
+                        self._tracer.add_event(
+                            span,
+                            "hitl_request",
+                            {
+                                "hitl_type": event.get("hitl_type", "input"),
+                            },
+                        )
+
                     if self._elicitation_handler:
                         response = await self._elicitation_handler.handle_request(ctx, event)
                         # Publish response back to NATS
@@ -216,6 +236,9 @@ class EventTranslator:
             # Publish the start event
             await self._js.publish(subject, json.dumps(start_event).encode())
             logger.info(f"Published start event to {subject}")
+
+            if self._tracer and span:
+                self._tracer.add_event(span, "event_published", {"subject": subject})
 
             # Wait for result with configurable timeout
             result = await asyncio.wait_for(result_future, timeout=self._agent_timeout)

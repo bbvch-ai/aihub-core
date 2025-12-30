@@ -117,12 +117,10 @@ class MCPSettings(BaseSettings):
             )
 
         if self.DEBUG and not has_api_keys:
-            logger.warning("Running in DEBUG mode without authentication. " "Do not expose to untrusted networks.")
+            logger.warning("Running in DEBUG mode without authentication. Do not expose to untrusted networks.")
 
         if self.HOST == "0.0.0.0" and not has_api_keys:
-            logger.warning(
-                "Server bound to all interfaces (0.0.0.0) without authentication. " "This is a security risk!"
-            )
+            logger.warning("Server bound to all interfaces (0.0.0.0) without authentication. This is a security risk!")
 
         return self
 

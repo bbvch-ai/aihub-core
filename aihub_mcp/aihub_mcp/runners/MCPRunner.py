@@ -1,8 +1,14 @@
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import Any
 
 from starlette.applications import Starlette
+from starlette.middleware import Middleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import JSONResponse, Response
+from starlette.routing import Mount
 
 from aihub_mcp.auth.ApiKeyAuth import ApiKeyAuth
 from aihub_mcp.discovery.AgentDiscoveryService import AgentDiscoveryService
@@ -20,6 +26,54 @@ from aihub_mcp.translation.SamplingBridge import SamplingBridge
 logger = logging.getLogger(__name__)
 
 
+class AuthMiddleware(BaseHTTPMiddleware):
+    """Middleware to validate API key authentication on MCP requests."""
+
+    def __init__(self, app: Any, auth: ApiKeyAuth, tracer: MCPTracer) -> None:
+        super().__init__(app)
+        self._auth = auth
+        self._tracer = tracer
+
+    async def dispatch(self, request: Request, call_next: Any) -> Response:
+        # Start tracing span for the request
+        span = self._tracer.start_tool_span(
+            tool_name="mcp_request",
+            agent_class="mcp_server",
+            attributes={
+                "http.method": request.method,
+                "http.url": str(request.url),
+            },
+        )
+
+        try:
+            # Skip auth for health checks and OPTIONS
+            if request.method == "OPTIONS" or request.url.path.endswith("/health"):
+                response = await call_next(request)
+                self._tracer.end_span(span, success=True)
+                return response
+
+            # Validate API key if auth is enabled
+            if self._auth.enabled:
+                headers = dict(request.headers)
+                if not self._auth.validate(headers):
+                    self._tracer.end_span(span, success=False, error_message="Unauthorized")
+                    return JSONResponse(
+                        status_code=401,
+                        content={"error": "Unauthorized", "message": "Invalid or missing API key"},
+                    )
+
+                # Store user identity in request state
+                request.state.user = self._auth.get_user_identity(headers)
+
+            response = await call_next(request)
+            self._tracer.end_span(span, success=True)
+            return response
+
+        except Exception as e:
+            self._tracer.end_span(span, success=False, error_message=str(e))
+            raise
+
+
 class MCPRunner:
     """
     Complete runner for the MCP server with all services.
@@ -28,8 +82,8 @@ class MCPRunner:
     - MCP server setup
     - Agent discovery
     - Event translation
-    - Authentication
-    - Tracing
+    - Authentication (wired via middleware)
+    - Tracing (wired via middleware)
     """
 
     def __init__(self, settings: MCPSettings | None = None) -> None:
@@ -41,7 +95,10 @@ class MCPRunner:
             api_keys=self._settings.get_all_api_keys(),
             rate_limit_per_minute=self._settings.RATE_LIMIT_REQUESTS_PER_MINUTE,
         )
-        self._tracer = MCPTracer(enabled=self._settings.TRACING_ENABLED)
+        self._tracer = MCPTracer(
+            service_name="aihub_mcp",
+            enabled=self._settings.TRACING_ENABLED,
+        )
 
         # Translation layer
         self._elicitation_handler = ElicitationHandler()
@@ -54,7 +111,7 @@ class MCPRunner:
             elicitation_handler=self._elicitation_handler,
             progress_streamer=self._progress_streamer,
             sampling_bridge=self._sampling_bridge,
-            tracer=self._tracer,  # Pass tracer for Phoenix integration
+            tracer=self._tracer,
             agent_timeout_seconds=self._settings.AGENT_TIMEOUT_SECONDS,
             mask_sensitive_data=self._settings.MASK_SENSITIVE_DATA,
         )
@@ -83,6 +140,14 @@ class MCPRunner:
     def mcp_server(self) -> MCPServer:
         return self._mcp_server
 
+    @property
+    def auth(self) -> ApiKeyAuth:
+        return self._auth
+
+    @property
+    def tracer(self) -> MCPTracer:
+        return self._tracer
+
     @asynccontextmanager
     async def lifespan(self, app: Starlette) -> AsyncIterator[None]:
         """Lifecycle manager for all MCP services."""
@@ -94,7 +159,12 @@ class MCPRunner:
         # Start agent discovery
         await self._discovery_service.start()
 
-        logger.info(f"MCP server ready at http://{self._settings.HOST}:{self._settings.PORT}{self._settings.PATH}")
+        auth_status = "enabled" if self._auth.enabled else "disabled"
+        tracing_status = "enabled" if self._settings.TRACING_ENABLED else "disabled"
+        logger.info(
+            f"MCP server ready at http://{self._settings.HOST}:{self._settings.PORT}{self._settings.PATH} "
+            f"(auth={auth_status}, tracing={tracing_status})"
+        )
 
         try:
             yield
@@ -110,7 +180,7 @@ class MCPRunner:
             logger.info("MCP runner services stopped")
 
     def create_app(self) -> Starlette:
-        """Create the complete MCP application."""
+        """Create the complete MCP application with auth and tracing middleware."""
         # Initialize MCP server
         self._mcp_server.create_mcp()
 
@@ -131,18 +201,14 @@ class MCPRunner:
                 async with self.lifespan(app):
                     yield
 
+        # Create app with auth middleware
         app = Starlette(
-            routes=[
-                # Mount MCP at configured path
-                # Note: Using Starlette Mount requires importing it
-            ],
+            routes=[Mount(self._settings.PATH, app=mcp_app)],
             lifespan=combined_lifespan,
+            middleware=[
+                Middleware(AuthMiddleware, auth=self._auth, tracer=self._tracer),
+            ],
         )
-
-        # Add the MCP app as a mount
-        from starlette.routing import Mount
-
-        app.routes.append(Mount(self._settings.PATH, app=mcp_app))
 
         return app
 
