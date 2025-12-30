@@ -393,6 +393,7 @@ def default_rclone_to_datalake_definitions(
     observe_job_minute: Annotated[int, "Minute to run daily rclone observation job"] = 0,
     remove_job_hour: Annotated[int, "Hour to run daily removed files cleanup job"] = 1,
     remove_job_minute: Annotated[int, "Minute to run daily removed files cleanup job"] = 0,
+    max_partitions: Annotated[int, "Maximum number of partitions to create or delete at once"] = 1000,
 ) -> Definitions:
     """
     Creates an Rclone to DataLake pipeline using S3-compatible storage.
@@ -453,7 +454,7 @@ def default_rclone_to_datalake_definitions(
     data_lake_files_key = AssetKey([datalake_container_name, pipeline_group, "data_lake_files"])
     removed_data_lake_files_key = AssetKey([datalake_container_name, pipeline_group, "removed_data_lake_files"])
 
-    observable_rclone_asset = observable_rclone_factory(rclone_key, rclone_partitions)
+    observable_rclone_asset = observable_rclone_factory(rclone_key, rclone_partitions, max_partitions)
 
     assets = [
         observable_rclone_asset,

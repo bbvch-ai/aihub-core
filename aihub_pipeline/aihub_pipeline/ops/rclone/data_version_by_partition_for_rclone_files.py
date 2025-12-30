@@ -16,6 +16,7 @@ def data_version_by_partition_for_rclone_files(
     asset_key: AssetKey,
     partition: DynamicPartitionsDefinition,
     rclone_files: list[MinimalRcloneFile],
+    max_partitions: int,
 ) -> DataVersionsByPartition:
     """
     Generates a dynamic partition key for each file from the rclone remote,
@@ -33,6 +34,7 @@ def data_version_by_partition_for_rclone_files(
         context,
         partition.name,
         partition_keys,
+        max_partitions,
     )
 
     context.log.info(f"Found {len(rclone_files)} files in rclone remote")

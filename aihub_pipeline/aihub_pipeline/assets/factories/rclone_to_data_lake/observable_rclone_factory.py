@@ -16,6 +16,7 @@ from aihub_pipeline.util.key_utils import group_name_from_asset_key
 def observable_rclone_factory(
     key: AssetKey,
     partitions: DynamicPartitionsDefinition,
+    max_partitions: int,
 ) -> observable_source_asset:
     """
     Observable source asset for cloud storage (OneDrive, Dropbox, Google Drive, etc.).
@@ -44,6 +45,7 @@ def observable_rclone_factory(
             asset_key=key,
             partition=partitions,
             rclone_files=rclone_files,
+            max_partitions=max_partitions,
         )
 
     return observable_rclone
