@@ -125,7 +125,10 @@ poetry install
 make run
 
 # Or directly
-poetry run python -m aihub_mcp.main
+poetry run python -m aihub_mcp
+
+# Interactive playground (debug mode with example commands)
+make playground
 ```
 
 ## Integration with aihub_api

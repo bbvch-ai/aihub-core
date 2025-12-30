@@ -31,4 +31,8 @@ use-local-core:
 
 run:
 	@echo "Starting MCP server..."
-	poetry run python -m aihub_mcp.main
+	poetry run python -m aihub_mcp
+
+playground:
+	@echo "Starting MCP playground..."
+	poetry run python playground.py
