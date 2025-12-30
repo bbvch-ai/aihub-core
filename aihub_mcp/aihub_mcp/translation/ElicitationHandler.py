@@ -1,5 +1,3 @@
-"""Handle HITL requests via MCP elicitation."""
-
 import html
 import logging
 import re

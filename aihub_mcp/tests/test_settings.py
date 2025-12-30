@@ -1,5 +1,3 @@
-"""Tests for MCP settings."""
-
 import pytest
 from pydantic import SecretStr
 

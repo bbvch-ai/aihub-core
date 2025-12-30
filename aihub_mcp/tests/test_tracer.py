@@ -1,5 +1,3 @@
-"""Tests for MCP tracing."""
-
 from aihub_mcp.tracing.MCPTracer import MCPTracer
 
 

@@ -1,5 +1,3 @@
-"""Main MCP server implementation using FastMCP."""
-
 import logging
 from typing import Any
 

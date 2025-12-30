@@ -1,5 +1,3 @@
-"""Registry for agent-specific prompt templates."""
-
 import logging
 from typing import TYPE_CHECKING, Any
 

@@ -1,5 +1,3 @@
-"""OpenTelemetry tracing instrumentation for MCP requests."""
-
 import logging
 from contextvars import ContextVar
 from typing import Any

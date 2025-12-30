@@ -1,5 +1,3 @@
-"""Stream SAAP display events as MCP progress notifications."""
-
 import logging
 import re
 

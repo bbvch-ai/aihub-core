@@ -1,5 +1,3 @@
-"""Integration tests for MCP clients (Claude Code, Cursor)."""
-
 import json
 
 import pytest

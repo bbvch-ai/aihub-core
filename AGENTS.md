@@ -172,8 +172,9 @@ class AgentDTO(BaseModel):  # Pydantic not dict
 - **Types**: Mandatory type annotations. Use modern syntax (`list[int]`, `int | None`). Avoid complex types (dicts,
   tuples)—use Pydantic models or dataclasses
 - **Error Handling**: Let functions fail. Do NOT catch errors and return None
-- **Docstrings**: Required for all public modules/classes/methods. Explain "why", not "what". Never use `Args:` or
-  `Returns:` sections—keep docstrings concise
+- **Docstrings**: Required for public classes and methods. Explain "why", not "what". Never use `Args:` or `Returns:`
+  sections—keep docstrings concise. **No module-level (file-level) docstrings**—file purpose should be clear from its
+  name and contents
 
 ## Development Workflow
 

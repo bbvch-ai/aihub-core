@@ -1,5 +1,3 @@
-"""API key authentication for MCP requests."""
-
 import hashlib
 import logging
 import secrets

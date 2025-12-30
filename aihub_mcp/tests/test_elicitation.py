@@ -1,5 +1,3 @@
-"""Tests for elicitation handler."""
-
 import pytest
 
 from aihub_mcp.translation.ElicitationHandler import (

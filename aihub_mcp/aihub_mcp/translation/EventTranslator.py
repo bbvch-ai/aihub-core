@@ -1,5 +1,3 @@
-"""SAAP to MCP event translation layer."""
-
 import asyncio
 import json
 import logging

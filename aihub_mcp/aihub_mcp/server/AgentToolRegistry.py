@@ -1,5 +1,3 @@
-"""Dynamic agent to MCP tool registration."""
-
 import json
 import logging
 import re

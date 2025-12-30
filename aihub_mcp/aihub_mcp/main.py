@@ -1,5 +1,3 @@
-"""Main entry point for the MCP server."""
-
 import logging
 
 from aihub_mcp.runners.MCPRunner import MCPRunner

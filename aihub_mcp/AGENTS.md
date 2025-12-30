@@ -130,11 +130,14 @@ poetry run python -m aihub_mcp.main
 
 ## Integration with aihub_api
 
-The MCP server can also be mounted within `aihub_api` for unified deployment:
+The MCP server can be mounted within `aihub_api` for unified deployment:
 
 ```python
-from aihub_mcp.server import MCPServer
-mcp_app = MCPServer.create_app()
+from aihub_mcp import MCPRunner
+from aihub_mcp.settings.MCPSettings import MCPSettings
+
+runner = MCPRunner(MCPSettings())
+mcp_app = runner.create_app()
 # Mount alongside existing API
 ```
 

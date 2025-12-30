@@ -1,5 +1,3 @@
-"""Service for discovering agents via NATS and registering them as MCP tools."""
-
 import asyncio
 import json
 import logging

@@ -1,5 +1,3 @@
-"""Tests for API key authentication."""
-
 import time
 from unittest.mock import patch
 

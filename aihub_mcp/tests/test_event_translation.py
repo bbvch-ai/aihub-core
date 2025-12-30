@@ -1,5 +1,3 @@
-"""Tests for SAAP to MCP event translation."""
-
 from aihub_mcp.translation.EventTranslator import EventTranslator
 
 

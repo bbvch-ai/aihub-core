@@ -1,5 +1,3 @@
-"""MCP resource registry for agent metadata."""
-
 import logging
 from typing import TYPE_CHECKING, Any
 

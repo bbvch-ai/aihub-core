@@ -1,5 +1,3 @@
-"""Tests for sampling bridge."""
-
 import pytest
 
 from aihub_mcp.translation.SamplingBridge import SamplingBridge

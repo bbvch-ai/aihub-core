@@ -1,5 +1,3 @@
-"""Tests for agent tool registry."""
-
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
