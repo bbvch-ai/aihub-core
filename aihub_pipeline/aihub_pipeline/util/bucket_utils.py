@@ -26,7 +26,9 @@ def _get_or_create_bucket(bucket_name: str, auto_sync: bool) -> BucketEntity:
     try:
         return BucketEntity.get_bucket_by_bucket_name(bucket_name, db_alias=_DB_ALIAS)
     except DoesNotExist:
-        return BucketEntity.create_bucket(bucket_name=bucket_name, db_name=bucket_name, auto_sync=auto_sync, db_alias=_DB_ALIAS)
+        return BucketEntity.create_bucket(
+            bucket_name=bucket_name, db_name=bucket_name, auto_sync=auto_sync, db_alias=_DB_ALIAS
+        )
 
 
 def _get_or_create_namespace(bucket_entity: BucketEntity, directory_name: str) -> NamespaceEntity:
