@@ -80,9 +80,11 @@ services:
       -ip.bind=0.0.0.0
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-filer:/data
+      - ./configs/seaweedfs/seaweed-filer-config.dev.gpu.toml:/etc/seaweedfs/filer.toml:ro
     depends_on:
       - seaweedfs-master
       - seaweedfs-volume
+      - etcd
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/"]
       interval: 30s
@@ -139,6 +141,10 @@ services:
     environment:
       AWS_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
       AWS_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_ENDPOINT: http://seaweedfs-s3:9000
+      AIHUB_CREATE_DEFAULT_BUCKETS: ${AIHUB_CREATE_DEFAULT_BUCKETS}
+      AIHUB_DEFAULT_BUCKET_NAME: ${AIHUB_DEFAULT_BUCKET_NAME}
+      AIHUB_SHARED_BUCKET_NAME: ${AIHUB_SHARED_BUCKET_NAME}
     volumes:
       - ./configs/seaweedfs/init-buckets.sh:/usr/local/bin/init-buckets.sh:ro
     entrypoint: [ "/bin/sh", "/usr/local/bin/init-buckets.sh" ]
@@ -158,7 +164,7 @@ services:
 
   etcd:
     container_name: etcd
-    image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.16
+    image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.25
     restart: always
     environment:
       ETCD_AUTO_COMPACTION_MODE: revision
@@ -178,7 +184,7 @@ services:
 
   milvus-standalone:
     container_name: milvus
-    image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.5.15
+    image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.6.7
     restart: always
     command: [ "milvus", "run", "standalone" ]
     security_opt:
@@ -217,7 +223,7 @@ services:
     ports:
       - "3003:3000"
     environment:
-      MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_URL: milvus-standalone:19530
     healthcheck:
       test: ["NONE"]
     logging:
@@ -225,6 +231,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+
+  
 
   # ===================================================================
   # Postgres Stack (SQL Database)
@@ -253,6 +261,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+
+  
 
   # ===================================================================
   # FerretDB Stack (MongoDB Compatibility)
@@ -423,9 +433,9 @@ services:
       HF_HOME: /root/.cache/huggingface
     command: >
       -hf google/gemma-3-4b-it-qat-q4_0-gguf
-      --hf-token ${HUGGINGFACE_API_KEY}
       --alias gemma-3-4b
       --port 8182
+      --hf-token ${HUGGINGFACE_API_KEY}
       --host 0.0.0.0
       -c 8196
     healthcheck:
@@ -507,47 +517,6 @@ services:
       options:
         max-size: 10m
         max-file: 2
-
-  
-  vllm-docling:
-    container_name: vllm-docling
-    platform: "linux/amd64"
-    image: ghcr.io/bbvch-ai/aihub-core/vllm-openai:v0.11.0
-    restart: always
-    ports:
-      - "8186:8182"
-    volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
-    environment:
-      HF_HOME: /root/.cache/huggingface
-      HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
-    command: >
-      --model ibm-granite/granite-docling-258M
-      --served-model-name granite-docling
-      --port 8182
-      --host 0.0.0.0
-      --max-model-len 8192
-      --trust-remote-code
-      --gpu-memory-utilization 0.25
-      --tensor-parallel-size 1
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
-      timeout: 10s
-      interval: 30s
-      retries: 3
-      start_period: 180s
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: [ '0' ]
-              capabilities: [ gpu ]
 
   # ===================================================================
   # Audio Model Serving (SST/TTS)
@@ -641,7 +610,7 @@ services:
       timeout: 10s
       interval: 30s
       retries: 3
-      start_period: 60s
+      start_period: 120s
     logging:
       driver: json-file
       options:
@@ -702,7 +671,7 @@ services:
 
   docling:
     container_name: docling
-    image: ghcr.io/bbvch-ai/aihub-core/docling-serve-cpu:v1.8.0
+    image: ghcr.io/bbvch-ai/aihub-core/docling-serve-cpu:v1.9.0
     restart: always
     ports:
       - "5001:5001"
@@ -724,6 +693,47 @@ services:
       options:
         max-size: 10m
         max-file: 2
+
+  
+  vllm-docling:
+    container_name: vllm-docling
+    platform: "linux/amd64"
+    image: ghcr.io/bbvch-ai/aihub-core/vllm-openai:v0.11.0
+    restart: always
+    ports:
+      - "8186:8182"
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
+    environment:
+      HF_HOME: /root/.cache/huggingface
+      HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
+    command: >
+      --model ibm-granite/granite-docling-258M
+      --served-model-name granite-docling
+      --port 8182
+      --host 0.0.0.0
+      --max-model-len 8192
+      --trust-remote-code
+      --gpu-memory-utilization 0.25
+      --tensor-parallel-size 1
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 180s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '0' ]
+              capabilities: [ gpu ]
 
   # ===================================================================
   # Observability Stack
@@ -765,7 +775,7 @@ services:
 
   open-webui:
     container_name: open-webui
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.36
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.41
     restart: always
     network_mode: "host"
     volumes:
@@ -787,7 +797,8 @@ services:
       # --- General Settings ---
       WEBUI_NAME: Swiss AI-Hub
       DEFAULT_LOCALE: de
-      ENABLE_BASE_MODELS_CACHE: True
+      # Disable model caching to ensure pipeline models (agents) are always fetched
+      ENABLE_BASE_MODELS_CACHE: False
       ENABLE_COMMUNITY_SHARING: False
       ENABLE_USER_WEBHOOKS: False
       ENABLE_LOGIN_FORM: False
@@ -868,6 +879,7 @@ services:
 
       # --- AI-Hub Internal Connection ---
       AIHUB_BASE_URL: http://localhost:8000
+      AIHUB_FRONTEND_URL: http://localhost:3000
       AIHUB_SUPERUSER_API_KEY: ${SUPERUSER_TOKEN}
       OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
       AIHUB_PIPELINE_PREFIX: "aihub/"
@@ -895,7 +907,7 @@ services:
       ENABLE_ADMIN_EXPORT: True
       ENABLE_ADMIN_CHAT_ACCESS: False
       SHOW_ADMIN_DETAILS: True
-      ADMIN_EMAIL: admin@ai-hub.bbv.ch
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
 
       # --- Code Execution ---
       CODE_EXECUTION_ENGINE: jupyter
@@ -925,7 +937,7 @@ services:
       EXTERNAL_DOCUMENT_LOADER_URL: http://localhost:8000/api/v1/docling
       EXTERNAL_DOCUMENT_LOADER_API_KEY: ${SUPERUSER_TOKEN}
       RAG_EMBEDDING_ENGINE: openai
-      RAG_EMBEDDING_MODEL: embedding/small
+      RAG_EMBEDDING_MODEL: embedding/large
       RAG_OPENAI_API_BASE_URL: http://localhost:8000/api/v1/openai
       RAG_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
 
@@ -974,6 +986,29 @@ services:
         max-size: 10m
         max-file: 2
 
+  openwebui-init:
+    container_name: openwebui-init
+    image: ghcr.io/bbvch-ai/aihub-core/postgres:17
+    restart: "no"
+    depends_on:
+      open-webui:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: openwebui
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./configs/openwebui/init-functions.sh:/init-functions.sh:ro
+      - ./configs/openwebui/functions:/functions:ro
+    entrypoint: ["/bin/sh", "/init-functions.sh"]
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+
   
 
   
@@ -988,6 +1023,12 @@ services:
   # These are the background workers and data processing pipelines
   # that power the platform's AI capabilities.
   # ===================================================================
+
+  
+
+  
+
+  
 
   
 

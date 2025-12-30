@@ -1,18 +1,21 @@
 condenser:
   standalone_question: |
-    Basierend auf dem folgenden Gespräch zwischen einem Benutzer und einem KI-Assistenten sowie einer 
-    Anschlussfrage des Benutzers, formuliere die Anschlussfrage so um, dass sie eine eigenständige Frage 
-    darstellt und den ursprünglichen Kontext beibehält.
+    <role_and_task>
+    Du bist ein Experte für Suchanfragen-Optimierung.
+    Deine Aufgabe ist es, **die letzte Nachricht des Benutzers** in diesem Chat in eine vollständig eigenständige Frage umzuformulieren.
+    </role_and_task>
 
     <chat_history>
     {chat_history}
     </chat_history>
-    
-    <user_query>
-    {question}
-    </user_question>
-    
-    Eigenständige Frage:
+
+    <instructions>
+    Die Nachricht des Benutzers enthält Text und eventuell ein Bild.
+    1. **Kontext aus Verlauf auflösen**: Ersetze Pronomen oder Referenzen, die sich auf frühere Nachrichten im Chatverlauf beziehen, durch die konkreten Begriffe aus dem Verlauf.
+    2. **Bild-Referenzen**: NUR wenn der Benutzer explizit auf ein Bild verweist (z.B. "Was ist **das**?", "Was siehst du **hier**?"), ersetze das Pronomen durch eine kurze Beschreibung des sichtbaren Objekts.
+    3. **Keine neuen Informationen hinzufügen**: Füge NIEMALS Details hinzu, die nicht in der ursprünglichen Frage enthalten sind. Die umformulierte Frage muss semantisch äquivalent zur ursprünglichen sein.
+    4. **Output**: Gib NUR den neuen Satz aus.
+    </instructions>
 
 rag:
   context_prompt: |
@@ -113,43 +116,28 @@ router:
       Analysieren Sie die Benutzeranfrage sorgfältig in Bezug auf den Chat-Verlauf. Bestimmen Sie, ob die Anfrage basierend auf den oben genannten Kriterien erfüllt werden kann. Geben Sie eine klare Ja/Nein-Entscheidung mit detaillierter Begründung an.
 
     expert_answer_sufficient: |
-      Sie erhalten einen Chat-Verlauf zwischen einem KI-Assistenten und einem Experten. Das Ziel dieses Gesprächs
-      ist es, eine ursprünglich von einem Benutzer gestellte Frage zu beantworten. Bestimmen Sie, ob der Experte die Frage
-      basierend auf dem Chat-Verlauf bereits ausreichend beantwortet hat.
+      Beantwortet die Antwort des Experten die Frage des Benutzers?
 
-       <chat_history>
+      <expert_response>
       {% for message in chat_history %}
-      <message role="{{ message.role.value }}">
+      {% if message.role.value == 'user' %}
       {% for block in message.blocks %}
       {% if block.block_type == 'text' %}
       {{ block.text }}
       {% endif %}
       {% endfor %}
-      </message>
+      {% endif %}
       {% endfor %}
-      </chat_history>
+      </expert_response>
 
-      <user_query>
-      %{question}
-      </user_query>
+      <user_question>
+      {{ query }}
+      </user_question>
 
-      <answered_criteria>
-      <is_answered>
-      Eine Frage gilt als beantwortet, wenn EINER der folgenden Punkte zutrifft:
-      * Der Experte hat eine vollständige und genaue Antwort auf die Frage des Benutzers gegeben
-      * Der Experte hat eine teilweise Antwort gegeben, aber der Benutzer kann die Hauptpunkte immer noch verstehen
-      * Der Experte hat angegeben, wo die Antwort zu finden ist
-      * Der Experte hat Kontextinformationen geliefert, möglicherweise in der Systemnachricht, die - direkt oder indirekt - die Frage beantworten
-      </is_answered>
-      <is_not_answered>
-      Eine Frage gilt als nicht beantwortet, wenn EINER der folgenden Punkte zutrifft:
-      * Der Experte hat keine Antwort auf die Frage des Benutzers gegeben
-      * Der Experte hat eine Antwort gegeben, aber sie ist unvollständig oder ungenau
-      * Der Experte hat eine Antwort gegeben, aber sie ist nicht relevant für die Frage des Benutzers
-      * Der Experte hat eine Antwort gegeben, aber sie ist nicht klar oder verständlich
-      * Der Experte gibt an, dass er die Antwort nicht kennt
-      </is_not_answered>
-      </answered_criteria>
+      Die Frage IST beantwortet, wenn der Experte Informationen geliefert hat, die direkt auf ALLE Teile des Gefragten eingehen.
+      Die Frage ist NICHT beantwortet, wenn:
+      - Der Experte ausdrücklich sagt, dass er es nicht weiss oder die Antwort verweigert
+      - Die Frage mehrere Teile hat und nur einige beantwortet wurden
 
       Analysieren Sie den Chat-Verlauf sorgfältig in Bezug auf die Frage des Benutzers. Bestimmen Sie, ob der Experte die Frage basierend auf den oben genannten Kriterien bereits ausreichend beantwortet hat. Geben Sie eine klare Entscheidung mit detaillierter Begründung an.
 
@@ -174,22 +162,22 @@ figure_description_generator:
     {% chat role="system" %}
     Sie sind Experte für die Erstellung hochwertiger Bildbeschreibungen für barrierefreie Dokumente.
     Ihre Aufgabe ist es, detaillierte Alt-Texte für Abbildungen in Dokumenten zu erstellen, die:
-    
+
     1. den visuellen Inhalt (Bilder, Tabellen, Diagramme, etc.) präzise beschreibt
     2. die wichtigsten Informationen, die durch die Abbildung vermittelt werden, aufgreift
     3. Bei Schaubildern und Diagrammen: Beschreibung der Struktur, Identifizierung von Achsen, Datenpunkten und Trends
     4. Für Tabellen: beschreibt die Struktur und fasst die wichtigsten Datenpunkte zusammen
     5. Extrahiert ggf. sichtbaren Text aus dem Bild
     6. Verwendet eine angemessene Fachsprache und bleibt dabei verständlich
-    7. Verwendet den bereitgestellten Kontext des umgebenden Textes, um die Rolle des Bildes zu verstehen, ohne dass der Kontext die sachliche, visuelle Beschreibung verändert.
-    8. Vermeidet unnötige Ausführlichkeit oder Spekulationen
-    
+    7. Vermeidet unnötige Ausführlichkeit oder Spekulationen
+
+    WICHTIG: Beschreiben Sie NUR, was Sie tatsächlich im Bild sehen. Der umgebende Text dient lediglich als Kontext für Terminologie und Sprache, aber Sie dürfen NIEMALS annehmen, dass das Bild etwas darstellt, das im Text erwähnt wird. Wenn der Text "eine Katze" erwähnt, Sie aber eine Frucht sehen, beschreiben Sie die Frucht. Wenn Sie ein Objekt nicht sicher identifizieren können, beschreiben Sie seine visuellen Eigenschaften (Form, Farbe, Textur), ohne zu raten, was es darstellt.
+
     Formatieren Sie Ihre Beschreibungen als knappe, sachliche Absätze, die direkt als Alt-Text verwendet werden können.
     Konzentrieren Sie sich darauf, informativ zu sein und dem Leser zu helfen, zu verstehen, was er nicht sehen kann.
-    Geben Sie **NICHT** Informationen an, sondern verweisen Sie nur auf das, was Sie auf dem Bild sehen können.
     Schreiben Sie Ihre Antwort in der GLEICHEN Sprache wie der Kontexttext und der Bildtext.
     {% endchat %}
-    
+
     {% chat role="user" %}
-    Bitte geben Sie eine detaillierte, genaue Beschreibung dieses Bildes an, die als effektiver Alt-Text dienen kann.
+    Bitte geben Sie eine detaillierte, genaue Beschreibung dieses Bildes an, die als effektiver Alt-Text dienen kann. Denken Sie daran: Beschreiben Sie nur, was Sie tatsächlich sehen, nicht das, was der umgebende Text vermuten lässt.
     {% endchat %}

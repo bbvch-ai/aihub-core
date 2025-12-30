@@ -3665,6 +3665,32 @@ export type DocumentBlock = {
 };
 
 /**
+ * DocumentConversionMetadata
+ */
+export type DocumentConversionMetadata = {
+    /**
+     * Filename
+     * Original filename of the converted document
+     */
+    filename: string;
+};
+
+/**
+ * DocumentConversionResponse
+ */
+export type DocumentConversionResponse = {
+    /**
+     * Page Content
+     * Markdown content extracted from the document
+     */
+    page_content: string;
+    /**
+     * Metadata about the converted document
+     */
+    metadata: DocumentConversionMetadata;
+};
+
+/**
  * DocumentDTO
  */
 export type DocumentDto = {
@@ -5598,7 +5624,7 @@ export type ImageGenerationRequest = {
      * Model
      * The model to use for image generation. Defaults to dall-e-2.
      */
-    model?: ('dall-e-2' | 'dall-e-3') | null;
+    model?: string | null;
     /**
      * N
      */
@@ -5619,7 +5645,7 @@ export type ImageGenerationRequest = {
      * Style
      */
     style?: ('vivid' | 'natural') | null;
-    [key: string]: unknown | string | (('dall-e-2' | 'dall-e-3') | null) | (number | null) | (('standard' | 'hd') | null) | (('url' | 'b64_json') | null) | (('256x256' | '512x512' | '1024x1024' | '1792x1024' | '1024x1792') | null) | (('vivid' | 'natural') | null) | undefined;
+    [key: string]: unknown | string | (string | null) | (number | null) | (('standard' | 'hd') | null) | (('url' | 'b64_json') | null) | (('256x256' | '512x512' | '1024x1024' | '1792x1024' | '1024x1792') | null) | (('vivid' | 'natural') | null) | undefined;
 };
 
 /**
@@ -15473,6 +15499,22 @@ export type UpdateNotificationResponses = {
 };
 
 export type UpdateNotificationResponse = UpdateNotificationResponses[keyof UpdateNotificationResponses];
+
+export type ProcessDocumentData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/docling/process';
+};
+
+export type ProcessDocumentResponses = {
+    /**
+     * Successful Response
+     */
+    200: DocumentConversionResponse;
+};
+
+export type ProcessDocumentResponse = ProcessDocumentResponses[keyof ProcessDocumentResponses];
 
 export type ClientOptions = {
     baseURL: `${string}://${string}/api/v1` | (string & {});

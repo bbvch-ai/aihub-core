@@ -28,10 +28,10 @@ from dagster import MetadataValue, TableColumn, TableRecord, TableSchema
 from llama_index.core.schema import TextNode
 
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
-from aihub_pipeline.types.LocalFile import MinimalLocalFile
 from aihub_pipeline.types.RcloneFile import MinimalRcloneFile
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
 from aihub_pipeline.types.SharePointFile import MinimalSharePointFile
+from aihub_pipeline.types.SourceFile import MinimalSourceFile
 
 
 def readable_date(timestamp: int):
@@ -211,12 +211,10 @@ def share_point_metadata_table(share_point_files: list[MinimalSharePointFile]):
     return MetadataValue.table(records=records, schema=table_schema)
 
 
-def local_file_table_row(file: MinimalLocalFile) -> dict:
-    """Convert MinimalLocalFile to table row dict."""
+def local_file_table_row(file: MinimalSourceFile) -> dict:
+    """Convert MinimalSourceFile to table row dict."""
     modified_dt = datetime.fromtimestamp(file.modified)
     return {
-        "source_folder": file.source_folder,
-        "subfolder": file.subfolder or "",
         "name": file.name,
         "modified": modified_dt.strftime("%Y-%m-%d %H:%M:%S"),
         "size": readable_size(file.size),
@@ -224,7 +222,7 @@ def local_file_table_row(file: MinimalLocalFile) -> dict:
     }
 
 
-def local_file_metadata_table(files: list[MinimalLocalFile]) -> MetadataValue:
+def local_file_metadata_table(files: list[MinimalSourceFile]) -> MetadataValue:
     """
     Create a Dagster metadata table from local file metadata.
 
@@ -232,15 +230,13 @@ def local_file_metadata_table(files: list[MinimalLocalFile]) -> MetadataValue:
     Limits display to first 100 files to avoid overwhelming the UI.
     """
     columns = [
-        TableColumn("source_folder", "string"),
-        TableColumn("subfolder", "string"),
         TableColumn("name", "string"),
         TableColumn("modified", "string"),
         TableColumn("size", "string"),
         TableColumn("path", "string"),
     ]
 
-    sorted_files = sorted(files, key=lambda f: (f.source_folder, f.path))
+    sorted_files = sorted(files, key=lambda f: f.path)
 
     display_files = sorted_files[:100]
 
@@ -250,8 +246,6 @@ def local_file_metadata_table(files: list[MinimalLocalFile]) -> MetadataValue:
         records.append(
             TableRecord(
                 {
-                    "source_folder": "...",
-                    "subfolder": "...",
                     "name": f"({len(sorted_files) - 100} more files)",
                     "modified": "...",
                     "size": "...",

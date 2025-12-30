@@ -18,7 +18,10 @@
     "pipeline",
     "llm_wrapping_agent",
     "default_rag_pipeline",
-    "rag_agent"
+    "shared_rag_pipeline",
+    "rag_agent",
+    "expert_rag_agent",
+    "expert_asking_agent"
   ],
   "license_categories": {
     "restrictive": [
@@ -291,6 +294,12 @@
       "license": "MIT",
       "status": "✅",
       "notes": "Permissive license"
+    },
+    {
+      "service": "pgbouncer",
+      "license": "ISC",
+      "status": "✅",
+      "notes": "Based on edoburu/pgbouncer (MIT wrapper); permissive licenses"
     }
   ]
 }

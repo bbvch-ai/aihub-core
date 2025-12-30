@@ -2,12 +2,25 @@ import { type DocumentDto, getDocumentsForNamespace } from '@core/sdk/client'
 
 export const useDocuments = defineQuery(() => {
   const route = useRoute()
+  const isRouteReady = useRouteReady('db', 'namespace')
+
   const currentPage = ref(1)
   const pageSize = ref(10)
 
+  const database = computed(() => route.params.db as string)
+  const namespace = computed(() => route.params.namespace as string)
+
   const documentsQuery = useQuery({
-    key: () => ['knowledge', 'databases', route.params.db as string, 'namespaces', route.params.namespace as string, 'documents', { page: currentPage.value, size: pageSize.value }],
+    key: () => ['knowledge', 'databases', database.value, 'namespaces', namespace.value, 'documents', { page: currentPage.value, size: pageSize.value }],
+    enabled: () => isRouteReady.value,
     query: async () => {
+      const db = database.value
+      const ns = namespace.value
+
+      if (!db || !ns) {
+        throw new Error('Database and namespace are required')
+      }
+
       const pageToFetch = Math.max(1, currentPage.value)
 
       return await getDocumentsForNamespace({
@@ -17,8 +30,8 @@ export const useDocuments = defineQuery(() => {
           page_size: pageSize.value,
         },
         path: {
-          database: route.params.db,
-          namespace: route.params.namespace,
+          database: db,
+          namespace: ns,
         },
       })
     },

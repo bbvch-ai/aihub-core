@@ -273,9 +273,17 @@ knowledge:
   navigation:
     document:
       basic: "Overview"
+      original: "Original"
       content: "Content"
       nodes: "Chunks"
       summary: "Summaries"
+  original:
+    not_available: "Original document view is only available for PDF files."
+    load_error: "Failed to load the original document."
+    view_button: "View Original"
+    open_new_tab: "Open in new tab"
+    title: "Original Document"
+    click_to_view: "Click the button below to view the original PDF document."
   documents:
     title: "Documents"
     upload:

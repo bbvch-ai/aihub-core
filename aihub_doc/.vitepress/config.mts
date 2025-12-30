@@ -1,6 +1,7 @@
 import { withMermaid } from "vitepress-plugin-mermaid";
-import { copyOrDownloadAsMarkdownButtons } from "vitepress-plugin-llms";
+import { copyOrDownloadAsMarkdownButtons } from 'vitepress-plugin-llms'
 import { generateSidebar, formatSidebarForConfig } from './sidebar-logic.mjs';
+import lightbox from "vitepress-plugin-lightbox"
 
 // https://vitepress.dev/reference/site-config
 export default withMermaid({
@@ -19,10 +20,12 @@ export default withMermaid({
   },
 
   srcExclude: ['public/**/*.md', 'translate-prompt.md'],
+  ignoreDeadLinks: true,
 
   markdown: {
     config(md) {
       md.use(copyOrDownloadAsMarkdownButtons)
+      md.use(lightbox, {});
     }
   },
 

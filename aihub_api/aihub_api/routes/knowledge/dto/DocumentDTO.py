@@ -5,10 +5,12 @@ from aihub_lib.generative_ai.document.types.IngestedDocument import IngestedDocu
 from aihub_lib.persistence.rag.documents.entities.RefDoc import RefDoc
 from pydantic import BaseModel, Field
 
+S3_PROTOCOL_PREFIX = "s3://"
+
 
 class DocumentDTO(BaseModel):
     id: Annotated[str, Field(description="Unique identifier of the document.")]
-    source: Annotated[str, Field(description="Source URI of original document.")]
+    source: Annotated[str, Field(description="Source path without protocol prefix (e.g., 'bucket/path/file.pdf').")]
     namespace: Annotated[str, Field(description="The namespace of the document within its metadata.")]
     created_at: Annotated[str, Field(description="Date source document was created (ISO format string)")]
     updated_at: Annotated[str, Field(description="Date source document was last updated (ISO format string)")]
@@ -26,7 +28,7 @@ class DocumentDTO(BaseModel):
             id=ingested_document.id,
             content=ingested_document.content,
             is_ingested=True,
-            source=ingested_document.source,
+            source=ingested_document.source.removeprefix(S3_PROTOCOL_PREFIX),
             namespace=ingested_document.namespace,
             number_of_pages=ingested_document.number_of_pages,
             document_title=ingested_document.document_title,
@@ -44,7 +46,7 @@ class DocumentDTO(BaseModel):
         return cls(
             id=str(entity.id),
             content=entity.data.text,
-            source=entity.data.metadata.source,
+            source=entity.data.metadata.source.removeprefix(S3_PROTOCOL_PREFIX),
             namespace=entity.data.metadata.namespace,
             number_of_pages=entity.data.metadata.number_of_pages,
             document_title=entity.data.metadata.document_title,

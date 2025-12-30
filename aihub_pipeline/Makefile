@@ -32,3 +32,6 @@ playground:
 quickstart:
 	@echo "Running quickstart..."
 	poetry run dagster dev -f playground/quick_start/simple_pipeline.py -f playground/quick_start/my_document_pipeline.py
+
+rag-pipelines:
+	poetry run dagster dev -m app.default_rag_pipeline -m app.shared_rag_pipeline

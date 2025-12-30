@@ -1,16 +1,12 @@
-import asyncio
-import datetime
-
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.generative_ai.open_webui.sdk import OpenWebuiClient
 from aihub_lib.generative_ai.routing.route_to_event_using_llm import route_to_event_using_llm
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoop
 from aihub_lib.nats.events.router.RouteOptions import RouteOptions
 from aihub_lib.nats.events.router.RouterEvent import RouterEvent
+from aihub_lib.persistence.insight import InsightCreator, InsightEntity, InsightMessage, InsightSource
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 from llama_index.core.prompts import RichPromptTemplate
-from stringcase import alphanumcase
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.agents.ExpertAskingAgent.events.AnswerStopEvent import AnswerStopEvent
@@ -18,20 +14,19 @@ from aihub_agent.agents.ExpertAskingAgent.events.AskExpertEvent import AskExpert
 from aihub_agent.agents.ExpertAskingAgent.events.AskExpertStartEvent import AskExpertStartEvent
 from aihub_agent.agents.ExpertAskingAgent.events.ExpertAnswerInsufficientEvent import ExpertAnswerInsufficientEvent
 from aihub_agent.agents.ExpertAskingAgent.events.ExpertAnswerSufficientEvent import ExpertAnswerSufficientEvent
-from aihub_agent.agents.ExpertAskingAgent.events.KnowledgeSnippetEvent import KnowledgeSnippetEvent
 from aihub_agent.agents.ExpertAskingAgent.events.NoAnswerStopEvent import NoAnswerStopEvent
 from aihub_agent.agents.ExpertAskingAgent.ExpertAskingAgentConfig import ExpertAskingAgentConfig
 from aihub_agent.context.run.RunContext import RunContext
+from aihub_agent.context.thread.ThreadContext import ThreadContext
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
 from aihub_agent.workflow.decorators.step import step
 
 
 class ExpertAskingAgent(Agent):
     """
-    The expert asking agent receives an expert question as input and poses the question to a dedicated slack
-    channel.
-    The agent validates the answer and poses follow-up question until the answer is sufficient, in which
-    case it creates a knowledge snippet and saves it to the knowledge base.
+    The expert asking agent receives an expert question as input and poses the question to a dedicated
+    Slack or Teams channel.
+    The agent validates the answer and poses follow-up questions until the answer is sufficient.
     """
 
     @step(
@@ -59,7 +54,7 @@ class ExpertAskingAgent(Agent):
         return BotInTheLoop.invoke(
             question=question_event.question_to_expert,
             user=question_event.user,
-            slack_channel_id=agent_config.slack_channel_id,
+            channel_config=agent_config.channel_config,
         )
 
     @step(
@@ -77,6 +72,7 @@ class ExpertAskingAgent(Agent):
         t: AgentLocaleHandler,
     ) -> RouterEvent:
         expert_response = expert_response_event.response
+        expert_user_id = expert_response_event.responder.user_id
         expert_name = expert_response_event.responder.user_name
         await displayer.display_thought(
             t("agent.expert_asking_agent.thoughts.expert_responded", response=expert_response)
@@ -99,12 +95,20 @@ class ExpertAskingAgent(Agent):
                 instructions=instructions,
                 routes=[
                     RouteOptions.for_event(
-                        ExpertAnswerSufficientEvent(response=expert_response, expert_name=expert_name),
-                        "Choose this option if the experts response sufficiently answered the question.",
+                        ExpertAnswerSufficientEvent(
+                            response=expert_response,
+                            expert_user_id=expert_user_id,
+                            expert_name=expert_name,
+                        ),
+                        t("agent.expert_asking_agent.routes.answer_sufficient"),
                     ),
                     RouteOptions.for_event(
-                        ExpertAnswerInsufficientEvent(response=expert_response, expert_name=expert_name),
-                        "Choose this option if the experts response does NOT sufficiently answered the question.",
+                        ExpertAnswerInsufficientEvent(
+                            response=expert_response,
+                            expert_user_id=expert_user_id,
+                            expert_name=expert_name,
+                        ),
+                        t("agent.expert_asking_agent.routes.answer_insufficient"),
                     ),
                 ],
                 t=t,
@@ -113,87 +117,47 @@ class ExpertAskingAgent(Agent):
 
     @step(
         name=LocaleString(en="Response Sufficient Router"),
-        description=LocaleString(en="Checks whether the expert has sufficiently answerd the question yet."),
+        description=LocaleString(en="Checks whether the expert has sufficiently answered the question yet."),
         icon="line-md:chat",
     )
     async def router_step(
         self,
-        router_event: RouterEvent,
-        displayer: EventDisplayer,
-        t: AgentLocaleHandler,
-    ) -> ExpertAnswerSufficientEvent | ExpertAnswerInsufficientEvent:
-        await displayer.display_thought(t("agent.expert_asking_agent.thoughts.determine_sufficient"))
-        return router_event.selected_option.event
-
-    @step(
-        name=LocaleString(en="Generate knowledge"),
-        description=LocaleString(en="Create a new knowledge snippet that can be safed to knowledge database."),
-        icon="ix:user-success-filled",
-    )
-    async def create_knowledge_snippet(
-        self,
         initial_question_event: AskExpertStartEvent,
-        _: ExpertAnswerSufficientEvent,
+        router_event: RouterEvent,
         agent_config: ExpertAskingAgentConfig,
         displayer: EventDisplayer,
-        t: AgentLocaleHandler,
         run_context: RunContext,
-    ) -> KnowledgeSnippetEvent:
-        await displayer.display_thought(t("agent.expert_asking_agent.thoughts.answer_sufficient"))
-
-        chat_history = await run_context.get("chat_history")
-        chat_history = [ChatMessage(**message) for message in chat_history]
-
-        async with agent_config.llm.cost_reporting_llm(displayer) as llm:
-            chat = RichPromptTemplate(
-                template_str=t("agent.expert_asking_agent.knowledge_snippet_prompt")
-            ).format_messages(
-                chat_history=chat_history,
-                question=initial_question_event.question_to_expert,
-            )
-            response: ChatResponse = await llm.achat(chat)
-            return KnowledgeSnippetEvent(content=response.message.content)
-
-    @step(
-        name=LocaleString(en="Safe knowledge"),
-        description=LocaleString(en="Persists knowledge into the knowledge database."),
-        icon="bi:database-up",
-    )
-    async def safe_knowledge_snippet(
-        self,
-        knowledge_snippet_event: KnowledgeSnippetEvent,
-        expert_answer_event: ExpertAnswerSufficientEvent,
-        agent_config: ExpertAskingAgentConfig,
-        displayer: EventDisplayer,
+        thread_context: ThreadContext,
         t: AgentLocaleHandler,
-    ) -> AnswerStopEvent:
-        await displayer.display_thought(t("agent.expert_asking_agent.thoughts.saving_knowledge"))
-        client = OpenWebuiClient(
-            base_url=agent_config.open_webui_api_url,
-            token=agent_config.open_webui_api_key,
-        )
-        knowledge_snippet = t(
-            "agent.expert_asking_agent.knowledge_snippet",
-            content=knowledge_snippet_event.content,
-            expert_name=expert_answer_event.expert_name,
-            date=datetime.datetime.now().strftime("%Y.%m.%d"),
-            time=datetime.datetime.now().strftime("%H:%M:%S"),
-        )
-        bytes_content = knowledge_snippet.encode("utf-8")
-        current_date_str = datetime.datetime.now().strftime("%Y-%m-%d")
-        expert_name = alphanumcase(expert_answer_event.expert_name)
-        filename = f"{expert_name}_{current_date_str}.txt"
-        file_response = await client.files.upload_file(
-            file=bytes_content,
-            filename=filename,
-        )
-        await displayer.display_thought(t("agent.expert_asking_agent.thoughts.knowledge_saved", filename=filename))
-        await asyncio.sleep(1)
-        await client.knowledge.add_file_to_knowledge(
-            knowledge_id=agent_config.open_webui_knowledge_id,
-            file_id=file_response.id,
-        )
-        return AnswerStopEvent(expert_answer=knowledge_snippet)
+    ) -> AnswerStopEvent | ExpertAnswerInsufficientEvent:
+        await displayer.display_thought(t("agent.expert_asking_agent.thoughts.determine_sufficient"))
+        event = router_event.selected_option.event
+        if isinstance(event, ExpertAnswerSufficientEvent):
+            await displayer.display_thought(t("agent.expert_asking_agent.thoughts.answer_sufficient"))
+            chat_history = await run_context.get("chat_history", [])
+            chat_history = [ChatMessage(**message) for message in chat_history]
+
+            # Create insight from expert conversation
+            InsightEntity.create_insight(
+                question=initial_question_event.question_to_expert,
+                expert_answer=event.response,
+                conversation=[InsightMessage(role=msg.role, content=msg.content) for msg in chat_history],
+                namespace=agent_config.insight_namespace,
+                source=InsightSource(
+                    thread_id=thread_context.thread_id,
+                    expert_user_id=event.expert_user_id,
+                    expert_name=event.expert_name,
+                ),
+                creator=InsightCreator(
+                    agent_class=agent_config.agent_class,
+                    agent_id=agent_config.agent_id,
+                    user_id=initial_question_event.user.id,
+                    user_name=initial_question_event.user.name,
+                ),
+            )
+
+            return AnswerStopEvent(expert_answer=event.response, expert_conversation=chat_history)
+        return event
 
     @step(
         name=LocaleString(en="Follow up question"),

@@ -4726,6 +4726,36 @@ export const DocumentBlockSchema = {
     description: 'A representation of a document to directly pass to the LLM.'
 } as const;
 
+export const DocumentConversionMetadataSchema = {
+    properties: {
+        filename: {
+            type: 'string',
+            title: 'Filename',
+            description: 'Original filename of the converted document'
+        }
+    },
+    type: 'object',
+    required: ['filename'],
+    title: 'DocumentConversionMetadata'
+} as const;
+
+export const DocumentConversionResponseSchema = {
+    properties: {
+        page_content: {
+            type: 'string',
+            title: 'Page Content',
+            description: 'Markdown content extracted from the document'
+        },
+        metadata: {
+            '$ref': '#/components/schemas/DocumentConversionMetadata',
+            description: 'Metadata about the converted document'
+        }
+    },
+    type: 'object',
+    required: ['page_content', 'metadata'],
+    title: 'DocumentConversionResponse'
+} as const;
+
 export const DocumentDTOSchema = {
     properties: {
         id: {
@@ -7106,8 +7136,7 @@ export const ImageGenerationRequestSchema = {
         model: {
             anyOf: [
                 {
-                    type: 'string',
-                    enum: ['dall-e-2', 'dall-e-3']
+                    type: 'string'
                 },
                 {
                     type: 'null'
@@ -7115,7 +7144,7 @@ export const ImageGenerationRequestSchema = {
             ],
             title: 'Model',
             description: 'The model to use for image generation. Defaults to dall-e-2.',
-            default: 'dall-e-3'
+            default: 'image-generation'
         },
         n: {
             anyOf: [
@@ -10033,7 +10062,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1762879556
+            default: 1764669803
         },
         owned_by: {
             type: 'string',

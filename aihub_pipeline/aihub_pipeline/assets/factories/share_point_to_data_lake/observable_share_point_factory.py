@@ -15,7 +15,11 @@ from aihub_pipeline.types.SharePointFile import MinimalSharePointFile
 from aihub_pipeline.util.key_utils import group_name_from_asset_key
 
 
-def observable_share_point_factory(key: AssetKey, partitions: DynamicPartitionsDefinition) -> observable_source_asset:
+def observable_share_point_factory(
+    key: AssetKey,
+    partitions: DynamicPartitionsDefinition,
+    max_partitions: int,
+) -> observable_source_asset:
     """
     Creates an observable source asset representing a sharepoint site containing files that should be processed
     by the pipeline. The asset generates a partition for each file in SharePoint as well as a DataVersion
@@ -39,6 +43,7 @@ def observable_share_point_factory(key: AssetKey, partitions: DynamicPartitionsD
             partition=partitions,
             share_point_files=share_point_files,
             asset_key=key,
+            max_partitions=max_partitions,
         )
 
     return observable_share_point

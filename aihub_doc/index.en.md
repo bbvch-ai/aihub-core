@@ -7,29 +7,29 @@ hero:
   text: The open AI platform you own and control
   tagline: Complete infrastructure for production AI. Deploy in your data center. Build with confidence. Keep your data in Switzerland.
   actions:
-    - theme: brand
-      text: Quick Start
-      link: /docs/2_platform/1_quick_start/
     - theme: alt
-      text: Platform Overview
-      link: /docs/2_platform/2_architecture/1_core_components/
+      text: Our Vision
+      link: /docs/1_vision_and_positioning/1_introduction/
     - theme: alt
       text: Why Swiss AI Hub
       link: /docs/1_vision_and_positioning/1_introduction
+    - theme: brand
+      text: Platform Overview
+      link: /docs/2_platform/2_architecture/1_core_components/
 
 features:
-  - title: Deploy AI in 30 minutes
-    details: One command starts everything. LLM gateway, vector databases, chat interface, authentication, monitoring. Pre-built agents work immediately. No cloud accounts, no complex setup.
-  - title: Your data stays yours
-    details: Run everything on-premise or in Swiss data centers. Local LLMs mean sensitive data never leaves your network. You control where every byte is processed and stored.
-  - title: See exactly what AI does
-    details: Every decision is traceable. Every workflow step is visible. Every cost is tracked. When AI gives an answer, you can see why. Trust through transparency, not promises.
-  - title: Build without the infrastructure headache
-    details: Authentication, deployment, monitoring, scaling already solved. Write your agent's business logic, the platform handles everything else. Focus on what makes you unique.
-  - title: Works with what you have
-    details: OpenAI-compatible API connects existing tools. Teams and Slack bots meet users where they work. Integrate with SharePoint, FTP, and your systems through standard protocols.
-  - title: Grow with the ecosystem
-    details: Every Swiss organization using the platform makes it stronger. Share common agents, keep strategic ones private. Collaborate on infrastructure, compete on innovation.
+  - title: The open-source AI bet
+    details: Best-in-class open-source tools (LiteLLM, Milvus, LlamaIndex) integrated and ready. When they evolve, you benefit. No vendor lock-in, no licensing fees, no platform constraints. Bet on the ecosystem, not a single vendor.
+  - title: Own the platform, not rent it
+    details: Complete infrastructure you deploy and control. Not SaaS subscriptions, not a code library. Authentication, monitoring, databases, UIs—everything included. Azure AI-level completeness with LangChain-level ownership.
+  - title: 30 minutes to production AI
+    details: One command deploys everything. LLM gateway, vector search, chat interface, authentication, monitoring. Pre-built agents work immediately. No cloud provisioning, no complex setup, no infrastructure engineering.
+  - title: Strategic independence from Big Tech
+    details: Run anywhere—on-premise, Swiss data centers, your cloud. Use local models or cloud APIs. Switch providers without code changes. Your data, your infrastructure, your control. True sovereignty.
+  - title: Transparent, not black-box AI
+    details: Every agent follows explicit workflows. Every decision is traceable and auditable. Every cost is tracked. See exactly why AI gave an answer. Trust through transparency, not promises. Built for Swiss standards.
+  - title: Collective strength through collaboration
+    details: Swiss organizations sharing infrastructure, competing on innovation. Contribute improvements, benefit from others'. Build together what no single organization could afford. The Swiss AI advantage.
 ---
 
 <div style="height: 500px"></div>

@@ -17,7 +17,7 @@ from nats.aio.client import Client as NATS
 
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.persistance.events.EventPersister import EventPersister
-from aihub_api.runners.lifetime.initialize_db import initialize_roles
+from aihub_api.runners.lifetime.initialize_db import initialize_knowledge_buckets, initialize_roles
 from aihub_api.services.AgentEndpointsDiscoveryService import AgentEndpointsDiscoveryService
 from aihub_api.services.ProcessEndpointsDiscoveryService import ProcessEndpointsDiscoveryService
 from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
@@ -74,6 +74,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
     connect(
         db=AIHubSettings().MONGO_MAIN_DB_NAME,
         host=MongoSettings().CONNECTION_STRING.get_secret_value(),
+        uuidRepresentation="standard",
     )
 
     try:
@@ -154,6 +155,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             logger.warning("Unable to start ProcessEndpointsDiscoveryService due to missing state.process_controller")
 
         await initialize_roles()
+        await initialize_knowledge_buckets()
 
         # Yield control back to FastAPI to start serving requests
         yield

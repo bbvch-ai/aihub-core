@@ -54,6 +54,8 @@ jobs:
           - llm_wrapping_agent
           - default_rag_pipeline
           - rag_agent
+          - expert_rag_agent
+          - expert_asking_agent
 
     steps:
       - name: Log in to GitHub Container Registry

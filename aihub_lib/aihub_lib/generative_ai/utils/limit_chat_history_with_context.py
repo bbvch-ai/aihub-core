@@ -33,8 +33,8 @@ def limit_chat_history_with_context(
 
     final_messages = [
         *system_messages,
-        *context_messages,
         *limited_history,
+        *context_messages,
         last_user_message,
     ]
 

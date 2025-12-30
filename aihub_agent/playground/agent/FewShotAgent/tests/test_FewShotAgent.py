@@ -5,12 +5,12 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 from aihub_lib.generative_ai.prompting.few_shot.FewShotExample import FewShotExample
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.nats.events import LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_lib.nats.events.guard.AgentSuitabilityAcceptEvent import AgentSuitabilityAcceptEvent
 from aihub_lib.nats.events.guard.GuardRejectionEvent import GuardRejectionEvent
 from aihub_lib.testing.asyncio_utils.bdd import async_test
-from aihub_lib.testing.logging.logger import enable_logging
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
 
@@ -99,13 +99,6 @@ def _(agent_config_data, self_hosted_llm_config):
         description=LocaleString(en=agent_config_data["description"]),
         llm=self_hosted_llm_config,
         number_of_input_tokens=100000,
-        condense_question_prompt=LocaleString(
-            en="""
-        Return the original user message noting a movie title.
-        The original user message was:
-        {question}
-        """
-        ),
         few_shot=FewShotStepConfig(
             few_shot_examples=examples,
             few_shot_system_prompt=LocaleString(en=agent_config_data["few_shot_system_prompt"]),

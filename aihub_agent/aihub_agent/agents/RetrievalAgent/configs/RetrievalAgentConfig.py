@@ -1,16 +1,13 @@
 from typing import Annotated
 
 from aihub_lib.agents.AgentConfig import AgentConfig
+from aihub_lib.generative_ai.retrievers.KnowledgeRetrieverConfig import KnowledgeRetrieverConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
 
-from aihub_agent.agents.RagAgent.configs.RetrieveStepConfig import RetrieveStepConfig
-
 
 class RetrievalAgentConfig(AgentConfig):
-    retrieve_step_config: Annotated[
-        RetrieveStepConfig, Field(..., description="The configuration for the retrieval step.")
-    ]
+    retriever: Annotated[KnowledgeRetrieverConfig, Field(description="The configuration for knowledge retrieval.")]
     context_prompt: Annotated[
         LocaleString | None, Field(description="The context prompt for the combined and ordered nodes.")
     ] = None

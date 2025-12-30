@@ -23,8 +23,8 @@ image_tags:
   # --- Core Infrastructure (mostly static) ---
   seaweedfs: seaweedfs:3.97
   aws_cli: aws-cli-alpine:3.22.1
-  etcd: etcd:v3.5.16
-  milvus: milvus:v2.5.15
+  etcd: etcd:v3.5.25
+  milvus: milvus:v2.6.7
   attu: attu:v2.5.12
   postgres: pgvector:pg17
   phoenix: phoenix:version-10.0.4
@@ -32,22 +32,23 @@ image_tags:
   valkey: valkey:8.0.5
   ferretdb: ferretdb:2.5.0
   litellm: litellm:v1.79.1-stable
-  docling: docling-serve-cpu:v1.8.0
+  docling: docling-serve-cpu:v1.9.0
   jupyter: minimal-notebook:notebook-7.0.6
   otel_collector: otel/opentelemetry-collector-contrib:latest
-  traefik: traefik:v3.4.4
+  traefik: traefik:v3.6.2
   postgres_ferretdb: postgres-documentdb:17.0.106.0-ferretdb-2.5.0
   docling_model_permission: alpine  # Init container
   presidio_analyzer: presidio-analyzer:2.2.359
   presidio_anonymizer: presidio-anonymizer:2.2.359
   oauth2proxy: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
-  open_webui: open-webui:v0.6.36
+  open_webui: open-webui:v0.6.41
   playwright: playwright:v1.54.1-jammy
   vllm: vllm-openai:v0.11.0
   llama_cpp_gpu: llama.cpp:server-cuda-b7003
   llama_cpp_cpu: llama.cpp:server-b7003
   speaches_gpu: speaches:0.8.3-cuda-12.6.3
   speaches_cpu: speaches:0.8.3-cpu
+  pgbouncer: pgbouncer:v1.24.1-p1
   rclone: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2
 
   # --- Custom Application Services ---
@@ -81,11 +82,29 @@ image_tags:
     nightly: rag_agent:nightly
     latest: rag_agent:latest
 
+  expert_rag_agent:
+    build: localbuild
+    local: expert_rag_agent:latest
+    nightly: expert_rag_agent:nightly
+    latest: expert_rag_agent:latest
+
+  expert_asking_agent:
+    build: localbuild
+    local: expert_asking_agent:latest
+    nightly: expert_asking_agent:nightly
+    latest: expert_asking_agent:latest
+
   default_rag_pipeline:
     build: localbuild
     local: default_rag_pipeline:latest
     nightly: default_rag_pipeline:nightly
     latest: default_rag_pipeline:latest
+
+  shared_rag_pipeline:
+    build: localbuild
+    local: shared_rag_pipeline:latest
+    nightly: shared_rag_pipeline:nightly
+    latest: shared_rag_pipeline:latest
 
   bot:
     build: localbuild

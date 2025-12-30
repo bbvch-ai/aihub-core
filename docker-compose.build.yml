@@ -72,6 +72,9 @@ services:
     container_name: seaweedfs-master
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
     restart: always
+    expose:
+      - "9333"   # Master HTTP port
+      - "19333"  # Master gRPC port
     command: >
       master
       -ip=seaweedfs-master
@@ -97,6 +100,9 @@ services:
     container_name: seaweedfs-volume
     image: "ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97"
     restart: always
+    expose:
+      - "8080"
+      - "18080"
     command: >
       volume
       -mserver="seaweedfs-master:9333"
@@ -119,15 +125,20 @@ services:
     container_name: seaweedfs-filer
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
     restart: always
+    ports:
+      - "8889:8888"
+      - "18888"
     command: >
       filer
       -master="seaweedfs-master:9333"
       -ip.bind=0.0.0.0
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-filer:/data
+      - ./configs/seaweedfs/seaweed-filer-config.build.toml:/etc/seaweedfs/filer.toml:ro
     depends_on:
       - seaweedfs-master
       - seaweedfs-volume
+      - etcd
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/"]
       interval: 30s
@@ -144,6 +155,8 @@ services:
     container_name: seaweedfs-s3
     image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
     restart: always
+    ports:
+      - "9000:9000"
     volumes:
       - ./configs/seaweedfs/s3-entrypoint.sh:/usr/local/bin/s3-entrypoint.sh:ro
     entrypoint: ["/bin/sh", "/usr/local/bin/s3-entrypoint.sh"]
@@ -171,6 +184,14 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seaweedfs-s3.rule=Host(`s3.${DOMAIN}`)"
+      - "traefik.http.routers.seaweedfs-s3.priority=4000"
+      - "traefik.http.routers.seaweedfs-s3.entrypoints=websecure"
+      - "traefik.http.routers.seaweedfs-s3.tls=true"
+      - "traefik.http.routers.seaweedfs-s3.middlewares=security-headers@file"
+      - "traefik.http.services.seaweedfs-s3.loadbalancer.server.port=9000"
 
   seaweedfs-init:
     container_name: seaweedfs-init
@@ -182,6 +203,10 @@ services:
     environment:
       AWS_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
       AWS_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_ENDPOINT: http://seaweedfs-s3:9000
+      AIHUB_CREATE_DEFAULT_BUCKETS: ${AIHUB_CREATE_DEFAULT_BUCKETS}
+      AIHUB_DEFAULT_BUCKET_NAME: ${AIHUB_DEFAULT_BUCKET_NAME}
+      AIHUB_SHARED_BUCKET_NAME: ${AIHUB_SHARED_BUCKET_NAME}
     volumes:
       - ./configs/seaweedfs/init-buckets.sh:/usr/local/bin/init-buckets.sh:ro
     entrypoint: [ "/bin/sh", "/usr/local/bin/init-buckets.sh" ]
@@ -210,7 +235,7 @@ services:
       OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET}
       OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
       OAUTH2_PROXY_EMAIL_DOMAINS: "*"
-      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: https://aiagentsstpublicblobs.blob.core.windows.net/logos/Bbv-Logo_farbig.png
+      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: ${OAUTH_CUSTOM_SIGN_IN_LOGO}
       OAUTH2_PROXY_REVERSE_PROXY: True
       OAUTH2_PROXY_REDIRECT_URL: https://datalake.${DOMAIN}
     depends_on:
@@ -239,7 +264,7 @@ services:
 
   etcd:
     container_name: etcd
-    image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.16
+    image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.25
     restart: always
     environment:
       ETCD_AUTO_COMPACTION_MODE: revision
@@ -248,7 +273,7 @@ services:
       ETCD_SNAPSHOT_COUNT: 50000
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/etcd-data:/etcd
-    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
     healthcheck:
       test: [ "CMD", "etcdctl", "endpoint", "health" ]
     logging:
@@ -259,7 +284,7 @@ services:
 
   milvus-standalone:
     container_name: milvus
-    image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.5.15
+    image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.6.7
     restart: always
     command: [ "milvus", "run", "standalone" ]
     security_opt:
@@ -275,6 +300,9 @@ services:
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9091/healthz" ]
       start_period: 90s
+    ports:
+      - "19530:19530"
+      - "9091:9091"
     depends_on:
       etcd:
         condition: service_healthy
@@ -292,10 +320,42 @@ services:
     restart: always
     depends_on:
       - milvus-standalone
+    ports:
+      - "3003:3000"
     environment:
       MILVUS_URL: milvus-standalone:19530
     healthcheck:
       test: ["NONE"]
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+
+  oauth2proxy-attu:
+    container_name: oauth2proxy-attu
+    image: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
+    restart: always
+    environment:
+      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4182
+      OAUTH2_PROXY_COOKIE_SECURE: False
+      OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
+      OAUTH2_PROXY_UPSTREAMS: http://attu:3000
+      OAUTH2_PROXY_ALLOWED_GROUPS: ${ATTU_OAUTH_ALLOWED_GROUPS}
+      OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
+      OAUTH2_PROXY_SCOPE: openid email profile
+      OAUTH2_PROXY_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH2_PROXY_PROVIDER: oidc
+      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
+      OAUTH2_PROXY_OIDC_ISSUER_URL: ${OAUTH_AUTHORITY_URL}/v2.0
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET}
+      OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OAUTH2_PROXY_EMAIL_DOMAINS: "*"
+      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: https://aiagentsstpublicblobs.blob.core.windows.net/logos/Bbv-Logo_farbig.png
+      OAUTH2_PROXY_REVERSE_PROXY: True
+      OAUTH2_PROXY_REDIRECT_URL: https://attu.${DOMAIN}
+    depends_on:
+      - attu
     logging:
       driver: json-file
       options:
@@ -308,7 +368,8 @@ services:
       - "traefik.http.routers.attu.entrypoints=websecure"
       - "traefik.http.routers.attu.tls=true"
       - "traefik.http.routers.attu.middlewares=security-headers@file"
-      - "traefik.http.services.attu.loadbalancer.server.port=3000"
+      - "traefik.http.services.attu.loadbalancer.server.port=4182"
+  
 
   # ===================================================================
   # Postgres Stack (SQL Database)
@@ -327,6 +388,8 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/postgres-data:/var/lib/postgresql/data
       - ./configs/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
+    ports:
+      - "5432:5432"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
       start_period: 5s
@@ -335,6 +398,47 @@ services:
       options:
         max-size: 10m
         max-file: 2
+
+  
+  # ===================================================================
+  # PgBouncer (Connection Pooler for Dagster)
+  # ===================================================================
+  pgbouncer:
+    container_name: pgbouncer
+    image: ghcr.io/bbvch-ai/aihub-core/pgbouncer:v1.24.1-p1
+    restart: always
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: dagster
+      AUTH_TYPE: scram-sha-256
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: "${PGBOUNCER_MAX_CLIENT_CONN:-1000}"
+      DEFAULT_POOL_SIZE: "${PGBOUNCER_DEFAULT_POOL_SIZE:-20}"
+      MIN_POOL_SIZE: "${PGBOUNCER_MIN_POOL_SIZE:-2}"
+      RESERVE_POOL_SIZE: "${PGBOUNCER_RESERVE_POOL_SIZE:-3}"
+      LISTEN_ADDR: "0.0.0.0"
+      LISTEN_PORT: "6432"
+      ADMIN_USERS: ${POSTGRES_USER}
+      LOG_CONNECTIONS: "0"
+      LOG_DISCONNECTIONS: "0"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-h", "127.0.0.1", "-p", "6432", "-U", "${POSTGRES_USER}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+  
 
   # ===================================================================
   # FerretDB Stack (MongoDB Compatibility)
@@ -367,6 +471,8 @@ services:
     container_name: ferretdb
     image: ghcr.io/bbvch-ai/aihub-core/ferretdb:2.5.0
     restart: always
+    ports:
+      - "27017:27017"
     environment:
       - FERRETDB_POSTGRESQL_URL=postgres://${MONGO_USERNAME}:${MONGO_PASSWORD}@postgres-ferretdb:5432/postgres
     depends_on:
@@ -391,6 +497,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    ports:
+      - "6006:6006"
+      - "6007:6007"
     environment:
       PHOENIX_SQL_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/phoenix
       PHOENIX_ENABLE_AUTH: False
@@ -419,6 +528,9 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/nats:/data/nats
     healthcheck:
       test: [ "NONE" ]
+    ports:
+      - "4222:4222"
+      - "8222:8222"
     logging:
       driver: json-file
       options:
@@ -432,6 +544,8 @@ services:
     command: valkey-server --save 30 1 --loglevel warning
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/valkey-data:/data
+    ports:
+      - "6379:6379"
     healthcheck:
       test: [ "CMD", "valkey-cli", "ping" ]
       start_period: 5s
@@ -505,6 +619,8 @@ services:
     container_name: litellm
     image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.79.1-stable
     restart: always
+    ports:
+      - "4000:4000"
     environment:
       DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/litellm"
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
@@ -523,6 +639,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: False
+      DOCLING_API_KEY: ${DOCLING_API_KEY}
     volumes:
       - ./configs/litellm/litellm-config.build.yml:/app/config.yml
     command: --config /app/config.yml
@@ -538,7 +655,7 @@ services:
       timeout: 10s
       interval: 30s
       retries: 3
-      start_period: 60s
+      start_period: 120s
     logging:
       driver: json-file
       options:
@@ -563,6 +680,8 @@ services:
     container_name: jupyter-lab
     image: ghcr.io/bbvch-ai/aihub-core/minimal-notebook:notebook-7.0.6
     restart: always
+    ports:
+      - "8888:8888"
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/jupyter-data:/home/jovyan/work
     environment:
@@ -578,6 +697,8 @@ services:
     container_name: playwright-server
     image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.54.1-jammy
     restart: always
+    ports:
+      - "3036:3000"
     command: npx playwright@v1.49.0 run-server --port 3000 --host 0.0.0.0
     environment:
       NODE_ENV: production
@@ -602,8 +723,10 @@ services:
 
   docling:
     container_name: docling
-    image: ghcr.io/bbvch-ai/aihub-core/docling-serve-cpu:v1.8.0
+    image: ghcr.io/bbvch-ai/aihub-core/docling-serve-cpu:v1.9.0
     restart: always
+    ports:
+      - "5001:5001"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
     environment:
@@ -611,6 +734,7 @@ services:
       DOCLING_SERVE_LOAD_MODELS_AT_BOOT: 0
       DOCLING_SERVE_MAX_SYNC_WAIT: 600
       DOCLING_SERVE_ENABLE_REMOTE_SERVICES: 1
+      DOCLING_SERVE_ENABLE_UI: 1
     depends_on:
       litellm:
         condition: service_healthy
@@ -619,6 +743,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+
+  
 
   # ===================================================================
   # Observability Stack
@@ -637,6 +763,11 @@ services:
       - OTEL_CLOUD_HEADERS=${OTEL_CLOUD_HEADERS}
     volumes:
       - ./configs/otel/otel-config.build.yml:/etc/otel-config.yml
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "13133:13133"
+      - "55679:55679"
     healthcheck:
       test: [ "NONE" ]
     logging:
@@ -655,7 +786,7 @@ services:
 
   open-webui:
     container_name: open-webui
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.36
+    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.41
     restart: always
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data
@@ -676,7 +807,8 @@ services:
       # --- General Settings ---
       WEBUI_NAME: Swiss AI-Hub
       DEFAULT_LOCALE: de
-      ENABLE_BASE_MODELS_CACHE: True
+      # Disable model caching to ensure pipeline models (agents) are always fetched
+      ENABLE_BASE_MODELS_CACHE: False
       ENABLE_COMMUNITY_SHARING: False
       ENABLE_USER_WEBHOOKS: False
       ENABLE_LOGIN_FORM: False
@@ -685,7 +817,7 @@ services:
 
       # --- Stage-Specific URLs and Environment ---
       WEBUI_URL: https://openwebui.${DOMAIN}
-      ENV: prod
+      ENV: ${ENV}
       GLOBAL_LOG_LEVEL: ${LOG_LEVEL}
 
       # --- Telemetry ---
@@ -757,6 +889,7 @@ services:
 
       # --- AI-Hub Internal Connection ---
       AIHUB_BASE_URL: http://api:8000
+      AIHUB_FRONTEND_URL: https://${DOMAIN}
       AIHUB_SUPERUSER_API_KEY: ${SUPERUSER_TOKEN}
       OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
       AIHUB_PIPELINE_PREFIX: "aihub/"
@@ -784,7 +917,7 @@ services:
       ENABLE_ADMIN_EXPORT: True
       ENABLE_ADMIN_CHAT_ACCESS: False
       SHOW_ADMIN_DETAILS: True
-      ADMIN_EMAIL: admin@ai-hub.bbv.ch
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
 
       # --- Code Execution ---
       CODE_EXECUTION_ENGINE: jupyter
@@ -814,7 +947,7 @@ services:
       EXTERNAL_DOCUMENT_LOADER_URL: http://api:8000/api/v1/docling
       EXTERNAL_DOCUMENT_LOADER_API_KEY: ${SUPERUSER_TOKEN}
       RAG_EMBEDDING_ENGINE: openai
-      RAG_EMBEDDING_MODEL: embedding/small
+      RAG_EMBEDDING_MODEL: embedding/large
       RAG_OPENAI_API_BASE_URL: http://api:8000/api/v1/openai
       RAG_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
 
@@ -906,6 +1039,29 @@ services:
       - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customRequestHeaders.X-Forwarded-Port=443"
       - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customRequestHeaders.X-Real-IP=%{remote_addr}"
 
+  openwebui-init:
+    container_name: openwebui-init
+    image: ghcr.io/bbvch-ai/aihub-core/postgres:17
+    restart: "no"
+    depends_on:
+      open-webui:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: openwebui
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./configs/openwebui/init-functions.sh:/init-functions.sh:ro
+      - ./configs/openwebui/functions:/functions:ro
+    entrypoint: ["/bin/sh", "/init-functions.sh"]
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+
   
   # ===================================================================
   # Dagster Stack (Data Pipeline Orchestration)
@@ -934,7 +1090,7 @@ services:
       OAUTH2_PROXY_SCOPE: openid email profile
       OAUTH2_PROXY_ALLOWED_GROUPS: ${DAGSTER_OAUTH_ALLOWED_GROUPS}
       OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
-      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: https://aiagentsstpublicblobs.blob.core.windows.net/logos/Bbv-Logo_farbig.png
+      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: ${OAUTH_CUSTOM_SIGN_IN_LOGO}
     logging:
       driver: json-file
       options:
@@ -954,6 +1110,11 @@ services:
     build:
       context: .
       dockerfile: ./aihub_pipeline/Dockerfile
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+    ports:
+      - "3002:3000"
     entrypoint:
       - dagster-webserver
       - -h
@@ -970,6 +1131,7 @@ services:
       DAGSTER_HOME: /dagster_home
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      LOG_LEVEL: ${LOG_LEVEL}
     logging:
       driver: json-file
       options:
@@ -982,6 +1144,9 @@ services:
     build:
       context: .
       dockerfile: ./aihub_pipeline/Dockerfile
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
     entrypoint:
       - dagster-daemon
       - run
@@ -993,6 +1158,7 @@ services:
       DAGSTER_HOME: /dagster_home
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      LOG_LEVEL: ${LOG_LEVEL}
     logging:
       driver: json-file
       options:
@@ -1008,7 +1174,7 @@ services:
   # ===================================================================
   traefik:
     container_name: traefik
-    image: "ghcr.io/bbvch-ai/aihub-core/traefik:v3.4.4"
+    image: "ghcr.io/bbvch-ai/aihub-core/traefik:v3.6.2"
     restart: always
     healthcheck:
       test: [ "NONE" ]
@@ -1093,20 +1259,26 @@ services:
       AIHUB_API_VERSION: ${AIHUB_API_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
       AIHUB_CREATE_DEFAULT_ROLES: True
+      AIHUB_CREATE_DEFAULT_BUCKETS: True
+      AIHUB_DEFAULT_BUCKET_NAME: ${AIHUB_DEFAULT_BUCKET_NAME}
+      AIHUB_SHARED_BUCKET_NAME: ${AIHUB_SHARED_BUCKET_NAME}
+      AIHUB_DEFAULT_NAMESPACE_NAME: ${AIHUB_DEFAULT_NAMESPACE_NAME}
+      AIHUB_SHARED_NAMESPACE_NAME: ${AIHUB_SHARED_NAMESPACE_NAME}
 
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Mongo DB
-      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
 
       # MILVUS
-      MILVUS_URL: http://milvus-standalone
-      MILVUS_DIMENSION: 3072
+      MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
 
       # S3 Access connection
       S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
@@ -1126,11 +1298,13 @@ services:
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
 
       # Docling
-      DOCLING_API_ENDPOINT: ${DOCLING_API_ENDPOINT}
+      DOCLING_BASE_API_URL: http://docling:5001
       DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
-      DOCLING_HOSTED_VLM_API_ENDPOINT: ${DOCLING_HOSTED_VLM_API_ENDPOINT}
-      DOCLING_HOSTED_VLM_API_KEY: ${DOCLING_HOSTED_VLM_API_KEY}
+      DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
+      DOCLING_HOSTED_VLM_API_ENDPOINT: http://litellm:4000
+      DOCLING_HOSTED_VLM_API_KEY: ${LITELLM_MASTER_KEY}
       DOCLING_VLM_MODEL_NAME: ${DOCLING_VLM_MODEL_NAME}
+      DOCLING_HTTP_RETRIES: ${DOCLING_HTTP_RETRIES}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -1172,7 +1346,7 @@ services:
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
       WEBUI_URL: https://openwebui.${DOMAIN}
-      WS_ENDPOINT: wss://${DOMAIN}/api/v1/event/ws
+      WS_ENDPOINT: wss://${DOMAIN}/api/v1/events/ws
     logging:
       driver: json-file
       options:
@@ -1219,6 +1393,12 @@ services:
       context: .
       dockerfile: ./aihub_agent/app/llm_wrapping_agent/Dockerfile
     environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
@@ -1233,7 +1413,7 @@ services:
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
-      OTEL_RESOURCE_SERVICE_NAME: api
+      OTEL_RESOURCE_SERVICE_NAME: llm-wrapping-agent
       OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     logging:
@@ -1250,19 +1430,30 @@ services:
       context: .
       dockerfile: ./aihub_agent/app/rag_agent/Dockerfile
     environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      AIHUB_DEFAULT_BUCKET_NAME: ${AIHUB_DEFAULT_BUCKET_NAME}
+      AIHUB_SHARED_BUCKET_NAME: ${AIHUB_SHARED_BUCKET_NAME}
+      AIHUB_DEFAULT_NAMESPACE_NAME: ${AIHUB_DEFAULT_NAMESPACE_NAME}
+      AIHUB_SHARED_NAMESPACE_NAME: ${AIHUB_SHARED_NAMESPACE_NAME}
+
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Mongo DB
-      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
 
       # MILVUS
-      MILVUS_URL: http://milvus-standalone
-      MILVUS_DIMENSION: 3072
+      MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
 
       # S3 Access connection
       S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
@@ -1278,7 +1469,98 @@ services:
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
-      OTEL_RESOURCE_SERVICE_NAME: api
+      OTEL_RESOURCE_SERVICE_NAME: rag-agent
+      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+
+  
+  expert_rag_agent:
+    container_name: expert-rag-agent
+    restart: always
+    build:
+      context: .
+      dockerfile: ./aihub_agent/app/expert_rag_agent/Dockerfile
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      AIHUB_DEFAULT_BUCKET_NAME: ${AIHUB_DEFAULT_BUCKET_NAME}
+      AIHUB_SHARED_BUCKET_NAME: ${AIHUB_SHARED_BUCKET_NAME}
+      AIHUB_DEFAULT_NAMESPACE_NAME: ${AIHUB_DEFAULT_NAMESPACE_NAME}
+      AIHUB_SHARED_NAMESPACE_NAME: ${AIHUB_SHARED_NAMESPACE_NAME}
+
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # MILVUS
+      MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+
+      # S3 Access connection
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+
+      # NATs
+      NATS_ENDPOINT: nats://nats:4222
+
+      # REDIS
+      REDIS_URL: redis://valkey:6379
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+      OTEL_RESOURCE_SERVICE_NAME: expert-rag-agent
+      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+
+  
+  expert_asking_agent:
+    container_name: expert-asking-agent
+    restart: always
+    build:
+      context: .
+      dockerfile: ./aihub_agent/app/expert_asking_agent/Dockerfile
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # NATs
+      NATS_ENDPOINT: nats://nats:4222
+
+      # REDIS
+      REDIS_URL: redis://valkey:6379
+
+      # Channel Configuration (Teams or Slack)
+      EXPERT_ASKING_CHANNEL_TYPE: ${EXPERT_ASKING_CHANNEL_TYPE}
+      TEAMS_CHANNEL_ID: ${TEAMS_CHANNEL_ID}
+      TEAMS_TENANT_ID: ${TEAMS_TENANT_ID}
+      TEAMS_BOT_ID: ${TEAMS_BOT_ID}
+      SLACK_CHANNEL_ID: ${SLACK_CHANNEL_ID}
+      SLACK_SERVICE_URL: ${SLACK_SERVICE_URL}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+      OTEL_RESOURCE_SERVICE_NAME: expert-asking-agent
       OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
 
@@ -1291,41 +1573,100 @@ services:
       dockerfile: ./aihub_pipeline/app/default_rag_pipeline/Dockerfile
     environment:
       PYTHONUNBUFFERED: 1
+      LOG_LEVEL: ${LOG_LEVEL}
 
       # AI-Hub Settings
       AIHUB_API_VERSION: ${AIHUB_API_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      AIHUB_DEFAULT_BUCKET_NAME: ${AIHUB_DEFAULT_BUCKET_NAME}
 
       # NATS
-      NATS_ENDPOINT: "nats://nats:4222"
+      NATS_ENDPOINT: nats://nats:4222
 
       # LiteLLM Proxy Server Settings
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Docling
-      DOCLING_API_ENDPOINT: http://docling:5001/v1alpha/convert/source
-      DOCLING_API_TIMEOUT: 600
+      DOCLING_BASE_API_URL: http://docling:5001
+      DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
+      DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
       DOCLING_HOSTED_VLM_API_ENDPOINT: http://litellm:4000
       DOCLING_HOSTED_VLM_API_KEY: ${LITELLM_MASTER_KEY}
-      DOCLING_VLM_MODEL_NAME: text-generation/ocr
+      DOCLING_VLM_MODEL_NAME: ${DOCLING_VLM_MODEL_NAME}
+      DOCLING_HTTP_RETRIES: ${DOCLING_HTTP_RETRIES}
 
       # Postgres
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
       # Mongo DB
-      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
 
       # MILVUS
-      MILVUS_URL: http://milvus-standalone
-      MILVUS_DIMENSION: 3072
+      MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
 
       # DAGSTER
       DAGSTER_HOME: /dagster_home
 
       # S3 Access connection (access and secret key same as SeaweedFS)
       S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+
+  
+  shared_rag_pipeline:
+    container_name: shared-rag-pipeline
+    restart: always
+    build:
+      context: .
+      dockerfile: ./aihub_pipeline/app/shared_rag_pipeline/Dockerfile
+    environment:
+      PYTHONUNBUFFERED: 1
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      AIHUB_SHARED_BUCKET_NAME: ${AIHUB_SHARED_BUCKET_NAME}
+
+      # NATS
+      NATS_ENDPOINT: nats://nats:4222
+
+      # LiteLLM Proxy Server Settings
+      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # Docling
+      DOCLING_BASE_API_URL: http://docling:5001
+      DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
+      DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
+      DOCLING_HOSTED_VLM_API_ENDPOINT: http://litellm:4000
+      DOCLING_HOSTED_VLM_API_KEY: ${LITELLM_MASTER_KEY}
+      DOCLING_VLM_MODEL_NAME: ${DOCLING_VLM_MODEL_NAME}
+      DOCLING_HTTP_RETRIES: ${DOCLING_HTTP_RETRIES}
+
+      # Postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # MILVUS
+      MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+
+      # DAGSTER
+      DAGSTER_HOME: /dagster_home
+
+      # S3 Access connection (access and secret key same as SeaweedFS)
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
@@ -1347,9 +1688,11 @@ services:
       - ferretdb
       - nats
       - traefik
+    ports:
+      - "8001:8001"
     environment:
       NATS_ENDPOINT: nats://nats:4222
-      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
       LOG_LEVEL: ${LOG_LEVEL}
       NUM_WORKERS: 1
       AIHUB_API_VERSION: ${AIHUB_API_VERSION}
@@ -1363,3 +1706,10 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bot.rule=Host(`bot.${DOMAIN}`)"
+      - "traefik.http.routers.bot.entrypoints=websecure"
+      - "traefik.http.routers.bot.tls=true"
+      - "traefik.http.routers.bot.middlewares=security-headers@file"
+      - "traefik.http.services.bot.loadbalancer.server.port=8000"

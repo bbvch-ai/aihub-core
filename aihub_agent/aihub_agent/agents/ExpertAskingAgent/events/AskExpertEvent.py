@@ -13,7 +13,7 @@ class AskExpertEvent(ControlEvent):
     locale: Annotated[
         str | None,
         Field(
-            description="The user’s locale, defaults to a system-wide default locale, "
+            description="The user's locale, defaults to a system-wide default locale, "
             "guiding language or regional adaptations.",
         ),
     ] = LocaleHandler.DEFAULT_LOCALE

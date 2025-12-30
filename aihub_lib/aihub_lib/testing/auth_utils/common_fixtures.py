@@ -11,7 +11,11 @@ from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 def mongo_db():
     """Set up MongoDB connection for testing."""
     config = AIHubSettings()
-    connect(db=config.MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_STRING.get_secret_value())
+    connect(
+        db=config.MONGO_MAIN_DB_NAME,
+        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
+        uuidRepresentation="standard",
+    )
     yield
     disconnect()
 

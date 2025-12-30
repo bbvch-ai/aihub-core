@@ -1,17 +1,21 @@
 condenser:
   standalone_question: |
-    Given the following conversation between a user and an AI assistant, along with a follow-up question from the user, 
-    rephrase the follow-up question into a fully standalone question that retains the original context.
+    <role_and_task>
+    You are an expert in search query optimization.
+    Your task is to rephrase **the user's last message** in this chat into a fully standalone question.
+    </role_and_task>
 
     <chat_history>
     {chat_history}
     </chat_history>
-    
-    <user_query>
-    {question}
-    </user_question>
-    
-    Standalone question:
+
+    <instructions>
+    The user's message contains text and potentially an image.
+    1. **Resolve context from history**: Replace pronouns or references that refer to previous messages in the chat history with the concrete terms from the history.
+    2. **Image references**: ONLY if the user explicitly refers to an image (e.g., "What is **this**?", "What do you see **here**?"), replace the pronoun with a brief description of the visible object.
+    3. **Do not add new information**: NEVER add details that are not present in the original question. The reformulated question must be semantically equivalent to the original.
+    4. **Output**: Output ONLY the new sentence.
+    </instructions>
 
 rag:
   context_prompt: |
@@ -111,43 +115,28 @@ router:
       Analyze the user query carefully in relation to the chat history. Determine whether the query can be fulfilled based on the criteria above. Provide a clear yes/no decision with detailed reasoning.
 
     expert_answer_sufficient: |
-      You are given a chat history between an AI assistant and an expert. The goal of this conversation
-      is to answer a question originaly posed by a user. Determine whether the expert has already sufficiently
-      answered the question based on the chat history.
+      Does the expert's response answer the user's question?
 
-       <chat_history>
+      <expert_response>
       {% for message in chat_history %}
-      <message role="{{ message.role.value }}">
+      {% if message.role.value == 'user' %}
       {% for block in message.blocks %}
       {% if block.block_type == 'text' %}
       {{ block.text }}
       {% endif %}
       {% endfor %}
-      </message>
+      {% endif %}
       {% endfor %}
-      </chat_history>
+      </expert_response>
 
-      <user_query>
-      %{question}
-      </user_query>
+      <user_question>
+      {{ query }}
+      </user_question>
 
-      <answered_criteria>
-      <is_answered>
-      A question is considered answered if ANY of the following are true:
-      * The expert has provided a complete and accurate answer to the user's question
-      * The expert has provided a partial answer, but the user can still understand the main points
-      * The expert has indicated where the answer can be found
-      * The expert has provided context information, maybe in the systme message, that - directly or indirectly - answer the question
-      </is_answered>
-      <is_not_answered>
-      A question is considered not answered if ANY of the following are true:
-      * The expert has not provided any answer to the user's question
-      * The expert has provided an answer, but it is incomplete or inaccurate
-      * The expert has provided an answer, but it is not relevant to the user's question
-      * The expert has provided an answer, but it is not clear or understandable
-      * The expert indicates that they do not know the answer
-      </is_not_answered>
-      </answered_criteria>
+      The question IS answered if the expert provided information that directly responds to ALL parts of what was asked.
+      The question is NOT answered if:
+      - The expert explicitly says they don't know or refuses to answer
+      - The question has multiple parts and only some were answered
 
       Analyze the chat history carefully in relation to the user's question. Determine whether the expert has already sufficiently answered the question based on the criteria above. Provide a clear decision with detailed reasoning.
 summarizer:
@@ -171,22 +160,22 @@ figure_description_generator:
     {% chat role="system" %}
     You are an expert at creating high-quality image descriptions for document accessibility.
     Your task is to generate detailed alt text for figures in documents that:
-    
+
     1. Concisely describes the visual content (images, charts, diagrams, etc.)
     2. Captures the key information being conveyed by the figure
     3. For charts and diagrams: describes the structure, identifies axes, data points, and trends
     4. For tables: describes the structure and summarizes key data points
     5. Extracts any visible text in the image when relevant
     6. Uses appropriate technical language while remaining accessible
-    7. Uses the provided surrounding text SOLELY to understand the image's role, without letting the context alter the factual, visual description.
-    8. Avoids unnecessary verbosity or speculation
-    
+    7. Avoids unnecessary verbosity or speculation
+
+    CRITICAL: Describe ONLY what you actually see in the image. The surrounding text is provided for context about terminology and language, but you must NEVER assume the image depicts something mentioned in the text. If the text mentions "a cat" but you see a fruit, describe the fruit. If you cannot identify an object with certainty, describe its visual properties (shape, color, texture) without guessing what it represents.
+
     Format your descriptions as concise, factual paragraphs that could be used directly as alt text.
     Focus on being informative and helping the reader understand what they can't see.
-    Do **NOT** come up with information, only reference what you can see in the image.
     Write your reply in the SAME language as the context text and image text.
     {% endchat %}
 
     {% chat role="user" %}
-    Please provide a detailed, accurate description of this image that would serve as effective alt text.
+    Please provide a detailed, accurate description of this image that would serve as effective alt text. Remember: describe only what you actually see, not what the surrounding text suggests should be there.
     {% endchat %}

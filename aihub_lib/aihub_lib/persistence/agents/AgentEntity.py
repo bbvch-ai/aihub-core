@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from bson import ObjectId
 from mongoengine import (
@@ -101,6 +101,15 @@ class EventSpec(EmbeddedDocument):
 
 
 class AgentEntity(Document):
+    """
+    Represents a registered agent in the system.
+
+    Online status is determined by the last_discovered timestamp - an agent is considered
+    online if it responded to a discovery broadcast within the ONLINE_THRESHOLD.
+    """
+
+    ONLINE_THRESHOLD = timedelta(minutes=5)
+
     meta = {
         "collection": "agents",
         "strict": False,
@@ -118,6 +127,13 @@ class AgentEntity(Document):
     network_graph = DictField(required=True)
     first_discovered = DateTimeField(required=True, default=datetime.now)
     last_discovered = DateTimeField(required=True, default=datetime.now)
+
+    @property
+    def is_online(self) -> bool:
+        """Agent is online if it responded to discovery within the threshold."""
+        if self.last_discovered is None:
+            return False
+        return datetime.now() - self.last_discovered < self.ONLINE_THRESHOLD
 
     @classmethod
     @trace_fn

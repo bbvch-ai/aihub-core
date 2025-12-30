@@ -1,9 +1,14 @@
+# ruff: noqa: E402
+from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
+
+AihubInstrumentor().instrument()
+
 from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 from aihub_lib.routes.health.HealthController import HealthController
-from aihub_lib.testing.logging.logger import enable_logging
 
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.docling.DoclingController import DoclingController
@@ -56,9 +61,9 @@ runner.mount(
     RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
     OpenaiController(auth=auth)
     .get_models()
-    .get_model()
+    .get_model_with_assistants()
     .get_embeddings()
-    .chat_completion()
+    .chat_completion_with_assistants()
     .generate_image()
     .stt()
     .tts(),

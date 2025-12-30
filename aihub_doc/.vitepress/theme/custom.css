@@ -240,10 +240,10 @@
   /* DEPRECATED: Use `--vp-c-brand-1` instead. */
   --vp-c-brand: var(--vp-c-brand-1);
 
-  --vp-c-tip-1: var(--vp-c-gray-1);
-  --vp-c-tip-2: var(--vp-c-gray-2);
-  --vp-c-tip-3: var(--vp-c-gray-3);
-  --vp-c-tip-soft: var(--vp-c-gray-soft);
+  --vp-c-tip-1: var(--vp-c-green-1);
+  --vp-c-tip-2: var(--vp-c-green-2);
+  --vp-c-tip-3: var(--vp-c-green-3);
+  --vp-c-tip-soft: var(--vp-c-green-soft);
 
   --vp-c-note-1: var(--vp-c-brand-1);
   --vp-c-note-2: var(--vp-c-brand-2);

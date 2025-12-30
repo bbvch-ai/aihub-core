@@ -6,17 +6,20 @@ from pydantic import Field
 
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
-from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import HumanInTheLoopRequestEvent
+from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
+    HumanInTheLoopConfirmationRequestEvent,
+    HumanInTheLoopInputRequestEvent,
+    HumanInTheLoopRequestEvent,
+)
 
 
 class HumanInTheLoopResponseEvent(ControlAndDisplayEvent):
     """
-    A response from a human operator after a HITL request.
+    Base response from a human operator after a HITL request.
 
-    ### Why HumanInTheLoopResponseEvent?
-    Once a human operator provides an answer to a `HumanInTheLoopRequestEvent`, the response:
-    - Influences the workflow (since it's a `ControlEvent`), resuming or altering execution based on human input.
-    - Is visible to the UI (since it's also a `DisplayEvent`), allowing transparency and auditing.
+    Use the specific subclasses:
+    - `HumanInTheLoopInputResponseEvent` for text input responses
+    - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses
     """
 
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.hitl_response_event.name")
@@ -24,7 +27,7 @@ class HumanInTheLoopResponseEvent(ControlAndDisplayEvent):
         "lib.events.hitl_response_event.description"
     )
 
-    response: Annotated[str, Field(description="The human operator's answer or decision.")]
+    response: Annotated[str | bool, Field(description="The human operator's response.")]
     request_event: Annotated[
         HumanInTheLoopRequestEvent,
         Field(
@@ -49,3 +52,35 @@ class HumanInTheLoopResponseEvent(ControlAndDisplayEvent):
             "_event_name": start_event_name,
         }
         return cls.deserialize_event(json_data)
+
+
+class HumanInTheLoopInputResponseEvent(HumanInTheLoopResponseEvent):
+    """Response containing free-form text input from a human operator."""
+
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.hitl_input_response_event.name")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
+        "lib.events.hitl_input_response_event.description"
+    )
+
+    response: Annotated[str, Field(description="The human operator's text input.")]
+    request_event: Annotated[
+        HumanInTheLoopInputRequestEvent,
+        Field(description="The original input request event."),
+    ]
+
+
+class HumanInTheLoopConfirmationResponseEvent(HumanInTheLoopResponseEvent):
+    """Response containing yes/no confirmation from a human operator."""
+
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path(
+        "lib.events.hitl_confirmation_response_event.name"
+    )
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
+        "lib.events.hitl_confirmation_response_event.description"
+    )
+
+    response: Annotated[bool, Field(description="The human operator's confirmation (True for yes, False for no).")]
+    request_event: Annotated[
+        HumanInTheLoopConfirmationRequestEvent,
+        Field(description="The original confirmation request event."),
+    ]

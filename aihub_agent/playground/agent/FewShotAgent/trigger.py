@@ -3,8 +3,8 @@ import asyncio
 from aihub_lib.generative_ai.prompting.few_shot.FewShotExample import FewShotExample
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.nats.events import StartEvent
-from aihub_lib.testing.logging.logger import enable_logging
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_agent.agents.FewShotAgent import FewShotAgent, FewShotAgentConfig
@@ -23,7 +23,6 @@ async def main():
             description=LocaleString(en="This is an agent can transfer movie titles into emojis"),
             llm=LLMConfig(model_name="text-generation/mini"),
             number_of_input_tokens=100000,
-            condense_question_prompt=LocaleString(en="""return the last user message"""),
             few_shot=FewShotStepConfig(
                 few_shot_examples=[
                     FewShotExample(
