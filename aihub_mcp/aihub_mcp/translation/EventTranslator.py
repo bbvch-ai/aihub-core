@@ -107,6 +107,10 @@ class EventTranslator:
         run_id = f"mcp_run_{uuid.uuid4().hex[:8]}"
         event_id = str(uuid.uuid4())
 
+        # Reset progress counters for this execution
+        if self._progress_streamer:
+            self._progress_streamer.reset()
+
         await ctx.info(
             f"Starting agent execution: agent={agent_class}, "
             f"thread={thread_id}, run={run_id}, user={identity.get('id', 'unknown')}"
@@ -213,6 +217,34 @@ class EventTranslator:
                         )
                     else:
                         await ctx.warning("HITL request received but no handler configured")
+
+                # Handle SamplingRequestEvent - LLM completion via MCP client
+                elif "SamplingRequestEvent" in event_type:
+                    if self._tracer and span:
+                        self._tracer.add_event(
+                            span,
+                            "sampling_request",
+                            {"message_count": len(event.get("messages", []))},
+                        )
+
+                    if self._sampling_bridge:
+                        try:
+                            sampling_response = await self._sampling_bridge.handle_sampling_request(ctx, event)
+                            # Publish sampling response back to NATS
+                            await self._publish_sampling_response(
+                                agent_class=agent_class,
+                                agent_id=agent_id,
+                                thread_id=thread_id,
+                                display_id=display_id,
+                                run_id=run_id,
+                                request_event=event,
+                                response=sampling_response,
+                            )
+                        except Exception as e:
+                            logger.error(f"Sampling failed: {e}")
+                            await ctx.error(f"LLM sampling failed: {e}")
+                    else:
+                        await ctx.warning("Sampling request received but no handler configured")
 
                 # Handle StopEvent - completion
                 elif "StopEvent" in event_type:
@@ -385,3 +417,45 @@ class EventTranslator:
 
         await self._js.publish(subject, json.dumps(response_event).encode())
         logger.info(f"Published HITL response to {subject}")
+
+    async def _publish_sampling_response(
+        self,
+        agent_class: str,
+        agent_id: str,
+        thread_id: str,
+        display_id: str,
+        run_id: str,
+        request_event: dict[str, Any],
+        response: str,
+    ) -> None:
+        """Publish a sampling response event back to NATS."""
+        event_id = str(uuid.uuid4())
+        event_name = "SamplingResponseEvent"
+        event_parents = [
+            "BaseEvent",
+            "ControlEvent",
+            "SamplingResponseEvent",
+        ]
+
+        response_event = {
+            "event_id": event_id,
+            "created_at": time.time_ns(),
+            "_event_name": event_name,
+            "_parent_event_names": event_parents,
+            "content": response,
+            "request_event_id": request_event.get("event_id"),
+        }
+
+        subject = self._build_subject(
+            agent_class=agent_class,
+            agent_id=agent_id,
+            thread_id=thread_id,
+            display_id=display_id,
+            run_id=run_id,
+            event_type="control_event",
+            event_name=event_name,
+            event_id=event_id,
+        )
+
+        await self._js.publish(subject, json.dumps(response_event).encode())
+        logger.info(f"Published sampling response to {subject}")

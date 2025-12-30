@@ -1,3 +1,5 @@
+"""Standalone runner for the MCP server with authentication and tracing middleware."""
+
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager

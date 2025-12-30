@@ -3,6 +3,7 @@
 import json
 
 import pytest
+from pydantic import SecretStr
 from starlette.testclient import TestClient
 
 from aihub_mcp.runners.MCPRunner import MCPRunner
@@ -41,7 +42,7 @@ class TestMCPServerHTTP:
         """Test that health endpoint is accessible without auth."""
         # Create settings with auth enabled
         auth_settings = MCPSettings(
-            API_KEY="test-secret-key",
+            API_KEY=SecretStr("test-secret-key"),
             TRACING_ENABLED=False,
         )
         runner = MCPRunner(auth_settings)
@@ -61,7 +62,7 @@ class TestMCPAuthentication:
     def authenticated_runner(self) -> MCPRunner:
         """Create runner with authentication enabled."""
         settings = MCPSettings(
-            API_KEY="test-api-key",
+            API_KEY=SecretStr("test-api-key"),
             TRACING_ENABLED=False,
         )
         return MCPRunner(settings)

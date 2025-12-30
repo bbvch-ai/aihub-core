@@ -255,6 +255,13 @@ class AgentToolRegistry:
                 },
             }
 
+            # Validate input data
+            try:
+                validate_event_data(event_data)
+            except InputValidationError as e:
+                await ctx.error(f"Input validation failed: {e}")
+                raise ValueError(f"Input validation failed: {e}") from e
+
             try:
                 await ctx.info(f"Invoking {agent_class} agent...")
                 result = await event_translator.execute_agent(
@@ -307,6 +314,13 @@ class AgentToolRegistry:
                 event_data = json.loads(event_data_json)
             except json.JSONDecodeError as e:
                 raise ValueError(f"Invalid JSON: {e}") from e
+
+            # Validate input data
+            try:
+                validate_event_data(event_data, event_schema)
+            except InputValidationError as e:
+                await ctx.error(f"Input validation failed: {e}")
+                raise ValueError(f"Input validation failed: {e}") from e
 
             try:
                 await ctx.info(f"Invoking {agent_class} agent...")
