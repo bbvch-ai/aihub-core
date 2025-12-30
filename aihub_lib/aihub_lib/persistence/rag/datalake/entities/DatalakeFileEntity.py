@@ -12,7 +12,13 @@ class DatalakeFileStatus(str, Enum):
 
 
 class DatalakeFileEntity(Document):
-    """Tracks all files in the datalake for efficient querying instead of S3 listing."""
+    """Tracks all files in the datalake for efficient querying instead of S3 listing.
+
+    IMPORTANT: Manual deletion of files directly from S3/storage is not supported.
+    Always delete files through the pipeline (delete_data_lake_files_from_data_lake op)
+    to ensure these tracking records are properly cleaned up. Direct S3 deletion will
+    leave orphaned records that appear as "processing" in the Knowledge UI.
+    """
 
     meta = {
         "collection": "datalake_files",

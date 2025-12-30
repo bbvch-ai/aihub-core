@@ -121,3 +121,33 @@ def _mark_entity_ingested(uri: str, namespace: str) -> DatalakeFileEntity | None
     except (PyMongoError, MongoEngineException) as e:
         logger.warning(f"Database error marking file as ingested: {uri}, error: {e}")
         return None
+
+
+def delete_file_entity(uri: str, namespace: str) -> bool:
+    """Delete the DatalakeFileEntity tracking record for a file.
+
+    Should be called when a file is deleted from the datalake through the pipeline.
+    Manual deletion from S3 is not supported and will leave orphaned tracking records.
+    """
+    _ensure_connection()
+    bucket_name = _extract_bucket_name_from_uri(uri)
+    file_path = _extract_file_path_from_uri(uri)
+
+    try:
+        bucket = BucketEntity.get_bucket_by_bucket_name(bucket_name, db_alias=_DB_ALIAS)
+    except BucketEntity.DoesNotExist:
+        logger.warning(f"Bucket '{bucket_name}' not found, cannot delete entity for {uri}")
+        return False
+
+    bucket_id = str(bucket.id)
+
+    try:
+        deleted = DatalakeFileEntity.delete_by_path(bucket_id, namespace, file_path, db_alias=_DB_ALIAS)
+        if deleted:
+            logger.debug(f"Deleted DatalakeFileEntity for {uri}")
+        else:
+            logger.debug(f"No DatalakeFileEntity found to delete for {uri}")
+        return deleted
+    except (PyMongoError, MongoEngineException) as e:
+        logger.warning(f"Database error deleting file entity: {uri}, error: {e}")
+        return False
