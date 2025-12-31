@@ -7,7 +7,6 @@ from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import Ret
 from aihub_lib.generative_ai.processors.models.RetrieveSummariesConfig import RetrieveSummariesConfig
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.retrievers.BaseRetrieverConfig import BaseRetrieverConfig, RetrieverType
-from aihub_lib.persistence.rag.vectors.node_metadata import NodeContentType
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 
 
@@ -28,16 +27,6 @@ class KnowledgeRetrieverConfig(BaseRetrieverConfig):
         list[Literal["summary", "content"]],
         Field(description="The types of nodes to retrieve (options: 'summary' or 'content').", min_length=1),
     ] = ["content"]
-    exclude_content_types: Annotated[
-        list[NodeContentType],
-        Field(
-            description=(
-                "Content types to exclude from semantic search (e.g., 'figure', 'table'). "
-                "Excluded types can still be retrieved via prev/next context. "
-                "Standalone image files (e.g., .png, .jpg) are never excluded."
-            ),
-        ),
-    ] = []
     retrieve_prev_next: Annotated[
         RetrievePrevNextConfig | None,
         Field(description="Configuration for retrieving previous and next nodes."),
