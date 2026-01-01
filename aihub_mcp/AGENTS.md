@@ -11,25 +11,31 @@ AI Hub agents as first-class MCP tools.
 ### Core Components
 
 ```
-aihub_mcp/
-├── server/           # MCP server implementation
-│   ├── MCPServer.py           # Main FastMCP server with transports
-│   ├── AgentToolRegistry.py   # Dynamic agent → MCP tool registration
-│   └── ResourceRegistry.py    # Agent metadata as MCP resources
-├── translation/      # SAAP ↔ MCP event translation
-│   ├── EventTranslator.py     # Core event translation logic
-│   ├── ElicitationHandler.py  # HITL → MCP elicitation bridge
-│   ├── SamplingBridge.py      # Agent LLM → Client LLM routing
-│   └── ProgressStreamer.py    # Display events → Progress notifications
-├── discovery/        # Agent discovery
-│   ├── AgentDiscoveryService.py  # Subscribe to agent discovery
-│   └── PromptRegistry.py      # Agent prompt templates
-├── auth/             # Authentication
-│   └── ApiKeyAuth.py          # API key authentication
-├── runners/          # Server runners
-│   └── MCPRunner.py           # Standalone server runner
-└── settings/         # Configuration
-    └── MCPSettings.py         # pydantic-settings configuration
+aihub_mcp/                    # Scope root
+├── aihub_mcp/                # Package source
+│   ├── server/               # MCP server implementation
+│   │   ├── MCPServer.py      # Main FastMCP server with transports
+│   │   ├── AgentToolRegistry.py  # Dynamic agent → MCP tool registration
+│   │   └── ResourceRegistry.py   # Agent metadata as MCP resources
+│   ├── translation/          # SAAP ↔ MCP event translation
+│   │   ├── EventTranslator.py    # Core event translation logic
+│   │   ├── ElicitationHandler.py # HITL → MCP elicitation bridge
+│   │   ├── SamplingBridge.py     # Agent LLM → Client LLM routing
+│   │   └── ProgressStreamer.py   # Display events → Progress notifications
+│   ├── discovery/            # Agent discovery
+│   │   ├── AgentDiscoveryService.py  # Subscribe to agent discovery
+│   │   └── PromptRegistry.py     # Agent prompt templates
+│   ├── auth/                 # Authentication
+│   │   └── ApiKeyAuth.py     # API key authentication
+│   ├── runners/              # Server runners
+│   │   └── MCPRunner.py      # Standalone server runner
+│   └── settings/             # Configuration
+│       └── MCPSettings.py    # pydantic-settings configuration
+├── playground/               # Interactive testing scripts
+│   └── server/               # MCP server playground
+│       └── main.py           # Run with: make playground
+└── tests/                    # Unit and integration tests
+    └── integration/          # Tests requiring running services
 ```
 
 ### Event Translation Mapping

@@ -35,4 +35,4 @@ run:
 
 playground:
 	@echo "Starting MCP playground..."
-	poetry run python playground.py
+	poetry run python playground/server/main.py

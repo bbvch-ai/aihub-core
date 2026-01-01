@@ -1,14 +1,4 @@
 #!/usr/bin/env python
-"""
-Interactive playground for testing the MCP server.
-
-Usage:
-    poetry run python playground.py [--host HOST] [--port PORT]
-
-This script starts the MCP server in debug mode and provides example curl
-commands for testing the various endpoints.
-"""
-
 import argparse
 import sys
 
