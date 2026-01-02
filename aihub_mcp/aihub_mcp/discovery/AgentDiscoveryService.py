@@ -134,7 +134,7 @@ class AgentDiscoveryService:
             self._last_discovered[agent_class] = time.time()
 
             # Check if already registered
-            if agent_class in self._mcp_server._agent_registry:
+            if self._mcp_server.is_agent_registered(agent_class):
                 logger.debug(f"Agent already registered: {agent_class}")
                 return
 
@@ -211,7 +211,8 @@ class AgentDiscoveryService:
         # Wait for responses
         await asyncio.sleep(self._settings.DISCOVERY_TIMEOUT_SECONDS)
 
+        agents = self._mcp_server.get_registered_agents()
         return {
-            "agents": list(self._mcp_server._agent_registry.keys()),
-            "count": len(self._mcp_server._agent_registry),
+            "agents": agents,
+            "count": len(agents),
         }

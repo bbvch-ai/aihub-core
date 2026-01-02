@@ -1,11 +1,33 @@
 import logging
-from typing import Any
+from typing import Annotated, Any
 
 from fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
 from aihub_mcp.settings.MCPSettings import MCPSettings
 
 logger = logging.getLogger(__name__)
+
+
+class EventSpec(BaseModel):
+    """Schema for an event specification from agent discovery."""
+
+    event_name: Annotated[str, Field(description="Name of the event class")]
+    event_schema: Annotated[dict[str, Any], Field(description="JSON schema for the event")]
+    event_parents: list[str] = Field(default_factory=list, description="Parent event class names")
+
+
+class AgentMetadata(BaseModel):
+    """Metadata for a registered agent."""
+
+    agent_class: Annotated[str, Field(description="Agent class name")]
+    is_conversational: Annotated[bool, Field(description="Whether agent supports chat interaction")]
+    start_events: Annotated[list[EventSpec], Field(description="Events that can start the agent")]
+    stop_events: Annotated[list[EventSpec], Field(description="Events that signal completion")]
+    hitl_request_events: Annotated[list[EventSpec], Field(description="Human-in-the-loop request events")]
+    hitl_response_events: Annotated[list[EventSpec], Field(description="Human-in-the-loop response events")]
+    agent_config_specs: dict[str, Any] = Field(default_factory=dict, description="Agent configuration schema")
+    default_agent_config: dict[str, Any] = Field(default_factory=dict, description="Default agent configuration")
 
 
 class MCPServer:
@@ -28,7 +50,7 @@ class MCPServer:
     def __init__(self, settings: MCPSettings | None = None) -> None:
         self._settings = settings or MCPSettings()
         self._mcp: FastMCP | None = None
-        self._agent_registry: dict[str, dict[str, Any]] = {}
+        self._agent_registry: dict[str, AgentMetadata] = {}
 
     @property
     def settings(self) -> MCPSettings:
@@ -68,7 +90,7 @@ class MCPServer:
         async def list_agents() -> dict[str, Any]:
             """List all available agents with their metadata."""
             return {
-                "agents": list(self._agent_registry.values()),
+                "agents": [agent.model_dump() for agent in self._agent_registry.values()],
                 "count": len(self._agent_registry),
             }
 
@@ -77,7 +99,7 @@ class MCPServer:
             """Get metadata for a specific agent class."""
             if agent_class not in self._agent_registry:
                 return {"error": f"Agent '{agent_class}' not found"}
-            return self._agent_registry[agent_class]
+            return self._agent_registry[agent_class].model_dump()
 
         logger.debug("MCP resources registered")
 
@@ -116,16 +138,16 @@ class MCPServer:
         This method is called by AgentDiscoveryService when agents are discovered.
         Each agent's start events become MCP tools.
         """
-        self._agent_registry[agent_class] = {
-            "agent_class": agent_class,
-            "is_conversational": is_conversational,
-            "start_events": start_events,
-            "stop_events": stop_events,
-            "hitl_request_events": hitl_request_events,
-            "hitl_response_events": hitl_response_events,
-            "agent_config_specs": agent_config_specs,
-            "default_agent_config": default_agent_config,
-        }
+        self._agent_registry[agent_class] = AgentMetadata(
+            agent_class=agent_class,
+            is_conversational=is_conversational,
+            start_events=[EventSpec(**e) for e in start_events],
+            stop_events=[EventSpec(**e) for e in stop_events],
+            hitl_request_events=[EventSpec(**e) for e in hitl_request_events],
+            hitl_response_events=[EventSpec(**e) for e in hitl_response_events],
+            agent_config_specs=agent_config_specs,
+            default_agent_config=default_agent_config,
+        )
         logger.info(f"Agent registered: {agent_class}")
 
     def unregister_agent(self, agent_class: str) -> None:
@@ -133,3 +155,11 @@ class MCPServer:
         if agent_class in self._agent_registry:
             del self._agent_registry[agent_class]
             logger.info(f"Agent unregistered: {agent_class}")
+
+    def is_agent_registered(self, agent_class: str) -> bool:
+        """Check if an agent is registered."""
+        return agent_class in self._agent_registry
+
+    def get_registered_agents(self) -> list[str]:
+        """Get list of registered agent class names."""
+        return list(self._agent_registry.keys())

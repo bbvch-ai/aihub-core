@@ -1,10 +1,10 @@
 import html
 import logging
 import re
-from dataclasses import dataclass
 from typing import Any
 
 from fastmcp import Context
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -19,15 +19,13 @@ DANGEROUS_PATTERNS = [
 ]
 
 
-@dataclass
-class InputResponse:
+class InputResponse(BaseModel):
     """Response type for text input elicitation."""
 
     text: str
 
 
-@dataclass
-class ConfirmationResponse:
+class ConfirmationResponse(BaseModel):
     """Response type for confirmation elicitation."""
 
     confirmed: bool

@@ -3,41 +3,34 @@ import logging
 import secrets
 import time
 from collections import defaultdict
-from dataclasses import dataclass, field
-from typing import Any
+from typing import Annotated, Any
 
-from pydantic import SecretStr
+from pydantic import BaseModel, Field, SecretStr
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class UserIdentity:
+class UserIdentity(BaseModel):
     """User identity associated with an API key."""
 
-    id: str
-    name: str
-    email: str
-    roles: list[str] = field(default_factory=lambda: ["user"])
-    source: str = "api_key"
+    id: Annotated[str, Field(description="Unique user identifier")]
+    name: Annotated[str, Field(description="Display name")]
+    email: Annotated[str, Field(description="Email address")]
+    roles: Annotated[list[str], Field(description="User roles")] = ["user"]
+    source: Annotated[str, Field(description="Identity source")] = "api_key"
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for SAAP events."""
-        return {
-            "id": self.id,
-            "name": self.name,
-            "email": self.email,
-            "roles": self.roles,
-            "source": self.source,
-        }
+        return self.model_dump()
 
 
-@dataclass
-class RateLimitState:
+class RateLimitState(BaseModel):
     """Track rate limiting state for a client."""
 
-    request_timestamps: list[float] = field(default_factory=list)
-    blocked_until: float = 0.0
+    model_config = {"arbitrary_types_allowed": True}
+
+    request_timestamps: list[float] = Field(default_factory=list, description="Timestamps of recent requests")
+    blocked_until: float = Field(default=0.0, description="Unix timestamp when block expires")
 
 
 class ApiKeyAuth:
@@ -69,7 +62,7 @@ class ApiKeyAuth:
         If api_keys is None or empty, authentication is disabled.
         """
         self._key_to_identity: dict[str, UserIdentity] = {}
-        self._rate_limits: dict[str, RateLimitState] = defaultdict(RateLimitState)
+        self._rate_limits: dict[str, RateLimitState] = {}
         self._rate_limit_per_minute = rate_limit_per_minute
         self._enabled = False
 
@@ -164,6 +157,8 @@ class ApiKeyAuth:
             return True  # Rate limiting disabled
 
         key_hash = self._hash_key(api_key)
+        if key_hash not in self._rate_limits:
+            self._rate_limits[key_hash] = RateLimitState()
         state = self._rate_limits[key_hash]
         now = time.time()
 
