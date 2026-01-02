@@ -1693,6 +1693,70 @@ services:
       {%- endif %}
   {%- endif %}
 
+  {% if image_tags.mcp[stage] %}
+  # ===================================================================
+  # MCP Stack (Model Context Protocol Server)
+  # ===================================================================
+  # Bridges Swiss AI Agent Protocol with Model Context Protocol for
+  # AI assistant integrations (Claude Code, etc.). Not present in 'dev'.
+  # ===================================================================
+  mcp:
+    container_name: mcp
+    restart: always
+    {%- if image_tags.mcp[stage] == 'localbuild' %}
+    build:
+      context: .
+      dockerfile: ./aihub_mcp/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.mcp[stage] }}
+    {%- endif %}
+    depends_on:
+      nats:
+        condition: service_started
+      traefik:
+        condition: service_started
+    environment:
+      # Server configuration
+      MCP_HOST: "0.0.0.0"
+      MCP_PORT: "8001"
+      MCP_DEBUG: "false"
+
+      # Authentication (required in production)
+      MCP_API_KEY: ${MCP_API_KEY}
+      MCP_REQUIRE_AUTH: "true"
+
+      # NATS configuration
+      MCP_NATS_URL: {{ NATS_ENDPOINT }}
+
+      # Tracing
+      MCP_TRACING_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8001/mcp" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mcp.rule=Host(`${DOMAIN}`) && PathPrefix(`/mcp`)"
+      - "traefik.http.routers.mcp.priority=5000"
+      - "traefik.http.routers.mcp.entrypoints=websecure"
+      - "traefik.http.routers.mcp.middlewares=security-headers@file"
+      - "traefik.http.services.mcp.loadbalancer.server.port=8001"
+      {%- if stage not in ['local', 'build'] %}
+      - "traefik.http.routers.mcp.tls.certresolver=letsencrypt"
+      {%- else %}
+      - "traefik.http.routers.mcp.tls=true"
+      {%- endif %}
+  {%- endif %}
+
   {% if image_tags.web[stage] %}
   # ===================================================================
   # Suite UI Stack (Frontend)

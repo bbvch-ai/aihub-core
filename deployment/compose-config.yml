@@ -111,3 +111,9 @@ image_tags:
     nightly: bot:nightly
     latest: bot:latest
 
+  mcp:
+    build: localbuild
+    local: mcp:latest
+    nightly: mcp:nightly
+    latest: mcp:latest
+

@@ -1442,6 +1442,59 @@ services:
 
   
   # ===================================================================
+  # MCP Stack (Model Context Protocol Server)
+  # ===================================================================
+  # Bridges Swiss AI Agent Protocol with Model Context Protocol for
+  # AI assistant integrations (Claude Code, etc.). Not present in 'dev'.
+  # ===================================================================
+  mcp:
+    container_name: mcp
+    restart: always
+    image: ghcr.io/bbvch-ai/aihub-core/mcp:nightly
+    depends_on:
+      nats:
+        condition: service_started
+      traefik:
+        condition: service_started
+    environment:
+      # Server configuration
+      MCP_HOST: "0.0.0.0"
+      MCP_PORT: "8001"
+      MCP_DEBUG: "false"
+
+      # Authentication (required in production)
+      MCP_API_KEY: ${MCP_API_KEY}
+      MCP_REQUIRE_AUTH: "true"
+
+      # NATS configuration
+      MCP_NATS_URL: nats://nats:4222
+
+      # Tracing
+      MCP_TRACING_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8001/mcp" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mcp.rule=Host(`${DOMAIN}`) && PathPrefix(`/mcp`)"
+      - "traefik.http.routers.mcp.priority=5000"
+      - "traefik.http.routers.mcp.entrypoints=websecure"
+      - "traefik.http.routers.mcp.middlewares=security-headers@file"
+      - "traefik.http.services.mcp.loadbalancer.server.port=8001"
+      - "traefik.http.routers.mcp.tls.certresolver=letsencrypt"
+
+  
+  # ===================================================================
   # Suite UI Stack (Frontend)
   # ===================================================================
   # This is the main SvelteKit frontend for the AI Hub. It is not

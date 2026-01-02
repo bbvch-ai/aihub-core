@@ -33,6 +33,10 @@ run:
 	@echo "Starting MCP server..."
 	poetry run python -m aihub_mcp
 
+run-prod:
+	@echo "Starting MCP server (production)..."
+	poetry run python -m aihub_mcp
+
 playground:
 	@echo "Starting MCP playground..."
 	poetry run python playground/server/main.py
