@@ -1,209 +1,109 @@
 ---
-title: Bidirectional MCP Server
+title: MCP Agent Server
 ---
 
-# Bidirectional MCP Server (aihub_mcp)
+# MCP Agent Server
 
-The `aihub_mcp` module provides a full-featured MCP (Model Context Protocol) server that bridges the Swiss AI Agent
-Protocol with MCP, enabling external clients like Claude Code, Cursor, and VS Code extensions to interact with AI Hub
-agents as first-class MCP tools.
+## Concept and Purpose
 
-## Overview
+The Swiss AI-Hub can expose its AI agents as interactive tools through the Model Context Protocol (MCP). This enables
+any MCP-compatible AI assistant—whether a desktop application, development tool, or custom automation—to discover and
+use your organization's agents.
 
-Unlike the simple API wrapper MCP endpoint in `aihub_api`, this module implements bidirectional communication:
+When a user asks their AI assistant to "check our HR policies about remote work" or "summarize the latest project
+updates," the assistant can invoke your organization's agents directly. Your agents—with access to your documents,
+policies, and specialized workflows—become tools that any MCP-compatible assistant can use, extending their reach far
+beyond the platform's web interface.
 
-- **Human-in-the-Loop**: Agents can request user input via MCP elicitation
-- **LLM Sampling**: Agents can use the MCP client's LLM for completions
-- **Progress Streaming**: Real-time streaming of agent thoughts and output chunks
-- **Dynamic Discovery**: Agents are automatically discovered and exposed as MCP tools
+## Key Capabilities
 
-## Architecture
+### Interactive Agent Conversations
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                      MCP Clients                                │
-│              (Claude Code, Cursor, VS Code)                     │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │ MCP Protocol (Streamable HTTP/SSE)
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                     aihub_mcp Server                            │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌────────────────┐  │
-│  │   MCPServer     │  │ EventTranslator │  │ SamplingBridge │  │
-│  │   (FastMCP)     │  │  (SAAP ↔ MCP)   │  │ (LLM routing)  │  │
-│  └─────────────────┘  └─────────────────┘  └────────────────┘  │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌────────────────┐  │
-│  │ AgentDiscovery  │  │ ElicitHandler   │  │ ProgressStream │  │
-│  │ (Dynamic tools) │  │ (HITL ↔ Elicit) │  │ (Chunk/Thought)│  │
-│  └─────────────────┘  └─────────────────┘  └────────────────┘  │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │ NATS Pub/Sub (Swiss AI Agent Protocol)
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                      AI Hub Agents                              │
-│              (RAGAgent, ChatAgent, etc.)                        │
-└─────────────────────────────────────────────────────────────────┘
-```
+Users can chat with organizational agents through any MCP-compatible assistant. An agent configured to understand your
+company policies can answer employee questions. A documentation agent can help users find information across your
+knowledge bases. This happens within whatever interface the user prefers—whether a desktop app, IDE, or custom
+application.
 
-## Event Translation
+### Human-in-the-Loop Interaction
 
-The server translates between Swiss AI Agent Protocol events and MCP protocol:
+When an agent workflow requires human input—such as confirming an action, providing clarification, or choosing between
+alternatives—the request appears directly in the user's AI assistant interface. The user provides input, and the agent
+continues its work. This preserves the collaborative nature of agent workflows even when agents are invoked remotely.
 
-| SAAP Event                    | MCP Equivalent           | Direction       |
-| ----------------------------- | ------------------------ | --------------- |
-| `UserMessageEvent`            | Tool invocation request  | Client → Server |
-| `HumanInTheLoopRequestEvent`  | Elicitation request      | Server → Client |
-| `HumanInTheLoopResponseEvent` | Elicitation response     | Client → Server |
-| `ChunkEvent`                  | Progress notification    | Server → Client |
-| `ThoughtEvent`                | Progress notification    | Server → Client |
-| `StopEvent`                   | Tool execution complete  | Server → Client |
-| `ExceptionEvent`              | Tool execution error     | Server → Client |
-| Agent LLM request             | `sampling/createMessage` | Server → Client |
+### Real-Time Progress Visibility
 
-## Configuration
+Long-running agent operations provide progress updates as they work. Users see the agent's reasoning steps and partial
+outputs in real time, maintaining awareness of what the agent is doing without waiting for final results. This
+transparency helps users understand agent behavior and intervene if needed.
 
-Set environment variables or create a `.env` file:
+### Consistent Access Control
 
-```bash
-# Server
-MCP_HOST=0.0.0.0
-MCP_PORT=8001
-MCP_PATH=/mcp
-MCP_TRANSPORT=http  # or 'sse' for backward compatibility
+The same permissions that govern agent access through the web interface apply when agents are invoked via MCP. Users
+only see and use agents they are authorized to access. All interactions are logged for compliance and auditing purposes.
 
-# Authentication
-MCP_API_KEY=your-secret-key
+## Business Value
 
-# NATS
-NATS_URL=nats://localhost:4222
+### Extended Agent Reach
 
-# Observability
-MCP_TRACING_ENABLED=true
-MCP_DEBUG=false
-```
+Making agents available through MCP extends their value beyond the platform's native interfaces. Users who prefer other
+AI assistants—whether for accessibility, workflow integration, or personal preference—gain access to organizational
+agents through tools they already use. This increases adoption and return on investment in agent development.
 
-## Running the Server
+### Seamless Integration
 
-### Standalone
+Organizations can integrate AI-Hub agents into existing workflows and tools. Developers can access code review agents
+from their IDE. Business analysts can query data agents from desktop assistants. Automation pipelines can invoke agents
+programmatically. The same agents serve all these use cases consistently.
 
-```bash
-cd aihub_mcp
-poetry install
-poetry run python -m aihub_mcp
-```
+### Consistent AI Experience
 
-### With Docker
+Whether users interact with agents through the web interface, team chat integrations, or third-party assistants, they
+receive the same capabilities and quality of response. Agents access the same knowledge bases and follow the same
+workflows regardless of how they are invoked.
 
-```bash
-docker run -p 8001:8001 aihub_mcp
-```
+### Reduced Context Switching
 
-## Client Configuration
+Users can access organizational knowledge without switching applications. Instead of navigating to the AI-Hub web
+interface, they ask questions directly from whatever tool they are using. This keeps users focused on their primary
+tasks while still benefiting from agent capabilities.
 
-### Claude Code
+## How It Works
 
-Add to `.mcp.json`:
+The platform exposes agents through the Model Context Protocol (MCP), an emerging standard for connecting AI assistants
+to external capabilities. Any MCP-compatible client can discover available agents and invoke them as tools.
 
-```json
-{
-  "mcpServers": {
-    "aihub_agents": {
-      "type": "http",
-      "url": "http://localhost:8001/mcp",
-      "headers": {
-        "X-API-Key": "your-api-key"
-      }
-    }
-  }
-}
-```
+From the user's perspective, organizational agents appear alongside other capabilities in their AI assistant. They can
+invoke agents through natural conversation, and the assistant handles the details of connecting to the platform,
+authenticating, and managing the interaction.
 
-### Cursor
+Administrators configure which agents are exposed through MCP and can monitor usage through the platform's standard
+observability tools.
 
-Configure in Cursor settings → MCP Servers:
+## Use Cases
 
-- URL: `http://localhost:8001/mcp`
-- Type: HTTP
-- API Key: Your configured key
+**For developers**: Access code review agents, documentation agents, and architecture guidance directly from your IDE
+using tools like Claude Code, Cursor, or VS Code extensions.
 
-## Features
+**For business users**: Query HR policy agents, project status agents, or document analysis agents from desktop AI
+assistants like Claude Desktop.
 
-### Dynamic Agent Discovery
+**For automation**: Integrate agents into workflows and pipelines using any MCP-compatible automation framework.
 
-Agents are automatically discovered via NATS and exposed as MCP tools. Each agent's start events become tools with
-dynamically generated schemas.
+**For custom applications**: Build applications that leverage organizational agents through the standard MCP interface.
 
-```python
-# Example: RAGAgent becomes an MCP tool
-# Tool name: rag_agent_user_message
-# Description: Chat with the RAGAgent...
-```
+## Getting Started
 
-### Human-in-the-Loop via Elicitation
+To use AI-Hub agents from an MCP-compatible client, you need:
 
-When an agent workflow needs human input, the request is translated to MCP elicitation:
+1. An AI assistant that supports MCP (such as Claude Desktop, Claude Code, Cursor, or compatible applications)
+2. Access credentials for the Swiss AI-Hub platform
+3. Permission to access the agents you want to use
 
-```python
-# Agent code
-return HumanInTheLoop.input.invoke("What document should I analyze?")
-
-# MCP client sees elicitation request
-# User provides input
-# Response flows back to agent
-```
-
-### LLM Sampling
-
-Agents can request completions from the MCP client's LLM:
-
-```python
-# Agent requests sampling
-result = await ctx.sample("Summarize this document...")
-
-# MCP client's LLM provides completion
-# Result returned to agent
-```
-
-### Progress Streaming
-
-`ChunkEvent` and `ThoughtEvent` stream as progress notifications:
-
-```python
-# Agent emits chunks
-yield ChunkEvent(content="Processing...")
-
-# MCP client sees real-time progress
-```
-
-## Security
-
-### API Key Authentication
-
-API keys are validated from request headers:
-
-- `X-API-Key` header
-- `Authorization: Bearer <token>` header
-
-### Best Practices
-
-1. Use strong, unique API keys per client
-2. Enable HTTPS in production
-3. Configure proper CORS origins
-4. Monitor with tracing enabled
-
-## Observability
-
-OpenTelemetry instrumentation provides:
-
-- Span traces for tool invocations
-- Elicitation request/response traces
-- Sampling request traces
-- Progress event traces
-
-View traces in Arize Phoenix (http://localhost:6006) when `MCP_TRACING_ENABLED=true`.
+Your MCP client's configuration points to your organization's Swiss AI-Hub instance. Once configured, agents appear
+automatically as available tools in your assistant.
 
 ## Related
 
 - [MCP Protocol Overview](../index.en.md)
-- [Swiss AI Agent Protocol](../../2_architecture/3_swiss_ai_agent_protocol/index.en.md)
-- [ADR: MCP Bidirectional Agent Interaction](../../../arc42/decisions/2025_12_22_mcp_bidirectional_agent_interaction.md)
+- [Agents](../../5_agents/index.en.md)
+- [Access Management](../../11_access_management/index.en.md)
