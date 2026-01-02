@@ -7,11 +7,12 @@ from typing import TYPE_CHECKING, Any
 
 from fastmcp import Context
 
-if TYPE_CHECKING:
-    from aihub_mcp.tracing.MCPTracer import MCPTracer
-    from aihub_mcp.translation.ElicitationHandler import ElicitationHandler
-    from aihub_mcp.translation.ProgressStreamer import ProgressStreamer
-    from aihub_mcp.translation.SamplingBridge import SamplingBridge
+from aihub_lib.nats.events import BaseEvent
+from aihub_lib.nats.publishers.JSPublisher import JSPublisher
+from aihub_mcp.tracing.MCPTracer import MCPTracer
+from aihub_mcp.translation.ElicitationHandler import ElicitationHandler
+from aihub_mcp.translation.ProgressStreamer import ProgressStreamer
+from aihub_mcp.translation.SamplingBridge import SamplingBridge
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +60,7 @@ class EventTranslator:
 
         self._nc: Any = None  # NATS connection
         self._js: Any = None  # JetStream context
+        self._js_publisher: JSPublisher | None = None
 
     async def connect(self) -> None:
         """Establish connection to NATS server."""
@@ -66,6 +68,7 @@ class EventTranslator:
 
         self._nc = await nats.connect(self._nats_url)
         self._js = self._nc.jetstream()
+        self._js_publisher = JSPublisher("MCPEventTranslator", self._js)
         logger.info(f"Connected to NATS: {self._nats_url}")
 
     async def disconnect(self) -> None:
@@ -263,8 +266,9 @@ class EventTranslator:
         sub = await self._nc.subscribe(display_subject, cb=handle_display_event)
 
         try:
-            # Publish the start event
-            await self._js.publish(subject, json.dumps(start_event).encode())
+            # Publish the start event using JSPublisher for proper headers and tracing
+            event = BaseEvent.deserialize_event(start_event)
+            await self._js_publisher.publish_event(event, subject)
             logger.info(f"Published start event to {subject}")
 
             if self._tracer and span:
@@ -314,13 +318,14 @@ class EventTranslator:
         if "UserMessageEvent" in event_name:
             base_event["user"] = user_identity
 
-            # Convert message string to proper messages format if needed
+            # Convert message string to proper LlamaIndex ChatMessage format if needed
             if "message" in event_data and "messages" not in event_data:
                 message_content = event_data.pop("message")
                 base_event["messages"] = [
                     {
                         "role": "user",
-                        "content": message_content,
+                        "additional_kwargs": {},
+                        "blocks": [{"block_type": "text", "text": message_content}],
                     }
                 ]
 
@@ -413,7 +418,8 @@ class EventTranslator:
             event_id=event_id,
         )
 
-        await self._js.publish(subject, json.dumps(response_event).encode())
+        event = BaseEvent.deserialize_event(response_event)
+        await self._js_publisher.publish_event(event, subject)
         logger.info(f"Published HITL response to {subject}")
 
     async def _publish_sampling_response(
@@ -455,5 +461,6 @@ class EventTranslator:
             event_id=event_id,
         )
 
-        await self._js.publish(subject, json.dumps(response_event).encode())
+        event = BaseEvent.deserialize_event(response_event)
+        await self._js_publisher.publish_event(event, subject)
         logger.info(f"Published sampling response to {subject}")

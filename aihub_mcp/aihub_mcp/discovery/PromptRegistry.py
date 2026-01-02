@@ -1,10 +1,9 @@
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-from fastmcp.prompts.prompt import PromptMessage, TextContent  # type: ignore[attr-defined]
+from fastmcp.prompts.prompt import PromptMessage, TextContent
 
-if TYPE_CHECKING:
-    from aihub_mcp.server.MCPServer import MCPServer
+from aihub_mcp.server.MCPServer import MCPServer
 
 logger = logging.getLogger(__name__)
 

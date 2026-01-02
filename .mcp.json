@@ -2,7 +2,10 @@
   "mcpServers": {
     "aihub_agents": {
       "type": "http",
-      "url": "http://localhost:8001/mcp/"
+      "url": "http://127.0.0.1:8001/mcp/",
+      "headers": {
+        "Authorization": "Bearer playground-key"
+      }
     },
     "phoenix": {
       "command": "docker",

@@ -135,14 +135,17 @@ class ApiKeyAuth:
         return True
 
     def _extract_key(self, headers: dict[str, str]) -> str | None:
-        """Extract API key from headers."""
+        """Extract API key from headers (case-insensitive lookup)."""
+        # Normalize headers to lowercase for case-insensitive lookup
+        lower_headers = {k.lower(): v for k, v in headers.items()}
+
         # Check X-API-Key header
-        api_key = headers.get(self.HEADER_NAME)
+        api_key = lower_headers.get(self.HEADER_NAME.lower())
         if api_key:
             return api_key
 
         # Check Authorization header (Bearer token)
-        auth_header = headers.get("Authorization", "")
+        auth_header = lower_headers.get("authorization", "")
         if auth_header.startswith(self.BEARER_PREFIX):
             return auth_header[len(self.BEARER_PREFIX) :]
 

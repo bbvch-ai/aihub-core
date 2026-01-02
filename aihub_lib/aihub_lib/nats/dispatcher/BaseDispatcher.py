@@ -117,7 +117,9 @@ class BaseDispatcher(abc.ABC):
 
         logger.debug(f"Handling event {event.event_name} for subject {topic}")
 
-        await self.event_store.ensure_event_stored(topic.execution_context_id, event)
+        # Add the event directly to the store since we already have it
+        # This avoids timing issues with waiting for a second delivery via subscription
+        self.event_store._add_event_to_store(topic.execution_context_id, event)
 
     @abc.abstractmethod
     async def is_step_ready(

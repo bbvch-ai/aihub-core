@@ -1,13 +1,12 @@
 import json
 import logging
 import re
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from fastmcp import Context
 
-if TYPE_CHECKING:
-    from aihub_mcp.server.MCPServer import MCPServer
-    from aihub_mcp.translation.EventTranslator import EventTranslator
+from aihub_mcp.server.MCPServer import MCPServer
+from aihub_mcp.translation.EventTranslator import EventTranslator
 
 logger = logging.getLogger(__name__)
 
@@ -250,6 +249,8 @@ class AgentToolRegistry:
                     "id": "mcp_client",
                     "name": "MCP Client",
                     "email": "mcp@aihub.local",
+                    "roles": ["user"],
+                    "source": "mcp",
                 },
             }
 

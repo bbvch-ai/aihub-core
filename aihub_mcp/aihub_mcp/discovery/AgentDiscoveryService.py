@@ -3,20 +3,15 @@ import json
 import logging
 import time
 import uuid
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import (  # type: ignore[import-untyped]
-    ClassDiscoveryRequestEvent,
-)
-from aihub_lib.nats.topic_managers.agents.AgentTopicManager import (  # type: ignore[import-untyped]
-    AgentTopicManager,
-)
+from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
+from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 
-if TYPE_CHECKING:
-    from aihub_mcp.server.AgentToolRegistry import AgentToolRegistry
-    from aihub_mcp.server.MCPServer import MCPServer
-    from aihub_mcp.server.ResourceRegistry import ResourceRegistry
-    from aihub_mcp.settings.MCPSettings import MCPSettings
+from aihub_mcp.server.AgentToolRegistry import AgentToolRegistry
+from aihub_mcp.server.MCPServer import MCPServer
+from aihub_mcp.server.ResourceRegistry import ResourceRegistry
+from aihub_mcp.settings.MCPSettings import MCPSettings
 
 logger = logging.getLogger(__name__)
 
