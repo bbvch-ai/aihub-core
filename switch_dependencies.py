@@ -48,6 +48,7 @@ MICROSERVICE_DIRS = [
     "aihub_agent",
     "aihub_api",
     "aihub_bot",
+    "aihub_mcp",
     "aihub_pipeline",
     "aihub_process",
 ]

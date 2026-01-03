@@ -25,6 +25,8 @@ aihub_mcp/                    # Scope root
 │   ├── discovery/            # Agent discovery
 │   │   ├── AgentDiscoveryService.py  # Subscribe to agent discovery
 │   │   └── PromptRegistry.py     # Agent prompt templates
+│   ├── tracing/              # Observability
+│   │   └── MCPTracer.py      # OpenTelemetry tracing integration
 │   ├── auth/                 # Authentication
 │   │   └── ApiKeyAuth.py     # API key authentication
 │   ├── runners/              # Server runners
@@ -32,7 +34,7 @@ aihub_mcp/                    # Scope root
 │   └── settings/             # Configuration
 │       └── MCPSettings.py    # pydantic-settings configuration
 ├── playground/               # Interactive testing scripts
-│   └── server/               # MCP server playground
+│   └── server/               # MCP server playground (no auth required)
 │       └── main.py           # Run with: make playground
 └── tests/                    # Unit and integration tests
     └── integration/          # Tests requiring running services
@@ -125,17 +127,35 @@ sampling_response = await ctx.sample(
 ## Running the Server
 
 ```bash
-# Standalone
+# Standalone (production mode - requires MCP_API_KEY)
 cd aihub_mcp
 poetry install
-make run
+MCP_API_KEY=your-secret-key make run
 
 # Or directly
-poetry run python -m aihub_mcp
+MCP_API_KEY=your-secret-key poetry run python -m aihub_mcp
 
-# Interactive playground (debug mode with example commands)
+# Interactive playground (no auth required for local testing)
 make playground
 ```
+
+## Docker Deployment
+
+The MCP server is included in docker-compose for `local`, `nightly`, and `latest` stages:
+
+```yaml
+# Service configuration in docker-compose
+mcp:
+  container_name: mcp
+  environment:
+    MCP_HOST: "0.0.0.0"
+    MCP_PORT: "8001"
+    MCP_API_KEY: ${MCP_API_KEY}
+    MCP_REQUIRE_AUTH: "true"
+    MCP_NATS_URL: nats://nats:4222
+```
+
+Exposed via Traefik at `/mcp` path with TLS.
 
 ## Integration with aihub_api
 
