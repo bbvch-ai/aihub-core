@@ -49,8 +49,14 @@ ARG VERSION
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
+    POETRY_VERSION=2.1.1 \
+    POETRY_HOME="/opt/poetry" \
+    POETRY_NO_INTERACTION=1 \
+    POETRY_VIRTUALENVS_IN_PROJECT=1 \
+    POETRY_VIRTUALENVS_CREATE=1 \
+    POETRY_CACHE_DIR=/tmp/poetry_cache \
     PYTHONPATH=/app \
-    PATH="/app/.venv/bin:/opt/poetry/bin:$PATH"
+    PATH="/app/aihub_mcp/.venv/bin:/opt/poetry/bin:$PATH"
 
 # Setup users
 ARG USERNAME=user
@@ -64,6 +70,7 @@ RUN groupadd --gid "$USER_GID" "$USERNAME" && \
     apt-get install -y --no-install-recommends \
     curl \
     make && \
+    curl -sSL https://install.python-poetry.org | python3 - --version "${POETRY_VERSION}" && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
