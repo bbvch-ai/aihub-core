@@ -550,17 +550,17 @@ services:
     image: ghcr.io/bbvch-ai/aihub-core/valkey:8.0.5
     restart: always
     # Password authentication enabled via --requirepass
-    command: valkey-server --save 30 1 --loglevel warning --requirepass ${VALKEY_PASSWORD}
+    command: valkey-server --save 30 1 --loglevel warning --requirepass ${REDIS_PASSWORD}
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/valkey-data:/data
     ports:
       - "6379:6379"
     healthcheck:
       # Use REDISCLI_AUTH to authenticate for health check
-      test: [ "CMD-SHELL", "REDISCLI_AUTH=${VALKEY_PASSWORD} valkey-cli ping" ]
+      test: [ "CMD-SHELL", "REDISCLI_AUTH=${REDIS_PASSWORD} valkey-cli ping" ]
       start_period: 5s
     environment:
-      VALKEY_PASSWORD: ${VALKEY_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     logging:
       driver: json-file
       options:
@@ -922,7 +922,7 @@ services:
       DATABASE_PORT: 5432
       DATABASE_NAME: openwebui
       # Redis with password authentication
-      REDIS_URL: redis://default:${VALKEY_PASSWORD}@valkey:6379/1
+      REDIS_URL: redis://default:${REDIS_PASSWORD}@valkey:6379/1
       REDIS_KEY_PREFIX: open-webui
 
       # --- Web Server ---
@@ -930,7 +930,7 @@ services:
       ENABLE_WEBSOCKET_SUPPORT: True
       WEBSOCKET_MANAGER: redis
       # Redis with password authentication
-      WEBSOCKET_REDIS_URL: redis://default:${VALKEY_PASSWORD}@valkey:6379/1
+      WEBSOCKET_REDIS_URL: redis://default:${REDIS_PASSWORD}@valkey:6379/1
       THREAD_POOL_SIZE: 32
       CORS_ALLOW_ORIGIN: "*" # TODO: Make this more secure
 
@@ -1320,7 +1320,7 @@ services:
       # REDIS
       REDIS_URL: redis://valkey:6379
       # Redis/Valkey password
-      REDIS_PASSWORD: ${VALKEY_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
 
       # Jupyter (for open-webui code interpreter)
       JUPYTER_URL: http://jupyter:8888
@@ -1440,7 +1440,7 @@ services:
       # REDIS
       REDIS_URL: redis://valkey:6379
       # Redis/Valkey password
-      REDIS_PASSWORD: ${VALKEY_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -1502,7 +1502,7 @@ services:
       # REDIS
       REDIS_URL: redis://valkey:6379
       # Redis/Valkey password
-      REDIS_PASSWORD: ${VALKEY_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -1559,7 +1559,7 @@ services:
       # REDIS
       REDIS_URL: redis://valkey:6379
       # Redis/Valkey password
-      REDIS_PASSWORD: ${VALKEY_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -1595,7 +1595,7 @@ services:
       # REDIS
       REDIS_URL: redis://valkey:6379
       # Redis/Valkey password
-      REDIS_PASSWORD: ${VALKEY_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
 
       # Channel Configuration (Teams or Slack)
       EXPERT_ASKING_CHANNEL_TYPE: ${EXPERT_ASKING_CHANNEL_TYPE}
