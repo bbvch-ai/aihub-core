@@ -831,7 +831,6 @@ services:
       DATABASE_HOST: localhost
       DATABASE_PORT: 5432
       DATABASE_NAME: openwebui
-
       # Redis with password authentication
       REDIS_URL: redis://default:${REDIS_TOKEN}@localhost:6379/10
       REDIS_KEY_PREFIX: open-webui

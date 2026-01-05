@@ -1229,7 +1229,7 @@ services:
       DATABASE_PORT: 5432
       DATABASE_NAME: openwebui
       # Redis with password authentication
-      REDIS_URL: redis://default:${REDIS_TOKEN}@{{ 'localhost' if stage == 'dev' else 'valkey' }}:6379/1
+      REDIS_URL: redis://default:${REDIS_TOKEN}@{{ 'localhost' if stage == 'dev' else 'valkey' }}:6379/10
       REDIS_KEY_PREFIX: open-webui
 
       # --- Web Server ---
@@ -1237,7 +1237,7 @@ services:
       ENABLE_WEBSOCKET_SUPPORT: True
       WEBSOCKET_MANAGER: redis
       # Redis with password authentication
-      WEBSOCKET_REDIS_URL: redis://default:${REDIS_TOKEN}@{{ 'localhost' if stage == 'dev' else 'valkey' }}:6379/1
+      WEBSOCKET_REDIS_URL: redis://default:${REDIS_TOKEN}@{{ 'localhost' if stage == 'dev' else 'valkey' }}:6379/11
       THREAD_POOL_SIZE: {{ '8' if stage == 'dev' else '32' }}
       CORS_ALLOW_ORIGIN: "*" # TODO: Make this more secure
 
