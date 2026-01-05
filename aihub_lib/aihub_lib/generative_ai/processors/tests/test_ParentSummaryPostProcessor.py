@@ -19,7 +19,6 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_collection, run_with_event_loop
 
-
 scenarios("features/parent_summary_post_processor.feature")
 
 

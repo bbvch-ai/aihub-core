@@ -5,7 +5,7 @@ import logging
 import os
 import re
 from io import BytesIO
-from typing import Any
+from typing import Annotated, Any
 
 import httpx
 from bs4 import BeautifulSoup
@@ -16,6 +16,7 @@ from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
 from pypdf import PdfReader, PdfWriter
+from pypdf.errors import PdfReadError, PdfStreamError
 from pypdf.generic import RectangleObject
 from tenacity import (
     AsyncRetrying,
@@ -36,9 +37,38 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
 
 logger = logging.getLogger(__name__)
 
+# A4 page dimensions in PostScript points (72 points = 1 inch)
+# 210mm × 297mm ≈ 595pt × 842pt
+# Used as fallback when PDF pages have missing/invalid mediabox
+A4_WIDTH_POINTS = 595
+A4_HEIGHT_POINTS = 842
 
-def _fix_pdf_mediabox(content: bytes, filename: str) -> bytes:
-    """Fix PDF files with missing or invalid page dimensions (mediabox)."""
+
+def _fix_pdf_mediabox(
+    content: Annotated[bytes, "Raw PDF file content"],
+    filename: Annotated[str, "Original filename for extension check and logging"],
+) -> bytes:
+    """
+    Preprocess PDF files to fix missing or invalid page dimensions.
+
+    ### Why This Fix?
+    Some PDF generators (notably certain scanners and legacy export tools) create
+    pages without proper mediabox definitions. Docling's PDF parser fails on such
+    files with dimension-related errors. This function detects and repairs these
+    malformed PDFs before conversion.
+
+    ### Invalid MediaBox Conditions
+    - `mediabox is None`: Page has no dimension metadata
+    - `width == 0` or `height == 0`: Degenerate page dimensions
+
+    ### Why A4 Fallback?
+    A4 (210×297mm) is the ISO standard and most common paper size globally,
+    making it a reasonable default for documents with unknown dimensions.
+
+    ### Graceful Degradation
+    If PDF processing fails, original content is returned unchanged to allow
+    downstream processing to attempt conversion or report errors appropriately.
+    """
     if not filename.lower().endswith(".pdf"):
         return content
 
@@ -48,13 +78,13 @@ def _fix_pdf_mediabox(content: bytes, filename: str) -> bytes:
 
         for page in reader.pages:
             if page.mediabox is None or page.mediabox.width == 0 or page.mediabox.height == 0:
-                page.mediabox = RectangleObject((0, 0, 595, 842))  # A4
+                page.mediabox = RectangleObject((0, 0, A4_WIDTH_POINTS, A4_HEIGHT_POINTS))
             writer.add_page(page)
 
         output = BytesIO()
         writer.write(output)
         return output.getvalue()
-    except Exception as e:
+    except (PdfReadError, PdfStreamError) as e:
         logger.warning(f"Could not preprocess PDF {filename}: {e}")
         return content
 

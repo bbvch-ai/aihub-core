@@ -11,7 +11,6 @@ from aihub_lib.persistence.rag.vectors.node_metadata import CREATED_AT, DOCUMENT
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_collection, run_with_event_loop
 
-
 scenarios("features/vector_prev_next_post_processor.feature")
 
 
