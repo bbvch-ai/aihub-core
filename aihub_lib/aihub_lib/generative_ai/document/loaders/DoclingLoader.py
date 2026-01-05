@@ -4,7 +4,8 @@ import html
 import logging
 import os
 import re
-from typing import Any
+from io import BytesIO
+from typing import Annotated, Any
 
 import httpx
 from bs4 import BeautifulSoup
@@ -14,6 +15,9 @@ from fsspec import AbstractFileSystem
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
+from pypdf import PdfReader, PdfWriter
+from pypdf.errors import PdfReadError, PdfStreamError
+from pypdf.generic import RectangleObject
 from tenacity import (
     AsyncRetrying,
     Retrying,
@@ -32,6 +36,57 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
 )
 
 logger = logging.getLogger(__name__)
+
+# A4 page dimensions in PostScript points (72 points = 1 inch)
+# 210mm × 297mm ≈ 595pt × 842pt
+# Used as fallback when PDF pages have missing/invalid mediabox
+A4_WIDTH_POINTS = 595
+A4_HEIGHT_POINTS = 842
+
+
+def _fix_pdf_mediabox(
+    content: Annotated[bytes, "Raw PDF file content"],
+    filename: Annotated[str, "Original filename for extension check and logging"],
+) -> bytes:
+    """
+    Preprocess PDF files to fix missing or invalid page dimensions.
+
+    ### Why This Fix?
+    Some PDF generators (notably certain scanners and legacy export tools) create
+    pages without proper mediabox definitions. Docling's PDF parser fails on such
+    files with dimension-related errors. This function detects and repairs these
+    malformed PDFs before conversion.
+
+    ### Invalid MediaBox Conditions
+    - `mediabox is None`: Page has no dimension metadata
+    - `width == 0` or `height == 0`: Degenerate page dimensions
+
+    ### Why A4 Fallback?
+    A4 (210×297mm) is the ISO standard and most common paper size globally,
+    making it a reasonable default for documents with unknown dimensions.
+
+    ### Graceful Degradation
+    If PDF processing fails, original content is returned unchanged to allow
+    downstream processing to attempt conversion or report errors appropriately.
+    """
+    if not filename.lower().endswith(".pdf"):
+        return content
+
+    try:
+        reader = PdfReader(BytesIO(content))
+        writer = PdfWriter()
+
+        for page in reader.pages:
+            if page.mediabox is None or page.mediabox.width == 0 or page.mediabox.height == 0:
+                page.mediabox = RectangleObject((0, 0, A4_WIDTH_POINTS, A4_HEIGHT_POINTS))
+            writer.add_page(page)
+
+        output = BytesIO()
+        writer.write(output)
+        return output.getvalue()
+    except (PdfReadError, PdfStreamError) as e:
+        logger.warning(f"Could not preprocess PDF {filename}: {e}")
+        return content
 
 
 class DoclingTransientError(Exception):
@@ -84,6 +139,7 @@ class DoclingLoader(BaseReader):
 
     def _read_file_sync(self, fs: AbstractFileSystem, file: str) -> str:
         file_content = fs.cat_file(file)
+        file_content = _fix_pdf_mediabox(file_content, file)
         return base64.b64encode(file_content).decode("utf-8")
 
     def _process_docling_response(
@@ -296,16 +352,14 @@ class DoclingLoader(BaseReader):
                 return result_response.json()
 
             elif task_status["task_status"] == "failure":
-                error_msg = "Unknown error"
-                if task_status.get("task_meta"):
-                    error_msg = task_status["task_meta"].get("error", error_msg)
-                raise DoclingTransientError(f"Docling conversion task failed: {error_msg}")
+                # Note: docling-serve does not currently expose failure reasons in the API
+                # See: https://github.com/docling-project/docling-serve/issues/365
+                raise DoclingTransientError(f"Docling conversion task {task_id} failed. Full response: {task_status}")
             elif task_status["task_status"] in ["pending", "started"]:
                 await asyncio.sleep(self.config.POLL_INTERVAL)
             elif task_status["task_status"] == "skipped":
                 raise DoclingTransientError(
-                    f"Docling conversion task was skipped: "
-                    f"{task_status.get('task_meta', {}).get('reason', 'Unknown reason')}"
+                    f"Docling conversion task {task_id} was skipped. Full response: {task_status}"
                 )
             else:
                 raise DoclingTransientError(f"Unknown task status: {task_status['task_status']}")
