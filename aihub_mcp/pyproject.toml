@@ -86,4 +86,4 @@ markers = [
     "integration: mark a test as an integration test",
 ]
 addopts = "--strict-markers"
-pythonpath = ["."]
+pythonpath = [".", "playground/testing"]

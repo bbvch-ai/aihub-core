@@ -15,14 +15,15 @@ pr-ready: format lint
 
 test-cov:
 	@echo "Running tests in aihub_mcp with coverage..."
-	poetry run pytest --cov=. \
+	poetry run pytest playground/testing/tests \
+	                  --cov=. \
 	                  --cov-report=xml:coverage.xml \
 	                  --cov-report=term-missing \
 	                  --junitxml=pytest.xml
 
 test:
 	@echo "Running tests in aihub_mcp..."
-	poetry run pytest
+	poetry run pytest playground/testing/tests
 
 use-local-core:
 	@echo "Switching to local aihub_lib..."
