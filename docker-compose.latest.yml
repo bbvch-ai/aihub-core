@@ -284,7 +284,8 @@ services:
       MINIO_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
       MINIO_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
       # Token-based authentication - root password for Milvus
-      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+      # Milvus reads this env var to set the initial root password
+      COMMON_SECURITY_DEFAULTROOTPASSWORD: ${MILVUS_ROOT_PASSWORD}
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/milvus-data:/var/lib/milvus
       - ./configs/milvus/milvus-config.latest.yml:/milvus/configs/milvus.yaml
@@ -310,7 +311,7 @@ services:
       - milvus-standalone
     environment:
       MILVUS_URL: milvus-standalone:19530
-      # Milvus authentication credentials
+      # Milvus authentication credentials (root username is hardcoded in Milvus)
       ATTU_LOGIN_USERNAME: root
       ATTU_LOGIN_PASSWORD: ${MILVUS_ROOT_PASSWORD}
     healthcheck:
@@ -524,15 +525,15 @@ services:
     image: ghcr.io/bbvch-ai/aihub-core/valkey:8.0.5
     restart: always
     # Password authentication enabled via --requirepass
-    command: valkey-server --save 30 1 --loglevel warning --requirepass ${REDIS_PASSWORD}
+    command: valkey-server --save 30 1 --loglevel warning --requirepass ${REDIS_TOKEN}
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/valkey-data:/data
     healthcheck:
       # Use REDISCLI_AUTH to authenticate for health check
-      test: [ "CMD-SHELL", "REDISCLI_AUTH=${REDIS_PASSWORD} valkey-cli ping" ]
+      test: [ "CMD-SHELL", "REDISCLI_AUTH=${REDIS_TOKEN} valkey-cli ping" ]
       start_period: 5s
     environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_TOKEN: ${REDIS_TOKEN}
     logging:
       driver: json-file
       options:
@@ -840,7 +841,7 @@ services:
       DATABASE_PORT: 5432
       DATABASE_NAME: openwebui
       # Redis with password authentication
-      REDIS_URL: redis://default:${REDIS_PASSWORD}@valkey:6379/1
+      REDIS_URL: redis://default:${REDIS_TOKEN}@valkey:6379/1
       REDIS_KEY_PREFIX: open-webui
 
       # --- Web Server ---
@@ -848,7 +849,7 @@ services:
       ENABLE_WEBSOCKET_SUPPORT: True
       WEBSOCKET_MANAGER: redis
       # Redis with password authentication
-      WEBSOCKET_REDIS_URL: redis://default:${REDIS_PASSWORD}@valkey:6379/1
+      WEBSOCKET_REDIS_URL: redis://default:${REDIS_TOKEN}@valkey:6379/1
       THREAD_POOL_SIZE: 32
       CORS_ALLOW_ORIGIN: "*" # TODO: Make this more secure
 
@@ -1231,8 +1232,8 @@ services:
 
       # REDIS
       REDIS_URL: redis://valkey:6379
-      # Redis/Valkey password
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      # Redis/Valkey token
+      REDIS_TOKEN: ${REDIS_TOKEN}
 
       # Jupyter (for open-webui code interpreter)
       JUPYTER_URL: http://jupyter:8888
@@ -1347,8 +1348,8 @@ services:
 
       # REDIS
       REDIS_URL: redis://valkey:6379
-      # Redis/Valkey password
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      # Redis/Valkey token
+      REDIS_TOKEN: ${REDIS_TOKEN}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -1407,8 +1408,8 @@ services:
 
       # REDIS
       REDIS_URL: redis://valkey:6379
-      # Redis/Valkey password
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      # Redis/Valkey token
+      REDIS_TOKEN: ${REDIS_TOKEN}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -1462,8 +1463,8 @@ services:
 
       # REDIS
       REDIS_URL: redis://valkey:6379
-      # Redis/Valkey password
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      # Redis/Valkey token
+      REDIS_TOKEN: ${REDIS_TOKEN}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -1496,8 +1497,8 @@ services:
 
       # REDIS
       REDIS_URL: redis://valkey:6379
-      # Redis/Valkey password
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      # Redis/Valkey token
+      REDIS_TOKEN: ${REDIS_TOKEN}
 
       # Channel Configuration (Teams or Slack)
       EXPERT_ASKING_CHANNEL_TYPE: ${EXPERT_ASKING_CHANNEL_TYPE}

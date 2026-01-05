@@ -1040,8 +1040,9 @@ common:
     superUsers:
     # default password for root user. The maximum length is 72 characters.
     # Large numeric passwords require double quotes to avoid yaml parsing precision issues.
-    # Set via environment variable MILVUS_ROOT_PASSWORD, falls back to 'Milvus' if not set.
-    defaultRootPassword: "${MILVUS_ROOT_PASSWORD:-Milvus}"
+    # Set via environment variable COMMON_SECURITY_DEFAULTROOTPASSWORD in docker-compose
+    # Leaving this commented/empty so the environment variable takes precedence
+    # defaultRootPassword: ""
     rootShouldBindRole: false # Whether the root user should bind a role when the authorization is enabled.
     enablePublicPrivilege: true # Whether to enable public privilege
     rbac:
