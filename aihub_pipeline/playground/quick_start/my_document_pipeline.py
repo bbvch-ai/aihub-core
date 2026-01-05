@@ -1,5 +1,6 @@
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.nats.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
 from dagster import AssetKey, Definitions, DynamicPartitionsDefinition
 
@@ -33,7 +34,7 @@ DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])
 DOCUMENT_KEY = AssetKey(["playground", "documents"])
 NODES_KEY = AssetKey(["playground", "nodes"])
 
-CONTAINER_NAME = "defaultknowledge"
+CONTAINER_NAME = AIHubSettings().DEFAULT_BUCKET_NAME
 
 # LLM configuration for document parsing and node processing
 llm_config = LLMConfig(model_name="text-generation/nano")
@@ -52,7 +53,8 @@ assets = [
         DOCUMENT_KEY,
         data_lake_key=DATA_LAKE_KEY,
         partitions=document_partitions,
-        enable_table_refinement=False,
+        enable_table_refinement=True,
+        enable_figure_descriptions=True,
     ),
     # Nodes factory chunks documents into searchable nodes with embeddings
     nodes_factory(NODES_KEY, document_key=DOCUMENT_KEY, partitions=document_partitions),

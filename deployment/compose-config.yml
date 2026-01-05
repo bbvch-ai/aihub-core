@@ -81,11 +81,29 @@ image_tags:
     nightly: rag_agent:nightly
     latest: rag_agent:latest
 
+  expert_rag_agent:
+    build: localbuild
+    local: expert_rag_agent:latest
+    nightly: expert_rag_agent:nightly
+    latest: expert_rag_agent:latest
+
+  expert_asking_agent:
+    build: localbuild
+    local: expert_asking_agent:latest
+    nightly: expert_asking_agent:nightly
+    latest: expert_asking_agent:latest
+
   default_rag_pipeline:
     build: localbuild
     local: default_rag_pipeline:latest
     nightly: default_rag_pipeline:nightly
     latest: default_rag_pipeline:latest
+
+  shared_rag_pipeline:
+    build: localbuild
+    local: shared_rag_pipeline:latest
+    nightly: shared_rag_pipeline:nightly
+    latest: shared_rag_pipeline:latest
 
   bot:
     build: localbuild

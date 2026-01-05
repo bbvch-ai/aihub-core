@@ -187,6 +187,7 @@ PHOENIX_SECRET="REPLACE_WITH_RANDOM_STRING"
 # Docling Configuration
 DOCLING_API_TIMEOUT="600"
 DOCLING_VLM_MODEL_NAME="text-generation/ocr"
+DOCLING_HTTP_RETRIES=3
 
 # Milvus Configuration (must match your embedding model dimensions)
 MILVUS_DIMENSION="3072"
@@ -203,6 +204,21 @@ ADMIN_EMAIL="admin@your-company.com"
 # OAuth Group Restrictions (Azure AD group names)
 DAGSTER_OAUTH_ALLOWED_GROUPS="AIHubAdmin"
 SEAWEEDFS_OAUTH_ALLOWED_GROUPS="AIHubAdmin"
+
+# -----------------------------------------------------------------------------
+# Expert Asking Agent Configuration (Optional - for expert escalation)
+# -----------------------------------------------------------------------------
+# Channel type: "teams" or "slack"
+EXPERT_ASKING_CHANNEL_TYPE="teams"
+
+# Teams Configuration (required if EXPERT_ASKING_CHANNEL_TYPE="teams")
+TEAMS_CHANNEL_ID="REPLACE_WITH_TEAMS_CHANNEL_ID"
+TEAMS_TENANT_ID="REPLACE_WITH_TEAMS_TENANT_ID"
+TEAMS_BOT_ID="REPLACE_WITH_TEAMS_BOT_ID"
+
+# Slack Configuration (required if EXPERT_ASKING_CHANNEL_TYPE="slack")
+SLACK_CHANNEL_ID=""
+SLACK_SERVICE_URL="https://slack.botframework.com"
 
 # -----------------------------------------------------------------------------
 # OpenTelemetry Configuration (Optional)
@@ -239,6 +255,12 @@ OTEL_CLOUD_HEADERS=""
 
    - Replace all `REPLACE_WITH_RANDOM_STRING` with: `openssl rand -hex 32`
    - Replace `REPLACE_WITH_16_HEX_CHARS` with: `openssl rand -hex 16`
+
+5. **Expert Escalation** (optional - for expert-in-the-loop features):
+
+   - `REPLACE_WITH_TEAMS_CHANNEL_ID` → Your Teams channel ID (format: `19:xxx@thread.tacv2`)
+   - `REPLACE_WITH_TEAMS_TENANT_ID` → Your Azure AD tenant ID
+   - `REPLACE_WITH_TEAMS_BOT_ID` → Your Azure Bot Service application ID
 
 ::: info Simplified Configuration
 Internal service endpoints (like database URLs, message queues, etc.) are now hardcoded in the Docker Compose files. You

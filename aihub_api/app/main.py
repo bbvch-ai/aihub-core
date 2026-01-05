@@ -1,3 +1,8 @@
+# ruff: noqa: E402
+from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
+
+AihubInstrumentor().instrument()
+
 from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.infrastructure.logging.logger import enable_logging
@@ -42,8 +47,16 @@ runner.mount(
     .add_agent_to_thread()
     .remove_agent_from_thread()
     .add_user_to_thread()
-    .remove_user_from_thread(),
-    AgentController(auth=auth).get_agent().get_agent_threads().get_agent_configuration().update_agent_configuration().get_agents().discover_agents(),
+    .remove_user_from_thread()
+    .get_open_chat_hitl(),
+    AgentController(auth=auth)
+    .get_agent()
+    .get_agent_threads()
+    .get_agent_configuration()
+    .update_agent_configuration()
+    .get_agents()
+    .discover_agents(),
+    AgentController(auth=auth).get_agent().get_agent_threads().get_agents().discover_agents(),
     ProcessController(auth=auth)
     .get_process()
     .get_processes()

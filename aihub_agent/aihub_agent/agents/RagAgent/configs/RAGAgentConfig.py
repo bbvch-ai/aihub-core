@@ -3,21 +3,21 @@ from typing import Annotated
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.generative_ai.retrievers import RetrieverConfig
+from aihub_lib.generative_ai.retrievers.RetrieverConfig import RetrieverConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
 
-from aihub_agent.agents.RagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
 
 
 class RAGAgentConfig(AgentConfig):
     """
-    Configuration for a RAGAgent with multiple retrieval sources and optional expert escalation.
+    Configuration for a RAGAgent with multiple retrieval sources.
 
     Supports:
     - Multiple retrievers (knowledge base + insights)
-    - Optional expert escalation when context is insufficient
+
+    Note: For expert escalation functionality, use ExpertRAGAgentConfig instead.
     """
 
     llm: Annotated[
@@ -71,9 +71,3 @@ class RAGAgentConfig(AgentConfig):
         RerankingConfig,
         Field(description="Configuration for reranking retrieved documents to improve relevance."),
     ] = RerankingConfig()
-    expert_escalation: Annotated[
-        ExpertEscalationConfig | None,
-        Field(
-            description="Expert escalation config. Enables escalation when context is insufficient.",
-        ),
-    ] = None

@@ -11,8 +11,10 @@ from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentClassDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
+from aihub_lib.nats.streams.StreamManager import StreamManager
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
+from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
@@ -193,6 +195,22 @@ class AgentTestRunner(AgentRunner):
         await self.test_event_subscriber.stop()
         await self.observe_discovery_event_subscriber.stop()
         await self.stop()
+
+    async def ensure_dependent_agent_stream(self, agent_class: str) -> None:
+        """
+        Ensure the JetStream stream exists for a dependent agent that will be delegated to.
+
+        Use this in tests when an agent delegates to another agent via agent-in-the-loop,
+        but the delegated agent's runner is not started. This creates the stream so the
+        delegation publish can succeed.
+        """
+        if not self.js:
+            raise RuntimeError("Runner must be started before ensuring dependent agent streams")
+
+        topic_manager = AgentClassTopicManager(agent_class=agent_class)
+        stream_name, stream_subject = topic_manager.get_stream()
+        stream_manager = StreamManager(self.js, stream_name, stream_subject)
+        await stream_manager.ensure_stream_exists()
 
     @property
     def has_start_event(self) -> bool:

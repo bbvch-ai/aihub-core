@@ -5,6 +5,254 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.256.9] - 2026-01-05 - Introducing Chat-Style Human-in-the-Loop for Seamless Agent Collaboration
+
+### Added
+
+- ✨ **New Chat-Style Human-in-the-Loop (HITL) Interaction**: Agents can now ask questions that appear as regular chat
+  messages, allowing users to respond by typing a normal chat message, enabling more fluid conversational workflows.
+- 🦾 **`HitlDemoAgent`**: A new demo agent has been introduced to showcase all three Human-in-the-Loop types: input,
+  confirmation, and the newly introduced chat-style interaction, providing clear examples for developers.
+- 🚀 **API Endpoint for Open Chat HITL**: A new `/threads/{thread_id}/open-chat-hitl` API endpoint has been added,
+  allowing client applications to efficiently query for active chat-style HITL requests within a thread.
+- 📄 **Dedicated Chat HITL Event Types**: New event classes (`HumanInTheLoopChatRequestEvent`,
+  `HumanInTheLoopChatResponseEvent`) and a helper class (`HumanInTheLoopChat`) have been implemented to specifically
+  support and simplify the integration of chat-style Human-in-the-Loop interactions.
+- 🌐 **Internationalization Support for Chat HITL**: Translations have been added for the new chat-style HITL request and
+  response events across supported languages (DE, EN, FR, IT), ensuring a global user experience.
+- ⚙️ **IntelliJ Run Configuration for `HitlDemoAgent`**: A new IntelliJ IDEA run configuration has been included to
+  simplify the setup and execution of the `HitlDemoAgent` for local development and testing.
+
+### Changed
+
+- 🔄 **OpenWebUI Pipeline Intelligent HITL Handling**: The OpenWebUI pipeline now intelligently detects active chat-style
+  HITL requests at the start of a user message and routes the user's input as a chat HITL response, streamlining
+  conversational turns.
+- ⚡️ **Enhanced Base HITL Events**: The core `HumanInTheLoopRequestEvent` and `HumanInTheLoopResponseEvent` have been
+  updated to incorporate the new `chat` interaction type and now utilize type generics for improved type safety and
+  clarity.
+- 🔐 **Improved Thread API Access Control**: Thread-related API endpoints in the `ThreadController` now leverage
+  extracted helper methods for more robust, consistent access checking and error handling across operations.
+- 🔌 **Application and Playground Router Integration**: The new API endpoint for retrieving open chat HITL requests has
+  been seamlessly integrated into the main application and playground router configurations.
+
+### Refactor
+
+- 🧹 **Reorganized Human-in-the-Loop Modules**: The `HumanInTheLoopInput` and `HumanInTheLoopConfirmation` helper
+  classes, along with their respective request/response event classes, have been refactored and moved into dedicated,
+  separate modules for better organization and maintainability.
+- 🏗️ **Streamlined HITL Event Imports**: Imports for Human-in-the-Loop event types have been simplified and made
+  consistent across the agent codebase and playground examples, reducing verbosity and improving code readability.
+
+---
+
+## [v0.256.8] - 2025-12-30 - Enhanced Document Upload Security and Validation
+
+### Fixed
+
+- 🔒 **Strengthened Filename Validation:** Implemented more robust and secure filename validation to prevent the upload
+  of malformed or potentially malicious filenames, including those containing path traversal sequences or invalid
+  control characters. This significantly enhances the security and integrity of uploaded documents.
+- 🐛 **Improved File Extension Handling:** Revised the logic for parsing and validating file extensions, ensuring that
+  all uploaded filenames consistently include a valid, single extension and preventing issues arising from improperly
+  formatted document types.
+
+---
+
+## [v0.256.7] - 2025-12-23 - Enhanced Agent Context Evaluation and Retrieval
+
+### Added
+
+- ✨ **Improved Context Management Visibility:** The agent now provides clearer insights into its decision-making
+  process, indicating when it has gathered sufficient information to answer a question or when it needs to perform
+  additional retrieval steps to find more relevant data.
+
+---
+
+## [v0.256.6] - 2025-12-19 - Optimized Streaming for Real-time Interactions
+
+### Changed
+
+- 🚀 **Improved Streaming Robustness:** Enhanced server-sent event (SSE) and streaming responses across chat completions
+  and agent event endpoints by adding critical HTTP headers. This prevents caching and buffering issues from
+  intermediary proxies, ensuring more reliable, real-time data delivery and a smoother user experience.
+
+---
+
+## [v0.256.5] - 2025-12-19 - Enhanced Docling Reliability with Automatic Retries
+
+### Added
+
+- ✨ **Docling API Retry Mechanism:** Introduced an automatic retry mechanism for Docling API calls, significantly
+  improving resilience against transient network errors and temporary service unresponsiveness during document
+  processing.
+- ⚙️ **`DOCLING_HTTP_RETRIES` Configuration:** Added a new configuration setting `DOCLING_HTTP_RETRIES` (defaulting to
+  3\) to control the number of retries attempted for Docling API requests, providing more control over system behavior.
+
+### Changed
+
+- 🚀 **Improved Docling Request Resilience:** Docling document conversion processes (both synchronous and asynchronous)
+  now incorporate retry logic with exponential backoff, automatically handling HTTP connection issues, timeouts, and
+  specific transient API errors.
+- 🛡️ **Refined Docling Error Handling:** Enhanced the classification of Docling API errors to differentiate between
+  transient failures (which trigger retries) and permanent issues, leading to more robust document processing.
+
+### Refactor
+
+- 🧹 **Streamlined Docling API Execution:** The underlying HTTP request execution logic for Docling API interactions has
+  been refactored into dedicated internal methods, improving code clarity and maintainability.
+
+---
+
+## [v0.256.4] - 2025-12-19 - Enhanced Document Processing: Configurable Figure Descriptions and Robustness
+
+### Added
+
+- ✨ **Configurable Figure Description Generation:** Introduced a new option to enable or disable the generation of
+  figure descriptions using a vision LLM, providing more control over document processing, with the feature enabled by
+  default.
+
+### Fixed
+
+- 🐛 **Improved Figure Description Robustness:** Added a safeguard to prevent errors when generating figure descriptions
+  for documents that lack text content, ensuring smoother processing and logging a warning instead.
+
+### Changed
+
+- ⚙️ **Updated Quick Start Pipeline:** The `my_document_pipeline` example now explicitly enables both table refinement
+  and figure description generation, showcasing recommended best practices and demonstrating the new feature.
+
+---
+
+## [v0.256.3] - 2025-12-17 - Enhanced Knowledge Management with Shared RAG Pipelines and Dynamic Buckets
+
+### Added
+
+- ✨ **Shared RAG Pipeline:** Introduced a new `shared_rag_pipeline` to process and manage shared knowledge, complete
+  with its own Docker image, Dagster configuration, and deployment setup.
+- 📦 **Dynamic Knowledge Bucket Configuration:** Added new environment variables (`AIHUB_CREATE_DEFAULT_BUCKETS`,
+  `AIHUB_DEFAULT_BUCKET_NAME`, `AIHUB_SHARED_BUCKET_NAME`, `AIHUB_DEFAULT_NAMESPACE_NAME`,
+  `AIHUB_SHARED_NAMESPACE_NAME`) to allow flexible naming and conditional creation of knowledge buckets and namespaces.
+- 🌱 **Automated Knowledge Bucket Initialization:** Implemented API startup logic to automatically create default
+  knowledge buckets and namespaces in MongoDB, ensuring consistent setup.
+- 📄 **New Docker Compose Conventions:** Added a section to `AGENTS.md` outlining best practices for Docker Compose
+  templates and environment variable usage.
+
+### Changed
+
+- ⚙️ **RAG Agent Knowledge Retrieval:** Updated `RAGAgent` and `ExpertRAGAgent` to simultaneously retrieve information
+  from both default and shared knowledge buckets and namespaces, enhancing retrieval capabilities.
+- 🔄 **Dynamic Pipeline Datalake Naming:** Configured existing RAG pipelines (`default_rag_pipeline`, playground
+  pipeline) to use dynamically defined datalake container names from `AIHubSettings`, improving configurability.
+- 💬 **Refined Condenser Prompt Instructions:** Improved the prompt instructions for the standalone question condenser
+  across all supported languages, focusing on better context resolution and preventing the addition of new information.
+  This leads to more accurate and self-contained queries.
+- 🚀 **Conditional S3 Bucket Creation:** Modified the S3 initialization script (`init-buckets.sh`) to conditionally
+  create default and shared knowledge buckets based on `AIHUB_CREATE_DEFAULT_BUCKETS` settings.
+- 💡 **Unified RAG Pipelines Development Setup:** Replaced the specific "Default RAG Pipeline Dev" run configuration with
+  a consolidated "RAG Pipelines Dev" setup to streamline development for all RAG pipelines.
+
+---
+
+## [v0.256.2] - 2025-12-17 - Platform-wide Observability Boost
+
+### Added
+
+- 📈 **Enhanced System Observability:** Integrated `AihubInstrumentor` across all core agent applications
+  (`ExpertAskingAgent`, `ExpertRAGAgent`, `LLMWrappingAgent`, `RAGAgent`) and the main API. This crucial update enables
+  comprehensive OpenTelemetry instrumentation, significantly improving distributed tracing and telemetry for better
+  system monitoring and debugging capabilities.
+
+---
+
+## [v0.256.1] - 2025-12-16 - Empowering RAG with Human Expertise: Introducing Expert RAG and Asking Agents
+
+### Added
+
+- 🦾 **Introduced Expert RAG Agent**: A new agent specifically designed for Retrieval-Augmented Generation with
+  integrated human expert escalation capabilities. This agent facilitates consulting human experts when the knowledge
+  base is insufficient.
+- 💬 **New Expert Asking Agent**: A dedicated agent to manage the end-to-end process of engaging human experts via
+  communication platforms like Microsoft Teams or Slack, capturing their responses, and integrating them into the
+  knowledge base.
+- ⚙️ **Expert Escalation Configuration**: Added new environment variables (`EXPERT_ASKING_CHANNEL_TYPE`,
+  `TEAMS_CHANNEL_ID`, `TEAMS_TENANT_ID`, `TEAMS_BOT_ID`, `SLACK_CHANNEL_ID`, `SLACK_SERVICE_URL`) to configure the
+  Expert Asking Agent for communication with human experts.
+- 🚀 **Deployment Support for Expert Agents**: Integrated `expert_rag_agent` and `expert_asking_agent` into the CI/CD
+  pipeline and Docker Compose configurations, enabling seamless building and deployment of these new agents.
+- 📄 **Expert Escalation Documentation**: Updated quick start and agent-specific documentation to guide users through
+  configuring and utilizing the new Expert RAG and Expert Asking Agents.
+- 🛠️ **Agent Test Runner Enhancement**: Added `ensure_dependent_agent_stream` method to the `AgentTestRunner` to better
+  support testing of agent-in-the-loop delegation scenarios.
+- 🔄 **Expert Conversation Formatting Utility**: Introduced a new utility function (`format_expert_conversation`) to
+  consistently format expert chat messages for use as context within agents.
+
+### Changed
+
+- 🔄 **RAG Agent Redefined**: The original RAG Agent has been streamlined to focus solely on standard RAG functionality,
+  removing its previous expert escalation logic and configuration. Expert escalation is now exclusively handled by the
+  new Expert RAG Agent.
+- 📝 **Docstring Guidelines Update**: Revised `AGENTS.md` to update docstring best practices, advising against `Args:` or
+  `Returns:` sections for conciseness.
+- 🧪 **Playground Test Restructuring**: Moved expert escalation-related playground examples and tests from the generic
+  RAG Agent to the new, dedicated Expert RAG Agent's test suite for clearer separation of concerns.
+
+### Refactor
+
+- 🧹 **Centralized RAG Logic**: Extracted common RAG preconditioning and step functions into new shared modules
+  (`aihub_agent/aihub_agent/rag/preconditions.py` and `aihub_agent/aihub_agent/rag/step_functions.py`) to promote code
+  reuse and improve modularity across RAG-based agents.
+- 🗂️ **Retriever Module Organization**: Refactored the `aihub_lib/aihub_lib/generative_ai/retrievers` module by moving
+  `RetrieverConfig` and `create_retriever` into their own dedicated files for better clarity and maintainability.
+- ⚡️ **Simplified Retrieval Event Display**: Streamlined the `retrieve_from_all_sources` utility by removing the direct
+  `displayer` argument, centralizing thought message handling at the agent step level.
+
+---
+
+## [v0.256.0] - 2025-12-16 - Enhanced Dynamic Partition Naming for Clarity
+
+### Refactor
+
+- 🔄 **Improved Dynamic Partition Naming:** Dynamic partition definitions for various data sources (documents,
+  SharePoint, and local filesystem) now automatically incorporate the `datalake_container_name` as a prefix. This
+  ensures unique and contextually relevant partition names, enhancing system clarity and preventing potential naming
+  collisions in complex environments.
+
+---
+
+## [v0.255.6] - 2025-12-12 - Smarter Data Lake Cleanup and Milvus Compatibility
+
+### Added
+
+- 🦾 **Introduced flexible document parser loader type:** The document parser can now be configured with different loader
+  types (e.g., `DOCLING`) directly via pipeline definitions, enhancing parsing capabilities.
+- 🗑️ **Automated figures folder cleanup:** When data lake files are deleted, their associated `__figures__` folders are
+  now automatically removed, improving data hygiene and ensuring complete data removal.
+- 📄 **Centralized Data Lake path building:** A new `build_path` utility method in `DataLakeResource` provides a
+  consistent way to construct relative paths within the data lake, including any configured directory prefixes.
+
+### Changed
+
+- ⚡️ **Enhanced Milvus vector store deletion:** The `PartitionAwareMilvusVectorStore` delete operation now includes a
+  backward compatibility check, ensuring correct fallback to the base class's delete method when manual partitions are
+  not in use, improving reliability.
+- 🔄 **Robust S3 directory operations:** The S3 Data Lake client now gracefully handles full S3 URIs (e.g.,
+  `s3://bucket/`) for directory existence, listing, and deletion checks, and ensures complete removal of S3 directory
+  marker objects.
+
+### Fixed
+
+- 🐛 **Corrected data lake file removal logic:** The process for identifying data lake files to remove now accurately
+  considers the configured `directory_name` prefix, ensuring that URIs are consistently built to prevent incorrect
+  deletion decisions.
+
+### Refactor
+
+- 🧹 **Streamlined figure folder naming:** The `create_figures_folder_name` utility has been refactored for cleaner and
+  more direct URI parsing, reducing reliance on `os.path` functions.
+
+---
+
 ## [v0.255.5] - 2025-12-12 - RAG Agent Rejection Message Customization
 
 ### Added

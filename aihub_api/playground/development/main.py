@@ -1,6 +1,4 @@
 # ruff: noqa: E402
-from aihub_api.routes.docling.DoclingController import DoclingController
-
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
 
 AihubInstrumentor().instrument()
@@ -16,6 +14,7 @@ from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import cr
 from aihub_lib.routes.health.HealthController import HealthController
 
 from aihub_api.routes.agent.AgentController import AgentController
+from aihub_api.routes.docling.DoclingController import DoclingController
 from aihub_api.routes.evaluation.EvaluationController import EvaluationController
 from aihub_api.routes.event.EventController import EventController
 from aihub_api.routes.file.FileController import FileController
@@ -55,7 +54,8 @@ async def main():
         .add_agent_to_thread()
         .remove_agent_from_thread()
         .add_user_to_thread()
-        .remove_user_from_thread(),
+        .remove_user_from_thread()
+        .get_open_chat_hitl(),
         ModelController(auth=auth).get_models().get_model(),
         AgentController(auth=auth).get_agent().get_agent_threads().get_agent_configuration().update_agent_configuration().get_agents().discover_agents(),
         ProcessController(auth=auth)

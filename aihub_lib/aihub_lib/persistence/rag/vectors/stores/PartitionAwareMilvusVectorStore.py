@@ -248,8 +248,11 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
         """
         Delete nodes associated with a ref_doc_id, scoped to a specific partition.
         """
-        partition_name = delete_kwargs.get("partition_name")
+        # Backward compatibility: fallback to base class if no manual partitions
+        if not self._check_has_manual_partitions():
+            return super().delete(ref_doc_id)
 
+        partition_name = delete_kwargs.get("partition_name")
         doc_ids = [ref_doc_id] if not isinstance(ref_doc_id, list) else ref_doc_id
         doc_ids_expr = ['"' + entry + '"' for entry in doc_ids]
 

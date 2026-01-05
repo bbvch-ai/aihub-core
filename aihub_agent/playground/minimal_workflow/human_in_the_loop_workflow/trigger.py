@@ -6,7 +6,7 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 )
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
-from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoop import HumanInTheLoopInput
+from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopInput
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
