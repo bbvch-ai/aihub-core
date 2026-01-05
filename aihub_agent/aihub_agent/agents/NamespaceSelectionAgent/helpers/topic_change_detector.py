@@ -1,66 +1,69 @@
 """
 Topic change detection for NamespaceSelectionAgent.
 
-Detects when a user's query has changed topic significantly,
-triggering re-evaluation of namespace selection.
+Uses LLM-based routing to detect when a user's query has changed topic
+significantly, triggering user confirmation and potential re-evaluation
+of namespace selection.
 """
 
 import logging
 
-import numpy as np
-from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
+from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.generative_ai.routing.topic_change_router import route_topic_change
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.nats.events import KnowledgeSource
+from aihub_lib.nats.events.guard import TopicChangedEvent, TopicUnchangedAcceptEvent
+from aihub_lib.nats.events.router.RouterEvent import RouterEvent
+from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.llms import LLM
 
 logger = logging.getLogger(__name__)
 
 
-def _cosine_similarity(vec1: list[float], vec2: list[float]) -> float:
-    """Compute cosine similarity between two vectors."""
-    a = np.array(vec1)
-    b = np.array(vec2)
-
-    dot_product = np.dot(a, b)
-    norm_a = np.linalg.norm(a)
-    norm_b = np.linalg.norm(b)
-
-    if norm_a == 0 or norm_b == 0:
-        return 0.0
-
-    return float(dot_product / (norm_a * norm_b))
-
-
-async def compute_query_embedding(query: str, embed_model_config: EmbeddingModelConfig) -> list[float]:
-    """Compute embedding vector for a query string."""
-    embed_model, _ = embed_model_config.to_llama_index()
-    embedding = await embed_model.aget_text_embedding(query)
-    return embedding
-
-
-async def detect_topic_change(
+async def detect_topic_change_with_llm(
     current_query: str,
-    previous_embedding: list[float] | None,
-    embed_model_config: EmbeddingModelConfig,
-    threshold: float = 0.5,
-) -> tuple[bool, list[float]]:
+    current_sources: list[KnowledgeSource],
+    llm: LLM,
+    displayer: EventDisplayer,
+    t: LocaleHandler,
+    previous_messages: list[ChatMessage] | None = None,
+) -> RouterEvent:
     """
-    Detect if the current query represents a topic change from the previous query.
+    Detect if the current query represents a topic change using LLM routing.
 
-    Uses cosine similarity between query embeddings to detect topic changes.
-    A similarity below the threshold indicates the topic has changed.
+    Uses the LLM router pattern to analyze whether the user's query is about
+    a fundamentally different topic than the previous conversation. Analyzes
+    the conversation history to properly detect follow-up questions.
 
-    Returns a tuple of (topic_changed, current_embedding).
+    Args:
+        current_query: The current user query.
+        current_sources: Currently selected knowledge sources.
+        llm: LLM for topic analysis.
+        displayer: For emitting display events.
+        t: Locale handler for translations.
+        previous_messages: Chat history to analyze for context and follow-ups.
+
+    Returns:
+        RouterEvent with selected route:
+        - TopicUnchangedAcceptEvent: Topic is the same, reuse sources
+        - TopicChangedEvent: Topic has changed, ask user about new sources
     """
-    current_embedding = await compute_query_embedding(current_query, embed_model_config)
+    await displayer.display_thought(t("agent.namespace_selection.thoughts.checking_topic_change"))
 
-    if previous_embedding is None:
-        # First query - no previous topic to compare
-        return False, current_embedding
+    router_event = await route_topic_change(
+        llm=llm,
+        t=t,
+        current_query=current_query,
+        current_sources=current_sources,
+        previous_messages=previous_messages,
+    )
 
-    similarity = _cosine_similarity(current_embedding, previous_embedding)
-    topic_changed = similarity < threshold
+    selected_event = router_event.selected_option.event
+    if isinstance(selected_event, TopicUnchangedAcceptEvent):
+        logger.debug(f"Topic unchanged: {router_event.reason}")
+        await displayer.display_thought(t("agent.namespace_selection.thoughts.topic_unchanged"))
+    elif isinstance(selected_event, TopicChangedEvent):
+        logger.debug(f"Topic changed: {router_event.reason}")
+        await displayer.display_thought(t("agent.namespace_selection.thoughts.topic_changed"))
 
-    if topic_changed:
-        logger.debug(f"Topic change detected: similarity={similarity:.3f} < threshold={threshold}")
-    else:
-        logger.debug(f"Same topic: similarity={similarity:.3f} >= threshold={threshold}")
-
-    return topic_changed, current_embedding
+    return router_event

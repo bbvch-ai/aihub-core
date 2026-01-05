@@ -194,12 +194,22 @@ async def select_namespaces(
     displayer: EventDisplayer,
     t: LocaleHandler,
     conversation_context: list[str] | None = None,
+    user_correction: str | None = None,
 ) -> NamespaceSelectionResult:
     """
     Use LLM to select relevant namespaces based on user query.
 
     Builds a prompt with available namespaces and conversation context,
     then parses the structured JSON response from the LLM.
+
+    Args:
+        user_query: The user's query.
+        available_namespaces: List of available namespaces to select from.
+        llm_config: LLM configuration.
+        displayer: Event displayer for thoughts.
+        t: Locale handler.
+        conversation_context: Previous clarification exchanges.
+        user_correction: User's correction or preference from previous selection.
     """
     if not available_namespaces:
         return NamespaceSelectionResult(
@@ -208,6 +218,11 @@ async def select_namespaces(
             reasoning="No namespaces available",
             clarification_question="There are no knowledge sources configured. Please contact your administrator.",
         )
+
+    # Include user correction in conversation context if provided
+    if user_correction:
+        conversation_context = conversation_context or []
+        conversation_context = [f"User preference: {user_correction}"] + conversation_context
 
     system_prompt = _build_selection_prompt(user_query, available_namespaces, conversation_context, t)
     user_message = _build_selection_user_message(user_query, t)

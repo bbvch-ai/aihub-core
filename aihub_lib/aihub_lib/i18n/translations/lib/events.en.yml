@@ -185,3 +185,11 @@ user_message_event:
 standalone_question_condenser_event:
   name: "Question Condensed"
   description: "The user's request has been condensed to a standalone question for better retrieval."
+
+topic_unchanged_accept_event:
+  name: "Topic Unchanged"
+  description: "The topic has not changed from the previous query, so the previous knowledge sources will be reused."
+
+topic_changed_event:
+  name: "Topic Changed"
+  description: "The topic has changed from the previous query, prompting the user to confirm if different sources should be searched."

@@ -9,6 +9,8 @@ from .GuardAcceptEvent import GuardAcceptEvent
 from .GuardRejectionEvent import GuardRejectionEvent
 from .SensitiveInfoAcceptEvent import SensitiveInfoAcceptEvent
 from .SensitiveInfoRejectEvent import SensitiveInfoRejectEvent
+from .TopicChangedEvent import TopicChangedEvent
+from .TopicUnchangedAcceptEvent import TopicUnchangedAcceptEvent
 
 __all__ = [
     "GuardAcceptEvent",
@@ -22,4 +24,6 @@ __all__ = [
     "ExpertRejectEvent",
     "SensitiveInfoAcceptEvent",
     "SensitiveInfoRejectEvent",
+    "TopicChangedEvent",
+    "TopicUnchangedAcceptEvent",
 ]

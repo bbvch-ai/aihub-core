@@ -1,8 +1,19 @@
 thoughts:
   starting_selection: "Starting namespace selection analysis."
-  reusing_selection: "Topic unchanged, reusing previous namespace selection."
-  topic_changed: "Topic change detected, re-evaluating namespace selection."
+  first_query: "First query in thread, need to select namespaces."
+  checking_topic_change: "Checking if the topic has changed from the previous query."
+  topic_unchanged: "Topic unchanged, continuing with current namespace selection."
+  reusing_selection: "Continuing with current selection as topic unchanged."
+  topic_changed: "Topic change detected, asking user for confirmation."
+  asking_topic_change: "Asking user if they want to search different sources."
+  user_wants_new_sources: "User wants to search different sources."
+  user_keeps_sources: "User wants to keep the current sources."
+  selecting_namespaces: "Selecting relevant namespaces for the query."
   analyzing_query: "Analyzing user query to determine relevant knowledge sources."
+  requesting_approval: "Requesting user approval for namespace selection."
+  user_approved: "User approved namespace selection."
+  max_corrections_reached: "Maximum correction rounds reached, proceeding with current selection."
+  reselecting: "User requested changes (%{feedback}), re-evaluating selection."
   confident_selection: "Confident in namespace selection, proceeding to RAG."
   max_rounds_reached: "Maximum clarification rounds reached, proceeding with best selection."
   need_clarification: "Selection confidence too low, requesting clarification from user."
@@ -12,6 +23,8 @@ thoughts:
   forwarding_response: "Forwarding RAG response to user."
 
 messages:
+  topic_change_question: "Your question seems to be about a different topic. I'm currently searching in **%{sources}**. Should I search different knowledge sources for this question?"
+  approval_question: "I'll search in these knowledge sources: **%{sources}**. Is that correct, or would you prefer different sources?"
   clarification_question: "I found some potentially relevant knowledge sources (%{sources}), but I'm not certain which ones best match your question. Could you please clarify what topic or area you're asking about?"
   rag_error: "An error occurred while processing your question: %{error}"
 
@@ -37,3 +50,35 @@ prompts:
     }
 
   selection_user: "User question: %{query}"
+
+  # Approval interpreter prompts
+  approval_intent_description: "The user's intent: 'approve' if they agree, 'reject' if they disagree, 'correct' if they want changes"
+  correction_details_description: "If correcting, describe what the user wants changed"
+  preferred_sources_description: "List of namespace names the user specifically mentioned"
+  interpretation_reasoning_description: "Brief explanation of how the response was interpreted"
+  approval_interpretation_docstring: "Interpretation of user's approval response"
+
+  approval_interpretation: |
+    Interpret the user's response to a namespace selection approval question.
+
+    Current selection: %{current_selection}
+    Available sources: %{available_sources}
+    User response: "%{user_response}"
+
+    Determine if the user:
+    - "approve": Agrees with the selection (yes, ok, proceed, looks good, etc.)
+    - "reject": Disagrees without providing alternatives (no, not those, wrong, etc.)
+    - "correct": Provides specific guidance (use X instead, also include Y, only Z, etc.)
+
+  # Topic change response interpreter prompts
+  wants_new_sources_description: "True if user wants to search different sources, False to keep current"
+  topic_response_reasoning_description: "Brief explanation of interpretation"
+  topic_change_interpretation_docstring: "Interpretation of user's topic change response"
+
+  topic_change_interpretation: |
+    Interpret the user's response to whether they want to search different knowledge sources.
+
+    User response: "%{user_response}"
+
+    Determine if the user wants to search different sources (yes, different, new topic, etc.)
+    or keep the current sources (no, same, continue, etc.).

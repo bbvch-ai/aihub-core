@@ -45,7 +45,7 @@ rag:
     {% endchat %}
 
 router:
-  selection_option_index: Index of the selected option (0-based)
+  selected_option_index: Index of the selected option (0-based)
   reason: Detailed explanation of why this option is the most appropriate
   routing_prompt: |
     {% chat role="system" %}
@@ -139,6 +139,47 @@ router:
       - The question has multiple parts and only some were answered
 
       Analyze the chat history carefully in relation to the user's question. Determine whether the expert has already sufficiently answered the question based on the criteria above. Provide a clear decision with detailed reasoning.
+
+routing:
+  topic_change:
+    instructions: |
+      Determine whether the user's current query represents a topic change from their previous conversation.
+
+      <current_query>
+      %{current_query}
+      </current_query>
+
+      <current_knowledge_sources>
+      The user is currently searching in these knowledge sources:
+      %{current_sources}
+      </current_knowledge_sources>
+
+      <conversation_history>
+      %{conversation_history}
+      </conversation_history>
+
+      <topic_change_criteria>
+      The topic has CHANGED if:
+      - The question is about a fundamentally different subject area
+      - The current knowledge sources would NOT be relevant for the new question
+      - The user is asking about something completely unrelated to the conversation history
+
+      The topic has NOT changed if:
+      - The question is a follow-up or clarification of the previous topic
+      - The question asks for more detail about something discussed before
+      - The question references previous answers (e.g., "what about...", "how does that relate to...")
+      - The question is related to the same subject area
+      - The current sources would still be relevant
+      </topic_change_criteria>
+
+      Analyze carefully and determine the most appropriate routing option.
+
+    no_previous_conversation: "No previous conversation context available"
+    topic_unchanged_reason: "Topic unchanged - continuing with previous sources"
+    topic_changed_reason: "Topic appears to have changed"
+    unchanged_instructions: "Select this option if the topic is the same or related to the previous conversation, including follow-up questions, clarifications, or requests for more details. The same knowledge sources should be used."
+    changed_instructions: "Select this option if the topic has changed substantially and different knowledge sources may be needed."
+
 summarizer:
   summarize: |
     Task: Summarize the following text as a TL;DR:

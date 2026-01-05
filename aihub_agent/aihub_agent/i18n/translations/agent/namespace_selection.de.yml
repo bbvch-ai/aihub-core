@@ -1,8 +1,19 @@
 thoughts:
   starting_selection: "Starte Namespace-Auswahl-Analyse."
-  reusing_selection: "Thema unverändert, verwende vorherige Namespace-Auswahl wieder."
-  topic_changed: "Themenwechsel erkannt, werte Namespace-Auswahl neu aus."
+  first_query: "Erste Anfrage im Thread, Namespaces müssen ausgewählt werden."
+  checking_topic_change: "Prüfe, ob sich das Thema seit der letzten Anfrage geändert hat."
+  topic_unchanged: "Thema unverändert, verwende aktuelle Namespace-Auswahl weiter."
+  reusing_selection: "Verwende aktuelle Auswahl weiter, da Thema unverändert."
+  topic_changed: "Themenwechsel erkannt, frage Benutzer zur Bestätigung."
+  asking_topic_change: "Frage Benutzer, ob er andere Quellen durchsuchen möchte."
+  user_wants_new_sources: "Benutzer möchte andere Quellen durchsuchen."
+  user_keeps_sources: "Benutzer möchte die aktuellen Quellen behalten."
+  selecting_namespaces: "Wähle relevante Namespaces für die Anfrage aus."
   analyzing_query: "Analysiere Benutzeranfrage, um relevante Wissensquellen zu bestimmen."
+  requesting_approval: "Fordere Benutzerbestätigung für Namespace-Auswahl an."
+  user_approved: "Benutzer hat Namespace-Auswahl bestätigt."
+  max_corrections_reached: "Maximale Korrektur-Runden erreicht, fahre mit aktueller Auswahl fort."
+  reselecting: "Benutzer hat Änderungen angefordert (%{feedback}), werte Auswahl neu aus."
   confident_selection: "Sicher bei der Namespace-Auswahl, fahre mit RAG fort."
   max_rounds_reached: "Maximale Klärungsrunden erreicht, fahre mit bester Auswahl fort."
   need_clarification: "Auswahlkonfidenz zu niedrig, fordere Klärung vom Benutzer an."
@@ -12,6 +23,8 @@ thoughts:
   forwarding_response: "Leite RAG-Antwort an Benutzer weiter."
 
 messages:
+  topic_change_question: "Ihre Frage scheint ein anderes Thema zu betreffen. Ich suche derzeit in **%{sources}**. Soll ich für diese Frage andere Wissensquellen durchsuchen?"
+  approval_question: "Ich werde in diesen Wissensquellen suchen: **%{sources}**. Ist das korrekt, oder bevorzugen Sie andere Quellen?"
   clarification_question: "Ich habe einige potenziell relevante Wissensquellen gefunden (%{sources}), bin mir aber nicht sicher, welche am besten zu Ihrer Frage passen. Könnten Sie bitte klären, zu welchem Thema oder Bereich Sie fragen?"
   rag_error: "Bei der Verarbeitung Ihrer Frage ist ein Fehler aufgetreten: %{error}"
 
@@ -37,3 +50,35 @@ prompts:
     }
 
   selection_user: "Benutzerfrage: %{query}"
+
+  # Approval interpreter prompts
+  approval_intent_description: "Die Absicht des Benutzers: 'approve' bei Zustimmung, 'reject' bei Ablehnung, 'correct' bei Änderungswunsch"
+  correction_details_description: "Bei Korrektur, beschreibe was der Benutzer ändern möchte"
+  preferred_sources_description: "Liste der vom Benutzer spezifisch genannten Namespace-Namen"
+  interpretation_reasoning_description: "Kurze Erklärung, wie die Antwort interpretiert wurde"
+  approval_interpretation_docstring: "Interpretation der Benutzer-Bestätigungsantwort"
+
+  approval_interpretation: |
+    Interpretiere die Antwort des Benutzers auf eine Namespace-Auswahl-Bestätigungsfrage.
+
+    Aktuelle Auswahl: %{current_selection}
+    Verfügbare Quellen: %{available_sources}
+    Benutzerantwort: "%{user_response}"
+
+    Bestimme, ob der Benutzer:
+    - "approve": Mit der Auswahl einverstanden ist (ja, ok, weiter, sieht gut aus, etc.)
+    - "reject": Nicht einverstanden ist ohne Alternativen zu nennen (nein, nicht diese, falsch, etc.)
+    - "correct": Spezifische Anweisungen gibt (verwende stattdessen X, auch Y einschliessen, nur Z, etc.)
+
+  # Topic change response interpreter prompts
+  wants_new_sources_description: "True wenn Benutzer andere Quellen durchsuchen möchte, False um aktuelle zu behalten"
+  topic_response_reasoning_description: "Kurze Erklärung der Interpretation"
+  topic_change_interpretation_docstring: "Interpretation der Benutzerantwort zum Themenwechsel"
+
+  topic_change_interpretation: |
+    Interpretiere die Antwort des Benutzers, ob er andere Wissensquellen durchsuchen möchte.
+
+    Benutzerantwort: "%{user_response}"
+
+    Bestimme, ob der Benutzer andere Quellen durchsuchen möchte (ja, andere, neues Thema, etc.)
+    oder die aktuellen Quellen behalten möchte (nein, gleiche, weiter, etc.).

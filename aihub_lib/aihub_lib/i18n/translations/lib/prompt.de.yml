@@ -141,6 +141,46 @@ router:
 
       Analysieren Sie den Chat-Verlauf sorgfältig in Bezug auf die Frage des Benutzers. Bestimmen Sie, ob der Experte die Frage basierend auf den oben genannten Kriterien bereits ausreichend beantwortet hat. Geben Sie eine klare Entscheidung mit detaillierter Begründung an.
 
+routing:
+  topic_change:
+    instructions: |
+      Bestimmen Sie, ob die aktuelle Anfrage des Benutzers einen Themenwechsel gegenüber der vorherigen Konversation darstellt.
+
+      <current_query>
+      %{current_query}
+      </current_query>
+
+      <current_knowledge_sources>
+      Der Benutzer sucht derzeit in diesen Wissensquellen:
+      %{current_sources}
+      </current_knowledge_sources>
+
+      <conversation_history>
+      %{conversation_history}
+      </conversation_history>
+
+      <topic_change_criteria>
+      Das Thema hat sich GEÄNDERT, wenn:
+      - Die Frage ein grundlegend anderes Themengebiet betrifft
+      - Die aktuellen Wissensquellen für die neue Frage NICHT relevant wären
+      - Der Benutzer nach etwas fragt, das völlig unabhängig vom Gesprächsverlauf ist
+
+      Das Thema hat sich NICHT geändert, wenn:
+      - Die Frage eine Folgefrage oder Klärung zum vorherigen Thema ist
+      - Die Frage nach mehr Details zu etwas fragt, das zuvor besprochen wurde
+      - Die Frage auf frühere Antworten verweist (z.B. "was ist mit...", "wie hängt das zusammen mit...")
+      - Die Frage zum gleichen Themenbereich gehört
+      - Die aktuellen Quellen weiterhin relevant wären
+      </topic_change_criteria>
+
+      Analysieren Sie sorgfältig und bestimmen Sie die am besten geeignete Routing-Option.
+
+    no_previous_conversation: "Kein vorheriger Konversationskontext verfügbar"
+    topic_unchanged_reason: "Thema unverändert - fahre mit aktuellen Quellen fort"
+    topic_changed_reason: "Thema scheint sich geändert zu haben"
+    unchanged_instructions: "Wählen Sie diese Option, wenn das Thema gleich oder verwandt mit der vorherigen Konversation ist, einschliesslich Folgefragen, Klärungen oder Anfragen nach mehr Details. Die gleichen Wissensquellen sollten verwendet werden."
+    changed_instructions: "Wählen Sie diese Option, wenn sich das Thema wesentlich geändert hat und andere Wissensquellen benötigt werden könnten."
+
 summarizer:
   summarize: |
     Aufgabe: Fasse den folgenden Text als TL;DR zusammen:

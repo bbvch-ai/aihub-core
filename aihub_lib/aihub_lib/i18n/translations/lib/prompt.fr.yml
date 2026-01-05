@@ -139,6 +139,47 @@ router:
       - La question comporte plusieurs parties et seules certaines ont été répondues
 
       Analysez soigneusement l'historique du chat par rapport à la question de l'utilisateur. Déterminez si l'expert a déjà suffisamment répondu à la question selon les critères ci-dessus. Fournissez une décision claire avec un raisonnement détaillé.
+
+routing:
+  topic_change:
+    instructions: |
+      Déterminez si la requête actuelle de l'utilisateur représente un changement de sujet par rapport à la conversation précédente.
+
+      <current_query>
+      %{current_query}
+      </current_query>
+
+      <current_knowledge_sources>
+      L'utilisateur recherche actuellement dans ces sources de connaissances :
+      %{current_sources}
+      </current_knowledge_sources>
+
+      <conversation_history>
+      %{conversation_history}
+      </conversation_history>
+
+      <topic_change_criteria>
+      Le sujet a CHANGÉ si :
+      - La question porte sur un domaine fondamentalement différent
+      - Les sources de connaissances actuelles ne seraient PAS pertinentes pour la nouvelle question
+      - L'utilisateur pose une question complètement sans rapport avec l'historique de la conversation
+
+      Le sujet n'a PAS changé si :
+      - La question est une suite ou une clarification du sujet précédent
+      - La question demande plus de détails sur quelque chose discuté auparavant
+      - La question fait référence aux réponses précédentes (par ex. "qu'en est-il de...", "comment cela est-il lié à...")
+      - La question est liée au même domaine
+      - Les sources actuelles seraient toujours pertinentes
+      </topic_change_criteria>
+
+      Analysez soigneusement et déterminez l'option de routage la plus appropriée.
+
+    no_previous_conversation: "Aucun contexte de conversation précédent disponible"
+    topic_unchanged_reason: "Sujet inchangé - continuation avec les sources actuelles"
+    topic_changed_reason: "Le sujet semble avoir changé"
+    unchanged_instructions: "Sélectionnez cette option si le sujet est identique ou lié à la conversation précédente, y compris les questions de suivi, les clarifications ou les demandes de plus de détails. Les mêmes sources de connaissances doivent être utilisées."
+    changed_instructions: "Sélectionnez cette option si le sujet a changé substantiellement et que différentes sources de connaissances pourraient être nécessaires."
+
 summarizer:
   summarize: |
     Tâche : Résume le texte suivant sous forme de TL;DR :

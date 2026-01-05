@@ -139,6 +139,47 @@ router:
       - La domanda ha più parti e solo alcune sono state risposte
 
       Analizza attentamente la cronologia della chat in relazione alla domanda dell'utente. Determina se l'esperto ha già risposto sufficientemente alla domanda in base ai criteri sopra indicati. Fornisci una decisione chiara con un ragionamento dettagliato.
+
+routing:
+  topic_change:
+    instructions: |
+      Determina se la query attuale dell'utente rappresenta un cambio di argomento rispetto alla conversazione precedente.
+
+      <current_query>
+      %{current_query}
+      </current_query>
+
+      <current_knowledge_sources>
+      L'utente sta attualmente cercando in queste fonti di conoscenza:
+      %{current_sources}
+      </current_knowledge_sources>
+
+      <conversation_history>
+      %{conversation_history}
+      </conversation_history>
+
+      <topic_change_criteria>
+      L'argomento È CAMBIATO se:
+      - La domanda riguarda un'area tematica fondamentalmente diversa
+      - Le fonti di conoscenza attuali NON sarebbero rilevanti per la nuova domanda
+      - L'utente sta chiedendo qualcosa di completamente non correlato alla cronologia della conversazione
+
+      L'argomento NON è cambiato se:
+      - La domanda è un seguito o una chiarificazione dell'argomento precedente
+      - La domanda chiede maggiori dettagli su qualcosa discusso in precedenza
+      - La domanda fa riferimento a risposte precedenti (ad es. "e per quanto riguarda...", "come si relaziona a...")
+      - La domanda è correlata alla stessa area tematica
+      - Le fonti attuali sarebbero ancora rilevanti
+      </topic_change_criteria>
+
+      Analizza attentamente e determina l'opzione di routing più appropriata.
+
+    no_previous_conversation: "Nessun contesto di conversazione precedente disponibile"
+    topic_unchanged_reason: "Argomento invariato - continuazione con le fonti attuali"
+    topic_changed_reason: "L'argomento sembra essere cambiato"
+    unchanged_instructions: "Seleziona questa opzione se l'argomento è lo stesso o correlato alla conversazione precedente, incluse domande di follow-up, chiarimenti o richieste di maggiori dettagli. Le stesse fonti di conoscenza devono essere utilizzate."
+    changed_instructions: "Seleziona questa opzione se l'argomento è cambiato sostanzialmente e potrebbero essere necessarie fonti di conoscenza diverse."
+
 summarizer:
   summarize: |
     Compito: Riassumi il testo seguente come TL;DR:  
