@@ -93,7 +93,6 @@ class EventTranslator:
         tool_name: str | None = None,
     ) -> str:
         """Execute an agent by translating MCP tool call to SAAP events."""
-        print(f"[MCP DEBUG] execute_agent called: agent_class={agent_class}, event_name={event_name}")
         identity = user_identity or DEFAULT_USER_IDENTITY
 
         agent_id = f"mcp_{uuid.uuid4().hex[:8]}"
@@ -163,7 +162,6 @@ class EventTranslator:
             try:
                 event = json.loads(msg.data.decode())
                 event_type = event.get("_event_name", "")
-                print(f"[MCP DEBUG] Received event: {event_type} on {msg.subject}")
 
                 if "ChunkEvent" in event_type:
                     content = event.get("content", "")
@@ -292,12 +290,10 @@ class EventTranslator:
                 logger.error(f"Error handling display event: {e}")
 
         sub = await self._nc.subscribe(display_subject, cb=handle_display_event)
-        print(f"[MCP DEBUG] Subscribed to: {display_subject}")
 
         try:
             event = BaseEvent.deserialize_event(start_event)
             await self._js_publisher.publish_event(event, subject)
-            print(f"[MCP DEBUG] Published start event to: {subject}")
 
             if self._tracer and span:
                 self._tracer.add_event(span, "event_published", {"subject": subject})
