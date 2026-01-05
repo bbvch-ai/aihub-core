@@ -139,8 +139,8 @@ class TestAgentToolRegistry:
         doc = registry._build_schema_documentation({}, [])
         assert doc == ""
 
-    def test_register_agent_tools_adds_to_registry(self, registry: AgentToolRegistry) -> None:
-        """Test that registering tools adds them to internal registry."""
+    def test_register_agent_tools_calls_mcp_tool(self, registry: AgentToolRegistry, mock_mcp_server: MagicMock) -> None:
+        """Test that registering tools calls mcp.tool decorator."""
         start_events = [
             {
                 "event_name": "StartEvent",
@@ -155,56 +155,4 @@ class TestAgentToolRegistry:
             is_conversational=False,
         )
 
-        registered = registry.get_registered_tools()
-        assert "test_agent_start" in registered
-        assert registered["test_agent_start"] == "TestAgent"
-
-    def test_register_skips_duplicate_tools(self, registry: AgentToolRegistry) -> None:
-        """Test that duplicate tools are not re-registered."""
-        start_events = [
-            {
-                "event_name": "StartEvent",
-                "event_schema": {},
-                "event_parents": [],
-            }
-        ]
-
-        # Register twice
-        registry.register_agent_tools("TestAgent", start_events, False)
-        registry.register_agent_tools("TestAgent", start_events, False)
-
-        # Should only have one entry
-        registered = registry.get_registered_tools()
-        assert len(registered) == 1
-
-    def test_unregister_agent_tools(self, registry: AgentToolRegistry) -> None:
-        """Test unregistering tools for an agent."""
-        start_events = [
-            {"event_name": "StartEvent", "event_schema": {}, "event_parents": []},
-            {"event_name": "AnotherEvent", "event_schema": {}, "event_parents": []},
-        ]
-
-        registry.register_agent_tools("TestAgent", start_events, False)
-        assert len(registry.get_registered_tools()) == 2
-
-        registry.unregister_agent_tools("TestAgent")
-        assert len(registry.get_registered_tools()) == 0
-
-    def test_unregister_only_affects_specified_agent(self, registry: AgentToolRegistry) -> None:
-        """Test that unregistering only removes tools for specified agent."""
-        registry.register_agent_tools(
-            "Agent1",
-            [{"event_name": "StartEvent", "event_schema": {}, "event_parents": []}],
-            False,
-        )
-        registry.register_agent_tools(
-            "Agent2",
-            [{"event_name": "StartEvent", "event_schema": {}, "event_parents": []}],
-            False,
-        )
-
-        registry.unregister_agent_tools("Agent1")
-
-        registered = registry.get_registered_tools()
-        assert len(registered) == 1
-        assert "agent2_start" in registered
+        mock_mcp_server.mcp.tool.assert_called()

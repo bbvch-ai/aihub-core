@@ -91,10 +91,7 @@ class AgentToolRegistry:
     Dynamically registers AI Hub agents as MCP tools.
 
     Each agent's start events become MCP tools with schemas derived from EventSpecs.
-    The registry handles:
-    - Converting agent event schemas to MCP tool schemas
-    - Creating tool handlers that invoke agents via SAAP
-    - Managing tool lifecycle as agents come online/offline
+    Tool handlers check agent availability at invocation time and fail fast if offline.
     """
 
     def __init__(
@@ -104,7 +101,6 @@ class AgentToolRegistry:
     ) -> None:
         self._mcp_server = mcp_server
         self._event_translator = event_translator
-        self._registered_tools: dict[str, str] = {}  # tool_name -> agent_class
 
     def register_agent_tools(
         self,
@@ -118,15 +114,8 @@ class AgentToolRegistry:
             event_schema = event_spec["event_schema"]
             event_parents = event_spec.get("event_parents", [])
 
-            # Generate tool name
             tool_name = self._generate_tool_name(agent_class, event_name)
 
-            # Skip if already registered
-            if tool_name in self._registered_tools:
-                logger.debug(f"Tool already registered: {tool_name}")
-                continue
-
-            # Create tool description
             description = self._generate_tool_description(
                 agent_class,
                 event_name,
@@ -134,7 +123,6 @@ class AgentToolRegistry:
                 is_conversational,
             )
 
-            # Register based on event type
             if is_conversational and "UserMessage" in event_name:
                 self._register_chat_tool(
                     tool_name=tool_name,
@@ -153,7 +141,6 @@ class AgentToolRegistry:
                     event_parents=event_parents,
                 )
 
-            self._registered_tools[tool_name] = agent_class
             logger.info(f"Registered MCP tool: {tool_name} for agent {agent_class}")
 
     def _generate_tool_name(self, agent_class: str, event_name: str) -> str:
@@ -196,6 +183,7 @@ class AgentToolRegistry:
     ) -> None:
         """Register a chat tool for conversational agents with proper message parameters."""
         mcp = self._mcp_server.mcp
+        mcp_server = self._mcp_server
         event_translator = self._event_translator
 
         @mcp.tool(name=tool_name, description=description)
@@ -206,10 +194,11 @@ class AgentToolRegistry:
             conversation_history: str | None = None,
         ) -> str:
             """Chat with the agent."""
-            # Build messages array
+            if not mcp_server.is_agent_registered(agent_class):
+                raise ValueError(f"Agent {agent_class} is no longer available")
+
             messages: list[dict[str, str]] = []
 
-            # Add conversation history if provided
             if conversation_history:
                 try:
                     history = json.loads(conversation_history)
@@ -218,10 +207,8 @@ class AgentToolRegistry:
                 except json.JSONDecodeError:
                     await ctx.warning("Could not parse conversation_history as JSON, ignoring")
 
-            # Add current message
             messages.append({"role": "user", "content": message})
 
-            # Build event data matching UserMessageEvent schema
             event_data = {
                 "locale": locale,
                 "messages": messages,
@@ -234,7 +221,6 @@ class AgentToolRegistry:
                 },
             }
 
-            # Validate input data
             try:
                 validate_event_data(event_data)
             except InputValidationError as e:
@@ -268,13 +254,11 @@ class AgentToolRegistry:
     ) -> None:
         """Register a generic tool that accepts JSON input for non-conversational events."""
         mcp = self._mcp_server.mcp
+        mcp_server = self._mcp_server
         event_translator = self._event_translator
 
-        # Extract schema info for documentation
         properties = self._extract_input_properties(event_schema)
         required = event_schema.get("required", [])
-
-        # Build schema documentation
         schema_doc = self._build_schema_documentation(properties, required)
 
         @mcp.tool(name=tool_name, description=f"{description}\n\n{schema_doc}")
@@ -283,12 +267,14 @@ class AgentToolRegistry:
             ctx: Context,
         ) -> str:
             """Invoke the agent with event data."""
+            if not mcp_server.is_agent_registered(agent_class):
+                raise ValueError(f"Agent {agent_class} is no longer available")
+
             try:
                 event_data = json.loads(event_data_json)
             except json.JSONDecodeError as e:
                 raise ValueError(f"Invalid JSON: {e}") from e
 
-            # Validate input data
             try:
                 validate_event_data(event_data, event_schema)
             except InputValidationError as e:
@@ -337,18 +323,3 @@ class AgentToolRegistry:
             lines.append(f"- `{prop_name}` ({prop_type}){req_marker}: {prop_desc}")
 
         return "\n".join(lines)
-
-    def unregister_agent_tools(self, agent_class: str) -> None:
-        """Remove all tools for an agent that went offline."""
-        tools_to_remove = [tool_name for tool_name, ac in self._registered_tools.items() if ac == agent_class]
-
-        for tool_name in tools_to_remove:
-            del self._registered_tools[tool_name]
-            logger.info(f"Unregistered MCP tool: {tool_name}")
-
-        # Note: FastMCP doesn't support runtime tool removal
-        # Tools will remain registered but will fail when invoked
-
-    def get_registered_tools(self) -> dict[str, str]:
-        """Get mapping of registered tool names to agent classes."""
-        return self._registered_tools.copy()

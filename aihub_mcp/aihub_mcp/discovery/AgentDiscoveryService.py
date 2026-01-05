@@ -197,7 +197,7 @@ class AgentDiscoveryService:
         )
 
     def _cleanup_stale_agents(self) -> None:
-        """Remove agents that haven't been seen recently."""
+        """Mark agents that haven't been seen recently as unavailable."""
         stale_threshold = self._settings.DISCOVERY_INTERVAL_SECONDS * 3
         current_time = time.time()
 
@@ -209,11 +209,8 @@ class AgentDiscoveryService:
 
         for agent_class in stale_agents:
             self._mcp_server.unregister_agent(agent_class)
-            self._tool_registry.unregister_agent_tools(agent_class)
-            self._resource_registry.unregister_agent_resources(agent_class)
-            self._prompt_registry.unregister_agent_prompts(agent_class)
             del self._last_discovered[agent_class]
-            logger.info(f"Removed stale agent: {agent_class}")
+            logger.info(f"Marked agent as unavailable: {agent_class}")
 
     async def discover_now(self) -> dict[str, Any]:
         """Trigger immediate discovery and return results."""
