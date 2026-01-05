@@ -472,6 +472,7 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-cache:/root/.cache/llama.cpp
     environment:
       HF_HOME: /root/.cache/huggingface
+      LLAMA_API_KEY: ${LLAMA_CPP_TOKEN}
     command: >
       -hf google/gemma-3-4b-it-qat-q4_0-gguf
       --alias gemma-3-4b
@@ -504,6 +505,7 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-cache:/root/.cache/llama.cpp
     environment:
       HF_HOME: /root/.cache/huggingface
+      LLAMA_API_KEY: ${LLAMA_CPP_TOKEN}
     command: >
       -hf Qwen/Qwen3-Embedding-0.6B-GGUF
       --hf-token ${HUGGINGFACE_API_KEY}
@@ -538,6 +540,7 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-cache:/root/.cache/llama.cpp
     environment:
       HF_HOME: /root/.cache/huggingface
+      LLAMA_API_KEY: ${LLAMA_CPP_TOKEN}
     command: >
       -hf ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF
       --hf-token ${HUGGINGFACE_API_KEY}
