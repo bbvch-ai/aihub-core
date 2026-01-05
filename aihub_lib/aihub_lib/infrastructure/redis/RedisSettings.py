@@ -8,31 +8,31 @@ from aihub_lib.settings.EnvironmentSettings import EnvironmentSettings
 
 
 class RedisSettings(EnvironmentSettings):
-    """Settings for Redis/Valkey connection with optional password authentication."""
+    """Settings for Redis/Valkey connection with optional token authentication."""
 
     model_config = EnvironmentSettings.create_settings_config("REDIS_")
 
-    URL: Annotated[str, Field(description="Connection URL for Redis server (without password)")]
-    PASSWORD: Annotated[
+    URL: Annotated[str, Field(description="Connection URL for Redis server (without token)")]
+    TOKEN: Annotated[
         SecretStr | None,
-        Field(default=None, description="Authentication password for Redis server. If not set, no auth is used."),
+        Field(default=None, description="Authentication token for Redis server. If not set, no auth is used."),
     ]
 
     def get_connection_url(self) -> str:
         """
-        Build Redis connection URL with embedded password if configured.
+        Build Redis connection URL with embedded token if configured.
 
-        Returns URL in format: redis://default:password@host:port or redis://host:port
+        Returns URL in format: redis://default:token@host:port or redis://host:port
         """
-        if self.PASSWORD is None:
+        if self.TOKEN is None:
             return self.URL
 
-        # Parse URL and inject password
+        # Parse URL and inject token
         parsed = urlparse(self.URL)
-        password = self.PASSWORD.get_secret_value()
+        token = self.TOKEN.get_secret_value()
 
-        # Build new URL with password (using 'default' as username for Redis)
-        netloc = f"default:{password}@{parsed.hostname}"
+        # Build new URL with token (using 'default' as username for Redis)
+        netloc = f"default:{token}@{parsed.hostname}"
         if parsed.port:
             netloc += f":{parsed.port}"
 
@@ -43,7 +43,7 @@ class RedisSettings(EnvironmentSettings):
         """
         Create a Redis client with settings from environment variables.
 
-        Returns a Redis client instance configured with the connection URL and optional password
+        Returns a Redis client instance configured with the connection URL and optional token
         from the environment settings.
 
         Example:
