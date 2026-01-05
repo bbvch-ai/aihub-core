@@ -29,13 +29,16 @@ use-local-core:
 	poetry remove aihub_lib
 	poetry add --editable ../aihub_lib
 
-run:
-	@echo "Starting MCP server..."
-	poetry run python -m aihub_mcp
+NUM_WORKERS = $(shell echo $${NUM_WORKERS:-$$(( $$(nproc) * 1 ))})
 
 run-prod:
-	@echo "Starting MCP server (production)..."
-	poetry run python -m aihub_mcp
+	@echo "Starting MCP server with Gunicorn using ${NUM_WORKERS} workers..."
+	poetry run gunicorn -w ${NUM_WORKERS} \
+		-k uvicorn.workers.UvicornWorker \
+		--timeout=300 \
+		-b 0.0.0.0:8001 \
+		--forwarded-allow-ips=* \
+		app.main:app
 
 playground:
 	@echo "Starting MCP playground..."
