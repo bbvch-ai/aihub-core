@@ -181,6 +181,14 @@ litellm_settings:
   telemetry: true
   json_logs: true
   drop_params: true
+  # Redis caching for LLM responses
+  set_verbose: true
+  cache: true
+  cache_params:
+    type: "redis"
+    host: "valkey"
+    port: 6379
+    password: os.environ/REDIS_TOKEN
   # Prompt injection detection settings
   prompt_injection_params:
     heuristics_check: false        # Disable simple pattern matching (too many false positives)
