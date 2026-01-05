@@ -19,6 +19,7 @@ class DoclingSettings(EnvironmentSettings):
 
     # --- General API Settings ---
     BASE_API_URL: Annotated[str, Field(description="Docling API endpoint URL")]
+    API_KEY: Annotated[str, Field(description="API key for Docling service authentication")] = ""
     API_TIMEOUT: Annotated[int, Field(description="Timeout for Docling API calls in seconds")] = 300
 
     # --- Pipeline Type ---

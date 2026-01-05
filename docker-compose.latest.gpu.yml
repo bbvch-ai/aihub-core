@@ -618,7 +618,7 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-cache:/root/.cache/llama.cpp
     environment:
       HF_HOME: /root/.cache/huggingface
-      LLAMA_API_KEY: ${LLAMA_CPP_TOKEN}
+      LLAMA_API_KEY: ${LOCAL_LLM_TOKEN}
     command: >
       -hf google/gemma-3-12b-it-qat-q4_0-gguf
       --alias gemma-3-12b
@@ -657,7 +657,7 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-cache:/root/.cache/llama.cpp
     environment:
       HF_HOME: /root/.cache/huggingface
-      LLAMA_API_KEY: ${LLAMA_CPP_TOKEN}
+      LLAMA_API_KEY: ${LOCAL_LLM_TOKEN}
     command: >
       -hf Qwen/Qwen3-Embedding-0.6B-GGUF
       --hf-token ${HUGGINGFACE_API_KEY}
@@ -698,7 +698,7 @@ services:
       - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-cache:/root/.cache/llama.cpp
     environment:
       HF_HOME: /root/.cache/huggingface
-      LLAMA_API_KEY: ${LLAMA_CPP_TOKEN}
+      LLAMA_API_KEY: ${LOCAL_LLM_TOKEN}
     command: >
       -hf ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF
       --hf-token ${HUGGINGFACE_API_KEY}
@@ -896,6 +896,7 @@ services:
       DOCLING_SERVE_LOAD_MODELS_AT_BOOT: 0
       DOCLING_SERVE_MAX_SYNC_WAIT: 600
       DOCLING_SERVE_ENABLE_REMOTE_SERVICES: 1
+      DOCLING_SERVE_API_KEY: ${DOCLING_API_KEY}
     depends_on:
       vllm-docling:
         condition: service_healthy
@@ -918,6 +919,7 @@ services:
     environment:
       HF_HOME: /root/.cache/huggingface
       HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
+      VLLM_API_KEY: ${LOCAL_LLM_TOKEN}
     command: >
       --model ibm-granite/granite-docling-258M
       --served-model-name granite-docling

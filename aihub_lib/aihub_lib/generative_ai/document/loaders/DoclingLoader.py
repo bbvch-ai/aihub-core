@@ -180,6 +180,13 @@ class DoclingLoader(BaseReader):
 
         raise ValueError(f"Unsupported pipeline type: {self.config.PIPELINE_TYPE}")
 
+    def _build_headers(self) -> dict[str, str]:
+        """Build HTTP headers including Authorization if API key is configured."""
+        headers = {"Content-Type": "application/json"}
+        if self.config.API_KEY:
+            headers["Authorization"] = f"Bearer {self.config.API_KEY}"
+        return headers
+
     def _retry_kwargs(self) -> dict:
         """Return retry configuration for tenacity."""
 
@@ -213,7 +220,7 @@ class DoclingLoader(BaseReader):
                 response = client.post(
                     f"{self.config.BASE_API_URL}/v1/convert/source",
                     json=request_body,
-                    headers={"Content-Type": "application/json"},
+                    headers=self._build_headers(),
                 )
 
                 if response.status_code != 200:
@@ -245,7 +252,7 @@ class DoclingLoader(BaseReader):
                 response = await client.post(
                     f"{self.config.BASE_API_URL}/v1/convert/source/async",
                     json=request_body,
-                    headers={"Content-Type": "application/json"},
+                    headers=self._build_headers(),
                 )
 
                 if response.status_code != 200:
@@ -267,7 +274,7 @@ class DoclingLoader(BaseReader):
         for _ in range(self.config.MAX_POLLS):
             status_response = await client.get(
                 f"{self.config.BASE_API_URL}/v1/status/poll/{task_id}",
-                headers={"Content-Type": "application/json"},
+                headers=self._build_headers(),
             )
 
             if status_response.status_code != 200:
@@ -284,7 +291,7 @@ class DoclingLoader(BaseReader):
             if task_status["task_status"] == "success":
                 result_response = await client.get(
                     f"{self.config.BASE_API_URL}/v1/result/{task_id}",
-                    headers={"Content-Type": "application/json"},
+                    headers=self._build_headers(),
                 )
 
                 if result_response.status_code != 200:

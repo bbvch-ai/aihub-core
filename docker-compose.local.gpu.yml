@@ -775,6 +775,7 @@ services:
       DOCLING_SERVE_LOAD_MODELS_AT_BOOT: 0
       DOCLING_SERVE_MAX_SYNC_WAIT: 600
       DOCLING_SERVE_ENABLE_REMOTE_SERVICES: 1
+      DOCLING_SERVE_API_KEY: ${DOCLING_API_KEY}
       DOCLING_SERVE_ENABLE_UI: 1
     depends_on:
       vllm-docling:
@@ -800,6 +801,7 @@ services:
     environment:
       HF_HOME: /root/.cache/huggingface
       HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
+      VLLM_API_KEY: ${LOCAL_LLM_TOKEN}
     command: >
       --model ibm-granite/granite-docling-258M
       --served-model-name granite-docling
