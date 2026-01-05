@@ -16,8 +16,11 @@ Full-featured MCP (Model Context Protocol) server for Swiss AI Hub, bridging the
 # Install dependencies
 poetry install
 
-# Run the MCP server
-make run
+# Run the MCP server (production)
+MCP_API_KEY=your-secret-key make run-prod
+
+# Or run the playground (no auth, for local testing)
+make playground
 ```
 
 ## Configuration

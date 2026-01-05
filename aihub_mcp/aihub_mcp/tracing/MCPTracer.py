@@ -5,7 +5,7 @@ from typing import Any
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.trace import SpanKind, Status, StatusCode
+from opentelemetry.trace import Span, SpanKind, Status, StatusCode
 
 logger = logging.getLogger(__name__)
 
@@ -13,12 +13,12 @@ logger = logging.getLogger(__name__)
 current_thread_id: ContextVar[str | None] = ContextVar("current_thread_id", default=None)
 current_run_id: ContextVar[str | None] = ContextVar("current_run_id", default=None)
 
-# OpenInference semantic convention attribute names
+# OpenInference semantic convention attribute names (for Phoenix integration)
 OPENINFERENCE_SESSION_ID = "session.id"
 OPENINFERENCE_USER_ID = "user.id"
 OPENINFERENCE_SPAN_KIND = "openinference.span.kind"
 
-# Additional MCP-specific attributes
+# MCP-specific attributes
 MCP_THREAD_ID = "mcp.thread_id"
 MCP_RUN_ID = "mcp.run_id"
 MCP_DISPLAY_ID = "mcp.display_id"
@@ -26,16 +26,7 @@ MCP_AGENT_ID = "mcp.agent_id"
 
 
 class MCPTracer:
-    """
-    OpenTelemetry tracing for MCP server operations.
-
-    Instruments:
-    - Tool invocations
-    - Agent executions
-    - HITL/Elicitation requests
-    - Sampling requests
-    - Progress notifications
-    """
+    """OpenTelemetry tracing for MCP server operations with Phoenix/OpenInference support."""
 
     TRACER_NAME = "aihub_mcp"
 
@@ -48,28 +39,21 @@ class MCPTracer:
             self._setup_tracer()
 
     def _setup_tracer(self) -> None:
-        """Configure OpenTelemetry tracer."""
+        """Configure OpenTelemetry tracer with OTLP exporter."""
         try:
             from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
             from opentelemetry.sdk.resources import Resource
 
-            # Create resource with service name
             resource = Resource.create({"service.name": self._service_name})
-
-            # Create tracer provider
             provider = TracerProvider(resource=resource)
 
-            # Add OTLP exporter (Phoenix/Jaeger compatible)
             try:
                 exporter = OTLPSpanExporter()
                 provider.add_span_processor(BatchSpanProcessor(exporter))
             except Exception as e:
                 logger.warning(f"Could not configure OTLP exporter: {e}")
 
-            # Set as global provider
             trace.set_tracer_provider(provider)
-
-            # Get tracer
             self._tracer = trace.get_tracer(self.TRACER_NAME)
             logger.info("OpenTelemetry tracing configured")
 
@@ -94,32 +78,21 @@ class MCPTracer:
         agent_id: str,
         user_id: str | None = None,
         attributes: dict[str, Any] | None = None,
-    ) -> Any:
-        """
-        Start a span for agent execution with full context.
-
-        Sets OpenInference attributes for Phoenix integration:
-        - session.id: thread_id for grouping related traces
-        - user.id: authenticated user identity
-        - openinference.span.kind: CHAIN for agent workflows
-        """
+    ) -> Span | None:
+        """Start a span for agent execution with full SAAP context."""
         if not self._enabled:
             return None
 
-        # Set context variables for child spans
         current_thread_id.set(thread_id)
         current_run_id.set(run_id)
 
-        span_attributes = {
-            # OpenInference semantic conventions
+        span_attributes: dict[str, Any] = {
             OPENINFERENCE_SESSION_ID: thread_id,
             OPENINFERENCE_SPAN_KIND: "CHAIN",
-            # MCP-specific attributes
             MCP_THREAD_ID: thread_id,
             MCP_RUN_ID: run_id,
             MCP_DISPLAY_ID: display_id,
             MCP_AGENT_ID: agent_id,
-            # Tool/agent info
             "mcp.tool.name": tool_name,
             "mcp.agent.class": agent_class,
             "mcp.operation": "agent_execution",
@@ -142,18 +115,17 @@ class MCPTracer:
         tool_name: str,
         agent_class: str,
         attributes: dict[str, Any] | None = None,
-    ) -> Any:
-        """Start a span for tool invocation (legacy, prefer start_agent_execution_span)."""
+    ) -> Span | None:
+        """Start a span for tool invocation."""
         if not self._enabled:
             return None
 
-        span_attributes = {
+        span_attributes: dict[str, Any] = {
             "mcp.tool.name": tool_name,
             "mcp.agent.class": agent_class,
             "mcp.operation": "tool_invocation",
         }
 
-        # Include thread/run context if available
         thread_id = current_thread_id.get()
         run_id = current_run_id.get()
         if thread_id:
@@ -171,11 +143,7 @@ class MCPTracer:
             attributes=span_attributes,
         )
 
-    def start_elicitation_span(
-        self,
-        hitl_type: str,
-        question: str,
-    ) -> Any:
+    def start_elicitation_span(self, hitl_type: str, question: str) -> Span | None:
         """Start a span for elicitation request."""
         if not self._enabled:
             return None
@@ -190,10 +158,7 @@ class MCPTracer:
             },
         )
 
-    def start_sampling_span(
-        self,
-        message_count: int,
-    ) -> Any:
+    def start_sampling_span(self, message_count: int) -> Span | None:
         """Start a span for sampling request."""
         if not self._enabled:
             return None
@@ -209,7 +174,7 @@ class MCPTracer:
 
     def end_span(
         self,
-        span: Any,
+        span: Span | None,
         success: bool = True,
         error_message: str | None = None,
     ) -> None:
@@ -228,7 +193,7 @@ class MCPTracer:
 
     def add_event(
         self,
-        span: Any,
+        span: Span | None,
         name: str,
         attributes: dict[str, Any] | None = None,
     ) -> None:

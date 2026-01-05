@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, Any
+from typing import Any
 
 from fastmcp import FastMCP
 from pydantic import BaseModel, Field
@@ -12,43 +12,34 @@ logger = logging.getLogger(__name__)
 class EventSpec(BaseModel):
     """Schema for an event specification from agent discovery."""
 
-    event_name: Annotated[str, Field(description="Name of the event class")]
-    event_schema: Annotated[dict[str, Any], Field(description="JSON schema for the event")]
-    event_parents: list[str] = Field(default_factory=list, description="Parent event class names")
+    event_name: str
+    event_schema: dict[str, Any]
+    event_parents: list[str] = Field(default_factory=list)
 
 
 class AgentMetadata(BaseModel):
     """Metadata for a registered agent."""
 
-    agent_class: Annotated[str, Field(description="Agent class name")]
-    is_conversational: Annotated[bool, Field(description="Whether agent supports chat interaction")]
-    start_events: Annotated[list[EventSpec], Field(description="Events that can start the agent")]
-    stop_events: Annotated[list[EventSpec], Field(description="Events that signal completion")]
-    hitl_request_events: Annotated[list[EventSpec], Field(description="Human-in-the-loop request events")]
-    hitl_response_events: Annotated[list[EventSpec], Field(description="Human-in-the-loop response events")]
-    agent_config_specs: dict[str, Any] = Field(default_factory=dict, description="Agent configuration schema")
-    default_agent_config: dict[str, Any] = Field(default_factory=dict, description="Default agent configuration")
+    agent_class: str
+    is_conversational: bool
+    start_events: list[EventSpec]
+    stop_events: list[EventSpec]
+    hitl_request_events: list[EventSpec]
+    hitl_response_events: list[EventSpec]
+    agent_config_specs: dict[str, Any] = Field(default_factory=dict)
+    default_agent_config: dict[str, Any] = Field(default_factory=dict)
 
 
 class MCPServer:
     """
-    Full-featured MCP server bridging Swiss AI Agent Protocol with Model Context Protocol.
+    MCP server bridging Swiss AI Agent Protocol with Model Context Protocol.
 
-    This server exposes AI Hub agents as MCP tools, enabling external clients like Claude Code,
-    Cursor, and VS Code extensions to interact with agents using the MCP specification.
-
-    Key capabilities:
-    - Dynamic agent discovery and tool registration
-    - Human-in-the-loop via MCP elicitation
-    - LLM sampling from MCP client
-    - Progress streaming for agent thoughts and outputs
-
-    Note: Use MCPRunner.create_app() to create the full application with
-    authentication and tracing middleware.
+    Exposes AI Hub agents as MCP tools, enabling external clients like Claude Code,
+    Cursor, and VS Code extensions to interact with agents.
     """
 
     def __init__(self, settings: MCPSettings | None = None) -> None:
-        self._settings = settings or MCPSettings()
+        self._settings = settings or MCPSettings(REQUIRE_AUTH=False)
         self._mcp: FastMCP | None = None
         self._agent_registry: dict[str, AgentMetadata] = {}
 
@@ -74,17 +65,13 @@ class MCPServer:
             ),
         )
 
-        # Register static resources
         self._register_resources()
-
-        # Register static prompts
-        self._register_prompts()
 
         logger.info("FastMCP instance created: Swiss AI Hub Agents")
         return self._mcp
 
     def _register_resources(self) -> None:
-        """Register static MCP resources for agent metadata."""
+        """Register static MCP resources for agent listing."""
 
         @self.mcp.resource("agents://list")
         async def list_agents() -> dict[str, Any]:
@@ -103,24 +90,6 @@ class MCPServer:
 
         logger.debug("MCP resources registered")
 
-    def _register_prompts(self) -> None:
-        """Register static MCP prompts for common operations."""
-        from fastmcp.prompts.prompt import PromptMessage, TextContent  # type: ignore[attr-defined]
-
-        @self.mcp.prompt
-        def analyze_with_agent(agent_name: str, query: str) -> PromptMessage:
-            """Create a prompt to analyze something using a specific agent."""
-            text = f"Use the {agent_name} agent to analyze the following:\n\n{query}"
-            return PromptMessage(role="user", content=TextContent(type="text", text=text))
-
-        @self.mcp.prompt
-        def list_available_agents() -> PromptMessage:
-            """Create a prompt to list all available agents."""
-            text = "Please list all available AI Hub agents and their capabilities."
-            return PromptMessage(role="user", content=TextContent(type="text", text=text))
-
-        logger.debug("MCP prompts registered")
-
     def register_agent(
         self,
         agent_class: str,
@@ -132,12 +101,7 @@ class MCPServer:
         agent_config_specs: dict[str, Any],
         default_agent_config: dict[str, Any],
     ) -> None:
-        """
-        Register an agent discovered via SAAP as an MCP tool.
-
-        This method is called by AgentDiscoveryService when agents are discovered.
-        Each agent's start events become MCP tools.
-        """
+        """Register an agent discovered via SAAP."""
         self._agent_registry[agent_class] = AgentMetadata(
             agent_class=agent_class,
             is_conversational=is_conversational,
@@ -151,7 +115,7 @@ class MCPServer:
         logger.info(f"Agent registered: {agent_class}")
 
     def unregister_agent(self, agent_class: str) -> None:
-        """Remove an agent from the registry (when it goes offline)."""
+        """Remove an agent from the registry."""
         if agent_class in self._agent_registry:
             del self._agent_registry[agent_class]
             logger.info(f"Agent unregistered: {agent_class}")
@@ -163,3 +127,7 @@ class MCPServer:
     def get_registered_agents(self) -> list[str]:
         """Get list of registered agent class names."""
         return list(self._agent_registry.keys())
+
+    def get_agent_metadata(self, agent_class: str) -> AgentMetadata | None:
+        """Get metadata for a specific agent."""
+        return self._agent_registry.get(agent_class)

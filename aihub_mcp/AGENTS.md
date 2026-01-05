@@ -33,11 +33,13 @@ aihub_mcp/                    # Scope root
 │   │   └── MCPRunner.py      # Standalone server runner
 │   └── settings/             # Configuration
 │       └── MCPSettings.py    # pydantic-settings configuration
-├── playground/               # Interactive testing scripts
-│   └── server/               # MCP server playground (no auth required)
-│       └── main.py           # Run with: make playground
-└── tests/                    # Unit and integration tests
-    └── integration/          # Tests requiring running services
+├── app/                      # ASGI application entry point
+│   └── main.py               # Exposes 'app' for gunicorn
+└── playground/               # Interactive testing and tests
+    ├── server/               # MCP server playground (no auth required)
+    │   └── main.py           # Run with: make playground
+    └── testing/tests/        # Unit and integration tests
+        └── integration/      # Tests requiring running services
 ```
 
 ### Event Translation Mapping
@@ -126,13 +128,10 @@ sampling_response = await ctx.sample(
 ## Running the Server
 
 ```bash
-# Standalone (production mode - requires MCP_API_KEY)
+# Production mode with gunicorn (requires MCP_API_KEY)
 cd aihub_mcp
 poetry install
-MCP_API_KEY=your-secret-key make run
-
-# Or directly
-MCP_API_KEY=your-secret-key poetry run python -m aihub_mcp
+MCP_API_KEY=your-secret-key make run-prod
 
 # Interactive playground (no auth required for local testing)
 make playground
@@ -161,7 +160,7 @@ Exposed via Traefik at `/mcp` path with TLS.
 The MCP server can be mounted within `aihub_api` for unified deployment:
 
 ```python
-from aihub_mcp import MCPRunner
+from aihub_mcp.runners.MCPRunner import MCPRunner
 from aihub_mcp.settings.MCPSettings import MCPSettings
 
 runner = MCPRunner(MCPSettings())

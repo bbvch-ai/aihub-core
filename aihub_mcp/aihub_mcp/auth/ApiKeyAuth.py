@@ -2,7 +2,6 @@ import hashlib
 import logging
 import secrets
 import time
-from typing import Annotated, Any
 
 from pydantic import BaseModel, Field, SecretStr
 
@@ -12,13 +11,13 @@ logger = logging.getLogger(__name__)
 class UserIdentity(BaseModel):
     """User identity associated with an API key."""
 
-    id: Annotated[str, Field(description="Unique user identifier")]
-    name: Annotated[str, Field(description="Display name")]
-    email: Annotated[str, Field(description="Email address")]
-    roles: Annotated[list[str], Field(description="User roles")] = ["user"]
-    source: Annotated[str, Field(description="Identity source")] = "api_key"
+    id: str
+    name: str
+    email: str
+    roles: list[str] = Field(default_factory=lambda: ["user"])
+    source: str = "api_key"
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> dict[str, str | list[str]]:
         """Convert to dictionary for SAAP events."""
         return self.model_dump()
 
@@ -26,24 +25,15 @@ class UserIdentity(BaseModel):
 class RateLimitState(BaseModel):
     """Track rate limiting state for a client."""
 
-    model_config = {"arbitrary_types_allowed": True}
-
-    request_timestamps: list[float] = Field(default_factory=list, description="Timestamps of recent requests")
-    blocked_until: float = Field(default=0.0, description="Unix timestamp when block expires")
+    request_timestamps: list[float] = Field(default_factory=list)
+    blocked_until: float = 0.0
 
 
 class ApiKeyAuth:
     """
-    API key authentication for MCP server.
+    API key authentication for MCP server with rate limiting and identity mapping.
 
-    Validates API keys from request headers against configured keys.
-    Supports multiple API keys for different clients with identity mapping.
-
-    Security features:
-    - Constant-time key comparison (timing attack prevention)
-    - Per-client rate limiting
-    - API key to user identity mapping
-    - Request logging for audit trail
+    Uses constant-time comparison to prevent timing attacks.
     """
 
     HEADER_NAME = "X-API-Key"
@@ -55,11 +45,6 @@ class ApiKeyAuth:
         api_keys: list[SecretStr] | SecretStr | None = None,
         rate_limit_per_minute: int = DEFAULT_RATE_LIMIT,
     ) -> None:
-        """
-        Initialize with configured API keys.
-
-        If api_keys is None or empty, authentication is disabled.
-        """
         self._key_to_identity: dict[str, UserIdentity] = {}
         self._rate_limits: dict[str, RateLimitState] = {}
         self._rate_limit_per_minute = rate_limit_per_minute
@@ -78,7 +63,6 @@ class ApiKeyAuth:
         key_hash = self._hash_key(key_value)
 
         if identity is None:
-            # Generate default identity from key hash
             short_id = key_hash[:8]
             identity = UserIdentity(
                 id=f"mcp_client_{short_id}",
@@ -91,7 +75,7 @@ class ApiKeyAuth:
         logger.info(f"Registered API key for user: {identity.id}")
 
     def _hash_key(self, key: str) -> str:
-        """Create a safe hash of the key for logging/identification."""
+        """Create a safe hash for logging without exposing the key."""
         return hashlib.sha256(key.encode()).hexdigest()
 
     @property
@@ -100,26 +84,19 @@ class ApiKeyAuth:
         return self._enabled
 
     def validate(self, headers: dict[str, str]) -> bool:
-        """
-        Validate the API key from request headers.
-
-        Returns True if valid or if auth is disabled.
-        """
+        """Validate the API key from request headers."""
         if not self._enabled:
             return True
 
-        # Extract API key
         api_key = self._extract_key(headers)
         if not api_key:
             logger.warning("No API key provided in request")
             return False
 
-        # Validate key
         if not self._validate_key(api_key):
             logger.warning("Invalid API key provided")
             return False
 
-        # Check rate limit
         if not self._check_rate_limit(api_key):
             logger.warning(f"Rate limit exceeded for client {self._hash_key(api_key)[:8]}")
             return False
@@ -128,15 +105,12 @@ class ApiKeyAuth:
 
     def _extract_key(self, headers: dict[str, str]) -> str | None:
         """Extract API key from headers (case-insensitive lookup)."""
-        # Normalize headers to lowercase for case-insensitive lookup
         lower_headers = {k.lower(): v for k, v in headers.items()}
 
-        # Check X-API-Key header
         api_key = lower_headers.get(self.HEADER_NAME.lower())
         if api_key:
             return api_key
 
-        # Check Authorization header (Bearer token)
         auth_header = lower_headers.get("authorization", "")
         if auth_header.startswith(self.BEARER_PREFIX):
             return auth_header[len(self.BEARER_PREFIX) :]
@@ -144,7 +118,7 @@ class ApiKeyAuth:
         return None
 
     def _validate_key(self, provided_key: str) -> bool:
-        """Validate a provided key against stored keys using constant-time comparison."""
+        """Validate using constant-time comparison to prevent timing attacks."""
         for valid_key in self._key_to_identity:
             if secrets.compare_digest(provided_key, valid_key):
                 return True
@@ -153,7 +127,7 @@ class ApiKeyAuth:
     def _check_rate_limit(self, api_key: str) -> bool:
         """Check if client is within rate limits."""
         if self._rate_limit_per_minute <= 0:
-            return True  # Rate limiting disabled
+            return True
 
         key_hash = self._hash_key(api_key)
         if key_hash not in self._rate_limits:
@@ -161,7 +135,6 @@ class ApiKeyAuth:
         state = self._rate_limits[key_hash]
         now = time.time()
 
-        # Check if blocked
         if now < state.blocked_until:
             return False
 
@@ -169,12 +142,10 @@ class ApiKeyAuth:
         cutoff = now - 60.0
         state.request_timestamps = [ts for ts in state.request_timestamps if ts > cutoff]
 
-        # Check rate limit
         if len(state.request_timestamps) >= self._rate_limit_per_minute:
-            state.blocked_until = now + 60.0  # Block for 1 minute
+            state.blocked_until = now + 60.0
             return False
 
-        # Record this request
         state.request_timestamps.append(now)
         return True
 
@@ -207,13 +178,8 @@ class ApiKeyAuth:
         if not self._key_to_identity:
             self._enabled = False
 
-    def get_user_identity(self, headers: dict[str, str]) -> dict[str, Any]:
-        """
-        Extract user identity from authenticated request.
-
-        Returns the identity mapped to the API key, or a default identity
-        if authentication is disabled.
-        """
+    def get_user_identity(self, headers: dict[str, str]) -> dict[str, str | list[str]]:
+        """Get the user identity for an authenticated request."""
         if not self._enabled:
             return {
                 "id": "anonymous",
@@ -227,7 +193,6 @@ class ApiKeyAuth:
         if api_key and api_key in self._key_to_identity:
             return self._key_to_identity[api_key].to_dict()
 
-        # Fallback (should not reach here if validate() was called first)
         return {
             "id": "unknown",
             "name": "Unknown Client",

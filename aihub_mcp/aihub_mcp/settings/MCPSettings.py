@@ -100,12 +100,12 @@ class MCPSettings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_security_settings(self) -> Self:
-        """Validate security configuration based on environment."""
-        has_api_keys = self.API_KEY is not None or len(self.API_KEYS) > 0
+        """Ensure API keys are configured when authentication is required."""
+        has_api_keys = self.API_KEY is not None or bool(self.API_KEYS)
 
         if self.REQUIRE_AUTH and not has_api_keys:
             raise ValueError(
-                "API key required. " "Set MCP_API_KEY or MCP_API_KEYS, or set MCP_REQUIRE_AUTH=false to disable."
+                "API key required. Set MCP_API_KEY or MCP_API_KEYS, or set MCP_REQUIRE_AUTH=false to disable."
             )
 
         if self.HOST == "0.0.0.0" and not has_api_keys:

@@ -16,7 +16,6 @@ from aihub_mcp.translation.SamplingBridge import SamplingBridge
 
 logger = logging.getLogger(__name__)
 
-# Default user identity when none provided (auth disabled)
 DEFAULT_USER_IDENTITY = {
     "id": "anonymous",
     "name": "Anonymous (No Auth)",
@@ -30,23 +29,17 @@ class EventTranslator:
     """
     Translates between Swiss AI Agent Protocol (SAAP) events and MCP protocol.
 
-    This is the core bridge between the two protocols, handling:
-    - Tool invocation → UserMessageEvent/StartEvent
-    - ChunkEvent/ThoughtEvent → Progress notifications
-    - HumanInTheLoopRequestEvent → Elicitation request
-    - StopEvent → Tool success response
-    - ExceptionEvent → Tool error response
-
-    Each invocation creates unique thread_id and run_id for proper tracing in Phoenix.
+    Bridges MCP tool invocations to SAAP events and streams agent responses back
+    as MCP progress notifications.
     """
 
     def __init__(
         self,
         nats_url: str,
-        elicitation_handler: "ElicitationHandler | None" = None,
-        progress_streamer: "ProgressStreamer | None" = None,
-        sampling_bridge: "SamplingBridge | None" = None,
-        tracer: "MCPTracer | None" = None,
+        elicitation_handler: ElicitationHandler | None = None,
+        progress_streamer: ProgressStreamer | None = None,
+        sampling_bridge: SamplingBridge | None = None,
+        tracer: MCPTracer | None = None,
         agent_timeout_seconds: float = 300.0,
         mask_sensitive_data: bool = True,
     ) -> None:
@@ -58,8 +51,8 @@ class EventTranslator:
         self._agent_timeout = agent_timeout_seconds
         self._mask_sensitive_data = mask_sensitive_data
 
-        self._nc: Any = None  # NATS connection
-        self._js: Any = None  # JetStream context
+        self._nc: Any = None
+        self._js: Any = None
         self._js_publisher: JSPublisher | None = None
 
     async def connect(self) -> None:
@@ -87,28 +80,15 @@ class EventTranslator:
         user_identity: dict[str, Any] | None = None,
         tool_name: str | None = None,
     ) -> str:
-        """
-        Execute an agent by translating MCP tool call to SAAP events.
-
-        1. Creates a thread and run context (unique per invocation)
-        2. Starts an OpenTelemetry span with thread/run IDs for Phoenix
-        3. Publishes the start event to NATS
-        4. Subscribes to display events for progress
-        5. Handles HITL requests via elicitation
-        6. Returns final result on StopEvent/ExceptionEvent
-        """
-        # Use provided identity or default
+        """Execute an agent by translating MCP tool call to SAAP events."""
         identity = user_identity or DEFAULT_USER_IDENTITY
 
-        # Generate UNIQUE identifiers for THIS execution
-        # Each MCP tool invocation gets its own thread_id and run_id
         agent_id = f"mcp_{uuid.uuid4().hex[:8]}"
         thread_id = f"mcp_thread_{uuid.uuid4().hex[:12]}"
         display_id = f"mcp_display_{uuid.uuid4().hex[:8]}"
         run_id = f"mcp_run_{uuid.uuid4().hex[:8]}"
         event_id = str(uuid.uuid4())
 
-        # Reset progress counters for this execution
         if self._progress_streamer:
             self._progress_streamer.reset()
 
@@ -117,7 +97,6 @@ class EventTranslator:
             f"thread={thread_id}, run={run_id}, user={identity.get('id', 'unknown')}"
         )
 
-        # Start tracing span with full context for Phoenix
         span = None
         if self._tracer:
             user_id_value = identity.get("id")
@@ -135,14 +114,9 @@ class EventTranslator:
             self._tracer.add_event(
                 span,
                 "execution_started",
-                {
-                    "thread_id": thread_id,
-                    "display_id": display_id,
-                    "run_id": run_id,
-                },
+                {"thread_id": thread_id, "display_id": display_id, "run_id": run_id},
             )
 
-        # Build the start event
         start_event = self._build_start_event(
             event_name=event_name,
             event_parents=event_parents,
@@ -151,7 +125,6 @@ class EventTranslator:
             user_identity=identity,
         )
 
-        # Build the NATS subject for publishing
         subject = self._build_subject(
             agent_class=agent_class,
             agent_id=agent_id,
@@ -163,7 +136,6 @@ class EventTranslator:
             event_id=event_id,
         )
 
-        # Subscribe to display events before publishing
         display_subject = self._build_display_subscription_pattern(
             agent_class=agent_class,
             agent_id=agent_id,
@@ -175,38 +147,31 @@ class EventTranslator:
         accumulated_content: list[str] = []
 
         async def handle_display_event(msg: Any) -> None:
-            """Handle incoming display events."""
             try:
                 event = json.loads(msg.data.decode())
                 event_type = event.get("_event_name", "")
 
-                # Handle ChunkEvent - stream progress
                 if "ChunkEvent" in event_type:
                     content = event.get("content", "")
                     accumulated_content.append(content)
                     if self._progress_streamer:
                         await self._progress_streamer.stream_chunk(ctx, content)
 
-                # Handle ThoughtEvent - stream reasoning
                 elif "ThoughtEvent" in event_type:
                     reasoning = event.get("reasoning_content", "")
                     if reasoning and self._progress_streamer:
                         await self._progress_streamer.stream_thought(ctx, reasoning)
 
-                # Handle HumanInTheLoopRequestEvent - elicitation
                 elif "HumanInTheLoopRequestEvent" in event_type:
                     if self._tracer and span:
                         self._tracer.add_event(
                             span,
                             "hitl_request",
-                            {
-                                "hitl_type": event.get("hitl_type", "input"),
-                            },
+                            {"hitl_type": event.get("hitl_type", "input")},
                         )
 
                     if self._elicitation_handler:
                         response = await self._elicitation_handler.handle_request(ctx, event)
-                        # Publish response back to NATS
                         await self._publish_hitl_response(
                             agent_class=agent_class,
                             agent_id=agent_id,
@@ -219,7 +184,6 @@ class EventTranslator:
                     else:
                         await ctx.warning("HITL request received but no handler configured")
 
-                # Handle SamplingRequestEvent - LLM completion via MCP client
                 elif "SamplingRequestEvent" in event_type:
                     if self._tracer and span:
                         self._tracer.add_event(
@@ -231,7 +195,6 @@ class EventTranslator:
                     if self._sampling_bridge:
                         try:
                             sampling_response = await self._sampling_bridge.handle_sampling_request(ctx, event)
-                            # Publish sampling response back to NATS
                             await self._publish_sampling_response(
                                 agent_class=agent_class,
                                 agent_id=agent_id,
@@ -247,13 +210,11 @@ class EventTranslator:
                     else:
                         await ctx.warning("Sampling request received but no handler configured")
 
-                # Handle StopEvent - completion
                 elif "StopEvent" in event_type:
                     final_content = "".join(accumulated_content)
                     if not result_future.done():
                         result_future.set_result(final_content or "Agent completed successfully")
 
-                # Handle ExceptionEvent - error
                 elif "ExceptionEvent" in event_type:
                     error_msg = event.get("message", "Unknown error")
                     if not result_future.done():
@@ -262,11 +223,9 @@ class EventTranslator:
             except Exception as e:
                 logger.error(f"Error handling display event: {e}")
 
-        # Subscribe to display events
         sub = await self._nc.subscribe(display_subject, cb=handle_display_event)
 
         try:
-            # Publish the start event using JSPublisher for proper headers and tracing
             event = BaseEvent.deserialize_event(start_event)
             await self._js_publisher.publish_event(event, subject)
             logger.info(f"Published start event to {subject}")
@@ -274,10 +233,8 @@ class EventTranslator:
             if self._tracer and span:
                 self._tracer.add_event(span, "event_published", {"subject": subject})
 
-            # Wait for result with configurable timeout
             result = await asyncio.wait_for(result_future, timeout=self._agent_timeout)
 
-            # End span with success
             if self._tracer and span:
                 self._tracer.end_span(span, success=True)
 
@@ -314,11 +271,9 @@ class EventTranslator:
             "_parent_event_names": event_parents,
         }
 
-        # Handle UserMessageEvent specifically - requires user identity and messages format
         if "UserMessageEvent" in event_name:
             base_event["user"] = user_identity
 
-            # Convert message string to proper LlamaIndex ChatMessage format if needed
             if "message" in event_data and "messages" not in event_data:
                 message_content = event_data.pop("message")
                 base_event["messages"] = [
@@ -329,7 +284,6 @@ class EventTranslator:
                     }
                 ]
 
-        # Merge remaining event data
         base_event.update(event_data)
         return base_event
 
@@ -345,7 +299,6 @@ class EventTranslator:
         event_id: str,
     ) -> str:
         """Build a NATS subject for publishing events."""
-        # Format: agent.<agent_class>.<agent_id>.<thread_id>.<display_id>.<run_id>.<event_type>.<event_name>.<event_id>
         return f"agent.{agent_class}.{agent_id}.{thread_id}.{display_id}.{run_id}.{event_type}.{event_name}.{event_id}"
 
     def _build_display_subscription_pattern(
@@ -356,10 +309,7 @@ class EventTranslator:
         display_id: str,
     ) -> str:
         """Build a NATS subject pattern for subscribing to display events."""
-        # Subscribe to all display events for this display context
-        # Format: agent.<agent_class>.<agent_id>.<thread_id>.<display_id>.<run_id>.display_event.<event_name>.<event_id>
-        # Note: Use wildcard for agent_id because the actual agent uses its configured ID (e.g., "rag_dev_agent")
-        # rather than the MCP-generated ID we used when publishing
+        # Wildcard for agent_id because agent uses its configured ID, not our MCP-generated one
         return f"agent.{agent_class}.*.{thread_id}.{display_id}.*.display_event.>"
 
     async def _publish_hitl_response(
@@ -375,7 +325,6 @@ class EventTranslator:
         """Publish a HITL response event back to NATS."""
         event_id = str(uuid.uuid4())
 
-        # Determine response event type based on request type
         hitl_type = request_event.get("hitl_type", "input")
         if hitl_type == "confirmation":
             event_name = "HumanInTheLoopConfirmationResponseEvent"

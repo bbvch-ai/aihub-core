@@ -26,13 +26,8 @@ class ProgressStreamer:
     """
     Streams SAAP DisplayEvents as MCP progress notifications.
 
-    Translates:
-    - ChunkEvent → Progress with partial content
-    - ThoughtEvent → Progress with reasoning metadata
-
-    This keeps MCP clients informed during long-running agent executions.
-
-    Security: Optionally masks sensitive data in logged content.
+    Translates ChunkEvent and ThoughtEvent to MCP progress updates, keeping
+    clients informed during long-running agent executions.
     """
 
     def __init__(self, mask_sensitive_data: bool = True) -> None:
@@ -51,42 +46,21 @@ class ProgressStreamer:
         return masked
 
     async def stream_chunk(self, ctx: Context, content: str) -> None:
-        """
-        Stream a ChunkEvent as progress notification.
-
-        Chunks represent streaming LLM output (token-by-token).
-        """
+        """Stream a ChunkEvent (streaming LLM output) as progress notification."""
         self._chunk_count += 1
 
-        # Report progress with chunk number
-        # Using chunk count as progress indicator
-        await ctx.report_progress(
-            progress=self._chunk_count,
-            total=None,  # Unknown total for streaming
-        )
+        await ctx.report_progress(progress=self._chunk_count, total=None)
 
-        # Also log the content for visibility (with masking)
-        # Note: MCP progress doesn't have a content field,
-        # so we use debug logging to surface the chunk
         if content.strip():
             safe_content = self._mask_content(content[:100])
             await ctx.debug(f"[Chunk {self._chunk_count}] {safe_content}")
 
     async def stream_thought(self, ctx: Context, reasoning: str) -> None:
-        """
-        Stream a ThoughtEvent as progress notification.
-
-        Thoughts represent agent reasoning/internal monologue.
-        """
+        """Stream a ThoughtEvent (agent reasoning) as progress notification."""
         self._thought_count += 1
 
-        # Report progress
-        await ctx.report_progress(
-            progress=self._thought_count,
-            total=None,
-        )
+        await ctx.report_progress(progress=self._thought_count, total=None)
 
-        # Log the reasoning for visibility (with masking)
         if reasoning:
             safe_reasoning = self._mask_content(reasoning[:200])
             await ctx.info(f"[Reasoning] {safe_reasoning}")

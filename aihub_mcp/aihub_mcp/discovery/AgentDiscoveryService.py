@@ -8,6 +8,7 @@ from typing import Any
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 
+from aihub_mcp.discovery.PromptRegistry import PromptRegistry
 from aihub_mcp.server.AgentToolRegistry import AgentToolRegistry
 from aihub_mcp.server.MCPServer import MCPServer
 from aihub_mcp.server.ResourceRegistry import ResourceRegistry
@@ -30,15 +31,17 @@ class AgentDiscoveryService:
 
     def __init__(
         self,
-        settings: "MCPSettings",
-        mcp_server: "MCPServer",
-        tool_registry: "AgentToolRegistry",
-        resource_registry: "ResourceRegistry",
+        settings: MCPSettings,
+        mcp_server: MCPServer,
+        tool_registry: AgentToolRegistry,
+        resource_registry: ResourceRegistry,
+        prompt_registry: PromptRegistry,
     ) -> None:
         self._settings = settings
         self._mcp_server = mcp_server
         self._tool_registry = tool_registry
         self._resource_registry = resource_registry
+        self._prompt_registry = prompt_registry
         self._topic_manager = AgentTopicManager()
 
         self._nc: Any = None  # NATS connection
@@ -180,6 +183,12 @@ class AgentDiscoveryService:
             agent_metadata=discovery_data,
         )
 
+        # Register MCP prompts
+        self._prompt_registry.register_agent_prompts(
+            agent_class=agent_class,
+            is_conversational=is_conversational,
+        )
+
         logger.info(
             f"Registered agent: {agent_class} "
             f"(conversational={is_conversational}, "
@@ -201,6 +210,8 @@ class AgentDiscoveryService:
         for agent_class in stale_agents:
             self._mcp_server.unregister_agent(agent_class)
             self._tool_registry.unregister_agent_tools(agent_class)
+            self._resource_registry.unregister_agent_resources(agent_class)
+            self._prompt_registry.unregister_agent_prompts(agent_class)
             del self._last_discovered[agent_class]
             logger.info(f"Removed stale agent: {agent_class}")
 

@@ -1,5 +1,5 @@
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -10,6 +10,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from starlette.routing import Mount
+from starlette.types import ASGIApp
 
 from aihub_mcp.auth.ApiKeyAuth import ApiKeyAuth
 from aihub_mcp.discovery.AgentDiscoveryService import AgentDiscoveryService
@@ -26,17 +27,22 @@ from aihub_mcp.translation.SamplingBridge import SamplingBridge
 
 logger = logging.getLogger(__name__)
 
+RequestResponseEndpoint = Callable[[Request], Response]
+
 
 class AuthMiddleware(BaseHTTPMiddleware):
     """Middleware to validate API key authentication on MCP requests."""
 
-    def __init__(self, app: Any, auth: ApiKeyAuth, tracer: MCPTracer) -> None:
+    def __init__(self, app: ASGIApp, auth: ApiKeyAuth, tracer: MCPTracer) -> None:
         super().__init__(app)
         self._auth = auth
         self._tracer = tracer
 
-    async def dispatch(self, request: Request, call_next: Any) -> Response:
-        # Start tracing span for the request
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: RequestResponseEndpoint,
+    ) -> Response:
         span = self._tracer.start_tool_span(
             tool_name="mcp_request",
             agent_class="mcp_server",
@@ -63,7 +69,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
                         content={"error": "Unauthorized", "message": "Invalid or missing API key"},
                     )
 
-                # Store user identity in request state
                 request.state.user = self._auth.get_user_identity(headers)
 
             response = await call_next(request)
@@ -77,18 +82,14 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
 class MCPRunner:
     """
-    Complete runner for the MCP server with all services.
+    Runner for the MCP server with authentication, tracing, and agent discovery.
 
-    Orchestrates:
-    - MCP server setup
-    - Agent discovery
-    - Event translation
-    - Authentication (wired via middleware)
-    - Tracing (wired via middleware)
+    Use create_app() to get a Starlette ASGI app for gunicorn, or run() for
+    standalone uvicorn execution.
     """
 
     def __init__(self, settings: MCPSettings | None = None) -> None:
-        self._settings = settings or MCPSettings()
+        self._settings = settings or MCPSettings(REQUIRE_AUTH=False)
 
         # Core components
         self._mcp_server = MCPServer(self._settings)
@@ -131,6 +132,7 @@ class MCPRunner:
             mcp_server=self._mcp_server,
             tool_registry=self._tool_registry,
             resource_registry=self._resource_registry,
+            prompt_registry=self._prompt_registry,
         )
 
     @property
@@ -150,14 +152,11 @@ class MCPRunner:
         return self._tracer
 
     @asynccontextmanager
-    async def lifespan(self, app: Starlette) -> AsyncIterator[None]:
+    async def lifespan(self, _app: Starlette) -> AsyncIterator[None]:
         """Lifecycle manager for all MCP services."""
         logger.info("Starting MCP runner services...")
 
-        # Connect event translator to NATS
         await self._event_translator.connect()
-
-        # Start agent discovery
         await self._discovery_service.start()
 
         auth_status = "enabled" if self._auth.enabled else "disabled"
@@ -171,25 +170,17 @@ class MCPRunner:
             yield
         finally:
             logger.info("Stopping MCP runner services...")
-
-            # Stop discovery
             await self._discovery_service.stop()
-
-            # Disconnect event translator
             await self._event_translator.disconnect()
-
             logger.info("MCP runner services stopped")
 
     def create_app(self) -> Starlette:
-        """Create the complete MCP application with auth and tracing middleware."""
-        # Initialize MCP server
+        """Create the ASGI application with auth and tracing middleware."""
         self._mcp_server.create_mcp()
-
-        # Create the MCP HTTP/SSE app
         mcp = self._mcp_server.mcp
 
         if self._settings.TRANSPORT == "sse":
-            mcp_app = mcp.sse_app(path="/")  # type: ignore[attr-defined]
+            mcp_app: Any = mcp.sse_app(path="/")
             logger.info("Using SSE transport")
         else:
             mcp_app = mcp.http_app(path="/")
@@ -197,13 +188,11 @@ class MCPRunner:
 
         @asynccontextmanager
         async def combined_lifespan(app: Starlette) -> AsyncIterator[None]:
-            # Critical: MCP lifespan must initialize FIRST for session management
             async with mcp_app.lifespan(mcp_app):
                 async with self.lifespan(app):
                     yield
 
-        # Create app with auth middleware
-        app = Starlette(
+        return Starlette(
             routes=[Mount(self._settings.PATH, app=mcp_app)],
             lifespan=combined_lifespan,
             middleware=[
@@ -211,10 +200,8 @@ class MCPRunner:
             ],
         )
 
-        return app
-
     def run(self) -> None:
-        """Run the MCP server using uvicorn."""
+        """Run the MCP server using uvicorn (for development)."""
         import uvicorn
 
         log_level = LogSettings().LEVEL.lower()

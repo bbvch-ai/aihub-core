@@ -29,14 +29,7 @@ class InputValidationError(ValueError):
 
 
 def validate_event_data(data: dict[str, Any], schema: dict[str, Any] | None = None) -> dict[str, Any]:
-    """
-    Validate event data for security issues.
-
-    Checks:
-    - Size limits
-    - Dangerous patterns
-    - Schema compliance (if provided)
-    """
+    """Validate event data for size limits, dangerous patterns, and schema compliance."""
     # Convert to string to check total size
     data_str = json.dumps(data)
     if len(data_str) > MAX_MESSAGE_LENGTH:
@@ -106,8 +99,8 @@ class AgentToolRegistry:
 
     def __init__(
         self,
-        mcp_server: "MCPServer",
-        event_translator: "EventTranslator",
+        mcp_server: MCPServer,
+        event_translator: EventTranslator,
     ) -> None:
         self._mcp_server = mcp_server
         self._event_translator = event_translator
@@ -119,12 +112,7 @@ class AgentToolRegistry:
         start_events: list[dict[str, Any]],
         is_conversational: bool,
     ) -> None:
-        """
-        Register MCP tools for an agent based on its start events.
-
-        For conversational agents with UserMessageEvent, creates a chat tool with proper parameters.
-        For other events, creates tools with JSON input.
-        """
+        """Register MCP tools for an agent based on its start events."""
         for event_spec in start_events:
             event_name = event_spec["event_name"]
             event_schema = event_spec["event_schema"]
@@ -217,15 +205,7 @@ class AgentToolRegistry:
             locale: str = "en",
             conversation_history: str | None = None,
         ) -> str:
-            """
-            Chat with the agent.
-
-            Args:
-                message: The user's message to send to the agent.
-                locale: Language locale (e.g., 'en', 'de', 'fr'). Default: 'en'.
-                conversation_history: Optional JSON array of previous messages for context.
-                    Format: [{"role": "user", "content": "..."}, {"role": "assistant", "content": "..."}]
-            """
+            """Chat with the agent."""
             # Build messages array
             messages: list[dict[str, str]] = []
 
@@ -302,13 +282,7 @@ class AgentToolRegistry:
             event_data_json: str,
             ctx: Context,
         ) -> str:
-            """
-            Invoke the agent with event data.
-
-            Args:
-                event_data_json: JSON object containing the event data.
-                    See tool description for required and optional fields.
-            """
+            """Invoke the agent with event data."""
             try:
                 event_data = json.loads(event_data_json)
             except json.JSONDecodeError as e:

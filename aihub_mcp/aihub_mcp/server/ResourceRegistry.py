@@ -11,36 +11,37 @@ class ResourceRegistry:
     Manages MCP resources for agent metadata.
 
     Exposes agent information as browsable MCP resources:
-    - agents://list - List all agents
-    - agents://{agent_class} - Agent class details
     - agents://{agent_class}/config - Agent configuration schema
     - agents://{agent_class}/events - Supported events
     """
 
-    def __init__(self, mcp_server: "MCPServer") -> None:
+    def __init__(self, mcp_server: MCPServer) -> None:
         self._mcp_server = mcp_server
+        self._registered_resources: dict[str, str] = {}  # resource_uri -> agent_class
 
     def register_agent_resources(
         self,
         agent_class: str,
         agent_metadata: dict[str, Any],
     ) -> None:
-        """
-        Register MCP resources for a discovered agent.
-
-        Creates resource templates for browsing agent details.
-        """
+        """Register MCP resources for a discovered agent."""
         mcp = self._mcp_server.mcp
 
-        # Register config resource
-        @mcp.resource(f"agents://{agent_class}/config")
+        config_uri = f"agents://{agent_class}/config"
+        events_uri = f"agents://{agent_class}/events"
+
+        # Skip if already registered
+        if config_uri in self._registered_resources:
+            logger.debug(f"Resources already registered for agent: {agent_class}")
+            return
+
+        @mcp.resource(config_uri)
         async def get_agent_config() -> dict[str, Any]:
             """Get configuration schema for the agent."""
             config: dict[str, Any] = agent_metadata.get("agent_config_specs", {})
             return config
 
-        # Register events resource
-        @mcp.resource(f"agents://{agent_class}/events")
+        @mcp.resource(events_uri)
         async def get_agent_events() -> dict[str, Any]:
             """Get supported events for the agent."""
             return {
@@ -50,15 +51,22 @@ class ResourceRegistry:
                 "hitl_response_events": agent_metadata.get("hitl_response_events", []),
             }
 
+        self._registered_resources[config_uri] = agent_class
+        self._registered_resources[events_uri] = agent_class
+
         logger.debug(f"Registered resources for agent: {agent_class}")
 
-    def get_all_agents_summary(self) -> list[dict[str, Any]]:
-        """Get a summary of all registered agents for the list resource."""
-        return [
-            {
-                "agent_class": agent_class,
-                "is_conversational": metadata.get("is_conversational", False),
-                "start_event_count": len(metadata.get("start_events", [])),
-            }
-            for agent_class, metadata in self._mcp_server._agent_registry.items()
-        ]
+    def unregister_agent_resources(self, agent_class: str) -> None:
+        """Remove all resources for an agent that went offline."""
+        resources_to_remove = [uri for uri, ac in self._registered_resources.items() if ac == agent_class]
+
+        for uri in resources_to_remove:
+            del self._registered_resources[uri]
+            logger.debug(f"Unregistered resource: {uri}")
+
+        # Note: FastMCP doesn't support runtime resource removal
+        # Resources will remain registered but associated agent may be unavailable
+
+    def get_registered_resources(self) -> dict[str, str]:
+        """Get mapping of registered resource URIs to agent classes."""
+        return self._registered_resources.copy()
