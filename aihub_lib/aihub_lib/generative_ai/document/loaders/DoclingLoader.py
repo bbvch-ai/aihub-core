@@ -4,6 +4,7 @@ import html
 import logging
 import os
 import re
+from io import BytesIO
 from typing import Any
 
 import httpx
@@ -14,6 +15,8 @@ from fsspec import AbstractFileSystem
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.readers.file.base import get_default_fs
 from llama_index.core.schema import Document
+from pypdf import PdfReader, PdfWriter
+from pypdf.generic import RectangleObject
 from tenacity import (
     AsyncRetrying,
     Retrying,
@@ -32,6 +35,28 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _fix_pdf_mediabox(content: bytes, filename: str) -> bytes:
+    """Fix PDF files with missing or invalid page dimensions (mediabox)."""
+    if not filename.lower().endswith(".pdf"):
+        return content
+
+    try:
+        reader = PdfReader(BytesIO(content))
+        writer = PdfWriter()
+
+        for page in reader.pages:
+            if page.mediabox is None or page.mediabox.width == 0 or page.mediabox.height == 0:
+                page.mediabox = RectangleObject((0, 0, 595, 842))  # A4
+            writer.add_page(page)
+
+        output = BytesIO()
+        writer.write(output)
+        return output.getvalue()
+    except Exception as e:
+        logger.warning(f"Could not preprocess PDF {filename}: {e}")
+        return content
 
 
 class DoclingTransientError(Exception):
@@ -84,6 +109,7 @@ class DoclingLoader(BaseReader):
 
     def _read_file_sync(self, fs: AbstractFileSystem, file: str) -> str:
         file_content = fs.cat_file(file)
+        file_content = _fix_pdf_mediabox(file_content, file)
         return base64.b64encode(file_content).decode("utf-8")
 
     def _process_docling_response(
