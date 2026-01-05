@@ -1,3 +1,5 @@
+import asyncio
+from contextlib import contextmanager
 from datetime import datetime
 
 from llama_index.core import Document
@@ -20,6 +22,32 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
 )
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
+
+
+@contextmanager
+def ensure_event_loop():
+    """
+    Context manager that ensures an event loop exists for the current thread.
+
+    LlamaIndex's MilvusVectorStore internally creates an AsyncMilvusClient which requires
+    an event loop. This context manager creates one if it doesn't exist, allowing
+    synchronous code (like pytest-bdd tests) to use Milvus vector stores.
+    """
+    try:
+        loop = asyncio.get_event_loop()
+        created_loop = False
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        created_loop = True
+
+    try:
+        yield loop
+    finally:
+        if created_loop:
+            loop.close()
+            asyncio.set_event_loop(None)
+
 
 DEFAULT_DOCUMENTS: list[Document] = [
     Document(
@@ -70,19 +98,20 @@ def fill_collection(
     doc_store: MongoDocumentStore,
     nodes: list[TextNode] | None = None,
 ):
-    embeddings, _ = embed_model.to_llama_index()
+    with ensure_event_loop():
+        embeddings, _ = embed_model.to_llama_index()
 
-    vector_store = vector_store.to_llama_index()
+        vector_store = vector_store.to_llama_index()
 
-    pipeline: IngestionPipeline = IngestionPipeline(
-        transformations=[embeddings],
-        vector_store=vector_store,
-        docstore=doc_store,
-    )
-    if nodes:
-        pipeline.run(nodes=nodes)
-    else:
-        pipeline.run(documents=DEFAULT_DOCUMENTS)
+        pipeline: IngestionPipeline = IngestionPipeline(
+            transformations=[embeddings],
+            vector_store=vector_store,
+            docstore=doc_store,
+        )
+        if nodes:
+            pipeline.run(nodes=nodes)
+        else:
+            pipeline.run(documents=DEFAULT_DOCUMENTS)
 
 
 def drop_collection(
