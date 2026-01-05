@@ -1,5 +1,6 @@
 import functools
 
+from aihub_lib.nats.events import HumanInTheLoopRequestEvent, HumanInTheLoopResponseEvent
 from aihub_lib.nats.events.control.start import StartEvent
 from aihub_lib.nats.events.control.stop import StopEvent
 from aihub_lib.nats.workflow.DispatchableWorkflow import DispatchableWorkflow
@@ -67,8 +68,6 @@ class Agent(DispatchableWorkflow):
         Returns all event types that are human-in-the-loop request events.
         These events indicate when the agent requests human intervention.
         """
-        from aihub_lib.nats.events.human_in_the_loop.request import HumanInTheLoopRequestEvent
-
         output_events = cls.get_output_events()
         return {event for event in output_events if issubclass(event, HumanInTheLoopRequestEvent)}
 
@@ -79,7 +78,5 @@ class Agent(DispatchableWorkflow):
         Returns all event types that are human-in-the-loop response events.
         These events indicate how humans can respond to HITL requests.
         """
-        from aihub_lib.nats.events.human_in_the_loop.response import HumanInTheLoopResponseEvent
-
         input_events = cls.get_input_events()
         return {event for event in input_events if issubclass(event, HumanInTheLoopResponseEvent)}
