@@ -49,6 +49,8 @@ jobs:
             docker_compose_services: "nats valkey postgres-ferretdb ferretdb"
           - module: aihub_process
             docker_compose_services: "postgres phoenix nats valkey postgres-ferretdb ferretdb"
+          - module: aihub_mcp
+            docker_compose_services: "nats valkey"
 
     steps:
       - name: Checkout repository
@@ -94,7 +96,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        module: [ aihub_lib, aihub_api, aihub_agent, aihub_pipeline, aihub_bot, aihub_process ]
+        module: [ aihub_lib, aihub_api, aihub_agent, aihub_pipeline, aihub_bot, aihub_process, aihub_mcp ]
 
     steps:
       - name: Coverage comment
@@ -133,6 +135,9 @@ jobs:
             report_coverage: 'true'
           - folder: aihub_process
             sonar_project_key: aihub-core_process-core
+            report_coverage: 'true'
+          - folder: aihub_mcp
+            sonar_project_key: aihub-core_mcp-core
             report_coverage: 'true'
           - folder: aihub_web
             sonar_project_key: aihub-core_aihub-web
