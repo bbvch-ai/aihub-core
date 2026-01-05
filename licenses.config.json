@@ -21,7 +21,8 @@
     "shared_rag_pipeline",
     "rag_agent",
     "expert_rag_agent",
-    "expert_asking_agent"
+    "expert_asking_agent",
+    "mcp"
   ],
   "license_categories": {
     "restrictive": [
