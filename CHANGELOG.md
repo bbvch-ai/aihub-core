@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.256.10] - 2026-01-05 - Improved PDF Handling and Development Workflow
+
+### Added
+
+- 🦾 **Enhanced PDF Document Processing:** Introduced a new pre-processing step to automatically fix malformed PDF files,
+  specifically those with missing or invalid page dimensions, using A4 as a standard fallback. This significantly
+  improves the robustness of document conversion through the Docling service.
+- 🧪 **Comprehensive PDF Pre-processing Tests:** Added a dedicated test suite for the new PDF pre-processing
+  functionality, ensuring its reliability and correctness across various PDF formats.
+- ⚡️ **Asynchronous Test Utility:** Implemented a new `run_with_event_loop` helper function to streamline the execution
+  of synchronous methods within an asyncio event loop, particularly for Milvus-related testing, enhancing test
+  reliability and developer experience.
+
+### Changed
+
+- 💬 **Improved Docling Task Error Reporting:** Updated error messages for failed or skipped Docling conversion tasks to
+  provide the full API response, offering more detailed context for debugging and troubleshooting.
+
+### Refactor
+
+- 🔄 **Streamlined Dependency Management:** Standardized `aihub_lib` dependency across all projects to use local path
+  references (`path = "../aihub_lib", develop = true`), simplifying local development and monorepo integration.
+- 🧹 **Centralized Asynchronous Test Setup:** Refactored Milvus-related test fixtures and helper functions to leverage
+  the new `run_with_event_loop` utility, centralizing and improving the management of asynchronous operations in tests.
+
+---
+
 ## [v0.256.9] - 2026-01-05 - Introducing Chat-Style Human-in-the-Loop for Seamless Agent Collaboration
 
 ### Added

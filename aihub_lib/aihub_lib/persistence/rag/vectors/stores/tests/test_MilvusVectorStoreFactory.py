@@ -10,7 +10,7 @@ from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import (
     MilvusIndexType,
     create_milvus_vector_store,
 )
-from aihub_lib.testing.milvus_vector_store_content import drop_collection
+from aihub_lib.testing.milvus_vector_store_content import drop_collection, run_with_event_loop
 
 scenarios("./features/milvus_vector_store.feature")
 
@@ -93,7 +93,10 @@ def _create_vector_store(context, **kwargs):
         "index_type": MilvusIndexType.FLAT,
     }
 
-    context["vector_store"] = create_milvus_vector_store(**(defaults | kwargs))
+    def _create():
+        return create_milvus_vector_store(**(defaults | kwargs))
+
+    context["vector_store"] = run_with_event_loop(_create)
     context["error"] = None
 
 
