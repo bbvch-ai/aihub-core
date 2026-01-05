@@ -117,9 +117,10 @@ class BaseDispatcher(abc.ABC):
 
         logger.debug(f"Handling event {event.event_name} for subject {topic}")
 
-        # Add the event directly to the store since we already have it
-        # This avoids timing issues with waiting for a second delivery via subscription
-        self.event_store._add_event_to_store(topic.execution_context_id, event)
+        # Store the event immediately to avoid race conditions. Without this, there's a timing
+        # window where the dispatcher checks for events before the subscription callback processes
+        # them. By storing directly, we guarantee the event is available for step readiness checks.
+        self.event_store.add_event_to_store(topic.execution_context_id, event)
 
     @abc.abstractmethod
     async def is_step_ready(

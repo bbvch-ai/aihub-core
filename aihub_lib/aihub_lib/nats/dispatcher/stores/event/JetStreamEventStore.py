@@ -147,7 +147,7 @@ class JetStreamEventStore:
                             topic = self.topic.from_subject(polled_msg.subject)
                             event = polled_msg.event
                             event._jetstream_sequence = polled_msg.sequence
-                            self._add_event_to_store(topic.execution_context_id, event)
+                            self.add_event_to_store(topic.execution_context_id, event)
                             msg_count += 1
                         except Exception as e:
                             logger.exception(f"Error processing replayed message: {e}")
@@ -186,8 +186,15 @@ class JetStreamEventStore:
             self.execution_context_stores[store_execution_context_id] = ExecutionContextEventStore()
         return self.execution_context_stores[store_execution_context_id]
 
-    def _add_event_to_store(self, store_execution_context_id: str, event: BaseEvent):
-        """Add an event to the store and handle any pending synchronization"""
+    def add_event_to_store(self, store_execution_context_id: str, event: BaseEvent) -> None:
+        """
+        Add an event to the in-memory store and notify any waiters.
+
+        This method is called both internally during replay/subscription handling and externally
+        by dispatchers that receive events before the subscription processes them. The direct
+        store access avoids race conditions where a dispatcher might check for an event before
+        the subscription callback has a chance to store it.
+        """
         # Get the run store and add the event
         execution_context_store = self._get_execution_context_store(store_execution_context_id)
         execution_context_store.add_event(event)
@@ -224,7 +231,7 @@ class JetStreamEventStore:
             logger.debug(f"Deserialized event: {event}")
 
             # Add the event to the store
-            self._add_event_to_store(store_execution_context_id, event)
+            self.add_event_to_store(store_execution_context_id, event)
 
             # Acknowledge the message
             await msg.ack()

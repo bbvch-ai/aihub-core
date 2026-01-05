@@ -3,7 +3,7 @@ import json
 import logging
 import time
 import uuid
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
@@ -14,6 +14,9 @@ from aihub_mcp.server.MCPServer import MCPServer
 from aihub_mcp.server.ResourceRegistry import ResourceRegistry
 from aihub_mcp.settings.MCPSettings import MCPSettings
 
+if TYPE_CHECKING:
+    from aihub_mcp.tracing.MCPTracer import MCPTracer
+
 logger = logging.getLogger(__name__)
 
 
@@ -21,12 +24,15 @@ class AgentDiscoveryService:
     """
     Discovers AI Hub agents via NATS and registers them as MCP tools.
 
-    This service:
-    1. Subscribes to agent discovery events on NATS
-    2. Broadcasts discovery requests periodically
-    3. Collects discovery responses from running agents
-    4. Registers each agent as an MCP tool via AgentToolRegistry
-    5. Updates registrations when agents come online/offline
+    This service solves the problem of dynamic agent availability. Unlike static tool
+    registration where tools are defined at startup, AI Hub agents can come and go at
+    runtime—deployed, scaled, or taken offline independently. This service continuously
+    monitors for agents and keeps the MCP tool registry in sync with what's actually
+    available, preventing clients from invoking agents that have gone offline.
+
+    The discovery mechanism uses NATS pub/sub to broadcast requests and collect responses,
+    allowing agents running anywhere in the cluster to self-register their capabilities.
+    Stale agents are automatically cleaned up when they stop responding to discovery pings.
     """
 
     def __init__(
@@ -36,12 +42,14 @@ class AgentDiscoveryService:
         tool_registry: AgentToolRegistry,
         resource_registry: ResourceRegistry,
         prompt_registry: PromptRegistry,
+        tracer: "MCPTracer | None" = None,
     ) -> None:
         self._settings = settings
         self._mcp_server = mcp_server
         self._tool_registry = tool_registry
         self._resource_registry = resource_registry
         self._prompt_registry = prompt_registry
+        self._tracer = tracer
         self._topic_manager = AgentTopicManager()
 
         self._nc: Any = None  # NATS connection
@@ -107,18 +115,30 @@ class AgentDiscoveryService:
         """Broadcast a discovery request to all agents."""
         call_id = uuid.uuid4().hex[:12]
 
-        # Use platform topic manager to get correct subject
-        # Pattern: class_discovery.agent.*.*.request.{call_id}
-        subject = self._topic_manager.get_agent_class_discovery_subject_request(
-            call_id=call_id,
-            agent_class="*",
-        )
+        span = None
+        if self._tracer:
+            span = self._tracer.start_discovery_span("broadcast", call_id)
 
-        # Use proper ClassDiscoveryRequestEvent from aihub_lib
-        event = ClassDiscoveryRequestEvent()
+        try:
+            # Use platform topic manager to get correct subject
+            # Pattern: class_discovery.agent.*.*.request.{call_id}
+            subject = self._topic_manager.get_agent_class_discovery_subject_request(
+                call_id=call_id,
+                agent_class="*",
+            )
 
-        await self._nc.publish(subject, event.model_dump_json().encode())
-        logger.debug(f"Broadcast discovery request: {call_id} on {subject}")
+            # Use proper ClassDiscoveryRequestEvent from aihub_lib
+            event = ClassDiscoveryRequestEvent()
+
+            await self._nc.publish(subject, event.model_dump_json().encode())
+            logger.debug(f"Broadcast discovery request: {call_id} on {subject}")
+
+            if self._tracer and span:
+                self._tracer.end_span(span, success=True)
+        except Exception as e:
+            if self._tracer and span:
+                self._tracer.end_span(span, success=False, error_message=str(e))
+            raise
 
     async def _handle_discovery_response(self, msg: Any) -> None:
         """Handle a discovery response from an agent."""
@@ -150,51 +170,73 @@ class AgentDiscoveryService:
     def _register_agent(self, discovery_data: dict[str, Any]) -> None:
         """Register a discovered agent as MCP tool and resources."""
         agent_class = discovery_data.get("agent_class", "")
-        is_conversational = discovery_data.get("is_conversational", False)
-        start_events = discovery_data.get("start_events", [])
-        stop_events = discovery_data.get("stop_events", [])
-        hitl_request_events = discovery_data.get("hitl_request_events", [])
-        hitl_response_events = discovery_data.get("hitl_response_events", [])
-        agent_config_specs = discovery_data.get("agent_config_specs", {})
-        default_agent_config = discovery_data.get("default_agent_config", {})
 
-        # Register with MCP server
-        self._mcp_server.register_agent(
-            agent_class=agent_class,
-            is_conversational=is_conversational,
-            start_events=start_events,
-            stop_events=stop_events,
-            hitl_request_events=hitl_request_events,
-            hitl_response_events=hitl_response_events,
-            agent_config_specs=agent_config_specs,
-            default_agent_config=default_agent_config,
-        )
+        span = None
+        if self._tracer:
+            span = self._tracer.start_agent_registration_span(agent_class)
 
-        # Register MCP tools
-        self._tool_registry.register_agent_tools(
-            agent_class=agent_class,
-            start_events=start_events,
-            is_conversational=is_conversational,
-        )
+        try:
+            is_conversational = discovery_data.get("is_conversational", False)
+            start_events = discovery_data.get("start_events", [])
+            stop_events = discovery_data.get("stop_events", [])
+            hitl_request_events = discovery_data.get("hitl_request_events", [])
+            hitl_response_events = discovery_data.get("hitl_response_events", [])
+            agent_config_specs = discovery_data.get("agent_config_specs", {})
+            default_agent_config = discovery_data.get("default_agent_config", {})
 
-        # Register MCP resources
-        self._resource_registry.register_agent_resources(
-            agent_class=agent_class,
-            agent_metadata=discovery_data,
-        )
+            # Register with MCP server
+            self._mcp_server.register_agent(
+                agent_class=agent_class,
+                is_conversational=is_conversational,
+                start_events=start_events,
+                stop_events=stop_events,
+                hitl_request_events=hitl_request_events,
+                hitl_response_events=hitl_response_events,
+                agent_config_specs=agent_config_specs,
+                default_agent_config=default_agent_config,
+            )
 
-        # Register MCP prompts
-        self._prompt_registry.register_agent_prompts(
-            agent_class=agent_class,
-            is_conversational=is_conversational,
-        )
+            # Register MCP tools
+            self._tool_registry.register_agent_tools(
+                agent_class=agent_class,
+                start_events=start_events,
+                is_conversational=is_conversational,
+            )
 
-        logger.info(
-            f"Registered agent: {agent_class} "
-            f"(conversational={is_conversational}, "
-            f"start_events={len(start_events)}, "
-            f"hitl_events={len(hitl_request_events)})"
-        )
+            # Register MCP resources
+            self._resource_registry.register_agent_resources(
+                agent_class=agent_class,
+                agent_metadata=discovery_data,
+            )
+
+            # Register MCP prompts
+            self._prompt_registry.register_agent_prompts(
+                agent_class=agent_class,
+                is_conversational=is_conversational,
+            )
+
+            if self._tracer and span:
+                self._tracer.add_event(
+                    span,
+                    "agent_registered",
+                    {
+                        "is_conversational": is_conversational,
+                        "start_events_count": len(start_events),
+                        "hitl_events_count": len(hitl_request_events),
+                    },
+                )
+                self._tracer.end_span(span, success=True)
+
+            logger.info(
+                f"Registered agent: {agent_class} "
+                f"(conversational={is_conversational}, "
+                f"start_events={len(start_events)}, "
+                f"hitl_events={len(hitl_request_events)})"
+            )
+        except Exception as e:
+            if self._tracer and span:
+                self._tracer.end_span(span, success=False, error_message=str(e))
+            raise
 
     def _cleanup_stale_agents(self) -> None:
         """Mark agents that haven't been seen recently as unavailable."""

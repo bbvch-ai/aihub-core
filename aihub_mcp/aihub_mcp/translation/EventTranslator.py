@@ -15,7 +15,7 @@ from aihub_mcp.translation.ProgressStreamer import ProgressStreamer
 from aihub_mcp.translation.SamplingBridge import SamplingBridge
 
 if TYPE_CHECKING:
-    from aihub_mcp.translation.HITLPendingStore import HITLPendingStore
+    from aihub_mcp.translation.HITLPendingStore import HITLPendingStoreInterface
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +35,16 @@ class EventTranslator:
     """
     Translates between Swiss AI Agent Protocol (SAAP) events and MCP protocol.
 
-    Bridges MCP tool invocations to SAAP events and streams agent responses back
-    as MCP progress notifications.
+    This class exists because MCP clients (like Claude Code) speak a different language than
+    our SAAP-based agents. Rather than modifying agents to understand MCP directly—which would
+    tightly couple them to a specific client protocol—we translate at the boundary, allowing
+    agents to remain protocol-agnostic while still being invocable via MCP.
+
+    Key responsibilities:
+    - Convert MCP tool calls into SAAP events that trigger agent workflows
+    - Subscribe to agent display events and stream them back as MCP progress notifications
+    - Handle HITL (Human-in-the-Loop) requests through either elicitation or two-phase fallback
+    - Manage the NATS connection lifecycle for each tool invocation
     """
 
     def __init__(
@@ -46,7 +54,7 @@ class EventTranslator:
         progress_streamer: ProgressStreamer | None = None,
         sampling_bridge: SamplingBridge | None = None,
         tracer: MCPTracer | None = None,
-        hitl_pending_store: "HITLPendingStore | None" = None,
+        hitl_pending_store: "HITLPendingStoreInterface | None" = None,
         agent_timeout_seconds: float = 300.0,
         mask_sensitive_data: bool = True,
     ) -> None:
@@ -63,7 +71,7 @@ class EventTranslator:
         self._js: Any = None
         self._js_publisher: JSPublisher | None = None
 
-    def set_hitl_pending_store(self, store: "HITLPendingStore") -> None:
+    def set_hitl_pending_store(self, store: "HITLPendingStoreInterface") -> None:
         """Set the HITL pending store for two-phase fallback flow."""
         self._hitl_pending_store = store
 
@@ -317,7 +325,11 @@ class EventTranslator:
             raise
 
         finally:
-            await sub.unsubscribe()
+            # Ensure subscription cleanup even if other cleanup operations fail
+            try:
+                await sub.unsubscribe()
+            except Exception as cleanup_error:
+                logger.warning(f"Failed to unsubscribe from display events: {cleanup_error}")
             logger.info(f"Agent execution completed: thread={thread_id}, run={run_id}")
 
     def _build_start_event(
@@ -618,5 +630,9 @@ class EventTranslator:
             raise
 
         finally:
-            await sub.unsubscribe()
+            # Ensure subscription cleanup even if other cleanup operations fail
+            try:
+                await sub.unsubscribe()
+            except Exception as cleanup_error:
+                logger.warning(f"Failed to unsubscribe during resume cleanup: {cleanup_error}")
             logger.info(f"Resume phase completed: request_id={request_id}")

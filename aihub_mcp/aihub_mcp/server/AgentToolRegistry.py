@@ -6,13 +6,10 @@ from typing import Any
 from fastmcp import Context
 
 from aihub_mcp.server.MCPServer import MCPServer
+from aihub_mcp.settings.MCPSettings import MCPSettings
 from aihub_mcp.translation.EventTranslator import EventTranslator
 
 logger = logging.getLogger(__name__)
-
-# Maximum sizes for input validation
-MAX_MESSAGE_LENGTH = 100_000  # 100KB max message
-MAX_JSON_DEPTH = 10  # Maximum nesting depth for JSON
 
 # Patterns that might indicate injection attempts
 SUSPICIOUS_PATTERNS = [
@@ -28,12 +25,17 @@ class InputValidationError(ValueError):
     pass
 
 
-def validate_event_data(data: dict[str, Any], schema: dict[str, Any] | None = None) -> dict[str, Any]:
+def validate_event_data(
+    data: dict[str, Any],
+    schema: dict[str, Any] | None = None,
+    max_message_length: int = 100_000,
+    max_json_depth: int = 10,
+) -> dict[str, Any]:
     """Validate event data for size limits, dangerous patterns, and schema compliance."""
     # Convert to string to check total size
     data_str = json.dumps(data)
-    if len(data_str) > MAX_MESSAGE_LENGTH:
-        raise InputValidationError(f"Input too large: {len(data_str)} bytes (max {MAX_MESSAGE_LENGTH})")
+    if len(data_str) > max_message_length:
+        raise InputValidationError(f"Input too large: {len(data_str)} bytes (max {max_message_length})")
 
     # Check for suspicious patterns
     for pattern in SUSPICIOUS_PATTERNS:
@@ -43,8 +45,8 @@ def validate_event_data(data: dict[str, Any], schema: dict[str, Any] | None = No
 
     # Check nesting depth
     def check_depth(obj: Any, current_depth: int = 0) -> None:
-        if current_depth > MAX_JSON_DEPTH:
-            raise InputValidationError(f"Input nesting too deep (max {MAX_JSON_DEPTH})")
+        if current_depth > max_json_depth:
+            raise InputValidationError(f"Input nesting too deep (max {max_json_depth})")
         if isinstance(obj, dict):
             for v in obj.values():
                 check_depth(v, current_depth + 1)
@@ -90,17 +92,25 @@ class AgentToolRegistry:
     """
     Dynamically registers AI Hub agents as MCP tools.
 
-    Each agent's start events become MCP tools with schemas derived from EventSpecs.
-    Tool handlers check agent availability at invocation time and fail fast if offline.
+    Each agent in AI Hub defines its own start events (the entry points for triggering
+    the agent's workflow). This registry translates those events into MCP tools, allowing
+    MCP clients to invoke agents without knowing the underlying SAAP event structure.
+
+    The registry generates tool schemas dynamically from event specs, so new agents or
+    event types don't require code changes here. Tool handlers perform runtime availability
+    checks because agents can go offline between discovery and invocation—we fail fast
+    with clear errors rather than hang waiting for a response that will never come.
     """
 
     def __init__(
         self,
         mcp_server: MCPServer,
         event_translator: EventTranslator,
+        settings: MCPSettings,
     ) -> None:
         self._mcp_server = mcp_server
         self._event_translator = event_translator
+        self._settings = settings
 
     def register_agent_tools(
         self,
@@ -185,6 +195,7 @@ class AgentToolRegistry:
         mcp = self._mcp_server.mcp
         mcp_server = self._mcp_server
         event_translator = self._event_translator
+        settings = self._settings
 
         @mcp.tool(name=tool_name, description=description)
         async def chat_tool(
@@ -222,7 +233,11 @@ class AgentToolRegistry:
             }
 
             try:
-                validate_event_data(event_data)
+                validate_event_data(
+                    event_data,
+                    max_message_length=settings.MAX_MESSAGE_LENGTH,
+                    max_json_depth=settings.MAX_JSON_DEPTH,
+                )
             except InputValidationError as e:
                 await ctx.error(f"Input validation failed: {e}")
                 raise ValueError(f"Input validation failed: {e}") from e
@@ -256,6 +271,7 @@ class AgentToolRegistry:
         mcp = self._mcp_server.mcp
         mcp_server = self._mcp_server
         event_translator = self._event_translator
+        settings = self._settings
 
         properties = self._extract_input_properties(event_schema)
         required = event_schema.get("required", [])
@@ -276,7 +292,12 @@ class AgentToolRegistry:
                 raise ValueError(f"Invalid JSON: {e}") from e
 
             try:
-                validate_event_data(event_data, event_schema)
+                validate_event_data(
+                    event_data,
+                    schema=event_schema,
+                    max_message_length=settings.MAX_MESSAGE_LENGTH,
+                    max_json_depth=settings.MAX_JSON_DEPTH,
+                )
             except InputValidationError as e:
                 await ctx.error(f"Input validation failed: {e}")
                 raise ValueError(f"Input validation failed: {e}") from e

@@ -1,3 +1,4 @@
+import abc
 import logging
 import time
 from typing import Any
@@ -10,12 +11,57 @@ logger = logging.getLogger(__name__)
 DEFAULT_HITL_TTL_SECONDS = 60 * 10  # 10 minutes
 
 
-class HITLPendingStore(StoreBase):
+class HITLPendingStoreInterface(abc.ABC):
+    """
+    Abstract interface for HITL pending request storage.
+
+    This interface allows different backend implementations for storing pending
+    Human-in-the-Loop requests. The default implementation uses Redis/Valkey,
+    but alternative implementations (e.g., in-memory for testing, database-backed
+    for persistence) can be created by implementing this interface.
+    """
+
+    @abc.abstractmethod
+    async def store_pending(
+        self,
+        request_id: str,
+        agent_class: str,
+        thread_id: str,
+        display_id: str,
+        run_id: str,
+        request_event: dict[str, Any],
+        hitl_type: str,
+        accumulated_content: list[str],
+    ) -> bool:
+        """
+        Store pending HITL context for later retrieval.
+
+        Returns True if storage was successful, False otherwise.
+        """
+        ...
+
+    @abc.abstractmethod
+    async def get_pending(self, request_id: str) -> dict[str, Any] | None:
+        """
+        Retrieve pending HITL context by request_id.
+
+        Returns the context dict if found, None if not found or expired.
+        """
+        ...
+
+    @abc.abstractmethod
+    async def remove_pending(self, request_id: str) -> None:
+        """Remove pending request after it has been processed."""
+        ...
+
+
+class HITLPendingStore(StoreBase, HITLPendingStoreInterface):
     """
     Valkey-backed store for pending Human-in-the-Loop requests.
 
     When MCP elicitation is not supported by the client, this store holds the execution
-    context so that the submit_hitl_response tool can resume agent execution.
+    context so that the submit_hitl_response tool can resume agent execution. Uses
+    Redis/Valkey for distributed storage with automatic TTL-based expiration.
 
     Key format: pending_hitl:{request_id}:context
 

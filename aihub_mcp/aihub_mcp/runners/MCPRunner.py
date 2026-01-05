@@ -125,6 +125,7 @@ class MCPRunner:
         self._tool_registry = AgentToolRegistry(
             mcp_server=self._mcp_server,
             event_translator=self._event_translator,
+            settings=self._settings,
         )
         self._resource_registry = ResourceRegistry(self._mcp_server)
         self._prompt_registry = PromptRegistry(self._mcp_server)
@@ -136,6 +137,7 @@ class MCPRunner:
             tool_registry=self._tool_registry,
             resource_registry=self._resource_registry,
             prompt_registry=self._prompt_registry,
+            tracer=self._tracer,
         )
 
         # HITL components (initialized in lifespan when Redis is available)

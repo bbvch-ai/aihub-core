@@ -104,6 +104,16 @@ class MCPSettings(BaseSettings):
         description="Mask potentially sensitive data in logs",
     )
 
+    # Input validation limits
+    MAX_MESSAGE_LENGTH: int = Field(
+        default=100_000,
+        description="Maximum size of input messages in bytes (100KB default). Prevents DoS via large payloads.",
+    )
+    MAX_JSON_DEPTH: int = Field(
+        default=10,
+        description="Maximum nesting depth for JSON input. Prevents stack overflow from deeply nested structures.",
+    )
+
     @model_validator(mode="after")
     def validate_security_settings(self) -> Self:
         """Ensure API keys are configured when authentication is required."""

@@ -172,6 +172,39 @@ class MCPTracer:
             },
         )
 
+    def start_discovery_span(self, operation: str, call_id: str | None = None) -> Span | None:
+        """Start a span for agent discovery operations."""
+        if not self._enabled:
+            return None
+
+        attributes: dict[str, Any] = {
+            "mcp.operation": "discovery",
+            "mcp.discovery.operation": operation,
+        }
+        if call_id:
+            attributes["mcp.discovery.call_id"] = call_id
+
+        return self.tracer.start_span(
+            name=f"mcp.discovery.{operation}",
+            kind=SpanKind.INTERNAL,
+            attributes=attributes,
+        )
+
+    def start_agent_registration_span(self, agent_class: str) -> Span | None:
+        """Start a span for agent registration."""
+        if not self._enabled:
+            return None
+
+        return self.tracer.start_span(
+            name=f"mcp.discovery.register.{agent_class}",
+            kind=SpanKind.INTERNAL,
+            attributes={
+                "mcp.operation": "discovery",
+                "mcp.discovery.operation": "register",
+                "mcp.agent.class": agent_class,
+            },
+        )
+
     def end_span(
         self,
         span: Span | None,

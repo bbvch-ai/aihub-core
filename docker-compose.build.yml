@@ -1312,6 +1312,8 @@ services:
     depends_on:
       nats:
         condition: service_started
+      valkey:
+        condition: service_healthy
       traefik:
         condition: service_started
     environment:
@@ -1326,6 +1328,9 @@ services:
 
       # NATS configuration
       MCP_NATS_URL: nats://nats:4222
+
+      # Redis/Valkey configuration (for HITL pending request storage)
+      MCP_REDIS_URL: redis://valkey:6379
 
       # Tracing
       MCP_TRACING_ENABLED: ${OTEL_ENABLED}
