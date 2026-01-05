@@ -3,6 +3,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
 
+from aihub_lib.infrastructure.logging.LogSettings import LogSettings
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -216,10 +217,7 @@ class MCPRunner:
         """Run the MCP server using uvicorn."""
         import uvicorn
 
-        # Configure logging
-        log_level = "debug" if self._settings.DEBUG else "info"
-        logging.basicConfig(level=log_level.upper())
-
+        log_level = LogSettings().LEVEL.lower()
         app = self.create_app()
 
         logger.info(f"Starting MCP server on {self._settings.HOST}:{self._settings.PORT}")

@@ -15,7 +15,7 @@ class MCPSettings(BaseSettings):
     or via a .env file.
 
     Security notes:
-    - API_KEY is required in production (DEBUG=False)
+    - API_KEY is required when REQUIRE_AUTH=true (default)
     - HOST defaults to 127.0.0.1 for security; set to 0.0.0.0 for network access
     """
 
@@ -47,7 +47,7 @@ class MCPSettings(BaseSettings):
     # Authentication
     API_KEY: SecretStr | None = Field(
         default=None,
-        description="API key for authenticating MCP clients. Required in production (DEBUG=False).",
+        description="API key for authenticating MCP clients. Required when REQUIRE_AUTH=true.",
     )
     API_KEYS: list[SecretStr] = Field(
         default_factory=list,
@@ -55,7 +55,7 @@ class MCPSettings(BaseSettings):
     )
     REQUIRE_AUTH: bool = Field(
         default=True,
-        description="Require authentication. Auto-disabled in DEBUG mode if no API keys configured.",
+        description="Require API key authentication for MCP clients.",
     )
 
     # NATS configuration
@@ -98,26 +98,15 @@ class MCPSettings(BaseSettings):
         description="Mask potentially sensitive data in logs",
     )
 
-    # Server behavior
-    DEBUG: bool = Field(
-        default=False,
-        description="Enable debug mode with verbose logging",
-    )
-
     @model_validator(mode="after")
     def validate_security_settings(self) -> Self:
         """Validate security configuration based on environment."""
         has_api_keys = self.API_KEY is not None or len(self.API_KEYS) > 0
 
-        if not self.DEBUG and self.REQUIRE_AUTH and not has_api_keys:
+        if self.REQUIRE_AUTH and not has_api_keys:
             raise ValueError(
-                "API key required in production mode. "
-                "Set MCP_API_KEY or MCP_API_KEYS, or set MCP_REQUIRE_AUTH=false to disable "
-                "(not recommended for production)."
+                "API key required. " "Set MCP_API_KEY or MCP_API_KEYS, or set MCP_REQUIRE_AUTH=false to disable."
             )
-
-        if self.DEBUG and not has_api_keys:
-            logger.warning("Running in DEBUG mode without authentication. Do not expose to untrusted networks.")
 
         if self.HOST == "0.0.0.0" and not has_api_keys:
             logger.warning("Server bound to all interfaces (0.0.0.0) without authentication. This is a security risk!")

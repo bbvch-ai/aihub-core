@@ -31,12 +31,11 @@ MCP_PORT=8001
 MCP_PATH=/mcp
 MCP_TRANSPORT=http
 
-# Authentication (required in production when DEBUG=False)
+# Authentication (required when REQUIRE_AUTH=true)
 MCP_API_KEY=your-api-key
 MCP_REQUIRE_AUTH=true
 
 # Optional settings
-MCP_DEBUG=false
 MCP_NATS_URL=nats://localhost:4222
 MCP_RATE_LIMIT_REQUESTS_PER_MINUTE=60
 MCP_MASK_SENSITIVE_DATA=true

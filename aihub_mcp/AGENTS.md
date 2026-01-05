@@ -107,8 +107,7 @@ sampling_response = await ctx.sample(
 | `MCP_PORT` | Server port | `8001` |
 | `MCP_PATH` | Endpoint path | `/mcp` |
 | `MCP_TRANSPORT` | Transport type (`http`, `sse`) | `http` |
-| `MCP_DEBUG` | Enable debug mode | `false` |
-| `MCP_API_KEY` | API key for authentication | Required in production |
+| `MCP_API_KEY` | API key for authentication | Required when `REQUIRE_AUTH=true` |
 | `MCP_API_KEYS` | Additional API keys (comma-separated) | `[]` |
 | `MCP_REQUIRE_AUTH` | Require authentication | `true` |
 | `MCP_RATE_LIMIT_REQUESTS_PER_MINUTE` | Rate limit (0 to disable) | `60` |
@@ -119,7 +118,7 @@ sampling_response = await ctx.sample(
 
 ### Security Notes
 
-- **Production Mode**: When `MCP_DEBUG=false` (default), API keys are required unless `MCP_REQUIRE_AUTH=false`
+- **Authentication**: API keys are required when `MCP_REQUIRE_AUTH=true` (default). Set `MCP_REQUIRE_AUTH=false` to disable.
 - **Network Access**: Default host is `127.0.0.1` (localhost only). Set to `0.0.0.0` for external access, but ensure authentication is configured
 - **Rate Limiting**: Enabled by default at 60 requests/minute per client
 - **Data Masking**: Sensitive data (API keys, passwords, emails, etc.) is automatically masked in logs

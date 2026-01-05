@@ -2,7 +2,6 @@ import hashlib
 import logging
 import secrets
 import time
-from collections import defaultdict
 from typing import Annotated, Any
 
 from pydantic import BaseModel, Field, SecretStr

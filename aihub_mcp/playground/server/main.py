@@ -72,7 +72,6 @@ def main() -> None:
     settings = MCPSettings(
         HOST=args.host,
         PORT=args.port,
-        DEBUG=True,
         API_KEY=SecretStr(args.api_key) if args.api_key else None,
         REQUIRE_AUTH=False,  # Playground doesn't require auth for convenience
         TRACING_ENABLED=False,  # Simpler output for playground

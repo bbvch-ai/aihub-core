@@ -1,12 +1,11 @@
 import logging
 
+from aihub_lib.infrastructure.logging.logger import enable_logging
+
 from aihub_mcp.runners.MCPRunner import MCPRunner
 from aihub_mcp.settings.MCPSettings import MCPSettings
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
+enable_logging()
 
 logger = logging.getLogger(__name__)
 
@@ -16,10 +15,6 @@ def main() -> None:
     logger.info("Initializing Swiss AI Hub MCP Server...")
 
     settings = MCPSettings()
-
-    if settings.DEBUG:
-        logging.getLogger().setLevel(logging.DEBUG)
-
     runner = MCPRunner(settings)
     runner.run()
 

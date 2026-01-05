@@ -3,12 +3,12 @@ import json
 import logging
 import time
 import uuid
-from typing import TYPE_CHECKING, Any
-
-from fastmcp import Context
+from typing import Any
 
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
+from fastmcp import Context
+
 from aihub_mcp.tracing.MCPTracer import MCPTracer
 from aihub_mcp.translation.ElicitationHandler import ElicitationHandler
 from aihub_mcp.translation.ProgressStreamer import ProgressStreamer
