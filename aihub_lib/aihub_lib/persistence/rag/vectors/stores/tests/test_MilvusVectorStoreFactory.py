@@ -96,6 +96,7 @@ def _create_vector_store(context, **kwargs):
         "collection_name": context["collection_name"],
         "embedding_vector_dimension": context["embedding_dimension"],
         "index_type": MilvusIndexType.FLAT,
+        "token": context.get("milvus_token"),
     }
 
     context["vector_store"] = create_milvus_vector_store(**(defaults | kwargs))
