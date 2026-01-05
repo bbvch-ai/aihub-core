@@ -121,6 +121,8 @@ services:
       -volumeSizeLimitMB=29000
       {%- endif %}
       -volumePreallocate=false
+    environment:
+      WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
     volumes:
       - {{ global.volume_root }}/seaweedfs-master:/data
     healthcheck:
@@ -151,6 +153,8 @@ services:
       -port=8080
       -max=100
       -dataCenter=dc1
+    environment:
+      WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
     volumes:
       - {{ global.volume_root }}/seaweedfs-volume:/data
     depends_on:
@@ -175,6 +179,8 @@ services:
       filer
       -master="{{ SEAWEEDFS_MASTER_ENDPOINT }}"
       -ip.bind=0.0.0.0
+    environment:
+      WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
     volumes:
       - {{ global.volume_root }}/seaweedfs-filer:/data
       - ./configs/seaweedfs/seaweed-filer-config.{{ stage_postfix }}.toml:/etc/seaweedfs/filer.toml:ro
@@ -209,6 +215,9 @@ services:
       # S3 Authentication
       SEAWEEDFS_S3_USER: ${S3_STORAGE_ACCESS_KEY}
       SEAWEEDFS_S3_PASSWORD: ${S3_STORAGE_SECRET_KEY}
+
+      # Internal JWT Authentication
+      WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
 
       # S3 Service Configuration
       S3_PORT: "9000"
