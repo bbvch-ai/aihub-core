@@ -74,6 +74,9 @@ services:
     container_name: docling-serve
     image: quay.io/docling-project/docling-serve-cu128:v1.9.0
     restart: always
+    # Memory swap limit: total memory+swap ceiling (requires swap on host)
+    # If container exceeds 20G RAM, it can use up to 4G swap before being killed
+    memswap_limit: 24G
     environment:
       DOCLING_SERVE_ENABLE_UI: "true"
       DOCLING_SERVE_ARTIFACTS_PATH: /models
