@@ -19,7 +19,6 @@ enable_logging()
 
 
 async def main():
-    servers_list = [NatsSettings().ENDPOINT]
     runner = AgentRunner(
         agent_type=LLMWrappingAgent,
         default_agent_config=LLMWrappingAgentConfig(
@@ -29,8 +28,6 @@ async def main():
             description=LocaleString(en="This is the default Dev Agent config"),
             llm=LLMConfig(model_name="text-generation/mini"),
         ),
-        redis_url=RedisSettings().URL,
-        servers=servers_list,
     )
 
     await runner.run_forever()

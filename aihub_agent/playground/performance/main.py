@@ -156,8 +156,6 @@ async def run_system_test(process_count: int, n_events: int, payload_kb: int) ->
     try:
         # Start the multiprocess runner
         runner = MultiprocessAgentRunner(
-            servers=[NatsSettings().ENDPOINT],
-            redis_url=RedisSettings().URL,
             agent_type=agent_type,
             agent_config=agent_config,
             process_count=process_count,

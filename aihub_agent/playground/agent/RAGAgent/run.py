@@ -29,7 +29,6 @@ enable_logging()
 
 
 async def main():
-    servers_list = [NatsSettings().ENDPOINT]
     aihub_settings = AIHubSettings()
     runner = AgentRunner(
         agent_type=RAGAgent,
@@ -185,8 +184,6 @@ async def main():
                 ),
             ],
         ),
-        redis_url=RedisSettings().URL,
-        servers=servers_list,
     )
 
     await runner.run_forever()

@@ -48,8 +48,6 @@ class ProcessRunner:
 
     def __init__(
         self,
-        servers: list[str],
-        redis_url: str,
         process_type: type[AgenticProcess],
         default_process_config: ProcessConfig,
         locale_paths: list[str] | None = None,
@@ -59,8 +57,6 @@ class ProcessRunner:
         if not issubclass(process_type, AgenticProcess):
             raise ValueError("process_type must be a subclass of AgenticProcess.")
 
-        self.servers = servers
-        self.redis_url = redis_url
         self.process_type = process_type
         self.default_process_config = default_process_config
         self.process_config_type = default_process_config.__class__
@@ -168,17 +164,10 @@ class ProcessRunner:
                 uuidRepresentation="standard",
             )
 
-        self.nc = NATS()
-        # Get NATS token from settings for authentication
-        nats_settings = NatsSettings()
-        token = nats_settings.TOKEN.get_secret_value() if nats_settings.TOKEN else None
-        await self.nc.connect(servers=self.servers, token=token)
-
+        # Create NATS and Redis clients from settings
+        self.nc = await NatsSettings.create_client()
         self.js = self.nc.jetstream(timeout=60, publish_async_max_pending=10_000)
-        # Use Redis.from_url() to properly handle password in connection URL
-        redis_settings = RedisSettings()
-        redis_url = redis_settings.get_connection_url()
-        self.redis = Redis.from_url(redis_url)
+        self.redis = RedisSettings.create_client()
 
         # Initialize dispatcher
         self.dispatcher = ProcessDispatcher(

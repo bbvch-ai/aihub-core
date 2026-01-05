@@ -31,7 +31,6 @@ enable_logging()
 
 
 async def main():
-    servers_list = [NatsSettings().ENDPOINT]
     aihub_settings = AIHubSettings()
     runner = AgentRunner(
         agent_type=ExpertRAGAgent,
@@ -209,8 +208,6 @@ async def main():
                 expert_asking_agent_id="expert_asking_agent",
             ),
         ),
-        redis_url=RedisSettings().URL,
-        servers=servers_list,
     )
 
     await runner.run_forever()

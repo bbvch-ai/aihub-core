@@ -167,10 +167,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         """
         assert len(self.simulated_events) > 0, "No simulated events provided"
 
-        self.nc = NATS()
-        nats_settings = NatsSettings()
-        token = nats_settings.TOKEN.get_secret_value() if nats_settings.TOKEN else None
-        await self.nc.connect(servers=[nats_settings.ENDPOINT], token=token)
+        self.nc = await NatsSettings.create_client()
 
         self.nc_publisher = NCPublisher(f"Simulated{self.agent_class}BotTestRunnerDiscoveryResponse", self.nc)
         self.discovery_subscriber = AgentNCSubscriber.for_agent_instance_discovery_request_events(

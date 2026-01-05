@@ -20,8 +20,6 @@ enable_logging()
 
 async def main():
     runner = MultiprocessAgentRunner(
-        servers=[NatsSettings().ENDPOINT],
-        redis_url=RedisSettings().URL,
         agent_type=FrontendTestingAgent,
         agent_config=FrontendTestingAgentConfig(
             agent_id="frontend_testing",

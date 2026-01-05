@@ -2,6 +2,7 @@ from typing import Annotated
 from urllib.parse import urlparse, urlunparse
 
 from pydantic import Field, SecretStr
+from redis.asyncio import Redis
 
 from aihub_lib.settings.EnvironmentSettings import EnvironmentSettings
 
@@ -36,3 +37,20 @@ class RedisSettings(EnvironmentSettings):
             netloc += f":{parsed.port}"
 
         return urlunparse((parsed.scheme, netloc, parsed.path, parsed.params, parsed.query, parsed.fragment))
+
+    @classmethod
+    def create_client(cls) -> Redis:
+        """
+        Create a Redis client with settings from environment variables.
+
+        Returns a Redis client instance configured with the connection URL and optional password
+        from the environment settings.
+
+        Example:
+            redis = RedisSettings.create_client()
+            # Use redis for operations
+            await redis.close()
+        """
+        settings = cls()
+        redis_url = settings.get_connection_url()
+        return Redis.from_url(redis_url)

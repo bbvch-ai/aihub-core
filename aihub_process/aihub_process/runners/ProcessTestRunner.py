@@ -60,8 +60,6 @@ class ProcessTestRunner(ProcessRunner):
         locale_paths: list[str] | None = None,
     ):
         super().__init__(
-            servers=[NatsSettings().ENDPOINT],
-            redis_url=RedisSettings().URL,
             process_type=process_type,
             default_process_config=default_process_config,
             locale_paths=locale_paths,

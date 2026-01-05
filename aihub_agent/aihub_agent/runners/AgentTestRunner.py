@@ -55,8 +55,6 @@ class AgentTestRunner(AgentRunner):
         locale_paths: list[str] | None = None,
     ):
         super().__init__(
-            servers=[NatsSettings().ENDPOINT],
-            redis_url=RedisSettings().URL,
             agent_type=agent_type,
             default_agent_config=default_agent_config,
             locale_paths=locale_paths,

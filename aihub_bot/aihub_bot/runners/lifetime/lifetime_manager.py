@@ -20,8 +20,6 @@ from aihub_bot.routes.bot_in_the_loop.BotInTheLoopHandler import BotInTheLoopHan
 async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
     logging.info("Initializing NATS connection and resources")
 
-    nc = NATS()
-
     # Connect to MongoDB via Cosmos
     connect(
         db=AIHubSettings().MONGO_MAIN_DB_NAME,
@@ -37,9 +35,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
     try:
         # Connect to NATS and setup JetStream
-        nats_settings = NatsSettings()
-        token = nats_settings.TOKEN.get_secret_value() if nats_settings.TOKEN else None
-        await nc.connect(servers=[nats_settings.ENDPOINT], token=token)
+        nc = await NatsSettings.create_client()
         js = nc.jetstream()
 
         topic_manager = AgentTopicManager()

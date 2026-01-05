@@ -38,7 +38,6 @@ def get_channel_config() -> TeamsConfig | SlackConfig:
 
 
 async def main():
-    servers_list = [NatsSettings().ENDPOINT]
     runner = AgentRunner(
         agent_type=ExpertAskingAgent,
         default_agent_config=ExpertAskingAgentConfig(
@@ -59,8 +58,6 @@ async def main():
             llm=LLMConfig(model_name="text-generation/mini"),
             channel_config=get_channel_config(),
         ),
-        redis_url=RedisSettings().URL,
-        servers=servers_list,
     )
 
     await runner.run_forever()

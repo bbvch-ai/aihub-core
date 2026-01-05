@@ -35,11 +35,8 @@ def nats_document_uploaded_sensor(
         """Poll NATS JetStream for SourceUpdatedEvent messages and trigger a single pipeline run."""
 
         async def check_for_events():
-            nc = NATS()
             try:
-                nats_settings = NatsSettings()
-                token = nats_settings.TOKEN.get_secret_value() if nats_settings.TOKEN else None
-                await nc.connect(servers=[nats_settings.ENDPOINT], token=token)
+                nc = await NatsSettings.create_client()
                 js = nc.jetstream()
 
                 stream_name, stream_subject = topic_manager.get_stream()

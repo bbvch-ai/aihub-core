@@ -44,8 +44,6 @@ class AgentRunner:
 
     def __init__(
         self,
-        servers: list[str],
-        redis_url: str,
         agent_type: type[Agent],
         default_agent_config: AgentConfig,
         locale_paths: list[str] | None = None,
@@ -55,8 +53,6 @@ class AgentRunner:
         if not issubclass(agent_type, Agent):
             raise ValueError("agent_type must be a subclass of Agent.")
 
-        self.servers = servers
-        self.redis_url = redis_url
         self.agent_type = agent_type
         self.default_agent_config = default_agent_config
         self.agent_config_type = default_agent_config.__class__
@@ -134,17 +130,10 @@ class AgentRunner:
         self.running = True
         self._stop_signal.clear()
 
-        self.nc = NATS()
-        # Get NATS token from settings for authentication
-        nats_settings = NatsSettings()
-        token = nats_settings.TOKEN.get_secret_value() if nats_settings.TOKEN else None
-        await self.nc.connect(servers=self.servers, token=token)
-
+        # Create NATS and Redis clients from settings
+        self.nc = await NatsSettings.create_client()
         self.js = self.nc.jetstream(timeout=60, publish_async_max_pending=10_000)
-        # Use Redis.from_url() to properly handle password in connection URL
-        redis_settings = RedisSettings()
-        redis_url = redis_settings.get_connection_url()
-        self.redis = Redis.from_url(redis_url)
+        self.redis = RedisSettings.create_client()
 
         # Connect to MongoDB (skip if already connected)
         try:
