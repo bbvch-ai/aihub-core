@@ -32,21 +32,19 @@ def ensure_event_loop():
     LlamaIndex's MilvusVectorStore internally creates an AsyncMilvusClient which requires
     an event loop. This context manager creates one if it doesn't exist, allowing
     synchronous code (like pytest-bdd tests) to use Milvus vector stores.
+
+    Note: The loop is intentionally NOT closed after the context exits because
+    MilvusVectorStore keeps references to AsyncMilvusClient which needs the loop.
     """
     try:
         loop = asyncio.get_event_loop()
-        created_loop = False
+        if loop.is_closed():
+            raise RuntimeError("Event loop is closed")
     except RuntimeError:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        created_loop = True
 
-    try:
-        yield loop
-    finally:
-        if created_loop:
-            loop.close()
-            asyncio.set_event_loop(None)
+    yield loop
 
 
 DEFAULT_DOCUMENTS: list[Document] = [
