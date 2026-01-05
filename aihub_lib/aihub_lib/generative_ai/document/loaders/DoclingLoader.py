@@ -322,16 +322,14 @@ class DoclingLoader(BaseReader):
                 return result_response.json()
 
             elif task_status["task_status"] == "failure":
-                error_msg = "Unknown error"
-                if task_status.get("task_meta"):
-                    error_msg = task_status["task_meta"].get("error", error_msg)
-                raise DoclingTransientError(f"Docling conversion task failed: {error_msg}")
+                # Note: docling-serve does not currently expose failure reasons in the API
+                # See: https://github.com/docling-project/docling-serve/issues/365
+                raise DoclingTransientError(f"Docling conversion task {task_id} failed. Full response: {task_status}")
             elif task_status["task_status"] in ["pending", "started"]:
                 await asyncio.sleep(self.config.POLL_INTERVAL)
             elif task_status["task_status"] == "skipped":
                 raise DoclingTransientError(
-                    f"Docling conversion task was skipped: "
-                    f"{task_status.get('task_meta', {}).get('reason', 'Unknown reason')}"
+                    f"Docling conversion task {task_id} was skipped. Full response: {task_status}"
                 )
             else:
                 raise DoclingTransientError(f"Unknown task status: {task_status['task_status']}")
