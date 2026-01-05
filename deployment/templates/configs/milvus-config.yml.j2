@@ -40,7 +40,7 @@ etcd:
   # To share an etcd instance among multiple Milvus instances, consider changing this to a different value for each Milvus instance before you start them.
   # Set an easy-to-identify root path for Milvus if etcd service already exists.
   # Changing this for an already running Milvus instance may result in failures to read legacy data.
-  rootPath: milvus
+  rootPath:
   # Sub-prefix of the key to where Milvus stores metadata-related information in etcd.
   # Caution: Changing this parameter after using Milvus for a period of time will affect your access to old data.
   # It is recommended to change this parameter before starting Milvus for the first time.
@@ -83,7 +83,7 @@ etcd:
   data:
     dir: default.etcd # Embedded Etcd only. please adjust in embedded Milvus: /tmp/milvus/etcdData/
   auth:
-    enabled: false # Whether to enable authentication
+    enabled: true # Whether to enable authentication
     userName:  # username for etcd authentication
     password:  # password for etcd authentication
 

@@ -128,14 +128,27 @@ services:
       -master="seaweedfs-master:9333"
       -ip.bind=0.0.0.0
     environment:
+      # Internal JWT Authentication
       WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
+
+      # Etcd Configuration (SeaweedFS reads WEED_ETCD_* env vars)
+      WEED_ETCD_ENABLED: "true"
+      WEED_ETCD_SERVERS: http://etcd:2379
+      WEED_ETCD_TIMEOUT: 3s
+      WEED_ETCD_USERNAME: root
+      WEED_ETCD_PASSWORD: ${ETCD_TOKEN}
+
+      # Disable default leveldb2 store when using etcd
+      WEED_LEVELDB2_ENABLED: "false"
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-filer:/data
-      - ./configs/seaweedfs/seaweed-filer-config.nightly.toml:/etc/seaweedfs/filer.toml:ro
     depends_on:
-      - seaweedfs-master
-      - seaweedfs-volume
-      - etcd
+      seaweedfs-master:
+        condition: service_started
+      seaweedfs-volume:
+        condition: service_started
+      etcd-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/"]
       interval: 30s
@@ -264,16 +277,51 @@ services:
     container_name: etcd
     image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.25
     restart: always
+    command:
+      - etcd
+      - --name=s1
+      - --data-dir=/etcd
+      - --listen-client-urls=http://0.0.0.0:2379
+      - --advertise-client-urls=http://127.0.0.1:2379
+      - --listen-peer-urls=http://0.0.0.0:2380
+      - --initial-advertise-peer-urls=http://127.0.0.1:2380
+      - --initial-cluster=s1=http://127.0.0.1:2380
+      - --auth-token=simple
     environment:
       ETCD_AUTO_COMPACTION_MODE: revision
       ETCD_AUTO_COMPACTION_RETENTION: 1000
       ETCD_QUOTA_BACKEND_BYTES: 4294967296
       ETCD_SNAPSHOT_COUNT: 50000
+      # Token for healthcheck (used after auth is enabled by etcd-init)
+      ETCD_TOKEN: ${ETCD_TOKEN}
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/etcd-data:/etcd
-    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
     healthcheck:
-      test: [ "CMD", "etcdctl", "endpoint", "health" ]
+      # Use credentials for healthcheck to work after auth is enabled
+      test: [ "CMD", "etcdctl", "--user=root:${ETCD_TOKEN}", "endpoint", "health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+
+  etcd-init:
+    container_name: etcd-init
+    build:
+      context: ./configs/etcd
+      dockerfile: init.Dockerfile
+    restart: no
+    depends_on:
+      etcd:
+        condition: service_started
+    environment:
+      ETCDCTL_ENDPOINTS: http://etcd:2379
+      ETCDCTL_API: "3"
+      ETCD_ROOT_PASSWORD: ${ETCD_TOKEN}
     logging:
       driver: json-file
       options:
@@ -288,7 +336,12 @@ services:
     security_opt:
       - seccomp:unconfined
     environment:
+      # Etcd Configuration (dots in YAML become underscores in env vars)
       ETCD_ENDPOINTS: etcd:2379
+      ETCD_ROOTPATH: milvus
+      ETCD_AUTH_USERNAME: root
+      ETCD_AUTH_PASSWORD: ${ETCD_TOKEN}
+      # MinIO/S3 Storage Configuration
       MINIO_ADDRESS: seaweedfs-s3:9000
       MINIO_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
       MINIO_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
@@ -302,8 +355,8 @@ services:
       test: [ "CMD", "curl", "-f", "http://localhost:9091/healthz" ]
       start_period: 90s
     depends_on:
-      etcd:
-        condition: service_healthy
+      etcd-init:
+        condition: service_completed_successfully
       seaweedfs-s3:
         condition: service_healthy
     logging:
