@@ -19,7 +19,7 @@ from aihub_lib.nats.events import (
 )
 from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentClassDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
-from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import HumanInTheLoopRequestEvent
+from aihub_lib.nats.events.human_in_the_loop.request import HumanInTheLoopRequestEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
