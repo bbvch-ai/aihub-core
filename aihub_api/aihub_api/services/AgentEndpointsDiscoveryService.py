@@ -460,6 +460,12 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             return StreamingResponse(
                 sse_event_generator(),
                 media_type="text/event-stream",
+                headers={
+                    "Cache-Control": "no-cache, no-store, must-revalidate, no-transform",
+                    "X-Accel-Buffering": "no",
+                    "Connection": "keep-alive",
+                    "Content-Encoding": "identity",
+                },
             )
 
         return stream_event

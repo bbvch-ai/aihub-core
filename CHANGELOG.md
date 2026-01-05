@@ -5,6 +5,125 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.256.9] - 2026-01-05 - Introducing Chat-Style Human-in-the-Loop for Seamless Agent Collaboration
+
+### Added
+
+- ✨ **New Chat-Style Human-in-the-Loop (HITL) Interaction**: Agents can now ask questions that appear as regular chat
+  messages, allowing users to respond by typing a normal chat message, enabling more fluid conversational workflows.
+- 🦾 **`HitlDemoAgent`**: A new demo agent has been introduced to showcase all three Human-in-the-Loop types: input,
+  confirmation, and the newly introduced chat-style interaction, providing clear examples for developers.
+- 🚀 **API Endpoint for Open Chat HITL**: A new `/threads/{thread_id}/open-chat-hitl` API endpoint has been added,
+  allowing client applications to efficiently query for active chat-style HITL requests within a thread.
+- 📄 **Dedicated Chat HITL Event Types**: New event classes (`HumanInTheLoopChatRequestEvent`,
+  `HumanInTheLoopChatResponseEvent`) and a helper class (`HumanInTheLoopChat`) have been implemented to specifically
+  support and simplify the integration of chat-style Human-in-the-Loop interactions.
+- 🌐 **Internationalization Support for Chat HITL**: Translations have been added for the new chat-style HITL request and
+  response events across supported languages (DE, EN, FR, IT), ensuring a global user experience.
+- ⚙️ **IntelliJ Run Configuration for `HitlDemoAgent`**: A new IntelliJ IDEA run configuration has been included to
+  simplify the setup and execution of the `HitlDemoAgent` for local development and testing.
+
+### Changed
+
+- 🔄 **OpenWebUI Pipeline Intelligent HITL Handling**: The OpenWebUI pipeline now intelligently detects active chat-style
+  HITL requests at the start of a user message and routes the user's input as a chat HITL response, streamlining
+  conversational turns.
+- ⚡️ **Enhanced Base HITL Events**: The core `HumanInTheLoopRequestEvent` and `HumanInTheLoopResponseEvent` have been
+  updated to incorporate the new `chat` interaction type and now utilize type generics for improved type safety and
+  clarity.
+- 🔐 **Improved Thread API Access Control**: Thread-related API endpoints in the `ThreadController` now leverage
+  extracted helper methods for more robust, consistent access checking and error handling across operations.
+- 🔌 **Application and Playground Router Integration**: The new API endpoint for retrieving open chat HITL requests has
+  been seamlessly integrated into the main application and playground router configurations.
+
+### Refactor
+
+- 🧹 **Reorganized Human-in-the-Loop Modules**: The `HumanInTheLoopInput` and `HumanInTheLoopConfirmation` helper
+  classes, along with their respective request/response event classes, have been refactored and moved into dedicated,
+  separate modules for better organization and maintainability.
+- 🏗️ **Streamlined HITL Event Imports**: Imports for Human-in-the-Loop event types have been simplified and made
+  consistent across the agent codebase and playground examples, reducing verbosity and improving code readability.
+
+---
+
+## [v0.256.8] - 2025-12-30 - Enhanced Document Upload Security and Validation
+
+### Fixed
+
+- 🔒 **Strengthened Filename Validation:** Implemented more robust and secure filename validation to prevent the upload
+  of malformed or potentially malicious filenames, including those containing path traversal sequences or invalid
+  control characters. This significantly enhances the security and integrity of uploaded documents.
+- 🐛 **Improved File Extension Handling:** Revised the logic for parsing and validating file extensions, ensuring that
+  all uploaded filenames consistently include a valid, single extension and preventing issues arising from improperly
+  formatted document types.
+
+---
+
+## [v0.256.7] - 2025-12-23 - Enhanced Agent Context Evaluation and Retrieval
+
+### Added
+
+- ✨ **Improved Context Management Visibility:** The agent now provides clearer insights into its decision-making
+  process, indicating when it has gathered sufficient information to answer a question or when it needs to perform
+  additional retrieval steps to find more relevant data.
+
+---
+
+## [v0.256.6] - 2025-12-19 - Optimized Streaming for Real-time Interactions
+
+### Changed
+
+- 🚀 **Improved Streaming Robustness:** Enhanced server-sent event (SSE) and streaming responses across chat completions
+  and agent event endpoints by adding critical HTTP headers. This prevents caching and buffering issues from
+  intermediary proxies, ensuring more reliable, real-time data delivery and a smoother user experience.
+
+---
+
+## [v0.256.5] - 2025-12-19 - Enhanced Docling Reliability with Automatic Retries
+
+### Added
+
+- ✨ **Docling API Retry Mechanism:** Introduced an automatic retry mechanism for Docling API calls, significantly
+  improving resilience against transient network errors and temporary service unresponsiveness during document
+  processing.
+- ⚙️ **`DOCLING_HTTP_RETRIES` Configuration:** Added a new configuration setting `DOCLING_HTTP_RETRIES` (defaulting to
+  3\) to control the number of retries attempted for Docling API requests, providing more control over system behavior.
+
+### Changed
+
+- 🚀 **Improved Docling Request Resilience:** Docling document conversion processes (both synchronous and asynchronous)
+  now incorporate retry logic with exponential backoff, automatically handling HTTP connection issues, timeouts, and
+  specific transient API errors.
+- 🛡️ **Refined Docling Error Handling:** Enhanced the classification of Docling API errors to differentiate between
+  transient failures (which trigger retries) and permanent issues, leading to more robust document processing.
+
+### Refactor
+
+- 🧹 **Streamlined Docling API Execution:** The underlying HTTP request execution logic for Docling API interactions has
+  been refactored into dedicated internal methods, improving code clarity and maintainability.
+
+---
+
+## [v0.256.4] - 2025-12-19 - Enhanced Document Processing: Configurable Figure Descriptions and Robustness
+
+### Added
+
+- ✨ **Configurable Figure Description Generation:** Introduced a new option to enable or disable the generation of
+  figure descriptions using a vision LLM, providing more control over document processing, with the feature enabled by
+  default.
+
+### Fixed
+
+- 🐛 **Improved Figure Description Robustness:** Added a safeguard to prevent errors when generating figure descriptions
+  for documents that lack text content, ensuring smoother processing and logging a warning instead.
+
+### Changed
+
+- ⚙️ **Updated Quick Start Pipeline:** The `my_document_pipeline` example now explicitly enables both table refinement
+  and figure description generation, showcasing recommended best practices and demonstrating the new feature.
+
+---
+
 ## [v0.256.3] - 2025-12-17 - Enhanced Knowledge Management with Shared RAG Pipelines and Dynamic Buckets
 
 ### Added

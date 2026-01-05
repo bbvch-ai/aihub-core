@@ -26,7 +26,7 @@ tests = ["arrow", "dask[dataframe]", "docker", "pytest", "pytest-mock"]
 
 [[package]]
 name = "aihub-agent"
-version = "v0.256.3"
+version = "v0.256.9"
 description = "agents core"
 optional = false
 python-versions = ">=3.13, <3.14"
@@ -35,7 +35,7 @@ files = []
 develop = true
 
 [package.dependencies]
-aihub_lib = {git = "https://github.com/bbvch-ai/aihub-core.git", tag = "v0.256.3", subdirectory = "aihub_lib"}
+aihub_lib = {git = "https://github.com/bbvch-ai/aihub-core.git", tag = "v0.256.9", subdirectory = "aihub_lib"}
 cachetools = "^5.5.2"
 colorlog = "^6.9.0"
 flatdict = "^4.0.1"
@@ -62,7 +62,7 @@ url = "../aihub_agent"
 
 [[package]]
 name = "aihub-lib"
-version = "v0.256.3"
+version = "v0.256.9"
 description = ""
 optional = false
 python-versions = ">=3.13, <3.14"
@@ -125,8 +125,8 @@ transformers = "^4.48.1"
 [package.source]
 type = "git"
 url = "https://github.com/bbvch-ai/aihub-core.git"
-reference = "v0.256.3"
-resolved_reference = "9ffd48beb6e5fe6ceceed5756d876bc41e212453"
+reference = "v0.256.9"
+resolved_reference = "a0057126fa2299555034935ea812664c2bee8db9"
 subdirectory = "aihub_lib"
 
 [[package]]
@@ -7345,4 +7345,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13, <3.14"
-content-hash = "c0632c83c56e59d120a8094c3b3c3991de0a8ef79cc9a02b98295756d33b94e1"
+content-hash = "f129f00250223a251f161c18058556291e9ad76c96883e573c547c24d192bc6c"
