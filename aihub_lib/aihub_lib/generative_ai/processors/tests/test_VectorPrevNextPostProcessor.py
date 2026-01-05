@@ -9,7 +9,7 @@ from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import Em
 from aihub_lib.persistence.rag.documents.stores.docstore import create_mongo_document_store
 from aihub_lib.persistence.rag.vectors.node_metadata import CREATED_AT, DOCUMENT_ID, INSERTED_AT, NAMESPACE, UPDATED_AT
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
-from aihub_lib.testing.milvus_vector_store_content import drop_collection, ensure_event_loop, fill_collection
+from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_collection, run_with_event_loop
 
 
 scenarios("features/vector_prev_next_post_processor.feature")
@@ -77,8 +77,7 @@ def milvus_vector_store(nodes_with_relationships):
 
 @given("a valid vector store with all nodes", target_fixture="vector_store")
 def _(milvus_vector_store):
-    with ensure_event_loop():
-        return milvus_vector_store.to_llama_index()
+    return run_with_event_loop(milvus_vector_store.to_llama_index)
 
 
 @given(parsers.parse('starting node is "{target_node_id}"'), target_fixture="starting_node")

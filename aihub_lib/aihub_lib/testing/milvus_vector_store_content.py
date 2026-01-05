@@ -1,6 +1,6 @@
 import asyncio
-from contextlib import contextmanager
 from datetime import datetime
+from typing import TypeVar
 
 from llama_index.core import Document
 from llama_index.core.ingestion import IngestionPipeline
@@ -23,19 +23,24 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
 
+T = TypeVar("T")
 
-@contextmanager
-def ensure_event_loop():
+
+def run_with_event_loop(func: callable, *args, **kwargs) -> T:
     """
-    Context manager that ensures an event loop exists for the current thread.
+    Run a synchronous function inside a running event loop.
 
     LlamaIndex's MilvusVectorStore internally creates an AsyncMilvusClient which requires
-    an event loop. This context manager creates one if it doesn't exist, allowing
-    synchronous code (like pytest-bdd tests) to use Milvus vector stores.
+    a RUNNING event loop (checked via asyncio.get_running_loop()). This helper creates
+    an event loop, runs the function inside it, and returns the result.
 
-    Note: The loop is intentionally NOT closed after the context exits because
-    MilvusVectorStore keeps references to AsyncMilvusClient which needs the loop.
+    The event loop is kept open after execution because MilvusVectorStore keeps
+    references to AsyncMilvusClient which needs the loop.
     """
+
+    async def _wrapper():
+        return func(*args, **kwargs)
+
     try:
         loop = asyncio.get_event_loop()
         if loop.is_closed():
@@ -44,7 +49,7 @@ def ensure_event_loop():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-    yield loop
+    return loop.run_until_complete(_wrapper())
 
 
 DEFAULT_DOCUMENTS: list[Document] = [
@@ -96,20 +101,20 @@ def fill_collection(
     doc_store: MongoDocumentStore,
     nodes: list[TextNode] | None = None,
 ):
-    with ensure_event_loop():
+    def _fill():
         embeddings, _ = embed_model.to_llama_index()
-
-        vector_store = vector_store.to_llama_index()
-
+        vs = vector_store.to_llama_index()
         pipeline: IngestionPipeline = IngestionPipeline(
             transformations=[embeddings],
-            vector_store=vector_store,
+            vector_store=vs,
             docstore=doc_store,
         )
         if nodes:
             pipeline.run(nodes=nodes)
         else:
             pipeline.run(documents=DEFAULT_DOCUMENTS)
+
+    run_with_event_loop(_fill)
 
 
 def drop_collection(

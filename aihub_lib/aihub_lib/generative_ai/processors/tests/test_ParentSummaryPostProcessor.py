@@ -17,7 +17,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     UPDATED_AT,
 )
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
-from aihub_lib.testing.milvus_vector_store_content import drop_collection, ensure_event_loop, fill_collection
+from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_collection, run_with_event_loop
 
 
 scenarios("features/parent_summary_post_processor.feature")
@@ -82,8 +82,7 @@ def milvus_vector_store(nodes_with_relationships):
 
 @given("a valid vector store with all nodes", target_fixture="vector_store")
 def _(milvus_vector_store):
-    with ensure_event_loop():
-        return milvus_vector_store.to_llama_index()
+    return run_with_event_loop(milvus_vector_store.to_llama_index)
 
 
 @given(parsers.parse("starting nodes are:"), target_fixture="starting_nodes")
