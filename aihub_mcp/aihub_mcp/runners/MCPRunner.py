@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 from aihub_lib.infrastructure.logging.LogSettings import LogSettings
+from redis.asyncio import Redis
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -16,12 +17,14 @@ from aihub_mcp.auth.ApiKeyAuth import ApiKeyAuth
 from aihub_mcp.discovery.AgentDiscoveryService import AgentDiscoveryService
 from aihub_mcp.discovery.PromptRegistry import PromptRegistry
 from aihub_mcp.server.AgentToolRegistry import AgentToolRegistry
+from aihub_mcp.server.HITLToolRegistry import HITLToolRegistry
 from aihub_mcp.server.MCPServer import MCPServer
 from aihub_mcp.server.ResourceRegistry import ResourceRegistry
 from aihub_mcp.settings.MCPSettings import MCPSettings
 from aihub_mcp.tracing.MCPTracer import MCPTracer
 from aihub_mcp.translation.ElicitationHandler import ElicitationHandler
 from aihub_mcp.translation.EventTranslator import EventTranslator
+from aihub_mcp.translation.HITLPendingStore import HITLPendingStore
 from aihub_mcp.translation.ProgressStreamer import ProgressStreamer
 from aihub_mcp.translation.SamplingBridge import SamplingBridge
 
@@ -135,6 +138,11 @@ class MCPRunner:
             prompt_registry=self._prompt_registry,
         )
 
+        # HITL components (initialized in lifespan when Redis is available)
+        self._redis: Redis | None = None
+        self._hitl_pending_store: HITLPendingStore | None = None
+        self._hitl_tool_registry: HITLToolRegistry | None = None
+
     @property
     def settings(self) -> MCPSettings:
         return self._settings
@@ -151,19 +159,45 @@ class MCPRunner:
     def tracer(self) -> MCPTracer:
         return self._tracer
 
+    async def _init_redis(self) -> None:
+        """Initialize Redis connection and HITL pending store."""
+        try:
+            self._redis = Redis.from_url(self._settings.REDIS_URL)
+            # Verify connection
+            await self._redis.ping()
+
+            self._hitl_pending_store = HITLPendingStore(self._redis)
+            self._event_translator.set_hitl_pending_store(self._hitl_pending_store)
+
+            logger.info(f"Connected to Redis: {self._settings.REDIS_URL}")
+        except Exception as e:
+            logger.warning(f"Failed to connect to Redis: {e}. HITL fallback will be disabled.")
+            self._redis = None
+            self._hitl_pending_store = None
+
+    async def _close_redis(self) -> None:
+        """Close Redis connection."""
+        if self._redis:
+            await self._redis.aclose()
+            logger.info("Disconnected from Redis")
+
     @asynccontextmanager
     async def lifespan(self, _app: Starlette) -> AsyncIterator[None]:
         """Lifecycle manager for all MCP services."""
         logger.info("Starting MCP runner services...")
+
+        # Initialize Redis for HITL pending store
+        await self._init_redis()
 
         await self._event_translator.connect()
         await self._discovery_service.start()
 
         auth_status = "enabled" if self._auth.enabled else "disabled"
         tracing_status = "enabled" if self._settings.TRACING_ENABLED else "disabled"
+        hitl_status = "enabled" if self._hitl_pending_store else "disabled"
         logger.info(
             f"MCP server ready at http://{self._settings.HOST}:{self._settings.PORT}{self._settings.PATH} "
-            f"(auth={auth_status}, tracing={tracing_status})"
+            f"(auth={auth_status}, tracing={tracing_status}, hitl_fallback={hitl_status})"
         )
 
         try:
@@ -172,12 +206,21 @@ class MCPRunner:
             logger.info("Stopping MCP runner services...")
             await self._discovery_service.stop()
             await self._event_translator.disconnect()
+            await self._close_redis()
             logger.info("MCP runner services stopped")
 
     def create_app(self) -> Starlette:
         """Create the ASGI application with auth and tracing middleware."""
         self._mcp_server.create_mcp()
         mcp = self._mcp_server.mcp
+
+        # Register HITL tool registry (submit_hitl_response tool)
+        # The pending store is set on EventTranslator in lifespan when Redis is connected
+        self._hitl_tool_registry = HITLToolRegistry(
+            mcp_server=self._mcp_server,
+            event_translator=self._event_translator,
+        )
+        self._hitl_tool_registry.register_tools()
 
         if self._settings.TRANSPORT == "sse":
             mcp_app: Any = mcp.sse_app(path="/")

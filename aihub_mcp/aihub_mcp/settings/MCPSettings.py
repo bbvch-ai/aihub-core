@@ -64,6 +64,12 @@ class MCPSettings(BaseSettings):
         description="NATS server URL for Swiss AI Agent Protocol communication",
     )
 
+    # Redis/Valkey configuration
+    REDIS_URL: str = Field(
+        default="redis://localhost:6379",
+        description="Redis/Valkey server URL for HITL pending request storage",
+    )
+
     # Tracing configuration
     TRACING_ENABLED: bool = Field(
         default=True,
