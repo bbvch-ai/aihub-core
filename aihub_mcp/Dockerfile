@@ -19,7 +19,7 @@ RUN apt-get update && \
     curl \
     git \
     make && \
-    curl -sSL https://install.python-poetry.org | python3 - --version "${POETRY_VERSION}" && \
+    curl -sSL --proto =https https://install.python-poetry.org | python3 - --version "${POETRY_VERSION}" && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -70,7 +70,7 @@ RUN groupadd --gid "$USER_GID" "$USERNAME" && \
     apt-get install -y --no-install-recommends \
     curl \
     make && \
-    curl -sSL https://install.python-poetry.org | python3 - --version "${POETRY_VERSION}" && \
+    curl -sSL --proto =https https://install.python-poetry.org | python3 - --version "${POETRY_VERSION}" && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
