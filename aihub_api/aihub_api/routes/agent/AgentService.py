@@ -801,8 +801,21 @@ class AgentService:
             agent_id: The agent instance identifier
 
         Raises:
-            HTTPException 404: Agent configuration not found (or is a default config)
+            HTTPException 403: Attempting to delete a default agent configuration
+            HTTPException 404: Agent configuration not found
         """
+        # Explicit check: prevent deletion of default agent configurations
+        # Get any agent entity of this class to check its default_agent_config
+        any_agent_of_class = AgentEntity.objects(agent_class=agent_class).first()
+        if any_agent_of_class and any_agent_of_class.default_agent_config:
+            default_id = any_agent_of_class.default_agent_config.agent_id
+            if default_id == agent_id:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Cannot delete default agent configuration '{agent_class}/{agent_id}'. "
+                    "Default configurations are managed by the agent class itself.",
+                )
+
         # Only user-created agent configs can be deleted.
         # Default configs (from the agent class itself) are not stored in AgentConfigEntityDocument,
         # so find_for_class_and_id will return None for them, preventing deletion.
