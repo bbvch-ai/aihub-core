@@ -30,12 +30,32 @@
 {%- set REDIS_ENDPOINT = "redis://valkey:6379" %}
 {%- set LITE_LLM_PROXY_BASE_URL = "http://litellm:4000" %}
 {%- set JUPYTER_URL = "http://jupyter:8888" %}
-{%- set DOCLING_BASE_API_URL = "http://docling:5001" %}
+{%- set DOCLING_API_BASE_URL = "http://docling:5001" %}
 {%- set PRESIDIO_ANALYZER_API_BASE = "http://presidio-analyzer:3000" %}
 {%- set PRESIDIO_ANONYMIZER_API_BASE = "http://presidio-anonymizer:3000" %}
 {%- set PLAYWRIGHT_WS_URL = "ws://playwright:3000" %}
 {%- set DAGSTER_WEBSERVER_URL = "http://dagster-webserver:3000" %}
 {%- set OTEL_EXPORTER_OTLP_ENDPOINT = "http://otel-collector:4317" %}
+
+{#- ===================================================================
+    Extract version tag from image string for OpenTelemetry versioning
+    ===================================================================
+    In production (local/nightly/latest), we want OTEL_RESOURCE_SERVICE_VERSION
+    to match the Docker image tag for accurate version tracking.
+
+    Examples:
+      - "api:nightly" → "nightly"
+      - "api:latest" → "latest"
+      - "localbuild" → ${OTEL_RESOURCE_SERVICE_VERSION} (env var fallback)
+    =================================================================== #}
+{%- macro get_service_version(service_name) -%}
+  {%- set image_tag = image_tags[service_name][stage] -%}
+  {%- if image_tag and image_tag != 'localbuild' and ':' in image_tag -%}
+    {{ image_tag.split(':')[1] }}
+  {%- else -%}
+    ${OTEL_RESOURCE_SERVICE_VERSION}
+  {%- endif -%}
+{%- endmacro -%}
 
 {% if stage != 'dev' %}
 # ===================================================================
@@ -958,7 +978,7 @@ services:
       LOCAL_LLM_TOKEN: ${LOCAL_LLM_TOKEN}
       AZURE_OPENAI_BASE_URL: ${AZURE_OPENAI_BASE_URL}
       AZURE_OPENAI_KEY: ${AZURE_OPENAI_KEY}
-      SWISS_LLM_CLOUD_API_URL: ${SWISS_LLM_CLOUD_API_URL}
+      SWISS_LLM_CLOUD_API_BASE_URL: ${SWISS_LLM_CLOUD_API_BASE_URL}
       SWISS_LLM_CLOUD_API_KEY: ${SWISS_LLM_CLOUD_API_KEY}
       COHERE_API_BASE: ${COHERE_API_BASE}
       COHERE_API_KEY: ${COHERE_API_KEY}
@@ -1164,6 +1184,8 @@ services:
       - "13133:13133"
       - "55679:55679"
     {%- endif %}
+    depends_on:
+      - phoenix
     healthcheck:
       test: [ "NONE" ]
     logging:
@@ -1757,10 +1779,10 @@ services:
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
 
       # Docling
-      DOCLING_BASE_API_URL: {{ DOCLING_BASE_API_URL }}
+      DOCLING_API_BASE_URL: {{ DOCLING_API_BASE_URL }}
       DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
       DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
-      DOCLING_HOSTED_VLM_API_ENDPOINT: {{ LITE_LLM_PROXY_BASE_URL }}
+      DOCLING_HOSTED_VLM_API_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
       DOCLING_HOSTED_VLM_API_KEY: ${LITELLM_MASTER_KEY}
       DOCLING_VLM_MODEL_NAME: ${DOCLING_VLM_MODEL_NAME}
       DOCLING_HTTP_RETRIES: ${DOCLING_HTTP_RETRIES}
@@ -1770,7 +1792,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: api
-      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
+      OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('api') }}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
@@ -1900,7 +1922,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: llm-wrapping-agent
-      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
+      OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('llm_wrapping_agent') }}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     logging:
       driver: json-file
@@ -1967,7 +1989,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: rag-agent
-      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
+      OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('rag_agent') }}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
   {%- endif %}
 
@@ -2029,7 +2051,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: expert-rag-agent
-      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
+      OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('expert_rag_agent') }}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
   {%- endif %}
 
@@ -2078,7 +2100,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: expert-asking-agent
-      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
+      OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('expert_asking_agent') }}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
   {%- endif %}
 
@@ -2112,10 +2134,10 @@ services:
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Docling
-      DOCLING_BASE_API_URL: {{ DOCLING_BASE_API_URL }}
+      DOCLING_API_BASE_URL: {{ DOCLING_API_BASE_URL }}
       DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
       DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
-      DOCLING_HOSTED_VLM_API_ENDPOINT: {{ LITE_LLM_PROXY_BASE_URL }}
+      DOCLING_HOSTED_VLM_API_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
       DOCLING_HOSTED_VLM_API_KEY: ${LITELLM_MASTER_KEY}
       DOCLING_VLM_MODEL_NAME: ${DOCLING_VLM_MODEL_NAME}
       DOCLING_HTTP_RETRIES: ${DOCLING_HTTP_RETRIES}
@@ -2175,10 +2197,10 @@ services:
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Docling
-      DOCLING_BASE_API_URL: {{ DOCLING_BASE_API_URL }}
+      DOCLING_API_BASE_URL: {{ DOCLING_API_BASE_URL }}
       DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
       DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
-      DOCLING_HOSTED_VLM_API_ENDPOINT: {{ LITE_LLM_PROXY_BASE_URL }}
+      DOCLING_HOSTED_VLM_API_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
       DOCLING_HOSTED_VLM_API_KEY: ${LITELLM_MASTER_KEY}
       DOCLING_VLM_MODEL_NAME: ${DOCLING_VLM_MODEL_NAME}
       DOCLING_HTTP_RETRIES: ${DOCLING_HTTP_RETRIES}

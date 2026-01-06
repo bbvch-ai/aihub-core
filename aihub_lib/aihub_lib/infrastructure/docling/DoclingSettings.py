@@ -18,7 +18,7 @@ class DoclingSettings(EnvironmentSettings):
     model_config = EnvironmentSettings.create_settings_config("DOCLING_")
 
     # --- General API Settings ---
-    BASE_API_URL: Annotated[str, Field(description="Docling API endpoint URL")]
+    API_BASE_URL: Annotated[str, Field(description="Docling API endpoint URL")]
     API_KEY: Annotated[str, Field(description="API key for Docling service authentication")] = ""
     API_TIMEOUT: Annotated[int, Field(description="Timeout for Docling API calls in seconds")] = 300
 
@@ -26,7 +26,7 @@ class DoclingSettings(EnvironmentSettings):
     PIPELINE_TYPE: Annotated[PipelineType, Field(description="The type of pipeline to use")] = PipelineType.STANDARD
 
     # --- VLM Pipeline Settings (Permanent) ---
-    HOSTED_VLM_API_ENDPOINT: Annotated[str, Field(description="The API endpoint for the self-hosted VLM")] = (
+    HOSTED_VLM_API_BASE_URL: Annotated[str, Field(description="The API endpoint for the self-hosted VLM")] = (
         "http://litellm:4000"
     )
     HOSTED_VLM_API_KEY: Annotated[str, Field(description="The API key for the self-hosted VLM")] = ""

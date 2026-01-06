@@ -52,7 +52,7 @@ model_list:
   - model_name: text-generation/ocr
     litellm_params:
       model: litellm_proxy/granite-docling
-      api_base: os.environ/SWISS_LLM_CLOUD_API_URL
+      api_base: os.environ/SWISS_LLM_CLOUD_API_BASE_URL
       api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
     model_info:
       mode: chat

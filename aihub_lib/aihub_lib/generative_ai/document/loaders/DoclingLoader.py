@@ -165,7 +165,7 @@ class DoclingLoader(BaseReader):
                     "include_images": include_images,
                     "pipeline": "vlm",
                     "vlm_pipeline_model_api": {
-                        "url": f"{self.config.HOSTED_VLM_API_ENDPOINT}/v1/chat/completions",
+                        "url": f"{self.config.HOSTED_VLM_API_BASE_URL}/v1/chat/completions",
                         "params": {
                             "model": self.config.VLM_MODEL_NAME,
                             "max_tokens": 8176,  # 8192 (max tokens) - 16 (for docling)
@@ -184,7 +184,7 @@ class DoclingLoader(BaseReader):
         """Build HTTP headers including Authorization if API key is configured."""
         headers = {"Content-Type": "application/json"}
         if self.config.API_KEY:
-            headers["Authorization"] = f"Bearer {self.config.API_KEY}"
+            headers["X-Api-Key"] = f"{self.config.API_KEY}"
         return headers
 
     def _retry_kwargs(self) -> dict:
@@ -218,7 +218,7 @@ class DoclingLoader(BaseReader):
         try:
             with httpx.Client(timeout=self.config.API_TIMEOUT) as client:
                 response = client.post(
-                    f"{self.config.BASE_API_URL}/v1/convert/source",
+                    f"{self.config.API_BASE_URL}/v1/convert/source",
                     json=request_body,
                     headers=self._build_headers(),
                 )
@@ -250,7 +250,7 @@ class DoclingLoader(BaseReader):
         try:
             async with httpx.AsyncClient(timeout=self.config.API_TIMEOUT) as client:
                 response = await client.post(
-                    f"{self.config.BASE_API_URL}/v1/convert/source/async",
+                    f"{self.config.API_BASE_URL}/v1/convert/source/async",
                     json=request_body,
                     headers=self._build_headers(),
                 )
@@ -273,7 +273,7 @@ class DoclingLoader(BaseReader):
         """Poll the task status until completion and return the result."""
         for _ in range(self.config.MAX_POLLS):
             status_response = await client.get(
-                f"{self.config.BASE_API_URL}/v1/status/poll/{task_id}",
+                f"{self.config.API_BASE_URL}/v1/status/poll/{task_id}",
                 headers=self._build_headers(),
             )
 
@@ -290,7 +290,7 @@ class DoclingLoader(BaseReader):
 
             if task_status["task_status"] == "success":
                 result_response = await client.get(
-                    f"{self.config.BASE_API_URL}/v1/result/{task_id}",
+                    f"{self.config.API_BASE_URL}/v1/result/{task_id}",
                     headers=self._build_headers(),
                 )
 

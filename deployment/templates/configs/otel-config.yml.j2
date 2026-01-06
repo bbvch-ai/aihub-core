@@ -93,6 +93,14 @@ exporters:
       initial_interval: 5s
       max_interval: 30s
 
+  {%- if stage == 'dev' %}
+  # Debug exporter for dev mode (logs/metrics to stdout)
+  debug:
+    verbosity: basic
+    sampling_initial: 5
+    sampling_thereafter: 200
+  {%- endif %}
+
 service:
   extensions: [ health_check ]
   pipelines:
@@ -102,7 +110,19 @@ service:
       processors: [ filter/phoenix, transform/phoenix, batch ]
       exporters: [ otlp/phoenix ]
 
-    {%- if stage != 'dev' %}
+    {%- if stage == 'dev' %}
+    # Accept logs but use debug exporter (Phoenix doesn't support logs)
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]
+
+    # Accept metrics but use debug exporter (Phoenix doesn't support metrics)
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]
+    {%- else %}
     # Send traces to cloud backend
     traces/cloud:
       receivers: [otlp]

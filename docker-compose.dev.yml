@@ -5,8 +5,6 @@
 #   - deployment/compose-config.yml (for changing values and versions)
 #   - deployment/templates/docker-compose.yml.j2 (for changing structure and logic)
 
-
-
 services:
   # ===================================================================
   # SeaweedFS Stack (Distributed Object Storage)
@@ -629,7 +627,7 @@ services:
       LOCAL_LLM_TOKEN: ${LOCAL_LLM_TOKEN}
       AZURE_OPENAI_BASE_URL: ${AZURE_OPENAI_BASE_URL}
       AZURE_OPENAI_KEY: ${AZURE_OPENAI_KEY}
-      SWISS_LLM_CLOUD_API_URL: ${SWISS_LLM_CLOUD_API_URL}
+      SWISS_LLM_CLOUD_API_BASE_URL: ${SWISS_LLM_CLOUD_API_BASE_URL}
       SWISS_LLM_CLOUD_API_KEY: ${SWISS_LLM_CLOUD_API_KEY}
       COHERE_API_BASE: ${COHERE_API_BASE}
       COHERE_API_KEY: ${COHERE_API_KEY}
@@ -763,6 +761,8 @@ services:
       - "4318:4318"
       - "13133:13133"
       - "55679:55679"
+    depends_on:
+      - phoenix
     healthcheck:
       test: [ "NONE" ]
     logging:
