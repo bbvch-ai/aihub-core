@@ -30,6 +30,33 @@ from aihub_agent.tracing.AgentRunTracer import AgentRunTracer
 logger = logging.getLogger(__name__)
 
 
+def _transform_formkit_arrays(data: Any) -> Any:
+    """
+    Recursively transforms FormKit-style dict arrays back to Python lists.
+
+    FormKit stores arrays as dicts with sequential numeric string keys:
+    {'0': {...}, '1': {...}} -> [{...}, {...}]
+
+    This transformation is needed when loading config from the database.
+    """
+    if isinstance(data, dict):
+        # Check if this dict looks like a FormKit array (all keys are sequential numeric strings)
+        keys = list(data.keys())
+        if keys and all(isinstance(k, str) and k.isdigit() for k in keys):
+            # Check if keys are sequential starting from 0
+            sorted_keys = sorted(keys, key=int)
+            if sorted_keys == [str(i) for i in range(len(keys))]:
+                # Convert to list, recursively transforming values
+                return [_transform_formkit_arrays(data[k]) for k in sorted_keys]
+
+        # Regular dict - recursively transform values
+        return {k: _transform_formkit_arrays(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [_transform_formkit_arrays(item) for item in data]
+    else:
+        return data
+
+
 class AgentDispatcher(BaseDispatcher):
     """
     The AgentDispatcher builds on the BaseDispatcher and adds functionality that is only specific to agentic
@@ -100,6 +127,8 @@ class AgentDispatcher(BaseDispatcher):
             if agent_config_dict is None:
                 raise ValueError(f"No agent config found for event {event.event_name} and topic {topic}")
 
+        # Transform FormKit-style arrays (dict with numeric keys) to Python lists
+        agent_config_dict = _transform_formkit_arrays(agent_config_dict)
         run_agent_config = self.agent_config_type.model_validate(agent_config_dict)
         topic = AgentInstanceTopic.from_agent_class_topic(
             agent_class_topic=topic,
