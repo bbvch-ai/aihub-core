@@ -57,7 +57,16 @@ async def main():
         .remove_user_from_thread()
         .get_open_chat_hitl(),
         ModelController(auth=auth).get_models().get_model(),
-        AgentController(auth=auth).get_agent().get_agent_threads().get_agent_configuration().update_agent_configuration().get_agents().discover_agents(),
+        AgentController(auth=auth)
+        .get_agent()
+        .get_agent_threads()
+        .get_agent_configuration()
+        .update_agent_configuration()
+        .get_agents()
+        .discover_agents()
+        .get_agent_classes()
+        .create_agent()
+        .delete_agent(),
         ProcessController(auth=auth)
         .get_process()
         .get_processes()
