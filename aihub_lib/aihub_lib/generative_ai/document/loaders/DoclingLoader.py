@@ -349,7 +349,9 @@ class DoclingLoader(BaseReader):
                         f"{result_response.text}"
                     )
 
-                return result_response.json()
+                result = result_response.json()
+                await self._clear_document(client, task_id)
+                return result
 
             elif task_status["task_status"] == "failure":
                 # Note: docling-serve does not currently expose failure reasons in the API
@@ -365,6 +367,33 @@ class DoclingLoader(BaseReader):
                 raise DoclingTransientError(f"Unknown task status: {task_status['task_status']}")
 
         raise TimeoutError(f"Docling conversion task {task_id} did not complete within the timeout period")
+
+    async def _clear_document(self, client: httpx.AsyncClient, task_id: str) -> None:
+        """
+        Clear the document from the Docling server after successful retrieval.
+
+        Frees server resources by explicitly deleting the task result. Non-fatal if
+        the server doesn't support this operation or the result was already cleaned
+        (e.g., SINGLE_USE_RESULTS mode enabled on server).
+        """
+        try:
+            response = await client.delete(
+                f"{self.config.BASE_API_URL}/v1/result/{task_id}",
+                headers={"Content-Type": "application/json"},
+            )
+            if response.status_code in (200, 204):
+                logger.debug(f"Cleared docling document for task {task_id}")
+            elif response.status_code == 404:
+                # Already cleaned (SINGLE_USE_RESULTS mode or auto-cleanup)
+                logger.debug(f"Docling document for task {task_id} already cleared")
+            else:
+                logger.warning(
+                    f"Failed to clear docling document for task {task_id}: "
+                    f"status {response.status_code}, response: {response.text}"
+                )
+        except Exception as e:
+            # Non-fatal: log and continue
+            logger.warning(f"Error clearing docling document for task {task_id}: {e}")
 
 
 def inject_figure_tags(markdown_text: str, img_strs: list[str]):
