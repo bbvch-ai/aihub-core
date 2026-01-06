@@ -36,16 +36,15 @@ prompts:
     %{namespaces}
     %{context}
 
+    WICHTIG: Wähle genau EINEN Namespace pro Bucket. Jeder Bucket sollte genau einen Namespace haben, basierend auf der Benutzeranfrage.
+
     Antworte mit einem JSON-Objekt, das enthält:
-    - "selected_sources": Array von Objekten mit "bucket_name" und "namespace_name" für jede relevante Quelle
-    - "confidence": Eine Zahl zwischen 0.0 und 1.0, die dein Vertrauen in die Auswahl angibt
+    - "selected_sources": Array von Objekten mit "bucket_name" und "namespace_name" für jede relevante Quelle (einer pro Bucket)
     - "reasoning": Eine kurze Erklärung, warum du diese Quellen ausgewählt hast
-    - "clarification_question": Optional - eine Frage an den Benutzer, wenn die Auswahl unklar ist
 
     Beispielantwort:
     {
       "selected_sources": [{"bucket_name": "knowledge", "namespace_name": "hr-policies"}],
-      "confidence": 0.85,
       "reasoning": "Die Anfrage bezieht sich auf Mitarbeiterrichtlinien, was zum HR-Richtlinien-Namespace passt."
     }
 

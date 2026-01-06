@@ -105,7 +105,15 @@ async def interpret_approval_response(
         prompt,
     )
 
-    return ApprovalInterpretation.model_validate(result)
+    interpretation = ApprovalInterpretation.model_validate(result)
+
+    # Validate preferred_sources against available namespaces
+    if interpretation.preferred_sources:
+        valid_names = {ns.namespace_name for ns in available_namespaces}
+        valid_preferred = [s for s in interpretation.preferred_sources if s in valid_names]
+        interpretation.preferred_sources = valid_preferred if valid_preferred else None
+
+    return interpretation
 
 
 async def interpret_topic_change_response(

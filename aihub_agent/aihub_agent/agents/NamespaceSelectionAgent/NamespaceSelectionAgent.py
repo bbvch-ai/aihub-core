@@ -18,12 +18,10 @@ from aihub_lib.nats.events import (
     AgentInTheLoop,
     HumanInTheLoop,
     KnowledgeSource,
-    RAGWithSourcesStartEvent,
     StopEvent,
 )
 from aihub_lib.nats.events.guard import TopicChangedEvent, TopicUnchangedAcceptEvent
 from aihub_lib.nats.events.router.RouterEvent import RouterEvent
-from aihub_lib.nats.events.semantic.llm import LLMStopEvent
 from aihub_lib.nats.events.user import UserMessageEvent
 
 from aihub_agent.agents.Agent import Agent
@@ -34,22 +32,21 @@ from aihub_agent.agents.NamespaceSelectionAgent.events.KeepSourcesEvent import K
 from aihub_agent.agents.NamespaceSelectionAgent.events.NamespaceSelectionEvent import NamespaceSelectionEvent
 from aihub_agent.agents.NamespaceSelectionAgent.events.SelectionReadyEvent import SelectionReadyEvent
 from aihub_agent.agents.NamespaceSelectionAgent.events.SelectNewSourcesEvent import SelectNewSourcesEvent
-from aihub_agent.agents.NamespaceSelectionAgent.helpers.approval_interpreter import (
+from aihub_agent.agents.NamespaceSelectionAgent.helpers import (
+    AvailableNamespace,
+    build_agent_invocation,
+    build_rag_start_event,
+    detect_topic_change_with_llm,
+    fetch_available_namespaces,
+    get_current_sources,
     interpret_approval_response,
     interpret_topic_change_response,
-)
-from aihub_agent.agents.NamespaceSelectionAgent.helpers.namespace_selector import (
-    AvailableNamespace,
-    fetch_available_namespaces,
+    save_selected_sources,
     select_namespaces,
 )
-from aihub_agent.agents.NamespaceSelectionAgent.helpers.topic_change_detector import detect_topic_change_with_llm
 from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.context.thread.ThreadContext import ThreadContext
 from aihub_agent.workflow.decorators.step import step
-
-# ThreadContext keys for persisted state
-THREAD_KEY_SELECTED_SOURCES = "namespace_selection:selected_sources"
 
 # RunContext keys for ephemeral state
 RUN_KEY_CORRECTION_COUNT = "correction_count"
@@ -81,7 +78,7 @@ class NamespaceSelectionAgent(Agent):
         run_context: RunContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> RouterEvent | NamespaceSelectionEvent:
+    ) -> RouterEvent | NamespaceSelectionEvent | TopicUnchangedAcceptEvent:
         """
         Entry point: Check if topic changed from previous conversation.
 
@@ -97,19 +94,23 @@ class NamespaceSelectionAgent(Agent):
         await displayer.display_thought(t("agent.namespace_selection.thoughts.starting_selection"))
 
         # Get current state (from previous query in same thread)
-        current_sources_data = await thread_context.get(THREAD_KEY_SELECTED_SOURCES)
+        current_sources = await get_current_sources(thread_context)
 
         # If no current selection, proceed directly to namespace selection
-        if not current_sources_data:
+        if current_sources is None:
             await displayer.display_thought(t("agent.namespace_selection.thoughts.first_query"))
             return NamespaceSelectionEvent(
                 selected_sources=[],
-                confidence=0.0,
                 reasoning="First query in thread - need to select namespaces",
-                requires_clarification=False,
             )
 
-        current_sources = [KnowledgeSource(**s) for s in current_sources_data]
+        # If topic changes are disabled, skip guard and reuse sources directly
+        if not agent_config.allow_topic_change:
+            await displayer.display_thought(t("agent.namespace_selection.thoughts.reusing_selection"))
+            return TopicUnchangedAcceptEvent(
+                current_sources=current_sources,
+                reason="Topic change detection disabled - reusing previous selection",
+            )
 
         # Use LLM router to detect topic change using the message history
         async with agent_config.selection_llm.cost_reporting_llm(displayer) as llm:
@@ -179,8 +180,7 @@ class NamespaceSelectionAgent(Agent):
             )
 
         # User wants to keep current sources
-        current_sources_data = await thread_context.get(THREAD_KEY_SELECTED_SOURCES, [])
-        current_sources = [KnowledgeSource(**s) for s in current_sources_data]
+        current_sources = await get_current_sources(thread_context) or []
 
         await displayer.display_thought(t("agent.namespace_selection.thoughts.user_keeps_sources"))
         return KeepSourcesEvent(
@@ -235,9 +235,7 @@ class NamespaceSelectionAgent(Agent):
         if not available_namespaces:
             return NamespaceSelectionEvent(
                 selected_sources=[],
-                confidence=0.0,
                 reasoning="No namespaces available in configured buckets",
-                requires_clarification=False,
             )
 
         # Get correction context if any
@@ -262,9 +260,7 @@ class NamespaceSelectionAgent(Agent):
 
         return NamespaceSelectionEvent(
             selected_sources=result.selected_sources,
-            confidence=result.confidence,
             reasoning=result.reasoning,
-            requires_clarification=False,
         )
 
     @step(
@@ -354,9 +350,7 @@ class NamespaceSelectionAgent(Agent):
         # This will be processed by select_namespaces_step again
         return NamespaceSelectionEvent(
             selected_sources=current_selection,
-            confidence=0.0,
             reasoning=f"User correction: {interpretation.correction_details or event.response}",
-            requires_clarification=False,
         )
 
     @step(
@@ -385,8 +379,7 @@ class NamespaceSelectionAgent(Agent):
             reasoning = event.reasoning
 
         # Persist selection for future queries
-        sources_data = [s.model_dump() for s in selected_sources]
-        await thread_context.set(THREAD_KEY_SELECTED_SOURCES, sources_data)
+        await save_selected_sources(thread_context, selected_sources)
 
         await displayer.display_thought(
             t(
@@ -395,20 +388,12 @@ class NamespaceSelectionAgent(Agent):
             )
         )
 
-        # Build RAGWithSourcesStartEvent
-        rag_start_event = RAGWithSourcesStartEvent(
-            locale=start_event.locale,
-            user=start_event.user,
-            messages=start_event.messages,
-            files=start_event.files,
-            knowledge_sources=selected_sources,
-            selection_reasoning=reasoning,
-        )
-
-        return AgentInTheLoop.invoke(
-            agent_class=agent_config.rag_agent_class,
-            agent_id=agent_config.rag_agent_id,
-            start_event=rag_start_event,
+        # Build and invoke RAG agent
+        rag_start_event = build_rag_start_event(start_event, selected_sources, reasoning)
+        return build_agent_invocation(
+            agent_config.rag_agent_class,
+            agent_config.rag_agent_id,
+            rag_start_event,
         )
 
     @step(
@@ -421,7 +406,7 @@ class NamespaceSelectionAgent(Agent):
         event: AgentInTheLoop.response,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> LLMStopEvent:
+    ) -> StopEvent:
         """
         Forwards the RAGAgent's response.
         """

@@ -9,10 +9,8 @@ class SelectionReadyEvent(ControlEvent):
     """
     Emitted when namespace selection is complete and ready to proceed.
 
-    This event exits the clarification loop and triggers RAGAgent invocation.
-    Selection is considered ready when either:
-    - Confidence is above threshold
-    - Maximum clarification rounds have been reached
+    This event triggers RAGAgent invocation after user approval
+    or when maximum correction rounds have been reached.
     """
 
     selected_sources: Annotated[

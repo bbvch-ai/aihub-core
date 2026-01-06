@@ -4,7 +4,7 @@ LLM-based namespace selection for NamespaceSelectionAgent.
 Provides functionality to:
 1. Fetch available namespaces from the database
 2. Use LLM to select relevant namespaces based on user query
-3. Parse structured LLM responses with confidence scoring
+3. Parse structured LLM responses
 """
 
 import json
@@ -37,9 +37,7 @@ class NamespaceSelectionResult(BaseModel):
     """Result of namespace selection by the LLM."""
 
     selected_sources: Annotated[list[KnowledgeSource], Field(description="Selected knowledge sources")]
-    confidence: Annotated[float, Field(description="Confidence in selection (0.0-1.0)", ge=0.0, le=1.0)]
     reasoning: Annotated[str, Field(description="LLM's reasoning for the selection")]
-    clarification_question: Annotated[str | None, Field(description="Suggested clarifying question if unclear")] = None
 
 
 def fetch_available_namespaces(allowed_bucket_names: list[str], locale: str = "en") -> list[AvailableNamespace]:
@@ -150,40 +148,16 @@ def _parse_selection_response(
                     )
                 )
 
-        # Default to all sources if none selected or invalid
-        if not selected_sources:
-            selected_sources = [
-                KnowledgeSource(
-                    bucket_name=ns.bucket_name,
-                    namespace_name=ns.namespace_name,
-                    display_name=ns.display_name,
-                )
-                for ns in available_namespaces[:3]  # Limit default selection
-            ]
-
         return NamespaceSelectionResult(
             selected_sources=selected_sources,
-            confidence=float(data.get("confidence", 0.5)),
             reasoning=data.get("reasoning", "No reasoning provided"),
-            clarification_question=data.get("clarification_question"),
         )
 
     except (json.JSONDecodeError, KeyError, TypeError) as e:
         logger.warning(f"Failed to parse LLM response: {e}")
-        # Return a low-confidence fallback
-        fallback_sources = [
-            KnowledgeSource(
-                bucket_name=ns.bucket_name,
-                namespace_name=ns.namespace_name,
-                display_name=ns.display_name,
-            )
-            for ns in available_namespaces[:3]
-        ]
         return NamespaceSelectionResult(
-            selected_sources=fallback_sources,
-            confidence=0.3,
-            reasoning="Failed to parse LLM response, using fallback selection",
-            clarification_question="Could you please specify which knowledge area you're asking about?",
+            selected_sources=[],
+            reasoning=f"Failed to parse LLM response: {e}",
         )
 
 
@@ -214,9 +188,7 @@ async def select_namespaces(
     if not available_namespaces:
         return NamespaceSelectionResult(
             selected_sources=[],
-            confidence=0.0,
             reasoning="No namespaces available",
-            clarification_question="There are no knowledge sources configured. Please contact your administrator.",
         )
 
     # Include user correction in conversation context if provided
@@ -238,4 +210,11 @@ async def select_namespaces(
         response = await llm.achat(messages)
         response_text = response.message.content
 
-    return _parse_selection_response(response_text, available_namespaces)
+    result = _parse_selection_response(response_text, available_namespaces)
+
+    # Validate one namespace per bucket
+    from aihub_agent.agents.NamespaceSelectionAgent.helpers.selection_validator import validate_one_per_bucket
+
+    result.selected_sources = validate_one_per_bucket(result.selected_sources)
+
+    return result

@@ -1,8 +1,19 @@
 thoughts:
   starting_selection: "Avvio dell'analisi di selezione namespace."
+  first_query: "Prima richiesta nel thread, necessaria selezione dei namespace."
+  checking_topic_change: "Verifica se l'argomento e cambiato dalla richiesta precedente."
+  topic_unchanged: "Argomento invariato, proseguimento con la selezione namespace attuale."
   reusing_selection: "Argomento invariato, riutilizzo della selezione namespace precedente."
-  topic_changed: "Cambio di argomento rilevato, rivalutazione della selezione namespace."
+  topic_changed: "Cambio di argomento rilevato, richiesta conferma all'utente."
+  asking_topic_change: "Richiesta all'utente se desidera cercare in altre fonti."
+  user_wants_new_sources: "L'utente desidera cercare in altre fonti."
+  user_keeps_sources: "L'utente desidera mantenere le fonti attuali."
+  selecting_namespaces: "Selezione dei namespace pertinenti per la richiesta."
   analyzing_query: "Analisi della richiesta utente per determinare le fonti di conoscenza rilevanti."
+  requesting_approval: "Richiesta approvazione all'utente per la selezione namespace."
+  user_approved: "L'utente ha approvato la selezione namespace."
+  max_corrections_reached: "Numero massimo di correzioni raggiunto, proseguimento con la selezione attuale."
+  reselecting: "L'utente ha richiesto modifiche (%{feedback}), rivalutazione della selezione."
   confident_selection: "Sicuro della selezione namespace, procedo con RAG."
   max_rounds_reached: "Numero massimo di round di chiarimento raggiunto, procedo con la migliore selezione."
   need_clarification: "Confidenza di selezione troppo bassa, richiesta chiarimento all'utente."
@@ -12,28 +23,61 @@ thoughts:
   forwarding_response: "Inoltro risposta RAG all'utente."
 
 messages:
+  topic_change_question: "La tua domanda sembra riguardare un argomento diverso. Attualmente sto cercando in **%{sources}**. Devo cercare in altre fonti di conoscenza per questa domanda?"
+  approval_question: "Cerchero in queste fonti di conoscenza: **%{sources}**. E corretto, o preferisci altre fonti?"
   clarification_question: "Ho trovato alcune fonti di conoscenza potenzialmente rilevanti (%{sources}), ma non sono certo quali corrispondano meglio alla tua domanda. Potresti chiarire l'argomento o l'area di cui stai chiedendo?"
-  rag_error: "Si è verificato un errore durante l'elaborazione della tua domanda: %{error}"
+  rag_error: "Si e verificato un errore durante l'elaborazione della tua domanda: %{error}"
 
 prompts:
   selection_system: |
-    Sei un selettore di fonti di conoscenza. Il tuo compito è determinare quali fonti di conoscenza sono più rilevanti per la domanda di un utente.
+    Sei un selettore di fonti di conoscenza. Il tuo compito e determinare quali fonti di conoscenza sono piu rilevanti per la domanda di un utente.
 
     Fonti di conoscenza disponibili:
     %{namespaces}
     %{context}
 
+    IMPORTANTE: Seleziona esattamente UN namespace per bucket. Ogni bucket deve avere uno e un solo namespace selezionato in base alla richiesta dell'utente.
+
     Rispondi con un oggetto JSON contenente:
-    - "selected_sources": Array di oggetti con "bucket_name" e "namespace_name" per ogni fonte rilevante
-    - "confidence": Un numero tra 0.0 e 1.0 che indica la tua fiducia nella selezione
-    - "reasoning": Una breve spiegazione del perché hai selezionato queste fonti
-    - "clarification_question": Opzionale - una domanda da porre all'utente se la selezione non è chiara
+    - "selected_sources": Array di oggetti con "bucket_name" e "namespace_name" per ogni fonte rilevante (uno per bucket)
+    - "reasoning": Una breve spiegazione del perche hai selezionato queste fonti
 
     Esempio di risposta:
     {
       "selected_sources": [{"bucket_name": "knowledge", "namespace_name": "hr-policies"}],
-      "confidence": 0.85,
       "reasoning": "La richiesta riguarda le politiche dei dipendenti, che corrisponde al namespace delle politiche HR."
     }
 
   selection_user: "Domanda utente: %{query}"
+
+  # Approval interpreter prompts
+  approval_intent_description: "L'intenzione dell'utente: 'approve' se accetta, 'reject' se rifiuta, 'correct' se vuole modifiche"
+  correction_details_description: "In caso di correzione, descrivi cosa l'utente vuole modificare"
+  preferred_sources_description: "Lista dei nomi di namespace che l'utente ha specificamente menzionato"
+  interpretation_reasoning_description: "Breve spiegazione dell'interpretazione della risposta"
+  approval_interpretation_docstring: "Interpretazione della risposta di approvazione dell'utente"
+
+  approval_interpretation: |
+    Interpreta la risposta dell'utente a una domanda di approvazione della selezione namespace.
+
+    Selezione attuale: %{current_selection}
+    Fonti disponibili: %{available_sources}
+    Risposta dell'utente: "%{user_response}"
+
+    Determina se l'utente:
+    - "approve": Accetta la selezione (si, ok, procedi, va bene, ecc.)
+    - "reject": Rifiuta senza proporre alternative (no, non quelle, sbagliato, ecc.)
+    - "correct": Fornisce indicazioni specifiche (usa X invece, includi anche Y, solo Z, ecc.)
+
+  # Topic change response interpreter prompts
+  wants_new_sources_description: "True se l'utente vuole cercare in altre fonti, False per mantenere le attuali"
+  topic_response_reasoning_description: "Breve spiegazione dell'interpretazione"
+  topic_change_interpretation_docstring: "Interpretazione della risposta dell'utente riguardo al cambio di argomento"
+
+  topic_change_interpretation: |
+    Interpreta la risposta dell'utente per sapere se vuole cercare in altre fonti di conoscenza.
+
+    Risposta dell'utente: "%{user_response}"
+
+    Determina se l'utente vuole cercare in altre fonti (si, diverse, nuovo argomento, ecc.)
+    o mantenere le fonti attuali (no, le stesse, continua, ecc.).

@@ -48,6 +48,14 @@ class NamespaceSelectionAgentConfig(AgentConfig):
         Field(description="Maximum number of HITL correction loops before forcing selection", ge=1),
     ] = 3
 
+    allow_topic_change: Annotated[
+        bool,
+        Field(
+            description="If True, detect topic changes and ask user to confirm new sources. "
+            "If False, namespace selection only happens on first query and is reused for entire thread."
+        ),
+    ] = True
+
     selection_system_prompt: Annotated[
         LocaleString | None,
         Field(description="System prompt for namespace selection LLM calls"),

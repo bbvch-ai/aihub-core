@@ -1,12 +1,18 @@
 from .configs import AllowedBucketConfig, NamespaceSelectionAgentConfig
-from .events import ClarificationNeededEvent, NamespaceSelectionEvent, SelectionReadyEvent
+from .events import (
+    KeepSourcesEvent,
+    NamespaceSelectionEvent,
+    SelectionReadyEvent,
+    SelectNewSourcesEvent,
+)
 from .NamespaceSelectionAgent import NamespaceSelectionAgent
 
 __all__ = [
     "AllowedBucketConfig",
-    "ClarificationNeededEvent",
+    "KeepSourcesEvent",
     "NamespaceSelectionAgent",
     "NamespaceSelectionAgentConfig",
     "NamespaceSelectionEvent",
     "SelectionReadyEvent",
+    "SelectNewSourcesEvent",
 ]

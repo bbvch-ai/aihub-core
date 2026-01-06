@@ -36,16 +36,15 @@ prompts:
     %{namespaces}
     %{context}
 
+    IMPORTANT: Select exactly ONE namespace per bucket. Each bucket should have one and only one namespace selected based on the user's query.
+
     Respond with a JSON object containing:
-    - "selected_sources": Array of objects with "bucket_name" and "namespace_name" for each relevant source
-    - "confidence": A number between 0.0 and 1.0 indicating your confidence in the selection
+    - "selected_sources": Array of objects with "bucket_name" and "namespace_name" for each relevant source (one per bucket)
     - "reasoning": A brief explanation of why you selected these sources
-    - "clarification_question": Optional - a question to ask the user if the selection is unclear
 
     Example response:
     {
       "selected_sources": [{"bucket_name": "knowledge", "namespace_name": "hr-policies"}],
-      "confidence": 0.85,
       "reasoning": "The query is about employee policies which matches the HR policies namespace."
     }
 
