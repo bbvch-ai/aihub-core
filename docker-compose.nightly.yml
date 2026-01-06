@@ -666,7 +666,7 @@ services:
       DOCLING_SERVE_MAX_SYNC_WAIT: 600
       DOCLING_SERVE_ENABLE_REMOTE_SERVICES: 1
       DOCLING_SERVE_SINGLE_USE_RESULTS: 1
-      DOCLING_SERVE_RESULT_REMOVAL_DELAY: 1
+      DOCLING_SERVE_RESULT_REMOVAL_DELAY: 30
     depends_on:
       litellm:
         condition: service_healthy
