@@ -31,7 +31,7 @@ async def main():
                 model_name="text-generation/nano",
             ),
             allowed_buckets=[
-                AllowedBucketConfig(bucket_name="default", retrieve_k=5),
+                AllowedBucketConfig(bucket_name="default"),
             ],
             rag_agent_class="RAGAgent",
             rag_agent_id="dev_rag_agent",
