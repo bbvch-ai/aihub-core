@@ -449,41 +449,30 @@ class DoclingLoader(BaseReader):
 
     async def _clear_document(self, client: httpx.AsyncClient, task_id: str) -> None:
         """
-        Request cleanup of the document from the Docling server after retrieval.
+        Clear all completed results from the Docling server after retrieval.
 
-        docling-serve doesn't expose a per-task DELETE endpoint. Cleanup options:
-        1. Server-side DOCLING_SERVE_SINGLE_USE_RESULTS=true (auto-clears after GET)
-        2. Server-side DOCLING_SERVE_RESULT_CLEANUP_DELAY (auto-clears after delay)
-        3. Bulk cleanup via GET /v1/clear/results (not suitable for concurrent use)
+        Uses GET /v1/clear/results?older_than=0 to immediately clear all completed
+        results. This is safe because documents are processed sequentially (one at
+        a time), so there are no concurrent results to accidentally clear.
 
-        This method attempts DELETE /v1/result/{task_id} in case the server version
-        supports it, otherwise relies on server-side auto-cleanup mechanisms.
+        This also cleans up any orphaned results from previous failed runs.
         """
         try:
-            response = await client.delete(
-                f"{self.config.BASE_API_URL}/v1/result/{task_id}",
+            response = await client.get(
+                f"{self.config.BASE_API_URL}/v1/clear/results",
+                params={"older_than": 0},
                 headers={"Content-Type": "application/json"},
             )
-            if response.status_code in (200, 204):
-                logger.debug(f"[DoclingLoader] Cleared document for task_id={task_id}")
-            elif response.status_code == 404:
-                # Already cleaned (SINGLE_USE_RESULTS mode or auto-cleanup)
-                logger.debug(f"[DoclingLoader] Document for task_id={task_id} already cleared (auto-cleanup)")
-            elif response.status_code == 405:
-                # DELETE not supported - this is expected for most docling-serve versions
-                # Rely on server-side SINGLE_USE_RESULTS or RESULT_CLEANUP_DELAY
-                logger.debug(
-                    f"[DoclingLoader] DELETE not supported for task_id={task_id}, "
-                    "relying on server auto-cleanup (SINGLE_USE_RESULTS or RESULT_CLEANUP_DELAY)"
-                )
+            if response.status_code == 200:
+                logger.debug(f"[DoclingLoader] Cleared all results after task_id={task_id}")
             else:
                 logger.debug(
-                    f"[DoclingLoader] Clear request for task_id={task_id} returned "
-                    f"status={response.status_code}, relying on server auto-cleanup"
+                    f"[DoclingLoader] Clear results returned status={response.status_code} "
+                    f"after task_id={task_id}, response={response.text}"
                 )
         except Exception as e:
-            # Non-fatal: server will auto-cleanup eventually
-            logger.debug(f"[DoclingLoader] Clear request failed for task_id={task_id}: {e}, relying on auto-cleanup")
+            # Non-fatal: server will auto-cleanup eventually via SINGLE_USE_RESULTS
+            logger.debug(f"[DoclingLoader] Clear results failed after task_id={task_id}: {e}")
 
 
 def inject_figure_tags(markdown_text: str, img_strs: list[str]):
