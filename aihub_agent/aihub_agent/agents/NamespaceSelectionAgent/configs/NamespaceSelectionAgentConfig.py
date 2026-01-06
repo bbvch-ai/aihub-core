@@ -10,7 +10,6 @@ class AllowedBucketConfig(BaseModel):
     """Configuration for an allowed knowledge bucket."""
 
     bucket_name: Annotated[str, Field(description="The name of the bucket/collection in Milvus")]
-    retrieve_k: Annotated[int, Field(description="Number of documents to retrieve per query", ge=1)] = 10
 
 
 class NamespaceSelectionAgentConfig(AgentConfig):

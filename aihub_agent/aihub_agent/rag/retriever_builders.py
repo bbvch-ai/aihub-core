@@ -28,9 +28,14 @@ def build_retrievers_from_sources(
         List of KnowledgeRetrieverConfig with namespaces set from sources.
 
     Raises:
-        ValueError: If no KnowledgeRetrieverConfig found in existing_retrievers,
-            or if a bucket in sources has no corresponding retriever configured.
+        ValueError: If sources is non-empty and no KnowledgeRetrieverConfig found
+            in existing_retrievers, or if a bucket in sources has no corresponding
+            retriever configured.
     """
+    # Early return for empty sources - no retrievers needed
+    if not sources:
+        return []
+
     # Build lookup of existing retrievers by bucket name
     bucket_retrievers: dict[str, KnowledgeRetrieverConfig] = {}
     for retriever in existing_retrievers:
