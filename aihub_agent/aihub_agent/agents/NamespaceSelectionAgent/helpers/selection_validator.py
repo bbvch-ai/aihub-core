@@ -1,8 +1,7 @@
 """
 Namespace selection validation for NamespaceSelectionAgent.
 
-Provides validation functions to ensure namespace selections meet
-the one-per-bucket constraint and all allowed buckets are covered.
+Provides validation to ensure exactly one namespace per allowed bucket.
 """
 
 import logging
@@ -14,52 +13,47 @@ from aihub_agent.agents.NamespaceSelectionAgent.helpers.namespace_selector impor
 logger = logging.getLogger(__name__)
 
 
-def validate_one_per_bucket(sources: list[KnowledgeSource]) -> list[KnowledgeSource]:
-    """
-    Ensure exactly one namespace per bucket.
-
-    If multiple namespaces from the same bucket are selected,
-    keeps only the first one encountered.
-    """
-    by_bucket: dict[str, KnowledgeSource] = {}
-    for source in sources:
-        if source.bucket_name in by_bucket:
-            logger.warning(
-                f"Multiple namespaces selected for bucket {source.bucket_name}, "
-                f"keeping {by_bucket[source.bucket_name].namespace_name}"
-            )
-        else:
-            by_bucket[source.bucket_name] = source
-    return list(by_bucket.values())
-
-
-def ensure_all_buckets_covered(
+def normalize_selection(
     sources: list[KnowledgeSource],
     available: list[AvailableNamespace],
     allowed_buckets: list[str],
 ) -> list[KnowledgeSource]:
     """
-    Ensure each allowed bucket has a selected namespace.
+    Ensure exactly one namespace per allowed bucket.
 
-    If a bucket has no selection, picks the first available namespace
-    from that bucket as a fallback.
+    - Removes duplicate selections (keeps first per bucket)
+    - Fills missing buckets with first available namespace
+
+    Args:
+        sources: LLM-selected knowledge sources.
+        available: All available namespaces.
+        allowed_buckets: Bucket names that must be covered.
+
+    Returns:
+        Normalized list with exactly one namespace per allowed bucket.
     """
-    result = list(sources)  # Don't modify original
-    covered = {s.bucket_name for s in result}
+    # Dedupe: keep first selection per bucket
+    by_bucket: dict[str, KnowledgeSource] = {}
+    for source in sources:
+        if source.bucket_name in by_bucket:
+            logger.debug(
+                f"Multiple namespaces selected for bucket {source.bucket_name}, "
+                f"keeping {by_bucket[source.bucket_name].namespace_name}"
+            )
+        else:
+            by_bucket[source.bucket_name] = source
 
+    # Fill missing buckets
     for bucket in allowed_buckets:
-        if bucket not in covered:
-            # Find first available namespace in this bucket
+        if bucket not in by_bucket:
             for ns in available:
                 if ns.bucket_name == bucket:
-                    result.append(
-                        KnowledgeSource(
-                            bucket_name=bucket,
-                            namespace_name=ns.namespace_name,
-                            display_name=ns.display_name,
-                        )
+                    by_bucket[bucket] = KnowledgeSource(
+                        bucket_name=bucket,
+                        namespace_name=ns.namespace_name,
+                        display_name=ns.display_name,
                     )
                     logger.info(f"Auto-selected {ns.namespace_name} for uncovered bucket {bucket}")
                     break
 
-    return result
+    return list(by_bucket.values())

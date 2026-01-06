@@ -37,11 +37,11 @@ from aihub_agent.agents.NamespaceSelectionAgent.helpers import (
     build_agent_invocation,
     build_rag_start_event,
     detect_topic_change_with_llm,
-    ensure_all_buckets_covered,
     fetch_available_namespaces,
     get_current_sources,
     interpret_approval_response,
     interpret_topic_change_response,
+    normalize_selection,
     save_selected_sources,
     select_namespaces,
 )
@@ -258,8 +258,8 @@ class NamespaceSelectionAgent(Agent):
             user_correction=user_preference,
         )
 
-        # Ensure all allowed buckets have at least one namespace selected
-        selected_sources = ensure_all_buckets_covered(
+        # Normalize: exactly one namespace per allowed bucket
+        selected_sources = normalize_selection(
             result.selected_sources,
             available_namespaces,
             bucket_names,

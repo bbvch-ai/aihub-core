@@ -246,9 +246,4 @@ async def select_namespaces(
 
     result = _parse_selection_response(response_text, available_namespaces)
 
-    # Validate one namespace per bucket
-    from aihub_agent.agents.NamespaceSelectionAgent.helpers.selection_validator import validate_one_per_bucket
-
-    result.selected_sources = validate_one_per_bucket(result.selected_sources)
-
     return result

@@ -14,8 +14,7 @@ from aihub_agent.agents.NamespaceSelectionAgent.helpers.namespace_selector impor
     _parse_selection_response,
 )
 from aihub_agent.agents.NamespaceSelectionAgent.helpers.selection_validator import (
-    ensure_all_buckets_covered,
-    validate_one_per_bucket,
+    normalize_selection,
 )
 
 
@@ -180,39 +179,8 @@ class TestParseSelectionResponse:
         assert "Failed to parse" in result.reasoning
 
 
-class TestValidateOnePerBucket:
-    """Tests for validate_one_per_bucket helper."""
-
-    def test_empty_list(self):
-        result = validate_one_per_bucket([])
-        assert result == []
-
-    def test_single_source(self):
-        sources = [KnowledgeSource(bucket_name="knowledge", namespace_name="docs")]
-        result = validate_one_per_bucket(sources)
-        assert len(result) == 1
-
-    def test_different_buckets_preserved(self):
-        sources = [
-            KnowledgeSource(bucket_name="bucket1", namespace_name="ns1"),
-            KnowledgeSource(bucket_name="bucket2", namespace_name="ns2"),
-        ]
-        result = validate_one_per_bucket(sources)
-        assert len(result) == 2
-
-    def test_duplicate_bucket_keeps_first(self):
-        sources = [
-            KnowledgeSource(bucket_name="knowledge", namespace_name="first"),
-            KnowledgeSource(bucket_name="knowledge", namespace_name="second"),
-        ]
-        result = validate_one_per_bucket(sources)
-
-        assert len(result) == 1
-        assert result[0].namespace_name == "first"
-
-
-class TestEnsureAllBucketsCovered:
-    """Tests for ensure_all_buckets_covered helper."""
+class TestNormalizeSelection:
+    """Tests for normalize_selection helper."""
 
     def setup_method(self):
         self.available = [
@@ -222,34 +190,57 @@ class TestEnsureAllBucketsCovered:
         ]
         self.allowed_buckets = ["bucket1", "bucket2"]
 
-    def test_all_covered(self):
-        sources = [
-            KnowledgeSource(bucket_name="bucket1", namespace_name="ns1a"),
-            KnowledgeSource(bucket_name="bucket2", namespace_name="ns2a"),
-        ]
-        result = ensure_all_buckets_covered(sources, self.available, self.allowed_buckets)
-
-        assert len(result) == 2
-
-    def test_missing_bucket_gets_first_available(self):
-        sources = [KnowledgeSource(bucket_name="bucket1", namespace_name="ns1a")]
-        result = ensure_all_buckets_covered(sources, self.available, self.allowed_buckets)
-
-        assert len(result) == 2
-        bucket2_source = next(s for s in result if s.bucket_name == "bucket2")
-        assert bucket2_source.namespace_name == "ns2a"
-
-    def test_empty_sources_fills_all(self):
-        result = ensure_all_buckets_covered([], self.available, self.allowed_buckets)
+    def test_empty_sources_fills_all_buckets(self):
+        """Empty sources should auto-fill all allowed buckets."""
+        result = normalize_selection([], self.available, self.allowed_buckets)
 
         assert len(result) == 2
         bucket_names = {s.bucket_name for s in result}
         assert bucket_names == {"bucket1", "bucket2"}
 
-    def test_original_list_not_modified(self):
+    def test_all_buckets_covered_unchanged(self):
+        """When all buckets covered, returns exactly those sources."""
+        sources = [
+            KnowledgeSource(bucket_name="bucket1", namespace_name="ns1a"),
+            KnowledgeSource(bucket_name="bucket2", namespace_name="ns2a"),
+        ]
+        result = normalize_selection(sources, self.available, self.allowed_buckets)
+
+        assert len(result) == 2
+
+    def test_missing_bucket_auto_filled(self):
+        """Missing bucket gets first available namespace."""
         sources = [KnowledgeSource(bucket_name="bucket1", namespace_name="ns1a")]
-        original_len = len(sources)
+        result = normalize_selection(sources, self.available, self.allowed_buckets)
 
-        ensure_all_buckets_covered(sources, self.available, self.allowed_buckets)
+        assert len(result) == 2
+        bucket2_source = next(s for s in result if s.bucket_name == "bucket2")
+        assert bucket2_source.namespace_name == "ns2a"
 
-        assert len(sources) == original_len  # Original should not be modified
+    def test_duplicate_bucket_keeps_first(self):
+        """Multiple selections from same bucket keeps only first."""
+        sources = [
+            KnowledgeSource(bucket_name="bucket1", namespace_name="first"),
+            KnowledgeSource(bucket_name="bucket1", namespace_name="second"),
+            KnowledgeSource(bucket_name="bucket2", namespace_name="ns2a"),
+        ]
+        result = normalize_selection(sources, self.available, self.allowed_buckets)
+
+        assert len(result) == 2
+        bucket1_source = next(s for s in result if s.bucket_name == "bucket1")
+        assert bucket1_source.namespace_name == "first"
+
+    def test_combined_dedupe_and_fill(self):
+        """Handles both deduplication and missing bucket filling."""
+        sources = [
+            KnowledgeSource(bucket_name="bucket1", namespace_name="first"),
+            KnowledgeSource(bucket_name="bucket1", namespace_name="second"),
+            # bucket2 is missing
+        ]
+        result = normalize_selection(sources, self.available, self.allowed_buckets)
+
+        assert len(result) == 2
+        bucket1_source = next(s for s in result if s.bucket_name == "bucket1")
+        bucket2_source = next(s for s in result if s.bucket_name == "bucket2")
+        assert bucket1_source.namespace_name == "first"  # Kept first
+        assert bucket2_source.namespace_name == "ns2a"  # Auto-filled
