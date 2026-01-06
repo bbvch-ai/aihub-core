@@ -449,22 +449,21 @@ class DoclingLoader(BaseReader):
 
     async def _clear_document(self, client: httpx.AsyncClient, task_id: str) -> None:
         """
-        Clear all completed results from the Docling server after retrieval.
+        Clear old results from the Docling server after retrieval.
 
-        Uses GET /v1/clear/results?older_than=0 to immediately clear all completed
-        results. This is safe because documents are processed sequentially (one at
-        a time), so there are no concurrent results to accidentally clear.
-
-        This also cleans up any orphaned results from previous failed runs.
+        Uses GET /v1/clear/results?older_than=30 to clear results older than 30
+        seconds. This provides a safety buffer to avoid clearing results that may
+        still be in use, while still cleaning up orphaned results from previous
+        failed runs.
         """
         try:
             response = await client.get(
                 f"{self.config.BASE_API_URL}/v1/clear/results",
-                params={"older_than": 0},
+                params={"older_than": 30},
                 headers={"Content-Type": "application/json"},
             )
             if response.status_code == 200:
-                logger.debug(f"[DoclingLoader] Cleared all results after task_id={task_id}")
+                logger.debug(f"[DoclingLoader] Cleared old results (>30s) after task_id={task_id}")
             else:
                 logger.debug(
                     f"[DoclingLoader] Clear results returned status={response.status_code} "
