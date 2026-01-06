@@ -1,7 +1,6 @@
 from .approval_interpreter import (
     ApprovalInterpretation,
     interpret_approval_response,
-    interpret_topic_change_response,
 )
 from .namespace_selector import (
     AvailableNamespace,
@@ -17,6 +16,7 @@ from .source_manager import (
     save_selected_sources,
 )
 from .topic_change_detector import detect_topic_change_with_llm
+from .topic_change_response_router import route_topic_change_response
 
 __all__ = [
     "ApprovalInterpretation",
@@ -29,8 +29,8 @@ __all__ = [
     "fetch_available_namespaces",
     "get_current_sources",
     "interpret_approval_response",
-    "interpret_topic_change_response",
     "normalize_selection",
+    "route_topic_change_response",
     "save_selected_sources",
     "select_namespaces",
 ]

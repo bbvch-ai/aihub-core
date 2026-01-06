@@ -61,6 +61,8 @@ prompts:
     - "reject": Rifiuta senza proporre alternative (no, non quelle, sbagliato, ecc.)
     - "correct": Fornisce indicazioni specifiche (usa X invece, includi anche Y, solo Z, ecc.)
 
+    Usa lo strumento per inviare la tua interpretazione.
+
   # Topic change response interpreter prompts
   wants_new_sources_description: "True se l'utente vuole cercare in altre fonti, False per mantenere le attuali"
   topic_response_reasoning_description: "Breve spiegazione dell'interpretazione"

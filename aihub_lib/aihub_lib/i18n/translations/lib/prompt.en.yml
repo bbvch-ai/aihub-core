@@ -71,7 +71,7 @@ router:
     1. Analyze the instructions carefully
     2. Compare against each option's selection criteria
     3. Choose exactly one option that best matches
-    4. Provide the option index (0 to {{ routes|length - 1 }})
+    4. Use the tool to submit your answer with the option index (0 to {{ routes|length - 1 }})
     5. Explain your reasoning in detail
     </selection_requirements>
     {% endchat %}
@@ -179,6 +179,22 @@ routing:
     topic_changed_reason: "Topic appears to have changed"
     unchanged_instructions: "Select this option if the topic is the same or related to the previous conversation, including follow-up questions, clarifications, or requests for more details. The same knowledge sources should be used."
     changed_instructions: "Select this option if the topic has changed substantially and different knowledge sources may be needed."
+
+  topic_response:
+    instructions: |
+      The user was asked whether they want to search for new sources or continue with the current ones.
+      Interpret their response and determine their intent.
+
+      <user_response>
+      %{user_response}
+      </user_response>
+
+      Determine if the user wants to keep using the current sources or select new ones.
+      Use the tool to submit your selection.
+    keep_instructions: "Select this option if the user wants to continue with the current sources (yes, ok, sure, continue, same sources, keep, etc.)"
+    select_new_instructions: "Select this option if the user wants to search in different/new sources (no, different, new sources, change, other, etc.)"
+    keep_reasoning: "User wants to keep current sources"
+    select_new_reasoning: "User wants new sources"
 
 summarizer:
   summarize: |

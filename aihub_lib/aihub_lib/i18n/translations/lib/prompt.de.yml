@@ -72,7 +72,7 @@ router:
     1. Analysieren Sie die Anweisungen sorgfältig
     2. Vergleichen Sie mit den Auswahlkriterien jeder Option
     3. Wählen Sie genau eine Option, die am besten passt
-    4. Geben Sie den Options-Index an (0 bis {{ routes|length - 1 }})
+    4. Verwenden Sie das Tool, um Ihre Antwort mit dem Options-Index einzureichen (0 bis {{ routes|length - 1 }})
     5. Erklären Sie Ihre Begründung ausführlich
     </selection_requirements>
     {% endchat %}
@@ -180,6 +180,22 @@ routing:
     topic_changed_reason: "Thema scheint sich geändert zu haben"
     unchanged_instructions: "Wählen Sie diese Option, wenn das Thema gleich oder verwandt mit der vorherigen Konversation ist, einschliesslich Folgefragen, Klärungen oder Anfragen nach mehr Details. Die gleichen Wissensquellen sollten verwendet werden."
     changed_instructions: "Wählen Sie diese Option, wenn sich das Thema wesentlich geändert hat und andere Wissensquellen benötigt werden könnten."
+
+  topic_response:
+    instructions: |
+      Der Benutzer wurde gefragt, ob er in neuen Quellen suchen oder mit den aktuellen fortfahren möchte.
+      Interpretieren Sie seine Antwort und bestimmen Sie seine Absicht.
+
+      <user_response>
+      %{user_response}
+      </user_response>
+
+      Bestimmen Sie, ob der Benutzer die aktuellen Quellen behalten oder neue auswählen möchte.
+      Verwenden Sie das Tool, um Ihre Auswahl einzureichen.
+    keep_instructions: "Wählen Sie diese Option, wenn der Benutzer mit den aktuellen Quellen fortfahren möchte (ja, ok, klar, weiter, gleiche Quellen, behalten, etc.)"
+    select_new_instructions: "Wählen Sie diese Option, wenn der Benutzer in anderen/neuen Quellen suchen möchte (nein, andere, neue Quellen, ändern, wechseln, etc.)"
+    keep_reasoning: "Benutzer möchte aktuelle Quellen behalten"
+    select_new_reasoning: "Benutzer möchte neue Quellen"
 
 summarizer:
   summarize: |

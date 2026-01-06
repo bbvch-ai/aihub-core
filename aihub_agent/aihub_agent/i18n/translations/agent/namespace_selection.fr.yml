@@ -61,6 +61,8 @@ prompts:
     - "reject": Refuse sans proposer d'alternatives (non, pas celles-la, faux, etc.)
     - "correct": Fournit des indications specifiques (utiliser X a la place, inclure aussi Y, seulement Z, etc.)
 
+    Utilisez l'outil pour soumettre votre interpretation.
+
   # Topic change response interpreter prompts
   wants_new_sources_description: "True si l'utilisateur veut chercher dans d'autres sources, False pour garder les actuelles"
   topic_response_reasoning_description: "Breve explication de l'interpretation"

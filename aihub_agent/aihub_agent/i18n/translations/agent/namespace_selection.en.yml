@@ -61,6 +61,8 @@ prompts:
     - "reject": Disagrees without providing alternatives (no, not those, wrong, etc.)
     - "correct": Provides specific guidance (use X instead, also include Y, only Z, etc.)
 
+    Use the tool to submit your interpretation.
+
   # Topic change response interpreter prompts
   wants_new_sources_description: "True if user wants to search different sources, False to keep current"
   topic_response_reasoning_description: "Brief explanation of interpretation"

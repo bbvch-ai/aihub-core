@@ -71,7 +71,7 @@ router:
     1. Analyze the instructions carefully
     2. Compare against each option's selection criteria
     3. Choose exactly one option that best matches
-    4. Provide the option index (0 to {{ routes|length - 1 }})
+    4. Use the tool to submit your answer with the option index (0 to {{ routes|length - 1 }})
     5. Explain your reasoning in detail
     </selection_requirements>
     {% endchat %}
@@ -179,6 +179,22 @@ routing:
     topic_changed_reason: "L'argomento sembra essere cambiato"
     unchanged_instructions: "Seleziona questa opzione se l'argomento è lo stesso o correlato alla conversazione precedente, incluse domande di follow-up, chiarimenti o richieste di maggiori dettagli. Le stesse fonti di conoscenza devono essere utilizzate."
     changed_instructions: "Seleziona questa opzione se l'argomento è cambiato sostanzialmente e potrebbero essere necessarie fonti di conoscenza diverse."
+
+  topic_response:
+    instructions: |
+      All'utente è stato chiesto se desidera cercare in nuove fonti o continuare con quelle attuali.
+      Interpreta la sua risposta e determina la sua intenzione.
+
+      <user_response>
+      %{user_response}
+      </user_response>
+
+      Determina se l'utente desidera mantenere le fonti attuali o selezionarne di nuove.
+      Usa lo strumento per inviare la tua selezione.
+    keep_instructions: "Seleziona questa opzione se l'utente desidera continuare con le fonti attuali (sì, ok, va bene, continua, stesse fonti, mantieni, etc.)"
+    select_new_instructions: "Seleziona questa opzione se l'utente desidera cercare in fonti diverse/nuove (no, diverso, nuove fonti, cambia, altro, etc.)"
+    keep_reasoning: "L'utente desidera mantenere le fonti attuali"
+    select_new_reasoning: "L'utente desidera nuove fonti"
 
 summarizer:
   summarize: |

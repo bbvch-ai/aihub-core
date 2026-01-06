@@ -11,7 +11,6 @@ from aihub_agent.agents.NamespaceSelectionAgent.helpers.namespace_selector impor
     AvailableNamespace,
     _build_context_text,
     _build_namespace_list_text,
-    _parse_selection_response,
 )
 from aihub_agent.agents.NamespaceSelectionAgent.helpers.selection_validator import (
     normalize_selection,
@@ -87,96 +86,6 @@ class TestBuildContextText:
         result = _build_context_text(["First feedback", "Second feedback"])
         assert "First feedback" in result
         assert "Second feedback" in result
-
-
-class TestParseSelectionResponse:
-    """Tests for _parse_selection_response helper."""
-
-    def setup_method(self):
-        self.available_namespaces = [
-            AvailableNamespace(
-                bucket_name="knowledge",
-                bucket_id="1",
-                namespace_name="hr-policies",
-                display_name="HR Policies",
-            ),
-            AvailableNamespace(
-                bucket_name="knowledge",
-                bucket_id="1",
-                namespace_name="tech-docs",
-                display_name="Technical Docs",
-            ),
-            AvailableNamespace(
-                bucket_name="external",
-                bucket_id="2",
-                namespace_name="vendor-docs",
-            ),
-        ]
-
-    def test_valid_json_response(self):
-        response = """
-        {
-            "selected_sources": [
-                {"bucket_name": "knowledge", "namespace_name": "hr-policies"}
-            ],
-            "reasoning": "The query is about HR policies"
-        }
-        """
-        result = _parse_selection_response(response, self.available_namespaces)
-
-        assert len(result.selected_sources) == 1
-        assert result.selected_sources[0].bucket_name == "knowledge"
-        assert result.selected_sources[0].namespace_name == "hr-policies"
-        assert result.selected_sources[0].display_name == "HR Policies"
-        assert result.reasoning == "The query is about HR policies"
-
-    def test_json_with_surrounding_text(self):
-        response = """
-        I'll analyze the query and select relevant sources.
-
-        {
-            "selected_sources": [
-                {"bucket_name": "external", "namespace_name": "vendor-docs"}
-            ],
-            "reasoning": "Looking for vendor information"
-        }
-
-        This selection should help answer the query.
-        """
-        result = _parse_selection_response(response, self.available_namespaces)
-
-        assert len(result.selected_sources) == 1
-        assert result.selected_sources[0].namespace_name == "vendor-docs"
-
-    def test_invalid_namespace_filtered(self):
-        response = """
-        {
-            "selected_sources": [
-                {"bucket_name": "knowledge", "namespace_name": "hr-policies"},
-                {"bucket_name": "unknown", "namespace_name": "invalid"}
-            ],
-            "reasoning": "Selected sources"
-        }
-        """
-        result = _parse_selection_response(response, self.available_namespaces)
-
-        # Invalid namespace should be filtered out
-        assert len(result.selected_sources) == 1
-        assert result.selected_sources[0].namespace_name == "hr-policies"
-
-    def test_no_json_in_response(self):
-        response = "I don't know which sources to select."
-        result = _parse_selection_response(response, self.available_namespaces)
-
-        assert len(result.selected_sources) == 0
-        assert "Failed to parse" in result.reasoning
-
-    def test_malformed_json(self):
-        response = '{"selected_sources": [invalid json'
-        result = _parse_selection_response(response, self.available_namespaces)
-
-        assert len(result.selected_sources) == 0
-        assert "Failed to parse" in result.reasoning
 
 
 class TestNormalizeSelection:

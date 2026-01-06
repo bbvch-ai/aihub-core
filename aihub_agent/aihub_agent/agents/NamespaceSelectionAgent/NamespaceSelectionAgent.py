@@ -40,8 +40,8 @@ from aihub_agent.agents.NamespaceSelectionAgent.helpers import (
     fetch_available_namespaces,
     get_current_sources,
     interpret_approval_response,
-    interpret_topic_change_response,
     normalize_selection,
+    route_topic_change_response,
     save_selected_sources,
     select_namespaces,
 )
@@ -162,32 +162,27 @@ class NamespaceSelectionAgent(Agent):
         thread_context: ThreadContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> KeepSourcesEvent | SelectNewSourcesEvent:
+    ) -> RouterEvent:
         """
-        Interpret user's response to topic change question.
+        Interpret user's response to topic change question using router pattern.
         """
-        async with agent_config.selection_llm.cost_reporting_llm(displayer) as llm:
-            wants_new_sources = await interpret_topic_change_response(
-                user_response=event.response,
-                llm=llm,
-                t=t,
-            )
-
-        if wants_new_sources:
-            await displayer.display_thought(t("agent.namespace_selection.thoughts.user_wants_new_sources"))
-            return SelectNewSourcesEvent(
-                reasoning="User confirmed topic change, selecting new sources",
-                user_preference=event.response,
-            )
-
-        # User wants to keep current sources
         current_sources = await get_current_sources(thread_context) or []
 
-        await displayer.display_thought(t("agent.namespace_selection.thoughts.user_keeps_sources"))
-        return KeepSourcesEvent(
-            current_sources=current_sources,
-            reasoning="User wants to continue with current sources",
-        )
+        async with agent_config.selection_llm.cost_reporting_llm(displayer) as llm:
+            router_event = await route_topic_change_response(
+                llm=llm,
+                t=t,
+                user_response=event.response,
+                current_sources=current_sources,
+            )
+
+        # Display thought based on selected route
+        if isinstance(router_event.selected_option.event, KeepSourcesEvent):
+            await displayer.display_thought(t("agent.namespace_selection.thoughts.user_keeps_sources"))
+        else:
+            await displayer.display_thought(t("agent.namespace_selection.thoughts.user_wants_new_sources"))
+
+        return router_event
 
     @step(
         name=LocaleString(en="Reuse Current Sources"),
