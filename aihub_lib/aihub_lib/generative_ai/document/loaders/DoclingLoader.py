@@ -129,13 +129,20 @@ class DoclingLoader(BaseReader):
         include_images = include_images if include_images is not None else True
 
         fs = fs or get_default_fs()
-        encoded_string = await asyncio.to_thread(self._read_file_sync, fs, file)
         file_name = os.path.basename(file)
+        logger.debug(f"[DoclingLoader] Starting async load for file: {file_name}")
+
+        encoded_string = await asyncio.to_thread(self._read_file_sync, fs, file)
+        logger.debug(f"[DoclingLoader] File read complete for: {file_name}, encoded size: {len(encoded_string)} bytes")
 
         answer = await self.convert_document_async(encoded_string, file_name, include_images)
-        return await asyncio.to_thread(
+        logger.debug(f"[DoclingLoader] Conversion complete for: {file_name}, processing response")
+
+        result = await asyncio.to_thread(
             self._process_docling_response, answer=answer, file=file, fs=fs, extra_info=extra_info
         )
+        logger.debug(f"[DoclingLoader] Processing complete for: {file_name}, returning {len(result)} document(s)")
+        return result
 
     def _read_file_sync(self, fs: AbstractFileSystem, file: str) -> str:
         file_content = fs.cat_file(file)
@@ -288,16 +295,22 @@ class DoclingLoader(BaseReader):
         include_images: bool,
         to_formats: list[str] | None = None,
     ) -> dict:
+        logger.debug(
+            f"[DoclingLoader] Starting async conversion for: {filename}, "
+            f"pipeline: {self.config.PIPELINE_TYPE}, max_polls: {self.config.MAX_POLLS}, "
+            f"poll_interval: {self.config.POLL_INTERVAL}s"
+        )
         request_body = self._build_request_body(file_content, filename, include_images, to_formats)
         async for attempt in AsyncRetrying(**self._retry_kwargs()):
             with attempt:
-                return await self._execute_async_conversion(request_body)
+                return await self._execute_async_conversion(request_body, filename)
         raise RuntimeError("Retry loop exited unexpectedly")
 
-    async def _execute_async_conversion(self, request_body: dict) -> dict:
+    async def _execute_async_conversion(self, request_body: dict, filename: str = "unknown") -> dict:
         """Execute the async conversion request and poll for completion."""
         try:
             async with httpx.AsyncClient(timeout=self.config.API_TIMEOUT) as client:
+                logger.debug(f"[DoclingLoader] Submitting async job to {self.config.BASE_API_URL} for: {filename}")
                 response = await client.post(
                     f"{self.config.BASE_API_URL}/v1/convert/source/async",
                     json=request_body,
@@ -305,28 +318,55 @@ class DoclingLoader(BaseReader):
                 )
 
                 if response.status_code != 200:
+                    logger.error(
+                        f"[DoclingLoader] Job submission failed for {filename}: "
+                        f"status={response.status_code}, response={response.text}"
+                    )
                     raise DoclingTransientError(
                         f"Docling async API request failed with status code {response.status_code}: {response.text}"
                     )
 
                 job_response = response.json()
                 if not job_response or "task_id" not in job_response:
+                    logger.error(f"[DoclingLoader] Invalid job response for {filename}: {job_response}")
                     raise DoclingTransientError(f"Docling API returned invalid job response: {job_response}")
 
                 task_id = job_response["task_id"]
-                return await self._poll_job_completion(client, task_id)
+                logger.debug(f"[DoclingLoader] Job submitted successfully for {filename}, task_id={task_id}")
+                return await self._poll_job_completion(client, task_id, filename)
         except (httpx.ReadError, httpx.ConnectError, httpx.TimeoutException) as e:
+            logger.error(f"[DoclingLoader] Network error during job submission for {filename}: {e}")
             raise DoclingTransientError(f"Network error: {e}") from e
 
-    async def _poll_job_completion(self, client: httpx.AsyncClient, task_id: str) -> dict:
+    async def _poll_job_completion(self, client: httpx.AsyncClient, task_id: str, filename: str = "unknown") -> dict:
         """Poll the task status until completion and return the result."""
-        for _ in range(self.config.MAX_POLLS):
-            status_response = await client.get(
-                f"{self.config.BASE_API_URL}/v1/status/poll/{task_id}",
-                headers={"Content-Type": "application/json"},
+        logger.debug(
+            f"[DoclingLoader] Starting polling for task_id={task_id}, file={filename}, "
+            f"max_polls={self.config.MAX_POLLS}, interval={self.config.POLL_INTERVAL}s"
+        )
+
+        for poll_count in range(1, self.config.MAX_POLLS + 1):
+            logger.debug(
+                f"[DoclingLoader] Poll {poll_count}/{self.config.MAX_POLLS} for task_id={task_id}, file={filename}"
             )
 
+            try:
+                status_response = await client.get(
+                    f"{self.config.BASE_API_URL}/v1/status/poll/{task_id}",
+                    headers={"Content-Type": "application/json"},
+                )
+            except Exception as e:
+                logger.error(
+                    f"[DoclingLoader] Poll {poll_count} failed with exception for task_id={task_id}, "
+                    f"file={filename}: {type(e).__name__}: {e}"
+                )
+                raise
+
             if status_response.status_code != 200:
+                logger.error(
+                    f"[DoclingLoader] Poll {poll_count} returned non-200 status for task_id={task_id}, "
+                    f"file={filename}: status={status_response.status_code}, response={status_response.text}"
+                )
                 raise DoclingTransientError(
                     f"Docling task status request failed with status code {status_response.status_code}: "
                     f"{status_response.text}"
@@ -335,37 +375,76 @@ class DoclingLoader(BaseReader):
             task_status = status_response.json()
 
             if not task_status or "task_status" not in task_status:
+                logger.error(
+                    f"[DoclingLoader] Poll {poll_count} returned invalid response for task_id={task_id}, "
+                    f"file={filename}: {task_status}"
+                )
                 raise DoclingTransientError(f"Docling API returned invalid response: {task_status}")
 
-            if task_status["task_status"] == "success":
+            status_value = task_status["task_status"]
+            logger.debug(
+                f"[DoclingLoader] Poll {poll_count} status for task_id={task_id}, file={filename}: {status_value}"
+            )
+
+            if status_value == "success":
+                logger.debug(
+                    f"[DoclingLoader] Task completed successfully after {poll_count} poll(s) "
+                    f"for task_id={task_id}, file={filename}. Fetching result..."
+                )
                 result_response = await client.get(
                     f"{self.config.BASE_API_URL}/v1/result/{task_id}",
                     headers={"Content-Type": "application/json"},
                 )
 
                 if result_response.status_code != 200:
+                    logger.error(
+                        f"[DoclingLoader] Failed to fetch result for task_id={task_id}, file={filename}: "
+                        f"status={result_response.status_code}, response={result_response.text}"
+                    )
                     raise DoclingTransientError(
                         f"Docling result request failed with status code {result_response.status_code}: "
                         f"{result_response.text}"
                     )
 
                 result = result_response.json()
+                logger.debug(f"[DoclingLoader] Result fetched successfully for task_id={task_id}, file={filename}")
                 await self._clear_document(client, task_id)
                 return result
 
-            elif task_status["task_status"] == "failure":
+            elif status_value == "failure":
+                logger.error(
+                    f"[DoclingLoader] Task failed for task_id={task_id}, file={filename}. "
+                    f"Full response: {task_status}"
+                )
                 # Note: docling-serve does not currently expose failure reasons in the API
                 # See: https://github.com/docling-project/docling-serve/issues/365
                 raise DoclingTransientError(f"Docling conversion task {task_id} failed. Full response: {task_status}")
-            elif task_status["task_status"] in ["pending", "started"]:
+
+            elif status_value in ["pending", "started"]:
+                logger.debug(
+                    f"[DoclingLoader] Task still {status_value} for task_id={task_id}, file={filename}. "
+                    f"Sleeping {self.config.POLL_INTERVAL}s before next poll..."
+                )
                 await asyncio.sleep(self.config.POLL_INTERVAL)
-            elif task_status["task_status"] == "skipped":
+
+            elif status_value == "skipped":
+                logger.error(
+                    f"[DoclingLoader] Task was skipped for task_id={task_id}, file={filename}. "
+                    f"Full response: {task_status}"
+                )
                 raise DoclingTransientError(
                     f"Docling conversion task {task_id} was skipped. Full response: {task_status}"
                 )
             else:
-                raise DoclingTransientError(f"Unknown task status: {task_status['task_status']}")
+                logger.error(
+                    f"[DoclingLoader] Unknown task status '{status_value}' for task_id={task_id}, file={filename}"
+                )
+                raise DoclingTransientError(f"Unknown task status: {status_value}")
 
+        logger.error(
+            f"[DoclingLoader] Timeout after {self.config.MAX_POLLS} polls for task_id={task_id}, file={filename}. "
+            f"Total wait time: {self.config.MAX_POLLS * self.config.POLL_INTERVAL}s"
+        )
         raise TimeoutError(f"Docling conversion task {task_id} did not complete within the timeout period")
 
     async def _clear_document(self, client: httpx.AsyncClient, task_id: str) -> None:
