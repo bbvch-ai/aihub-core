@@ -14,6 +14,7 @@ from .elements.MultiSelect import MultiSelect
 from .elements.Password import Password
 from .elements.RadioButton import RadioButton
 from .elements.Rating import Rating
+from .elements.Repeater import Repeater
 from .elements.Select import Select
 from .elements.SelectButton import SelectButton
 from .elements.Slider import Slider
@@ -38,6 +39,7 @@ ALL_FORM_OPTIONS = (
     | Password
     | RadioButton
     | Rating
+    | Repeater
     | Select
     | SelectButton
     | Slider
@@ -46,6 +48,7 @@ ALL_FORM_OPTIONS = (
     | ToggleSwitch
 )
 
-# Rebuild Group model to resolve forward reference to ALL_FORM_OPTIONS
-# Group.children uses ALL_FORM_OPTIONS which creates a circular dependency
+# Rebuild models to resolve forward reference to ALL_FORM_OPTIONS
+# Group.children and Repeater.children use ALL_FORM_OPTIONS which creates a circular dependency
 Group.model_rebuild()
+Repeater.model_rebuild()
