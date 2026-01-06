@@ -72,6 +72,7 @@ class EmbeddingModelConfig(LiteLLMBase[OpenAILikeEmbedding]):
             callback_manager=CallbackManager([token_counter]),
             timeout=self.default_parameter.timeout,
             default_headers=default_headers,
+            dimensions=self.default_parameter.dimensions,
         )
 
         return open_ai_like_embedding, cost_tracker

@@ -8,7 +8,10 @@ import asyncio
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.processors.models.RetrieveSummariesConfig import RetrieveSummariesConfig
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
-from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
+from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import (
+    EmbeddingLLMParameter,
+    EmbeddingModelConfig,
+)
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.generative_ai.retrievers.InsightRetrieverConfig import InsightRetrieverConfig
 from aihub_lib.generative_ai.retrievers.KnowledgeRetrieverConfig import KnowledgeRetrieverConfig
@@ -141,7 +144,10 @@ async def main():
             ),
             retrievers=[
                 KnowledgeRetrieverConfig(
-                    embed_model=EmbeddingModelConfig(model_name="embedding/large"),
+                    embed_model=EmbeddingModelConfig(
+                        model_name="embedding/large",
+                        default_parameter=EmbeddingLLMParameter(dimensions=MilvusSettings().DIMENSION),
+                    ),
                     index_namespaces=[aihub_settings.DEFAULT_NAMESPACE_NAME],
                     retrieve_k=10,
                     query_mode=VectorStoreQueryMode.HYBRID,
@@ -160,7 +166,10 @@ async def main():
                     ),
                 ),
                 KnowledgeRetrieverConfig(
-                    embed_model=EmbeddingModelConfig(model_name="embedding/large"),
+                    embed_model=EmbeddingModelConfig(
+                        model_name="embedding/large",
+                        default_parameter=EmbeddingLLMParameter(dimensions=MilvusSettings().DIMENSION),
+                    ),
                     index_namespaces=[aihub_settings.SHARED_NAMESPACE_NAME],
                     retrieve_k=10,
                     query_mode=VectorStoreQueryMode.HYBRID,
