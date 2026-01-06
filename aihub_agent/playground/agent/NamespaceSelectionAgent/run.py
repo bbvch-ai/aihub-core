@@ -20,12 +20,6 @@ enable_logging()
 
 
 async def main():
-    """
-    Playground runner for NamespaceSelectionAgent development.
-
-    Uses nano model for fast iteration. Delegates to RAGAgent by default.
-    Change rag_agent_class to "ExpertRAGAgent" to test with expert sources.
-    """
     runner = AgentTestRunner(
         agent_type=NamespaceSelectionAgent,
         default_agent_config=NamespaceSelectionAgentConfig(
@@ -33,10 +27,8 @@ async def main():
             agent_id="dev_namespace_selection_agent",
             name=LocaleString(en="Dev Namespace Selection Agent"),
             description=LocaleString(en="Development config for NamespaceSelectionAgent"),
-            # When using nano model, temperature needs to be 1.0
             selection_llm=LLMConfig(
                 model_name="text-generation/nano",
-                default_parameter=LLMParameter(temperature=1.0),
             ),
             allowed_buckets=[
                 AllowedBucketConfig(bucket_name="default", retrieve_k=5),

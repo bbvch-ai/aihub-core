@@ -30,7 +30,7 @@ jobs:
       github.event_name == 'repository_dispatch'
     strategy:
       matrix:
-        image: [llm_wrapping_agent, rag_agent, expert_rag_agent, expert_asking_agent]
+        image: [llm_wrapping_agent, rag_agent, expert_rag_agent, expert_asking_agent, namespace_selection_agent]
     continue-on-error: true
     steps:
       - name: Checkout code

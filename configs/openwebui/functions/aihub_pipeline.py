@@ -1606,7 +1606,7 @@ class Pipe:
                     # Normal flow - send UserMessageEvent
                     event_name = "UserMessageEvent"
                     hitl_display_id = display_id
-                    event_payload = {"messages": messages}
+                    event_payload: dict[str, Any] = {"messages": messages}
                     if files:
                         event_payload["files"] = files
                         logger.debug(f"Attached {len(files)} file(s) to UserMessageEvent")
