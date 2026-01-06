@@ -1,11 +1,3 @@
-"""
-Topic change detection for NamespaceSelectionAgent.
-
-Uses LLM-based routing to detect when a user's query has changed topic
-significantly, triggering user confirmation and potential re-evaluation
-of namespace selection.
-"""
-
 import logging
 
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
@@ -34,19 +26,6 @@ async def detect_topic_change_with_llm(
     Uses the LLM router pattern to analyze whether the user's query is about
     a fundamentally different topic than the previous conversation. Analyzes
     the conversation history to properly detect follow-up questions.
-
-    Args:
-        current_query: The current user query.
-        current_sources: Currently selected knowledge sources.
-        llm: LLM for topic analysis.
-        displayer: For emitting display events.
-        t: Locale handler for translations.
-        previous_messages: Chat history to analyze for context and follow-ups.
-
-    Returns:
-        RouterEvent with selected route:
-        - TopicUnchangedAcceptEvent: Topic is the same, reuse sources
-        - TopicChangedEvent: Topic has changed, ask user about new sources
     """
     await displayer.display_thought(t("agent.namespace_selection.thoughts.checking_topic_change"))
 

@@ -1,16 +1,3 @@
-"""
-NamespaceSelectionAgent - Orchestrates namespace selection with natural conversation.
-
-This agent:
-1. Receives user queries
-2. Uses LLM router to detect topic changes (asks user to confirm if topic changed)
-3. Uses LLM to select relevant knowledge namespaces
-4. Always asks user to approve selection via chat-style HITL
-5. Supports correction loops when user wants changes
-6. Persists selection in ThreadContext for subsequent queries
-7. Delegates to RAGAgent via AgentInTheLoop with RAGWithSourcesStartEvent
-"""
-
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -183,6 +170,21 @@ class NamespaceSelectionAgent(Agent):
             await displayer.display_thought(t("agent.namespace_selection.thoughts.user_wants_new_sources"))
 
         return router_event
+
+    @step(
+        name=LocaleString(en="Router"),
+        description=LocaleString(en="Routes to the next step based on user's response"),
+        icon="line-md:chat",
+    )
+    async def router_step(
+        self,
+        router_event: RouterEvent,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> TopicChangedEvent | TopicUnchangedAcceptEvent | KeepSourcesEvent | SelectNewSourcesEvent:
+        await displayer.display_thought(t("agent.expert_asking_agent.thoughts.determine_sufficient"))
+        event = router_event.selected_option.event
+        return event
 
     @step(
         name=LocaleString(en="Reuse Current Sources"),

@@ -1,10 +1,3 @@
-"""
-Topic change response routing for NamespaceSelectionAgent.
-
-Uses the LLM router pattern to interpret the user's response to whether they
-want to keep the current knowledge sources or select new ones.
-"""
-
 from aihub_lib.generative_ai.routing.route_to_event_using_llm import route_to_event_using_llm
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events.rag import KnowledgeSource
@@ -31,15 +24,6 @@ async def route_topic_change_response(
     Routes:
     - KeepSourcesEvent: User wants to continue with current sources
     - SelectNewSourcesEvent: User wants to select new/different sources
-
-    Args:
-        llm: The LLM to use for routing decision.
-        t: Locale handler for translations.
-        user_response: The user's response to the topic change question.
-        current_sources: The currently selected knowledge sources.
-
-    Returns:
-        RouterEvent with the selected route.
     """
     instructions = t(
         "lib.prompt.routing.topic_response.instructions",
