@@ -80,6 +80,8 @@ services:
     environment:
       DOCLING_SERVE_ENABLE_UI: "true"
       DOCLING_SERVE_ARTIFACTS_PATH: /models
+      DOCLING_SERVE_SINGLE_USE_RESULTS: "true"
+      DOCLING_SERVE_RESULT_REMOVAL_DELAY: "30"
     volumes:
       - /data/volumes/docling-models:/models
     depends_on:
