@@ -8,7 +8,6 @@ from aihub_lib.persistence.process.ProcessEntity import HumanInSpecsEntity
 from pydantic import BaseModel, Field
 
 
-# TODO align with this for AgentConfigDTO
 class HumanInDTO(BaseModel):
     name: Annotated[str, Field(description="The name of the work event.")]
     description: Annotated[

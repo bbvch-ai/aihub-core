@@ -9,8 +9,7 @@ from aihub_process.delegators.process.Process import Process
 from aihub_process.process.decorators.process_step import process_step
 from playground.events.CustomProcessStopEvent import CustomProcessStopEvent
 from playground.events.HumanAWork import HumanAWork
-from playground.events.HumanAWorkForm import HumanAWorkForm
-from playground.events.HumanBWorkForm import HumanBWorkForm
+from playground.events.HumanBWork import HumanBWork
 from playground.events.HumanBWorkReqeust import HumanBWorkRequest
 
 
@@ -23,15 +22,14 @@ class HumanOnlyProcess(AgenticProcess):
             Human.In(
                 route="/input_a",
                 method="POST",
-                start_form=HumanAWorkForm(payload=InputText(label=LocaleString(en="Input text A"))),
-                form=HumanAWorkForm(payload=InputText(label=LocaleString(en="Input text A"))),
+                start_form=HumanAWork(payload=InputText(label=LocaleString(en="Input text A"))),
             ),
         ],
     ) -> Annotated[HumanBWorkRequest, Human.Out(user_roles=["AIHubAdmin"])]:
         print(f"[AgentOnlyProcess.start_with_output_from_human_a] {work_from_human_a.payload}")
         return HumanBWorkRequest(
             forms=[
-                HumanBWorkForm(
+                HumanBWork(
                     payload=InputText(
                         label=LocaleString(en=f"Please respond to <{work_from_human_a.payload}> with a single word:")
                     )
@@ -41,15 +39,7 @@ class HumanOnlyProcess(AgenticProcess):
 
     @process_step()
     async def end_with_output_from_human_b(
-        self,
-        work_from_human_b: Annotated[
-            HumanBWorkRequest.work,
-            Human.In(
-                route="/input_b",
-                method="POST",
-                form=HumanBWorkForm(payload=InputText(label=LocaleString(en="Input text A"))),
-            ),
-        ],
+        self, work_from_human_b: Annotated[HumanBWorkRequest.work, Human.In(route="/input_b", method="POST")]
     ) -> Annotated[CustomProcessStopEvent, Process.Out()]:
         print(f"[AgentOnlyProcess.end_with_output_from_human_b] {work_from_human_b.payload}")
         payload = f"{work_from_human_b.payload} -> HumanOnlyProcess output"

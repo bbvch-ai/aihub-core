@@ -10,7 +10,7 @@ from aihub_process.delegators.process.Process import Process
 from aihub_process.process.decorators.process_step import process_step
 from playground.events.AgentAWork import AgentAWork
 from playground.events.CustomProcessStopEvent import CustomProcessStopEvent
-from playground.events.HumanBWorkForm import HumanBWorkForm
+from playground.events.HumanBWork import HumanBWork
 from playground.events.HumanBWorkReqeust import HumanBWorkRequest
 
 
@@ -24,7 +24,7 @@ class AgentToHumanProcess(AgenticProcess):
         print(f"[AgentToHumanProcess.start_with_agent_a] Received from AgentA: {agent_payload}")
         return HumanBWorkRequest(
             forms=[
-                HumanBWorkForm(
+                HumanBWork(
                     payload=InputText(label=LocaleString(en=f"Please respond to <{agent_payload}> with a single word:"))
                 )
             ]

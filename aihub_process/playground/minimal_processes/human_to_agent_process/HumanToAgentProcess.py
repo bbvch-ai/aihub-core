@@ -12,7 +12,6 @@ from playground.agents.AgentA.events.AgentAStartEvent import AgentAStartEvent
 from playground.events.AgentAWorkRequest import AgentAWorkRequest
 from playground.events.CustomProcessStopEvent import CustomProcessStopEvent
 from playground.events.HumanAWork import HumanAWork
-from playground.events.HumanAWorkForm import HumanAWorkForm
 
 
 class HumanToAgentProcess(AgenticProcess):
@@ -24,7 +23,7 @@ class HumanToAgentProcess(AgenticProcess):
             Human.In(
                 route="/input",
                 method="POST",
-                start_form=HumanAWorkForm(payload=InputText(label=LocaleString(en="Your input"))),
+                start_form=HumanAWork(payload=InputText(label=LocaleString(en="Your input"))),
             ),
         ],
     ) -> Annotated[AgentAWorkRequest, Agent.Out(agent_class="AgentA", agent_id="agent_a")]:

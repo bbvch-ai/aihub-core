@@ -1,6 +1,6 @@
 from typing import Annotated, Literal
 
-from aihub_lib.nats.events.form.Form import Form
+from aihub_lib.nats.events.work.human.HumanWorkEvent import HumanWorkEvent
 from pydantic import Field, model_validator
 
 from aihub_process.delegators.AbstractProcessEntity import BaseProcessEntity
@@ -26,13 +26,12 @@ class Human(BaseProcessEntity):
             Literal["POST", "PUT", "DELETE"], Field(description="HTTP method by API endpoint for submission")
         ] = "POST"
         start_form: Annotated[
-            Form | None,
+            HumanWorkEvent | None,
             Field(
                 description="If human input marks start of process, "
                 "use this form instance to generate user form in frontend"
             ),
         ] = None
-        form: Annotated[Form, Field(description="Form definition")]
 
     class Out(BaseProcessEntity.Out):
         user_ids: Annotated[list[str], Field(description="The list of user IDs that can submit work.")] = []
