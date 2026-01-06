@@ -50,9 +50,7 @@ class TestAgentToolRegistry:
         return translator
 
     @pytest.fixture
-    def registry(
-        self, mock_mcp_server: MagicMock, mock_event_translator: MagicMock
-    ) -> AgentToolRegistry:
+    def registry(self, mock_mcp_server: MagicMock, mock_event_translator: MagicMock) -> AgentToolRegistry:
         """Create a registry for testing."""
         return AgentToolRegistry(
             mcp_server=mock_mcp_server,

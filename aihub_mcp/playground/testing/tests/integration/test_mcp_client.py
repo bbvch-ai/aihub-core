@@ -1,5 +1,4 @@
 import json
-import os
 
 import pytest
 from pydantic import SecretStr

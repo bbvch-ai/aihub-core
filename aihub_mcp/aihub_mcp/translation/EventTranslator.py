@@ -136,12 +136,17 @@ class EventTranslator:
             run_id=run_id,
             ctx=ctx,
             result_future=asyncio.get_event_loop().create_future(),
-            span=self._start_execution_span(tool_name or event_name, agent_class, identity, exec_ids={
-                "thread_id": thread_id,
-                "display_id": display_id,
-                "run_id": run_id,
-                "agent_id": agent_id,
-            }),
+            span=self._start_execution_span(
+                tool_name or event_name,
+                agent_class,
+                identity,
+                exec_ids={
+                    "thread_id": thread_id,
+                    "display_id": display_id,
+                    "run_id": run_id,
+                    "agent_id": agent_id,
+                },
+            ),
         )
 
         start_event = self._build_start_event(
@@ -386,8 +391,7 @@ class EventTranslator:
         if not exec_ctx.allow_hitl_fallback:
             logger.warning("Nested HITL request during resume - not supported")
             await exec_ctx.ctx.warning(
-                "Agent requested additional human input during resume. "
-                "This is not supported in the two-phase flow."
+                "Agent requested additional human input during resume. This is not supported in the two-phase flow."
             )
             return
 
@@ -432,16 +436,18 @@ class EventTranslator:
             self._tracer.add_event(exec_ctx.span, "hitl_pending", {"request_id": request_id})
 
         pending_info = pending_info or {}
-        pending_response = json.dumps({
-            "status": "hitl_pending",
-            "request_id": request_id,
-            "question": pending_info.get("question", ""),
-            "hitl_type": hitl_type,
-            "instruction": (
-                "Please ask the user this question, then call "
-                "submit_hitl_response with request_id and their answer."
-            ),
-        })
+        pending_response = json.dumps(
+            {
+                "status": "hitl_pending",
+                "request_id": request_id,
+                "question": pending_info.get("question", ""),
+                "hitl_type": hitl_type,
+                "instruction": (
+                    "Please ask the user this question, then call "
+                    "submit_hitl_response with request_id and their answer."
+                ),
+            }
+        )
 
         if not exec_ctx.result_future.done():
             exec_ctx.result_future.set_result(pending_response)

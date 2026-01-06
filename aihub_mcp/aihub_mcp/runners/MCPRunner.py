@@ -99,7 +99,7 @@ class MCPRunner:
         # Core components
         self._mcp_server = MCPServer(self._settings)
         self._auth = ApiKeyAuth(api_key=self._settings.API_KEY)
-        self._tracer = MCPTracer(service_name="aihub_mcp")
+        self._tracer = MCPTracer()
 
         # Translation layer
         self._elicitation_handler = ElicitationHandler()
