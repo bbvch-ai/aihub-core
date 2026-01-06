@@ -74,7 +74,14 @@ class PipelineInstanceTopicManager(PipelineTopicManager, AbstractStreamTopicMana
         return self._get_stream_name_for_all_events(), self._get_subject_for_all_events_in_pipeline_instance()
 
     def _get_stream_name_for_all_events(self) -> str:
-        return f"{self.PIPELINE_TOPIC}_{self.source_type}_{self.source_id}_{self.target_type}_{self.target_id}_stream"
+        return (
+            f"{self.PIPELINE_TOPIC}_"
+            f"{self.source_type}_"
+            f"{self.source_id}_"
+            f"{self.target_type}_"
+            f"{self.target_id}_"
+            f"stream"
+        )
 
     def _get_subject_for_all_events_in_pipeline_instance(self) -> str:
         return self.get_subject_for_specific_event_in_pipeline_instance(
