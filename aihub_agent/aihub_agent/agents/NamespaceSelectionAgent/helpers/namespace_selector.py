@@ -7,7 +7,6 @@ Provides functionality to:
 3. Parse structured LLM responses
 """
 
-import json
 import logging
 from typing import Annotated
 
@@ -18,7 +17,7 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import KnowledgeSource
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
 from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.prompts.rich import RichPromptTemplate
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -32,6 +31,20 @@ class AvailableNamespace(BaseModel):
     namespace_name: Annotated[str, Field(description="The namespace name")]
     display_name: Annotated[str | None, Field(description="Human-readable display name")] = None
     description: Annotated[str | None, Field(description="Namespace description")] = None
+
+
+class SelectedSource(BaseModel):
+    """A single selected knowledge source."""
+
+    bucket_name: Annotated[str, Field(description="The bucket name")]
+    namespace_name: Annotated[str, Field(description="The namespace name")]
+
+
+class LLMSelectionOutput(BaseModel):
+    """Structured output from LLM for namespace selection."""
+
+    selected_sources: Annotated[list[SelectedSource], Field(description="Selected knowledge sources (one per bucket)")]
+    reasoning: Annotated[str, Field(description="Brief explanation of why these sources were selected")]
 
 
 class NamespaceSelectionResult(BaseModel):
@@ -81,87 +94,6 @@ def fetch_available_namespaces(allowed_bucket_names: list[str], locale: str = "e
     return available
 
 
-def _build_selection_prompt(
-    user_query: str,
-    available_namespaces: list[AvailableNamespace],
-    conversation_context: list[str] | None,
-    t: LocaleHandler,
-) -> str:
-    """Build the system prompt for namespace selection."""
-    namespace_list = []
-    for ns in available_namespaces:
-        entry = f"- {ns.bucket_name}/{ns.namespace_name}"
-        if ns.display_name:
-            entry += f" ({ns.display_name})"
-        if ns.description:
-            entry += f": {ns.description}"
-        namespace_list.append(entry)
-
-    namespaces_text = "\n".join(namespace_list)
-
-    context_text = ""
-    if conversation_context:
-        context_text = "\n\nPrevious clarification exchanges:\n" + "\n".join(conversation_context)
-
-    return t(
-        "agent.namespace_selection.prompts.selection_system",
-        namespaces=namespaces_text,
-        context=context_text,
-    )
-
-
-def _build_selection_user_message(user_query: str, t: LocaleHandler) -> str:
-    """Build the user message for namespace selection."""
-    return t("agent.namespace_selection.prompts.selection_user", query=user_query)
-
-
-def _parse_selection_response(
-    response: str, available_namespaces: list[AvailableNamespace]
-) -> NamespaceSelectionResult:
-    """Parse the LLM's JSON response into a structured result."""
-    # Create lookup for validation
-    valid_sources = {(ns.bucket_name, ns.namespace_name): ns for ns in available_namespaces}
-
-    try:
-        # Try to extract JSON from the response
-        json_start = response.find("{")
-        json_end = response.rfind("}") + 1
-        if json_start >= 0 and json_end > json_start:
-            json_str = response[json_start:json_end]
-            data = json.loads(json_str)
-        else:
-            raise ValueError("No JSON object found in response")
-
-        # Extract and validate selected sources
-        selected_sources: list[KnowledgeSource] = []
-        for source in data.get("selected_sources", []):
-            bucket_name = source.get("bucket_name", "")
-            namespace_name = source.get("namespace_name", "")
-            key = (bucket_name, namespace_name)
-
-            if key in valid_sources:
-                ns = valid_sources[key]
-                selected_sources.append(
-                    KnowledgeSource(
-                        bucket_name=bucket_name,
-                        namespace_name=namespace_name,
-                        display_name=ns.display_name,
-                    )
-                )
-
-        return NamespaceSelectionResult(
-            selected_sources=selected_sources,
-            reasoning=data.get("reasoning", "No reasoning provided"),
-        )
-
-    except (json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
-        logger.warning(f"Failed to parse LLM response: {e}")
-        return NamespaceSelectionResult(
-            selected_sources=[],
-            reasoning=f"Failed to parse LLM response: {e}",
-        )
-
-
 def _build_namespace_list_text(available_namespaces: list[AvailableNamespace]) -> str:
     """Build formatted text listing all available namespaces."""
     namespace_list = []
@@ -195,8 +127,7 @@ async def select_namespaces(
     """
     Use LLM to select relevant namespaces based on user query.
 
-    Builds a prompt with available namespaces and conversation context,
-    then parses the structured JSON response from the LLM.
+    Uses structured prediction to get a validated response from the LLM.
 
     Args:
         user_query: The user's query.
@@ -220,30 +151,51 @@ async def select_namespaces(
         conversation_context = conversation_context or []
         conversation_context = [f"User preference: {user_correction}"] + conversation_context
 
-    # Build system prompt - use config override if provided, else use i18n
+    # Build prompt - use config override if provided, else use i18n
+    namespaces_text = _build_namespace_list_text(available_namespaces)
+    context_text = _build_context_text(conversation_context)
+
     if selection_system_prompt:
-        namespaces_text = _build_namespace_list_text(available_namespaces)
-        context_text = _build_context_text(conversation_context)
-        system_prompt = t.extract(selection_system_prompt).format(
+        prompt_text = t.extract(selection_system_prompt).format(
             namespaces=namespaces_text,
             context=context_text,
         )
     else:
-        system_prompt = _build_selection_prompt(user_query, available_namespaces, conversation_context, t)
+        prompt_text = t(
+            "agent.namespace_selection.prompts.selection_system",
+            namespaces=namespaces_text,
+            context=context_text,
+        )
 
-    user_message = _build_selection_user_message(user_query, t)
-
-    messages = [
-        ChatMessage(role=MessageRole.SYSTEM, content=system_prompt),
-        ChatMessage(role=MessageRole.USER, content=user_message),
-    ]
+    # Append user query
+    prompt_text += f"\n\n{t('agent.namespace_selection.prompts.selection_user', query=user_query)}"
 
     await displayer.display_thought(t("agent.namespace_selection.thoughts.analyzing_query"))
 
+    # Create lookup for validation
+    valid_sources = {(ns.bucket_name, ns.namespace_name): ns for ns in available_namespaces}
+
     async with llm_config.cost_reporting_llm(displayer) as llm:
-        response = await llm.achat(messages)
-        response_text = response.message.content
+        prompt = RichPromptTemplate(prompt_text)
+        llm_output = await llm.astructured_predict(LLMSelectionOutput, prompt)
 
-    result = _parse_selection_response(response_text, available_namespaces)
+    # Convert LLM output to KnowledgeSource objects, validating against available namespaces
+    selected_sources: list[KnowledgeSource] = []
+    for source in llm_output.selected_sources:
+        key = (source.bucket_name, source.namespace_name)
+        if key in valid_sources:
+            ns = valid_sources[key]
+            selected_sources.append(
+                KnowledgeSource(
+                    bucket_name=source.bucket_name,
+                    namespace_name=source.namespace_name,
+                    display_name=ns.display_name,
+                )
+            )
+        else:
+            logger.warning(f"LLM selected invalid source: {source.bucket_name}/{source.namespace_name}")
 
-    return result
+    return NamespaceSelectionResult(
+        selected_sources=selected_sources,
+        reasoning=llm_output.reasoning,
+    )

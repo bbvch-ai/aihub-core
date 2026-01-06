@@ -38,15 +38,7 @@ prompts:
 
     IMPORTANT: Selectionnez exactement UN namespace par bucket. Chaque bucket doit avoir un et un seul namespace selectionne en fonction de la requete de l'utilisateur.
 
-    Repondez avec un objet JSON contenant:
-    - "selected_sources": Tableau d'objets avec "bucket_name" et "namespace_name" pour chaque source pertinente (un par bucket)
-    - "reasoning": Une breve explication de pourquoi vous avez selectionne ces sources
-
-    Exemple de reponse:
-    {
-      "selected_sources": [{"bucket_name": "knowledge", "namespace_name": "hr-policies"}],
-      "reasoning": "La requete concerne les politiques des employes, ce qui correspond au namespace des politiques RH."
-    }
+    Utilisez l'outil fourni pour soumettre votre selection.
 
   selection_user: "Question utilisateur: %{query}"
 
