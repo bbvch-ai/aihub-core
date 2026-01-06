@@ -1,5 +1,6 @@
 # ruff: noqa: E402
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
+from dotenv import load_dotenv
 
 AihubInstrumentor().instrument()
 
@@ -16,6 +17,7 @@ from aihub_agent.agents.ExpertAskingAgent.ExpertAskingAgentConfig import ExpertA
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 
 enable_logging()
+load_dotenv()
 
 
 def get_channel_config() -> TeamsConfig | SlackConfig:
