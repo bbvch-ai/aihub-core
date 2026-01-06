@@ -6,6 +6,7 @@ from typing import Annotated, Any
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.api.DiscoverySettings import DiscoverySettings
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
@@ -50,6 +51,9 @@ logger = logging.getLogger(__name__)
 DISCOVER_AGENTS_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache the entire agent list for 60s
 GET_AGENT_INSTANCE_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache individual agents for 60s
 GET_AGENT_CLASS_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache agent classes for 60s
+
+# Discovery settings for configurable timeouts
+discovery_settings = DiscoverySettings()
 
 
 class AgentService:
@@ -214,9 +218,9 @@ class AgentService:
             subject=topic_manager.get_agent_class_discovery_subject_request(call_id=call_id),
         )
 
-        # Wait up to 1 second for response
+        # Wait for response with configurable timeout
         try:
-            await asyncio.wait_for(agent_found_event.wait(), timeout=1.0)
+            await asyncio.wait_for(agent_found_event.wait(), timeout=discovery_settings.CLASS_DISCOVERY_TIMEOUT)
         except TimeoutError:
             await nc_subscriber.stop()
             raise HTTPException(status_code=404, detail=f"Agent {agent_class} not found.")
@@ -613,6 +617,22 @@ class AgentService:
                 detail=f"Agent {agent_class}/{agent_id} not found. Cannot update configuration.",
             )
 
+        # Validate configuration keys against form schema
+        if agent_entity.agent_config_specs and agent_entity.agent_config_specs.form:
+            standard_fields = {"name", "description", "icon", "agent_class", "agent_id"}
+            form_field_names = {
+                elem.name for elem in agent_entity.agent_config_specs.form if hasattr(elem, "name") and elem.name
+            }
+            valid_fields = standard_fields | form_field_names
+
+            invalid_fields = set(configuration.keys()) - valid_fields
+            if invalid_fields:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid configuration fields: {', '.join(sorted(invalid_fields))}. "
+                    f"Valid fields are: {', '.join(sorted(valid_fields))}",
+                )
+
         # Find existing configuration or create new one
         config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
 
@@ -634,6 +654,9 @@ class AgentService:
                 config_data=configuration,
             )
             config_entity.save()
+
+        # Clear cache to ensure updated config is immediately visible
+        AgentService._clear_cache()
 
         return configuration
 

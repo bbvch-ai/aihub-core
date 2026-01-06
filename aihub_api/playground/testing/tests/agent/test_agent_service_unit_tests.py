@@ -643,3 +643,71 @@ class TestAgentServiceUnit:
                                 assert result == []
                                 # Should not cache empty results
                                 assert "all_agent_classes" not in DISCOVER_AGENTS_CACHE
+
+
+class TestUpdateAgentConfiguration:
+    """Unit tests for AgentService.update_agent_configuration method."""
+
+    @pytest.mark.asyncio
+    async def test_update_agent_configuration_rejects_invalid_fields(self):
+        """Test that update_agent_configuration rejects configuration with invalid fields."""
+        # Create a mock agent entity with form specs
+        mock_agent_entity = Mock()
+        mock_agent_entity.agent_class = "TestAgent"
+        mock_agent_entity.agent_id = "test_agent_1"
+
+        # Create mock form elements with names
+        mock_form_element = Mock()
+        mock_form_element.name = "valid_field"
+
+        mock_config_specs = Mock()
+        mock_config_specs.form = [mock_form_element]
+        mock_config_specs.name = LocaleString(en="Test")
+        mock_config_specs.description = LocaleString(en="Test description")
+        mock_config_specs.icon = "test-icon"
+
+        mock_agent_entity.agent_config_specs = mock_config_specs
+
+        with patch.object(AgentEntity, "get_agent") as mock_get_agent:
+            mock_get_agent.return_value = mock_agent_entity
+
+            # Try to update with an invalid field
+            with pytest.raises(HTTPException) as exc_info:
+                await AgentService.update_agent_configuration(
+                    agent_class="TestAgent",
+                    agent_id="test_agent_1",
+                    configuration={"invalid_field_that_does_not_exist": "value"},
+                )
+
+            assert exc_info.value.status_code == 400
+            assert "Invalid configuration fields" in str(exc_info.value.detail)
+            assert "invalid_field_that_does_not_exist" in str(exc_info.value.detail)
+
+    @pytest.mark.asyncio
+    async def test_update_agent_configuration_clears_cache(self):
+        """Test that update_agent_configuration clears the cache after update."""
+        # Create a mock agent entity
+        mock_agent_entity = Mock()
+        mock_agent_entity.agent_class = "TestAgent"
+        mock_agent_entity.agent_id = "test_agent_1"
+        mock_agent_entity.agent_config_specs = None  # No form validation
+
+        mock_config_entity = Mock()
+        mock_config_entity.config_data = {}
+        mock_config_entity.save = Mock()
+
+        with patch.object(AgentEntity, "get_agent") as mock_get_agent:
+            mock_get_agent.return_value = mock_agent_entity
+
+            with patch.object(AgentConfigEntityDocument, "find_for_class_and_id") as mock_find_config:
+                mock_find_config.return_value = mock_config_entity
+
+                with patch.object(AgentService, "_clear_cache") as mock_clear_cache:
+                    await AgentService.update_agent_configuration(
+                        agent_class="TestAgent",
+                        agent_id="test_agent_1",
+                        configuration={"name": {"en": "Updated Name"}},
+                    )
+
+                    # Verify cache was cleared
+                    mock_clear_cache.assert_called_once()

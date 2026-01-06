@@ -38,6 +38,9 @@ def _transform_formkit_arrays(data: Any) -> Any:
     {'0': {...}, '1': {...}} -> [{...}, {...}]
 
     This transformation is needed when loading config from the database.
+
+    To avoid false positives with legitimate dicts that have numeric string keys,
+    we also verify that all values are dicts (FormKit arrays always contain objects).
     """
     if isinstance(data, dict):
         # Check if this dict looks like a FormKit array (all keys are sequential numeric strings)
@@ -46,8 +49,12 @@ def _transform_formkit_arrays(data: Any) -> Any:
             # Check if keys are sequential starting from 0
             sorted_keys = sorted(keys, key=int)
             if sorted_keys == [str(i) for i in range(len(keys))]:
-                # Convert to list, recursively transforming values
-                return [_transform_formkit_arrays(data[k]) for k in sorted_keys]
+                # Additional check: FormKit arrays contain objects, not primitives
+                # This prevents false positives with dicts like {"0": "value", "1": "other"}
+                values = [data[k] for k in sorted_keys]
+                if all(isinstance(v, dict) for v in values):
+                    # Convert to list, recursively transforming values
+                    return [_transform_formkit_arrays(data[k]) for k in sorted_keys]
 
         # Regular dict - recursively transform values
         return {k: _transform_formkit_arrays(v) for k, v in data.items()}

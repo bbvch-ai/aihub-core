@@ -184,7 +184,6 @@ class AgentController(Controller):
 
         return self
 
-    # TODO check if already exists, make sure config is complete
     def update_agent_configuration(self, route: str = "/{agent_class}/{agent_id}/configuration") -> "AgentController":
         @self.router.put(route, tags=self.tags)
         async def update_agent_configuration(

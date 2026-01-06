@@ -3,7 +3,7 @@
     :title="agent?.agent_config.name"
     close-route="/service/agents"
     :loading="agentIsLoading"
-    size="medium"
+    size="normal"
   >
     <div class="flex flex-col gap-12">
       <Panel

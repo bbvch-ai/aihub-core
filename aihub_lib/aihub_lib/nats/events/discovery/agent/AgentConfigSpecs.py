@@ -74,10 +74,11 @@ class AgentConfigSpecs(BaseModel):
             )
             return cls.from_agent_config(dummy_instance)
         except Exception as e:
-            # Log the error to help with debugging
-            logger.warning(
+            # Log at ERROR level with full traceback to aid debugging
+            logger.error(
                 f"Failed to create AgentConfigSpecs from class {agent_config_type.__name__}: {e}. "
-                "Returning empty specs. Consider using from_agent_config() with an instance instead."
+                "Returning empty specs. Consider using from_agent_config() with an instance instead.",
+                exc_info=True,
             )
             return cls(
                 name=LocaleString(en="", de="", fr="", it=""),

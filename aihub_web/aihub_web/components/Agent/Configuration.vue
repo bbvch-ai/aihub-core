@@ -6,7 +6,7 @@
     <p class="text-xs dark:text-surface-500">
       {{ description }}
     </p>
-    <div class="content max-w-2xl pt-6">
+    <div class="content pt-6">
       <FormKit
         id="form"
         v-model="data"
@@ -362,7 +362,7 @@ async function submitHandler() {
 }
 
 .content :deep(.formkit-group-fieldset) {
-  @apply border border-surface-300 dark:border-surface-600 rounded-lg p-4 mb-4 max-w-2xl;
+  @apply border border-surface-300 dark:border-surface-600 rounded-lg p-4 mb-4;
 }
 
 .content :deep(.formkit-group-fieldset legend) {

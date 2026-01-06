@@ -5,6 +5,7 @@ from typing import Any
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.api.DiscoverySettings import DiscoverySettings
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.nats.distributor.events.ExternalProcessEvent import ExternalProcessEvent
 from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
@@ -42,6 +43,9 @@ from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
 DISCOVER_PROCESSES_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache the entire process list for 60s
 GET_PROCESS_INSTANCE_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache individual processes for 60s
 GET_PROCESS_CLASS_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache process classes for 60s
+
+# Discovery settings for configurable timeouts
+discovery_settings = DiscoverySettings()
 
 
 class ProcessService:
@@ -201,9 +205,9 @@ class ProcessService:
             subject=topic_manager.get_process_class_discovery_subject_request(call_id=call_id),
         )
 
-        # Wait up to 1 second for response
+        # Wait for response with configurable timeout
         try:
-            await asyncio.wait_for(process_found_event.wait(), timeout=1.0)
+            await asyncio.wait_for(process_found_event.wait(), timeout=discovery_settings.CLASS_DISCOVERY_TIMEOUT)
         except TimeoutError:
             await nc_subscriber.stop()
             raise HTTPException(status_code=404, detail=f"Process {process_class} not found.")
