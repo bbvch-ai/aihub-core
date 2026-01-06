@@ -5,7 +5,7 @@ AihubInstrumentor().instrument()
 
 import asyncio
 
-from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig, LLMParameter
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
 
