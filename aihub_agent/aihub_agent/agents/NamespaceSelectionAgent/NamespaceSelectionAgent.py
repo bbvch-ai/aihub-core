@@ -123,7 +123,7 @@ class NamespaceSelectionAgent(Agent):
         event: TopicChangedEvent,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> HumanInTheLoop.chat.request:
+    ) -> HumanInTheLoop.input.request:
         """
         When topic change is detected, ask user if they want different sources.
         """
@@ -135,7 +135,7 @@ class NamespaceSelectionAgent(Agent):
         )
 
         await displayer.display_thought(t("agent.namespace_selection.thoughts.asking_topic_change"))
-        return HumanInTheLoop.chat.invoke(question=question)
+        return HumanInTheLoop.input.invoke(question=question)
 
     @step(
         name=LocaleString(en="Handle Topic Response"),
@@ -144,7 +144,7 @@ class NamespaceSelectionAgent(Agent):
     )
     async def handle_topic_response_step(
         self,
-        event: HumanInTheLoop.chat.response,
+        event: HumanInTheLoop.input.response,
         agent_config: NamespaceSelectionAgentConfig,
         thread_context: ThreadContext,
         displayer: EventDisplayer,
