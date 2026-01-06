@@ -5,6 +5,87 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.256.10] - 2026-01-05 - Improved PDF Handling and Development Workflow
+
+### Added
+
+- 🦾 **Enhanced PDF Document Processing:** Introduced a new pre-processing step to automatically fix malformed PDF files,
+  specifically those with missing or invalid page dimensions, using A4 as a standard fallback. This significantly
+  improves the robustness of document conversion through the Docling service.
+- 🧪 **Comprehensive PDF Pre-processing Tests:** Added a dedicated test suite for the new PDF pre-processing
+  functionality, ensuring its reliability and correctness across various PDF formats.
+- ⚡️ **Asynchronous Test Utility:** Implemented a new `run_with_event_loop` helper function to streamline the execution
+  of synchronous methods within an asyncio event loop, particularly for Milvus-related testing, enhancing test
+  reliability and developer experience.
+
+### Changed
+
+- 💬 **Improved Docling Task Error Reporting:** Updated error messages for failed or skipped Docling conversion tasks to
+  provide the full API response, offering more detailed context for debugging and troubleshooting.
+
+### Refactor
+
+- 🔄 **Streamlined Dependency Management:** Standardized `aihub_lib` dependency across all projects to use local path
+  references (`path = "../aihub_lib", develop = true`), simplifying local development and monorepo integration.
+- 🧹 **Centralized Asynchronous Test Setup:** Refactored Milvus-related test fixtures and helper functions to leverage
+  the new `run_with_event_loop` utility, centralizing and improving the management of asynchronous operations in tests.
+
+---
+
+## [v0.256.9] - 2026-01-05 - Introducing Chat-Style Human-in-the-Loop for Seamless Agent Collaboration
+
+### Added
+
+- ✨ **New Chat-Style Human-in-the-Loop (HITL) Interaction**: Agents can now ask questions that appear as regular chat
+  messages, allowing users to respond by typing a normal chat message, enabling more fluid conversational workflows.
+- 🦾 **`HitlDemoAgent`**: A new demo agent has been introduced to showcase all three Human-in-the-Loop types: input,
+  confirmation, and the newly introduced chat-style interaction, providing clear examples for developers.
+- 🚀 **API Endpoint for Open Chat HITL**: A new `/threads/{thread_id}/open-chat-hitl` API endpoint has been added,
+  allowing client applications to efficiently query for active chat-style HITL requests within a thread.
+- 📄 **Dedicated Chat HITL Event Types**: New event classes (`HumanInTheLoopChatRequestEvent`,
+  `HumanInTheLoopChatResponseEvent`) and a helper class (`HumanInTheLoopChat`) have been implemented to specifically
+  support and simplify the integration of chat-style Human-in-the-Loop interactions.
+- 🌐 **Internationalization Support for Chat HITL**: Translations have been added for the new chat-style HITL request and
+  response events across supported languages (DE, EN, FR, IT), ensuring a global user experience.
+- ⚙️ **IntelliJ Run Configuration for `HitlDemoAgent`**: A new IntelliJ IDEA run configuration has been included to
+  simplify the setup and execution of the `HitlDemoAgent` for local development and testing.
+
+### Changed
+
+- 🔄 **OpenWebUI Pipeline Intelligent HITL Handling**: The OpenWebUI pipeline now intelligently detects active chat-style
+  HITL requests at the start of a user message and routes the user's input as a chat HITL response, streamlining
+  conversational turns.
+- ⚡️ **Enhanced Base HITL Events**: The core `HumanInTheLoopRequestEvent` and `HumanInTheLoopResponseEvent` have been
+  updated to incorporate the new `chat` interaction type and now utilize type generics for improved type safety and
+  clarity.
+- 🔐 **Improved Thread API Access Control**: Thread-related API endpoints in the `ThreadController` now leverage
+  extracted helper methods for more robust, consistent access checking and error handling across operations.
+- 🔌 **Application and Playground Router Integration**: The new API endpoint for retrieving open chat HITL requests has
+  been seamlessly integrated into the main application and playground router configurations.
+
+### Refactor
+
+- 🧹 **Reorganized Human-in-the-Loop Modules**: The `HumanInTheLoopInput` and `HumanInTheLoopConfirmation` helper
+  classes, along with their respective request/response event classes, have been refactored and moved into dedicated,
+  separate modules for better organization and maintainability.
+- 🏗️ **Streamlined HITL Event Imports**: Imports for Human-in-the-Loop event types have been simplified and made
+  consistent across the agent codebase and playground examples, reducing verbosity and improving code readability.
+
+---
+
+## [v0.256.8] - 2025-12-30 - Enhanced Document Upload Security and Validation
+
+### Fixed
+
+- 🔒 **Strengthened Filename Validation:** Implemented more robust and secure filename validation to prevent the upload
+  of malformed or potentially malicious filenames, including those containing path traversal sequences or invalid
+  control characters. This significantly enhances the security and integrity of uploaded documents.
+- 🐛 **Improved File Extension Handling:** Revised the logic for parsing and validating file extensions, ensuring that
+  all uploaded filenames consistently include a valid, single extension and preventing issues arising from improperly
+  formatted document types.
+
+---
+
 ## [v0.256.7] - 2025-12-23 - Enhanced Agent Context Evaluation and Retrieval
 
 ### Added
