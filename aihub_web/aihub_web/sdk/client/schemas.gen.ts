@@ -69,6 +69,145 @@ export const AddUserRequestSchema = {
     title: 'AddUserRequest'
 } as const;
 
+export const AgentClassDTOSchema = {
+    properties: {
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class',
+            description: "The agent's class identifier (e.g., 'my_agent_class')."
+        },
+        agent_config_specs: {
+            '$ref': '#/components/schemas/AgentConfigSpecs',
+            description: 'Configuration specifications of the agent class, including schema and parameters.'
+        },
+        start_events: {
+            items: {
+                '$ref': '#/components/schemas/EventSpecs'
+            },
+            type: 'array',
+            title: 'Start Events',
+            description: "A list of `EventSpecs` representing events that can start this agent's workflow."
+        },
+        stop_events: {
+            items: {
+                '$ref': '#/components/schemas/EventSpecs'
+            },
+            type: 'array',
+            title: 'Stop Events',
+            description: "A list of `EventSpecs` representing events that can stop this agent's workflow."
+        },
+        hitl_request_events: {
+            items: {
+                '$ref': '#/components/schemas/EventSpecs'
+            },
+            type: 'array',
+            title: 'Hitl Request Events',
+            description: 'A list of `EventSpecs` representing human-in-the-loop request events this agent can produce.'
+        },
+        hitl_response_events: {
+            items: {
+                '$ref': '#/components/schemas/EventSpecs'
+            },
+            type: 'array',
+            title: 'Hitl Response Events',
+            description: 'A list of `EventSpecs` representing human-in-the-loop response events this agent can accept.'
+        },
+        network_graph: {
+            '$ref': '#/components/schemas/WorkflowGraph',
+            description: 'A network graph of the agent class, showing how different components are connected and interact.'
+        },
+        is_conversational: {
+            type: 'boolean',
+            title: 'Is Conversational',
+            description: 'Whether the agent class can participate in a chat-based conversation'
+        },
+        is_online: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Online',
+            description: 'Indicates whether the agent class is online and reachable.'
+        },
+        default_agent_config: {
+            '$ref': '#/components/schemas/AgentConfig',
+            description: 'The default agent configuration for this agent class. This is the configuration that will be used if no specific configuration is provided.'
+        }
+    },
+    type: 'object',
+    required: ['agent_class', 'agent_config_specs', 'start_events', 'stop_events', 'hitl_request_events', 'hitl_response_events', 'network_graph', 'is_conversational', 'default_agent_config'],
+    title: 'AgentClassDTO',
+    description: `Encapsulates the data transfer object (DTO) for an agent class.
+Contains information about the agent class, including its name and configuration specifications.`
+} as const;
+
+export const AgentConfigSchema = {
+    properties: {
+        name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'The name of the process or agent.'
+        },
+        description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'The description of the process or agent.'
+        },
+        icon: {
+            type: 'string',
+            title: 'Icon',
+            description: 'The icon representing the process or agent.',
+            default: 'meteor-icons:robot'
+        },
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class',
+            description: 'The class name of the agent, used for identification.'
+        },
+        agent_id: {
+            type: 'string',
+            pattern: '^[a-z0-9_-]+$',
+            title: 'Agent Id',
+            description: 'Uniquely identifies the agent instance.'
+        },
+        _form_name: {
+            type: 'string',
+            title: 'Form Name',
+            description: 'The form type name, used for polymorphic deserialization.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['name', 'description', 'agent_class', 'agent_id', '_form_name'],
+    title: 'AgentConfig',
+    description: `The agent config is a flexible way to configure the runtime behavior of an agent. It can ensure that two agents
+that follow the same workflow can still be configured to achieve different outcomes through a different
+set of configurations.
+
+Usually, you will want to inherit from this AgentConfig and pass it to your runner.
+The dispatcher will then flexibly inject the config into each step,
+giving you full control over the agent's runtime behavior.
+
+Note that you can also define configs for individual workflow steps! Simply by naming the attribute the same
+way as your step, and assigning it a value of type \`StepConfig\`, you can configure the step's behavior.
+
+\`\`\`python
+class StepXConfig(StepConfig):
+    some_setting: str
+
+class MyCustomAgentConfig(AgentConfig):
+    step_x: StepXConfig = StepXConfig(some_setting="some value")
+
+class MyAgent(Agent):
+    @step()
+    def step_x(self, step_x_config: StepXConfig):
+        print(step_x_config.some_setting)
+\`\`\``
+} as const;
+
 export const AgentConfigDTOSchema = {
     properties: {
         agent_id: {
@@ -146,6 +285,9 @@ export const AgentConfigDTOSchema = {
                                 '$ref': '#/components/schemas/Rating'
                             },
                             {
+                                '$ref': '#/components/schemas/Repeater'
+                            },
+                            {
                                 '$ref': '#/components/schemas/Select'
                             },
                             {
@@ -178,6 +320,119 @@ export const AgentConfigDTOSchema = {
     type: 'object',
     required: ['agent_id', 'name', 'description'],
     title: 'AgentConfigDTO'
+} as const;
+
+export const AgentConfigSpecsSchema = {
+    properties: {
+        name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'The name of the process or agent.'
+        },
+        description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'The description of the process or agent.'
+        },
+        icon: {
+            type: 'string',
+            title: 'Icon',
+            description: 'The icon representing the process or agent.',
+            default: 'meteor-icons:robot'
+        },
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class',
+            description: 'The class name of the agent, used for identification.'
+        },
+        agent_id: {
+            type: 'string',
+            pattern: '^[a-z0-9_-]+$',
+            title: 'Agent Id',
+            description: 'Uniquely identifies the agent instance.'
+        },
+        form: {
+            items: {
+                anyOf: [
+                    {
+                        '$ref': '#/components/schemas/HtmlElement'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputText'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CascadeSelect'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Checkbox'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ColorPicker'
+                    },
+                    {
+                        '$ref': '#/components/schemas/DatePicker'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Group'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputMask'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputNumber'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputOtp'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Knob'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Listbox'
+                    },
+                    {
+                        '$ref': '#/components/schemas/MultiSelect'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Password'
+                    },
+                    {
+                        '$ref': '#/components/schemas/RadioButton'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Rating'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Repeater'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Select'
+                    },
+                    {
+                        '$ref': '#/components/schemas/SelectButton'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Slider'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Textarea'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ToggleButton'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ToggleSwitch'
+                    }
+                ]
+            },
+            type: 'array',
+            title: 'Form',
+            description: 'Formkit elements of the Agent Config.',
+            default: []
+        }
+    },
+    type: 'object',
+    required: ['name', 'description', 'agent_class', 'agent_id'],
+    title: 'AgentConfigSpecs',
+    description: "Defines a specification for an agent's configuration."
 } as const;
 
 export const AgentConfigurationDataDTOSchema = {
@@ -483,10 +738,10 @@ export const AgentInTheLoopRequestEventSchema = {
         other_agent_topic: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/aihub_lib__nats__topics__agents__PartialAgentTopic__PartialAgentTopic'
+                    '$ref': '#/components/schemas/PartialAgentTopic'
                 },
                 {
-                    '$ref': '#/components/schemas/aihub_lib__nats__topics__agents__AgentInstanceTopic__AgentInstanceTopic'
+                    '$ref': '#/components/schemas/AgentInstanceTopic'
                 }
             ],
             title: 'Other Agent Topic',
@@ -607,7 +862,7 @@ When an agent completes a task delegated through an \`AgentInTheLoopRequestEvent
 - Is visible to the UI (since it's also a \`DisplayEvent\`), enabling monitoring of agent interactions`
 } as const;
 
-export const AgentInstanceTopic_InputSchema = {
+export const AgentInstanceTopicSchema = {
     properties: {
         agent_class: {
             type: 'string',
@@ -652,7 +907,21 @@ export const AgentInstanceTopic_InputSchema = {
     },
     type: 'object',
     required: ['agent_class', 'agent_id', 'run_id', 'thread_id', 'display_id', 'event_type', 'event_name', 'event_id'],
-    title: 'AgentInstanceTopic'
+    title: 'AgentInstanceTopic',
+    description: `Represents a fully-defined agent event topic. Unlike PartialAgentTopic, all fields are expected
+to be present. This includes identifiers for agent_class, agent_id, and the event itself.
+
+### Why This Class Exists
+
+In a hierarchical event topic model, PartialAgentTopic might not have all details filled out.
+AgentTopic guarantees that every piece of the event route—from agent class to event ID—is known.
+This makes AgentTopic ideal for scenarios where the full path is required, such as final message
+routing or logging a complete event identifier.
+
+### Example:
+If an event subject is something like:
+"agent.myclass.myid.thread123.displayA.run45.display_event.some_event.789"
+then this AgentTopic can represent it, providing quick field-level access and serialization.`
 } as const;
 
 export const AgentProcessStepDTOSchema = {
@@ -4041,6 +4310,34 @@ By subclassing \`BaseEvent\`, \`ControlEvent\` benefits from automatic type regi
 serialization, ensuring that control signals are as easy to produce and consume as any other event.`
 } as const;
 
+export const CreateAgentRequestSchema = {
+    properties: {
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class',
+            description: 'The agent class to create an instance of. Must match a discovered/online agent class.'
+        },
+        agent_id: {
+            type: 'string',
+            maxLength: 100,
+            minLength: 1,
+            pattern: '^[a-z0-9_-]+$',
+            title: 'Agent Id',
+            description: 'Unique identifier for the agent instance. Must be URL-safe.'
+        },
+        configuration: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Configuration',
+            description: "The full configuration values including name, description, icon, and runtime settings. Keys should match the 'name' fields from the agent's form elements."
+        }
+    },
+    type: 'object',
+    required: ['agent_class', 'agent_id'],
+    title: 'CreateAgentRequest',
+    description: 'Request body for creating a new agent instance.'
+} as const;
+
 export const CreateNamespaceRequestSchema = {
     properties: {
         folder_name: {
@@ -6586,6 +6883,9 @@ export const GroupSchema = {
                         '$ref': '#/components/schemas/Rating'
                     },
                     {
+                        '$ref': '#/components/schemas/Repeater'
+                    },
+                    {
                         '$ref': '#/components/schemas/Select'
                     },
                     {
@@ -7046,6 +7346,9 @@ export const HumanInDTOSchema = {
                         '$ref': '#/components/schemas/Rating'
                     },
                     {
+                        '$ref': '#/components/schemas/Repeater'
+                    },
+                    {
                         '$ref': '#/components/schemas/Select'
                     },
                     {
@@ -7074,123 +7377,6 @@ export const HumanInDTOSchema = {
     type: 'object',
     required: ['name', 'description', 'route', 'method', 'is_process_start', 'event_specs'],
     title: 'HumanInDTO'
-} as const;
-
-export const HumanInTheLoopConfirmationRequestEventSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'The time (in ns since epoch) the event was stored in the event store'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        },
-        question: {
-            type: 'string',
-            title: 'Question',
-            description: 'The query or prompt presented to the human operator.'
-        },
-        topic: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/PartialAgentTopic-Input'
-                },
-                {
-                    '$ref': '#/components/schemas/AgentInstanceTopic-Input'
-                }
-            ],
-            title: 'Topic',
-            description: 'A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.'
-        },
-        hitl_type: {
-            type: 'string',
-            const: 'confirmation',
-            title: 'Hitl Type',
-            description: "Fixed to 'confirmation' for yes/no requests.",
-            default: 'confirmation'
-        }
-    },
-    type: 'object',
-    required: ['question', 'topic'],
-    title: 'HumanInTheLoopConfirmationRequestEvent'
-} as const;
-
-export const HumanInTheLoopConfirmationRequestEventOutputSchema = {
-    properties: {
-        display_name: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        },
-        question: {
-            type: 'string',
-            title: 'Question',
-            description: 'The query or prompt presented to the human operator.'
-        },
-        topic: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/jambo__parser__object_type_parser__PartialAgentTopic'
-                },
-                {
-                    '$ref': '#/components/schemas/jambo__parser__object_type_parser__AgentInstanceTopic'
-                }
-            ],
-            title: 'Topic',
-            description: 'A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.'
-        },
-        hitl_type: {
-            type: 'string',
-            const: 'confirmation',
-            title: 'Hitl Type',
-            description: "Fixed to 'confirmation' for yes/no requests.",
-            default: 'confirmation'
-        }
-    },
-    type: 'object',
-    required: ['question', 'topic'],
-    title: 'HumanInTheLoopConfirmationRequestEventOutput'
 } as const;
 
 export const HumanInTheLoopRequestEventSchema = {
@@ -7234,10 +7420,10 @@ export const HumanInTheLoopRequestEventSchema = {
         topic: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/aihub_lib__nats__topics__agents__PartialAgentTopic__PartialAgentTopic'
+                    '$ref': '#/components/schemas/PartialAgentTopic'
                 },
                 {
-                    '$ref': '#/components/schemas/aihub_lib__nats__topics__agents__AgentInstanceTopic__AgentInstanceTopic'
+                    '$ref': '#/components/schemas/AgentInstanceTopic'
                 }
             ],
             title: 'Topic',
@@ -7245,9 +7431,9 @@ export const HumanInTheLoopRequestEventSchema = {
         },
         hitl_type: {
             type: 'string',
-            enum: ['input', 'confirmation'],
+            enum: ['input', 'confirmation', 'chat'],
             title: 'Hitl Type',
-            description: "The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no."
+            description: "HITL type: 'input' (free-form text), 'confirmation' (yes/no), 'chat' (chat-style)."
         },
         _event_name: {
             type: 'string',
@@ -7273,8 +7459,9 @@ Used during deserialization to decide which subclass to instantiate.`,
     description: `Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
 
 Use the specific subclasses:
-- \`HumanInTheLoopInputRequestEvent\` for free-form text input
-- \`HumanInTheLoopConfirmationRequestEvent\` for yes/no confirmation`
+- \`HumanInTheLoopInputRequestEvent\` for free-form text input (popup dialog)
+- \`HumanInTheLoopConfirmationRequestEvent\` for yes/no confirmation (popup dialog)
+- \`HumanInTheLoopChatRequestEvent\` for chat-style input (appears as regular message)`
 } as const;
 
 export const HumanInTheLoopResponseEventSchema = {
@@ -7350,8 +7537,9 @@ Used during deserialization to decide which subclass to instantiate.`,
     description: `Base response from a human operator after a HITL request.
 
 Use the specific subclasses:
-- \`HumanInTheLoopInputResponseEvent\` for text input responses
-- \`HumanInTheLoopConfirmationResponseEvent\` for yes/no confirmation responses`
+- \`HumanInTheLoopInputResponseEvent\` for text input responses (popup dialog)
+- \`HumanInTheLoopConfirmationResponseEvent\` for yes/no confirmation responses (popup dialog)
+- \`HumanInTheLoopChatResponseEvent\` for chat-style responses (regular message)`
 } as const;
 
 export const HumanProcessStepDTOSchema = {
@@ -10659,7 +10847,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1765781502
+            default: 1767692791
         },
         owned_by: {
             type: 'string',
@@ -11701,6 +11889,31 @@ export const NotificationDTOSchema = {
     description: 'Data Transfer Object for a notification.'
 } as const;
 
+export const OpenChatHitlResponseSchema = {
+    properties: {
+        has_open_chat_hitl: {
+            type: 'boolean',
+            title: 'Has Open Chat Hitl',
+            description: 'Whether there is an open chat HITL request awaiting response.'
+        },
+        hitl_request: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/HumanInTheLoopRequestEvent'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'The HITL request event if there is an open chat HITL, None otherwise.'
+        }
+    },
+    type: 'object',
+    required: ['has_open_chat_hitl'],
+    title: 'OpenChatHitlResponse',
+    description: "Response indicating whether there's an open chat HITL request for a thread."
+} as const;
+
 export const PaginatedDocumentsResponseSchema = {
     properties: {
         total: {
@@ -11884,7 +12097,7 @@ export const PaginatedUsersResponseSchema = {
     description: 'Represents a paginated response containing a list of users.'
 } as const;
 
-export const PartialAgentTopic_InputSchema = {
+export const PartialAgentTopicSchema = {
     properties: {
         agent_class: {
             anyOf: [
@@ -11984,7 +12197,23 @@ export const PartialAgentTopic_InputSchema = {
         }
     },
     type: 'object',
-    title: 'PartialAgentTopic'
+    title: 'PartialAgentTopic',
+    description: `Represents a partially qualified agent event topic, where some fields may be unspecified.
+Wildcards (represented by "*") in the subject translate into None values here.
+
+### Why PartialAgentTopic?
+Sometimes you deal with generic subscriptions to broad categories of events—like all display events
+or all events from a particular agent class—without knowing the exact agent_id, thread_id, or event_id.
+PartialAgentTopic captures this scenario, making it explicit which parts of the topic are defined
+and which remain open (None).
+
+### Use Cases
+- **Generic Monitoring:** You might subscribe to \`agent.myclass.*.*.*.*.display_event.*.*\` to monitor
+  all display events for a given agent class, regardless of the specific agent instance or thread.
+  The resulting PartialAgentTopic shows which filters have been fixed and which are open.
+- **Routing Decisions:** If a system receives a message on a wildcard topic, it can inspect this
+  PartialAgentTopic to decide dynamically which handler to invoke based on known fields, leaving
+  unknowns as flexible conditions.`
 } as const;
 
 export const PasswordSchema = {
@@ -13003,6 +13232,265 @@ export const RatingSchema = {
     required: ['label', 'validation'],
     title: 'Rating',
     description: 'https://formkit-primevue.netlify.app/inputs/Rating'
+} as const;
+
+export const RepeaterSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
+        '$formkit': {
+            type: 'string',
+            const: 'repeater',
+            title: '$Formkit',
+            description: 'FormKit repeater element',
+            default: 'repeater'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'Key name for the array data in the form output'
+        },
+        label: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Label',
+            description: 'Label displayed as the section header'
+        },
+        addLabel: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Addlabel',
+            description: 'Text for the add button'
+        },
+        removeLabel: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Removelabel',
+            description: 'Text for the remove button'
+        },
+        upControl: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Upcontrol',
+            description: 'Show up/reorder controls'
+        },
+        downControl: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Downcontrol',
+            description: 'Show down/reorder controls'
+        },
+        insertControl: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Insertcontrol',
+            description: 'Show insert controls'
+        },
+        min: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Min',
+            description: 'Minimum number of items'
+        },
+        max: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Max',
+            description: 'Maximum number of items'
+        },
+        children: {
+            items: {
+                anyOf: [
+                    {
+                        '$ref': '#/components/schemas/HtmlElement'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputText'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CascadeSelect'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Checkbox'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ColorPicker'
+                    },
+                    {
+                        '$ref': '#/components/schemas/DatePicker'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Group'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputMask'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputNumber'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputOtp'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Knob'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Listbox'
+                    },
+                    {
+                        '$ref': '#/components/schemas/MultiSelect'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Password'
+                    },
+                    {
+                        '$ref': '#/components/schemas/RadioButton'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Rating'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Repeater'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Select'
+                    },
+                    {
+                        '$ref': '#/components/schemas/SelectButton'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Slider'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Textarea'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ToggleButton'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ToggleSwitch'
+                    }
+                ]
+            },
+            type: 'array',
+            title: 'Children',
+            description: 'Template form elements for each repeater item'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['name', 'children'],
+    title: 'Repeater',
+    description: `https://formkit.com/inputs/repeater
+Creates a dynamic array of form items with add/remove functionality.
+
+The repeater allows users to add multiple instances of the same form structure,
+each with its own set of values. The entire section can be collapsible.
+
+Example:
+    repeater = Repeater(
+        name="examples",
+        label="Few-Shot Examples",
+        add_label="Add Example",
+        children=[
+            InputText(name="user", label="User Input"),
+            Checkbox(name="success", label="Success"),
+            Textarea(name="reason", label="Reason"),
+        ]
+    )
+
+    # Results in form data:
+    # { "examples": [
+    #     { "user": "...", "success": true, "reason": "..." },
+    #     { "user": "...", "success": false, "reason": "..." }
+    # ] }`
 } as const;
 
 export const RerankerEventSchema = {
@@ -14651,35 +15139,6 @@ By inheriting from both \`ControlEvent\` and \`DisplayEvent\`:
 ### Use Cases
 - Signaling that a response is ready, and no more actions are needed.
 - Informing the user interface that the conversation or task has concluded.`
-} as const;
-
-export const StopEventOutputSchema = {
-    properties: {
-        display_name: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        }
-    },
-    type: 'object',
-    title: 'StopEventOutput'
 } as const;
 
 export const SubmittedFormDTOSchema = {
@@ -16644,40 +17103,6 @@ export const additional_location_infoSchema = {
     title: 'additional_location_info'
 } as const;
 
-export const aihub_api__services__ModelCreationService__HumanInTheLoopConfirmationResponseEventInput__1Schema = {
-    properties: {
-        response: {
-            type: 'boolean',
-            title: 'Response',
-            description: "The human operator's confirmation (True for yes, False for no)."
-        },
-        request_event: {
-            '$ref': '#/components/schemas/HumanInTheLoopConfirmationRequestEvent',
-            description: 'The original confirmation request event.'
-        }
-    },
-    type: 'object',
-    required: ['response', 'request_event'],
-    title: 'HumanInTheLoopConfirmationResponseEventInput'
-} as const;
-
-export const aihub_api__services__ModelCreationService__HumanInTheLoopConfirmationResponseEventInput__2Schema = {
-    properties: {
-        response: {
-            type: 'boolean',
-            title: 'Response',
-            description: "The human operator's confirmation (True for yes, False for no)."
-        },
-        request_event: {
-            '$ref': '#/components/schemas/HumanInTheLoopConfirmationRequestEvent',
-            description: 'The original confirmation request event.'
-        }
-    },
-    type: 'object',
-    required: ['response', 'request_event'],
-    title: 'HumanInTheLoopConfirmationResponseEventInput'
-} as const;
-
 export const aihub_api__services__ModelCreationService__LLMStopEventOutput__1Schema = {
     properties: {
         display_name: {
@@ -17254,187 +17679,6 @@ export const aihub_lib__nats__events__user__UserUploadedFile__UserUploadedFileSc
     title: 'UserUploadedFile'
 } as const;
 
-export const aihub_lib__nats__topics__agents__AgentInstanceTopic__AgentInstanceTopicSchema = {
-    properties: {
-        agent_class: {
-            type: 'string',
-            title: 'Agent Class',
-            description: "The agent's class identifier."
-        },
-        agent_id: {
-            type: 'string',
-            title: 'Agent Id',
-            description: 'Unique identifier for the specific agent instance.'
-        },
-        run_id: {
-            type: 'string',
-            title: 'Run Id',
-            description: 'The run ID within the thread.'
-        },
-        thread_id: {
-            type: 'string',
-            title: 'Thread Id',
-            description: 'Unique identifier for the conversation or workflow thread.'
-        },
-        display_id: {
-            type: 'string',
-            title: 'Display Id',
-            description: 'UI-facing grouping ID, used to distinguish or group related runs.'
-        },
-        event_type: {
-            type: 'string',
-            title: 'Event Type',
-            description: "Type of event (e.g., 'display_event', 'control_event')."
-        },
-        event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: "Name of the event (e.g., 'StartEvent', 'StopEvent', 'ExceptionEvent, ...')."
-        },
-        event_id: {
-            type: 'string',
-            title: 'Event Id',
-            description: 'Unique identifier for this particular event instance.'
-        }
-    },
-    type: 'object',
-    required: ['agent_class', 'agent_id', 'run_id', 'thread_id', 'display_id', 'event_type', 'event_name', 'event_id'],
-    title: 'AgentInstanceTopic',
-    description: `Represents a fully-defined agent event topic. Unlike PartialAgentTopic, all fields are expected
-to be present. This includes identifiers for agent_class, agent_id, and the event itself.
-
-### Why This Class Exists
-
-In a hierarchical event topic model, PartialAgentTopic might not have all details filled out.
-AgentTopic guarantees that every piece of the event route—from agent class to event ID—is known.
-This makes AgentTopic ideal for scenarios where the full path is required, such as final message
-routing or logging a complete event identifier.
-
-### Example:
-If an event subject is something like:
-"agent.myclass.myid.thread123.displayA.run45.display_event.some_event.789"
-then this AgentTopic can represent it, providing quick field-level access and serialization.`
-} as const;
-
-export const aihub_lib__nats__topics__agents__PartialAgentTopic__PartialAgentTopicSchema = {
-    properties: {
-        agent_class: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Agent Class',
-            description: 'Agent class or None if unspecified.'
-        },
-        agent_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Agent Id',
-            description: 'Agent ID or None if unspecified.'
-        },
-        run_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Run Id',
-            description: 'Run ID or None if unspecified.'
-        },
-        thread_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Thread Id',
-            description: 'Thread ID or None if unspecified.'
-        },
-        display_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Id',
-            description: 'Display ID or None if unspecified.'
-        },
-        event_type: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Event Type',
-            description: 'Event type or None if unspecified.'
-        },
-        event_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Event Name',
-            description: 'Event name or None if unspecified.'
-        },
-        event_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Event Id',
-            description: 'Event ID or None if unspecified.'
-        }
-    },
-    type: 'object',
-    title: 'PartialAgentTopic',
-    description: `Represents a partially qualified agent event topic, where some fields may be unspecified.
-Wildcards (represented by "*") in the subject translate into None values here.
-
-### Why PartialAgentTopic?
-Sometimes you deal with generic subscriptions to broad categories of events—like all display events
-or all events from a particular agent class—without knowing the exact agent_id, thread_id, or event_id.
-PartialAgentTopic captures this scenario, making it explicit which parts of the topic are defined
-and which remain open (None).
-
-### Use Cases
-- **Generic Monitoring:** You might subscribe to \`agent.myclass.*.*.*.*.display_event.*.*\` to monitor
-  all display events for a given agent class, regardless of the specific agent instance or thread.
-  The resulting PartialAgentTopic shows which filters have been fixed and which are open.
-- **Routing Decisions:** If a system receives a message on a wildcard topic, it can inspect this
-  PartialAgentTopic to decide dynamically which handler to invoke based on known fields, leaving
-  unknowns as flexible conditions.`
-} as const;
-
 export const function_call_arguments_jsonSchema = {
     properties: {},
     type: 'object',
@@ -17445,54 +17689,6 @@ export const invocation_parametersSchema = {
     properties: {},
     type: 'object',
     title: 'invocation_parameters'
-} as const;
-
-export const jambo__parser__object_type_parser__AgentInstanceTopicSchema = {
-    properties: {
-        agent_class: {
-            type: 'string',
-            title: 'Agent Class',
-            description: "The agent's class identifier."
-        },
-        agent_id: {
-            type: 'string',
-            title: 'Agent Id',
-            description: 'Unique identifier for the specific agent instance.'
-        },
-        run_id: {
-            type: 'string',
-            title: 'Run Id',
-            description: 'The run ID within the thread.'
-        },
-        thread_id: {
-            type: 'string',
-            title: 'Thread Id',
-            description: 'Unique identifier for the conversation or workflow thread.'
-        },
-        display_id: {
-            type: 'string',
-            title: 'Display Id',
-            description: 'UI-facing grouping ID, used to distinguish or group related runs.'
-        },
-        event_type: {
-            type: 'string',
-            title: 'Event Type',
-            description: "Type of event (e.g., 'display_event', 'control_event')."
-        },
-        event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: "Name of the event (e.g., 'StartEvent', 'StopEvent', 'ExceptionEvent, ...')."
-        },
-        event_id: {
-            type: 'string',
-            title: 'Event Id',
-            description: 'Unique identifier for this particular event instance.'
-        }
-    },
-    type: 'object',
-    required: ['agent_class', 'agent_id', 'run_id', 'thread_id', 'display_id', 'event_type', 'event_name', 'event_id'],
-    title: 'AgentInstanceTopic'
 } as const;
 
 export const jambo__parser__object_type_parser__ChatMessage__1Schema = {
@@ -17705,109 +17901,6 @@ export const jambo__parser__object_type_parser__MessageSchema = {
     type: 'object',
     required: ['role'],
     title: 'Message'
-} as const;
-
-export const jambo__parser__object_type_parser__PartialAgentTopicSchema = {
-    properties: {
-        agent_class: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Agent Class',
-            description: 'Agent class or None if unspecified.'
-        },
-        agent_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Agent Id',
-            description: 'Agent ID or None if unspecified.'
-        },
-        run_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Run Id',
-            description: 'Run ID or None if unspecified.'
-        },
-        thread_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Thread Id',
-            description: 'Thread ID or None if unspecified.'
-        },
-        display_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Id',
-            description: 'Display ID or None if unspecified.'
-        },
-        event_type: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Event Type',
-            description: 'Event type or None if unspecified.'
-        },
-        event_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Event Name',
-            description: 'Event name or None if unspecified.'
-        },
-        event_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Event Id',
-            description: 'Event ID or None if unspecified.'
-        }
-    },
-    type: 'object',
-    title: 'PartialAgentTopic'
 } as const;
 
 export const jambo__parser__object_type_parser__UserUploadedFileSchema = {

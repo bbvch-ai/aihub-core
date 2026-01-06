@@ -62,6 +62,227 @@ export type AddUserRequest = {
 };
 
 /**
+ * AgentClassDTO
+ * Encapsulates the data transfer object (DTO) for an agent class.
+ * Contains information about the agent class, including its name and configuration specifications.
+ */
+export type AgentClassDtoReadable = {
+    /**
+     * Agent Class
+     * The agent's class identifier (e.g., 'my_agent_class').
+     */
+    agent_class: string;
+    /**
+     * Configuration specifications of the agent class, including schema and parameters.
+     */
+    agent_config_specs: AgentConfigSpecsReadable;
+    /**
+     * Start Events
+     * A list of `EventSpecs` representing events that can start this agent's workflow.
+     */
+    start_events: Array<EventSpecs>;
+    /**
+     * Stop Events
+     * A list of `EventSpecs` representing events that can stop this agent's workflow.
+     */
+    stop_events: Array<EventSpecs>;
+    /**
+     * Hitl Request Events
+     * A list of `EventSpecs` representing human-in-the-loop request events this agent can produce.
+     */
+    hitl_request_events: Array<EventSpecs>;
+    /**
+     * Hitl Response Events
+     * A list of `EventSpecs` representing human-in-the-loop response events this agent can accept.
+     */
+    hitl_response_events: Array<EventSpecs>;
+    /**
+     * A network graph of the agent class, showing how different components are connected and interact.
+     */
+    network_graph: WorkflowGraph;
+    /**
+     * Is Conversational
+     * Whether the agent class can participate in a chat-based conversation
+     */
+    is_conversational: boolean;
+    /**
+     * Is Online
+     * Indicates whether the agent class is online and reachable.
+     */
+    is_online?: boolean | null;
+    /**
+     * The default agent configuration for this agent class. This is the configuration that will be used if no specific configuration is provided.
+     */
+    default_agent_config: AgentConfigReadable;
+};
+
+/**
+ * AgentClassDTO
+ * Encapsulates the data transfer object (DTO) for an agent class.
+ * Contains information about the agent class, including its name and configuration specifications.
+ */
+export type AgentClassDtoWritable = {
+    /**
+     * Agent Class
+     * The agent's class identifier (e.g., 'my_agent_class').
+     */
+    agent_class: string;
+    /**
+     * Configuration specifications of the agent class, including schema and parameters.
+     */
+    agent_config_specs: AgentConfigSpecsWritable;
+    /**
+     * Start Events
+     * A list of `EventSpecs` representing events that can start this agent's workflow.
+     */
+    start_events: Array<EventSpecs>;
+    /**
+     * Stop Events
+     * A list of `EventSpecs` representing events that can stop this agent's workflow.
+     */
+    stop_events: Array<EventSpecs>;
+    /**
+     * Hitl Request Events
+     * A list of `EventSpecs` representing human-in-the-loop request events this agent can produce.
+     */
+    hitl_request_events: Array<EventSpecs>;
+    /**
+     * Hitl Response Events
+     * A list of `EventSpecs` representing human-in-the-loop response events this agent can accept.
+     */
+    hitl_response_events: Array<EventSpecs>;
+    /**
+     * A network graph of the agent class, showing how different components are connected and interact.
+     */
+    network_graph: WorkflowGraph;
+    /**
+     * Is Conversational
+     * Whether the agent class can participate in a chat-based conversation
+     */
+    is_conversational: boolean;
+    /**
+     * Is Online
+     * Indicates whether the agent class is online and reachable.
+     */
+    is_online?: boolean | null;
+    /**
+     * The default agent configuration for this agent class. This is the configuration that will be used if no specific configuration is provided.
+     */
+    default_agent_config: AgentConfigWritable;
+};
+
+/**
+ * AgentConfig
+ * The agent config is a flexible way to configure the runtime behavior of an agent. It can ensure that two agents
+ * that follow the same workflow can still be configured to achieve different outcomes through a different
+ * set of configurations.
+ *
+ * Usually, you will want to inherit from this AgentConfig and pass it to your runner.
+ * The dispatcher will then flexibly inject the config into each step,
+ * giving you full control over the agent's runtime behavior.
+ *
+ * Note that you can also define configs for individual workflow steps! Simply by naming the attribute the same
+ * way as your step, and assigning it a value of type `StepConfig`, you can configure the step's behavior.
+ *
+ * ```python
+ * class StepXConfig(StepConfig):
+ * some_setting: str
+ *
+ * class MyCustomAgentConfig(AgentConfig):
+ * step_x: StepXConfig = StepXConfig(some_setting="some value")
+ *
+ * class MyAgent(Agent):
+ * @step()
+ * def step_x(self, step_x_config: StepXConfig):
+ * print(step_x_config.some_setting)
+ * ```
+ */
+export type AgentConfigReadable = {
+    /**
+     * The name of the process or agent.
+     */
+    name: LocaleString;
+    /**
+     * The description of the process or agent.
+     */
+    description: LocaleString;
+    /**
+     * Icon
+     * The icon representing the process or agent.
+     */
+    icon?: string;
+    /**
+     * Agent Class
+     * The class name of the agent, used for identification.
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     * Uniquely identifies the agent instance.
+     */
+    agent_id: string;
+    /**
+     * Form Name
+     * The form type name, used for polymorphic deserialization.
+     */
+    readonly _form_name: string;
+    [key: string]: unknown | LocaleString | string | undefined;
+};
+
+/**
+ * AgentConfig
+ * The agent config is a flexible way to configure the runtime behavior of an agent. It can ensure that two agents
+ * that follow the same workflow can still be configured to achieve different outcomes through a different
+ * set of configurations.
+ *
+ * Usually, you will want to inherit from this AgentConfig and pass it to your runner.
+ * The dispatcher will then flexibly inject the config into each step,
+ * giving you full control over the agent's runtime behavior.
+ *
+ * Note that you can also define configs for individual workflow steps! Simply by naming the attribute the same
+ * way as your step, and assigning it a value of type `StepConfig`, you can configure the step's behavior.
+ *
+ * ```python
+ * class StepXConfig(StepConfig):
+ * some_setting: str
+ *
+ * class MyCustomAgentConfig(AgentConfig):
+ * step_x: StepXConfig = StepXConfig(some_setting="some value")
+ *
+ * class MyAgent(Agent):
+ * @step()
+ * def step_x(self, step_x_config: StepXConfig):
+ * print(step_x_config.some_setting)
+ * ```
+ */
+export type AgentConfigWritable = {
+    /**
+     * The name of the process or agent.
+     */
+    name: LocaleString;
+    /**
+     * The description of the process or agent.
+     */
+    description: LocaleString;
+    /**
+     * Icon
+     * The icon representing the process or agent.
+     */
+    icon?: string;
+    /**
+     * Agent Class
+     * The class name of the agent, used for identification.
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     * Uniquely identifies the agent instance.
+     */
+    agent_id: string;
+    [key: string]: unknown | LocaleString | string | undefined;
+};
+
+/**
  * AgentConfigDTO
  */
 export type AgentConfigDtoReadable = {
@@ -89,7 +310,7 @@ export type AgentConfigDtoReadable = {
      * Form
      * Dynamic form configuration for agent runtime settings.
      */
-    form?: Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable> | null;
+    form?: Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | RepeaterReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable> | null;
 };
 
 /**
@@ -120,7 +341,77 @@ export type AgentConfigDtoWritable = {
      * Form
      * Dynamic form configuration for agent runtime settings.
      */
-    form?: Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable> | null;
+    form?: Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | RepeaterWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable> | null;
+};
+
+/**
+ * AgentConfigSpecs
+ * Defines a specification for an agent's configuration.
+ */
+export type AgentConfigSpecsReadable = {
+    /**
+     * The name of the process or agent.
+     */
+    name: LocaleString;
+    /**
+     * The description of the process or agent.
+     */
+    description: LocaleString;
+    /**
+     * Icon
+     * The icon representing the process or agent.
+     */
+    icon?: string;
+    /**
+     * Agent Class
+     * The class name of the agent, used for identification.
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     * Uniquely identifies the agent instance.
+     */
+    agent_id: string;
+    /**
+     * Form
+     * Formkit elements of the Agent Config.
+     */
+    form?: Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | RepeaterReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable>;
+};
+
+/**
+ * AgentConfigSpecs
+ * Defines a specification for an agent's configuration.
+ */
+export type AgentConfigSpecsWritable = {
+    /**
+     * The name of the process or agent.
+     */
+    name: LocaleString;
+    /**
+     * The description of the process or agent.
+     */
+    description: LocaleString;
+    /**
+     * Icon
+     * The icon representing the process or agent.
+     */
+    icon?: string;
+    /**
+     * Agent Class
+     * The class name of the agent, used for identification.
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     * Uniquely identifies the agent instance.
+     */
+    agent_id: string;
+    /**
+     * Form
+     * Formkit elements of the Agent Config.
+     */
+    form?: Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | RepeaterWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable>;
 };
 
 /**
@@ -468,7 +759,7 @@ export type AgentInTheLoopRequestEventReadable = {
      * Other Agent Topic
      * A partial or full agent topic specifying the target agent and event routing, ensuring the task is delegated to the correct agent.
      */
-    other_agent_topic: AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic | AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic;
+    other_agent_topic: PartialAgentTopic | AgentInstanceTopic;
     /**
      * Share Thread Id
      * Whether to share the conversation thread context with the other agent.
@@ -495,7 +786,7 @@ export type AgentInTheLoopRequestEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (StartEventReadable | UserMessageEventReadable) | (AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic | AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic) | boolean | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (StartEventReadable | UserMessageEventReadable) | (PartialAgentTopic | AgentInstanceTopic) | boolean | Array<string> | undefined;
 };
 
 /**
@@ -536,7 +827,7 @@ export type AgentInTheLoopRequestEventWritable = {
      * Other Agent Topic
      * A partial or full agent topic specifying the target agent and event routing, ensuring the task is delegated to the correct agent.
      */
-    other_agent_topic: AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic | AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic;
+    other_agent_topic: PartialAgentTopic | AgentInstanceTopic;
     /**
      * Share Thread Id
      * Whether to share the conversation thread context with the other agent.
@@ -552,7 +843,7 @@ export type AgentInTheLoopRequestEventWritable = {
      * Whether to share the run context with the other agent. Warning: In almost all cases, you will not want to share the run!
      */
     share_run_id?: boolean;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (StartEventWritable | UserMessageEventWritable) | (AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic | AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic) | boolean | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (StartEventWritable | UserMessageEventWritable) | (PartialAgentTopic | AgentInstanceTopic) | boolean | undefined;
 };
 
 /**
@@ -636,8 +927,22 @@ export type AgentInTheLoopResponseEventWritable = {
 
 /**
  * AgentInstanceTopic
+ * Represents a fully-defined agent event topic. Unlike PartialAgentTopic, all fields are expected
+ * to be present. This includes identifiers for agent_class, agent_id, and the event itself.
+ *
+ * ### Why This Class Exists
+ *
+ * In a hierarchical event topic model, PartialAgentTopic might not have all details filled out.
+ * AgentTopic guarantees that every piece of the event route—from agent class to event ID—is known.
+ * This makes AgentTopic ideal for scenarios where the full path is required, such as final message
+ * routing or logging a complete event identifier.
+ *
+ * ### Example:
+ * If an event subject is something like:
+ * "agent.myclass.myid.thread123.displayA.run45.display_event.some_event.789"
+ * then this AgentTopic can represent it, providing quick field-level access and serialization.
  */
-export type AgentInstanceTopicInput = {
+export type AgentInstanceTopic = {
     /**
      * Agent Class
      * The agent's class identifier.
@@ -3304,6 +3609,30 @@ export type ControlEventWritable = {
 };
 
 /**
+ * CreateAgentRequest
+ * Request body for creating a new agent instance.
+ */
+export type CreateAgentRequest = {
+    /**
+     * Agent Class
+     * The agent class to create an instance of. Must match a discovered/online agent class.
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     * Unique identifier for the agent instance. Must be URL-safe.
+     */
+    agent_id: string;
+    /**
+     * Configuration
+     * The full configuration values including name, description, icon, and runtime settings. Keys should match the 'name' fields from the agent's form elements.
+     */
+    configuration?: {
+        [key: string]: unknown;
+    };
+};
+
+/**
  * CreateNamespaceRequest
  */
 export type CreateNamespaceRequest = {
@@ -5379,8 +5708,8 @@ export type GroupReadable = {
      * Children
      * Child form elements contained within this group
      */
-    children: Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable>;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'group' | string | (LocaleString | string | null) | Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable> | undefined;
+    children: Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | RepeaterReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable>;
+    [key: string]: unknown | true | (string | null) | (string | null) | 'group' | string | (LocaleString | string | null) | Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | RepeaterReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable> | undefined;
 };
 
 /**
@@ -5439,8 +5768,8 @@ export type GroupWritable = {
      * Children
      * Child form elements contained within this group
      */
-    children: Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable>;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'group' | string | (LocaleString | string | null) | Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable> | undefined;
+    children: Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | RepeaterWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable>;
+    [key: string]: unknown | true | (string | null) | (string | null) | 'group' | string | (LocaleString | string | null) | Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | RepeaterWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable> | undefined;
 };
 
 /**
@@ -5803,7 +6132,7 @@ export type HumanInDtoReadable = {
      * Form
      * Formkit elements of the work event.
      */
-    form?: Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable>;
+    form?: Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | RepeaterReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable>;
 };
 
 /**
@@ -5843,74 +6172,7 @@ export type HumanInDtoWritable = {
      * Form
      * Formkit elements of the work event.
      */
-    form?: Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable>;
-};
-
-/**
- * HumanInTheLoopConfirmationRequestEvent
- */
-export type HumanInTheLoopConfirmationRequestEvent = {
-    /**
-     * Event Id
-     */
-    event_id?: string;
-    /**
-     * Created At
-     * The time (in ns since epoch) the event was stored in the event store
-     */
-    created_at?: number;
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Question
-     * The query or prompt presented to the human operator.
-     */
-    question: string;
-    /**
-     * Topic
-     * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
-     */
-    topic: PartialAgentTopicInput | AgentInstanceTopicInput;
-    /**
-     * Hitl Type
-     * Fixed to 'confirmation' for yes/no requests.
-     */
-    hitl_type?: 'confirmation';
-};
-
-/**
- * HumanInTheLoopConfirmationRequestEventOutput
- */
-export type HumanInTheLoopConfirmationRequestEventOutput = {
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Question
-     * The query or prompt presented to the human operator.
-     */
-    question: string;
-    /**
-     * Topic
-     * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
-     */
-    topic: JamboParserObjectTypeParserPartialAgentTopic | JamboParserObjectTypeParserAgentInstanceTopic;
-    /**
-     * Hitl Type
-     * Fixed to 'confirmation' for yes/no requests.
-     */
-    hitl_type?: 'confirmation';
+    form?: Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | RepeaterWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable>;
 };
 
 /**
@@ -5918,8 +6180,9 @@ export type HumanInTheLoopConfirmationRequestEventOutput = {
  * Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
  *
  * Use the specific subclasses:
- * - `HumanInTheLoopInputRequestEvent` for free-form text input
- * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation
+ * - `HumanInTheLoopInputRequestEvent` for free-form text input (popup dialog)
+ * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation (popup dialog)
+ * - `HumanInTheLoopChatRequestEvent` for chat-style input (appears as regular message)
  */
 export type HumanInTheLoopRequestEventReadable = {
     /**
@@ -5948,12 +6211,12 @@ export type HumanInTheLoopRequestEventReadable = {
      * Topic
      * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
      */
-    topic: AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic | AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic;
+    topic: PartialAgentTopic | AgentInstanceTopic;
     /**
      * Hitl Type
-     * The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no.
+     * HITL type: 'input' (free-form text), 'confirmation' (yes/no), 'chat' (chat-style).
      */
-    hitl_type: 'input' | 'confirmation';
+    hitl_type: 'input' | 'confirmation' | 'chat';
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -5965,7 +6228,7 @@ export type HumanInTheLoopRequestEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic | AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic) | ('input' | 'confirmation') | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation' | 'chat') | Array<string> | undefined;
 };
 
 /**
@@ -5973,8 +6236,9 @@ export type HumanInTheLoopRequestEventReadable = {
  * Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
  *
  * Use the specific subclasses:
- * - `HumanInTheLoopInputRequestEvent` for free-form text input
- * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation
+ * - `HumanInTheLoopInputRequestEvent` for free-form text input (popup dialog)
+ * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation (popup dialog)
+ * - `HumanInTheLoopChatRequestEvent` for chat-style input (appears as regular message)
  */
 export type HumanInTheLoopRequestEventWritable = {
     /**
@@ -6003,13 +6267,13 @@ export type HumanInTheLoopRequestEventWritable = {
      * Topic
      * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
      */
-    topic: AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic | AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic;
+    topic: PartialAgentTopic | AgentInstanceTopic;
     /**
      * Hitl Type
-     * The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no.
+     * HITL type: 'input' (free-form text), 'confirmation' (yes/no), 'chat' (chat-style).
      */
-    hitl_type: 'input' | 'confirmation';
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic | AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic) | ('input' | 'confirmation') | undefined;
+    hitl_type: 'input' | 'confirmation' | 'chat';
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation' | 'chat') | undefined;
 };
 
 /**
@@ -6017,8 +6281,9 @@ export type HumanInTheLoopRequestEventWritable = {
  * Base response from a human operator after a HITL request.
  *
  * Use the specific subclasses:
- * - `HumanInTheLoopInputResponseEvent` for text input responses
- * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses
+ * - `HumanInTheLoopInputResponseEvent` for text input responses (popup dialog)
+ * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses (popup dialog)
+ * - `HumanInTheLoopChatResponseEvent` for chat-style responses (regular message)
  */
 export type HumanInTheLoopResponseEventReadable = {
     /**
@@ -6066,8 +6331,9 @@ export type HumanInTheLoopResponseEventReadable = {
  * Base response from a human operator after a HITL request.
  *
  * Use the specific subclasses:
- * - `HumanInTheLoopInputResponseEvent` for text input responses
- * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses
+ * - `HumanInTheLoopInputResponseEvent` for text input responses (popup dialog)
+ * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses (popup dialog)
+ * - `HumanInTheLoopChatResponseEvent` for chat-style responses (regular message)
  */
 export type HumanInTheLoopResponseEventWritable = {
     /**
@@ -9594,6 +9860,38 @@ export type NotificationDto = {
 };
 
 /**
+ * OpenChatHitlResponse
+ * Response indicating whether there's an open chat HITL request for a thread.
+ */
+export type OpenChatHitlResponseReadable = {
+    /**
+     * Has Open Chat Hitl
+     * Whether there is an open chat HITL request awaiting response.
+     */
+    has_open_chat_hitl: boolean;
+    /**
+     * The HITL request event if there is an open chat HITL, None otherwise.
+     */
+    hitl_request?: HumanInTheLoopRequestEventReadable | null;
+};
+
+/**
+ * OpenChatHitlResponse
+ * Response indicating whether there's an open chat HITL request for a thread.
+ */
+export type OpenChatHitlResponseWritable = {
+    /**
+     * Has Open Chat Hitl
+     * Whether there is an open chat HITL request awaiting response.
+     */
+    has_open_chat_hitl: boolean;
+    /**
+     * The HITL request event if there is an open chat HITL, None otherwise.
+     */
+    hitl_request?: HumanInTheLoopRequestEventWritable | null;
+};
+
+/**
  * PaginatedDocumentsResponse
  */
 export type PaginatedDocumentsResponse = {
@@ -9816,8 +10114,24 @@ export type PaginatedUsersResponse = {
 
 /**
  * PartialAgentTopic
+ * Represents a partially qualified agent event topic, where some fields may be unspecified.
+ * Wildcards (represented by "*") in the subject translate into None values here.
+ *
+ * ### Why PartialAgentTopic?
+ * Sometimes you deal with generic subscriptions to broad categories of events—like all display events
+ * or all events from a particular agent class—without knowing the exact agent_id, thread_id, or event_id.
+ * PartialAgentTopic captures this scenario, making it explicit which parts of the topic are defined
+ * and which remain open (None).
+ *
+ * ### Use Cases
+ * - **Generic Monitoring:** You might subscribe to `agent.myclass.*.*.*.*.display_event.*.*` to monitor
+ * all display events for a given agent class, regardless of the specific agent instance or thread.
+ * The resulting PartialAgentTopic shows which filters have been fixed and which are open.
+ * - **Routing Decisions:** If a system receives a message on a wildcard topic, it can inspect this
+ * PartialAgentTopic to decide dynamically which handler to invoke based on known fields, leaving
+ * unknowns as flexible conditions.
  */
-export type PartialAgentTopicInput = {
+export type PartialAgentTopic = {
     /**
      * Agent Class
      * Agent class or None if unspecified.
@@ -10853,6 +11167,206 @@ export type RatingWritable = {
      */
     cancelIcon?: string | null;
     [key: string]: unknown | true | (string | null) | (string | null) | 'primeRating' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | number | (string | null) | (string | null) | (string | null) | undefined;
+};
+
+/**
+ * Repeater
+ * https://formkit.com/inputs/repeater
+ * Creates a dynamic array of form items with add/remove functionality.
+ *
+ * The repeater allows users to add multiple instances of the same form structure,
+ * each with its own set of values. The entire section can be collapsible.
+ *
+ * Example:
+ * repeater = Repeater(
+ * name="examples",
+ * label="Few-Shot Examples",
+ * add_label="Add Example",
+ * children=[
+ * InputText(name="user", label="User Input"),
+ * Checkbox(name="success", label="Success"),
+ * Textarea(name="reason", label="Reason"),
+ * ]
+ * )
+ *
+ * # Results in form data:
+ * # { "examples": [
+ * #     { "user": "...", "success": true, "reason": "..." },
+ * #     { "user": "...", "success": false, "reason": "..." }
+ * # ] }
+ */
+export type RepeaterReadable = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Id
+     * Unique identifier for this element
+     */
+    id?: string | null;
+    /**
+     * $Formkit
+     * FormKit repeater element
+     */
+    $formkit?: 'repeater';
+    /**
+     * Name
+     * Key name for the array data in the form output
+     */
+    name: string;
+    /**
+     * Label
+     * Label displayed as the section header
+     */
+    label?: LocaleString | string | null;
+    /**
+     * Addlabel
+     * Text for the add button
+     */
+    addLabel?: LocaleString | string | null;
+    /**
+     * Removelabel
+     * Text for the remove button
+     */
+    removeLabel?: LocaleString | string | null;
+    /**
+     * Upcontrol
+     * Show up/reorder controls
+     */
+    upControl?: boolean | null;
+    /**
+     * Downcontrol
+     * Show down/reorder controls
+     */
+    downControl?: boolean | null;
+    /**
+     * Insertcontrol
+     * Show insert controls
+     */
+    insertControl?: boolean | null;
+    /**
+     * Min
+     * Minimum number of items
+     */
+    min?: number | null;
+    /**
+     * Max
+     * Maximum number of items
+     */
+    max?: number | null;
+    /**
+     * Children
+     * Template form elements for each repeater item
+     */
+    children: Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | RepeaterReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable>;
+    [key: string]: unknown | true | (string | null) | (string | null) | 'repeater' | string | (LocaleString | string | null) | (LocaleString | string | null) | (LocaleString | string | null) | (boolean | null) | (boolean | null) | (boolean | null) | (number | null) | (number | null) | Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | RepeaterReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable> | undefined;
+};
+
+/**
+ * Repeater
+ * https://formkit.com/inputs/repeater
+ * Creates a dynamic array of form items with add/remove functionality.
+ *
+ * The repeater allows users to add multiple instances of the same form structure,
+ * each with its own set of values. The entire section can be collapsible.
+ *
+ * Example:
+ * repeater = Repeater(
+ * name="examples",
+ * label="Few-Shot Examples",
+ * add_label="Add Example",
+ * children=[
+ * InputText(name="user", label="User Input"),
+ * Checkbox(name="success", label="Success"),
+ * Textarea(name="reason", label="Reason"),
+ * ]
+ * )
+ *
+ * # Results in form data:
+ * # { "examples": [
+ * #     { "user": "...", "success": true, "reason": "..." },
+ * #     { "user": "...", "success": false, "reason": "..." }
+ * # ] }
+ */
+export type RepeaterWritable = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Id
+     * Unique identifier for this element
+     */
+    id?: string | null;
+    /**
+     * $Formkit
+     * FormKit repeater element
+     */
+    $formkit?: 'repeater';
+    /**
+     * Name
+     * Key name for the array data in the form output
+     */
+    name: string;
+    /**
+     * Label
+     * Label displayed as the section header
+     */
+    label?: LocaleString | string | null;
+    /**
+     * Addlabel
+     * Text for the add button
+     */
+    addLabel?: LocaleString | string | null;
+    /**
+     * Removelabel
+     * Text for the remove button
+     */
+    removeLabel?: LocaleString | string | null;
+    /**
+     * Upcontrol
+     * Show up/reorder controls
+     */
+    upControl?: boolean | null;
+    /**
+     * Downcontrol
+     * Show down/reorder controls
+     */
+    downControl?: boolean | null;
+    /**
+     * Insertcontrol
+     * Show insert controls
+     */
+    insertControl?: boolean | null;
+    /**
+     * Min
+     * Minimum number of items
+     */
+    min?: number | null;
+    /**
+     * Max
+     * Maximum number of items
+     */
+    max?: number | null;
+    /**
+     * Children
+     * Template form elements for each repeater item
+     */
+    children: Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | RepeaterWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable>;
+    [key: string]: unknown | true | (string | null) | (string | null) | 'repeater' | string | (LocaleString | string | null) | (LocaleString | string | null) | (LocaleString | string | null) | (boolean | null) | (boolean | null) | (boolean | null) | (number | null) | (number | null) | Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | RepeaterWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable> | undefined;
 };
 
 /**
@@ -12630,20 +13144,6 @@ export type StopEventWritable = {
      */
     display_description?: LocaleString | null;
     [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
-};
-
-/**
- * StopEventOutput
- */
-export type StopEventOutput = {
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
 };
 
 /**
@@ -14431,36 +14931,6 @@ export type AdditionalLocationInfo = {
 };
 
 /**
- * HumanInTheLoopConfirmationResponseEventInput
- */
-export type AihubApiServicesModelCreationServiceHumanInTheLoopConfirmationResponseEventInput1 = {
-    /**
-     * Response
-     * The human operator's confirmation (True for yes, False for no).
-     */
-    response: boolean;
-    /**
-     * The original confirmation request event.
-     */
-    request_event: HumanInTheLoopConfirmationRequestEvent;
-};
-
-/**
- * HumanInTheLoopConfirmationResponseEventInput
- */
-export type AihubApiServicesModelCreationServiceHumanInTheLoopConfirmationResponseEventInput2 = {
-    /**
-     * Response
-     * The human operator's confirmation (True for yes, False for no).
-     */
-    response: boolean;
-    /**
-     * The original confirmation request event.
-     */
-    request_event: HumanInTheLoopConfirmationRequestEvent;
-};
-
-/**
  * LLMStopEventOutput
  */
 export type AihubApiServicesModelCreationServiceLlmStopEventOutput1 = {
@@ -14762,128 +15232,6 @@ export type AihubLibNatsEventsUserUserUploadedFileUserUploadedFile = {
 };
 
 /**
- * AgentInstanceTopic
- * Represents a fully-defined agent event topic. Unlike PartialAgentTopic, all fields are expected
- * to be present. This includes identifiers for agent_class, agent_id, and the event itself.
- *
- * ### Why This Class Exists
- *
- * In a hierarchical event topic model, PartialAgentTopic might not have all details filled out.
- * AgentTopic guarantees that every piece of the event route—from agent class to event ID—is known.
- * This makes AgentTopic ideal for scenarios where the full path is required, such as final message
- * routing or logging a complete event identifier.
- *
- * ### Example:
- * If an event subject is something like:
- * "agent.myclass.myid.thread123.displayA.run45.display_event.some_event.789"
- * then this AgentTopic can represent it, providing quick field-level access and serialization.
- */
-export type AihubLibNatsTopicsAgentsAgentInstanceTopicAgentInstanceTopic = {
-    /**
-     * Agent Class
-     * The agent's class identifier.
-     */
-    agent_class: string;
-    /**
-     * Agent Id
-     * Unique identifier for the specific agent instance.
-     */
-    agent_id: string;
-    /**
-     * Run Id
-     * The run ID within the thread.
-     */
-    run_id: string;
-    /**
-     * Thread Id
-     * Unique identifier for the conversation or workflow thread.
-     */
-    thread_id: string;
-    /**
-     * Display Id
-     * UI-facing grouping ID, used to distinguish or group related runs.
-     */
-    display_id: string;
-    /**
-     * Event Type
-     * Type of event (e.g., 'display_event', 'control_event').
-     */
-    event_type: string;
-    /**
-     * Event Name
-     * Name of the event (e.g., 'StartEvent', 'StopEvent', 'ExceptionEvent, ...').
-     */
-    event_name: string;
-    /**
-     * Event Id
-     * Unique identifier for this particular event instance.
-     */
-    event_id: string;
-};
-
-/**
- * PartialAgentTopic
- * Represents a partially qualified agent event topic, where some fields may be unspecified.
- * Wildcards (represented by "*") in the subject translate into None values here.
- *
- * ### Why PartialAgentTopic?
- * Sometimes you deal with generic subscriptions to broad categories of events—like all display events
- * or all events from a particular agent class—without knowing the exact agent_id, thread_id, or event_id.
- * PartialAgentTopic captures this scenario, making it explicit which parts of the topic are defined
- * and which remain open (None).
- *
- * ### Use Cases
- * - **Generic Monitoring:** You might subscribe to `agent.myclass.*.*.*.*.display_event.*.*` to monitor
- * all display events for a given agent class, regardless of the specific agent instance or thread.
- * The resulting PartialAgentTopic shows which filters have been fixed and which are open.
- * - **Routing Decisions:** If a system receives a message on a wildcard topic, it can inspect this
- * PartialAgentTopic to decide dynamically which handler to invoke based on known fields, leaving
- * unknowns as flexible conditions.
- */
-export type AihubLibNatsTopicsAgentsPartialAgentTopicPartialAgentTopic = {
-    /**
-     * Agent Class
-     * Agent class or None if unspecified.
-     */
-    agent_class?: string | null;
-    /**
-     * Agent Id
-     * Agent ID or None if unspecified.
-     */
-    agent_id?: string | null;
-    /**
-     * Run Id
-     * Run ID or None if unspecified.
-     */
-    run_id?: string | null;
-    /**
-     * Thread Id
-     * Thread ID or None if unspecified.
-     */
-    thread_id?: string | null;
-    /**
-     * Display Id
-     * Display ID or None if unspecified.
-     */
-    display_id?: string | null;
-    /**
-     * Event Type
-     * Event type or None if unspecified.
-     */
-    event_type?: string | null;
-    /**
-     * Event Name
-     * Event name or None if unspecified.
-     */
-    event_name?: string | null;
-    /**
-     * Event Id
-     * Event ID or None if unspecified.
-     */
-    event_id?: string | null;
-};
-
-/**
  * function_call_arguments_json
  */
 export type FunctionCallArgumentsJson = {
@@ -14895,52 +15243,6 @@ export type FunctionCallArgumentsJson = {
  */
 export type InvocationParameters = {
     [key: string]: unknown;
-};
-
-/**
- * AgentInstanceTopic
- */
-export type JamboParserObjectTypeParserAgentInstanceTopic = {
-    /**
-     * Agent Class
-     * The agent's class identifier.
-     */
-    agent_class: string;
-    /**
-     * Agent Id
-     * Unique identifier for the specific agent instance.
-     */
-    agent_id: string;
-    /**
-     * Run Id
-     * The run ID within the thread.
-     */
-    run_id: string;
-    /**
-     * Thread Id
-     * Unique identifier for the conversation or workflow thread.
-     */
-    thread_id: string;
-    /**
-     * Display Id
-     * UI-facing grouping ID, used to distinguish or group related runs.
-     */
-    display_id: string;
-    /**
-     * Event Type
-     * Type of event (e.g., 'display_event', 'control_event').
-     */
-    event_type: string;
-    /**
-     * Event Name
-     * Name of the event (e.g., 'StartEvent', 'StopEvent', 'ExceptionEvent, ...').
-     */
-    event_name: string;
-    /**
-     * Event Id
-     * Unique identifier for this particular event instance.
-     */
-    event_id: string;
 };
 
 /**
@@ -15033,52 +15335,6 @@ export type JamboParserObjectTypeParserMessage = {
      * The message contents as an array of content blocks (text, image, audio).
      */
     contents?: Array<TextContent | ImageContent | AudioContent> | null;
-};
-
-/**
- * PartialAgentTopic
- */
-export type JamboParserObjectTypeParserPartialAgentTopic = {
-    /**
-     * Agent Class
-     * Agent class or None if unspecified.
-     */
-    agent_class?: string | null;
-    /**
-     * Agent Id
-     * Agent ID or None if unspecified.
-     */
-    agent_id?: string | null;
-    /**
-     * Run Id
-     * Run ID or None if unspecified.
-     */
-    run_id?: string | null;
-    /**
-     * Thread Id
-     * Thread ID or None if unspecified.
-     */
-    thread_id?: string | null;
-    /**
-     * Display Id
-     * Display ID or None if unspecified.
-     */
-    display_id?: string | null;
-    /**
-     * Event Type
-     * Event type or None if unspecified.
-     */
-    event_type?: string | null;
-    /**
-     * Event Name
-     * Event name or None if unspecified.
-     */
-    event_name?: string | null;
-    /**
-     * Event Id
-     * Event ID or None if unspecified.
-     */
-    event_id?: string | null;
 };
 
 /**
@@ -15713,6 +15969,36 @@ export type RemoveUserFromThreadResponses = {
 
 export type RemoveUserFromThreadResponse = RemoveUserFromThreadResponses[keyof RemoveUserFromThreadResponses];
 
+export type GetOpenChatHitlData = {
+    body?: never;
+    path: {
+        /**
+         * Thread ID
+         */
+        thread_id: string;
+    };
+    query?: never;
+    url: '/threads/{thread_id}/open-chat-hitl';
+};
+
+export type GetOpenChatHitlErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetOpenChatHitlError = GetOpenChatHitlErrors[keyof GetOpenChatHitlErrors];
+
+export type GetOpenChatHitlResponses = {
+    /**
+     * Successful Response
+     */
+    200: OpenChatHitlResponseReadable;
+};
+
+export type GetOpenChatHitlResponse = GetOpenChatHitlResponses[keyof GetOpenChatHitlResponses];
+
 export type GetModelsData = {
     body?: never;
     path?: never;
@@ -15759,6 +16045,40 @@ export type GetModelResponses = {
 };
 
 export type GetModelResponse = GetModelResponses[keyof GetModelResponses];
+
+export type DeleteAgentData = {
+    body?: never;
+    path: {
+        /**
+         * Agent Class
+         */
+        agent_class: string;
+        /**
+         * Agent Id
+         */
+        agent_id: string;
+    };
+    query?: never;
+    url: '/agents/{agent_class}/{agent_id}';
+};
+
+export type DeleteAgentErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteAgentError = DeleteAgentErrors[keyof DeleteAgentErrors];
+
+export type DeleteAgentResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteAgentResponse = DeleteAgentResponses[keyof DeleteAgentResponses];
 
 export type GetAgentData = {
     body?: never;
@@ -15924,6 +16244,31 @@ export type GetAgentsResponses = {
 
 export type GetAgentsResponse = GetAgentsResponses[keyof GetAgentsResponses];
 
+export type CreateAgentData = {
+    body: CreateAgentRequest;
+    path?: never;
+    query?: never;
+    url: '/agents/';
+};
+
+export type CreateAgentErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateAgentError = CreateAgentErrors[keyof CreateAgentErrors];
+
+export type CreateAgentResponses = {
+    /**
+     * Successful Response
+     */
+    201: AgentDtoReadable;
+};
+
+export type CreateAgentResponse = CreateAgentResponses[keyof CreateAgentResponses];
+
 export type DiscoverAgentsData = {
     body?: never;
     path?: never;
@@ -15940,6 +16285,23 @@ export type DiscoverAgentsResponses = {
 };
 
 export type DiscoverAgentsResponse = DiscoverAgentsResponses[keyof DiscoverAgentsResponses];
+
+export type GetAgentClassesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/agents/classes';
+};
+
+export type GetAgentClassesResponses = {
+    /**
+     * Response Get Agent Classes Agents Classes Get
+     * Successful Response
+     */
+    200: Array<AgentClassDtoReadable>;
+};
+
+export type GetAgentClassesResponse = GetAgentClassesResponses[keyof GetAgentClassesResponses];
 
 export type GetProcessData = {
     body?: never;
@@ -17411,10 +17773,9 @@ export type SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMess
 
 export type SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostResponses = {
     /**
-     * Response Send User Message Event To R A G Agent Rag Agent Agents Ragagent Rag Agent Usermessageevent Post
      * Successful Response
      */
-    200: StopEventOutput | AihubApiServicesModelCreationServiceLlmStopEventOutput1 | HumanInTheLoopConfirmationRequestEventOutput;
+    200: AihubApiServicesModelCreationServiceLlmStopEventOutput1;
 };
 
 export type SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostResponse = SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostResponses[keyof SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostResponses];
@@ -17451,70 +17812,6 @@ export type StreamUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMe
     200: unknown;
 };
 
-export type SendHumanInTheLoopConfirmationResponseEventToRagAgentRagAgentAgentsRagAgentRagAgentHumanInTheLoopConfirmationResponseEventPostData = {
-    body: AihubApiServicesModelCreationServiceHumanInTheLoopConfirmationResponseEventInput1;
-    path?: never;
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/RAGAgent/rag_agent/HumanInTheLoopConfirmationResponseEvent';
-};
-
-export type SendHumanInTheLoopConfirmationResponseEventToRagAgentRagAgentAgentsRagAgentRagAgentHumanInTheLoopConfirmationResponseEventPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SendHumanInTheLoopConfirmationResponseEventToRagAgentRagAgentAgentsRagAgentRagAgentHumanInTheLoopConfirmationResponseEventPostError = SendHumanInTheLoopConfirmationResponseEventToRagAgentRagAgentAgentsRagAgentRagAgentHumanInTheLoopConfirmationResponseEventPostErrors[keyof SendHumanInTheLoopConfirmationResponseEventToRagAgentRagAgentAgentsRagAgentRagAgentHumanInTheLoopConfirmationResponseEventPostErrors];
-
-export type SendHumanInTheLoopConfirmationResponseEventToRagAgentRagAgentAgentsRagAgentRagAgentHumanInTheLoopConfirmationResponseEventPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type StreamHumanInTheLoopConfirmationResponseEventToRagAgentRagAgentAgentsRagAgentRagAgentHumanInTheLoopConfirmationResponseEventStreamPostData = {
-    body: AihubApiServicesModelCreationServiceHumanInTheLoopConfirmationResponseEventInput1;
-    path?: never;
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/RAGAgent/rag_agent/HumanInTheLoopConfirmationResponseEvent/stream';
-};
-
-export type StreamHumanInTheLoopConfirmationResponseEventToRagAgentRagAgentAgentsRagAgentRagAgentHumanInTheLoopConfirmationResponseEventStreamPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type StreamHumanInTheLoopConfirmationResponseEventToRagAgentRagAgentAgentsRagAgentRagAgentHumanInTheLoopConfirmationResponseEventStreamPostError = StreamHumanInTheLoopConfirmationResponseEventToRagAgentRagAgentAgentsRagAgentRagAgentHumanInTheLoopConfirmationResponseEventStreamPostErrors[keyof StreamHumanInTheLoopConfirmationResponseEventToRagAgentRagAgentAgentsRagAgentRagAgentHumanInTheLoopConfirmationResponseEventStreamPostErrors];
-
-export type StreamHumanInTheLoopConfirmationResponseEventToRagAgentRagAgentAgentsRagAgentRagAgentHumanInTheLoopConfirmationResponseEventStreamPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
 export type SendUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventPostData = {
     body: AihubApiServicesModelCreationServiceUserMessageEventInput2;
     path?: never;
@@ -17542,10 +17839,9 @@ export type SendUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUs
 
 export type SendUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventPostResponses = {
     /**
-     * Response Send User Message Event To R A G Agent Rag Dev Agent Agents Ragagent Rag Dev Agent Usermessageevent Post
      * Successful Response
      */
-    200: StopEventOutput | AihubApiServicesModelCreationServiceLlmStopEventOutput2 | HumanInTheLoopConfirmationRequestEventOutput;
+    200: AihubApiServicesModelCreationServiceLlmStopEventOutput2;
 };
 
 export type SendUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventPostResponse = SendUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventPostResponses[keyof SendUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventPostResponses];
@@ -17576,70 +17872,6 @@ export type StreamUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgent
 export type StreamUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventStreamPostError = StreamUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventStreamPostErrors[keyof StreamUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventStreamPostErrors];
 
 export type StreamUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventStreamPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type SendHumanInTheLoopConfirmationResponseEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentHumanInTheLoopConfirmationResponseEventPostData = {
-    body: AihubApiServicesModelCreationServiceHumanInTheLoopConfirmationResponseEventInput2;
-    path?: never;
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/RAGAgent/rag_dev_agent/HumanInTheLoopConfirmationResponseEvent';
-};
-
-export type SendHumanInTheLoopConfirmationResponseEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentHumanInTheLoopConfirmationResponseEventPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SendHumanInTheLoopConfirmationResponseEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentHumanInTheLoopConfirmationResponseEventPostError = SendHumanInTheLoopConfirmationResponseEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentHumanInTheLoopConfirmationResponseEventPostErrors[keyof SendHumanInTheLoopConfirmationResponseEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentHumanInTheLoopConfirmationResponseEventPostErrors];
-
-export type SendHumanInTheLoopConfirmationResponseEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentHumanInTheLoopConfirmationResponseEventPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type StreamHumanInTheLoopConfirmationResponseEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentHumanInTheLoopConfirmationResponseEventStreamPostData = {
-    body: AihubApiServicesModelCreationServiceHumanInTheLoopConfirmationResponseEventInput2;
-    path?: never;
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/RAGAgent/rag_dev_agent/HumanInTheLoopConfirmationResponseEvent/stream';
-};
-
-export type StreamHumanInTheLoopConfirmationResponseEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentHumanInTheLoopConfirmationResponseEventStreamPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type StreamHumanInTheLoopConfirmationResponseEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentHumanInTheLoopConfirmationResponseEventStreamPostError = StreamHumanInTheLoopConfirmationResponseEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentHumanInTheLoopConfirmationResponseEventStreamPostErrors[keyof StreamHumanInTheLoopConfirmationResponseEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentHumanInTheLoopConfirmationResponseEventStreamPostErrors];
-
-export type StreamHumanInTheLoopConfirmationResponseEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentHumanInTheLoopConfirmationResponseEventStreamPostResponses = {
     /**
      * Successful Response
      */
