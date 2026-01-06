@@ -3,6 +3,7 @@ from typing import Annotated, get_args, get_origin
 
 from aihub_lib.nats.events import WorkEvent
 from aihub_lib.nats.workflow.annotations.extractors.extract_event_classes import extract_event_classes
+
 from aihub_process.delegators.AbstractProcessEntity import BaseProcessEntity
 
 

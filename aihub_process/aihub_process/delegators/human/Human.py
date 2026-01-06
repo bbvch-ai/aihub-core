@@ -1,8 +1,8 @@
 from typing import Annotated, Literal
 
+from aihub_lib.nats.events.form.Form import Form
 from pydantic import Field, model_validator
 
-from aihub_lib.nats.events.form.Form import Form
 from aihub_process.delegators.AbstractProcessEntity import BaseProcessEntity
 
 
