@@ -459,19 +459,20 @@ class DoclingLoader(BaseReader):
         """
         Clear old results from the Docling server after retrieval.
 
-        Uses GET /v1/clear/results?older_than=30 to clear results older than 30
-        seconds. This provides a safety buffer to avoid clearing results that may
-        still be in use, while still cleaning up orphaned results from previous
-        failed runs.
+        Uses GET /v1/clear/results?older_than=N to clear results older than
+        CLEAR_RESULTS_DELAY seconds. This provides a safety buffer to avoid
+        clearing results that may still be in use, while still cleaning up
+        orphaned results from previous failed runs.
         """
+        delay = self.config.CLEAR_RESULTS_DELAY
         try:
             response = await client.get(
                 f"{self.config.BASE_API_URL}/v1/clear/results",
-                params={"older_than": 30},
+                params={"older_than": delay},
                 headers={"Content-Type": "application/json"},
             )
             if response.status_code == 200:
-                logger.debug(f"[DoclingLoader] Cleared old results (>30s) after task_id={task_id}")
+                logger.debug(f"[DoclingLoader] Cleared old results (>{delay}s) after task_id={task_id}")
             else:
                 logger.debug(
                     f"[DoclingLoader] Clear results returned status={response.status_code} "
