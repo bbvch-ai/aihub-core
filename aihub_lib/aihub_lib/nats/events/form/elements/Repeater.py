@@ -39,33 +39,23 @@ class Repeater(FormkitElement):
         # ] }
     """
 
-    formkit: Annotated[
-        Literal["repeater"], Field(description="FormKit repeater element", alias="$formkit")
-    ] = "repeater"
+    formkit: Annotated[Literal["repeater"], Field(description="FormKit repeater element", alias="$formkit")] = (
+        "repeater"
+    )
     name: Annotated[str, Field(description="Key name for the array data in the form output")]
-    label: Annotated[
-        LocaleString | str | None, Field(description="Label displayed as the section header")
-    ] = None
-    add_label: Annotated[
-        LocaleString | str | None, Field(description="Text for the add button", alias="addLabel")
-    ] = None
+    label: Annotated[LocaleString | str | None, Field(description="Label displayed as the section header")] = None
+    add_label: Annotated[LocaleString | str | None, Field(description="Text for the add button", alias="addLabel")] = (
+        None
+    )
     remove_label: Annotated[
         LocaleString | str | None, Field(description="Text for the remove button", alias="removeLabel")
     ] = None
-    up_control: Annotated[
-        bool | None, Field(description="Show up/reorder controls", alias="upControl")
-    ] = None
-    down_control: Annotated[
-        bool | None, Field(description="Show down/reorder controls", alias="downControl")
-    ] = None
-    insert_control: Annotated[
-        bool | None, Field(description="Show insert controls", alias="insertControl")
-    ] = None
+    up_control: Annotated[bool | None, Field(description="Show up/reorder controls", alias="upControl")] = None
+    down_control: Annotated[bool | None, Field(description="Show down/reorder controls", alias="downControl")] = None
+    insert_control: Annotated[bool | None, Field(description="Show insert controls", alias="insertControl")] = None
     min: Annotated[int | None, Field(description="Minimum number of items")] = None
     max: Annotated[int | None, Field(description="Maximum number of items")] = None
-    children: Annotated[
-        list[ALL_FORM_OPTIONS], Field(description="Template form elements for each repeater item")
-    ]
+    children: Annotated[list[ALL_FORM_OPTIONS], Field(description="Template form elements for each repeater item")]
 
     def in_locale(self, t: LocaleHandler) -> Repeater:
         self_copy = self.model_copy(deep=True)

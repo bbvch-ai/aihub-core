@@ -237,17 +237,17 @@ class TestAgentConfig:
         model_class = AgentConfig.formkit_from_entity(sample_agent_config_entity)
         model = model_class()
 
-        assert isinstance(model.api_endpoint, (str, InputText))
+        assert isinstance(model.api_endpoint, str | InputText)
 
-        assert isinstance(model.retry_config.max_retries, (int, InputNumber))
+        assert isinstance(model.retry_config.max_retries, int | InputNumber)
 
-        assert isinstance(model.retry_config.backoff_multiplier, (float, InputNumber))
+        assert isinstance(model.retry_config.backoff_multiplier, float | InputNumber)
 
-        assert isinstance(model.retry_config.enabled, (bool, Checkbox))
+        assert isinstance(model.retry_config.enabled, bool | Checkbox)
 
-        assert isinstance(model.llm_settings.model_name, (str, InputText))
+        assert isinstance(model.llm_settings.model_name, str | InputText)
 
-        assert isinstance(model.llm_settings.temperature, (float, InputNumber))
+        assert isinstance(model.llm_settings.temperature, float | InputNumber)
 
 
 class TestStepConfig:
