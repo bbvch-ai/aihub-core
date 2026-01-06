@@ -74,7 +74,6 @@ def main() -> None:
         PORT=args.port,
         API_KEY=SecretStr(args.api_key) if args.api_key else None,
         REQUIRE_AUTH=False,  # Playground doesn't require auth for convenience
-        TRACING_ENABLED=False,  # Simpler output for playground
     )
 
     print_examples(args.host, args.port, args.api_key)

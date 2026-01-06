@@ -103,7 +103,7 @@ class AgentDiscoveryService:
         """Periodically broadcast discovery requests."""
         while self._running:
             try:
-                await asyncio.sleep(self._settings.DISCOVERY_INTERVAL_SECONDS)
+                await asyncio.sleep(30.0)  # Discovery interval
                 await self._broadcast_discovery_request()
                 self._cleanup_stale_agents()
             except asyncio.CancelledError:
@@ -240,7 +240,7 @@ class AgentDiscoveryService:
 
     def _cleanup_stale_agents(self) -> None:
         """Mark agents that haven't been seen recently as unavailable."""
-        stale_threshold = self._settings.DISCOVERY_INTERVAL_SECONDS * 3
+        stale_threshold = 90.0  # 3x discovery interval
         current_time = time.time()
 
         stale_agents = [
@@ -259,7 +259,7 @@ class AgentDiscoveryService:
         await self._broadcast_discovery_request()
 
         # Wait for responses
-        await asyncio.sleep(self._settings.DISCOVERY_TIMEOUT_SECONDS)
+        await asyncio.sleep(5.0)  # Discovery timeout
 
         agents = self._mcp_server.get_registered_agents()
         return {

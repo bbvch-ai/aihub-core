@@ -1,6 +1,4 @@
-import html
 import logging
-import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -11,13 +9,6 @@ logger = logging.getLogger(__name__)
 
 # Maximum length for displayed questions
 MAX_QUESTION_LENGTH = 1000
-
-# Pattern for potentially dangerous content in questions
-DANGEROUS_PATTERNS = [
-    re.compile(r"<script[^>]*>.*?</script>", re.I | re.S),
-    re.compile(r"javascript:", re.I),
-    re.compile(r"on\w+\s*=", re.I),
-]
 
 
 class InputResponse(BaseModel):
@@ -47,19 +38,11 @@ class ElicitationResult:
     pending_info: dict[str, Any] | None = None
 
 
-def sanitize_question(question: str, max_length: int = MAX_QUESTION_LENGTH) -> str:
-    """Sanitize a question string by removing dangerous patterns, escaping HTML, and truncating."""
-    sanitized = question
-
-    for pattern in DANGEROUS_PATTERNS:
-        sanitized = pattern.sub("", sanitized)
-
-    sanitized = html.escape(sanitized)
-
-    if len(sanitized) > max_length:
-        sanitized = sanitized[:max_length] + "..."
-
-    return sanitized
+def truncate_question(question: str, max_length: int = MAX_QUESTION_LENGTH) -> str:
+    """Truncate a question string to the maximum allowed length."""
+    if len(question) > max_length:
+        return question[:max_length] + "..."
+    return question
 
 
 class ElicitationHandler:
@@ -81,7 +64,7 @@ class ElicitationHandler:
         """Handle a HITL request via MCP elicitation, returning success or pending result."""
         raw_question = request_event.get("question", "Please provide input:")
         hitl_type = request_event.get("hitl_type", "input")
-        question = sanitize_question(raw_question)
+        question = truncate_question(raw_question)
 
         logger.info(f"Handling HITL request: type={hitl_type}, question={question[:50]}...")
 

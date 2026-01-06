@@ -31,16 +31,14 @@ Set environment variables or use `.env`:
 # Server binding (default 127.0.0.1 for security; use 0.0.0.0 for network access)
 MCP_HOST=127.0.0.1
 MCP_PORT=8001
-MCP_PATH=/mcp
-MCP_TRANSPORT=http
 
 # Authentication (required when REQUIRE_AUTH=true)
 MCP_API_KEY=your-api-key
 MCP_REQUIRE_AUTH=true
 
-# Optional settings
+# Infrastructure (optional, defaults shown)
 MCP_NATS_URL=nats://localhost:4222
-MCP_MASK_SENSITIVE_DATA=true
+MCP_REDIS_URL=redis://localhost:6379
 ```
 
 ## MCP Client Configuration

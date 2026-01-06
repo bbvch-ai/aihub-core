@@ -96,19 +96,12 @@ class MCPRunner:
 
         # Core components
         self._mcp_server = MCPServer(self._settings)
-        self._auth = ApiKeyAuth(
-            api_keys=self._settings.get_all_api_keys(),
-        )
-        self._tracer = MCPTracer(
-            service_name="aihub_mcp",
-            enabled=self._settings.TRACING_ENABLED,
-        )
+        self._auth = ApiKeyAuth(api_key=self._settings.API_KEY)
+        self._tracer = MCPTracer(service_name="aihub_mcp")
 
         # Translation layer
         self._elicitation_handler = ElicitationHandler()
-        self._progress_streamer = ProgressStreamer(
-            mask_sensitive_data=self._settings.MASK_SENSITIVE_DATA,
-        )
+        self._progress_streamer = ProgressStreamer()
         self._sampling_bridge = SamplingBridge()
         self._event_translator = EventTranslator(
             nats_url=self._settings.NATS_URL,
@@ -116,8 +109,6 @@ class MCPRunner:
             progress_streamer=self._progress_streamer,
             sampling_bridge=self._sampling_bridge,
             tracer=self._tracer,
-            agent_timeout_seconds=self._settings.AGENT_TIMEOUT_SECONDS,
-            mask_sensitive_data=self._settings.MASK_SENSITIVE_DATA,
         )
 
         # Registries
@@ -194,11 +185,10 @@ class MCPRunner:
         await self._discovery_service.start()
 
         auth_status = "enabled" if self._auth.enabled else "disabled"
-        tracing_status = "enabled" if self._settings.TRACING_ENABLED else "disabled"
         hitl_status = "enabled" if self._hitl_pending_store else "disabled"
         logger.info(
-            f"MCP server ready at http://{self._settings.HOST}:{self._settings.PORT}{self._settings.PATH} "
-            f"(auth={auth_status}, tracing={tracing_status}, hitl_fallback={hitl_status})"
+            f"MCP server ready at http://{self._settings.HOST}:{self._settings.PORT}/mcp "
+            f"(auth={auth_status}, hitl_fallback={hitl_status})"
         )
 
         try:
@@ -223,12 +213,7 @@ class MCPRunner:
         )
         self._hitl_tool_registry.register_tools()
 
-        if self._settings.TRANSPORT == "sse":
-            mcp_app: Any = mcp.sse_app(path="/")
-            logger.info("Using SSE transport")
-        else:
-            mcp_app = mcp.http_app(path="/")
-            logger.info("Using Streamable HTTP transport")
+        mcp_app: Any = mcp.http_app(path="/")
 
         @asynccontextmanager
         async def combined_lifespan(app: Starlette) -> AsyncIterator[None]:
@@ -237,7 +222,7 @@ class MCPRunner:
                     yield
 
         return Starlette(
-            routes=[Mount(self._settings.PATH, app=mcp_app)],
+            routes=[Mount("/mcp", app=mcp_app)],
             lifespan=combined_lifespan,
             middleware=[
                 Middleware(AuthMiddleware, auth=self._auth, tracer=self._tracer),

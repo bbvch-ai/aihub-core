@@ -54,8 +54,6 @@ class EventTranslator:
         sampling_bridge: SamplingBridge | None = None,
         tracer: MCPTracer | None = None,
         hitl_pending_store: "HITLPendingStoreInterface | None" = None,
-        agent_timeout_seconds: float = 300.0,
-        mask_sensitive_data: bool = True,
     ) -> None:
         self._nats_url = nats_url
         self._elicitation_handler = elicitation_handler
@@ -63,8 +61,7 @@ class EventTranslator:
         self._sampling_bridge = sampling_bridge
         self._tracer = tracer
         self._hitl_pending_store = hitl_pending_store
-        self._agent_timeout = agent_timeout_seconds
-        self._mask_sensitive_data = mask_sensitive_data
+        self._agent_timeout = 300.0  # 5 minutes
 
         self._nc: Any = None
         self._js: Any = None

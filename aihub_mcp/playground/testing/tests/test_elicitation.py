@@ -5,7 +5,7 @@ from aihub_mcp.translation.ElicitationHandler import (
     ElicitationHandler,
     ElicitationResult,
     InputResponse,
-    sanitize_question,
+    truncate_question,
 )
 
 
@@ -80,43 +80,17 @@ class TestElicitationResult:
         assert result.pending_info["hitl_type"] == "input"
 
 
-class TestSanitizeQuestion:
-    """Tests for question sanitization."""
+class TestTruncateQuestion:
+    """Tests for question truncation."""
 
-    def test_basic_sanitization(self) -> None:
-        """Test that normal questions pass through."""
+    def test_short_question_unchanged(self) -> None:
+        """Test that short questions pass through unchanged."""
         question = "What is your name?"
-        assert sanitize_question(question) == "What is your name?"
-
-    def test_html_escape(self) -> None:
-        """Test HTML characters are escaped."""
-        question = "What is <b>your</b> name?"
-        result = sanitize_question(question)
-        assert "&lt;b&gt;" in result
-        assert "&lt;/b&gt;" in result
-
-    def test_script_removal(self) -> None:
-        """Test script tags are removed."""
-        question = "Hello <script>alert('xss')</script> world"
-        result = sanitize_question(question)
-        assert "<script>" not in result.lower()
-        assert "alert" not in result
+        assert truncate_question(question) == "What is your name?"
 
     def test_truncation(self) -> None:
         """Test long questions are truncated."""
         long_question = "A" * 1500
-        result = sanitize_question(long_question, max_length=100)
+        result = truncate_question(long_question, max_length=100)
         assert len(result) == 103  # 100 + "..."
         assert result.endswith("...")
-
-    def test_javascript_protocol_removal(self) -> None:
-        """Test javascript: protocol is removed."""
-        question = "Click javascript:alert('xss')"
-        result = sanitize_question(question)
-        assert "javascript:" not in result.lower()
-
-    def test_event_handler_removal(self) -> None:
-        """Test inline event handlers are removed."""
-        question = 'Hello onmouseover="alert(1)" world'
-        result = sanitize_question(question)
-        assert "onmouseover" not in result.lower()

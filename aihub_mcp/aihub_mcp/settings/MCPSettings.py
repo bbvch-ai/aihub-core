@@ -1,5 +1,5 @@
 import logging
-from typing import Literal, Self
+from typing import Self
 
 from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -13,10 +13,6 @@ class MCPSettings(BaseSettings):
 
     All settings can be configured via environment variables with the MCP_ prefix,
     or via a .env file.
-
-    Security notes:
-    - API_KEY is required when REQUIRE_AUTH=true (default)
-    - HOST defaults to 127.0.0.1 for security; set to 0.0.0.0 for network access
     """
 
     model_config = SettingsConfigDict(
@@ -29,103 +25,40 @@ class MCPSettings(BaseSettings):
     # Server configuration
     HOST: str = Field(
         default="127.0.0.1",
-        description="Host address to bind the MCP server. Use 0.0.0.0 for network access.",
+        description="Host to bind. Use 0.0.0.0 for network access.",
     )
     PORT: int = Field(
         default=8001,
-        description="Port to bind the MCP server",
-    )
-    PATH: str = Field(
-        default="/mcp",
-        description="URL path for the MCP endpoint",
-    )
-    TRANSPORT: Literal["http", "sse"] = Field(
-        default="http",
-        description="Transport type: 'http' for Streamable HTTP (recommended), 'sse' for Server-Sent Events",
+        description="Port to bind",
     )
 
     # Authentication
     API_KEY: SecretStr | None = Field(
         default=None,
-        description="API key for authenticating MCP clients. Required when REQUIRE_AUTH=true.",
-    )
-    API_KEYS: list[SecretStr] = Field(
-        default_factory=list,
-        description="Additional API keys for multiple clients. Each can be mapped to a user identity.",
+        description="API key for authentication. Required when REQUIRE_AUTH=true.",
     )
     REQUIRE_AUTH: bool = Field(
         default=True,
-        description="Require API key authentication for MCP clients.",
+        description="Require API key authentication.",
     )
 
-    # NATS configuration
+    # Infrastructure
     NATS_URL: str = Field(
         default="nats://localhost:4222",
-        description="NATS server URL for Swiss AI Agent Protocol communication",
+        description="NATS server URL",
     )
-
-    # Redis/Valkey configuration
     REDIS_URL: str = Field(
         default="redis://localhost:6379",
-        description="Redis/Valkey server URL for HITL pending request storage",
-    )
-
-    # Tracing configuration
-    TRACING_ENABLED: bool = Field(
-        default=True,
-        description="Enable OpenTelemetry tracing for MCP requests",
-    )
-
-    # Agent discovery
-    DISCOVERY_TIMEOUT_SECONDS: float = Field(
-        default=5.0,
-        description="Timeout for agent discovery requests",
-    )
-    DISCOVERY_INTERVAL_SECONDS: float = Field(
-        default=30.0,
-        description="Interval between agent discovery refreshes",
-    )
-
-    # Agent execution
-    AGENT_TIMEOUT_SECONDS: float = Field(
-        default=300.0,
-        description="Maximum time to wait for agent execution (5 minutes default)",
-    )
-
-    # Logging security
-    MASK_SENSITIVE_DATA: bool = Field(
-        default=True,
-        description="Mask potentially sensitive data in logs",
-    )
-
-    # Input validation limits
-    MAX_MESSAGE_LENGTH: int = Field(
-        default=100_000,
-        description="Maximum size of input messages in bytes (100KB default). Prevents DoS via large payloads.",
-    )
-    MAX_JSON_DEPTH: int = Field(
-        default=10,
-        description="Maximum nesting depth for JSON input. Prevents stack overflow from deeply nested structures.",
+        description="Redis/Valkey server URL for HITL storage",
     )
 
     @model_validator(mode="after")
     def validate_security_settings(self) -> Self:
-        """Ensure API keys are configured when authentication is required."""
-        has_api_keys = self.API_KEY is not None or bool(self.API_KEYS)
+        """Ensure API key is configured when authentication is required."""
+        if self.REQUIRE_AUTH and self.API_KEY is None:
+            raise ValueError("API key required. Set MCP_API_KEY or set MCP_REQUIRE_AUTH=false to disable.")
 
-        if self.REQUIRE_AUTH and not has_api_keys:
-            raise ValueError(
-                "API key required. Set MCP_API_KEY or MCP_API_KEYS, or set MCP_REQUIRE_AUTH=false to disable."
-            )
-
-        if self.HOST == "0.0.0.0" and not has_api_keys:
-            logger.warning("Server bound to all interfaces (0.0.0.0) without authentication. This is a security risk!")
+        if self.HOST == "0.0.0.0" and self.API_KEY is None:
+            logger.warning("Server bound to 0.0.0.0 without authentication. This is a security risk!")
 
         return self
-
-    def get_all_api_keys(self) -> list[SecretStr]:
-        """Get all configured API keys."""
-        keys = list(self.API_KEYS)
-        if self.API_KEY:
-            keys.insert(0, self.API_KEY)
-        return keys

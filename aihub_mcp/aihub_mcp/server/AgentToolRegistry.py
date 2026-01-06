@@ -1,6 +1,5 @@
 import json
 import logging
-import re
 from typing import Any
 
 from fastmcp import Context
@@ -10,13 +9,6 @@ from aihub_mcp.settings.MCPSettings import MCPSettings
 from aihub_mcp.translation.EventTranslator import EventTranslator
 
 logger = logging.getLogger(__name__)
-
-# Patterns that might indicate injection attempts
-SUSPICIOUS_PATTERNS = [
-    re.compile(r"__proto__", re.I),
-    re.compile(r"constructor\s*\[", re.I),
-    re.compile(r"\$\{.*\}", re.I),  # Template injection
-]
 
 
 class InputValidationError(ValueError):
@@ -31,17 +23,10 @@ def validate_event_data(
     max_message_length: int = 100_000,
     max_json_depth: int = 10,
 ) -> dict[str, Any]:
-    """Validate event data for size limits, dangerous patterns, and schema compliance."""
-    # Convert to string to check total size
+    """Validate event data for size limits and schema compliance."""
     data_str = json.dumps(data)
     if len(data_str) > max_message_length:
         raise InputValidationError(f"Input too large: {len(data_str)} bytes (max {max_message_length})")
-
-    # Check for suspicious patterns
-    for pattern in SUSPICIOUS_PATTERNS:
-        if pattern.search(data_str):
-            logger.warning(f"Suspicious pattern detected in input: {pattern.pattern}")
-            raise InputValidationError("Input contains potentially dangerous patterns")
 
     # Check nesting depth
     def check_depth(obj: Any, current_depth: int = 0) -> None:
@@ -232,11 +217,7 @@ class AgentToolRegistry:
             }
 
             try:
-                validate_event_data(
-                    event_data,
-                    max_message_length=settings.MAX_MESSAGE_LENGTH,
-                    max_json_depth=settings.MAX_JSON_DEPTH,
-                )
+                validate_event_data(event_data)
             except InputValidationError as e:
                 await ctx.error(f"Input validation failed: {e}")
                 raise ValueError(f"Input validation failed: {e}") from e
@@ -291,12 +272,7 @@ class AgentToolRegistry:
                 raise ValueError(f"Invalid JSON: {e}") from e
 
             try:
-                validate_event_data(
-                    event_data,
-                    schema=event_schema,
-                    max_message_length=settings.MAX_MESSAGE_LENGTH,
-                    max_json_depth=settings.MAX_JSON_DEPTH,
-                )
+                validate_event_data(event_data, schema=event_schema)
             except InputValidationError as e:
                 await ctx.error(f"Input validation failed: {e}")
                 raise ValueError(f"Input validation failed: {e}") from e

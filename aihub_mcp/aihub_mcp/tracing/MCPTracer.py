@@ -30,13 +30,10 @@ class MCPTracer:
 
     TRACER_NAME = "aihub_mcp"
 
-    def __init__(self, service_name: str = "aihub_mcp", enabled: bool = True) -> None:
-        self._enabled = enabled
+    def __init__(self, service_name: str = "aihub_mcp") -> None:
         self._service_name = service_name
         self._tracer: trace.Tracer | None = None
-
-        if enabled:
-            self._setup_tracer()
+        self._setup_tracer()
 
     def _setup_tracer(self) -> None:
         """Configure OpenTelemetry tracer with OTLP exporter."""
@@ -59,7 +56,6 @@ class MCPTracer:
 
         except Exception as e:
             logger.warning(f"Could not configure tracing: {e}")
-            self._enabled = False
 
     @property
     def tracer(self) -> trace.Tracer:
@@ -80,9 +76,6 @@ class MCPTracer:
         attributes: dict[str, Any] | None = None,
     ) -> Span | None:
         """Start a span for agent execution with full SAAP context."""
-        if not self._enabled:
-            return None
-
         current_thread_id.set(thread_id)
         current_run_id.set(run_id)
 
@@ -117,9 +110,6 @@ class MCPTracer:
         attributes: dict[str, Any] | None = None,
     ) -> Span | None:
         """Start a span for tool invocation."""
-        if not self._enabled:
-            return None
-
         span_attributes: dict[str, Any] = {
             "mcp.tool.name": tool_name,
             "mcp.agent.class": agent_class,
@@ -145,9 +135,6 @@ class MCPTracer:
 
     def start_elicitation_span(self, hitl_type: str, question: str) -> Span | None:
         """Start a span for elicitation request."""
-        if not self._enabled:
-            return None
-
         return self.tracer.start_span(
             name=f"mcp.elicitation.{hitl_type}",
             kind=SpanKind.CLIENT,
@@ -160,9 +147,6 @@ class MCPTracer:
 
     def start_sampling_span(self, message_count: int) -> Span | None:
         """Start a span for sampling request."""
-        if not self._enabled:
-            return None
-
         return self.tracer.start_span(
             name="mcp.sampling",
             kind=SpanKind.CLIENT,
@@ -174,9 +158,6 @@ class MCPTracer:
 
     def start_discovery_span(self, operation: str, call_id: str | None = None) -> Span | None:
         """Start a span for agent discovery operations."""
-        if not self._enabled:
-            return None
-
         attributes: dict[str, Any] = {
             "mcp.operation": "discovery",
             "mcp.discovery.operation": operation,
@@ -192,9 +173,6 @@ class MCPTracer:
 
     def start_agent_registration_span(self, agent_class: str) -> Span | None:
         """Start a span for agent registration."""
-        if not self._enabled:
-            return None
-
         return self.tracer.start_span(
             name=f"mcp.discovery.register.{agent_class}",
             kind=SpanKind.INTERNAL,
