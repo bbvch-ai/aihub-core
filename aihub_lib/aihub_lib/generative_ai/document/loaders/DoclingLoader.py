@@ -334,9 +334,17 @@ class DoclingLoader(BaseReader):
                 task_id = job_response["task_id"]
                 logger.debug(f"[DoclingLoader] Job submitted successfully for {filename}, task_id={task_id}")
                 return await self._poll_job_completion(client, task_id, filename)
-        except (httpx.ReadError, httpx.ConnectError, httpx.TimeoutException) as e:
-            logger.error(f"[DoclingLoader] Network error during job submission for {filename}: {e}")
-            raise DoclingTransientError(f"Network error: {e}") from e
+        except DoclingTransientError:
+            raise
+        except httpx.HTTPError as e:
+            # Catch all httpx errors (connection reset, protocol errors, timeouts, etc.)
+            # This handles docling restarts mid-conversion
+            logger.error(f"[DoclingLoader] HTTP error for {filename}: {type(e).__name__}: {e}")
+            raise DoclingTransientError(f"HTTP error: {type(e).__name__}: {e}") from e
+        except OSError as e:
+            # Catch OS-level network errors (connection refused, etc.)
+            logger.error(f"[DoclingLoader] Network error for {filename}: {type(e).__name__}: {e}")
+            raise DoclingTransientError(f"Network error: {type(e).__name__}: {e}") from e
 
     async def _poll_job_completion(self, client: httpx.AsyncClient, task_id: str, filename: str = "unknown") -> dict:
         """Poll the task status until completion and return the result."""
