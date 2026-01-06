@@ -3,7 +3,6 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from aihub_mcp.server.AgentToolRegistry import AgentToolRegistry, _to_snake_case
-from aihub_mcp.settings.MCPSettings import MCPSettings
 
 
 class TestToSnakeCase:
@@ -51,19 +50,13 @@ class TestAgentToolRegistry:
         return translator
 
     @pytest.fixture
-    def mock_settings(self) -> MCPSettings:
-        """Create mock settings for testing."""
-        return MCPSettings(REQUIRE_AUTH=False)
-
-    @pytest.fixture
     def registry(
-        self, mock_mcp_server: MagicMock, mock_event_translator: MagicMock, mock_settings: MCPSettings
+        self, mock_mcp_server: MagicMock, mock_event_translator: MagicMock
     ) -> AgentToolRegistry:
         """Create a registry for testing."""
         return AgentToolRegistry(
             mcp_server=mock_mcp_server,
             event_translator=mock_event_translator,
-            settings=mock_settings,
         )
 
     def test_generate_tool_name(self, registry: AgentToolRegistry) -> None:

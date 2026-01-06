@@ -59,10 +59,3 @@ class SamplingBridge:
             return str(content)
 
         return messages
-
-    async def is_sampling_supported(self, ctx: Context) -> bool:
-        """Check if the MCP client supports sampling."""
-        try:
-            return hasattr(ctx, "sample")
-        except Exception:
-            return False

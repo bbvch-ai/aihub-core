@@ -4,6 +4,8 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 from aihub_lib.infrastructure.logging.LogSettings import LogSettings
+from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
+from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from redis.asyncio import Redis
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
@@ -72,7 +74,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                         content={"error": "Unauthorized", "message": "Invalid or missing API key"},
                     )
 
-                request.state.user = self._auth.get_user_identity(headers)
+                request.state.user = self._auth.get_user_identity()
 
             response = await call_next(request)
             self._tracer.end_span(span, success=True)
@@ -104,7 +106,7 @@ class MCPRunner:
         self._progress_streamer = ProgressStreamer()
         self._sampling_bridge = SamplingBridge()
         self._event_translator = EventTranslator(
-            nats_url=self._settings.NATS_URL,
+            nats_url=NatsSettings().ENDPOINT,
             elicitation_handler=self._elicitation_handler,
             progress_streamer=self._progress_streamer,
             sampling_bridge=self._sampling_bridge,
@@ -115,14 +117,12 @@ class MCPRunner:
         self._tool_registry = AgentToolRegistry(
             mcp_server=self._mcp_server,
             event_translator=self._event_translator,
-            settings=self._settings,
         )
         self._resource_registry = ResourceRegistry(self._mcp_server)
         self._prompt_registry = PromptRegistry(self._mcp_server)
 
         # Discovery
         self._discovery_service = AgentDiscoveryService(
-            settings=self._settings,
             mcp_server=self._mcp_server,
             tool_registry=self._tool_registry,
             resource_registry=self._resource_registry,
@@ -153,15 +153,16 @@ class MCPRunner:
 
     async def _init_redis(self) -> None:
         """Initialize Redis connection and HITL pending store."""
+        redis_url = RedisSettings().URL
         try:
-            self._redis = Redis.from_url(self._settings.REDIS_URL)
+            self._redis = Redis.from_url(redis_url)
             # Verify connection
             await self._redis.ping()
 
             self._hitl_pending_store = HITLPendingStore(self._redis)
             self._event_translator.set_hitl_pending_store(self._hitl_pending_store)
 
-            logger.info(f"Connected to Redis: {self._settings.REDIS_URL}")
+            logger.info(f"Connected to Redis: {redis_url}")
         except Exception as e:
             logger.warning(f"Failed to connect to Redis: {e}. HITL fallback will be disabled.")
             self._redis = None

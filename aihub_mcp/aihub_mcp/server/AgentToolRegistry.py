@@ -5,72 +5,32 @@ from typing import Any
 from fastmcp import Context
 
 from aihub_mcp.server.MCPServer import MCPServer
-from aihub_mcp.settings.MCPSettings import MCPSettings
 from aihub_mcp.translation.EventTranslator import EventTranslator
 
 logger = logging.getLogger(__name__)
 
-
-class InputValidationError(ValueError):
-    """Raised when input validation fails."""
-
-    pass
+MAX_MESSAGE_SIZE = 100_000  # 100KB
 
 
-def validate_event_data(
-    data: dict[str, Any],
-    schema: dict[str, Any] | None = None,
-    max_message_length: int = 100_000,
-    max_json_depth: int = 10,
-) -> dict[str, Any]:
-    """Validate event data for size limits and schema compliance."""
+def validate_event_data(data: dict[str, Any]) -> None:
+    """Validate event data size to prevent DoS."""
     data_str = json.dumps(data)
-    if len(data_str) > max_message_length:
-        raise InputValidationError(f"Input too large: {len(data_str)} bytes (max {max_message_length})")
-
-    # Check nesting depth
-    def check_depth(obj: Any, current_depth: int = 0) -> None:
-        if current_depth > max_json_depth:
-            raise InputValidationError(f"Input nesting too deep (max {max_json_depth})")
-        if isinstance(obj, dict):
-            for v in obj.values():
-                check_depth(v, current_depth + 1)
-        elif isinstance(obj, list):
-            for item in obj:
-                check_depth(item, current_depth + 1)
-
-    check_depth(data)
-
-    # Schema validation (if provided)
-    if schema:
-        required_fields = schema.get("required", [])
-        properties = schema.get("properties", {})
-
-        for field in required_fields:
-            if field not in data:
-                raise InputValidationError(f"Missing required field: {field}")
-
-        for field, value in data.items():
-            if field in properties:
-                field_type = properties[field].get("type")
-                if field_type == "string" and not isinstance(value, str):
-                    raise InputValidationError(f"Field '{field}' must be a string")
-                elif field_type == "number" and not isinstance(value, int | float):
-                    raise InputValidationError(f"Field '{field}' must be a number")
-                elif field_type == "boolean" and not isinstance(value, bool):
-                    raise InputValidationError(f"Field '{field}' must be a boolean")
-                elif field_type == "array" and not isinstance(value, list):
-                    raise InputValidationError(f"Field '{field}' must be an array")
-                elif field_type == "object" and not isinstance(value, dict):
-                    raise InputValidationError(f"Field '{field}' must be an object")
-
-    return data
+    if len(data_str) > MAX_MESSAGE_SIZE:
+        raise ValueError(f"Input too large: {len(data_str)} bytes (max {MAX_MESSAGE_SIZE})")
 
 
 def _to_snake_case(name: str) -> str:
-    """Convert CamelCase to snake_case."""
-    s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
-    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+    """Convert CamelCase to snake_case, handling acronyms like RAG or HTTP."""
+    result: list[str] = []
+    for i, char in enumerate(name):
+        if char.isupper() and i > 0:
+            prev_char = name[i - 1]
+            next_is_lower = i + 1 < len(name) and name[i + 1].islower()
+            # Add underscore: after lowercase, or at acronym end (e.g., HTTPServer -> http_server)
+            if prev_char.islower() or next_is_lower:
+                result.append("_")
+        result.append(char.lower())
+    return "".join(result)
 
 
 class AgentToolRegistry:
@@ -91,11 +51,9 @@ class AgentToolRegistry:
         self,
         mcp_server: MCPServer,
         event_translator: EventTranslator,
-        settings: MCPSettings,
     ) -> None:
         self._mcp_server = mcp_server
         self._event_translator = event_translator
-        self._settings = settings
 
     def register_agent_tools(
         self,
@@ -180,7 +138,6 @@ class AgentToolRegistry:
         mcp = self._mcp_server.mcp
         mcp_server = self._mcp_server
         event_translator = self._event_translator
-        settings = self._settings
 
         @mcp.tool(name=tool_name, description=description)
         async def chat_tool(
@@ -216,11 +173,7 @@ class AgentToolRegistry:
                 },
             }
 
-            try:
-                validate_event_data(event_data)
-            except InputValidationError as e:
-                await ctx.error(f"Input validation failed: {e}")
-                raise ValueError(f"Input validation failed: {e}") from e
+            validate_event_data(event_data)
 
             try:
                 await ctx.info(f"Invoking {agent_class} agent...")
@@ -251,7 +204,6 @@ class AgentToolRegistry:
         mcp = self._mcp_server.mcp
         mcp_server = self._mcp_server
         event_translator = self._event_translator
-        settings = self._settings
 
         properties = self._extract_input_properties(event_schema)
         required = event_schema.get("required", [])
@@ -271,11 +223,7 @@ class AgentToolRegistry:
             except json.JSONDecodeError as e:
                 raise ValueError(f"Invalid JSON: {e}") from e
 
-            try:
-                validate_event_data(event_data, schema=event_schema)
-            except InputValidationError as e:
-                await ctx.error(f"Input validation failed: {e}")
-                raise ValueError(f"Input validation failed: {e}") from e
+            validate_event_data(event_data)
 
             try:
                 await ctx.info(f"Invoking {agent_class} agent...")

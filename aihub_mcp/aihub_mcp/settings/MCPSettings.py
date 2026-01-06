@@ -12,7 +12,7 @@ class MCPSettings(BaseSettings):
     Configuration for the MCP server.
 
     All settings can be configured via environment variables with the MCP_ prefix,
-    or via a .env file.
+    or via a .env file. Infrastructure settings (NATS, Redis) use shared lib settings.
     """
 
     model_config = SettingsConfigDict(
@@ -40,16 +40,6 @@ class MCPSettings(BaseSettings):
     REQUIRE_AUTH: bool = Field(
         default=True,
         description="Require API key authentication.",
-    )
-
-    # Infrastructure
-    NATS_URL: str = Field(
-        default="nats://localhost:4222",
-        description="NATS server URL",
-    )
-    REDIS_URL: str = Field(
-        default="redis://localhost:6379",
-        description="Redis/Valkey server URL for HITL storage",
     )
 
     @model_validator(mode="after")

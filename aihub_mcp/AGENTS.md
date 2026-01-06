@@ -109,8 +109,12 @@ sampling_response = await ctx.sample(
 | `MCP_PORT` | Server port | `8001` |
 | `MCP_API_KEY` | API key for authentication | Required when `REQUIRE_AUTH=true` |
 | `MCP_REQUIRE_AUTH` | Require authentication | `true` |
-| `MCP_NATS_URL` | NATS server URL | `nats://localhost:4222` |
-| `MCP_REDIS_URL` | Redis URL for HITL storage | `redis://localhost:6379` |
+
+Infrastructure settings use shared lib configuration:
+| Variable | Description |
+|----------|-------------|
+| `NATS_ENDPOINT` | NATS server URL (from `aihub_lib.infrastructure.nats.NatsSettings`) |
+| `REDIS_URL` | Redis URL for HITL storage (from `aihub_lib.infrastructure.redis.RedisSettings`) |
 
 ### Security Notes
 
@@ -142,7 +146,8 @@ mcp:
     MCP_PORT: "8001"
     MCP_API_KEY: ${MCP_API_KEY}
     MCP_REQUIRE_AUTH: "true"
-    MCP_NATS_URL: nats://nats:4222
+    NATS_ENDPOINT: nats://nats:4222
+    REDIS_URL: redis://valkey:6379
 ```
 
 Exposed via Traefik at `/mcp` path with TLS.

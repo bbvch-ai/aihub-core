@@ -50,7 +50,7 @@ class ApiKeyAuth:
             logger.warning("No API key provided in request")
             return False
 
-        if not secrets.compare_digest(api_key, self._key):  # type: ignore[arg-type]
+        if self._key is None or not secrets.compare_digest(api_key, self._key):
             logger.warning("Invalid API key provided")
             return False
 
@@ -69,7 +69,7 @@ class ApiKeyAuth:
 
         return None
 
-    def get_user_identity(self, headers: dict[str, str]) -> UserIdentity:
+    def get_user_identity(self) -> UserIdentity:
         """Get the user identity for an authenticated request."""
         if not self.enabled or self._identity is None:
             return UserIdentity(

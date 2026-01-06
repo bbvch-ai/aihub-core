@@ -1727,14 +1727,11 @@ services:
       MCP_API_KEY: ${MCP_API_KEY}
       MCP_REQUIRE_AUTH: "true"
 
-      # NATS configuration
-      MCP_NATS_URL: {{ NATS_ENDPOINT }}
-
-      # Redis/Valkey configuration (for HITL pending request storage)
-      MCP_REDIS_URL: {{ VALKEY_ENDPOINT }}
+      # Infrastructure (uses shared lib settings)
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      REDIS_URL: {{ VALKEY_ENDPOINT }}
 
       # Tracing
-      MCP_TRACING_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
     healthcheck:

@@ -1,10 +1,12 @@
 import asyncio
+import contextlib
 import json
 import logging
 import time
 import uuid
 from typing import TYPE_CHECKING, Any
 
+from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 
@@ -12,7 +14,6 @@ from aihub_mcp.discovery.PromptRegistry import PromptRegistry
 from aihub_mcp.server.AgentToolRegistry import AgentToolRegistry
 from aihub_mcp.server.MCPServer import MCPServer
 from aihub_mcp.server.ResourceRegistry import ResourceRegistry
-from aihub_mcp.settings.MCPSettings import MCPSettings
 
 if TYPE_CHECKING:
     from aihub_mcp.tracing.MCPTracer import MCPTracer
@@ -37,14 +38,12 @@ class AgentDiscoveryService:
 
     def __init__(
         self,
-        settings: MCPSettings,
         mcp_server: MCPServer,
         tool_registry: AgentToolRegistry,
         resource_registry: ResourceRegistry,
         prompt_registry: PromptRegistry,
         tracer: "MCPTracer | None" = None,
     ) -> None:
-        self._settings = settings
         self._mcp_server = mcp_server
         self._tool_registry = tool_registry
         self._resource_registry = resource_registry
@@ -61,7 +60,7 @@ class AgentDiscoveryService:
         """Start the discovery service."""
         import nats
 
-        self._nc = await nats.connect(self._settings.NATS_URL)
+        self._nc = await nats.connect(NatsSettings().ENDPOINT)
         self._running = True
 
         # Subscribe to discovery responses using platform topic pattern
@@ -89,10 +88,8 @@ class AgentDiscoveryService:
 
         if self._discovery_task:
             self._discovery_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._discovery_task
-            except asyncio.CancelledError:
-                pass
 
         if self._nc:
             await self._nc.close()
@@ -106,8 +103,6 @@ class AgentDiscoveryService:
                 await asyncio.sleep(30.0)  # Discovery interval
                 await self._broadcast_discovery_request()
                 self._cleanup_stale_agents()
-            except asyncio.CancelledError:
-                break
             except Exception as e:
                 logger.error(f"Discovery loop error: {e}")
 
@@ -141,7 +136,7 @@ class AgentDiscoveryService:
             raise
 
     async def _handle_discovery_response(self, msg: Any) -> None:
-        """Handle a discovery response from an agent."""
+        """Handle a discovery response from an agent (NATS requires async callbacks)."""
         try:
             data = json.loads(msg.data.decode())
             event_name = data.get("_event_name", "")
@@ -161,8 +156,9 @@ class AgentDiscoveryService:
                 logger.debug(f"Agent already registered: {agent_class}")
                 return
 
-            # Register the agent
+            # Register the agent (sync operation, yield control to event loop)
             self._register_agent(data)
+            await asyncio.sleep(0)
 
         except Exception as e:
             logger.error(f"Error handling discovery response: {e}")

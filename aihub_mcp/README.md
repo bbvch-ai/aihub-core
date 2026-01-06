@@ -36,9 +36,7 @@ MCP_PORT=8001
 MCP_API_KEY=your-api-key
 MCP_REQUIRE_AUTH=true
 
-# Infrastructure (optional, defaults shown)
-MCP_NATS_URL=nats://localhost:4222
-MCP_REDIS_URL=redis://localhost:6379
+# Infrastructure (uses shared lib settings - NATS_ENDPOINT, REDIS_URL)
 ```
 
 ## MCP Client Configuration

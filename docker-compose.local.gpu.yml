@@ -1358,14 +1358,11 @@ services:
       MCP_API_KEY: ${MCP_API_KEY}
       MCP_REQUIRE_AUTH: "true"
 
-      # NATS configuration
-      MCP_NATS_URL: nats://nats:4222
-
-      # Redis/Valkey configuration (for HITL pending request storage)
-      MCP_REDIS_URL: redis://valkey:6379
+      # Infrastructure (uses shared lib settings)
+      NATS_ENDPOINT: nats://nats:4222
+      REDIS_URL: redis://valkey:6379
 
       # Tracing
-      MCP_TRACING_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
     healthcheck:

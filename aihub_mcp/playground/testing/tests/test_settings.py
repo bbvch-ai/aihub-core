@@ -15,8 +15,6 @@ class TestMCPSettings:
         assert settings.PORT == 8001
         assert settings.API_KEY is None
         assert settings.REQUIRE_AUTH is False
-        assert settings.NATS_URL == "nats://localhost:4222"
-        assert settings.REDIS_URL == "redis://localhost:6379"
 
     def test_require_auth_without_api_key_fails(self) -> None:
         """Test that REQUIRE_AUTH=true without API key fails."""

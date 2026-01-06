@@ -1,4 +1,5 @@
 import json
+import os
 
 import pytest
 from pydantic import SecretStr
@@ -9,6 +10,13 @@ from aihub_mcp.settings.MCPSettings import MCPSettings
 
 # Mark all tests in this module as integration tests
 pytestmark = pytest.mark.integration
+
+
+@pytest.fixture(autouse=True)
+def set_infrastructure_env_vars(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Set required infrastructure environment variables for tests."""
+    monkeypatch.setenv("NATS_ENDPOINT", "nats://localhost:4222")
+    monkeypatch.setenv("REDIS_URL", "redis://localhost:6379")
 
 
 class TestMCPServerHTTP:
