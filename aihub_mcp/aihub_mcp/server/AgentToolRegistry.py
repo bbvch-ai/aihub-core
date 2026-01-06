@@ -228,7 +228,6 @@ class AgentToolRegistry:
                     "name": "MCP Client",
                     "email": "mcp@aihub.local",
                     "roles": ["user"],
-                    "source": "mcp",
                 },
             }
 

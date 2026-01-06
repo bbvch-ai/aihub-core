@@ -27,7 +27,6 @@ DEFAULT_USER_IDENTITY = {
     "name": "Anonymous (No Auth)",
     "email": "anonymous@aihub.local",
     "roles": ["user"],
-    "source": "no_auth",
 }
 
 

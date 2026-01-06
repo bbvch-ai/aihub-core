@@ -40,7 +40,6 @@ MCP_REQUIRE_AUTH=true
 
 # Optional settings
 MCP_NATS_URL=nats://localhost:4222
-MCP_RATE_LIMIT_REQUESTS_PER_MINUTE=60
 MCP_MASK_SENSITIVE_DATA=true
 ```
 

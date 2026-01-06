@@ -1,82 +1,47 @@
 import hashlib
 import logging
 import secrets
-import time
 
-from pydantic import BaseModel, Field, SecretStr
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from pydantic import SecretStr
 
 logger = logging.getLogger(__name__)
 
 
-class UserIdentity(BaseModel):
-    """User identity associated with an API key."""
-
-    id: str
-    name: str
-    email: str
-    roles: list[str] = Field(default_factory=lambda: ["user"])
-    source: str = "api_key"
-
-    def to_dict(self) -> dict[str, str | list[str]]:
-        """Convert to dictionary for SAAP events."""
-        return self.model_dump()
-
-
-class RateLimitState(BaseModel):
-    """Track rate limiting state for a client."""
-
-    request_timestamps: list[float] = Field(default_factory=list)
-    blocked_until: float = 0.0
+def _short_hash(key: str) -> str:
+    """Create a short deterministic identifier from a key (for logging, not security)."""
+    return hashlib.sha256(key.encode()).hexdigest()[:8]
 
 
 class ApiKeyAuth:
     """
-    API key authentication for MCP server with rate limiting and identity mapping.
+    API key authentication for MCP server.
 
     Uses constant-time comparison to prevent timing attacks.
     """
 
-    HEADER_NAME = "X-API-Key"
-    BEARER_PREFIX = "Bearer "
-    DEFAULT_RATE_LIMIT = 60  # requests per minute
-
-    def __init__(
-        self,
-        api_keys: list[SecretStr] | SecretStr | None = None,
-        rate_limit_per_minute: int = DEFAULT_RATE_LIMIT,
-    ) -> None:
+    def __init__(self, api_keys: list[SecretStr] | SecretStr | None = None) -> None:
         self._key_to_identity: dict[str, UserIdentity] = {}
-        self._rate_limits: dict[str, RateLimitState] = {}
-        self._rate_limit_per_minute = rate_limit_per_minute
         self._enabled = False
 
         if api_keys is not None:
-            if isinstance(api_keys, SecretStr):
-                self._register_key(api_keys)
-            else:
-                for key in api_keys:
-                    self._register_key(key)
+            keys = [api_keys] if isinstance(api_keys, SecretStr) else api_keys
+            for key in keys:
+                self._register_key(key)
 
-    def _register_key(self, key: SecretStr, identity: UserIdentity | None = None) -> None:
-        """Register an API key with optional identity mapping."""
+    def _register_key(self, key: SecretStr) -> None:
+        """Register an API key with auto-generated identity."""
         key_value = key.get_secret_value()
-        key_hash = self._hash_key(key_value)
+        short_id = _short_hash(key_value)
 
-        if identity is None:
-            short_id = key_hash[:8]
-            identity = UserIdentity(
-                id=f"mcp_client_{short_id}",
-                name=f"MCP Client ({short_id})",
-                email=f"mcp_{short_id}@aihub.local",
-            )
-
-        self._key_to_identity[key_value] = identity
+        self._key_to_identity[key_value] = UserIdentity(
+            id=f"mcp_client_{short_id}",
+            name=f"MCP Client ({short_id})",
+            email=f"mcp_{short_id}@aihub.local",
+            roles=["user"],
+        )
         self._enabled = True
-        logger.info(f"Registered API key for user: {identity.id}")
-
-    def _hash_key(self, key: str) -> str:
-        """Create a safe hash for logging without exposing the key."""
-        return hashlib.sha256(key.encode()).hexdigest()
+        logger.info(f"Registered API key: {short_id}")
 
     @property
     def enabled(self) -> bool:
@@ -93,12 +58,8 @@ class ApiKeyAuth:
             logger.warning("No API key provided in request")
             return False
 
-        if not self._validate_key(api_key):
+        if self._validate_key(api_key) is None:
             logger.warning("Invalid API key provided")
-            return False
-
-        if not self._check_rate_limit(api_key):
-            logger.warning(f"Rate limit exceeded for client {self._hash_key(api_key)[:8]}")
             return False
 
         return True
@@ -107,103 +68,41 @@ class ApiKeyAuth:
         """Extract API key from headers (case-insensitive lookup)."""
         lower_headers = {k.lower(): v for k, v in headers.items()}
 
-        api_key = lower_headers.get(self.HEADER_NAME.lower())
-        if api_key:
+        if api_key := lower_headers.get("x-api-key"):
             return api_key
 
         auth_header = lower_headers.get("authorization", "")
-        if auth_header.startswith(self.BEARER_PREFIX):
-            return auth_header[len(self.BEARER_PREFIX) :]
+        if auth_header.startswith("Bearer "):
+            return auth_header[7:]
 
         return None
 
-    def _validate_key(self, provided_key: str) -> bool:
-        """Validate using constant-time comparison to prevent timing attacks."""
-        for valid_key in self._key_to_identity:
+    def _validate_key(self, provided_key: str) -> UserIdentity | None:
+        """Validate and return identity using constant-time comparison to prevent timing attacks."""
+        for valid_key, identity in self._key_to_identity.items():
             if secrets.compare_digest(provided_key, valid_key):
-                return True
-        return False
+                return identity
+        return None
 
-    def _check_rate_limit(self, api_key: str) -> bool:
-        """Check if client is within rate limits."""
-        if self._rate_limit_per_minute <= 0:
-            return True
-
-        key_hash = self._hash_key(api_key)
-        if key_hash not in self._rate_limits:
-            self._rate_limits[key_hash] = RateLimitState()
-        state = self._rate_limits[key_hash]
-        now = time.time()
-
-        if now < state.blocked_until:
-            return False
-
-        # Clean old timestamps (older than 1 minute)
-        cutoff = now - 60.0
-        state.request_timestamps = [ts for ts in state.request_timestamps if ts > cutoff]
-
-        if len(state.request_timestamps) >= self._rate_limit_per_minute:
-            state.blocked_until = now + 60.0
-            return False
-
-        state.request_timestamps.append(now)
-        return True
-
-    def add_key(
-        self,
-        key: SecretStr,
-        user_id: str | None = None,
-        user_name: str | None = None,
-        user_email: str | None = None,
-        roles: list[str] | None = None,
-    ) -> None:
-        """Add an API key with optional user identity."""
-        identity = None
-        if user_id or user_name or user_email:
-            identity = UserIdentity(
-                id=user_id or "mcp_client",
-                name=user_name or "MCP Client",
-                email=user_email or "mcp@aihub.local",
-                roles=roles or ["user"],
-            )
-        self._register_key(key, identity)
-
-    def remove_key(self, key: SecretStr) -> None:
-        """Remove an API key."""
-        key_value = key.get_secret_value()
-        if key_value in self._key_to_identity:
-            del self._key_to_identity[key_value]
-            logger.info(f"Removed API key: {self._hash_key(key_value)[:8]}")
-
-        if not self._key_to_identity:
-            self._enabled = False
-
-    def get_user_identity(self, headers: dict[str, str]) -> dict[str, str | list[str]]:
+    def get_user_identity(self, headers: dict[str, str]) -> UserIdentity:
         """Get the user identity for an authenticated request."""
         if not self._enabled:
-            return {
-                "id": "anonymous",
-                "name": "Anonymous (Auth Disabled)",
-                "email": "anonymous@aihub.local",
-                "roles": ["user"],
-                "source": "no_auth",
-            }
+            return UserIdentity(
+                id="anonymous",
+                name="Anonymous (Auth Disabled)",
+                email="anonymous@aihub.local",
+                roles=["user"],
+            )
 
-        api_key = self._extract_key(headers)
-        if api_key and api_key in self._key_to_identity:
-            return self._key_to_identity[api_key].to_dict()
-
-        return {
-            "id": "unknown",
-            "name": "Unknown Client",
-            "email": "unknown@aihub.local",
-            "roles": ["user"],
-            "source": "api_key",
-        }
-
-    def get_client_id(self, headers: dict[str, str]) -> str:
-        """Get a unique client identifier for rate limiting and logging."""
         api_key = self._extract_key(headers)
         if api_key:
-            return self._hash_key(api_key)[:16]
-        return "anonymous"
+            identity = self._validate_key(api_key)
+            if identity:
+                return identity
+
+        return UserIdentity(
+            id="unknown",
+            name="Unknown Client",
+            email="unknown@aihub.local",
+            roles=["user"],
+        )

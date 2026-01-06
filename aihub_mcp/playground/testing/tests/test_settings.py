@@ -27,7 +27,6 @@ class TestMCPSettings:
 
         # New security settings
         assert settings.AGENT_TIMEOUT_SECONDS == 300.0
-        assert settings.RATE_LIMIT_REQUESTS_PER_MINUTE == 60
         assert settings.MASK_SENSITIVE_DATA is True
 
     def test_require_auth_without_api_key_fails(self) -> None:

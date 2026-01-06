@@ -98,7 +98,6 @@ class MCPRunner:
         self._mcp_server = MCPServer(self._settings)
         self._auth = ApiKeyAuth(
             api_keys=self._settings.get_all_api_keys(),
-            rate_limit_per_minute=self._settings.RATE_LIMIT_REQUESTS_PER_MINUTE,
         )
         self._tracer = MCPTracer(
             service_name="aihub_mcp",

@@ -92,12 +92,6 @@ class MCPSettings(BaseSettings):
         description="Maximum time to wait for agent execution (5 minutes default)",
     )
 
-    # Rate limiting
-    RATE_LIMIT_REQUESTS_PER_MINUTE: int = Field(
-        default=60,
-        description="Maximum requests per minute per client. 0 to disable.",
-    )
-
     # Logging security
     MASK_SENSITIVE_DATA: bool = Field(
         default=True,
