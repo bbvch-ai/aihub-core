@@ -26,7 +26,7 @@ from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
-from aihub_lib.nats.events.form import Checkbox, Group, InputNumber, InputText, Select, Slider, Textarea
+from aihub_lib.nats.events.form import Checkbox, Group, InputNumber, InputText, MultiSelect, Repeater, Select, Slider, Textarea
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
@@ -463,46 +463,329 @@ async def main():
             ],
         ),
         # =============================================================================
-        # Expert Escalation Configuration Group (ExpertEscalationConfig)
+        # Retrievers Configuration (list[RetrieverConfig])
+        # Supports KnowledgeRetrieverConfig and InsightRetrieverConfig
         # =============================================================================
         Group(
-            name="expert_escalation",
+            name="retrievers",
             label=LocaleString(
-                en="Expert Escalation",
-                de="Experten-Eskalation",
-                fr="Escalade vers expert",
-                it="Escalation esperto",
+                en="Retrievers",
+                de="Retriever",
+                fr="Récupérateurs",
+                it="Recuperatori",
             ),
             children=[
-                InputText(
-                    name="expert_asking_agent_class",
+                # Knowledge Retriever Configuration
+                Group(
+                    name="0",
                     label=LocaleString(
-                        en="Expert Agent Class",
-                        de="Experten-Agent-Klasse",
-                        fr="Classe d'agent expert",
-                        it="Classe agente esperto",
+                        en="Knowledge Retriever",
+                        de="Wissens-Retriever",
+                        fr="Récupérateur de connaissances",
+                        it="Recuperatore di conoscenza",
                     ),
-                    help=LocaleString(
-                        en="The agent class name for expert escalation when context is insufficient.",
-                        de="Der Agentenklassenname für die Experten-Eskalation bei unzureichendem Kontext.",
-                        fr="Le nom de la classe d'agent pour l'escalade vers expert lorsque le contexte est insuffisant.",
-                        it="Il nome della classe dell'agente per l'escalation all'esperto quando il contesto è insufficiente.",
-                    ),
+                    children=[
+                        Select(
+                            name="retriever_type",
+                            label=LocaleString(
+                                en="Retriever Type",
+                                de="Retriever-Typ",
+                                fr="Type de récupérateur",
+                                it="Tipo di recuperatore",
+                            ),
+                            help=LocaleString(
+                                en="The type of retriever (knowledge or insight).",
+                                de="Der Typ des Retrievers (Wissen oder Einsicht).",
+                                fr="Le type de récupérateur (connaissance ou insight).",
+                                it="Il tipo di recuperatore (conoscenza o insight).",
+                            ),
+                            options=[
+                                {"label": "Knowledge", "value": "knowledge"},
+                                {"label": "Insight", "value": "insight"},
+                            ],
+                            option_label="label",
+                            option_value="value",
+                        ),
+                        Group(
+                            name="embed_model",
+                            label=LocaleString(
+                                en="Embedding Model",
+                                de="Einbettungsmodell",
+                                fr="Modèle d'embedding",
+                                it="Modello di embedding",
+                            ),
+                            children=[
+                                Select(
+                                    name="model_name",
+                                    label=LocaleString(
+                                        en="Model Name",
+                                        de="Modellname",
+                                        fr="Nom du modèle",
+                                        it="Nome del modello",
+                                    ),
+                                    help=LocaleString(
+                                        en="The embedding model to use for vector search.",
+                                        de="Das Einbettungsmodell für die Vektorsuche.",
+                                        fr="Le modèle d'embedding à utiliser pour la recherche vectorielle.",
+                                        it="Il modello di embedding da utilizzare per la ricerca vettoriale.",
+                                    ),
+                                    options=[
+                                        {"label": "Large Embedding Model", "value": "embedding/large"},
+                                        {"label": "Small Embedding Model", "value": "embedding/small"},
+                                    ],
+                                    option_label="label",
+                                    option_value="value",
+                                ),
+                            ],
+                        ),
+                        InputText(
+                            name="index_namespaces",
+                            label=LocaleString(
+                                en="Index Namespaces",
+                                de="Index-Namespaces",
+                                fr="Espaces de noms d'index",
+                                it="Namespace degli indici",
+                            ),
+                            help=LocaleString(
+                                en="Comma-separated list of namespaces to retrieve from.",
+                                de="Kommagetrennte Liste der Namespaces für den Abruf.",
+                                fr="Liste de namespaces séparés par des virgules.",
+                                it="Elenco di namespace separati da virgole.",
+                            ),
+                        ),
+                        InputNumber(
+                            name="retrieve_k",
+                            label=LocaleString(
+                                en="Documents to Retrieve",
+                                de="Abzurufende Dokumente",
+                                fr="Documents à récupérer",
+                                it="Documenti da recuperare",
+                            ),
+                            help=LocaleString(
+                                en="The number of documents to retrieve per query (1-100).",
+                                de="Die Anzahl der Dokumente pro Abfrage (1-100).",
+                                fr="Le nombre de documents à récupérer par requête (1-100).",
+                                it="Il numero di documenti da recuperare per query (1-100).",
+                            ),
+                            min=1,
+                            max=100,
+                            step=1,
+                            show_buttons=True,
+                        ),
+                        Select(
+                            name="query_mode",
+                            label=LocaleString(
+                                en="Query Mode",
+                                de="Abfragemodus",
+                                fr="Mode de requête",
+                                it="Modalità di query",
+                            ),
+                            help=LocaleString(
+                                en="How the vector store should be queried.",
+                                de="Wie der Vektorspeicher abgefragt werden soll.",
+                                fr="Comment le magasin de vecteurs doit être interrogé.",
+                                it="Come deve essere interrogato il vector store.",
+                            ),
+                            options=[
+                                {"label": "Default", "value": "default"},
+                                {"label": "Hybrid", "value": "hybrid"},
+                                {"label": "Sparse", "value": "sparse"},
+                            ],
+                            option_label="label",
+                            option_value="value",
+                        ),
+                        MultiSelect(
+                            name="node_types",
+                            label=LocaleString(
+                                en="Node Types",
+                                de="Knotentypen",
+                                fr="Types de nœuds",
+                                it="Tipi di nodo",
+                            ),
+                            help=LocaleString(
+                                en="The types of nodes to retrieve (summary and/or content).",
+                                de="Die Arten der abzurufenden Knoten (Zusammenfassung und/oder Inhalt).",
+                                fr="Les types de nœuds à récupérer (résumé et/ou contenu).",
+                                it="I tipi di nodi da recuperare (riepilogo e/o contenuto).",
+                            ),
+                            options=[
+                                {"label": "Content", "value": "content"},
+                                {"label": "Summary", "value": "summary"},
+                            ],
+                            option_label="label",
+                            option_value="value",
+                        ),
+                    ],
                 ),
-                InputText(
-                    name="expert_asking_agent_id",
+                # Insight Retriever Configuration
+                Group(
+                    name="1",
                     label=LocaleString(
-                        en="Expert Agent ID",
-                        de="Experten-Agent-ID",
-                        fr="ID de l'agent expert",
-                        it="ID agente esperto",
+                        en="Insight Retriever",
+                        de="Einsichts-Retriever",
+                        fr="Récupérateur d'insights",
+                        it="Recuperatore di insight",
+                    ),
+                    children=[
+                        Select(
+                            name="retriever_type",
+                            label=LocaleString(
+                                en="Retriever Type",
+                                de="Retriever-Typ",
+                                fr="Type de récupérateur",
+                                it="Tipo di recuperatore",
+                            ),
+                            help=LocaleString(
+                                en="The type of retriever (knowledge or insight).",
+                                de="Der Typ des Retrievers (Wissen oder Einsicht).",
+                                fr="Le type de récupérateur (connaissance ou insight).",
+                                it="Il tipo di recuperatore (conoscenza o insight).",
+                            ),
+                            options=[
+                                {"label": "Knowledge", "value": "knowledge"},
+                                {"label": "Insight", "value": "insight"},
+                            ],
+                            option_label="label",
+                            option_value="value",
+                        ),
+                        InputText(
+                            name="namespace",
+                            label=LocaleString(
+                                en="Namespace",
+                                de="Namespace",
+                                fr="Espace de noms",
+                                it="Namespace",
+                            ),
+                            help=LocaleString(
+                                en="The namespace to filter insights by.",
+                                de="Der Namespace zum Filtern von Einsichten.",
+                                fr="L'espace de noms pour filtrer les insights.",
+                                it="Il namespace per filtrare gli insight.",
+                            ),
+                        ),
+                        InputText(
+                            name="agent_class",
+                            label=LocaleString(
+                                en="Agent Class",
+                                de="Agent-Klasse",
+                                fr="Classe d'agent",
+                                it="Classe agente",
+                            ),
+                            help=LocaleString(
+                                en="The agent class to filter insights by.",
+                                de="Die Agent-Klasse zum Filtern von Einsichten.",
+                                fr="La classe d'agent pour filtrer les insights.",
+                                it="La classe dell'agente per filtrare gli insight.",
+                            ),
+                        ),
+                        InputText(
+                            name="agent_id",
+                            label=LocaleString(
+                                en="Agent ID",
+                                de="Agent-ID",
+                                fr="ID de l'agent",
+                                it="ID agente",
+                            ),
+                            help=LocaleString(
+                                en="The agent ID to filter insights by.",
+                                de="Die Agent-ID zum Filtern von Einsichten.",
+                                fr="L'ID de l'agent pour filtrer les insights.",
+                                it="L'ID dell'agente per filtrare gli insight.",
+                            ),
+                        ),
+                    ],
+                ),
+            ],
+        ),
+        # =============================================================================
+        # Few-Shot Guard Examples (list[FewShotGuardExample])
+        # Examples for the few-shot guard to define which user requests are accepted
+        # Dynamic repeater allowing add/remove of examples
+        # =============================================================================
+        Repeater(
+            name="few_shot_guard_examples",
+            label=LocaleString(
+                en="Few-Shot Guard Examples",
+                de="Few-Shot-Guard-Beispiele",
+                fr="Exemples de garde few-shot",
+                it="Esempi di guardia few-shot",
+            ),
+            add_label=LocaleString(
+                en="Add Example",
+                de="Beispiel hinzufügen",
+                fr="Ajouter un exemple",
+                it="Aggiungi esempio",
+            ),
+            children=[
+                Group(
+                    name="user",
+                    label=LocaleString(
+                        en="User Message",
+                        de="Benutzernachricht",
+                        fr="Message utilisateur",
+                        it="Messaggio utente",
+                    ),
+                    children=[
+                        InputText(
+                            name="en",
+                            label=LocaleString(en="English", de="Englisch", fr="Anglais", it="Inglese"),
+                        ),
+                        InputText(
+                            name="de",
+                            label=LocaleString(en="German", de="Deutsch", fr="Allemand", it="Tedesco"),
+                        ),
+                        InputText(
+                            name="fr",
+                            label=LocaleString(en="French", de="Französisch", fr="Français", it="Francese"),
+                        ),
+                        InputText(
+                            name="it",
+                            label=LocaleString(en="Italian", de="Italienisch", fr="Italien", it="Italiano"),
+                        ),
+                    ],
+                ),
+                Checkbox(
+                    name="success",
+                    label=LocaleString(
+                        en="Should Accept",
+                        de="Sollte akzeptieren",
+                        fr="Devrait accepter",
+                        it="Dovrebbe accettare",
                     ),
                     help=LocaleString(
-                        en="The unique agent ID for expert escalation.",
-                        de="Die eindeutige Agent-ID für die Experten-Eskalation.",
-                        fr="L'ID unique de l'agent pour l'escalade vers expert.",
-                        it="L'ID univoco dell'agente per l'escalation all'esperto.",
+                        en="Whether this type of request should be accepted (true) or rejected (false).",
+                        de="Ob diese Art von Anfrage akzeptiert (wahr) oder abgelehnt (falsch) werden soll.",
+                        fr="Si ce type de demande doit être accepté (vrai) ou rejeté (faux).",
+                        it="Se questo tipo di richiesta deve essere accettata (vero) o rifiutata (falso).",
                     ),
+                    binary=True,
+                ),
+                Group(
+                    name="reason",
+                    label=LocaleString(
+                        en="Reason",
+                        de="Begründung",
+                        fr="Raison",
+                        it="Motivo",
+                    ),
+                    children=[
+                        InputText(
+                            name="en",
+                            label=LocaleString(en="English", de="Englisch", fr="Anglais", it="Inglese"),
+                        ),
+                        InputText(
+                            name="de",
+                            label=LocaleString(en="German", de="Deutsch", fr="Allemand", it="Tedesco"),
+                        ),
+                        InputText(
+                            name="fr",
+                            label=LocaleString(en="French", de="Französisch", fr="Français", it="Francese"),
+                        ),
+                        InputText(
+                            name="it",
+                            label=LocaleString(en="Italian", de="Italienisch", fr="Italien", it="Italiano"),
+                        ),
+                    ],
                 ),
             ],
         ),
