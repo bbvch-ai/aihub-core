@@ -7,15 +7,7 @@ import asyncio
 
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.processors.models.RetrieveSummariesConfig import RetrieveSummariesConfig
-from llama_index.core.vector_stores.types import VectorStoreQueryMode
-
-from aihub_agent.agents.ExpertAskingAgent.ExpertAskingAgent import ExpertAskingAgent
-from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
-from aihub_agent.agents.RagAgent.configs.ExpertEscalationConfig import ExpertEscalationConfig
-from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.runners.AgentRunner import AgentRunner
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
-from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.generative_ai.retrievers.InsightRetrieverConfig import InsightRetrieverConfig
@@ -26,7 +18,17 @@ from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
-from aihub_lib.nats.events.form import Checkbox, Group, InputNumber, InputText, MultiSelect, Repeater, Select, Slider, Textarea
+from aihub_lib.nats.events.form import (
+    Checkbox,
+    Group,
+    InputNumber,
+    InputText,
+    MultiSelect,
+    Repeater,
+    Select,
+    Slider,
+    Textarea,
+)
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
@@ -257,10 +259,10 @@ async def main():
                                 it="Temperatura",
                             ),
                             help=LocaleString(
-                                en="Controls randomness in responses. Lower = more deterministic, higher = more creative. Default: 0.0",
-                                de="Steuert die Zufälligkeit der Antworten. Niedriger = deterministischer, höher = kreativer. Standard: 0.0",
-                                fr="Contrôle l'aléatoire des réponses. Bas = déterministe, haut = créatif. Par défaut: 0.0",
-                                it="Controlla la casualità nelle risposte. Basso = deterministico, alto = creativo. Default: 0.0",
+                                en="Controls randomness. Lower = more deterministic, higher = more creative.",
+                                de="Steuert die Zufälligkeit. Niedriger = deterministischer, höher = kreativer.",
+                                fr="Contrôle l'aléatoire. Bas = déterministe, haut = créatif.",
+                                it="Controlla la casualità. Basso = deterministico, alto = creativo.",
                             ),
                             min=0.0,
                             max=2.0,
@@ -275,10 +277,10 @@ async def main():
                                 it="Restituisci probabilità logaritmiche",
                             ),
                             help=LocaleString(
-                                en="Whether to return log probabilities per token. Default: None (disabled)",
-                                de="Ob Log-Wahrscheinlichkeiten pro Token zurückgegeben werden sollen. Standard: None (deaktiviert)",
-                                fr="Retourner ou non les probabilités logarithmiques par token. Par défaut: None (désactivé)",
-                                it="Se restituire le probabilità logaritmiche per token. Default: None (disabilitato)",
+                                en="Whether to return log probabilities per token.",
+                                de="Ob Log-Wahrscheinlichkeiten pro Token zurückgegeben werden.",
+                                fr="Retourner ou non les probabilités logarithmiques par token.",
+                                it="Se restituire le probabilità logaritmiche per token.",
                             ),
                             binary=True,
                         ),
@@ -291,10 +293,10 @@ async def main():
                                 it="Top probabilità logaritmiche",
                             ),
                             help=LocaleString(
-                                en="Number of top token log probs to return (0-20). Default: 0",
-                                de="Anzahl der zurückzugebenden Top-Token-Log-Wahrscheinlichkeiten (0-20). Standard: 0",
-                                fr="Nombre de probabilités logarithmiques des tokens principaux à retourner (0-20). Par défaut: 0",
-                                it="Numero di probabilità logaritmiche dei token principali da restituire (0-20). Default: 0",
+                                en="Number of top token log probabilities to return (0-20).",
+                                de="Anzahl der Top-Token-Log-Wahrscheinlichkeiten (0-20).",
+                                fr="Nombre de probabilités logarithmiques des tokens à retourner (0-20).",
+                                it="Numero di probabilità logaritmiche dei token da restituire (0-20).",
                             ),
                             min=0,
                             max=20,
@@ -355,10 +357,10 @@ async def main():
                 it="Verifica sufficienza contesto",
             ),
             help=LocaleString(
-                en="When enabled, the agent will verify if the retrieved context contains enough information to answer. Default: False",
-                de="Wenn aktiviert, prüft der Agent, ob der abgerufene Kontext genügend Informationen enthält. Standard: False",
-                fr="Lorsqu'activé, l'agent vérifie si le contexte récupéré contient suffisamment d'informations. Par défaut: False",
-                it="Se abilitato, l'agente verifica se il contesto recuperato contiene informazioni sufficienti. Default: False",
+                en="When enabled, the agent verifies if the retrieved context contains enough info.",
+                de="Wenn aktiviert, prüft der Agent, ob der abgerufene Kontext genügend Infos enthält.",
+                fr="L'agent vérifie si le contexte récupéré contient suffisamment d'informations.",
+                it="L'agente verifica se il contesto recuperato contiene informazioni sufficienti.",
             ),
             binary=True,
         ),
@@ -402,10 +404,10 @@ async def main():
                         it="Abilita riordinamento",
                     ),
                     help=LocaleString(
-                        en="When enabled, retrieved documents will be reranked for improved relevance. Default: False",
-                        de="Wenn aktiviert, werden abgerufene Dokumente für bessere Relevanz neu geordnet. Standard: False",
-                        fr="Lorsqu'activé, les documents récupérés seront reclassés pour une meilleure pertinence. Par défaut: False",
-                        it="Se abilitato, i documenti recuperati verranno riordinati per una migliore rilevanza. Default: False",
+                        en="When enabled, retrieved documents will be reranked for improved relevance.",
+                        de="Wenn aktiviert, werden Dokumente für bessere Relevanz neu geordnet.",
+                        fr="Les documents récupérés seront reclassés pour une meilleure pertinence.",
+                        it="I documenti recuperati verranno riordinati per una migliore rilevanza.",
                     ),
                     binary=True,
                 ),
@@ -448,10 +450,10 @@ async def main():
                                 it="Top N documenti",
                             ),
                             help=LocaleString(
-                                en="Number of top documents to keep after reranking (1-100). Default: 5",
-                                de="Anzahl der Top-Dokumente, die nach dem Reranking behalten werden (1-100). Standard: 5",
-                                fr="Nombre de documents principaux à conserver après le reclassement (1-100). Par défaut: 5",
-                                it="Numero di documenti principali da mantenere dopo il riordinamento (1-100). Default: 5",
+                                en="Number of top documents to keep after reranking (1-100).",
+                                de="Anzahl der Top-Dokumente nach dem Reranking (1-100).",
+                                fr="Nombre de documents à conserver après le reclassement (1-100).",
+                                it="Numero di documenti da mantenere dopo il riordinamento (1-100).",
                             ),
                             min=1,
                             max=100,
