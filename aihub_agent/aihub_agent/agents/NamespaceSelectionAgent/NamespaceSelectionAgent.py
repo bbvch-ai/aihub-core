@@ -172,21 +172,6 @@ class NamespaceSelectionAgent(Agent):
         return router_event
 
     @step(
-        name=LocaleString(en="Router"),
-        description=LocaleString(en="Routes to the next step based on user's response"),
-        icon="line-md:chat",
-    )
-    async def router_step(
-        self,
-        router_event: RouterEvent,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-    ) -> TopicChangedEvent | TopicUnchangedAcceptEvent | KeepSourcesEvent | SelectNewSourcesEvent:
-        await displayer.display_thought(t("agent.expert_asking_agent.thoughts.determine_sufficient"))
-        event = router_event.selected_option.event
-        return event
-
-    @step(
         name=LocaleString(en="Reuse Current Sources"),
         description=LocaleString(en="Skips selection when topic is unchanged"),
         icon="iconoir:arrow-right",
