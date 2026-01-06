@@ -62,26 +62,20 @@ class TestEventTranslator:
         assert pattern == "agent.ChatAgent.*.thread1.display1.*.display_event.>"
 
 
+def _get_hitl_event_name(hitl_type: str) -> str:
+    """Helper to determine HITL response event name based on type."""
+    if hitl_type == "confirmation":
+        return "HumanInTheLoopConfirmationResponseEvent"
+    return "HumanInTheLoopInputResponseEvent"
+
+
 class TestBuildHitlResponse:
     """Tests for HITL response event building."""
 
     def test_build_input_response_event(self) -> None:
         """Test that input HITL response has correct event name."""
-        # Simulate calling _publish_hitl_response logic
-        hitl_type = "input"
-        if hitl_type == "confirmation":
-            event_name = "HumanInTheLoopConfirmationResponseEvent"
-        else:
-            event_name = "HumanInTheLoopInputResponseEvent"
-
-        assert event_name == "HumanInTheLoopInputResponseEvent"
+        assert _get_hitl_event_name("input") == "HumanInTheLoopInputResponseEvent"
 
     def test_build_confirmation_response_event(self) -> None:
         """Test that confirmation HITL response has correct event name."""
-        hitl_type = "confirmation"
-        if hitl_type == "confirmation":
-            event_name = "HumanInTheLoopConfirmationResponseEvent"
-        else:
-            event_name = "HumanInTheLoopInputResponseEvent"
-
-        assert event_name == "HumanInTheLoopConfirmationResponseEvent"
+        assert _get_hitl_event_name("confirmation") == "HumanInTheLoopConfirmationResponseEvent"

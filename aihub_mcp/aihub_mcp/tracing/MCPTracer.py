@@ -23,6 +23,9 @@ MCP_THREAD_ID = "mcp.thread_id"
 MCP_RUN_ID = "mcp.run_id"
 MCP_DISPLAY_ID = "mcp.display_id"
 MCP_AGENT_ID = "mcp.agent_id"
+MCP_TOOL_NAME = "mcp.tool.name"
+MCP_AGENT_CLASS = "mcp.agent.class"
+MCP_OPERATION = "mcp.operation"
 
 
 class MCPTracer:
@@ -86,9 +89,9 @@ class MCPTracer:
             MCP_RUN_ID: run_id,
             MCP_DISPLAY_ID: display_id,
             MCP_AGENT_ID: agent_id,
-            "mcp.tool.name": tool_name,
-            "mcp.agent.class": agent_class,
-            "mcp.operation": "agent_execution",
+            MCP_TOOL_NAME: tool_name,
+            MCP_AGENT_CLASS: agent_class,
+            MCP_OPERATION: "agent_execution",
         }
 
         if user_id:
@@ -111,9 +114,9 @@ class MCPTracer:
     ) -> Span | None:
         """Start a span for tool invocation."""
         span_attributes: dict[str, Any] = {
-            "mcp.tool.name": tool_name,
-            "mcp.agent.class": agent_class,
-            "mcp.operation": "tool_invocation",
+            MCP_TOOL_NAME: tool_name,
+            MCP_AGENT_CLASS: agent_class,
+            MCP_OPERATION: "tool_invocation",
         }
 
         thread_id = current_thread_id.get()
@@ -141,7 +144,7 @@ class MCPTracer:
             attributes={
                 "mcp.elicitation.type": hitl_type,
                 "mcp.elicitation.question": question[:100],
-                "mcp.operation": "elicitation",
+                MCP_OPERATION: "elicitation",
             },
         )
 
@@ -152,14 +155,14 @@ class MCPTracer:
             kind=SpanKind.CLIENT,
             attributes={
                 "mcp.sampling.message_count": message_count,
-                "mcp.operation": "sampling",
+                MCP_OPERATION: "sampling",
             },
         )
 
     def start_discovery_span(self, operation: str, call_id: str | None = None) -> Span | None:
         """Start a span for agent discovery operations."""
         attributes: dict[str, Any] = {
-            "mcp.operation": "discovery",
+            MCP_OPERATION: "discovery",
             "mcp.discovery.operation": operation,
         }
         if call_id:
@@ -177,9 +180,9 @@ class MCPTracer:
             name=f"mcp.discovery.register.{agent_class}",
             kind=SpanKind.INTERNAL,
             attributes={
-                "mcp.operation": "discovery",
+                MCP_OPERATION: "discovery",
                 "mcp.discovery.operation": "register",
-                "mcp.agent.class": agent_class,
+                MCP_AGENT_CLASS: agent_class,
             },
         )
 
