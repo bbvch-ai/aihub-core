@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import Annotated, Any
 
 from fastmcp import FastMCP
 from pydantic import BaseModel, Field
@@ -12,22 +12,22 @@ logger = logging.getLogger(__name__)
 class EventSpec(BaseModel):
     """Schema for an event specification from agent discovery."""
 
-    event_name: str
-    event_schema: dict[str, Any]
-    event_parents: list[str] = Field(default_factory=list)
+    event_name: Annotated[str, Field(description="Name of the event")]
+    event_schema: Annotated[dict[str, Any], Field(description="JSON schema for event parameters")]
+    event_parents: Annotated[list[str], Field(default_factory=list, description="Parent event names")]
 
 
 class AgentMetadata(BaseModel):
     """Metadata for a registered agent."""
 
-    agent_class: str
-    is_conversational: bool
-    start_events: list[EventSpec]
-    stop_events: list[EventSpec]
-    hitl_request_events: list[EventSpec]
-    hitl_response_events: list[EventSpec]
-    agent_config_specs: dict[str, Any] = Field(default_factory=dict)
-    default_agent_config: dict[str, Any] = Field(default_factory=dict)
+    agent_class: Annotated[str, Field(description="Agent class name")]
+    is_conversational: Annotated[bool, Field(description="Whether agent supports conversation")]
+    start_events: Annotated[list[EventSpec], Field(description="Events that can start the agent")]
+    stop_events: Annotated[list[EventSpec], Field(description="Events that stop the agent")]
+    hitl_request_events: Annotated[list[EventSpec], Field(description="HITL request event specs")]
+    hitl_response_events: Annotated[list[EventSpec], Field(description="HITL response event specs")]
+    agent_config_specs: Annotated[dict[str, Any], Field(default_factory=dict, description="Config specifications")]
+    default_agent_config: Annotated[dict[str, Any], Field(default_factory=dict, description="Default config values")]
 
 
 class MCPServer:

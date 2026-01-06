@@ -1,9 +1,9 @@
 import logging
 from dataclasses import dataclass
-from typing import Any
+from typing import Annotated, Any
 
 from fastmcp import Context
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -14,13 +14,13 @@ MAX_QUESTION_LENGTH = 1000
 class InputResponse(BaseModel):
     """Response type for text input elicitation."""
 
-    text: str
+    text: Annotated[str, Field(description="User's text input response")]
 
 
 class ConfirmationResponse(BaseModel):
     """Response type for confirmation elicitation."""
 
-    confirmed: bool
+    confirmed: Annotated[bool, Field(description="Whether user confirmed the action")]
 
 
 @dataclass

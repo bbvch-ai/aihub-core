@@ -1,5 +1,5 @@
 import logging
-from typing import Self
+from typing import Annotated, Self
 
 from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -23,24 +23,24 @@ class MCPSettings(BaseSettings):
     )
 
     # Server configuration
-    HOST: str = Field(
+    HOST: Annotated[str, Field(
         default="127.0.0.1",
         description="Host to bind. Use 0.0.0.0 for network access.",
-    )
-    PORT: int = Field(
+    )]
+    PORT: Annotated[int, Field(
         default=8001,
         description="Port to bind",
-    )
+    )]
 
     # Authentication
-    API_KEY: SecretStr | None = Field(
+    API_KEY: Annotated[SecretStr | None, Field(
         default=None,
         description="API key for authentication. Required when REQUIRE_AUTH=true.",
-    )
-    REQUIRE_AUTH: bool = Field(
+    )]
+    REQUIRE_AUTH: Annotated[bool, Field(
         default=True,
         description="Require API key authentication.",
-    )
+    )]
 
     @model_validator(mode="after")
     def validate_security_settings(self) -> Self:
