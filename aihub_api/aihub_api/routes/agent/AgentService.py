@@ -39,6 +39,7 @@ from nats.aio.client import Client as NATS
 from aihub_api.routes.agent.dto.AgentClassDTO import AgentClassDTO
 from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
 from aihub_api.routes.agent.dto.AgentInstanceDTO import AgentInstanceDTO
+from aihub_api.routes.agent.dto.CreateAgentRequest import CreateAgentRequest
 from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
 from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
@@ -645,3 +646,157 @@ class AgentService:
         DISCOVER_AGENTS_CACHE.clear()
         GET_AGENT_INSTANCE_CACHE.clear()
         GET_AGENT_CLASS_CACHE.clear()
+
+    @staticmethod
+    @trace_fn
+    async def get_agent_classes(nc: NATS, t: LocaleHandler) -> list[AgentClassDTO]:
+        """
+        Returns all discovered agent classes (types) that are currently online.
+        Each agent class includes its form schema for configuration.
+
+        This is used for the "Create New Agent" feature to populate the agent class dropdown.
+        """
+        agent_classes = await AgentService._discover_agent_classes(nc)
+        return agent_classes
+
+    @staticmethod
+    @trace_fn
+    async def create_agent(
+        nc: NATS,
+        request: CreateAgentRequest,
+        t: LocaleHandler,
+    ) -> AgentDTO:
+        """
+        Creates a new agent instance from an existing agent class.
+
+        Args:
+            nc: NATS client connection
+            request: CreateAgentRequest with agent_class, agent_id, and configuration
+            t: LocaleHandler for translations
+
+        Returns:
+            AgentDTO for the newly created agent
+
+        Raises:
+            HTTPException 404: Agent class not found
+            HTTPException 409: Agent with this agent_class/agent_id already exists
+        """
+        from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
+
+        # Step 1: Verify the agent class exists (must be online/discovered)
+        try:
+            agent_class_dto = await AgentService._discover_agent_class(nc, request.agent_class)
+        except HTTPException:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Agent class '{request.agent_class}' not found. Make sure the agent is running.",
+            )
+
+        # Step 2: Check agent_id uniqueness within the agent class
+        existing_config = AgentConfigEntityDocument.find_for_class_and_id(request.agent_class, request.agent_id)
+        if existing_config:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Agent '{request.agent_class}/{request.agent_id}' already exists.",
+            )
+
+        # Also check if it matches the default agent config
+        if agent_class_dto.default_agent_config.agent_id == request.agent_id:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Agent ID '{request.agent_id}' is reserved for the default configuration.",
+            )
+
+        # Step 3: Extract name, description, icon from configuration or use defaults
+        config = request.configuration
+        name_data = config.get("name", {})
+        description_data = config.get("description", {})
+        icon = config.get("icon", agent_class_dto.agent_config_specs.icon or "meteor-icons:robot")
+
+        # Create LocaleStringEntity for name and description
+        name_entity = LocaleStringEntity(
+            de=name_data.get("de", f"New {request.agent_class}"),
+            en=name_data.get("en", f"New {request.agent_class}"),
+            fr=name_data.get("fr", f"Nouveau {request.agent_class}"),
+            it=name_data.get("it", f"Nuovo {request.agent_class}"),
+        )
+        description_entity = LocaleStringEntity(
+            de=description_data.get("de", ""),
+            en=description_data.get("en", ""),
+            fr=description_data.get("fr", ""),
+            it=description_data.get("it", ""),
+        )
+
+        # Step 4: Create AgentConfigEntityDocument with full configuration
+        # Include agent_class and agent_id in the config_data
+        full_config_data = {
+            **config,
+            "agent_class": request.agent_class,
+            "agent_id": request.agent_id,
+        }
+
+        config_entity = AgentConfigEntityDocument(
+            agent_class=request.agent_class,
+            agent_id=request.agent_id,
+            name=name_entity,
+            description=description_entity,
+            icon=icon,
+            config_data=full_config_data,
+        )
+        config_entity.save()
+
+        # Step 5: Create AgentEntity for the new instance
+        agent_config = AgentConfig.from_entity(config_entity)
+        agent_instance_dto = AgentInstanceDTO.from_class_and_config(
+            class_dto=agent_class_dto,
+            agent_config=agent_config,
+        )
+        agent_instance_dto.create_or_update_agent_entity()
+
+        # Step 6: Clear cache to ensure fresh data
+        AgentService._clear_cache()
+
+        # Step 7: Return the created agent
+        agent_entity = AgentEntity.get_agent(request.agent_class, request.agent_id)
+        if not agent_entity:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to create agent. Please try again.",
+            )
+
+        return AgentDTO.from_entity(agent_entity, t)
+
+    @staticmethod
+    @trace_fn
+    async def delete_agent(agent_class: str, agent_id: str) -> None:
+        """
+        Deletes an agent instance by removing its configuration from the database.
+
+        Only user-created agents (stored in AgentConfigEntityDocument) can be deleted.
+        Default agent configurations (from the agent class itself) cannot be deleted.
+
+        Args:
+            agent_class: The agent class identifier
+            agent_id: The agent instance identifier
+
+        Raises:
+            HTTPException 404: Agent configuration not found (or is a default config)
+        """
+        # Check if this is a user-created agent config
+        config = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+        if not config:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Agent configuration '{agent_class}/{agent_id}' not found or is a default configuration.",
+            )
+
+        # Delete the configuration
+        AgentConfigEntityDocument.delete_if_exists_for_class_and_id(agent_class, agent_id)
+
+        # Also delete the agent entity if it exists
+        agent_entity = AgentEntity.get_agent(agent_class, agent_id)
+        if agent_entity:
+            agent_entity.delete()
+
+        # Clear cache to ensure fresh data
+        AgentService._clear_cache()

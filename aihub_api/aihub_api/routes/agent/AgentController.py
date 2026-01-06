@@ -1,16 +1,5 @@
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, Security
-from nats.aio.client import Client as NATS
-
-from aihub_api.i18n.dependencies.use_locale import use_locale
-from aihub_api.pagination.type.PageNumber import PageNumber
-from aihub_api.pagination.type.PageSize import PageSize
-from aihub_api.routes.agent.AgentService import AgentService
-from aihub_api.routes.agent.dto.AgentConfigurationDataDTO import AgentConfigurationDataDTO
-from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
-from aihub_api.routes.agent.dto.UpdateAgentConfigurationDTO import UpdateAgentConfigurationDTO
-from aihub_api.routes.thread.dto.PaginatedThreadsResponse import PaginatedThreadsResponse
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.access.AccessLevel import AccessLevel
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -19,6 +8,19 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
+from fastapi import Depends, HTTPException, Security
+from nats.aio.client import Client as NATS
+
+from aihub_api.i18n.dependencies.use_locale import use_locale
+from aihub_api.pagination.type.PageNumber import PageNumber
+from aihub_api.pagination.type.PageSize import PageSize
+from aihub_api.routes.agent.AgentService import AgentService
+from aihub_api.routes.agent.dto.AgentClassDTO import AgentClassDTO
+from aihub_api.routes.agent.dto.AgentConfigurationDataDTO import AgentConfigurationDataDTO
+from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
+from aihub_api.routes.agent.dto.CreateAgentRequest import CreateAgentRequest
+from aihub_api.routes.agent.dto.UpdateAgentConfigurationDTO import UpdateAgentConfigurationDTO
+from aihub_api.routes.thread.dto.PaginatedThreadsResponse import PaginatedThreadsResponse
 
 
 class AgentController(Controller):
@@ -209,4 +211,66 @@ class AgentController(Controller):
 
         return self
 
-    # TODO add new endpoint for agent creation and deletion (POST, DELETE)
+    def get_agent_classes(self, route: str = "/classes") -> "AgentController":
+        @self.router.get(route, tags=self.tags)
+        async def get_agent_classes(
+            nc: Annotated[NATS, Depends(use_nats)],
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> list[AgentClassDTO]:
+            """
+            Retrieve all available agent classes (types) that are currently online.
+            Each agent class includes its form schema for configuration.
+
+            This is used to populate the agent class dropdown in the "Create New Agent" feature.
+            """
+            return await AgentService.get_agent_classes(nc, t)
+
+        return self
+
+    def create_agent(self, route: str = "/") -> "AgentController":
+        from fastapi import status
+
+        @self.router.post(route, tags=self.tags, status_code=status.HTTP_201_CREATED)
+        async def create_agent(
+            nc: Annotated[NATS, Depends(use_nats)],
+            request: CreateAgentRequest,
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> AgentDTO:
+            """
+            Create a new agent instance from an existing agent class.
+
+            The agent class must be online (running). The agent_id must be unique
+            within the agent class and URL-safe (lowercase letters, numbers, hyphens, underscores).
+
+            The configuration should include:
+            - name: {de, en, fr, it} - Display name in each language
+            - description: {de, en, fr, it} - Description in each language
+            - icon: Icon identifier (e.g., 'meteor-icons:robot')
+            - Additional runtime configuration fields from the agent's form schema
+            """
+            return await AgentService.create_agent(nc, request, t)
+
+        return self
+
+    def delete_agent(self, route: str = "/{agent_class}/{agent_id}") -> "AgentController":
+        from fastapi import Response, status
+
+        @self.router.delete(route, tags=self.tags, status_code=status.HTTP_204_NO_CONTENT)
+        async def delete_agent(
+            agent_class: str,
+            agent_id: str,
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
+        ) -> Response:
+            """
+            Delete an agent instance.
+
+            This removes the agent's configuration from the database.
+            The agent class itself remains available for creating new instances.
+            Default agent configurations (from the agent class) cannot be deleted.
+            """
+            await AgentService.delete_agent(agent_class, agent_id)
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+        return self
