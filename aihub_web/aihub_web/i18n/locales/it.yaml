@@ -261,6 +261,30 @@ agent:
     title: "Flusso di lavoro agentico"
   threads:
     title: "Thread dell'agente"
+  create:
+    button: "Crea nuovo agente"
+    title: "Crea nuovo agente"
+    cancel: "Annulla"
+    selectClass: "Tipo di agente"
+    selectClassPlaceholder: "Seleziona un tipo di agente..."
+    agentId: "ID agente"
+    agentIdPlaceholder: "mio-nuovo-agente"
+    agentIdHelp: "Identificatore univoco (lettere minuscole, numeri, trattini, underscore)"
+    agentIdInvalid: "Sono consentiti solo lettere minuscole, numeri, trattini e underscore"
+    agentIdTooLong: "L'ID agente deve essere al massimo di 100 caratteri"
+    configuration: "Configurazione"
+    noAgentClasses: "Nessun tipo di agente disponibile. Assicurati che almeno un agente sia in esecuzione."
+    submit: "Crea agente"
+    success: "Agente creato con successo"
+    error: "Impossibile creare l'agente"
+  delete:
+    button: "Elimina"
+    title: "Elimina agente"
+    confirm: "Sei sicuro di voler eliminare questo agente?"
+    confirmMessage: "Questa azione non può essere annullata. La configurazione dell'agente verrà rimossa definitivamente."
+    success: "Agente eliminato con successo"
+    error: "Impossibile eliminare l'agente"
+    cannotDeleteDefault: "Le configurazioni degli agenti predefiniti non possono essere eliminate"
 
 document:
   list:

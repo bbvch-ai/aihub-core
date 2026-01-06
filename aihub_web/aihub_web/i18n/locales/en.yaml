@@ -262,6 +262,30 @@ agent:
     title: "Agentic Workflow"
   threads:
     title: "Agent Threads"
+  create:
+    button: "Create New Agent"
+    title: "Create New Agent"
+    cancel: "Cancel"
+    selectClass: "Agent Type"
+    selectClassPlaceholder: "Select an agent type..."
+    agentId: "Agent ID"
+    agentIdPlaceholder: "my-new-agent"
+    agentIdHelp: "Unique identifier (lowercase letters, numbers, hyphens, underscores)"
+    agentIdInvalid: "Only lowercase letters, numbers, hyphens, and underscores are allowed"
+    agentIdTooLong: "Agent ID must be 100 characters or less"
+    configuration: "Configuration"
+    noAgentClasses: "No agent types available. Make sure at least one agent is running."
+    submit: "Create Agent"
+    success: "Agent created successfully"
+    error: "Failed to create agent"
+  delete:
+    button: "Delete"
+    title: "Delete Agent"
+    confirm: "Are you sure you want to delete this agent?"
+    confirmMessage: "This action cannot be undone. The agent configuration will be permanently removed."
+    success: "Agent deleted successfully"
+    error: "Failed to delete agent"
+    cannotDeleteDefault: "Default agent configurations cannot be deleted"
 
 document:
   list:

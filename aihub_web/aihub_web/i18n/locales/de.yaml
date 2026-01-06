@@ -262,6 +262,30 @@ agent:
     title: "Agenten-Workflow"
   threads:
     title: "Agenten-Threads"
+  create:
+    button: "Neuen Agenten erstellen"
+    title: "Neuen Agenten erstellen"
+    cancel: "Abbrechen"
+    selectClass: "Agententyp"
+    selectClassPlaceholder: "Agententyp auswählen..."
+    agentId: "Agenten-ID"
+    agentIdPlaceholder: "mein-neuer-agent"
+    agentIdHelp: "Eindeutige Kennung (Kleinbuchstaben, Zahlen, Bindestriche, Unterstriche)"
+    agentIdInvalid: "Nur Kleinbuchstaben, Zahlen, Bindestriche und Unterstriche erlaubt"
+    agentIdTooLong: "Agenten-ID darf maximal 100 Zeichen lang sein"
+    configuration: "Konfiguration"
+    noAgentClasses: "Keine Agententypen verfügbar. Stellen Sie sicher, dass mindestens ein Agent läuft."
+    submit: "Agent erstellen"
+    success: "Agent erfolgreich erstellt"
+    error: "Agent konnte nicht erstellt werden"
+  delete:
+    button: "Löschen"
+    title: "Agent löschen"
+    confirm: "Möchten Sie diesen Agenten wirklich löschen?"
+    confirmMessage: "Diese Aktion kann nicht rückgängig gemacht werden. Die Agentenkonfiguration wird dauerhaft entfernt."
+    success: "Agent erfolgreich gelöscht"
+    error: "Agent konnte nicht gelöscht werden"
+    cannotDeleteDefault: "Standardkonfigurationen von Agenten können nicht gelöscht werden"
 
 document:
   list:
