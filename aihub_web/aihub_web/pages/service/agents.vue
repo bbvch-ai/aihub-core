@@ -15,7 +15,7 @@
         <div class="grid grid-cols-2 gap-4 2xl:grid-cols-2">
           <AgentCard
             v-for="agent in agents"
-            :key="agent.agent_id"
+            :key="`${agent.agent_class}-${agent.agent_id}`"
             :agent="agent"
             @click="() => toAgent(agent)"
           />

@@ -62,6 +62,9 @@ class AgentConfigSpecs(BaseModel):
         """
         # For backward compatibility, try to create an instance with minimal required fields
         # This is a fallback for tests - in production, use from_agent_config() with the default_agent_config
+        import logging
+
+        logger = logging.getLogger(__name__)
         try:
             dummy_instance = agent_config_type(
                 name=LocaleString(en="", de="", fr="", it=""),
@@ -70,8 +73,12 @@ class AgentConfigSpecs(BaseModel):
                 agent_id="placeholder",
             )
             return cls.from_agent_config(dummy_instance)
-        except Exception:
-            # If we can't create an instance, return empty specs
+        except Exception as e:
+            # Log the error to help with debugging
+            logger.warning(
+                f"Failed to create AgentConfigSpecs from class {agent_config_type.__name__}: {e}. "
+                "Returning empty specs. Consider using from_agent_config() with an instance instead."
+            )
             return cls(
                 name=LocaleString(en="", de="", fr="", it=""),
                 description=LocaleString(en="", de="", fr="", it=""),

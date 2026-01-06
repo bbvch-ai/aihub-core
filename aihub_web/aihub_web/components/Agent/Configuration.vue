@@ -38,11 +38,12 @@
         />
       </FormKit>
     </div>
-    <pre class="mt-4 max-h-96 max-w-2xl overflow-auto rounded-lg bg-surface-900 p-4 text-xs">{{ data }}</pre>
   </Panel>
 </template>
 
 <script setup lang="ts">
+import merge from 'lodash/merge'
+
 import type { FormkitElement } from '@core/sdk/client'
 import type { FormKitSchemaNode, FormKitSchemaDefinition } from '@formkit/core'
 
@@ -61,8 +62,8 @@ const data = ref<Record<string, unknown>>(props.initialData || {})
 // Use deep: true to ensure nested changes are detected
 watch(() => props.initialData, (newData) => {
   if (newData && Object.keys(newData).length > 0) {
-    // Merge with existing data to preserve any user changes
-    data.value = { ...data.value, ...newData }
+    // Deep merge with existing data to preserve any user changes and nested objects
+    data.value = merge({}, data.value, newData)
   }
 }, { deep: true })
 

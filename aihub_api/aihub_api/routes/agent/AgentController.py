@@ -261,7 +261,9 @@ class AgentController(Controller):
         async def delete_agent(
             agent_class: str,
             agent_id: str,
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
+            _: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.admin.agent.{agent_class}.{agent_id}"))
+            ],
         ) -> Response:
             """
             Delete an agent instance.

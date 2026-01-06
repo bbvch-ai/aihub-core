@@ -181,13 +181,13 @@ class AgentEntity(Document):
         agent_id: str,
         agent_class: str,
         default_agent_config: AgentConfig,
-        agent_config_specs: AgentConfigSpecs,
         is_conversational: bool,
         start_events: list[EventSpecs],
         stop_events: list[EventSpecs],
         hitl_request_events: list[EventSpecs],
         hitl_response_events: list[EventSpecs],
         network_graph: WorkflowGraph,
+        agent_config_specs: AgentConfigSpecs | None = None,
     ) -> "AgentEntity":
         """
         Creates a new AgentEntity from an AgentDTO or updates an existing one if an agent
@@ -203,6 +203,9 @@ class AgentEntity(Document):
             logger.debug(f"No agent config found for class {agent_class} and ID {agent_id}.")
 
         default_agent_config_entity = AgentConfigEntityEmbeddedDocument.from_agent_config(default_agent_config)
+        # If no agent_config_specs provided, derive from default_agent_config
+        if agent_config_specs is None:
+            agent_config_specs = AgentConfigSpecs.from_agent_config(default_agent_config)
         agent_config_specs_entity = AgentConfigSpecsEntity.from_specs(agent_config_specs)
 
         # Create EventSpec objects, serializing the schema to avoid $ issues

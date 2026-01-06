@@ -2,6 +2,7 @@
   <div
     class="flex cursor-pointer flex-col gap-3 rounded-xl border border-surface-200 p-4 hover:bg-surface-100 dark:border-surface-800 hover:dark:bg-surface-800"
     :class="{ 'bg-surface-100 dark:bg-surface-800': isActive }"
+    @click="emit('click', agent)"
   >
     <div class="flex items-center justify-between gap-4">
       <div class="flex items-center justify-start gap-2">
@@ -73,6 +74,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   deleted: [agentClass: string, agentId: string]
+  click: [agent: AgentDto]
 }>()
 
 const route = useRoute()

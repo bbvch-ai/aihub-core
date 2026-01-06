@@ -707,6 +707,21 @@ class AgentService:
                 detail=f"Agent ID '{request.agent_id}' is reserved for the default configuration.",
             )
 
+        # Step 2.5: Validate configuration keys against form schema
+        standard_fields = {"name", "description", "icon", "agent_class", "agent_id"}
+        form_field_names = {
+            elem.name for elem in agent_class_dto.agent_config_specs.form if hasattr(elem, "name") and elem.name
+        }
+        valid_fields = standard_fields | form_field_names
+
+        invalid_fields = set(request.configuration.keys()) - valid_fields
+        if invalid_fields:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid configuration fields: {', '.join(sorted(invalid_fields))}. "
+                f"Valid fields are: {', '.join(sorted(valid_fields))}",
+            )
+
         # Step 3: Extract name, description, icon from configuration or use defaults
         config = request.configuration
         name_data = config.get("name", {})
@@ -746,12 +761,18 @@ class AgentService:
         config_entity.save()
 
         # Step 5: Create AgentEntity for the new instance
-        agent_config = AgentConfig.from_entity(config_entity)
-        agent_instance_dto = AgentInstanceDTO.from_class_and_config(
-            class_dto=agent_class_dto,
-            agent_config=agent_config,
-        )
-        agent_instance_dto.create_or_update_agent_entity()
+        # Wrap in try/except to rollback config on failure
+        try:
+            agent_config = AgentConfig.from_entity(config_entity)
+            agent_instance_dto = AgentInstanceDTO.from_class_and_config(
+                class_dto=agent_class_dto,
+                agent_config=agent_config,
+            )
+            agent_instance_dto.create_or_update_agent_entity()
+        except Exception:
+            # Rollback: delete the config we just created
+            config_entity.delete()
+            raise
 
         # Step 6: Clear cache to ensure fresh data
         AgentService._clear_cache()
@@ -782,12 +803,15 @@ class AgentService:
         Raises:
             HTTPException 404: Agent configuration not found (or is a default config)
         """
-        # Check if this is a user-created agent config
+        # Only user-created agent configs can be deleted.
+        # Default configs (from the agent class itself) are not stored in AgentConfigEntityDocument,
+        # so find_for_class_and_id will return None for them, preventing deletion.
         config = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
         if not config:
             raise HTTPException(
                 status_code=404,
-                detail=f"Agent configuration '{agent_class}/{agent_id}' not found or is a default configuration.",
+                detail=f"Agent configuration '{agent_class}/{agent_id}' not found. "
+                "Only user-created configurations can be deleted; default configurations cannot be removed.",
             )
 
         # Delete the configuration
