@@ -14,6 +14,7 @@ from typing import Annotated
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import KnowledgeSource
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
 from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
@@ -161,12 +162,33 @@ def _parse_selection_response(
         )
 
 
+def _build_namespace_list_text(available_namespaces: list[AvailableNamespace]) -> str:
+    """Build formatted text listing all available namespaces."""
+    namespace_list = []
+    for ns in available_namespaces:
+        entry = f"- {ns.bucket_name}/{ns.namespace_name}"
+        if ns.display_name:
+            entry += f" ({ns.display_name})"
+        if ns.description:
+            entry += f": {ns.description}"
+        namespace_list.append(entry)
+    return "\n".join(namespace_list)
+
+
+def _build_context_text(conversation_context: list[str] | None) -> str:
+    """Build context text from conversation history."""
+    if conversation_context:
+        return "\n\nPrevious clarification exchanges:\n" + "\n".join(conversation_context)
+    return ""
+
+
 async def select_namespaces(
     user_query: str,
     available_namespaces: list[AvailableNamespace],
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
+    selection_system_prompt: LocaleString | None = None,
     conversation_context: list[str] | None = None,
     user_correction: str | None = None,
 ) -> NamespaceSelectionResult:
@@ -182,6 +204,8 @@ async def select_namespaces(
         llm_config: LLM configuration.
         displayer: Event displayer for thoughts.
         t: Locale handler.
+        selection_system_prompt: Optional custom system prompt (overrides default i18n prompt).
+            Supports placeholders: {namespaces}, {context}.
         conversation_context: Previous clarification exchanges.
         user_correction: User's correction or preference from previous selection.
     """
@@ -196,7 +220,17 @@ async def select_namespaces(
         conversation_context = conversation_context or []
         conversation_context = [f"User preference: {user_correction}"] + conversation_context
 
-    system_prompt = _build_selection_prompt(user_query, available_namespaces, conversation_context, t)
+    # Build system prompt - use config override if provided, else use i18n
+    if selection_system_prompt:
+        namespaces_text = _build_namespace_list_text(available_namespaces)
+        context_text = _build_context_text(conversation_context)
+        system_prompt = t.extract(selection_system_prompt).format(
+            namespaces=namespaces_text,
+            context=context_text,
+        )
+    else:
+        system_prompt = _build_selection_prompt(user_query, available_namespaces, conversation_context, t)
+
     user_message = _build_selection_user_message(user_query, t)
 
     messages = [

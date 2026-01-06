@@ -252,6 +252,7 @@ class NamespaceSelectionAgent(Agent):
             agent_config.selection_llm,
             displayer,
             t,
+            selection_system_prompt=agent_config.selection_system_prompt,
             conversation_context=conversation_context,
             user_correction=user_preference,
         )
@@ -317,6 +318,7 @@ class NamespaceSelectionAgent(Agent):
                 available_namespaces=available_namespaces,
                 llm=llm,
                 t=t,
+                correction_prompt=agent_config.correction_prompt,
             )
 
         if interpretation.intent == "approve":

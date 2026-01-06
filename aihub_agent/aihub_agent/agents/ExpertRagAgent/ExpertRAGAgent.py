@@ -1,5 +1,4 @@
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.generative_ai.retrievers.KnowledgeRetrieverConfig import KnowledgeRetrieverConfig
 from aihub_lib.generative_ai.retrievers.RetrieverConfig import RetrieverConfig
 from aihub_lib.generative_ai.utils.format_expert_conversation import format_expert_conversation
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -7,7 +6,6 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import (
     AgentInTheLoop,
     HumanInTheLoop,
-    KnowledgeSource,
     LimitChatHistoryEvent,
     RAGWithSourcesStartEvent,
     StandaloneQuestionCondenserEvent,
@@ -35,6 +33,7 @@ from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderN
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 from aihub_agent.agents.RagAgent.events.UserRequestsExpertEvent import UserRequestsExpertEvent
 from aihub_agent.context.run.RunContext import RunContext
+from aihub_agent.rag import build_retrievers_from_sources
 from aihub_agent.rag.preconditions import (
     check_context_ready_for_history_limit_with_expert,
     check_is_answer_response,
@@ -427,63 +426,5 @@ class ExpertRAGAgent(Agent):
         - RAGWithSourcesStartEvent: Builds dynamic retrievers from knowledge sources.
         """
         if isinstance(start_event, RAGWithSourcesStartEvent):
-            return self._build_retrievers_from_sources(start_event.knowledge_sources, agent_config)
+            return build_retrievers_from_sources(start_event.knowledge_sources, agent_config.retrievers)
         return agent_config.retrievers
-
-    def _build_retrievers_from_sources(
-        self,
-        sources: list[KnowledgeSource],
-        agent_config: ExpertRAGAgentConfig,
-    ) -> list[KnowledgeRetrieverConfig]:
-        """
-        Build KnowledgeRetrieverConfig list from KnowledgeSource list.
-
-        Uses existing retriever configurations from agent_config and only overrides
-        the index_namespaces field. Each bucket must have a corresponding retriever
-        configured in the agent config.
-        """
-        # Build lookup of existing retrievers by bucket name
-        bucket_retrievers: dict[str, KnowledgeRetrieverConfig] = {}
-        for retriever in agent_config.retrievers:
-            if isinstance(retriever, KnowledgeRetrieverConfig):
-                bucket_name = retriever.vector_store.collection_name
-                bucket_retrievers[bucket_name] = retriever
-
-        if not bucket_retrievers:
-            raise ValueError(
-                "Cannot build dynamic retrievers: no KnowledgeRetrieverConfig found in agent config. "
-                "At least one KnowledgeRetrieverConfig is required."
-            )
-
-        # Group sources by bucket
-        bucket_namespaces: dict[str, list[str]] = {}
-        for source in sources:
-            if source.bucket_name not in bucket_namespaces:
-                bucket_namespaces[source.bucket_name] = []
-            bucket_namespaces[source.bucket_name].append(source.namespace_name)
-
-        # Build retrievers by copying existing config and overriding namespaces
-        retrievers: list[KnowledgeRetrieverConfig] = []
-
-        for bucket_name, namespaces in bucket_namespaces.items():
-            if bucket_name not in bucket_retrievers:
-                raise ValueError(
-                    f"No retriever configured for bucket '{bucket_name}'. "
-                    "Each bucket used in RAGWithSourcesStartEvent must have a corresponding retriever in agent config."
-                )
-
-            base_retriever = bucket_retrievers[bucket_name]
-            retrievers.append(
-                KnowledgeRetrieverConfig(
-                    embed_model=base_retriever.embed_model,
-                    index_namespaces=namespaces,
-                    retrieve_k=base_retriever.retrieve_k,
-                    query_mode=base_retriever.query_mode,
-                    node_types=base_retriever.node_types,
-                    vector_store=base_retriever.vector_store,
-                    retrieve_prev_next=base_retriever.retrieve_prev_next,
-                    retrieve_summaries=base_retriever.retrieve_summaries,
-                )
-            )
-
-        return retrievers

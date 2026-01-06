@@ -8,6 +8,7 @@ Determines if user approved, rejected, or wants to correct the selection.
 from typing import Annotated, Literal
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import KnowledgeSource
 from llama_index.core.llms import LLM
 from llama_index.core.prompts.rich import RichPromptTemplate
@@ -46,6 +47,7 @@ async def interpret_approval_response(
     available_namespaces: list[AvailableNamespace],
     llm: LLM,
     t: LocaleHandler,
+    correction_prompt: LocaleString | None = None,
 ) -> ApprovalInterpretation:
     """
     Interpret user's response to namespace selection approval.
@@ -61,6 +63,8 @@ async def interpret_approval_response(
         available_namespaces: All available namespaces for selection.
         llm: LLM for interpretation.
         t: Locale handler for translations.
+        correction_prompt: Optional custom prompt (overrides default i18n prompt).
+            Supports placeholders: {user_response}, {current_selection}, {available_sources}.
 
     Returns:
         ApprovalInterpretation with the user's intent and any corrections.
@@ -92,12 +96,20 @@ async def interpret_approval_response(
 
     LocalizedApprovalInterpretation.__doc__ = t("agent.namespace_selection.prompts.approval_interpretation_docstring")
 
-    prompt_text = t(
-        "agent.namespace_selection.prompts.approval_interpretation",
-        user_response=user_response,
-        current_selection=current_str,
-        available_sources=available_str,
-    )
+    # Build prompt - use config override if provided, else use i18n
+    if correction_prompt:
+        prompt_text = t.extract(correction_prompt).format(
+            user_response=user_response,
+            current_selection=current_str,
+            available_sources=available_str,
+        )
+    else:
+        prompt_text = t(
+            "agent.namespace_selection.prompts.approval_interpretation",
+            user_response=user_response,
+            current_selection=current_str,
+            available_sources=available_str,
+        )
     prompt = RichPromptTemplate(prompt_text)
 
     result = await llm.astructured_predict(

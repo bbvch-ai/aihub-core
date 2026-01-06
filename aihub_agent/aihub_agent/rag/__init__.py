@@ -6,6 +6,7 @@ from aihub_agent.rag.preconditions import (
     check_reranking_complete_or_disabled,
     check_reranking_enabled,
 )
+from aihub_agent.rag.retriever_builders import build_retrievers_from_sources
 from aihub_agent.rag.step_functions import (
     do_context_sufficient_guard,
     do_few_shot_guard,
@@ -24,6 +25,8 @@ __all__ = [
     "check_is_no_answer_response",
     "check_context_ready_for_history_limit",
     "check_context_ready_for_history_limit_with_expert",
+    # Retriever builders
+    "build_retrievers_from_sources",
     # Step functions - business logic
     "do_few_shot_guard",
     "do_retrieve",
