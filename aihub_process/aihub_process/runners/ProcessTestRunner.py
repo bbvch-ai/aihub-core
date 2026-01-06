@@ -4,8 +4,6 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
-from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.nats.events import (
     BaseEvent,
     ProcessExceptionEvent,

@@ -28,7 +28,6 @@ from mongoengine import connect
 from mongoengine.connection import get_connection
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
-from redis.asyncio import Redis
 
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 from aihub_process.delegators.agent.AgentDelegator import AgentDelegator
@@ -164,7 +163,6 @@ class ProcessRunner:
                 uuidRepresentation="standard",
             )
 
-        # Create NATS and Redis clients from settings
         self.nc = await NatsSettings.create_client()
         self.js = self.nc.jetstream(timeout=60, publish_async_max_pending=10_000)
         self.redis = RedisSettings.create_client()

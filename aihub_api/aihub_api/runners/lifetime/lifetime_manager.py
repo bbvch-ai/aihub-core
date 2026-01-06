@@ -13,7 +13,6 @@ from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicMan
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
-from nats.aio.client import Client as NATS
 
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.persistance.events.EventPersister import EventPersister

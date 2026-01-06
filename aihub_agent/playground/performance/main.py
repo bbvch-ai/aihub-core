@@ -8,10 +8,8 @@ import uuid
 from typing import Any
 
 # For NATS JS benchmarking
-import nats
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
-from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.nats.events import BaseEvent, StartEvent, StopEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
@@ -37,10 +35,7 @@ async def benchmark_jetstream(n_events: int, payload_kb: int) -> dict[str, Any]:
     """
     Benchmark NATS JetStream performance.
     """
-    # Connect to NATS with token authentication
-    nats_settings = NatsSettings()
-    token = nats_settings.TOKEN.get_secret_value() if nats_settings.TOKEN else None
-    nc = await nats.connect(nats_settings.ENDPOINT, token=token)
+    nc = await NatsSettings.create_client()
     js = nc.jetstream()
 
     # Create a random stream name
@@ -165,11 +160,8 @@ async def run_system_test(process_count: int, n_events: int, payload_kb: int) ->
         # Allow time for processes to initialize
         await asyncio.sleep(2)
 
-        # Set up NATS connection for test coordination with token authentication
-        nc = NATS()
-        nats_settings = NatsSettings()
-        token = nats_settings.TOKEN.get_secret_value() if nats_settings.TOKEN else None
-        await nc.connect(servers=[nats_settings.ENDPOINT], token=token)
+        # Set up NATS connection for test coordination
+        nc = await NatsSettings.create_client()
         js = nc.jetstream()
 
         # Generate unique IDs for this test run

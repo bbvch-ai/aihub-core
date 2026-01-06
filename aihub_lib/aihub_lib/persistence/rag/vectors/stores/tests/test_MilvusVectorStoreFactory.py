@@ -20,7 +20,6 @@ scenarios("./features/milvus_vector_store.feature")
 @pytest.fixture
 def context():
     """Shared context dictionary for test state."""
-    # Get token from settings if available, for authenticated Milvus connections
     milvus_token = MilvusSettings().get_token()
     return {
         "milvus_uri": None,

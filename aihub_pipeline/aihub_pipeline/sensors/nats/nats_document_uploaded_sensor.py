@@ -8,7 +8,6 @@ from aihub_lib.nats.polling.JSPoller import JSPoller
 from aihub_lib.nats.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
 from dagster import DefaultSensorStatus, RunRequest, SensorEvaluationContext, sensor
 from dagster._core.definitions.target import ExecutableDefinition
-from nats.aio.client import Client as NATS
 
 logger = logging.getLogger(__name__)
 

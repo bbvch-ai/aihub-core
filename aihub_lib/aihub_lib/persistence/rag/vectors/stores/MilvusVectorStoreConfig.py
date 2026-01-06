@@ -14,7 +14,6 @@ class MilvusVectorStoreConfig(BasePydanticVectorStoreConfig):
     token: Annotated[str | None, Field(description="Authentication token (format: username:password)")] = None
 
     def to_llama_index(self) -> MilvusVectorStore:
-        # Use token from config, or fall back to settings if not provided
         token = self.token if self.token is not None else MilvusSettings().get_token()
         return MilvusVectorStoreFactory.create_milvus_vector_store(
             uri=self.uri,

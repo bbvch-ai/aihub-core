@@ -26,7 +26,6 @@ from mongoengine import connect, disconnect
 from mongoengine.connection import get_connection
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
-from redis.asyncio import Redis
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.dispatchers.AgentDispatcher import AgentDispatcher
@@ -130,7 +129,6 @@ class AgentRunner:
         self.running = True
         self._stop_signal.clear()
 
-        # Create NATS and Redis clients from settings
         self.nc = await NatsSettings.create_client()
         self.js = self.nc.jetstream(timeout=60, publish_async_max_pending=10_000)
         self.redis = RedisSettings.create_client()

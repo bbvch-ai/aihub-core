@@ -27,11 +27,9 @@ class RedisSettings(EnvironmentSettings):
         if self.TOKEN is None:
             return self.URL
 
-        # Parse URL and inject token
         parsed = urlparse(self.URL)
         token = self.TOKEN.get_secret_value()
 
-        # Build new URL with token (using 'default' as username for Redis)
         netloc = f"default:{token}@{parsed.hostname}"
         if parsed.port:
             netloc += f":{parsed.port}"
