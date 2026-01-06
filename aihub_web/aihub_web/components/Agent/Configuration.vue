@@ -23,6 +23,19 @@
           :schema="schema"
           :data="data"
         />
+
+        <!-- Render repeaters separately (not supported by FormKit standard) -->
+        <FormKitRepeater
+          v-for="rep in repeaterElements"
+          :key="rep.name"
+          v-model="data[rep.name] as Record<string, unknown>[]"
+          :name="rep.name"
+          :label="rep.label"
+          :add-label="rep.addLabel"
+          :children-schema="rep.childrenSchema"
+          :min="rep.min"
+          :max="rep.max"
+        />
       </FormKit>
     </div>
     <pre class="mt-4 max-h-96 max-w-2xl overflow-auto rounded-lg bg-surface-900 p-4 text-xs">{{ data }}</pre>
@@ -57,6 +70,32 @@ const emit = defineEmits<{
   submit: [Record<string, unknown>]
 }>()
 
+// Repeater element configuration for custom rendering
+interface RepeaterConfig {
+  name: string
+  label?: string
+  addLabel?: string
+  childrenSchema: FormKitSchemaNode[]
+  min?: number
+  max?: number
+}
+
+// Wraps a node in a labeled fieldset
+function wrapInFieldset(label: string, node: FormKitSchemaNode): FormKitSchemaNode[] {
+  return [{
+    $el: 'fieldset',
+    attrs: { class: 'formkit-group-fieldset border border-surface-300 dark:border-surface-600 rounded-lg p-4 mb-4' },
+    children: [
+      {
+        $el: 'legend',
+        attrs: { class: 'text-sm font-semibold px-2 text-surface-700 dark:text-surface-300' },
+        children: label,
+      },
+      node,
+    ],
+  }] as FormKitSchemaNode[]
+}
+
 const schema = computed<FormKitSchemaDefinition>(() => {
   const pattern = new RegExp(
     Object.keys(data.value)
@@ -69,6 +108,9 @@ const schema = computed<FormKitSchemaDefinition>(() => {
     const elementRecord = formElement as Record<string, unknown>
     const formkitType = elementRecord.formkit || elementRecord.$formkit
 
+    // Skip repeaters - they're rendered separately with custom component
+    if (formkitType === 'repeater') return []
+
     // Handle group elements - wrap with visual container if label exists
     if (formkitType === 'group') {
       const children = (elementRecord.children as FormkitElement[] || []).flatMap(transformElement)
@@ -77,29 +119,9 @@ const schema = computed<FormKitSchemaDefinition>(() => {
         name: elementRecord.name as string,
         children: children as FormKitSchemaNode[],
       }
-
-      // If group has a label, wrap it in a visual fieldset-like structure
       if (elementRecord.label) {
-        return [
-          {
-            $el: 'fieldset',
-            attrs: {
-              class: 'formkit-group-fieldset border border-surface-300 dark:border-surface-600 rounded-lg p-4 mb-4',
-            },
-            children: [
-              {
-                $el: 'legend',
-                attrs: {
-                  class: 'text-sm font-semibold px-2 text-surface-700 dark:text-surface-300',
-                },
-                children: elementRecord.label as string,
-              },
-              groupNode,
-            ],
-          },
-        ] as FormKitSchemaNode[]
+        return wrapInFieldset(elementRecord.label as string, groupNode)
       }
-
       return groupNode
     }
 
@@ -129,6 +151,59 @@ const schema = computed<FormKitSchemaDefinition>(() => {
   }
 
   return props.form.flatMap(transformElement)
+})
+
+// Extract repeater elements for custom rendering
+const repeaterElements = computed<RepeaterConfig[]>(() => {
+  if (!props.form || props.form.length === 0) return []
+
+  const repeaters: RepeaterConfig[] = []
+
+  function transformChildElement(formElement: FormkitElement): FormKitSchemaNode | FormKitSchemaNode[] {
+    const elementRecord = formElement as Record<string, unknown>
+    const formkitType = elementRecord.formkit || elementRecord.$formkit
+    const children = (elementRecord.children as FormkitElement[] || []).flatMap(transformChildElement)
+
+    if (formkitType === 'group') {
+      const groupNode: FormKitSchemaNode = {
+        $formkit: 'group',
+        name: elementRecord.name as string,
+        children: children as FormKitSchemaNode[],
+      }
+      if (elementRecord.label) {
+        return wrapInFieldset(elementRecord.label as string, groupNode)
+      }
+      return groupNode
+    }
+
+    const cleanNode: Record<string, unknown> = { $formkit: formkitType }
+    if (elementRecord.name) cleanNode.name = elementRecord.name
+    if (elementRecord.label) cleanNode.label = elementRecord.label
+    if (elementRecord.help) cleanNode.help = elementRecord.help
+    if (elementRecord.validation) cleanNode.validation = elementRecord.validation
+    if (elementRecord.options) cleanNode.options = elementRecord.options
+    if (children.length > 0) cleanNode.children = children
+
+    return cleanNode as FormKitSchemaNode
+  }
+
+  for (const el of props.form) {
+    const element = el as Record<string, unknown>
+    const formkitType = element.formkit || element.$formkit
+    if (formkitType === 'repeater') {
+      const childrenSchema = (element.children as FormkitElement[] || []).flatMap(transformChildElement)
+      repeaters.push({
+        name: element.name as string,
+        label: element.label as string | undefined,
+        addLabel: (element.addLabel || element.add_label) as string | undefined,
+        childrenSchema: childrenSchema as FormKitSchemaNode[],
+        min: element.min as number | undefined,
+        max: element.max as number | undefined,
+      })
+    }
+  }
+
+  return repeaters
 })
 
 async function submitHandler() {

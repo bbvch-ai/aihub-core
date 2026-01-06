@@ -48,8 +48,10 @@ const navItems = computed<NavItem[]>(() => {
   return items
 })
 
-const toNavItem = (navItem: NavItem) => {
-  router.push(localePath(navItem.path))
+const toNavItem = (navItem: NavItem | null) => {
+  if (navItem) {
+    router.push(localePath(navItem.path))
+  }
 }
 
 const activeNavItem = computed<NavItem | undefined>(() => {
