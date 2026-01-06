@@ -154,7 +154,7 @@ def _parse_selection_response(
             reasoning=data.get("reasoning", "No reasoning provided"),
         )
 
-    except (json.JSONDecodeError, KeyError, TypeError) as e:
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
         logger.warning(f"Failed to parse LLM response: {e}")
         return NamespaceSelectionResult(
             selected_sources=[],
