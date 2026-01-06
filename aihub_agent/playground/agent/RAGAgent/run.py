@@ -228,17 +228,10 @@ async def main():
                     help=LocaleString(
                         en="The language model to use for generating responses.",
                         de="Das Sprachmodell für die Generierung von Antworten.",
-                        fr="Le modèle de langage à utiliser pour générer des réponses.",
-                        it="Il modello di linguaggio da utilizzare per generare risposte.",
+                        fr="Le modèle de langage pour générer des réponses.",
+                        it="Il modello di linguaggio per generare risposte.",
                     ),
-                    options=[
-                        {"label": "Nano (Local, Fast)", "value": "text-generation/nano"},
-                        {"label": "Mini (Local, Balanced)", "value": "text-generation/mini"},
-                        {"label": "Large (Azure, Best Quality)", "value": "text-generation/large"},
-                        {"label": "OCR (Azure, Vision)", "value": "text-generation/ocr"},
-                    ],
-                    option_label="label",
-                    option_value="value",
+                    options_api_mode="chat",
                 ),
                 # LLMParameter nested config
                 Group(
@@ -432,14 +425,10 @@ async def main():
                             help=LocaleString(
                                 en="The model to use for reranking documents.",
                                 de="Das Modell für das Reranking von Dokumenten.",
-                                fr="Le modèle à utiliser pour le reclassement des documents.",
-                                it="Il modello da utilizzare per il riordinamento dei documenti.",
+                                fr="Le modèle pour le reclassement des documents.",
+                                it="Il modello per il riordinamento dei documenti.",
                             ),
-                            options=[
-                                {"label": "Rerank Model", "value": "reranking/default"},
-                            ],
-                            option_label="label",
-                            option_value="value",
+                            options_api_mode="rerank",
                         ),
                         InputNumber(
                             name="top_n",
@@ -526,17 +515,12 @@ async def main():
                                         it="Nome del modello",
                                     ),
                                     help=LocaleString(
-                                        en="The embedding model to use for vector search.",
+                                        en="The embedding model for vector search.",
                                         de="Das Einbettungsmodell für die Vektorsuche.",
-                                        fr="Le modèle d'embedding à utiliser pour la recherche vectorielle.",
-                                        it="Il modello di embedding da utilizzare per la ricerca vettoriale.",
+                                        fr="Le modèle d'embedding pour la recherche vectorielle.",
+                                        it="Il modello di embedding per la ricerca vettoriale.",
                                     ),
-                                    options=[
-                                        {"label": "Large Embedding Model", "value": "embedding/large"},
-                                        {"label": "Small Embedding Model", "value": "embedding/small"},
-                                    ],
-                                    option_label="label",
-                                    option_value="value",
+                                    options_api_mode="embedding",
                                 ),
                             ],
                         ),

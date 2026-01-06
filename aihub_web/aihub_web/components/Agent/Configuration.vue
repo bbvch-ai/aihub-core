@@ -11,6 +11,7 @@
         id="form"
         v-model="data"
         type="form"
+        :submit-label="t('common.actions.save')"
         :submit-attrs="{
           inputClass: 'p-button p-component w-full',
         }"
@@ -42,10 +43,12 @@
 </template>
 
 <script setup lang="ts">
+import { type GetModelsByModeResponse, type FormkitElement, getModelsByMode } from '@core/sdk/client'
 import merge from 'lodash/merge'
 
-import type { FormkitElement } from '@core/sdk/client'
 import type { FormKitSchemaNode, FormKitSchemaDefinition } from '@formkit/core'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   title: string
@@ -53,6 +56,65 @@ const props = defineProps<{
   form: FormkitElement[]
   initialData?: Record<string, unknown>
 }>()
+
+// Extract unique API modes from form elements for dynamic model fetching
+function extractApiModes(elements: FormkitElement[]): string[] {
+  const modes = new Set<string>()
+  function traverse(el: FormkitElement) {
+    const record = el as Record<string, unknown>
+    // Check both snake_case (Python) and camelCase (alias) versions
+    const apiMode = record.options_api_mode || record.optionsApiMode
+    if (apiMode && typeof apiMode === 'string') {
+      modes.add(apiMode)
+    }
+    if (record.children && Array.isArray(record.children)) {
+      for (const child of record.children as FormkitElement[]) {
+        traverse(child)
+      }
+    }
+  }
+  for (const el of elements) {
+    traverse(el)
+  }
+  return [...modes]
+}
+
+// Fetch models by mode - returns a map of mode -> model options
+const modelsByMode = ref<Record<string, GetModelsByModeResponse>>({})
+
+async function fetchModelsForModes(modes: string[]) {
+  const results: Record<string, GetModelsByModeResponse> = {}
+  await Promise.all(
+    modes.map(async (mode) => {
+      try {
+        const models = await getModelsByMode({
+          composable: '$fetch',
+          path: { mode },
+        })
+        results[mode] = models
+      }
+      catch (error) {
+        console.warn(`Failed to fetch models for mode "${mode}":`, error)
+        results[mode] = []
+      }
+    }),
+  )
+  modelsByMode.value = results
+}
+
+// Fetch models when form changes
+watch(
+  () => props.form,
+  async (form) => {
+    if (form && form.length > 0) {
+      const modes = extractApiModes(form)
+      if (modes.length > 0) {
+        await fetchModelsForModes(modes)
+      }
+    }
+  },
+  { immediate: true },
+)
 
 // Initialize form data with initialData prop
 // Start with initialData if available, otherwise empty object
@@ -134,6 +196,19 @@ const schema = computed<FormKitSchemaDefinition>(() => {
     // Remove the original formkit property to avoid duplication
     delete (formkitNode as Record<string, unknown>).formkit
 
+    // Handle dynamic model options from API
+    const nodeRecord = formkitNode as Record<string, unknown>
+    // Check both snake_case (Python) and camelCase (alias) versions
+    const apiMode = nodeRecord.options_api_mode || nodeRecord.optionsApiMode
+    if (apiMode && typeof apiMode === 'string') {
+      const models = modelsByMode.value[apiMode] || []
+      // Convert models to options array with model_name as both label and value
+      nodeRecord.options = models.map(m => m.model_name)
+      // Remove the custom attributes as FormKit doesn't need them
+      delete nodeRecord.options_api_mode
+      delete nodeRecord.optionsApiMode
+    }
+
     // Replace template variables in labels
     if (formkitNode?.label && typeof formkitNode.label === 'string') {
       formkitNode.label = formkitNode.label.replace(pattern, (match: string) => {
@@ -143,7 +218,6 @@ const schema = computed<FormKitSchemaDefinition>(() => {
     }
 
     // Recursively transform children for any other elements with children
-    const nodeRecord = formkitNode as Record<string, unknown>
     if (nodeRecord.children && Array.isArray(nodeRecord.children)) {
       nodeRecord.children = (nodeRecord.children as FormkitElement[]).flatMap(transformElement)
     }

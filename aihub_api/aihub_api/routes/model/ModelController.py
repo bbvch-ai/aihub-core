@@ -54,3 +54,14 @@ class ModelController(Controller):
             return await ModelService.get_model_by_name(user, model_name)
 
         return self
+
+    def get_models_by_mode(self, route: str = "/mode/{mode}") -> "ModelController":
+        @self.router.get(route, tags=self.tags)
+        async def get_models_by_mode(
+            mode: str,
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+        ) -> list[ModelDTO]:
+            """Retrieve all models filtered by their mode (chat, embedding, rerank, etc.)."""
+            return await ModelService.get_models_by_mode(user, mode)
+
+        return self

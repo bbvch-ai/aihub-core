@@ -60,3 +60,10 @@ class ModelService:
         ]
 
         return sorted(result, key=lambda x: x.name)
+
+    @staticmethod
+    @trace_fn
+    async def get_models_by_mode(user: UserIdentity, mode: str) -> list[ModelDTO]:
+        """Get all models filtered by their mode (chat, embedding, rerank, etc.)."""
+        models = await ModelService.get_model_list(user)
+        return [model for model in models if model.model_info.mode == mode]

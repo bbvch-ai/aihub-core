@@ -17,6 +17,7 @@ from aihub_api.routes.event.EventController import EventController
 from aihub_api.routes.file.FileController import FileController
 from aihub_api.routes.i18n.I18nController import I18nController
 from aihub_api.routes.knowledge.KnowledgeController import KnowledgeController
+from aihub_api.routes.model.ModelController import ModelController
 from aihub_api.routes.notification.NotificationController import NotificationController
 from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_api.routes.process.ProcessController import ProcessController
@@ -40,6 +41,7 @@ runner.mount(
     UserController(auth=auth).get_my_user().get_user().get_users().get_my_dashboard().update_my_dashboard(),
     I18nController(auth=auth).get_my_locale(),
     EventController(auth=auth).ws().get_agent_events_in_thread().get_agent_event_timeseries(),
+    ModelController(auth=auth).get_models().get_models_by_mode().get_model(),
     ThreadController(auth=auth)
     .get_user_threads()
     .create_thread()

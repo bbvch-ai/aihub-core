@@ -2583,6 +2583,32 @@ export type ChatCompletionUserMessageParam = {
 
 /**
  * ChatMessage
+ */
+export type ChatMessageInput = {
+    role?: MessageRoleInput;
+    additional_kwargs: AdditionalKwargs;
+    /**
+     * Blocks
+     */
+    blocks?: Array<({
+        block_type: 'text';
+    } & TextBlockInput) | ({
+        block_type: 'image';
+    } & ImageBlockInput) | ({
+        block_type: 'audio';
+    } & AudioBlockInput) | ({
+        block_type: 'document';
+    } & DocumentBlockInput) | ({
+        block_type: 'cache';
+    } & CachePointInput) | ({
+        block_type: 'citable';
+    } & CitableBlockInput) | ({
+        block_type: 'citation';
+    } & CitationBlockInput)>;
+};
+
+/**
+ * ChatMessage
  * Chat message.
  */
 export type ChatMessageOutput = {
@@ -8545,6 +8571,83 @@ export type LlmStopEventWritable = {
     } | null) | (string | null) | (number | null) | (number | null) | (number | null) | (Array<{
         [key: string]: unknown;
     }> | null) | undefined;
+};
+
+/**
+ * LLMStopEventOutput
+ */
+export type LlmStopEventOutput = {
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Input Messages
+     * List of messages sent to the LLM as input.
+     */
+    input_messages?: Array<JamboParserObjectTypeParserMessage> | null;
+    /**
+     * Output Messages
+     * List of messages received from the LLM as output.
+     */
+    output_messages?: Array<JamboParserObjectTypeParserMessage> | null;
+    /**
+     * Parameters used during the invocation of the LLM.
+     */
+    invocation_parameters?: InvocationParameters | null;
+    /**
+     * Chat Model Name
+     * The name of the language model being utilized.
+     */
+    chat_model_name?: string | null;
+    /**
+     * Provider
+     * The hosting provider of the LLM, e.g., OpenAI, Azure.
+     */
+    provider?: string | null;
+    /**
+     * System
+     * The AI product as identified by the client or server.
+     */
+    system?: string | null;
+    /**
+     * Prompt Template
+     * The prompt template as a Python f-string.
+     */
+    prompt_template?: string | null;
+    /**
+     * A dictionary of input variables to the prompt template.
+     */
+    prompt_template_variables?: PromptTemplateVariables | null;
+    /**
+     * Prompt Template Version
+     * The version of the prompt template being used.
+     */
+    prompt_template_version?: string | null;
+    /**
+     * Token Count Prompt
+     * The number of tokens in the prompt.
+     */
+    token_count_prompt?: number | null;
+    /**
+     * Token Count Completion
+     * The number of tokens in the completion.
+     */
+    token_count_completion?: number | null;
+    /**
+     * Token Count Total
+     * The total number of tokens, including both prompt and completion.
+     */
+    token_count_total?: number | null;
+    /**
+     * Tools
+     * List of tools that are advertised to the LLM to be able to call.
+     */
+    tools?: Array<Tools> | null;
 };
 
 /**
@@ -14795,6 +14898,22 @@ export type UserMessageEventWritable = {
 };
 
 /**
+ * UserMessageEventInput
+ */
+export type UserMessageEventInput = {
+    /**
+     * Messages
+     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
+     */
+    messages?: Array<ChatMessageInput>;
+    /**
+     * Files
+     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
+     */
+    files?: Array<JamboParserObjectTypeParserUserUploadedFile> | null;
+};
+
+/**
  * UserUploadedFile
  */
 export type UserUploadedFileOutput = {
@@ -14931,192 +15050,6 @@ export type AdditionalLocationInfo = {
 };
 
 /**
- * LLMStopEventOutput
- */
-export type AihubApiServicesModelCreationServiceLlmStopEventOutput1 = {
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Input Messages
-     * List of messages sent to the LLM as input.
-     */
-    input_messages?: Array<JamboParserObjectTypeParserMessage> | null;
-    /**
-     * Output Messages
-     * List of messages received from the LLM as output.
-     */
-    output_messages?: Array<JamboParserObjectTypeParserMessage> | null;
-    /**
-     * Parameters used during the invocation of the LLM.
-     */
-    invocation_parameters?: InvocationParameters | null;
-    /**
-     * Chat Model Name
-     * The name of the language model being utilized.
-     */
-    chat_model_name?: string | null;
-    /**
-     * Provider
-     * The hosting provider of the LLM, e.g., OpenAI, Azure.
-     */
-    provider?: string | null;
-    /**
-     * System
-     * The AI product as identified by the client or server.
-     */
-    system?: string | null;
-    /**
-     * Prompt Template
-     * The prompt template as a Python f-string.
-     */
-    prompt_template?: string | null;
-    /**
-     * A dictionary of input variables to the prompt template.
-     */
-    prompt_template_variables?: PromptTemplateVariables | null;
-    /**
-     * Prompt Template Version
-     * The version of the prompt template being used.
-     */
-    prompt_template_version?: string | null;
-    /**
-     * Token Count Prompt
-     * The number of tokens in the prompt.
-     */
-    token_count_prompt?: number | null;
-    /**
-     * Token Count Completion
-     * The number of tokens in the completion.
-     */
-    token_count_completion?: number | null;
-    /**
-     * Token Count Total
-     * The total number of tokens, including both prompt and completion.
-     */
-    token_count_total?: number | null;
-    /**
-     * Tools
-     * List of tools that are advertised to the LLM to be able to call.
-     */
-    tools?: Array<Tools> | null;
-};
-
-/**
- * LLMStopEventOutput
- */
-export type AihubApiServicesModelCreationServiceLlmStopEventOutput2 = {
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Input Messages
-     * List of messages sent to the LLM as input.
-     */
-    input_messages?: Array<JamboParserObjectTypeParserMessage> | null;
-    /**
-     * Output Messages
-     * List of messages received from the LLM as output.
-     */
-    output_messages?: Array<JamboParserObjectTypeParserMessage> | null;
-    /**
-     * Parameters used during the invocation of the LLM.
-     */
-    invocation_parameters?: InvocationParameters | null;
-    /**
-     * Chat Model Name
-     * The name of the language model being utilized.
-     */
-    chat_model_name?: string | null;
-    /**
-     * Provider
-     * The hosting provider of the LLM, e.g., OpenAI, Azure.
-     */
-    provider?: string | null;
-    /**
-     * System
-     * The AI product as identified by the client or server.
-     */
-    system?: string | null;
-    /**
-     * Prompt Template
-     * The prompt template as a Python f-string.
-     */
-    prompt_template?: string | null;
-    /**
-     * A dictionary of input variables to the prompt template.
-     */
-    prompt_template_variables?: PromptTemplateVariables | null;
-    /**
-     * Prompt Template Version
-     * The version of the prompt template being used.
-     */
-    prompt_template_version?: string | null;
-    /**
-     * Token Count Prompt
-     * The number of tokens in the prompt.
-     */
-    token_count_prompt?: number | null;
-    /**
-     * Token Count Completion
-     * The number of tokens in the completion.
-     */
-    token_count_completion?: number | null;
-    /**
-     * Token Count Total
-     * The total number of tokens, including both prompt and completion.
-     */
-    token_count_total?: number | null;
-    /**
-     * Tools
-     * List of tools that are advertised to the LLM to be able to call.
-     */
-    tools?: Array<Tools> | null;
-};
-
-/**
- * UserMessageEventInput
- */
-export type AihubApiServicesModelCreationServiceUserMessageEventInput1 = {
-    /**
-     * Messages
-     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
-     */
-    messages?: Array<JamboParserObjectTypeParserChatMessage1>;
-    /**
-     * Files
-     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
-     */
-    files?: Array<JamboParserObjectTypeParserUserUploadedFile> | null;
-};
-
-/**
- * UserMessageEventInput
- */
-export type AihubApiServicesModelCreationServiceUserMessageEventInput2 = {
-    /**
-     * Messages
-     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
-     */
-    messages?: Array<JamboParserObjectTypeParserChatMessage2>;
-    /**
-     * Files
-     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
-     */
-    files?: Array<JamboParserObjectTypeParserUserUploadedFile> | null;
-};
-
-/**
  * Message
  */
 export type AihubLibNatsEventsSemanticLlmMessageMessageReadable = {
@@ -15243,58 +15176,6 @@ export type FunctionCallArgumentsJson = {
  */
 export type InvocationParameters = {
     [key: string]: unknown;
-};
-
-/**
- * ChatMessage
- */
-export type JamboParserObjectTypeParserChatMessage1 = {
-    role?: MessageRoleInput;
-    additional_kwargs: AdditionalKwargs;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlockInput) | ({
-        block_type: 'image';
-    } & ImageBlockInput) | ({
-        block_type: 'audio';
-    } & AudioBlockInput) | ({
-        block_type: 'document';
-    } & DocumentBlockInput) | ({
-        block_type: 'cache';
-    } & CachePointInput) | ({
-        block_type: 'citable';
-    } & CitableBlockInput) | ({
-        block_type: 'citation';
-    } & CitationBlockInput)>;
-};
-
-/**
- * ChatMessage
- */
-export type JamboParserObjectTypeParserChatMessage2 = {
-    role?: MessageRoleInput;
-    additional_kwargs: AdditionalKwargs;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlockInput) | ({
-        block_type: 'image';
-    } & ImageBlockInput) | ({
-        block_type: 'audio';
-    } & AudioBlockInput) | ({
-        block_type: 'document';
-    } & DocumentBlockInput) | ({
-        block_type: 'cache';
-    } & CachePointInput) | ({
-        block_type: 'citable';
-    } & CitableBlockInput) | ({
-        block_type: 'citation';
-    } & CitationBlockInput)>;
 };
 
 /**
@@ -16015,6 +15896,37 @@ export type GetModelsResponses = {
 };
 
 export type GetModelsResponse = GetModelsResponses[keyof GetModelsResponses];
+
+export type GetModelsByModeData = {
+    body?: never;
+    path: {
+        /**
+         * Mode
+         */
+        mode: string;
+    };
+    query?: never;
+    url: '/models/mode/{mode}';
+};
+
+export type GetModelsByModeErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetModelsByModeError = GetModelsByModeErrors[keyof GetModelsByModeErrors];
+
+export type GetModelsByModeResponses = {
+    /**
+     * Response Get Models By Mode Models Mode  Mode  Get
+     * Successful Response
+     */
+    200: Array<ModelDtoReadable>;
+};
+
+export type GetModelsByModeResponse = GetModelsByModeResponses[keyof GetModelsByModeResponses];
 
 export type GetModelData = {
     body?: never;
@@ -17746,74 +17658,8 @@ export type ProcessDocumentResponses = {
 
 export type ProcessDocumentResponse = ProcessDocumentResponses[keyof ProcessDocumentResponses];
 
-export type SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostData = {
-    body: AihubApiServicesModelCreationServiceUserMessageEventInput1;
-    path?: never;
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/RAGAgent/rag_agent/UserMessageEvent';
-};
-
-export type SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostError = SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostErrors[keyof SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostErrors];
-
-export type SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: AihubApiServicesModelCreationServiceLlmStopEventOutput1;
-};
-
-export type SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostResponse = SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostResponses[keyof SendUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventPostResponses];
-
-export type StreamUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventStreamPostData = {
-    body: AihubApiServicesModelCreationServiceUserMessageEventInput1;
-    path?: never;
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/RAGAgent/rag_agent/UserMessageEvent/stream';
-};
-
-export type StreamUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventStreamPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type StreamUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventStreamPostError = StreamUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventStreamPostErrors[keyof StreamUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventStreamPostErrors];
-
-export type StreamUserMessageEventToRagAgentRagAgentAgentsRagAgentRagAgentUserMessageEventStreamPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
 export type SendUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventPostData = {
-    body: AihubApiServicesModelCreationServiceUserMessageEventInput2;
+    body: UserMessageEventInput;
     path?: never;
     query?: {
         /**
@@ -17841,13 +17687,13 @@ export type SendUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUs
     /**
      * Successful Response
      */
-    200: AihubApiServicesModelCreationServiceLlmStopEventOutput2;
+    200: LlmStopEventOutput;
 };
 
 export type SendUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventPostResponse = SendUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventPostResponses[keyof SendUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventPostResponses];
 
 export type StreamUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventStreamPostData = {
-    body: AihubApiServicesModelCreationServiceUserMessageEventInput2;
+    body: UserMessageEventInput;
     path?: never;
     query?: {
         /**

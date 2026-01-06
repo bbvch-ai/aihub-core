@@ -56,7 +56,7 @@ async def main():
         .add_user_to_thread()
         .remove_user_from_thread()
         .get_open_chat_hitl(),
-        ModelController(auth=auth).get_models().get_model(),
+        ModelController(auth=auth).get_models().get_models_by_mode().get_model(),
         AgentController(auth=auth)
         .get_agent()
         .get_agent_threads()

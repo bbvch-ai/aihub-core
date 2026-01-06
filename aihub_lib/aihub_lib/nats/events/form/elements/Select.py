@@ -14,8 +14,16 @@ class Select(PrimeVueElement):
 
     options: Annotated[
         list[str | LocaleString | dict[str, str | LocaleString]] | list[str],
-        Field(description="Array of selectable options (objects or strings)"),
-    ]
+        Field(description="Array of selectable options (objects or strings). Use this OR options_api_mode."),
+    ] = []
+    options_api_mode: Annotated[
+        str | None,
+        Field(
+            description="When set, options are fetched from /api/v1/models/mode/{mode}. "
+            "Valid modes: chat, embedding, rerank, image_generation, audio_transcription, audio_speech",
+            alias="optionsApiMode",
+        ),
+    ] = None
     option_label: Annotated[
         str | None, Field(description="Property name to use as the label of an option", alias="optionLabel")
     ] = None

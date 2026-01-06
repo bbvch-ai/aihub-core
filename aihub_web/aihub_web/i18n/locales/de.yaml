@@ -1,6 +1,15 @@
 test: "Dies ist ein Test"
 welcome: "Willkommen im bbv ai-hub"
 
+common:
+  actions:
+    save: "Speichern"
+    cancel: "Abbrechen"
+    create: "Erstellen"
+    delete: "Löschen"
+    edit: "Bearbeiten"
+  loading: "Laden..."
+
 models:
   title: "Modelle"
   error: "Fehler beim Laden der Modelle"
