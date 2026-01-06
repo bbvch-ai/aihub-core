@@ -32,6 +32,7 @@ from aihub_agent.agents.NamespaceSelectionAgent.events.KeepSourcesEvent import K
 from aihub_agent.agents.NamespaceSelectionAgent.events.NamespaceSelectionEvent import NamespaceSelectionEvent
 from aihub_agent.agents.NamespaceSelectionAgent.events.SelectionReadyEvent import SelectionReadyEvent
 from aihub_agent.agents.NamespaceSelectionAgent.events.SelectNewSourcesEvent import SelectNewSourcesEvent
+from aihub_agent.agents.NamespaceSelectionAgent.events.StartNamespaceSelectionEvent import StartNamespaceSelectionEvent
 from aihub_agent.agents.NamespaceSelectionAgent.helpers import (
     AvailableNamespace,
     build_agent_invocation,
@@ -79,7 +80,7 @@ class NamespaceSelectionAgent(Agent):
         run_context: RunContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> RouterEvent | NamespaceSelectionEvent | TopicUnchangedAcceptEvent:
+    ) -> RouterEvent | StartNamespaceSelectionEvent | TopicUnchangedAcceptEvent:
         """
         Entry point: Check if topic changed from previous conversation.
 
@@ -100,8 +101,7 @@ class NamespaceSelectionAgent(Agent):
         # If no current selection, proceed directly to namespace selection
         if current_sources is None:
             await displayer.display_thought(t("agent.namespace_selection.thoughts.first_query"))
-            return NamespaceSelectionEvent(
-                selected_sources=[],
+            return StartNamespaceSelectionEvent(
                 reasoning="First query in thread - need to select namespaces",
             )
 
@@ -211,7 +211,7 @@ class NamespaceSelectionAgent(Agent):
     )
     async def select_namespaces_step(
         self,
-        event: NamespaceSelectionEvent | SelectNewSourcesEvent,
+        event: StartNamespaceSelectionEvent | SelectNewSourcesEvent,
         start_event: UserMessageEvent,
         agent_config: NamespaceSelectionAgentConfig,
         run_context: RunContext,
@@ -303,7 +303,7 @@ class NamespaceSelectionAgent(Agent):
         run_context: RunContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> SelectionReadyEvent | NamespaceSelectionEvent:
+    ) -> SelectionReadyEvent | StartNamespaceSelectionEvent:
         """
         Interpret user's approval response and decide next action.
         """
@@ -351,10 +351,8 @@ class NamespaceSelectionAgent(Agent):
 
         await displayer.display_thought(t("agent.namespace_selection.thoughts.reselecting", feedback=event.response))
 
-        # Return NamespaceSelectionEvent to trigger re-selection
-        # This will be processed by select_namespaces_step again
-        return NamespaceSelectionEvent(
-            selected_sources=current_selection,
+        # Return StartNamespaceSelectionEvent to trigger re-selection
+        return StartNamespaceSelectionEvent(
             reasoning=f"User correction: {interpretation.correction_details or event.response}",
         )
 
