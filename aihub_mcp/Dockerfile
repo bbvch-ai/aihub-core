@@ -77,8 +77,8 @@ RUN groupadd --gid "$USER_GID" "$USERNAME" && \
 # Set the working directory
 WORKDIR /app
 
-# Copy only the necessary code from the builder stage
-COPY --from=builder --chown="$USERNAME:$USERNAME" /app /app
+# Copy only the necessary code from the builder stage (read+execute only, no write)
+COPY --from=builder --chown="$USERNAME:$USERNAME" --chmod=555 /app /app
 
 # Switch to non-root user
 USER $USERNAME
