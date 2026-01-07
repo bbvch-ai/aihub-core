@@ -1,0 +1,13 @@
+thoughts:
+  fetching_namespaces: "Recupero dei namespace disponibili dai bucket configurati."
+  processing_selection: "Elaborazione della selezione del namespace dell'utente."
+  invalid_selection: "La selezione non può essere analizzata. Utilizzo dei namespace predefiniti."
+  using_defaults: "Utilizzo della selezione predefinita del namespace (primo namespace di ogni bucket)."
+  selection_stored: "La selezione del namespace è stata salvata."
+  forwarding_to_rag: "Inoltro della richiesta all'agente RAG con i namespace selezionati."
+  rag_error: "L'agente RAG ha restituito un errore %{error_code}: %{error_message}."
+
+messages:
+  selection_instruction: "Rispondi con la tua selezione (ad esempio '1, 2' o i nomi dei namespace)."
+  selection_summary: "I tuoi namespace selezionati:"
+  rag_error: "Si è verificato un errore durante l'elaborazione della richiesta. Riprova."

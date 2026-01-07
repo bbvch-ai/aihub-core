@@ -1,0 +1,13 @@
+thoughts:
+  fetching_namespaces: "Fetching available namespaces from configured buckets."
+  processing_selection: "Processing user's namespace selection."
+  invalid_selection: "The selection could not be parsed. Using default namespaces."
+  using_defaults: "Using default namespace selection (first namespace from each bucket)."
+  selection_stored: "Namespace selection has been stored."
+  forwarding_to_rag: "Forwarding query to RAG agent with selected namespaces."
+  rag_error: "RAG agent returned an error %{error_code}: %{error_message}."
+
+messages:
+  selection_instruction: "Please reply with your selection (e.g., '1, 2' or the namespace names)."
+  selection_summary: "Your selected namespaces:"
+  rag_error: "An error occurred while processing your request. Please try again."

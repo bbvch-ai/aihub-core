@@ -1,0 +1,13 @@
+thoughts:
+  fetching_namespaces: "Verfügbare Namespaces aus konfigurierten Buckets werden abgerufen."
+  processing_selection: "Namespace-Auswahl des Benutzers wird verarbeitet."
+  invalid_selection: "Die Auswahl konnte nicht analysiert werden. Standard-Namespaces werden verwendet."
+  using_defaults: "Standard-Namespace-Auswahl wird verwendet (erster Namespace aus jedem Bucket)."
+  selection_stored: "Namespace-Auswahl wurde gespeichert."
+  forwarding_to_rag: "Anfrage wird an RAG-Agent mit ausgewählten Namespaces weitergeleitet."
+  rag_error: "RAG-Agent hat einen Fehler zurückgegeben %{error_code}: %{error_message}."
+
+messages:
+  selection_instruction: "Bitte antworten Sie mit Ihrer Auswahl (z.B. '1, 2' oder die Namespace-Namen)."
+  selection_summary: "Ihre ausgewählten Namespaces:"
+  rag_error: "Bei der Verarbeitung Ihrer Anfrage ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut."
