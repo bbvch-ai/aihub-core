@@ -1,6 +1,5 @@
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.generative_ai.retrievers.KnowledgeRetrieverConfig import KnowledgeRetrieverConfig
-from aihub_lib.generative_ai.retrievers.RetrieverConfig import RetrieverConfig
+from aihub_lib.generative_ai.utils.filter_retrievers_by_namespace import filter_retrievers_by_namespace
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import (
@@ -20,7 +19,6 @@ from aihub_lib.nats.events.user import UserMessageEvent
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
-from aihub_agent.agents.RagAgent.events.BucketNamespacePair import BucketNamespacePair
 from aihub_agent.agents.RagAgent.events.ContextInsufficientWithQueryEvent import ContextInsufficientWithQueryEvent
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
@@ -44,32 +42,6 @@ from aihub_agent.rag.step_functions import (
 )
 from aihub_agent.workflow.decorators.precondition import precondition
 from aihub_agent.workflow.decorators.step import step
-
-SELECTED_NAMESPACES_KEY = "_selected_namespaces"
-
-
-def _filter_retrievers_by_namespace(
-    retrievers: list[RetrieverConfig],
-    selected_namespaces: list[BucketNamespacePair],
-) -> list[RetrieverConfig]:
-    if not selected_namespaces:
-        return retrievers
-
-    namespace_map = {pair.bucket_name: pair.namespace_name for pair in selected_namespaces}
-
-    filtered: list[RetrieverConfig] = []
-    for retriever in retrievers:
-        if isinstance(retriever, KnowledgeRetrieverConfig):
-            bucket_name = retriever.vector_store.collection_name
-            if bucket_name in namespace_map:
-                selected_namespace = namespace_map[bucket_name]
-                if selected_namespace in retriever.index_namespaces:
-                    filtered_retriever = retriever.model_copy(update={"index_namespaces": [selected_namespace]})
-                    filtered.append(filtered_retriever)
-        else:
-            # Pass through non-knowledge retrievers (e.g., InsightRetrieverConfig) unchanged
-            filtered.append(retriever)
-    return filtered
 
 
 @precondition()
@@ -122,10 +94,7 @@ class RAGAgent(Agent):
         self,
         event: UserMessageEvent | NamespaceAwareStartEvent,
         agent_config: RAGAgentConfig,
-        run_context: RunContext,
     ) -> LimitChatHistoryEvent:
-        if isinstance(event, NamespaceAwareStartEvent):
-            await run_context.set(SELECTED_NAMESPACES_KEY, [ns.model_dump() for ns in event.selected_namespaces])
         return do_limit_chat_history(event.messages, agent_config.number_of_input_tokens)
 
     @step(
@@ -167,15 +136,16 @@ class RAGAgent(Agent):
         self,
         event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
         _: FewShotAcceptEvent,
+        start_event: UserMessageEvent | NamespaceAwareStartEvent,
         agent_config: RAGAgentConfig,
-        run_context: RunContext,
         t: LocaleHandler,
     ) -> RetrieverEvent:
         """Retrieves relevant nodes from multiple knowledge sources in parallel."""
-        selected_namespaces_raw = await run_context.get(SELECTED_NAMESPACES_KEY, [])
-        selected_namespaces = [BucketNamespacePair(**ns) for ns in selected_namespaces_raw]
-        filtered_retrievers = _filter_retrievers_by_namespace(agent_config.retrievers, selected_namespaces)
-        return await do_retrieve(event, filtered_retrievers, t)
+        if isinstance(start_event, NamespaceAwareStartEvent):
+            retrievers = filter_retrievers_by_namespace(agent_config.retrievers, start_event.selected_namespaces)
+        else:
+            retrievers = agent_config.retrievers
+        return await do_retrieve(event, retrievers, t)
 
     @step(
         name=LocaleString(en="Rerank Retrieved Nodes"),

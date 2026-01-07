@@ -2,6 +2,7 @@ import logging
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.generative_ai.retrievers.BucketNamespacePair import BucketNamespacePair
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import AgentInTheLoop, StopEvent
@@ -28,7 +29,6 @@ from aihub_agent.agents.NamespaceSelectionAgent.events.NamespaceApprovalHitl imp
     NamespaceApprovalResponseEvent,
 )
 from aihub_agent.agents.NamespaceSelectionAgent.llm.NamespaceDecision import NamespaceDecision
-from aihub_agent.agents.RagAgent.events.BucketNamespacePair import BucketNamespacePair
 from aihub_agent.agents.RagAgent.events.NamespaceAwareStartEvent import NamespaceAwareStartEvent
 from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.context.thread.ThreadContext import ThreadContext

@@ -1,10 +1,9 @@
 from typing import Annotated, ClassVar
 
+from aihub_lib.generative_ai.retrievers.BucketNamespacePair import BucketNamespacePair
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.user import UserMessageEvent
 from pydantic import Field
-
-from aihub_agent.agents.RagAgent.events.BucketNamespacePair import BucketNamespacePair
 
 
 class NamespaceAwareStartEvent(UserMessageEvent):
