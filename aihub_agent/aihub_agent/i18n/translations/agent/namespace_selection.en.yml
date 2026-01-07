@@ -1,13 +1,37 @@
 thoughts:
   fetching_namespaces: "Fetching available namespaces from configured buckets."
-  processing_selection: "Processing user's namespace selection."
-  invalid_selection: "The selection could not be parsed. Using default namespaces."
-  using_defaults: "Using default namespace selection (first namespace from each bucket)."
-  selection_stored: "Namespace selection has been stored."
+  starting_determination: "Starting namespace determination loop."
+  analyzing_request: "Analyzing user request to determine appropriate namespaces."
+  llm_decision: "LLM decision: %{reasoning}"
+  processing_follow_up: "Processing user's follow-up response."
+  selection_approved: "User approved namespace selection."
+  selection_rejected: "User rejected namespace selection. Gathering more information."
   forwarding_to_rag: "Forwarding query to RAG agent with selected namespaces."
   rag_error: "RAG agent returned an error %{error_code}: %{error_message}."
 
 messages:
-  selection_instruction: "Please reply with your selection (e.g., '1, 2' or the namespace names)."
-  selection_summary: "Your selected namespaces:"
+  default_follow_up: "Could you please provide more details about your request so I can determine the most relevant knowledge sources?"
+  user_rejected_selection: "I rejected the proposed namespace selection. Please suggest different namespaces."
   rag_error: "An error occurred while processing your request. Please try again."
+
+prompts:
+  determination: |
+    You are a namespace selection assistant. Your task is to analyze a user's request and determine which knowledge sources (namespaces) would be most relevant to answer their query.
+
+    Conversation history:
+    <conversation_history>
+    {{ conversation_history }}
+    </conversation_history>
+
+    <available_namespaces>
+    {{ available_namespaces }}
+    </available_namespaces>
+
+    Instructions:
+    1. If the user's intent is clear enough to select specific namespaces, set has_enough_information=true and provide selected_namespaces mapping each bucket to exactly one namespace.
+    2. If you need more information, set has_enough_information=false and ask a follow_up_question.
+
+    CRITICAL CONSTRAINTS:
+    - Each bucket MUST have exactly ONE namespace selected - no more, no less.
+    - Your follow_up_question MUST list the exact namespace names from <available_namespaces> above as options.
+    - Do NOT invent names - use only the actual names shown above.

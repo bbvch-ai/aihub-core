@@ -1,13 +1,37 @@
 thoughts:
   fetching_namespaces: "Recupero dei namespace disponibili dai bucket configurati."
-  processing_selection: "Elaborazione della selezione del namespace dell'utente."
-  invalid_selection: "La selezione non può essere analizzata. Utilizzo dei namespace predefiniti."
-  using_defaults: "Utilizzo della selezione predefinita del namespace (primo namespace di ogni bucket)."
-  selection_stored: "La selezione del namespace è stata salvata."
+  starting_determination: "Avvio del ciclo di determinazione dei namespace."
+  analyzing_request: "Analisi della richiesta utente per determinare i namespace appropriati."
+  llm_decision: "Decisione LLM: %{reasoning}"
+  processing_follow_up: "Elaborazione della risposta di follow-up dell'utente."
+  selection_approved: "L'utente ha approvato la selezione dei namespace."
+  selection_rejected: "L'utente ha rifiutato la selezione dei namespace. Raccolta di ulteriori informazioni."
   forwarding_to_rag: "Inoltro della richiesta all'agente RAG con i namespace selezionati."
   rag_error: "L'agente RAG ha restituito un errore %{error_code}: %{error_message}."
 
 messages:
-  selection_instruction: "Rispondi con la tua selezione (ad esempio '1, 2' o i nomi dei namespace)."
-  selection_summary: "I tuoi namespace selezionati:"
+  default_follow_up: "Potresti fornire maggiori dettagli sulla tua richiesta in modo che io possa determinare le fonti di conoscenza più rilevanti?"
+  user_rejected_selection: "Ho rifiutato la selezione dei namespace proposta. Per favore suggerisci namespace diversi."
   rag_error: "Si è verificato un errore durante l'elaborazione della richiesta. Riprova."
+
+prompts:
+  determination: |
+    Sei un assistente per la selezione dei namespace. Il tuo compito è analizzare la richiesta di un utente e determinare quali fonti di conoscenza (namespace) sarebbero più rilevanti per rispondere alla sua domanda.
+
+    Cronologia della conversazione:
+    <conversation_history>
+    {{ conversation_history }}
+    </conversation_history>
+
+    <available_namespaces>
+    {{ available_namespaces }}
+    </available_namespaces>
+
+    Istruzioni:
+    1. Se l'intento dell'utente è sufficientemente chiaro per selezionare namespace specifici, imposta has_enough_information=true e fornisci selected_namespaces mappando ogni bucket a esattamente un namespace.
+    2. Se hai bisogno di più informazioni, imposta has_enough_information=false e fai una follow_up_question.
+
+    VINCOLI CRITICI:
+    - Ogni bucket DEVE avere esattamente UN namespace selezionato - né più, né meno.
+    - La tua follow_up_question DEVE elencare i nomi esatti dei namespace da <available_namespaces> sopra come opzioni.
+    - NON inventare nomi - usa solo i nomi reali mostrati sopra.

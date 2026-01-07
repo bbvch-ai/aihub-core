@@ -1,21 +1,33 @@
-import re
+import logging
 
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import AgentInTheLoop, StopEvent
 from aihub_lib.nats.events.user import UserMessageEvent
+from aihub_lib.nats.events.user.UserUploadedFile import UserUploadedFile
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
 from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
+from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.prompts import RichPromptTemplate
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.agents.NamespaceSelectionAgent.configs.NamespaceSelectionAgentConfig import (
     NamespaceSelectionAgentConfig,
 )
-from aihub_agent.agents.NamespaceSelectionAgent.events.NamespaceSelectionHitl import (
-    NamespaceSelectionHitl,
+from aihub_agent.agents.NamespaceSelectionAgent.events.DetermineNamespacesEvent import DetermineNamespacesEvent
+from aihub_agent.agents.NamespaceSelectionAgent.events.FollowUpQuestionHitl import (
+    FollowUpQuestionHitl,
+    FollowUpQuestionRequestEvent,
+    FollowUpQuestionResponseEvent,
 )
-from aihub_agent.agents.NamespaceSelectionAgent.events.SelectionStoredEvent import SelectionStoredEvent
+from aihub_agent.agents.NamespaceSelectionAgent.events.NamespaceApprovalHitl import (
+    NamespaceApprovalHitl,
+    NamespaceApprovalRequestEvent,
+    NamespaceApprovalResponseEvent,
+)
+from aihub_agent.agents.NamespaceSelectionAgent.llm.NamespaceDecision import NamespaceDecision
 from aihub_agent.agents.RagAgent.events.BucketNamespacePair import BucketNamespacePair
 from aihub_agent.agents.RagAgent.events.NamespaceAwareStartEvent import NamespaceAwareStartEvent
 from aihub_agent.context.run.RunContext import RunContext
@@ -23,8 +35,20 @@ from aihub_agent.context.thread.ThreadContext import ThreadContext
 from aihub_agent.workflow.decorators.precondition import precondition
 from aihub_agent.workflow.decorators.step import step
 
-NAMESPACE_SELECTION_KEY = "namespace_selection"
+logger = logging.getLogger(__name__)
+
+
+# RunContext keys
 AVAILABLE_NAMESPACES_KEY = "available_namespaces"
+CONVERSATION_HISTORY_KEY = "conversation_history"
+ORIGINAL_MESSAGES_KEY = "original_messages"
+ORIGINAL_USER_KEY = "original_user"
+ORIGINAL_LOCALE_KEY = "original_locale"
+ORIGINAL_FILES_KEY = "original_files"
+PROPOSED_NAMESPACES_KEY = "proposed_namespaces"
+
+# ThreadContext keys
+NAMESPACE_SELECTION_KEY = "namespace_selection"
 
 
 @precondition()
@@ -42,147 +66,207 @@ async def has_selection(thread_context: ThreadContext) -> bool:
 
 
 class NamespaceSelectionAgent(Agent):
-    """
-    Agent that prompts users to select namespaces on first interaction and
-    delegates subsequent queries to a configured RAG agent.
+    """Agent that determines namespaces via LLM-driven conversation and delegates to RAG.
 
     ### Workflow
 
     **First message (no selection):**
     1. Fetch available namespaces from configured buckets
-    2. Ask user to select one namespace per bucket (HITL)
-    3. Store selection in ThreadContext
-    4. Confirm selection to user
+    2. Store original query for later forwarding
+    3. Enter determination loop: LLM decides if it has enough info
+    4. If not enough info: ask follow-up question (HITL), loop back
+    5. If enough info: propose namespaces, ask for approval (HITL)
+    6. If approved: store selection, forward original query to RAG
+    7. If rejected: add rejection to conversation, loop back
 
     **Subsequent messages (has selection):**
     1. Read selection from ThreadContext
     2. Forward query to RAG agent via AgentInTheLoop with namespace selection
     3. Return RAG response to user
-
-    ### Features
-    - Configurable bucket list
-    - Persistent namespace selection per conversation thread
-    - Integration with RAGAgent via AITL
     """
 
     # === First-time flow: No selection exists ===
 
     @step(
-        name=LocaleString(en="Fetch Namespaces"),
-        description=LocaleString(en="Fetches available namespaces from configured buckets"),
+        name=LocaleString(en="Initialize Namespace Determination"),
+        description=LocaleString(en="Fetches namespaces and initializes the determination loop"),
         icon="tabler:folder-search",
         precondition=needs_selection,
     )
-    async def fetch_namespaces_step(
+    async def initialize_determination_step(
         self,
-        _: UserMessageEvent,
+        event: UserMessageEvent,
         agent_config: NamespaceSelectionAgentConfig,
         run_context: RunContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> NamespaceSelectionHitl.request:
-        """Fetch namespaces from configured buckets and ask user to select."""
+    ) -> DetermineNamespacesEvent:
+        """Fetch namespaces, store original query, and start determination loop."""
         await displayer.display_thought(t("agent.namespace_selection.thoughts.fetching_namespaces"))
 
+        # Fetch available namespaces
         available_namespaces: dict[str, list[str]] = {}
         for bucket_name in agent_config.bucket_names:
             bucket = BucketEntity.get_bucket_by_bucket_name(bucket_name)
             namespaces = NamespaceEntity.get_namespaces_by_bucket(str(bucket.id))
             available_namespaces[bucket_name] = [ns.namespace_name for ns in namespaces]
 
-        # Store in RunContext for retrieval in process_selection_step
+        # Store in RunContext
+        logger.debug(f"Available namespaces fetched: {available_namespaces}")
         await run_context.set(AVAILABLE_NAMESPACES_KEY, available_namespaces)
+        await run_context.set(ORIGINAL_MESSAGES_KEY, [msg.model_dump() for msg in event.messages])
+        await run_context.set(ORIGINAL_USER_KEY, event.user.model_dump() if event.user else None)
+        await run_context.set(ORIGINAL_LOCALE_KEY, event.locale)
+        await run_context.set(ORIGINAL_FILES_KEY, [f.model_dump() for f in event.files] if event.files else [])
 
-        question = _format_selection_question(available_namespaces, agent_config.selection_prompt, t)
-        return NamespaceSelectionHitl.invoke(question=question)
+        # Initialize conversation history with user's first message
+        conversation_history = [{"role": "user", "content": event.user_query}]
+        await run_context.set(CONVERSATION_HISTORY_KEY, conversation_history)
+
+        await displayer.display_thought(t("agent.namespace_selection.thoughts.starting_determination"))
+
+        return DetermineNamespacesEvent()
 
     @step(
-        name=LocaleString(en="Process Selection"),
-        description=LocaleString(en="Processes user's namespace selection and stores it"),
+        name=LocaleString(en="Determine Namespaces"),
+        description=LocaleString(en="LLM analyzes conversation to determine namespaces"),
+        icon="tabler:brain",
+    )
+    async def determine_namespaces_step(
+        self,
+        _: DetermineNamespacesEvent,
+        agent_config: NamespaceSelectionAgentConfig,
+        run_context: RunContext,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> FollowUpQuestionRequestEvent | NamespaceApprovalRequestEvent:
+        """Use LLM to determine if enough info exists to select namespaces."""
+        await displayer.display_thought(t("agent.namespace_selection.thoughts.analyzing_request"))
+
+        available_namespaces: dict[str, list[str]] = await run_context.get(AVAILABLE_NAMESPACES_KEY, {})
+        conversation_history: list[dict[str, str]] = await run_context.get(CONVERSATION_HISTORY_KEY, [])
+
+        # Format namespaces for LLM
+        namespaces_str = _format_available_namespaces(available_namespaces)
+        conversation_str = _format_conversation_history(conversation_history)
+
+        logger.debug(f"Formatted namespaces string:\n{namespaces_str}")
+        logger.debug(f"Conversation history:\n{conversation_str}")
+
+        async with agent_config.llm.cost_reporting_llm(displayer) as llm:
+            prompt = RichPromptTemplate(t("agent.namespace_selection.prompts.determination"))
+            decision: NamespaceDecision = await llm.astructured_predict(
+                NamespaceDecision,
+                prompt,
+                available_namespaces=namespaces_str,
+                conversation_history=conversation_str,
+            )
+
+        await displayer.display_thought(
+            t("agent.namespace_selection.thoughts.llm_decision", reasoning=decision.reasoning)
+        )
+
+        if not decision.has_enough_information:
+            # Need more info - ask follow-up question
+            question = decision.follow_up_question or t("agent.namespace_selection.messages.default_follow_up")
+            return FollowUpQuestionHitl.invoke(question=question)
+
+        # Have enough info - propose namespaces for approval
+        selected = decision.selected_namespaces or {}
+        await run_context.set(PROPOSED_NAMESPACES_KEY, selected)
+
+        approval_question = _format_approval_question(selected, agent_config.approval_message_template, t)
+        return NamespaceApprovalHitl.invoke(question=approval_question)
+
+    @step(
+        name=LocaleString(en="Process Follow-Up"),
+        description=LocaleString(en="Processes user's follow-up response and continues determination"),
+        icon="tabler:message-dots",
+    )
+    async def process_follow_up_step(
+        self,
+        event: FollowUpQuestionResponseEvent,
+        run_context: RunContext,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> DetermineNamespacesEvent:
+        """Append user's response to conversation history and loop back."""
+        await displayer.display_thought(t("agent.namespace_selection.thoughts.processing_follow_up"))
+
+        conversation_history: list[dict[str, str]] = await run_context.get(CONVERSATION_HISTORY_KEY, [])
+
+        # Add the question that was asked and the user's response
+        conversation_history.append({"role": "assistant", "content": event.request_event.question})
+        conversation_history.append({"role": "user", "content": event.response})
+        await run_context.set(CONVERSATION_HISTORY_KEY, conversation_history)
+
+        return DetermineNamespacesEvent()
+
+    @step(
+        name=LocaleString(en="Process Approval"),
+        description=LocaleString(en="Processes user's approval and forwards to RAG or loops back"),
         icon="tabler:check",
     )
-    async def process_selection_step(
+    async def process_approval_step(
         self,
-        event: NamespaceSelectionHitl.response,
+        event: NamespaceApprovalResponseEvent,
+        agent_config: NamespaceSelectionAgentConfig,
         run_context: RunContext,
         thread_context: ThreadContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> SelectionStoredEvent:
-        """Parse user's selection, validate, and store in ThreadContext."""
-        available: dict[str, list[str]] = await run_context.get(AVAILABLE_NAMESPACES_KEY, {})
-        user_response = event.response
+    ) -> AgentInTheLoop.request | DetermineNamespacesEvent:
+        """Store selection and forward to RAG if approved, or loop back if rejected."""
+        if event.response:  # User approved
+            await displayer.display_thought(t("agent.namespace_selection.thoughts.selection_approved"))
 
-        await displayer.display_thought(t("agent.namespace_selection.thoughts.processing_selection"))
+            selected: dict[str, str] = await run_context.get(PROPOSED_NAMESPACES_KEY, {})
+            await thread_context.set(NAMESPACE_SELECTION_KEY, selected)
 
-        selected = _parse_namespace_selection(user_response, available)
+            # Reconstruct original event for forwarding
+            original_messages = await run_context.get(ORIGINAL_MESSAGES_KEY, [])
+            original_user = await run_context.get(ORIGINAL_USER_KEY)
+            original_locale = await run_context.get(ORIGINAL_LOCALE_KEY)
+            original_files = await run_context.get(ORIGINAL_FILES_KEY, [])
 
-        if not _validate_selection(selected, available):
-            await displayer.display_thought(t("agent.namespace_selection.thoughts.invalid_selection"))
-            selected = _get_default_selection(available)
-            await displayer.display_thought(t("agent.namespace_selection.thoughts.using_defaults"))
+            messages = [ChatMessage.model_validate(m) for m in original_messages]
+            user = UserIdentity.model_validate(original_user) if original_user else None
+            files = [UserUploadedFile.model_validate(f) for f in original_files] if original_files else []
 
-        await thread_context.set(NAMESPACE_SELECTION_KEY, selected)
-        await displayer.display_thought(t("agent.namespace_selection.thoughts.selection_stored"))
+            namespace_pairs = [
+                BucketNamespacePair(bucket_name=bucket, namespace_name=namespace)
+                for bucket, namespace in selected.items()
+            ]
 
-        return SelectionStoredEvent(selected_namespaces=selected)
+            await displayer.display_thought(t("agent.namespace_selection.thoughts.forwarding_to_rag"))
 
-    @step(
-        name=LocaleString(en="Confirm Selection"),
-        description=LocaleString(en="Confirms namespace selection to user"),
-        icon="tabler:message-check",
-    )
-    async def confirm_selection_step(
-        self,
-        event: SelectionStoredEvent,
-        agent_config: NamespaceSelectionAgentConfig,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-    ) -> StopEvent:
-        """Confirm the selection to user and wait for their next message."""
-        selection_summary = _format_selection_summary(event.selected_namespaces, t)
-        confirmation_message = f"{t.extract(agent_config.selection_confirmed_message)}\n\n{selection_summary}"
-        await displayer.display_chunk(confirmation_message, model_name=NamespaceSelectionAgent.__name__)
-        return StopEvent()
+            return AgentInTheLoop.invoke(
+                agent_class=agent_config.rag_delegation.rag_agent_class,
+                agent_id=agent_config.rag_delegation.rag_agent_id,
+                start_event=NamespaceAwareStartEvent(
+                    messages=messages,
+                    user=user,
+                    locale=original_locale,
+                    files=files,
+                    selected_namespaces=namespace_pairs,
+                ),
+                share_thread_id=True,
+            )
 
-    # === Subsequent messages: Selection exists ===
+        # User rejected - add the assistant's question and rejection to conversation, then loop back
+        await displayer.display_thought(t("agent.namespace_selection.thoughts.selection_rejected"))
 
-    @step(
-        name=LocaleString(en="Forward to RAG"),
-        description=LocaleString(en="Forwards query to RAG agent with namespace selection"),
-        icon="tabler:send",
-        precondition=has_selection,
-    )
-    async def forward_to_rag_step(
-        self,
-        event: UserMessageEvent,
-        agent_config: NamespaceSelectionAgentConfig,
-        thread_context: ThreadContext,
-        displayer: EventDisplayer,
-        t: LocaleHandler,
-    ) -> AgentInTheLoop.request:
-        """Forward message to RAG agent with stored namespace selection."""
-        selected: dict[str, str] = await thread_context.get(NAMESPACE_SELECTION_KEY, {})
-
-        await displayer.display_thought(t("agent.namespace_selection.thoughts.forwarding_to_rag"))
-
-        # Convert dict to list of BucketNamespacePair
-        namespace_pairs = [
-            BucketNamespacePair(bucket_name=bucket, namespace_name=namespace) for bucket, namespace in selected.items()
-        ]
-
-        return AgentInTheLoop.invoke(
-            agent_class=agent_config.rag_delegation.rag_agent_class,
-            agent_id=agent_config.rag_delegation.rag_agent_id,
-            start_event=NamespaceAwareStartEvent(
-                messages=event.messages,
-                user=event.user,
-                locale=event.locale,
-                files=event.files,
-                selected_namespaces=namespace_pairs,
-            ),
-            share_thread_id=True,
+        conversation_history: list[dict[str, str]] = await run_context.get(CONVERSATION_HISTORY_KEY, [])
+        conversation_history.append({"role": "assistant", "content": event.request_event.question})
+        conversation_history.append(
+            {
+                "role": "user",
+                "content": t("agent.namespace_selection.messages.user_rejected_selection"),
+            }
         )
+        await run_context.set(CONVERSATION_HISTORY_KEY, conversation_history)
+
+        return DetermineNamespacesEvent()
 
     @step(
         name=LocaleString(en="RAG Response"),
@@ -221,88 +305,74 @@ class NamespaceSelectionAgent(Agent):
         )
         return StopEvent()
 
+    # === Subsequent messages: Selection exists ===
 
-def _format_selection_question(
-    available_namespaces: dict[str, list[str]],
-    selection_prompt: LocaleString,
+    @step(
+        name=LocaleString(en="Forward to RAG"),
+        description=LocaleString(en="Forwards query to RAG agent with namespace selection"),
+        icon="tabler:send",
+        precondition=has_selection,
+    )
+    async def forward_to_rag_step(
+        self,
+        event: UserMessageEvent,
+        agent_config: NamespaceSelectionAgentConfig,
+        thread_context: ThreadContext,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> AgentInTheLoop.request:
+        """Forward message to RAG agent with stored namespace selection."""
+        selected: dict[str, str] = await thread_context.get(NAMESPACE_SELECTION_KEY, {})
+
+        await displayer.display_thought(t("agent.namespace_selection.thoughts.forwarding_to_rag"))
+
+        namespace_pairs = [
+            BucketNamespacePair(bucket_name=bucket, namespace_name=namespace) for bucket, namespace in selected.items()
+        ]
+
+        return AgentInTheLoop.invoke(
+            agent_class=agent_config.rag_delegation.rag_agent_class,
+            agent_id=agent_config.rag_delegation.rag_agent_id,
+            start_event=NamespaceAwareStartEvent(
+                messages=event.messages,
+                user=event.user,
+                locale=event.locale,
+                files=event.files,
+                selected_namespaces=namespace_pairs,
+            ),
+            share_thread_id=True,
+        )
+
+
+def _format_available_namespaces(available_namespaces: dict[str, list[str]]) -> str:
+    """Format available namespaces for LLM prompt."""
+    lines = []
+    for bucket_name, namespaces in available_namespaces.items():
+        lines.append(f"Bucket '{bucket_name}':")
+        for ns in namespaces:
+            lines.append(f"  - {ns}")
+    return "\n".join(lines)
+
+
+def _format_conversation_history(conversation_history: list[dict[str, str]]) -> str:
+    """Format conversation history for LLM prompt."""
+    lines = []
+    for entry in conversation_history:
+        role = entry.get("role", "unknown")
+        content = entry.get("content", "")
+        lines.append(f"{role.upper()}: {content}")
+    return "\n".join(lines)
+
+
+def _format_approval_question(
+    selected: dict[str, str],
+    template: LocaleString,
     t: LocaleHandler,
 ) -> str:
-    """Format the namespace selection question for the user."""
-    lines = [t.extract(selection_prompt), ""]
-
-    for i, (bucket_name, namespaces) in enumerate(available_namespaces.items(), 1):
-        lines.append(f"**{bucket_name}:**")
-        for j, ns in enumerate(namespaces, 1):
-            lines.append(f"  {j}. {ns}")
-        lines.append("")
-
-    lines.append(t("agent.namespace_selection.messages.selection_instruction"))
-
-    return "\n".join(lines)
-
-
-def _parse_namespace_selection(
-    user_response: str,
-    available_namespaces: dict[str, list[str]],
-) -> dict[str, str]:
-    """Parse user's free-text response to extract namespace selection.
-
-    Supports formats like:
-    - "1, 2" (numbered selection in order of buckets)
-    - "namespace1, namespace2" (direct namespace names)
-    - "bucket1: namespace1, bucket2: namespace2" (explicit bucket mapping)
-    """
-    selected: dict[str, str] = {}
-    buckets = list(available_namespaces.keys())
-
-    user_response_lower = user_response.lower().strip()
-
-    for bucket_name, namespaces in available_namespaces.items():
-        for ns in namespaces:
-            if ns.lower() in user_response_lower:
-                selected[bucket_name] = ns
-                break
-
-    if len(selected) == len(buckets):
-        return selected
-
-    numbers = re.findall(r"\d+", user_response)
-    if numbers:
-        for i, num_str in enumerate(numbers):
-            if i >= len(buckets):
-                break
-            bucket_name = buckets[i]
-            num = int(num_str)
-            namespaces = available_namespaces[bucket_name]
-            if 1 <= num <= len(namespaces):
-                selected[bucket_name] = namespaces[num - 1]
-
-    return selected
-
-
-def _validate_selection(
-    selected: dict[str, str],
-    available_namespaces: dict[str, list[str]],
-) -> bool:
-    """Validate that exactly one namespace is selected per bucket."""
-    if set(selected.keys()) != set(available_namespaces.keys()):
-        return False
-
-    for bucket_name, namespace in selected.items():
-        if namespace not in available_namespaces.get(bucket_name, []):
-            return False
-
-    return True
-
-
-def _get_default_selection(available_namespaces: dict[str, list[str]]) -> dict[str, str]:
-    """Get default selection (first namespace from each bucket)."""
-    return {bucket: namespaces[0] for bucket, namespaces in available_namespaces.items() if namespaces}
-
-
-def _format_selection_summary(selected: dict[str, str], t: LocaleHandler) -> str:
-    """Format a summary of the selected namespaces."""
-    lines = [t("agent.namespace_selection.messages.selection_summary")]
+    """Format the approval question with selected namespaces."""
+    namespace_lines = []
     for bucket, namespace in selected.items():
-        lines.append(f"- **{bucket}**: {namespace}")
-    return "\n".join(lines)
+        namespace_lines.append(f"- **{bucket}**: {namespace}")
+    namespaces_str = "\n".join(namespace_lines)
+
+    return t.extract(template).format(namespaces=namespaces_str)

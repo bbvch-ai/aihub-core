@@ -1,4 +1,6 @@
 # ruff: noqa: E402
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+
 from aihub_agent.agents.NamespaceSelectionAgent.configs.RAGDelegationConfig import RAGDelegationConfig
 
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
@@ -38,6 +40,7 @@ async def main():
                 fr="Agent qui demande une sélection de namespace avant de déléguer à RAG",
                 it="Agente che richiede la selezione del namespace prima di delegare a RAG",
             ),
+            llm=LLMConfig(model_name="text-generation/nano"),
             bucket_names=["defaultknowledge", "sharedknowledge"],
             rag_delegation=RAGDelegationConfig(
                 rag_agent_class="RAGAgent",

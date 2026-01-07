@@ -1,6 +1,6 @@
 """Tests for NamespaceSelectionAgent.
 
-These tests verify the NamespaceSelectionAgent correctly handles namespace selection.
+These tests verify the NamespaceSelectionAgent components work correctly.
 Note: Full integration tests require Redis, NATS, and MongoDB infrastructure.
 """
 
@@ -8,137 +8,113 @@ from unittest.mock import MagicMock
 
 from aihub_lib.i18n.LocaleString import LocaleString
 
-from aihub_agent.agents.NamespaceSelectionAgent import NamespaceSelectionAgent
 from aihub_agent.agents.NamespaceSelectionAgent.configs import NamespaceSelectionAgentConfig
-from aihub_agent.agents.NamespaceSelectionAgent.configs.RAGDelegationConfig import RAGDelegationConfig
 from aihub_agent.agents.NamespaceSelectionAgent.events import (
-    NamespaceSelectionHitl,
-    SelectionStoredEvent,
+    DetermineNamespacesEvent,
+    FollowUpQuestionHitl,
+    NamespaceApprovalHitl,
 )
+from aihub_agent.agents.NamespaceSelectionAgent.llm.NamespaceDecision import NamespaceDecision
 from aihub_agent.agents.NamespaceSelectionAgent.NamespaceSelectionAgent import (
-    _format_selection_question,
-    _format_selection_summary,
-    _get_default_selection,
-    _parse_namespace_selection,
-    _validate_selection,
+    _format_approval_question,
+    _format_available_namespaces,
+    _format_conversation_history,
 )
 
 
-def _create_test_config() -> NamespaceSelectionAgentConfig:
-    """Create a test config for NamespaceSelectionAgent."""
-    return NamespaceSelectionAgentConfig(
-        agent_id="test_namespace_agent",
-        agent_class=NamespaceSelectionAgent.__name__,
-        name=LocaleString(en="Test Agent"),
-        description=LocaleString(en="Test description"),
-        bucket_names=["defaultknowledge"],
-        rag_delegation=RAGDelegationConfig(
-            rag_agent_class="RAGAgent",
-            rag_agent_id="test_rag",
-        ),
-    )
+class TestNamespaceDecision:
+    """Tests for NamespaceDecision model."""
 
+    def test_decision_with_enough_info(self):
+        """Test creating a decision when enough info is available."""
+        decision = NamespaceDecision(
+            has_enough_information=True,
+            selected_namespaces={"bucket1": "ns1"},
+            reasoning="User clearly mentioned topic X",
+        )
+        assert decision.has_enough_information is True
+        assert decision.selected_namespaces == {"bucket1": "ns1"}
+        assert decision.follow_up_question is None
 
-class TestNamespaceSelectionParsing:
-    """Tests for parsing user namespace selection."""
-
-    def test_parse_numeric_selection(self):
-        """Test parsing numeric selection like '1, 2'."""
-        available = {"bucket1": ["ns1", "ns2"], "bucket2": ["ns3", "ns4"]}
-        result = _parse_namespace_selection("1, 2", available)
-        assert result == {"bucket1": "ns1", "bucket2": "ns4"}
-
-    def test_parse_name_selection(self):
-        """Test parsing namespace names directly."""
-        available = {"bucket1": ["namespace_a", "namespace_b"]}
-        result = _parse_namespace_selection("namespace_b", available)
-        assert result == {"bucket1": "namespace_b"}
-
-    def test_parse_mixed_selection(self):
-        """Test parsing mix of numbers and names."""
-        available = {"bucket1": ["ns1", "ns2"], "bucket2": ["ns3", "ns4"]}
-        result = _parse_namespace_selection("ns2", available)
-        assert result.get("bucket1") == "ns2"
-
-
-class TestNamespaceSelectionValidation:
-    """Tests for validating namespace selection."""
-
-    def test_valid_selection(self):
-        """Test that a valid selection passes."""
-        available = {"bucket1": ["ns1", "ns2"]}
-        selected = {"bucket1": "ns1"}
-        assert _validate_selection(selected, available) is True
-
-    def test_invalid_selection_missing_bucket(self):
-        """Test that missing bucket fails validation."""
-        available = {"bucket1": ["ns1"], "bucket2": ["ns2"]}
-        selected = {"bucket1": "ns1"}
-        assert _validate_selection(selected, available) is False
-
-    def test_invalid_selection_wrong_namespace(self):
-        """Test that wrong namespace fails validation."""
-        available = {"bucket1": ["ns1", "ns2"]}
-        selected = {"bucket1": "ns3"}
-        assert _validate_selection(selected, available) is False
-
-
-class TestDefaultSelection:
-    """Tests for default namespace selection."""
-
-    def test_get_default_selection(self):
-        """Test getting first namespace from each bucket."""
-        available = {"bucket1": ["ns1", "ns2"], "bucket2": ["ns3", "ns4"]}
-        result = _get_default_selection(available)
-        assert result == {"bucket1": "ns1", "bucket2": "ns3"}
+    def test_decision_needs_more_info(self):
+        """Test creating a decision when more info is needed."""
+        decision = NamespaceDecision(
+            has_enough_information=False,
+            follow_up_question="What topic are you interested in?",
+            reasoning="User query is too vague",
+        )
+        assert decision.has_enough_information is False
+        assert decision.selected_namespaces is None
+        assert decision.follow_up_question == "What topic are you interested in?"
 
 
 class TestFormatting:
     """Tests for formatting functions."""
 
-    def test_format_selection_summary(self):
-        """Test formatting a selection summary."""
-        selected = {"bucket1": "ns1"}
-        t = MagicMock()
-        t.side_effect = lambda x: x
-        result = _format_selection_summary(selected, t)
+    def test_format_available_namespaces(self):
+        """Test formatting namespaces for LLM prompt."""
+        available = {"bucket1": ["ns1", "ns2"], "bucket2": ["ns3"]}
+        result = _format_available_namespaces(available)
         assert "bucket1" in result
         assert "ns1" in result
+        assert "ns2" in result
+        assert "bucket2" in result
+        assert "ns3" in result
 
-    def test_format_selection_question(self):
-        """Test formatting a selection question."""
-        available = {"bucket1": ["ns1", "ns2"]}
-        prompt = LocaleString(en="Please select:")
+    def test_format_conversation_history(self):
+        """Test formatting conversation history for LLM prompt."""
+        history = [
+            {"role": "user", "content": "Hello"},
+            {"role": "assistant", "content": "Hi there"},
+        ]
+        result = _format_conversation_history(history)
+        assert "USER: Hello" in result
+        assert "ASSISTANT: Hi there" in result
+
+    def test_format_approval_question(self):
+        """Test formatting approval question with namespaces."""
+        selected = {"bucket1": "ns1", "bucket2": "ns2"}
+        template = LocaleString(en="Approve these?\n{namespaces}")
         t = MagicMock()
-        t.side_effect = lambda x: str(x) if isinstance(x, LocaleString) else x
-        t.extract = lambda x: str(x) if isinstance(x, LocaleString) else x
-        result = _format_selection_question(available, prompt, t)
+        t.extract = lambda x: x.en if hasattr(x, "en") else x
+        result = _format_approval_question(selected, template, t)
         assert "bucket1" in result
         assert "ns1" in result
+        assert "bucket2" in result
         assert "ns2" in result
 
 
 class TestEvents:
     """Tests for event definitions."""
 
-    def test_selection_stored_event_creation(self):
-        """Test creating a SelectionStoredEvent."""
-        event = SelectionStoredEvent(selected_namespaces={"bucket1": "ns1"})
-        assert event.selected_namespaces == {"bucket1": "ns1"}
+    def test_determine_namespaces_event_creation(self):
+        """Test creating a DetermineNamespacesEvent."""
+        event = DetermineNamespacesEvent()
+        assert event is not None
 
-    def test_namespace_selection_hitl_invoke(self):
-        """Test creating a NamespaceSelectionRequestEvent via invoke."""
-        request = NamespaceSelectionHitl.invoke(
-            question="Select namespace",
+    def test_follow_up_question_hitl_invoke(self):
+        """Test creating a FollowUpQuestionHitl request via invoke."""
+        request = FollowUpQuestionHitl.invoke(
+            question="What topic are you interested in?",
         )
-        assert request.question == "Select namespace"
+        assert request.question == "What topic are you interested in?"
+
+    def test_namespace_approval_hitl_invoke(self):
+        """Test creating a NamespaceApprovalHitl request via invoke."""
+        request = NamespaceApprovalHitl.invoke(
+            question="Approve these namespaces?",
+        )
+        assert request.question == "Approve these namespaces?"
 
 
 class TestConfig:
     """Tests for configuration."""
 
-    def test_config_creation(self):
-        """Test creating a valid config."""
-        config = _create_test_config()
-        assert config.bucket_names == ["defaultknowledge"]
-        assert config.rag_delegation.rag_agent_class == "RAGAgent"
+    def test_config_creation_requires_llm(self):
+        """Test that config requires LLM configuration."""
+        # This test verifies the config structure - actual LLMConfig creation
+        # requires LiteLLM proxy settings, so we just check the field exists
+        assert hasattr(NamespaceSelectionAgentConfig, "model_fields")
+        assert "llm" in NamespaceSelectionAgentConfig.model_fields
+        assert "bucket_names" in NamespaceSelectionAgentConfig.model_fields
+        assert "rag_delegation" in NamespaceSelectionAgentConfig.model_fields
