@@ -8,7 +8,7 @@
 #   - deployment/compose-config.yml (for changing model versions and configs)
 #   - deployment/templates/configs/litellm-config.yml.j2 (for changing litellm structure)
 #
-# Stage: local
+# Stage: dev
 # Hardware: CPU
 # ===================================================================
 
@@ -19,24 +19,25 @@ model_list:
 
   - model_name: text-generation/nano
     litellm_params:
-      model: azure/gpt-5-nano
-      api_base: os.environ/AZURE_OPENAI_BASE_URL
-      api_key: os.environ/AZURE_OPENAI_KEY
-      api_version: "2025-01-01-preview"
-      drop_params: true
+      model: openai/gemma-3-4b
+      api_base: http://llama-cpp:8182/
+      api_key: XXX
     model_info:
       mode: chat
+      max_input_tokens: 8196
+      max_output_tokens: 8196
+      supports_function_calling: false
 
   - model_name: text-generation/mini
     litellm_params:
-      # api has changed for gpt-5 models needs to be 4o for ingestion to work currently
-      model: azure/gpt-4o-mini
-      api_base: os.environ/AZURE_OPENAI_BASE_URL
-      api_key: os.environ/AZURE_OPENAI_KEY
-      api_version: "2025-01-01-preview"
-      drop_params: true
+      model: openai/gemma-3-4b
+      api_base: http://llama-cpp:8182/
+      api_key: XXX
     model_info:
       mode: chat
+      max_input_tokens: 8196
+      max_output_tokens: 8196
+      supports_function_calling: false
 
   - model_name: text-generation/large
     litellm_params:
@@ -66,19 +67,17 @@ model_list:
 
   - model_name: embedding/small
     litellm_params:
-      model: azure/text-embedding-3-small
-      api_base: os.environ/AZURE_OPENAI_BASE_URL
-      api_key: os.environ/AZURE_OPENAI_KEY
-      api_version: "2025-01-01-preview"
+      model: openai/qwen-3-embedding
+      api_base: http://llama-cpp-embedding:8182/v1
+      api_key: XXX
     model_info:
       mode: embedding
 
   - model_name: embedding/large
     litellm_params:
-      model: azure/text-embedding-3-large
-      api_base: os.environ/AZURE_OPENAI_BASE_URL
-      api_key: os.environ/AZURE_OPENAI_KEY
-      api_version: "2025-01-01-preview"
+      model: openai/qwen-3-embedding
+      api_base: http://llama-cpp-embedding:8182/v1
+      api_key: XXX
     model_info:
       mode: embedding
 
@@ -88,9 +87,9 @@ model_list:
 
   - model_name: reranker
     litellm_params:
-      model: cohere/rerank-english-v3.0
-      api_base: os.environ/COHERE_API_BASE
-      api_key: os.environ/COHERE_API_KEY
+      model: jina_ai/qwen-3-reranking
+      api_base: http://llama-cpp-reranker:8182/
+      api_key: XXX
     model_info:
       mode: rerank
 
@@ -114,23 +113,21 @@ model_list:
 
   - model_name: transcription
     litellm_params:
-      model: azure/gpt-4o-mini-transcribe
-      api_base: os.environ/AZURE_OPENAI_BASE_URL
-      api_key: os.environ/AZURE_OPENAI_KEY
-      api_version: "2025-03-01-preview"
+      model: openai/whisper-small
+      api_base: http://speaches:8000/
+      api_key: XXX
     model_info:
       mode: audio_transcription
-      base_model: azure/gpt-4o-mini-transcribe
+      base_model: openai/whisper-1
 
   - model_name: speech
     litellm_params:
-      model: azure/gpt-4o-mini-tts
-      api_base: os.environ/AZURE_OPENAI_BASE_URL
-      api_key: os.environ/AZURE_OPENAI_KEY
-      api_version: "2025-03-01-preview"
+      model: openai/kokoro-82m
+      api_base: http://speaches:8000/
+      api_key: XXX
     model_info:
       mode: audio_speech
-      base_model: azure/gpt-4o-mini-tts
+      base_model: openai/tts-1
 
 # ===================================================================
 # Guardrails Configuration
@@ -177,7 +174,6 @@ general_settings:
 # ===================================================================
 litellm_settings:
   callbacks: [ "detect_prompt_injection", "otel" ]
-  default_fallbacks: [ "text-generation/nano", "text-generation/mini" ]
   telemetry: true
   json_logs: true
   drop_params: true
