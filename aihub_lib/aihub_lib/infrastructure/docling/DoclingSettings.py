@@ -90,4 +90,6 @@ class DoclingSettings(EnvironmentSettings):
     HTTP_RETRIES: Annotated[int, Field(description="Number of retries for transient HTTP errors")] = 3
 
     # --- Cleanup Settings ---
-    CLEAR_RESULTS_DELAY: Annotated[int, Field(description="Delay in seconds for clearing old results after fetch")] = 30
+    CLEAR_RESULTS_DELAY: Annotated[
+        int, Field(description="Delay in seconds for clearing old results after fetch")
+    ] = 30

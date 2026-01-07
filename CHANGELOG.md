@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.256.11] - 2026-01-06 - Enhanced Document Processing and Interactive AI
+
+### Added
+
+- ✨ **Introduced Chat-style Human-in-the-Loop (HITL) interactions:** Agents can now prompt users with questions directly
+  within the chat interface, appearing as regular messages rather than pop-up dialogs, for more seamless conversational
+  workflows.
+- 🧹 **Automatic Docling Result Cleanup:** Implemented client-side and server-side mechanisms to automatically clear old
+  Docling conversion results after retrieval, improving storage management and preventing orphaned data.
+- ⚙️ **Configurable Docling Result Removal Delay:** Added a new `CLEAR_RESULTS_DELAY` setting to control how long
+  Docling results are retained before automatic cleanup.
+
+### Changed
+
+- 🛡️ **Improved Docling Conversion Resiliency:** Enhanced error handling for Docling document conversion to more
+  robustly manage network issues, connection resets, timeouts, and server restarts, reducing transient failures.
+- 📊 **Enhanced Docling Conversion Logging:** Significantly expanded debug and error logging within the Docling loader to
+  provide greater visibility into the document conversion process, aiding in troubleshooting.
+- 🚀 **Updated Docling Service Configurations:** Modified Docker Compose templates to enable `SINGLE_USE_RESULTS` and set
+  a `RESULT_REMOVAL_DELAY` for the Docling service, complementing client-side cleanup efforts.
+
+---
+
 ## [v0.256.10] - 2026-01-05 - Improved PDF Handling and Development Workflow
 
 ### Added
