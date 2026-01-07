@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -12,6 +13,7 @@ from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntit
 from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.prompts import RichPromptTemplate
+from mongoengine import DoesNotExist
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.agents.NamespaceSelectionAgent.configs.NamespaceSelectionAgentConfig import (
@@ -107,8 +109,17 @@ class NamespaceSelectionAgent(Agent):
         # Fetch available namespaces
         available_namespaces: dict[str, list[str]] = {}
         for bucket_name in agent_config.bucket_names:
-            bucket = BucketEntity.get_bucket_by_bucket_name(bucket_name)
-            namespaces = NamespaceEntity.get_namespaces_by_bucket(str(bucket.id))
+            try:
+                bucket = await asyncio.to_thread(BucketEntity.get_bucket_by_bucket_name, bucket_name)
+            except DoesNotExist:
+                logger.warning(f"Bucket '{bucket_name}' not found - skipping")
+                continue
+
+            namespaces = await asyncio.to_thread(NamespaceEntity.get_namespaces_by_bucket, str(bucket.id))
+            if not namespaces:
+                logger.warning(f"No namespaces found in bucket '{bucket_name}' - skipping")
+                continue
+
             available_namespaces[bucket_name] = [ns.namespace_name for ns in namespaces]
 
         # Store in RunContext
@@ -139,7 +150,7 @@ class NamespaceSelectionAgent(Agent):
         run_context: RunContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> FollowUpQuestionRequestEvent | NamespaceApprovalRequestEvent:
+    ) -> FollowUpQuestionRequestEvent | NamespaceApprovalRequestEvent | DetermineNamespacesEvent:
         """Use LLM to determine if enough info exists to select namespaces."""
         await displayer.display_thought(t("agent.namespace_selection.thoughts.analyzing_request"))
 
@@ -171,8 +182,20 @@ class NamespaceSelectionAgent(Agent):
             question = decision.follow_up_question or t("agent.namespace_selection.messages.default_follow_up")
             return FollowUpQuestionHitl.invoke(question=question)
 
-        # Have enough info - propose namespaces for approval
+        # Have enough info - validate and propose namespaces for approval
         selected = decision.selected_namespaces or {}
+
+        if not _validate_namespace_selection(selected, available_namespaces):
+            # Invalid selection - add error to conversation and retry
+            conversation_history.append(
+                {
+                    "role": "system",
+                    "content": "Your selection was invalid. Please select only from the available namespaces listed.",
+                }
+            )
+            await run_context.set(CONVERSATION_HISTORY_KEY, conversation_history)
+            return DetermineNamespacesEvent()
+
         await run_context.set(PROPOSED_NAMESPACES_KEY, selected)
 
         approval_question = _format_approval_question(selected, agent_config.approval_message_template, t)
@@ -376,3 +399,18 @@ def _format_approval_question(
     namespaces_str = "\n".join(namespace_lines)
 
     return t.extract(template).format(namespaces=namespaces_str)
+
+
+def _validate_namespace_selection(
+    selected: dict[str, str],
+    available_namespaces: dict[str, list[str]],
+) -> bool:
+    """Validate that LLM selection references valid buckets and namespaces."""
+    for bucket_name, namespace_name in selected.items():
+        if bucket_name not in available_namespaces:
+            logger.error(f"Invalid bucket '{bucket_name}' in LLM selection")
+            return False
+        if namespace_name not in available_namespaces[bucket_name]:
+            logger.error(f"Invalid namespace '{namespace_name}' for bucket '{bucket_name}'")
+            return False
+    return True
