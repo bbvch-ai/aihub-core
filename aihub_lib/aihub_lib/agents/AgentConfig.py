@@ -1,11 +1,9 @@
 import logging
-from types import UnionType
 from typing import TYPE_CHECKING, Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, create_model
+from pydantic import BaseModel, ConfigDict, Field
 
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.form.Form import Form
 
 if TYPE_CHECKING:
     from aihub_lib.persistence.agents import AgentConfigEntity
@@ -30,7 +28,7 @@ class StepConfig(BaseModel):
     pass
 
 
-class AgentConfig(Form):
+class AgentConfig(BaseModel):
     """
     The agent config is a flexible way to configure the runtime behavior of an agent. It can ensure that two agents
     that follow the same workflow can still be configured to achieve different outcomes through a different
@@ -78,43 +76,6 @@ class AgentConfig(Form):
         }
         config = cls(**data)
         return config
-
-    @staticmethod
-    def recursive_formkit_from_dict(model_name: str, model_dict: dict) -> BaseModel:
-        # Import at runtime to avoid circular imports
-        from aihub_lib.nats.events.form import Checkbox, InputNumber, InputText
-
-        mapping: dict[type, UnionType] = {
-            str: InputText | str,
-            int: InputNumber | int,
-            float: InputNumber | float,
-            bool: Checkbox | bool,
-        }
-
-        fields: dict[str, tuple[UnionType | type[BaseModel], ...]] = {}
-        for key, value in model_dict.items():
-            value_type = type(value)
-
-            # Map to FormKit element type, fallback to the primitive type
-            if value_type in mapping:
-                fields[key] = (mapping[value_type], value)
-            elif value_type is dict:
-                # Recursively create nested model class where dict values become field defaults
-                # Then instantiate to get an object with those values
-                nested_model_class = AgentConfig.recursive_formkit_from_dict(key, value)
-                nested_instance = nested_model_class()
-                fields[key] = (nested_model_class, nested_instance)
-            else:
-                # do nothing
-                pass
-
-        return create_model(model_name, **fields)
-
-    @staticmethod
-    def formkit_from_entity(entity: "AgentConfigEntity") -> "BaseModel":
-        agent_config: dict[str, str | float | int | bool | dict] = entity.config_data
-
-        return AgentConfig.recursive_formkit_from_dict(entity.agent_class, agent_config)
 
     def get_step_configs(self) -> dict[type[StepConfig], StepConfig]:
         """

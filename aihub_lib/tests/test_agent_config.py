@@ -1,11 +1,8 @@
-from typing import Annotated
-
 import pytest
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import Field, ValidationError
 
 from aihub_lib.agents.AgentConfig import AgentConfig, StepConfig
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.form import Checkbox, InputNumber, InputText
 from aihub_lib.persistence.agents.AgentConfigEntityEmbeddedDocument import AgentConfigEntityEmbeddedDocument
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 
@@ -141,114 +138,6 @@ class TestAgentConfig:
             "temperature": 0.8,
         }
 
-    def test_recursive_formkit_from_dict_simple_types(self) -> None:
-        """Test recursive_formkit_from_dict with simple primitive types."""
-        config_dict = {
-            "api_key": "secret123",
-            "max_retries": 3,
-            "timeout": 30.5,
-            "enabled": True,
-        }
-
-        model_class = AgentConfig.recursive_formkit_from_dict("SimpleConfig", config_dict)
-        # Instantiate the model to access the fields
-        model = model_class()
-
-        assert hasattr(model, "api_key")
-        assert hasattr(model, "max_retries")
-        assert hasattr(model, "timeout")
-        assert hasattr(model, "enabled")
-
-        # Check default values
-        assert model.api_key == "secret123"
-        assert model.max_retries == 3
-        assert model.timeout == 30.5
-        assert model.enabled is True
-
-    def test_recursive_formkit_from_dict_nested_structure(self) -> None:
-        """Test recursive_formkit_from_dict with nested dictionaries."""
-        config_dict = {
-            "api_endpoint": "https://api.example.com",
-            "retry_config": {
-                "max_retries": 5,
-                "backoff_multiplier": 2.0,
-                "enabled": True,
-            },
-        }
-
-        model_class = AgentConfig.recursive_formkit_from_dict("NestedConfig", config_dict)
-        model = model_class()
-
-        assert hasattr(model, "api_endpoint")
-        assert hasattr(model, "retry_config")
-        assert model.api_endpoint == "https://api.example.com"
-
-        nested = model.retry_config
-        assert isinstance(nested, BaseModel)
-        assert nested.max_retries == 5
-        assert nested.backoff_multiplier == 2.0
-        assert nested.enabled is True
-
-    def test_recursive_formkit_from_dict_deeply_nested(self) -> None:
-        """Test recursive_formkit_from_dict with deeply nested structures."""
-        config_dict = {
-            "level1": {
-                "level2": {
-                    "level3": {
-                        "value": "deep_value",
-                        "count": 42,
-                    }
-                }
-            }
-        }
-
-        model_class = AgentConfig.recursive_formkit_from_dict("DeepConfig", config_dict)
-        model = model_class()
-
-        assert hasattr(model, "level1")
-        assert isinstance(model.level1, BaseModel)
-        assert isinstance(model.level1.level2, BaseModel)
-        assert isinstance(model.level1.level2.level3, BaseModel)
-        assert model.level1.level2.level3.value == "deep_value"
-        assert model.level1.level2.level3.count == 42
-
-    def test_formkit_from_entity(self, sample_agent_config_entity: AgentConfigEntityEmbeddedDocument) -> None:
-        """Test formkit_from_entity creates correct model structure."""
-        model_class = AgentConfig.formkit_from_entity(sample_agent_config_entity)
-        model = model_class()
-
-        assert hasattr(model, "api_endpoint")
-        assert hasattr(model, "retry_config")
-        assert hasattr(model, "llm_settings")
-
-        assert isinstance(model.retry_config, BaseModel)
-        assert model.retry_config.max_retries == 5
-        assert model.retry_config.backoff_multiplier == 2.0
-        assert model.retry_config.enabled is True
-
-        assert isinstance(model.llm_settings, BaseModel)
-        assert model.llm_settings.model_name == "gpt-4"
-        assert model.llm_settings.temperature == 0.8
-
-    def test_formkit_from_entity_generates_formkit_types(
-        self, sample_agent_config_entity: AgentConfigEntityEmbeddedDocument
-    ) -> None:
-        """Test that formkit_from_entity generates FormKit UI element types, not just plain values."""
-        model_class = AgentConfig.formkit_from_entity(sample_agent_config_entity)
-        model = model_class()
-
-        assert isinstance(model.api_endpoint, str | InputText)
-
-        assert isinstance(model.retry_config.max_retries, int | InputNumber)
-
-        assert isinstance(model.retry_config.backoff_multiplier, float | InputNumber)
-
-        assert isinstance(model.retry_config.enabled, bool | Checkbox)
-
-        assert isinstance(model.llm_settings.model_name, str | InputText)
-
-        assert isinstance(model.llm_settings.temperature, float | InputNumber)
-
 
 class TestStepConfig:
     """Test cases for StepConfig functionality."""
@@ -331,60 +220,6 @@ class TestStepConfig:
         step_configs = config.get_step_configs()
         processing_config = step_configs[ProcessingConfig]
         assert processing_config.max_items == 200
-
-
-class TestAgentConfigFormIntegration:
-    """Test cases for AgentConfig Form integration."""
-
-    def test_agent_config_with_form_elements(self, sample_locale_string: LocaleString) -> None:
-        """Test that AgentConfig can include FormKit elements."""
-
-        class FormAgentConfig(AgentConfig):
-            api_key: Annotated[str | InputText, Field(description="API Key")]
-            max_tokens: Annotated[int | InputNumber, Field(description="Maximum tokens")]
-            enable_logging: Annotated[bool | Checkbox, Field(description="Enable logging")]
-
-        config = FormAgentConfig(
-            agent_class="FormAgent",
-            agent_id="form-agent-1",
-            name=sample_locale_string,
-            description=sample_locale_string,
-            api_key=InputText(label="API Key"),
-            max_tokens=InputNumber(label="Max Tokens", min_value=1, max_value=4000),
-            enable_logging=Checkbox(label="Enable Logging"),
-        )
-
-        # Verify form elements are properly assigned
-        assert isinstance(config.api_key, InputText)
-        assert isinstance(config.max_tokens, InputNumber)
-        assert isinstance(config.enable_logging, Checkbox)
-
-    def test_to_formkit_form_generates_elements(self, sample_locale_string: LocaleString) -> None:
-        """Test that to_formkit_form() generates correct FormKit elements."""
-
-        class FormAgentConfig(AgentConfig):
-            api_key: Annotated[str | InputText, Field(description="API Key")]
-            max_tokens: Annotated[int | InputNumber, Field(description="Maximum tokens")]
-            enable_logging: Annotated[bool | Checkbox, Field(description="Enable logging")]
-
-        config = FormAgentConfig(
-            agent_class="FormAgent",
-            agent_id="form-agent-1",
-            name=sample_locale_string,
-            description=sample_locale_string,
-            api_key=InputText(label="API Key"),
-            max_tokens=InputNumber(label="Max Tokens", min_value=1, max_value=4000),
-            enable_logging=Checkbox(label="Enable Logging"),
-        )
-
-        form_elements = config.to_formkit_form()
-
-        # Should generate form elements for the FormKit fields
-        assert len(form_elements) >= 3
-        element_names = [elem.name for elem in form_elements]
-        assert "api_key" in element_names
-        assert "max_tokens" in element_names
-        assert "enable_logging" in element_names
 
 
 class TestAgentConfigEntityRoundTrip:
