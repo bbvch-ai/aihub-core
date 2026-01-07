@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_api"
-version = "v0.256.10"
+version = "v0.256.11"
 description = "api core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
