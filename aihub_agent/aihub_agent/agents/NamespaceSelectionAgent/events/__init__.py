@@ -9,11 +9,6 @@ from aihub_agent.agents.NamespaceSelectionAgent.events.NamespaceApprovalHitl imp
     NamespaceApprovalRequestEvent,
     NamespaceApprovalResponseEvent,
 )
-from aihub_agent.agents.NamespaceSelectionAgent.events.NamespaceSelectionHitl import (
-    NamespaceSelectionHitl,
-    NamespaceSelectionRequestEvent,
-)
-from aihub_agent.agents.NamespaceSelectionAgent.events.SelectionStoredEvent import SelectionStoredEvent
 from aihub_agent.agents.RagAgent.events.NamespaceAwareStartEvent import NamespaceAwareStartEvent
 
 __all__ = [
@@ -25,7 +20,4 @@ __all__ = [
     "NamespaceApprovalRequestEvent",
     "NamespaceApprovalResponseEvent",
     "NamespaceAwareStartEvent",
-    "NamespaceSelectionHitl",
-    "NamespaceSelectionRequestEvent",
-    "SelectionStoredEvent",
 ]
