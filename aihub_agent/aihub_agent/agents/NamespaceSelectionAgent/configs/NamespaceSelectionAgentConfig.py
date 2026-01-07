@@ -31,6 +31,15 @@ class NamespaceSelectionAgentConfig(AgentConfig):
         Field(description="Configuration for delegating queries to the RAG agent."),
     ]
 
+    max_conversation_history_entries: Annotated[
+        int,
+        Field(
+            default=20,
+            ge=4,
+            description="Maximum number of conversation history entries to keep. Keeps first entry + most recent.",
+        ),
+    ]
+
     approval_message_template: Annotated[
         LocaleString,
         Field(description="Message template for namespace approval. Use {namespaces} placeholder."),

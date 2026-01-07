@@ -15,10 +15,10 @@ from aihub_agent.agents.NamespaceSelectionAgent.events import (
     NamespaceApprovalHitl,
 )
 from aihub_agent.agents.NamespaceSelectionAgent.llm.NamespaceDecision import NamespaceDecision
-from aihub_agent.agents.NamespaceSelectionAgent.NamespaceSelectionAgent import (
-    _format_approval_question,
-    _format_available_namespaces,
-    _format_conversation_history,
+from aihub_agent.agents.NamespaceSelectionAgent.utils import (
+    format_approval_question,
+    format_available_namespaces,
+    format_conversation_history,
 )
 
 
@@ -54,7 +54,7 @@ class TestFormatting:
     def test_format_available_namespaces(self):
         """Test formatting namespaces for LLM prompt."""
         available = {"bucket1": ["ns1", "ns2"], "bucket2": ["ns3"]}
-        result = _format_available_namespaces(available)
+        result = format_available_namespaces(available)
         assert "bucket1" in result
         assert "ns1" in result
         assert "ns2" in result
@@ -67,7 +67,7 @@ class TestFormatting:
             {"role": "user", "content": "Hello"},
             {"role": "assistant", "content": "Hi there"},
         ]
-        result = _format_conversation_history(history)
+        result = format_conversation_history(history)
         assert "USER: Hello" in result
         assert "ASSISTANT: Hi there" in result
 
@@ -77,7 +77,7 @@ class TestFormatting:
         template = LocaleString(en="Approve these?\n{namespaces}")
         t = MagicMock()
         t.extract = lambda x: x.en if hasattr(x, "en") else x
-        result = _format_approval_question(selected, template, t)
+        result = format_approval_question(selected, template, t)
         assert "bucket1" in result
         assert "ns1" in result
         assert "bucket2" in result

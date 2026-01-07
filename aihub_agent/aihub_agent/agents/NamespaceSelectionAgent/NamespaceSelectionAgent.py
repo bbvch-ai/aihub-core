@@ -35,6 +35,7 @@ from aihub_agent.agents.NamespaceSelectionAgent.utils import (
     format_approval_question,
     format_available_namespaces,
     format_conversation_history,
+    truncate_conversation_history,
     validate_namespace_selection,
 )
 from aihub_agent.agents.RagAgent.events.NamespaceAwareStartEvent import NamespaceAwareStartEvent
@@ -118,18 +119,18 @@ class NamespaceSelectionAgent(Agent):
             try:
                 bucket = await asyncio.to_thread(BucketEntity.get_bucket_by_bucket_name, bucket_name)
             except DoesNotExist:
-                logger.warning(f"Bucket '{bucket_name}' not found - skipping")
+                logger.warning("Bucket '%s' not found - skipping", bucket_name)
                 continue
 
             namespaces = await asyncio.to_thread(NamespaceEntity.get_namespaces_by_bucket, str(bucket.id))
             if not namespaces:
-                logger.warning(f"No namespaces found in bucket '{bucket_name}' - skipping")
+                logger.warning("No namespaces found in bucket '%s' - skipping", bucket_name)
                 continue
 
             available_namespaces[bucket_name] = [ns.namespace_name for ns in namespaces]
 
         # Store in RunContext
-        logger.debug(f"Available namespaces fetched: {available_namespaces}")
+        logger.debug("Available namespaces fetched: %s", available_namespaces)
         await run_context.set(AVAILABLE_NAMESPACES_KEY, available_namespaces)
         await run_context.set(ORIGINAL_MESSAGES_KEY, [msg.model_dump() for msg in event.messages])
         await run_context.set(ORIGINAL_USER_KEY, event.user.model_dump() if event.user else None)
@@ -167,8 +168,8 @@ class NamespaceSelectionAgent(Agent):
         namespaces_str = format_available_namespaces(available_namespaces)
         conversation_str = format_conversation_history(conversation_history)
 
-        logger.debug(f"Formatted namespaces string:\n{namespaces_str}")
-        logger.debug(f"Conversation history:\n{conversation_str}")
+        logger.debug("Formatted namespaces string:\n%s", namespaces_str)
+        logger.debug("Conversation history:\n%s", conversation_str)
 
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             prompt = RichPromptTemplate(t("agent.namespace_selection.prompts.determination"))
@@ -215,6 +216,7 @@ class NamespaceSelectionAgent(Agent):
     async def process_follow_up_step(
         self,
         event: FollowUpQuestionResponseEvent,
+        agent_config: NamespaceSelectionAgentConfig,
         run_context: RunContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
@@ -227,6 +229,9 @@ class NamespaceSelectionAgent(Agent):
         # Add the question that was asked and the user's response
         conversation_history.append({"role": "assistant", "content": event.request_event.question})
         conversation_history.append({"role": "user", "content": event.response})
+        conversation_history = truncate_conversation_history(
+            conversation_history, agent_config.max_conversation_history_entries
+        )
         await run_context.set(CONVERSATION_HISTORY_KEY, conversation_history)
 
         return DetermineNamespacesEvent()
@@ -292,6 +297,9 @@ class NamespaceSelectionAgent(Agent):
                 "role": "user",
                 "content": t("agent.namespace_selection.messages.user_rejected_selection"),
             }
+        )
+        conversation_history = truncate_conversation_history(
+            conversation_history, agent_config.max_conversation_history_entries
         )
         await run_context.set(CONVERSATION_HISTORY_KEY, conversation_history)
 
