@@ -1,13 +1,12 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from aihub_lib.persistence.rag.documents.entities.RefDoc import IngestionStatus
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     DOCUMENT_TITLE,
     HASH,
-    INGESTION_STATUS,
     INSERTED_AT,
+    IS_INGESTED,
     NAMESPACE,
     NODE_CONTENT_TYPE,
     NODE_CONTENT_TYPE_TEXT,
@@ -66,6 +65,6 @@ class RefDocDocument(Document):
             SOURCE: data_lake_file.uri,
             SOURCE_ORIGIN: data_lake_file.metadata.get(SOURCE_ORIGIN),
             DOCUMENT_TITLE: data_lake_file.metadata.get(DOCUMENT_TITLE, document_title),
-            INGESTION_STATUS: IngestionStatus.INGESTED.value,
+            IS_INGESTED: True,
         }
         return self

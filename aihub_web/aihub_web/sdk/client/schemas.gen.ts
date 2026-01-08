@@ -4798,13 +4798,7 @@ export const DocumentDTOSchema = {
         is_ingested: {
             type: 'boolean',
             title: 'Is Ingested',
-            description: 'Indicates if the document has been ingested.'
-        },
-        ingestion_status: {
-            type: 'string',
-            title: 'Ingestion Status',
-            description: "Ingestion status: 'pending' or 'ingested'.",
-            default: 'ingested'
+            description: 'Whether the document has been fully ingested.'
         },
         content: {
             anyOf: [
@@ -10050,7 +10044,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1767885950
+            default: 1767889732
         },
         owned_by: {
             type: 'string',

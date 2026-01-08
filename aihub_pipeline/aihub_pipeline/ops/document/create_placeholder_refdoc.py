@@ -1,10 +1,9 @@
-from aihub_lib.persistence.rag.documents.entities.RefDoc import IngestionStatus
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     DOCUMENT_TITLE,
     HASH,
-    INGESTION_STATUS,
     INSERTED_AT,
+    IS_INGESTED,
     NAMESPACE,
     NODE_CONTENT_TYPE,
     NODE_CONTENT_TYPE_TEXT,
@@ -23,7 +22,7 @@ from aihub_pipeline.types.RefDocDocument import RefDocDocument
 def create_placeholder_refdoc_from_data_lake_file(
     data_lake_file: DataLakeFile,
 ) -> Output[RefDocDocument]:
-    """Create a placeholder RefDocDocument with pending status from a DataLakeFile."""
+    """Create a placeholder RefDocDocument (not yet ingested) from a DataLakeFile."""
     doc = RefDocDocument(text="")
     doc.id_ = data_lake_file.id_
 
@@ -41,7 +40,7 @@ def create_placeholder_refdoc_from_data_lake_file(
         NODE_CONTENT_TYPE: NODE_CONTENT_TYPE_TEXT,
         SOURCE: data_lake_file.uri,
         DOCUMENT_TITLE: data_lake_file.metadata.get(DOCUMENT_TITLE, document_title),
-        INGESTION_STATUS: IngestionStatus.PENDING.value,
+        IS_INGESTED: False,
     }
 
     return Output(doc)

@@ -3726,14 +3726,9 @@ export type DocumentDto = {
     inserted_at: string | null;
     /**
      * Is Ingested
-     * Indicates if the document has been ingested.
+     * Whether the document has been fully ingested.
      */
     is_ingested: boolean;
-    /**
-     * Ingestion Status
-     * Ingestion status: 'pending' or 'ingested'.
-     */
-    ingestion_status?: string;
     /**
      * Content
      * Content of the document.

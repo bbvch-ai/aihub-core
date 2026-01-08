@@ -27,7 +27,7 @@ NUMBER_OF_PAGES: str = "number_of_pages"
 CREATED_AT: str = "created_at"
 UPDATED_AT: str = "updated_at"
 INSERTED_AT: str = "inserted_at"
-INGESTION_STATUS: str = "ingestion_status"
+IS_INGESTED: str = "is_ingested"
 
 # Node level - Metadata
 INDEX = "index"

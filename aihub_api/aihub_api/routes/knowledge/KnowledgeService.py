@@ -17,7 +17,7 @@ from aihub_lib.nats.topic_managers.pipeline.PipelineInstanceTopicManager import 
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
 from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
-from aihub_lib.persistence.rag.documents.entities.RefDoc import IngestionStatus, RefDoc
+from aihub_lib.persistence.rag.documents.entities.RefDoc import RefDoc
 from aihub_lib.persistence.rag.vectors import VectorStoreFactory
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     DOCUMENT_ID,
@@ -73,22 +73,14 @@ class KnowledgeService:
         sort_field: str | None = None,
         sort_order: int = 1,
     ) -> tuple[int, list[DocumentDTO]]:
-        """
-        Retrieves paginated documents for a given namespace from a single RefDoc collection.
+        """Retrieves paginated documents for a namespace.
 
-        Args:
-            search: Filter by document title or source filename (case-insensitive)
-            sort_field: Field to sort by (document_title, created_at, updated_at)
-            sort_order: 1 for ascending, -1 for descending
-
-        When sorting is applied or search is provided, uses unified query.
-        Otherwise, pending documents are shown first, followed by ingested documents.
+        Default sort is by updated_at (newest first).
+        Use sort_field=is_ingested to see pending documents first.
         """
         skip = (page - 1) * page_size
-
         KnowledgeService._ensure_db_exists(db)
 
-        # If search is provided, use search methods with sorting
         if search:
             total = RefDoc.count_search_in_namespace(db_alias=db, namespace=namespace, query=search)
             if skip >= total:
@@ -102,11 +94,7 @@ class KnowledgeService:
                 sort_field=sort_field,
                 sort_order=sort_order,
             )
-            docs = [DocumentDTO.from_ref_doc(doc) for doc in ref_docs]
-            return total, docs
-
-        # If sorting is applied, use unified query
-        if sort_field:
+        else:
             total = RefDoc.count_by_namespace(db_alias=db, namespace=namespace)
             if skip >= total:
                 return total, []
@@ -118,38 +106,8 @@ class KnowledgeService:
                 sort_field=sort_field,
                 sort_order=sort_order,
             )
-            docs = [DocumentDTO.from_ref_doc(doc) for doc in ref_docs]
-            return total, docs
 
-        # Default pagination: pending first, then ingested
-        pending_count = RefDoc.count_by_status_and_namespace(
-            db_alias=db, namespace=namespace, ingestion_status=IngestionStatus.PENDING.value
-        )
-        ingested_count = RefDoc.count_by_status_and_namespace(
-            db_alias=db, namespace=namespace, ingestion_status=IngestionStatus.INGESTED.value
-        )
-        total = pending_count + ingested_count
-
-        if skip >= total:
-            return total, []
-
-        pending_to_fetch = max(0, min(page_size, pending_count - skip))
-        ingested_to_fetch = page_size - pending_to_fetch
-        ingested_skip = max(0, skip - pending_count)
-
-        docs: list[DocumentDTO] = []
-        if pending_to_fetch > 0:
-            pending_docs = RefDoc.get_pending_by_namespace(
-                db_alias=db, namespace=namespace, skip=skip, limit=pending_to_fetch
-            )
-            docs.extend([DocumentDTO.from_ref_doc(doc) for doc in pending_docs])
-        if ingested_to_fetch > 0:
-            ingested_docs = RefDoc.get_ingested_by_namespace(
-                db_alias=db, namespace=namespace, skip=ingested_skip, limit=ingested_to_fetch
-            )
-            docs.extend([DocumentDTO.from_ref_doc(doc) for doc in ingested_docs])
-
-        return total, docs
+        return total, [DocumentDTO.from_ref_doc(doc) for doc in ref_docs]
 
     @staticmethod
     @trace_fn
@@ -437,18 +395,23 @@ class KnowledgeService:
         exists = S3AnonymousFileAccessService().verify_file_exists(container=container, file_path=object_key)
 
         if exists:
-            try:
-                KnowledgeService._ensure_db_exists(database)
-                source = f"s3://{container}/{object_key}"
-                document_title = object_key.split("/")[-1]
+            KnowledgeService._ensure_db_exists(database)
+            source = f"s3://{container}/{object_key}"
+            document_title = object_key.split("/")[-1]
 
+            # Create placeholder - log warning if fails but continue to publish event
+            try:
                 RefDoc.get_or_create_placeholder(
                     db_alias=database,
                     source=source,
                     namespace=namespace,
                     document_title=document_title,
                 )
+            except Exception as e:
+                logger.warning(f"Failed to create placeholder for {object_key}: {e}")
 
+            # Publish event to trigger pipeline - this must succeed or upload fails
+            try:
                 await KnowledgeService._publish_source_updated_event(
                     nc=nc,
                     database=database,
@@ -456,7 +419,12 @@ class KnowledgeService:
                     file_path=object_key,
                 )
             except Exception as e:
-                logger.exception(f"Failed to process upload for {object_key}: {e}")
+                logger.exception(f"Failed to publish event for {object_key}: {e}")
+                raise HTTPException(
+                    status_code=500,
+                    detail="Upload succeeded but processing could not be initiated. Please try again.",
+                ) from e
+
         return DocumentUploadValidationResponse(exists=exists, file_path=object_key, container=container)
 
     @staticmethod
