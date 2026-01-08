@@ -4,14 +4,12 @@
       {{ label }}
     </legend>
 
-    <!-- Repeater items -->
     <div class="flex flex-col gap-3">
       <div
         v-for="(item, index) in items"
         :key="index"
         class="relative rounded-lg border border-surface-200 p-4 dark:border-surface-700"
       >
-        <!-- Item header with index and remove button -->
         <div class="mb-3 flex items-center justify-between">
           <span class="text-sm font-medium text-surface-600 dark:text-surface-400">
             #{{ index + 1 }}
@@ -27,7 +25,6 @@
           />
         </div>
 
-        <!-- Item content - render children schema for each item -->
         <FormKit
           v-if="modelValue"
           :id="`${name}-${index}`"
@@ -42,7 +39,6 @@
       </div>
     </div>
 
-    <!-- Add button -->
     <Button
       type="button"
       :label="addLabel || 'Add Item'"
@@ -56,7 +52,7 @@
 </template>
 
 <script setup lang="ts">
-import type { FormKitSchemaNode } from '@formkit/core'
+import type {FormKitSchemaNode} from '@formkit/core'
 
 const props = defineProps<{
   name: string
@@ -67,18 +63,15 @@ const props = defineProps<{
   max?: number
 }>()
 
-const modelValue = defineModel<Record<string, unknown>[]>({ default: () => [] })
+const modelValue = defineModel<Record<string, unknown>[]>({default: () => []})
 
-// Ensure modelValue is always an array
 const items = computed(() => modelValue.value || [])
 
-// Check if add button should be disabled (only when max is a number and reached)
 const isAddDisabled = computed(() => {
   if (typeof props.max !== 'number') return false
   return items.value.length >= props.max
 })
 
-// Check if remove button should be disabled (only when min is a number and reached)
 const isRemoveDisabled = computed(() => {
   const minVal = typeof props.min === 'number' ? props.min : 0
   return items.value.length <= minVal
@@ -94,7 +87,6 @@ function addItem() {
 
 function removeItem(index: number) {
   if (!modelValue.value || isRemoveDisabled.value) return
-  // Create new array to trigger reactivity
   modelValue.value = modelValue.value.filter((_, i) => i !== index)
 }
 </script>

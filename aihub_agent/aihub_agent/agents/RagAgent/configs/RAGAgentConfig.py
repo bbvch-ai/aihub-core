@@ -1,38 +1,13 @@
-from typing import Annotated, Any
+from typing import Annotated
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.generative_ai.retrievers.RetrieverConfig import RetrieverConfig
 from aihub_lib.i18n.LocaleString import LocaleString
-from pydantic import Field, field_validator
+from pydantic import Field
 
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
-
-
-def _empty_locale_string_to_none(v: Any) -> Any:
-    """
-    Convert empty LocaleString data to None.
-
-    FormKit may send:
-    - Empty dict: {} -> None
-    - Dict with empty strings: {"en": "", "de": ""} -> None
-    - LocaleString with all None/empty values -> None
-    """
-    if v is None:
-        return None
-    if isinstance(v, dict):
-        # Empty dict
-        if not v:
-            return None
-        # Dict with all empty/None values
-        if all(not val for val in v.values()):
-            return None
-    if isinstance(v, LocaleString):
-        # LocaleString with all None/empty values
-        if not any([v.de, v.en, v.fr, v.it]):
-            return None
-    return v
 
 
 class RAGAgentConfig(AgentConfig):
@@ -96,9 +71,3 @@ class RAGAgentConfig(AgentConfig):
         RerankingConfig,
         Field(description="Configuration for reranking retrieved documents to improve relevance."),
     ] = RerankingConfig()
-
-    @field_validator("context_prompt", "system_prompt", "context_insufficient_prompt", mode="before")
-    @classmethod
-    def empty_locale_string_to_none(cls, v: Any) -> Any:
-        """Convert empty LocaleString data from FormKit to None."""
-        return _empty_locale_string_to_none(v)

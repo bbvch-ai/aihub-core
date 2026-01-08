@@ -3,13 +3,24 @@ import logging
 from asyncio import sleep
 from typing import Annotated, Any
 
+from bson import ObjectId
+from cachetools import TTLCache
+from fastapi import HTTPException
+from nats.aio.client import Client as NATS
+
+from aihub_api.routes.agent.dto.AgentClassDTO import AgentClassDTO
+from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
+from aihub_api.routes.agent.dto.AgentInstanceDTO import AgentInstanceDTO
+from aihub_api.routes.agent.dto.CreateAgentRequest import CreateAgentRequest
+from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
+from aihub_api.routes.thread.ThreadService import ThreadService
+from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.infrastructure.api.DiscoverySettings import DiscoverySettings
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
+from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from aihub_lib.nats.events import (
     BaseEvent,
     DisplayEvent,
@@ -18,8 +29,8 @@ from aihub_lib.nats.events import (
     StartEvent,
     StopEvent,
 )
-from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentClassDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
+from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentClassDiscoveryResponseEvent
 from aihub_lib.nats.events.human_in_the_loop.request import HumanInTheLoopRequestEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
@@ -32,28 +43,35 @@ from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEn
 from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
-from bson import ObjectId
-from cachetools import TTLCache
-from fastapi import HTTPException
-from nats.aio.client import Client as NATS
-
-from aihub_api.routes.agent.dto.AgentClassDTO import AgentClassDTO
-from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
-from aihub_api.routes.agent.dto.AgentInstanceDTO import AgentInstanceDTO
-from aihub_api.routes.agent.dto.CreateAgentRequest import CreateAgentRequest
-from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
-from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
-from aihub_api.routes.thread.ThreadService import ThreadService
 
 logger = logging.getLogger(__name__)
+
+
+def _normalize_empty_locale_strings(value: Any) -> Any:
+    """
+    Recursively normalize empty LocaleString data from FormKit to None.
+    """
+    if value is None:
+        return None
+
+    if isinstance(value, dict):
+        locale_keys = {"de", "en", "fr", "it"}
+        if set(value.keys()).issubset(locale_keys):
+            if not value or all(not val for val in value.values()):
+                return None
+
+        return {k: _normalize_empty_locale_strings(v) for k, v in value.items()}
+
+    if isinstance(value, list):
+        return [_normalize_empty_locale_strings(item) for item in value]
+
+    return value
+
 
 # In-memory caches to avoid repeatedly querying NATS for agent info
 DISCOVER_AGENTS_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache the entire agent list for 60s
 GET_AGENT_INSTANCE_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache individual agents for 60s
 GET_AGENT_CLASS_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache agent classes for 60s
-
-# Discovery settings for configurable timeouts
-discovery_settings = DiscoverySettings()
 
 
 class AgentService:
@@ -218,9 +236,9 @@ class AgentService:
             subject=topic_manager.get_agent_class_discovery_subject_request(call_id=call_id),
         )
 
-        # Wait for response with configurable timeout
+        # Wait up to 1 second for response
         try:
-            await asyncio.wait_for(agent_found_event.wait(), timeout=discovery_settings.CLASS_DISCOVERY_TIMEOUT)
+            await asyncio.wait_for(agent_found_event.wait(), timeout=1.0)
         except TimeoutError:
             await nc_subscriber.stop()
             raise HTTPException(status_code=404, detail=f"Agent {agent_class} not found.")
@@ -564,31 +582,16 @@ class AgentService:
     async def get_agent_configuration(agent_class: str, agent_id: str) -> dict[str, Any]:
         """
         Retrieve the current configuration data for a specific agent.
-
-        Returns the nested dict structure directly. The frontend handles
-        flattening/unflattening for FormKit compatibility.
-
-        Falls back to default_agent_config if no custom configuration exists.
-
-        Args:
-            agent_class: The agent's class identifier
-            agent_id: The agent's instance identifier
-
-        Returns:
-            Dictionary containing the agent's configuration values (nested structure)
         """
-        # First, check for custom configuration in agent_configs collection
         config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
 
         if config_entity and config_entity.config_data:
             return config_entity.config_data
 
-        # Fall back to default_agent_config from AgentEntity
         agent_entity = AgentEntity.get_agent(agent_class, agent_id)
         if agent_entity and agent_entity.default_agent_config:
             return agent_entity.default_agent_config.config_data
 
-        # If no configuration exists at all, return empty dict
         return {}
 
     @staticmethod
@@ -598,17 +601,6 @@ class AgentService:
     ) -> dict[str, Any]:
         """
         Update the configuration data for a specific agent.
-
-        Expects nested dict structure from the frontend (frontend handles conversion
-        from FormKit's dot-notation format).
-
-        Args:
-            agent_class: The agent's class identifier
-            agent_id: The agent's instance identifier
-            configuration: The new configuration values (nested structure)
-
-        Returns:
-            Dictionary containing the updated configuration values (nested structure)
         """
         agent_entity = AgentEntity.get_agent(agent_class, agent_id)
         if not agent_entity:
@@ -617,23 +609,29 @@ class AgentService:
                 detail=f"Agent {agent_class}/{agent_id} not found. Cannot update configuration.",
             )
 
-        # Validate configuration keys against form schema
+        # Filter out FormKit internal fields (those starting with '_')
+        configuration = {k: v for k, v in configuration.items() if not k.startswith("_")}
+
+        # Normalize empty LocaleString data from FormKit to None
+        configuration = _normalize_empty_locale_strings(configuration)
+
+        # Log unknown fields but allow them (for backwards compatibility with existing configs)
         if agent_entity.agent_config_specs and agent_entity.agent_config_specs.form:
             standard_fields = {"name", "description", "icon", "agent_class", "agent_id"}
             form_field_names = {
-                elem.name for elem in agent_entity.agent_config_specs.form if hasattr(elem, "name") and elem.name
+                elem.name
+                for elem in agent_entity.agent_config_specs.form_elements
+                if hasattr(elem, "name") and elem.name
             }
             valid_fields = standard_fields | form_field_names
 
-            invalid_fields = set(configuration.keys()) - valid_fields
-            if invalid_fields:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Invalid configuration fields: {', '.join(sorted(invalid_fields))}. "
-                    f"Valid fields are: {', '.join(sorted(valid_fields))}",
+            unknown_fields = set(configuration.keys()) - valid_fields
+            if unknown_fields:
+                logger.warning(
+                    f"Configuration for {agent_class}/{agent_id} contains unknown fields: "
+                    f"{', '.join(sorted(unknown_fields))}. These fields will be preserved but are not in the form schema."
                 )
 
-        # Find existing configuration or create new one
         config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
 
         if config_entity:
@@ -655,7 +653,6 @@ class AgentService:
             )
             config_entity.save()
 
-        # Clear cache to ensure updated config is immediately visible
         AgentService._clear_cache()
 
         return configuration
@@ -676,8 +673,6 @@ class AgentService:
         """
         Returns all discovered agent classes (types) that are currently online.
         Each agent class includes its form schema for configuration.
-
-        This is used for the "Create New Agent" feature to populate the agent class dropdown.
         """
         agent_classes = await AgentService._discover_agent_classes(nc)
         return agent_classes
@@ -691,22 +686,9 @@ class AgentService:
     ) -> AgentDTO:
         """
         Creates a new agent instance from an existing agent class.
-
-        Args:
-            nc: NATS client connection
-            request: CreateAgentRequest with agent_class, agent_id, and configuration
-            t: LocaleHandler for translations
-
-        Returns:
-            AgentDTO for the newly created agent
-
-        Raises:
-            HTTPException 404: Agent class not found
-            HTTPException 409: Agent with this agent_class/agent_id already exists
         """
         from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 
-        # Step 1: Verify the agent class exists (must be online/discovered)
         try:
             agent_class_dto = await AgentService._discover_agent_class(nc, request.agent_class)
         except HTTPException:
@@ -715,7 +697,6 @@ class AgentService:
                 detail=f"Agent class '{request.agent_class}' not found. Make sure the agent is running.",
             )
 
-        # Step 2: Check agent_id uniqueness within the agent class
         existing_config = AgentConfigEntityDocument.find_for_class_and_id(request.agent_class, request.agent_id)
         if existing_config:
             raise HTTPException(
@@ -723,14 +704,12 @@ class AgentService:
                 detail=f"Agent '{request.agent_class}/{request.agent_id}' already exists.",
             )
 
-        # Also check if it matches the default agent config
         if agent_class_dto.default_agent_config.agent_id == request.agent_id:
             raise HTTPException(
                 status_code=409,
                 detail=f"Agent ID '{request.agent_id}' is reserved for the default configuration.",
             )
 
-        # Step 2.5: Validate configuration keys against form schema
         standard_fields = {"name", "description", "icon", "agent_class", "agent_id"}
         form_field_names = {
             elem.name for elem in agent_class_dto.agent_config_specs.form if hasattr(elem, "name") and elem.name
@@ -745,13 +724,11 @@ class AgentService:
                 f"Valid fields are: {', '.join(sorted(valid_fields))}",
             )
 
-        # Step 3: Extract name, description, icon from configuration or use defaults
         config = request.configuration
         name_data = config.get("name", {})
         description_data = config.get("description", {})
         icon = config.get("icon", agent_class_dto.agent_config_specs.icon or "meteor-icons:robot")
 
-        # Create LocaleStringEntity for name and description
         name_entity = LocaleStringEntity(
             de=name_data.get("de", f"New {request.agent_class}"),
             en=name_data.get("en", f"New {request.agent_class}"),
@@ -765,8 +742,6 @@ class AgentService:
             it=description_data.get("it", ""),
         )
 
-        # Step 4: Create AgentConfigEntityDocument with full configuration
-        # Include agent_class and agent_id in the config_data
         full_config_data = {
             **config,
             "agent_class": request.agent_class,
@@ -783,8 +758,6 @@ class AgentService:
         )
         config_entity.save()
 
-        # Step 5: Create AgentEntity for the new instance
-        # Wrap in try/except to rollback config on failure
         try:
             agent_config = AgentConfig.from_entity(config_entity)
             agent_instance_dto = AgentInstanceDTO.from_class_and_config(
@@ -793,14 +766,11 @@ class AgentService:
             )
             agent_instance_dto.create_or_update_agent_entity()
         except Exception:
-            # Rollback: delete the config we just created
             config_entity.delete()
             raise
 
-        # Step 6: Clear cache to ensure fresh data
         AgentService._clear_cache()
 
-        # Step 7: Return the created agent
         agent_entity = AgentEntity.get_agent(request.agent_class, request.agent_id)
         if not agent_entity:
             raise HTTPException(
@@ -815,20 +785,7 @@ class AgentService:
     async def delete_agent(agent_class: str, agent_id: str) -> None:
         """
         Deletes an agent instance by removing its configuration from the database.
-
-        Only user-created agents (stored in AgentConfigEntityDocument) can be deleted.
-        Default agent configurations (from the agent class itself) cannot be deleted.
-
-        Args:
-            agent_class: The agent class identifier
-            agent_id: The agent instance identifier
-
-        Raises:
-            HTTPException 403: Attempting to delete a default agent configuration
-            HTTPException 404: Agent configuration not found
         """
-        # Explicit check: prevent deletion of default agent configurations
-        # Get any agent entity of this class to check its default_agent_config
         any_agent_of_class = AgentEntity.objects(agent_class=agent_class).first()
         if any_agent_of_class and any_agent_of_class.default_agent_config:
             default_id = any_agent_of_class.default_agent_config.agent_id
@@ -839,9 +796,6 @@ class AgentService:
                     "Default configurations are managed by the agent class itself.",
                 )
 
-        # Only user-created agent configs can be deleted.
-        # Default configs (from the agent class itself) are not stored in AgentConfigEntityDocument,
-        # so find_for_class_and_id will return None for them, preventing deletion.
         config = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
         if not config:
             raise HTTPException(
@@ -850,13 +804,10 @@ class AgentService:
                 "Only user-created configurations can be deleted; default configurations cannot be removed.",
             )
 
-        # Delete the configuration
         AgentConfigEntityDocument.delete_if_exists_for_class_and_id(agent_class, agent_id)
 
-        # Also delete the agent entity if it exists
         agent_entity = AgentEntity.get_agent(agent_class, agent_id)
         if agent_entity:
             agent_entity.delete()
 
-        # Clear cache to ensure fresh data
         AgentService._clear_cache()

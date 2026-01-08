@@ -128,7 +128,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
             hitl_request_events=hitl_request_events,
             hitl_response_events=hitl_response_events,
             network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
-            agent_config_specs=AgentConfigSpecs.from_agent_config_class(AgentConfig),
+            agent_config_specs=AgentConfigSpecs.from_agent_config(self.default_agent_config, form=[]),
             default_agent_config=self.default_agent_config,
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)

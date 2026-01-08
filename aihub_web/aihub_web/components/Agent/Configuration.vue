@@ -22,7 +22,7 @@
       >
         <FormKitSchema
           :schema="schema"
-          :data="data"
+          :data="{...data}"
         />
 
         <!-- Render repeaters separately (not supported by FormKit standard) -->
@@ -43,12 +43,12 @@
 </template>
 
 <script setup lang="ts">
-import { type GetModelsByModeResponse, type FormkitElement, getModelsByMode } from '@core/sdk/client'
+import {type FormkitElement, getModelsByMode, type GetModelsByModeResponse} from '@core/sdk/client'
 import merge from 'lodash/merge'
 
-import type { FormKitSchemaNode, FormKitSchemaDefinition } from '@formkit/core'
+import type {FormKitSchemaDefinition, FormKitSchemaNode} from '@formkit/core'
 
-const { t } = useI18n()
+const {t} = useI18n()
 
 const props = defineProps<{
   title: string
@@ -57,12 +57,11 @@ const props = defineProps<{
   initialData?: Record<string, unknown>
 }>()
 
-// Extract unique API modes from form elements for dynamic model fetching
 function extractApiModes(elements: FormkitElement[]): string[] {
   const modes = new Set<string>()
+
   function traverse(el: FormkitElement) {
     const record = el as Record<string, unknown>
-    // Check both snake_case (Python) and camelCase (alias) versions
     const apiMode = record.options_api_mode || record.optionsApiMode
     if (apiMode && typeof apiMode === 'string') {
       modes.add(apiMode)
@@ -73,13 +72,13 @@ function extractApiModes(elements: FormkitElement[]): string[] {
       }
     }
   }
+
   for (const el of elements) {
     traverse(el)
   }
   return [...modes]
 }
 
-// Fetch models by mode - returns a map of mode -> model options
 const modelsByMode = ref<Record<string, GetModelsByModeResponse>>({})
 
 async function fetchModelsForModes(modes: string[]) {
@@ -89,11 +88,10 @@ async function fetchModelsForModes(modes: string[]) {
       try {
         const models = await getModelsByMode({
           composable: '$fetch',
-          path: { mode },
+          path: {mode},
         })
         results[mode] = models
-      }
-      catch (error) {
+      } catch (error) {
         console.warn(`Failed to fetch models for mode "${mode}":`, error)
         results[mode] = []
       }
@@ -113,27 +111,21 @@ watch(
       }
     }
   },
-  { immediate: true },
+  {immediate: true},
 )
 
-// Initialize form data with initialData prop
-// Start with initialData if available, otherwise empty object
 const data = ref<Record<string, unknown>>(props.initialData || {})
 
-// Watch for changes in initialData and update form data
-// Use deep: true to ensure nested changes are detected
 watch(() => props.initialData, (newData) => {
   if (newData && Object.keys(newData).length > 0) {
-    // Deep merge with existing data to preserve any user changes and nested objects
     data.value = merge({}, data.value, newData)
   }
-}, { deep: true })
+}, {deep: true})
 
 const emit = defineEmits<{
   submit: [Record<string, unknown>]
 }>()
 
-// Repeater element configuration for custom rendering
 interface RepeaterConfig {
   name: string
   label?: string
@@ -143,15 +135,14 @@ interface RepeaterConfig {
   max?: number
 }
 
-// Wraps a node in a labeled fieldset
 function wrapInFieldset(label: string, node: FormKitSchemaNode): FormKitSchemaNode[] {
   return [{
     $el: 'fieldset',
-    attrs: { class: 'formkit-group-fieldset border border-surface-300 dark:border-surface-600 rounded-lg p-4 mb-4' },
+    attrs: {class: 'formkit-group-fieldset border border-surface-300 dark:border-surface-600 rounded-lg p-4 mb-4'},
     children: [
       {
         $el: 'legend',
-        attrs: { class: 'text-sm font-semibold px-2 text-surface-700 dark:text-surface-300' },
+        attrs: {class: 'text-sm font-semibold px-2 text-surface-700 dark:text-surface-300'},
         children: label,
       },
       node,
@@ -171,10 +162,8 @@ const schema = computed<FormKitSchemaDefinition>(() => {
     const elementRecord = formElement as Record<string, unknown>
     const formkitType = elementRecord.formkit || elementRecord.$formkit
 
-    // Skip repeaters - they're rendered separately with custom component
     if (formkitType === 'repeater') return []
 
-    // Handle group elements - wrap with visual container if label exists
     if (formkitType === 'group') {
       const children = (elementRecord.children as FormkitElement[] || []).flatMap(transformElement)
       const groupNode: FormKitSchemaNode = {
@@ -193,23 +182,17 @@ const schema = computed<FormKitSchemaDefinition>(() => {
       $formkit: formkitType,
     } as FormKitSchemaNode
 
-    // Remove the original formkit property to avoid duplication
     delete (formkitNode as Record<string, unknown>).formkit
 
-    // Handle dynamic model options from API
     const nodeRecord = formkitNode as Record<string, unknown>
-    // Check both snake_case (Python) and camelCase (alias) versions
     const apiMode = nodeRecord.options_api_mode || nodeRecord.optionsApiMode
     if (apiMode && typeof apiMode === 'string') {
       const models = modelsByMode.value[apiMode] || []
-      // Convert models to options array with model_name as both label and value
       nodeRecord.options = models.map(m => m.model_name)
-      // Remove the custom attributes as FormKit doesn't need them
       delete nodeRecord.options_api_mode
       delete nodeRecord.optionsApiMode
     }
 
-    // Replace template variables in labels
     if (formkitNode?.label && typeof formkitNode.label === 'string') {
       formkitNode.label = formkitNode.label.replace(pattern, (match: string) => {
         const key = match.substring(1)
@@ -217,7 +200,6 @@ const schema = computed<FormKitSchemaDefinition>(() => {
       })
     }
 
-    // Recursively transform children for any other elements with children
     if (nodeRecord.children && Array.isArray(nodeRecord.children)) {
       nodeRecord.children = (nodeRecord.children as FormkitElement[]).flatMap(transformElement)
     }
@@ -228,7 +210,6 @@ const schema = computed<FormKitSchemaDefinition>(() => {
   return props.form.flatMap(transformElement)
 })
 
-// Extract repeater elements for custom rendering
 const repeaterElements = computed<RepeaterConfig[]>(() => {
   if (!props.form || props.form.length === 0) return []
 
@@ -251,7 +232,7 @@ const repeaterElements = computed<RepeaterConfig[]>(() => {
       return groupNode
     }
 
-    const cleanNode: Record<string, unknown> = { $formkit: formkitType }
+    const cleanNode: Record<string, unknown> = {$formkit: formkitType}
     if (elementRecord.name) cleanNode.name = elementRecord.name
     if (elementRecord.label) cleanNode.label = elementRecord.label
     if (elementRecord.help) cleanNode.help = elementRecord.help
@@ -290,9 +271,11 @@ async function submitHandler() {
 .content {
   @apply font-light text-xs
 }
-.content :deep(.formkit-outer){
+
+.content :deep(.formkit-outer) {
   @apply pt-3 pb-1;
 }
+
 .content :deep(h1) {
   @apply pt-3 pb-1 text-xl font-bold;
 }
@@ -346,17 +329,21 @@ async function submitHandler() {
 }
 
 .content :deep(p a) {
-  @apply  border-b border-dotted border-gray-400  after:content-['↗'] after:pl-[1px];
+  @apply border-b border-dotted border-gray-400  after:content-['↗'] after:pl-[1px];
 }
+
 .content :deep(ul a) {
-  @apply  border-b border-dotted border-gray-400  after:content-['↗'] after:pl-[1px];
+  @apply border-b border-dotted border-gray-400  after:content-['↗'] after:pl-[1px];
 }
+
 .content :deep(table) {
   @apply my-8;
 }
+
 .content :deep(th) {
   @apply border border-surface-200 dark:border-surface-500 p-2 text-left font-bold bg-surface-100 dark:bg-surface-800;
 }
+
 .content :deep(td) {
   @apply border border-surface-200 dark:border-surface-500 p-2 text-left;
 }

@@ -39,16 +39,15 @@
 </template>
 
 <script setup lang="ts">
-import type { AgentConfigDtoReadable } from '@core/sdk/client'
+import type {AgentConfigDtoReadable} from '@core/sdk/client'
 
-// Form element type from AgentConfigDto
 type FormElement = NonNullable<AgentConfigDtoReadable['form']>[number]
 
 const route = useRoute()
-const { agent, agentIsLoading } = useAgent()
-const { agentConfiguration, agentConfigurationIsLoading } = useAgentConfiguration()
-const { updateAgentConfiguration } = useUpdateAgentConfiguration()
-const { t } = useI18n()
+const {agent, agentIsLoading} = useAgent()
+const {agentConfiguration, agentConfigurationIsLoading} = useAgentConfiguration()
+const {updateAgentConfiguration} = useUpdateAgentConfiguration()
+const {t} = useI18n()
 const toast = useToast()
 
 const configForm = computed(() => agent.value?.agent_config?.form || [])
@@ -62,7 +61,7 @@ const initializeGroupData = (
   formElements: FormElement[],
   data: Record<string, unknown>,
 ): Record<string, unknown> => {
-  const result = { ...data }
+  const result = {...data}
 
   for (const element of formElements) {
     const elementRecord = element as Record<string, unknown>
@@ -72,12 +71,10 @@ const initializeGroupData = (
       const name = elementRecord.name as string
       const children = elementRecord.children as FormElement[] | undefined
 
-      // Ensure group has an object value (not null/undefined)
       if (result[name] === null || result[name] === undefined) {
         result[name] = {}
       }
 
-      // Recursively initialize nested groups
       if (children && Array.isArray(children)) {
         result[name] = initializeGroupData(children, result[name] as Record<string, unknown>)
       }
@@ -87,7 +84,6 @@ const initializeGroupData = (
   return result
 }
 
-// Initialize nested group data with empty objects where null/undefined
 const configurationData = computed(() => {
   const rawData = (agentConfiguration.value?.configuration || {}) as Record<string, unknown>
   return initializeGroupData(configForm.value, rawData)
@@ -97,7 +93,6 @@ const submitConfiguration = async (formData: Record<string, unknown>) => {
   const agentClass = route.params.agent_class as string
   const agentId = route.params.agent_id as string
 
-  // FormKit with groups already produces nested data, send directly to API
   try {
     await updateAgentConfiguration({
       agentClass,
@@ -109,8 +104,7 @@ const submitConfiguration = async (formData: Record<string, unknown>) => {
       summary: t('agent.configuration.saveSuccess'),
       life: 3000,
     })
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Failed to save agent configuration:', error)
     toast.add({
       severity: 'error',

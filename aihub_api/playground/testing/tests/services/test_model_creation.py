@@ -589,7 +589,7 @@ class TestSchemaValidation:
             start_events=[event_specs],
             stop_events=[],
             network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
-            agent_config_specs=AgentConfigSpecs.from_agent_config_class(AgentConfig),
+            agent_config_specs=AgentConfigSpecs.from_agent_config(agent_config, form=[]),
             default_agent_config=agent_config,
             hitl_request_events=[],
             hitl_response_events=[],

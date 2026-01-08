@@ -7,15 +7,13 @@
     :closable="!isCreating"
   >
     <div class="flex flex-col gap-6">
-      <!-- Loading state -->
       <div
         v-if="agentClassesAreLoading"
         class="flex items-center justify-center py-8"
       >
-        <ProgressSpinner />
+        <ProgressSpinner/>
       </div>
 
-      <!-- No agent classes available -->
       <div
         v-else-if="!agentClasses || agentClasses.length === 0"
         class="py-8 text-center text-surface-500"
@@ -23,9 +21,7 @@
         {{ t('agent.create.noAgentClasses') }}
       </div>
 
-      <!-- Form content -->
       <template v-else>
-        <!-- Step 1: Select Agent Class -->
         <div class="flex flex-col gap-2">
           <label
             for="agentClass"
@@ -44,7 +40,6 @@
           />
         </div>
 
-        <!-- Step 2: Enter Agent ID -->
         <div class="flex flex-col gap-2">
           <label
             for="agentId"
@@ -71,7 +66,6 @@
           </small>
         </div>
 
-        <!-- Step 3: Configuration Form -->
         <div
           v-if="selectedClassData && configForm.length > 0"
           class="flex flex-col gap-2"
@@ -94,7 +88,6 @@
                 :data="formData"
               />
 
-              <!-- Render repeaters separately (not supported by FormKit standard) -->
               <FormKitRepeater
                 v-for="rep in repeaterElements"
                 :key="rep.name"
@@ -112,7 +105,6 @@
       </template>
     </div>
 
-    <!-- Footer with action buttons -->
     <template #footer>
       <Button
         :label="t('agent.create.cancel')"
@@ -130,8 +122,8 @@
 </template>
 
 <script setup lang="ts">
-import type { AgentClassDto } from '@core/composables/agent/useAgentClasses'
-import type { FormKitSchemaDefinition, FormKitSchemaNode } from '@formkit/core'
+import type {AgentClassDto} from '@core/composables/agent/useAgentClasses'
+import type {FormKitSchemaDefinition, FormKitSchemaNode} from '@formkit/core'
 
 const props = defineProps<{
   modelValue: boolean
@@ -142,38 +134,32 @@ const emit = defineEmits<{
   'success': [agentClass: string, agentId: string]
 }>()
 
-const { t, locale } = useI18n()
+const {t, locale} = useI18n()
 const toast = useToast()
-const { agentClasses, agentClassesAreLoading } = useAgentClasses()
-const { createAgent, isCreating } = useCreateAgent()
+const {agentClasses, agentClassesAreLoading} = useAgentClasses()
+const {createAgent, isCreating} = useCreateAgent()
 
-// Form state
 const selectedClass = ref<string>('')
 const agentId = ref('')
 const agentIdError = ref('')
 const formData = ref<Record<string, unknown>>({})
 
-// Computed visibility for v-model
 const visible = computed({
   get: () => props.modelValue,
   set: (value: boolean) => emit('update:modelValue', value),
 })
 
-// Get the selected class data
 const selectedClassData = computed<AgentClassDto | undefined>(() => {
   if (!selectedClass.value || !agentClasses.value) return undefined
   return agentClasses.value.find(c => c.agent_class === selectedClass.value)
 })
 
-// Get the form schema from selected class
 const configForm = computed(() => {
   return selectedClassData.value?.agent_config_specs?.form || []
 })
 
-// Transform form elements to FormKit schema
 type FormElement = Record<string, unknown>
 
-// Helper to get localized string value
 function getLocalizedString(value: unknown, currentLocale: string): string | undefined {
   if (!value) return undefined
   if (typeof value === 'string') return value
@@ -184,15 +170,14 @@ function getLocalizedString(value: unknown, currentLocale: string): string | und
   return String(value)
 }
 
-// Wraps a node in a labeled fieldset
 function wrapInFieldset(label: string, node: FormKitSchemaNode): FormKitSchemaNode[] {
   return [{
     $el: 'fieldset',
-    attrs: { class: 'border border-surface-300 dark:border-surface-600 rounded-lg p-4 mb-4' },
+    attrs: {class: 'border border-surface-300 dark:border-surface-600 rounded-lg p-4 mb-4'},
     children: [
       {
         $el: 'legend',
-        attrs: { class: 'text-sm font-semibold px-2 text-surface-700 dark:text-surface-300' },
+        attrs: {class: 'text-sm font-semibold px-2 text-surface-700 dark:text-surface-300'},
         children: label,
       },
       node,
@@ -200,7 +185,6 @@ function wrapInFieldset(label: string, node: FormKitSchemaNode): FormKitSchemaNo
   }] as FormKitSchemaNode[]
 }
 
-// Repeater element configuration for custom rendering
 interface RepeaterConfig {
   name: string
   label?: string
@@ -220,13 +204,11 @@ const schema = computed<FormKitSchemaDefinition>(() => {
 
     const formkitType = formElement.formkit || formElement.$formkit
 
-    // Skip repeaters - they're rendered separately with custom component
     if (formkitType === 'repeater') return []
 
     const children = (formElement.children as FormElement[] || []).flatMap(transformElement)
     const label = getLocalizedString(formElement.label, currentLocale)
 
-    // Handle group elements
     if (formkitType === 'group') {
       const groupNode: FormKitSchemaNode = {
         $formkit: 'group',
@@ -236,8 +218,7 @@ const schema = computed<FormKitSchemaDefinition>(() => {
       return label ? wrapInFieldset(label, groupNode) : groupNode
     }
 
-    // Build a clean node for other element types
-    const cleanNode: Record<string, unknown> = { $formkit: formkitType }
+    const cleanNode: Record<string, unknown> = {$formkit: formkitType}
     if (formElement.name) cleanNode.name = formElement.name
     if (label) cleanNode.label = label
     const help = getLocalizedString(formElement.help, currentLocale)
@@ -254,14 +235,12 @@ const schema = computed<FormKitSchemaDefinition>(() => {
 
   try {
     return configForm.value.flatMap(el => transformElement(el as FormElement))
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Error transforming schema:', error)
     return []
   }
 })
 
-// Extract repeater elements for custom rendering
 const repeaterElements = computed<RepeaterConfig[]>(() => {
   if (!configForm.value || configForm.value.length === 0) return []
 
@@ -283,7 +262,7 @@ const repeaterElements = computed<RepeaterConfig[]>(() => {
       return label ? wrapInFieldset(label, groupNode) : groupNode
     }
 
-    const cleanNode: Record<string, unknown> = { $formkit: formkitType }
+    const cleanNode: Record<string, unknown> = {$formkit: formkitType}
     if (formElement.name) cleanNode.name = formElement.name
     if (label) cleanNode.label = label
     const help = getLocalizedString(formElement.help, currentLocale)
@@ -314,21 +293,17 @@ const repeaterElements = computed<RepeaterConfig[]>(() => {
   return repeaters
 })
 
-// Initialize form data when class is selected
 watch(selectedClassData, (newClass) => {
   if (newClass?.default_agent_config) {
-    // Initialize with default config, ensuring nested groups have objects
     formData.value = initializeGroupData(
       configForm.value as FormElement[],
-      { ...newClass.default_agent_config } as Record<string, unknown>,
+      {...newClass.default_agent_config} as Record<string, unknown>,
     )
-  }
-  else {
+  } else {
     formData.value = {}
   }
-}, { immediate: true })
+}, {immediate: true})
 
-// Initialize a single element's data based on its type
 function initializeElementData(
   element: FormElement,
   result: Record<string, unknown>,
@@ -344,8 +319,7 @@ function initializeElementData(
     if (hasChildren) {
       result[name] = recursiveFn(children, result[name] as Record<string, unknown>)
     }
-  }
-  else if (formkitType === 'repeater') {
+  } else if (formkitType === 'repeater') {
     result[name] = result[name] ?? []
     if (Array.isArray(result[name]) && hasChildren) {
       result[name] = (result[name] as Record<string, unknown>[]).map(item => recursiveFn(children, item))
@@ -353,19 +327,17 @@ function initializeElementData(
   }
 }
 
-// Helper to initialize group and repeater data with proper structures
 function initializeGroupData(
   formElements: FormElement[],
   data: Record<string, unknown>,
 ): Record<string, unknown> {
-  const result = { ...data }
+  const result = {...data}
   for (const element of formElements) {
     initializeElementData(element, result, initializeGroupData)
   }
   return result
 }
 
-// Validate agent ID
 const agentIdPattern = /^[a-z0-9_-]+$/
 
 function validateAgentId() {
@@ -376,16 +348,13 @@ function validateAgentId() {
 
   if (!agentIdPattern.test(agentId.value)) {
     agentIdError.value = t('agent.create.agentIdInvalid')
-  }
-  else if (agentId.value.length > 100) {
+  } else if (agentId.value.length > 100) {
     agentIdError.value = t('agent.create.agentIdTooLong')
-  }
-  else {
+  } else {
     agentIdError.value = ''
   }
 }
 
-// Can submit check
 const canSubmit = computed(() => {
   const hasClass = !!selectedClass.value
   const hasId = !!agentId.value
@@ -395,13 +364,11 @@ const canSubmit = computed(() => {
   return hasClass && hasId && noError && validPattern
 })
 
-// Close modal
 function closeModal() {
   visible.value = false
   resetForm()
 }
 
-// Reset form
 function resetForm() {
   selectedClass.value = ''
   agentId.value = ''
@@ -409,7 +376,6 @@ function resetForm() {
   formData.value = {}
 }
 
-// Handle submit
 async function handleSubmit() {
   if (!canSubmit.value) return
 
@@ -430,8 +396,7 @@ async function handleSubmit() {
 
     emit('success', selectedClass.value, agentId.value)
     closeModal()
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Failed to create agent:', error)
     toast.add({
       severity: 'error',

@@ -1,14 +1,30 @@
 import asyncio
-import time
 from asyncio import sleep
 from typing import Any
 
+import time
+from bson import ObjectId
+from cachetools import TTLCache
+from fastapi import HTTPException
+from nats.aio.client import Client as NATS
+
+from aihub_api.routes.process.dto import (
+    AgentProcessStepDTO,
+    HumanProcessStepDTO,
+    PersistedEventDTO,
+    ProgramProcessStepDTO,
+)
+from aihub_api.routes.process.dto.ProcessClassDTO import ProcessClassDTO
+from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
+from aihub_api.routes.process.dto.ProcessInstanceDTO import ProcessInstanceDTO
+from aihub_api.routes.process.dto.ProcessWalkthroughDTO import ProcessWalkthroughDTO
+from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
+from aihub_api.routes.process.dto.in_specs.HumanInDTO import HumanInDTO
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.infrastructure.api.DiscoverySettings import DiscoverySettings
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from aihub_lib.nats.distributor.events.ExternalProcessEvent import ExternalProcessEvent
 from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
+from aihub_lib.nats.distributor.events.ExternalProcessEvent import ExternalProcessEvent
 from aihub_lib.nats.events import ProcessStartEvent, WorkEvent
 from aihub_lib.nats.events.discovery import ProcessClassDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
@@ -21,31 +37,11 @@ from aihub_lib.persistence.messaging.entities.PersistedProcessEventEntity import
 from aihub_lib.persistence.process.ProcessConfigEntityDocument import ProcessConfigEntityDocument
 from aihub_lib.persistence.process.ProcessEntity import ProcessEntity
 from aihub_lib.processes.ProcessConfig import ProcessConfig
-from bson import ObjectId
-from cachetools import TTLCache
-from fastapi import HTTPException
-from nats.aio.client import Client as NATS
-
-from aihub_api.routes.process.dto import (
-    AgentProcessStepDTO,
-    HumanProcessStepDTO,
-    PersistedEventDTO,
-    ProgramProcessStepDTO,
-)
-from aihub_api.routes.process.dto.in_specs.HumanInDTO import HumanInDTO
-from aihub_api.routes.process.dto.ProcessClassDTO import ProcessClassDTO
-from aihub_api.routes.process.dto.ProcessDTO import ProcessDTO
-from aihub_api.routes.process.dto.ProcessInstanceDTO import ProcessInstanceDTO
-from aihub_api.routes.process.dto.ProcessWalkthroughDTO import ProcessWalkthroughDTO
-from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
 
 # In-memory caches to avoid repeatedly querying NATS for process info
 DISCOVER_PROCESSES_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache the entire process list for 60s
 GET_PROCESS_INSTANCE_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache individual processes for 60s
 GET_PROCESS_CLASS_CACHE = TTLCache(maxsize=100, ttl=60)  # Cache process classes for 60s
-
-# Discovery settings for configurable timeouts
-discovery_settings = DiscoverySettings()
 
 
 class ProcessService:
@@ -205,9 +201,9 @@ class ProcessService:
             subject=topic_manager.get_process_class_discovery_subject_request(call_id=call_id),
         )
 
-        # Wait for response with configurable timeout
+        # Wait up to 1 second for response
         try:
-            await asyncio.wait_for(process_found_event.wait(), timeout=discovery_settings.CLASS_DISCOVERY_TIMEOUT)
+            await asyncio.wait_for(process_found_event.wait(), timeout=1.0)
         except TimeoutError:
             await nc_subscriber.stop()
             raise HTTPException(status_code=404, detail=f"Process {process_class} not found.")
@@ -692,12 +688,16 @@ class ProcessService:
                             involved_humans[user_id] = MinimalUserDTO.model_validate(
                                 {
                                     "id": user_id,
-                                    "name": submitted_by.get("name")
-                                    if isinstance(submitted_by, dict)
-                                    else getattr(submitted_by, "name", ""),
-                                    "email": submitted_by.get("email")
-                                    if isinstance(submitted_by, dict)
-                                    else getattr(submitted_by, "email", ""),
+                                    "name": (
+                                        submitted_by.get("name")
+                                        if isinstance(submitted_by, dict)
+                                        else getattr(submitted_by, "name", "")
+                                    ),
+                                    "email": (
+                                        submitted_by.get("email")
+                                        if isinstance(submitted_by, dict)
+                                        else getattr(submitted_by, "email", "")
+                                    ),
                                     "profile_image": profile_image,
                                 }
                             )

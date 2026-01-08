@@ -193,7 +193,6 @@ class AgentEntity(Document):
         Creates a new AgentEntity from an AgentDTO or updates an existing one if an agent
         with the same agent_class and agent_id already exists.
         """
-        # Check if an agent with the same agent_class and agent_id already exists
         existing_agent = cls.objects(agent_class=agent_class, agent_id=agent_id).first()
 
         agent_config_entity = AgentConfigEntityDocument.find_for_class_and_id(
@@ -203,12 +202,10 @@ class AgentEntity(Document):
             logger.debug(f"No agent config found for class {agent_class} and ID {agent_id}.")
 
         default_agent_config_entity = AgentConfigEntityEmbeddedDocument.from_agent_config(default_agent_config)
-        # If no agent_config_specs provided, derive from default_agent_config
         if agent_config_specs is None:
             agent_config_specs = AgentConfigSpecs.from_agent_config(default_agent_config)
         agent_config_specs_entity = AgentConfigSpecsEntity.from_specs(agent_config_specs)
 
-        # Create EventSpec objects, serializing the schema to avoid $ issues
         start_events = [EventSpec.from_specs(event) for event in start_events]
         stop_events = [EventSpec.from_specs(event) for event in stop_events]
         hitl_request_events = [EventSpec.from_specs(event) for event in hitl_request_events]
@@ -217,7 +214,6 @@ class AgentEntity(Document):
         network_graph = network_graph.model_dump()
 
         if existing_agent:
-            # Update existing agent
             existing_agent.agent_config = agent_config_entity
             existing_agent.default_agent_config = default_agent_config_entity
             existing_agent.agent_config_specs = agent_config_specs_entity
@@ -231,7 +227,6 @@ class AgentEntity(Document):
             existing_agent.save()
             return existing_agent
         else:
-            # Create new agent
             return cls.create_agent(
                 agent_class=agent_class,
                 agent_id=agent_id,

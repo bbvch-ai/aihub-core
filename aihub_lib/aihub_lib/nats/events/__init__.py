@@ -7,9 +7,6 @@ from .common import LimitChatHistoryEvent, StandaloneQuestionCondenserEvent
 from .control import ControlEvent, ExceptionEvent, StartEvent, StopEvent
 from .ControlAndDisplayEvent import ControlAndDisplayEvent
 from .cost import CostEvent, LLMCostEvent
-
-# Lazy import discovery events to avoid circular dependency with AgentConfig
-# from .discovery import AgentInstanceDiscoveryResponseEvent, InstanceDiscoveryRequestEvent
 from .display import ChunkEvent, DisplayEvent, ThoughtEvent
 from .guard import GuardRejectionEvent
 from .human_in_the_loop import HumanInTheLoop
@@ -32,7 +29,6 @@ from .work import AgentWorkEvent, HumanWorkEvent, ProgramWorkEvent, WorkEvent
 from .work_request import AgentWorkRequestEvent, HumanWorkRequestEvent, ProgramWorkRequestEvent, WorkRequestEvent
 
 
-# Lazy loading for discovery events to avoid circular imports with AgentConfig
 def __getattr__(name: str):
     if name == "AgentInstanceDiscoveryResponseEvent":
         from .discovery import AgentInstanceDiscoveryResponseEvent

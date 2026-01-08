@@ -149,7 +149,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             hitl_request_events=self.hitl_request_events or [],
             hitl_response_events=self.hitl_response_events or [],
             network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
-            agent_config_specs=AgentConfigSpecs.from_agent_config_class(AgentConfig),
+            agent_config_specs=AgentConfigSpecs.from_agent_config(self.default_agent_config, form=[]),
             default_agent_config=self.default_agent_config,
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)

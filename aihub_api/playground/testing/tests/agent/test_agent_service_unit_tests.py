@@ -649,8 +649,8 @@ class TestUpdateAgentConfiguration:
     """Unit tests for AgentService.update_agent_configuration method."""
 
     @pytest.mark.asyncio
-    async def test_update_agent_configuration_rejects_invalid_fields(self):
-        """Test that update_agent_configuration rejects configuration with invalid fields."""
+    async def test_update_agent_configuration_warns_on_unknown_fields(self, caplog):
+        """Test that update_agent_configuration logs a warning for unknown fields but still saves."""
         # Create a mock agent entity with form specs
         mock_agent_entity = Mock()
         mock_agent_entity.agent_class = "TestAgent"
@@ -662,26 +662,37 @@ class TestUpdateAgentConfiguration:
 
         mock_config_specs = Mock()
         mock_config_specs.form = [mock_form_element]
+        mock_config_specs.form_elements = [mock_form_element]
         mock_config_specs.name = LocaleString(en="Test")
         mock_config_specs.description = LocaleString(en="Test description")
         mock_config_specs.icon = "test-icon"
 
         mock_agent_entity.agent_config_specs = mock_config_specs
 
+        mock_config_entity = Mock()
+        mock_config_entity.config_data = {}
+        mock_config_entity.save = Mock()
+
         with patch.object(AgentEntity, "get_agent") as mock_get_agent:
             mock_get_agent.return_value = mock_agent_entity
 
-            # Try to update with an invalid field
-            with pytest.raises(HTTPException) as exc_info:
-                await AgentService.update_agent_configuration(
-                    agent_class="TestAgent",
-                    agent_id="test_agent_1",
-                    configuration={"invalid_field_that_does_not_exist": "value"},
-                )
+            with patch.object(AgentConfigEntityDocument, "find_for_class_and_id") as mock_find_config:
+                mock_find_config.return_value = mock_config_entity
 
-            assert exc_info.value.status_code == 400
-            assert "Invalid configuration fields" in str(exc_info.value.detail)
-            assert "invalid_field_that_does_not_exist" in str(exc_info.value.detail)
+                with patch.object(AgentService, "_clear_cache"):
+                    # Update with an unknown field - should succeed with warning
+                    await AgentService.update_agent_configuration(
+                        agent_class="TestAgent",
+                        agent_id="test_agent_1",
+                        configuration={"invalid_field_that_does_not_exist": "value"},
+                    )
+
+                    # Verify the config was saved (unknown fields are preserved)
+                    mock_config_entity.save.assert_called_once()
+                    assert "invalid_field_that_does_not_exist" in mock_config_entity.config_data
+
+                    # Verify warning was logged
+                    assert "unknown fields" in caplog.text.lower()
 
     @pytest.mark.asyncio
     async def test_update_agent_configuration_clears_cache(self):
