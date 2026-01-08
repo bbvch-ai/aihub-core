@@ -1,17 +1,17 @@
 """Event triggering LLM namespace determination step."""
 
-from typing import ClassVar
+from typing import Annotated, ClassVar
 
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.control.ControlEvent import ControlEvent
+from pydantic import Field
 
 
 class DetermineNamespacesEvent(ControlEvent):
     """Internal event that triggers the LLM namespace determination step.
 
-    This event is emitted to enter or re-enter the namespace determination loop.
-    The conversation history and available namespaces are stored in RunContext,
-    not in this event, to keep the event lightweight.
+    This event carries available namespaces through the determination loop,
+    eliminating the need for RunContext storage of this data.
     """
 
     _display_name: ClassVar[LocaleString] = LocaleString(
@@ -26,3 +26,11 @@ class DetermineNamespacesEvent(ControlEvent):
         fr="Déclenche le LLM pour déterminer les namespaces à partir du contexte de conversation.",
         it="Attiva l'LLM per determinare i namespace dal contesto della conversazione.",
     )
+
+    available_namespaces: Annotated[
+        dict[str, list[str]],
+        Field(
+            default_factory=dict,
+            description="Map of bucket names to their available namespace names.",
+        ),
+    ]

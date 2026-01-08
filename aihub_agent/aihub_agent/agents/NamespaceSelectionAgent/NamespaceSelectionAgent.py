@@ -45,9 +45,7 @@ logger = logging.getLogger(__name__)
 
 
 # RunContext keys
-AVAILABLE_NAMESPACES_KEY = "available_namespaces"
 CONVERSATION_HISTORY_KEY = "conversation_history"
-PROPOSED_NAMESPACES_KEY = "proposed_namespaces"
 
 # ThreadContext keys
 NAMESPACE_SELECTION_KEY = "namespace_selection"
@@ -134,9 +132,7 @@ class NamespaceSelectionAgent(Agent):
 
             available_namespaces[bucket_name] = [ns.namespace_name for ns in namespaces]
 
-        # Store in RunContext
         logger.debug("Available namespaces fetched: %s", available_namespaces)
-        await run_context.set(AVAILABLE_NAMESPACES_KEY, available_namespaces)
 
         # Initialize conversation history with user's first message
         conversation_history = [{"role": "user", "content": event.user_query}]
@@ -144,7 +140,7 @@ class NamespaceSelectionAgent(Agent):
 
         await displayer.display_thought(t("agent.namespace_selection.thoughts.starting_determination"))
 
-        return DetermineNamespacesEvent()
+        return DetermineNamespacesEvent(available_namespaces=available_namespaces)
 
     @step(
         name=LocaleString(en="Determine Namespaces"),
@@ -153,7 +149,7 @@ class NamespaceSelectionAgent(Agent):
     )
     async def determine_namespaces_step(
         self,
-        _: DetermineNamespacesEvent,
+        event: DetermineNamespacesEvent,
         agent_config: NamespaceSelectionAgentConfig,
         run_context: RunContext,
         displayer: EventDisplayer,
@@ -162,7 +158,7 @@ class NamespaceSelectionAgent(Agent):
         """Use LLM to determine if enough info exists to select namespaces."""
         await displayer.display_thought(t("agent.namespace_selection.thoughts.analyzing_request"))
 
-        available_namespaces: dict[str, list[str]] = await run_context.get(AVAILABLE_NAMESPACES_KEY, {})
+        available_namespaces = event.available_namespaces
         conversation_history: list[dict[str, str]] = await run_context.get(CONVERSATION_HISTORY_KEY, [])
 
         # Format namespaces for LLM
@@ -188,7 +184,7 @@ class NamespaceSelectionAgent(Agent):
         if not decision.has_enough_information:
             # Need more info - ask follow-up question
             question = decision.follow_up_question or t("agent.namespace_selection.messages.default_follow_up")
-            return FollowUpQuestionHitl.invoke(question=question)
+            return FollowUpQuestionHitl.invoke(question=question, available_namespaces=available_namespaces)
 
         # Have enough info - validate and propose namespaces for approval
         selected = decision.selected_namespaces or {}
@@ -202,12 +198,14 @@ class NamespaceSelectionAgent(Agent):
                 }
             )
             await run_context.set(CONVERSATION_HISTORY_KEY, conversation_history)
-            return DetermineNamespacesEvent()
-
-        await run_context.set(PROPOSED_NAMESPACES_KEY, selected)
+            return DetermineNamespacesEvent(available_namespaces=available_namespaces)
 
         approval_question = format_approval_question(selected, agent_config.approval_message_template, t)
-        return NamespaceApprovalHitl.invoke(question=approval_question)
+        return NamespaceApprovalHitl.invoke(
+            question=approval_question,
+            proposed_namespaces=selected,
+            available_namespaces=available_namespaces,
+        )
 
     @step(
         name=LocaleString(en="Process Follow-Up"),
@@ -235,7 +233,10 @@ class NamespaceSelectionAgent(Agent):
         )
         await run_context.set(CONVERSATION_HISTORY_KEY, conversation_history)
 
-        return DetermineNamespacesEvent()
+        # Get available_namespaces from the original request event
+        available_namespaces = event.request_event.available_namespaces
+
+        return DetermineNamespacesEvent(available_namespaces=available_namespaces)
 
     @step(
         name=LocaleString(en="Process Approval - Approved"),
@@ -245,10 +246,9 @@ class NamespaceSelectionAgent(Agent):
     )
     async def process_approval_approved_step(
         self,
-        _: NamespaceApprovalResponseEvent,
+        event: NamespaceApprovalResponseEvent,
         start_event: UserMessageEvent | NamespaceAwareUserMessageEvent,
         agent_config: NamespaceSelectionAgentConfig,
-        run_context: RunContext,
         thread_context: ThreadContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
@@ -256,7 +256,8 @@ class NamespaceSelectionAgent(Agent):
         """Store selection and forward to RAG."""
         await displayer.display_thought(t("agent.namespace_selection.thoughts.selection_approved"))
 
-        selected: dict[str, str] = await run_context.get(PROPOSED_NAMESPACES_KEY, {})
+        # Get proposed_namespaces from the original request event
+        selected = event.request_event.proposed_namespaces
         await thread_context.set(NAMESPACE_SELECTION_KEY, selected)
 
         namespace_pairs = [
@@ -308,7 +309,10 @@ class NamespaceSelectionAgent(Agent):
         )
         await run_context.set(CONVERSATION_HISTORY_KEY, conversation_history)
 
-        return DetermineNamespacesEvent()
+        # Get available_namespaces from the original request event
+        available_namespaces = event.request_event.available_namespaces
+
+        return DetermineNamespacesEvent(available_namespaces=available_namespaces)
 
     @step(
         name=LocaleString(en="RAG Response"),
