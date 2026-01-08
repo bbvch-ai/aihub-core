@@ -30,10 +30,7 @@ class FollowUpQuestionRequestEvent(HumanInTheLoopInputRequestEvent):
 class FollowUpQuestionResponseEvent(HumanInTheLoopInputResponseEvent):
     """Response containing user's answer to a follow-up question."""
 
-    request_event: Annotated[
-        FollowUpQuestionRequestEvent,
-        Field(description="The original FollowUpQuestionRequestEvent that led to this response."),
-    ]
+    pass
 
 
 class FollowUpQuestionHitl:
