@@ -13,6 +13,7 @@ messages:
   default_follow_up: "Könnten Sie bitte weitere Details zu Ihrer Anfrage angeben, damit ich die relevantesten Wissensquellen bestimmen kann?"
   user_rejected_selection: "Ich habe die vorgeschlagene Namespace-Auswahl abgelehnt. Bitte schlagen Sie andere Namespaces vor."
   rag_error: "Bei der Verarbeitung Ihrer Anfrage ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut."
+  invalid_selection: "Ihre Auswahl war ungültig. Sie haben ausgewählt: %{selected}. Verfügbare Namespaces sind: %{available_namespaces}. Bitte wählen Sie nur aus den aufgelisteten verfügbaren Namespaces."
 
 prompts:
   determination: |

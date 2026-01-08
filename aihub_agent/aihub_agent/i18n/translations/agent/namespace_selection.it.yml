@@ -13,6 +13,7 @@ messages:
   default_follow_up: "Potresti fornire maggiori dettagli sulla tua richiesta in modo che io possa determinare le fonti di conoscenza più rilevanti?"
   user_rejected_selection: "Ho rifiutato la selezione dei namespace proposta. Per favore suggerisci namespace diversi."
   rag_error: "Si è verificato un errore durante l'elaborazione della richiesta. Riprova."
+  invalid_selection: "La tua selezione non era valida. Hai selezionato: %{selected}. I namespace disponibili sono: %{available_namespaces}. Seleziona solo dai namespace disponibili elencati."
 
 prompts:
   determination: |

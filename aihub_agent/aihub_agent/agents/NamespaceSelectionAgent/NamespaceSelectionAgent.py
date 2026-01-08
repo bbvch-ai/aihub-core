@@ -200,10 +200,10 @@ class NamespaceSelectionAgent(Agent):
                 available_namespaces,
             )
             # Invalid selection - add error to conversation with details and retry
-            error_message = (
-                f"Your selection was invalid. You selected: {selected}. "
-                f"Available namespaces are: {available_namespaces}. "
-                "Please select only from the available namespaces listed."
+            error_message = t(
+                "agent.namespace_selection.messages.invalid_selection",
+                selected=selected,
+                available_namespaces=available_namespaces,
             )
             conversation_history.append({"role": "system", "content": error_message})
             await run_context.set(CONVERSATION_HISTORY_KEY, conversation_history)
