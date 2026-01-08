@@ -1,4 +1,5 @@
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.generative_ai.utils.filter_retrievers_by_namespace import filter_retrievers_by_namespace
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import (
@@ -21,6 +22,7 @@ from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.RagAgent.events.ContextInsufficientWithQueryEvent import ContextInsufficientWithQueryEvent
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
+from aihub_agent.agents.RagAgent.events.NamespaceAwareUserMessageEvent import NamespaceAwareUserMessageEvent
 from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.rag.preconditions import (
     check_context_ready_for_history_limit,
@@ -90,7 +92,7 @@ class RAGAgent(Agent):
     )
     async def limit_chat_history_step(
         self,
-        event: UserMessageEvent,
+        event: UserMessageEvent | NamespaceAwareUserMessageEvent,
         agent_config: RAGAgentConfig,
     ) -> LimitChatHistoryEvent:
         return do_limit_chat_history(event.messages, agent_config.number_of_input_tokens)
@@ -102,7 +104,7 @@ class RAGAgent(Agent):
     async def condense_standalone_question_step(
         self,
         event: LimitChatHistoryEvent,
-        start_event: UserMessageEvent,
+        start_event: UserMessageEvent | NamespaceAwareUserMessageEvent,
         agent_config: RAGAgentConfig,
         t: LocaleHandler,
         displayer: EventDisplayer,
@@ -134,11 +136,16 @@ class RAGAgent(Agent):
         self,
         event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
         _: FewShotAcceptEvent,
+        start_event: UserMessageEvent | NamespaceAwareUserMessageEvent,
         agent_config: RAGAgentConfig,
         t: LocaleHandler,
     ) -> RetrieverEvent:
         """Retrieves relevant nodes from multiple knowledge sources in parallel."""
-        return await do_retrieve(event, agent_config.retrievers, t)
+        if isinstance(start_event, NamespaceAwareUserMessageEvent):
+            retrievers = filter_retrievers_by_namespace(agent_config.retrievers, start_event.selected_namespaces)
+        else:
+            retrievers = agent_config.retrievers
+        return await do_retrieve(event, retrievers, t)
 
     @step(
         name=LocaleString(en="Rerank Retrieved Nodes"),
@@ -208,7 +215,7 @@ class RAGAgent(Agent):
         context_event: InOrderNodeCombinerEvent,
         chat_history_event: LimitChatHistoryEvent,
         _: ContextSufficientAcceptEvent | None,
-        start_event: UserMessageEvent,
+        start_event: UserMessageEvent | NamespaceAwareUserMessageEvent,
         agent_config: RAGAgentConfig,
     ) -> LimitChatHistoryWithContextEvent:
         return do_limit_chat_history_with_context(

@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.257.0] - 2026-01-08 - Empowering RAG with Dynamic Namespace Selection and Enhanced Retrieval
+
+### Added
+
+- ✨ **Namespace Selection Agent:** Introduced a new agent dedicated to interactively guiding users through the selection
+  of relevant knowledge source namespaces for their queries. This agent uses an LLM to understand intent and
+  incorporates human-in-the-loop (HITL) steps for clarification and approval, ensuring accurate context for RAG.
+- 🦾 **Namespace-Aware User Message Event:** Implemented a new event type (`NamespaceAwareUserMessageEvent`) that extends
+  the standard user message to include pre-selected knowledge source namespaces, enabling RAG agents to receive and
+  process this crucial contextual information.
+- 📄 **Core Namespace Utilities:** Developed foundational data structures (`BucketNamespacePair`) and utility functions
+  (`filter_retrievers_by_namespace`) within `aihub_lib` to support dynamic filtering of RAG retrievers based on
+  user-selected namespaces.
+- ⚙️ **New Configuration Options:** Added `NamespaceSelectionAgentConfig` and `RAGDelegationConfig` to provide flexible
+  configuration for the namespace selection workflow, including LLM settings, available buckets, and how it delegates to
+  RAG agents.
+
+### Changed
+
+- 🔄 **RAG Agent Namespace Filtering:** Updated both the **RAG Agent** and **Expert RAG Agent** to leverage the new
+  `NamespaceAwareUserMessageEvent`. These agents can now dynamically filter their knowledge retrievers based on the
+  pre-selected namespaces, significantly improving the precision and relevance of information retrieval.
+
+### Fixed
+
+- 🐛 **OpenAI Service Header Injection:** Corrected an issue in the OpenAI service where additional headers were not
+  consistently injected into SDK calls, ensuring proper instrumentation and metadata propagation for requests.
+
+---
+
 ## [v0.256.14] - 2026-01-08 - Robust Timeout Management and Enhanced Dagster Run Monitoring
 
 ### Added
