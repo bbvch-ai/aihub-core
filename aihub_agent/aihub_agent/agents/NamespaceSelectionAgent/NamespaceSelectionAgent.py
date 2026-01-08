@@ -194,13 +194,18 @@ class NamespaceSelectionAgent(Agent):
         selected = decision.selected_namespaces or {}
 
         if not validate_namespace_selection(selected, available_namespaces):
-            # Invalid selection - add error to conversation and retry
-            conversation_history.append(
-                {
-                    "role": "system",
-                    "content": "Your selection was invalid. Please select only from the available namespaces listed.",
-                }
+            logger.error(
+                "Invalid namespace selection: %s. Available namespaces: %s",
+                selected,
+                available_namespaces,
             )
+            # Invalid selection - add error to conversation with details and retry
+            error_message = (
+                f"Your selection was invalid. You selected: {selected}. "
+                f"Available namespaces are: {available_namespaces}. "
+                "Please select only from the available namespaces listed."
+            )
+            conversation_history.append({"role": "system", "content": error_message})
             await run_context.set(CONVERSATION_HISTORY_KEY, conversation_history)
             return DetermineNamespacesEvent()
 
