@@ -3701,7 +3701,7 @@ export type DocumentDto = {
     id: string;
     /**
      * Source
-     * Source URI of original document.
+     * Source path without protocol prefix (e.g., 'bucket/path/file.pdf').
      */
     source: string;
     /**
@@ -3729,6 +3729,11 @@ export type DocumentDto = {
      * Indicates if the document has been ingested.
      */
     is_ingested: boolean;
+    /**
+     * Ingestion Status
+     * Ingestion status: 'pending' or 'ingested'.
+     */
+    ingestion_status?: string;
     /**
      * Content
      * Content of the document.
@@ -4127,7 +4132,7 @@ export type EvaluationSummaryData = {
      * Avg Score
      * Average score from this evaluator.
      */
-    avg_score?: number | null;
+    avg_score: number;
 };
 
 /**
@@ -5203,12 +5208,11 @@ export type HumanInDtoWritable = {
 
 /**
  * HumanInTheLoopRequestEvent
- * An event asking a human for input, guidance, or approval at a critical juncture in a workflow.
+ * Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
  *
- * ### Why HumanInTheLoopRequestEvent?
- * In automated workflows, certain decisions may require human validation. This event:
- * - Is a `DisplayEvent`, so it can appear in user interfaces.
- * - Carries a question and a topic indicating where the subsequent response should be sent.
+ * Use the specific subclasses:
+ * - `HumanInTheLoopInputRequestEvent` for free-form text input
+ * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation
  */
 export type HumanInTheLoopRequestEventReadable = {
     /**
@@ -5239,6 +5243,11 @@ export type HumanInTheLoopRequestEventReadable = {
      */
     topic: PartialAgentTopic | AgentInstanceTopic;
     /**
+     * Hitl Type
+     * The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no.
+     */
+    hitl_type: 'input' | 'confirmation';
+    /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
@@ -5249,17 +5258,16 @@ export type HumanInTheLoopRequestEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation') | Array<string> | undefined;
 };
 
 /**
  * HumanInTheLoopRequestEvent
- * An event asking a human for input, guidance, or approval at a critical juncture in a workflow.
+ * Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
  *
- * ### Why HumanInTheLoopRequestEvent?
- * In automated workflows, certain decisions may require human validation. This event:
- * - Is a `DisplayEvent`, so it can appear in user interfaces.
- * - Carries a question and a topic indicating where the subsequent response should be sent.
+ * Use the specific subclasses:
+ * - `HumanInTheLoopInputRequestEvent` for free-form text input
+ * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation
  */
 export type HumanInTheLoopRequestEventWritable = {
     /**
@@ -5289,17 +5297,21 @@ export type HumanInTheLoopRequestEventWritable = {
      * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
      */
     topic: PartialAgentTopic | AgentInstanceTopic;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | undefined;
+    /**
+     * Hitl Type
+     * The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no.
+     */
+    hitl_type: 'input' | 'confirmation';
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation') | undefined;
 };
 
 /**
  * HumanInTheLoopResponseEvent
- * A response from a human operator after a HITL request.
+ * Base response from a human operator after a HITL request.
  *
- * ### Why HumanInTheLoopResponseEvent?
- * Once a human operator provides an answer to a `HumanInTheLoopRequestEvent`, the response:
- * - Influences the workflow (since it's a `ControlEvent`), resuming or altering execution based on human input.
- * - Is visible to the UI (since it's also a `DisplayEvent`), allowing transparency and auditing.
+ * Use the specific subclasses:
+ * - `HumanInTheLoopInputResponseEvent` for text input responses
+ * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses
  */
 export type HumanInTheLoopResponseEventReadable = {
     /**
@@ -5321,9 +5333,9 @@ export type HumanInTheLoopResponseEventReadable = {
     display_description?: LocaleString | null;
     /**
      * Response
-     * The human operator's answer or decision.
+     * The human operator's response.
      */
-    response: string;
+    response: string | boolean;
     /**
      * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
      */
@@ -5339,17 +5351,16 @@ export type HumanInTheLoopResponseEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | HumanInTheLoopRequestEventReadable | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | boolean) | HumanInTheLoopRequestEventReadable | Array<string> | undefined;
 };
 
 /**
  * HumanInTheLoopResponseEvent
- * A response from a human operator after a HITL request.
+ * Base response from a human operator after a HITL request.
  *
- * ### Why HumanInTheLoopResponseEvent?
- * Once a human operator provides an answer to a `HumanInTheLoopRequestEvent`, the response:
- * - Influences the workflow (since it's a `ControlEvent`), resuming or altering execution based on human input.
- * - Is visible to the UI (since it's also a `DisplayEvent`), allowing transparency and auditing.
+ * Use the specific subclasses:
+ * - `HumanInTheLoopInputResponseEvent` for text input responses
+ * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses
  */
 export type HumanInTheLoopResponseEventWritable = {
     /**
@@ -5371,14 +5382,14 @@ export type HumanInTheLoopResponseEventWritable = {
     display_description?: LocaleString | null;
     /**
      * Response
-     * The human operator's answer or decision.
+     * The human operator's response.
      */
-    response: string;
+    response: string | boolean;
     /**
      * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
      */
     request_event: HumanInTheLoopRequestEventWritable;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | HumanInTheLoopRequestEventWritable | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | boolean) | HumanInTheLoopRequestEventWritable | undefined;
 };
 
 /**
@@ -14564,21 +14575,21 @@ export type CreateRoleResponses = {
 
 export type CreateRoleResponse = CreateRoleResponses[keyof CreateRoleResponses];
 
-export type GetModelsWithAssistantsData = {
+export type GetModels2Data = {
     body?: never;
     path?: never;
     query?: never;
     url: '/openai/models';
 };
 
-export type GetModelsWithAssistantsResponses = {
+export type GetModels2Responses = {
     /**
      * Successful Response
      */
     200: ModelResponse;
 };
 
-export type GetModelsWithAssistantsResponse = GetModelsWithAssistantsResponses[keyof GetModelsWithAssistantsResponses];
+export type GetModels2Response = GetModels2Responses[keyof GetModels2Responses];
 
 export type GetModelWithAssistantsData = {
     body?: never;
@@ -15019,6 +15030,21 @@ export type GetDocumentsForNamespaceData = {
          * Number of items per page (maximum 100)
          */
         page_size?: number;
+        /**
+         * Search
+         * Search by document title or filename
+         */
+        search?: string | null;
+        /**
+         * Sort Field
+         * Field to sort by: document_title, created_at, updated_at
+         */
+        sort_field?: string | null;
+        /**
+         * Sort Order
+         * Sort order: 1 for ascending, -1 for descending
+         */
+        sort_order?: number;
     };
     url: '/knowledge/databases/{database}/namespaces/{namespace}/documents';
 };

@@ -2,8 +2,7 @@ from datetime import UTC, datetime
 from typing import Annotated
 
 from aihub_lib.generative_ai.document.types.IngestedDocument import IngestedDocument
-from aihub_lib.persistence.rag.datalake.entities.DatalakeFileEntity import DatalakeFileEntity, DatalakeFileStatus
-from aihub_lib.persistence.rag.documents.entities.RefDoc import RefDoc
+from aihub_lib.persistence.rag.documents.entities.RefDoc import IngestionStatus, RefDoc
 from pydantic import BaseModel, Field
 
 S3_PROTOCOL_PREFIX = "s3://"
@@ -19,6 +18,7 @@ class DocumentDTO(BaseModel):
         str | None, Field(description="Date source document was inserted into document store (ISO format string)")
     ]
     is_ingested: Annotated[bool, Field(description="Indicates if the document has been ingested.")]
+    ingestion_status: Annotated[str, Field(description="Ingestion status: 'pending' or 'ingested'.")] = "ingested"
     content: Annotated[str | None, Field(description="Content of the document.")] = None
     number_of_pages: Annotated[int | None, Field(description="Number of Pages in the Document.")] = None
     document_title: Annotated[str | None, Field(description="Document title.")] = None
@@ -40,38 +40,25 @@ class DocumentDTO(BaseModel):
 
     @classmethod
     def from_ref_doc(cls, entity: RefDoc) -> "DocumentDTO":
-        def to_iso(timestamp: int):
+        def to_iso(timestamp: int) -> str:
             dt_utc = datetime.fromtimestamp(timestamp, tz=UTC)
             return dt_utc.isoformat().replace("+00:00", "Z")
 
+        # Legacy docs without ingestion_status field are treated as ingested
+        raw_status = getattr(entity.data.metadata, "ingestion_status", None)
+        ingestion_status = raw_status if raw_status else IngestionStatus.INGESTED.value
+        is_ingested = ingestion_status == IngestionStatus.INGESTED.value
+
         return cls(
             id=str(entity.id),
-            content=entity.data.text,
+            content=entity.data.text if entity.data.text else None,
             source=entity.data.metadata.source.removeprefix(S3_PROTOCOL_PREFIX),
             namespace=entity.data.metadata.namespace,
             number_of_pages=entity.data.metadata.number_of_pages,
             document_title=entity.data.metadata.document_title,
             created_at=to_iso(entity.data.metadata.created_at),
             updated_at=to_iso(entity.data.metadata.updated_at),
-            inserted_at=to_iso(entity.data.metadata.inserted_at),
-            is_ingested=True,
-        )
-
-    @classmethod
-    def from_datalake_file(cls, entity: DatalakeFileEntity, bucket_name: str) -> "DocumentDTO":
-        """Create DTO from a datalake file entity (for processing files)."""
-
-        def to_iso(timestamp: int) -> str:
-            dt_utc = datetime.fromtimestamp(timestamp, tz=UTC)
-            return dt_utc.isoformat().replace("+00:00", "Z")
-
-        return cls(
-            id=str(entity.id),
-            source=f"{bucket_name}/{entity.file_path}",
-            namespace=entity.namespace_name,
-            document_title=entity.filename,
-            created_at=to_iso(entity.created_at),
-            updated_at=to_iso(entity.updated_at),
-            inserted_at=None,
-            is_ingested=entity.status == DatalakeFileStatus.INGESTED,
+            inserted_at=to_iso(entity.data.metadata.inserted_at) if entity.data.metadata.inserted_at else None,
+            is_ingested=is_ingested,
+            ingestion_status=ingestion_status,
         )

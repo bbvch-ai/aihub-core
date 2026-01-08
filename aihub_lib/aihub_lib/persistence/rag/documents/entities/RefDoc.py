@@ -1,3 +1,5 @@
+import time
+from enum import Enum
 from typing import Any
 
 from mongoengine import (
@@ -7,11 +9,20 @@ from mongoengine import (
     EmbeddedDocumentField,
     IntField,
     ListField,
+    NotUniqueError,
+    Q,
     StringField,
 )
 from mongoengine.context_managers import switch_db
 
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+
+
+class IngestionStatus(str, Enum):
+    """Status of document ingestion into the system."""
+
+    PENDING = "pending"
+    INGESTED = "ingested"
 
 
 class Metadata(DynamicEmbeddedDocument):
@@ -30,6 +41,8 @@ class Metadata(DynamicEmbeddedDocument):
 
     content_hash = StringField(required=True)
     type = StringField(required=True)
+    # No default: legacy docs without this field are treated as ingested by the application layer
+    ingestion_status = StringField(required=False)
 
 
 class DocumentData(DynamicEmbeddedDocument):
@@ -55,7 +68,15 @@ class RefDoc(Document):
     DocumentData.
     """
 
-    meta = {"collection": "documents-data", "strict": False, "indexes": [{"fields": ["data.metadata.namespace"]}]}
+    meta = {
+        "collection": "documents-data",
+        "strict": False,
+        "indexes": [
+            {"fields": ["data.metadata.namespace"]},
+            {"fields": ["data.metadata.namespace", "data.metadata.ingestion_status"]},
+            {"fields": ["data.metadata.source"], "unique": True},
+        ],
+    }
     id = StringField(primary_key=True)
     data = EmbeddedDocumentField(DocumentData, db_field="__data__")
     type_ = StringField(db_field="__type__")
@@ -160,3 +181,290 @@ class RefDoc(Document):
 
         with switch_db(cls, db_alias) as SwitchedRefDoc:
             return list(SwitchedRefDoc.objects.aggregate(pipeline))
+
+    @classmethod
+    @trace_fn
+    def count_by_status_and_namespace(
+        cls,
+        db_alias: str,
+        namespace: str,
+        ingestion_status: str,
+    ) -> int:
+        """Count documents by namespace and ingestion status.
+
+        For backwards compatibility, when counting INGESTED documents,
+        also includes documents without ingestion_status field (legacy docs).
+        """
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            if ingestion_status == IngestionStatus.INGESTED.value:
+                # Include docs with status=ingested OR docs without status field (legacy)
+                status_filter = Q(data__metadata__ingestion_status=IngestionStatus.INGESTED.value) | Q(
+                    data__metadata__ingestion_status__exists=False
+                )
+                return SwitchedRefDoc.objects.filter(Q(data__metadata__namespace=namespace) & status_filter).count()
+            else:
+                return SwitchedRefDoc.objects.filter(
+                    data__metadata__namespace=namespace,
+                    data__metadata__ingestion_status=ingestion_status,
+                ).count()
+
+    @classmethod
+    @trace_fn
+    def get_pending_by_namespace(
+        cls,
+        db_alias: str,
+        namespace: str,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> list["RefDoc"]:
+        """Get pending (not yet processed) documents in a namespace."""
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            return list(
+                SwitchedRefDoc.objects.filter(
+                    data__metadata__namespace=namespace,
+                    data__metadata__ingestion_status=IngestionStatus.PENDING.value,
+                )
+                .skip(skip)
+                .limit(limit)
+                .order_by("-data.metadata.updated_at")
+            )
+
+    @classmethod
+    @trace_fn
+    def get_ingested_by_namespace(
+        cls,
+        db_alias: str,
+        namespace: str,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> list["RefDoc"]:
+        """Get fully ingested documents in a namespace.
+
+        For backwards compatibility, documents without ingestion_status field
+        are treated as ingested (they existed before this field was added).
+        """
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            # Include docs with status=ingested OR docs without status field (legacy)
+            status_filter = Q(data__metadata__ingestion_status=IngestionStatus.INGESTED.value) | Q(
+                data__metadata__ingestion_status__exists=False
+            )
+            return list(
+                SwitchedRefDoc.objects.filter(Q(data__metadata__namespace=namespace) & status_filter)
+                .skip(skip)
+                .limit(limit)
+                .order_by("id")
+            )
+
+    @classmethod
+    @trace_fn
+    def search_in_namespace(
+        cls,
+        db_alias: str,
+        namespace: str,
+        query: str,
+        skip: int = 0,
+        limit: int = 100,
+        sort_field: str | None = None,
+        sort_order: int = 1,
+    ) -> list["RefDoc"]:
+        """Search documents by title or source filename (case-insensitive).
+
+        Args:
+            sort_field: Field to sort by (document_title, created_at, updated_at)
+            sort_order: 1 for ascending, -1 for descending
+        """
+        order_by = cls._get_order_by(sort_field, sort_order)
+
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            return list(
+                SwitchedRefDoc.objects.filter(
+                    Q(data__metadata__namespace=namespace)
+                    & (Q(data__metadata__document_title__icontains=query) | Q(data__metadata__source__icontains=query))
+                )
+                .skip(skip)
+                .limit(limit)
+                .order_by(order_by)
+            )
+
+    @classmethod
+    @trace_fn
+    def count_search_in_namespace(
+        cls,
+        db_alias: str,
+        namespace: str,
+        query: str,
+    ) -> int:
+        """Count documents matching search query in namespace."""
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            return SwitchedRefDoc.objects.filter(
+                Q(data__metadata__namespace=namespace)
+                & (Q(data__metadata__document_title__icontains=query) | Q(data__metadata__source__icontains=query))
+            ).count()
+
+    @classmethod
+    @trace_fn
+    def get_all_in_namespace(
+        cls,
+        db_alias: str,
+        namespace: str,
+        skip: int = 0,
+        limit: int = 100,
+        sort_field: str | None = None,
+        sort_order: int = 1,
+    ) -> list["RefDoc"]:
+        """Get all documents in a namespace with sorting support.
+
+        Args:
+            sort_field: Field to sort by (document_title, created_at, updated_at)
+            sort_order: 1 for ascending, -1 for descending
+        """
+        order_by = cls._get_order_by(sort_field, sort_order)
+
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            return list(
+                SwitchedRefDoc.objects.filter(data__metadata__namespace=namespace)
+                .skip(skip)
+                .limit(limit)
+                .order_by(order_by)
+            )
+
+    @staticmethod
+    def _get_order_by(sort_field: str | None, sort_order: int) -> str:
+        """Convert sort field and order to MongoEngine order_by string."""
+        field_mapping = {
+            "document_title": "data.metadata.document_title",
+            "created_at": "data.metadata.created_at",
+            "updated_at": "data.metadata.updated_at",
+        }
+
+        if sort_field and sort_field in field_mapping:
+            prefix = "-" if sort_order == -1 else ""
+            return f"{prefix}{field_mapping[sort_field]}"
+
+        # Default: pending first (by status), then by id
+        return "id"
+
+    @classmethod
+    @trace_fn
+    def create_placeholder(
+        cls,
+        db_alias: str,
+        source: str,
+        namespace: str,
+        document_title: str | None = None,
+    ) -> "RefDoc":
+        """Create a placeholder RefDoc for a file that is being uploaded/processed.
+
+        Uses deterministic ID based on source path to enable upsert on processing completion.
+        """
+        from aihub_lib.persistence.rag.documents.utils.id_utils import source_to_doc_id
+
+        doc_id = source_to_doc_id(source)
+        current_time = int(time.time())
+
+        if not document_title:
+            document_title = source.split("/")[-1]
+
+        metadata = Metadata(
+            source=source,
+            namespace=namespace,
+            version="1",
+            ingestion_status=IngestionStatus.PENDING.value,
+            created_at=current_time,
+            updated_at=current_time,
+            inserted_at=current_time,
+            content_hash="",
+            type="content",
+            document_title=document_title,
+        )
+
+        document_data = DocumentData(
+            id=doc_id,
+            metadata=metadata,
+            text="",
+            mimetype="application/octet-stream",
+            excluded_embed_metadata_keys=[],
+            excluded_llm_metadata_keys=[],
+            relationships={},
+        )
+
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            ref_doc = SwitchedRefDoc(
+                id=doc_id,
+                data=document_data,
+                type_="placeholder",
+            )
+            ref_doc.save()
+            return ref_doc
+
+    @classmethod
+    @trace_fn
+    def get_or_create_placeholder(
+        cls,
+        db_alias: str,
+        source: str,
+        namespace: str,
+        document_title: str | None = None,
+    ) -> tuple["RefDoc", bool]:
+        """Get existing RefDoc by source or create a placeholder.
+
+        If the document exists and is already ingested, it resets the status to pending
+        (for re-upload/re-processing scenarios).
+
+        Returns (ref_doc, created) where created is True if new placeholder was created.
+        """
+        from aihub_lib.persistence.rag.documents.utils.id_utils import source_to_doc_id
+
+        doc_id = source_to_doc_id(source)
+
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            try:
+                existing = SwitchedRefDoc.objects.get(id=doc_id)
+                if existing.data.metadata.ingestion_status != IngestionStatus.PENDING.value:
+                    existing.data.metadata.ingestion_status = IngestionStatus.PENDING.value
+                    existing.data.metadata.updated_at = int(time.time())
+                    existing.save()
+                return existing, False
+            except SwitchedRefDoc.DoesNotExist:
+                pass
+
+        try:
+            new_doc = cls.create_placeholder(db_alias, source, namespace, document_title)
+            return new_doc, True
+        except NotUniqueError:
+            with switch_db(cls, db_alias) as SwitchedRefDoc:
+                existing = SwitchedRefDoc.objects.get(id=doc_id)
+                if existing.data.metadata.ingestion_status != IngestionStatus.PENDING.value:
+                    existing.data.metadata.ingestion_status = IngestionStatus.PENDING.value
+                    existing.data.metadata.updated_at = int(time.time())
+                    existing.save()
+                return existing, False
+
+    @classmethod
+    @trace_fn
+    def delete_by_source(cls, db_alias: str, source: str) -> bool:
+        """Delete a RefDoc by its source path."""
+        from aihub_lib.persistence.rag.documents.utils.id_utils import source_to_doc_id
+
+        doc_id = source_to_doc_id(source)
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            try:
+                ref_doc = SwitchedRefDoc.objects.get(id=doc_id)
+                ref_doc.delete()
+                return True
+            except SwitchedRefDoc.DoesNotExist:
+                return False
+
+    @classmethod
+    @trace_fn
+    def mark_ingested(cls, db_alias: str, doc_id: str) -> "RefDoc | None":
+        """Update the ingestion status of a document to INGESTED."""
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            try:
+                ref_doc = SwitchedRefDoc.objects.get(id=doc_id)
+                ref_doc.data.metadata.ingestion_status = IngestionStatus.INGESTED.value
+                ref_doc.data.metadata.updated_at = int(time.time())
+                ref_doc.save()
+                return ref_doc
+            except SwitchedRefDoc.DoesNotExist:
+                return None

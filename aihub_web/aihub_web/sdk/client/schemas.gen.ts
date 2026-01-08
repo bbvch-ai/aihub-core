@@ -4766,7 +4766,7 @@ export const DocumentDTOSchema = {
         source: {
             type: 'string',
             title: 'Source',
-            description: 'Source URI of original document.'
+            description: "Source path without protocol prefix (e.g., 'bucket/path/file.pdf')."
         },
         namespace: {
             type: 'string',
@@ -4799,6 +4799,12 @@ export const DocumentDTOSchema = {
             type: 'boolean',
             title: 'Is Ingested',
             description: 'Indicates if the document has been ingested.'
+        },
+        ingestion_status: {
+            type: 'string',
+            title: 'Ingestion Status',
+            description: "Ingestion status: 'pending' or 'ingested'.",
+            default: 'ingested'
         },
         content: {
             anyOf: [
@@ -5335,20 +5341,13 @@ export const EvaluationSummaryDataSchema = {
             description: 'Number of items evaluated.'
         },
         avg_score: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
+            type: 'number',
             title: 'Avg Score',
             description: 'Average score from this evaluator.'
         }
     },
     type: 'object',
-    required: ['evaluator', 'n'],
+    required: ['evaluator', 'n', 'avg_score'],
     title: 'EvaluationSummaryData'
 } as const;
 
@@ -6631,6 +6630,12 @@ export const HumanInTheLoopRequestEventSchema = {
             title: 'Topic',
             description: 'A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.'
         },
+        hitl_type: {
+            type: 'string',
+            enum: ['input', 'confirmation'],
+            title: 'Hitl Type',
+            description: "The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no."
+        },
         _event_name: {
             type: 'string',
             title: 'Event Name',
@@ -6650,14 +6655,13 @@ Used during deserialization to decide which subclass to instantiate.`,
     },
     additionalProperties: true,
     type: 'object',
-    required: ['question', 'topic', '_event_name', '_parent_event_names'],
+    required: ['question', 'topic', 'hitl_type', '_event_name', '_parent_event_names'],
     title: 'HumanInTheLoopRequestEvent',
-    description: `An event asking a human for input, guidance, or approval at a critical juncture in a workflow.
+    description: `Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
 
-### Why HumanInTheLoopRequestEvent?
-In automated workflows, certain decisions may require human validation. This event:
-- Is a \`DisplayEvent\`, so it can appear in user interfaces.
-- Carries a question and a topic indicating where the subsequent response should be sent.`
+Use the specific subclasses:
+- \`HumanInTheLoopInputRequestEvent\` for free-form text input
+- \`HumanInTheLoopConfirmationRequestEvent\` for yes/no confirmation`
 } as const;
 
 export const HumanInTheLoopResponseEventSchema = {
@@ -6694,9 +6698,16 @@ export const HumanInTheLoopResponseEventSchema = {
             description: 'Display description for the event'
         },
         response: {
-            type: 'string',
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'boolean'
+                }
+            ],
             title: 'Response',
-            description: "The human operator's answer or decision."
+            description: "The human operator's response."
         },
         request_event: {
             '$ref': '#/components/schemas/HumanInTheLoopRequestEvent',
@@ -6723,12 +6734,11 @@ Used during deserialization to decide which subclass to instantiate.`,
     type: 'object',
     required: ['response', 'request_event', '_event_name', '_parent_event_names'],
     title: 'HumanInTheLoopResponseEvent',
-    description: `A response from a human operator after a HITL request.
+    description: `Base response from a human operator after a HITL request.
 
-### Why HumanInTheLoopResponseEvent?
-Once a human operator provides an answer to a \`HumanInTheLoopRequestEvent\`, the response:
-- Influences the workflow (since it's a \`ControlEvent\`), resuming or altering execution based on human input.
-- Is visible to the UI (since it's also a \`DisplayEvent\`), allowing transparency and auditing.`
+Use the specific subclasses:
+- \`HumanInTheLoopInputResponseEvent\` for text input responses
+- \`HumanInTheLoopConfirmationResponseEvent\` for yes/no confirmation responses`
 } as const;
 
 export const HumanProcessStepDTOSchema = {
@@ -10062,7 +10072,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1764669803
+            default: 1767877438
         },
         owned_by: {
             type: 'string',

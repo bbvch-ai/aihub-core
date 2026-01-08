@@ -11,7 +11,7 @@ from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.persistence.rag.vectors import VectorStoreFactory
 from aihub_lib.routes.Controller import Controller
-from fastapi import Depends, HTTPException, Path, Security
+from fastapi import Depends, HTTPException, Path, Query, Security
 from mongoengine import connect
 from nats.aio.client import Client as NATS
 from pymongo import MongoClient
@@ -104,14 +104,30 @@ class KnowledgeController(Controller):
             ],
             page: PageNumber = 1,
             page_size: PageSize = 20,
+            search: Annotated[
+                str | None, Query(min_length=1, max_length=200, description="Search by document title or filename")
+            ] = None,
+            sort_field: Annotated[
+                str | None,
+                Query(description="Field to sort by: document_title, created_at, updated_at"),
+            ] = None,
+            sort_order: Annotated[int, Query(description="Sort order: 1 for ascending, -1 for descending")] = 1,
         ) -> PaginatedDocumentsResponse:
             """
             Returns paginated documents for a specific namespace within a database.
+            Optionally filter by document title or filename using the search parameter.
+            Supports sorting by document_title, created_at, or updated_at.
             """
             if database in ["admin", "local", "config"]:
                 raise HTTPException(status_code=403, detail="Not authorized to view this database")
             total, documents = KnowledgeService.get_paginated_documents(
-                db=database, namespace=namespace, page=page, page_size=page_size
+                db=database,
+                namespace=namespace,
+                page=page,
+                page_size=page_size,
+                search=search,
+                sort_field=sort_field,
+                sort_order=sort_order,
             )
 
             total_pages = (total + page_size - 1) // page_size
