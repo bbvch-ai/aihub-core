@@ -1,17 +1,14 @@
 import asyncio
 import logging
 
-from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.retrievers.BucketNamespacePair import BucketNamespacePair
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import AgentInTheLoop, StopEvent
 from aihub_lib.nats.events.user import UserMessageEvent
-from aihub_lib.nats.events.user.UserUploadedFile import UserUploadedFile
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
 from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
-from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.prompts import RichPromptTemplate
 from mongoengine import DoesNotExist
 
@@ -50,10 +47,6 @@ logger = logging.getLogger(__name__)
 # RunContext keys
 AVAILABLE_NAMESPACES_KEY = "available_namespaces"
 CONVERSATION_HISTORY_KEY = "conversation_history"
-ORIGINAL_MESSAGES_KEY = "original_messages"
-ORIGINAL_USER_KEY = "original_user"
-ORIGINAL_LOCALE_KEY = "original_locale"
-ORIGINAL_FILES_KEY = "original_files"
 PROPOSED_NAMESPACES_KEY = "proposed_namespaces"
 
 # ThreadContext keys
@@ -132,10 +125,6 @@ class NamespaceSelectionAgent(Agent):
         # Store in RunContext
         logger.debug("Available namespaces fetched: %s", available_namespaces)
         await run_context.set(AVAILABLE_NAMESPACES_KEY, available_namespaces)
-        await run_context.set(ORIGINAL_MESSAGES_KEY, [msg.model_dump() for msg in event.messages])
-        await run_context.set(ORIGINAL_USER_KEY, event.user.model_dump() if event.user else None)
-        await run_context.set(ORIGINAL_LOCALE_KEY, event.locale)
-        await run_context.set(ORIGINAL_FILES_KEY, [f.model_dump() for f in event.files] if event.files else [])
 
         # Initialize conversation history with user's first message
         conversation_history = [{"role": "user", "content": event.user_query}]
@@ -244,6 +233,7 @@ class NamespaceSelectionAgent(Agent):
     async def process_approval_step(
         self,
         event: NamespaceApprovalResponseEvent,
+        start_event: UserMessageEvent | NamespaceAwareStartEvent,
         agent_config: NamespaceSelectionAgentConfig,
         run_context: RunContext,
         thread_context: ThreadContext,
@@ -257,16 +247,6 @@ class NamespaceSelectionAgent(Agent):
             selected: dict[str, str] = await run_context.get(PROPOSED_NAMESPACES_KEY, {})
             await thread_context.set(NAMESPACE_SELECTION_KEY, selected)
 
-            # Reconstruct original event for forwarding
-            original_messages = await run_context.get(ORIGINAL_MESSAGES_KEY, [])
-            original_user = await run_context.get(ORIGINAL_USER_KEY)
-            original_locale = await run_context.get(ORIGINAL_LOCALE_KEY)
-            original_files = await run_context.get(ORIGINAL_FILES_KEY, [])
-
-            messages = [ChatMessage.model_validate(m) for m in original_messages]
-            user = UserIdentity.model_validate(original_user) if original_user else None
-            files = [UserUploadedFile.model_validate(f) for f in original_files] if original_files else []
-
             namespace_pairs = [
                 BucketNamespacePair(bucket_name=bucket, namespace_name=namespace)
                 for bucket, namespace in selected.items()
@@ -278,10 +258,10 @@ class NamespaceSelectionAgent(Agent):
                 agent_class=agent_config.rag_delegation.rag_agent_class,
                 agent_id=agent_config.rag_delegation.rag_agent_id,
                 start_event=NamespaceAwareStartEvent(
-                    messages=messages,
-                    user=user,
-                    locale=original_locale,
-                    files=files,
+                    messages=start_event.messages,
+                    user=start_event.user,
+                    locale=start_event.locale,
+                    files=start_event.files if start_event.files else [],
                     selected_namespaces=namespace_pairs,
                 ),
                 share_thread_id=True,
