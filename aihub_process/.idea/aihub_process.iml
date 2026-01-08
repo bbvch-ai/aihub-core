@@ -9,4 +9,7 @@
     <orderEntry type="module" module-name="aihub_lib" />
     <orderEntry type="module" module-name="aihub_agent" />
   </component>
+  <component name="SonarLintModuleSettings">
+    <option name="projectKey" value="aihub-core_process-core" />
+  </component>
 </module>

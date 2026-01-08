@@ -9,4 +9,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="aihub_lib" />
   </component>
+  <component name="SonarLintModuleSettings">
+    <option name="projectKey" value="aihub-core_pipelines-core" />
+  </component>
 </module>
