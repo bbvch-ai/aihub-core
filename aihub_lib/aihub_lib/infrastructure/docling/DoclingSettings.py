@@ -19,7 +19,10 @@ class DoclingSettings(EnvironmentSettings):
 
     # --- General API Settings ---
     BASE_API_URL: Annotated[str, Field(description="Docling API endpoint URL")]
-    API_TIMEOUT: Annotated[int, Field(description="Timeout for Docling API calls in seconds")] = 300
+    API_TIMEOUT: Annotated[int, Field(description="Timeout for individual Docling API calls in seconds")] = 300
+    OPERATION_TIMEOUT: Annotated[
+        int, Field(description="Overall timeout for entire aload_data operation in seconds")
+    ] = 3600  # 1 hour
 
     # --- Pipeline Type ---
     PIPELINE_TYPE: Annotated[PipelineType, Field(description="The type of pipeline to use")] = PipelineType.STANDARD
@@ -90,6 +93,4 @@ class DoclingSettings(EnvironmentSettings):
     HTTP_RETRIES: Annotated[int, Field(description="Number of retries for transient HTTP errors")] = 3
 
     # --- Cleanup Settings ---
-    CLEAR_RESULTS_DELAY: Annotated[
-        int, Field(description="Delay in seconds for clearing old results after fetch")
-    ] = 30
+    CLEAR_RESULTS_DELAY: Annotated[int, Field(description="Delay in seconds for clearing old results after fetch")] = 30

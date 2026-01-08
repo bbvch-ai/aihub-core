@@ -93,4 +93,8 @@ class AzureDataLakeFileSystemResource(AbstractDataLakeFileSystemResource[AzureBl
 
     def create_resource(self, context: InitResourceContext) -> AzureBlobFileSystem:
         conn_str = AzureDataLakeSettings().CONNECTION_STRING.get_secret_value()
-        return AzureBlobFileSystem(connection_string=conn_str)
+        return AzureBlobFileSystem(
+            connection_string=conn_str,
+            connection_timeout=30,  # 30 seconds for connection establishment
+            read_timeout=300,  # 5 minutes for read operations
+        )
