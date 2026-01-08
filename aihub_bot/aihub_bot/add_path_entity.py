@@ -22,7 +22,8 @@ env_path = Path(__file__).parent.parent.parent / ".env"
 if env_path.exists():
     load_dotenv(env_path)
 
-PATH = "/api/v1/bot_in_the_loop/response"
+# PATH = "/api/v1/bot_in_the_loop/response"
+PATH = "/api/v1/openai/chat/completions/json?model_name=text-generation/nano"
 
 
 def main():
