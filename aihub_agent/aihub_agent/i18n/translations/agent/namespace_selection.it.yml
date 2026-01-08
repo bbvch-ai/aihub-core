@@ -1,13 +1,13 @@
 thoughts:
-  fetching_namespaces: "Recupero dei namespace disponibili dai bucket configurati."
-  starting_determination: "Avvio del ciclo di determinazione dei namespace."
-  analyzing_request: "Analisi della richiesta utente per determinare i namespace appropriati."
-  llm_decision: "Decisione LLM: %{reasoning}"
-  processing_follow_up: "Elaborazione della risposta di follow-up dell'utente."
-  selection_approved: "L'utente ha approvato la selezione dei namespace."
-  selection_rejected: "L'utente ha rifiutato la selezione dei namespace. Raccolta di ulteriori informazioni."
-  forwarding_to_rag: "Inoltro della richiesta all'agente RAG con i namespace selezionati."
-  rag_error: "L'agente RAG ha restituito un errore %{error_code}: %{error_message}."
+  fetching_namespaces: "Ricerca delle fonti di conoscenza disponibili"
+  starting_determination: "Determinazione delle fonti da consultare"
+  analyzing_request: "Comprensione della richiesta"
+  llm_decision: "%{reasoning}"
+  processing_follow_up: "Elaborazione della risposta"
+  selection_approved: "Fonti confermate"
+  selection_rejected: "Ricerca di fonti alternative"
+  forwarding_to_rag: "Ricerca di informazioni pertinenti"
+  rag_error: "Si è verificato un errore durante la ricerca: %{error_message}"
 
 messages:
   default_follow_up: "Potresti fornire maggiori dettagli sulla tua richiesta in modo che io possa determinare le fonti di conoscenza più rilevanti?"

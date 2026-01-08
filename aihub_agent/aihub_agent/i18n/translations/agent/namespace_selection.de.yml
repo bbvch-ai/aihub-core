@@ -1,13 +1,13 @@
 thoughts:
-  fetching_namespaces: "Verfügbare Namespaces aus konfigurierten Buckets werden abgerufen."
-  starting_determination: "Namespace-Bestimmungsschleife wird gestartet."
-  analyzing_request: "Benutzeranfrage wird analysiert, um geeignete Namespaces zu bestimmen."
-  llm_decision: "LLM-Entscheidung: %{reasoning}"
-  processing_follow_up: "Folgeantwort des Benutzers wird verarbeitet."
-  selection_approved: "Benutzer hat die Namespace-Auswahl genehmigt."
-  selection_rejected: "Benutzer hat die Namespace-Auswahl abgelehnt. Weitere Informationen werden gesammelt."
-  forwarding_to_rag: "Anfrage wird an RAG-Agent mit ausgewählten Namespaces weitergeleitet."
-  rag_error: "RAG-Agent hat einen Fehler zurückgegeben %{error_code}: %{error_message}."
+  fetching_namespaces: "Verfügbare Wissensquellen werden ermittelt"
+  starting_determination: "Relevante Quellen werden bestimmt"
+  analyzing_request: "Anfrage wird verstanden"
+  llm_decision: "%{reasoning}"
+  processing_follow_up: "Antwort wird verarbeitet"
+  selection_approved: "Quellen bestätigt"
+  selection_rejected: "Alternative Quellen werden gesucht"
+  forwarding_to_rag: "Relevante Informationen werden gesucht"
+  rag_error: "Bei der Suche ist ein Fehler aufgetreten: %{error_message}"
 
 messages:
   default_follow_up: "Könnten Sie bitte weitere Details zu Ihrer Anfrage angeben, damit ich die relevantesten Wissensquellen bestimmen kann?"
