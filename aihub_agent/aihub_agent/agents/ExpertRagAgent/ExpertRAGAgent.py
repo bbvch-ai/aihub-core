@@ -30,7 +30,7 @@ from aihub_agent.agents.RagAgent.events.ContextInsufficientWithQueryEvent import
 from aihub_agent.agents.RagAgent.events.ExpertAnswerContextEvent import ExpertAnswerContextEvent
 from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
-from aihub_agent.agents.RagAgent.events.NamespaceAwareStartEvent import NamespaceAwareStartEvent
+from aihub_agent.agents.RagAgent.events.NamespaceAwareUserMessageEvent import NamespaceAwareUserMessageEvent
 from aihub_agent.agents.RagAgent.events.UserRequestsExpertEvent import UserRequestsExpertEvent
 from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.rag.preconditions import (
@@ -118,7 +118,7 @@ class ExpertRAGAgent(Agent):
     )
     async def limit_chat_history_step(
         self,
-        event: UserMessageEvent | NamespaceAwareStartEvent,
+        event: UserMessageEvent | NamespaceAwareUserMessageEvent,
         agent_config: ExpertRAGAgentConfig,
     ) -> LimitChatHistoryEvent:
         return do_limit_chat_history(event.messages, agent_config.number_of_input_tokens)
@@ -130,7 +130,7 @@ class ExpertRAGAgent(Agent):
     async def condense_standalone_question_step(
         self,
         event: LimitChatHistoryEvent,
-        start_event: UserMessageEvent | NamespaceAwareStartEvent,
+        start_event: UserMessageEvent | NamespaceAwareUserMessageEvent,
         agent_config: ExpertRAGAgentConfig,
         t: LocaleHandler,
         displayer: EventDisplayer,
@@ -162,12 +162,12 @@ class ExpertRAGAgent(Agent):
         self,
         event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
         _: FewShotAcceptEvent,
-        start_event: UserMessageEvent | NamespaceAwareStartEvent,
+        start_event: UserMessageEvent | NamespaceAwareUserMessageEvent,
         agent_config: ExpertRAGAgentConfig,
         t: LocaleHandler,
     ) -> RetrieverEvent:
         """Retrieves relevant nodes from multiple knowledge sources in parallel."""
-        if isinstance(start_event, NamespaceAwareStartEvent):
+        if isinstance(start_event, NamespaceAwareUserMessageEvent):
             retrievers = filter_retrievers_by_namespace(agent_config.retrievers, start_event.selected_namespaces)
         else:
             retrievers = agent_config.retrievers
@@ -241,7 +241,7 @@ class ExpertRAGAgent(Agent):
         context_event: InOrderNodeCombinerEvent | ExpertAnswerContextEvent,
         chat_history_event: LimitChatHistoryEvent,
         _: ContextSufficientAcceptEvent | None,
-        start_event: UserMessageEvent | NamespaceAwareStartEvent,
+        start_event: UserMessageEvent | NamespaceAwareUserMessageEvent,
         agent_config: ExpertRAGAgentConfig,
     ) -> LimitChatHistoryWithContextEvent:
         return do_limit_chat_history_with_context(
@@ -294,7 +294,7 @@ class ExpertRAGAgent(Agent):
     )
     async def forward_to_expert_asking_agent_step(
         self,
-        user_message_event: UserMessageEvent | NamespaceAwareStartEvent,
+        user_message_event: UserMessageEvent | NamespaceAwareUserMessageEvent,
         _: UserRequestsExpertEvent,
         displayer: EventDisplayer,
         agent_config: ExpertRAGAgentConfig,

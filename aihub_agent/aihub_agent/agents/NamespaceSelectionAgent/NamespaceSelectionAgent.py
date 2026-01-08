@@ -35,7 +35,7 @@ from aihub_agent.agents.NamespaceSelectionAgent.utils import (
     truncate_conversation_history,
     validate_namespace_selection,
 )
-from aihub_agent.agents.RagAgent.events.NamespaceAwareStartEvent import NamespaceAwareStartEvent
+from aihub_agent.agents.RagAgent.events.NamespaceAwareUserMessageEvent import NamespaceAwareUserMessageEvent
 from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.context.thread.ThreadContext import ThreadContext
 from aihub_agent.workflow.decorators.precondition import precondition
@@ -233,7 +233,7 @@ class NamespaceSelectionAgent(Agent):
     async def process_approval_step(
         self,
         event: NamespaceApprovalResponseEvent,
-        start_event: UserMessageEvent | NamespaceAwareStartEvent,
+        start_event: UserMessageEvent | NamespaceAwareUserMessageEvent,
         agent_config: NamespaceSelectionAgentConfig,
         run_context: RunContext,
         thread_context: ThreadContext,
@@ -257,7 +257,7 @@ class NamespaceSelectionAgent(Agent):
             return AgentInTheLoop.invoke(
                 agent_class=agent_config.rag_delegation.rag_agent_class,
                 agent_id=agent_config.rag_delegation.rag_agent_id,
-                start_event=NamespaceAwareStartEvent(
+                start_event=NamespaceAwareUserMessageEvent(
                     messages=start_event.messages,
                     user=start_event.user,
                     locale=start_event.locale,
@@ -350,7 +350,7 @@ class NamespaceSelectionAgent(Agent):
         return AgentInTheLoop.invoke(
             agent_class=agent_config.rag_delegation.rag_agent_class,
             agent_id=agent_config.rag_delegation.rag_agent_id,
-            start_event=NamespaceAwareStartEvent(
+            start_event=NamespaceAwareUserMessageEvent(
                 messages=event.messages,
                 user=event.user,
                 locale=event.locale,

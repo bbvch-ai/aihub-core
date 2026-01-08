@@ -6,8 +6,8 @@ from aihub_lib.nats.events.user import UserMessageEvent
 from pydantic import Field
 
 
-class NamespaceAwareStartEvent(UserMessageEvent):
-    """StartEvent for RAG agent that includes pre-selected namespaces.
+class NamespaceAwareUserMessageEvent(UserMessageEvent):
+    """User message event for RAG agent that includes pre-selected namespaces.
 
     This event extends UserMessageEvent to carry namespace selection information
     to the RAG agent. The selected_namespaces field contains a list of bucket-namespace
@@ -15,10 +15,10 @@ class NamespaceAwareStartEvent(UserMessageEvent):
     """
 
     _display_name: ClassVar[LocaleString] = LocaleString(
-        en="Namespace-Aware Start Event",
-        de="Namespace-bewusstes Start-Event",
-        fr="Événement de démarrage avec namespace",
-        it="Evento di avvio con namespace",
+        en="Namespace-Aware User Message Event",
+        de="Namespace-bewusste Benutzernachricht",
+        fr="Événement de message utilisateur avec namespace",
+        it="Evento di messaggio utente con namespace",
     )
     _display_description: ClassVar[LocaleString] = LocaleString(
         en="A user message event with pre-selected namespaces for RAG retrieval.",
