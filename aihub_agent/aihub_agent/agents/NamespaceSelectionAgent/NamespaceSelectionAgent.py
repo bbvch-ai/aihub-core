@@ -67,6 +67,18 @@ async def has_selection(thread_context: ThreadContext) -> bool:
     return selection is not None
 
 
+@precondition()
+async def is_namespace_approved(event: NamespaceApprovalResponseEvent) -> bool:
+    """Check if user approved the namespace selection."""
+    return event.response
+
+
+@precondition()
+async def is_namespace_rejected(event: NamespaceApprovalResponseEvent) -> bool:
+    """Check if user rejected the namespace selection."""
+    return not event.response
+
+
 class NamespaceSelectionAgent(Agent):
     """Agent that determines namespaces via LLM-driven conversation and delegates to RAG.
 
@@ -226,48 +238,61 @@ class NamespaceSelectionAgent(Agent):
         return DetermineNamespacesEvent()
 
     @step(
-        name=LocaleString(en="Process Approval"),
-        description=LocaleString(en="Processes user's approval and forwards to RAG or loops back"),
+        name=LocaleString(en="Process Approval - Approved"),
+        description=LocaleString(en="Stores selection and forwards to RAG agent"),
         icon="tabler:check",
+        precondition=is_namespace_approved,
     )
-    async def process_approval_step(
+    async def process_approval_approved_step(
         self,
-        event: NamespaceApprovalResponseEvent,
+        _: NamespaceApprovalResponseEvent,
         start_event: UserMessageEvent | NamespaceAwareUserMessageEvent,
         agent_config: NamespaceSelectionAgentConfig,
         run_context: RunContext,
         thread_context: ThreadContext,
         displayer: EventDisplayer,
         t: LocaleHandler,
-    ) -> AgentInTheLoop.request | DetermineNamespacesEvent:
-        """Store selection and forward to RAG if approved, or loop back if rejected."""
-        if event.response:  # User approved
-            await displayer.display_thought(t("agent.namespace_selection.thoughts.selection_approved"))
+    ) -> AgentInTheLoop.request:
+        """Store selection and forward to RAG."""
+        await displayer.display_thought(t("agent.namespace_selection.thoughts.selection_approved"))
 
-            selected: dict[str, str] = await run_context.get(PROPOSED_NAMESPACES_KEY, {})
-            await thread_context.set(NAMESPACE_SELECTION_KEY, selected)
+        selected: dict[str, str] = await run_context.get(PROPOSED_NAMESPACES_KEY, {})
+        await thread_context.set(NAMESPACE_SELECTION_KEY, selected)
 
-            namespace_pairs = [
-                BucketNamespacePair(bucket_name=bucket, namespace_name=namespace)
-                for bucket, namespace in selected.items()
-            ]
+        namespace_pairs = [
+            BucketNamespacePair(bucket_name=bucket, namespace_name=namespace) for bucket, namespace in selected.items()
+        ]
 
-            await displayer.display_thought(t("agent.namespace_selection.thoughts.forwarding_to_rag"))
+        await displayer.display_thought(t("agent.namespace_selection.thoughts.forwarding_to_rag"))
 
-            return AgentInTheLoop.invoke(
-                agent_class=agent_config.rag_delegation.rag_agent_class,
-                agent_id=agent_config.rag_delegation.rag_agent_id,
-                start_event=NamespaceAwareUserMessageEvent(
-                    messages=start_event.messages,
-                    user=start_event.user,
-                    locale=start_event.locale,
-                    files=start_event.files if start_event.files else [],
-                    selected_namespaces=namespace_pairs,
-                ),
-                share_thread_id=True,
-            )
+        return AgentInTheLoop.invoke(
+            agent_class=agent_config.rag_delegation.rag_agent_class,
+            agent_id=agent_config.rag_delegation.rag_agent_id,
+            start_event=NamespaceAwareUserMessageEvent(
+                messages=start_event.messages,
+                user=start_event.user,
+                locale=start_event.locale,
+                files=start_event.files if start_event.files else [],
+                selected_namespaces=namespace_pairs,
+            ),
+            share_thread_id=True,
+        )
 
-        # User rejected - add the assistant's question and rejection to conversation, then loop back
+    @step(
+        name=LocaleString(en="Process Approval - Rejected"),
+        description=LocaleString(en="Adds rejection to conversation and loops back"),
+        icon="tabler:x",
+        precondition=is_namespace_rejected,
+    )
+    async def process_approval_rejected_step(
+        self,
+        event: NamespaceApprovalResponseEvent,
+        agent_config: NamespaceSelectionAgentConfig,
+        run_context: RunContext,
+        displayer: EventDisplayer,
+        t: LocaleHandler,
+    ) -> DetermineNamespacesEvent:
+        """Add rejection to conversation history and loop back to determination."""
         await displayer.display_thought(t("agent.namespace_selection.thoughts.selection_rejected"))
 
         conversation_history: list[dict[str, str]] = await run_context.get(CONVERSATION_HISTORY_KEY, [])
