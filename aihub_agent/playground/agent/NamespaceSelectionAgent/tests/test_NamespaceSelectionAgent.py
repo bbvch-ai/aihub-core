@@ -94,17 +94,26 @@ class TestEvents:
 
     def test_follow_up_question_hitl_invoke(self):
         """Test creating a FollowUpQuestionHitl request via invoke."""
+        available = {"bucket1": ["ns1", "ns2"], "bucket2": ["ns3"]}
         request = FollowUpQuestionHitl.invoke(
             question="What topic are you interested in?",
+            available_namespaces=available,
         )
         assert request.question == "What topic are you interested in?"
+        assert request.available_namespaces == available
 
     def test_namespace_approval_hitl_invoke(self):
         """Test creating a NamespaceApprovalHitl request via invoke."""
+        proposed = {"bucket1": "ns1", "bucket2": "ns2"}
+        available = {"bucket1": ["ns1", "ns2"], "bucket2": ["ns2", "ns3"]}
         request = NamespaceApprovalHitl.invoke(
             question="Approve these namespaces?",
+            proposed_namespaces=proposed,
+            available_namespaces=available,
         )
         assert request.question == "Approve these namespaces?"
+        assert request.proposed_namespaces == proposed
+        assert request.available_namespaces == available
 
 
 class TestConfig:
