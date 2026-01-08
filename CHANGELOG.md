@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.256.13] - 2026-01-08 - Enhanced Observability for Document Parsing
+
+### Changed
+
+- 📄 **Improved Document Parsing Logging:** Added comprehensive logging within the `parse_document_from_data_lake`
+  operation to provide greater visibility and easier debugging for document loading, parsing, and metadata application
+  steps.
+
+---
+
 ## [v0.256.12] - 2026-01-07 - Improved Database Connectivity for Docker Environments
 
 ### Added
