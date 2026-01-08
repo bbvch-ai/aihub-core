@@ -96,9 +96,16 @@ class S3DataLakeFileSystemResource(AbstractDataLakeFileSystemResource[s3fs.S3Fil
             "endpoint_url": s3_config.ENDPOINT,
         }
 
+        config_kwargs = {
+            "connect_timeout": 30,
+            "read_timeout": 300,
+            "retries": {"max_attempts": 3},
+        }
+
         return s3fs.S3FileSystem(
             key=s3_config.ACCESS_KEY,
             secret=s3_config.SECRET_KEY.get_secret_value(),
             client_kwargs=client_kwargs,
+            config_kwargs=config_kwargs,
             anon=False,  # Use credentials, not anonymous access
         )
