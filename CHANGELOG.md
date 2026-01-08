@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.256.14] - 2026-01-08 - Robust Timeout Management and Enhanced Dagster Run Monitoring
+
+### Added
+
+- ✨ **Introduced Comprehensive Document Loading Timeout:** Added an `OPERATION_TIMEOUT` setting for the DoclingLoader,
+  allowing control over the overall duration of document loading operations to prevent indefinite hangs.
+- 🚀 **Granular HTTP Timeouts for Docling API:** Implemented explicit connect, read, write, and pool timeouts for HTTPX
+  clients used in Docling API interactions, providing more fine-grained control over network requests.
+- 🦾 **Explicit Filesystem Timeouts:** Configured explicit connection and read timeouts for Azure Data Lake and S3
+  filesystem resources, improving reliability for storage operations.
+- ⚡️ **Enabled Dagster Run Monitoring:** Activated Dagster's run monitoring across all environments, with configurable
+  settings for maximum runtime, start timeout, cancel timeout, and poll intervals to automatically manage and prevent
+  stuck runs.
+
+### Changed
+
+- 🔄 **Clarified Docling API Timeout Scope:** The `API_TIMEOUT` setting for Docling API calls is now explicitly defined
+  as the timeout for *individual* API calls, distinguishing it from the new overall operation timeout.
+
+### Fixed
+
+- 🐛 **Improved Docling Async Poll Error Handling:** Refined the error handling for asynchronous polling in the
+  DoclingLoader to catch more specific HTTP, OS, and asyncio cancellation errors, leading to more robust operation.
+
+### Refactor
+
+- 🧹 **Streamlined DoclingLoader Asynchronous Logic:** Refactored the asynchronous document loading method in
+  `DoclingLoader` by extracting core logic into an internal helper method, improving readability and maintainability.
+
+---
+
 ## [v0.256.13] - 2026-01-08 - Enhanced Observability for Document Parsing
 
 ### Changed
