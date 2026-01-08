@@ -9,6 +9,7 @@ from llama_index.storage.docstore.mongodb import MongoDocumentStore
 from pymilvus import MilvusClient
 
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
+from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     DOCUMENT_ID,
@@ -119,10 +120,14 @@ def fill_collection(
 
 def drop_collection(
     uri: str = "http://localhost:19530",
-    token: str = "root:Milvus",
+    token: str | None = None,
     collection_name: str = "development",
 ):
+    """Drop a Milvus collection. Uses MilvusSettings token if not explicitly provided."""
     try:
+        # Fall back to settings token if not provided
+        if token is None:
+            token = MilvusSettings().get_token()
         client = MilvusClient(uri=uri, token=token)
         client.drop_collection(collection_name=collection_name)
         create_milvus_vector_store.cache_clear()

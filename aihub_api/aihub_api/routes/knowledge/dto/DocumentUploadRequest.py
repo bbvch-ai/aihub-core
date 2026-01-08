@@ -49,8 +49,7 @@ class DocumentUploadRequest(BaseModel):
         if not file_type.is_extension_supported(file_ext):
             supported_extensions = file_type.get_unique_extensions()
             raise ValueError(
-                f"File extension '{file_ext}' is not supported. "
-                f"Supported extensions: {', '.join(supported_extensions)}"
+                f"File extension '{file_ext}' is not supported. Supported extensions: {', '.join(supported_extensions)}"
             )
 
         # Second check: Does the MIME type match what we expect for this extension?

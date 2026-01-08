@@ -9,8 +9,6 @@ import os
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
-from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
-from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import SlackConfig, TeamsConfig
 
 from aihub_agent.agents.ExpertAskingAgent.ExpertAskingAgent import ExpertAskingAgent
@@ -38,7 +36,6 @@ def get_channel_config() -> TeamsConfig | SlackConfig:
 
 
 async def main():
-    servers_list = [NatsSettings().ENDPOINT]
     runner = AgentRunner(
         agent_type=ExpertAskingAgent,
         default_agent_config=ExpertAskingAgentConfig(
@@ -59,8 +56,6 @@ async def main():
             llm=LLMConfig(model_name="text-generation/mini"),
             channel_config=get_channel_config(),
         ),
-        redis_url=RedisSettings().URL,
-        servers=servers_list,
     )
 
     await runner.run_forever()

@@ -47,7 +47,7 @@ def _clean_conversation_id(conversation_id: str, bot_id: str) -> str:
         if extracted_bot_team_id != bot_id:
             logger.warning(f"Bot:Team ID mismatch: extracted '{extracted_bot_team_id}' != expected '{bot_id}'")
             raise ValueError(
-                f"Bot:Team ID mismatch: extracted '{extracted_bot_team_id}' " f"does not match expected '{bot_id}'"
+                f"Bot:Team ID mismatch: extracted '{extracted_bot_team_id}' does not match expected '{bot_id}'"
             )
         return match.group(2)
     return conversation_id

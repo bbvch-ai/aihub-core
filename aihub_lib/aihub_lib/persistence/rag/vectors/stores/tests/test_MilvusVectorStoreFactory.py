@@ -5,6 +5,7 @@ from llama_index.core.schema import TextNode
 from pymilvus import Collection, MilvusClient, connections
 from pytest_bdd import given, parsers, scenarios, then, when
 
+from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.persistence.rag.vectors.node_metadata import DOCUMENT_ID, NAMESPACE
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import (
     MilvusIndexType,
@@ -19,8 +20,10 @@ scenarios("./features/milvus_vector_store.feature")
 @pytest.fixture
 def context():
     """Shared context dictionary for test state."""
+    milvus_token = MilvusSettings().get_token()
     return {
         "milvus_uri": None,
+        "milvus_token": milvus_token,
         "embedding_dimension": None,
         "collection_name": None,
         "vector_store": None,
@@ -34,9 +37,9 @@ def context():
 
 @pytest.fixture
 def milvus_client(context):
-    """Reusable Milvus client."""
+    """Reusable Milvus client with authentication support."""
     if not context.get("client") and context.get("milvus_uri"):
-        context["client"] = MilvusClient(uri=context["milvus_uri"])
+        context["client"] = MilvusClient(uri=context["milvus_uri"], token=context.get("milvus_token"))
     return context["client"]
 
 
@@ -46,14 +49,15 @@ def cleanup_test_collections(context):
     yield
     # Cleanup after test
     if context.get("milvus_uri") and context.get("collection_name"):
-        drop_collection(uri=context["milvus_uri"], collection_name=context["collection_name"])
+        token = context.get("milvus_token") or "root:Milvus"
+        drop_collection(uri=context["milvus_uri"], token=token, collection_name=context["collection_name"])
 
 
 # Helper functions
 @contextmanager
-def milvus_connection(uri: str):
-    """Context manager for Milvus connections."""
-    connections.connect(uri=uri)
+def milvus_connection(uri: str, token: str | None = None):
+    """Context manager for Milvus connections with authentication support."""
+    connections.connect(uri=uri, token=token)
     try:
         yield
     finally:
@@ -91,6 +95,7 @@ def _create_vector_store(context, **kwargs):
         "collection_name": context["collection_name"],
         "embedding_vector_dimension": context["embedding_dimension"],
         "index_type": MilvusIndexType.FLAT,
+        "token": context.get("milvus_token"),
     }
 
     def _create():
@@ -180,7 +185,7 @@ def then_collection_exists(context, milvus_client):
 @then(parsers.parse('the embedding field should have index type "{expected_index_type}"'))
 def then_embedding_field_has_index_type(context, expected_index_type: str):
     """Verify embedding field has specified index type."""
-    with milvus_connection(context["milvus_uri"]):
+    with milvus_connection(context["milvus_uri"], context.get("milvus_token")):
         collection = Collection(context["collection_name"])
         embedding_index = _get_embedding_index(collection)
 
@@ -193,7 +198,7 @@ def then_embedding_field_has_index_type(context, expected_index_type: str):
 @then(parsers.parse('the sparse_embedding field should have index type "{expected_index_type}"'))
 def then_sparse_embedding_field_has_index_type(context, expected_index_type: str):
     """Verify sparse_embedding field has specified index type."""
-    with milvus_connection(context["milvus_uri"]):
+    with milvus_connection(context["milvus_uri"], context.get("milvus_token")):
         collection = Collection(context["collection_name"])
         sparse_index = next((idx for idx in collection.indexes if idx.field_name == "sparse_embedding"), None)
 
@@ -206,7 +211,7 @@ def then_sparse_embedding_field_has_index_type(context, expected_index_type: str
 @then("the namespace field should be the partition key")
 def then_namespace_is_the_partition_key(context):
     """Verify namespace field is configured as partition key."""
-    with milvus_connection(context["milvus_uri"]):
+    with milvus_connection(context["milvus_uri"], context.get("milvus_token")):
         collection = Collection(context["collection_name"])
         namespace_field = next((f for f in collection.schema.fields if f.name == NAMESPACE), None)
 
@@ -217,7 +222,7 @@ def then_namespace_is_the_partition_key(context):
 @then("the collection schema should have these fields:")
 def then_schema_has_fields(context, datatable):
     """Verify collection schema has all specified fields with correct properties."""
-    with milvus_connection(context["milvus_uri"]):
+    with milvus_connection(context["milvus_uri"], context.get("milvus_token")):
         collection = Collection(context["collection_name"])
         schema = collection.schema
 
@@ -241,7 +246,7 @@ def then_schema_has_fields(context, datatable):
 @then("the collection should have a BM25 function defined")
 def then_collection_has_bm25_function(context):
     """Verify collection has BM25 function for sparse embeddings."""
-    with milvus_connection(context["milvus_uri"]):
+    with milvus_connection(context["milvus_uri"], context.get("milvus_token")):
         collection = Collection(context["collection_name"])
         functions = collection.schema.functions
 
@@ -254,7 +259,7 @@ def then_collection_has_bm25_function(context):
 @then(parsers.parse('the collection should have index type "{expected_index_type}"'))
 def then_collection_has_index_type(context, expected_index_type: str):
     """Verify collection has specified index type."""
-    with milvus_connection(context["milvus_uri"]):
+    with milvus_connection(context["milvus_uri"], context.get("milvus_token")):
         collection = Collection(context["collection_name"])
         embedding_index = _get_embedding_index(collection)
 
@@ -269,7 +274,7 @@ def then_collection_has_index_type(context, expected_index_type: str):
 @then("the namespace field should be marked as partition key")
 def then_namespace_is_partition_key(context):
     """Verify namespace field is partition key."""
-    with milvus_connection(context["milvus_uri"]):
+    with milvus_connection(context["milvus_uri"], context.get("milvus_token")):
         collection = Collection(context["collection_name"])
         namespace_field = next((field for field in collection.schema.fields if field.name == NAMESPACE), None)
 
@@ -328,7 +333,7 @@ def then_sparse_embeddings_enabled(context):
 @then(parsers.parse('the collection schema should have a "{field_name}" field'))
 def then_schema_has_field(context, field_name: str):
     """Verify collection schema has specified field."""
-    with milvus_connection(context["milvus_uri"]):
+    with milvus_connection(context["milvus_uri"], context.get("milvus_token")):
         collection = Collection(context["collection_name"])
         field_found = any(field.name == field_name for field in collection.schema.fields)
         assert field_found, f"Field '{field_name}' not found in schema"
