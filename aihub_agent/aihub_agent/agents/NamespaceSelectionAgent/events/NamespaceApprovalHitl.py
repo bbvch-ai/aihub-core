@@ -37,7 +37,10 @@ class NamespaceApprovalRequestEvent(HumanInTheLoopConfirmationRequestEvent):
 class NamespaceApprovalResponseEvent(HumanInTheLoopConfirmationResponseEvent):
     """Response containing user's approval or rejection of proposed namespaces."""
 
-    pass
+    request_event: Annotated[
+        NamespaceApprovalRequestEvent,
+        Field(description="The original NamespaceApprovalRequestEvent that led to this response."),
+    ]
 
 
 class NamespaceApprovalHitl:
