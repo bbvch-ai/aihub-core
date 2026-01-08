@@ -267,12 +267,7 @@ class RefDoc(Document):
         sort_field: str | None = None,
         sort_order: int = 1,
     ) -> list["RefDoc"]:
-        """Search documents by title or source filename (case-insensitive).
-
-        Args:
-            sort_field: Field to sort by (document_title, created_at, updated_at)
-            sort_order: 1 for ascending, -1 for descending
-        """
+        """Search documents by title or source filename (case-insensitive)."""
         order_by = cls._get_order_by(sort_field, sort_order)
 
         with switch_db(cls, db_alias) as SwitchedRefDoc:
@@ -312,12 +307,7 @@ class RefDoc(Document):
         sort_field: str | None = None,
         sort_order: int = 1,
     ) -> list["RefDoc"]:
-        """Get all documents in a namespace with sorting support.
-
-        Args:
-            sort_field: Field to sort by (document_title, created_at, updated_at)
-            sort_order: 1 for ascending, -1 for descending
-        """
+        """Get all documents in a namespace with sorting support."""
         order_by = cls._get_order_by(sort_field, sort_order)
 
         with switch_db(cls, db_alias) as SwitchedRefDoc:
