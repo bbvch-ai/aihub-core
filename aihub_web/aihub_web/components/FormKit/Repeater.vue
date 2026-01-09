@@ -52,7 +52,7 @@
 </template>
 
 <script setup lang="ts">
-import type {FormKitSchemaNode} from '@formkit/core'
+import type { FormKitSchemaNode } from '@formkit/core'
 
 const props = defineProps<{
   name: string
@@ -63,7 +63,7 @@ const props = defineProps<{
   max?: number
 }>()
 
-const modelValue = defineModel<Record<string, unknown>[]>({default: () => []})
+const modelValue = defineModel<Record<string, unknown>[]>({ default: () => [] })
 
 const items = computed(() => modelValue.value || [])
 

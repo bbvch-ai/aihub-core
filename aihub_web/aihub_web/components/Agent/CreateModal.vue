@@ -11,7 +11,7 @@
         v-if="agentClassesAreLoading"
         class="flex items-center justify-center py-8"
       >
-        <ProgressSpinner/>
+        <ProgressSpinner />
       </div>
 
       <div
@@ -122,8 +122,16 @@
 </template>
 
 <script setup lang="ts">
-import type {AgentClassDto} from '@core/composables/agent/useAgentClasses'
-import type {FormKitSchemaDefinition, FormKitSchemaNode} from '@formkit/core'
+import {
+  type FormElement,
+  type RepeaterConfig,
+  buildFormKitSchema,
+  extractRepeaterConfigs,
+  getFormkitType,
+} from '@core/composables/form/useFormKitTransform'
+
+import type { AgentClassDto } from '@core/composables/agent/useAgentClasses'
+import type { FormKitSchemaDefinition } from '@formkit/core'
 
 const props = defineProps<{
   modelValue: boolean
@@ -134,10 +142,10 @@ const emit = defineEmits<{
   'success': [agentClass: string, agentId: string]
 }>()
 
-const {t, locale} = useI18n()
+const { t, locale } = useI18n()
 const toast = useToast()
-const {agentClasses, agentClassesAreLoading} = useAgentClasses()
-const {createAgent, isCreating} = useCreateAgent()
+const { agentClasses, agentClassesAreLoading } = useAgentClasses()
+const { createAgent, isCreating } = useCreateAgent()
 
 const selectedClass = ref<string>('')
 const agentId = ref('')
@@ -158,158 +166,34 @@ const configForm = computed(() => {
   return selectedClassData.value?.agent_config_specs?.form || []
 })
 
-type FormElement = Record<string, unknown>
-
-function getLocalizedString(value: unknown, currentLocale: string): string | undefined {
-  if (!value) return undefined
-  if (typeof value === 'string') return value
-  if (typeof value === 'object' && value !== null) {
-    const localeObj = value as Record<string, string>
-    return localeObj[currentLocale] || localeObj.en || Object.values(localeObj)[0]
-  }
-  return String(value)
-}
-
-function wrapInFieldset(label: string, node: FormKitSchemaNode): FormKitSchemaNode[] {
-  return [{
-    $el: 'fieldset',
-    attrs: {class: 'border border-surface-300 dark:border-surface-600 rounded-lg p-4 mb-4'},
-    children: [
-      {
-        $el: 'legend',
-        attrs: {class: 'text-sm font-semibold px-2 text-surface-700 dark:text-surface-300'},
-        children: label,
-      },
-      node,
-    ],
-  }] as FormKitSchemaNode[]
-}
-
-interface RepeaterConfig {
-  name: string
-  label?: string
-  addLabel?: string
-  childrenSchema: FormKitSchemaNode[]
-  min?: number
-  max?: number
-}
-
 const schema = computed<FormKitSchemaDefinition>(() => {
-  if (!configForm.value || configForm.value.length === 0) return []
-
-  const currentLocale = locale.value
-
-  function transformElement(formElement: FormElement): FormKitSchemaNode | FormKitSchemaNode[] {
-    if (!formElement) return []
-
-    const formkitType = formElement.formkit || formElement.$formkit
-
-    if (formkitType === 'repeater') return []
-
-    const children = (formElement.children as FormElement[] || []).flatMap(transformElement)
-    const label = getLocalizedString(formElement.label, currentLocale)
-
-    if (formkitType === 'group') {
-      const groupNode: FormKitSchemaNode = {
-        $formkit: 'group',
-        name: formElement.name as string,
-        children: children as FormKitSchemaNode[],
-      }
-      return label ? wrapInFieldset(label, groupNode) : groupNode
-    }
-
-    const cleanNode: Record<string, unknown> = {$formkit: formkitType}
-    if (formElement.name) cleanNode.name = formElement.name
-    if (label) cleanNode.label = label
-    const help = getLocalizedString(formElement.help, currentLocale)
-    if (help) cleanNode.help = help
-    const placeholder = getLocalizedString(formElement.placeholder, currentLocale)
-    if (placeholder) cleanNode.placeholder = placeholder
-    if (formElement.validation) cleanNode.validation = formElement.validation
-    if (formElement.options) cleanNode.options = formElement.options
-    if (formElement.value !== undefined) cleanNode.value = formElement.value
-    if (children.length > 0) cleanNode.children = children
-
-    return cleanNode as FormKitSchemaNode
-  }
-
-  try {
-    return configForm.value.flatMap(el => transformElement(el as FormElement))
-  } catch (error) {
-    console.error('Error transforming schema:', error)
-    return []
-  }
+  return buildFormKitSchema(configForm.value as FormElement[], {
+    locale: locale.value,
+  })
 })
 
 const repeaterElements = computed<RepeaterConfig[]>(() => {
-  if (!configForm.value || configForm.value.length === 0) return []
-
-  const currentLocale = locale.value
-  const repeaters: RepeaterConfig[] = []
-
-  function transformChildElement(formElement: FormElement): FormKitSchemaNode | FormKitSchemaNode[] {
-    if (!formElement) return []
-    const formkitType = formElement.formkit || formElement.$formkit
-    const children = (formElement.children as FormElement[] || []).flatMap(transformChildElement)
-    const label = getLocalizedString(formElement.label, currentLocale)
-
-    if (formkitType === 'group') {
-      const groupNode: FormKitSchemaNode = {
-        $formkit: 'group',
-        name: formElement.name as string,
-        children: children as FormKitSchemaNode[],
-      }
-      return label ? wrapInFieldset(label, groupNode) : groupNode
-    }
-
-    const cleanNode: Record<string, unknown> = {$formkit: formkitType}
-    if (formElement.name) cleanNode.name = formElement.name
-    if (label) cleanNode.label = label
-    const help = getLocalizedString(formElement.help, currentLocale)
-    if (help) cleanNode.help = help
-    if (formElement.validation) cleanNode.validation = formElement.validation
-    if (formElement.options) cleanNode.options = formElement.options
-    if (children.length > 0) cleanNode.children = children
-
-    return cleanNode as FormKitSchemaNode
-  }
-
-  for (const el of configForm.value) {
-    const element = el as FormElement
-    const formkitType = element.formkit || element.$formkit
-    if (formkitType === 'repeater') {
-      const childrenSchema = (element.children as FormElement[] || []).flatMap(transformChildElement)
-      repeaters.push({
-        name: element.name as string,
-        label: getLocalizedString(element.label, currentLocale),
-        addLabel: getLocalizedString(element.addLabel || element.add_label, currentLocale),
-        childrenSchema: childrenSchema as FormKitSchemaNode[],
-        min: element.min as number | undefined,
-        max: element.max as number | undefined,
-      })
-    }
-  }
-
-  return repeaters
+  return extractRepeaterConfigs(configForm.value as FormElement[], locale.value)
 })
 
 watch(selectedClassData, (newClass) => {
   if (newClass?.default_agent_config) {
     formData.value = initializeGroupData(
       configForm.value as FormElement[],
-      {...newClass.default_agent_config} as Record<string, unknown>,
+      { ...newClass.default_agent_config } as Record<string, unknown>,
     )
-  } else {
+  }
+  else {
     formData.value = {}
   }
-}, {immediate: true})
+}, { immediate: true })
 
 function initializeElementData(
   element: FormElement,
   result: Record<string, unknown>,
   recursiveFn: (elements: FormElement[], data: Record<string, unknown>) => Record<string, unknown>,
 ): void {
-  const formkitType = element.formkit || element.$formkit
+  const formkitType = getFormkitType(element)
   const name = element.name as string
   const children = element.children as FormElement[] | undefined
   const hasChildren = children && Array.isArray(children)
@@ -319,7 +203,8 @@ function initializeElementData(
     if (hasChildren) {
       result[name] = recursiveFn(children, result[name] as Record<string, unknown>)
     }
-  } else if (formkitType === 'repeater') {
+  }
+  else if (formkitType === 'repeater') {
     result[name] = result[name] ?? []
     if (Array.isArray(result[name]) && hasChildren) {
       result[name] = (result[name] as Record<string, unknown>[]).map(item => recursiveFn(children, item))
@@ -331,7 +216,7 @@ function initializeGroupData(
   formElements: FormElement[],
   data: Record<string, unknown>,
 ): Record<string, unknown> {
-  const result = {...data}
+  const result = { ...data }
   for (const element of formElements) {
     initializeElementData(element, result, initializeGroupData)
   }
@@ -348,9 +233,11 @@ function validateAgentId() {
 
   if (!agentIdPattern.test(agentId.value)) {
     agentIdError.value = t('agent.create.agentIdInvalid')
-  } else if (agentId.value.length > 100) {
+  }
+  else if (agentId.value.length > 100) {
     agentIdError.value = t('agent.create.agentIdTooLong')
-  } else {
+  }
+  else {
     agentIdError.value = ''
   }
 }
@@ -396,7 +283,8 @@ async function handleSubmit() {
 
     emit('success', selectedClass.value, agentId.value)
     closeModal()
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to create agent:', error)
     toast.add({
       severity: 'error',

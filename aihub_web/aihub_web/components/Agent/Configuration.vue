@@ -22,7 +22,7 @@
       >
         <FormKitSchema
           :schema="schema"
-          :data="{...data}"
+          :data="{ ...data }"
         />
 
         <!-- Render repeaters separately (not supported by FormKit standard) -->
@@ -43,12 +43,18 @@
 </template>
 
 <script setup lang="ts">
-import {type FormkitElement, getModelsByMode, type GetModelsByModeResponse} from '@core/sdk/client'
+import {
+  buildFormKitSchema,
+  extractRepeaterConfigs,
+  type FormElement,
+  type RepeaterConfig,
+} from '@core/composables/form/useFormKitTransform'
+import { type FormkitElement, getModelsByMode, type GetModelsByModeResponse } from '@core/sdk/client'
 import merge from 'lodash/merge'
 
-import type {FormKitSchemaDefinition, FormKitSchemaNode} from '@formkit/core'
+import type { FormKitSchemaDefinition } from '@formkit/core'
 
-const {t} = useI18n()
+const { t } = useI18n()
 
 const props = defineProps<{
   title: string
@@ -88,10 +94,11 @@ async function fetchModelsForModes(modes: string[]) {
       try {
         const models = await getModelsByMode({
           composable: '$fetch',
-          path: {mode},
+          path: { mode },
         })
         results[mode] = models
-      } catch (error) {
+      }
+      catch (error) {
         console.warn(`Failed to fetch models for mode "${mode}":`, error)
         results[mode] = []
       }
@@ -111,7 +118,7 @@ watch(
       }
     }
   },
-  {immediate: true},
+  { immediate: true },
 )
 
 const data = ref<Record<string, unknown>>(props.initialData || {})
@@ -120,146 +127,44 @@ watch(() => props.initialData, (newData) => {
   if (newData && Object.keys(newData).length > 0) {
     data.value = merge({}, data.value, newData)
   }
-}, {deep: true})
+}, { deep: true })
 
 const emit = defineEmits<{
   submit: [Record<string, unknown>]
 }>()
 
-interface RepeaterConfig {
-  name: string
-  label?: string
-  addLabel?: string
-  childrenSchema: FormKitSchemaNode[]
-  min?: number
-  max?: number
+function createLabelPattern(): RegExp {
+  const keys = Object.keys(data.value)
+  if (keys.length === 0) return /(?!)/ // Never matches
+  return new RegExp(keys.map(key => `\\$${key}`).join('|'), 'g')
 }
 
-function wrapInFieldset(label: string, node: FormKitSchemaNode): FormKitSchemaNode[] {
-  return [{
-    $el: 'fieldset',
-    attrs: {class: 'formkit-group-fieldset border border-surface-300 dark:border-surface-600 rounded-lg p-4 mb-4'},
-    children: [
-      {
-        $el: 'legend',
-        attrs: {class: 'text-sm font-semibold px-2 text-surface-700 dark:text-surface-300'},
-        children: label,
-      },
-      node,
-    ],
-  }] as FormKitSchemaNode[]
+function replaceLabelVariables(label: string): string {
+  const pattern = createLabelPattern()
+  return label.replace(pattern, (match: string) => {
+    const key = match.substring(1)
+    return (data.value[key] as string) || match
+  })
+}
+
+function resolveApiModeOptions(element: FormElement): unknown[] | undefined {
+  const apiMode = element.options_api_mode || element.optionsApiMode
+  if (apiMode && typeof apiMode === 'string') {
+    const models = modelsByMode.value[apiMode] || []
+    return models.map(m => m.model_name)
+  }
+  return undefined
 }
 
 const schema = computed<FormKitSchemaDefinition>(() => {
-  const pattern = new RegExp(
-    Object.keys(data.value)
-      .map(key => `\\$${key}`)
-      .join('|'),
-    'g',
-  )
-
-  function transformElement(formElement: FormkitElement): FormKitSchemaNode | FormKitSchemaNode[] {
-    const elementRecord = formElement as Record<string, unknown>
-    const formkitType = elementRecord.formkit || elementRecord.$formkit
-
-    if (formkitType === 'repeater') return []
-
-    if (formkitType === 'group') {
-      const children = (elementRecord.children as FormkitElement[] || []).flatMap(transformElement)
-      const groupNode: FormKitSchemaNode = {
-        $formkit: 'group',
-        name: elementRecord.name as string,
-        children: children as FormKitSchemaNode[],
-      }
-      if (elementRecord.label) {
-        return wrapInFieldset(elementRecord.label as string, groupNode)
-      }
-      return groupNode
-    }
-
-    const formkitNode = {
-      ...formElement,
-      $formkit: formkitType,
-    } as FormKitSchemaNode
-
-    delete (formkitNode as Record<string, unknown>).formkit
-
-    const nodeRecord = formkitNode as Record<string, unknown>
-    const apiMode = nodeRecord.options_api_mode || nodeRecord.optionsApiMode
-    if (apiMode && typeof apiMode === 'string') {
-      const models = modelsByMode.value[apiMode] || []
-      nodeRecord.options = models.map(m => m.model_name)
-      delete nodeRecord.options_api_mode
-      delete nodeRecord.optionsApiMode
-    }
-
-    if (formkitNode?.label && typeof formkitNode.label === 'string') {
-      formkitNode.label = formkitNode.label.replace(pattern, (match: string) => {
-        const key = match.substring(1)
-        return data.value[key] || match
-      })
-    }
-
-    if (nodeRecord.children && Array.isArray(nodeRecord.children)) {
-      nodeRecord.children = (nodeRecord.children as FormkitElement[]).flatMap(transformElement)
-    }
-
-    return formkitNode
-  }
-
-  return props.form.flatMap(transformElement)
+  return buildFormKitSchema(props.form as FormElement[], {
+    labelTransform: replaceLabelVariables,
+    optionsResolver: resolveApiModeOptions,
+  })
 })
 
 const repeaterElements = computed<RepeaterConfig[]>(() => {
-  if (!props.form || props.form.length === 0) return []
-
-  const repeaters: RepeaterConfig[] = []
-
-  function transformChildElement(formElement: FormkitElement): FormKitSchemaNode | FormKitSchemaNode[] {
-    const elementRecord = formElement as Record<string, unknown>
-    const formkitType = elementRecord.formkit || elementRecord.$formkit
-    const children = (elementRecord.children as FormkitElement[] || []).flatMap(transformChildElement)
-
-    if (formkitType === 'group') {
-      const groupNode: FormKitSchemaNode = {
-        $formkit: 'group',
-        name: elementRecord.name as string,
-        children: children as FormKitSchemaNode[],
-      }
-      if (elementRecord.label) {
-        return wrapInFieldset(elementRecord.label as string, groupNode)
-      }
-      return groupNode
-    }
-
-    const cleanNode: Record<string, unknown> = {$formkit: formkitType}
-    if (elementRecord.name) cleanNode.name = elementRecord.name
-    if (elementRecord.label) cleanNode.label = elementRecord.label
-    if (elementRecord.help) cleanNode.help = elementRecord.help
-    if (elementRecord.validation) cleanNode.validation = elementRecord.validation
-    if (elementRecord.options) cleanNode.options = elementRecord.options
-    if (children.length > 0) cleanNode.children = children
-
-    return cleanNode as FormKitSchemaNode
-  }
-
-  for (const el of props.form) {
-    const element = el as Record<string, unknown>
-    const formkitType = element.formkit || element.$formkit
-    if (formkitType === 'repeater') {
-      const childrenSchema = (element.children as FormkitElement[] || []).flatMap(transformChildElement)
-      repeaters.push({
-        name: element.name as string,
-        label: element.label as string | undefined,
-        addLabel: (element.addLabel || element.add_label) as string | undefined,
-        childrenSchema: childrenSchema as FormKitSchemaNode[],
-        min: element.min as number | undefined,
-        max: element.max as number | undefined,
-      })
-    }
-  }
-
-  return repeaters
+  return extractRepeaterConfigs(props.form as FormElement[])
 })
 
 async function submitHandler() {

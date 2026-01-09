@@ -1,4 +1,4 @@
-import {deleteAgent} from '@core/sdk/client'
+import { deleteAgent } from '@core/sdk/client'
 
 export const useDeleteAgent = defineMutation(() => {
   const queryCache = useQueryCache()
@@ -8,7 +8,7 @@ export const useDeleteAgent = defineMutation(() => {
     isPending: isDeleting,
     error: deleteError,
   } = useMutation({
-    mutation: async ({agentClass, agentId}: { agentClass: string, agentId: string }) => {
+    mutation: async ({ agentClass, agentId }: { agentClass: string, agentId: string }) => {
       await deleteAgent({
         composable: '$fetch',
         path: {
@@ -17,7 +17,7 @@ export const useDeleteAgent = defineMutation(() => {
         },
       })
 
-      queryCache.invalidateQueries({key: ['agents']})
+      queryCache.invalidateQueries({ key: ['agents'] })
     },
   })
 

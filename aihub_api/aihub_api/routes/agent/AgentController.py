@@ -1,5 +1,13 @@
 from typing import Annotated
 
+from aihub_lib.auth.access.AccessChecker import AccessChecker
+from aihub_lib.auth.access.AccessLevel import AccessLevel
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.dependencies.use_nats import use_nats
+from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Security
 from nats.aio.client import Client as NATS
 
@@ -13,14 +21,6 @@ from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
 from aihub_api.routes.agent.dto.CreateAgentRequest import CreateAgentRequest
 from aihub_api.routes.agent.dto.UpdateAgentConfigurationDTO import UpdateAgentConfigurationDTO
 from aihub_api.routes.thread.dto.PaginatedThreadsResponse import PaginatedThreadsResponse
-from aihub_lib.auth.access.AccessChecker import AccessChecker
-from aihub_lib.auth.access.AccessLevel import AccessLevel
-from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
-from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.dependencies.use_nats import use_nats
-from aihub_lib.routes.Controller import Controller
 
 
 class AgentController(Controller):

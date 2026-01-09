@@ -1,11 +1,10 @@
 from typing import TYPE_CHECKING, Annotated
 
-from pydantic import BaseModel, Field
-
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events.discovery.agent.AgentConfigSpecs import AgentConfigSpecs
 from aihub_lib.nats.events.discovery.agent.AgentConfigSpecsEntity import AgentConfigSpecsEntity
 from aihub_lib.nats.events.form import ALL_FORM_OPTIONS
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from aihub_lib.persistence.agents.AgentConfigEntity import AgentConfigEntity
