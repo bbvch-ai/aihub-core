@@ -5,6 +5,103 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.257.1] - 2026-01-09 - Enhanced Knowledge Retriever Namespace Flexibility
+
+### Changed
+
+- 🔄 **Improved `KnowledgeRetrieverConfig` for Namespaces:** Relaxed the constraint on `index_namespaces`, allowing it to
+  be an empty list. An empty list now signifies the intention to retrieve information from *all* available namespaces,
+  offering greater flexibility.
+- 🦾 **Smarter Retriever Filtering:** Updated the `filter_retrievers_by_namespace` utility to correctly interpret an
+  empty `index_namespaces` list, ensuring that retrievers are considered for all relevant namespaces when no specific
+  namespace is provided.
+- ⚡️ **Dynamic Node Retrieval:** The `retrieve_nodes` function now intelligently constructs metadata filters. If
+  `index_namespaces` is empty, it will skip namespace-specific filtering, allowing retrieval of nodes across all
+  namespaces based solely on node type.
+
+---
+
+## [v0.257.0] - 2026-01-08 - Empowering RAG with Dynamic Namespace Selection and Enhanced Retrieval
+
+### Added
+
+- ✨ **Namespace Selection Agent:** Introduced a new agent dedicated to interactively guiding users through the selection
+  of relevant knowledge source namespaces for their queries. This agent uses an LLM to understand intent and
+  incorporates human-in-the-loop (HITL) steps for clarification and approval, ensuring accurate context for RAG.
+- 🦾 **Namespace-Aware User Message Event:** Implemented a new event type (`NamespaceAwareUserMessageEvent`) that extends
+  the standard user message to include pre-selected knowledge source namespaces, enabling RAG agents to receive and
+  process this crucial contextual information.
+- 📄 **Core Namespace Utilities:** Developed foundational data structures (`BucketNamespacePair`) and utility functions
+  (`filter_retrievers_by_namespace`) within `aihub_lib` to support dynamic filtering of RAG retrievers based on
+  user-selected namespaces.
+- ⚙️ **New Configuration Options:** Added `NamespaceSelectionAgentConfig` and `RAGDelegationConfig` to provide flexible
+  configuration for the namespace selection workflow, including LLM settings, available buckets, and how it delegates to
+  RAG agents.
+
+### Changed
+
+- 🔄 **RAG Agent Namespace Filtering:** Updated both the **RAG Agent** and **Expert RAG Agent** to leverage the new
+  `NamespaceAwareUserMessageEvent`. These agents can now dynamically filter their knowledge retrievers based on the
+  pre-selected namespaces, significantly improving the precision and relevance of information retrieval.
+
+### Fixed
+
+- 🐛 **OpenAI Service Header Injection:** Corrected an issue in the OpenAI service where additional headers were not
+  consistently injected into SDK calls, ensuring proper instrumentation and metadata propagation for requests.
+
+---
+
+## [v0.256.14] - 2026-01-08 - Robust Timeout Management and Enhanced Dagster Run Monitoring
+
+### Added
+
+- ✨ **Introduced Comprehensive Document Loading Timeout:** Added an `OPERATION_TIMEOUT` setting for the DoclingLoader,
+  allowing control over the overall duration of document loading operations to prevent indefinite hangs.
+- 🚀 **Granular HTTP Timeouts for Docling API:** Implemented explicit connect, read, write, and pool timeouts for HTTPX
+  clients used in Docling API interactions, providing more fine-grained control over network requests.
+- 🦾 **Explicit Filesystem Timeouts:** Configured explicit connection and read timeouts for Azure Data Lake and S3
+  filesystem resources, improving reliability for storage operations.
+- ⚡️ **Enabled Dagster Run Monitoring:** Activated Dagster's run monitoring across all environments, with configurable
+  settings for maximum runtime, start timeout, cancel timeout, and poll intervals to automatically manage and prevent
+  stuck runs.
+
+### Changed
+
+- 🔄 **Clarified Docling API Timeout Scope:** The `API_TIMEOUT` setting for Docling API calls is now explicitly defined
+  as the timeout for *individual* API calls, distinguishing it from the new overall operation timeout.
+
+### Fixed
+
+- 🐛 **Improved Docling Async Poll Error Handling:** Refined the error handling for asynchronous polling in the
+  DoclingLoader to catch more specific HTTP, OS, and asyncio cancellation errors, leading to more robust operation.
+
+### Refactor
+
+- 🧹 **Streamlined DoclingLoader Asynchronous Logic:** Refactored the asynchronous document loading method in
+  `DoclingLoader` by extracting core logic into an internal helper method, improving readability and maintainability.
+
+---
+
+## [v0.256.13] - 2026-01-08 - Enhanced Observability for Document Parsing
+
+### Changed
+
+- 📄 **Improved Document Parsing Logging:** Added comprehensive logging within the `parse_document_from_data_lake`
+  operation to provide greater visibility and easier debugging for document loading, parsing, and metadata application
+  steps.
+
+---
+
+## [v0.256.12] - 2026-01-07 - Improved Database Connectivity for Docker Environments
+
+### Added
+
+- 🔗 **Configured `MONGO_CONNECTION_STRING`:** Explicitly defined the MongoDB connection string across Docker Compose
+  configurations, leveraging `ferretdb` and existing environment variables (`MONGO_USERNAME`, `MONGO_PASSWORD`) for a
+  more robust and clearer database setup.
+
+---
+
 ## [v0.256.11] - 2026-01-06 - Enhanced Document Processing and Interactive AI
 
 ### Added
