@@ -26,20 +26,26 @@ def retrieve_nodes(
     if retrieve_k <= 0:
         raise ValueError("retrieve_k must be a positive integer")
 
-    filters = MetadataFilters(
-        filters=[
-            MetadataFilters(
-                filters=[
-                    MetadataFilter(key=NAMESPACE, value=ns),
-                    MetadataFilter(key=TYPE, value=nt),
-                ],
-                condition=FilterCondition.AND,
-            )
-            for ns in index_namespaces
-            for nt in node_types
-        ],
-        condition=FilterCondition.OR,
-    )
+    if index_namespaces:
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilters(
+                    filters=[
+                        MetadataFilter(key=NAMESPACE, value=ns),
+                        MetadataFilter(key=TYPE, value=nt),
+                    ],
+                    condition=FilterCondition.AND,
+                )
+                for ns in index_namespaces
+                for nt in node_types
+            ],
+            condition=FilterCondition.OR,
+        )
+    else:
+        filters = MetadataFilters(
+            filters=[MetadataFilter(key=TYPE, value=nt) for nt in node_types],
+            condition=FilterCondition.OR,
+        )
 
     embedding = embed_model.get_text_embedding(message)
 
