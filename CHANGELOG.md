@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.257.1] - 2026-01-09 - Enhanced Knowledge Retriever Namespace Flexibility
+
+### Changed
+
+- 🔄 **Improved `KnowledgeRetrieverConfig` for Namespaces:** Relaxed the constraint on `index_namespaces`, allowing it to
+  be an empty list. An empty list now signifies the intention to retrieve information from *all* available namespaces,
+  offering greater flexibility.
+- 🦾 **Smarter Retriever Filtering:** Updated the `filter_retrievers_by_namespace` utility to correctly interpret an
+  empty `index_namespaces` list, ensuring that retrievers are considered for all relevant namespaces when no specific
+  namespace is provided.
+- ⚡️ **Dynamic Node Retrieval:** The `retrieve_nodes` function now intelligently constructs metadata filters. If
+  `index_namespaces` is empty, it will skip namespace-specific filtering, allowing retrieval of nodes across all
+  namespaces based solely on node type.
+
+---
+
 ## [v0.257.0] - 2026-01-08 - Empowering RAG with Dynamic Namespace Selection and Enhanced Retrieval
 
 ### Added
