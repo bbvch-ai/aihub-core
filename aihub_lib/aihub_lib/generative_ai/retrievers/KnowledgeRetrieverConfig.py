@@ -17,7 +17,7 @@ class KnowledgeRetrieverConfig(BaseRetrieverConfig):
 
     embed_model: Annotated[EmbeddingModelConfig, Field(description="The embedding model configuration.")]
     vector_store: Annotated[MilvusVectorStoreConfig, Field(description="The vector store configuration.")]
-    index_namespaces: Annotated[list[str], Field(description="The namespaces to retrieve from.", min_length=1)]
+    index_namespaces: Annotated[list[str], Field(description="The namespaces to retrieve from. Empty means all.")]
     retrieve_k: Annotated[int, Field(description="The number of documents to retrieve.", ge=1)]
     query_mode: Annotated[
         VectorStoreQueryMode,
