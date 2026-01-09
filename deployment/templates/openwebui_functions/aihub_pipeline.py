@@ -779,11 +779,13 @@ class HumanInTheLoopHandler(EventHandler):
         if result is not None and result != "":
             response_event_name = topic.get("event_name", "HumanInTheLoopResponseEvent")
             hitl_display_id = topic.get("display_id", "")
+            agent_class = topic.get("agent_class", "")
+            agent_id = topic.get("agent_id", "")
 
             response_payload = {"response": result, "request_event": event}
 
             await context.stream_service.send_hitl_response(
-                response_event_name, response_payload, hitl_display_id, context
+                response_event_name, response_payload, hitl_display_id, context, agent_class, agent_id
             )
 
         return True
@@ -1210,11 +1212,13 @@ class StreamingService:
         payload: Annotated[dict[str, Any], "Response payload"],
         display_id: Annotated[str, "HITL display ID"],
         context: Annotated[EventContext, "Original context"],
+        agent_class: Annotated[str, "Agent class identifier"],
+        agent_id: Annotated[str, "Agent instance identifier"],
     ) -> None:
         """Send HITL response back to agent"""
         await self.stream_response(
-            context.agent_class,
-            context.agent_id,
+            agent_class,
+            agent_id,
             event_name,
             payload,
             context.headers,
