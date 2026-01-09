@@ -126,6 +126,22 @@ class DoclingLoader(BaseReader):
         include_images: bool | None = None,
     ) -> list[Document]:
         """Load and process documents asynchronously using the Docling service."""
+        try:
+            return await asyncio.wait_for(
+                self._aload_data_impl(file, extra_info, fs, include_images),
+                timeout=self.config.OPERATION_TIMEOUT,
+            )
+        except TimeoutError:
+            raise TimeoutError(f"Document loading timed out after {self.config.OPERATION_TIMEOUT}s for: {file}")
+
+    async def _aload_data_impl(
+        self,
+        file: str,
+        extra_info: dict | None = None,
+        fs: AbstractFileSystem | None = None,
+        include_images: bool | None = None,
+    ) -> list[Document]:
+        """Internal implementation of aload_data with actual processing logic."""
         include_images = include_images if include_images is not None else True
 
         fs = fs or get_default_fs()
@@ -267,6 +283,15 @@ class DoclingLoader(BaseReader):
             "reraise": True,
         }
 
+    def _get_httpx_timeout(self) -> httpx.Timeout:
+        """Return httpx timeout configuration with explicit values for each phase."""
+        return httpx.Timeout(
+            connect=30.0,  # Connection establishment
+            read=float(self.config.API_TIMEOUT),  # Reading response
+            write=60.0,  # Writing request body (large files)
+            pool=10.0,  # Waiting for connection from pool
+        )
+
     def convert_document(
         self, file_content: str, filename: str, include_images: bool, to_formats: list[str] | None = None
     ) -> dict:
@@ -279,7 +304,7 @@ class DoclingLoader(BaseReader):
     def _execute_sync_conversion(self, request_body: dict) -> dict:
         """Execute the sync conversion request."""
         try:
-            with httpx.Client(timeout=self.config.API_TIMEOUT) as client:
+            with httpx.Client(timeout=self._get_httpx_timeout()) as client:
                 response = client.post(
                     f"{self.config.API_BASE_URL}/v1/convert/source",
                     json=request_body,
@@ -316,7 +341,7 @@ class DoclingLoader(BaseReader):
     async def _execute_async_conversion(self, request_body: dict, filename: str = "unknown") -> dict:
         """Execute the async conversion request and poll for completion."""
         try:
-            async with httpx.AsyncClient(timeout=self.config.API_TIMEOUT) as client:
+            async with httpx.AsyncClient(timeout=self._get_httpx_timeout()) as client:
                 logger.debug(f"[DoclingLoader] Submitting async job to {self.config.BASE_API_URL} for: {filename}")
                 response = await client.post(
                     f"{self.config.API_BASE_URL}/v1/convert/source/async",
@@ -370,9 +395,9 @@ class DoclingLoader(BaseReader):
                     f"{self.config.API_BASE_URL}/v1/status/poll/{task_id}",
                     headers=self._build_headers(),
                 )
-            except Exception as e:
+            except (httpx.HTTPError, OSError, asyncio.CancelledError) as e:
                 logger.error(
-                    f"[DoclingLoader] Poll {poll_count} failed with exception for task_id={task_id}, "
+                    f"[DoclingLoader] Poll {poll_count} failed for task_id={task_id}, "
                     f"file={filename}: {type(e).__name__}: {e}"
                 )
                 raise
