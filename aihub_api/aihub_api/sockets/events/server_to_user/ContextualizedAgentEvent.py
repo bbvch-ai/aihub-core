@@ -10,6 +10,7 @@ from aihub_lib.nats.events import (
     ChainEvent,
     ChunkEvent,
     DisplayEvent,
+    DocumentChangedEvent,
     EmbeddingEvent,
     ExceptionEvent,
     GuardRejectionEvent,
@@ -25,7 +26,9 @@ from aihub_lib.nats.events import (
     StartEvent,
     StopEvent,
     ThoughtEvent,
+    ToolErrorEvent,
     ToolEvent,
+    ToolOutputEvent,
     UserMessageEvent,
 )
 from aihub_lib.nats.events.guard import (
@@ -69,7 +72,10 @@ DisplayEvents = (
     | Annotated[LLMStopEvent, Tag("LLMStopEvent")]
     | Annotated[RerankerEvent, Tag("RerankerEvent")]
     | Annotated[RetrieverEvent, Tag("RetrieverEvent")]
+    | Annotated[DocumentChangedEvent, Tag("DocumentChangedEvent")]
     | Annotated[ToolEvent, Tag("ToolEvent")]
+    | Annotated[ToolOutputEvent, Tag("ToolOutputEvent")]
+    | Annotated[ToolErrorEvent, Tag("ToolErrorEvent")]
     | Annotated[UserMessageEvent, Tag("UserMessageEvent")]
     | Annotated[ExceptionEvent, Tag("ExceptionEvent")]
     | Annotated[StopEvent, Tag("StopEvent")]
