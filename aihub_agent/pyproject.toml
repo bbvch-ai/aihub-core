@@ -32,11 +32,9 @@ pytest-mock = "^3.14.0"
 cachetools = "^5.5.2"
 redis = "^5.2.1"
 stringcase = "^1.2.0"
+opencode-ai = {version = "^0.1.0a36", extras = ["aiohttp"]}
+aihub-lib = {path = "../aihub_lib", develop = true}
 
-[tool.poetry.dependencies.aihub_lib]
-git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.257.1"
-subdirectory = "aihub_lib"
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
 pytest-asyncio = "^0.24.0"
