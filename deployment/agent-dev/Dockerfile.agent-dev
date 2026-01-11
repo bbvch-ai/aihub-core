@@ -1,0 +1,75 @@
+# Agent Development Container
+# Provides isolated development environment for building Swiss AI-Hub agents
+#
+# Features:
+#   - VS Code in browser (code-server) with password protection
+#   - OpenCode Server for AI-assisted development
+#   - Full Python 3.13 + Poetry environment
+#   - All aihub_lib dependencies pre-installed
+#   - Development tools (pytest, black, ruff, mypy)
+#   - Hot-reload capability
+
+FROM python:3.13-slim
+
+# Build arguments
+ARG USERNAME=developer
+ARG USER_UID=1000
+ARG USER_GID=1000
+
+# Environment variables
+ENV PYTHONUNBUFFERED=1 \
+    POETRY_VERSION=2.1.1 \
+    POETRY_HOME="/opt/poetry" \
+    POETRY_NO_INTERACTION=1 \
+    POETRY_VIRTUALENVS_IN_PROJECT=0 \
+    POETRY_VIRTUALENVS_CREATE=1 \
+    POETRY_CACHE_DIR=/tmp/poetry_cache \
+    PYTHONPATH=/workspace/aihub_agent:/workspace \
+    PATH="/opt/poetry/bin:/home/${USERNAME}/.local/bin:$PATH"
+
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    git \
+    make \
+    openssh-client \
+    ca-certificates \
+    procps \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install code-server (VS Code in browser)
+RUN curl -fsSL https://code-server.dev/install.sh | sh
+
+# Install Poetry
+RUN curl -sSL https://install.python-poetry.org | python3 - --version "${POETRY_VERSION}"
+
+# Create non-root user
+RUN groupadd --gid "$USER_GID" "$USERNAME" && \
+    useradd --uid "$USER_UID" --gid "$USER_GID" -m -s /bin/bash "$USERNAME"
+
+# Switch to non-root user
+USER $USERNAME
+
+# Install OpenCode Server
+RUN pip install --user opencode-server
+
+# Set working directory
+WORKDIR /workspace
+
+# Copy startup script
+COPY --chown=$USERNAME:$USERNAME start-services.sh /home/developer/start-services.sh
+RUN chmod +x /home/developer/start-services.sh
+
+# Expose ports
+# 8443: code-server (VS Code web UI)
+# 8080: OpenCode Server (AI agent)
+EXPOSE 8443 8080
+
+# Health check (verify code-server is responding)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8443/healthz || exit 1
+
+# Start both services
+CMD ["/home/developer/start-services.sh"]

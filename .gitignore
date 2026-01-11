@@ -15,3 +15,10 @@ aihub_doc/aihub
 .idea/copilot*
 *.log
 .mypy_cache/
+
+# Agent Development Environment
+.env.agent-dev
+agents/*/venv/
+agents/*/.venv/
+agents/*/__pycache__/
+agents/*/.pytest_cache/
