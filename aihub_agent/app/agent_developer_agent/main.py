@@ -33,9 +33,7 @@ async def main():
             agent_class=AgentDeveloperAgent.__name__,
             agent_id="agent_developer",
             name=LocaleString(en="Agent Developer"),
-            description=LocaleString(
-                en="Meta-agent for building AI agents through chat interface using OpenCode"
-            ),
+            description=LocaleString(en="Meta-agent for building AI agents through chat interface using OpenCode"),
             llm=LLMConfig(model_name="text-generation/claude-3.5-sonnet"),
             opencode_server_url=opencode_server_url,
             opencode_token=SecretStr(opencode_token),
