@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.257.2] - 2026-01-11 - Core Pipeline Refinements and Human-in-the-Loop Context
+
+### Changed
+
+- 🦾 **Human-in-the-Loop (HITL) Context**: Enhanced the Human-in-the-Loop response mechanism to explicitly pass agent
+  class and ID, providing more precise context for agent interactions.
+
+### Refactor
+
+- 🧹 **Code Readability**: Improved code readability and conciseness across various AI Hub pipeline components by
+  optimizing variable assignments and method signatures.
+
+---
+
 ## [v0.257.1] - 2026-01-09 - Enhanced Knowledge Retriever Namespace Flexibility
 
 ### Changed
