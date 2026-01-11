@@ -22,7 +22,7 @@ def filter_retrievers_by_namespace(
             bucket_name = retriever.vector_store.collection_name
             if bucket_name in namespace_map:
                 selected_namespace = namespace_map[bucket_name]
-                if selected_namespace in retriever.index_namespaces:
+                if not retriever.index_namespaces or selected_namespace in retriever.index_namespaces:
                     filtered_retriever = retriever.model_copy(update={"index_namespaces": [selected_namespace]})
                     filtered.append(filtered_retriever)
         else:
