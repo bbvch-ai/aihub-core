@@ -111,3 +111,17 @@ image_tags:
     nightly: bot:nightly
     latest: bot:latest
 
+  # --- Agent Development Infrastructure ---
+  # VS Code + OpenCode server for building AI agents
+  empty_agent:
+    dev: codercom/code-server:latest
+    dev_gpu: codercom/code-server:latest
+
+  # AgentDeveloperAgent - Meta-agent for building agents via chat
+  agent_developer_agent:
+    build: localbuild
+    dev: localbuild
+    local: agent_developer_agent:latest
+    nightly: agent_developer_agent:nightly
+    latest: agent_developer_agent:latest
+

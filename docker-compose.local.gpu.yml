@@ -1703,3 +1703,57 @@ services:
       - "traefik.http.routers.bot.tls=true"
       - "traefik.http.routers.bot.middlewares=security-headers@file"
       - "traefik.http.services.bot.loadbalancer.server.port=8000"
+
+  # ===================================================================
+  # EMPTY AGENT - Development Environment (VS Code + OpenCode)
+  # ===================================================================
+  # Provides an agent development workspace with code-server and OpenCode
+  # for building and testing AI agents. Only available in dev environments.
+  # ===================================================================
+
+  # ===================================================================
+  # AGENT DEVELOPER AGENT
+  # ===================================================================
+  # Meta-agent that enables developers to build AI agents through chat
+  # interface by proxying requests to OpenCode server in empty_agent.
+  # ===================================================================
+  agent_developer_agent:
+    container_name: agent-developer-agent
+    restart: always
+    image: ghcr.io/bbvch-ai/aihub-core/agent_developer_agent:latest
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # LiteLLM Access (for model selection)
+      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # NATs
+      NATS_ENDPOINT: nats://nats:4222
+
+      # REDIS
+      REDIS_URL: redis://valkey:6379
+
+      # OpenCode Connection
+      OPENCODE_SERVER_URL: ${OPENCODE_SERVER_URL}
+      OPENCODE_TOKEN: ${AGENT_DEV_OPENCODE_TOKEN}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+      OTEL_RESOURCE_SERVICE_NAME: agent-developer-agent
+      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2

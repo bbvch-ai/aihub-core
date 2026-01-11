@@ -2135,3 +2135,105 @@ services:
       - "traefik.http.services.bot.loadbalancer.server.port=8000"
     {%- endif %}
   {%- endif %}
+
+  # ===================================================================
+  # EMPTY AGENT - Development Environment (VS Code + OpenCode)
+  # ===================================================================
+  # Provides an agent development workspace with code-server and OpenCode
+  # for building and testing AI agents. Only available in dev environments.
+  # ===================================================================
+  {%- if image_tags.empty_agent[stage] %}
+  empty_agent:
+    container_name: empty-agent
+    restart: always
+    image: {{ image_tags.empty_agent[stage] }}
+    environment:
+      PASSWORD: ${AGENT_DEV_VSCODE_PASSWORD}
+      OPENCODE_TOKEN: ${AGENT_DEV_OPENCODE_TOKEN}
+    ports:
+      - "8080:8080"  # VS Code Server
+      - "8081:8081"  # OpenCode Server
+    volumes:
+      - {{ global.volume_root }}/empty-agent-workspace:/home/coder/workspace
+      - {{ global.volume_root }}/empty-agent-config:/home/coder/.config
+    working_dir: /home/coder/workspace
+    command: >
+      sh -c "
+        # Install Node.js and npm (required for OpenCode)
+        curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - &&
+        sudo apt-get install -y nodejs &&
+
+        # Install OpenCode globally
+        sudo npm install -g opencode-ai &&
+
+        # Start OpenCode server in background
+        opencode server --port 8081 --token $${OPENCODE_TOKEN} &
+
+        # Start code-server
+        /usr/bin/entrypoint.sh --bind-addr 0.0.0.0:8080
+      "
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+  {%- endif %}
+
+  # ===================================================================
+  # AGENT DEVELOPER AGENT
+  # ===================================================================
+  # Meta-agent that enables developers to build AI agents through chat
+  # interface by proxying requests to OpenCode server in empty_agent.
+  # ===================================================================
+  {%- if image_tags.agent_developer_agent[stage] %}
+  agent_developer_agent:
+    container_name: agent-developer-agent
+    restart: always
+    {%- if image_tags.agent_developer_agent[stage] == 'localbuild' %}
+    build:
+      context: .
+      dockerfile: ./aihub_agent/app/agent_developer_agent/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.agent_developer_agent[stage] }}
+    {%- endif %}
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # LiteLLM Access (for model selection)
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # NATs
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+
+      # REDIS
+      REDIS_URL: {{ VALKEY_ENDPOINT }}
+
+      # OpenCode Connection
+      {%- if stage in ['dev'] %}
+      OPENCODE_SERVER_URL: http://empty-agent:8081
+      {%- else %}
+      OPENCODE_SERVER_URL: ${OPENCODE_SERVER_URL}
+      {%- endif %}
+      OPENCODE_TOKEN: ${AGENT_DEV_OPENCODE_TOKEN}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: {{ OTEL_EXPORTER_OTLP_ENDPOINT }}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+      OTEL_RESOURCE_SERVICE_NAME: agent-developer-agent
+      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+  {%- endif %}
