@@ -6,7 +6,7 @@ from .llm import LLMEvent, LLMStopEvent, Message
 from .reranker import RerankerEvent
 from .retriever import RetrieverEvent
 from .SemanticEvent import SemanticEvent
-from .tool import ToolEvent
+from .tool import ToolErrorEvent, ToolEvent, ToolOutputEvent
 
 __all__ = [
     "AgentEvent",
@@ -19,6 +19,8 @@ __all__ = [
     "GuardEvent",
     "SemanticEvent",
     "ToolEvent",
+    "ToolOutputEvent",
+    "ToolErrorEvent",
     "Message",
     "Embedding",
 ]

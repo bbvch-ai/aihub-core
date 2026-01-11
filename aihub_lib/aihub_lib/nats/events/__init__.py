@@ -9,6 +9,7 @@ from .ControlAndDisplayEvent import ControlAndDisplayEvent
 from .cost import CostEvent, LLMCostEvent
 from .discovery import AgentInstanceDiscoveryResponseEvent, InstanceDiscoveryRequestEvent
 from .display import ChunkEvent, DisplayEvent, ThoughtEvent
+from .document import DocumentChangedEvent
 from .guard import GuardRejectionEvent
 from .human_in_the_loop import HumanInTheLoop
 from .human_in_the_loop.request import HumanInTheLoopRequestEvent
@@ -23,7 +24,9 @@ from .semantic import (
     LLMStopEvent,
     RerankerEvent,
     RetrieverEvent,
+    ToolErrorEvent,
     ToolEvent,
+    ToolOutputEvent,
 )
 from .user import UserMessageEvent
 from .work import AgentWorkEvent, HumanWorkEvent, ProgramWorkEvent, WorkEvent
@@ -50,6 +53,7 @@ __all__ = [
     "DisplayEvent",
     "ChunkEvent",
     "ThoughtEvent",
+    "DocumentChangedEvent",
     "AgentEvent",
     "ChainEvent",
     "EmbeddingEvent",
@@ -58,6 +62,8 @@ __all__ = [
     "RerankerEvent",
     "RetrieverEvent",
     "ToolEvent",
+    "ToolOutputEvent",
+    "ToolErrorEvent",
     "GuardEvent",
     "UserMessageEvent",
     "GuardRejectionEvent",
