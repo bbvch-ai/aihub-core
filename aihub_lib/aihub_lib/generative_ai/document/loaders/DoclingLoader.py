@@ -446,8 +446,7 @@ class DoclingLoader(BaseReader):
 
             elif status_value == "failure":
                 logger.error(
-                    f"[DoclingLoader] Task failed for task_id={task_id}, file={filename}. "
-                    f"Full response: {task_status}"
+                    f"[DoclingLoader] Task failed for task_id={task_id}, file={filename}. Full response: {task_status}"
                 )
                 # Note: docling-serve does not currently expose failure reasons in the API
                 # See: https://github.com/docling-project/docling-serve/issues/365

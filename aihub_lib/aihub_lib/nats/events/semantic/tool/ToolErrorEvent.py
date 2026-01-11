@@ -19,6 +19,4 @@ class ToolErrorEvent(ControlAndDisplayEvent):
     error: Annotated[str, Field(description="The error message or output from the failed tool execution")]
     input: Annotated[dict[str, Any] | None, Field(description="The input parameters used for the tool")] = None
     duration: Annotated[float | None, Field(description="Execution duration in seconds before failure")] = None
-    metadata: Annotated[
-        dict[str, Any] | None, Field(description="Additional metadata about the tool execution")
-    ] = None
+    metadata: Annotated[dict[str, Any] | None, Field(description="Additional metadata about the tool execution")] = None
