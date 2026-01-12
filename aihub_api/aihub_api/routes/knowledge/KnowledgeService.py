@@ -18,6 +18,7 @@ from aihub_lib.nats.events.pipeline.SourceUpdatedEvent import SourceUpdatedEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
+from aihub_lib.persistence.insight import InsightEntity
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
 from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
 from aihub_lib.persistence.rag.documents.entities.RefDoc import RefDoc
@@ -253,14 +254,61 @@ class KnowledgeService:
         return database_dtos
 
     @staticmethod
+    def _insight_to_node(insight: InsightEntity, t: LocaleHandler) -> IngestedNode:
+        """Convert an InsightEntity to an IngestedNode for display in the knowledge panel."""
+        conversation_lines = [
+            f"{t(f'lib.insight.role.{msg.role.value}')}: {msg.content}" for msg in insight.conversation
+        ]
+        content_parts: list[str] = [
+            f"{t('lib.insight.label.question')}: {insight.question}",
+            f"{t('lib.insight.label.answer')}: {insight.expert_answer}",
+            f"{t('lib.insight.label.conversation')}:",
+            *conversation_lines,
+        ]
+
+        content: str = "\n".join(content_parts)
+
+        created_at: str = insight.created_at.isoformat().replace("+00:00", "Z")
+        updated_at: str = insight.updated_at.isoformat().replace("+00:00", "Z")
+
+        return IngestedNode(
+            id=str(insight.id),
+            content=content,
+            document_id=str(insight.id),
+            source=f"insight:{insight.id}",
+            source_origin=insight.source.thread_id,
+            namespace=insight.namespace,
+            document_title=insight.question[:100],
+            created_at=created_at,
+            updated_at=updated_at,
+            inserted_at=created_at,
+            metadata={
+                "insight_type": "expert_conversation",
+                "expert_user_id": insight.source.expert_user_id,
+                "expert_name": insight.source.expert_name,
+                "agent_class": insight.creator.agent_class,
+                "agent_id": insight.creator.agent_id,
+            },
+        )
+
+    @staticmethod
     @trace_fn
     def get_nodes(
         db: str,
         namespace: str,
         document_id: str,
         vector_store_factory: VectorStoreFactory,
+        t: LocaleHandler | None = None,
         node_type: NodeTypeValue = NODE_TYPE_CONTENT,
     ) -> list[IngestedNode]:
+        # Check if the document_id corresponds to an insight stored in MongoDB
+        insight = InsightEntity.get_by_id(document_id)
+        if insight is not None and insight.namespace == namespace:
+            if t is None:
+                t = LocaleHandler(locale="en")
+            return [KnowledgeService._insight_to_node(insight, t)]
+
+        # Fall back to vector store query for regular documents
         filters = MetadataFilters(
             filters=[
                 MetadataFilter(key=DOCUMENT_ID, value=document_id),

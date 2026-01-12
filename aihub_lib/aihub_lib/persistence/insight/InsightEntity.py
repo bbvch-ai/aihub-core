@@ -100,6 +100,19 @@ class InsightEntity(Document):
 
     @classmethod
     @trace_fn
+    def get_by_id(cls, insight_id: str) -> "InsightEntity | None":
+        """
+        Get an insight by its ID.
+
+        Returns None if the ID is not a valid ObjectId or the insight doesn't exist.
+        """
+        try:
+            return cls.objects.get(id=ObjectId(insight_id))
+        except Exception:
+            return None
+
+    @classmethod
+    @trace_fn
     def get_by_namespace_and_agent(
         cls,
         namespace: str,
