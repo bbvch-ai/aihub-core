@@ -126,6 +126,14 @@ hitl_confirmation_response_event:
   name: "Bestätigung erhalten"
   description: "Der Benutzer hat bestätigt oder abgelehnt, und der Agent kann mit der Aufgabe fortfahren."
 
+hitl_chat_request_event:
+  name: "Chat-Frage"
+  description: "Der Agent hat eine Frage gestellt, die durch eine Chat-Nachricht beantwortet werden kann."
+
+hitl_chat_response_event:
+  name: "Chat-Antwort erhalten"
+  description: "Der Benutzer hat per Chat-Nachricht geantwortet, und der Agent kann mit der Aufgabe fortfahren."
+
 router_event:
   name: "Optimaler Pfad gewählt"
   description: "Der Agent hat den optimalen Pfad für das weitere Vorgehen gewählt."

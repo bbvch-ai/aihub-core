@@ -31,8 +31,6 @@ class MultiprocessAgentRunner:
     ### Usage Example
     ```python
     runner = MultiprocessAgentRunner(
-        servers=["nats://localhost:4222"],
-        redis_url=RedisSettings().URL,
         agent_type=MyAgent,
         agent_config=my_config,
         process_count=5
@@ -45,15 +43,11 @@ class MultiprocessAgentRunner:
 
     def __init__(
         self,
-        servers: list[str],
-        redis_url: str,
         agent_type: type[Agent],
         agent_config: AgentConfig,
         locale_paths: list[str] | None = None,
         process_count: int = 10,
     ):
-        self.servers = servers
-        self.redis_url = redis_url
         self.agent_type = agent_type
         self.agent_config = agent_config
         self.process_count = process_count
@@ -68,8 +62,6 @@ class MultiprocessAgentRunner:
     @staticmethod
     def _process_runner(
         process_index: int,
-        servers: list[str],
-        redis_url: str,
         agent_type: type[Agent],
         agent_config: AgentConfig,
         locale_paths: list[str] | None,
@@ -107,8 +99,6 @@ class MultiprocessAgentRunner:
 
             # Create a unique agent ID for this process
             runner = AgentRunner(
-                servers=servers,
-                redis_url=redis_url,
                 agent_type=agent_type,
                 default_agent_config=agent_config.model_copy(deep=True),
                 locale_paths=locale_paths,
@@ -152,8 +142,6 @@ class MultiprocessAgentRunner:
                 target=self._process_runner,
                 args=(
                     i,
-                    self.servers,
-                    self.redis_url,
                     self.agent_type,
                     self.agent_config,
                     self.locale_paths,
