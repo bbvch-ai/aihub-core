@@ -12,6 +12,8 @@ from mongoengine import (
     StringField,
 )
 
+from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 
@@ -110,6 +112,40 @@ class InsightEntity(Document):
             return cls.objects.get(id=ObjectId(insight_id))
         except Exception:
             return None
+
+    def to_ingested_node(self, t: LocaleHandler) -> IngestedNode:
+        """Convert this insight to an IngestedNode for retrieval and display."""
+        conversation_lines = [f"{t(f'lib.insight.role.{msg.role.value}')}: {msg.content}" for msg in self.conversation]
+        content_parts: list[str] = [
+            f"{t('lib.insight.label.question')}: {self.question}",
+            f"{t('lib.insight.label.answer')}: {self.expert_answer}",
+            f"{t('lib.insight.label.conversation')}:",
+            *conversation_lines,
+        ]
+
+        content: str = "\n".join(content_parts)
+        created_at: str = self.created_at.isoformat().replace("+00:00", "Z")
+        updated_at: str = self.updated_at.isoformat().replace("+00:00", "Z")
+
+        return IngestedNode(
+            id=str(self.id),
+            content=content,
+            document_id=str(self.id),
+            source=f"insight:{self.id}",
+            source_origin=self.source.thread_id,
+            namespace=self.namespace,
+            document_title=self.question[:100],
+            created_at=created_at,
+            updated_at=updated_at,
+            inserted_at=created_at,
+            metadata={
+                "insight_type": "expert_conversation",
+                "expert_user_id": self.source.expert_user_id,
+                "expert_name": self.source.expert_name,
+                "agent_class": self.creator.agent_class,
+                "agent_id": self.creator.agent_id,
+            },
+        )
 
     @classmethod
     @trace_fn
