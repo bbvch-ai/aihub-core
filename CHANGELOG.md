@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.258.0] - 2026-01-12 - Fortified Core Services: Enhanced Security, Streamlined Configuration, and Improved Observability
+
+### Security
+
+- 🔑 **Introduced comprehensive token-based authentication** for key infrastructure components including Milvus, NATS,
+  Redis/Valkey, Etcd, and SeaweedFS, significantly enhancing the platform's security posture.
+- 🔑 **Enabled authentication for Docling API** access, allowing API key-based security for document processing services.
+- 🔐 **Added `etcd-init` service** to automatically set up root password authentication for Etcd on startup, ensuring
+  secure metadata storage from the outset.
+- 🔑 **Centralized management of API keys** for local Large Language Models (LLMs) (llama.cpp and vLLM) under the
+  `LOCAL_LLM_TOKEN` environment variable for easier and more secure configuration.
+
+### Added
+
+- 📦 **Enabled Docker secrets support for Pydantic settings**, allowing sensitive configuration data to be managed
+  securely as Docker secrets, with environment variables taking precedence for development flexibility.
+- ⚡️ **Integrated LiteLLM caching with Redis**, now supporting authentication to improve performance and secure cached
+  responses.
+- 📊 **Introduced debug exporters for OpenTelemetry** logs and metrics in development environments, providing immediate
+  visibility into service telemetry.
+
+### Changed
+
+- 🔄 **Standardized NATS and Redis client initialization** by centralizing their creation within dedicated `NatsSettings`
+  and `RedisSettings` classes, simplifying client setup across all services (agents, API, pipelines).
+- 📈 **Activated OpenTelemetry by default** in development environments to provide immediate observability into service
+  operations.
+- 🏷️ **Implemented dynamic service versioning** for OpenTelemetry resources, automatically deriving service versions
+  from Docker image tags for more accurate telemetry data.
+- ⚙️ **Standardized Docling API configuration variables** (`DOCLING_BASE_API_URL` to `DOCLING_API_BASE_URL` and
+  `DOCLING_HOSTED_VLM_API_ENDPOINT` to `DOCLING_HOSTED_VLM_API_BASE_URL`) for consistency.
+- 🌐 **Renamed Swiss LLM Cloud API URL** to `SWISS_LLM_CLOUD_API_BASE_URL` for improved clarity and consistency in
+  configuration.
+- 🚫 **Disabled OpenTelemetry for local Dagster runs** by default in the `Makefile` to prevent potential conflicts and
+  streamline local development workflows.
+- 🔗 **Updated OpenWebUI connections** to Redis and Milvus to properly utilize the newly introduced authentication
+  tokens.
+- 👷 **Adjusted CI workflow to always rebuild Docker images** for backend tests instead of relying on cached images,
+  ensuring tests run against the freshest code.
+
+### Refactor
+
+- 🧹 **Migrated SeaweedFS Filer configuration** entirely from static TOML files to environment variables, streamlining
+  deployment and configuration management.
+- ⚙️ **Simplified Agent and Process runners** by removing direct NATS server list and Redis URL parameters, now
+  leveraging `NatsSettings` and `RedisSettings` for configuration.
+
+---
+
 ## [v0.257.2] - 2026-01-11 - Core Pipeline Refinements and Human-in-the-Loop Context
 
 ### Changed

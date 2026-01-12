@@ -8,10 +8,8 @@ import uuid
 from typing import Any
 
 # For NATS JS benchmarking
-import nats
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
-from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.nats.events import BaseEvent, StartEvent, StopEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
@@ -37,8 +35,7 @@ async def benchmark_jetstream(n_events: int, payload_kb: int) -> dict[str, Any]:
     """
     Benchmark NATS JetStream performance.
     """
-    # Connect to NATS
-    nc = await nats.connect("nats://localhost:4222")
+    nc = await NatsSettings.create_client()
     js = nc.jetstream()
 
     # Create a random stream name
@@ -154,8 +151,6 @@ async def run_system_test(process_count: int, n_events: int, payload_kb: int) ->
     try:
         # Start the multiprocess runner
         runner = MultiprocessAgentRunner(
-            servers=[NatsSettings().ENDPOINT],
-            redis_url=RedisSettings().URL,
             agent_type=agent_type,
             agent_config=agent_config,
             process_count=process_count,
@@ -166,8 +161,7 @@ async def run_system_test(process_count: int, n_events: int, payload_kb: int) ->
         await asyncio.sleep(2)
 
         # Set up NATS connection for test coordination
-        nc = NATS()
-        await nc.connect(servers=[NatsSettings().ENDPOINT])
+        nc = await NatsSettings.create_client()
         js = nc.jetstream()
 
         # Generate unique IDs for this test run

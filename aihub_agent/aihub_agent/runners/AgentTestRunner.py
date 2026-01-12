@@ -4,8 +4,6 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 
 from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
-from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.control import ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentClassDiscoveryResponseEvent
@@ -55,8 +53,6 @@ class AgentTestRunner(AgentRunner):
         locale_paths: list[str] | None = None,
     ):
         super().__init__(
-            servers=[NatsSettings().ENDPOINT],
-            redis_url=RedisSettings().URL,
             agent_type=agent_type,
             default_agent_config=default_agent_config,
             locale_paths=locale_paths,
