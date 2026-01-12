@@ -173,14 +173,9 @@ LITE_LLM_PROXY_API_KEY="REPLACE_WITH_RANDOM_STRING"
 # DATABASE CONFIGURATION
 # =============================================================================
 
-# PostgreSQL
+# PostgreSQL (also used by FerretDB for MongoDB compatibility)
 POSTGRES_USER="admin"
 POSTGRES_PASSWORD="REPLACE_WITH_RANDOM_STRING"
-
-# FerretDB (MongoDB-compatible)
-MONGO_USERNAME="admin"
-MONGO_PASSWORD="REPLACE_WITH_RANDOM_STRING"
-MONGO_CONNECTION_STRING="mongodb://admin:REPLACE_WITH_SAME_MONGO_PASSWORD@ferretdb:27017/"
 
 # Valkey (Redis-compatible)
 REDIS_URL="redis://localhost:6379"

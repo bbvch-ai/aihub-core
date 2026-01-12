@@ -302,12 +302,10 @@ services:
   # ===================================================================
   # Postgres Stack (SQL Database)
   # ===================================================================
-  # PostgreSQL instance for application relational data.
-  # ===================================================================
 
   postgres:
     container_name: postgres
-    image: ghcr.io/bbvch-ai/aihub-core/pgvector:pg17
+    image: ghcr.io/bbvch-ai/aihub-core/postgres-documentdb:17.0.106.0-ferretdb-2.5.0
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -330,31 +328,8 @@ services:
   
 
   # ===================================================================
-  # FerretDB Stack (MongoDB Compatibility)
+  # FerretDB (MongoDB Compatibility Layer)
   # ===================================================================
-  # FerretDB provides MongoDB-compatible API backed by PostgreSQL.
-  # ===================================================================
-
-  postgres-ferretdb:
-    container_name: postgres-ferretdb
-    image: ghcr.io/bbvch-ai/aihub-core/postgres-documentdb:17.0.106.0-ferretdb-2.5.0
-    restart: always
-    environment:
-      POSTGRES_USER: ${MONGO_USERNAME}
-      POSTGRES_PASSWORD: ${MONGO_PASSWORD}
-      POSTGRES_DB: postgres
-    volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/ferretdb-postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${MONGO_USERNAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
 
   ferretdb:
     container_name: ferretdb
@@ -363,9 +338,9 @@ services:
     ports:
       - "27017:27017"
     environment:
-      - FERRETDB_POSTGRESQL_URL=postgres://${MONGO_USERNAME}:${MONGO_PASSWORD}@postgres-ferretdb:5432/postgres
+      - FERRETDB_POSTGRESQL_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/postgres
     depends_on:
-      postgres-ferretdb:
+      postgres:
         condition: service_healthy
     logging:
       driver: json-file
