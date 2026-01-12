@@ -267,7 +267,7 @@ class KnowledgeService:
         insight = InsightEntity.get_by_id(document_id)
         if insight is not None and insight.namespace == namespace:
             if t is None:
-                t = LocaleHandler(locale="en")
+                t = LocaleHandler()
             return [insight.to_ingested_node(t)]
 
         # Fall back to vector store query for regular documents

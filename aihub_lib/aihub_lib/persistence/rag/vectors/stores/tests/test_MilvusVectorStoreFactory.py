@@ -177,9 +177,9 @@ def when_create_same_vector_store(context):
 @then("the collection should exist in Milvus")
 def then_collection_exists(context, milvus_client):
     """Verify collection exists."""
-    assert milvus_client.has_collection(context["collection_name"]), (
-        f"Collection {context['collection_name']} does not exist"
-    )
+    assert milvus_client.has_collection(
+        context["collection_name"]
+    ), f"Collection {context['collection_name']} does not exist"
 
 
 @then(parsers.parse('the embedding field should have index type "{expected_index_type}"'))
@@ -190,9 +190,9 @@ def then_embedding_field_has_index_type(context, expected_index_type: str):
         embedding_index = _get_embedding_index(collection)
 
         assert embedding_index, "Embedding field index not found"
-        assert embedding_index.params.get("index_type") == expected_index_type, (
-            f"Expected {expected_index_type}, got {embedding_index.params.get('index_type')}"
-        )
+        assert (
+            embedding_index.params.get("index_type") == expected_index_type
+        ), f"Expected {expected_index_type}, got {embedding_index.params.get('index_type')}"
 
 
 @then(parsers.parse('the sparse_embedding field should have index type "{expected_index_type}"'))
@@ -203,9 +203,9 @@ def then_sparse_embedding_field_has_index_type(context, expected_index_type: str
         sparse_index = next((idx for idx in collection.indexes if idx.field_name == "sparse_embedding"), None)
 
         assert sparse_index, "Sparse embedding field index not found"
-        assert sparse_index.params.get("index_type") == expected_index_type, (
-            f"Expected {expected_index_type}, got {sparse_index.params.get('index_type')}"
-        )
+        assert (
+            sparse_index.params.get("index_type") == expected_index_type
+        ), f"Expected {expected_index_type}, got {sparse_index.params.get('index_type')}"
 
 
 @then("the namespace field should be the partition key")
@@ -234,13 +234,13 @@ def then_schema_has_fields(context, datatable):
 
             # Handle dtype - can be enum name or numeric value
             actual_dtype = field.dtype.name if hasattr(field.dtype, "name") else str(field.dtype).split(".")[-1]
-            assert actual_dtype == data_type, (
-                f"Field '{field_name}' type mismatch: expected {data_type}, got {actual_dtype} (raw: {field.dtype})"
-            )
+            assert (
+                actual_dtype == data_type
+            ), f"Field '{field_name}' type mismatch: expected {data_type}, got {actual_dtype} (raw: {field.dtype})"
             assert field.is_primary == (is_primary == "true"), f"Field '{field_name}' is_primary mismatch"
-            assert field.is_partition_key == (is_partition_key == "true"), (
-                f"Field '{field_name}' is_partition_key mismatch"
-            )
+            assert field.is_partition_key == (
+                is_partition_key == "true"
+            ), f"Field '{field_name}' is_partition_key mismatch"
 
 
 @then("the collection should have a BM25 function defined")
@@ -266,9 +266,9 @@ def then_collection_has_index_type(context, expected_index_type: str):
         assert embedding_index, "Embedding field index not found"
 
         actual_index_type = embedding_index.params.get("index_type")
-        assert actual_index_type == expected_index_type, (
-            f"Expected index type {expected_index_type}, got {actual_index_type}"
-        )
+        assert (
+            actual_index_type == expected_index_type
+        ), f"Expected index type {expected_index_type}, got {actual_index_type}"
 
 
 @then("the namespace field should be marked as partition key")
@@ -299,9 +299,9 @@ def then_query_namespace_returns_nodes(context, namespace: str, expected_count: 
         limit=100,
     )
 
-    assert len(results) == expected_count, (
-        f"Expected {expected_count} nodes for namespace {namespace}, got {len(results)}"
-    )
+    assert (
+        len(results) == expected_count
+    ), f"Expected {expected_count} nodes for namespace {namespace}, got {len(results)}"
 
 
 @then(parsers.parse("the data should be distributed across {expected_partitions:d} physical partitions"))
@@ -309,9 +309,9 @@ def then_data_distributed_across_partitions(context, expected_partitions: int, m
     """Verify data is distributed across physical partitions."""
     partitions = milvus_client.list_partitions(collection_name=context["collection_name"])
 
-    assert len(partitions) == expected_partitions, (
-        f"Expected {expected_partitions} physical partitions, got {len(partitions)}"
-    )
+    assert (
+        len(partitions) == expected_partitions
+    ), f"Expected {expected_partitions} physical partitions, got {len(partitions)}"
 
     # Verify all data is accessible
     all_results = milvus_client.query(
@@ -356,9 +356,9 @@ def then_all_nodes_have_namespace(context, expected_namespace: str, milvus_clien
     )
 
     for result in results:
-        assert result[NAMESPACE] == expected_namespace, (
-            f"Expected namespace {expected_namespace}, got {result[NAMESPACE]}"
-        )
+        assert (
+            result[NAMESPACE] == expected_namespace
+        ), f"Expected namespace {expected_namespace}, got {result[NAMESPACE]}"
 
 
 @then("all returned nodes should have their correct namespace")
@@ -378,6 +378,6 @@ def then_all_nodes_have_correct_namespace(context, milvus_client):
         assert len(results) > 0, f"No results found for namespace '{namespace}'"
 
         for result in results:
-            assert result[NAMESPACE] == namespace, (
-                f"Namespace mismatch: expected '{namespace}', got '{result[NAMESPACE]}'"
-            )
+            assert (
+                result[NAMESPACE] == namespace
+            ), f"Namespace mismatch: expected '{namespace}', got '{result[NAMESPACE]}'"

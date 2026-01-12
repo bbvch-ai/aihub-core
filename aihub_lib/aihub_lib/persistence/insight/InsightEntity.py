@@ -1,10 +1,12 @@
 from datetime import UTC, datetime
 
 from bson import ObjectId
+from bson.errors import InvalidId
 from llama_index.core.base.llms.types import MessageRole
 from mongoengine import (
     DateTimeField,
     Document,
+    DoesNotExist,
     EmbeddedDocument,
     EmbeddedDocumentField,
     EnumField,
@@ -107,10 +109,14 @@ class InsightEntity(Document):
         Get an insight by its ID.
 
         Returns None if the ID is not a valid ObjectId or the insight doesn't exist.
+        Uses ObjectId.is_valid() to avoid unnecessary MongoDB queries for non-ObjectId strings.
         """
+        if not ObjectId.is_valid(insight_id):
+            return None
+
         try:
             return cls.objects.get(id=ObjectId(insight_id))
-        except Exception:
+        except (InvalidId, DoesNotExist):
             return None
 
     def to_ingested_node(self, t: LocaleHandler) -> IngestedNode:
@@ -134,7 +140,7 @@ class InsightEntity(Document):
             source=f"insight:{self.id}",
             source_origin=self.source.thread_id,
             namespace=self.namespace,
-            document_title=self.question[:100],
+            document_title=self.question,
             created_at=created_at,
             updated_at=updated_at,
             inserted_at=created_at,
