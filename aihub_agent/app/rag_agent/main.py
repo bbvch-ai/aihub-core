@@ -16,8 +16,6 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
-from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
-from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
@@ -29,7 +27,6 @@ enable_logging()
 
 
 async def main():
-    servers_list = [NatsSettings().ENDPOINT]
     aihub_settings = AIHubSettings()
     runner = AgentRunner(
         agent_type=RAGAgent,
@@ -185,8 +182,6 @@ async def main():
                 ),
             ],
         ),
-        redis_url=RedisSettings().URL,
-        servers=servers_list,
     )
 
     await runner.run_forever()

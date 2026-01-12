@@ -336,7 +336,6 @@ You can set the configuration values in your `trigger.py` or when you build the 
 
 ```python{10}
 async def main():
-    servers_list = [NatsSettings().ENDPOINT]
     runner = AgentRunner(
         agent_type=MyCustomAgent,
         default_agent_config=MyCustomAgentConfig(
@@ -346,8 +345,6 @@ async def main():
             description=LocaleString(en="This is a simple agent created from a template."),
             config_value="My first Config Value"
         ),
-        redis_url=RedisSettings().URL,
-        servers=servers_list,
     )
 
     await runner.run_forever()

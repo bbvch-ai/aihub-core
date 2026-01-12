@@ -45,7 +45,8 @@ runner.mount(
     .add_agent_to_thread()
     .remove_agent_from_thread()
     .add_user_to_thread()
-    .remove_user_from_thread(),
+    .remove_user_from_thread()
+    .get_open_chat_hitl(),
     AgentController(auth=auth).get_agent().get_agent_threads().get_agents().discover_agents(),
     ProcessController(auth=auth)
     .get_process()

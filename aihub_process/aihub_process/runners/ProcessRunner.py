@@ -3,6 +3,8 @@ import copy
 import logging
 
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
+from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
+from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.nats.events import ProcessStartEvent
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
@@ -26,7 +28,6 @@ from mongoengine import connect
 from mongoengine.connection import get_connection
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
-from redis.asyncio import ConnectionPool, Redis
 
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 from aihub_process.delegators.agent.AgentDelegator import AgentDelegator
@@ -46,8 +47,6 @@ class ProcessRunner:
 
     def __init__(
         self,
-        servers: list[str],
-        redis_url: str,
         process_type: type[AgenticProcess],
         default_process_config: ProcessConfig,
         locale_paths: list[str] | None = None,
@@ -57,8 +56,6 @@ class ProcessRunner:
         if not issubclass(process_type, AgenticProcess):
             raise ValueError("process_type must be a subclass of AgenticProcess.")
 
-        self.servers = servers
-        self.redis_url = redis_url
         self.process_type = process_type
         self.default_process_config = default_process_config
         self.process_config_type = default_process_config.__class__
@@ -166,12 +163,9 @@ class ProcessRunner:
                 uuidRepresentation="standard",
             )
 
-        self.nc = NATS()
-        await self.nc.connect(servers=self.servers)
-
+        self.nc = await NatsSettings.create_client()
         self.js = self.nc.jetstream(timeout=60, publish_async_max_pending=10_000)
-        _, host, port = self.redis_url.split(":")
-        self.redis = Redis(connection_pool=ConnectionPool(host=host[2:], port=port))
+        self.redis = RedisSettings.create_client()
 
         # Initialize dispatcher
         self.dispatcher = ProcessDispatcher(

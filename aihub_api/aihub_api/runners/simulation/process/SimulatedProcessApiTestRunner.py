@@ -181,8 +181,7 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
         """
         assert len(self.simulated_events) > 0, "No simulated events provided"
 
-        self.nc = NATS()
-        await self.nc.connect(servers=[NatsSettings().ENDPOINT])
+        self.nc = await NatsSettings.create_client()
 
         self.human_inputs = [
             HumanInSpecs(
