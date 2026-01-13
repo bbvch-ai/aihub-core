@@ -113,7 +113,6 @@ class InsightEntity(Document):
         """
         if not ObjectId.is_valid(insight_id):
             return None
-
         try:
             return cls.objects.get(id=ObjectId(insight_id))
         except (InvalidId, DoesNotExist):

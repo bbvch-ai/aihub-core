@@ -260,14 +260,12 @@ class KnowledgeService:
         namespace: str,
         document_id: str,
         vector_store_factory: VectorStoreFactory,
-        t: LocaleHandler | None = None,
+        t: LocaleHandler,
         node_type: NodeTypeValue = NODE_TYPE_CONTENT,
     ) -> list[IngestedNode]:
         # Check if the document_id corresponds to an insight stored in MongoDB
         insight = InsightEntity.get_by_id(document_id)
         if insight is not None and insight.namespace == namespace:
-            if t is None:
-                t = LocaleHandler()
             return [insight.to_ingested_node(t)]
 
         # Fall back to vector store query for regular documents
@@ -290,7 +288,7 @@ class KnowledgeService:
         db: str, namespace: str, document_id: str, vector_store_factory: VectorStoreFactory
     ) -> list[NodeSummaryDTO]:
         nodes = KnowledgeService.get_nodes(
-            db, namespace, document_id, vector_store_factory, node_type=NODE_TYPE_SUMMARY
+            db, namespace, document_id, vector_store_factory, t=LocaleHandler(locale="en"), node_type=NODE_TYPE_SUMMARY
         )
         summaries: dict[int, NodeSummaryDTO] = {i: NodeSummaryDTO(level=i, nodes=[]) for i in range(0, 7)}
         for node in nodes:
