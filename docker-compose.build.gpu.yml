@@ -1185,7 +1185,12 @@ services:
     container_name: docker-socket-proxy
     image: "tecnativa/docker-socket-proxy:0.3"
     restart: always
-    privileged: true
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:2375/_ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
@@ -1225,7 +1230,8 @@ services:
     image: "ghcr.io/bbvch-ai/aihub-core/traefik:v3.6.2"
     restart: always
     depends_on:
-      - docker-socket-proxy
+      docker-socket-proxy:
+        condition: service_healthy
     healthcheck:
       test: [ "NONE" ]
     ports:
