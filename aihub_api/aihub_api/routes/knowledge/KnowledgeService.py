@@ -297,7 +297,7 @@ class KnowledgeService:
         db: str, namespace: str, document_id: str, vector_store_factory: VectorStoreFactory
     ) -> list[NodeSummaryDTO]:
         nodes = KnowledgeService.get_nodes(
-            db, namespace, document_id, vector_store_factory, t=LocaleHandler(locale="en"), node_type=NODE_TYPE_SUMMARY
+            db, namespace, document_id, vector_store_factory, t=LocaleHandler(), node_type=NODE_TYPE_SUMMARY
         )
         summaries: dict[int, NodeSummaryDTO] = {i: NodeSummaryDTO(level=i, nodes=[]) for i in range(0, 7)}
         for node in nodes:
