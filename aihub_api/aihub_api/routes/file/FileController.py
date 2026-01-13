@@ -77,7 +77,9 @@ class FileController(Controller):
             """
             Provides access to a file via a temporary, signed URL and returns the URL.
             """
-            return SignedUrlDto(url=FileService.get_anonymous_file_url(container, file_path, expires, signature, s3_service))
+            return SignedUrlDto(
+                url=FileService.get_anonymous_file_url(container, file_path, expires, signature, s3_service)
+            )
 
         return self
 

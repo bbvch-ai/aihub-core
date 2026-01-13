@@ -389,7 +389,11 @@ class KnowledgeService:
 
     @staticmethod
     async def validate_document_upload(
-        nc: NATS, database: str, namespace: str, request: DocumentUploadValidationRequest, s3_service: S3AnonymousFileAccessService
+        nc: NATS,
+        database: str,
+        namespace: str,
+        request: DocumentUploadValidationRequest,
+        s3_service: S3AnonymousFileAccessService,
     ) -> DocumentUploadValidationResponse:
         """
         Validates whether a file was successfully uploaded to the globally configured datalake.
