@@ -6,6 +6,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     DOCUMENT_TITLE,
     HASH,
     INSERTED_AT,
+    IS_INGESTED,
     NAMESPACE,
     NODE_CONTENT_TYPE,
     NODE_CONTENT_TYPE_TEXT,
@@ -64,5 +65,6 @@ class RefDocDocument(Document):
             SOURCE: data_lake_file.uri,
             SOURCE_ORIGIN: data_lake_file.metadata.get(SOURCE_ORIGIN),
             DOCUMENT_TITLE: data_lake_file.metadata.get(DOCUMENT_TITLE, document_title),
+            IS_INGESTED: True,
         }
         return self

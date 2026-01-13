@@ -3701,7 +3701,7 @@ export type DocumentDto = {
     id: string;
     /**
      * Source
-     * Source URI of original document.
+     * Source path without protocol prefix (e.g., 'bucket/path/file.pdf').
      */
     source: string;
     /**
@@ -3726,7 +3726,7 @@ export type DocumentDto = {
     inserted_at: string | null;
     /**
      * Is Ingested
-     * Indicates if the document has been ingested.
+     * Whether the document has been fully ingested.
      */
     is_ingested: boolean;
     /**
@@ -4127,7 +4127,7 @@ export type EvaluationSummaryData = {
      * Avg Score
      * Average score from this evaluator.
      */
-    avg_score?: number | null;
+    avg_score: number;
 };
 
 /**
@@ -5203,12 +5203,11 @@ export type HumanInDtoWritable = {
 
 /**
  * HumanInTheLoopRequestEvent
- * An event asking a human for input, guidance, or approval at a critical juncture in a workflow.
+ * Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
  *
- * ### Why HumanInTheLoopRequestEvent?
- * In automated workflows, certain decisions may require human validation. This event:
- * - Is a `DisplayEvent`, so it can appear in user interfaces.
- * - Carries a question and a topic indicating where the subsequent response should be sent.
+ * Use the specific subclasses:
+ * - `HumanInTheLoopInputRequestEvent` for free-form text input
+ * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation
  */
 export type HumanInTheLoopRequestEventReadable = {
     /**
@@ -5239,6 +5238,11 @@ export type HumanInTheLoopRequestEventReadable = {
      */
     topic: PartialAgentTopic | AgentInstanceTopic;
     /**
+     * Hitl Type
+     * The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no.
+     */
+    hitl_type: 'input' | 'confirmation';
+    /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
@@ -5249,17 +5253,16 @@ export type HumanInTheLoopRequestEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation') | Array<string> | undefined;
 };
 
 /**
  * HumanInTheLoopRequestEvent
- * An event asking a human for input, guidance, or approval at a critical juncture in a workflow.
+ * Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
  *
- * ### Why HumanInTheLoopRequestEvent?
- * In automated workflows, certain decisions may require human validation. This event:
- * - Is a `DisplayEvent`, so it can appear in user interfaces.
- * - Carries a question and a topic indicating where the subsequent response should be sent.
+ * Use the specific subclasses:
+ * - `HumanInTheLoopInputRequestEvent` for free-form text input
+ * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation
  */
 export type HumanInTheLoopRequestEventWritable = {
     /**
@@ -5289,17 +5292,21 @@ export type HumanInTheLoopRequestEventWritable = {
      * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
      */
     topic: PartialAgentTopic | AgentInstanceTopic;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | undefined;
+    /**
+     * Hitl Type
+     * The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no.
+     */
+    hitl_type: 'input' | 'confirmation';
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation') | undefined;
 };
 
 /**
  * HumanInTheLoopResponseEvent
- * A response from a human operator after a HITL request.
+ * Base response from a human operator after a HITL request.
  *
- * ### Why HumanInTheLoopResponseEvent?
- * Once a human operator provides an answer to a `HumanInTheLoopRequestEvent`, the response:
- * - Influences the workflow (since it's a `ControlEvent`), resuming or altering execution based on human input.
- * - Is visible to the UI (since it's also a `DisplayEvent`), allowing transparency and auditing.
+ * Use the specific subclasses:
+ * - `HumanInTheLoopInputResponseEvent` for text input responses
+ * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses
  */
 export type HumanInTheLoopResponseEventReadable = {
     /**
@@ -5321,9 +5328,9 @@ export type HumanInTheLoopResponseEventReadable = {
     display_description?: LocaleString | null;
     /**
      * Response
-     * The human operator's answer or decision.
+     * The human operator's response.
      */
-    response: string;
+    response: string | boolean;
     /**
      * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
      */
@@ -5339,17 +5346,16 @@ export type HumanInTheLoopResponseEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | HumanInTheLoopRequestEventReadable | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | boolean) | HumanInTheLoopRequestEventReadable | Array<string> | undefined;
 };
 
 /**
  * HumanInTheLoopResponseEvent
- * A response from a human operator after a HITL request.
+ * Base response from a human operator after a HITL request.
  *
- * ### Why HumanInTheLoopResponseEvent?
- * Once a human operator provides an answer to a `HumanInTheLoopRequestEvent`, the response:
- * - Influences the workflow (since it's a `ControlEvent`), resuming or altering execution based on human input.
- * - Is visible to the UI (since it's also a `DisplayEvent`), allowing transparency and auditing.
+ * Use the specific subclasses:
+ * - `HumanInTheLoopInputResponseEvent` for text input responses
+ * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses
  */
 export type HumanInTheLoopResponseEventWritable = {
     /**
@@ -5371,14 +5377,14 @@ export type HumanInTheLoopResponseEventWritable = {
     display_description?: LocaleString | null;
     /**
      * Response
-     * The human operator's answer or decision.
+     * The human operator's response.
      */
-    response: string;
+    response: string | boolean;
     /**
      * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
      */
     request_event: HumanInTheLoopRequestEventWritable;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | HumanInTheLoopRequestEventWritable | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | boolean) | HumanInTheLoopRequestEventWritable | undefined;
 };
 
 /**
@@ -8129,40 +8135,6 @@ export type MinimalUserDto = {
 };
 
 /**
- * ModelDTO
- */
-export type ModelDtoReadable = {
-    /**
-     * Model Name
-     * The name/identifier of the model
-     */
-    model_name: string;
-    /**
-     * Detailed information about the model
-     */
-    model_info: ModelInfoDto;
-    /**
-     * Icon
-     */
-    readonly icon: string;
-};
-
-/**
- * ModelDTO
- */
-export type ModelDtoWritable = {
-    /**
-     * Model Name
-     * The name/identifier of the model
-     */
-    model_name: string;
-    /**
-     * Detailed information about the model
-     */
-    model_info: ModelInfoDto;
-};
-
-/**
  * ModelDetails
  */
 export type ModelDetails = {
@@ -8199,202 +8171,6 @@ export type ModelDetails = {
 };
 
 /**
- * ModelInfoDTO
- */
-export type ModelInfoDto = {
-    /**
-     * Mode
-     * The mode of the model (e.g., 'chat', 'completion', 'embedding')
-     */
-    mode: string;
-    /**
-     * Max Input Tokens
-     * Maximum number of input tokens the model can handle
-     */
-    max_input_tokens?: number | null;
-    /**
-     * Max Output Tokens
-     * Maximum number of output tokens the model can generate
-     */
-    max_output_tokens?: number | null;
-    /**
-     * Input Cost Per Token
-     * Cost per input token in USD
-     */
-    input_cost_per_token?: number | null;
-    /**
-     * Output Cost Per Token
-     * Cost per output token in USD
-     */
-    output_cost_per_token?: number | null;
-    /**
-     * Cache Creation Input Token Cost
-     * Cost for creating cache from input tokens
-     */
-    cache_creation_input_token_cost?: number | null;
-    /**
-     * Cache Read Input Token Cost
-     * Cost for reading cached input tokens
-     */
-    cache_read_input_token_cost?: number | null;
-    /**
-     * Input Cost Per Token Above 128K Tokens
-     * Cost per input token for contexts above 128k tokens
-     */
-    input_cost_per_token_above_128k_tokens?: number | null;
-    /**
-     * Input Cost Per Token Above 200K Tokens
-     * Cost per input token for contexts above 200k tokens
-     */
-    input_cost_per_token_above_200k_tokens?: number | null;
-    /**
-     * Input Cost Per Audio Token
-     * Cost per audio input token
-     */
-    input_cost_per_audio_token?: number | null;
-    /**
-     * Input Cost Per Token Batches
-     * Cost per input token when using batch API
-     */
-    input_cost_per_token_batches?: number | null;
-    /**
-     * Output Cost Per Token Batches
-     * Cost per output token when using batch API
-     */
-    output_cost_per_token_batches?: number | null;
-    /**
-     * Output Cost Per Audio Token
-     * Cost per audio output token
-     */
-    output_cost_per_audio_token?: number | null;
-    /**
-     * Output Cost Per Reasoning Token
-     * Cost per reasoning token for models with reasoning capabilities
-     */
-    output_cost_per_reasoning_token?: number | null;
-    /**
-     * Output Cost Per Token Above 128K Tokens
-     * Cost per output token for contexts above 128k tokens
-     */
-    output_cost_per_token_above_128k_tokens?: number | null;
-    /**
-     * Output Cost Per Token Above 200K Tokens
-     * Cost per output token for contexts above 200k tokens
-     */
-    output_cost_per_token_above_200k_tokens?: number | null;
-    /**
-     * Output Cost Per Image
-     * Cost per image output
-     */
-    output_cost_per_image?: number | null;
-    /**
-     * Search Context Cost Per Query
-     * Cost per search context query
-     */
-    search_context_cost_per_query?: number | null;
-    /**
-     * Output Vector Size
-     * Size of output vectors for embedding models
-     */
-    output_vector_size?: number | null;
-    /**
-     * Supports System Messages
-     * Whether the model supports system messages
-     */
-    supports_system_messages?: boolean | null;
-    /**
-     * Supports Response Schema
-     * Whether the model supports structured response schemas
-     */
-    supports_response_schema?: boolean | null;
-    /**
-     * Supports Vision
-     * Whether the model supports vision/image input
-     */
-    supports_vision?: boolean | null;
-    /**
-     * Supports Function Calling
-     * Whether the model supports function calling
-     */
-    supports_function_calling?: boolean | null;
-    /**
-     * Supports Tool Choice
-     * Whether the model supports tool choice selection
-     */
-    supports_tool_choice?: boolean | null;
-    /**
-     * Supports Assistant Prefill
-     * Whether the model supports assistant message prefilling
-     */
-    supports_assistant_prefill?: boolean | null;
-    /**
-     * Supports Prompt Caching
-     * Whether the model supports prompt caching
-     */
-    supports_prompt_caching?: boolean | null;
-    /**
-     * Supports Audio Input
-     * Whether the model supports audio input
-     */
-    supports_audio_input?: boolean | null;
-    /**
-     * Supports Audio Output
-     * Whether the model supports audio output
-     */
-    supports_audio_output?: boolean | null;
-    /**
-     * Supports Pdf Input
-     * Whether the model supports PDF input
-     */
-    supports_pdf_input?: boolean | null;
-    /**
-     * Supports Embedding Image Input
-     * Whether the model supports image input for embeddings
-     */
-    supports_embedding_image_input?: boolean | null;
-    /**
-     * Supports Native Streaming
-     * Whether the model supports native streaming
-     */
-    supports_native_streaming?: boolean | null;
-    /**
-     * Supports Web Search
-     * Whether the model supports web search capabilities
-     */
-    supports_web_search?: boolean | null;
-    /**
-     * Supports Url Context
-     * Whether the model supports URL context input
-     */
-    supports_url_context?: boolean | null;
-    /**
-     * Supports Reasoning
-     * Whether the model supports reasoning capabilities
-     */
-    supports_reasoning?: boolean | null;
-    /**
-     * Supports Computer Use
-     * Whether the model supports computer use capabilities
-     */
-    supports_computer_use?: boolean | null;
-    /**
-     * Tpm
-     * Tokens per minute rate limit
-     */
-    tpm?: number | null;
-    /**
-     * Rpm
-     * Requests per minute rate limit
-     */
-    rpm?: number | null;
-    /**
-     * Supported Openai Params
-     * List of supported OpenAI API parameters
-     */
-    supported_openai_params?: Array<string> | null;
-};
-
-/**
  * ModelResponse
  */
 export type ModelResponse = {
@@ -8408,38 +8184,6 @@ export type ModelResponse = {
      * The list of models.
      */
     data: Array<ModelDetails>;
-};
-
-/**
- * ModelTypeGroupDTO
- */
-export type ModelTypeGroupDtoReadable = {
-    /**
-     * Name
-     * The name/type of the model group
-     */
-    name: string;
-    /**
-     * Models
-     * List of models in this group
-     */
-    models: Array<ModelDtoReadable>;
-};
-
-/**
- * ModelTypeGroupDTO
- */
-export type ModelTypeGroupDtoWritable = {
-    /**
-     * Name
-     * The name/type of the model group
-     */
-    name: string;
-    /**
-     * Models
-     * List of models in this group
-     */
-    models: Array<ModelDtoWritable>;
 };
 
 /**
@@ -13913,53 +13657,6 @@ export type RemoveUserFromThreadResponses = {
 
 export type RemoveUserFromThreadResponse = RemoveUserFromThreadResponses[keyof RemoveUserFromThreadResponses];
 
-export type GetModelsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/models';
-};
-
-export type GetModelsResponses = {
-    /**
-     * Response Get Models Models Get
-     * Successful Response
-     */
-    200: Array<ModelTypeGroupDtoReadable>;
-};
-
-export type GetModelsResponse = GetModelsResponses[keyof GetModelsResponses];
-
-export type GetModelData = {
-    body?: never;
-    path: {
-        /**
-         * Model Name
-         */
-        model_name: string;
-    };
-    query?: never;
-    url: '/models/{model_name}';
-};
-
-export type GetModelErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetModelError = GetModelErrors[keyof GetModelErrors];
-
-export type GetModelResponses = {
-    /**
-     * Successful Response
-     */
-    200: ModelDtoReadable;
-};
-
-export type GetModelResponse = GetModelResponses[keyof GetModelResponses];
-
 export type GetAgentData = {
     body?: never;
     path: {
@@ -14564,21 +14261,21 @@ export type CreateRoleResponses = {
 
 export type CreateRoleResponse = CreateRoleResponses[keyof CreateRoleResponses];
 
-export type GetModelsWithAssistantsData = {
+export type GetModelsData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/openai/models';
 };
 
-export type GetModelsWithAssistantsResponses = {
+export type GetModelsResponses = {
     /**
      * Successful Response
      */
     200: ModelResponse;
 };
 
-export type GetModelsWithAssistantsResponse = GetModelsWithAssistantsResponses[keyof GetModelsWithAssistantsResponses];
+export type GetModelsResponse = GetModelsResponses[keyof GetModelsResponses];
 
 export type GetModelWithAssistantsData = {
     body?: never;
@@ -15019,6 +14716,21 @@ export type GetDocumentsForNamespaceData = {
          * Number of items per page (maximum 100)
          */
         page_size?: number;
+        /**
+         * Search
+         * Search by document title or filename
+         */
+        search?: string | null;
+        /**
+         * Sort Field
+         * Field to sort by: document_title, created_at, updated_at
+         */
+        sort_field?: string | null;
+        /**
+         * Sort Order
+         * Sort order: 1 for ascending, -1 for descending
+         */
+        sort_order?: number;
     };
     url: '/knowledge/databases/{database}/namespaces/{namespace}/documents';
 };
