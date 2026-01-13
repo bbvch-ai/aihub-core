@@ -1,10 +1,5 @@
 import asyncio
-import json
 import logging
-import os
-import socket
-import threading
-from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
@@ -30,6 +25,7 @@ from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import Agent
 from aihub_lib.nats.workflow.visualizers.WorkflowVisualizer import WorkflowVisualizer
 from aihub_lib.routes.health.dto.HealthResponse import AgentHealthChecks
 from aihub_lib.routes.health.health_checks import check_milvus, check_nats_sync, check_redis_sync
+from aihub_lib.routes.health.HealthServer import HealthCheckProvider, HealthServer
 from mongoengine import connect, disconnect
 from mongoengine.connection import get_connection
 from nats.aio.client import Client as NATS
@@ -44,7 +40,7 @@ from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
 logger = logging.getLogger(__name__)
 
 
-class AgentRunner:
+class AgentRunner(HealthCheckProvider):
     """
     An agent runner is responsible for connecting with external services like NATs, JetStream, and Redis, as well
     as running the agent through an agent dispatcher.
@@ -87,129 +83,30 @@ class AgentRunner:
 
         self.locale_handler = AgentLocaleHandler(locale_paths=locale_paths)
 
-        self.health_port = health_port
-        self._health_server: HTTPServer | None = None
-        self._health_thread: threading.Thread | None = None
         self._loop: asyncio.AbstractEventLoop | None = None
+        self._health_server = HealthServer(
+            provider=self,
+            default_port=health_port,
+            port_env_var="AGENT_HEALTH_PORT",
+        )
 
-    def _create_health_handler(self) -> type[BaseHTTPRequestHandler]:
-        """Creates a health check HTTP request handler with access to the runner instance."""
-        runner = self
+    # HealthCheckProvider implementation
 
-        class HealthHandler(BaseHTTPRequestHandler):
-            def log_message(self, format: str, *args: object) -> None:
-                # Suppress default logging to avoid cluttering logs
-                pass
+    @property
+    def entity_name(self) -> str:
+        return self.agent_class
 
-            def do_GET(self) -> None:
-                if self.path == "/health":
-                    self._handle_liveness()
-                elif self.path == "/health/ready":
-                    self._handle_readiness()
-                else:
-                    self.send_error(404, "Not Found")
+    @property
+    def entity_type(self) -> str:
+        return "agent"
 
-            def _handle_liveness(self) -> None:
-                """Simple liveness check - just confirms the process is running."""
-                health_status = {
-                    "status": "ok",
-                    "agent_class": runner.agent_class,
-                }
-                response_body = json.dumps(health_status).encode("utf-8")
-
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Content-Length", str(len(response_body)))
-                self.end_headers()
-                self.wfile.write(response_body)
-
-            def _handle_readiness(self) -> None:
-                """Readiness check - verifies all dependencies are available."""
-                # Check if runner is running
-                running_healthy = runner.running
-
-                # Check NATS connection by flushing (sends PING, waits for PONG)
-                nats_healthy = check_nats_sync(runner.nc, runner._loop) if runner._loop else False
-
-                # Check Redis connection by pinging
-                redis_healthy = check_redis_sync(runner.redis, runner._loop) if runner._loop else False
-
-                # Check Milvus connection
-                milvus_healthy = check_milvus(runner.milvus_client)
-
-                is_healthy = running_healthy and nats_healthy and redis_healthy and milvus_healthy
-
-                checks = AgentHealthChecks(
-                    running=running_healthy,
-                    nats=nats_healthy,
-                    redis=redis_healthy,
-                    milvus=milvus_healthy,
-                )
-
-                health_status = {
-                    "status": "ok" if is_healthy else "unhealthy",
-                    "agent_class": runner.agent_class,
-                    "checks": checks.model_dump(),
-                }
-
-                status_code = 200 if is_healthy else 503
-                response_body = json.dumps(health_status).encode("utf-8")
-
-                self.send_response(status_code)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Content-Length", str(len(response_body)))
-                self.end_headers()
-                self.wfile.write(response_body)
-
-        return HealthHandler
-
-    def _is_port_available(self, port: int) -> bool:
-        """Check if a port is available for binding."""
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            try:
-                s.bind(("0.0.0.0", port))
-                return True
-            except OSError:
-                return False
-
-    def _find_free_port(self) -> int:
-        """Find a random available port."""
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(("0.0.0.0", 0))
-            return s.getsockname()[1]
-
-    def _start_health_server(self) -> None:
-        """Starts the HTTP health check server in a background thread."""
-        env_port = os.environ.get("AGENT_HEALTH_PORT")
-
-        if env_port is not None:
-            # User explicitly set port - use it or fail
-            port = int(env_port)
-            if not self._is_port_available(port):
-                raise OSError(f"AGENT_HEALTH_PORT={port} is not available. Port is already in use.")
-        elif self._is_port_available(self.health_port):
-            # Default port is available
-            port = self.health_port
-        else:
-            # Default port occupied, find a free one
-            port = self._find_free_port()
-            logger.warning(f"Default health port {self.health_port} is occupied, falling back to port {port}")
-
-        handler_class = self._create_health_handler()
-        self._health_server = HTTPServer(("0.0.0.0", port), handler_class)
-        self._health_thread = threading.Thread(target=self._health_server.serve_forever, daemon=True)
-        self._health_thread.start()
-        logger.info(f"Health check server started on port {port}")
-
-    def _stop_health_server(self) -> None:
-        """Stops the HTTP health check server."""
-        if self._health_server:
-            self._health_server.shutdown()
-            self._health_server = None
-        if self._health_thread:
-            self._health_thread.join(timeout=5)
-            self._health_thread = None
-        logger.debug("Health check server stopped")
+    def get_readiness_checks(self) -> AgentHealthChecks:
+        return AgentHealthChecks(
+            running=self.running,
+            nats=check_nats_sync(self.nc, self._loop) if self._loop else False,
+            redis=check_redis_sync(self.redis, self._loop) if self._loop else False,
+            milvus=check_milvus(self.milvus_client),
+        )
 
     async def discovery_handler(self, event: ClassDiscoveryRequestEvent, topic: AgentClassDiscoveryTopic):
         """
@@ -321,7 +218,7 @@ class AgentRunner:
         self._loop_task = asyncio.create_task(self._run_loop())
 
         # Start health check server
-        self._start_health_server()
+        self._health_server.start()
 
     async def stop(self):
         """
@@ -334,7 +231,7 @@ class AgentRunner:
         logger.debug(f"Shutting down {self.agent_class}...")
 
         # Stop health check server first
-        self._stop_health_server()
+        self._health_server.stop()
         self._stop_signal.set()
 
         if self._loop_task is not None:

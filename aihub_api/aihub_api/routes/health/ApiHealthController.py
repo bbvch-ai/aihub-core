@@ -1,8 +1,17 @@
+from typing import Annotated
+
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.infrastructure.milvus.use_milvus import use_milvus
+from aihub_lib.infrastructure.redis.use_redis import use_redis
+from aihub_lib.infrastructure.s3.use_s3 import use_s3
+from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.health.dto.HealthResponse import ApiHealthChecks, HealthResponse
 from aihub_lib.routes.health.health_checks import check_milvus, check_mongodb, check_nats, check_redis, check_s3
 from aihub_lib.routes.health.HealthController import HealthController
-from fastapi import Request, Response
+from fastapi import Depends, Response
+from nats.aio.client import Client as NATS
+from pymilvus import MilvusClient
+from redis.asyncio import Redis
 from starlette.status import HTTP_200_OK, HTTP_503_SERVICE_UNAVAILABLE
 
 
@@ -23,16 +32,17 @@ class ApiHealthController(HealthController):
         """Adds a readiness endpoint that checks all API dependencies."""
 
         @self.router.get(route, tags=self.tags)
-        async def get_ready(request: Request, response: Response) -> HealthResponse:
+        async def get_ready(
+            response: Response,
+            nc: Annotated[NATS, Depends(use_nats)],
+            redis: Annotated[Redis, Depends(use_redis)],
+            milvus_client: Annotated[MilvusClient, Depends(use_milvus)],
+            s3_client: Annotated[object, Depends(use_s3)],
+        ) -> HealthResponse:
             """
             Readiness check that verifies all API dependencies are available.
             Returns 200 if all checks pass, 503 if any check fails.
             """
-            nc = getattr(request.app.state, "nc", None)
-            redis = getattr(request.app.state, "redis", None)
-            milvus_client = getattr(request.app.state, "milvus_client", None)
-            s3_client = getattr(request.app.state, "s3_client", None)
-
             nats_healthy = await check_nats(nc)
             mongodb_healthy = check_mongodb()
             redis_healthy = await check_redis(redis)

@@ -1,4 +1,5 @@
 # ruff: noqa: E402
+from aihub_api.routes.health.ApiHealthController import ApiHealthController
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
 
 AihubInstrumentor().instrument()
@@ -40,7 +41,7 @@ async def main():
     # auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
 
     runner.mount(
-        HealthController(auth=auth).get_health(),
+        ApiHealthController(auth=auth).get_health().get_ready(),
         SuiteController(auth=auth).get_suite(),
         UserController(auth=auth).get_my_user().get_user().get_users().get_my_dashboard().update_my_dashboard(),
         I18nController(auth=auth).get_my_locale(),
