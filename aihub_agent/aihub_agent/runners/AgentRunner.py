@@ -312,7 +312,8 @@ class AgentRunner:
         self.redis = RedisSettings.create_client()
 
         # Connect to Milvus
-        self.milvus_client = MilvusClient(uri=MilvusSettings().URL)
+        milvus_settings = MilvusSettings()
+        self.milvus_client = MilvusClient(uri=milvus_settings.URL, token=milvus_settings.get_token())
 
         # Connect to MongoDB (skip if already connected)
         try:

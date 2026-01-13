@@ -85,7 +85,8 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
     redis = Redis.from_url(RedisSettings().URL)
 
     # Connect to Milvus
-    milvus_client = MilvusClient(uri=MilvusSettings().URL)
+    milvus_settings = MilvusSettings()
+    milvus_client = MilvusClient(uri=milvus_settings.URL, token=milvus_settings.get_token())
 
     # Connect to S3 (SeaweedFS)
     s3_settings = S3StorageSettings()
