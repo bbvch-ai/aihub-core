@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.258.2] - 2026-01-13 - Deepening Knowledge: Insights Now Integral to Document & Node Retrieval
+
+### Added
+
+- ✨ **Enhanced Knowledge Base with Insight Integration:** Introduced the capability to retrieve **Insights** directly as
+  standard documents and nodes within the knowledge base, enabling their use in Retrieval-Augmented Generation (RAG)
+  flows.
+- 📚 **Direct Insight Retrieval by ID:** Added a new method (`InsightEntity.get_by_id`) to directly fetch insights using
+  their unique identifier, streamlining access to structured knowledge.
+- 🌍 **Localized Insight Representation:** Implemented support for localizing insight content when presented as nodes,
+  ensuring that questions, answers, and conversation parts are displayed in the user's preferred language.
+
+### Changed
+
+- 🔄 **Unified Document and Node Retrieval:** Modified the `KnowledgeService` to transparently handle both regular
+  documents and **Insights** when fetching documents by ID or retrieving specific nodes, providing a more consistent API
+  experience.
+- 🛠️ **Refined Insight-to-Document Conversion:** Updated `DocumentDTO` to include a dedicated method for converting an
+  `InsightEntity` into a document data transfer object, standardizing how insights are represented.
+- 🌐 **Improved Insight Source Handling in UI:** Adjusted the web interface to recognize insights as a distinct document
+  source, ensuring the "View Original" action is correctly hidden for insight-based knowledge.
+- 🗄️ **Virtual Bucket Assignment for Insights:** Updated the `extractBucket` utility in the UI to correctly assign a
+  virtual 'insights' bucket for documents originating from MongoDB-stored insights.
+
+### Refactor
+
+- 🧹 **Encapsulated Insight Node Conversion Logic:** Moved the logic for transforming an `InsightEntity` into an
+  `IngestedNode` directly into the `InsightEntity` class, improving modularity and reusability.
+- 📄 **Minor Logging Message Formatting:** Adjusted a logging message in the `DoclingLoader` for improved clarity.
+
+---
+
 ## [v0.258.1] - 2026-01-13 - Knowledge Base Evolution: Advanced Document Management and Visibility
 
 ### Added

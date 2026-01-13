@@ -170,6 +170,7 @@ class KnowledgeController(Controller):
             _: Annotated[
                 UserIdentity, Security(self.user_with_permission("aihub.user.knowledge.{database}.{namespace}"))
             ],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> list[IngestedNode]:
             """
             Returns nodes for a given document.
@@ -181,6 +182,7 @@ class KnowledgeController(Controller):
                 namespace=namespace,
                 document_id=document_id,
                 vector_store_factory=self.vector_store_factory,
+                t=t,
             )
 
         return self
