@@ -244,7 +244,7 @@ class DoclingLoader(BaseReader):
                     "include_images": include_images,
                     "pipeline": "vlm",
                     "vlm_pipeline_model_api": {
-                        "url": f"{self.config.HOSTED_VLM_API_ENDPOINT}/v1/chat/completions",
+                        "url": f"{self.config.HOSTED_VLM_API_BASE_URL}/v1/chat/completions",
                         "params": {
                             "model": self.config.VLM_MODEL_NAME,
                             "max_tokens": 8176,  # 8192 (max tokens) - 16 (for docling)
@@ -258,6 +258,13 @@ class DoclingLoader(BaseReader):
             }
 
         raise ValueError(f"Unsupported pipeline type: {self.config.PIPELINE_TYPE}")
+
+    def _build_headers(self) -> dict[str, str]:
+        """Build HTTP headers including Authorization if API key is configured."""
+        headers = {"Content-Type": "application/json"}
+        if self.config.API_KEY:
+            headers["X-Api-Key"] = self.config.API_KEY.get_secret_value()
+        return headers
 
     def _retry_kwargs(self) -> dict:
         """Return retry configuration for tenacity."""
@@ -299,9 +306,9 @@ class DoclingLoader(BaseReader):
         try:
             with httpx.Client(timeout=self._get_httpx_timeout()) as client:
                 response = client.post(
-                    f"{self.config.BASE_API_URL}/v1/convert/source",
+                    f"{self.config.API_BASE_URL}/v1/convert/source",
                     json=request_body,
-                    headers={"Content-Type": "application/json"},
+                    headers=self._build_headers(),
                 )
 
                 if response.status_code != 200:
@@ -337,9 +344,9 @@ class DoclingLoader(BaseReader):
             async with httpx.AsyncClient(timeout=self._get_httpx_timeout()) as client:
                 logger.debug(f"[DoclingLoader] Submitting async job to {self.config.BASE_API_URL} for: {filename}")
                 response = await client.post(
-                    f"{self.config.BASE_API_URL}/v1/convert/source/async",
+                    f"{self.config.API_BASE_URL}/v1/convert/source/async",
                     json=request_body,
-                    headers={"Content-Type": "application/json"},
+                    headers=self._build_headers(),
                 )
 
                 if response.status_code != 200:
@@ -385,8 +392,8 @@ class DoclingLoader(BaseReader):
 
             try:
                 status_response = await client.get(
-                    f"{self.config.BASE_API_URL}/v1/status/poll/{task_id}",
-                    headers={"Content-Type": "application/json"},
+                    f"{self.config.API_BASE_URL}/v1/status/poll/{task_id}",
+                    headers=self._build_headers(),
                 )
             except (httpx.HTTPError, OSError, asyncio.CancelledError) as e:
                 logger.error(
@@ -425,8 +432,8 @@ class DoclingLoader(BaseReader):
                     f"for task_id={task_id}, file={filename}. Fetching result..."
                 )
                 result_response = await client.get(
-                    f"{self.config.BASE_API_URL}/v1/result/{task_id}",
-                    headers={"Content-Type": "application/json"},
+                    f"{self.config.API_BASE_URL}/v1/result/{task_id}",
+                    headers=self._build_headers(),
                 )
 
                 if result_response.status_code != 200:

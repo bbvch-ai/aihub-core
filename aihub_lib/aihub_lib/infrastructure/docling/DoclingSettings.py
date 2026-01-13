@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Annotated
 
-from pydantic import Field
+from pydantic import Field, SecretStr
 
 from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import PAGE_BREAK
 from aihub_lib.settings.EnvironmentSettings import EnvironmentSettings
@@ -18,7 +18,8 @@ class DoclingSettings(EnvironmentSettings):
     model_config = EnvironmentSettings.create_settings_config("DOCLING_")
 
     # --- General API Settings ---
-    BASE_API_URL: Annotated[str, Field(description="Docling API endpoint URL")]
+    API_BASE_URL: Annotated[str, Field(description="Docling API endpoint URL")]
+    API_KEY: Annotated[SecretStr | None, Field(description="API key for Docling service authentication")] = None
     API_TIMEOUT: Annotated[int, Field(description="Timeout for individual Docling API calls in seconds")] = 300
     OPERATION_TIMEOUT: Annotated[
         int, Field(description="Overall timeout for entire aload_data operation in seconds")
@@ -28,7 +29,7 @@ class DoclingSettings(EnvironmentSettings):
     PIPELINE_TYPE: Annotated[PipelineType, Field(description="The type of pipeline to use")] = PipelineType.STANDARD
 
     # --- VLM Pipeline Settings (Permanent) ---
-    HOSTED_VLM_API_ENDPOINT: Annotated[str, Field(description="The API endpoint for the self-hosted VLM")] = (
+    HOSTED_VLM_API_BASE_URL: Annotated[str, Field(description="The API endpoint for the self-hosted VLM")] = (
         "http://litellm:4000"
     )
     HOSTED_VLM_API_KEY: Annotated[str, Field(description="The API key for the self-hosted VLM")] = ""

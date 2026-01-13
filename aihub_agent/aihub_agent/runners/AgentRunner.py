@@ -4,6 +4,8 @@ import logging
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
+from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
+from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
     AgentClassDiscoveryResponseEvent,
@@ -25,7 +27,6 @@ from mongoengine import connect, disconnect
 from mongoengine.connection import get_connection
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
-from redis.asyncio import ConnectionPool, Redis
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.dispatchers.AgentDispatcher import AgentDispatcher
@@ -43,8 +44,6 @@ class AgentRunner:
 
     def __init__(
         self,
-        servers: list[str],
-        redis_url: str,
         agent_type: type[Agent],
         default_agent_config: AgentConfig,
         locale_paths: list[str] | None = None,
@@ -55,8 +54,6 @@ class AgentRunner:
         if not issubclass(agent_type, Agent):
             raise ValueError("agent_type must be a subclass of Agent.")
 
-        self.servers = servers
-        self.redis_url = redis_url
         self.agent_type = agent_type
         self.default_agent_config = default_agent_config
         self.agent_config_type = default_agent_config.__class__
@@ -135,12 +132,9 @@ class AgentRunner:
         self.running = True
         self._stop_signal.clear()
 
-        self.nc = NATS()
-        await self.nc.connect(servers=self.servers)
-
+        self.nc = await NatsSettings.create_client()
         self.js = self.nc.jetstream(timeout=60, publish_async_max_pending=10_000)
-        _, host, port = self.redis_url.split(":")
-        self.redis = Redis(connection_pool=ConnectionPool(host=host[2:], port=port))
+        self.redis = RedisSettings.create_client()
 
         # Connect to MongoDB (skip if already connected)
         try:

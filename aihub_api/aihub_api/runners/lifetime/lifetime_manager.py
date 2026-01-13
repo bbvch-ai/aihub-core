@@ -13,7 +13,6 @@ from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicMan
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
-from nats.aio.client import Client as NATS
 
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.persistance.events.EventPersister import EventPersister
@@ -68,8 +67,6 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
     logging.info("Initializing NATS connection and resources")
 
-    nc = NATS()
-
     # Connect to MongoDB via Cosmos
     connect(
         db=AIHubSettings().MONGO_MAIN_DB_NAME,
@@ -79,7 +76,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
     try:
         # Connect to NATS and setup JetStream
-        await nc.connect(servers=[NatsSettings().ENDPOINT])
+        nc = await NatsSettings.create_client()
         js = nc.jetstream()
 
         # Persist all events

@@ -84,6 +84,7 @@ class MilvusVectorStoreResource(ConfigurableResource[MilvusVectorStore]):
     index_type: Annotated[MilvusIndexType, Field(description="Vector index type to use for the embedding field")] = (
         MilvusIndexType.HNSW
     )
+    token: Annotated[str | None, Field(description="Authentication token in format 'username:password'")] = None
 
     def create_resource(self, context: InitResourceContext) -> MilvusVectorStore:
         return create_milvus_vector_store(
@@ -91,4 +92,5 @@ class MilvusVectorStoreResource(ConfigurableResource[MilvusVectorStore]):
             collection_name=self.collection_name,
             embedding_vector_dimension=self.embedding_vector_dimension,
             index_type=self.index_type,
+            token=self.token,
         )

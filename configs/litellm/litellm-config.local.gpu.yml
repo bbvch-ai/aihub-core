@@ -52,7 +52,7 @@ model_list:
     litellm_params:
       model: openai/granite-docling
       api_base: http://vllm-docling:8182/v1
-      api_key: XXX
+      api_key: os.environ/LOCAL_LLM_TOKEN
     model_info:
       mode: chat
       max_input_tokens: 8192
@@ -181,6 +181,12 @@ litellm_settings:
   telemetry: true
   json_logs: true
   drop_params: true
+  cache: true
+  cache_params:
+    type: "redis"
+    host: "valkey"
+    port: 6379
+    password: os.environ/REDIS_TOKEN
   # Prompt injection detection settings
   prompt_injection_params:
     heuristics_check: false        # Disable simple pattern matching (too many false positives)
