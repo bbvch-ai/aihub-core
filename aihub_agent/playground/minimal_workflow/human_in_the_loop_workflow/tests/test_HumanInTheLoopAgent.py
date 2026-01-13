@@ -62,9 +62,9 @@ def _(agent_runner: AgentTestRunner):
 
 @then(parsers.parse('a HumanInTheLoopResponseEvent event with the response "{response}" is present'))
 def _(agent_runner: AgentTestRunner, response: str):
-    assert (
-        agent_runner.get_event_of_class(HumanInTheLoopInputResponseEvent).response == response
-    ), "Agent did not receive correct response"
+    assert agent_runner.get_event_of_class(HumanInTheLoopInputResponseEvent).response == response, (
+        "Agent did not receive correct response"
+    )
 
 
 @then("a StopEvent is present")
