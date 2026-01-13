@@ -229,9 +229,9 @@ async def _(expert_rag_agent_runner: AgentTestRunner, query: str):
 @then("a HumanInTheLoopConfirmationRequestEvent is present")
 def _(expert_rag_agent_runner: AgentTestRunner):
     """Check that a HITL confirmation request was emitted."""
-    assert expert_rag_agent_runner.has_event_of_class(HumanInTheLoopConfirmationRequestEvent), (
-        "HumanInTheLoopConfirmationRequestEvent was not emitted"
-    )
+    assert expert_rag_agent_runner.has_event_of_class(
+        HumanInTheLoopConfirmationRequestEvent
+    ), "HumanInTheLoopConfirmationRequestEvent was not emitted"
 
 
 @then("an ExpertRejectEvent is present")
@@ -243,17 +243,17 @@ def _(expert_rag_agent_runner: AgentTestRunner):
 @then("a UserRequestsExpertEvent is present")
 def _(expert_rag_agent_runner: AgentTestRunner):
     """Check that a UserRequestsExpertEvent was emitted."""
-    assert expert_rag_agent_runner.has_event_of_class(UserRequestsExpertEvent), (
-        "UserRequestsExpertEvent was not emitted"
-    )
+    assert expert_rag_agent_runner.has_event_of_class(
+        UserRequestsExpertEvent
+    ), "UserRequestsExpertEvent was not emitted"
 
 
 @then("an AgentInTheLoopRequestEvent is present")
 def _(expert_rag_agent_runner: AgentTestRunner):
     """Check that an AgentInTheLoopRequestEvent was emitted."""
-    assert expert_rag_agent_runner.has_event_of_class(AgentInTheLoopRequestEvent), (
-        "AgentInTheLoopRequestEvent was not emitted"
-    )
+    assert expert_rag_agent_runner.has_event_of_class(
+        AgentInTheLoopRequestEvent
+    ), "AgentInTheLoopRequestEvent was not emitted"
 
 
 @then("an LLMEvent is present with a generated response")

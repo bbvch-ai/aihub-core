@@ -1,13 +1,9 @@
-import logging
-
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
-from aihub_lib.routes.health.dto.HealthResponse import HealthResponse
+from aihub_lib.routes.health.dto.HealthResponse import ApiHealthChecks, HealthResponse
+from aihub_lib.routes.health.health_checks import check_milvus, check_mongodb, check_nats, check_redis, check_s3
 from aihub_lib.routes.health.HealthController import HealthController
 from fastapi import Request, Response
-from mongoengine.connection import get_connection
 from starlette.status import HTTP_200_OK, HTTP_503_SERVICE_UNAVAILABLE
-
-logger = logging.getLogger(__name__)
 
 
 class ApiHealthController(HealthController):
@@ -32,11 +28,16 @@ class ApiHealthController(HealthController):
             Readiness check that verifies all API dependencies are available.
             Returns 200 if all checks pass, 503 if any check fails.
             """
-            nats_healthy = await _check_nats(request)
-            mongodb_healthy = await _check_mongodb()
-            redis_healthy = await _check_redis(request)
-            milvus_healthy = _check_milvus(request)
-            s3_healthy = _check_s3(request)
+            nc = getattr(request.app.state, "nc", None)
+            redis = getattr(request.app.state, "redis", None)
+            milvus_client = getattr(request.app.state, "milvus_client", None)
+            s3_client = getattr(request.app.state, "s3_client", None)
+
+            nats_healthy = await check_nats(nc)
+            mongodb_healthy = check_mongodb()
+            redis_healthy = await check_redis(redis)
+            milvus_healthy = check_milvus(milvus_client)
+            s3_healthy = check_s3(s3_client)
 
             all_healthy = nats_healthy and mongodb_healthy and redis_healthy and milvus_healthy and s3_healthy
             status = "ok" if all_healthy else "unhealthy"
@@ -46,86 +47,13 @@ class ApiHealthController(HealthController):
             return HealthResponse(
                 status=status,
                 code=code,
-                checks={
-                    "nats": nats_healthy,
-                    "mongodb": mongodb_healthy,
-                    "redis": redis_healthy,
-                    "milvus": milvus_healthy,
-                    "s3": s3_healthy,
-                },
+                checks=ApiHealthChecks(
+                    nats=nats_healthy,
+                    mongodb=mongodb_healthy,
+                    redis=redis_healthy,
+                    milvus=milvus_healthy,
+                    s3=s3_healthy,
+                ),
             )
 
         return self
-
-
-async def _check_nats(request: Request) -> bool:
-    """Check if NATS connection is healthy by flushing (sends PING, waits for PONG)."""
-    if not hasattr(request.app.state, "nc"):
-        return False
-    nc = request.app.state.nc
-    if nc is None:
-        return False
-    try:
-        await nc.flush(timeout=5)
-        return True
-    except Exception as e:
-        logger.debug(f"NATS health check failed: {e}")
-        return False
-
-
-async def _check_mongodb() -> bool:
-    """Check if MongoDB connection is available."""
-    try:
-        conn = get_connection()
-        conn.admin.command("ping")
-        return True
-    except Exception as e:
-        logger.debug(f"MongoDB health check failed: {e}")
-        return False
-
-
-async def _check_redis(request: Request) -> bool:
-    """Check if Redis connection is healthy by pinging."""
-    if not hasattr(request.app.state, "redis"):
-        return False
-    redis = request.app.state.redis
-    if redis is None:
-        return False
-    try:
-        await redis.ping()
-        return True
-    except Exception as e:
-        logger.debug(f"Redis health check failed: {e}")
-        return False
-
-
-def _check_milvus(request: Request) -> bool:
-    """Check if Milvus connection is healthy by listing collections."""
-    if not hasattr(request.app.state, "milvus_client"):
-        return False
-    milvus_client = request.app.state.milvus_client
-    if milvus_client is None:
-        return False
-    try:
-        # list_collections is a lightweight operation to verify connectivity
-        milvus_client.list_collections()
-        return True
-    except Exception as e:
-        logger.debug(f"Milvus health check failed: {e}")
-        return False
-
-
-def _check_s3(request: Request) -> bool:
-    """Check if S3 connection is healthy by listing buckets."""
-    if not hasattr(request.app.state, "s3_client"):
-        return False
-    s3_client = request.app.state.s3_client
-    if s3_client is None:
-        return False
-    try:
-        # list_buckets is a lightweight operation to verify connectivity
-        s3_client.list_buckets()
-        return True
-    except Exception as e:
-        logger.debug(f"S3 health check failed: {e}")
-        return False

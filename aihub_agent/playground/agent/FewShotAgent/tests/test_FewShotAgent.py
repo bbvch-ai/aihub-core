@@ -138,16 +138,16 @@ def then_limit_chat_history_event(agent_runner: AgentTestRunner):
 
 @then("a RightAgentEvent is present")
 def then_guard_or_rejection_event(agent_runner: AgentTestRunner):
-    assert agent_runner.has_event_of_class(AgentSuitabilityAcceptEvent), (
-        "Agent did not produce AgentSuitabilityAcceptEvent"
-    )
+    assert agent_runner.has_event_of_class(
+        AgentSuitabilityAcceptEvent
+    ), "Agent did not produce AgentSuitabilityAcceptEvent"
 
 
 @then("a FewShotStandaloneQuestionCondenserEvent is present with condensed question")
 def then_few_shot_condenser_event(agent_runner: AgentTestRunner):
-    assert agent_runner.has_event_of_class(FewShotStandaloneQuestionCondenserEvent), (
-        "FewShotStandaloneQuestionCondenserEvent was not emitted"
-    )
+    assert agent_runner.has_event_of_class(
+        FewShotStandaloneQuestionCondenserEvent
+    ), "FewShotStandaloneQuestionCondenserEvent was not emitted"
     condenser_event = agent_runner.get_event_of_class(FewShotStandaloneQuestionCondenserEvent)
     assert condenser_event.condensed_chat_message.content, "Condensed question content was empty"
 

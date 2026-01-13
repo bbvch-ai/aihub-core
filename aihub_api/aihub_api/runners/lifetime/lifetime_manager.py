@@ -19,7 +19,6 @@ from botocore.config import Config
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from pymilvus import MilvusClient
-from redis.asyncio import Redis
 
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.persistance.events.EventPersister import EventPersister
@@ -82,7 +81,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
     )
 
     # Connect to Redis
-    redis = Redis.from_url(RedisSettings().URL)
+    redis = RedisSettings.create_client()
 
     # Connect to Milvus
     milvus_settings = MilvusSettings()

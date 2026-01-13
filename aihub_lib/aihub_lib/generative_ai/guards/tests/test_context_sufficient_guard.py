@@ -100,9 +100,9 @@ def _(guard_result):
 
 @then(parsers.parse('the reasoning should be "{expected_reasoning}"'))
 def _(guard_result, expected_reasoning):
-    assert guard_result.reasoning == expected_reasoning, (
-        f"Expected reasoning: {expected_reasoning}, got: {guard_result.reasoning}"
-    )
+    assert (
+        guard_result.reasoning == expected_reasoning
+    ), f"Expected reasoning: {expected_reasoning}, got: {guard_result.reasoning}"
 
 
 @then("no new query should be generated")
@@ -112,6 +112,6 @@ def _(guard_result):
 
 @then(parsers.parse('a new query "{expected_query}" should be generated'))
 def _(guard_result, expected_query):
-    assert guard_result.new_query == expected_query, (
-        f"Expected new query: {expected_query}, got: {guard_result.new_query}"
-    )
+    assert (
+        guard_result.new_query == expected_query
+    ), f"Expected new query: {expected_query}, got: {guard_result.new_query}"
