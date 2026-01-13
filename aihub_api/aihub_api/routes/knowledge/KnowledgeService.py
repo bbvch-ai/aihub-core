@@ -1,14 +1,11 @@
 import logging
-import time
 import uuid
-from functools import lru_cache, wraps
 from typing import Annotated
 
 import mongoengine
 from aihub_lib.generative_ai.document.types.FileTypeConfig import FileTypeConfig
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.generative_ai.utils.path_utils import FIGURES_DIRECTORY_NAME
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
@@ -18,6 +15,7 @@ from aihub_lib.nats.events.pipeline.SourceUpdatedEvent import SourceUpdatedEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
+from aihub_lib.persistence.insight import InsightEntity
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
 from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
 from aihub_lib.persistence.rag.documents.entities.RefDoc import RefDoc
@@ -38,7 +36,7 @@ from pydantic import Field
 
 from aihub_api.routes.knowledge.dto.CreateNamespaceRequest import CreateNamespaceRequest
 from aihub_api.routes.knowledge.dto.DatabaseDTO import DatabaseDTO
-from aihub_api.routes.knowledge.dto.DocumentDTO import S3_PROTOCOL_PREFIX, DocumentDTO
+from aihub_api.routes.knowledge.dto.DocumentDTO import DocumentDTO
 from aihub_api.routes.knowledge.dto.DocumentUploadRequest import DocumentUploadRequest
 from aihub_api.routes.knowledge.dto.DocumentUploadResponse import DocumentUploadResponse
 from aihub_api.routes.knowledge.dto.DocumentUploadValidationRequest import DocumentUploadValidationRequest
@@ -50,32 +48,6 @@ from aihub_api.routes.knowledge.dto.UpdateNamespaceRequest import UpdateNamespac
 from aihub_api.services.TranslationService import TranslationService
 
 logger = logging.getLogger(__name__)
-
-
-def ttl_cache(seconds: int, maxsize: int = 128):
-    def decorator(func):
-        func = lru_cache(maxsize=maxsize)(func)
-        func.lifetime = seconds
-        func.expiration = time.time() + seconds
-
-        @wraps(func)
-        def wrapped_func(*args, **kwargs):
-            if time.time() >= func.expiration:
-                func.cache_clear()
-                func.expiration = time.time() + func.lifetime
-            return func(*args, **kwargs)
-
-        def invalidate():
-            func.cache_clear()
-            func.expiration = time.time() + func.lifetime
-
-        wrapped_func.invalidate = invalidate
-        wrapped_func.cache_info = func.cache_info
-        wrapped_func.cache_clear = func.cache_clear
-
-        return wrapped_func
-
-    return decorator
 
 
 class KnowledgeService:
@@ -92,128 +64,67 @@ class KnowledgeService:
             )
 
     @staticmethod
-    def _get_unprocessed_datalake_files(
-        bucket_name: str,
-        namespace: str,
-        processed_sources: set[str],
-    ) -> list[DocumentDTO]:
-        """
-        Get unprocessed files from datalake in a specific namespace.
-
-        Files in the __figures__ directory are excluded as they are generated artifacts
-        from document processing and should not be displayed in the knowledge interface.
-        Files that have already been processed (exist in processed_sources) are also excluded.
-        """
-        files_info = create_s3_service().list_files(container=bucket_name, prefix=f"{namespace}/")
-
-        unprocessed_files = []
-        for file_info in files_info:
-            key = file_info["key"]
-
-            if f"/{FIGURES_DIRECTORY_NAME}/" in key:
-                continue
-
-            source = f"{bucket_name}/{key}"
-            if f"{S3_PROTOCOL_PREFIX}{source}" in processed_sources:
-                continue
-
-            filename = key.split("/")[-1]
-            file_namespace = key.split("/")[0]
-
-            unprocessed_files.append(
-                DocumentDTO(
-                    id=key,
-                    document_title=filename,
-                    namespace=file_namespace,
-                    updated_at=file_info.get("last_modified", ""),
-                    created_at=file_info.get("last_modified", ""),
-                    inserted_at="",
-                    source=source,
-                    is_ingested=False,
-                )
-            )
-
-        return unprocessed_files
-
-    @staticmethod
-    @ttl_cache(seconds=300, maxsize=256)  # 5 minutes TTL, 256 max entries
-    def _get_processed_sources(db: str, namespace: str) -> set[str]:
-        count = RefDoc.count_by_namespace(db_alias=db, namespace=namespace)
-        if count == 0:
-            return set()
-
-        docs = RefDoc.get_paginated_by_namespace(db_alias=db, namespace=namespace, skip=0, limit=count)
-        return {doc.data.metadata.source for doc in docs}
-
-    @staticmethod
-    @ttl_cache(seconds=300, maxsize=256)  # 5 minutes TTL, 256 max entries
-    def _get_processed_documents_sorted(db: str, namespace: str) -> list[DocumentDTO]:
-        count = RefDoc.count_by_namespace(db_alias=db, namespace=namespace)
-        if count == 0:
-            return []
-
-        docs = RefDoc.get_paginated_by_namespace(db_alias=db, namespace=namespace, skip=0, limit=count)
-        documents = [DocumentDTO.from_ref_doc(doc) for doc in docs]
-        documents.sort(key=lambda doc: doc.updated_at, reverse=True)
-        return documents
-
-    @classmethod
-    @ttl_cache(seconds=300, maxsize=256)  # 5 minutes TTL, 256 max entries
-    def _get_unprocessed_files(cls, db: str, namespace: str, bucket_name: str) -> list[DocumentDTO]:
-        processed_sources = cls._get_processed_sources(db, namespace)
-        unprocessed = cls._get_unprocessed_datalake_files(bucket_name, namespace, processed_sources)
-        unprocessed.sort(key=lambda doc: doc.updated_at, reverse=True)
-        return unprocessed
-
-    @staticmethod
-    def invalidate_cache():
-        KnowledgeService._get_processed_sources.invalidate()
-        KnowledgeService._get_processed_documents_sorted.invalidate()
-        KnowledgeService._get_unprocessed_files.invalidate()
-
-    @staticmethod
     @trace_fn
     def get_paginated_documents(
-        db: str, namespace: str, page: int = 1, page_size: int = 20
+        db: str,
+        namespace: str,
+        page: int = 1,
+        page_size: int = 20,
+        search: str | None = None,
+        sort_field: str | None = None,
+        sort_order: int = 1,
     ) -> tuple[int, list[DocumentDTO]]:
-        """
-        Retrieves paginated documents for a given namespace, including both processed (docstore)
-        and processing (datalake only) documents.
+        """Retrieves paginated documents for a namespace.
+
+        Default sort is by updated_at (newest first).
+        Use sort_field=is_ingested to see pending documents first.
         """
         skip = (page - 1) * page_size
-
         KnowledgeService._ensure_db_exists(db)
-        bucket = BucketEntity.get_bucket_by_db_name(db)
 
-        unprocessed = KnowledgeService._get_unprocessed_files(db, namespace, bucket.bucket_name)
-        unprocessed_count = len(unprocessed)
+        if search:
+            total = RefDoc.count_search_in_namespace(db_alias=db, namespace=namespace, query=search)
+            if skip >= total:
+                return total, []
+            ref_docs = RefDoc.search_in_namespace(
+                db_alias=db,
+                namespace=namespace,
+                query=search,
+                skip=skip,
+                limit=page_size,
+                sort_field=sort_field,
+                sort_order=sort_order,
+            )
+        else:
+            total = RefDoc.count_by_namespace(db_alias=db, namespace=namespace)
+            if skip >= total:
+                return total, []
+            ref_docs = RefDoc.get_all_in_namespace(
+                db_alias=db,
+                namespace=namespace,
+                skip=skip,
+                limit=page_size,
+                sort_field=sort_field,
+                sort_order=sort_order,
+            )
 
-        processed = KnowledgeService._get_processed_documents_sorted(db, namespace)
-        processed_count = len(processed)
-
-        total = unprocessed_count + processed_count
-
-        if skip >= total:
-            return total, []
-
-        if skip + page_size <= unprocessed_count:
-            return total, unprocessed[skip : skip + page_size]
-
-        if skip < unprocessed_count:
-            result = unprocessed[skip:]
-            remaining = page_size - len(result)
-            result.extend(processed[:remaining])
-            return total, result
-
-        processed_skip = skip - unprocessed_count
-        return total, processed[processed_skip : processed_skip + page_size]
+        return total, [DocumentDTO.from_ref_doc(doc) for doc in ref_docs]
 
     @staticmethod
     @trace_fn
     def get_document_by_id(db: str, document_id: str) -> DocumentDTO:
         """
         Retrieves a single document by its ID.
+
+        For insights (db='insights'), retrieves from MongoDB InsightEntity.
+        For regular documents, retrieves from the RefDoc docstore.
         """
+        # Check if this is an insight document
+        insight = InsightEntity.get_by_id(document_id)
+        if insight is not None:
+            return DocumentDTO.from_insight(insight)
+
+        # Fall back to regular document lookup
         KnowledgeService._ensure_db_exists(db)
         ref_doc = RefDoc.by_id(db_alias=db, doc_id=document_id)
         return DocumentDTO.from_ref_doc(ref_doc)
@@ -223,8 +134,9 @@ class KnowledgeService:
     def get_databases(t: LocaleHandler) -> list[DatabaseDTO]:
         """
         Retrieves all databases (buckets) with their available namespaces with the number of documents in each.
+
         Gets buckets from BucketEntity and namespaces from NamespaceEntity in MongoDB,
-        then enriches with document stats from docstore. Returns format compatible with web frontend.
+        then enriches with document counts from RefDoc (both pending and ingested).
         """
         database_dtos: list[DatabaseDTO] = []
         buckets = BucketEntity.get_all_buckets()
@@ -237,12 +149,7 @@ class KnowledgeService:
 
             namespaces = []
             for ns_entity in namespace_entities:
-                unprocessed = KnowledgeService._get_unprocessed_files(
-                    db_name, ns_entity.namespace_name, bucket.bucket_name
-                )
-                processed_count = RefDoc.count_by_namespace(db_alias=db_name, namespace=ns_entity.namespace_name)
-                total_count = len(unprocessed) + processed_count
-
+                total_count = RefDoc.count_by_namespace(db_alias=db_name, namespace=ns_entity.namespace_name)
                 namespaces.append(NamespaceDTO.from_entity(entity=ns_entity, t=t, number_of_documents=total_count))
 
             display_name = KnowledgeService._safe_extract_locale_string(bucket.name, t)
@@ -259,8 +166,15 @@ class KnowledgeService:
         namespace: str,
         document_id: str,
         vector_store_factory: VectorStoreFactory,
+        t: LocaleHandler,
         node_type: NodeTypeValue = NODE_TYPE_CONTENT,
     ) -> list[IngestedNode]:
+        # Check if the document_id corresponds to an insight stored in MongoDB
+        insight = InsightEntity.get_by_id(document_id)
+        if insight is not None and insight.namespace == namespace:
+            return [insight.to_ingested_node(t)]
+
+        # Fall back to vector store query for regular documents
         filters = MetadataFilters(
             filters=[
                 MetadataFilter(key=DOCUMENT_ID, value=document_id),
@@ -280,7 +194,7 @@ class KnowledgeService:
         db: str, namespace: str, document_id: str, vector_store_factory: VectorStoreFactory
     ) -> list[NodeSummaryDTO]:
         nodes = KnowledgeService.get_nodes(
-            db, namespace, document_id, vector_store_factory, node_type=NODE_TYPE_SUMMARY
+            db, namespace, document_id, vector_store_factory, t=LocaleHandler(), node_type=NODE_TYPE_SUMMARY
         )
         summaries: dict[int, NodeSummaryDTO] = {i: NodeSummaryDTO(level=i, nodes=[]) for i in range(0, 7)}
         for node in nodes:
@@ -352,8 +266,6 @@ class KnowledgeService:
             description=description_entity,
         )
 
-        KnowledgeService.invalidate_cache()
-
         return NamespaceResponse(
             id=str(namespace_entity.id),
             bucket_id=namespace_entity.bucket_id,
@@ -387,8 +299,6 @@ class KnowledgeService:
             display_name=display_name_entity,
             description=description_entity,
         )
-
-        KnowledgeService.invalidate_cache()
 
         return NamespaceResponse(
             id=str(updated_entity.id),
@@ -484,8 +394,9 @@ class KnowledgeService:
         """
         Validates whether a file was successfully uploaded to the globally configured datalake.
 
-        This method verifies that the uploaded file exists in the datalake storage and publishes
-        a SourceUpdatedEvent to NATS to trigger downstream pipeline processing via Dagster sensors.
+        This method verifies that the uploaded file exists in the datalake storage, creates
+        a placeholder RefDoc to track the file with status=pending, and publishes a
+        SourceUpdatedEvent to NATS to trigger downstream pipeline processing via Dagster sensors.
         """
         try:
             bucket_entity = BucketEntity.get_bucket_by_db_name(database)
@@ -501,8 +412,23 @@ class KnowledgeService:
         exists = create_s3_service().verify_file_exists(container=container, file_path=object_key)
 
         if exists:
+            KnowledgeService._ensure_db_exists(database)
+            source = f"s3://{container}/{object_key}"
+            document_title = object_key.split("/")[-1]
+
+            # Create placeholder - log warning if fails but continue to publish event
             try:
-                KnowledgeService.invalidate_cache()
+                RefDoc.get_or_create_placeholder(
+                    db_alias=database,
+                    source=source,
+                    namespace=namespace,
+                    document_title=document_title,
+                )
+            except Exception as e:
+                logger.warning(f"Failed to create placeholder for {object_key}: {e}")
+
+            # Publish event to trigger pipeline - this must succeed or upload fails
+            try:
                 await KnowledgeService._publish_source_updated_event(
                     nc=nc,
                     database=database,
@@ -510,8 +436,12 @@ class KnowledgeService:
                     file_path=object_key,
                 )
             except Exception as e:
-                logger.exception(f"Failed to publish SourceUpdatedEvent for {object_key}: {e}")
-                # Don't fail the validation - file was successfully uploaded
+                logger.exception(f"Failed to publish event for {object_key}: {e}")
+                raise HTTPException(
+                    status_code=500,
+                    detail="Upload succeeded but processing could not be initiated. Please try again.",
+                ) from e
+
         return DocumentUploadValidationResponse(exists=exists, file_path=object_key, container=container)
 
     @staticmethod

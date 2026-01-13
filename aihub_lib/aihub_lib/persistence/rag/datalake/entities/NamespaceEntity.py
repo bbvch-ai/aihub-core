@@ -3,6 +3,7 @@ import time
 
 from bson import ObjectId
 from mongoengine import Document, EmbeddedDocumentField, IntField, StringField, ValidationError
+from mongoengine.context_managers import switch_db
 
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 
@@ -57,6 +58,7 @@ class NamespaceEntity(Document):
         display_name: LocaleStringEntity | None = None,
         description: LocaleStringEntity | None = None,
         namespace_id: ObjectId | None = None,
+        db_alias: str = "default",
     ) -> "NamespaceEntity":
         sanitized_namespace_name = cls._sanitize_namespace_name(namespace_name)
         cls._validate_namespace_name(sanitized_namespace_name)
@@ -65,45 +67,55 @@ class NamespaceEntity(Document):
         cls._validate_folder_name(resolved_folder_name)
 
         current_time = int(time.time())
-        namespace = cls(
-            id=namespace_id or ObjectId(),
-            bucket_id=bucket_id,
-            namespace_name=sanitized_namespace_name,
-            folder_name=resolved_folder_name,
-            display_name=display_name,
-            description=description,
-            created_at=current_time,
-            updated_at=current_time,
-            inserted_at=current_time,
-        )
-        namespace.save()
-        return namespace
-
-    @classmethod
-    def get_namespace_by_id(cls, namespace_id: str) -> "NamespaceEntity":
-        return cls.objects().get(id=ObjectId(namespace_id))
-
-    @classmethod
-    def get_namespace_by_bucket_and_name(cls, bucket_id: str, namespace_name: str) -> "NamespaceEntity":
-        return cls.objects().get(bucket_id=bucket_id, namespace_name=namespace_name)
-
-    @classmethod
-    def get_namespace_by_bucket_and_folder(cls, bucket_id: str, folder_name: str) -> "NamespaceEntity":
-        return cls.objects().get(bucket_id=bucket_id, folder_name=folder_name)
-
-    @classmethod
-    def get_namespaces_by_bucket(cls, bucket_id: str) -> list["NamespaceEntity"]:
-        return (
-            cls.objects()
-            .filter(
+        with switch_db(cls, db_alias) as SwitchedNamespace:
+            namespace = SwitchedNamespace(
+                id=namespace_id or ObjectId(),
                 bucket_id=bucket_id,
+                namespace_name=sanitized_namespace_name,
+                folder_name=resolved_folder_name,
+                display_name=display_name,
+                description=description,
+                created_at=current_time,
+                updated_at=current_time,
+                inserted_at=current_time,
             )
-            .order_by("namespace_name")
-        )
+            namespace.save()
+            return namespace
 
     @classmethod
-    def get_all_namespaces(cls) -> list["NamespaceEntity"]:
-        return cls.objects().order_by("bucket_id", "namespace_name")
+    def get_namespace_by_id(cls, namespace_id: str, db_alias: str = "default") -> "NamespaceEntity":
+        with switch_db(cls, db_alias) as SwitchedNamespace:
+            return SwitchedNamespace.objects().get(id=ObjectId(namespace_id))
+
+    @classmethod
+    def get_namespace_by_bucket_and_name(
+        cls, bucket_id: str, namespace_name: str, db_alias: str = "default"
+    ) -> "NamespaceEntity":
+        with switch_db(cls, db_alias) as SwitchedNamespace:
+            return SwitchedNamespace.objects().get(bucket_id=bucket_id, namespace_name=namespace_name)
+
+    @classmethod
+    def get_namespace_by_bucket_and_folder(
+        cls, bucket_id: str, folder_name: str, db_alias: str = "default"
+    ) -> "NamespaceEntity":
+        with switch_db(cls, db_alias) as SwitchedNamespace:
+            return SwitchedNamespace.objects().get(bucket_id=bucket_id, folder_name=folder_name)
+
+    @classmethod
+    def get_namespaces_by_bucket(cls, bucket_id: str, db_alias: str = "default") -> list["NamespaceEntity"]:
+        with switch_db(cls, db_alias) as SwitchedNamespace:
+            return (
+                SwitchedNamespace.objects()
+                .filter(
+                    bucket_id=bucket_id,
+                )
+                .order_by("namespace_name")
+            )
+
+    @classmethod
+    def get_all_namespaces(cls, db_alias: str = "default") -> list["NamespaceEntity"]:
+        with switch_db(cls, db_alias) as SwitchedNamespace:
+            return SwitchedNamespace.objects().order_by("bucket_id", "namespace_name")
 
     @classmethod
     def update_namespace(
@@ -113,8 +125,9 @@ class NamespaceEntity(Document):
         folder_name: str | None = None,
         display_name: LocaleStringEntity | None = None,
         description: LocaleStringEntity | None = None,
+        db_alias: str = "default",
     ) -> "NamespaceEntity":
-        namespace = cls.get_namespace_by_id(namespace_id)
+        namespace = cls.get_namespace_by_id(namespace_id, db_alias=db_alias)
         if namespace_name:
             sanitized_namespace_name = cls._sanitize_namespace_name(namespace_name)
             cls._validate_namespace_name(sanitized_namespace_name)
@@ -131,7 +144,7 @@ class NamespaceEntity(Document):
         return namespace
 
     @classmethod
-    def delete_namespace(cls, namespace_id: str) -> "NamespaceEntity":
-        namespace = cls.get_namespace_by_id(namespace_id)
+    def delete_namespace(cls, namespace_id: str, db_alias: str = "default") -> "NamespaceEntity":
+        namespace = cls.get_namespace_by_id(namespace_id, db_alias=db_alias)
         namespace.delete()
         return namespace

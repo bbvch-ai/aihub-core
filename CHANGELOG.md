@@ -5,6 +5,89 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.258.2] - 2026-01-13 - Deepening Knowledge: Insights Now Integral to Document & Node Retrieval
+
+### Added
+
+- ✨ **Enhanced Knowledge Base with Insight Integration:** Introduced the capability to retrieve **Insights** directly as
+  standard documents and nodes within the knowledge base, enabling their use in Retrieval-Augmented Generation (RAG)
+  flows.
+- 📚 **Direct Insight Retrieval by ID:** Added a new method (`InsightEntity.get_by_id`) to directly fetch insights using
+  their unique identifier, streamlining access to structured knowledge.
+- 🌍 **Localized Insight Representation:** Implemented support for localizing insight content when presented as nodes,
+  ensuring that questions, answers, and conversation parts are displayed in the user's preferred language.
+
+### Changed
+
+- 🔄 **Unified Document and Node Retrieval:** Modified the `KnowledgeService` to transparently handle both regular
+  documents and **Insights** when fetching documents by ID or retrieving specific nodes, providing a more consistent API
+  experience.
+- 🛠️ **Refined Insight-to-Document Conversion:** Updated `DocumentDTO` to include a dedicated method for converting an
+  `InsightEntity` into a document data transfer object, standardizing how insights are represented.
+- 🌐 **Improved Insight Source Handling in UI:** Adjusted the web interface to recognize insights as a distinct document
+  source, ensuring the "View Original" action is correctly hidden for insight-based knowledge.
+- 🗄️ **Virtual Bucket Assignment for Insights:** Updated the `extractBucket` utility in the UI to correctly assign a
+  virtual 'insights' bucket for documents originating from MongoDB-stored insights.
+
+### Refactor
+
+- 🧹 **Encapsulated Insight Node Conversion Logic:** Moved the logic for transforming an `InsightEntity` into an
+  `IngestedNode` directly into the `InsightEntity` class, improving modularity and reusability.
+- 📄 **Minor Logging Message Formatting:** Adjusted a logging message in the `DoclingLoader` for improved clarity.
+
+---
+
+## [v0.258.1] - 2026-01-13 - Knowledge Base Evolution: Advanced Document Management and Visibility
+
+### Added
+
+- ✨ **Introduced Document Search and Sorting**: Users can now easily find documents by title or filename and sort them
+  by creation date, update date, or title directly in the Knowledge Base UI.
+- 🚀 **Real-time Document Ingestion Tracking**: Documents uploaded to the data lake are now immediately visible in the UI
+  with a "pending" status, providing real-time feedback on ingestion progress.
+- 📄 **Placeholder Document Support**: The backend now creates `RefDoc` placeholders for newly uploaded files, enabling
+  immediate visibility and consistent tracking throughout the ingestion lifecycle.
+- 🔗 **Deterministic Document IDs**: Implemented a new utility for generating deterministic IDs for `RefDoc` entries
+  based on their source path, improving consistency and data management.
+- 🧩 **Dagster Pipeline Assets for Placeholders**: Integrated new Dagster assets and operations to automate the creation
+  of placeholder `RefDoc` entries for files entering the data lake via SharePoint and local filesystem pipelines.
+
+### Changed
+
+- 🔄 **Unified Document Retrieval Logic**: The Knowledge Base backend has been revamped to use a single, unified approach
+  for fetching documents from the `RefDoc` store, simplifying the architecture and improving consistency.
+- ⬆️ **Enhanced Document Upload Validation**: The document upload process now reliably creates a `RefDoc` placeholder
+  for pending files and includes improved error handling for event publishing, making uploads more robust.
+- 📝 **Clarified DocumentDTO fields**: The `DocumentDTO` fields `source` and `is_ingested` have clearer descriptions,
+  better reflecting the document's state and origin.
+- 🧹 **Refined Document List UI**: The document list now uses consistent field names (`document_title`, `created_at`,
+  `updated_at`) aligning with backend changes and supports the new sorting capabilities.
+- ⚡️ **Improved UI Loading States**: The document list now provides a clearer loading indicator, only showing a full
+  loading state on initial data fetch for a smoother user experience.
+- ⚠️ **Conditional Document Upload Button**: The document upload button is now only visible for knowledge bases that are
+  not configured for automatic synchronization, preventing manual uploads to auto-synced sources.
+- 🗑️ **Enhanced Data Lake File Deletion**: Deleting files from the data lake now automatically cleans up associated
+  `RefDoc` entries from the document store, ensuring data consistency.
+- ⚙️ **Human-in-the-Loop Event Structure**: `HumanInTheLoop` request and response events have been refined to include a
+  `hitl_type` and support more flexible response data types, making them more adaptable to various human interaction
+  patterns.
+
+### Refactor
+
+- 🧹 **Centralized MongoDB Connection Management**: MongoDB connection handling across `aihub_lib` and `aihub_pipeline`
+  has been refactored to use `switch_db` context managers and dedicated helper functions, improving multi-database
+  support and connection stability.
+
+### Removed
+
+- 🗑️ **Deprecated Document Caching Logic**: Custom caching mechanisms for distinguishing between processed and
+  unprocessed documents in the Knowledge Service have been removed, replaced by the new unified `RefDoc` retrieval
+  strategy.
+- 📚 **Streamlined Models API**: Several deprecated model-related DTOs and API endpoints have been removed or
+  consolidated, simplifying the API surface for model management.
+
+---
+
 ## [v0.258.0] - 2026-01-12 - Fortified Core Services: Enhanced Security, Streamlined Configuration, and Improved Observability
 
 ### Security
