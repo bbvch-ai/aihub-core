@@ -1097,6 +1097,8 @@ services:
     container_name: docker-socket-proxy
     image: "tecnativa/docker-socket-proxy:0.3"
     restart: always
+    # Required for Docker socket access in SELinux/AppArmor environments
+    privileged: true
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:2375/_ping"]
       interval: 10s
