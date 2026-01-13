@@ -46,6 +46,7 @@
 import {
   buildFormKitSchema,
   extractRepeaterConfigs,
+  normalizeFormLocaleStrings,
   type FormElement,
   type RepeaterConfig,
 } from '@core/composables/form/useFormKitTransform'
@@ -168,7 +169,8 @@ const repeaterElements = computed<RepeaterConfig[]>(() => {
 })
 
 async function submitHandler() {
-  emit('submit', data.value)
+  const normalizedData = normalizeFormLocaleStrings(data.value)
+  emit('submit', normalizedData)
 }
 </script>
 

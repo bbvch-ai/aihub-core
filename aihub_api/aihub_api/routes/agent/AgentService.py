@@ -3,12 +3,24 @@ import logging
 from asyncio import sleep
 from typing import Annotated, Any
 
+from bson import ObjectId
+from cachetools import TTLCache
+from fastapi import HTTPException
+from nats.aio.client import Client as NATS
+
+from aihub_api.routes.agent.dto.AgentClassDTO import AgentClassDTO
+from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
+from aihub_api.routes.agent.dto.AgentInstanceDTO import AgentInstanceDTO
+from aihub_api.routes.agent.dto.CreateAgentRequest import CreateAgentRequest
+from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
+from aihub_api.routes.thread.ThreadService import ThreadService
+from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
+from aihub_lib.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from aihub_lib.nats.events import (
     BaseEvent,
     DisplayEvent,
@@ -17,8 +29,8 @@ from aihub_lib.nats.events import (
     StartEvent,
     StopEvent,
 )
-from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentClassDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
+from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentClassDiscoveryResponseEvent
 from aihub_lib.nats.events.human_in_the_loop.request import HumanInTheLoopRequestEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
@@ -31,18 +43,6 @@ from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEn
 from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
-from bson import ObjectId
-from cachetools import TTLCache
-from fastapi import HTTPException
-from nats.aio.client import Client as NATS
-
-from aihub_api.routes.agent.dto.AgentClassDTO import AgentClassDTO
-from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
-from aihub_api.routes.agent.dto.AgentInstanceDTO import AgentInstanceDTO
-from aihub_api.routes.agent.dto.CreateAgentRequest import CreateAgentRequest
-from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
-from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
-from aihub_api.routes.thread.ThreadService import ThreadService
 
 logger = logging.getLogger(__name__)
 
@@ -724,7 +724,7 @@ class AgentService:
                 f"Valid fields are: {', '.join(sorted(valid_fields))}",
             )
 
-        config = request.configuration
+        config = _normalize_empty_locale_strings(request.configuration)
         name_data = config.get("name", {})
         description_data = config.get("description", {})
         icon = config.get("icon", agent_class_dto.agent_config_specs.icon or "meteor-icons:robot")

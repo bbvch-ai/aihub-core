@@ -128,6 +128,7 @@ import {
   buildFormKitSchema,
   extractRepeaterConfigs,
   getFormkitType,
+  normalizeFormLocaleStrings,
 } from '@core/composables/form/useFormKitTransform'
 
 import type { AgentClassDto } from '@core/composables/agent/useAgentClasses'
@@ -267,11 +268,12 @@ async function handleSubmit() {
   if (!canSubmit.value) return
 
   try {
+    const normalizedConfig = normalizeFormLocaleStrings(formData.value)
     await createAgent({
       request: {
         agent_class: selectedClass.value,
         agent_id: agentId.value,
-        configuration: formData.value,
+        configuration: normalizedConfig,
       },
     })
 

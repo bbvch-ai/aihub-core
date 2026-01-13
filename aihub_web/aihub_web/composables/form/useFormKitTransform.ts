@@ -225,3 +225,70 @@ export function buildFormKitSchema(
     return []
   }
 }
+
+const LOCALE_KEYS = new Set(['de', 'en', 'fr', 'it'])
+
+/**
+ * Checks if a value is a LocaleString object (has only locale keys: de, en, fr, it).
+ */
+function isLocaleStringObject(value: unknown): value is Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false
+  }
+  const keys = Object.keys(value)
+  return keys.length > 0 && keys.every(key => LOCALE_KEYS.has(key))
+}
+
+/**
+ * Checks if all values in a LocaleString object are empty (null, undefined, or empty string).
+ */
+function isEmptyLocaleString(localeObj: Record<string, unknown>): boolean {
+  return Object.values(localeObj).every(val => val === null || val === undefined || val === '')
+}
+
+/**
+ * Normalizes a LocaleString object:
+ * - If all locale values are empty → returns null
+ * - If any locale value has content → returns object with all fields as strings (empty string for unfilled)
+ */
+function normalizeLocaleString(localeObj: Record<string, unknown>): Record<string, string> | null {
+  if (isEmptyLocaleString(localeObj)) {
+    return null
+  }
+  return {
+    de: (localeObj.de as string) || '',
+    en: (localeObj.en as string) || '',
+    fr: (localeObj.fr as string) || '',
+    it: (localeObj.it as string) || '',
+  }
+}
+
+/**
+ * Recursively normalizes LocaleString fields in form data before submission.
+ * - LocaleString objects with all empty values → null
+ * - LocaleString objects with any content → all fields as strings
+ * - Other values are recursively processed
+ */
+export function normalizeFormLocaleStrings<T>(data: T): T {
+  if (data === null || data === undefined) {
+    return data
+  }
+
+  if (Array.isArray(data)) {
+    return data.map(item => normalizeFormLocaleStrings(item)) as T
+  }
+
+  if (typeof data === 'object') {
+    if (isLocaleStringObject(data)) {
+      return normalizeLocaleString(data as Record<string, unknown>) as T
+    }
+
+    const result: Record<string, unknown> = {}
+    for (const [key, value] of Object.entries(data)) {
+      result[key] = normalizeFormLocaleStrings(value)
+    }
+    return result as T
+  }
+
+  return data
+}
