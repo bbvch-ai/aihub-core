@@ -214,7 +214,16 @@ class KnowledgeService:
     def get_document_by_id(db: str, document_id: str) -> DocumentDTO:
         """
         Retrieves a single document by its ID.
+
+        For insights (db='insights'), retrieves from MongoDB InsightEntity.
+        For regular documents, retrieves from the RefDoc docstore.
         """
+        # Check if this is an insight document
+        insight = InsightEntity.get_by_id(document_id)
+        if insight is not None:
+            return DocumentDTO.from_insight(insight)
+
+        # Fall back to regular document lookup
         KnowledgeService._ensure_db_exists(db)
         ref_doc = RefDoc.by_id(db_alias=db, doc_id=document_id)
         return DocumentDTO.from_ref_doc(ref_doc)
