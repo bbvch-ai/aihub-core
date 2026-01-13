@@ -14,12 +14,29 @@ from aihub_agent.agents.ExpertAskingAgent.events.AskExpertEvent import AskExpert
 from aihub_agent.agents.ExpertAskingAgent.events.AskExpertStartEvent import AskExpertStartEvent
 from aihub_agent.agents.ExpertAskingAgent.events.ExpertAnswerInsufficientEvent import ExpertAnswerInsufficientEvent
 from aihub_agent.agents.ExpertAskingAgent.events.ExpertAnswerSufficientEvent import ExpertAnswerSufficientEvent
+from aihub_agent.agents.ExpertAskingAgent.events.NamespaceAwareAskExpertStartEvent import (
+    NamespaceAwareAskExpertStartEvent,
+)
 from aihub_agent.agents.ExpertAskingAgent.events.NoAnswerStopEvent import NoAnswerStopEvent
 from aihub_agent.agents.ExpertAskingAgent.ExpertAskingAgentConfig import ExpertAskingAgentConfig
 from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.context.thread.ThreadContext import ThreadContext
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
 from aihub_agent.workflow.decorators.step import step
+
+
+def _get_insight_namespaces(
+    initial_event: AskExpertStartEvent,
+    config: ExpertAskingAgentConfig,
+) -> list[str]:
+    """Determine namespaces for insight storage.
+
+    Uses namespaces from event if available (NamespaceAwareAskExpertStartEvent),
+    otherwise falls back to default_namespaces from config.
+    """
+    if isinstance(initial_event, NamespaceAwareAskExpertStartEvent) and initial_event.selected_namespaces:
+        return [f"{pair.bucket_name}/{pair.namespace_name}" for pair in initial_event.selected_namespaces]
+    return config.default_namespaces
 
 
 class ExpertAskingAgent(Agent):
@@ -137,12 +154,15 @@ class ExpertAskingAgent(Agent):
             chat_history = await run_context.get("chat_history", [])
             chat_history = [ChatMessage(**message) for message in chat_history]
 
+            # Determine namespaces from event or config fallback
+            namespaces = _get_insight_namespaces(initial_question_event, agent_config)
+
             # Create insight from expert conversation
             InsightEntity.create_insight(
                 question=initial_question_event.question_to_expert,
                 expert_answer=event.response,
                 conversation=[InsightMessage(role=msg.role, content=msg.content) for msg in chat_history],
-                namespace=agent_config.insight_namespace,
+                namespaces=namespaces,
                 source=InsightSource(
                     thread_id=thread_context.thread_id,
                     expert_user_id=event.expert_user_id,

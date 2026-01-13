@@ -25,6 +25,9 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.agents.ExpertAskingAgent.events.AskExpertStartEvent import AskExpertStartEvent
+from aihub_agent.agents.ExpertAskingAgent.events.NamespaceAwareAskExpertStartEvent import (
+    NamespaceAwareAskExpertStartEvent,
+)
 from aihub_agent.agents.ExpertRagAgent.configs.ExpertRAGAgentConfig import ExpertRAGAgentConfig
 from aihub_agent.agents.RagAgent.events.ContextInsufficientWithQueryEvent import ContextInsufficientWithQueryEvent
 from aihub_agent.agents.RagAgent.events.ExpertAnswerContextEvent import ExpertAnswerContextEvent
@@ -313,14 +316,26 @@ class ExpertRAGAgent(Agent):
             t("agent.expert_grounded_agent.messages.expert_answer_coming_soon"),
             model_name=ExpertRAGAgent.__name__,
         )
-        return AgentInTheLoop.invoke(
-            agent_class=agent_config.expert_escalation.expert_asking_agent_class,
-            agent_id=agent_config.expert_escalation.expert_asking_agent_id,
-            start_event=AskExpertStartEvent(
+
+        # Forward namespaces to ExpertAskingAgent for insight storage
+        if isinstance(user_message_event, NamespaceAwareUserMessageEvent):
+            start_event: AskExpertStartEvent = NamespaceAwareAskExpertStartEvent(
                 question_to_expert=user_message_event.user_query,
                 locale=user_message_event.locale,
                 user=user_message_event.user,
-            ),
+                selected_namespaces=user_message_event.selected_namespaces,
+            )
+        else:
+            start_event = AskExpertStartEvent(
+                question_to_expert=user_message_event.user_query,
+                locale=user_message_event.locale,
+                user=user_message_event.user,
+            )
+
+        return AgentInTheLoop.invoke(
+            agent_class=agent_config.expert_escalation.expert_asking_agent_class,
+            agent_id=agent_config.expert_escalation.expert_asking_agent_id,
+            start_event=start_event,
         )
 
     @step(

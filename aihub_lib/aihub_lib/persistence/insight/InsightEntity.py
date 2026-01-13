@@ -49,16 +49,19 @@ class InsightEntity(Document):
 
     Insights are knowledge pieces created when an expert successfully answers
     a question. They store the raw question/answer data for future reference.
+
+    Namespaces use compound format "bucket_name/namespace_name" to identify
+    which knowledge domains the insight belongs to.
     """
 
     meta = {
         "collection": "insights",
         "strict": False,
         "indexes": [
-            {"fields": ["namespace"]},
+            {"fields": ["namespaces"]},
             {"fields": ["created_at"]},
             {"fields": ["source.thread_id"]},
-            {"fields": ["namespace", "creator.agent_class", "creator.agent_id", "-created_at"]},
+            {"fields": ["namespaces", "creator.agent_class", "creator.agent_id", "-created_at"]},
         ],
     }
 
@@ -67,8 +70,8 @@ class InsightEntity(Document):
     expert_answer = StringField(required=True)
     conversation = ListField(EmbeddedDocumentField(InsightMessage), required=True)
 
-    # Organization
-    namespace = StringField(required=True)
+    # Organization - multiple namespaces in compound format "bucket_name/namespace_name"
+    namespaces = ListField(StringField(), required=True)
 
     # Provenance
     source = EmbeddedDocumentField(InsightSource, required=True)
@@ -85,17 +88,21 @@ class InsightEntity(Document):
         question: str,
         expert_answer: str,
         conversation: list[InsightMessage],
-        namespace: str,
+        namespaces: list[str],
         source: InsightSource,
         creator: InsightCreator,
     ) -> "InsightEntity":
-        """Create a new insight from expert conversation data."""
+        """Create a new insight from expert conversation data.
+
+        Args:
+            namespaces: List of compound namespace strings in format "bucket_name/namespace_name".
+        """
         entity = cls(
             id=ObjectId(),
             question=question,
             expert_answer=expert_answer,
             conversation=conversation,
-            namespace=namespace,
+            namespaces=namespaces,
             source=source,
             creator=creator,
         )
@@ -132,13 +139,17 @@ class InsightEntity(Document):
         created_at: str = self.created_at.isoformat().replace("+00:00", "Z")
         updated_at: str = self.updated_at.isoformat().replace("+00:00", "Z")
 
+        # Use first namespace for IngestedNode (single namespace field)
+        # Full namespace list is available in metadata
+        primary_namespace = self.namespaces[0] if self.namespaces else "default"
+
         return IngestedNode(
             id=str(self.id),
             content=content,
             document_id=str(self.id),
             source=f"insight:{self.id}",
             source_origin=self.source.thread_id,
-            namespace=self.namespace,
+            namespace=primary_namespace,
             document_title=self.question,
             created_at=created_at,
             updated_at=updated_at,
@@ -149,24 +160,48 @@ class InsightEntity(Document):
                 "expert_name": self.source.expert_name,
                 "agent_class": self.creator.agent_class,
                 "agent_id": self.creator.agent_id,
+                "namespaces": self.namespaces,
             },
         )
 
     @classmethod
     @trace_fn
-    def get_by_namespace_and_agent(
+    def get_by_namespaces_and_agent(
         cls,
-        namespace: str,
+        namespaces: list[str],
         agent_class: str,
         agent_id: str,
         limit: int = 100,
     ) -> list["InsightEntity"]:
         """
-        Get insights for a namespace filtered by agent class and id.
+        Get insights matching any of the given namespaces, filtered by agent class and id.
+
+        Args:
+            namespaces: List of compound namespace strings in format "bucket_name/namespace_name".
         """
         return list(
             cls.objects(
-                namespace=namespace,
+                namespaces__in=namespaces,
+                creator__agent_class=agent_class,
+                creator__agent_id=agent_id,
+            )
+            .order_by("-created_at")
+            .limit(limit)
+        )
+
+    @classmethod
+    @trace_fn
+    def get_all_by_agent(
+        cls,
+        agent_class: str,
+        agent_id: str,
+        limit: int = 100,
+    ) -> list["InsightEntity"]:
+        """
+        Get all insights for an agent without namespace filtering.
+        """
+        return list(
+            cls.objects(
                 creator__agent_class=agent_class,
                 creator__agent_id=agent_id,
             )

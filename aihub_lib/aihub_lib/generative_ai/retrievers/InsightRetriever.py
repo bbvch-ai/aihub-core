@@ -9,7 +9,11 @@ from aihub_lib.persistence.insight import InsightEntity
 
 
 class InsightRetriever(BaseRetriever):
-    """Retriever for insights from MongoDB."""
+    """Retriever for insights from MongoDB.
+
+    Supports namespace filtering when index_namespaces is set (via NamespaceSelectionAgent flow),
+    or retrieves all insights for the agent when index_namespaces is empty (direct flow).
+    """
 
     logger = logging.getLogger(__name__)
 
@@ -20,17 +24,26 @@ class InsightRetriever(BaseRetriever):
     @trace_fn
     async def retrieve(self, query: str, t: LocaleHandler) -> list[IngestedNode]:
         """
-        Retrieve all insights for the configured namespace and agent.
+        Retrieve insights for the configured agent, optionally filtered by namespaces.
 
-        Note: The query parameter is currently unused. This retriever fetches all
-        insights for the configured namespace/agent without semantic filtering.
+        When index_namespaces is set, only retrieves insights matching those namespaces.
+        When index_namespaces is empty, retrieves all insights for the agent.
+
+        Note: The query parameter is currently unused. This retriever fetches insights
+        without semantic filtering.
         """
         try:
-            insights = InsightEntity.get_by_namespace_and_agent(
-                namespace=self.config.namespace,
-                agent_class=self.config.agent_class,
-                agent_id=self.config.agent_id,
-            )
+            if self.config.index_namespaces:
+                insights = InsightEntity.get_by_namespaces_and_agent(
+                    namespaces=self.config.index_namespaces,
+                    agent_class=self.config.agent_class,
+                    agent_id=self.config.agent_id,
+                )
+            else:
+                insights = InsightEntity.get_all_by_agent(
+                    agent_class=self.config.agent_class,
+                    agent_id=self.config.agent_id,
+                )
             return [insight.to_ingested_node(t) for insight in insights]
         except Exception as e:
             self.logger.error(f"Failed to retrieve insights: {e}")
