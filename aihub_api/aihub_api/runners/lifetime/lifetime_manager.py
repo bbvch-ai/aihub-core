@@ -215,6 +215,10 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         # Close Milvus connection
         milvus_client.close()
 
+        # Close S3 connections
+        s3_client.close()
+        s3_public_client.close()
+
     finally:
         # Close NATS connection on exit
         await nc.close()

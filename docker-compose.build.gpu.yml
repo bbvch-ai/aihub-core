@@ -1374,7 +1374,6 @@ services:
       # MILVUS
       MILVUS_URL: http://milvus-standalone:19530
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
-      MILVUS_TOKEN: root:${MILVUS_ROOT_PASSWORD}
       MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
       # S3 Access connection
@@ -1579,7 +1578,6 @@ services:
       # MILVUS
       MILVUS_URL: http://milvus-standalone:19530
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
-      MILVUS_TOKEN: root:${MILVUS_ROOT_PASSWORD}
       MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
       # S3 Access connection
@@ -1640,7 +1638,6 @@ services:
       # MILVUS
       MILVUS_URL: http://milvus-standalone:19530
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
-      MILVUS_TOKEN: root:${MILVUS_ROOT_PASSWORD}
       MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
       # S3 Access connection
@@ -1772,7 +1769,7 @@ services:
       # MILVUS
       MILVUS_URL: http://milvus-standalone:19530
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
-      MILVUS_TOKEN: root:${MILVUS_ROOT_PASSWORD}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
       # DAGSTER
       DAGSTER_HOME: /dagster_home
@@ -1834,7 +1831,7 @@ services:
       # MILVUS
       MILVUS_URL: http://milvus-standalone:19530
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
-      MILVUS_TOKEN: root:${MILVUS_ROOT_PASSWORD}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
       # DAGSTER
       DAGSTER_HOME: /dagster_home
