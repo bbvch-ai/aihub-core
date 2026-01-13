@@ -20,6 +20,7 @@ from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import Mil
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
+from aihub_agent.agents.RagAgent.forms import create_rag_agent_config_form
 from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
 from aihub_agent.runners.AgentRunner import AgentRunner
 
@@ -28,8 +29,12 @@ enable_logging()
 
 async def main():
     aihub_settings = AIHubSettings()
+
+    form = create_rag_agent_config_form()
+
     runner = AgentRunner(
         agent_type=RAGAgent,
+        form=form,
         default_agent_config=RAGAgentConfig(
             agent_class=RAGAgent.__name__,
             agent_id="rag_agent",

@@ -34,6 +34,7 @@ async def main():
 
     runner = AgentRunner(
         agent_type=RAGAgent,
+        form=form,
         default_agent_config=RAGAgentConfig(
             agent_class=RAGAgent.__name__,
             agent_id="rag_dev_agent",
