@@ -92,6 +92,8 @@ def _create_vector_store(context, **kwargs):
         "collection_name": context["collection_name"],
         "embedding_vector_dimension": context["embedding_dimension"],
         "index_type": MilvusIndexType.FLAT,
+        "uri": context["milvus_uri"],
+        "token": context.get("milvus_token"),
     }
 
     # Create or reuse client with token authentication

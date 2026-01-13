@@ -6,6 +6,7 @@ from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQu
 from llama_index.core.vector_stores.utils import node_to_metadata_dict
 from llama_index.vector_stores.milvus import MilvusVectorStore
 from llama_index.vector_stores.milvus.utils import BaseSparseEmbeddingFunction
+from pymilvus import MilvusClient
 
 from aihub_lib.persistence.rag.vectors.node_metadata import NAMESPACE
 from aihub_lib.persistence.rag.vectors.stores.MilvusPartitionManager import (
@@ -26,6 +27,9 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
     """
     Memory-efficient Milvus store that loads only queried partitions based on namespace.
 
+    Accepts a pre-configured MilvusClient for dependency injection, enabling
+    connection reuse across the application and proper health checking.
+
     Limitations:
     - Copies insertion logic from base class (LlamaIndex doesn't support partition injection)
     - Overrides HYBRID search (base class doesn't forward kwargs to _hybrid_search)
@@ -38,8 +42,27 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
     (e.g., collections created before this PR or with a different partition count).
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        client: MilvusClient,
+        uri: str,
+        token: str | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Initialize with a pre-configured MilvusClient.
+
+        LlamaIndex's MilvusVectorStore creates its own internal clients. We pass uri/token
+        to satisfy the parent, then override with our pre-configured client for actual operations.
+        This enables connection reuse and proper health checking.
+        """
+        # Pass uri/token to parent so it doesn't use the default './milvus_llamaindex.db'
+        super().__init__(uri=uri, token=token or "", *args, **kwargs)
+
+        # Override the parent's internally-created client with our pre-configured one
+        self._milvusclient = client
+
         self._has_manual_partitions: bool | None = None
 
     def _check_has_manual_partitions(self) -> bool:

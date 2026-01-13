@@ -21,4 +21,6 @@ class MilvusVectorStoreConfig(BasePydanticVectorStoreConfig):
             client=client,
             collection_name=self.collection_name,
             embedding_vector_dimension=self.dimensions,
+            uri=self.uri,
+            token=token,
         )

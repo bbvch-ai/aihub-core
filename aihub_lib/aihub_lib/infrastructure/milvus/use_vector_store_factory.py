@@ -14,13 +14,15 @@ def use_vector_store_factory(request: Request) -> VectorStoreFactory:
     underlying Milvus connection for health checks and connection pooling.
     """
     milvus_client: MilvusClient = request.app.state.milvus_client
-    dimension = MilvusSettings().DIMENSION
+    settings = MilvusSettings()
 
     def factory(collection: str):
         return create_milvus_vector_store(
             client=milvus_client,
             collection_name=collection,
-            embedding_vector_dimension=dimension,
+            embedding_vector_dimension=settings.DIMENSION,
+            uri=settings.URL,
+            token=settings.get_token(),
         )
 
     return factory

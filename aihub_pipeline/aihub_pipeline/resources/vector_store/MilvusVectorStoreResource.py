@@ -88,11 +88,12 @@ class MilvusVectorStoreResource(ConfigurableResource[MilvusVectorStore]):
     token: Annotated[str | None, Field(description="Authentication token in format 'username:password'")] = None
 
     def create_resource(self, context: InitResourceContext) -> MilvusVectorStore:
-        client = MilvusClient(uri=self.uri)
+        client = MilvusClient(uri=self.uri, token=self.token)
         return create_milvus_vector_store(
             client=client,
             collection_name=self.collection_name,
             embedding_vector_dimension=self.embedding_vector_dimension,
             index_type=self.index_type,
+            uri=self.uri,
             token=self.token,
         )

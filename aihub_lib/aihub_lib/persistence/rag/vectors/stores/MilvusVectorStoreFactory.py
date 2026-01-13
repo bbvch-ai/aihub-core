@@ -33,6 +33,8 @@ def create_milvus_vector_store(
     index_type: Annotated[MilvusIndexType, Field(description="Vector index type for the embedding field")] = (
         MilvusIndexType.HNSW
     ),
+    uri: Annotated[str, Field(description="Milvus server URI")] = "http://localhost:19530",
+    token: Annotated[str | None, Field(description="Authentication token (format: username:password)")] = None,
 ) -> MilvusVectorStore:
     """
     Factory for namespace-partitioned vector stores optimized for RAG workloads.
@@ -100,6 +102,8 @@ def create_milvus_vector_store(
 
     return PartitionAwareMilvusVectorStore(
         client=client,
+        uri=uri,
+        token=token,
         collection_name=collection_name,
         dim=embedding_vector_dimension,
         overwrite=False,
