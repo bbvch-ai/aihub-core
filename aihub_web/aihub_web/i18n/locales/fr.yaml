@@ -325,6 +325,8 @@ knowledge:
     click_to_view: "Cliquez sur le bouton ci-dessous pour afficher le document PDF original."
   documents:
     title: "Documents"
+    search:
+      placeholder: "Rechercher par titre de document..."
     upload:
       title: "Télécharger des documents"
       drag_and_drop: "Glissez les fichiers ici ou cliquez pour sélectionner des fichiers"

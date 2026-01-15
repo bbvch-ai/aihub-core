@@ -62,230 +62,9 @@ export type AddUserRequest = {
 };
 
 /**
- * AgentClassDTO
- * Encapsulates the data transfer object (DTO) for an agent class.
- * Contains information about the agent class, including its name and configuration specifications.
- */
-export type AgentClassDtoReadable = {
-    /**
-     * Agent Class
-     * The agent's class identifier (e.g., 'my_agent_class').
-     */
-    agent_class: string;
-    /**
-     * Configuration specifications of the agent class, including schema and parameters.
-     */
-    agent_config_specs: AgentConfigSpecsReadable;
-    /**
-     * Start Events
-     * A list of `EventSpecs` representing events that can start this agent's workflow.
-     */
-    start_events: Array<EventSpecs>;
-    /**
-     * Stop Events
-     * A list of `EventSpecs` representing events that can stop this agent's workflow.
-     */
-    stop_events: Array<EventSpecs>;
-    /**
-     * Hitl Request Events
-     * A list of `EventSpecs` representing human-in-the-loop request events this agent can produce.
-     */
-    hitl_request_events: Array<EventSpecs>;
-    /**
-     * Hitl Response Events
-     * A list of `EventSpecs` representing human-in-the-loop response events this agent can accept.
-     */
-    hitl_response_events: Array<EventSpecs>;
-    /**
-     * A network graph of the agent class, showing how different components are connected and interact.
-     */
-    network_graph: WorkflowGraph;
-    /**
-     * Is Conversational
-     * Whether the agent class can participate in a chat-based conversation
-     */
-    is_conversational: boolean;
-    /**
-     * Is Online
-     * Indicates whether the agent class is online and reachable.
-     */
-    is_online?: boolean | null;
-    /**
-     * The default agent configuration for this agent class. This is the configuration that will be used if no specific configuration is provided.
-     */
-    default_agent_config: AgentConfigReadable;
-};
-
-/**
- * AgentClassDTO
- * Encapsulates the data transfer object (DTO) for an agent class.
- * Contains information about the agent class, including its name and configuration specifications.
- */
-export type AgentClassDtoWritable = {
-    /**
-     * Agent Class
-     * The agent's class identifier (e.g., 'my_agent_class').
-     */
-    agent_class: string;
-    /**
-     * Configuration specifications of the agent class, including schema and parameters.
-     */
-    agent_config_specs: AgentConfigSpecsWritable;
-    /**
-     * Start Events
-     * A list of `EventSpecs` representing events that can start this agent's workflow.
-     */
-    start_events: Array<EventSpecs>;
-    /**
-     * Stop Events
-     * A list of `EventSpecs` representing events that can stop this agent's workflow.
-     */
-    stop_events: Array<EventSpecs>;
-    /**
-     * Hitl Request Events
-     * A list of `EventSpecs` representing human-in-the-loop request events this agent can produce.
-     */
-    hitl_request_events: Array<EventSpecs>;
-    /**
-     * Hitl Response Events
-     * A list of `EventSpecs` representing human-in-the-loop response events this agent can accept.
-     */
-    hitl_response_events: Array<EventSpecs>;
-    /**
-     * A network graph of the agent class, showing how different components are connected and interact.
-     */
-    network_graph: WorkflowGraph;
-    /**
-     * Is Conversational
-     * Whether the agent class can participate in a chat-based conversation
-     */
-    is_conversational: boolean;
-    /**
-     * Is Online
-     * Indicates whether the agent class is online and reachable.
-     */
-    is_online?: boolean | null;
-    /**
-     * The default agent configuration for this agent class. This is the configuration that will be used if no specific configuration is provided.
-     */
-    default_agent_config: AgentConfigWritable;
-};
-
-/**
- * AgentConfig
- * The agent config is a flexible way to configure the runtime behavior of an agent. It can ensure that two agents
- * that follow the same workflow can still be configured to achieve different outcomes through a different
- * set of configurations.
- *
- * Usually, you will want to inherit from this AgentConfig and pass it to your runner.
- * The dispatcher will then flexibly inject the config into each step,
- * giving you full control over the agent's runtime behavior.
- *
- * Note that you can also define configs for individual workflow steps! Simply by naming the attribute the same
- * way as your step, and assigning it a value of type `StepConfig`, you can configure the step's behavior.
- *
- * ```python
- * class StepXConfig(StepConfig):
- * some_setting: str
- *
- * class MyCustomAgentConfig(AgentConfig):
- * step_x: StepXConfig = StepXConfig(some_setting="some value")
- *
- * class MyAgent(Agent):
- * @step()
- * def step_x(self, step_x_config: StepXConfig):
- * print(step_x_config.some_setting)
- * ```
- */
-export type AgentConfigReadable = {
-    /**
-     * The name of the process or agent.
-     */
-    name: LocaleString;
-    /**
-     * The description of the process or agent.
-     */
-    description: LocaleString;
-    /**
-     * Icon
-     * The icon representing the process or agent.
-     */
-    icon?: string;
-    /**
-     * Agent Class
-     * The class name of the agent, used for identification.
-     */
-    agent_class: string;
-    /**
-     * Agent Id
-     * Uniquely identifies the agent instance.
-     */
-    agent_id: string;
-    /**
-     * Form Name
-     * The form type name, used for polymorphic deserialization.
-     */
-    readonly _form_name: string;
-    [key: string]: unknown | LocaleString | string | undefined;
-};
-
-/**
- * AgentConfig
- * The agent config is a flexible way to configure the runtime behavior of an agent. It can ensure that two agents
- * that follow the same workflow can still be configured to achieve different outcomes through a different
- * set of configurations.
- *
- * Usually, you will want to inherit from this AgentConfig and pass it to your runner.
- * The dispatcher will then flexibly inject the config into each step,
- * giving you full control over the agent's runtime behavior.
- *
- * Note that you can also define configs for individual workflow steps! Simply by naming the attribute the same
- * way as your step, and assigning it a value of type `StepConfig`, you can configure the step's behavior.
- *
- * ```python
- * class StepXConfig(StepConfig):
- * some_setting: str
- *
- * class MyCustomAgentConfig(AgentConfig):
- * step_x: StepXConfig = StepXConfig(some_setting="some value")
- *
- * class MyAgent(Agent):
- * @step()
- * def step_x(self, step_x_config: StepXConfig):
- * print(step_x_config.some_setting)
- * ```
- */
-export type AgentConfigWritable = {
-    /**
-     * The name of the process or agent.
-     */
-    name: LocaleString;
-    /**
-     * The description of the process or agent.
-     */
-    description: LocaleString;
-    /**
-     * Icon
-     * The icon representing the process or agent.
-     */
-    icon?: string;
-    /**
-     * Agent Class
-     * The class name of the agent, used for identification.
-     */
-    agent_class: string;
-    /**
-     * Agent Id
-     * Uniquely identifies the agent instance.
-     */
-    agent_id: string;
-    [key: string]: unknown | LocaleString | string | undefined;
-};
-
-/**
  * AgentConfigDTO
  */
-export type AgentConfigDtoReadable = {
+export type AgentConfigDto = {
     /**
      * Agent Id
      * The id of the agent.
@@ -306,136 +85,6 @@ export type AgentConfigDtoReadable = {
      * The icon representing the agent.
      */
     icon?: string;
-    /**
-     * Form
-     * Dynamic form configuration for agent runtime settings.
-     */
-    form?: Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | RepeaterReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable> | null;
-};
-
-/**
- * AgentConfigDTO
- */
-export type AgentConfigDtoWritable = {
-    /**
-     * Agent Id
-     * The id of the agent.
-     */
-    agent_id: string;
-    /**
-     * Name
-     * The name of the agent.
-     */
-    name: string;
-    /**
-     * Description
-     * The description of the agent.
-     */
-    description: string;
-    /**
-     * Icon
-     * The icon representing the agent.
-     */
-    icon?: string;
-    /**
-     * Form
-     * Dynamic form configuration for agent runtime settings.
-     */
-    form?: Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | RepeaterWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable> | null;
-};
-
-/**
- * AgentConfigSpecs
- * Defines a specification for an agent's configuration.
- */
-export type AgentConfigSpecsReadable = {
-    /**
-     * The name of the process or agent.
-     */
-    name: LocaleString;
-    /**
-     * The description of the process or agent.
-     */
-    description: LocaleString;
-    /**
-     * Icon
-     * The icon representing the process or agent.
-     */
-    icon?: string;
-    /**
-     * Agent Class
-     * The class name of the agent, used for identification.
-     */
-    agent_class: string;
-    /**
-     * Agent Id
-     * Uniquely identifies the agent instance.
-     */
-    agent_id: string;
-    /**
-     * Form
-     * Formkit elements of the Agent Config.
-     */
-    form?: Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | RepeaterReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable>;
-};
-
-/**
- * AgentConfigSpecs
- * Defines a specification for an agent's configuration.
- */
-export type AgentConfigSpecsWritable = {
-    /**
-     * The name of the process or agent.
-     */
-    name: LocaleString;
-    /**
-     * The description of the process or agent.
-     */
-    description: LocaleString;
-    /**
-     * Icon
-     * The icon representing the process or agent.
-     */
-    icon?: string;
-    /**
-     * Agent Class
-     * The class name of the agent, used for identification.
-     */
-    agent_class: string;
-    /**
-     * Agent Id
-     * Uniquely identifies the agent instance.
-     */
-    agent_id: string;
-    /**
-     * Form
-     * Formkit elements of the Agent Config.
-     */
-    form?: Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | RepeaterWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable>;
-};
-
-/**
- * AgentConfigurationDataDTO
- * Response containing the current configuration data for an agent.
- */
-export type AgentConfigurationDataDto = {
-    /**
-     * Agent Class
-     * The agent's class identifier.
-     */
-    agent_class: string;
-    /**
-     * Agent Id
-     * The agent's instance identifier.
-     */
-    agent_id: string;
-    /**
-     * Configuration
-     * The current configuration values as key-value pairs. Keys match the 'name' fields from the agent's form elements.
-     */
-    configuration: {
-        [key: string]: unknown;
-    };
 };
 
 /**
@@ -446,7 +95,7 @@ export type AgentConfigurationDataDto = {
  * event models and the publicly exposed fields in HTTP responses.
  * By using `AgentDTO`, the API can evolve independently from the internal event representations.
  */
-export type AgentDtoReadable = {
+export type AgentDto = {
     /**
      * Agent Class
      * The agent's class identifier (e.g., 'my_agent_class').
@@ -460,66 +109,7 @@ export type AgentDtoReadable = {
     /**
      * Configuration details of the agent, including name, description, and prompts.
      */
-    agent_config: AgentConfigDtoReadable;
-    /**
-     * Is Conversational
-     * Whether the agent can participate in a chat-based conversation
-     */
-    is_conversational: boolean;
-    /**
-     * Start Events
-     * A list of `EventSpecs` representing events that can start this agent's workflow.
-     */
-    start_events: Array<EventSpecs>;
-    /**
-     * Stop Events
-     * A list of `EventSpecs` representing events that can stop this agent's workflow.
-     */
-    stop_events: Array<EventSpecs>;
-    /**
-     * Hitl Request Events
-     * A list of `EventSpecs` representing human-in-the-loop request events this agent can produce.
-     */
-    hitl_request_events: Array<EventSpecs>;
-    /**
-     * Hitl Response Events
-     * A list of `EventSpecs` representing human-in-the-loop response events this agent can accept.
-     */
-    hitl_response_events: Array<EventSpecs>;
-    /**
-     * A network graph of the agent, showing how different components are connected and interact.
-     */
-    network_graph: WorkflowGraph;
-    /**
-     * Is Online
-     * Indicates whether the agent is online and reachable.
-     */
-    is_online?: boolean | null;
-};
-
-/**
- * AgentDTO
- * A data transfer object for representing agent information in responses.
- * This DTO standardizes how agent data is returned from the service layer to the controller,
- * and subsequently to the API response. It helps maintain a clean separation between the internal
- * event models and the publicly exposed fields in HTTP responses.
- * By using `AgentDTO`, the API can evolve independently from the internal event representations.
- */
-export type AgentDtoWritable = {
-    /**
-     * Agent Class
-     * The agent's class identifier (e.g., 'my_agent_class').
-     */
-    agent_class: string;
-    /**
-     * Agent Id
-     * Unique identifier for the agent instance (e.g., 'agent_123').
-     */
-    agent_id: string;
-    /**
-     * Configuration details of the agent, including name, description, and prompts.
-     */
-    agent_config: AgentConfigDtoWritable;
+    agent_config: AgentConfigDto;
     /**
      * Is Conversational
      * Whether the agent can participate in a chat-based conversation
@@ -989,7 +579,7 @@ export type AgentInstanceTopic = {
  * AgentProcessStepDTO
  * DTO representing an agent process step with agent-specific work request and response information.
  */
-export type AgentProcessStepDtoReadable = {
+export type AgentProcessStepDto = {
     /**
      * Step Index
      * Order of this step in the walkthrough (0-based).
@@ -1013,46 +603,11 @@ export type AgentProcessStepDtoReadable = {
     /**
      * The agent work request for this step.
      */
-    work_request?: AgentWorkRequestDtoReadable | null;
+    work_request?: AgentWorkRequestDto | null;
     /**
      * The agent work response for this step. May be None if work is not yet completed.
      */
-    work_response?: AgentWorkResponseDtoReadable | null;
-};
-
-/**
- * AgentProcessStepDTO
- * DTO representing an agent process step with agent-specific work request and response information.
- */
-export type AgentProcessStepDtoWritable = {
-    /**
-     * Step Index
-     * Order of this step in the walkthrough (0-based).
-     */
-    step_index: number;
-    /**
-     * Step Type
-     * Type of entity involved in this step.
-     */
-    step_type?: string;
-    /**
-     * Created At
-     * Timestamp when this step was created in nanoseconds.
-     */
-    created_at: number;
-    /**
-     * Is Completed
-     * Whether this step has been completed (has a work response).
-     */
-    is_completed: boolean;
-    /**
-     * The agent work request for this step.
-     */
-    work_request?: AgentWorkRequestDtoWritable | null;
-    /**
-     * The agent work response for this step. May be None if work is not yet completed.
-     */
-    work_response?: AgentWorkResponseDtoWritable | null;
+    work_response?: AgentWorkResponseDto | null;
 };
 
 /**
@@ -1219,7 +774,7 @@ export type AgentSuitabilityRejectEventWritable = {
  * AgentWorkRequestDTO
  * DTO representing an agent work request with specific agent-related information.
  */
-export type AgentWorkRequestDtoReadable = {
+export type AgentWorkRequestDto = {
     /**
      * Event Id
      * Unique identifier of the work request event.
@@ -1270,72 +825,7 @@ export type AgentWorkRequestDtoReadable = {
     /**
      * Detailed information about the agent, if available.
      */
-    agent_info?: MinimalAgentDtoReadable | null;
-    /**
-     * Start Event
-     * The start event that will be sent to the agent.
-     */
-    start_event?: {
-        [key: string]: unknown;
-    };
-};
-
-/**
- * AgentWorkRequestDTO
- * DTO representing an agent work request with specific agent-related information.
- */
-export type AgentWorkRequestDtoWritable = {
-    /**
-     * Event Id
-     * Unique identifier of the work request event.
-     */
-    event_id: string;
-    /**
-     * Event Name
-     * Name of the event type.
-     */
-    event_name: string;
-    /**
-     * Created At
-     * Timestamp when the work was requested in nanoseconds.
-     */
-    created_at: number;
-    /**
-     * Request Type
-     * Type of entity the work was requested from.
-     */
-    request_type: 'human' | 'agent' | 'program';
-    /**
-     * Display Name
-     * Human-readable name for the work request.
-     */
-    display_name: string | null;
-    /**
-     * Display Description
-     * Human-readable description of the work request.
-     */
-    display_description: string | null;
-    /**
-     * Data
-     * The work request event data.
-     */
-    data: {
-        [key: string]: unknown;
-    };
-    /**
-     * Agent Class
-     * The class of the agent that should handle this request.
-     */
-    agent_class: string;
-    /**
-     * Agent Id
-     * The ID of the agent that should handle this request.
-     */
-    agent_id: string;
-    /**
-     * Detailed information about the agent, if available.
-     */
-    agent_info?: MinimalAgentDtoWritable | null;
+    agent_info?: MinimalAgentDto | null;
     /**
      * Start Event
      * The start event that will be sent to the agent.
@@ -1349,7 +839,7 @@ export type AgentWorkRequestDtoWritable = {
  * AgentWorkResponseDTO
  * DTO representing an agent work response with specific agent-related information.
  */
-export type AgentWorkResponseDtoReadable = {
+export type AgentWorkResponseDto = {
     /**
      * Event Id
      * Unique identifier of the work response event.
@@ -1400,72 +890,7 @@ export type AgentWorkResponseDtoReadable = {
     /**
      * Detailed information about the agent, if available.
      */
-    agent_info?: MinimalAgentDtoReadable | null;
-    /**
-     * Agent Stop Event
-     * The stop event returned by the agent after completing the work.
-     */
-    agent_stop_event?: {
-        [key: string]: unknown;
-    };
-};
-
-/**
- * AgentWorkResponseDTO
- * DTO representing an agent work response with specific agent-related information.
- */
-export type AgentWorkResponseDtoWritable = {
-    /**
-     * Event Id
-     * Unique identifier of the work response event.
-     */
-    event_id: string;
-    /**
-     * Event Name
-     * Name of the event type.
-     */
-    event_name: string;
-    /**
-     * Created At
-     * Timestamp when the work was completed in nanoseconds.
-     */
-    created_at: number;
-    /**
-     * Response Type
-     * Type of entity that completed the work.
-     */
-    response_type: 'human' | 'agent' | 'program';
-    /**
-     * Display Name
-     * Human-readable name for the work response.
-     */
-    display_name: string | null;
-    /**
-     * Display Description
-     * Human-readable description of the work response.
-     */
-    display_description: string | null;
-    /**
-     * Data
-     * The work response event data.
-     */
-    data: {
-        [key: string]: unknown;
-    };
-    /**
-     * Agent Class
-     * The class of the agent that should handle this request.
-     */
-    agent_class: string;
-    /**
-     * Agent Id
-     * The ID of the agent that should handle this request.
-     */
-    agent_id: string;
-    /**
-     * Detailed information about the agent, if available.
-     */
-    agent_info?: MinimalAgentDtoWritable | null;
+    agent_info?: MinimalAgentDto | null;
     /**
      * Agent Stop Event
      * The stop event returned by the agent after completing the work.
@@ -1523,35 +948,9 @@ export type Audio = {
 
 /**
  * AudioBlock
- */
-export type AudioBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'audio';
-    /**
-     * Audio
-     */
-    audio?: (Blob | File) | null;
-    /**
-     * Path
-     */
-    path?: string | null;
-    /**
-     * Url
-     */
-    url?: string | null;
-    /**
-     * Format
-     */
-    format?: string | null;
-};
-
-/**
- * AudioBlock
  * A representation of audio data to directly pass to/from the LLM.
  */
-export type AudioBlockOutput = {
+export type AudioBlock = {
     /**
      * Block Type
      */
@@ -1667,20 +1066,9 @@ export type CacheControl = {
 
 /**
  * CachePoint
- */
-export type CachePointInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'cache';
-    cache_control: CacheControl;
-};
-
-/**
- * CachePoint
  * Used to set the point to cache up to, if the LLM supports caching.
  */
-export type CachePointOutput = {
+export type CachePoint = {
     /**
      * Block Type
      */
@@ -2583,36 +1971,10 @@ export type ChatCompletionUserMessageParam = {
 
 /**
  * ChatMessage
- */
-export type ChatMessageInput = {
-    role?: MessageRoleInput;
-    additional_kwargs: AdditionalKwargs;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlockInput) | ({
-        block_type: 'image';
-    } & ImageBlockInput) | ({
-        block_type: 'audio';
-    } & AudioBlockInput) | ({
-        block_type: 'document';
-    } & DocumentBlockInput) | ({
-        block_type: 'cache';
-    } & CachePointInput) | ({
-        block_type: 'citable';
-    } & CitableBlockInput) | ({
-        block_type: 'citation';
-    } & CitationBlockInput)>;
-};
-
-/**
- * ChatMessage
  * Chat message.
  */
-export type ChatMessageOutput = {
-    role?: MessageRoleOutput;
+export type ChatMessage = {
+    role?: MessageRole;
     /**
      * Additional Kwargs
      */
@@ -2622,19 +1984,19 @@ export type ChatMessageOutput = {
      */
     blocks?: Array<({
         block_type: 'text';
-    } & TextBlockOutput) | ({
+    } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlockOutput) | ({
+    } & ImageBlock) | ({
         block_type: 'audio';
-    } & AudioBlockOutput) | ({
+    } & AudioBlock) | ({
         block_type: 'document';
-    } & DocumentBlockOutput) | ({
+    } & DocumentBlock) | ({
         block_type: 'cache';
-    } & CachePointOutput) | ({
+    } & CachePoint) | ({
         block_type: 'citable';
-    } & CitableBlockOutput) | ({
+    } & CitableBlock) | ({
         block_type: 'citation';
-    } & CitationBlockOutput)>;
+    } & CitationBlock)>;
 };
 
 /**
@@ -2958,37 +2320,9 @@ export type ChunkEventWritable = {
 
 /**
  * CitableBlock
- */
-export type CitableBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'citable';
-    /**
-     * Title
-     */
-    title: string;
-    /**
-     * Source
-     */
-    source: string;
-    /**
-     * Content
-     */
-    content: Array<({
-        block_type: 'text';
-    } & TextBlockInput) | ({
-        block_type: 'image';
-    } & ImageBlockInput) | ({
-        block_type: 'document';
-    } & DocumentBlockInput)>;
-};
-
-/**
- * CitableBlock
  * Supports providing citable content to LLMs that have built-in citation support.
  */
-export type CitableBlockOutput = {
+export type CitableBlock = {
     /**
      * Block Type
      */
@@ -3006,45 +2340,18 @@ export type CitableBlockOutput = {
      */
     content: Array<({
         block_type: 'text';
-    } & TextBlockOutput) | ({
+    } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlockOutput) | ({
+    } & ImageBlock) | ({
         block_type: 'document';
-    } & DocumentBlockOutput)>;
-};
-
-/**
- * CitationBlock
- */
-export type CitationBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'citation';
-    /**
-     * Cited Content
-     */
-    cited_content: ({
-        block_type: 'text';
-    } & TextBlockInput) | ({
-        block_type: 'image';
-    } & ImageBlockInput);
-    /**
-     * Source
-     */
-    source: string;
-    /**
-     * Title
-     */
-    title: string;
-    additional_location_info: AdditionalLocationInfo;
+    } & DocumentBlock)>;
 };
 
 /**
  * CitationBlock
  * A representation of cited content from past messages.
  */
-export type CitationBlockOutput = {
+export type CitationBlock = {
     /**
      * Block Type
      */
@@ -3054,9 +2361,9 @@ export type CitationBlockOutput = {
      */
     cited_content: ({
         block_type: 'text';
-    } & TextBlockOutput) | ({
+    } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlockOutput);
+    } & ImageBlock);
     /**
      * Source
      */
@@ -3632,30 +2939,6 @@ export type ControlEventWritable = {
      */
     created_at?: number;
     [key: string]: unknown | string | number | undefined;
-};
-
-/**
- * CreateAgentRequest
- * Request body for creating a new agent instance.
- */
-export type CreateAgentRequest = {
-    /**
-     * Agent Class
-     * The agent class to create an instance of. Must match a discovered/online agent class.
-     */
-    agent_class: string;
-    /**
-     * Agent Id
-     * Unique identifier for the agent instance. Must be URL-safe.
-     */
-    agent_id: string;
-    /**
-     * Configuration
-     * The full configuration values including name, description, icon, and runtime settings. Keys should match the 'name' fields from the agent's form elements.
-     */
-    configuration?: {
-        [key: string]: unknown;
-    };
 };
 
 /**
@@ -4277,7 +3560,7 @@ export type DisplayEventWritable = {
  * DisplayStatistics
  * Statistics for a display, including its runs, intended for API response.
  */
-export type DisplayStatisticsReadable = {
+export type DisplayStatistics = {
     /**
      * N Events
      * Total number of events
@@ -4347,121 +3630,14 @@ export type DisplayStatisticsReadable = {
      * Runs
      * Runs in this display, sorted by start time
      */
-    runs?: Array<RunStatisticsReadable>;
-};
-
-/**
- * DisplayStatistics
- * Statistics for a display, including its runs, intended for API response.
- */
-export type DisplayStatisticsWritable = {
-    /**
-     * N Events
-     * Total number of events
-     */
-    n_events?: number;
-    /**
-     * Has Errors
-     * Has error events
-     */
-    has_errors?: boolean;
-    /**
-     * Has Pending
-     * Has pending events (more start than stop/exception events)
-     */
-    has_pending?: boolean;
-    /**
-     * Is Hitl
-     * Has HITL events
-     */
-    is_hitl?: boolean;
-    /**
-     * Open Hitl
-     * Has open HITL requests
-     */
-    open_hitl?: boolean;
-    /**
-     * Is Bitl
-     * Has BITL events
-     */
-    is_bitl?: boolean;
-    /**
-     * Open Bitl
-     * Has open BITL requests
-     */
-    open_bitl?: boolean;
-    /**
-     * Is Aitl
-     * Has AITL events
-     */
-    is_aitl?: boolean;
-    /**
-     * Open Aitl
-     * Has open AITL requests
-     */
-    open_aitl?: boolean;
-    /**
-     * Started At
-     * Start time (ISO format string)
-     */
-    started_at?: string | null;
-    /**
-     * Ended At
-     * End time (ISO format string)
-     */
-    ended_at?: string | null;
-    /**
-     * Duration
-     * Duration in seconds
-     */
-    duration?: number | null;
-    /**
-     * Display Id
-     * The display ID
-     */
-    display_id: string;
-    /**
-     * Runs
-     * Runs in this display, sorted by start time
-     */
-    runs?: Array<RunStatisticsWritable>;
-};
-
-/**
- * DocumentBlock
- */
-export type DocumentBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'document';
-    /**
-     * Data
-     */
-    data?: (Blob | File) | null;
-    /**
-     * Path
-     */
-    path?: string | null;
-    /**
-     * Url
-     */
-    url?: string | null;
-    /**
-     * Title
-     */
-    title?: string | null;
-    /**
-     * Document Mimetype
-     */
-    document_mimetype?: string | null;
+    runs?: Array<RunStatistics>;
 };
 
 /**
  * DocumentBlock
  * A representation of a document to directly pass to the LLM.
  */
-export type DocumentBlockOutput = {
+export type DocumentBlock = {
     /**
      * Block Type
      */
@@ -4550,7 +3726,7 @@ export type DocumentDto = {
     inserted_at: string | null;
     /**
      * Is Ingested
-     * Indicates if the document has been ingested.
+     * Whether the document has been fully ingested.
      */
     is_ingested: boolean;
     /**
@@ -5215,7 +4391,7 @@ export type ExceptionEventWritable = {
 /**
  * Experiment
  */
-export type ExperimentReadable = {
+export type Experiment = {
     /**
      * Id
      * The unique identifier of the experiment in Phoenix.
@@ -5234,63 +4410,7 @@ export type ExperimentReadable = {
     /**
      * Agent that was evaluated
      */
-    agent: MinimalAgentDtoReadable;
-    /**
-     * Created At
-     * Timestamp of when the experiment data was recorded or fetched.
-     */
-    created_at?: Date | null;
-    /**
-     * The dataset associated with this experiment.
-     */
-    dataset: MinimalDataset;
-    /**
-     * Locale
-     * The locale of the experiment.
-     */
-    locale: string;
-    /**
-     * How concise is the answer
-     */
-    conciseness?: EvaluationSummaryData | null;
-    /**
-     * How correct is the answer
-     */
-    correctness?: EvaluationSummaryData | null;
-    /**
-     * How complete is the answer
-     */
-    completeness?: EvaluationSummaryData | null;
-    /**
-     * Items
-     * Detailed records of each run within the experiment, including inputs, outputs, and evaluations.
-     */
-    items: Array<ExperimentRunRecord>;
-};
-
-/**
- * Experiment
- */
-export type ExperimentWritable = {
-    /**
-     * Id
-     * The unique identifier of the experiment in Phoenix.
-     */
-    id: string;
-    /**
-     * Name
-     * The name of the experiment.
-     */
-    name: string;
-    /**
-     * Description
-     * The description of the experiment.
-     */
-    description?: string | null;
-    /**
-     * Agent that was evaluated
-     */
-    agent: MinimalAgentDtoWritable;
+    agent: MinimalAgentDto;
     /**
      * Created At
      * Timestamp of when the experiment data was recorded or fetched.
@@ -5679,126 +4799,6 @@ export type FunctionDefinition = {
 };
 
 /**
- * Group
- * https://formkit.com/inputs/group
- * Groups child inputs into a nested object structure. The group itself outputs no markup by default
- * and can be used to organize related form fields under a common key.
- *
- * The group's name becomes the key in the resulting form data object, with all child values nested inside.
- *
- * Example:
- * group = Group(
- * name="llm",
- * label="LLM Configuration",
- * children=[
- * Select(name="model_name", label="Model", options=[...]),
- * InputNumber(name="temperature", label="Temperature"),
- * ]
- * )
- *
- * # Results in form data:
- * # { "llm": { "model_name": "gpt-4", "temperature": 0.7 } }
- */
-export type GroupReadable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * $Formkit
-     * FormKit group element
-     */
-    $formkit?: 'group';
-    /**
-     * Name
-     * Key name for the grouped data in the form output
-     */
-    name: string;
-    /**
-     * Label
-     * Optional label displayed above the group
-     */
-    label?: LocaleString | string | null;
-    /**
-     * Children
-     * Child form elements contained within this group
-     */
-    children: Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | RepeaterReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable>;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'group' | string | (LocaleString | string | null) | Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | RepeaterReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable> | undefined;
-};
-
-/**
- * Group
- * https://formkit.com/inputs/group
- * Groups child inputs into a nested object structure. The group itself outputs no markup by default
- * and can be used to organize related form fields under a common key.
- *
- * The group's name becomes the key in the resulting form data object, with all child values nested inside.
- *
- * Example:
- * group = Group(
- * name="llm",
- * label="LLM Configuration",
- * children=[
- * Select(name="model_name", label="Model", options=[...]),
- * InputNumber(name="temperature", label="Temperature"),
- * ]
- * )
- *
- * # Results in form data:
- * # { "llm": { "model_name": "gpt-4", "temperature": 0.7 } }
- */
-export type GroupWritable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * $Formkit
-     * FormKit group element
-     */
-    $formkit?: 'group';
-    /**
-     * Name
-     * Key name for the grouped data in the form output
-     */
-    name: string;
-    /**
-     * Label
-     * Optional label displayed above the group
-     */
-    label?: LocaleString | string | null;
-    /**
-     * Children
-     * Child form elements contained within this group
-     */
-    children: Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | RepeaterWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable>;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'group' | string | (LocaleString | string | null) | Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | RepeaterWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable> | undefined;
-};
-
-/**
  * GuardAcceptEvent
  * Base class for all guard acceptance events.
  *
@@ -6158,7 +5158,7 @@ export type HumanInDtoReadable = {
      * Form
      * Formkit elements of the work event.
      */
-    form?: Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | RepeaterReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable>;
+    form?: Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable>;
 };
 
 /**
@@ -6198,7 +5198,7 @@ export type HumanInDtoWritable = {
      * Form
      * Formkit elements of the work event.
      */
-    form?: Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | RepeaterWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable>;
+    form?: Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable>;
 };
 
 /**
@@ -6206,9 +5206,8 @@ export type HumanInDtoWritable = {
  * Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
  *
  * Use the specific subclasses:
- * - `HumanInTheLoopInputRequestEvent` for free-form text input (popup dialog)
- * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation (popup dialog)
- * - `HumanInTheLoopChatRequestEvent` for chat-style input (appears as regular message)
+ * - `HumanInTheLoopInputRequestEvent` for free-form text input
+ * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation
  */
 export type HumanInTheLoopRequestEventReadable = {
     /**
@@ -6240,9 +5239,9 @@ export type HumanInTheLoopRequestEventReadable = {
     topic: PartialAgentTopic | AgentInstanceTopic;
     /**
      * Hitl Type
-     * HITL type: 'input' (free-form text), 'confirmation' (yes/no), 'chat' (chat-style).
+     * The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no.
      */
-    hitl_type: 'input' | 'confirmation' | 'chat';
+    hitl_type: 'input' | 'confirmation';
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -6254,7 +5253,7 @@ export type HumanInTheLoopRequestEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation' | 'chat') | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation') | Array<string> | undefined;
 };
 
 /**
@@ -6262,9 +5261,8 @@ export type HumanInTheLoopRequestEventReadable = {
  * Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
  *
  * Use the specific subclasses:
- * - `HumanInTheLoopInputRequestEvent` for free-form text input (popup dialog)
- * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation (popup dialog)
- * - `HumanInTheLoopChatRequestEvent` for chat-style input (appears as regular message)
+ * - `HumanInTheLoopInputRequestEvent` for free-form text input
+ * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation
  */
 export type HumanInTheLoopRequestEventWritable = {
     /**
@@ -6296,10 +5294,10 @@ export type HumanInTheLoopRequestEventWritable = {
     topic: PartialAgentTopic | AgentInstanceTopic;
     /**
      * Hitl Type
-     * HITL type: 'input' (free-form text), 'confirmation' (yes/no), 'chat' (chat-style).
+     * The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no.
      */
-    hitl_type: 'input' | 'confirmation' | 'chat';
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation' | 'chat') | undefined;
+    hitl_type: 'input' | 'confirmation';
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation') | undefined;
 };
 
 /**
@@ -6307,9 +5305,8 @@ export type HumanInTheLoopRequestEventWritable = {
  * Base response from a human operator after a HITL request.
  *
  * Use the specific subclasses:
- * - `HumanInTheLoopInputResponseEvent` for text input responses (popup dialog)
- * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses (popup dialog)
- * - `HumanInTheLoopChatResponseEvent` for chat-style responses (regular message)
+ * - `HumanInTheLoopInputResponseEvent` for text input responses
+ * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses
  */
 export type HumanInTheLoopResponseEventReadable = {
     /**
@@ -6357,9 +5354,8 @@ export type HumanInTheLoopResponseEventReadable = {
  * Base response from a human operator after a HITL request.
  *
  * Use the specific subclasses:
- * - `HumanInTheLoopInputResponseEvent` for text input responses (popup dialog)
- * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses (popup dialog)
- * - `HumanInTheLoopChatResponseEvent` for chat-style responses (regular message)
+ * - `HumanInTheLoopInputResponseEvent` for text input responses
+ * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses
  */
 export type HumanInTheLoopResponseEventWritable = {
     /**
@@ -6576,39 +5572,9 @@ export type Image = {
 
 /**
  * ImageBlock
- */
-export type ImageBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'image';
-    /**
-     * Image
-     */
-    image?: (Blob | File) | null;
-    /**
-     * Path
-     */
-    path?: string | null;
-    /**
-     * Url
-     */
-    url?: string | null;
-    /**
-     * Image Mimetype
-     */
-    image_mimetype?: string | null;
-    /**
-     * Detail
-     */
-    detail?: string | null;
-};
-
-/**
- * ImageBlock
  * A representation of image data to directly pass to/from the LLM.
  */
-export type ImageBlockOutput = {
+export type ImageBlock = {
     /**
      * Block Type
      */
@@ -8172,12 +7138,12 @@ export type LlmEventReadable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
+    input_messages?: Array<MessageReadable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
+    output_messages?: Array<MessageReadable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -8250,7 +7216,7 @@ export type LlmEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageReadable> | null) | (Array<MessageReadable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -8284,12 +7250,12 @@ export type LlmEventWritable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
+    input_messages?: Array<MessageWritable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
+    output_messages?: Array<MessageWritable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -8351,7 +7317,7 @@ export type LlmEventWritable = {
     tools?: Array<{
         [key: string]: unknown;
     }> | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageWritable> | null) | (Array<MessageWritable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -8385,12 +7351,12 @@ export type LlmStopEventReadable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
+    input_messages?: Array<MessageReadable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
+    output_messages?: Array<MessageReadable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -8463,7 +7429,7 @@ export type LlmStopEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageReadable> | null) | (Array<MessageReadable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -8497,12 +7463,12 @@ export type LlmStopEventWritable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
+    input_messages?: Array<MessageWritable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
+    output_messages?: Array<MessageWritable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -8564,90 +7530,13 @@ export type LlmStopEventWritable = {
     tools?: Array<{
         [key: string]: unknown;
     }> | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageWritable> | null) | (Array<MessageWritable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
     } | null) | (string | null) | (number | null) | (number | null) | (number | null) | (Array<{
         [key: string]: unknown;
     }> | null) | undefined;
-};
-
-/**
- * LLMStopEventOutput
- */
-export type LlmStopEventOutput = {
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Input Messages
-     * List of messages sent to the LLM as input.
-     */
-    input_messages?: Array<JamboParserObjectTypeParserMessage> | null;
-    /**
-     * Output Messages
-     * List of messages received from the LLM as output.
-     */
-    output_messages?: Array<JamboParserObjectTypeParserMessage> | null;
-    /**
-     * Parameters used during the invocation of the LLM.
-     */
-    invocation_parameters?: InvocationParameters | null;
-    /**
-     * Chat Model Name
-     * The name of the language model being utilized.
-     */
-    chat_model_name?: string | null;
-    /**
-     * Provider
-     * The hosting provider of the LLM, e.g., OpenAI, Azure.
-     */
-    provider?: string | null;
-    /**
-     * System
-     * The AI product as identified by the client or server.
-     */
-    system?: string | null;
-    /**
-     * Prompt Template
-     * The prompt template as a Python f-string.
-     */
-    prompt_template?: string | null;
-    /**
-     * A dictionary of input variables to the prompt template.
-     */
-    prompt_template_variables?: PromptTemplateVariables | null;
-    /**
-     * Prompt Template Version
-     * The version of the prompt template being used.
-     */
-    prompt_template_version?: string | null;
-    /**
-     * Token Count Prompt
-     * The number of tokens in the prompt.
-     */
-    token_count_prompt?: number | null;
-    /**
-     * Token Count Completion
-     * The number of tokens in the completion.
-     */
-    token_count_completion?: number | null;
-    /**
-     * Token Count Total
-     * The total number of tokens, including both prompt and completion.
-     */
-    token_count_total?: number | null;
-    /**
-     * Tools
-     * List of tools that are advertised to the LLM to be able to call.
-     */
-    tools?: Array<Tools> | null;
 };
 
 /**
@@ -8676,7 +7565,7 @@ export type LimitChatHistoryEventReadable = {
      * Limited History
      * Limited chat history based on number of input tokens.
      */
-    limited_history: Array<ChatMessageOutput>;
+    limited_history: Array<ChatMessage>;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -8688,7 +7577,7 @@ export type LimitChatHistoryEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessageOutput> | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessage> | Array<string> | undefined;
 };
 
 /**
@@ -8717,8 +7606,8 @@ export type LimitChatHistoryEventWritable = {
      * Limited History
      * Limited chat history based on number of input tokens.
      */
-    limited_history: Array<ChatMessageOutput>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessageOutput> | undefined;
+    limited_history: Array<ChatMessage>;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessage> | undefined;
 };
 
 /**
@@ -8982,35 +7871,110 @@ export type Logprob = {
 };
 
 /**
- * MessageRole
+ * Message
  */
-export type MessageRoleInput = 'system' | 'developer' | 'user' | 'assistant' | 'function' | 'tool' | 'chatbot' | 'model';
+export type MessageReadable = {
+    /**
+     * Role
+     * The role of the message, such as 'user', 'assistant', or 'system'.
+     */
+    role: string;
+    /**
+     * Name
+     * The name of the function or agent generating the message.
+     */
+    name?: string | null;
+    /**
+     * Tool Calls
+     * List of tool calls generated by the model, such as function calls.
+     */
+    tool_calls?: Array<{
+        [key: string]: unknown;
+    }> | null;
+    /**
+     * Function Call Name
+     * The name of the function being called in the message.
+     */
+    function_call_name?: string | null;
+    /**
+     * Function Call Arguments Json
+     * JSON representing arguments passed to the function during a function call.
+     */
+    function_call_arguments_json?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Tool Call Id
+     * The ID of the tool call, if applicable.
+     */
+    tool_call_id?: string | null;
+    /**
+     * Contents
+     * The message contents as an array of content blocks (text, image, audio).
+     */
+    contents?: Array<TextContent | ImageContent | AudioContent> | null;
+    /**
+     * Content
+     */
+    readonly content: string;
+};
 
 /**
- * MessageRole
+ * Message
  */
-export const MessageRoleInput = {
-    SYSTEM: 'system',
-    DEVELOPER: 'developer',
-    USER: 'user',
-    ASSISTANT: 'assistant',
-    FUNCTION: 'function',
-    TOOL: 'tool',
-    CHATBOT: 'chatbot',
-    MODEL: 'model'
-} as const;
+export type MessageWritable = {
+    /**
+     * Role
+     * The role of the message, such as 'user', 'assistant', or 'system'.
+     */
+    role: string;
+    /**
+     * Name
+     * The name of the function or agent generating the message.
+     */
+    name?: string | null;
+    /**
+     * Tool Calls
+     * List of tool calls generated by the model, such as function calls.
+     */
+    tool_calls?: Array<{
+        [key: string]: unknown;
+    }> | null;
+    /**
+     * Function Call Name
+     * The name of the function being called in the message.
+     */
+    function_call_name?: string | null;
+    /**
+     * Function Call Arguments Json
+     * JSON representing arguments passed to the function during a function call.
+     */
+    function_call_arguments_json?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Tool Call Id
+     * The ID of the tool call, if applicable.
+     */
+    tool_call_id?: string | null;
+    /**
+     * Contents
+     * The message contents as an array of content blocks (text, image, audio).
+     */
+    contents?: Array<TextContent | ImageContent | AudioContent> | null;
+};
 
 /**
  * MessageRole
  * Message role.
  */
-export type MessageRoleOutput = 'system' | 'developer' | 'user' | 'assistant' | 'function' | 'tool' | 'chatbot' | 'model';
+export type MessageRole = 'system' | 'developer' | 'user' | 'assistant' | 'function' | 'tool' | 'chatbot' | 'model';
 
 /**
  * MessageRole
  * Message role.
  */
-export const MessageRoleOutput = {
+export const MessageRole = {
     SYSTEM: 'system',
     DEVELOPER: 'developer',
     USER: 'user',
@@ -9044,7 +8008,7 @@ export type Metadata = {
      * Files
      * List of files to attach to the request, if supported by the model.
      */
-    files?: Array<AihubLibNatsEventsUserUserUploadedFileUserUploadedFile> | null;
+    files?: Array<UserUploadedFile> | null;
 };
 
 /**
@@ -9052,7 +8016,7 @@ export type Metadata = {
  * Encapsulates the data transfer object (DTO) for a minimal agent.
  * Only contains minimal information about the agent.
  */
-export type MinimalAgentDtoReadable = {
+export type MinimalAgentDto = {
     /**
      * Agent Class
      * The agent's class identifier (e.g., 'my_agent_class').
@@ -9066,34 +8030,7 @@ export type MinimalAgentDtoReadable = {
     /**
      * Configuration details of the agent, including name, description, and prompts.
      */
-    agent_config: AgentConfigDtoReadable;
-    /**
-     * Is Conversational
-     * Whether the agent can participate in a chat-based conversation
-     */
-    is_conversational: boolean;
-};
-
-/**
- * MinimalAgentDTO
- * Encapsulates the data transfer object (DTO) for a minimal agent.
- * Only contains minimal information about the agent.
- */
-export type MinimalAgentDtoWritable = {
-    /**
-     * Agent Class
-     * The agent's class identifier (e.g., 'my_agent_class').
-     */
-    agent_class: string;
-    /**
-     * Agent Id
-     * Unique identifier for the agent instance (e.g., 'agent_123').
-     */
-    agent_id: string;
-    /**
-     * Configuration details of the agent, including name, description, and prompts.
-     */
-    agent_config: AgentConfigDtoWritable;
+    agent_config: AgentConfigDto;
     /**
      * Is Conversational
      * Whether the agent can participate in a chat-based conversation
@@ -9135,7 +8072,7 @@ export type MinimalDataset = {
 /**
  * MinimalExperiment
  */
-export type MinimalExperimentReadable = {
+export type MinimalExperiment = {
     /**
      * Id
      * The unique identifier of the experiment in Phoenix.
@@ -9154,46 +8091,7 @@ export type MinimalExperimentReadable = {
     /**
      * Agent that was evaluated
      */
-    agent: MinimalAgentDtoReadable;
-    /**
-     * Created At
-     * Timestamp of when the experiment data was recorded or fetched.
-     */
-    created_at?: Date | null;
-    /**
-     * The dataset associated with this experiment.
-     */
-    dataset: MinimalDataset;
-    /**
-     * Locale
-     * The locale of the experiment.
-     */
-    locale: string;
-};
-
-/**
- * MinimalExperiment
- */
-export type MinimalExperimentWritable = {
-    /**
-     * Id
-     * The unique identifier of the experiment in Phoenix.
-     */
-    id: string;
-    /**
-     * Name
-     * The name of the experiment.
-     */
-    name: string;
-    /**
-     * Description
-     * The description of the experiment.
-     */
-    description?: string | null;
-    /**
-     * Agent that was evaluated
-     */
-    agent: MinimalAgentDtoWritable;
+    agent: MinimalAgentDto;
     /**
      * Created At
      * Timestamp of when the experiment data was recorded or fetched.
@@ -9237,40 +8135,6 @@ export type MinimalUserDto = {
 };
 
 /**
- * ModelDTO
- */
-export type ModelDtoReadable = {
-    /**
-     * Model Name
-     * The name/identifier of the model
-     */
-    model_name: string;
-    /**
-     * Detailed information about the model
-     */
-    model_info: ModelInfoDto;
-    /**
-     * Icon
-     */
-    readonly icon: string;
-};
-
-/**
- * ModelDTO
- */
-export type ModelDtoWritable = {
-    /**
-     * Model Name
-     * The name/identifier of the model
-     */
-    model_name: string;
-    /**
-     * Detailed information about the model
-     */
-    model_info: ModelInfoDto;
-};
-
-/**
  * ModelDetails
  */
 export type ModelDetails = {
@@ -9307,202 +8171,6 @@ export type ModelDetails = {
 };
 
 /**
- * ModelInfoDTO
- */
-export type ModelInfoDto = {
-    /**
-     * Mode
-     * The mode of the model (e.g., 'chat', 'completion', 'embedding')
-     */
-    mode: string;
-    /**
-     * Max Input Tokens
-     * Maximum number of input tokens the model can handle
-     */
-    max_input_tokens?: number | null;
-    /**
-     * Max Output Tokens
-     * Maximum number of output tokens the model can generate
-     */
-    max_output_tokens?: number | null;
-    /**
-     * Input Cost Per Token
-     * Cost per input token in USD
-     */
-    input_cost_per_token?: number | null;
-    /**
-     * Output Cost Per Token
-     * Cost per output token in USD
-     */
-    output_cost_per_token?: number | null;
-    /**
-     * Cache Creation Input Token Cost
-     * Cost for creating cache from input tokens
-     */
-    cache_creation_input_token_cost?: number | null;
-    /**
-     * Cache Read Input Token Cost
-     * Cost for reading cached input tokens
-     */
-    cache_read_input_token_cost?: number | null;
-    /**
-     * Input Cost Per Token Above 128K Tokens
-     * Cost per input token for contexts above 128k tokens
-     */
-    input_cost_per_token_above_128k_tokens?: number | null;
-    /**
-     * Input Cost Per Token Above 200K Tokens
-     * Cost per input token for contexts above 200k tokens
-     */
-    input_cost_per_token_above_200k_tokens?: number | null;
-    /**
-     * Input Cost Per Audio Token
-     * Cost per audio input token
-     */
-    input_cost_per_audio_token?: number | null;
-    /**
-     * Input Cost Per Token Batches
-     * Cost per input token when using batch API
-     */
-    input_cost_per_token_batches?: number | null;
-    /**
-     * Output Cost Per Token Batches
-     * Cost per output token when using batch API
-     */
-    output_cost_per_token_batches?: number | null;
-    /**
-     * Output Cost Per Audio Token
-     * Cost per audio output token
-     */
-    output_cost_per_audio_token?: number | null;
-    /**
-     * Output Cost Per Reasoning Token
-     * Cost per reasoning token for models with reasoning capabilities
-     */
-    output_cost_per_reasoning_token?: number | null;
-    /**
-     * Output Cost Per Token Above 128K Tokens
-     * Cost per output token for contexts above 128k tokens
-     */
-    output_cost_per_token_above_128k_tokens?: number | null;
-    /**
-     * Output Cost Per Token Above 200K Tokens
-     * Cost per output token for contexts above 200k tokens
-     */
-    output_cost_per_token_above_200k_tokens?: number | null;
-    /**
-     * Output Cost Per Image
-     * Cost per image output
-     */
-    output_cost_per_image?: number | null;
-    /**
-     * Search Context Cost Per Query
-     * Cost per search context query
-     */
-    search_context_cost_per_query?: number | null;
-    /**
-     * Output Vector Size
-     * Size of output vectors for embedding models
-     */
-    output_vector_size?: number | null;
-    /**
-     * Supports System Messages
-     * Whether the model supports system messages
-     */
-    supports_system_messages?: boolean | null;
-    /**
-     * Supports Response Schema
-     * Whether the model supports structured response schemas
-     */
-    supports_response_schema?: boolean | null;
-    /**
-     * Supports Vision
-     * Whether the model supports vision/image input
-     */
-    supports_vision?: boolean | null;
-    /**
-     * Supports Function Calling
-     * Whether the model supports function calling
-     */
-    supports_function_calling?: boolean | null;
-    /**
-     * Supports Tool Choice
-     * Whether the model supports tool choice selection
-     */
-    supports_tool_choice?: boolean | null;
-    /**
-     * Supports Assistant Prefill
-     * Whether the model supports assistant message prefilling
-     */
-    supports_assistant_prefill?: boolean | null;
-    /**
-     * Supports Prompt Caching
-     * Whether the model supports prompt caching
-     */
-    supports_prompt_caching?: boolean | null;
-    /**
-     * Supports Audio Input
-     * Whether the model supports audio input
-     */
-    supports_audio_input?: boolean | null;
-    /**
-     * Supports Audio Output
-     * Whether the model supports audio output
-     */
-    supports_audio_output?: boolean | null;
-    /**
-     * Supports Pdf Input
-     * Whether the model supports PDF input
-     */
-    supports_pdf_input?: boolean | null;
-    /**
-     * Supports Embedding Image Input
-     * Whether the model supports image input for embeddings
-     */
-    supports_embedding_image_input?: boolean | null;
-    /**
-     * Supports Native Streaming
-     * Whether the model supports native streaming
-     */
-    supports_native_streaming?: boolean | null;
-    /**
-     * Supports Web Search
-     * Whether the model supports web search capabilities
-     */
-    supports_web_search?: boolean | null;
-    /**
-     * Supports Url Context
-     * Whether the model supports URL context input
-     */
-    supports_url_context?: boolean | null;
-    /**
-     * Supports Reasoning
-     * Whether the model supports reasoning capabilities
-     */
-    supports_reasoning?: boolean | null;
-    /**
-     * Supports Computer Use
-     * Whether the model supports computer use capabilities
-     */
-    supports_computer_use?: boolean | null;
-    /**
-     * Tpm
-     * Tokens per minute rate limit
-     */
-    tpm?: number | null;
-    /**
-     * Rpm
-     * Requests per minute rate limit
-     */
-    rpm?: number | null;
-    /**
-     * Supported Openai Params
-     * List of supported OpenAI API parameters
-     */
-    supported_openai_params?: Array<string> | null;
-};
-
-/**
  * ModelResponse
  */
 export type ModelResponse = {
@@ -9516,38 +8184,6 @@ export type ModelResponse = {
      * The list of models.
      */
     data: Array<ModelDetails>;
-};
-
-/**
- * ModelTypeGroupDTO
- */
-export type ModelTypeGroupDtoReadable = {
-    /**
-     * Name
-     * The name/type of the model group
-     */
-    name: string;
-    /**
-     * Models
-     * List of models in this group
-     */
-    models: Array<ModelDtoReadable>;
-};
-
-/**
- * ModelTypeGroupDTO
- */
-export type ModelTypeGroupDtoWritable = {
-    /**
-     * Name
-     * The name/type of the model group
-     */
-    name: string;
-    /**
-     * Models
-     * List of models in this group
-     */
-    models: Array<ModelDtoWritable>;
 };
 
 /**
@@ -9963,38 +8599,6 @@ export type NotificationDto = {
 };
 
 /**
- * OpenChatHitlResponse
- * Response indicating whether there's an open chat HITL request for a thread.
- */
-export type OpenChatHitlResponseReadable = {
-    /**
-     * Has Open Chat Hitl
-     * Whether there is an open chat HITL request awaiting response.
-     */
-    has_open_chat_hitl: boolean;
-    /**
-     * The HITL request event if there is an open chat HITL, None otherwise.
-     */
-    hitl_request?: HumanInTheLoopRequestEventReadable | null;
-};
-
-/**
- * OpenChatHitlResponse
- * Response indicating whether there's an open chat HITL request for a thread.
- */
-export type OpenChatHitlResponseWritable = {
-    /**
-     * Has Open Chat Hitl
-     * Whether there is an open chat HITL request awaiting response.
-     */
-    has_open_chat_hitl: boolean;
-    /**
-     * The HITL request event if there is an open chat HITL, None otherwise.
-     */
-    hitl_request?: HumanInTheLoopRequestEventWritable | null;
-};
-
-/**
  * PaginatedDocumentsResponse
  */
 export type PaginatedDocumentsResponse = {
@@ -10061,7 +8665,7 @@ export type PaginatedNotificationsResponse = {
  * PaginatedProcessWalkthroughsResponse
  * Paginated response containing process walkthroughs with detailed step information.
  */
-export type PaginatedProcessWalkthroughsResponseReadable = {
+export type PaginatedProcessWalkthroughsResponse = {
     /**
      * Total
      * Total number of items available
@@ -10086,45 +8690,13 @@ export type PaginatedProcessWalkthroughsResponseReadable = {
      * Walkthroughs
      * List of process walkthroughs for the current page
      */
-    walkthroughs: Array<ProcessWalkthroughDtoReadable>;
-};
-
-/**
- * PaginatedProcessWalkthroughsResponse
- * Paginated response containing process walkthroughs with detailed step information.
- */
-export type PaginatedProcessWalkthroughsResponseWritable = {
-    /**
-     * Total
-     * Total number of items available
-     */
-    total: number;
-    /**
-     * Page
-     * Current page number (1-indexed)
-     */
-    page: number;
-    /**
-     * Page Size
-     * Number of threads per page
-     */
-    page_size: number;
-    /**
-     * Total Pages
-     * Total number of pages available
-     */
-    total_pages: number;
-    /**
-     * Walkthroughs
-     * List of process walkthroughs for the current page
-     */
-    walkthroughs: Array<ProcessWalkthroughDtoWritable>;
+    walkthroughs: Array<ProcessWalkthroughDto>;
 };
 
 /**
  * PaginatedThreadsResponse
  */
-export type PaginatedThreadsResponseReadable = {
+export type PaginatedThreadsResponse = {
     /**
      * Total
      * Total number of items available
@@ -10149,38 +8721,7 @@ export type PaginatedThreadsResponseReadable = {
      * Threads
      * List of ThreadDTO objects for the current page
      */
-    threads: Array<ThreadDtoReadable>;
-};
-
-/**
- * PaginatedThreadsResponse
- */
-export type PaginatedThreadsResponseWritable = {
-    /**
-     * Total
-     * Total number of items available
-     */
-    total: number;
-    /**
-     * Page
-     * Current page number (1-indexed)
-     */
-    page: number;
-    /**
-     * Page Size
-     * Number of threads per page
-     */
-    page_size: number;
-    /**
-     * Total Pages
-     * Total number of pages available
-     */
-    total_pages: number;
-    /**
-     * Threads
-     * List of ThreadDTO objects for the current page
-     */
-    threads: Array<ThreadDtoWritable>;
+    threads: Array<ThreadDto>;
 };
 
 /**
@@ -10617,7 +9158,7 @@ export type ProcessDtoWritable = {
  * ProcessWalkthroughDTO
  * DTO representing a process walkthrough with detailed step information.
  */
-export type ProcessWalkthroughDtoReadable = {
+export type ProcessWalkthroughDto = {
     /**
      * Process Walkthrough Id
      * Unique identifier for this specific process walkthrough.
@@ -10637,7 +9178,7 @@ export type ProcessWalkthroughDtoReadable = {
      * Process Steps
      * List of all steps in this walkthrough, ordered chronologically.
      */
-    process_steps: Array<AgentProcessStepDtoReadable | ProgramProcessStepDto | HumanProcessStepDto>;
+    process_steps: Array<AgentProcessStepDto | ProgramProcessStepDto | HumanProcessStepDto>;
     /**
      * Created At
      * Timestamp of the first event in nanoseconds.
@@ -10667,69 +9208,7 @@ export type ProcessWalkthroughDtoReadable = {
      * Involved Agents
      * List of agents that submitted work in this walkthrough.
      */
-    involved_agents?: Array<MinimalAgentDtoReadable>;
-    /**
-     * Involved Humans
-     * List of humans that submitted work in this walkthrough.
-     */
-    involved_humans?: Array<MinimalUserDto>;
-};
-
-/**
- * ProcessWalkthroughDTO
- * DTO representing a process walkthrough with detailed step information.
- */
-export type ProcessWalkthroughDtoWritable = {
-    /**
-     * Process Walkthrough Id
-     * Unique identifier for this specific process walkthrough.
-     */
-    process_walkthrough_id: string;
-    /**
-     * Process Class
-     * The class/type of the process.
-     */
-    process_class: string;
-    /**
-     * Process Id
-     * Unique identifier for the specific process instance.
-     */
-    process_id: string;
-    /**
-     * Process Steps
-     * List of all steps in this walkthrough, ordered chronologically.
-     */
-    process_steps: Array<AgentProcessStepDtoWritable | ProgramProcessStepDto | HumanProcessStepDto>;
-    /**
-     * Created At
-     * Timestamp of the first event in nanoseconds.
-     */
-    created_at: number;
-    /**
-     * Updated At
-     * Timestamp of the last event in nanoseconds.
-     */
-    updated_at: number;
-    /**
-     * Total Steps
-     * Total number of steps in this walkthrough.
-     */
-    total_steps: number;
-    /**
-     * Completed Steps
-     * Number of completed steps in this walkthrough.
-     */
-    completed_steps: number;
-    /**
-     * Is Active
-     * Whether this walkthrough is active (no ProcessStopEvent).
-     */
-    is_active: boolean;
-    /**
-     * Involved Agents
-     * List of agents that submitted work in this walkthrough.
-     */
-    involved_agents?: Array<MinimalAgentDtoWritable>;
+    involved_agents?: Array<MinimalAgentDto>;
     /**
      * Involved Humans
      * List of humans that submitted work in this walkthrough.
@@ -11273,206 +9752,6 @@ export type RatingWritable = {
 };
 
 /**
- * Repeater
- * https://formkit.com/inputs/repeater
- * Creates a dynamic array of form items with add/remove functionality.
- *
- * The repeater allows users to add multiple instances of the same form structure,
- * each with its own set of values. The entire section can be collapsible.
- *
- * Example:
- * repeater = Repeater(
- * name="examples",
- * label="Few-Shot Examples",
- * add_label="Add Example",
- * children=[
- * InputText(name="user", label="User Input"),
- * Checkbox(name="success", label="Success"),
- * Textarea(name="reason", label="Reason"),
- * ]
- * )
- *
- * # Results in form data:
- * # { "examples": [
- * #     { "user": "...", "success": true, "reason": "..." },
- * #     { "user": "...", "success": false, "reason": "..." }
- * # ] }
- */
-export type RepeaterReadable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * $Formkit
-     * FormKit repeater element
-     */
-    $formkit?: 'repeater';
-    /**
-     * Name
-     * Key name for the array data in the form output
-     */
-    name: string;
-    /**
-     * Label
-     * Label displayed as the section header
-     */
-    label?: LocaleString | string | null;
-    /**
-     * Addlabel
-     * Text for the add button
-     */
-    addLabel?: LocaleString | string | null;
-    /**
-     * Removelabel
-     * Text for the remove button
-     */
-    removeLabel?: LocaleString | string | null;
-    /**
-     * Upcontrol
-     * Show up/reorder controls
-     */
-    upControl?: boolean | null;
-    /**
-     * Downcontrol
-     * Show down/reorder controls
-     */
-    downControl?: boolean | null;
-    /**
-     * Insertcontrol
-     * Show insert controls
-     */
-    insertControl?: boolean | null;
-    /**
-     * Min
-     * Minimum number of items
-     */
-    min?: number | null;
-    /**
-     * Max
-     * Maximum number of items
-     */
-    max?: number | null;
-    /**
-     * Children
-     * Template form elements for each repeater item
-     */
-    children: Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | RepeaterReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable>;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'repeater' | string | (LocaleString | string | null) | (LocaleString | string | null) | (LocaleString | string | null) | (boolean | null) | (boolean | null) | (boolean | null) | (number | null) | (number | null) | Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | RepeaterReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable> | undefined;
-};
-
-/**
- * Repeater
- * https://formkit.com/inputs/repeater
- * Creates a dynamic array of form items with add/remove functionality.
- *
- * The repeater allows users to add multiple instances of the same form structure,
- * each with its own set of values. The entire section can be collapsible.
- *
- * Example:
- * repeater = Repeater(
- * name="examples",
- * label="Few-Shot Examples",
- * add_label="Add Example",
- * children=[
- * InputText(name="user", label="User Input"),
- * Checkbox(name="success", label="Success"),
- * Textarea(name="reason", label="Reason"),
- * ]
- * )
- *
- * # Results in form data:
- * # { "examples": [
- * #     { "user": "...", "success": true, "reason": "..." },
- * #     { "user": "...", "success": false, "reason": "..." }
- * # ] }
- */
-export type RepeaterWritable = {
-    /**
-     * Is Formkit Element
-     * Indicates that this element is a FormKit element
-     */
-    is_formkit_element?: true;
-    /**
-     * If
-     * Conditional expression to show this element
-     */
-    if?: string | null;
-    /**
-     * Id
-     * Unique identifier for this element
-     */
-    id?: string | null;
-    /**
-     * $Formkit
-     * FormKit repeater element
-     */
-    $formkit?: 'repeater';
-    /**
-     * Name
-     * Key name for the array data in the form output
-     */
-    name: string;
-    /**
-     * Label
-     * Label displayed as the section header
-     */
-    label?: LocaleString | string | null;
-    /**
-     * Addlabel
-     * Text for the add button
-     */
-    addLabel?: LocaleString | string | null;
-    /**
-     * Removelabel
-     * Text for the remove button
-     */
-    removeLabel?: LocaleString | string | null;
-    /**
-     * Upcontrol
-     * Show up/reorder controls
-     */
-    upControl?: boolean | null;
-    /**
-     * Downcontrol
-     * Show down/reorder controls
-     */
-    downControl?: boolean | null;
-    /**
-     * Insertcontrol
-     * Show insert controls
-     */
-    insertControl?: boolean | null;
-    /**
-     * Min
-     * Minimum number of items
-     */
-    min?: number | null;
-    /**
-     * Max
-     * Maximum number of items
-     */
-    max?: number | null;
-    /**
-     * Children
-     * Template form elements for each repeater item
-     */
-    children: Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | RepeaterWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable>;
-    [key: string]: unknown | true | (string | null) | (string | null) | 'repeater' | string | (LocaleString | string | null) | (LocaleString | string | null) | (LocaleString | string | null) | (boolean | null) | (boolean | null) | (boolean | null) | (number | null) | (number | null) | Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | RepeaterWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable> | undefined;
-};
-
-/**
  * RerankerEvent
  */
 export type RerankerEventReadable = {
@@ -11937,7 +10216,7 @@ export type RouterEventWritable = {
  * RunStatistics
  * Statistics for a single run, intended for API response.
  */
-export type RunStatisticsReadable = {
+export type RunStatistics = {
     /**
      * N Events
      * Total number of events
@@ -12006,83 +10285,7 @@ export type RunStatisticsReadable = {
     /**
      * The agent that ran the run
      */
-    agent: MinimalAgentDtoReadable;
-};
-
-/**
- * RunStatistics
- * Statistics for a single run, intended for API response.
- */
-export type RunStatisticsWritable = {
-    /**
-     * N Events
-     * Total number of events
-     */
-    n_events?: number;
-    /**
-     * Has Errors
-     * Has error events
-     */
-    has_errors?: boolean;
-    /**
-     * Has Pending
-     * Has pending events (more start than stop/exception events)
-     */
-    has_pending?: boolean;
-    /**
-     * Is Hitl
-     * Has HITL events
-     */
-    is_hitl?: boolean;
-    /**
-     * Open Hitl
-     * Has open HITL requests
-     */
-    open_hitl?: boolean;
-    /**
-     * Is Bitl
-     * Has BITL events
-     */
-    is_bitl?: boolean;
-    /**
-     * Open Bitl
-     * Has open BITL requests
-     */
-    open_bitl?: boolean;
-    /**
-     * Is Aitl
-     * Has AITL events
-     */
-    is_aitl?: boolean;
-    /**
-     * Open Aitl
-     * Has open AITL requests
-     */
-    open_aitl?: boolean;
-    /**
-     * Started At
-     * Start time (ISO format string)
-     */
-    started_at?: string | null;
-    /**
-     * Ended At
-     * End time (ISO format string)
-     */
-    ended_at?: string | null;
-    /**
-     * Duration
-     * Duration in seconds
-     */
-    duration?: number | null;
-    /**
-     * Run Id
-     * The run ID
-     */
-    run_id: string;
-    /**
-     * The agent that ran the run
-     */
-    agent: MinimalAgentDtoWritable;
+    agent: MinimalAgentDto;
 };
 
 /**
@@ -13017,7 +11220,7 @@ export type StandaloneQuestionCondenserEventReadable = {
     /**
      * Single chat message containing the condensed user question.
      */
-    condensed_chat_message: ChatMessageOutput;
+    condensed_chat_message: ChatMessage;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -13029,7 +11232,7 @@ export type StandaloneQuestionCondenserEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ChatMessageOutput | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ChatMessage | Array<string> | undefined;
 };
 
 /**
@@ -13057,8 +11260,8 @@ export type StandaloneQuestionCondenserEventWritable = {
     /**
      * Single chat message containing the condensed user question.
      */
-    condensed_chat_message: ChatMessageOutput;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ChatMessageOutput | undefined;
+    condensed_chat_message: ChatMessage;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ChatMessage | undefined;
 };
 
 /**
@@ -13283,23 +11486,9 @@ export type SuiteDto = {
 
 /**
  * TextBlock
- */
-export type TextBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'text';
-    /**
-     * Text
-     */
-    text: string;
-};
-
-/**
- * TextBlock
  * A representation of text data to directly pass to/from the LLM.
  */
-export type TextBlockOutput = {
+export type TextBlock = {
     /**
      * Block Type
      */
@@ -13621,7 +11810,7 @@ export type ThreadAgentDto = {
  * ThreadDTO
  * Thread information and statistics for API response.
  */
-export type ThreadDtoReadable = {
+export type ThreadDto = {
     /**
      * Id
      * The thread ID
@@ -13641,7 +11830,7 @@ export type ThreadDtoReadable = {
      * Agents
      * List of agents initially associated with thread
      */
-    agents: Array<MinimalAgentDtoReadable>;
+    agents: Array<MinimalAgentDto>;
     /**
      * Created At
      * Date at which thread was created (ISO format string)
@@ -13731,139 +11920,12 @@ export type ThreadDtoReadable = {
      * Displays
      * Displays in this thread, sorted by start time
      */
-    displays?: Array<DisplayStatisticsReadable>;
+    displays?: Array<DisplayStatistics>;
     /**
      * Participating Agents
      * All unique agents that participated in the thread's events
      */
-    participating_agents?: Array<MinimalAgentDtoReadable>;
-    /**
-     * Llm Cost
-     * Total LLM cost of the thread
-     */
-    llm_cost?: number;
-};
-
-/**
- * ThreadDTO
- * Thread information and statistics for API response.
- */
-export type ThreadDtoWritable = {
-    /**
-     * Id
-     * The thread ID
-     */
-    id: string;
-    /**
-     * Name
-     * User given name of thread
-     */
-    name: string;
-    /**
-     * Users
-     * List of users in thread
-     */
-    users: Array<MinimalUserDto>;
-    /**
-     * Agents
-     * List of agents initially associated with thread
-     */
-    agents: Array<MinimalAgentDtoWritable>;
-    /**
-     * Created At
-     * Date at which thread was created (ISO format string)
-     */
-    created_at: string;
-    /**
-     * Process Class
-     * Class of the process that generated the thread
-     */
-    process_class?: string | null;
-    /**
-     * Process Id
-     * ID of the process that generated the thread
-     */
-    process_id?: string | null;
-    /**
-     * Process Walkthrough Id
-     * ID of the walkthrough that generated the thread
-     */
-    process_walkthrough_id?: string | null;
-    /**
-     * Num Events
-     * Total number of events in the thread
-     */
-    num_events?: number;
-    /**
-     * Num Turns
-     * Number of turns (StartEvent count)
-     */
-    num_turns?: number;
-    /**
-     * Has Pending
-     * Thread has more StartEvent than StopEvent+ExceptionEvent overall
-     */
-    has_pending?: boolean;
-    /**
-     * Has Errors
-     * There are ExceptionEvent in the thread
-     */
-    has_errors?: boolean;
-    /**
-     * Is Hitl
-     * There are HumanInTheLoopRequest events present
-     */
-    is_hitl?: boolean;
-    /**
-     * Open Hitl
-     * More HumanInTheLoopRequest than Response overall
-     */
-    open_hitl?: boolean;
-    /**
-     * Is Bitl
-     * There are BotInTheLoopRequest events present
-     */
-    is_bitl?: boolean;
-    /**
-     * Open Bitl
-     * More BotInTheLoopRequest than Response overall
-     */
-    open_bitl?: boolean;
-    /**
-     * Is Aitl
-     * There are AgentInTheLoopRequest events present
-     */
-    is_aitl?: boolean;
-    /**
-     * Open Aitl
-     * More AgentInTheLoopRequest than Response overall
-     */
-    open_aitl?: boolean;
-    /**
-     * First Interaction
-     * Date of oldest event in thread (ISO format string)
-     */
-    first_interaction?: string | null;
-    /**
-     * Latest Interaction
-     * Date of newest event in thread (ISO format string)
-     */
-    latest_interaction?: string | null;
-    /**
-     * Duration
-     * Overall duration of interactions in seconds
-     */
-    duration?: number | null;
-    /**
-     * Displays
-     * Displays in this thread, sorted by start time
-     */
-    displays?: Array<DisplayStatisticsWritable>;
-    /**
-     * Participating Agents
-     * All unique agents that participated in the thread's events
-     */
-    participating_agents?: Array<MinimalAgentDtoWritable>;
+    participating_agents?: Array<MinimalAgentDto>;
     /**
      * Llm Cost
      * Total LLM cost of the thread
@@ -14510,20 +12572,6 @@ export type TranscriptionWord = {
 };
 
 /**
- * UpdateAgentConfigurationDTO
- * Request body for updating agent configuration.
- */
-export type UpdateAgentConfigurationDto = {
-    /**
-     * Configuration
-     * The configuration values to update as key-value pairs. Keys should match the 'name' fields from the agent's form elements.
-     */
-    configuration: {
-        [key: string]: unknown;
-    };
-};
-
-/**
  * UpdateNamespaceRequest
  */
 export type UpdateNamespaceRequest = {
@@ -14801,12 +12849,12 @@ export type UserMessageEventReadable = {
      * Messages
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessageOutput>;
+    messages?: Array<ChatMessage>;
     /**
      * Files
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
      */
-    files?: Array<UserUploadedFileOutput> | null;
+    files?: Array<UserUploadedFile> | null;
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -14820,7 +12868,7 @@ export type UserMessageEventReadable = {
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
         [key: string]: unknown;
-    } | null) | UserIdentity | Array<ChatMessageOutput> | (Array<UserUploadedFileOutput> | null) | Array<string> | undefined;
+    } | null) | UserIdentity | Array<ChatMessage> | (Array<UserUploadedFile> | null) | Array<string> | undefined;
 };
 
 /**
@@ -14886,37 +12934,21 @@ export type UserMessageEventWritable = {
      * Messages
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessageOutput>;
+    messages?: Array<ChatMessage>;
     /**
      * Files
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
      */
-    files?: Array<UserUploadedFileOutput> | null;
+    files?: Array<UserUploadedFile> | null;
     [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | ({
         [key: string]: unknown;
-    } | null) | UserIdentity | Array<ChatMessageOutput> | (Array<UserUploadedFileOutput> | null) | undefined;
-};
-
-/**
- * UserMessageEventInput
- */
-export type UserMessageEventInput = {
-    /**
-     * Messages
-     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
-     */
-    messages?: Array<ChatMessageInput>;
-    /**
-     * Files
-     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
-     */
-    files?: Array<JamboParserObjectTypeParserUserUploadedFile> | null;
+    } | null) | UserIdentity | Array<ChatMessage> | (Array<UserUploadedFile> | null) | undefined;
 };
 
 /**
  * UserUploadedFile
  */
-export type UserUploadedFileOutput = {
+export type UserUploadedFile = {
     /**
      * Filename
      * The name of the uploaded file, including the extension.
@@ -15036,210 +13068,6 @@ export type WorkflowGraph = {
 };
 
 /**
- * additional_kwargs
- */
-export type AdditionalKwargs = {
-    [key: string]: unknown;
-};
-
-/**
- * additional_location_info
- */
-export type AdditionalLocationInfo = {
-    [key: string]: unknown;
-};
-
-/**
- * Message
- */
-export type AihubLibNatsEventsSemanticLlmMessageMessageReadable = {
-    /**
-     * Role
-     * The role of the message, such as 'user', 'assistant', or 'system'.
-     */
-    role: string;
-    /**
-     * Name
-     * The name of the function or agent generating the message.
-     */
-    name?: string | null;
-    /**
-     * Tool Calls
-     * List of tool calls generated by the model, such as function calls.
-     */
-    tool_calls?: Array<{
-        [key: string]: unknown;
-    }> | null;
-    /**
-     * Function Call Name
-     * The name of the function being called in the message.
-     */
-    function_call_name?: string | null;
-    /**
-     * Function Call Arguments Json
-     * JSON representing arguments passed to the function during a function call.
-     */
-    function_call_arguments_json?: {
-        [key: string]: unknown;
-    } | null;
-    /**
-     * Tool Call Id
-     * The ID of the tool call, if applicable.
-     */
-    tool_call_id?: string | null;
-    /**
-     * Contents
-     * The message contents as an array of content blocks (text, image, audio).
-     */
-    contents?: Array<TextContent | ImageContent | AudioContent> | null;
-    /**
-     * Content
-     */
-    readonly content: string;
-};
-
-/**
- * Message
- */
-export type AihubLibNatsEventsSemanticLlmMessageMessageWritable = {
-    /**
-     * Role
-     * The role of the message, such as 'user', 'assistant', or 'system'.
-     */
-    role: string;
-    /**
-     * Name
-     * The name of the function or agent generating the message.
-     */
-    name?: string | null;
-    /**
-     * Tool Calls
-     * List of tool calls generated by the model, such as function calls.
-     */
-    tool_calls?: Array<{
-        [key: string]: unknown;
-    }> | null;
-    /**
-     * Function Call Name
-     * The name of the function being called in the message.
-     */
-    function_call_name?: string | null;
-    /**
-     * Function Call Arguments Json
-     * JSON representing arguments passed to the function during a function call.
-     */
-    function_call_arguments_json?: {
-        [key: string]: unknown;
-    } | null;
-    /**
-     * Tool Call Id
-     * The ID of the tool call, if applicable.
-     */
-    tool_call_id?: string | null;
-    /**
-     * Contents
-     * The message contents as an array of content blocks (text, image, audio).
-     */
-    contents?: Array<TextContent | ImageContent | AudioContent> | null;
-};
-
-/**
- * UserUploadedFile
- */
-export type AihubLibNatsEventsUserUserUploadedFileUserUploadedFile = {
-    /**
-     * Filename
-     * The name of the uploaded file, including the extension.
-     */
-    filename: string;
-    /**
-     * File Data
-     * Base64 encoded content of the uploaded file.
-     */
-    file_data: string;
-    /**
-     * File Type
-     * The MIME type of the uploaded file.
-     */
-    file_type: string;
-};
-
-/**
- * function_call_arguments_json
- */
-export type FunctionCallArgumentsJson = {
-    [key: string]: unknown;
-};
-
-/**
- * invocation_parameters
- */
-export type InvocationParameters = {
-    [key: string]: unknown;
-};
-
-/**
- * Message
- */
-export type JamboParserObjectTypeParserMessage = {
-    /**
-     * Role
-     * The role of the message, such as 'user', 'assistant', or 'system'.
-     */
-    role: string;
-    /**
-     * Name
-     * The name of the function or agent generating the message.
-     */
-    name?: string | null;
-    /**
-     * Tool Calls
-     * List of tool calls generated by the model, such as function calls.
-     */
-    tool_calls?: Array<ToolCalls> | null;
-    /**
-     * Function Call Name
-     * The name of the function being called in the message.
-     */
-    function_call_name?: string | null;
-    /**
-     * JSON representing arguments passed to the function during a function call.
-     */
-    function_call_arguments_json?: FunctionCallArgumentsJson | null;
-    /**
-     * Tool Call Id
-     * The ID of the tool call, if applicable.
-     */
-    tool_call_id?: string | null;
-    /**
-     * Contents
-     * The message contents as an array of content blocks (text, image, audio).
-     */
-    contents?: Array<TextContent | ImageContent | AudioContent> | null;
-};
-
-/**
- * UserUploadedFile
- */
-export type JamboParserObjectTypeParserUserUploadedFile = {
-    /**
-     * Filename
-     * The name of the uploaded file, including the extension.
-     */
-    filename: string;
-    /**
-     * File Data
-     * Base64 encoded content of the uploaded file.
-     */
-    file_data: string;
-    /**
-     * File Type
-     * The MIME type of the uploaded file.
-     */
-    file_type: string;
-};
-
-/**
  * Usage
  */
 export type OpenaiTypesAudioTranscriptionVerboseUsage = {
@@ -15347,27 +13175,6 @@ export type OpenaiTypesImagesResponseUsage = {
      */
     total_tokens: number;
     [key: string]: unknown | number | UsageInputTokensDetails;
-};
-
-/**
- * prompt_template_variables
- */
-export type PromptTemplateVariables = {
-    [key: string]: unknown;
-};
-
-/**
- * tool_calls
- */
-export type ToolCalls = {
-    [key: string]: unknown;
-};
-
-/**
- * tools
- */
-export type Tools = {
-    [key: string]: unknown;
 };
 
 export type GetHealthData = {
@@ -15658,7 +13465,7 @@ export type GetUserThreadsResponses = {
     /**
      * Successful Response
      */
-    200: PaginatedThreadsResponseReadable;
+    200: PaginatedThreadsResponse;
 };
 
 export type GetUserThreadsResponse = GetUserThreadsResponses[keyof GetUserThreadsResponses];
@@ -15683,7 +13490,7 @@ export type CreateThreadResponses = {
     /**
      * Successful Response
      */
-    200: ThreadDtoReadable;
+    200: ThreadDto;
 };
 
 export type CreateThreadResponse = CreateThreadResponses[keyof CreateThreadResponses];
@@ -15713,7 +13520,7 @@ export type GetThreadResponses = {
     /**
      * Successful Response
      */
-    200: ThreadDtoReadable;
+    200: ThreadDto;
 };
 
 export type GetThreadResponse = GetThreadResponses[keyof GetThreadResponses];
@@ -15743,7 +13550,7 @@ export type AddAgentToThreadResponses = {
     /**
      * Successful Response
      */
-    200: ThreadDtoReadable;
+    200: ThreadDto;
 };
 
 export type AddAgentToThreadResponse = AddAgentToThreadResponses[keyof AddAgentToThreadResponses];
@@ -15781,7 +13588,7 @@ export type RemoveAgentFromThreadResponses = {
     /**
      * Successful Response
      */
-    200: ThreadDtoReadable;
+    200: ThreadDto;
 };
 
 export type RemoveAgentFromThreadResponse = RemoveAgentFromThreadResponses[keyof RemoveAgentFromThreadResponses];
@@ -15811,7 +13618,7 @@ export type AddUserToThreadResponses = {
     /**
      * Successful Response
      */
-    200: ThreadDtoReadable;
+    200: ThreadDto;
 };
 
 export type AddUserToThreadResponse = AddUserToThreadResponses[keyof AddUserToThreadResponses];
@@ -15845,152 +13652,10 @@ export type RemoveUserFromThreadResponses = {
     /**
      * Successful Response
      */
-    200: ThreadDtoReadable;
+    200: ThreadDto;
 };
 
 export type RemoveUserFromThreadResponse = RemoveUserFromThreadResponses[keyof RemoveUserFromThreadResponses];
-
-export type GetOpenChatHitlData = {
-    body?: never;
-    path: {
-        /**
-         * Thread ID
-         */
-        thread_id: string;
-    };
-    query?: never;
-    url: '/threads/{thread_id}/open-chat-hitl';
-};
-
-export type GetOpenChatHitlErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetOpenChatHitlError = GetOpenChatHitlErrors[keyof GetOpenChatHitlErrors];
-
-export type GetOpenChatHitlResponses = {
-    /**
-     * Successful Response
-     */
-    200: OpenChatHitlResponseReadable;
-};
-
-export type GetOpenChatHitlResponse = GetOpenChatHitlResponses[keyof GetOpenChatHitlResponses];
-
-export type GetModelsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/models';
-};
-
-export type GetModelsResponses = {
-    /**
-     * Response Get Models Models Get
-     * Successful Response
-     */
-    200: Array<ModelTypeGroupDtoReadable>;
-};
-
-export type GetModelsResponse = GetModelsResponses[keyof GetModelsResponses];
-
-export type GetModelsByModeData = {
-    body?: never;
-    path: {
-        /**
-         * Mode
-         */
-        mode: string;
-    };
-    query?: never;
-    url: '/models/mode/{mode}';
-};
-
-export type GetModelsByModeErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetModelsByModeError = GetModelsByModeErrors[keyof GetModelsByModeErrors];
-
-export type GetModelsByModeResponses = {
-    /**
-     * Response Get Models By Mode Models Mode  Mode  Get
-     * Successful Response
-     */
-    200: Array<ModelDtoReadable>;
-};
-
-export type GetModelsByModeResponse = GetModelsByModeResponses[keyof GetModelsByModeResponses];
-
-export type GetModelData = {
-    body?: never;
-    path: {
-        /**
-         * Model Name
-         */
-        model_name: string;
-    };
-    query?: never;
-    url: '/models/{model_name}';
-};
-
-export type GetModelErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetModelError = GetModelErrors[keyof GetModelErrors];
-
-export type GetModelResponses = {
-    /**
-     * Successful Response
-     */
-    200: ModelDtoReadable;
-};
-
-export type GetModelResponse = GetModelResponses[keyof GetModelResponses];
-
-export type DeleteAgentData = {
-    body?: never;
-    path: {
-        /**
-         * Agent Class
-         */
-        agent_class: string;
-        /**
-         * Agent Id
-         */
-        agent_id: string;
-    };
-    query?: never;
-    url: '/agents/{agent_class}/{agent_id}';
-};
-
-export type DeleteAgentErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type DeleteAgentError = DeleteAgentErrors[keyof DeleteAgentErrors];
-
-export type DeleteAgentResponses = {
-    /**
-     * Successful Response
-     */
-    204: void;
-};
-
-export type DeleteAgentResponse = DeleteAgentResponses[keyof DeleteAgentResponses];
 
 export type GetAgentData = {
     body?: never;
@@ -16021,7 +13686,7 @@ export type GetAgentResponses = {
     /**
      * Successful Response
      */
-    200: AgentDtoReadable;
+    200: AgentDto;
 };
 
 export type GetAgentResponse = GetAgentResponses[keyof GetAgentResponses];
@@ -16066,78 +13731,10 @@ export type GetAgentThreadsResponses = {
     /**
      * Successful Response
      */
-    200: PaginatedThreadsResponseReadable;
+    200: PaginatedThreadsResponse;
 };
 
 export type GetAgentThreadsResponse = GetAgentThreadsResponses[keyof GetAgentThreadsResponses];
-
-export type GetAgentConfigurationData = {
-    body?: never;
-    path: {
-        /**
-         * Agent Class
-         */
-        agent_class: string;
-        /**
-         * Agent Id
-         */
-        agent_id: string;
-    };
-    query?: never;
-    url: '/agents/{agent_class}/{agent_id}/configuration';
-};
-
-export type GetAgentConfigurationErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetAgentConfigurationError = GetAgentConfigurationErrors[keyof GetAgentConfigurationErrors];
-
-export type GetAgentConfigurationResponses = {
-    /**
-     * Successful Response
-     */
-    200: AgentConfigurationDataDto;
-};
-
-export type GetAgentConfigurationResponse = GetAgentConfigurationResponses[keyof GetAgentConfigurationResponses];
-
-export type UpdateAgentConfigurationData = {
-    body: UpdateAgentConfigurationDto;
-    path: {
-        /**
-         * Agent Class
-         */
-        agent_class: string;
-        /**
-         * Agent Id
-         */
-        agent_id: string;
-    };
-    query?: never;
-    url: '/agents/{agent_class}/{agent_id}/configuration';
-};
-
-export type UpdateAgentConfigurationErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type UpdateAgentConfigurationError = UpdateAgentConfigurationErrors[keyof UpdateAgentConfigurationErrors];
-
-export type UpdateAgentConfigurationResponses = {
-    /**
-     * Successful Response
-     */
-    200: AgentConfigurationDataDto;
-};
-
-export type UpdateAgentConfigurationResponse = UpdateAgentConfigurationResponses[keyof UpdateAgentConfigurationResponses];
 
 export type GetAgentsData = {
     body?: never;
@@ -16151,35 +13748,10 @@ export type GetAgentsResponses = {
      * Response Get Agents Agents  Get
      * Successful Response
      */
-    200: Array<AgentDtoReadable>;
+    200: Array<AgentDto>;
 };
 
 export type GetAgentsResponse = GetAgentsResponses[keyof GetAgentsResponses];
-
-export type CreateAgentData = {
-    body: CreateAgentRequest;
-    path?: never;
-    query?: never;
-    url: '/agents/';
-};
-
-export type CreateAgentErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type CreateAgentError = CreateAgentErrors[keyof CreateAgentErrors];
-
-export type CreateAgentResponses = {
-    /**
-     * Successful Response
-     */
-    201: AgentDtoReadable;
-};
-
-export type CreateAgentResponse = CreateAgentResponses[keyof CreateAgentResponses];
 
 export type DiscoverAgentsData = {
     body?: never;
@@ -16193,27 +13765,10 @@ export type DiscoverAgentsResponses = {
      * Response Discover Agents Agents Discover Get
      * Successful Response
      */
-    200: Array<AgentDtoReadable>;
+    200: Array<AgentDto>;
 };
 
 export type DiscoverAgentsResponse = DiscoverAgentsResponses[keyof DiscoverAgentsResponses];
-
-export type GetAgentClassesData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/agents/classes';
-};
-
-export type GetAgentClassesResponses = {
-    /**
-     * Response Get Agent Classes Agents Classes Get
-     * Successful Response
-     */
-    200: Array<AgentClassDtoReadable>;
-};
-
-export type GetAgentClassesResponse = GetAgentClassesResponses[keyof GetAgentClassesResponses];
 
 export type GetProcessData = {
     body?: never;
@@ -16323,7 +13878,7 @@ export type GetProcessWalkthroughsResponses = {
     /**
      * Successful Response
      */
-    200: PaginatedProcessWalkthroughsResponseReadable;
+    200: PaginatedProcessWalkthroughsResponse;
 };
 
 export type GetProcessWalkthroughsResponse = GetProcessWalkthroughsResponses[keyof GetProcessWalkthroughsResponses];
@@ -16706,21 +14261,21 @@ export type CreateRoleResponses = {
 
 export type CreateRoleResponse = CreateRoleResponses[keyof CreateRoleResponses];
 
-export type GetModels2Data = {
+export type GetModelsData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/openai/models';
 };
 
-export type GetModels2Responses = {
+export type GetModelsResponses = {
     /**
      * Successful Response
      */
     200: ModelResponse;
 };
 
-export type GetModels2Response = GetModels2Responses[keyof GetModels2Responses];
+export type GetModelsResponse = GetModelsResponses[keyof GetModelsResponses];
 
 export type GetModelWithAssistantsData = {
     body?: never;
@@ -17006,7 +14561,7 @@ export type GetExperimentResponses = {
     /**
      * Successful Response
      */
-    200: ExperimentReadable;
+    200: Experiment;
 };
 
 export type GetExperimentResponse = GetExperimentResponses[keyof GetExperimentResponses];
@@ -17023,7 +14578,7 @@ export type GetExperimentsResponses = {
      * Response Get Experiments Evaluations Experiments Get
      * Successful Response
      */
-    200: Array<MinimalExperimentReadable>;
+    200: Array<MinimalExperiment>;
 };
 
 export type GetExperimentsResponse = GetExperimentsResponses[keyof GetExperimentsResponses];
@@ -17048,7 +14603,7 @@ export type RunExperimentResponses = {
     /**
      * Successful Response
      */
-    200: ExperimentReadable;
+    200: Experiment;
 };
 
 export type RunExperimentResponse = RunExperimentResponses[keyof RunExperimentResponses];
@@ -17161,6 +14716,21 @@ export type GetDocumentsForNamespaceData = {
          * Number of items per page (maximum 100)
          */
         page_size?: number;
+        /**
+         * Search
+         * Search by document title or filename
+         */
+        search?: string | null;
+        /**
+         * Sort Field
+         * Field to sort by: document_title, created_at, updated_at
+         */
+        sort_field?: string | null;
+        /**
+         * Sort Order
+         * Sort order: 1 for ascending, -1 for descending
+         */
+        sort_order?: number;
     };
     url: '/knowledge/databases/{database}/namespaces/{namespace}/documents';
 };
@@ -17657,72 +15227,6 @@ export type ProcessDocumentResponses = {
 };
 
 export type ProcessDocumentResponse = ProcessDocumentResponses[keyof ProcessDocumentResponses];
-
-export type SendUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventPostData = {
-    body: UserMessageEventInput;
-    path?: never;
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/RAGAgent/rag_dev_agent/UserMessageEvent';
-};
-
-export type SendUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SendUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventPostError = SendUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventPostErrors[keyof SendUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventPostErrors];
-
-export type SendUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: LlmStopEventOutput;
-};
-
-export type SendUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventPostResponse = SendUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventPostResponses[keyof SendUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventPostResponses];
-
-export type StreamUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventStreamPostData = {
-    body: UserMessageEventInput;
-    path?: never;
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/RAGAgent/rag_dev_agent/UserMessageEvent/stream';
-};
-
-export type StreamUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventStreamPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type StreamUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventStreamPostError = StreamUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventStreamPostErrors[keyof StreamUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventStreamPostErrors];
-
-export type StreamUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventStreamPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
 
 export type ClientOptions = {
     baseURL: `${string}://${string}/api/v1` | (string & {});

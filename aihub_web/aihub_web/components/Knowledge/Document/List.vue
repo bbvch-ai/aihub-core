@@ -5,11 +5,16 @@
     selection-mode="single"
     :selection="selectedDocument"
     :row-class="getRowClass"
+    :sort-field="sortField ?? undefined"
+    :sort-order="sortOrder"
+    removable-sort
     @update:selection="handleSelection"
+    @sort="handleSort"
   >
     <Column
-      field="title"
+      field="document_title"
       :header="t('document.list.title')"
+      sortable
     >
       <template #body="{ data }">
         <div class="flex items-center gap-2">
@@ -33,16 +38,18 @@
       </template>
     </Column>
     <Column
-      field="Created"
+      field="created_at"
       :header="t('document.list.created')"
+      sortable
     >
       <template #body="{ data }">
         <p>{{ formatted(data.created_at) }}</p>
       </template>
     </Column>
     <Column
-      field="Updated"
+      field="updated_at"
       :header="t('document.list.updated_at')"
+      sortable
     >
       <template #body="{ data }">
         <p>{{ formatted(data.updated_at) }}</p>
@@ -82,6 +89,7 @@
 
 <script setup lang="ts">
 import type { DocumentDto } from '@core/sdk/client'
+import type { DataTableSortEvent } from 'primevue/datatable'
 
 const route = useRoute()
 const { t } = useI18n()
@@ -89,10 +97,13 @@ const { getDocumentSourceUrl } = useDocumentUrl()
 
 const props = defineProps<{
   documents: DocumentDto[]
+  sortField: string | null
+  sortOrder: 1 | -1
 }>()
 
 const emit = defineEmits<{
   selected: [document: DocumentDto]
+  sort: [field: string | null, order: 1 | -1]
 }>()
 
 const formatted = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY')
@@ -110,6 +121,12 @@ const handleSelection = (document: DocumentDto) => {
 
 const getRowClass = (data: DocumentDto) => {
   return data.is_ingested ? '' : 'opacity-50 cursor-not-allowed pointer-events-none'
+}
+
+const handleSort = (event: DataTableSortEvent) => {
+  const field = event.sortField as string | null
+  const order = (event.sortOrder ?? 1) as 1 | -1
+  emit('sort', field, order)
 }
 
 const downloadFile = async (src: string) => {
