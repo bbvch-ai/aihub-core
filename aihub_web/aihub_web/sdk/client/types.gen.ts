@@ -62,9 +62,172 @@ export type AddUserRequest = {
 };
 
 /**
+ * AgentClassDTO
+ * Encapsulates the data transfer object (DTO) for an agent class.
+ * Contains information about the agent class, including its name and configuration specifications.
+ */
+export type AgentClassDtoReadable = {
+    /**
+     * Agent Class
+     * The agent's class identifier (e.g., 'my_agent_class').
+     */
+    agent_class: string;
+    /**
+     * Configuration specifications of the agent class, including schema and parameters.
+     */
+    agent_config_specs: AgentConfigSpecsReadable;
+    /**
+     * Start Events
+     * A list of `EventSpecs` representing events that can start this agent's workflow.
+     */
+    start_events: Array<EventSpecs>;
+    /**
+     * Stop Events
+     * A list of `EventSpecs` representing events that can stop this agent's workflow.
+     */
+    stop_events: Array<EventSpecs>;
+    /**
+     * Hitl Request Events
+     * A list of `EventSpecs` representing human-in-the-loop request events this agent can produce.
+     */
+    hitl_request_events: Array<EventSpecs>;
+    /**
+     * Hitl Response Events
+     * A list of `EventSpecs` representing human-in-the-loop response events this agent can accept.
+     */
+    hitl_response_events: Array<EventSpecs>;
+    /**
+     * A network graph of the agent class, showing how different components are connected and interact.
+     */
+    network_graph: WorkflowGraph;
+    /**
+     * Is Conversational
+     * Whether the agent class can participate in a chat-based conversation
+     */
+    is_conversational: boolean;
+    /**
+     * Is Online
+     * Indicates whether the agent class is online and reachable.
+     */
+    is_online?: boolean | null;
+    /**
+     * The default agent configuration for this agent class. This is the configuration that will be used if no specific configuration is provided.
+     */
+    default_agent_config: AgentConfig;
+};
+
+/**
+ * AgentClassDTO
+ * Encapsulates the data transfer object (DTO) for an agent class.
+ * Contains information about the agent class, including its name and configuration specifications.
+ */
+export type AgentClassDtoWritable = {
+    /**
+     * Agent Class
+     * The agent's class identifier (e.g., 'my_agent_class').
+     */
+    agent_class: string;
+    /**
+     * Configuration specifications of the agent class, including schema and parameters.
+     */
+    agent_config_specs: AgentConfigSpecsWritable;
+    /**
+     * Start Events
+     * A list of `EventSpecs` representing events that can start this agent's workflow.
+     */
+    start_events: Array<EventSpecs>;
+    /**
+     * Stop Events
+     * A list of `EventSpecs` representing events that can stop this agent's workflow.
+     */
+    stop_events: Array<EventSpecs>;
+    /**
+     * Hitl Request Events
+     * A list of `EventSpecs` representing human-in-the-loop request events this agent can produce.
+     */
+    hitl_request_events: Array<EventSpecs>;
+    /**
+     * Hitl Response Events
+     * A list of `EventSpecs` representing human-in-the-loop response events this agent can accept.
+     */
+    hitl_response_events: Array<EventSpecs>;
+    /**
+     * A network graph of the agent class, showing how different components are connected and interact.
+     */
+    network_graph: WorkflowGraph;
+    /**
+     * Is Conversational
+     * Whether the agent class can participate in a chat-based conversation
+     */
+    is_conversational: boolean;
+    /**
+     * Is Online
+     * Indicates whether the agent class is online and reachable.
+     */
+    is_online?: boolean | null;
+    /**
+     * The default agent configuration for this agent class. This is the configuration that will be used if no specific configuration is provided.
+     */
+    default_agent_config: AgentConfig;
+};
+
+/**
+ * AgentConfig
+ * The agent config is a flexible way to configure the runtime behavior of an agent. It can ensure that two agents
+ * that follow the same workflow can still be configured to achieve different outcomes through a different
+ * set of configurations.
+ *
+ * Usually, you will want to inherit from this AgentConfig and pass it to your runner.
+ * The dispatcher will then flexibly inject the config into each step,
+ * giving you full control over the agent's runtime behavior.
+ *
+ * Note that you can also define configs for individual workflow steps! Simply by naming the attribute the same
+ * way as your step, and assigning it a value of type `StepConfig`, you can configure the step's behavior.
+ *
+ * ```python
+ * class StepXConfig(StepConfig):
+ * some_setting: str
+ *
+ * class MyCustomAgentConfig(AgentConfig):
+ * step_x: StepXConfig = StepXConfig(some_setting="some value")
+ *
+ * class MyAgent(Agent):
+ * @step()
+ * def step_x(self, step_x_config: StepXConfig):
+ * print(step_x_config.some_setting)
+ * ```
+ */
+export type AgentConfig = {
+    /**
+     * The name of the process or agent.
+     */
+    name: LocaleString;
+    /**
+     * The description of the process or agent.
+     */
+    description: LocaleString;
+    /**
+     * Icon
+     * The icon representing the process or agent.
+     */
+    icon?: string;
+    /**
+     * Agent Class
+     * The class name of the agent, used for identification.
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     * Uniquely identifies the agent instance.
+     */
+    agent_id: string;
+    [key: string]: unknown | LocaleString | string | undefined;
+};
+
+/**
  * AgentConfigDTO
  */
-export type AgentConfigDto = {
+export type AgentConfigDtoReadable = {
     /**
      * Agent Id
      * The id of the agent.
@@ -85,6 +248,136 @@ export type AgentConfigDto = {
      * The icon representing the agent.
      */
     icon?: string;
+    /**
+     * Form
+     * Dynamic form configuration for agent runtime settings.
+     */
+    form?: Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | RepeaterReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable> | null;
+};
+
+/**
+ * AgentConfigDTO
+ */
+export type AgentConfigDtoWritable = {
+    /**
+     * Agent Id
+     * The id of the agent.
+     */
+    agent_id: string;
+    /**
+     * Name
+     * The name of the agent.
+     */
+    name: string;
+    /**
+     * Description
+     * The description of the agent.
+     */
+    description: string;
+    /**
+     * Icon
+     * The icon representing the agent.
+     */
+    icon?: string;
+    /**
+     * Form
+     * Dynamic form configuration for agent runtime settings.
+     */
+    form?: Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | RepeaterWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable> | null;
+};
+
+/**
+ * AgentConfigSpecs
+ * Defines a specification for an agent's configuration.
+ */
+export type AgentConfigSpecsReadable = {
+    /**
+     * The name of the process or agent.
+     */
+    name: LocaleString;
+    /**
+     * The description of the process or agent.
+     */
+    description: LocaleString;
+    /**
+     * Icon
+     * The icon representing the process or agent.
+     */
+    icon?: string;
+    /**
+     * Agent Class
+     * The class name of the agent, used for identification.
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     * Uniquely identifies the agent instance.
+     */
+    agent_id: string;
+    /**
+     * Form
+     * Formkit elements of the Agent Config.
+     */
+    form?: Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | RepeaterReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable>;
+};
+
+/**
+ * AgentConfigSpecs
+ * Defines a specification for an agent's configuration.
+ */
+export type AgentConfigSpecsWritable = {
+    /**
+     * The name of the process or agent.
+     */
+    name: LocaleString;
+    /**
+     * The description of the process or agent.
+     */
+    description: LocaleString;
+    /**
+     * Icon
+     * The icon representing the process or agent.
+     */
+    icon?: string;
+    /**
+     * Agent Class
+     * The class name of the agent, used for identification.
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     * Uniquely identifies the agent instance.
+     */
+    agent_id: string;
+    /**
+     * Form
+     * Formkit elements of the Agent Config.
+     */
+    form?: Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | RepeaterWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable>;
+};
+
+/**
+ * AgentConfigurationDataDTO
+ * Response containing the current configuration data for an agent.
+ */
+export type AgentConfigurationDataDto = {
+    /**
+     * Agent Class
+     * The agent's class identifier.
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     * The agent's instance identifier.
+     */
+    agent_id: string;
+    /**
+     * Configuration
+     * The current configuration values as key-value pairs. Keys match the 'name' fields from the agent's form elements.
+     */
+    configuration: {
+        [key: string]: unknown;
+    };
 };
 
 /**
@@ -95,7 +388,7 @@ export type AgentConfigDto = {
  * event models and the publicly exposed fields in HTTP responses.
  * By using `AgentDTO`, the API can evolve independently from the internal event representations.
  */
-export type AgentDto = {
+export type AgentDtoReadable = {
     /**
      * Agent Class
      * The agent's class identifier (e.g., 'my_agent_class').
@@ -109,7 +402,66 @@ export type AgentDto = {
     /**
      * Configuration details of the agent, including name, description, and prompts.
      */
-    agent_config: AgentConfigDto;
+    agent_config: AgentConfigDtoReadable;
+    /**
+     * Is Conversational
+     * Whether the agent can participate in a chat-based conversation
+     */
+    is_conversational: boolean;
+    /**
+     * Start Events
+     * A list of `EventSpecs` representing events that can start this agent's workflow.
+     */
+    start_events: Array<EventSpecs>;
+    /**
+     * Stop Events
+     * A list of `EventSpecs` representing events that can stop this agent's workflow.
+     */
+    stop_events: Array<EventSpecs>;
+    /**
+     * Hitl Request Events
+     * A list of `EventSpecs` representing human-in-the-loop request events this agent can produce.
+     */
+    hitl_request_events: Array<EventSpecs>;
+    /**
+     * Hitl Response Events
+     * A list of `EventSpecs` representing human-in-the-loop response events this agent can accept.
+     */
+    hitl_response_events: Array<EventSpecs>;
+    /**
+     * A network graph of the agent, showing how different components are connected and interact.
+     */
+    network_graph: WorkflowGraph;
+    /**
+     * Is Online
+     * Indicates whether the agent is online and reachable.
+     */
+    is_online?: boolean | null;
+};
+
+/**
+ * AgentDTO
+ * A data transfer object for representing agent information in responses.
+ * This DTO standardizes how agent data is returned from the service layer to the controller,
+ * and subsequently to the API response. It helps maintain a clean separation between the internal
+ * event models and the publicly exposed fields in HTTP responses.
+ * By using `AgentDTO`, the API can evolve independently from the internal event representations.
+ */
+export type AgentDtoWritable = {
+    /**
+     * Agent Class
+     * The agent's class identifier (e.g., 'my_agent_class').
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     * Unique identifier for the agent instance (e.g., 'agent_123').
+     */
+    agent_id: string;
+    /**
+     * Configuration details of the agent, including name, description, and prompts.
+     */
+    agent_config: AgentConfigDtoWritable;
     /**
      * Is Conversational
      * Whether the agent can participate in a chat-based conversation
@@ -579,7 +931,7 @@ export type AgentInstanceTopic = {
  * AgentProcessStepDTO
  * DTO representing an agent process step with agent-specific work request and response information.
  */
-export type AgentProcessStepDto = {
+export type AgentProcessStepDtoReadable = {
     /**
      * Step Index
      * Order of this step in the walkthrough (0-based).
@@ -603,11 +955,46 @@ export type AgentProcessStepDto = {
     /**
      * The agent work request for this step.
      */
-    work_request?: AgentWorkRequestDto | null;
+    work_request?: AgentWorkRequestDtoReadable | null;
     /**
      * The agent work response for this step. May be None if work is not yet completed.
      */
-    work_response?: AgentWorkResponseDto | null;
+    work_response?: AgentWorkResponseDtoReadable | null;
+};
+
+/**
+ * AgentProcessStepDTO
+ * DTO representing an agent process step with agent-specific work request and response information.
+ */
+export type AgentProcessStepDtoWritable = {
+    /**
+     * Step Index
+     * Order of this step in the walkthrough (0-based).
+     */
+    step_index: number;
+    /**
+     * Step Type
+     * Type of entity involved in this step.
+     */
+    step_type?: string;
+    /**
+     * Created At
+     * Timestamp when this step was created in nanoseconds.
+     */
+    created_at: number;
+    /**
+     * Is Completed
+     * Whether this step has been completed (has a work response).
+     */
+    is_completed: boolean;
+    /**
+     * The agent work request for this step.
+     */
+    work_request?: AgentWorkRequestDtoWritable | null;
+    /**
+     * The agent work response for this step. May be None if work is not yet completed.
+     */
+    work_response?: AgentWorkResponseDtoWritable | null;
 };
 
 /**
@@ -774,7 +1161,7 @@ export type AgentSuitabilityRejectEventWritable = {
  * AgentWorkRequestDTO
  * DTO representing an agent work request with specific agent-related information.
  */
-export type AgentWorkRequestDto = {
+export type AgentWorkRequestDtoReadable = {
     /**
      * Event Id
      * Unique identifier of the work request event.
@@ -825,7 +1212,72 @@ export type AgentWorkRequestDto = {
     /**
      * Detailed information about the agent, if available.
      */
-    agent_info?: MinimalAgentDto | null;
+    agent_info?: MinimalAgentDtoReadable | null;
+    /**
+     * Start Event
+     * The start event that will be sent to the agent.
+     */
+    start_event?: {
+        [key: string]: unknown;
+    };
+};
+
+/**
+ * AgentWorkRequestDTO
+ * DTO representing an agent work request with specific agent-related information.
+ */
+export type AgentWorkRequestDtoWritable = {
+    /**
+     * Event Id
+     * Unique identifier of the work request event.
+     */
+    event_id: string;
+    /**
+     * Event Name
+     * Name of the event type.
+     */
+    event_name: string;
+    /**
+     * Created At
+     * Timestamp when the work was requested in nanoseconds.
+     */
+    created_at: number;
+    /**
+     * Request Type
+     * Type of entity the work was requested from.
+     */
+    request_type: 'human' | 'agent' | 'program';
+    /**
+     * Display Name
+     * Human-readable name for the work request.
+     */
+    display_name: string | null;
+    /**
+     * Display Description
+     * Human-readable description of the work request.
+     */
+    display_description: string | null;
+    /**
+     * Data
+     * The work request event data.
+     */
+    data: {
+        [key: string]: unknown;
+    };
+    /**
+     * Agent Class
+     * The class of the agent that should handle this request.
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     * The ID of the agent that should handle this request.
+     */
+    agent_id: string;
+    /**
+     * Detailed information about the agent, if available.
+     */
+    agent_info?: MinimalAgentDtoWritable | null;
     /**
      * Start Event
      * The start event that will be sent to the agent.
@@ -839,7 +1291,7 @@ export type AgentWorkRequestDto = {
  * AgentWorkResponseDTO
  * DTO representing an agent work response with specific agent-related information.
  */
-export type AgentWorkResponseDto = {
+export type AgentWorkResponseDtoReadable = {
     /**
      * Event Id
      * Unique identifier of the work response event.
@@ -890,7 +1342,72 @@ export type AgentWorkResponseDto = {
     /**
      * Detailed information about the agent, if available.
      */
-    agent_info?: MinimalAgentDto | null;
+    agent_info?: MinimalAgentDtoReadable | null;
+    /**
+     * Agent Stop Event
+     * The stop event returned by the agent after completing the work.
+     */
+    agent_stop_event?: {
+        [key: string]: unknown;
+    };
+};
+
+/**
+ * AgentWorkResponseDTO
+ * DTO representing an agent work response with specific agent-related information.
+ */
+export type AgentWorkResponseDtoWritable = {
+    /**
+     * Event Id
+     * Unique identifier of the work response event.
+     */
+    event_id: string;
+    /**
+     * Event Name
+     * Name of the event type.
+     */
+    event_name: string;
+    /**
+     * Created At
+     * Timestamp when the work was completed in nanoseconds.
+     */
+    created_at: number;
+    /**
+     * Response Type
+     * Type of entity that completed the work.
+     */
+    response_type: 'human' | 'agent' | 'program';
+    /**
+     * Display Name
+     * Human-readable name for the work response.
+     */
+    display_name: string | null;
+    /**
+     * Display Description
+     * Human-readable description of the work response.
+     */
+    display_description: string | null;
+    /**
+     * Data
+     * The work response event data.
+     */
+    data: {
+        [key: string]: unknown;
+    };
+    /**
+     * Agent Class
+     * The class of the agent that should handle this request.
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     * The ID of the agent that should handle this request.
+     */
+    agent_id: string;
+    /**
+     * Detailed information about the agent, if available.
+     */
+    agent_info?: MinimalAgentDtoWritable | null;
     /**
      * Agent Stop Event
      * The stop event returned by the agent after completing the work.
@@ -2942,6 +3459,30 @@ export type ControlEventWritable = {
 };
 
 /**
+ * CreateAgentRequest
+ * Request body for creating a new agent instance.
+ */
+export type CreateAgentRequest = {
+    /**
+     * Agent Class
+     * The agent class to create an instance of. Must match a discovered/online agent class.
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     * Unique identifier for the agent instance. Must be URL-safe.
+     */
+    agent_id: string;
+    /**
+     * Configuration
+     * The full configuration values including name, description, icon, and runtime settings. Keys should match the 'name' fields from the agent's form elements.
+     */
+    configuration?: {
+        [key: string]: unknown;
+    };
+};
+
+/**
  * CreateNamespaceRequest
  */
 export type CreateNamespaceRequest = {
@@ -3560,7 +4101,7 @@ export type DisplayEventWritable = {
  * DisplayStatistics
  * Statistics for a display, including its runs, intended for API response.
  */
-export type DisplayStatistics = {
+export type DisplayStatisticsReadable = {
     /**
      * N Events
      * Total number of events
@@ -3630,7 +4171,84 @@ export type DisplayStatistics = {
      * Runs
      * Runs in this display, sorted by start time
      */
-    runs?: Array<RunStatistics>;
+    runs?: Array<RunStatisticsReadable>;
+};
+
+/**
+ * DisplayStatistics
+ * Statistics for a display, including its runs, intended for API response.
+ */
+export type DisplayStatisticsWritable = {
+    /**
+     * N Events
+     * Total number of events
+     */
+    n_events?: number;
+    /**
+     * Has Errors
+     * Has error events
+     */
+    has_errors?: boolean;
+    /**
+     * Has Pending
+     * Has pending events (more start than stop/exception events)
+     */
+    has_pending?: boolean;
+    /**
+     * Is Hitl
+     * Has HITL events
+     */
+    is_hitl?: boolean;
+    /**
+     * Open Hitl
+     * Has open HITL requests
+     */
+    open_hitl?: boolean;
+    /**
+     * Is Bitl
+     * Has BITL events
+     */
+    is_bitl?: boolean;
+    /**
+     * Open Bitl
+     * Has open BITL requests
+     */
+    open_bitl?: boolean;
+    /**
+     * Is Aitl
+     * Has AITL events
+     */
+    is_aitl?: boolean;
+    /**
+     * Open Aitl
+     * Has open AITL requests
+     */
+    open_aitl?: boolean;
+    /**
+     * Started At
+     * Start time (ISO format string)
+     */
+    started_at?: string | null;
+    /**
+     * Ended At
+     * End time (ISO format string)
+     */
+    ended_at?: string | null;
+    /**
+     * Duration
+     * Duration in seconds
+     */
+    duration?: number | null;
+    /**
+     * Display Id
+     * The display ID
+     */
+    display_id: string;
+    /**
+     * Runs
+     * Runs in this display, sorted by start time
+     */
+    runs?: Array<RunStatisticsWritable>;
 };
 
 /**
@@ -4391,7 +5009,7 @@ export type ExceptionEventWritable = {
 /**
  * Experiment
  */
-export type Experiment = {
+export type ExperimentReadable = {
     /**
      * Id
      * The unique identifier of the experiment in Phoenix.
@@ -4410,7 +5028,63 @@ export type Experiment = {
     /**
      * Agent that was evaluated
      */
-    agent: MinimalAgentDto;
+    agent: MinimalAgentDtoReadable;
+    /**
+     * Created At
+     * Timestamp of when the experiment data was recorded or fetched.
+     */
+    created_at?: Date | null;
+    /**
+     * The dataset associated with this experiment.
+     */
+    dataset: MinimalDataset;
+    /**
+     * Locale
+     * The locale of the experiment.
+     */
+    locale: string;
+    /**
+     * How concise is the answer
+     */
+    conciseness?: EvaluationSummaryData | null;
+    /**
+     * How correct is the answer
+     */
+    correctness?: EvaluationSummaryData | null;
+    /**
+     * How complete is the answer
+     */
+    completeness?: EvaluationSummaryData | null;
+    /**
+     * Items
+     * Detailed records of each run within the experiment, including inputs, outputs, and evaluations.
+     */
+    items: Array<ExperimentRunRecord>;
+};
+
+/**
+ * Experiment
+ */
+export type ExperimentWritable = {
+    /**
+     * Id
+     * The unique identifier of the experiment in Phoenix.
+     */
+    id: string;
+    /**
+     * Name
+     * The name of the experiment.
+     */
+    name: string;
+    /**
+     * Description
+     * The description of the experiment.
+     */
+    description?: string | null;
+    /**
+     * Agent that was evaluated
+     */
+    agent: MinimalAgentDtoWritable;
     /**
      * Created At
      * Timestamp of when the experiment data was recorded or fetched.
@@ -4799,6 +5473,126 @@ export type FunctionDefinition = {
 };
 
 /**
+ * Group
+ * https://formkit.com/inputs/group
+ * Groups child inputs into a nested object structure. The group itself outputs no markup by default
+ * and can be used to organize related form fields under a common key.
+ *
+ * The group's name becomes the key in the resulting form data object, with all child values nested inside.
+ *
+ * Example:
+ * group = Group(
+ * name="llm",
+ * label="LLM Configuration",
+ * children=[
+ * Select(name="model_name", label="Model", options=[...]),
+ * InputNumber(name="temperature", label="Temperature"),
+ * ]
+ * )
+ *
+ * # Results in form data:
+ * # { "llm": { "model_name": "gpt-4", "temperature": 0.7 } }
+ */
+export type GroupReadable = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Id
+     * Unique identifier for this element
+     */
+    id?: string | null;
+    /**
+     * $Formkit
+     * FormKit group element
+     */
+    $formkit?: 'group';
+    /**
+     * Name
+     * Key name for the grouped data in the form output
+     */
+    name: string;
+    /**
+     * Label
+     * Optional label displayed above the group
+     */
+    label?: LocaleString | string | null;
+    /**
+     * Children
+     * Child form elements contained within this group
+     */
+    children: Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | RepeaterReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable>;
+    [key: string]: unknown | true | (string | null) | (string | null) | 'group' | string | (LocaleString | string | null) | Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | RepeaterReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable> | undefined;
+};
+
+/**
+ * Group
+ * https://formkit.com/inputs/group
+ * Groups child inputs into a nested object structure. The group itself outputs no markup by default
+ * and can be used to organize related form fields under a common key.
+ *
+ * The group's name becomes the key in the resulting form data object, with all child values nested inside.
+ *
+ * Example:
+ * group = Group(
+ * name="llm",
+ * label="LLM Configuration",
+ * children=[
+ * Select(name="model_name", label="Model", options=[...]),
+ * InputNumber(name="temperature", label="Temperature"),
+ * ]
+ * )
+ *
+ * # Results in form data:
+ * # { "llm": { "model_name": "gpt-4", "temperature": 0.7 } }
+ */
+export type GroupWritable = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Id
+     * Unique identifier for this element
+     */
+    id?: string | null;
+    /**
+     * $Formkit
+     * FormKit group element
+     */
+    $formkit?: 'group';
+    /**
+     * Name
+     * Key name for the grouped data in the form output
+     */
+    name: string;
+    /**
+     * Label
+     * Optional label displayed above the group
+     */
+    label?: LocaleString | string | null;
+    /**
+     * Children
+     * Child form elements contained within this group
+     */
+    children: Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | RepeaterWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable>;
+    [key: string]: unknown | true | (string | null) | (string | null) | 'group' | string | (LocaleString | string | null) | Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | RepeaterWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable> | undefined;
+};
+
+/**
  * GuardAcceptEvent
  * Base class for all guard acceptance events.
  *
@@ -5158,7 +5952,7 @@ export type HumanInDtoReadable = {
      * Form
      * Formkit elements of the work event.
      */
-    form?: Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable>;
+    form?: Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | RepeaterReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable>;
 };
 
 /**
@@ -5198,7 +5992,7 @@ export type HumanInDtoWritable = {
      * Form
      * Formkit elements of the work event.
      */
-    form?: Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable>;
+    form?: Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | RepeaterWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable>;
 };
 
 /**
@@ -5206,8 +6000,9 @@ export type HumanInDtoWritable = {
  * Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
  *
  * Use the specific subclasses:
- * - `HumanInTheLoopInputRequestEvent` for free-form text input
- * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation
+ * - `HumanInTheLoopInputRequestEvent` for free-form text input (popup dialog)
+ * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation (popup dialog)
+ * - `HumanInTheLoopChatRequestEvent` for chat-style input (appears as regular message)
  */
 export type HumanInTheLoopRequestEventReadable = {
     /**
@@ -5239,9 +6034,9 @@ export type HumanInTheLoopRequestEventReadable = {
     topic: PartialAgentTopic | AgentInstanceTopic;
     /**
      * Hitl Type
-     * The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no.
+     * HITL type: 'input' (free-form text), 'confirmation' (yes/no), 'chat' (chat-style).
      */
-    hitl_type: 'input' | 'confirmation';
+    hitl_type: 'input' | 'confirmation' | 'chat';
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -5253,7 +6048,7 @@ export type HumanInTheLoopRequestEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation') | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation' | 'chat') | Array<string> | undefined;
 };
 
 /**
@@ -5261,8 +6056,9 @@ export type HumanInTheLoopRequestEventReadable = {
  * Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
  *
  * Use the specific subclasses:
- * - `HumanInTheLoopInputRequestEvent` for free-form text input
- * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation
+ * - `HumanInTheLoopInputRequestEvent` for free-form text input (popup dialog)
+ * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation (popup dialog)
+ * - `HumanInTheLoopChatRequestEvent` for chat-style input (appears as regular message)
  */
 export type HumanInTheLoopRequestEventWritable = {
     /**
@@ -5294,10 +6090,10 @@ export type HumanInTheLoopRequestEventWritable = {
     topic: PartialAgentTopic | AgentInstanceTopic;
     /**
      * Hitl Type
-     * The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no.
+     * HITL type: 'input' (free-form text), 'confirmation' (yes/no), 'chat' (chat-style).
      */
-    hitl_type: 'input' | 'confirmation';
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation') | undefined;
+    hitl_type: 'input' | 'confirmation' | 'chat';
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation' | 'chat') | undefined;
 };
 
 /**
@@ -5305,8 +6101,9 @@ export type HumanInTheLoopRequestEventWritable = {
  * Base response from a human operator after a HITL request.
  *
  * Use the specific subclasses:
- * - `HumanInTheLoopInputResponseEvent` for text input responses
- * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses
+ * - `HumanInTheLoopInputResponseEvent` for text input responses (popup dialog)
+ * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses (popup dialog)
+ * - `HumanInTheLoopChatResponseEvent` for chat-style responses (regular message)
  */
 export type HumanInTheLoopResponseEventReadable = {
     /**
@@ -5354,8 +6151,9 @@ export type HumanInTheLoopResponseEventReadable = {
  * Base response from a human operator after a HITL request.
  *
  * Use the specific subclasses:
- * - `HumanInTheLoopInputResponseEvent` for text input responses
- * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses
+ * - `HumanInTheLoopInputResponseEvent` for text input responses (popup dialog)
+ * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses (popup dialog)
+ * - `HumanInTheLoopChatResponseEvent` for chat-style responses (regular message)
  */
 export type HumanInTheLoopResponseEventWritable = {
     /**
@@ -8016,7 +8814,7 @@ export type Metadata = {
  * Encapsulates the data transfer object (DTO) for a minimal agent.
  * Only contains minimal information about the agent.
  */
-export type MinimalAgentDto = {
+export type MinimalAgentDtoReadable = {
     /**
      * Agent Class
      * The agent's class identifier (e.g., 'my_agent_class').
@@ -8030,7 +8828,34 @@ export type MinimalAgentDto = {
     /**
      * Configuration details of the agent, including name, description, and prompts.
      */
-    agent_config: AgentConfigDto;
+    agent_config: AgentConfigDtoReadable;
+    /**
+     * Is Conversational
+     * Whether the agent can participate in a chat-based conversation
+     */
+    is_conversational: boolean;
+};
+
+/**
+ * MinimalAgentDTO
+ * Encapsulates the data transfer object (DTO) for a minimal agent.
+ * Only contains minimal information about the agent.
+ */
+export type MinimalAgentDtoWritable = {
+    /**
+     * Agent Class
+     * The agent's class identifier (e.g., 'my_agent_class').
+     */
+    agent_class: string;
+    /**
+     * Agent Id
+     * Unique identifier for the agent instance (e.g., 'agent_123').
+     */
+    agent_id: string;
+    /**
+     * Configuration details of the agent, including name, description, and prompts.
+     */
+    agent_config: AgentConfigDtoWritable;
     /**
      * Is Conversational
      * Whether the agent can participate in a chat-based conversation
@@ -8072,7 +8897,7 @@ export type MinimalDataset = {
 /**
  * MinimalExperiment
  */
-export type MinimalExperiment = {
+export type MinimalExperimentReadable = {
     /**
      * Id
      * The unique identifier of the experiment in Phoenix.
@@ -8091,7 +8916,46 @@ export type MinimalExperiment = {
     /**
      * Agent that was evaluated
      */
-    agent: MinimalAgentDto;
+    agent: MinimalAgentDtoReadable;
+    /**
+     * Created At
+     * Timestamp of when the experiment data was recorded or fetched.
+     */
+    created_at?: Date | null;
+    /**
+     * The dataset associated with this experiment.
+     */
+    dataset: MinimalDataset;
+    /**
+     * Locale
+     * The locale of the experiment.
+     */
+    locale: string;
+};
+
+/**
+ * MinimalExperiment
+ */
+export type MinimalExperimentWritable = {
+    /**
+     * Id
+     * The unique identifier of the experiment in Phoenix.
+     */
+    id: string;
+    /**
+     * Name
+     * The name of the experiment.
+     */
+    name: string;
+    /**
+     * Description
+     * The description of the experiment.
+     */
+    description?: string | null;
+    /**
+     * Agent that was evaluated
+     */
+    agent: MinimalAgentDtoWritable;
     /**
      * Created At
      * Timestamp of when the experiment data was recorded or fetched.
@@ -8135,6 +8999,40 @@ export type MinimalUserDto = {
 };
 
 /**
+ * ModelDTO
+ */
+export type ModelDtoReadable = {
+    /**
+     * Model Name
+     * The name/identifier of the model
+     */
+    model_name: string;
+    /**
+     * Detailed information about the model
+     */
+    model_info: ModelInfoDto;
+    /**
+     * Icon
+     */
+    readonly icon: string;
+};
+
+/**
+ * ModelDTO
+ */
+export type ModelDtoWritable = {
+    /**
+     * Model Name
+     * The name/identifier of the model
+     */
+    model_name: string;
+    /**
+     * Detailed information about the model
+     */
+    model_info: ModelInfoDto;
+};
+
+/**
  * ModelDetails
  */
 export type ModelDetails = {
@@ -8171,6 +9069,202 @@ export type ModelDetails = {
 };
 
 /**
+ * ModelInfoDTO
+ */
+export type ModelInfoDto = {
+    /**
+     * Mode
+     * The mode of the model (e.g., 'chat', 'completion', 'embedding')
+     */
+    mode: string;
+    /**
+     * Max Input Tokens
+     * Maximum number of input tokens the model can handle
+     */
+    max_input_tokens?: number | null;
+    /**
+     * Max Output Tokens
+     * Maximum number of output tokens the model can generate
+     */
+    max_output_tokens?: number | null;
+    /**
+     * Input Cost Per Token
+     * Cost per input token in USD
+     */
+    input_cost_per_token?: number | null;
+    /**
+     * Output Cost Per Token
+     * Cost per output token in USD
+     */
+    output_cost_per_token?: number | null;
+    /**
+     * Cache Creation Input Token Cost
+     * Cost for creating cache from input tokens
+     */
+    cache_creation_input_token_cost?: number | null;
+    /**
+     * Cache Read Input Token Cost
+     * Cost for reading cached input tokens
+     */
+    cache_read_input_token_cost?: number | null;
+    /**
+     * Input Cost Per Token Above 128K Tokens
+     * Cost per input token for contexts above 128k tokens
+     */
+    input_cost_per_token_above_128k_tokens?: number | null;
+    /**
+     * Input Cost Per Token Above 200K Tokens
+     * Cost per input token for contexts above 200k tokens
+     */
+    input_cost_per_token_above_200k_tokens?: number | null;
+    /**
+     * Input Cost Per Audio Token
+     * Cost per audio input token
+     */
+    input_cost_per_audio_token?: number | null;
+    /**
+     * Input Cost Per Token Batches
+     * Cost per input token when using batch API
+     */
+    input_cost_per_token_batches?: number | null;
+    /**
+     * Output Cost Per Token Batches
+     * Cost per output token when using batch API
+     */
+    output_cost_per_token_batches?: number | null;
+    /**
+     * Output Cost Per Audio Token
+     * Cost per audio output token
+     */
+    output_cost_per_audio_token?: number | null;
+    /**
+     * Output Cost Per Reasoning Token
+     * Cost per reasoning token for models with reasoning capabilities
+     */
+    output_cost_per_reasoning_token?: number | null;
+    /**
+     * Output Cost Per Token Above 128K Tokens
+     * Cost per output token for contexts above 128k tokens
+     */
+    output_cost_per_token_above_128k_tokens?: number | null;
+    /**
+     * Output Cost Per Token Above 200K Tokens
+     * Cost per output token for contexts above 200k tokens
+     */
+    output_cost_per_token_above_200k_tokens?: number | null;
+    /**
+     * Output Cost Per Image
+     * Cost per image output
+     */
+    output_cost_per_image?: number | null;
+    /**
+     * Search Context Cost Per Query
+     * Cost per search context query
+     */
+    search_context_cost_per_query?: number | null;
+    /**
+     * Output Vector Size
+     * Size of output vectors for embedding models
+     */
+    output_vector_size?: number | null;
+    /**
+     * Supports System Messages
+     * Whether the model supports system messages
+     */
+    supports_system_messages?: boolean | null;
+    /**
+     * Supports Response Schema
+     * Whether the model supports structured response schemas
+     */
+    supports_response_schema?: boolean | null;
+    /**
+     * Supports Vision
+     * Whether the model supports vision/image input
+     */
+    supports_vision?: boolean | null;
+    /**
+     * Supports Function Calling
+     * Whether the model supports function calling
+     */
+    supports_function_calling?: boolean | null;
+    /**
+     * Supports Tool Choice
+     * Whether the model supports tool choice selection
+     */
+    supports_tool_choice?: boolean | null;
+    /**
+     * Supports Assistant Prefill
+     * Whether the model supports assistant message prefilling
+     */
+    supports_assistant_prefill?: boolean | null;
+    /**
+     * Supports Prompt Caching
+     * Whether the model supports prompt caching
+     */
+    supports_prompt_caching?: boolean | null;
+    /**
+     * Supports Audio Input
+     * Whether the model supports audio input
+     */
+    supports_audio_input?: boolean | null;
+    /**
+     * Supports Audio Output
+     * Whether the model supports audio output
+     */
+    supports_audio_output?: boolean | null;
+    /**
+     * Supports Pdf Input
+     * Whether the model supports PDF input
+     */
+    supports_pdf_input?: boolean | null;
+    /**
+     * Supports Embedding Image Input
+     * Whether the model supports image input for embeddings
+     */
+    supports_embedding_image_input?: boolean | null;
+    /**
+     * Supports Native Streaming
+     * Whether the model supports native streaming
+     */
+    supports_native_streaming?: boolean | null;
+    /**
+     * Supports Web Search
+     * Whether the model supports web search capabilities
+     */
+    supports_web_search?: boolean | null;
+    /**
+     * Supports Url Context
+     * Whether the model supports URL context input
+     */
+    supports_url_context?: boolean | null;
+    /**
+     * Supports Reasoning
+     * Whether the model supports reasoning capabilities
+     */
+    supports_reasoning?: boolean | null;
+    /**
+     * Supports Computer Use
+     * Whether the model supports computer use capabilities
+     */
+    supports_computer_use?: boolean | null;
+    /**
+     * Tpm
+     * Tokens per minute rate limit
+     */
+    tpm?: number | null;
+    /**
+     * Rpm
+     * Requests per minute rate limit
+     */
+    rpm?: number | null;
+    /**
+     * Supported Openai Params
+     * List of supported OpenAI API parameters
+     */
+    supported_openai_params?: Array<string> | null;
+};
+
+/**
  * ModelResponse
  */
 export type ModelResponse = {
@@ -8184,6 +9278,38 @@ export type ModelResponse = {
      * The list of models.
      */
     data: Array<ModelDetails>;
+};
+
+/**
+ * ModelTypeGroupDTO
+ */
+export type ModelTypeGroupDtoReadable = {
+    /**
+     * Name
+     * The name/type of the model group
+     */
+    name: string;
+    /**
+     * Models
+     * List of models in this group
+     */
+    models: Array<ModelDtoReadable>;
+};
+
+/**
+ * ModelTypeGroupDTO
+ */
+export type ModelTypeGroupDtoWritable = {
+    /**
+     * Name
+     * The name/type of the model group
+     */
+    name: string;
+    /**
+     * Models
+     * List of models in this group
+     */
+    models: Array<ModelDtoWritable>;
 };
 
 /**
@@ -8599,6 +9725,38 @@ export type NotificationDto = {
 };
 
 /**
+ * OpenChatHitlResponse
+ * Response indicating whether there's an open chat HITL request for a thread.
+ */
+export type OpenChatHitlResponseReadable = {
+    /**
+     * Has Open Chat Hitl
+     * Whether there is an open chat HITL request awaiting response.
+     */
+    has_open_chat_hitl: boolean;
+    /**
+     * The HITL request event if there is an open chat HITL, None otherwise.
+     */
+    hitl_request?: HumanInTheLoopRequestEventReadable | null;
+};
+
+/**
+ * OpenChatHitlResponse
+ * Response indicating whether there's an open chat HITL request for a thread.
+ */
+export type OpenChatHitlResponseWritable = {
+    /**
+     * Has Open Chat Hitl
+     * Whether there is an open chat HITL request awaiting response.
+     */
+    has_open_chat_hitl: boolean;
+    /**
+     * The HITL request event if there is an open chat HITL, None otherwise.
+     */
+    hitl_request?: HumanInTheLoopRequestEventWritable | null;
+};
+
+/**
  * PaginatedDocumentsResponse
  */
 export type PaginatedDocumentsResponse = {
@@ -8665,7 +9823,7 @@ export type PaginatedNotificationsResponse = {
  * PaginatedProcessWalkthroughsResponse
  * Paginated response containing process walkthroughs with detailed step information.
  */
-export type PaginatedProcessWalkthroughsResponse = {
+export type PaginatedProcessWalkthroughsResponseReadable = {
     /**
      * Total
      * Total number of items available
@@ -8690,13 +9848,45 @@ export type PaginatedProcessWalkthroughsResponse = {
      * Walkthroughs
      * List of process walkthroughs for the current page
      */
-    walkthroughs: Array<ProcessWalkthroughDto>;
+    walkthroughs: Array<ProcessWalkthroughDtoReadable>;
+};
+
+/**
+ * PaginatedProcessWalkthroughsResponse
+ * Paginated response containing process walkthroughs with detailed step information.
+ */
+export type PaginatedProcessWalkthroughsResponseWritable = {
+    /**
+     * Total
+     * Total number of items available
+     */
+    total: number;
+    /**
+     * Page
+     * Current page number (1-indexed)
+     */
+    page: number;
+    /**
+     * Page Size
+     * Number of threads per page
+     */
+    page_size: number;
+    /**
+     * Total Pages
+     * Total number of pages available
+     */
+    total_pages: number;
+    /**
+     * Walkthroughs
+     * List of process walkthroughs for the current page
+     */
+    walkthroughs: Array<ProcessWalkthroughDtoWritable>;
 };
 
 /**
  * PaginatedThreadsResponse
  */
-export type PaginatedThreadsResponse = {
+export type PaginatedThreadsResponseReadable = {
     /**
      * Total
      * Total number of items available
@@ -8721,7 +9911,38 @@ export type PaginatedThreadsResponse = {
      * Threads
      * List of ThreadDTO objects for the current page
      */
-    threads: Array<ThreadDto>;
+    threads: Array<ThreadDtoReadable>;
+};
+
+/**
+ * PaginatedThreadsResponse
+ */
+export type PaginatedThreadsResponseWritable = {
+    /**
+     * Total
+     * Total number of items available
+     */
+    total: number;
+    /**
+     * Page
+     * Current page number (1-indexed)
+     */
+    page: number;
+    /**
+     * Page Size
+     * Number of threads per page
+     */
+    page_size: number;
+    /**
+     * Total Pages
+     * Total number of pages available
+     */
+    total_pages: number;
+    /**
+     * Threads
+     * List of ThreadDTO objects for the current page
+     */
+    threads: Array<ThreadDtoWritable>;
 };
 
 /**
@@ -9158,7 +10379,7 @@ export type ProcessDtoWritable = {
  * ProcessWalkthroughDTO
  * DTO representing a process walkthrough with detailed step information.
  */
-export type ProcessWalkthroughDto = {
+export type ProcessWalkthroughDtoReadable = {
     /**
      * Process Walkthrough Id
      * Unique identifier for this specific process walkthrough.
@@ -9178,7 +10399,7 @@ export type ProcessWalkthroughDto = {
      * Process Steps
      * List of all steps in this walkthrough, ordered chronologically.
      */
-    process_steps: Array<AgentProcessStepDto | ProgramProcessStepDto | HumanProcessStepDto>;
+    process_steps: Array<AgentProcessStepDtoReadable | ProgramProcessStepDto | HumanProcessStepDto>;
     /**
      * Created At
      * Timestamp of the first event in nanoseconds.
@@ -9208,7 +10429,69 @@ export type ProcessWalkthroughDto = {
      * Involved Agents
      * List of agents that submitted work in this walkthrough.
      */
-    involved_agents?: Array<MinimalAgentDto>;
+    involved_agents?: Array<MinimalAgentDtoReadable>;
+    /**
+     * Involved Humans
+     * List of humans that submitted work in this walkthrough.
+     */
+    involved_humans?: Array<MinimalUserDto>;
+};
+
+/**
+ * ProcessWalkthroughDTO
+ * DTO representing a process walkthrough with detailed step information.
+ */
+export type ProcessWalkthroughDtoWritable = {
+    /**
+     * Process Walkthrough Id
+     * Unique identifier for this specific process walkthrough.
+     */
+    process_walkthrough_id: string;
+    /**
+     * Process Class
+     * The class/type of the process.
+     */
+    process_class: string;
+    /**
+     * Process Id
+     * Unique identifier for the specific process instance.
+     */
+    process_id: string;
+    /**
+     * Process Steps
+     * List of all steps in this walkthrough, ordered chronologically.
+     */
+    process_steps: Array<AgentProcessStepDtoWritable | ProgramProcessStepDto | HumanProcessStepDto>;
+    /**
+     * Created At
+     * Timestamp of the first event in nanoseconds.
+     */
+    created_at: number;
+    /**
+     * Updated At
+     * Timestamp of the last event in nanoseconds.
+     */
+    updated_at: number;
+    /**
+     * Total Steps
+     * Total number of steps in this walkthrough.
+     */
+    total_steps: number;
+    /**
+     * Completed Steps
+     * Number of completed steps in this walkthrough.
+     */
+    completed_steps: number;
+    /**
+     * Is Active
+     * Whether this walkthrough is active (no ProcessStopEvent).
+     */
+    is_active: boolean;
+    /**
+     * Involved Agents
+     * List of agents that submitted work in this walkthrough.
+     */
+    involved_agents?: Array<MinimalAgentDtoWritable>;
     /**
      * Involved Humans
      * List of humans that submitted work in this walkthrough.
@@ -9752,6 +11035,206 @@ export type RatingWritable = {
 };
 
 /**
+ * Repeater
+ * https://formkit.com/inputs/repeater
+ * Creates a dynamic array of form items with add/remove functionality.
+ *
+ * The repeater allows users to add multiple instances of the same form structure,
+ * each with its own set of values. The entire section can be collapsible.
+ *
+ * Example:
+ * repeater = Repeater(
+ * name="examples",
+ * label="Few-Shot Examples",
+ * add_label="Add Example",
+ * children=[
+ * InputText(name="user", label="User Input"),
+ * Checkbox(name="success", label="Success"),
+ * Textarea(name="reason", label="Reason"),
+ * ]
+ * )
+ *
+ * # Results in form data:
+ * # { "examples": [
+ * #     { "user": "...", "success": true, "reason": "..." },
+ * #     { "user": "...", "success": false, "reason": "..." }
+ * # ] }
+ */
+export type RepeaterReadable = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Id
+     * Unique identifier for this element
+     */
+    id?: string | null;
+    /**
+     * $Formkit
+     * FormKit repeater element
+     */
+    $formkit?: 'repeater';
+    /**
+     * Name
+     * Key name for the array data in the form output
+     */
+    name: string;
+    /**
+     * Label
+     * Label displayed as the section header
+     */
+    label?: LocaleString | string | null;
+    /**
+     * Addlabel
+     * Text for the add button
+     */
+    addLabel?: LocaleString | string | null;
+    /**
+     * Removelabel
+     * Text for the remove button
+     */
+    removeLabel?: LocaleString | string | null;
+    /**
+     * Upcontrol
+     * Show up/reorder controls
+     */
+    upControl?: boolean | null;
+    /**
+     * Downcontrol
+     * Show down/reorder controls
+     */
+    downControl?: boolean | null;
+    /**
+     * Insertcontrol
+     * Show insert controls
+     */
+    insertControl?: boolean | null;
+    /**
+     * Min
+     * Minimum number of items
+     */
+    min?: number | null;
+    /**
+     * Max
+     * Maximum number of items
+     */
+    max?: number | null;
+    /**
+     * Children
+     * Template form elements for each repeater item
+     */
+    children: Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | RepeaterReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable>;
+    [key: string]: unknown | true | (string | null) | (string | null) | 'repeater' | string | (LocaleString | string | null) | (LocaleString | string | null) | (LocaleString | string | null) | (boolean | null) | (boolean | null) | (boolean | null) | (number | null) | (number | null) | Array<HtmlElement | InputTextReadable | CascadeSelectReadable | CheckboxReadable | ColorPickerReadable | DatePickerReadable | GroupReadable | InputMaskReadable | InputNumberReadable | InputOtpReadable | KnobReadable | ListboxReadable | MultiSelectReadable | PasswordReadable | RadioButtonReadable | RatingReadable | RepeaterReadable | SelectReadable | SelectButtonReadable | SliderReadable | TextareaReadable | ToggleButtonReadable | ToggleSwitchReadable> | undefined;
+};
+
+/**
+ * Repeater
+ * https://formkit.com/inputs/repeater
+ * Creates a dynamic array of form items with add/remove functionality.
+ *
+ * The repeater allows users to add multiple instances of the same form structure,
+ * each with its own set of values. The entire section can be collapsible.
+ *
+ * Example:
+ * repeater = Repeater(
+ * name="examples",
+ * label="Few-Shot Examples",
+ * add_label="Add Example",
+ * children=[
+ * InputText(name="user", label="User Input"),
+ * Checkbox(name="success", label="Success"),
+ * Textarea(name="reason", label="Reason"),
+ * ]
+ * )
+ *
+ * # Results in form data:
+ * # { "examples": [
+ * #     { "user": "...", "success": true, "reason": "..." },
+ * #     { "user": "...", "success": false, "reason": "..." }
+ * # ] }
+ */
+export type RepeaterWritable = {
+    /**
+     * Is Formkit Element
+     * Indicates that this element is a FormKit element
+     */
+    is_formkit_element?: true;
+    /**
+     * If
+     * Conditional expression to show this element
+     */
+    if?: string | null;
+    /**
+     * Id
+     * Unique identifier for this element
+     */
+    id?: string | null;
+    /**
+     * $Formkit
+     * FormKit repeater element
+     */
+    $formkit?: 'repeater';
+    /**
+     * Name
+     * Key name for the array data in the form output
+     */
+    name: string;
+    /**
+     * Label
+     * Label displayed as the section header
+     */
+    label?: LocaleString | string | null;
+    /**
+     * Addlabel
+     * Text for the add button
+     */
+    addLabel?: LocaleString | string | null;
+    /**
+     * Removelabel
+     * Text for the remove button
+     */
+    removeLabel?: LocaleString | string | null;
+    /**
+     * Upcontrol
+     * Show up/reorder controls
+     */
+    upControl?: boolean | null;
+    /**
+     * Downcontrol
+     * Show down/reorder controls
+     */
+    downControl?: boolean | null;
+    /**
+     * Insertcontrol
+     * Show insert controls
+     */
+    insertControl?: boolean | null;
+    /**
+     * Min
+     * Minimum number of items
+     */
+    min?: number | null;
+    /**
+     * Max
+     * Maximum number of items
+     */
+    max?: number | null;
+    /**
+     * Children
+     * Template form elements for each repeater item
+     */
+    children: Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | RepeaterWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable>;
+    [key: string]: unknown | true | (string | null) | (string | null) | 'repeater' | string | (LocaleString | string | null) | (LocaleString | string | null) | (LocaleString | string | null) | (boolean | null) | (boolean | null) | (boolean | null) | (number | null) | (number | null) | Array<HtmlElement | InputTextWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | KnobWritable | ListboxWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | RepeaterWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable> | undefined;
+};
+
+/**
  * RerankerEvent
  */
 export type RerankerEventReadable = {
@@ -10216,7 +11699,7 @@ export type RouterEventWritable = {
  * RunStatistics
  * Statistics for a single run, intended for API response.
  */
-export type RunStatistics = {
+export type RunStatisticsReadable = {
     /**
      * N Events
      * Total number of events
@@ -10285,7 +11768,83 @@ export type RunStatistics = {
     /**
      * The agent that ran the run
      */
-    agent: MinimalAgentDto;
+    agent: MinimalAgentDtoReadable;
+};
+
+/**
+ * RunStatistics
+ * Statistics for a single run, intended for API response.
+ */
+export type RunStatisticsWritable = {
+    /**
+     * N Events
+     * Total number of events
+     */
+    n_events?: number;
+    /**
+     * Has Errors
+     * Has error events
+     */
+    has_errors?: boolean;
+    /**
+     * Has Pending
+     * Has pending events (more start than stop/exception events)
+     */
+    has_pending?: boolean;
+    /**
+     * Is Hitl
+     * Has HITL events
+     */
+    is_hitl?: boolean;
+    /**
+     * Open Hitl
+     * Has open HITL requests
+     */
+    open_hitl?: boolean;
+    /**
+     * Is Bitl
+     * Has BITL events
+     */
+    is_bitl?: boolean;
+    /**
+     * Open Bitl
+     * Has open BITL requests
+     */
+    open_bitl?: boolean;
+    /**
+     * Is Aitl
+     * Has AITL events
+     */
+    is_aitl?: boolean;
+    /**
+     * Open Aitl
+     * Has open AITL requests
+     */
+    open_aitl?: boolean;
+    /**
+     * Started At
+     * Start time (ISO format string)
+     */
+    started_at?: string | null;
+    /**
+     * Ended At
+     * End time (ISO format string)
+     */
+    ended_at?: string | null;
+    /**
+     * Duration
+     * Duration in seconds
+     */
+    duration?: number | null;
+    /**
+     * Run Id
+     * The run ID
+     */
+    run_id: string;
+    /**
+     * The agent that ran the run
+     */
+    agent: MinimalAgentDtoWritable;
 };
 
 /**
@@ -10340,11 +11899,16 @@ export type SelectReadable = {
     additional_validation_rules?: string | null;
     /**
      * Options
-     * Array of selectable options (objects or strings)
+     * Array of selectable options (objects or strings). Use this OR options_api_mode.
      */
-    options: Array<string | LocaleString | {
+    options?: Array<string | LocaleString | {
         [key: string]: string | LocaleString;
     }> | Array<string>;
+    /**
+     * Optionsapimode
+     * When set, options are fetched from /api/v1/models/mode/{mode}. Valid modes: chat, embedding, rerank, image_generation, audio_transcription, audio_speech
+     */
+    optionsApiMode?: string | null;
     /**
      * Optionlabel
      * Property name to use as the label of an option
@@ -10386,7 +11950,7 @@ export type SelectReadable = {
     readonly validation: string;
     [key: string]: unknown | true | (string | null) | (string | null) | 'primeSelect' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (Array<string | LocaleString | {
         [key: string]: string | LocaleString;
-    }> | Array<string>) | (string | null) | (string | null) | (LocaleString | string | null) | string | undefined;
+    }> | Array<string>) | (string | null) | (string | null) | (string | null) | (LocaleString | string | null) | string | undefined;
 };
 
 /**
@@ -10441,11 +12005,16 @@ export type SelectWritable = {
     additional_validation_rules?: string | null;
     /**
      * Options
-     * Array of selectable options (objects or strings)
+     * Array of selectable options (objects or strings). Use this OR options_api_mode.
      */
-    options: Array<string | LocaleString | {
+    options?: Array<string | LocaleString | {
         [key: string]: string | LocaleString;
     }> | Array<string>;
+    /**
+     * Optionsapimode
+     * When set, options are fetched from /api/v1/models/mode/{mode}. Valid modes: chat, embedding, rerank, image_generation, audio_transcription, audio_speech
+     */
+    optionsApiMode?: string | null;
     /**
      * Optionlabel
      * Property name to use as the label of an option
@@ -10483,7 +12052,7 @@ export type SelectWritable = {
     filter?: boolean;
     [key: string]: unknown | true | (string | null) | (string | null) | 'primeSelect' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (Array<string | LocaleString | {
         [key: string]: string | LocaleString;
-    }> | Array<string>) | (string | null) | (string | null) | (LocaleString | string | null) | undefined;
+    }> | Array<string>) | (string | null) | (string | null) | (string | null) | (LocaleString | string | null) | undefined;
 };
 
 /**
@@ -11810,7 +13379,7 @@ export type ThreadAgentDto = {
  * ThreadDTO
  * Thread information and statistics for API response.
  */
-export type ThreadDto = {
+export type ThreadDtoReadable = {
     /**
      * Id
      * The thread ID
@@ -11830,7 +13399,7 @@ export type ThreadDto = {
      * Agents
      * List of agents initially associated with thread
      */
-    agents: Array<MinimalAgentDto>;
+    agents: Array<MinimalAgentDtoReadable>;
     /**
      * Created At
      * Date at which thread was created (ISO format string)
@@ -11920,12 +13489,139 @@ export type ThreadDto = {
      * Displays
      * Displays in this thread, sorted by start time
      */
-    displays?: Array<DisplayStatistics>;
+    displays?: Array<DisplayStatisticsReadable>;
     /**
      * Participating Agents
      * All unique agents that participated in the thread's events
      */
-    participating_agents?: Array<MinimalAgentDto>;
+    participating_agents?: Array<MinimalAgentDtoReadable>;
+    /**
+     * Llm Cost
+     * Total LLM cost of the thread
+     */
+    llm_cost?: number;
+};
+
+/**
+ * ThreadDTO
+ * Thread information and statistics for API response.
+ */
+export type ThreadDtoWritable = {
+    /**
+     * Id
+     * The thread ID
+     */
+    id: string;
+    /**
+     * Name
+     * User given name of thread
+     */
+    name: string;
+    /**
+     * Users
+     * List of users in thread
+     */
+    users: Array<MinimalUserDto>;
+    /**
+     * Agents
+     * List of agents initially associated with thread
+     */
+    agents: Array<MinimalAgentDtoWritable>;
+    /**
+     * Created At
+     * Date at which thread was created (ISO format string)
+     */
+    created_at: string;
+    /**
+     * Process Class
+     * Class of the process that generated the thread
+     */
+    process_class?: string | null;
+    /**
+     * Process Id
+     * ID of the process that generated the thread
+     */
+    process_id?: string | null;
+    /**
+     * Process Walkthrough Id
+     * ID of the walkthrough that generated the thread
+     */
+    process_walkthrough_id?: string | null;
+    /**
+     * Num Events
+     * Total number of events in the thread
+     */
+    num_events?: number;
+    /**
+     * Num Turns
+     * Number of turns (StartEvent count)
+     */
+    num_turns?: number;
+    /**
+     * Has Pending
+     * Thread has more StartEvent than StopEvent+ExceptionEvent overall
+     */
+    has_pending?: boolean;
+    /**
+     * Has Errors
+     * There are ExceptionEvent in the thread
+     */
+    has_errors?: boolean;
+    /**
+     * Is Hitl
+     * There are HumanInTheLoopRequest events present
+     */
+    is_hitl?: boolean;
+    /**
+     * Open Hitl
+     * More HumanInTheLoopRequest than Response overall
+     */
+    open_hitl?: boolean;
+    /**
+     * Is Bitl
+     * There are BotInTheLoopRequest events present
+     */
+    is_bitl?: boolean;
+    /**
+     * Open Bitl
+     * More BotInTheLoopRequest than Response overall
+     */
+    open_bitl?: boolean;
+    /**
+     * Is Aitl
+     * There are AgentInTheLoopRequest events present
+     */
+    is_aitl?: boolean;
+    /**
+     * Open Aitl
+     * More AgentInTheLoopRequest than Response overall
+     */
+    open_aitl?: boolean;
+    /**
+     * First Interaction
+     * Date of oldest event in thread (ISO format string)
+     */
+    first_interaction?: string | null;
+    /**
+     * Latest Interaction
+     * Date of newest event in thread (ISO format string)
+     */
+    latest_interaction?: string | null;
+    /**
+     * Duration
+     * Overall duration of interactions in seconds
+     */
+    duration?: number | null;
+    /**
+     * Displays
+     * Displays in this thread, sorted by start time
+     */
+    displays?: Array<DisplayStatisticsWritable>;
+    /**
+     * Participating Agents
+     * All unique agents that participated in the thread's events
+     */
+    participating_agents?: Array<MinimalAgentDtoWritable>;
     /**
      * Llm Cost
      * Total LLM cost of the thread
@@ -12569,6 +14265,20 @@ export type TranscriptionWord = {
      */
     word: string;
     [key: string]: unknown | number | string;
+};
+
+/**
+ * UpdateAgentConfigurationDTO
+ * Request body for updating agent configuration.
+ */
+export type UpdateAgentConfigurationDto = {
+    /**
+     * Configuration
+     * The configuration values to update as key-value pairs. Keys should match the 'name' fields from the agent's form elements.
+     */
+    configuration: {
+        [key: string]: unknown;
+    };
 };
 
 /**
@@ -13465,7 +15175,7 @@ export type GetUserThreadsResponses = {
     /**
      * Successful Response
      */
-    200: PaginatedThreadsResponse;
+    200: PaginatedThreadsResponseReadable;
 };
 
 export type GetUserThreadsResponse = GetUserThreadsResponses[keyof GetUserThreadsResponses];
@@ -13490,7 +15200,7 @@ export type CreateThreadResponses = {
     /**
      * Successful Response
      */
-    200: ThreadDto;
+    200: ThreadDtoReadable;
 };
 
 export type CreateThreadResponse = CreateThreadResponses[keyof CreateThreadResponses];
@@ -13520,7 +15230,7 @@ export type GetThreadResponses = {
     /**
      * Successful Response
      */
-    200: ThreadDto;
+    200: ThreadDtoReadable;
 };
 
 export type GetThreadResponse = GetThreadResponses[keyof GetThreadResponses];
@@ -13550,7 +15260,7 @@ export type AddAgentToThreadResponses = {
     /**
      * Successful Response
      */
-    200: ThreadDto;
+    200: ThreadDtoReadable;
 };
 
 export type AddAgentToThreadResponse = AddAgentToThreadResponses[keyof AddAgentToThreadResponses];
@@ -13588,7 +15298,7 @@ export type RemoveAgentFromThreadResponses = {
     /**
      * Successful Response
      */
-    200: ThreadDto;
+    200: ThreadDtoReadable;
 };
 
 export type RemoveAgentFromThreadResponse = RemoveAgentFromThreadResponses[keyof RemoveAgentFromThreadResponses];
@@ -13618,7 +15328,7 @@ export type AddUserToThreadResponses = {
     /**
      * Successful Response
      */
-    200: ThreadDto;
+    200: ThreadDtoReadable;
 };
 
 export type AddUserToThreadResponse = AddUserToThreadResponses[keyof AddUserToThreadResponses];
@@ -13652,10 +15362,152 @@ export type RemoveUserFromThreadResponses = {
     /**
      * Successful Response
      */
-    200: ThreadDto;
+    200: ThreadDtoReadable;
 };
 
 export type RemoveUserFromThreadResponse = RemoveUserFromThreadResponses[keyof RemoveUserFromThreadResponses];
+
+export type GetOpenChatHitlData = {
+    body?: never;
+    path: {
+        /**
+         * Thread ID
+         */
+        thread_id: string;
+    };
+    query?: never;
+    url: '/threads/{thread_id}/open-chat-hitl';
+};
+
+export type GetOpenChatHitlErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetOpenChatHitlError = GetOpenChatHitlErrors[keyof GetOpenChatHitlErrors];
+
+export type GetOpenChatHitlResponses = {
+    /**
+     * Successful Response
+     */
+    200: OpenChatHitlResponseReadable;
+};
+
+export type GetOpenChatHitlResponse = GetOpenChatHitlResponses[keyof GetOpenChatHitlResponses];
+
+export type GetModelsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/models';
+};
+
+export type GetModelsResponses = {
+    /**
+     * Response Get Models Models Get
+     * Successful Response
+     */
+    200: Array<ModelTypeGroupDtoReadable>;
+};
+
+export type GetModelsResponse = GetModelsResponses[keyof GetModelsResponses];
+
+export type GetModelsByModeData = {
+    body?: never;
+    path: {
+        /**
+         * Mode
+         */
+        mode: string;
+    };
+    query?: never;
+    url: '/models/mode/{mode}';
+};
+
+export type GetModelsByModeErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetModelsByModeError = GetModelsByModeErrors[keyof GetModelsByModeErrors];
+
+export type GetModelsByModeResponses = {
+    /**
+     * Response Get Models By Mode Models Mode  Mode  Get
+     * Successful Response
+     */
+    200: Array<ModelDtoReadable>;
+};
+
+export type GetModelsByModeResponse = GetModelsByModeResponses[keyof GetModelsByModeResponses];
+
+export type GetModelData = {
+    body?: never;
+    path: {
+        /**
+         * Model Name
+         */
+        model_name: string;
+    };
+    query?: never;
+    url: '/models/{model_name}';
+};
+
+export type GetModelErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetModelError = GetModelErrors[keyof GetModelErrors];
+
+export type GetModelResponses = {
+    /**
+     * Successful Response
+     */
+    200: ModelDtoReadable;
+};
+
+export type GetModelResponse = GetModelResponses[keyof GetModelResponses];
+
+export type DeleteAgentData = {
+    body?: never;
+    path: {
+        /**
+         * Agent Class
+         */
+        agent_class: string;
+        /**
+         * Agent Id
+         */
+        agent_id: string;
+    };
+    query?: never;
+    url: '/agents/{agent_class}/{agent_id}';
+};
+
+export type DeleteAgentErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteAgentError = DeleteAgentErrors[keyof DeleteAgentErrors];
+
+export type DeleteAgentResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteAgentResponse = DeleteAgentResponses[keyof DeleteAgentResponses];
 
 export type GetAgentData = {
     body?: never;
@@ -13686,7 +15538,7 @@ export type GetAgentResponses = {
     /**
      * Successful Response
      */
-    200: AgentDto;
+    200: AgentDtoReadable;
 };
 
 export type GetAgentResponse = GetAgentResponses[keyof GetAgentResponses];
@@ -13731,10 +15583,78 @@ export type GetAgentThreadsResponses = {
     /**
      * Successful Response
      */
-    200: PaginatedThreadsResponse;
+    200: PaginatedThreadsResponseReadable;
 };
 
 export type GetAgentThreadsResponse = GetAgentThreadsResponses[keyof GetAgentThreadsResponses];
+
+export type GetAgentConfigurationData = {
+    body?: never;
+    path: {
+        /**
+         * Agent Class
+         */
+        agent_class: string;
+        /**
+         * Agent Id
+         */
+        agent_id: string;
+    };
+    query?: never;
+    url: '/agents/{agent_class}/{agent_id}/configuration';
+};
+
+export type GetAgentConfigurationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetAgentConfigurationError = GetAgentConfigurationErrors[keyof GetAgentConfigurationErrors];
+
+export type GetAgentConfigurationResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentConfigurationDataDto;
+};
+
+export type GetAgentConfigurationResponse = GetAgentConfigurationResponses[keyof GetAgentConfigurationResponses];
+
+export type UpdateAgentConfigurationData = {
+    body: UpdateAgentConfigurationDto;
+    path: {
+        /**
+         * Agent Class
+         */
+        agent_class: string;
+        /**
+         * Agent Id
+         */
+        agent_id: string;
+    };
+    query?: never;
+    url: '/agents/{agent_class}/{agent_id}/configuration';
+};
+
+export type UpdateAgentConfigurationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateAgentConfigurationError = UpdateAgentConfigurationErrors[keyof UpdateAgentConfigurationErrors];
+
+export type UpdateAgentConfigurationResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentConfigurationDataDto;
+};
+
+export type UpdateAgentConfigurationResponse = UpdateAgentConfigurationResponses[keyof UpdateAgentConfigurationResponses];
 
 export type GetAgentsData = {
     body?: never;
@@ -13748,10 +15668,35 @@ export type GetAgentsResponses = {
      * Response Get Agents Agents  Get
      * Successful Response
      */
-    200: Array<AgentDto>;
+    200: Array<AgentDtoReadable>;
 };
 
 export type GetAgentsResponse = GetAgentsResponses[keyof GetAgentsResponses];
+
+export type CreateAgentData = {
+    body: CreateAgentRequest;
+    path?: never;
+    query?: never;
+    url: '/agents/';
+};
+
+export type CreateAgentErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateAgentError = CreateAgentErrors[keyof CreateAgentErrors];
+
+export type CreateAgentResponses = {
+    /**
+     * Successful Response
+     */
+    201: AgentDtoReadable;
+};
+
+export type CreateAgentResponse = CreateAgentResponses[keyof CreateAgentResponses];
 
 export type DiscoverAgentsData = {
     body?: never;
@@ -13765,10 +15710,27 @@ export type DiscoverAgentsResponses = {
      * Response Discover Agents Agents Discover Get
      * Successful Response
      */
-    200: Array<AgentDto>;
+    200: Array<AgentDtoReadable>;
 };
 
 export type DiscoverAgentsResponse = DiscoverAgentsResponses[keyof DiscoverAgentsResponses];
+
+export type GetAgentClassesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/agents/classes';
+};
+
+export type GetAgentClassesResponses = {
+    /**
+     * Response Get Agent Classes Agents Classes Get
+     * Successful Response
+     */
+    200: Array<AgentClassDtoReadable>;
+};
+
+export type GetAgentClassesResponse = GetAgentClassesResponses[keyof GetAgentClassesResponses];
 
 export type GetProcessData = {
     body?: never;
@@ -13878,7 +15840,7 @@ export type GetProcessWalkthroughsResponses = {
     /**
      * Successful Response
      */
-    200: PaginatedProcessWalkthroughsResponse;
+    200: PaginatedProcessWalkthroughsResponseReadable;
 };
 
 export type GetProcessWalkthroughsResponse = GetProcessWalkthroughsResponses[keyof GetProcessWalkthroughsResponses];
@@ -14261,21 +16223,21 @@ export type CreateRoleResponses = {
 
 export type CreateRoleResponse = CreateRoleResponses[keyof CreateRoleResponses];
 
-export type GetModelsData = {
+export type GetModels2Data = {
     body?: never;
     path?: never;
     query?: never;
     url: '/openai/models';
 };
 
-export type GetModelsResponses = {
+export type GetModels2Responses = {
     /**
      * Successful Response
      */
     200: ModelResponse;
 };
 
-export type GetModelsResponse = GetModelsResponses[keyof GetModelsResponses];
+export type GetModels2Response = GetModels2Responses[keyof GetModels2Responses];
 
 export type GetModelWithAssistantsData = {
     body?: never;
@@ -14561,7 +16523,7 @@ export type GetExperimentResponses = {
     /**
      * Successful Response
      */
-    200: Experiment;
+    200: ExperimentReadable;
 };
 
 export type GetExperimentResponse = GetExperimentResponses[keyof GetExperimentResponses];
@@ -14578,7 +16540,7 @@ export type GetExperimentsResponses = {
      * Response Get Experiments Evaluations Experiments Get
      * Successful Response
      */
-    200: Array<MinimalExperiment>;
+    200: Array<MinimalExperimentReadable>;
 };
 
 export type GetExperimentsResponse = GetExperimentsResponses[keyof GetExperimentsResponses];
@@ -14603,7 +16565,7 @@ export type RunExperimentResponses = {
     /**
      * Successful Response
      */
-    200: Experiment;
+    200: ExperimentReadable;
 };
 
 export type RunExperimentResponse = RunExperimentResponses[keyof RunExperimentResponses];

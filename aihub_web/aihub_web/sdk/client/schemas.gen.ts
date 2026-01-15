@@ -69,6 +69,139 @@ export const AddUserRequestSchema = {
     title: 'AddUserRequest'
 } as const;
 
+export const AgentClassDTOSchema = {
+    properties: {
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class',
+            description: "The agent's class identifier (e.g., 'my_agent_class')."
+        },
+        agent_config_specs: {
+            '$ref': '#/components/schemas/AgentConfigSpecs',
+            description: 'Configuration specifications of the agent class, including schema and parameters.'
+        },
+        start_events: {
+            items: {
+                '$ref': '#/components/schemas/EventSpecs'
+            },
+            type: 'array',
+            title: 'Start Events',
+            description: "A list of `EventSpecs` representing events that can start this agent's workflow."
+        },
+        stop_events: {
+            items: {
+                '$ref': '#/components/schemas/EventSpecs'
+            },
+            type: 'array',
+            title: 'Stop Events',
+            description: "A list of `EventSpecs` representing events that can stop this agent's workflow."
+        },
+        hitl_request_events: {
+            items: {
+                '$ref': '#/components/schemas/EventSpecs'
+            },
+            type: 'array',
+            title: 'Hitl Request Events',
+            description: 'A list of `EventSpecs` representing human-in-the-loop request events this agent can produce.'
+        },
+        hitl_response_events: {
+            items: {
+                '$ref': '#/components/schemas/EventSpecs'
+            },
+            type: 'array',
+            title: 'Hitl Response Events',
+            description: 'A list of `EventSpecs` representing human-in-the-loop response events this agent can accept.'
+        },
+        network_graph: {
+            '$ref': '#/components/schemas/WorkflowGraph',
+            description: 'A network graph of the agent class, showing how different components are connected and interact.'
+        },
+        is_conversational: {
+            type: 'boolean',
+            title: 'Is Conversational',
+            description: 'Whether the agent class can participate in a chat-based conversation'
+        },
+        is_online: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Online',
+            description: 'Indicates whether the agent class is online and reachable.'
+        },
+        default_agent_config: {
+            '$ref': '#/components/schemas/AgentConfig',
+            description: 'The default agent configuration for this agent class. This is the configuration that will be used if no specific configuration is provided.'
+        }
+    },
+    type: 'object',
+    required: ['agent_class', 'agent_config_specs', 'start_events', 'stop_events', 'hitl_request_events', 'hitl_response_events', 'network_graph', 'is_conversational', 'default_agent_config'],
+    title: 'AgentClassDTO',
+    description: `Encapsulates the data transfer object (DTO) for an agent class.
+Contains information about the agent class, including its name and configuration specifications.`
+} as const;
+
+export const AgentConfigSchema = {
+    properties: {
+        name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'The name of the process or agent.'
+        },
+        description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'The description of the process or agent.'
+        },
+        icon: {
+            type: 'string',
+            title: 'Icon',
+            description: 'The icon representing the process or agent.',
+            default: 'meteor-icons:robot'
+        },
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class',
+            description: 'The class name of the agent, used for identification.'
+        },
+        agent_id: {
+            type: 'string',
+            pattern: '^[a-z0-9_-]+$',
+            title: 'Agent Id',
+            description: 'Uniquely identifies the agent instance.'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['name', 'description', 'agent_class', 'agent_id'],
+    title: 'AgentConfig',
+    description: `The agent config is a flexible way to configure the runtime behavior of an agent. It can ensure that two agents
+that follow the same workflow can still be configured to achieve different outcomes through a different
+set of configurations.
+
+Usually, you will want to inherit from this AgentConfig and pass it to your runner.
+The dispatcher will then flexibly inject the config into each step,
+giving you full control over the agent's runtime behavior.
+
+Note that you can also define configs for individual workflow steps! Simply by naming the attribute the same
+way as your step, and assigning it a value of type \`StepConfig\`, you can configure the step's behavior.
+
+\`\`\`python
+class StepXConfig(StepConfig):
+    some_setting: str
+
+class MyCustomAgentConfig(AgentConfig):
+    step_x: StepXConfig = StepXConfig(some_setting="some value")
+
+class MyAgent(Agent):
+    @step()
+    def step_x(self, step_x_config: StepXConfig):
+        print(step_x_config.some_setting)
+\`\`\``
+} as const;
+
 export const AgentConfigDTOSchema = {
     properties: {
         agent_id: {
@@ -91,11 +224,234 @@ export const AgentConfigDTOSchema = {
             title: 'Icon',
             description: 'The icon representing the agent.',
             default: 'meteor-icons:robot'
+        },
+        form: {
+            anyOf: [
+                {
+                    items: {
+                        anyOf: [
+                            {
+                                '$ref': '#/components/schemas/HtmlElement'
+                            },
+                            {
+                                '$ref': '#/components/schemas/InputText'
+                            },
+                            {
+                                '$ref': '#/components/schemas/CascadeSelect'
+                            },
+                            {
+                                '$ref': '#/components/schemas/Checkbox'
+                            },
+                            {
+                                '$ref': '#/components/schemas/ColorPicker'
+                            },
+                            {
+                                '$ref': '#/components/schemas/DatePicker'
+                            },
+                            {
+                                '$ref': '#/components/schemas/Group'
+                            },
+                            {
+                                '$ref': '#/components/schemas/InputMask'
+                            },
+                            {
+                                '$ref': '#/components/schemas/InputNumber'
+                            },
+                            {
+                                '$ref': '#/components/schemas/InputOtp'
+                            },
+                            {
+                                '$ref': '#/components/schemas/Knob'
+                            },
+                            {
+                                '$ref': '#/components/schemas/Listbox'
+                            },
+                            {
+                                '$ref': '#/components/schemas/MultiSelect'
+                            },
+                            {
+                                '$ref': '#/components/schemas/Password'
+                            },
+                            {
+                                '$ref': '#/components/schemas/RadioButton'
+                            },
+                            {
+                                '$ref': '#/components/schemas/Rating'
+                            },
+                            {
+                                '$ref': '#/components/schemas/Repeater'
+                            },
+                            {
+                                '$ref': '#/components/schemas/Select'
+                            },
+                            {
+                                '$ref': '#/components/schemas/SelectButton'
+                            },
+                            {
+                                '$ref': '#/components/schemas/Slider'
+                            },
+                            {
+                                '$ref': '#/components/schemas/Textarea'
+                            },
+                            {
+                                '$ref': '#/components/schemas/ToggleButton'
+                            },
+                            {
+                                '$ref': '#/components/schemas/ToggleSwitch'
+                            }
+                        ]
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Form',
+            description: 'Dynamic form configuration for agent runtime settings.'
         }
     },
     type: 'object',
     required: ['agent_id', 'name', 'description'],
     title: 'AgentConfigDTO'
+} as const;
+
+export const AgentConfigSpecsSchema = {
+    properties: {
+        name: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'The name of the process or agent.'
+        },
+        description: {
+            '$ref': '#/components/schemas/LocaleString',
+            description: 'The description of the process or agent.'
+        },
+        icon: {
+            type: 'string',
+            title: 'Icon',
+            description: 'The icon representing the process or agent.',
+            default: 'meteor-icons:robot'
+        },
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class',
+            description: 'The class name of the agent, used for identification.'
+        },
+        agent_id: {
+            type: 'string',
+            pattern: '^[a-z0-9_-]+$',
+            title: 'Agent Id',
+            description: 'Uniquely identifies the agent instance.'
+        },
+        form: {
+            items: {
+                anyOf: [
+                    {
+                        '$ref': '#/components/schemas/HtmlElement'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputText'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CascadeSelect'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Checkbox'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ColorPicker'
+                    },
+                    {
+                        '$ref': '#/components/schemas/DatePicker'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Group'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputMask'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputNumber'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputOtp'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Knob'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Listbox'
+                    },
+                    {
+                        '$ref': '#/components/schemas/MultiSelect'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Password'
+                    },
+                    {
+                        '$ref': '#/components/schemas/RadioButton'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Rating'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Repeater'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Select'
+                    },
+                    {
+                        '$ref': '#/components/schemas/SelectButton'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Slider'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Textarea'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ToggleButton'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ToggleSwitch'
+                    }
+                ]
+            },
+            type: 'array',
+            title: 'Form',
+            description: 'Formkit elements of the Agent Config.',
+            default: []
+        }
+    },
+    type: 'object',
+    required: ['name', 'description', 'agent_class', 'agent_id'],
+    title: 'AgentConfigSpecs',
+    description: "Defines a specification for an agent's configuration."
+} as const;
+
+export const AgentConfigurationDataDTOSchema = {
+    properties: {
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class',
+            description: "The agent's class identifier."
+        },
+        agent_id: {
+            type: 'string',
+            title: 'Agent Id',
+            description: "The agent's instance identifier."
+        },
+        configuration: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Configuration',
+            description: "The current configuration values as key-value pairs. Keys match the 'name' fields from the agent's form elements."
+        }
+    },
+    type: 'object',
+    required: ['agent_class', 'agent_id', 'configuration'],
+    title: 'AgentConfigurationDataDTO',
+    description: 'Response containing the current configuration data for an agent.'
 } as const;
 
 export const AgentDTOSchema = {
@@ -3776,6 +4132,34 @@ By subclassing \`BaseEvent\`, \`ControlEvent\` benefits from automatic type regi
 serialization, ensuring that control signals are as easy to produce and consume as any other event.`
 } as const;
 
+export const CreateAgentRequestSchema = {
+    properties: {
+        agent_class: {
+            type: 'string',
+            title: 'Agent Class',
+            description: 'The agent class to create an instance of. Must match a discovered/online agent class.'
+        },
+        agent_id: {
+            type: 'string',
+            maxLength: 100,
+            minLength: 1,
+            pattern: '^[a-z0-9_-]+$',
+            title: 'Agent Id',
+            description: 'Unique identifier for the agent instance. Must be URL-safe.'
+        },
+        configuration: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Configuration',
+            description: "The full configuration values including name, description, icon, and runtime settings. Keys should match the 'name' fields from the agent's form elements."
+        }
+    },
+    type: 'object',
+    required: ['agent_class', 'agent_id'],
+    title: 'CreateAgentRequest',
+    description: 'Request body for creating a new agent instance.'
+} as const;
+
 export const CreateNamespaceRequestSchema = {
     properties: {
         folder_name: {
@@ -6135,6 +6519,170 @@ export const FunctionDefinitionSchema = {
     title: 'FunctionDefinition'
 } as const;
 
+export const GroupSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
+        '$formkit': {
+            type: 'string',
+            const: 'group',
+            title: '$Formkit',
+            description: 'FormKit group element',
+            default: 'group'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'Key name for the grouped data in the form output'
+        },
+        label: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Label',
+            description: 'Optional label displayed above the group'
+        },
+        children: {
+            items: {
+                anyOf: [
+                    {
+                        '$ref': '#/components/schemas/HtmlElement'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputText'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CascadeSelect'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Checkbox'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ColorPicker'
+                    },
+                    {
+                        '$ref': '#/components/schemas/DatePicker'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Group'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputMask'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputNumber'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputOtp'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Knob'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Listbox'
+                    },
+                    {
+                        '$ref': '#/components/schemas/MultiSelect'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Password'
+                    },
+                    {
+                        '$ref': '#/components/schemas/RadioButton'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Rating'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Repeater'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Select'
+                    },
+                    {
+                        '$ref': '#/components/schemas/SelectButton'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Slider'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Textarea'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ToggleButton'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ToggleSwitch'
+                    }
+                ]
+            },
+            type: 'array',
+            title: 'Children',
+            description: 'Child form elements contained within this group'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['name', 'children'],
+    title: 'Group',
+    description: `https://formkit.com/inputs/group
+Groups child inputs into a nested object structure. The group itself outputs no markup by default
+and can be used to organize related form fields under a common key.
+
+The group's name becomes the key in the resulting form data object, with all child values nested inside.
+
+Example:
+    group = Group(
+        name="llm",
+        label="LLM Configuration",
+        children=[
+            Select(name="model_name", label="Model", options=[...]),
+            InputNumber(name="temperature", label="Temperature"),
+        ]
+    )
+
+    # Results in form data:
+    # { "llm": { "model_name": "gpt-4", "temperature": 0.7 } }`
+} as const;
+
 export const GuardAcceptEventSchema = {
     properties: {
         event_id: {
@@ -6517,6 +7065,9 @@ export const HumanInDTOSchema = {
                         '$ref': '#/components/schemas/DatePicker'
                     },
                     {
+                        '$ref': '#/components/schemas/Group'
+                    },
+                    {
                         '$ref': '#/components/schemas/InputMask'
                     },
                     {
@@ -6542,6 +7093,9 @@ export const HumanInDTOSchema = {
                     },
                     {
                         '$ref': '#/components/schemas/Rating'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Repeater'
                     },
                     {
                         '$ref': '#/components/schemas/Select'
@@ -6626,9 +7180,9 @@ export const HumanInTheLoopRequestEventSchema = {
         },
         hitl_type: {
             type: 'string',
-            enum: ['input', 'confirmation'],
+            enum: ['input', 'confirmation', 'chat'],
             title: 'Hitl Type',
-            description: "The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no."
+            description: "HITL type: 'input' (free-form text), 'confirmation' (yes/no), 'chat' (chat-style)."
         },
         _event_name: {
             type: 'string',
@@ -6654,8 +7208,9 @@ Used during deserialization to decide which subclass to instantiate.`,
     description: `Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
 
 Use the specific subclasses:
-- \`HumanInTheLoopInputRequestEvent\` for free-form text input
-- \`HumanInTheLoopConfirmationRequestEvent\` for yes/no confirmation`
+- \`HumanInTheLoopInputRequestEvent\` for free-form text input (popup dialog)
+- \`HumanInTheLoopConfirmationRequestEvent\` for yes/no confirmation (popup dialog)
+- \`HumanInTheLoopChatRequestEvent\` for chat-style input (appears as regular message)`
 } as const;
 
 export const HumanInTheLoopResponseEventSchema = {
@@ -6731,8 +7286,9 @@ Used during deserialization to decide which subclass to instantiate.`,
     description: `Base response from a human operator after a HITL request.
 
 Use the specific subclasses:
-- \`HumanInTheLoopInputResponseEvent\` for text input responses
-- \`HumanInTheLoopConfirmationResponseEvent\` for yes/no confirmation responses`
+- \`HumanInTheLoopInputResponseEvent\` for text input responses (popup dialog)
+- \`HumanInTheLoopConfirmationResponseEvent\` for yes/no confirmation responses (popup dialog)
+- \`HumanInTheLoopChatResponseEvent\` for chat-style responses (regular message)`
 } as const;
 
 export const HumanProcessStepDTOSchema = {
@@ -10027,6 +10583,28 @@ export const MinimalUserDTOSchema = {
     title: 'MinimalUserDTO'
 } as const;
 
+export const ModelDTOSchema = {
+    properties: {
+        model_name: {
+            type: 'string',
+            title: 'Model Name',
+            description: 'The name/identifier of the model'
+        },
+        model_info: {
+            '$ref': '#/components/schemas/ModelInfoDTO',
+            description: 'Detailed information about the model'
+        },
+        icon: {
+            type: 'string',
+            title: 'Icon',
+            readOnly: true
+        }
+    },
+    type: 'object',
+    required: ['model_name', 'model_info', 'icon'],
+    title: 'ModelDTO'
+} as const;
+
 export const ModelDetailsSchema = {
     properties: {
         id: {
@@ -10044,7 +10622,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1767889732
+            default: 1768473290
         },
         owned_by: {
             type: 'string',
@@ -10082,6 +10660,466 @@ export const ModelDetailsSchema = {
     title: 'ModelDetails'
 } as const;
 
+export const ModelInfoDTOSchema = {
+    properties: {
+        mode: {
+            type: 'string',
+            title: 'Mode',
+            description: "The mode of the model (e.g., 'chat', 'completion', 'embedding')"
+        },
+        max_input_tokens: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Max Input Tokens',
+            description: 'Maximum number of input tokens the model can handle'
+        },
+        max_output_tokens: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Max Output Tokens',
+            description: 'Maximum number of output tokens the model can generate'
+        },
+        input_cost_per_token: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Cost Per Token',
+            description: 'Cost per input token in USD'
+        },
+        output_cost_per_token: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Token',
+            description: 'Cost per output token in USD'
+        },
+        cache_creation_input_token_cost: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cache Creation Input Token Cost',
+            description: 'Cost for creating cache from input tokens'
+        },
+        cache_read_input_token_cost: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cache Read Input Token Cost',
+            description: 'Cost for reading cached input tokens'
+        },
+        input_cost_per_token_above_128k_tokens: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Cost Per Token Above 128K Tokens',
+            description: 'Cost per input token for contexts above 128k tokens'
+        },
+        input_cost_per_token_above_200k_tokens: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Cost Per Token Above 200K Tokens',
+            description: 'Cost per input token for contexts above 200k tokens'
+        },
+        input_cost_per_audio_token: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Cost Per Audio Token',
+            description: 'Cost per audio input token'
+        },
+        input_cost_per_token_batches: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Cost Per Token Batches',
+            description: 'Cost per input token when using batch API'
+        },
+        output_cost_per_token_batches: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Token Batches',
+            description: 'Cost per output token when using batch API'
+        },
+        output_cost_per_audio_token: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Audio Token',
+            description: 'Cost per audio output token'
+        },
+        output_cost_per_reasoning_token: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Reasoning Token',
+            description: 'Cost per reasoning token for models with reasoning capabilities'
+        },
+        output_cost_per_token_above_128k_tokens: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Token Above 128K Tokens',
+            description: 'Cost per output token for contexts above 128k tokens'
+        },
+        output_cost_per_token_above_200k_tokens: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Token Above 200K Tokens',
+            description: 'Cost per output token for contexts above 200k tokens'
+        },
+        output_cost_per_image: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Image',
+            description: 'Cost per image output'
+        },
+        search_context_cost_per_query: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Search Context Cost Per Query',
+            description: 'Cost per search context query'
+        },
+        output_vector_size: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Vector Size',
+            description: 'Size of output vectors for embedding models'
+        },
+        supports_system_messages: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports System Messages',
+            description: 'Whether the model supports system messages'
+        },
+        supports_response_schema: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Response Schema',
+            description: 'Whether the model supports structured response schemas'
+        },
+        supports_vision: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Vision',
+            description: 'Whether the model supports vision/image input'
+        },
+        supports_function_calling: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Function Calling',
+            description: 'Whether the model supports function calling'
+        },
+        supports_tool_choice: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Tool Choice',
+            description: 'Whether the model supports tool choice selection'
+        },
+        supports_assistant_prefill: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Assistant Prefill',
+            description: 'Whether the model supports assistant message prefilling'
+        },
+        supports_prompt_caching: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Prompt Caching',
+            description: 'Whether the model supports prompt caching'
+        },
+        supports_audio_input: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Audio Input',
+            description: 'Whether the model supports audio input'
+        },
+        supports_audio_output: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Audio Output',
+            description: 'Whether the model supports audio output'
+        },
+        supports_pdf_input: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Pdf Input',
+            description: 'Whether the model supports PDF input'
+        },
+        supports_embedding_image_input: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Embedding Image Input',
+            description: 'Whether the model supports image input for embeddings'
+        },
+        supports_native_streaming: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Native Streaming',
+            description: 'Whether the model supports native streaming'
+        },
+        supports_web_search: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Web Search',
+            description: 'Whether the model supports web search capabilities'
+        },
+        supports_url_context: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Url Context',
+            description: 'Whether the model supports URL context input'
+        },
+        supports_reasoning: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Reasoning',
+            description: 'Whether the model supports reasoning capabilities'
+        },
+        supports_computer_use: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Computer Use',
+            description: 'Whether the model supports computer use capabilities'
+        },
+        tpm: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tpm',
+            description: 'Tokens per minute rate limit'
+        },
+        rpm: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Rpm',
+            description: 'Requests per minute rate limit'
+        },
+        supported_openai_params: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supported Openai Params',
+            description: 'List of supported OpenAI API parameters'
+        }
+    },
+    type: 'object',
+    required: ['mode'],
+    title: 'ModelInfoDTO'
+} as const;
+
 export const ModelResponseSchema = {
     properties: {
         object: {
@@ -10102,6 +11140,27 @@ export const ModelResponseSchema = {
     type: 'object',
     required: ['data'],
     title: 'ModelResponse'
+} as const;
+
+export const ModelTypeGroupDTOSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'The name/type of the model group'
+        },
+        models: {
+            items: {
+                '$ref': '#/components/schemas/ModelDTO'
+            },
+            type: 'array',
+            title: 'Models',
+            description: 'List of models in this group'
+        }
+    },
+    type: 'object',
+    required: ['name', 'models'],
+    title: 'ModelTypeGroupDTO'
 } as const;
 
 export const MultiSelectSchema = {
@@ -10603,6 +11662,31 @@ export const NotificationDTOSchema = {
     required: ['id', 'user_id', 'title', 'message', 'severity', 'link', 'created_at'],
     title: 'NotificationDTO',
     description: 'Data Transfer Object for a notification.'
+} as const;
+
+export const OpenChatHitlResponseSchema = {
+    properties: {
+        has_open_chat_hitl: {
+            type: 'boolean',
+            title: 'Has Open Chat Hitl',
+            description: 'Whether there is an open chat HITL request awaiting response.'
+        },
+        hitl_request: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/HumanInTheLoopRequestEvent'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'The HITL request event if there is an open chat HITL, None otherwise.'
+        }
+    },
+    type: 'object',
+    required: ['has_open_chat_hitl'],
+    title: 'OpenChatHitlResponse',
+    description: "Response indicating whether there's an open chat HITL request for a thread."
 } as const;
 
 export const PaginatedDocumentsResponseSchema = {
@@ -11925,6 +13009,265 @@ export const RatingSchema = {
     description: 'https://formkit-primevue.netlify.app/inputs/Rating'
 } as const;
 
+export const RepeaterSchema = {
+    properties: {
+        is_formkit_element: {
+            type: 'boolean',
+            const: true,
+            title: 'Is Formkit Element',
+            description: 'Indicates that this element is a FormKit element',
+            default: true
+        },
+        if: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^\\$.+'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'If',
+            description: 'Conditional expression to show this element'
+        },
+        id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Id',
+            description: 'Unique identifier for this element'
+        },
+        '$formkit': {
+            type: 'string',
+            const: 'repeater',
+            title: '$Formkit',
+            description: 'FormKit repeater element',
+            default: 'repeater'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'Key name for the array data in the form output'
+        },
+        label: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Label',
+            description: 'Label displayed as the section header'
+        },
+        addLabel: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Addlabel',
+            description: 'Text for the add button'
+        },
+        removeLabel: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Removelabel',
+            description: 'Text for the remove button'
+        },
+        upControl: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Upcontrol',
+            description: 'Show up/reorder controls'
+        },
+        downControl: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Downcontrol',
+            description: 'Show down/reorder controls'
+        },
+        insertControl: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Insertcontrol',
+            description: 'Show insert controls'
+        },
+        min: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Min',
+            description: 'Minimum number of items'
+        },
+        max: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Max',
+            description: 'Maximum number of items'
+        },
+        children: {
+            items: {
+                anyOf: [
+                    {
+                        '$ref': '#/components/schemas/HtmlElement'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputText'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CascadeSelect'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Checkbox'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ColorPicker'
+                    },
+                    {
+                        '$ref': '#/components/schemas/DatePicker'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Group'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputMask'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputNumber'
+                    },
+                    {
+                        '$ref': '#/components/schemas/InputOtp'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Knob'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Listbox'
+                    },
+                    {
+                        '$ref': '#/components/schemas/MultiSelect'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Password'
+                    },
+                    {
+                        '$ref': '#/components/schemas/RadioButton'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Rating'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Repeater'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Select'
+                    },
+                    {
+                        '$ref': '#/components/schemas/SelectButton'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Slider'
+                    },
+                    {
+                        '$ref': '#/components/schemas/Textarea'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ToggleButton'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ToggleSwitch'
+                    }
+                ]
+            },
+            type: 'array',
+            title: 'Children',
+            description: 'Template form elements for each repeater item'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['name', 'children'],
+    title: 'Repeater',
+    description: `https://formkit.com/inputs/repeater
+Creates a dynamic array of form items with add/remove functionality.
+
+The repeater allows users to add multiple instances of the same form structure,
+each with its own set of values. The entire section can be collapsible.
+
+Example:
+    repeater = Repeater(
+        name="examples",
+        label="Few-Shot Examples",
+        add_label="Add Example",
+        children=[
+            InputText(name="user", label="User Input"),
+            Checkbox(name="success", label="Success"),
+            Textarea(name="reason", label="Reason"),
+        ]
+    )
+
+    # Results in form data:
+    # { "examples": [
+    #     { "user": "...", "success": true, "reason": "..." },
+    #     { "user": "...", "success": false, "reason": "..." }
+    # ] }`
+} as const;
+
 export const RerankerEventSchema = {
     properties: {
         event_id: {
@@ -12618,7 +13961,20 @@ export const SelectSchema = {
                 }
             ],
             title: 'Options',
-            description: 'Array of selectable options (objects or strings)'
+            description: 'Array of selectable options (objects or strings). Use this OR options_api_mode.',
+            default: []
+        },
+        optionsApiMode: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Optionsapimode',
+            description: 'When set, options are fetched from /api/v1/models/mode/{mode}. Valid modes: chat, embedding, rerank, image_generation, audio_transcription, audio_speech'
         },
         optionLabel: {
             anyOf: [
@@ -12691,7 +14047,7 @@ export const SelectSchema = {
     },
     additionalProperties: true,
     type: 'object',
-    required: ['label', 'options', 'validation'],
+    required: ['label', 'validation'],
     title: 'Select',
     description: 'https://formkit-primevue.netlify.app/inputs/Select'
 } as const;
@@ -14853,6 +16209,21 @@ export const TranscriptionWordSchema = {
     type: 'object',
     required: ['end', 'start', 'word'],
     title: 'TranscriptionWord'
+} as const;
+
+export const UpdateAgentConfigurationDTOSchema = {
+    properties: {
+        configuration: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Configuration',
+            description: "The configuration values to update as key-value pairs. Keys should match the 'name' fields from the agent's form elements."
+        }
+    },
+    type: 'object',
+    required: ['configuration'],
+    title: 'UpdateAgentConfigurationDTO',
+    description: 'Request body for updating agent configuration.'
 } as const;
 
 export const UpdateNamespaceRequestSchema = {
