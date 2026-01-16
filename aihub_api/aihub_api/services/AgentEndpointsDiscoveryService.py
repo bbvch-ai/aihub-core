@@ -44,6 +44,7 @@ from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.routes.agent.dto.AgentInstanceDTO import AgentInstanceDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
+from aihub_api.routes.usage.UsageService import UsageService
 from aihub_api.services.EndpointsDiscoveryService import EndpointsDiscoveryService
 from aihub_api.services.ModelCreationService import ModelCreationService
 
@@ -325,6 +326,9 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             t: LocaleHandler = Depends(use_locale),
         ) -> response_union_type:
             """Send a specific event type to a specific agent. Returns either a stop event or HITL request event."""
+            # Check user budget before executing agent (agents use service account, not user keys)
+            await UsageService.check_user_budget(user)
+
             if thread_id is not None:
                 try:
                     thread = await ThreadService.get_thread_by_id(thread_id, t=t)
@@ -397,6 +401,9 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             t: LocaleHandler = Depends(use_locale),
         ) -> StreamingResponse:
             """Send a specific event type to a specific agent and stream all events as SSE."""
+            # Check user budget before executing agent (agents use service account, not user keys)
+            await UsageService.check_user_budget(user)
+
             if thread_id is not None:
                 try:
                     thread = await ThreadService.get_thread_by_id(thread_id, t=t)

@@ -2,6 +2,7 @@ from datetime import datetime
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
+from fastapi import HTTPException
 
 from aihub_api.routes.usage.dto.UserUsageDTO import UserUsageDTO
 
@@ -63,3 +64,29 @@ class UsageService:
             is_approaching_limit=is_approaching_limit,
             is_over_limit=is_over_limit,
         )
+
+    @staticmethod
+    async def check_user_budget(user: UserIdentity) -> None:
+        """
+        Check if user has exceeded their budget and raise HTTPException if so.
+
+        This should be called before executing expensive operations like agent runs.
+        Raises HTTP 429 (Too Many Requests) with budget details if limit exceeded.
+        """
+        try:
+            usage = await UsageService.get_user_usage(user)
+        except Exception:
+            # If we can't check the budget, allow the request to proceed
+            # This prevents blocking users if LiteLLM is temporarily unavailable
+            return
+
+        if usage.is_over_limit:
+            reset_info = ""
+            if usage.budget_reset_at:
+                reset_info = f" Budget resets at {usage.budget_reset_at.isoformat()}."
+
+            raise HTTPException(
+                status_code=429,
+                detail=f"Budget limit exceeded. You have spent ${usage.spend:.2f} of your "
+                f"${usage.max_budget:.2f} budget.{reset_info}",
+            )
