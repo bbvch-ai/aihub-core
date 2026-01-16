@@ -9,16 +9,51 @@ Features:
 - Displays warning when usage exceeds 80% of budget
 - Shows error message when budget is exceeded
 - Works with all models routed through LiteLLM (AI-Hub agents and OpenAI pipeline)
+- Multilingual support (en, de, fr, it)
+- Configurable date format (European DD.MM.YYYY or US MM/DD/YYYY)
 """
 
 import logging
 import os
-from typing import Any, Callable, Awaitable
+from datetime import datetime
+from typing import Any, Callable, Awaitable, Literal
 
 import httpx
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
+
+# Translations for usage messages
+TRANSLATIONS = {
+    "en": {
+        "usage": "Usage",
+        "usage_alert": "Usage Alert",
+        "budget_exceeded": "Budget Exceeded",
+        "resets": "Resets",
+        "limit_reached": "Your usage limit has been reached. Please contact your administrator.",
+    },
+    "de": {
+        "usage": "Nutzung",
+        "usage_alert": "Nutzungswarnung",
+        "budget_exceeded": "Budget überschritten",
+        "resets": "Zurücksetzung",
+        "limit_reached": "Ihr Nutzungslimit wurde erreicht. Bitte kontaktieren Sie Ihren Administrator.",
+    },
+    "fr": {
+        "usage": "Utilisation",
+        "usage_alert": "Alerte d'utilisation",
+        "budget_exceeded": "Budget dépassé",
+        "resets": "Réinitialisation",
+        "limit_reached": "Votre limite d'utilisation a été atteinte. Veuillez contacter votre administrateur.",
+    },
+    "it": {
+        "usage": "Utilizzo",
+        "usage_alert": "Avviso di utilizzo",
+        "budget_exceeded": "Budget superato",
+        "resets": "Reset",
+        "limit_reached": "Il limite di utilizzo è stato raggiunto. Contatta il tuo amministratore.",
+    },
+}
 
 
 class Filter:
@@ -57,9 +92,41 @@ class Filter:
             default=os.getenv("USAGE_SHOW_AMOUNTS", "true").lower() == "true",
             description="Show dollar amounts (e.g., $25.00 / $50.00). If false, only shows percentage.",
         )
+        LOCALE: Literal["en", "de", "fr", "it"] = Field(
+            default=os.getenv("USAGE_DISPLAY_LOCALE", "en"),
+            description="Language for usage messages (en, de, fr, it)",
+        )
 
     def __init__(self):
         self.valves = self.Valves()
+
+    def _get_translation(self, key: str) -> str:
+        """Get translated string for the current locale."""
+        locale = self.valves.LOCALE
+        if locale not in TRANSLATIONS:
+            locale = "en"
+        return TRANSLATIONS[locale].get(key, TRANSLATIONS["en"][key])
+
+    def _format_date(self, date_str: str | None) -> str | None:
+        """Format date string according to locale (DD.MM.YYYY for European locales)."""
+        if not date_str:
+            return None
+
+        try:
+            # Try parsing ISO format first (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)
+            if "T" in date_str:
+                dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+            else:
+                dt = datetime.strptime(date_str[:10], "%Y-%m-%d")
+
+            # Format based on locale
+            if self.valves.LOCALE in ("de", "fr", "it"):
+                return dt.strftime("%d.%m.%Y")
+            else:
+                return dt.strftime("%m/%d/%Y")
+        except (ValueError, TypeError) as e:
+            logger.debug(f"Could not parse date '{date_str}': {e}")
+            return date_str
 
     async def outlet(
         self,
@@ -128,8 +195,10 @@ class Filter:
         if usage_percent is not None and usage_percent < (self.valves.SHOW_USAGE_THRESHOLD * 100):
             return None
 
-        # Format reset info
-        reset_info = f" | Resets: {budget_reset_at}" if budget_reset_at else ""
+        # Format reset info with localized date
+        formatted_date = self._format_date(budget_reset_at)
+        reset_label = self._get_translation("resets")
+        reset_info = f" | {reset_label}: {formatted_date}" if formatted_date else ""
 
         # Format usage display based on SHOW_AMOUNTS setting
         if self.valves.SHOW_AMOUNTS:
@@ -137,24 +206,17 @@ class Filter:
         else:
             usage_display = f"{usage_percent:.0f}%"
 
-        # Format the message based on status
+        # Format the message based on status with translations
         if is_over_limit:
-            return (
-                f"\n\n---\n"
-                f"🚫 **Budget Exceeded**: {usage_display}{reset_info}\n"
-                f"_Your usage limit has been reached. Please contact your administrator._"
-            )
+            label = self._get_translation("budget_exceeded")
+            limit_msg = self._get_translation("limit_reached")
+            return f"\n\n---\n🚫 **{label}**: {usage_display}{reset_info}\n_{limit_msg}_"
         elif is_approaching_limit:
-            return (
-                f"\n\n---\n"
-                f"⚠️ **Usage Alert**: {usage_display}{reset_info}"
-            )
+            label = self._get_translation("usage_alert")
+            return f"\n\n---\n⚠️ **{label}**: {usage_display}{reset_info}"
         else:
-            # Above show threshold but below warning
-            return (
-                f"\n\n---\n"
-                f"📊 **Usage**: {usage_display}{reset_info}"
-            )
+            label = self._get_translation("usage")
+            return f"\n\n---\n📊 **{label}**: {usage_display}{reset_info}"
 
     def _append_usage_to_response(self, body: dict[str, Any], usage_message: str) -> dict[str, Any]:
         """Append usage message to the last assistant message in the response."""
