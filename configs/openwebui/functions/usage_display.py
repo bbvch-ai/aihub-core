@@ -53,6 +53,10 @@ class Filter:
             default=os.getenv("USAGE_DISPLAY_ENABLED", "true").lower() == "true",
             description="Enable or disable usage display",
         )
+        SHOW_AMOUNTS: bool = Field(
+            default=os.getenv("USAGE_SHOW_AMOUNTS", "true").lower() == "true",
+            description="Show dollar amounts (e.g., $25.00 / $50.00). If false, only shows percentage.",
+        )
 
     def __init__(self):
         self.valves = self.Valves()
@@ -127,25 +131,29 @@ class Filter:
         # Format reset info
         reset_info = f" | Resets: {budget_reset_at}" if budget_reset_at else ""
 
+        # Format usage display based on SHOW_AMOUNTS setting
+        if self.valves.SHOW_AMOUNTS:
+            usage_display = f"${spend:.2f} / ${max_budget:.2f} ({usage_percent:.0f}%)"
+        else:
+            usage_display = f"{usage_percent:.0f}%"
+
         # Format the message based on status
         if is_over_limit:
             return (
                 f"\n\n---\n"
-                f"🚫 **Budget Exceeded**: ${spend:.2f} / ${max_budget:.2f} "
-                f"({usage_percent:.0f}%){reset_info}\n"
+                f"🚫 **Budget Exceeded**: {usage_display}{reset_info}\n"
                 f"_Your usage limit has been reached. Please contact your administrator._"
             )
         elif is_approaching_limit:
             return (
                 f"\n\n---\n"
-                f"⚠️ **Usage Alert**: ${spend:.2f} / ${max_budget:.2f} "
-                f"({usage_percent:.0f}%){reset_info}"
+                f"⚠️ **Usage Alert**: {usage_display}{reset_info}"
             )
         else:
             # Above show threshold but below warning
             return (
                 f"\n\n---\n"
-                f"📊 **Usage**: ${spend:.2f} / ${max_budget:.2f} ({usage_percent:.0f}%){reset_info}"
+                f"📊 **Usage**: {usage_display}{reset_info}"
             )
 
     def _append_usage_to_response(self, body: dict[str, Any], usage_message: str) -> dict[str, Any]:
