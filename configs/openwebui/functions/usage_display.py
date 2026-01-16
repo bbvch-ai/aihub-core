@@ -1,14 +1,14 @@
 """
 AI-Hub Usage Display Filter for Open-WebUI
 
-This filter displays user's LLM usage and budget information at the end of AI agent responses.
+This filter displays user's LLM usage and budget information at the end of all LLM responses.
 It queries the AI-Hub API to get current spend and shows warnings when approaching limits.
 
 Features:
-- Shows usage percentage and spend after each agent response
+- Shows usage percentage and spend after each LLM response (agents and direct models)
 - Displays warning when usage exceeds 80% of budget
 - Shows error message when budget is exceeded
-- Only displays for AI-Hub agent responses (models starting with configured prefix)
+- Works with all models routed through LiteLLM (AI-Hub agents and OpenAI pipeline)
 """
 
 import logging
@@ -23,10 +23,11 @@ logger = logging.getLogger(__name__)
 
 class Filter:
     """
-    Usage Display Filter - Shows budget usage information after AI-Hub agent responses.
+    Usage Display Filter - Shows budget usage information after all LLM responses.
 
     This filter integrates with AI-Hub's usage API to display real-time budget
     consumption to users, helping them stay aware of their usage limits.
+    Works for both AI-Hub agents and direct LLM access via OpenAI pipeline.
     """
 
     class Valves(BaseModel):
@@ -39,10 +40,6 @@ class Filter:
         AIHUB_SUPERUSER_API_KEY: str = Field(
             default=os.getenv("AIHUB_SUPERUSER_API_KEY", ""),
             description="API key for authenticating with AI-Hub",
-        )
-        AIHUB_PIPELINE_PREFIX: str = Field(
-            default=os.getenv("AIHUB_PIPELINE_PREFIX", "aihub/"),
-            description="Prefix for AI-Hub agent model names",
         )
         SHOW_USAGE_THRESHOLD: float = Field(
             default=float(os.getenv("SHOW_USAGE_THRESHOLD", "0.5")),
@@ -71,13 +68,9 @@ class Filter:
 
         Called after the model response is generated. Fetches usage data from
         AI-Hub API and appends a usage summary if thresholds are exceeded.
+        Works for all models (AI-Hub agents and direct LLM access).
         """
         if not self.valves.ENABLED:
-            return body
-
-        # Only process AI-Hub agent responses
-        model = body.get("model", "")
-        if not model.startswith(self.valves.AIHUB_PIPELINE_PREFIX):
             return body
 
         try:
