@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
@@ -6,9 +7,72 @@ from fastapi import HTTPException
 
 from aihub_api.routes.usage.dto.UserUsageDTO import UserUsageDTO
 
+# User-friendly budget exceeded messages in multiple languages
+BUDGET_EXCEEDED_MESSAGES = {
+    "en": {
+        "title": "Usage Limit Reached",
+        "message": "You've reached your usage limit for this period.",
+        "details": "Current usage: {usage_percent:.0f}%",
+        "reset": "Your limit will reset on {reset_date}.",
+        "contact": "Please contact your administrator if you need additional capacity.",
+    },
+    "de": {
+        "title": "Nutzungslimit erreicht",
+        "message": "Sie haben Ihr Nutzungslimit für diesen Zeitraum erreicht.",
+        "details": "Aktuelle Nutzung: {usage_percent:.0f}%",
+        "reset": "Ihr Limit wird am {reset_date} zurückgesetzt.",
+        "contact": "Bitte kontaktieren Sie Ihren Administrator, wenn Sie zusätzliche Kapazität benötigen.",
+    },
+    "fr": {
+        "title": "Limite d'utilisation atteinte",
+        "message": "Vous avez atteint votre limite d'utilisation pour cette période.",
+        "details": "Utilisation actuelle: {usage_percent:.0f}%",
+        "reset": "Votre limite sera réinitialisée le {reset_date}.",
+        "contact": "Veuillez contacter votre administrateur si vous avez besoin de capacité supplémentaire.",
+    },
+    "it": {
+        "title": "Limite di utilizzo raggiunto",
+        "message": "Hai raggiunto il limite di utilizzo per questo periodo.",
+        "details": "Utilizzo attuale: {usage_percent:.0f}%",
+        "reset": "Il limite verrà ripristinato il {reset_date}.",
+        "contact": "Contatta il tuo amministratore se hai bisogno di capacità aggiuntiva.",
+    },
+}
+
 
 class UsageService:
     """Service for retrieving user usage and budget information from LiteLLM."""
+
+    @staticmethod
+    def _format_date(dt: datetime, locale: str) -> str:
+        """Format date according to locale (DD.MM.YYYY for European, MM/DD/YYYY for English)."""
+        if locale in ("de", "fr", "it"):
+            return dt.strftime("%d.%m.%Y")
+        return dt.strftime("%m/%d/%Y")
+
+    @staticmethod
+    def _get_budget_exceeded_message(
+        usage: "UserUsageDTO",
+        locale: Literal["en", "de", "fr", "it"] = "en",
+    ) -> str:
+        """Generate a user-friendly budget exceeded message."""
+        messages = BUDGET_EXCEEDED_MESSAGES.get(locale, BUDGET_EXCEEDED_MESSAGES["en"])
+
+        parts = [
+            messages["title"],
+            "",
+            messages["message"],
+            messages["details"].format(usage_percent=usage.usage_percent or 100),
+        ]
+
+        if usage.budget_reset_at:
+            reset_date = UsageService._format_date(usage.budget_reset_at, locale)
+            parts.append(messages["reset"].format(reset_date=reset_date))
+
+        parts.append("")
+        parts.append(messages["contact"])
+
+        return "\n".join(parts)
 
     @staticmethod
     async def get_user_usage(user: UserIdentity) -> UserUsageDTO:
@@ -66,12 +130,15 @@ class UsageService:
         )
 
     @staticmethod
-    async def check_user_budget(user: UserIdentity) -> None:
+    async def check_user_budget(
+        user: UserIdentity,
+        locale: Literal["en", "de", "fr", "it"] = "en",
+    ) -> None:
         """
         Check if user has exceeded their budget and raise HTTPException if so.
 
         This should be called before executing expensive operations like agent runs.
-        Raises HTTP 429 (Too Many Requests) with budget details if limit exceeded.
+        Raises HTTP 429 (Too Many Requests) with a user-friendly message if limit exceeded.
         """
         try:
             usage = await UsageService.get_user_usage(user)
@@ -81,12 +148,31 @@ class UsageService:
             return
 
         if usage.is_over_limit:
-            reset_info = ""
-            if usage.budget_reset_at:
-                reset_info = f" Budget resets at {usage.budget_reset_at.isoformat()}."
+            message = UsageService._get_budget_exceeded_message(usage, locale)
+            raise HTTPException(status_code=429, detail=message)
 
-            raise HTTPException(
-                status_code=429,
-                detail=f"Budget limit exceeded. You have spent ${usage.spend:.2f} of your "
-                f"${usage.max_budget:.2f} budget.{reset_info}",
-            )
+    @staticmethod
+    async def add_spend_to_user(user_id: str, amount: float) -> None:
+        """
+        Add spend amount to a user's current spend in LiteLLM.
+
+        This can be used to attribute agent costs to individual users,
+        since agents use a shared service account key.
+        """
+        if amount <= 0:
+            return
+
+        litellm_settings = LiteLLMProxySettings()
+        client = litellm_settings.httpx_aclient
+
+        # First get current spend
+        response = await client.get("/user/info", params={"user_id": user_id})
+        response.raise_for_status()
+        current_spend = float(response.json().get("user_info", {}).get("spend", 0) or 0)
+
+        # Update with new spend
+        new_spend = current_spend + amount
+        await client.post(
+            "/user/update",
+            json={"user_id": user_id, "spend": new_spend},
+        )

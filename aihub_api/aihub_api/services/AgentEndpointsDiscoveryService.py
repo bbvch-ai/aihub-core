@@ -327,7 +327,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         ) -> response_union_type:
             """Send a specific event type to a specific agent. Returns either a stop event or HITL request event."""
             # Check user budget before executing agent (agents use service account, not user keys)
-            await UsageService.check_user_budget(user)
+            await UsageService.check_user_budget(user, locale=t.locale)
 
             if thread_id is not None:
                 try:
@@ -402,7 +402,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         ) -> StreamingResponse:
             """Send a specific event type to a specific agent and stream all events as SSE."""
             # Check user budget before executing agent (agents use service account, not user keys)
-            await UsageService.check_user_budget(user)
+            await UsageService.check_user_budget(user, locale=t.locale)
 
             if thread_id is not None:
                 try:
