@@ -24,6 +24,7 @@ from aihub_api.routes.role.RoleController import RoleController
 from aihub_api.routes.suite.SuiteController import SuiteController
 from aihub_api.routes.thread.ThreadController import ThreadController
 from aihub_api.routes.token.TokenController import TokenController
+from aihub_api.routes.usage.UsageController import UsageController
 from aihub_api.routes.user.UserController import UserController
 from aihub_api.runners.ApiRunner import ApiRunner
 
@@ -59,6 +60,7 @@ runner.mount(
     .send_process_start_form()
     .send_process_open_form(),
     TokenController(auth=auth).create_token().list_tokens().revoke_token(),
+    UsageController(auth=auth).get_my_usage(),
     RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
     OpenaiController(auth=auth)
     .get_models()
