@@ -124,16 +124,18 @@ class Filter:
         if usage_percent is not None and usage_percent < (self.valves.SHOW_USAGE_THRESHOLD * 100):
             return None
 
+        # Format reset info
+        reset_info = f" | Resets: {budget_reset_at}" if budget_reset_at else ""
+
         # Format the message based on status
         if is_over_limit:
             return (
                 f"\n\n---\n"
                 f"🚫 **Budget Exceeded**: ${spend:.2f} / ${max_budget:.2f} "
-                f"({usage_percent:.0f}%)\n"
+                f"({usage_percent:.0f}%){reset_info}\n"
                 f"_Your usage limit has been reached. Please contact your administrator._"
             )
         elif is_approaching_limit:
-            reset_info = f" Resets: {budget_reset_at}" if budget_reset_at else ""
             return (
                 f"\n\n---\n"
                 f"⚠️ **Usage Alert**: ${spend:.2f} / ${max_budget:.2f} "
@@ -143,7 +145,7 @@ class Filter:
             # Above show threshold but below warning
             return (
                 f"\n\n---\n"
-                f"📊 **Usage**: ${spend:.2f} / ${max_budget:.2f} ({usage_percent:.0f}%)"
+                f"📊 **Usage**: ${spend:.2f} / ${max_budget:.2f} ({usage_percent:.0f}%){reset_info}"
             )
 
     def _append_usage_to_response(self, body: dict[str, Any], usage_message: str) -> dict[str, Any]:
