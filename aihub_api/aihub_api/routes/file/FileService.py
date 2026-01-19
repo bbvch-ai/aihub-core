@@ -19,16 +19,20 @@ class FileService:
 
     @staticmethod
     @trace_fn
-    def get_authenticated_file_redirect(container: str, file_path: str) -> RedirectResponse:
+    def get_authenticated_file_redirect(
+        container: str, file_path: str, s3_service: S3AnonymousFileAccessService
+    ) -> RedirectResponse:
         """
         For logged-in users. Generates a temporary URL and returns a redirect response.
         """
-        sas_url = S3AnonymousFileAccessService().generate_sas_url(container, file_path)
+        sas_url = s3_service.generate_sas_url(container, file_path)
         return RedirectResponse(url=sas_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 
     @staticmethod
     @trace_fn
-    def get_anonymous_file_url(container: str, file_path: str, expires: int, signature: str) -> str:
+    def get_anonymous_file_url(
+        container: str, file_path: str, expires: int, signature: str, s3_service: S3AnonymousFileAccessService
+    ) -> str:
         """
         For anonymous users. Validates the signature and expiry, then generates a
         temporary URL.
@@ -39,7 +43,7 @@ class FileService:
             raise HTTPException(status_code=status.HTTP_410_GONE, detail="This link has expired.")
 
         expected_signature = FileService._generate_internal_signature(
-            container=container, path=file_path, expires=expires
+            container=container, path=file_path, expires=expires, s3_service=s3_service
         )
         if not hmac.compare_digest(expected_signature, signature):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid signature.")
@@ -47,23 +51,27 @@ class FileService:
         remaining_seconds = expires - now_timestamp
         lifetime_hours = math.ceil(remaining_seconds / 3600)
 
-        return S3AnonymousFileAccessService().generate_sas_url(container, file_path, lifetime_hours=lifetime_hours)
+        return s3_service.generate_sas_url(container, file_path, lifetime_hours=lifetime_hours)
 
     @staticmethod
     @trace_fn
-    def get_anonymous_file_redirect(container: str, file_path: str, expires: int, signature: str) -> RedirectResponse:
+    def get_anonymous_file_redirect(
+        container: str, file_path: str, expires: int, signature: str, s3_service: S3AnonymousFileAccessService
+    ) -> RedirectResponse:
         """
         For anonymous users. Validates the signature and expiry, then generates a
         temporary URL and returns a redirect response.
         """
-        sas_url = FileService.get_anonymous_file_url(container, file_path, expires, signature)
+        sas_url = FileService.get_anonymous_file_url(container, file_path, expires, signature, s3_service)
         return RedirectResponse(url=sas_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 
     @staticmethod
     @trace_fn
-    def _generate_internal_signature(container: str, path: str, expires: int) -> str:
+    def _generate_internal_signature(
+        container: str, path: str, expires: int, s3_service: S3AnonymousFileAccessService
+    ) -> str:
         """Generates an HMAC signature for our internal anonymous URL."""
-        secret = S3AnonymousFileAccessService().get_url_signing_secret()
+        secret = s3_service.get_url_signing_secret()
         msg = f"{container}{path}{expires}".encode()
         return hmac.new(secret.encode("utf-8"), msg, hashlib.sha256).hexdigest()
 
@@ -75,6 +83,7 @@ class FileService:
         ],
         container: Annotated[str, "Container/bucket name"],
         file_path: Annotated[str, "Path to file within container"],
+        s3_service: S3AnonymousFileAccessService,
         lifetime_hours: Annotated[int, "Link lifetime, can be at most 24 hours"] = 24,
     ) -> str:
         """
@@ -91,7 +100,7 @@ class FileService:
         expires_timestamp = int(expires_dt.timestamp())
 
         signature = FileService._generate_internal_signature(
-            container=container, path=file_path, expires=expires_timestamp
+            container=container, path=file_path, expires=expires_timestamp, s3_service=s3_service
         )
 
         return (

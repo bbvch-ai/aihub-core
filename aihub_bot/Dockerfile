@@ -86,8 +86,8 @@ COPY --from=builder --chown="$USERNAME:$USERNAME" /app /app
 # Switch to non-root user
 USER $USERNAME
 
-# Expose port 8000
-EXPOSE 8000
+# Expose port 8001 (bot runs on 8001, see Makefile run-prod)
+EXPOSE 8001
 
 WORKDIR /app/aihub_bot
 
