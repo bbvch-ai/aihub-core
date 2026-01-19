@@ -1342,6 +1342,8 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=false"
+    networks:
+      - backend  # Only Traefik needs to access this service
 
   # ===================================================================
   # Traefik (Reverse Proxy)
