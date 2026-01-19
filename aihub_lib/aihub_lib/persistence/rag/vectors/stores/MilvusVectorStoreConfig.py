@@ -2,6 +2,7 @@ from typing import Annotated
 
 from llama_index.vector_stores.milvus import MilvusVectorStore
 from pydantic import Field
+from pymilvus import MilvusClient
 
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.persistence.rag.vectors.stores import MilvusVectorStoreFactory
@@ -15,9 +16,11 @@ class MilvusVectorStoreConfig(BasePydanticVectorStoreConfig):
 
     def to_llama_index(self) -> MilvusVectorStore:
         token = self.token if self.token is not None else MilvusSettings().get_token()
+        client = MilvusClient(uri=self.uri, token=token)
         return MilvusVectorStoreFactory.create_milvus_vector_store(
-            uri=self.uri,
+            client=client,
             collection_name=self.collection_name,
             embedding_vector_dimension=self.dimensions,
+            uri=self.uri,
             token=token,
         )

@@ -5,6 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.258.4] - 2026-01-19 - Enhanced Service Health, API Stability, and Richer Chat Interactions
+
+### Added
+
+- ✨ **Comprehensive Service Health Checks:** Introduced new liveness and readiness endpoints for the API, Agents, and
+  Processes, providing detailed dependency status for critical infrastructure like NATS, MongoDB, Redis, Milvus, and S3.
+- ⚙️ **Centralized Health Check Server:** Implemented a generic HTTP health check server running in a background thread
+  for Agents and Processes, ensuring consistent and robust monitoring across all services.
+- 🚀 **New Model Management API Endpoints:** Added dedicated API endpoints to retrieve lists of all available models
+  grouped by type, and to fetch detailed information for specific models.
+- 💬 **Expanded Chat Message Blocks:** Introduced support for new message content types, including **VideoBlock**,
+  **ThinkingBlock**, and **ToolCallBlock**, significantly enriching conversational capabilities and allowing for more
+  complex multimodal interactions.
+- 🗣️ **Chat-style Human-in-the-Loop (HITL):** Added a new `chat` type for Human-in-the-Loop requests, enabling users to
+  provide input and respond to prompts directly within the regular chat interface, improving user experience.
+- 🧩 **FastAPI Infrastructure Client Dependencies:** Introduced new FastAPI dependencies (`use_milvus`, `use_redis`,
+  `use_s3`, `use_s3_public`, `use_s3_service`, `use_vector_store_factory`) to standardize access to shared Milvus,
+  Redis, and S3 clients and vector store factories, promoting consistency and reusability.
+
+### Changed
+
+- ⬆️ **Agent and Process Runner Upgrades:** Integrated Agent and Process runners with the newly introduced health check
+  server, now providing detailed readiness statuses for their respective dependencies (NATS, Redis, Milvus).
+- ✅ **API Readiness Checks:** The API service now utilizes the `ApiHealthController` for comprehensive readiness checks,
+  moving beyond a simple liveness probe to verify all critical service dependencies.
+- 🔗 **Milvus Client Reusability:** Refactored Milvus vector store creation to reuse a shared `MilvusClient` instance
+  across the application, improving connection pooling efficiency and enabling centralized health monitoring.
+- 📍 **Bot Service Port Update:** Corrected the exposed port for the Bot service from 8000 to 8001 to align with standard
+  deployment configurations.
+- 🔒 **Milvus Authentication Variable:** Standardized Milvus client authentication across various services by updating
+  the `MILVUS_TOKEN` environment variable to `MILVUS_ROOT_PASSWORD` for consistency and clarity.
+- 🛡️ **Enhanced SDK Endpoint Security:** Applied security headers to all endpoints within the generated TypeScript SDK
+  client, improving overall API security.
+
+### Refactor
+
+- 🧹 **S3 File Access Service Modernization:** Refactored the `S3AnonymousFileAccessService` to accept injected S3 client
+  instances, significantly improving testability and streamlining resource management.
+- ♻️ **Knowledge Controller Dependency Injection:** Migrated direct instantiation of `VectorStoreFactory` and
+  `S3AnonymousFileAccessService` within the `KnowledgeController` to FastAPI's dependency injection system, enhancing
+  modularity and maintainability.
+
+---
+
 ## [v0.258.3] - 2026-01-19 - Hardened Docker Integration with Socket Proxy
 
 ### Security
