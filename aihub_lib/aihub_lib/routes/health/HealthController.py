@@ -6,15 +6,14 @@ from aihub_lib.routes.health.dto.HealthResponse import HealthResponse
 
 class HealthController(Controller):
     """
-    A simple controller that provides a health check endpoint.
+    A controller that provides a simple liveness health check endpoint.
 
     ### Why HealthController?
     In production environments, load balancers, monitoring tools, or health checks
     need a straightforward way to confirm that the application is running and responsive.
-    The `HealthController` offers a minimal endpoint (`/health`) that returns a simple "ok" status.
 
-    ### Endpoint
-    - `GET /health/`: Returns `{"status": "ok"}` if the application is healthy.
+    ### Endpoints
+    - `GET /health/`: Returns `{"status": "ok"}` if the application is alive (liveness probe).
 
     ### Authentication
     No authentication is applied by default, as health checks are usually publicly accessible
@@ -22,11 +21,11 @@ class HealthController(Controller):
 
     ### Usage
     ```python
-    app = FastAPI()
-    HealthController().get_health().mount(app)
+    HealthController(auth=auth).get_health().mount(app)
     ```
 
-    Now calling `GET /health` returns a JSON response indicating the application status.
+    For readiness checks with dependency verification, extend this controller
+    in your service package with service-specific health checks.
     """
 
     name = LocaleString(en="Health")
@@ -42,7 +41,7 @@ class HealthController(Controller):
         @self.router.get(route, tags=self.tags)
         async def get_health() -> HealthResponse:
             """
-            A simple health check endpoint that returns {"status": "ok"} if
+            A simple liveness check endpoint that returns {"status": "ok"} if
             the application is running and capable of handling requests.
             """
             return HealthResponse(status="ok", code=200)

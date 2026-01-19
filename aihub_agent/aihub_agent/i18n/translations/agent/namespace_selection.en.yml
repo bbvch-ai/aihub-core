@@ -1,0 +1,38 @@
+thoughts:
+  fetching_namespaces: "Looking up available knowledge sources"
+  starting_determination: "Determining which sources to search"
+  analyzing_request: "Understanding your request"
+  llm_decision: "%{reasoning}"
+  processing_follow_up: "Processing your response"
+  selection_approved: "Sources confirmed"
+  selection_rejected: "Searching for alternative sources"
+  forwarding_to_rag: "Searching for relevant information"
+  rag_error: "An error occurred while searching: %{error_message}"
+
+messages:
+  default_follow_up: "Could you please provide more details about your request so I can determine the most relevant knowledge sources?"
+  user_rejected_selection: "I rejected the proposed namespace selection. Please suggest different namespaces."
+  rag_error: "An error occurred while processing your request. Please try again."
+  invalid_selection: "Your selection was invalid. You selected: %{selected}. Available namespaces are: %{available_namespaces}. Please select only from the available namespaces listed."
+
+prompts:
+  determination: |
+    You are a namespace selection assistant. Your task is to analyze a user's request and determine which knowledge sources (namespaces) would be most relevant to answer their query.
+
+    Conversation history:
+    <conversation_history>
+    {{ conversation_history }}
+    </conversation_history>
+
+    <available_namespaces>
+    {{ available_namespaces }}
+    </available_namespaces>
+
+    Instructions:
+    1. If the user's intent is clear enough to select specific namespaces, set has_enough_information=true and provide selected_namespaces mapping each bucket to exactly one namespace.
+    2. If you need more information, set has_enough_information=false and ask a follow_up_question.
+
+    CRITICAL CONSTRAINTS:
+    - Each bucket MUST have exactly ONE namespace selected - no more, no less.
+    - Your follow_up_question MUST list the exact namespace names from <available_namespaces> above as options.
+    - Do NOT invent names - use only the actual names shown above.

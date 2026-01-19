@@ -206,6 +206,33 @@ export type AgentEventWritable = {
 };
 
 /**
+ * AgentHealthChecks
+ * Health check results for Agent service dependencies.
+ */
+export type AgentHealthChecks = {
+    /**
+     * Running
+     * Whether the agent runner is running.
+     */
+    running: boolean;
+    /**
+     * Nats
+     * NATS message broker connectivity.
+     */
+    nats: boolean;
+    /**
+     * Redis
+     * Redis/Valkey cache connectivity.
+     */
+    redis: boolean;
+    /**
+     * Milvus
+     * Milvus vector database connectivity.
+     */
+    milvus: boolean;
+};
+
+/**
  * AgentInDTO
  */
 export type AgentInDto = {
@@ -933,6 +960,38 @@ export type AnnotationUrlCitation = {
      */
     url: string;
     [key: string]: unknown | number | string;
+};
+
+/**
+ * ApiHealthChecks
+ * Health check results for API service dependencies.
+ */
+export type ApiHealthChecks = {
+    /**
+     * Nats
+     * NATS message broker connectivity.
+     */
+    nats: boolean;
+    /**
+     * Mongodb
+     * MongoDB database connectivity.
+     */
+    mongodb: boolean;
+    /**
+     * Redis
+     * Redis/Valkey cache connectivity.
+     */
+    redis: boolean;
+    /**
+     * Milvus
+     * Milvus vector database connectivity.
+     */
+    milvus: boolean;
+    /**
+     * S3
+     * S3/SeaweedFS object storage connectivity.
+     */
+    s3: boolean;
 };
 
 /**
@@ -1989,6 +2048,8 @@ export type ChatMessage = {
     } & ImageBlock) | ({
         block_type: 'audio';
     } & AudioBlock) | ({
+        block_type: 'video';
+    } & VideoBlock) | ({
         block_type: 'document';
     } & DocumentBlock) | ({
         block_type: 'cache';
@@ -1996,7 +2057,11 @@ export type ChatMessage = {
         block_type: 'citable';
     } & CitableBlock) | ({
         block_type: 'citation';
-    } & CitationBlock)>;
+    } & CitationBlock) | ({
+        block_type: 'thinking';
+    } & ThinkingBlock) | ({
+        block_type: 'tool_call';
+    } & ToolCallBlock)>;
 };
 
 /**
@@ -3701,7 +3766,7 @@ export type DocumentDto = {
     id: string;
     /**
      * Source
-     * Source URI of original document.
+     * Source path without protocol prefix (e.g., 'bucket/path/file.pdf').
      */
     source: string;
     /**
@@ -3726,7 +3791,7 @@ export type DocumentDto = {
     inserted_at: string | null;
     /**
      * Is Ingested
-     * Indicates if the document has been ingested.
+     * Whether the document has been fully ingested.
      */
     is_ingested: boolean;
     /**
@@ -4127,7 +4192,7 @@ export type EvaluationSummaryData = {
      * Avg Score
      * Average score from this evaluator.
      */
-    avg_score?: number | null;
+    avg_score: number;
 };
 
 /**
@@ -5053,6 +5118,7 @@ export type HttpValidationError = {
 
 /**
  * HealthResponse
+ * Standard health check response.
  */
 export type HealthResponse = {
     /**
@@ -5065,6 +5131,11 @@ export type HealthResponse = {
      * HTTP status code.
      */
     code: number;
+    /**
+     * Checks
+     * Individual health check results.
+     */
+    checks?: ApiHealthChecks | AgentHealthChecks | null;
 };
 
 /**
@@ -5203,12 +5274,12 @@ export type HumanInDtoWritable = {
 
 /**
  * HumanInTheLoopRequestEvent
- * An event asking a human for input, guidance, or approval at a critical juncture in a workflow.
+ * Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
  *
- * ### Why HumanInTheLoopRequestEvent?
- * In automated workflows, certain decisions may require human validation. This event:
- * - Is a `DisplayEvent`, so it can appear in user interfaces.
- * - Carries a question and a topic indicating where the subsequent response should be sent.
+ * Use the specific subclasses:
+ * - `HumanInTheLoopInputRequestEvent` for free-form text input (popup dialog)
+ * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation (popup dialog)
+ * - `HumanInTheLoopChatRequestEvent` for chat-style input (appears as regular message)
  */
 export type HumanInTheLoopRequestEventReadable = {
     /**
@@ -5239,6 +5310,11 @@ export type HumanInTheLoopRequestEventReadable = {
      */
     topic: PartialAgentTopic | AgentInstanceTopic;
     /**
+     * Hitl Type
+     * HITL type: 'input' (free-form text), 'confirmation' (yes/no), 'chat' (chat-style).
+     */
+    hitl_type: 'input' | 'confirmation' | 'chat';
+    /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
      * Used during deserialization to decide which subclass to instantiate.
@@ -5249,17 +5325,17 @@ export type HumanInTheLoopRequestEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation' | 'chat') | Array<string> | undefined;
 };
 
 /**
  * HumanInTheLoopRequestEvent
- * An event asking a human for input, guidance, or approval at a critical juncture in a workflow.
+ * Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
  *
- * ### Why HumanInTheLoopRequestEvent?
- * In automated workflows, certain decisions may require human validation. This event:
- * - Is a `DisplayEvent`, so it can appear in user interfaces.
- * - Carries a question and a topic indicating where the subsequent response should be sent.
+ * Use the specific subclasses:
+ * - `HumanInTheLoopInputRequestEvent` for free-form text input (popup dialog)
+ * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation (popup dialog)
+ * - `HumanInTheLoopChatRequestEvent` for chat-style input (appears as regular message)
  */
 export type HumanInTheLoopRequestEventWritable = {
     /**
@@ -5289,17 +5365,22 @@ export type HumanInTheLoopRequestEventWritable = {
      * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
      */
     topic: PartialAgentTopic | AgentInstanceTopic;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | undefined;
+    /**
+     * Hitl Type
+     * HITL type: 'input' (free-form text), 'confirmation' (yes/no), 'chat' (chat-style).
+     */
+    hitl_type: 'input' | 'confirmation' | 'chat';
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation' | 'chat') | undefined;
 };
 
 /**
  * HumanInTheLoopResponseEvent
- * A response from a human operator after a HITL request.
+ * Base response from a human operator after a HITL request.
  *
- * ### Why HumanInTheLoopResponseEvent?
- * Once a human operator provides an answer to a `HumanInTheLoopRequestEvent`, the response:
- * - Influences the workflow (since it's a `ControlEvent`), resuming or altering execution based on human input.
- * - Is visible to the UI (since it's also a `DisplayEvent`), allowing transparency and auditing.
+ * Use the specific subclasses:
+ * - `HumanInTheLoopInputResponseEvent` for text input responses (popup dialog)
+ * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses (popup dialog)
+ * - `HumanInTheLoopChatResponseEvent` for chat-style responses (regular message)
  */
 export type HumanInTheLoopResponseEventReadable = {
     /**
@@ -5321,9 +5402,9 @@ export type HumanInTheLoopResponseEventReadable = {
     display_description?: LocaleString | null;
     /**
      * Response
-     * The human operator's answer or decision.
+     * The human operator's response.
      */
-    response: string;
+    response: string | boolean;
     /**
      * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
      */
@@ -5339,17 +5420,17 @@ export type HumanInTheLoopResponseEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | HumanInTheLoopRequestEventReadable | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | boolean) | HumanInTheLoopRequestEventReadable | Array<string> | undefined;
 };
 
 /**
  * HumanInTheLoopResponseEvent
- * A response from a human operator after a HITL request.
+ * Base response from a human operator after a HITL request.
  *
- * ### Why HumanInTheLoopResponseEvent?
- * Once a human operator provides an answer to a `HumanInTheLoopRequestEvent`, the response:
- * - Influences the workflow (since it's a `ControlEvent`), resuming or altering execution based on human input.
- * - Is visible to the UI (since it's also a `DisplayEvent`), allowing transparency and auditing.
+ * Use the specific subclasses:
+ * - `HumanInTheLoopInputResponseEvent` for text input responses (popup dialog)
+ * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses (popup dialog)
+ * - `HumanInTheLoopChatResponseEvent` for chat-style responses (regular message)
  */
 export type HumanInTheLoopResponseEventWritable = {
     /**
@@ -5371,14 +5452,14 @@ export type HumanInTheLoopResponseEventWritable = {
     display_description?: LocaleString | null;
     /**
      * Response
-     * The human operator's answer or decision.
+     * The human operator's response.
      */
-    response: string;
+    response: string | boolean;
     /**
      * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
      */
     request_event: HumanInTheLoopRequestEventWritable;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | HumanInTheLoopRequestEventWritable | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (string | boolean) | HumanInTheLoopRequestEventWritable | undefined;
 };
 
 /**
@@ -8855,6 +8936,38 @@ export type NotificationDto = {
 };
 
 /**
+ * OpenChatHitlResponse
+ * Response indicating whether there's an open chat HITL request for a thread.
+ */
+export type OpenChatHitlResponseReadable = {
+    /**
+     * Has Open Chat Hitl
+     * Whether there is an open chat HITL request awaiting response.
+     */
+    has_open_chat_hitl: boolean;
+    /**
+     * The HITL request event if there is an open chat HITL, None otherwise.
+     */
+    hitl_request?: HumanInTheLoopRequestEventReadable | null;
+};
+
+/**
+ * OpenChatHitlResponse
+ * Response indicating whether there's an open chat HITL request for a thread.
+ */
+export type OpenChatHitlResponseWritable = {
+    /**
+     * Has Open Chat Hitl
+     * Whether there is an open chat HITL request awaiting response.
+     */
+    has_open_chat_hitl: boolean;
+    /**
+     * The HITL request event if there is an open chat HITL, None otherwise.
+     */
+    hitl_request?: HumanInTheLoopRequestEventWritable | null;
+};
+
+/**
  * PaginatedDocumentsResponse
  */
 export type PaginatedDocumentsResponse = {
@@ -11964,6 +12077,34 @@ export type TextareaWritable = {
 };
 
 /**
+ * ThinkingBlock
+ * A representation of the content streamed from reasoning/thinking processes by LLMs
+ */
+export type ThinkingBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'thinking';
+    /**
+     * Content
+     * Content of the reasoning/thinking process, if available
+     */
+    content?: string | null;
+    /**
+     * Num Tokens
+     * Number of token used for reasoning/thinking, if available
+     */
+    num_tokens?: number | null;
+    /**
+     * Additional Information
+     * Additional information related to the thinking/reasoning process, if available
+     */
+    additional_information?: {
+        [key: string]: unknown;
+    };
+};
+
+/**
  * ThoughtEvent
  * An event representing the system or agent's internal reasoning process, often displayed as
  * a "thought" or debug info stream. These "thoughts" provide insight into how the agent arrives
@@ -12581,6 +12722,33 @@ export type TokenResponse = {
 };
 
 /**
+ * ToolCallBlock
+ */
+export type ToolCallBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'tool_call';
+    /**
+     * Tool Call Id
+     * ID of the tool call, if provided
+     */
+    tool_call_id?: string | null;
+    /**
+     * Tool Name
+     * Name of the called tool
+     */
+    tool_name: string;
+    /**
+     * Tool Kwargs
+     * Arguments provided to the tool, if available
+     */
+    tool_kwargs?: {
+        [key: string]: unknown;
+    } | string;
+};
+
+/**
  * ToolEvent
  */
 export type ToolEventReadable = {
@@ -12800,12 +12968,12 @@ export type TranscriptionVerbose = {
      * Segments
      */
     segments?: Array<TranscriptionSegment> | null;
-    usage?: OpenaiTypesAudioTranscriptionVerboseUsage | null;
+    usage?: Usage | null;
     /**
      * Words
      */
     words?: Array<TranscriptionWord> | null;
-    [key: string]: unknown | number | string | (Array<TranscriptionSegment> | null) | (OpenaiTypesAudioTranscriptionVerboseUsage | null) | (Array<TranscriptionWord> | null) | undefined;
+    [key: string]: unknown | number | string | (Array<TranscriptionSegment> | null) | (Usage | null) | (Array<TranscriptionWord> | null) | undefined;
 };
 
 /**
@@ -12880,6 +13048,21 @@ export type UpdateRoleRequest = {
      * The new list of access rules.
      */
     access_rules?: Array<string> | null;
+};
+
+/**
+ * Usage
+ */
+export type Usage = {
+    /**
+     * Seconds
+     */
+    seconds: number;
+    /**
+     * Type
+     */
+    type: 'duration';
+    [key: string]: unknown | number | 'duration';
 };
 
 /**
@@ -13290,6 +13473,41 @@ export type ValidationError = {
 };
 
 /**
+ * VideoBlock
+ * A representation of video data to directly pass to/from the LLM.
+ */
+export type VideoBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'video';
+    /**
+     * Video
+     */
+    video?: (Blob | File) | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | null;
+    /**
+     * Video Mimetype
+     */
+    video_mimetype?: string | null;
+    /**
+     * Detail
+     */
+    detail?: string | null;
+    /**
+     * Fps
+     */
+    fps?: number | null;
+};
+
+/**
  * WorkflowGraph
  * Complete workflow graph representation.
  */
@@ -13321,21 +13539,6 @@ export type WorkflowGraph = {
      * List of edges in the graph
      */
     links: Array<EdgeData>;
-};
-
-/**
- * Usage
- */
-export type OpenaiTypesAudioTranscriptionVerboseUsage = {
-    /**
-     * Seconds
-     */
-    seconds: number;
-    /**
-     * Type
-     */
-    type: 'duration';
-    [key: string]: unknown | number | 'duration';
 };
 
 /**
@@ -13912,6 +14115,36 @@ export type RemoveUserFromThreadResponses = {
 };
 
 export type RemoveUserFromThreadResponse = RemoveUserFromThreadResponses[keyof RemoveUserFromThreadResponses];
+
+export type GetOpenChatHitlData = {
+    body?: never;
+    path: {
+        /**
+         * Thread ID
+         */
+        thread_id: string;
+    };
+    query?: never;
+    url: '/threads/{thread_id}/open-chat-hitl';
+};
+
+export type GetOpenChatHitlErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetOpenChatHitlError = GetOpenChatHitlErrors[keyof GetOpenChatHitlErrors];
+
+export type GetOpenChatHitlResponses = {
+    /**
+     * Successful Response
+     */
+    200: OpenChatHitlResponseReadable;
+};
+
+export type GetOpenChatHitlResponse = GetOpenChatHitlResponses[keyof GetOpenChatHitlResponses];
 
 export type GetModelsData = {
     body?: never;
@@ -14564,21 +14797,21 @@ export type CreateRoleResponses = {
 
 export type CreateRoleResponse = CreateRoleResponses[keyof CreateRoleResponses];
 
-export type GetModelsWithAssistantsData = {
+export type GetModels2Data = {
     body?: never;
     path?: never;
     query?: never;
     url: '/openai/models';
 };
 
-export type GetModelsWithAssistantsResponses = {
+export type GetModels2Responses = {
     /**
      * Successful Response
      */
     200: ModelResponse;
 };
 
-export type GetModelsWithAssistantsResponse = GetModelsWithAssistantsResponses[keyof GetModelsWithAssistantsResponses];
+export type GetModels2Response = GetModels2Responses[keyof GetModels2Responses];
 
 export type GetModelWithAssistantsData = {
     body?: never;
@@ -15019,6 +15252,21 @@ export type GetDocumentsForNamespaceData = {
          * Number of items per page (maximum 100)
          */
         page_size?: number;
+        /**
+         * Search
+         * Search by document title or filename
+         */
+        search?: string | null;
+        /**
+         * Sort Field
+         * Field to sort by: document_title, created_at, updated_at
+         */
+        sort_field?: string | null;
+        /**
+         * Sort Order
+         * Sort order: 1 for ascending, -1 for descending
+         */
+        sort_order?: number;
     };
     url: '/knowledge/databases/{database}/namespaces/{namespace}/documents';
 };

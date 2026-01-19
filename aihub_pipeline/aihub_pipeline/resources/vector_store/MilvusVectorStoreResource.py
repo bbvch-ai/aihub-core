@@ -7,6 +7,7 @@ from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import (
 from dagster import ConfigurableResource, InitResourceContext
 from llama_index.vector_stores.milvus import MilvusVectorStore
 from pydantic import Field
+from pymilvus import MilvusClient
 
 
 class MilvusVectorStoreResource(ConfigurableResource[MilvusVectorStore]):
@@ -84,11 +85,15 @@ class MilvusVectorStoreResource(ConfigurableResource[MilvusVectorStore]):
     index_type: Annotated[MilvusIndexType, Field(description="Vector index type to use for the embedding field")] = (
         MilvusIndexType.HNSW
     )
+    token: Annotated[str | None, Field(description="Authentication token in format 'username:password'")] = None
 
     def create_resource(self, context: InitResourceContext) -> MilvusVectorStore:
+        client = MilvusClient(uri=self.uri, token=self.token)
         return create_milvus_vector_store(
-            uri=self.uri,
+            client=client,
             collection_name=self.collection_name,
             embedding_vector_dimension=self.embedding_vector_dimension,
             index_type=self.index_type,
+            uri=self.uri,
+            token=self.token,
         )

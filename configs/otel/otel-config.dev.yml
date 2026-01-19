@@ -84,6 +84,11 @@ exporters:
       enabled: true
       initial_interval: 5s
       max_interval: 30s
+  # Debug exporter for dev mode (logs/metrics to stdout)
+  debug:
+    verbosity: basic
+    sampling_initial: 5
+    sampling_thereafter: 200
 
 service:
   extensions: [ health_check ]
@@ -93,3 +98,14 @@ service:
       receivers: [ otlp ]
       processors: [ filter/phoenix, transform/phoenix, batch ]
       exporters: [ otlp/phoenix ]
+    # Accept logs but use debug exporter (Phoenix doesn't support logs)
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]
+
+    # Accept metrics but use debug exporter (Phoenix doesn't support metrics)
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]

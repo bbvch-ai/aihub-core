@@ -234,6 +234,35 @@ Used during deserialization to decide which subclass to instantiate.`,
     title: 'AgentEvent'
 } as const;
 
+export const AgentHealthChecksSchema = {
+    properties: {
+        running: {
+            type: 'boolean',
+            title: 'Running',
+            description: 'Whether the agent runner is running.'
+        },
+        nats: {
+            type: 'boolean',
+            title: 'Nats',
+            description: 'NATS message broker connectivity.'
+        },
+        redis: {
+            type: 'boolean',
+            title: 'Redis',
+            description: 'Redis/Valkey cache connectivity.'
+        },
+        milvus: {
+            type: 'boolean',
+            title: 'Milvus',
+            description: 'Milvus vector database connectivity.'
+        }
+    },
+    type: 'object',
+    required: ['running', 'nats', 'redis', 'milvus'],
+    title: 'AgentHealthChecks',
+    description: 'Health check results for Agent service dependencies.'
+} as const;
+
 export const AgentInDTOSchema = {
     properties: {
         agent_class: {
@@ -963,6 +992,40 @@ export const AnnotationURLCitationSchema = {
     type: 'object',
     required: ['end_index', 'start_index', 'title', 'url'],
     title: 'AnnotationURLCitation'
+} as const;
+
+export const ApiHealthChecksSchema = {
+    properties: {
+        nats: {
+            type: 'boolean',
+            title: 'Nats',
+            description: 'NATS message broker connectivity.'
+        },
+        mongodb: {
+            type: 'boolean',
+            title: 'Mongodb',
+            description: 'MongoDB database connectivity.'
+        },
+        redis: {
+            type: 'boolean',
+            title: 'Redis',
+            description: 'Redis/Valkey cache connectivity.'
+        },
+        milvus: {
+            type: 'boolean',
+            title: 'Milvus',
+            description: 'Milvus vector database connectivity.'
+        },
+        s3: {
+            type: 'boolean',
+            title: 'S3',
+            description: 'S3/SeaweedFS object storage connectivity.'
+        }
+    },
+    type: 'object',
+    required: ['nats', 'mongodb', 'redis', 'milvus', 's3'],
+    title: 'ApiHealthChecks',
+    description: 'Health check results for API service dependencies.'
 } as const;
 
 export const AudioSchema = {
@@ -2732,6 +2795,9 @@ export const ChatMessageSchema = {
                         '$ref': '#/components/schemas/AudioBlock'
                     },
                     {
+                        '$ref': '#/components/schemas/VideoBlock'
+                    },
+                    {
                         '$ref': '#/components/schemas/DocumentBlock'
                     },
                     {
@@ -2742,6 +2808,12 @@ export const ChatMessageSchema = {
                     },
                     {
                         '$ref': '#/components/schemas/CitationBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ThinkingBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ToolCallBlock'
                     }
                 ],
                 discriminator: {
@@ -2753,7 +2825,10 @@ export const ChatMessageSchema = {
                         citation: '#/components/schemas/CitationBlock',
                         document: '#/components/schemas/DocumentBlock',
                         image: '#/components/schemas/ImageBlock',
-                        text: '#/components/schemas/TextBlock'
+                        text: '#/components/schemas/TextBlock',
+                        thinking: '#/components/schemas/ThinkingBlock',
+                        tool_call: '#/components/schemas/ToolCallBlock',
+                        video: '#/components/schemas/VideoBlock'
                     }
                 }
             },
@@ -4766,7 +4841,7 @@ export const DocumentDTOSchema = {
         source: {
             type: 'string',
             title: 'Source',
-            description: 'Source URI of original document.'
+            description: "Source path without protocol prefix (e.g., 'bucket/path/file.pdf')."
         },
         namespace: {
             type: 'string',
@@ -4798,7 +4873,7 @@ export const DocumentDTOSchema = {
         is_ingested: {
             type: 'boolean',
             title: 'Is Ingested',
-            description: 'Indicates if the document has been ingested.'
+            description: 'Whether the document has been fully ingested.'
         },
         content: {
             anyOf: [
@@ -5335,20 +5410,13 @@ export const EvaluationSummaryDataSchema = {
             description: 'Number of items evaluated.'
         },
         avg_score: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
+            type: 'number',
             title: 'Avg Score',
             description: 'Average score from this evaluator.'
         }
     },
     type: 'object',
-    required: ['evaluator', 'n'],
+    required: ['evaluator', 'n', 'avg_score'],
     title: 'EvaluationSummaryData'
 } as const;
 
@@ -6368,11 +6436,27 @@ export const HealthResponseSchema = {
             type: 'integer',
             title: 'Code',
             description: 'HTTP status code.'
+        },
+        checks: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/ApiHealthChecks'
+                },
+                {
+                    '$ref': '#/components/schemas/AgentHealthChecks'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Checks',
+            description: 'Individual health check results.'
         }
     },
     type: 'object',
     required: ['status', 'code'],
-    title: 'HealthResponse'
+    title: 'HealthResponse',
+    description: 'Standard health check response.'
 } as const;
 
 export const HtmlElementSchema = {
@@ -6631,6 +6715,12 @@ export const HumanInTheLoopRequestEventSchema = {
             title: 'Topic',
             description: 'A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.'
         },
+        hitl_type: {
+            type: 'string',
+            enum: ['input', 'confirmation', 'chat'],
+            title: 'Hitl Type',
+            description: "HITL type: 'input' (free-form text), 'confirmation' (yes/no), 'chat' (chat-style)."
+        },
         _event_name: {
             type: 'string',
             title: 'Event Name',
@@ -6650,14 +6740,14 @@ Used during deserialization to decide which subclass to instantiate.`,
     },
     additionalProperties: true,
     type: 'object',
-    required: ['question', 'topic', '_event_name', '_parent_event_names'],
+    required: ['question', 'topic', 'hitl_type', '_event_name', '_parent_event_names'],
     title: 'HumanInTheLoopRequestEvent',
-    description: `An event asking a human for input, guidance, or approval at a critical juncture in a workflow.
+    description: `Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
 
-### Why HumanInTheLoopRequestEvent?
-In automated workflows, certain decisions may require human validation. This event:
-- Is a \`DisplayEvent\`, so it can appear in user interfaces.
-- Carries a question and a topic indicating where the subsequent response should be sent.`
+Use the specific subclasses:
+- \`HumanInTheLoopInputRequestEvent\` for free-form text input (popup dialog)
+- \`HumanInTheLoopConfirmationRequestEvent\` for yes/no confirmation (popup dialog)
+- \`HumanInTheLoopChatRequestEvent\` for chat-style input (appears as regular message)`
 } as const;
 
 export const HumanInTheLoopResponseEventSchema = {
@@ -6694,9 +6784,16 @@ export const HumanInTheLoopResponseEventSchema = {
             description: 'Display description for the event'
         },
         response: {
-            type: 'string',
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'boolean'
+                }
+            ],
             title: 'Response',
-            description: "The human operator's answer or decision."
+            description: "The human operator's response."
         },
         request_event: {
             '$ref': '#/components/schemas/HumanInTheLoopRequestEvent',
@@ -6723,12 +6820,12 @@ Used during deserialization to decide which subclass to instantiate.`,
     type: 'object',
     required: ['response', 'request_event', '_event_name', '_parent_event_names'],
     title: 'HumanInTheLoopResponseEvent',
-    description: `A response from a human operator after a HITL request.
+    description: `Base response from a human operator after a HITL request.
 
-### Why HumanInTheLoopResponseEvent?
-Once a human operator provides an answer to a \`HumanInTheLoopRequestEvent\`, the response:
-- Influences the workflow (since it's a \`ControlEvent\`), resuming or altering execution based on human input.
-- Is visible to the UI (since it's also a \`DisplayEvent\`), allowing transparency and auditing.`
+Use the specific subclasses:
+- \`HumanInTheLoopInputResponseEvent\` for text input responses (popup dialog)
+- \`HumanInTheLoopConfirmationResponseEvent\` for yes/no confirmation responses (popup dialog)
+- \`HumanInTheLoopChatResponseEvent\` for chat-style responses (regular message)`
 } as const;
 
 export const HumanProcessStepDTOSchema = {
@@ -10062,7 +10159,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1764669803
+            default: 1768329188
         },
         owned_by: {
             type: 'string',
@@ -11102,6 +11199,31 @@ export const NotificationDTOSchema = {
     required: ['id', 'user_id', 'title', 'message', 'severity', 'link', 'created_at'],
     title: 'NotificationDTO',
     description: 'Data Transfer Object for a notification.'
+} as const;
+
+export const OpenChatHitlResponseSchema = {
+    properties: {
+        has_open_chat_hitl: {
+            type: 'boolean',
+            title: 'Has Open Chat Hitl',
+            description: 'Whether there is an open chat HITL request awaiting response.'
+        },
+        hitl_request: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/HumanInTheLoopRequestEvent'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'The HITL request event if there is an open chat HITL, None otherwise.'
+        }
+    },
+    type: 'object',
+    required: ['has_open_chat_hitl'],
+    title: 'OpenChatHitlResponse',
+    description: "Response indicating whether there's an open chat HITL request for a thread."
 } as const;
 
 export const PaginatedDocumentsResponseSchema = {
@@ -14363,6 +14485,50 @@ export const TextareaSchema = {
     description: 'https://formkit-primevue.netlify.app/inputs/Textarea'
 } as const;
 
+export const ThinkingBlockSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'thinking',
+            title: 'Block Type',
+            default: 'thinking'
+        },
+        content: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Content',
+            description: 'Content of the reasoning/thinking process, if available'
+        },
+        num_tokens: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Num Tokens',
+            description: 'Number of token used for reasoning/thinking, if available'
+        },
+        additional_information: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Additional Information',
+            description: 'Additional information related to the thinking/reasoning process, if available'
+        }
+    },
+    type: 'object',
+    title: 'ThinkingBlock',
+    description: 'A representation of the content streamed from reasoning/thinking processes by LLMs'
+} as const;
+
 export const ThoughtEventSchema = {
     properties: {
         event_id: {
@@ -15044,6 +15210,50 @@ export const TokenResponseSchema = {
     title: 'TokenResponse'
 } as const;
 
+export const ToolCallBlockSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'tool_call',
+            title: 'Block Type',
+            default: 'tool_call'
+        },
+        tool_call_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tool Call Id',
+            description: 'ID of the tool call, if provided'
+        },
+        tool_name: {
+            type: 'string',
+            title: 'Tool Name',
+            description: 'Name of the called tool'
+        },
+        tool_kwargs: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Tool Kwargs',
+            description: 'Arguments provided to the tool, if available'
+        }
+    },
+    type: 'object',
+    required: ['tool_name'],
+    title: 'ToolCallBlock'
+} as const;
+
 export const ToolEventSchema = {
     properties: {
         event_id: {
@@ -15305,7 +15515,7 @@ export const TranscriptionVerboseSchema = {
         usage: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/openai__types__audio__transcription_verbose__Usage'
+                    '$ref': '#/components/schemas/Usage'
                 },
                 {
                     type: 'null'
@@ -15462,6 +15672,24 @@ export const UpdateRoleRequestSchema = {
     type: 'object',
     title: 'UpdateRoleRequest',
     description: 'Request model for updating an existing role. All fields are optional.'
+} as const;
+
+export const UsageSchema = {
+    properties: {
+        seconds: {
+            type: 'number',
+            title: 'Seconds'
+        },
+        type: {
+            type: 'string',
+            const: 'duration',
+            title: 'Type'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['seconds', 'type'],
+    title: 'Usage'
 } as const;
 
 export const UsageDurationSchema = {
@@ -15948,6 +16176,93 @@ export const ValidationErrorSchema = {
     title: 'ValidationError'
 } as const;
 
+export const VideoBlockSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'video',
+            title: 'Block Type',
+            default: 'video'
+        },
+        video: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'binary'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Video'
+        },
+        path: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'file-path'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Path'
+        },
+        url: {
+            anyOf: [
+                {
+                    type: 'string',
+                    minLength: 1,
+                    format: 'uri'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Url'
+        },
+        video_mimetype: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Video Mimetype'
+        },
+        detail: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Detail'
+        },
+        fps: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Fps'
+        }
+    },
+    type: 'object',
+    title: 'VideoBlock',
+    description: 'A representation of video data to directly pass to/from the LLM.'
+} as const;
+
 export const WorkflowGraphSchema = {
     properties: {
         directed: {
@@ -15987,24 +16302,6 @@ export const WorkflowGraphSchema = {
     required: ['directed', 'multigraph', 'graph', 'nodes', 'links'],
     title: 'WorkflowGraph',
     description: 'Complete workflow graph representation.'
-} as const;
-
-export const openai__types__audio__transcription_verbose__UsageSchema = {
-    properties: {
-        seconds: {
-            type: 'number',
-            title: 'Seconds'
-        },
-        type: {
-            type: 'string',
-            const: 'duration',
-            title: 'Type'
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['seconds', 'type'],
-    title: 'Usage'
 } as const;
 
 export const openai__types__chat__chat_completion_message_custom_tool_call_param__CustomSchema = {

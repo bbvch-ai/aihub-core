@@ -6,7 +6,7 @@
     <KnowledgeDocumentOverview :document="document">
       <div class="mb-4 flex justify-end">
         <Button
-          v-if="document?.source"
+          v-if="document?.source && !document.source.startsWith('insight:')"
           icon="pi pi-external-link"
           :label="t('knowledge.original.view_button')"
           size="small"

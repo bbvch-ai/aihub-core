@@ -3,6 +3,8 @@ import copy
 import logging
 
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
+from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
+from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.nats.events import ProcessStartEvent
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
@@ -22,11 +24,14 @@ from aihub_lib.nats.topic_managers.process.ProcessClassTopicManager import Proce
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
 from aihub_lib.nats.topics.discovery.process.ProcessClassDiscoveryTopic import ProcessClassDiscoveryTopic
 from aihub_lib.processes.ProcessConfig import ProcessConfig
+from aihub_lib.routes.health.dto.HealthResponse import ProcessHealthChecks
+from aihub_lib.routes.health.health_checks import check_nats_sync, check_redis_sync
+from aihub_lib.routes.health.HealthServer import HealthCheckProvider, HealthServer
 from mongoengine import connect
 from mongoengine.connection import get_connection
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
-from redis.asyncio import ConnectionPool, Redis
+from redis.asyncio import Redis
 
 from aihub_process.agentic_processes.AgenticProcess import AgenticProcess
 from aihub_process.delegators.agent.AgentDelegator import AgentDelegator
@@ -37,7 +42,7 @@ from aihub_process.i18n.ProcessLocaleHandler import ProcessLocaleHandler
 logger = logging.getLogger(__name__)
 
 
-class ProcessRunner:
+class ProcessRunner(HealthCheckProvider):
     """
     The process runner is responsible for connecting with external services like NATs, JetStream, and Redis, as well
     as running the process through an process dispatcher.
@@ -46,19 +51,16 @@ class ProcessRunner:
 
     def __init__(
         self,
-        servers: list[str],
-        redis_url: str,
         process_type: type[AgenticProcess],
         default_process_config: ProcessConfig,
         locale_paths: list[str] | None = None,
+        health_port: int = 8080,
     ):
         if not isinstance(process_type, type):
             raise ValueError("process_type must be a class, not an instance or module.")
         if not issubclass(process_type, AgenticProcess):
             raise ValueError("process_type must be a subclass of AgenticProcess.")
 
-        self.servers = servers
-        self.redis_url = redis_url
         self.process_type = process_type
         self.default_process_config = default_process_config
         self.process_config_type = default_process_config.__class__
@@ -72,6 +74,7 @@ class ProcessRunner:
 
         self.nc: NATS | None = None
         self.js: JetStreamContext | None = None
+        self.redis: Redis | None = None
 
         self.dispatcher: ProcessDispatcher | None = None
 
@@ -83,6 +86,28 @@ class ProcessRunner:
         self.nc_publisher: NCPublisher[ProcessClassDiscoveryResponseEvent] | None = None
 
         self.locale_handler = ProcessLocaleHandler(locale_paths=locale_paths)
+
+        self._loop: asyncio.AbstractEventLoop | None = None
+        self._health_server = HealthServer(
+            provider=self,
+            default_port=health_port,
+            port_env_var="PROCESS_HEALTH_PORT",
+        )
+
+    @property
+    def entity_name(self) -> str:
+        return self.process_class
+
+    @property
+    def entity_type(self) -> str:
+        return "process"
+
+    def get_readiness_checks(self) -> ProcessHealthChecks:
+        return ProcessHealthChecks(
+            running=self.running,
+            nats=check_nats_sync(self.nc, self._loop) if self._loop else False,
+            redis=check_redis_sync(self.redis, self._loop) if self._loop else False,
+        )
 
     async def discovery_handler(self, event: ClassDiscoveryRequestEvent, topic: ProcessClassDiscoveryTopic):
         """
@@ -156,6 +181,7 @@ class ProcessRunner:
 
         self.running = True
         self._stop_signal.clear()
+        self._loop = asyncio.get_running_loop()
 
         # Connect to MongoDB (skip if already connected)
         try:
@@ -166,12 +192,9 @@ class ProcessRunner:
                 uuidRepresentation="standard",
             )
 
-        self.nc = NATS()
-        await self.nc.connect(servers=self.servers)
-
+        self.nc = await NatsSettings.create_client()
         self.js = self.nc.jetstream(timeout=60, publish_async_max_pending=10_000)
-        _, host, port = self.redis_url.split(":")
-        self.redis = Redis(connection_pool=ConnectionPool(host=host[2:], port=port))
+        self.redis = RedisSettings.create_client()
 
         # Initialize dispatcher
         self.dispatcher = ProcessDispatcher(
@@ -225,6 +248,9 @@ class ProcessRunner:
         logger.debug(f"{self.process_class} is now running and subscribed to incoming messages.")
         self._loop_task = asyncio.create_task(self._run_loop())
 
+        # Start health check server
+        self._health_server.start()
+
     async def stop(self):
         """
         Stops the process by setting a stop event, unsubscribing, and closing the NATS connection.
@@ -235,6 +261,9 @@ class ProcessRunner:
             return
 
         logger.debug(f"Shutting down {self.process_class}...")
+
+        # Stop health check server first
+        self._health_server.stop()
         self._stop_signal.set()
 
         if self._loop_task is not None:
