@@ -89,6 +89,12 @@ user:
     roles: "Ruoli"
     last_accessed: "Ultimo accesso"
 
+my_account:
+  title: "Il mio account"
+  services: "Servizi"
+  agents: "Agenti"
+  processes: "Processi"
+
 time_ago:
   last_hour: "Ultima ora"
   last_day: "Ultimo giorno"

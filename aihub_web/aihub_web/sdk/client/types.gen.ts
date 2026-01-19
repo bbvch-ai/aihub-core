@@ -5206,8 +5206,9 @@ export type HumanInDtoWritable = {
  * Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
  *
  * Use the specific subclasses:
- * - `HumanInTheLoopInputRequestEvent` for free-form text input
- * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation
+ * - `HumanInTheLoopInputRequestEvent` for free-form text input (popup dialog)
+ * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation (popup dialog)
+ * - `HumanInTheLoopChatRequestEvent` for chat-style input (appears as regular message)
  */
 export type HumanInTheLoopRequestEventReadable = {
     /**
@@ -5239,9 +5240,9 @@ export type HumanInTheLoopRequestEventReadable = {
     topic: PartialAgentTopic | AgentInstanceTopic;
     /**
      * Hitl Type
-     * The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no.
+     * HITL type: 'input' (free-form text), 'confirmation' (yes/no), 'chat' (chat-style).
      */
-    hitl_type: 'input' | 'confirmation';
+    hitl_type: 'input' | 'confirmation' | 'chat';
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -5253,7 +5254,7 @@ export type HumanInTheLoopRequestEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation') | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation' | 'chat') | Array<string> | undefined;
 };
 
 /**
@@ -5261,8 +5262,9 @@ export type HumanInTheLoopRequestEventReadable = {
  * Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
  *
  * Use the specific subclasses:
- * - `HumanInTheLoopInputRequestEvent` for free-form text input
- * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation
+ * - `HumanInTheLoopInputRequestEvent` for free-form text input (popup dialog)
+ * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation (popup dialog)
+ * - `HumanInTheLoopChatRequestEvent` for chat-style input (appears as regular message)
  */
 export type HumanInTheLoopRequestEventWritable = {
     /**
@@ -5294,10 +5296,10 @@ export type HumanInTheLoopRequestEventWritable = {
     topic: PartialAgentTopic | AgentInstanceTopic;
     /**
      * Hitl Type
-     * The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no.
+     * HITL type: 'input' (free-form text), 'confirmation' (yes/no), 'chat' (chat-style).
      */
-    hitl_type: 'input' | 'confirmation';
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation') | undefined;
+    hitl_type: 'input' | 'confirmation' | 'chat';
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation' | 'chat') | undefined;
 };
 
 /**
@@ -5305,8 +5307,9 @@ export type HumanInTheLoopRequestEventWritable = {
  * Base response from a human operator after a HITL request.
  *
  * Use the specific subclasses:
- * - `HumanInTheLoopInputResponseEvent` for text input responses
- * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses
+ * - `HumanInTheLoopInputResponseEvent` for text input responses (popup dialog)
+ * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses (popup dialog)
+ * - `HumanInTheLoopChatResponseEvent` for chat-style responses (regular message)
  */
 export type HumanInTheLoopResponseEventReadable = {
     /**
@@ -5354,8 +5357,9 @@ export type HumanInTheLoopResponseEventReadable = {
  * Base response from a human operator after a HITL request.
  *
  * Use the specific subclasses:
- * - `HumanInTheLoopInputResponseEvent` for text input responses
- * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses
+ * - `HumanInTheLoopInputResponseEvent` for text input responses (popup dialog)
+ * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses (popup dialog)
+ * - `HumanInTheLoopChatResponseEvent` for chat-style responses (regular message)
  */
 export type HumanInTheLoopResponseEventWritable = {
     /**
@@ -8135,6 +8139,40 @@ export type MinimalUserDto = {
 };
 
 /**
+ * ModelDTO
+ */
+export type ModelDtoReadable = {
+    /**
+     * Model Name
+     * The name/identifier of the model
+     */
+    model_name: string;
+    /**
+     * Detailed information about the model
+     */
+    model_info: ModelInfoDto;
+    /**
+     * Icon
+     */
+    readonly icon: string;
+};
+
+/**
+ * ModelDTO
+ */
+export type ModelDtoWritable = {
+    /**
+     * Model Name
+     * The name/identifier of the model
+     */
+    model_name: string;
+    /**
+     * Detailed information about the model
+     */
+    model_info: ModelInfoDto;
+};
+
+/**
  * ModelDetails
  */
 export type ModelDetails = {
@@ -8171,6 +8209,202 @@ export type ModelDetails = {
 };
 
 /**
+ * ModelInfoDTO
+ */
+export type ModelInfoDto = {
+    /**
+     * Mode
+     * The mode of the model (e.g., 'chat', 'completion', 'embedding')
+     */
+    mode: string;
+    /**
+     * Max Input Tokens
+     * Maximum number of input tokens the model can handle
+     */
+    max_input_tokens?: number | null;
+    /**
+     * Max Output Tokens
+     * Maximum number of output tokens the model can generate
+     */
+    max_output_tokens?: number | null;
+    /**
+     * Input Cost Per Token
+     * Cost per input token in USD
+     */
+    input_cost_per_token?: number | null;
+    /**
+     * Output Cost Per Token
+     * Cost per output token in USD
+     */
+    output_cost_per_token?: number | null;
+    /**
+     * Cache Creation Input Token Cost
+     * Cost for creating cache from input tokens
+     */
+    cache_creation_input_token_cost?: number | null;
+    /**
+     * Cache Read Input Token Cost
+     * Cost for reading cached input tokens
+     */
+    cache_read_input_token_cost?: number | null;
+    /**
+     * Input Cost Per Token Above 128K Tokens
+     * Cost per input token for contexts above 128k tokens
+     */
+    input_cost_per_token_above_128k_tokens?: number | null;
+    /**
+     * Input Cost Per Token Above 200K Tokens
+     * Cost per input token for contexts above 200k tokens
+     */
+    input_cost_per_token_above_200k_tokens?: number | null;
+    /**
+     * Input Cost Per Audio Token
+     * Cost per audio input token
+     */
+    input_cost_per_audio_token?: number | null;
+    /**
+     * Input Cost Per Token Batches
+     * Cost per input token when using batch API
+     */
+    input_cost_per_token_batches?: number | null;
+    /**
+     * Output Cost Per Token Batches
+     * Cost per output token when using batch API
+     */
+    output_cost_per_token_batches?: number | null;
+    /**
+     * Output Cost Per Audio Token
+     * Cost per audio output token
+     */
+    output_cost_per_audio_token?: number | null;
+    /**
+     * Output Cost Per Reasoning Token
+     * Cost per reasoning token for models with reasoning capabilities
+     */
+    output_cost_per_reasoning_token?: number | null;
+    /**
+     * Output Cost Per Token Above 128K Tokens
+     * Cost per output token for contexts above 128k tokens
+     */
+    output_cost_per_token_above_128k_tokens?: number | null;
+    /**
+     * Output Cost Per Token Above 200K Tokens
+     * Cost per output token for contexts above 200k tokens
+     */
+    output_cost_per_token_above_200k_tokens?: number | null;
+    /**
+     * Output Cost Per Image
+     * Cost per image output
+     */
+    output_cost_per_image?: number | null;
+    /**
+     * Search Context Cost Per Query
+     * Cost per search context query
+     */
+    search_context_cost_per_query?: number | null;
+    /**
+     * Output Vector Size
+     * Size of output vectors for embedding models
+     */
+    output_vector_size?: number | null;
+    /**
+     * Supports System Messages
+     * Whether the model supports system messages
+     */
+    supports_system_messages?: boolean | null;
+    /**
+     * Supports Response Schema
+     * Whether the model supports structured response schemas
+     */
+    supports_response_schema?: boolean | null;
+    /**
+     * Supports Vision
+     * Whether the model supports vision/image input
+     */
+    supports_vision?: boolean | null;
+    /**
+     * Supports Function Calling
+     * Whether the model supports function calling
+     */
+    supports_function_calling?: boolean | null;
+    /**
+     * Supports Tool Choice
+     * Whether the model supports tool choice selection
+     */
+    supports_tool_choice?: boolean | null;
+    /**
+     * Supports Assistant Prefill
+     * Whether the model supports assistant message prefilling
+     */
+    supports_assistant_prefill?: boolean | null;
+    /**
+     * Supports Prompt Caching
+     * Whether the model supports prompt caching
+     */
+    supports_prompt_caching?: boolean | null;
+    /**
+     * Supports Audio Input
+     * Whether the model supports audio input
+     */
+    supports_audio_input?: boolean | null;
+    /**
+     * Supports Audio Output
+     * Whether the model supports audio output
+     */
+    supports_audio_output?: boolean | null;
+    /**
+     * Supports Pdf Input
+     * Whether the model supports PDF input
+     */
+    supports_pdf_input?: boolean | null;
+    /**
+     * Supports Embedding Image Input
+     * Whether the model supports image input for embeddings
+     */
+    supports_embedding_image_input?: boolean | null;
+    /**
+     * Supports Native Streaming
+     * Whether the model supports native streaming
+     */
+    supports_native_streaming?: boolean | null;
+    /**
+     * Supports Web Search
+     * Whether the model supports web search capabilities
+     */
+    supports_web_search?: boolean | null;
+    /**
+     * Supports Url Context
+     * Whether the model supports URL context input
+     */
+    supports_url_context?: boolean | null;
+    /**
+     * Supports Reasoning
+     * Whether the model supports reasoning capabilities
+     */
+    supports_reasoning?: boolean | null;
+    /**
+     * Supports Computer Use
+     * Whether the model supports computer use capabilities
+     */
+    supports_computer_use?: boolean | null;
+    /**
+     * Tpm
+     * Tokens per minute rate limit
+     */
+    tpm?: number | null;
+    /**
+     * Rpm
+     * Requests per minute rate limit
+     */
+    rpm?: number | null;
+    /**
+     * Supported Openai Params
+     * List of supported OpenAI API parameters
+     */
+    supported_openai_params?: Array<string> | null;
+};
+
+/**
  * ModelResponse
  */
 export type ModelResponse = {
@@ -8184,6 +8418,38 @@ export type ModelResponse = {
      * The list of models.
      */
     data: Array<ModelDetails>;
+};
+
+/**
+ * ModelTypeGroupDTO
+ */
+export type ModelTypeGroupDtoReadable = {
+    /**
+     * Name
+     * The name/type of the model group
+     */
+    name: string;
+    /**
+     * Models
+     * List of models in this group
+     */
+    models: Array<ModelDtoReadable>;
+};
+
+/**
+ * ModelTypeGroupDTO
+ */
+export type ModelTypeGroupDtoWritable = {
+    /**
+     * Name
+     * The name/type of the model group
+     */
+    name: string;
+    /**
+     * Models
+     * List of models in this group
+     */
+    models: Array<ModelDtoWritable>;
 };
 
 /**
@@ -8596,6 +8862,38 @@ export type NotificationDto = {
      * The timestamp when the notification was created.
      */
     created_at: Date;
+};
+
+/**
+ * OpenChatHitlResponse
+ * Response indicating whether there's an open chat HITL request for a thread.
+ */
+export type OpenChatHitlResponseReadable = {
+    /**
+     * Has Open Chat Hitl
+     * Whether there is an open chat HITL request awaiting response.
+     */
+    has_open_chat_hitl: boolean;
+    /**
+     * The HITL request event if there is an open chat HITL, None otherwise.
+     */
+    hitl_request?: HumanInTheLoopRequestEventReadable | null;
+};
+
+/**
+ * OpenChatHitlResponse
+ * Response indicating whether there's an open chat HITL request for a thread.
+ */
+export type OpenChatHitlResponseWritable = {
+    /**
+     * Has Open Chat Hitl
+     * Whether there is an open chat HITL request awaiting response.
+     */
+    has_open_chat_hitl: boolean;
+    /**
+     * The HITL request event if there is an open chat HITL, None otherwise.
+     */
+    hitl_request?: HumanInTheLoopRequestEventWritable | null;
 };
 
 /**
@@ -13209,52 +13507,63 @@ export type GetSuiteResponses = {
 
 export type GetSuiteResponse = GetSuiteResponses[keyof GetSuiteResponses];
 
-export type GetMyUserData = {
+export type GetMyAccountData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/users/me';
+    url: '/my-account/';
 };
 
-export type GetMyUserResponses = {
+export type GetMyAccountResponses = {
     /**
      * Successful Response
      */
     200: UserWithAccessDto;
 };
 
-export type GetMyUserResponse = GetMyUserResponses[keyof GetMyUserResponses];
+export type GetMyAccountResponse = GetMyAccountResponses[keyof GetMyAccountResponses];
 
-export type GetUserData = {
+export type GetMyDashboardData = {
     body?: never;
-    path: {
-        /**
-         * User Id
-         * The user's unique identifier (OID).
-         */
-        user_id: string;
-    };
+    path?: never;
     query?: never;
-    url: '/users/{user_id}';
+    url: '/my-account/dashboard';
 };
 
-export type GetUserErrors = {
+export type GetMyDashboardResponses = {
+    /**
+     * Response Get My Dashboard My Account Dashboard Get
+     * Successful Response
+     */
+    200: DashboardDto | null;
+};
+
+export type GetMyDashboardResponse = GetMyDashboardResponses[keyof GetMyDashboardResponses];
+
+export type UpdateMyDashboardData = {
+    body: DashboardDto;
+    path?: never;
+    query?: never;
+    url: '/my-account/dashboard';
+};
+
+export type UpdateMyDashboardErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type GetUserError = GetUserErrors[keyof GetUserErrors];
+export type UpdateMyDashboardError = UpdateMyDashboardErrors[keyof UpdateMyDashboardErrors];
 
-export type GetUserResponses = {
+export type UpdateMyDashboardResponses = {
     /**
      * Successful Response
      */
-    200: UserWithAccessDto;
+    204: void;
 };
 
-export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
+export type UpdateMyDashboardResponse = UpdateMyDashboardResponses[keyof UpdateMyDashboardResponses];
 
 export type GetUsersData = {
     body?: never;
@@ -13292,47 +13601,36 @@ export type GetUsersResponses = {
 
 export type GetUsersResponse = GetUsersResponses[keyof GetUsersResponses];
 
-export type GetMyDashboardData = {
+export type GetUserData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * User Id
+         * The user's unique identifier (OID).
+         */
+        user_id: string;
+    };
     query?: never;
-    url: '/users/me/dashboard';
+    url: '/users/{user_id}';
 };
 
-export type GetMyDashboardResponses = {
-    /**
-     * Response Get My Dashboard Users Me Dashboard Get
-     * Successful Response
-     */
-    200: DashboardDto | null;
-};
-
-export type GetMyDashboardResponse = GetMyDashboardResponses[keyof GetMyDashboardResponses];
-
-export type UpdateMyDashboardData = {
-    body: DashboardDto;
-    path?: never;
-    query?: never;
-    url: '/users/me/dashboard';
-};
-
-export type UpdateMyDashboardErrors = {
+export type GetUserErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type UpdateMyDashboardError = UpdateMyDashboardErrors[keyof UpdateMyDashboardErrors];
+export type GetUserError = GetUserErrors[keyof GetUserErrors];
 
-export type UpdateMyDashboardResponses = {
+export type GetUserResponses = {
     /**
      * Successful Response
      */
-    204: void;
+    200: UserWithAccessDto;
 };
 
-export type UpdateMyDashboardResponse = UpdateMyDashboardResponses[keyof UpdateMyDashboardResponses];
+export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
 
 export type GetLocaleData = {
     body?: never;
@@ -13656,6 +13954,83 @@ export type RemoveUserFromThreadResponses = {
 };
 
 export type RemoveUserFromThreadResponse = RemoveUserFromThreadResponses[keyof RemoveUserFromThreadResponses];
+
+export type GetOpenChatHitlData = {
+    body?: never;
+    path: {
+        /**
+         * Thread ID
+         */
+        thread_id: string;
+    };
+    query?: never;
+    url: '/threads/{thread_id}/open-chat-hitl';
+};
+
+export type GetOpenChatHitlErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetOpenChatHitlError = GetOpenChatHitlErrors[keyof GetOpenChatHitlErrors];
+
+export type GetOpenChatHitlResponses = {
+    /**
+     * Successful Response
+     */
+    200: OpenChatHitlResponseReadable;
+};
+
+export type GetOpenChatHitlResponse = GetOpenChatHitlResponses[keyof GetOpenChatHitlResponses];
+
+export type GetModelsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/models';
+};
+
+export type GetModelsResponses = {
+    /**
+     * Response Get Models Models Get
+     * Successful Response
+     */
+    200: Array<ModelTypeGroupDtoReadable>;
+};
+
+export type GetModelsResponse = GetModelsResponses[keyof GetModelsResponses];
+
+export type GetModelData = {
+    body?: never;
+    path: {
+        /**
+         * Model Name
+         */
+        model_name: string;
+    };
+    query?: never;
+    url: '/models/{model_name}';
+};
+
+export type GetModelErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetModelError = GetModelErrors[keyof GetModelErrors];
+
+export type GetModelResponses = {
+    /**
+     * Successful Response
+     */
+    200: ModelDtoReadable;
+};
+
+export type GetModelResponse = GetModelResponses[keyof GetModelResponses];
 
 export type GetAgentData = {
     body?: never;
@@ -14261,21 +14636,21 @@ export type CreateRoleResponses = {
 
 export type CreateRoleResponse = CreateRoleResponses[keyof CreateRoleResponses];
 
-export type GetModelsData = {
+export type GetModels2Data = {
     body?: never;
     path?: never;
     query?: never;
     url: '/openai/models';
 };
 
-export type GetModelsResponses = {
+export type GetModels2Responses = {
     /**
      * Successful Response
      */
     200: ModelResponse;
 };
 
-export type GetModelsResponse = GetModelsResponses[keyof GetModelsResponses];
+export type GetModels2Response = GetModels2Responses[keyof GetModels2Responses];
 
 export type GetModelWithAssistantsData = {
     body?: never;

@@ -25,12 +25,12 @@ from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from mongoengine import connect, disconnect
 
-from aihub_api.routes.user.UserController import UserController
+from aihub_api.routes.my_account.MyAccountController import MyAccountController
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 # Constants for the tests
 BASE_URL = "http://test"
-USER_ENDPOINT = "/api/v1/users/me"
+USER_ENDPOINT = "/api/v1/my-account/"
 EXPECTED_USER_FIELDS = ["id", "name", "email"]
 TOKEN_EXPIRY_MINUTES = 10
 
@@ -118,10 +118,10 @@ def expected_user_data():
 
 @pytest_asyncio.fixture(scope="module")
 async def oauth2_api_client():
-    """Return a TestClient with OAuth2AuthHandler and UserController mounted."""
+    """Return a TestClient with OAuth2AuthHandler and MyAccountController mounted."""
     runner = ApiTestRunner()
     auth = OAuth2AuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
-    runner.mount(UserController(auth=auth).get_my_user())
+    runner.mount(MyAccountController(auth=auth).get_my_account())
     app = runner.create_app()
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:

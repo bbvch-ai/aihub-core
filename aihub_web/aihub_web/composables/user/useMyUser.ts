@@ -1,16 +1,16 @@
-import { getMyUser, type UserDto } from '@core/sdk/client'
+import { getMyAccount, type UserWithAccessDto } from '@core/sdk/client'
 import { minutesToMilliseconds } from 'date-fns'
 
 export default defineQuery(() => {
   const {
     data: myUser,
     isPending: myUserIsLoading,
-  } = useQuery<UserDto>({
-    key: () => ['my_user'],
+  } = useQuery<UserWithAccessDto>({
+    key: () => ['my_account'],
     staleTime: minutesToMilliseconds(5),
     enabled: true,
     query: async () => {
-      return await getMyUser({
+      return await getMyAccount({
         composable: '$fetch',
       })
     },

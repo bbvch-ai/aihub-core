@@ -6626,9 +6626,9 @@ export const HumanInTheLoopRequestEventSchema = {
         },
         hitl_type: {
             type: 'string',
-            enum: ['input', 'confirmation'],
+            enum: ['input', 'confirmation', 'chat'],
             title: 'Hitl Type',
-            description: "The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no."
+            description: "HITL type: 'input' (free-form text), 'confirmation' (yes/no), 'chat' (chat-style)."
         },
         _event_name: {
             type: 'string',
@@ -6654,8 +6654,9 @@ Used during deserialization to decide which subclass to instantiate.`,
     description: `Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
 
 Use the specific subclasses:
-- \`HumanInTheLoopInputRequestEvent\` for free-form text input
-- \`HumanInTheLoopConfirmationRequestEvent\` for yes/no confirmation`
+- \`HumanInTheLoopInputRequestEvent\` for free-form text input (popup dialog)
+- \`HumanInTheLoopConfirmationRequestEvent\` for yes/no confirmation (popup dialog)
+- \`HumanInTheLoopChatRequestEvent\` for chat-style input (appears as regular message)`
 } as const;
 
 export const HumanInTheLoopResponseEventSchema = {
@@ -6731,8 +6732,9 @@ Used during deserialization to decide which subclass to instantiate.`,
     description: `Base response from a human operator after a HITL request.
 
 Use the specific subclasses:
-- \`HumanInTheLoopInputResponseEvent\` for text input responses
-- \`HumanInTheLoopConfirmationResponseEvent\` for yes/no confirmation responses`
+- \`HumanInTheLoopInputResponseEvent\` for text input responses (popup dialog)
+- \`HumanInTheLoopConfirmationResponseEvent\` for yes/no confirmation responses (popup dialog)
+- \`HumanInTheLoopChatResponseEvent\` for chat-style responses (regular message)`
 } as const;
 
 export const HumanProcessStepDTOSchema = {
@@ -10027,6 +10029,28 @@ export const MinimalUserDTOSchema = {
     title: 'MinimalUserDTO'
 } as const;
 
+export const ModelDTOSchema = {
+    properties: {
+        model_name: {
+            type: 'string',
+            title: 'Model Name',
+            description: 'The name/identifier of the model'
+        },
+        model_info: {
+            '$ref': '#/components/schemas/ModelInfoDTO',
+            description: 'Detailed information about the model'
+        },
+        icon: {
+            type: 'string',
+            title: 'Icon',
+            readOnly: true
+        }
+    },
+    type: 'object',
+    required: ['model_name', 'model_info', 'icon'],
+    title: 'ModelDTO'
+} as const;
+
 export const ModelDetailsSchema = {
     properties: {
         id: {
@@ -10044,7 +10068,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1767889732
+            default: 1768810291
         },
         owned_by: {
             type: 'string',
@@ -10082,6 +10106,466 @@ export const ModelDetailsSchema = {
     title: 'ModelDetails'
 } as const;
 
+export const ModelInfoDTOSchema = {
+    properties: {
+        mode: {
+            type: 'string',
+            title: 'Mode',
+            description: "The mode of the model (e.g., 'chat', 'completion', 'embedding')"
+        },
+        max_input_tokens: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Max Input Tokens',
+            description: 'Maximum number of input tokens the model can handle'
+        },
+        max_output_tokens: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Max Output Tokens',
+            description: 'Maximum number of output tokens the model can generate'
+        },
+        input_cost_per_token: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Cost Per Token',
+            description: 'Cost per input token in USD'
+        },
+        output_cost_per_token: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Token',
+            description: 'Cost per output token in USD'
+        },
+        cache_creation_input_token_cost: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cache Creation Input Token Cost',
+            description: 'Cost for creating cache from input tokens'
+        },
+        cache_read_input_token_cost: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cache Read Input Token Cost',
+            description: 'Cost for reading cached input tokens'
+        },
+        input_cost_per_token_above_128k_tokens: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Cost Per Token Above 128K Tokens',
+            description: 'Cost per input token for contexts above 128k tokens'
+        },
+        input_cost_per_token_above_200k_tokens: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Cost Per Token Above 200K Tokens',
+            description: 'Cost per input token for contexts above 200k tokens'
+        },
+        input_cost_per_audio_token: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Cost Per Audio Token',
+            description: 'Cost per audio input token'
+        },
+        input_cost_per_token_batches: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Cost Per Token Batches',
+            description: 'Cost per input token when using batch API'
+        },
+        output_cost_per_token_batches: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Token Batches',
+            description: 'Cost per output token when using batch API'
+        },
+        output_cost_per_audio_token: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Audio Token',
+            description: 'Cost per audio output token'
+        },
+        output_cost_per_reasoning_token: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Reasoning Token',
+            description: 'Cost per reasoning token for models with reasoning capabilities'
+        },
+        output_cost_per_token_above_128k_tokens: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Token Above 128K Tokens',
+            description: 'Cost per output token for contexts above 128k tokens'
+        },
+        output_cost_per_token_above_200k_tokens: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Token Above 200K Tokens',
+            description: 'Cost per output token for contexts above 200k tokens'
+        },
+        output_cost_per_image: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Cost Per Image',
+            description: 'Cost per image output'
+        },
+        search_context_cost_per_query: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Search Context Cost Per Query',
+            description: 'Cost per search context query'
+        },
+        output_vector_size: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Vector Size',
+            description: 'Size of output vectors for embedding models'
+        },
+        supports_system_messages: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports System Messages',
+            description: 'Whether the model supports system messages'
+        },
+        supports_response_schema: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Response Schema',
+            description: 'Whether the model supports structured response schemas'
+        },
+        supports_vision: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Vision',
+            description: 'Whether the model supports vision/image input'
+        },
+        supports_function_calling: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Function Calling',
+            description: 'Whether the model supports function calling'
+        },
+        supports_tool_choice: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Tool Choice',
+            description: 'Whether the model supports tool choice selection'
+        },
+        supports_assistant_prefill: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Assistant Prefill',
+            description: 'Whether the model supports assistant message prefilling'
+        },
+        supports_prompt_caching: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Prompt Caching',
+            description: 'Whether the model supports prompt caching'
+        },
+        supports_audio_input: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Audio Input',
+            description: 'Whether the model supports audio input'
+        },
+        supports_audio_output: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Audio Output',
+            description: 'Whether the model supports audio output'
+        },
+        supports_pdf_input: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Pdf Input',
+            description: 'Whether the model supports PDF input'
+        },
+        supports_embedding_image_input: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Embedding Image Input',
+            description: 'Whether the model supports image input for embeddings'
+        },
+        supports_native_streaming: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Native Streaming',
+            description: 'Whether the model supports native streaming'
+        },
+        supports_web_search: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Web Search',
+            description: 'Whether the model supports web search capabilities'
+        },
+        supports_url_context: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Url Context',
+            description: 'Whether the model supports URL context input'
+        },
+        supports_reasoning: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Reasoning',
+            description: 'Whether the model supports reasoning capabilities'
+        },
+        supports_computer_use: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supports Computer Use',
+            description: 'Whether the model supports computer use capabilities'
+        },
+        tpm: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tpm',
+            description: 'Tokens per minute rate limit'
+        },
+        rpm: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Rpm',
+            description: 'Requests per minute rate limit'
+        },
+        supported_openai_params: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Supported Openai Params',
+            description: 'List of supported OpenAI API parameters'
+        }
+    },
+    type: 'object',
+    required: ['mode'],
+    title: 'ModelInfoDTO'
+} as const;
+
 export const ModelResponseSchema = {
     properties: {
         object: {
@@ -10102,6 +10586,27 @@ export const ModelResponseSchema = {
     type: 'object',
     required: ['data'],
     title: 'ModelResponse'
+} as const;
+
+export const ModelTypeGroupDTOSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'The name/type of the model group'
+        },
+        models: {
+            items: {
+                '$ref': '#/components/schemas/ModelDTO'
+            },
+            type: 'array',
+            title: 'Models',
+            description: 'List of models in this group'
+        }
+    },
+    type: 'object',
+    required: ['name', 'models'],
+    title: 'ModelTypeGroupDTO'
 } as const;
 
 export const MultiSelectSchema = {
@@ -10603,6 +11108,31 @@ export const NotificationDTOSchema = {
     required: ['id', 'user_id', 'title', 'message', 'severity', 'link', 'created_at'],
     title: 'NotificationDTO',
     description: 'Data Transfer Object for a notification.'
+} as const;
+
+export const OpenChatHitlResponseSchema = {
+    properties: {
+        has_open_chat_hitl: {
+            type: 'boolean',
+            title: 'Has Open Chat Hitl',
+            description: 'Whether there is an open chat HITL request awaiting response.'
+        },
+        hitl_request: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/HumanInTheLoopRequestEvent'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'The HITL request event if there is an open chat HITL, None otherwise.'
+        }
+    },
+    type: 'object',
+    required: ['has_open_chat_hitl'],
+    title: 'OpenChatHitlResponse',
+    description: "Response indicating whether there's an open chat HITL request for a thread."
 } as const;
 
 export const PaginatedDocumentsResponseSchema = {
