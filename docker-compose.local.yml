@@ -1209,6 +1209,54 @@ services:
 
   
   # ===================================================================
+  # Docker Socket Proxy (Security Layer)
+  # ===================================================================
+  # Provides filtered, read-only access to the Docker socket for Traefik.
+  # This prevents potential container escape attacks if Traefik is
+  # compromised, as the proxy only exposes the minimal Docker API
+  # endpoints required for service discovery.
+  # ===================================================================
+  docker-socket-proxy:
+    container_name: docker-socket-proxy
+    image: "tecnativa/docker-socket-proxy:0.3"
+    restart: always
+    # Required for Docker socket access in SELinux/AppArmor environments
+    privileged: true
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:2375/_ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      # Security: Only enable required Docker API sections
+      CONTAINERS: 1    # Required for Traefik to discover services
+      NETWORKS: 1      # Required for Traefik network routing
+      # Explicitly disable dangerous permissions (defaults are already 0, but explicit is clearer)
+      BUILD: 0
+      COMMIT: 0
+      CONFIGS: 0
+      DISTRIBUTION: 0
+      EXEC: 0
+      IMAGES: 0
+      POST: 0
+      SECRETS: 0
+      SERVICES: 0
+      SWARM: 0
+      SYSTEM: 0
+      TASKS: 0
+      VOLUMES: 0
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels:
+      - "traefik.enable=false"
+
+  # ===================================================================
   # Traefik (Reverse Proxy)
   # ===================================================================
   # Traefik manages incoming traffic, TLS, and routing to services.
@@ -1218,13 +1266,15 @@ services:
     container_name: traefik
     image: "ghcr.io/bbvch-ai/aihub-core/traefik:v3.6.2"
     restart: always
+    depends_on:
+      docker-socket-proxy:
+        condition: service_healthy
     healthcheck:
       test: [ "NONE" ]
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./configs/traefik/traefik-config.local.yml:/etc/traefik/traefik.yml:ro"
       - "./configs/traefik/middlewares.local.yml:/etc/traefik/dynamic/middlewares.yml:ro"
       - "./configs/traefik/tls.local.yml:/etc/traefik/dynamic/tls.yml:ro"

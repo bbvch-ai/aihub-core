@@ -1,12 +1,12 @@
 # License Report
 
-Generated on: 13.01.2026
+Generated on: 19.01.2026
 
 This document contains license information for all dependencies across the monorepo:
 
 - Python packages (Poetry): **237 packages**
 - Node.js packages (pnpm): **197 packages**
-- External Docker images: **30 images**
+- External Docker images: **31 images**
 
 ### License Compatibility
 
@@ -477,6 +477,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | oauth2-proxy                    | `ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest`                             | MIT                | Permissive license                                                |
 | ✅     | llama.cpp                       | `ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b7003`                   | MIT                | Permissive license                                                |
 | ✅     | minimal-notebook                | `ghcr.io/bbvch-ai/aihub-core/minimal-notebook:notebook-7.0.6`               | BSD-3-Clause       | Jupyter base image                                                |
+| ✅     | docker-socket-proxy             | `tecnativa/docker-socket-proxy:0.3`                                         | Apache-2.0         | Permissive license                                                |
 | ✅     | docling-serve-cpu               | `ghcr.io/bbvch-ai/aihub-core/docling-serve-cpu:v1.9.0`                      | MIT                | Permissive license                                                |
 | ✅     | pgvector                        | `ghcr.io/bbvch-ai/aihub-core/pgvector:pg17`                                 | PostgreSQL License | BSD-style permissive license                                      |
 | ✅     | etcd                            | `ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.25`                                  | Apache-2.0         | Permissive license                                                |
