@@ -334,6 +334,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data     # Milvus metadata storage
+      - storage  # SeaweedFS filer metadata
 
   etcd-init:
     container_name: etcd-init
