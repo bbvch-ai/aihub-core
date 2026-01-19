@@ -1,11 +1,3 @@
-"""
-Shared health check utilities for verifying service connectivity.
-
-These functions provide lightweight connectivity checks for various services
-used across the AI-Hub platform. They are designed to be used by both the API
-service and agent runners for health monitoring.
-"""
-
 import asyncio
 import logging
 
@@ -94,9 +86,6 @@ def check_mongodb() -> bool:
     Check if MongoDB connection is available by pinging the admin database.
 
     Uses the global MongoEngine connection.
-
-    Returns:
-        True if MongoDB is healthy, False otherwise.
     """
     try:
         conn = get_connection()

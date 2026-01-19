@@ -1,3 +1,4 @@
+import asyncio
 from typing import Annotated
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -43,11 +44,13 @@ class ApiHealthController(HealthController):
             Readiness check that verifies all API dependencies are available.
             Returns 200 if all checks pass, 503 if any check fails.
             """
-            nats_healthy = await check_nats(nc)
-            mongodb_healthy = check_mongodb()
-            redis_healthy = await check_redis(redis)
-            milvus_healthy = check_milvus(milvus_client)
-            s3_healthy = check_s3(s3_client)
+            nats_healthy, mongodb_healthy, redis_healthy, milvus_healthy, s3_healthy = await asyncio.gather(
+                check_nats(nc),
+                asyncio.to_thread(check_mongodb),
+                check_redis(redis),
+                asyncio.to_thread(check_milvus, milvus_client),
+                asyncio.to_thread(check_s3, s3_client),
+            )
 
             all_healthy = nats_healthy and mongodb_healthy and redis_healthy and milvus_healthy and s3_healthy
             status = "ok" if all_healthy else "unhealthy"

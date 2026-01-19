@@ -1,13 +1,10 @@
 import logging
-from typing import TYPE_CHECKING, Any
 
 from botocore.exceptions import ClientError
+from mypy_boto3_s3 import S3Client
 
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.infrastructure.s3.S3StorageSettings import S3StorageSettings
-
-if TYPE_CHECKING:
-    from mypy_boto3_s3 import S3Client
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +27,8 @@ class S3AnonymousFileAccessService:
 
     def __init__(
         self,
-        s3_client: "S3Client | Any",
-        s3_public_client: "S3Client | Any",
+        s3_client: S3Client,
+        s3_public_client: S3Client,
         s3_settings: S3StorageSettings,
     ):
         """

@@ -1,5 +1,6 @@
 # ruff: noqa: E402
 from aihub_api.routes.health.ApiHealthController import ApiHealthController
+
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
 
 AihubInstrumentor().instrument()
@@ -10,7 +11,6 @@ import nest_asyncio
 from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.infrastructure.logging.logger import enable_logging
-from aihub_lib.routes.health.HealthController import HealthController
 
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.docling.DoclingController import DoclingController

@@ -90,8 +90,6 @@ class AgentRunner(HealthCheckProvider):
             port_env_var="AGENT_HEALTH_PORT",
         )
 
-    # HealthCheckProvider implementation
-
     @property
     def entity_name(self) -> str:
         return self.agent_class
@@ -164,6 +162,7 @@ class AgentRunner(HealthCheckProvider):
         self._stop_signal.clear()
         self._loop = asyncio.get_running_loop()
 
+        # Connect to NATs and Redis
         self.nc = await NatsSettings.create_client()
         self.js = self.nc.jetstream(timeout=60, publish_async_max_pending=10_000)
         self.redis = RedisSettings.create_client()

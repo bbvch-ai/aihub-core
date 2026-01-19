@@ -94,8 +94,6 @@ class ProcessRunner(HealthCheckProvider):
             port_env_var="PROCESS_HEALTH_PORT",
         )
 
-    # HealthCheckProvider implementation
-
     @property
     def entity_name(self) -> str:
         return self.process_class

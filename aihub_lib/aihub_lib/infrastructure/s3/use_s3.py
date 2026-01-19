@@ -1,22 +1,19 @@
-from typing import TYPE_CHECKING, Any
 
 import boto3
 from botocore.config import Config
 from fastapi import Request
+from mypy_boto3_s3 import S3Client
 
 from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
 from aihub_lib.infrastructure.s3.S3StorageSettings import S3StorageSettings
 
-if TYPE_CHECKING:
-    from mypy_boto3_s3 import S3Client
 
-
-def use_s3(request: Request) -> "S3Client | Any":
+def use_s3(request: Request) -> S3Client:
     """FastAPI dependency that provides the S3 client from app state."""
     return request.app.state.s3_client
 
 
-def use_s3_public(request: Request) -> "S3Client | Any":
+def use_s3_public(request: Request) -> S3Client:
     """FastAPI dependency that provides the public S3 client for presigned URLs."""
     return request.app.state.s3_public_client
 
