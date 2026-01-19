@@ -1,11 +1,5 @@
 from typing import Annotated
 
-from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
-from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.dependencies.use_nats import use_nats
-from aihub_lib.routes.Controller import Controller
 from fastapi import Body, Depends, Security
 from nats.aio.client import Client as NATS
 
@@ -13,6 +7,12 @@ from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.my_account.MyAccountService import MyAccountService
 from aihub_api.routes.user.dto.Dashboard.DashboardDTO import DashboardDTO
 from aihub_api.routes.user.dto.UserWithAccessDTO import UserWithAccessDTO
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.dependencies.use_nats import use_nats
+from aihub_lib.routes.Controller import Controller
 
 
 class MyAccountController(Controller):
@@ -46,7 +46,7 @@ class MyAccountController(Controller):
         async def get_my_account(
             nc: Annotated[NATS, Depends(use_nats)],
             t: Annotated[LocaleHandler, Depends(use_locale)],
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.basic.?>"))],
         ) -> UserWithAccessDTO:
             """
             Returns the currently logged-in user's account information including access permissions.
