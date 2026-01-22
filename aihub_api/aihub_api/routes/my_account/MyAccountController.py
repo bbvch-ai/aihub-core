@@ -85,6 +85,5 @@ class MyAccountController(Controller):
             Updates the user's dashboard settings.
             """
             await MyAccountService.update_user_dashboard(user, dashboard_dto)
-            return None
 
         return self

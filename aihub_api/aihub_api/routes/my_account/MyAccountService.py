@@ -51,10 +51,7 @@ class MyAccountService:
         dashboard_data_dict = dashboard_dto.model_dump()
 
         children_data = dashboard_data_dict.pop("children", [])
-        dashboard_items = []
-        if children_data:
-            for item_data in children_data:
-                dashboard_items.append(DashboardItem(**item_data))
+        dashboard_items = [DashboardItem(**item_data) for item_data in children_data]
 
         user_entity.dashboard = Dashboard(children=dashboard_items, **dashboard_data_dict)
         user_entity.save()
