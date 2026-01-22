@@ -4013,7 +4013,9 @@ export const DashboardDTOSchema = {
         minRow: {
             anyOf: [
                 {
-                    type: 'integer'
+                    type: 'integer',
+                    maximum: 1000,
+                    minimum: 0
                 },
                 {
                     type: 'null'
@@ -4025,7 +4027,9 @@ export const DashboardDTOSchema = {
         margin: {
             anyOf: [
                 {
-                    type: 'integer'
+                    type: 'integer',
+                    maximum: 100,
+                    minimum: 0
                 },
                 {
                     type: 'null'
@@ -4037,7 +4041,9 @@ export const DashboardDTOSchema = {
         column: {
             anyOf: [
                 {
-                    type: 'integer'
+                    type: 'integer',
+                    maximum: 24,
+                    minimum: 1
                 },
                 {
                     type: 'null'
@@ -4049,7 +4055,9 @@ export const DashboardDTOSchema = {
         cellHeight: {
             anyOf: [
                 {
-                    type: 'integer'
+                    type: 'integer',
+                    maximum: 1000,
+                    minimum: 1
                 },
                 {
                     type: 'null'
@@ -4063,6 +4071,7 @@ export const DashboardDTOSchema = {
                 '$ref': '#/components/schemas/DashboardItemDTO'
             },
             type: 'array',
+            maxItems: 100,
             title: 'Children',
             description: 'List of widgets (dashboard items) within the grid.',
             default: []
@@ -4076,28 +4085,38 @@ export const DashboardItemDTOSchema = {
     properties: {
         id: {
             type: 'string',
+            maxLength: 100,
+            minLength: 1,
             title: 'Id',
             description: 'Unique identifier for the dashboard widget.'
         },
         component: {
             type: 'string',
+            maxLength: 100,
+            minLength: 1,
             title: 'Component',
             description: 'Specifies the component to render for this widget.'
         },
         x: {
             type: 'integer',
+            maximum: 1000,
+            minimum: 0,
             title: 'X',
             description: 'The x-coordinate of the widget in the grid.'
         },
         y: {
             type: 'integer',
+            maximum: 1000,
+            minimum: 0,
             title: 'Y',
             description: 'The y-coordinate of the widget in the grid.'
         },
         w: {
             anyOf: [
                 {
-                    type: 'integer'
+                    type: 'integer',
+                    maximum: 24,
+                    minimum: 1
                 },
                 {
                     type: 'null'
@@ -4121,7 +4140,8 @@ export const DashboardItemDTOSchema = {
         timeRange: {
             anyOf: [
                 {
-                    type: 'string'
+                    type: 'string',
+                    maxLength: 50
                 },
                 {
                     type: 'null'
@@ -4133,7 +4153,8 @@ export const DashboardItemDTOSchema = {
         event: {
             anyOf: [
                 {
-                    type: 'string'
+                    type: 'string',
+                    maxLength: 100
                 },
                 {
                     type: 'null'
@@ -6446,6 +6467,9 @@ export const HealthResponseSchema = {
                     '$ref': '#/components/schemas/AgentHealthChecks'
                 },
                 {
+                    '$ref': '#/components/schemas/ProcessHealthChecks'
+                },
+                {
                     type: 'null'
                 }
             ],
@@ -7398,7 +7422,7 @@ export const ImagesResponseSchema = {
         usage: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/openai__types__images_response__Usage'
+                    '$ref': '#/components/schemas/Usage'
                 },
                 {
                     type: 'null'
@@ -10159,7 +10183,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1768329188
+            default: 1769098163
         },
         owned_by: {
             type: 'string',
@@ -11853,6 +11877,30 @@ This DTO standardizes how process data is returned from the service layer to the
 and subsequently to the API response. It helps maintain a clean separation between the internal
 event models and the publicly exposed fields in HTTP responses.
 By using \`ProcessDTO\`, the API can evolve independently from the internal event representations.`
+} as const;
+
+export const ProcessHealthChecksSchema = {
+    properties: {
+        running: {
+            type: 'boolean',
+            title: 'Running',
+            description: 'Whether the process runner is running.'
+        },
+        nats: {
+            type: 'boolean',
+            title: 'Nats',
+            description: 'NATS message broker connectivity.'
+        },
+        redis: {
+            type: 'boolean',
+            title: 'Redis',
+            description: 'Redis/Valkey cache connectivity.'
+        }
+    },
+    type: 'object',
+    required: ['running', 'nats', 'redis'],
+    title: 'ProcessHealthChecks',
+    description: 'Health check results for Process service dependencies.'
 } as const;
 
 export const ProcessWalkthroughDTOSchema = {
@@ -15515,7 +15563,7 @@ export const TranscriptionVerboseSchema = {
         usage: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/Usage'
+                    '$ref': '#/components/schemas/openai__types__audio__transcription_verbose__Usage'
                 },
                 {
                     type: 'null'
@@ -15676,19 +15724,25 @@ export const UpdateRoleRequestSchema = {
 
 export const UsageSchema = {
     properties: {
-        seconds: {
-            type: 'number',
-            title: 'Seconds'
+        input_tokens: {
+            type: 'integer',
+            title: 'Input Tokens'
         },
-        type: {
-            type: 'string',
-            const: 'duration',
-            title: 'Type'
+        input_tokens_details: {
+            '$ref': '#/components/schemas/UsageInputTokensDetails'
+        },
+        output_tokens: {
+            type: 'integer',
+            title: 'Output Tokens'
+        },
+        total_tokens: {
+            type: 'integer',
+            title: 'Total Tokens'
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['seconds', 'type'],
+    required: ['input_tokens', 'input_tokens_details', 'output_tokens', 'total_tokens'],
     title: 'Usage'
 } as const;
 
@@ -16304,6 +16358,24 @@ export const WorkflowGraphSchema = {
     description: 'Complete workflow graph representation.'
 } as const;
 
+export const openai__types__audio__transcription_verbose__UsageSchema = {
+    properties: {
+        seconds: {
+            type: 'number',
+            title: 'Seconds'
+        },
+        type: {
+            type: 'string',
+            const: 'duration',
+            title: 'Type'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['seconds', 'type'],
+    title: 'Usage'
+} as const;
+
 export const openai__types__chat__chat_completion_message_custom_tool_call_param__CustomSchema = {
     properties: {
         input: {
@@ -16384,28 +16456,4 @@ export const openai__types__chat__completion_create_params__FunctionSchema = {
     type: 'object',
     required: ['name'],
     title: 'Function'
-} as const;
-
-export const openai__types__images_response__UsageSchema = {
-    properties: {
-        input_tokens: {
-            type: 'integer',
-            title: 'Input Tokens'
-        },
-        input_tokens_details: {
-            '$ref': '#/components/schemas/UsageInputTokensDetails'
-        },
-        output_tokens: {
-            type: 'integer',
-            title: 'Output Tokens'
-        },
-        total_tokens: {
-            type: 'integer',
-            title: 'Total Tokens'
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['input_tokens', 'input_tokens_details', 'output_tokens', 'total_tokens'],
-    title: 'Usage'
 } as const;

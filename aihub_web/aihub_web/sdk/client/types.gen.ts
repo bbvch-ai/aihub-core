@@ -5135,7 +5135,7 @@ export type HealthResponse = {
      * Checks
      * Individual health check results.
      */
-    checks?: ApiHealthChecks | AgentHealthChecks | null;
+    checks?: ApiHealthChecks | AgentHealthChecks | ProcessHealthChecks | null;
 };
 
 /**
@@ -5772,8 +5772,8 @@ export type ImagesResponse = {
      * Size
      */
     size?: ('1024x1024' | '1024x1536' | '1536x1024') | null;
-    usage?: OpenaiTypesImagesResponseUsage | null;
-    [key: string]: unknown | number | (('transparent' | 'opaque') | null) | (Array<Image> | null) | (('png' | 'webp' | 'jpeg') | null) | (('low' | 'medium' | 'high') | null) | (('1024x1024' | '1024x1536' | '1536x1024') | null) | (OpenaiTypesImagesResponseUsage | null) | undefined;
+    usage?: Usage | null;
+    [key: string]: unknown | number | (('transparent' | 'opaque') | null) | (Array<Image> | null) | (('png' | 'webp' | 'jpeg') | null) | (('low' | 'medium' | 'high') | null) | (('1024x1024' | '1024x1536' | '1536x1024') | null) | (Usage | null) | undefined;
 };
 
 /**
@@ -9524,6 +9524,28 @@ export type ProcessDtoWritable = {
 };
 
 /**
+ * ProcessHealthChecks
+ * Health check results for Process service dependencies.
+ */
+export type ProcessHealthChecks = {
+    /**
+     * Running
+     * Whether the process runner is running.
+     */
+    running: boolean;
+    /**
+     * Nats
+     * NATS message broker connectivity.
+     */
+    nats: boolean;
+    /**
+     * Redis
+     * Redis/Valkey cache connectivity.
+     */
+    redis: boolean;
+};
+
+/**
  * ProcessWalkthroughDTO
  * DTO representing a process walkthrough with detailed step information.
  */
@@ -12968,12 +12990,12 @@ export type TranscriptionVerbose = {
      * Segments
      */
     segments?: Array<TranscriptionSegment> | null;
-    usage?: Usage | null;
+    usage?: OpenaiTypesAudioTranscriptionVerboseUsage | null;
     /**
      * Words
      */
     words?: Array<TranscriptionWord> | null;
-    [key: string]: unknown | number | string | (Array<TranscriptionSegment> | null) | (Usage | null) | (Array<TranscriptionWord> | null) | undefined;
+    [key: string]: unknown | number | string | (Array<TranscriptionSegment> | null) | (OpenaiTypesAudioTranscriptionVerboseUsage | null) | (Array<TranscriptionWord> | null) | undefined;
 };
 
 /**
@@ -13055,14 +13077,19 @@ export type UpdateRoleRequest = {
  */
 export type Usage = {
     /**
-     * Seconds
+     * Input Tokens
      */
-    seconds: number;
+    input_tokens: number;
+    input_tokens_details: UsageInputTokensDetails;
     /**
-     * Type
+     * Output Tokens
      */
-    type: 'duration';
-    [key: string]: unknown | number | 'duration';
+    output_tokens: number;
+    /**
+     * Total Tokens
+     */
+    total_tokens: number;
+    [key: string]: unknown | number | UsageInputTokensDetails;
 };
 
 /**
@@ -13542,6 +13569,21 @@ export type WorkflowGraph = {
 };
 
 /**
+ * Usage
+ */
+export type OpenaiTypesAudioTranscriptionVerboseUsage = {
+    /**
+     * Seconds
+     */
+    seconds: number;
+    /**
+     * Type
+     */
+    type: 'duration';
+    [key: string]: unknown | number | 'duration';
+};
+
+/**
  * Custom
  */
 export type OpenaiTypesChatChatCompletionMessageCustomToolCallParamCustom = {
@@ -13616,26 +13658,6 @@ export type OpenaiTypesChatCompletionCreateParamsFunction = {
     } | undefined;
 };
 
-/**
- * Usage
- */
-export type OpenaiTypesImagesResponseUsage = {
-    /**
-     * Input Tokens
-     */
-    input_tokens: number;
-    input_tokens_details: UsageInputTokensDetails;
-    /**
-     * Output Tokens
-     */
-    output_tokens: number;
-    /**
-     * Total Tokens
-     */
-    total_tokens: number;
-    [key: string]: unknown | number | UsageInputTokensDetails;
-};
-
 export type GetHealthData = {
     body?: never;
     path?: never;
@@ -13651,6 +13673,22 @@ export type GetHealthResponses = {
 };
 
 export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
+
+export type GetReadyData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/health/ready';
+};
+
+export type GetReadyResponses = {
+    /**
+     * Successful Response
+     */
+    200: HealthResponse;
+};
+
+export type GetReadyResponse = GetReadyResponses[keyof GetReadyResponses];
 
 export type GetSuiteData = {
     body?: never;
