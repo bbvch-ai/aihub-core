@@ -36,9 +36,7 @@ class NamespaceDecision(BaseModel):
 
     follow_up_question: Annotated[
         str | None,
-        Field(
-            description=("Question to ask the user for clarification. " "Only set if has_enough_information is False.")
-        ),
+        Field(description=("Question to ask the user for clarification. Only set if has_enough_information is False.")),
     ] = None
 
     reasoning: Annotated[

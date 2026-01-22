@@ -234,6 +234,35 @@ Used during deserialization to decide which subclass to instantiate.`,
     title: 'AgentEvent'
 } as const;
 
+export const AgentHealthChecksSchema = {
+    properties: {
+        running: {
+            type: 'boolean',
+            title: 'Running',
+            description: 'Whether the agent runner is running.'
+        },
+        nats: {
+            type: 'boolean',
+            title: 'Nats',
+            description: 'NATS message broker connectivity.'
+        },
+        redis: {
+            type: 'boolean',
+            title: 'Redis',
+            description: 'Redis/Valkey cache connectivity.'
+        },
+        milvus: {
+            type: 'boolean',
+            title: 'Milvus',
+            description: 'Milvus vector database connectivity.'
+        }
+    },
+    type: 'object',
+    required: ['running', 'nats', 'redis', 'milvus'],
+    title: 'AgentHealthChecks',
+    description: 'Health check results for Agent service dependencies.'
+} as const;
+
 export const AgentInDTOSchema = {
     properties: {
         agent_class: {
@@ -963,6 +992,40 @@ export const AnnotationURLCitationSchema = {
     type: 'object',
     required: ['end_index', 'start_index', 'title', 'url'],
     title: 'AnnotationURLCitation'
+} as const;
+
+export const ApiHealthChecksSchema = {
+    properties: {
+        nats: {
+            type: 'boolean',
+            title: 'Nats',
+            description: 'NATS message broker connectivity.'
+        },
+        mongodb: {
+            type: 'boolean',
+            title: 'Mongodb',
+            description: 'MongoDB database connectivity.'
+        },
+        redis: {
+            type: 'boolean',
+            title: 'Redis',
+            description: 'Redis/Valkey cache connectivity.'
+        },
+        milvus: {
+            type: 'boolean',
+            title: 'Milvus',
+            description: 'Milvus vector database connectivity.'
+        },
+        s3: {
+            type: 'boolean',
+            title: 'S3',
+            description: 'S3/SeaweedFS object storage connectivity.'
+        }
+    },
+    type: 'object',
+    required: ['nats', 'mongodb', 'redis', 'milvus', 's3'],
+    title: 'ApiHealthChecks',
+    description: 'Health check results for API service dependencies.'
 } as const;
 
 export const AudioSchema = {
@@ -2732,6 +2795,9 @@ export const ChatMessageSchema = {
                         '$ref': '#/components/schemas/AudioBlock'
                     },
                     {
+                        '$ref': '#/components/schemas/VideoBlock'
+                    },
+                    {
                         '$ref': '#/components/schemas/DocumentBlock'
                     },
                     {
@@ -2742,6 +2808,12 @@ export const ChatMessageSchema = {
                     },
                     {
                         '$ref': '#/components/schemas/CitationBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ThinkingBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ToolCallBlock'
                     }
                 ],
                 discriminator: {
@@ -2753,7 +2825,10 @@ export const ChatMessageSchema = {
                         citation: '#/components/schemas/CitationBlock',
                         document: '#/components/schemas/DocumentBlock',
                         image: '#/components/schemas/ImageBlock',
-                        text: '#/components/schemas/TextBlock'
+                        text: '#/components/schemas/TextBlock',
+                        thinking: '#/components/schemas/ThinkingBlock',
+                        tool_call: '#/components/schemas/ToolCallBlock',
+                        video: '#/components/schemas/VideoBlock'
                     }
                 }
             },
@@ -6361,11 +6436,27 @@ export const HealthResponseSchema = {
             type: 'integer',
             title: 'Code',
             description: 'HTTP status code.'
+        },
+        checks: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/ApiHealthChecks'
+                },
+                {
+                    '$ref': '#/components/schemas/AgentHealthChecks'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Checks',
+            description: 'Individual health check results.'
         }
     },
     type: 'object',
     required: ['status', 'code'],
-    title: 'HealthResponse'
+    title: 'HealthResponse',
+    description: 'Standard health check response.'
 } as const;
 
 export const HtmlElementSchema = {
@@ -10068,7 +10159,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1768810291
+            default: 1768329188
         },
         owned_by: {
             type: 'string',
@@ -14394,6 +14485,50 @@ export const TextareaSchema = {
     description: 'https://formkit-primevue.netlify.app/inputs/Textarea'
 } as const;
 
+export const ThinkingBlockSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'thinking',
+            title: 'Block Type',
+            default: 'thinking'
+        },
+        content: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Content',
+            description: 'Content of the reasoning/thinking process, if available'
+        },
+        num_tokens: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Num Tokens',
+            description: 'Number of token used for reasoning/thinking, if available'
+        },
+        additional_information: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Additional Information',
+            description: 'Additional information related to the thinking/reasoning process, if available'
+        }
+    },
+    type: 'object',
+    title: 'ThinkingBlock',
+    description: 'A representation of the content streamed from reasoning/thinking processes by LLMs'
+} as const;
+
 export const ThoughtEventSchema = {
     properties: {
         event_id: {
@@ -15075,6 +15210,50 @@ export const TokenResponseSchema = {
     title: 'TokenResponse'
 } as const;
 
+export const ToolCallBlockSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'tool_call',
+            title: 'Block Type',
+            default: 'tool_call'
+        },
+        tool_call_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tool Call Id',
+            description: 'ID of the tool call, if provided'
+        },
+        tool_name: {
+            type: 'string',
+            title: 'Tool Name',
+            description: 'Name of the called tool'
+        },
+        tool_kwargs: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Tool Kwargs',
+            description: 'Arguments provided to the tool, if available'
+        }
+    },
+    type: 'object',
+    required: ['tool_name'],
+    title: 'ToolCallBlock'
+} as const;
+
 export const ToolEventSchema = {
     properties: {
         event_id: {
@@ -15336,7 +15515,7 @@ export const TranscriptionVerboseSchema = {
         usage: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/openai__types__audio__transcription_verbose__Usage'
+                    '$ref': '#/components/schemas/Usage'
                 },
                 {
                     type: 'null'
@@ -15493,6 +15672,24 @@ export const UpdateRoleRequestSchema = {
     type: 'object',
     title: 'UpdateRoleRequest',
     description: 'Request model for updating an existing role. All fields are optional.'
+} as const;
+
+export const UsageSchema = {
+    properties: {
+        seconds: {
+            type: 'number',
+            title: 'Seconds'
+        },
+        type: {
+            type: 'string',
+            const: 'duration',
+            title: 'Type'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['seconds', 'type'],
+    title: 'Usage'
 } as const;
 
 export const UsageDurationSchema = {
@@ -15979,6 +16176,93 @@ export const ValidationErrorSchema = {
     title: 'ValidationError'
 } as const;
 
+export const VideoBlockSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'video',
+            title: 'Block Type',
+            default: 'video'
+        },
+        video: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'binary'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Video'
+        },
+        path: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'file-path'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Path'
+        },
+        url: {
+            anyOf: [
+                {
+                    type: 'string',
+                    minLength: 1,
+                    format: 'uri'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Url'
+        },
+        video_mimetype: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Video Mimetype'
+        },
+        detail: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Detail'
+        },
+        fps: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Fps'
+        }
+    },
+    type: 'object',
+    title: 'VideoBlock',
+    description: 'A representation of video data to directly pass to/from the LLM.'
+} as const;
+
 export const WorkflowGraphSchema = {
     properties: {
         directed: {
@@ -16018,24 +16302,6 @@ export const WorkflowGraphSchema = {
     required: ['directed', 'multigraph', 'graph', 'nodes', 'links'],
     title: 'WorkflowGraph',
     description: 'Complete workflow graph representation.'
-} as const;
-
-export const openai__types__audio__transcription_verbose__UsageSchema = {
-    properties: {
-        seconds: {
-            type: 'number',
-            title: 'Seconds'
-        },
-        type: {
-            type: 'string',
-            const: 'duration',
-            title: 'Type'
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['seconds', 'type'],
-    title: 'Usage'
 } as const;
 
 export const openai__types__chat__chat_completion_message_custom_tool_call_param__CustomSchema = {

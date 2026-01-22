@@ -206,6 +206,33 @@ export type AgentEventWritable = {
 };
 
 /**
+ * AgentHealthChecks
+ * Health check results for Agent service dependencies.
+ */
+export type AgentHealthChecks = {
+    /**
+     * Running
+     * Whether the agent runner is running.
+     */
+    running: boolean;
+    /**
+     * Nats
+     * NATS message broker connectivity.
+     */
+    nats: boolean;
+    /**
+     * Redis
+     * Redis/Valkey cache connectivity.
+     */
+    redis: boolean;
+    /**
+     * Milvus
+     * Milvus vector database connectivity.
+     */
+    milvus: boolean;
+};
+
+/**
  * AgentInDTO
  */
 export type AgentInDto = {
@@ -933,6 +960,38 @@ export type AnnotationUrlCitation = {
      */
     url: string;
     [key: string]: unknown | number | string;
+};
+
+/**
+ * ApiHealthChecks
+ * Health check results for API service dependencies.
+ */
+export type ApiHealthChecks = {
+    /**
+     * Nats
+     * NATS message broker connectivity.
+     */
+    nats: boolean;
+    /**
+     * Mongodb
+     * MongoDB database connectivity.
+     */
+    mongodb: boolean;
+    /**
+     * Redis
+     * Redis/Valkey cache connectivity.
+     */
+    redis: boolean;
+    /**
+     * Milvus
+     * Milvus vector database connectivity.
+     */
+    milvus: boolean;
+    /**
+     * S3
+     * S3/SeaweedFS object storage connectivity.
+     */
+    s3: boolean;
 };
 
 /**
@@ -1989,6 +2048,8 @@ export type ChatMessage = {
     } & ImageBlock) | ({
         block_type: 'audio';
     } & AudioBlock) | ({
+        block_type: 'video';
+    } & VideoBlock) | ({
         block_type: 'document';
     } & DocumentBlock) | ({
         block_type: 'cache';
@@ -1996,7 +2057,11 @@ export type ChatMessage = {
         block_type: 'citable';
     } & CitableBlock) | ({
         block_type: 'citation';
-    } & CitationBlock)>;
+    } & CitationBlock) | ({
+        block_type: 'thinking';
+    } & ThinkingBlock) | ({
+        block_type: 'tool_call';
+    } & ToolCallBlock)>;
 };
 
 /**
@@ -5053,6 +5118,7 @@ export type HttpValidationError = {
 
 /**
  * HealthResponse
+ * Standard health check response.
  */
 export type HealthResponse = {
     /**
@@ -5065,6 +5131,11 @@ export type HealthResponse = {
      * HTTP status code.
      */
     code: number;
+    /**
+     * Checks
+     * Individual health check results.
+     */
+    checks?: ApiHealthChecks | AgentHealthChecks | null;
 };
 
 /**
@@ -12006,6 +12077,34 @@ export type TextareaWritable = {
 };
 
 /**
+ * ThinkingBlock
+ * A representation of the content streamed from reasoning/thinking processes by LLMs
+ */
+export type ThinkingBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'thinking';
+    /**
+     * Content
+     * Content of the reasoning/thinking process, if available
+     */
+    content?: string | null;
+    /**
+     * Num Tokens
+     * Number of token used for reasoning/thinking, if available
+     */
+    num_tokens?: number | null;
+    /**
+     * Additional Information
+     * Additional information related to the thinking/reasoning process, if available
+     */
+    additional_information?: {
+        [key: string]: unknown;
+    };
+};
+
+/**
  * ThoughtEvent
  * An event representing the system or agent's internal reasoning process, often displayed as
  * a "thought" or debug info stream. These "thoughts" provide insight into how the agent arrives
@@ -12623,6 +12722,33 @@ export type TokenResponse = {
 };
 
 /**
+ * ToolCallBlock
+ */
+export type ToolCallBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'tool_call';
+    /**
+     * Tool Call Id
+     * ID of the tool call, if provided
+     */
+    tool_call_id?: string | null;
+    /**
+     * Tool Name
+     * Name of the called tool
+     */
+    tool_name: string;
+    /**
+     * Tool Kwargs
+     * Arguments provided to the tool, if available
+     */
+    tool_kwargs?: {
+        [key: string]: unknown;
+    } | string;
+};
+
+/**
  * ToolEvent
  */
 export type ToolEventReadable = {
@@ -12842,12 +12968,12 @@ export type TranscriptionVerbose = {
      * Segments
      */
     segments?: Array<TranscriptionSegment> | null;
-    usage?: OpenaiTypesAudioTranscriptionVerboseUsage | null;
+    usage?: Usage | null;
     /**
      * Words
      */
     words?: Array<TranscriptionWord> | null;
-    [key: string]: unknown | number | string | (Array<TranscriptionSegment> | null) | (OpenaiTypesAudioTranscriptionVerboseUsage | null) | (Array<TranscriptionWord> | null) | undefined;
+    [key: string]: unknown | number | string | (Array<TranscriptionSegment> | null) | (Usage | null) | (Array<TranscriptionWord> | null) | undefined;
 };
 
 /**
@@ -12922,6 +13048,21 @@ export type UpdateRoleRequest = {
      * The new list of access rules.
      */
     access_rules?: Array<string> | null;
+};
+
+/**
+ * Usage
+ */
+export type Usage = {
+    /**
+     * Seconds
+     */
+    seconds: number;
+    /**
+     * Type
+     */
+    type: 'duration';
+    [key: string]: unknown | number | 'duration';
 };
 
 /**
@@ -13332,6 +13473,41 @@ export type ValidationError = {
 };
 
 /**
+ * VideoBlock
+ * A representation of video data to directly pass to/from the LLM.
+ */
+export type VideoBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'video';
+    /**
+     * Video
+     */
+    video?: (Blob | File) | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | null;
+    /**
+     * Video Mimetype
+     */
+    video_mimetype?: string | null;
+    /**
+     * Detail
+     */
+    detail?: string | null;
+    /**
+     * Fps
+     */
+    fps?: number | null;
+};
+
+/**
  * WorkflowGraph
  * Complete workflow graph representation.
  */
@@ -13363,21 +13539,6 @@ export type WorkflowGraph = {
      * List of edges in the graph
      */
     links: Array<EdgeData>;
-};
-
-/**
- * Usage
- */
-export type OpenaiTypesAudioTranscriptionVerboseUsage = {
-    /**
-     * Seconds
-     */
-    seconds: number;
-    /**
-     * Type
-     */
-    type: 'duration';
-    [key: string]: unknown | number | 'duration';
 };
 
 /**

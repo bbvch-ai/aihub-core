@@ -311,7 +311,7 @@ class KnowledgeService:
 
     @staticmethod
     async def initiate_document_upload(
-        database: str, namespace: str, request: DocumentUploadRequest
+        database: str, namespace: str, request: DocumentUploadRequest, s3_service: S3AnonymousFileAccessService
     ) -> DocumentUploadResponse:
         """
         Initiates document upload by generating a presigned URL for the globally configured datalake.
@@ -338,7 +338,7 @@ class KnowledgeService:
         upload_id = str(uuid.uuid4())
         object_key = f"{folder}/{request.filename}"
 
-        presigned_url = S3AnonymousFileAccessService().generate_upload_url(
+        presigned_url = s3_service.generate_upload_url(
             container=container,
             file_path=object_key,
             content_type=request.content_type,
@@ -389,7 +389,11 @@ class KnowledgeService:
 
     @staticmethod
     async def validate_document_upload(
-        nc: NATS, database: str, namespace: str, request: DocumentUploadValidationRequest
+        nc: NATS,
+        database: str,
+        namespace: str,
+        request: DocumentUploadValidationRequest,
+        s3_service: S3AnonymousFileAccessService,
     ) -> DocumentUploadValidationResponse:
         """
         Validates whether a file was successfully uploaded to the globally configured datalake.
@@ -409,7 +413,7 @@ class KnowledgeService:
         container = bucket_entity.bucket_name
         object_key = request.file_path
 
-        exists = S3AnonymousFileAccessService().verify_file_exists(container=container, file_path=object_key)
+        exists = s3_service.verify_file_exists(container=container, file_path=object_key)
 
         if exists:
             KnowledgeService._ensure_db_exists(database)

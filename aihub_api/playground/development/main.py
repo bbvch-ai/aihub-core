@@ -1,4 +1,6 @@
 # ruff: noqa: E402
+from aihub_api.routes.health.ApiHealthController import ApiHealthController
+
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
 
 AihubInstrumentor().instrument()
@@ -9,9 +11,6 @@ import nest_asyncio
 from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.infrastructure.logging.logger import enable_logging
-from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
-from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
-from aihub_lib.routes.health.HealthController import HealthController
 
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.docling.DoclingController import DoclingController
@@ -43,7 +42,7 @@ async def main():
     # auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
 
     runner.mount(
-        HealthController(auth=auth).get_health(),
+        ApiHealthController(auth=auth).get_health().get_ready(),
         SuiteController(auth=auth).get_suite(),
         MyAccountController(auth=auth).get_my_account().get_my_dashboard().update_my_dashboard(),
         UserController(auth=auth).get_users().get_user(),
@@ -92,9 +91,6 @@ async def main():
         .run_experiment(),
         KnowledgeController(
             auth=auth,
-            vector_store_factory=lambda collection: create_milvus_vector_store(
-                MilvusSettings().URL, collection, MilvusSettings().DIMENSION
-            ),
             translation_llm_config=LLMConfig(model_name="text-generation/mini"),
         )
         .create_namespace()

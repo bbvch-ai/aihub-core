@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.258.3] - 2026-01-19 - Hardened Docker Integration with Socket Proxy
+
+### Security
+
+- 🔑 **Implemented Docker Socket Proxy:** Introduced a new `docker-socket-proxy` service that acts as a secure
+  intermediary between Traefik and the Docker daemon. This significantly enhances system security by limiting Traefik's
+  access to only the essential Docker API endpoints (container and network discovery) needed for service routing,
+  mitigating potential container escape vulnerabilities.
+
+### Added
+
+- ✨ **`docker-socket-proxy` Service:** A dedicated `tecnativa/docker-socket-proxy` service has been added to all Docker
+  Compose configurations, providing fine-grained control over Docker API access.
+- ⚙️ **Docker Socket Proxy Configuration:** Comprehensive configurations for the new proxy service are included,
+  explicitly disabling dangerous Docker API permissions (e.g., build, commit, exec, images) and ensuring read-only
+  access to the underlying Docker socket.
+
+### Changed
+
+- 🔄 **Traefik Docker Endpoint:** Traefik's Docker provider endpoint has been updated to connect to the new
+  `docker-socket-proxy` over TCP (`tcp://docker-socket-proxy:2375`) instead of directly accessing the Unix Docker
+  socket.
+- 🧹 **Removed Direct Docker Socket Mount:** The direct volume mount of `/var/run/docker.sock` from the Traefik service
+  has been removed across all deployment configurations, delegating Docker socket interaction to the new, more secure
+  proxy service.
+
+---
+
 ## [v0.258.2] - 2026-01-13 - Deepening Knowledge: Insights Now Integral to Document & Node Retrieval
 
 ### Added
