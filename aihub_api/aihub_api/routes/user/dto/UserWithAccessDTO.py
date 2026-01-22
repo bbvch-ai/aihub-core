@@ -34,8 +34,12 @@ class UserWithAccessDTO(UserDTO):
         from aihub_api.routes.agent.AgentService import AgentService
         from aihub_api.routes.process.ProcessService import ProcessService
 
-        dashboard_data = user_entity.dashboard.to_mongo()
-        dashboard_dto = DashboardDTO(**dashboard_data)
+        if user_entity.dashboard:
+            dashboard_data = user_entity.dashboard.to_mongo()
+            dashboard_dto = DashboardDTO(**dashboard_data)
+        else:
+            dashboard_dto = None
+
         valid_roles = RoleEntity.filter_existing_roles(user_entity.roles)
 
         access_rules = RoleEntity.get_access_rules_for_roles(user_entity.roles)

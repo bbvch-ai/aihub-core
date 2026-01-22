@@ -1,18 +1,18 @@
 from typing import Annotated
 
-from fastapi import HTTPException, Security, status
-from mongoengine.errors import DoesNotExist, NotUniqueError
-
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
-from .RoleService import RoleService
+from fastapi import HTTPException, Security, status
+from mongoengine.errors import DoesNotExist, NotUniqueError
+
 from .dto.CreateRoleRequest import CreateRoleRequest
 from .dto.DeleteRoleResponse import DeleteRoleResponse
 from .dto.RoleResponse import RoleResponse
 from .dto.UpdateRoleRequest import UpdateRoleRequest
+from .RoleService import RoleService
 
 
 class RoleController(Controller):
