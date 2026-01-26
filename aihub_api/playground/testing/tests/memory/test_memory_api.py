@@ -657,7 +657,11 @@ class TestUserMemoryIntegration:
         from aihub_lib.i18n.LocaleString import LocaleString
         from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
-        user_id = "test_user_api_integration"
+        from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+            DangerousDevelopmentOnlyAuthSettings,
+        )
+
+        user_id = DangerousDevelopmentOnlyAuthSettings().OID
 
         # 1. Add memory via AgentMemory directly (simulates agent adding memory)
         agent_config = AgentConfig(
@@ -668,6 +672,9 @@ class TestUserMemoryIntegration:
         )
         locale_handler = LocaleHandler(locale="en")
         agent_memory = AgentMemory(agent_config=agent_config, t=locale_handler)
+
+        # Clean up leftover memories from previous test runs to avoid deduplication
+        await agent_memory.mem0service.delete_all(owner_id=user_id)
 
         memory_added = await agent_memory.add_user_memory(
             messages=[
