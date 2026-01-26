@@ -189,7 +189,7 @@ litellm_settings:
   cache: true
   cache_params:
     type: "redis"
-    host: "localhost"
+    host: "valkey"
     port: 6379
     password: os.environ/REDIS_TOKEN
   # Prompt injection detection settings

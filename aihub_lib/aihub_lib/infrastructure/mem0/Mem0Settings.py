@@ -60,7 +60,7 @@ class Mem0Settings(EnvironmentSettings):
                 provider="milvus",
                 config={
                     "url": milvus.URL,
-                    "token": "token",
+                    "token": milvus.get_token(),
                     "db_name": "default",
                     "collection_name": "memories",
                     "embedding_model_dims": milvus.DIMENSION,
@@ -82,7 +82,6 @@ class Mem0Settings(EnvironmentSettings):
                     url=neo4j.URL,
                     username=neo4j.USERNAME,
                     password=neo4j.PASSWORD.get_secret_value(),
-                    database="neo4j",
                     base_label=False,
                 ),
             ),
