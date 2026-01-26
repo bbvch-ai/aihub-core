@@ -52,103 +52,6 @@ export type AddAgentRequest = {
 };
 
 /**
- * AddMemoryToChatHistoryEvent
- * A control and display event emitted when an agent extends chat history with retrieved memories.
- *
- * ### Why AddMemoryToChatHistoryEvent?
- * Large language models are stateless - they don't remember past conversations unless explicitly provided.
- * This event signals that the agent has enriched the conversation context with relevant memories from
- * previous interactions.
- *
- * By prepending memories as a system message, we:
- * - Give the LLM access to long-term context beyond the current session
- * - Maintain user privacy (memories are scoped to user/organization)
- * - Keep the prompt construction process transparent and auditable
- *
- * This event serves both workflow control (passing extended context to LLM steps) and user transparency
- * (showing what background information influenced the agent's response).
- */
-export type AddMemoryToChatHistoryEventReadable = {
-    /**
-     * Event Id
-     */
-    event_id?: string;
-    /**
-     * Created At
-     * The time (in ns since epoch) the event was stored in the event store
-     */
-    created_at?: number;
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Extended History
-     * Chat history extended with user memories.
-     */
-    extended_history: Array<ChatMessage>;
-    /**
-     * Event Name
-     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
-     * Used during deserialization to decide which subclass to instantiate.
-     */
-    readonly _event_name: string;
-    /**
-     * Parent Event Names
-     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
-     */
-    readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessage> | Array<string> | undefined;
-};
-
-/**
- * AddMemoryToChatHistoryEvent
- * A control and display event emitted when an agent extends chat history with retrieved memories.
- *
- * ### Why AddMemoryToChatHistoryEvent?
- * Large language models are stateless - they don't remember past conversations unless explicitly provided.
- * This event signals that the agent has enriched the conversation context with relevant memories from
- * previous interactions.
- *
- * By prepending memories as a system message, we:
- * - Give the LLM access to long-term context beyond the current session
- * - Maintain user privacy (memories are scoped to user/organization)
- * - Keep the prompt construction process transparent and auditable
- *
- * This event serves both workflow control (passing extended context to LLM steps) and user transparency
- * (showing what background information influenced the agent's response).
- */
-export type AddMemoryToChatHistoryEventWritable = {
-    /**
-     * Event Id
-     */
-    event_id?: string;
-    /**
-     * Created At
-     * The time (in ns since epoch) the event was stored in the event store
-     */
-    created_at?: number;
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Extended History
-     * Chat history extended with user memories.
-     */
-    extended_history: Array<ChatMessage>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<ChatMessage> | undefined;
-};
-
-/**
  * AddUserRequest
  */
 export type AddUserRequest = {
@@ -300,6 +203,33 @@ export type AgentEventWritable = {
      */
     display_description?: LocaleString | null;
     [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | undefined;
+};
+
+/**
+ * AgentHealthChecks
+ * Health check results for Agent service dependencies.
+ */
+export type AgentHealthChecks = {
+    /**
+     * Running
+     * Whether the agent runner is running.
+     */
+    running: boolean;
+    /**
+     * Nats
+     * NATS message broker connectivity.
+     */
+    nats: boolean;
+    /**
+     * Redis
+     * Redis/Valkey cache connectivity.
+     */
+    redis: boolean;
+    /**
+     * Milvus
+     * Milvus vector database connectivity.
+     */
+    milvus: boolean;
 };
 
 /**
@@ -1033,6 +963,38 @@ export type AnnotationUrlCitation = {
 };
 
 /**
+ * ApiHealthChecks
+ * Health check results for API service dependencies.
+ */
+export type ApiHealthChecks = {
+    /**
+     * Nats
+     * NATS message broker connectivity.
+     */
+    nats: boolean;
+    /**
+     * Mongodb
+     * MongoDB database connectivity.
+     */
+    mongodb: boolean;
+    /**
+     * Redis
+     * Redis/Valkey cache connectivity.
+     */
+    redis: boolean;
+    /**
+     * Milvus
+     * Milvus vector database connectivity.
+     */
+    milvus: boolean;
+    /**
+     * S3
+     * S3/SeaweedFS object storage connectivity.
+     */
+    s3: boolean;
+};
+
+/**
  * Audio
  */
 export type Audio = {
@@ -1088,254 +1050,6 @@ export type AudioContent = {
      * Mime Type
      */
     mime_type?: string | null;
-};
-
-/**
- * BaseRetrieveMemoryEvent
- * A control and display event emitted when an agent retrieves memories from long-term storage.
- *
- * ### Why BaseRetrieveMemoryEvent?
- * This event bridges the gap between stateless conversation and stateful user context:
- * - As a control event, it provides retrieved memories to downstream workflow steps
- * - As a display event, it shows users what context the agent is using from past interactions
- *
- * Agents emit this event after semantic search through user/organization memories. The retrieved
- * memories are then typically prepended to chat history as system context, enabling personalized
- * responses. This transparency is crucial for user trust - they can see what the agent "remembers"
- * and correct inaccuracies if needed.
- *
- * The event includes both individual memories and their relations in the knowledge graph, allowing
- * agents to understand not just isolated facts but how concepts connect.
- */
-export type BaseRetrieveMemoryEventReadable = {
-    /**
-     * Event Id
-     */
-    event_id?: string;
-    /**
-     * Created At
-     * The time (in ns since epoch) the event was stored in the event store
-     */
-    created_at?: number;
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Memories
-     * The list of memories that were retrieved.
-     */
-    memories?: Array<Memory>;
-    /**
-     * Relations
-     * The list of matching memory relations.
-     */
-    relations: Array<MemoryRelation>;
-    /**
-     * Event Name
-     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
-     * Used during deserialization to decide which subclass to instantiate.
-     */
-    readonly _event_name: string;
-    /**
-     * Parent Event Names
-     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
-     */
-    readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<Memory> | Array<MemoryRelation> | Array<string> | undefined;
-};
-
-/**
- * BaseRetrieveMemoryEvent
- * A control and display event emitted when an agent retrieves memories from long-term storage.
- *
- * ### Why BaseRetrieveMemoryEvent?
- * This event bridges the gap between stateless conversation and stateful user context:
- * - As a control event, it provides retrieved memories to downstream workflow steps
- * - As a display event, it shows users what context the agent is using from past interactions
- *
- * Agents emit this event after semantic search through user/organization memories. The retrieved
- * memories are then typically prepended to chat history as system context, enabling personalized
- * responses. This transparency is crucial for user trust - they can see what the agent "remembers"
- * and correct inaccuracies if needed.
- *
- * The event includes both individual memories and their relations in the knowledge graph, allowing
- * agents to understand not just isolated facts but how concepts connect.
- */
-export type BaseRetrieveMemoryEventWritable = {
-    /**
-     * Event Id
-     */
-    event_id?: string;
-    /**
-     * Created At
-     * The time (in ns since epoch) the event was stored in the event store
-     */
-    created_at?: number;
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Memories
-     * The list of memories that were retrieved.
-     */
-    memories?: Array<Memory>;
-    /**
-     * Relations
-     * The list of matching memory relations.
-     */
-    relations: Array<MemoryRelation>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<Memory> | Array<MemoryRelation> | undefined;
-};
-
-/**
- * BaseStoreMemoryEvent
- * Abstract base class for memory storage events.
- *
- * ### Why BaseStoreMemoryEvent?
- * This event serves dual purposes in the Swiss AI Agent Protocol:
- * - As a control event, it notifies downstream systems that memory state has changed
- * - As a display event, it provides transparency to users about what was learned or stored
- *
- * Agents emit this event after persisting insights to long-term memory storage. The event captures
- * both the semantic changes (added/updated/deleted memories) and the knowledge graph updates
- * (new/removed relations between entities). This transparency is crucial for user trust - they can
- * see what the agent learned and verify accuracy.
- *
- * The event structure follows mem0's MemoryAdded response format, enabling real-time UI updates,
- * audit trails, and triggering downstream workflows that depend on memory state.
- *
- * Concrete subclasses differentiate between user-scoped and organization-scoped memory storage.
- */
-export type BaseStoreMemoryEventReadable = {
-    /**
-     * Event Id
-     */
-    event_id?: string;
-    /**
-     * Created At
-     * The time (in ns since epoch) the event was stored in the event store
-     */
-    created_at?: number;
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Added Memories
-     * Newly added memory texts
-     */
-    added_memories: Array<string>;
-    /**
-     * Updated Memories
-     * Updated memory texts
-     */
-    updated_memories: Array<string>;
-    /**
-     * Deleted Memories
-     * Deleted memory texts
-     */
-    deleted_memories: Array<string>;
-    /**
-     * Added Relations
-     * Newly added relations
-     */
-    added_relations: Array<MemoryRelation>;
-    /**
-     * Deleted Relations
-     * Deleted relations
-     */
-    deleted_relations: Array<MemoryRelation>;
-    /**
-     * Event Name
-     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
-     * Used during deserialization to decide which subclass to instantiate.
-     */
-    readonly _event_name: string;
-    /**
-     * Parent Event Names
-     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
-     */
-    readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | Array<string> | Array<string> | Array<MemoryRelation> | Array<MemoryRelation> | Array<string> | undefined;
-};
-
-/**
- * BaseStoreMemoryEvent
- * Abstract base class for memory storage events.
- *
- * ### Why BaseStoreMemoryEvent?
- * This event serves dual purposes in the Swiss AI Agent Protocol:
- * - As a control event, it notifies downstream systems that memory state has changed
- * - As a display event, it provides transparency to users about what was learned or stored
- *
- * Agents emit this event after persisting insights to long-term memory storage. The event captures
- * both the semantic changes (added/updated/deleted memories) and the knowledge graph updates
- * (new/removed relations between entities). This transparency is crucial for user trust - they can
- * see what the agent learned and verify accuracy.
- *
- * The event structure follows mem0's MemoryAdded response format, enabling real-time UI updates,
- * audit trails, and triggering downstream workflows that depend on memory state.
- *
- * Concrete subclasses differentiate between user-scoped and organization-scoped memory storage.
- */
-export type BaseStoreMemoryEventWritable = {
-    /**
-     * Event Id
-     */
-    event_id?: string;
-    /**
-     * Created At
-     * The time (in ns since epoch) the event was stored in the event store
-     */
-    created_at?: number;
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Added Memories
-     * Newly added memory texts
-     */
-    added_memories: Array<string>;
-    /**
-     * Updated Memories
-     * Updated memory texts
-     */
-    updated_memories: Array<string>;
-    /**
-     * Deleted Memories
-     * Deleted memory texts
-     */
-    deleted_memories: Array<string>;
-    /**
-     * Added Relations
-     * Newly added relations
-     */
-    added_relations: Array<MemoryRelation>;
-    /**
-     * Deleted Relations
-     * Deleted relations
-     */
-    deleted_relations: Array<MemoryRelation>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | Array<string> | Array<string> | Array<MemoryRelation> | Array<MemoryRelation> | undefined;
 };
 
 /**
@@ -2334,6 +2048,8 @@ export type ChatMessage = {
     } & ImageBlock) | ({
         block_type: 'audio';
     } & AudioBlock) | ({
+        block_type: 'video';
+    } & VideoBlock) | ({
         block_type: 'document';
     } & DocumentBlock) | ({
         block_type: 'cache';
@@ -2341,7 +2057,11 @@ export type ChatMessage = {
         block_type: 'citable';
     } & CitableBlock) | ({
         block_type: 'citation';
-    } & CitationBlock)>;
+    } & CitationBlock) | ({
+        block_type: 'thinking';
+    } & ThinkingBlock) | ({
+        block_type: 'tool_call';
+    } & ToolCallBlock)>;
 };
 
 /**
@@ -3147,7 +2867,7 @@ export type ContextualizedAgentEventReadable = {
      * Event
      * Data of the event itself.
      */
-    event: StartEventReadable | AgentInTheLoopResponseEventReadable | HumanInTheLoopRequestEventReadable | AgentInTheLoopRequestEventReadable | AgentInTheLoopExceptionEventReadable | HumanInTheLoopResponseEventReadable | LimitChatHistoryEventReadable | AddMemoryToChatHistoryEventReadable | StandaloneQuestionCondenserEventReadable | LlmCostEventReadable | ChunkEventReadable | ThoughtEventReadable | GuardEventReadable | RouterEventReadable | GuardRejectionEventReadable | SemanticEventReadable | AgentEventReadable | ChainEventReadable | EmbeddingEventReadable | LlmEventReadable | LlmStopEventReadable | RerankerEventReadable | RetrieverEventReadable | ToolEventReadable | UserMessageEventReadable | ExceptionEventReadable | StopEventReadable | DisplayEventReadable | GuardAcceptEventReadable | AgentSuitabilityAcceptEventReadable | AgentSuitabilityRejectEventReadable | ContextSufficientAcceptEventReadable | ContextInsufficientRejectEventReadable | FewShotAcceptEventReadable | FewShotRejectEventReadable | SensitiveInfoAcceptEventReadable | SensitiveInfoRejectEventReadable | StoreUserMemoryEventReadable | BaseRetrieveMemoryEventReadable | BaseStoreMemoryEventReadable | RetrieveOrganizationMemoryEventReadable | RetrieveUserMemoryEventReadable | StoreOrganizationMemoryEventReadable;
+    event: StartEventReadable | AgentInTheLoopResponseEventReadable | HumanInTheLoopRequestEventReadable | AgentInTheLoopRequestEventReadable | AgentInTheLoopExceptionEventReadable | HumanInTheLoopResponseEventReadable | LimitChatHistoryEventReadable | StandaloneQuestionCondenserEventReadable | LlmCostEventReadable | ChunkEventReadable | ThoughtEventReadable | GuardEventReadable | RouterEventReadable | GuardRejectionEventReadable | SemanticEventReadable | AgentEventReadable | ChainEventReadable | EmbeddingEventReadable | LlmEventReadable | LlmStopEventReadable | RerankerEventReadable | RetrieverEventReadable | ToolEventReadable | UserMessageEventReadable | ExceptionEventReadable | StopEventReadable | DisplayEventReadable | GuardAcceptEventReadable | AgentSuitabilityAcceptEventReadable | AgentSuitabilityRejectEventReadable | ContextSufficientAcceptEventReadable | ContextInsufficientRejectEventReadable | FewShotAcceptEventReadable | FewShotRejectEventReadable | SensitiveInfoAcceptEventReadable | SensitiveInfoRejectEventReadable;
 };
 
 /**
@@ -3218,7 +2938,7 @@ export type ContextualizedAgentEventWritable = {
      * Event
      * Data of the event itself.
      */
-    event: StartEventWritable | AgentInTheLoopResponseEventWritable | HumanInTheLoopRequestEventWritable | AgentInTheLoopRequestEventWritable | AgentInTheLoopExceptionEventWritable | HumanInTheLoopResponseEventWritable | LimitChatHistoryEventWritable | AddMemoryToChatHistoryEventWritable | StandaloneQuestionCondenserEventWritable | LlmCostEventWritable | ChunkEventWritable | ThoughtEventWritable | GuardEventWritable | RouterEventWritable | GuardRejectionEventWritable | SemanticEventWritable | AgentEventWritable | ChainEventWritable | EmbeddingEventWritable | LlmEventWritable | LlmStopEventWritable | RerankerEventWritable | RetrieverEventWritable | ToolEventWritable | UserMessageEventWritable | ExceptionEventWritable | StopEventWritable | DisplayEventWritable | GuardAcceptEventWritable | AgentSuitabilityAcceptEventWritable | AgentSuitabilityRejectEventWritable | ContextSufficientAcceptEventWritable | ContextInsufficientRejectEventWritable | FewShotAcceptEventWritable | FewShotRejectEventWritable | SensitiveInfoAcceptEventWritable | SensitiveInfoRejectEventWritable | StoreUserMemoryEventWritable | BaseRetrieveMemoryEventWritable | BaseStoreMemoryEventWritable | RetrieveOrganizationMemoryEventWritable | RetrieveUserMemoryEventWritable | StoreOrganizationMemoryEventWritable;
+    event: StartEventWritable | AgentInTheLoopResponseEventWritable | HumanInTheLoopRequestEventWritable | AgentInTheLoopRequestEventWritable | AgentInTheLoopExceptionEventWritable | HumanInTheLoopResponseEventWritable | LimitChatHistoryEventWritable | StandaloneQuestionCondenserEventWritable | LlmCostEventWritable | ChunkEventWritable | ThoughtEventWritable | GuardEventWritable | RouterEventWritable | GuardRejectionEventWritable | SemanticEventWritable | AgentEventWritable | ChainEventWritable | EmbeddingEventWritable | LlmEventWritable | LlmStopEventWritable | RerankerEventWritable | RetrieverEventWritable | ToolEventWritable | UserMessageEventWritable | ExceptionEventWritable | StopEventWritable | DisplayEventWritable | GuardAcceptEventWritable | AgentSuitabilityAcceptEventWritable | AgentSuitabilityRejectEventWritable | ContextSufficientAcceptEventWritable | ContextInsufficientRejectEventWritable | FewShotAcceptEventWritable | FewShotRejectEventWritable | SensitiveInfoAcceptEventWritable | SensitiveInfoRejectEventWritable;
 };
 
 /**
@@ -3805,35 +3525,6 @@ export type DatePickerWritable = {
 };
 
 /**
- * DeleteAllMemoriesResponse
- * Response for deleting all memories.
- */
-export type DeleteAllMemoriesResponse = {
-    /**
-     * Status
-     * Operation status. Always 'deleted_all' on success; errors raise HTTPException.
-     */
-    status: string;
-};
-
-/**
- * DeleteMemoryResponse
- * Response for deleting a single memory.
- */
-export type DeleteMemoryResponse = {
-    /**
-     * Status
-     * Operation status. Always 'deleted' on success; errors raise HTTPException.
-     */
-    status: string;
-    /**
-     * Memory Id
-     * ID of the memory that was deleted. Echoed from request path.
-     */
-    memory_id: string;
-};
-
-/**
  * DeleteRoleResponse
  * Confirmation response for a successful deletion.
  */
@@ -4100,7 +3791,7 @@ export type DocumentDto = {
     inserted_at: string | null;
     /**
      * Is Ingested
-     * Indicates if the document has been ingested.
+     * Whether the document has been fully ingested.
      */
     is_ingested: boolean;
     /**
@@ -5427,6 +5118,7 @@ export type HttpValidationError = {
 
 /**
  * HealthResponse
+ * Standard health check response.
  */
 export type HealthResponse = {
     /**
@@ -5439,6 +5131,11 @@ export type HealthResponse = {
      * HTTP status code.
      */
     code: number;
+    /**
+     * Checks
+     * Individual health check results.
+     */
+    checks?: ApiHealthChecks | AgentHealthChecks | null;
 };
 
 /**
@@ -5580,8 +5277,9 @@ export type HumanInDtoWritable = {
  * Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
  *
  * Use the specific subclasses:
- * - `HumanInTheLoopInputRequestEvent` for free-form text input
- * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation
+ * - `HumanInTheLoopInputRequestEvent` for free-form text input (popup dialog)
+ * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation (popup dialog)
+ * - `HumanInTheLoopChatRequestEvent` for chat-style input (appears as regular message)
  */
 export type HumanInTheLoopRequestEventReadable = {
     /**
@@ -5613,9 +5311,9 @@ export type HumanInTheLoopRequestEventReadable = {
     topic: PartialAgentTopic | AgentInstanceTopic;
     /**
      * Hitl Type
-     * The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no.
+     * HITL type: 'input' (free-form text), 'confirmation' (yes/no), 'chat' (chat-style).
      */
-    hitl_type: 'input' | 'confirmation';
+    hitl_type: 'input' | 'confirmation' | 'chat';
     /**
      * Event Name
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -5627,7 +5325,7 @@ export type HumanInTheLoopRequestEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation') | Array<string> | undefined;
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation' | 'chat') | Array<string> | undefined;
 };
 
 /**
@@ -5635,8 +5333,9 @@ export type HumanInTheLoopRequestEventReadable = {
  * Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
  *
  * Use the specific subclasses:
- * - `HumanInTheLoopInputRequestEvent` for free-form text input
- * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation
+ * - `HumanInTheLoopInputRequestEvent` for free-form text input (popup dialog)
+ * - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation (popup dialog)
+ * - `HumanInTheLoopChatRequestEvent` for chat-style input (appears as regular message)
  */
 export type HumanInTheLoopRequestEventWritable = {
     /**
@@ -5668,10 +5367,10 @@ export type HumanInTheLoopRequestEventWritable = {
     topic: PartialAgentTopic | AgentInstanceTopic;
     /**
      * Hitl Type
-     * The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no.
+     * HITL type: 'input' (free-form text), 'confirmation' (yes/no), 'chat' (chat-style).
      */
-    hitl_type: 'input' | 'confirmation';
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation') | undefined;
+    hitl_type: 'input' | 'confirmation' | 'chat';
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (PartialAgentTopic | AgentInstanceTopic) | ('input' | 'confirmation' | 'chat') | undefined;
 };
 
 /**
@@ -5679,8 +5378,9 @@ export type HumanInTheLoopRequestEventWritable = {
  * Base response from a human operator after a HITL request.
  *
  * Use the specific subclasses:
- * - `HumanInTheLoopInputResponseEvent` for text input responses
- * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses
+ * - `HumanInTheLoopInputResponseEvent` for text input responses (popup dialog)
+ * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses (popup dialog)
+ * - `HumanInTheLoopChatResponseEvent` for chat-style responses (regular message)
  */
 export type HumanInTheLoopResponseEventReadable = {
     /**
@@ -5728,8 +5428,9 @@ export type HumanInTheLoopResponseEventReadable = {
  * Base response from a human operator after a HITL request.
  *
  * Use the specific subclasses:
- * - `HumanInTheLoopInputResponseEvent` for text input responses
- * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses
+ * - `HumanInTheLoopInputResponseEvent` for text input responses (popup dialog)
+ * - `HumanInTheLoopConfirmationResponseEvent` for yes/no confirmation responses (popup dialog)
+ * - `HumanInTheLoopChatResponseEvent` for chat-style responses (regular message)
  */
 export type HumanInTheLoopResponseEventWritable = {
     /**
@@ -8245,244 +7946,6 @@ export type Logprob = {
 };
 
 /**
- * MemoriesResponse
- * Response for listing user memories with full knowledge graph.
- */
-export type MemoriesResponse = {
-    /**
-     * Total
-     * Total number of memories returned. Respects limit and filters. Does not include graph relation count.
-     */
-    total: number;
-    /**
-     * Memories
-     * List of memory items. Limited by the 'limit' query parameter and filtered by user/agent.
-     */
-    memories: Array<MemoryDto>;
-    /**
-     * Relations
-     * FULL knowledge graph relations for the user. Includes all graph triples regardless of limit/filters for complete graph visualization.
-     */
-    relations: Array<MemoryRelationDto>;
-};
-
-/**
- * Memory
- */
-export type Memory = {
-    /**
-     * Id
-     * The unique identifier for the memory.
-     */
-    id: string;
-    /**
-     * Owner Id
-     * The user ID of the user who created the memory.
-     */
-    owner_id: string;
-    /**
-     * Memory
-     * The memory deduced from the text data.
-     */
-    memory: string;
-    /**
-     * Score
-     * The score of the memory.
-     */
-    score?: number | null;
-    /**
-     * Created At
-     * The timestamp when the memory was created.
-     */
-    created_at: string;
-    /**
-     * The metadata associated with the memory.
-     */
-    metadata: MemoryMetadata;
-};
-
-/**
- * MemoryDTO
- * Data Transfer Object for a single memory item.
- */
-export type MemoryDto = {
-    /**
-     * Id
-     * The unique identifier of the memory.
-     */
-    id: string;
-    /**
-     * Memory
-     * The memory content deduced from the text data.
-     */
-    memory: string;
-    /**
-     * Score
-     * The relevance score of the memory (present for search results, null otherwise).
-     */
-    score?: number | null;
-    /**
-     * Created At
-     * ISO timestamp when the memory was created.
-     */
-    created_at: string;
-    /**
-     * User Id
-     * The unique identifier of the user who owns this memory.
-     */
-    user_id?: string | null;
-    /**
-     * Agent Id
-     * The unique identifier of the agent that created this memory.
-     */
-    agent_id?: string | null;
-    /**
-     * Thread Id
-     * The unique identifier of the thread in which this memory was created.
-     */
-    thread_id?: string | null;
-    /**
-     * Display Id
-     * The unique identifier of the display in which this memory was created..
-     */
-    display_id?: string | null;
-    /**
-     * Run Id
-     * The unique identifier of the run in which this memory was created.
-     */
-    run_id?: string | null;
-};
-
-/**
- * MemoryMetadata
- */
-export type MemoryMetadata = {
-    /**
-     * User Id
-     * The user ID.
-     */
-    user_id: string;
-    /**
-     * Agent Id
-     * The agent ID.
-     */
-    agent_id: string;
-    /**
-     * Thread Id
-     * The thread ID.
-     */
-    thread_id: string;
-    /**
-     * Display Id
-     * The display ID.
-     */
-    display_id: string;
-    /**
-     * Run Id
-     * The run ID.
-     */
-    run_id: string;
-    /**
-     * The type of the memory.
-     */
-    type: MemoryType;
-    /**
-     * Tenant Id
-     * The tenant ID for multi-tenancy support.
-     */
-    tenant_id?: string | null;
-    /**
-     * Tenant Namespace
-     * The tenant namespace for department-level scoping.
-     */
-    tenant_namespace?: string | null;
-};
-
-/**
- * MemoryRelation
- * Represents a knowledge graph triple
- */
-export type MemoryRelation = {
-    /**
-     * Source
-     * The source entity.
-     */
-    source: string;
-    /**
-     * Relation
-     * The relationship between the source and target entities.
-     */
-    relation: string;
-    /**
-     * Target
-     * The target entity.
-     */
-    target: string;
-};
-
-/**
- * MemoryRelationDTO
- * Data Transfer Object for a knowledge graph relation (triple).
- */
-export type MemoryRelationDto = {
-    /**
-     * Source
-     * The source entity in the knowledge graph.
-     */
-    source: string;
-    /**
-     * Relation
-     * The relationship type between source and target entities.
-     */
-    relation: string;
-    /**
-     * Target
-     * The target entity in the knowledge graph.
-     */
-    target: string;
-};
-
-/**
- * MemorySearchResponse
- * Response for searching memories with scored results and matching graph relations.
- */
-export type MemorySearchResponse = {
-    /**
-     * Query
-     * The original search query used.
-     */
-    query: string;
-    /**
-     * Total
-     * Total number of search results matching the query.
-     */
-    total: number;
-    /**
-     * Memories
-     * List of memories matching the search query, ordered by relevance score. Each memory includes a score field indicating relevance to the query.
-     */
-    memories: Array<MemoryDto>;
-    /**
-     * Relations
-     * Knowledge graph relations involving entities from the search results. Used for highlighting matching triples in the graph visualization. Only includes relations where both source AND target appear in the search results.
-     */
-    relations: Array<MemoryRelationDto>;
-};
-
-/**
- * MemoryType
- */
-export type MemoryType = 'user_memory' | 'organization_memory';
-
-/**
- * MemoryType
- */
-export const MemoryType = {
-    USER_MEMORY: 'user_memory',
-    ORGANIZATION_MEMORY: 'organization_memory'
-} as const;
-
-/**
  * Message
  */
 export type MessageReadable = {
@@ -9470,6 +8933,38 @@ export type NotificationDto = {
      * The timestamp when the notification was created.
      */
     created_at: Date;
+};
+
+/**
+ * OpenChatHitlResponse
+ * Response indicating whether there's an open chat HITL request for a thread.
+ */
+export type OpenChatHitlResponseReadable = {
+    /**
+     * Has Open Chat Hitl
+     * Whether there is an open chat HITL request awaiting response.
+     */
+    has_open_chat_hitl: boolean;
+    /**
+     * The HITL request event if there is an open chat HITL, None otherwise.
+     */
+    hitl_request?: HumanInTheLoopRequestEventReadable | null;
+};
+
+/**
+ * OpenChatHitlResponse
+ * Response indicating whether there's an open chat HITL request for a thread.
+ */
+export type OpenChatHitlResponseWritable = {
+    /**
+     * Has Open Chat Hitl
+     * Whether there is an open chat HITL request awaiting response.
+     */
+    has_open_chat_hitl: boolean;
+    /**
+     * The HITL request event if there is an open chat HITL, None otherwise.
+     */
+    hitl_request?: HumanInTheLoopRequestEventWritable | null;
 };
 
 /**
@@ -10791,180 +10286,6 @@ export type ResponseFormatText = {
      */
     type: 'text';
     [key: string]: unknown | 'text';
-};
-
-/**
- * RetrieveOrganizationMemoryEvent
- * Specialized BaseRetrieveMemoryEvent for organization-wide memories.
- *
- * Emitted when an agent retrieves shared organizational memories from long-term storage.
- * These memories are accessible to all users within the organization namespace.
- */
-export type RetrieveOrganizationMemoryEventReadable = {
-    /**
-     * Event Id
-     */
-    event_id?: string;
-    /**
-     * Created At
-     * The time (in ns since epoch) the event was stored in the event store
-     */
-    created_at?: number;
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Memories
-     * The list of memories that were retrieved.
-     */
-    memories?: Array<Memory>;
-    /**
-     * Relations
-     * The list of matching memory relations.
-     */
-    relations: Array<MemoryRelation>;
-    /**
-     * Event Name
-     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
-     * Used during deserialization to decide which subclass to instantiate.
-     */
-    readonly _event_name: string;
-    /**
-     * Parent Event Names
-     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
-     */
-    readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<Memory> | Array<MemoryRelation> | Array<string> | undefined;
-};
-
-/**
- * RetrieveOrganizationMemoryEvent
- * Specialized BaseRetrieveMemoryEvent for organization-wide memories.
- *
- * Emitted when an agent retrieves shared organizational memories from long-term storage.
- * These memories are accessible to all users within the organization namespace.
- */
-export type RetrieveOrganizationMemoryEventWritable = {
-    /**
-     * Event Id
-     */
-    event_id?: string;
-    /**
-     * Created At
-     * The time (in ns since epoch) the event was stored in the event store
-     */
-    created_at?: number;
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Memories
-     * The list of memories that were retrieved.
-     */
-    memories?: Array<Memory>;
-    /**
-     * Relations
-     * The list of matching memory relations.
-     */
-    relations: Array<MemoryRelation>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<Memory> | Array<MemoryRelation> | undefined;
-};
-
-/**
- * RetrieveUserMemoryEvent
- * Specialized BaseRetrieveMemoryEvent for user-specific memories.
- *
- * Emitted when an agent retrieves private user memories from long-term storage.
- * These memories are scoped to individual users and never shared across users.
- */
-export type RetrieveUserMemoryEventReadable = {
-    /**
-     * Event Id
-     */
-    event_id?: string;
-    /**
-     * Created At
-     * The time (in ns since epoch) the event was stored in the event store
-     */
-    created_at?: number;
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Memories
-     * The list of memories that were retrieved.
-     */
-    memories?: Array<Memory>;
-    /**
-     * Relations
-     * The list of matching memory relations.
-     */
-    relations: Array<MemoryRelation>;
-    /**
-     * Event Name
-     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
-     * Used during deserialization to decide which subclass to instantiate.
-     */
-    readonly _event_name: string;
-    /**
-     * Parent Event Names
-     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
-     */
-    readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<Memory> | Array<MemoryRelation> | Array<string> | undefined;
-};
-
-/**
- * RetrieveUserMemoryEvent
- * Specialized BaseRetrieveMemoryEvent for user-specific memories.
- *
- * Emitted when an agent retrieves private user memories from long-term storage.
- * These memories are scoped to individual users and never shared across users.
- */
-export type RetrieveUserMemoryEventWritable = {
-    /**
-     * Event Id
-     */
-    event_id?: string;
-    /**
-     * Created At
-     * The time (in ns since epoch) the event was stored in the event store
-     */
-    created_at?: number;
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Memories
-     * The list of memories that were retrieved.
-     */
-    memories?: Array<Memory>;
-    /**
-     * Relations
-     * The list of matching memory relations.
-     */
-    relations: Array<MemoryRelation>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<Memory> | Array<MemoryRelation> | undefined;
 };
 
 /**
@@ -12501,244 +11822,6 @@ export type StopEventWritable = {
 };
 
 /**
- * StoreOrganizationMemoryEvent
- * Specialized BaseStoreMemoryEvent for organization-wide memories.
- *
- * Emitted when an agent stores shared organizational memories to long-term storage.
- * These memories are accessible to all users within the organization namespace.
- * Unlike user memories (inferred from chat), organization memories are explicit facts provided by users.
- */
-export type StoreOrganizationMemoryEventReadable = {
-    /**
-     * Event Id
-     */
-    event_id?: string;
-    /**
-     * Created At
-     * The time (in ns since epoch) the event was stored in the event store
-     */
-    created_at?: number;
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Added Memories
-     * Newly added memory texts
-     */
-    added_memories: Array<string>;
-    /**
-     * Updated Memories
-     * Updated memory texts
-     */
-    updated_memories: Array<string>;
-    /**
-     * Deleted Memories
-     * Deleted memory texts
-     */
-    deleted_memories: Array<string>;
-    /**
-     * Added Relations
-     * Newly added relations
-     */
-    added_relations: Array<MemoryRelation>;
-    /**
-     * Deleted Relations
-     * Deleted relations
-     */
-    deleted_relations: Array<MemoryRelation>;
-    /**
-     * Event Name
-     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
-     * Used during deserialization to decide which subclass to instantiate.
-     */
-    readonly _event_name: string;
-    /**
-     * Parent Event Names
-     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
-     */
-    readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | Array<string> | Array<string> | Array<MemoryRelation> | Array<MemoryRelation> | Array<string> | undefined;
-};
-
-/**
- * StoreOrganizationMemoryEvent
- * Specialized BaseStoreMemoryEvent for organization-wide memories.
- *
- * Emitted when an agent stores shared organizational memories to long-term storage.
- * These memories are accessible to all users within the organization namespace.
- * Unlike user memories (inferred from chat), organization memories are explicit facts provided by users.
- */
-export type StoreOrganizationMemoryEventWritable = {
-    /**
-     * Event Id
-     */
-    event_id?: string;
-    /**
-     * Created At
-     * The time (in ns since epoch) the event was stored in the event store
-     */
-    created_at?: number;
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Added Memories
-     * Newly added memory texts
-     */
-    added_memories: Array<string>;
-    /**
-     * Updated Memories
-     * Updated memory texts
-     */
-    updated_memories: Array<string>;
-    /**
-     * Deleted Memories
-     * Deleted memory texts
-     */
-    deleted_memories: Array<string>;
-    /**
-     * Added Relations
-     * Newly added relations
-     */
-    added_relations: Array<MemoryRelation>;
-    /**
-     * Deleted Relations
-     * Deleted relations
-     */
-    deleted_relations: Array<MemoryRelation>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | Array<string> | Array<string> | Array<MemoryRelation> | Array<MemoryRelation> | undefined;
-};
-
-/**
- * StoreUserMemoryEvent
- * Specialized BaseStoreMemoryEvent for user-specific memories.
- *
- * Emitted when an agent stores private user memories to long-term storage.
- * These memories are scoped to individual users and never shared across users.
- * User memories are typically inferred from conversation context.
- */
-export type StoreUserMemoryEventReadable = {
-    /**
-     * Event Id
-     */
-    event_id?: string;
-    /**
-     * Created At
-     * The time (in ns since epoch) the event was stored in the event store
-     */
-    created_at?: number;
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Added Memories
-     * Newly added memory texts
-     */
-    added_memories: Array<string>;
-    /**
-     * Updated Memories
-     * Updated memory texts
-     */
-    updated_memories: Array<string>;
-    /**
-     * Deleted Memories
-     * Deleted memory texts
-     */
-    deleted_memories: Array<string>;
-    /**
-     * Added Relations
-     * Newly added relations
-     */
-    added_relations: Array<MemoryRelation>;
-    /**
-     * Deleted Relations
-     * Deleted relations
-     */
-    deleted_relations: Array<MemoryRelation>;
-    /**
-     * Event Name
-     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
-     * Used during deserialization to decide which subclass to instantiate.
-     */
-    readonly _event_name: string;
-    /**
-     * Parent Event Names
-     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
-     */
-    readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | Array<string> | Array<string> | Array<MemoryRelation> | Array<MemoryRelation> | Array<string> | undefined;
-};
-
-/**
- * StoreUserMemoryEvent
- * Specialized BaseStoreMemoryEvent for user-specific memories.
- *
- * Emitted when an agent stores private user memories to long-term storage.
- * These memories are scoped to individual users and never shared across users.
- * User memories are typically inferred from conversation context.
- */
-export type StoreUserMemoryEventWritable = {
-    /**
-     * Event Id
-     */
-    event_id?: string;
-    /**
-     * Created At
-     * The time (in ns since epoch) the event was stored in the event store
-     */
-    created_at?: number;
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Added Memories
-     * Newly added memory texts
-     */
-    added_memories: Array<string>;
-    /**
-     * Updated Memories
-     * Updated memory texts
-     */
-    updated_memories: Array<string>;
-    /**
-     * Deleted Memories
-     * Deleted memory texts
-     */
-    deleted_memories: Array<string>;
-    /**
-     * Added Relations
-     * Newly added relations
-     */
-    added_relations: Array<MemoryRelation>;
-    /**
-     * Deleted Relations
-     * Deleted relations
-     */
-    deleted_relations: Array<MemoryRelation>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | Array<string> | Array<string> | Array<string> | Array<MemoryRelation> | Array<MemoryRelation> | undefined;
-};
-
-/**
  * SubmittedFormDTO
  */
 export type SubmittedFormDto = {
@@ -12991,6 +12074,34 @@ export type TextareaWritable = {
      */
     autoResize?: boolean;
     [key: string]: unknown | true | (string | null) | (string | null) | 'primeTextarea' | (string | null) | (LocaleString | string) | (LocaleString | string | null) | boolean | (string | null) | (LocaleString | string | null) | (number | null) | undefined;
+};
+
+/**
+ * ThinkingBlock
+ * A representation of the content streamed from reasoning/thinking processes by LLMs
+ */
+export type ThinkingBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'thinking';
+    /**
+     * Content
+     * Content of the reasoning/thinking process, if available
+     */
+    content?: string | null;
+    /**
+     * Num Tokens
+     * Number of token used for reasoning/thinking, if available
+     */
+    num_tokens?: number | null;
+    /**
+     * Additional Information
+     * Additional information related to the thinking/reasoning process, if available
+     */
+    additional_information?: {
+        [key: string]: unknown;
+    };
 };
 
 /**
@@ -13611,6 +12722,33 @@ export type TokenResponse = {
 };
 
 /**
+ * ToolCallBlock
+ */
+export type ToolCallBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'tool_call';
+    /**
+     * Tool Call Id
+     * ID of the tool call, if provided
+     */
+    tool_call_id?: string | null;
+    /**
+     * Tool Name
+     * Name of the called tool
+     */
+    tool_name: string;
+    /**
+     * Tool Kwargs
+     * Arguments provided to the tool, if available
+     */
+    tool_kwargs?: {
+        [key: string]: unknown;
+    } | string;
+};
+
+/**
  * ToolEvent
  */
 export type ToolEventReadable = {
@@ -13830,12 +12968,12 @@ export type TranscriptionVerbose = {
      * Segments
      */
     segments?: Array<TranscriptionSegment> | null;
-    usage?: OpenaiTypesAudioTranscriptionVerboseUsage | null;
+    usage?: Usage | null;
     /**
      * Words
      */
     words?: Array<TranscriptionWord> | null;
-    [key: string]: unknown | number | string | (Array<TranscriptionSegment> | null) | (OpenaiTypesAudioTranscriptionVerboseUsage | null) | (Array<TranscriptionWord> | null) | undefined;
+    [key: string]: unknown | number | string | (Array<TranscriptionSegment> | null) | (Usage | null) | (Array<TranscriptionWord> | null) | undefined;
 };
 
 /**
@@ -13855,35 +12993,6 @@ export type TranscriptionWord = {
      */
     word: string;
     [key: string]: unknown | number | string;
-};
-
-/**
- * UpdateMemoryRequest
- * Request for updating a memory's content.
- */
-export type UpdateMemoryRequest = {
-    /**
-     * Data
-     * New content to update the memory with.
-     */
-    data: string;
-};
-
-/**
- * UpdateMemoryResponse
- * Response for updating a memory.
- */
-export type UpdateMemoryResponse = {
-    /**
-     * Status
-     * Operation status. Always 'updated' on success; errors raise HTTPException.
-     */
-    status: string;
-    /**
-     * Memory Id
-     * ID of the memory that was updated. Echoed from request path.
-     */
-    memory_id: string;
 };
 
 /**
@@ -13939,6 +13048,21 @@ export type UpdateRoleRequest = {
      * The new list of access rules.
      */
     access_rules?: Array<string> | null;
+};
+
+/**
+ * Usage
+ */
+export type Usage = {
+    /**
+     * Seconds
+     */
+    seconds: number;
+    /**
+     * Type
+     */
+    type: 'duration';
+    [key: string]: unknown | number | 'duration';
 };
 
 /**
@@ -14107,7 +13231,7 @@ export type UserIdentity = {
  *
  * ### Why UserMessageEvent?
  * While `StartEvent` influences the workflow’s starting point and `DisplayEvent` represents user-facing
- * output, a `UserMessageEvent` marks afChatMessage workflow start initiated by a user’s input. This is common in chat
+ * output, a `UserMessageEvent` marks a workflow start initiated by a user’s input. This is common in chat
  * interfaces, voice assistants, or interactive dashboards, where a user’s message serves as both:
  * - A display event (since it may appear in the UI history).
  * - A control event triggering workflow execution from a particular starting step.
@@ -14192,7 +13316,7 @@ export type UserMessageEventReadable = {
  *
  * ### Why UserMessageEvent?
  * While `StartEvent` influences the workflow’s starting point and `DisplayEvent` represents user-facing
- * output, a `UserMessageEvent` marks afChatMessage workflow start initiated by a user’s input. This is common in chat
+ * output, a `UserMessageEvent` marks a workflow start initiated by a user’s input. This is common in chat
  * interfaces, voice assistants, or interactive dashboards, where a user’s message serves as both:
  * - A display event (since it may appear in the UI history).
  * - A control event triggering workflow execution from a particular starting step.
@@ -14349,6 +13473,41 @@ export type ValidationError = {
 };
 
 /**
+ * VideoBlock
+ * A representation of video data to directly pass to/from the LLM.
+ */
+export type VideoBlock = {
+    /**
+     * Block Type
+     */
+    block_type?: 'video';
+    /**
+     * Video
+     */
+    video?: (Blob | File) | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | null;
+    /**
+     * Video Mimetype
+     */
+    video_mimetype?: string | null;
+    /**
+     * Detail
+     */
+    detail?: string | null;
+    /**
+     * Fps
+     */
+    fps?: number | null;
+};
+
+/**
  * WorkflowGraph
  * Complete workflow graph representation.
  */
@@ -14380,21 +13539,6 @@ export type WorkflowGraph = {
      * List of edges in the graph
      */
     links: Array<EdgeData>;
-};
-
-/**
- * Usage
- */
-export type OpenaiTypesAudioTranscriptionVerboseUsage = {
-    /**
-     * Seconds
-     */
-    seconds: number;
-    /**
-     * Type
-     */
-    type: 'duration';
-    [key: string]: unknown | number | 'duration';
 };
 
 /**
@@ -14971,6 +14115,36 @@ export type RemoveUserFromThreadResponses = {
 };
 
 export type RemoveUserFromThreadResponse = RemoveUserFromThreadResponses[keyof RemoveUserFromThreadResponses];
+
+export type GetOpenChatHitlData = {
+    body?: never;
+    path: {
+        /**
+         * Thread ID
+         */
+        thread_id: string;
+    };
+    query?: never;
+    url: '/threads/{thread_id}/open-chat-hitl';
+};
+
+export type GetOpenChatHitlErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetOpenChatHitlError = GetOpenChatHitlErrors[keyof GetOpenChatHitlErrors];
+
+export type GetOpenChatHitlResponses = {
+    /**
+     * Successful Response
+     */
+    200: OpenChatHitlResponseReadable;
+};
+
+export type GetOpenChatHitlResponse = GetOpenChatHitlResponses[keyof GetOpenChatHitlResponses];
 
 export type GetModelsData = {
     body?: never;
@@ -16078,6 +15252,21 @@ export type GetDocumentsForNamespaceData = {
          * Number of items per page (maximum 100)
          */
         page_size?: number;
+        /**
+         * Search
+         * Search by document title or filename
+         */
+        search?: string | null;
+        /**
+         * Sort Field
+         * Field to sort by: document_title, created_at, updated_at
+         */
+        sort_field?: string | null;
+        /**
+         * Sort Order
+         * Sort order: 1 for ascending, -1 for descending
+         */
+        sort_order?: number;
     };
     url: '/knowledge/databases/{database}/namespaces/{namespace}/documents';
 };
@@ -16558,316 +15747,6 @@ export type UpdateNotificationResponses = {
 };
 
 export type UpdateNotificationResponse = UpdateNotificationResponses[keyof UpdateNotificationResponses];
-
-export type DeleteAllUserMemoriesData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/user-memories';
-};
-
-export type DeleteAllUserMemoriesResponses = {
-    /**
-     * Successful Response
-     */
-    200: DeleteAllMemoriesResponse;
-};
-
-export type DeleteAllUserMemoriesResponse = DeleteAllUserMemoriesResponses[keyof DeleteAllUserMemoriesResponses];
-
-export type GetUserMemoriesData = {
-    body?: never;
-    path?: never;
-    query?: {
-        /**
-         * Limit
-         * Maximum number of memories to return
-         */
-        limit?: number;
-    };
-    url: '/user-memories';
-};
-
-export type GetUserMemoriesErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetUserMemoriesError = GetUserMemoriesErrors[keyof GetUserMemoriesErrors];
-
-export type GetUserMemoriesResponses = {
-    /**
-     * Successful Response
-     */
-    200: MemoriesResponse;
-};
-
-export type GetUserMemoriesResponse = GetUserMemoriesResponses[keyof GetUserMemoriesResponses];
-
-export type SearchUserMemoriesData = {
-    body?: never;
-    path?: never;
-    query: {
-        /**
-         * Query
-         * Search query for semantic search
-         */
-        query: string;
-        /**
-         * Limit
-         * Maximum number of results to return
-         */
-        limit?: number;
-        /**
-         * Agent Id
-         * Filter by agent ID
-         */
-        agent_id?: string | null;
-        /**
-         * Thread Id
-         * Filter by thread ID
-         */
-        thread_id?: string | null;
-    };
-    url: '/user-memories/search';
-};
-
-export type SearchUserMemoriesErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SearchUserMemoriesError = SearchUserMemoriesErrors[keyof SearchUserMemoriesErrors];
-
-export type SearchUserMemoriesResponses = {
-    /**
-     * Successful Response
-     */
-    200: MemorySearchResponse;
-};
-
-export type SearchUserMemoriesResponse = SearchUserMemoriesResponses[keyof SearchUserMemoriesResponses];
-
-export type DeleteUserMemoryData = {
-    body?: never;
-    path: {
-        /**
-         * Memory Id
-         * Memory ID to delete
-         */
-        memory_id: string;
-    };
-    query?: never;
-    url: '/user-memories/{memory_id}';
-};
-
-export type DeleteUserMemoryErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type DeleteUserMemoryError = DeleteUserMemoryErrors[keyof DeleteUserMemoryErrors];
-
-export type DeleteUserMemoryResponses = {
-    /**
-     * Successful Response
-     */
-    200: DeleteMemoryResponse;
-};
-
-export type DeleteUserMemoryResponse = DeleteUserMemoryResponses[keyof DeleteUserMemoryResponses];
-
-export type UpdateUserMemoryData = {
-    body: UpdateMemoryRequest;
-    path: {
-        /**
-         * Memory Id
-         * Memory ID to update
-         */
-        memory_id: string;
-    };
-    query?: never;
-    url: '/user-memories/{memory_id}';
-};
-
-export type UpdateUserMemoryErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type UpdateUserMemoryError = UpdateUserMemoryErrors[keyof UpdateUserMemoryErrors];
-
-export type UpdateUserMemoryResponses = {
-    /**
-     * Successful Response
-     */
-    200: UpdateMemoryResponse;
-};
-
-export type UpdateUserMemoryResponse = UpdateUserMemoryResponses[keyof UpdateUserMemoryResponses];
-
-export type DeleteAllOrganizationMemoriesData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/organization-memories';
-};
-
-export type DeleteAllOrganizationMemoriesResponses = {
-    /**
-     * Successful Response
-     */
-    200: DeleteAllMemoriesResponse;
-};
-
-export type DeleteAllOrganizationMemoriesResponse = DeleteAllOrganizationMemoriesResponses[keyof DeleteAllOrganizationMemoriesResponses];
-
-export type GetOrganizationMemoriesData = {
-    body?: never;
-    path?: never;
-    query?: {
-        /**
-         * Limit
-         * Maximum number of memories to return
-         */
-        limit?: number;
-    };
-    url: '/organization-memories';
-};
-
-export type GetOrganizationMemoriesErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetOrganizationMemoriesError = GetOrganizationMemoriesErrors[keyof GetOrganizationMemoriesErrors];
-
-export type GetOrganizationMemoriesResponses = {
-    /**
-     * Successful Response
-     */
-    200: MemoriesResponse;
-};
-
-export type GetOrganizationMemoriesResponse = GetOrganizationMemoriesResponses[keyof GetOrganizationMemoriesResponses];
-
-export type SearchOrganizationMemoriesData = {
-    body?: never;
-    path?: never;
-    query: {
-        /**
-         * Query
-         * Search query for semantic search
-         */
-        query: string;
-        /**
-         * Limit
-         * Maximum number of results to return
-         */
-        limit?: number;
-        /**
-         * Agent Id
-         * Filter by agent ID
-         */
-        agent_id?: string | null;
-        /**
-         * Thread Id
-         * Filter by thread ID
-         */
-        thread_id?: string | null;
-    };
-    url: '/organization-memories/search';
-};
-
-export type SearchOrganizationMemoriesErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SearchOrganizationMemoriesError = SearchOrganizationMemoriesErrors[keyof SearchOrganizationMemoriesErrors];
-
-export type SearchOrganizationMemoriesResponses = {
-    /**
-     * Successful Response
-     */
-    200: MemorySearchResponse;
-};
-
-export type SearchOrganizationMemoriesResponse = SearchOrganizationMemoriesResponses[keyof SearchOrganizationMemoriesResponses];
-
-export type DeleteOrganizationMemoryData = {
-    body?: never;
-    path: {
-        /**
-         * Memory Id
-         * Memory ID to delete
-         */
-        memory_id: string;
-    };
-    query?: never;
-    url: '/organization-memories/{memory_id}';
-};
-
-export type DeleteOrganizationMemoryErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type DeleteOrganizationMemoryError = DeleteOrganizationMemoryErrors[keyof DeleteOrganizationMemoryErrors];
-
-export type DeleteOrganizationMemoryResponses = {
-    /**
-     * Successful Response
-     */
-    200: DeleteMemoryResponse;
-};
-
-export type DeleteOrganizationMemoryResponse = DeleteOrganizationMemoryResponses[keyof DeleteOrganizationMemoryResponses];
-
-export type UpdateOrganizationMemoryData = {
-    body: UpdateMemoryRequest;
-    path: {
-        /**
-         * Memory Id
-         * Memory ID to update
-         */
-        memory_id: string;
-    };
-    query?: never;
-    url: '/organization-memories/{memory_id}';
-};
-
-export type UpdateOrganizationMemoryErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type UpdateOrganizationMemoryError = UpdateOrganizationMemoryErrors[keyof UpdateOrganizationMemoryErrors];
-
-export type UpdateOrganizationMemoryResponses = {
-    /**
-     * Successful Response
-     */
-    200: UpdateMemoryResponse;
-};
-
-export type UpdateOrganizationMemoryResponse = UpdateOrganizationMemoryResponses[keyof UpdateOrganizationMemoryResponses];
 
 export type ProcessDocumentData = {
     body?: never;

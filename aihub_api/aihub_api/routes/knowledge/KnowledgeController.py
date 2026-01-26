@@ -3,15 +3,18 @@ from typing import Annotated
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.milvus.use_vector_store_factory import use_vector_store_factory
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
+from aihub_lib.infrastructure.s3.use_s3 import use_s3_service
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.persistence.rag.vectors import VectorStoreFactory
 from aihub_lib.routes.Controller import Controller
-from fastapi import Depends, HTTPException, Path, Security
+from fastapi import Depends, HTTPException, Path, Query, Security
 from mongoengine import connect
 from nats.aio.client import Client as NATS
 from pymongo import MongoClient
@@ -47,7 +50,6 @@ class KnowledgeController(Controller):
         self,
         *,
         auth: AuthHandler,
-        vector_store_factory: VectorStoreFactory,
         route: str = "/knowledge",
         additionally_required_permission: str | None = None,
         translation_llm_config: LLMConfig | None = None,
@@ -57,7 +59,6 @@ class KnowledgeController(Controller):
             host=MongoSettings().CONNECTION_STRING.get_secret_value(), alias="docstore", uuidRepresentation="standard"
         )
 
-        self.vector_store_factory = vector_store_factory
         self.translation_llm_config = translation_llm_config
 
     def get_databases(self, route: str = "/databases") -> "KnowledgeController":
@@ -104,14 +105,30 @@ class KnowledgeController(Controller):
             ],
             page: PageNumber = 1,
             page_size: PageSize = 20,
+            search: Annotated[
+                str | None, Query(min_length=1, max_length=200, description="Search by document title or filename")
+            ] = None,
+            sort_field: Annotated[
+                str | None,
+                Query(description="Field to sort by: document_title, created_at, updated_at"),
+            ] = None,
+            sort_order: Annotated[int, Query(description="Sort order: 1 for ascending, -1 for descending")] = 1,
         ) -> PaginatedDocumentsResponse:
             """
             Returns paginated documents for a specific namespace within a database.
+            Optionally filter by document title or filename using the search parameter.
+            Supports sorting by document_title, created_at, or updated_at.
             """
             if database in ["admin", "local", "config"]:
                 raise HTTPException(status_code=403, detail="Not authorized to view this database")
             total, documents = KnowledgeService.get_paginated_documents(
-                db=database, namespace=namespace, page=page, page_size=page_size
+                db=database,
+                namespace=namespace,
+                page=page,
+                page_size=page_size,
+                search=search,
+                sort_field=sort_field,
+                sort_order=sort_order,
             )
 
             total_pages = (total + page_size - 1) // page_size
@@ -154,6 +171,8 @@ class KnowledgeController(Controller):
             _: Annotated[
                 UserIdentity, Security(self.user_with_permission("aihub.user.knowledge.{database}.{namespace}"))
             ],
+            vector_store_factory: Annotated[VectorStoreFactory, Depends(use_vector_store_factory)],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> list[IngestedNode]:
             """
             Returns nodes for a given document.
@@ -164,7 +183,8 @@ class KnowledgeController(Controller):
                 db=database,
                 namespace=namespace,
                 document_id=document_id,
-                vector_store_factory=self.vector_store_factory,
+                vector_store_factory=vector_store_factory,
+                t=t,
             )
 
         return self
@@ -180,6 +200,7 @@ class KnowledgeController(Controller):
             _: Annotated[
                 UserIdentity, Security(self.user_with_permission("aihub.user.knowledge.{database}.{namespace}"))
             ],
+            vector_store_factory: Annotated[VectorStoreFactory, Depends(use_vector_store_factory)],
         ) -> list[NodeSummaryDTO]:
             """
             Returns nodes for a given document.
@@ -190,7 +211,7 @@ class KnowledgeController(Controller):
                 db=database,
                 namespace=namespace,
                 document_id=document_id,
-                vector_store_factory=self.vector_store_factory,
+                vector_store_factory=vector_store_factory,
             )
 
         return self
@@ -242,6 +263,7 @@ class KnowledgeController(Controller):
             _: Annotated[
                 UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}.{namespace}"))
             ],
+            s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
         ) -> DocumentUploadResponse:
             """
             Initiates file upload by generating a presigned S3/MinIO URL.
@@ -249,7 +271,7 @@ class KnowledgeController(Controller):
             This endpoint validates the upload request and returns a presigned URL
             that allows the client to upload the file directly to S3/MinIO storage.
             """
-            return await KnowledgeService.initiate_document_upload(database, namespace, request)
+            return await KnowledgeService.initiate_document_upload(database, namespace, request, s3_service)
 
         return self
 
@@ -265,6 +287,7 @@ class KnowledgeController(Controller):
             _: Annotated[
                 UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}.{namespace}"))
             ],
+            s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
         ) -> DocumentUploadValidationResponse:
             """
             Validates whether a file was successfully uploaded to the datalake.
@@ -273,7 +296,7 @@ class KnowledgeController(Controller):
             (S3/MinIO or Azure Blob Storage) after a presigned URL upload, and publishes
             a SourceUpdatedEvent to NATS to trigger downstream pipeline processing.
             """
-            return await KnowledgeService.validate_document_upload(nc, database, namespace, request)
+            return await KnowledgeService.validate_document_upload(nc, database, namespace, request, s3_service)
 
         return self
 

@@ -37,6 +37,7 @@ image_tags:
   jupyter: minimal-notebook:notebook-7.0.6
   otel_collector: otel/opentelemetry-collector-contrib:latest
   traefik: traefik:v3.6.2
+  docker_socket_proxy: tecnativa/docker-socket-proxy:0.3
   postgres_ferretdb: postgres-documentdb:17.0.106.0-ferretdb-2.5.0
   docling_model_permission: alpine  # Init container
   presidio_analyzer: presidio-analyzer:2.2.359

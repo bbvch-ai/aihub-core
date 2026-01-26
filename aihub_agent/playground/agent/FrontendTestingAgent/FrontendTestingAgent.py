@@ -26,13 +26,9 @@ from aihub_lib.nats.events.guard import (
     SensitiveInfoAcceptEvent,
     SensitiveInfoRejectEvent,
 )
-from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoop import HumanInTheLoopInput
-from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
-    HumanInTheLoopInputRequestEvent,
-)
-from aihub_lib.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import (
-    HumanInTheLoopInputResponseEvent,
-)
+from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopInput
+from aihub_lib.nats.events.human_in_the_loop.request import HumanInTheLoopInputRequestEvent
+from aihub_lib.nats.events.human_in_the_loop.response import HumanInTheLoopInputResponseEvent
 from aihub_lib.nats.events.router.RouteOptions import RouteOptions
 from aihub_lib.nats.events.router.RouterEvent import RouterEvent
 from aihub_lib.nats.events.semantic import Embedding

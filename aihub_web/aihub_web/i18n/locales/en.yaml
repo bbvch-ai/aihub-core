@@ -308,6 +308,8 @@ knowledge:
     click_to_view: "Click the button below to view the original PDF document."
   documents:
     title: "Documents"
+    search:
+      placeholder: "Search by document title..."
     upload:
       title: "Upload Documents"
       drag_and_drop: "Drag files here or click to select files"

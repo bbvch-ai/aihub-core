@@ -38,7 +38,7 @@ model_list:
 {%- if has_llama_cpp %}
       model: openai/{{ llama_cpp_alias }}
       api_base: http://llama-cpp:8182/
-      api_key: XXX
+      api_key: os.environ/LOCAL_LLM_TOKEN
 {%- else %}
       model: azure/gpt-5-nano
       api_base: os.environ/AZURE_OPENAI_BASE_URL
@@ -59,7 +59,7 @@ model_list:
 {%- if has_llama_cpp %}
       model: openai/{{ llama_cpp_alias }}
       api_base: http://llama-cpp:8182/
-      api_key: XXX
+      api_key: os.environ/LOCAL_LLM_TOKEN
 {%- else %}
       # api has changed for gpt-5 models needs to be 4o for ingestion to work currently
       model: azure/gpt-4o-mini
@@ -91,11 +91,11 @@ model_list:
 {%- if has_vllm_docling %}
       model: openai/{{ vllm_docling_alias }}
       api_base: http://vllm-docling:8182/v1
-      api_key: XXX
+      api_key: os.environ/LOCAL_LLM_TOKEN
 {%- else %}
       model: litellm_proxy/granite-docling
-      api_base: https://docling.ai-agents.ch
-      api_key: os.environ/DOCLING_API_KEY
+      api_base: os.environ/SWISS_LLM_CLOUD_API_BASE_URL
+      api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
 {%- endif %}
       drop_params: true
     model_info:
@@ -114,7 +114,7 @@ model_list:
 {%- if has_llama_cpp_embedding %}
       model: openai/qwen-3-embedding
       api_base: http://llama-cpp-embedding:8182/v1
-      api_key: XXX
+      api_key: os.environ/LOCAL_LLM_TOKEN
       additional_drop_params: ["dimensions"]
 {%- else %}
       model: azure/text-embedding-3-small
@@ -131,7 +131,7 @@ model_list:
 {%- if has_llama_cpp_embedding %}
       model: openai/qwen-3-embedding
       api_base: http://llama-cpp-embedding:8182/v1
-      api_key: XXX
+      api_key: os.environ/LOCAL_LLM_TOKEN
       additional_drop_params: ["dimensions"]
 {%- else %}
       model: azure/text-embedding-3-large
@@ -152,7 +152,7 @@ model_list:
 {%- if has_llama_cpp_reranker %}
       model: jina_ai/qwen-3-reranking
       api_base: http://llama-cpp-reranker:8182/
-      api_key: XXX
+      api_key: os.environ/LOCAL_LLM_TOKEN
 {%- else %}
       model: cohere/rerank-english-v3.0
       api_base: os.environ/COHERE_API_BASE
@@ -266,6 +266,12 @@ litellm_settings:
   telemetry: true
   json_logs: true
   drop_params: true
+  cache: true
+  cache_params:
+    type: "redis"
+    host: {{ '"localhost"' if stage == 'dev' else '"valkey"' }}
+    port: 6379
+    password: os.environ/REDIS_TOKEN
   # Prompt injection detection settings
   prompt_injection_params:
     heuristics_check: false        # Disable simple pattern matching (too many false positives)

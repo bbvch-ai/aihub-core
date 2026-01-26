@@ -52,8 +52,7 @@ model_list:
     litellm_params:
       model: openai/granite-docling
       api_base: http://vllm-docling:8182/v1
-      api_key: XXX
-      drop_params: true
+      api_key: os.environ/LOCAL_LLM_TOKEN
     model_info:
       mode: chat
       max_input_tokens: 8192
@@ -71,7 +70,6 @@ model_list:
       api_base: os.environ/AZURE_OPENAI_BASE_URL
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2025-01-01-preview"
-      drop_params: true
     model_info:
       mode: embedding
 
@@ -81,7 +79,6 @@ model_list:
       api_base: os.environ/AZURE_OPENAI_BASE_URL
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2025-01-01-preview"
-      drop_params: true
     model_info:
       mode: embedding
 
@@ -94,7 +91,6 @@ model_list:
       model: cohere/rerank-english-v3.0
       api_base: os.environ/COHERE_API_BASE
       api_key: os.environ/COHERE_API_KEY
-      drop_params: true
     model_info:
       mode: rerank
 
@@ -108,7 +104,6 @@ model_list:
       api_base: os.environ/AZURE_OPENAI_BASE_URL
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2024-02-01"
-      drop_params: true
     model_info:
       mode: image_generation
       base_model: azure/dall-e-3
@@ -123,7 +118,6 @@ model_list:
       api_base: os.environ/AZURE_OPENAI_BASE_URL
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2025-03-01-preview"
-      drop_params: true
     model_info:
       mode: audio_transcription
       base_model: azure/gpt-4o-mini-transcribe
@@ -134,7 +128,6 @@ model_list:
       api_base: os.environ/AZURE_OPENAI_BASE_URL
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2025-03-01-preview"
-      drop_params: true
     model_info:
       mode: audio_speech
       base_model: azure/gpt-4o-mini-tts
@@ -188,6 +181,12 @@ litellm_settings:
   telemetry: true
   json_logs: true
   drop_params: true
+  cache: true
+  cache_params:
+    type: "redis"
+    host: "valkey"
+    port: 6379
+    password: os.environ/REDIS_TOKEN
   # Prompt injection detection settings
   prompt_injection_params:
     heuristics_check: false        # Disable simple pattern matching (too many false positives)

@@ -132,8 +132,7 @@ runs:
       if: inputs.docker_compose_services != ''
       shell: bash
       run: |
-        # Use --no-build to avoid rebuilding and rely on cached images
-        docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --no-build ${{ inputs.docker_compose_services }}
+        docker compose -f docker-compose.dev.yml --env-file .env.dev up -d ${{ inputs.docker_compose_services }}
 
     - name: Use Local Core (without install)
       if: inputs.use_local_core == 'true'

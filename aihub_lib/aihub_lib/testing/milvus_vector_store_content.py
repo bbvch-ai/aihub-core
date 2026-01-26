@@ -1,4 +1,6 @@
+import asyncio
 from datetime import datetime
+from typing import TypeVar
 
 from llama_index.core import Document
 from llama_index.core.ingestion import IngestionPipeline
@@ -7,6 +9,7 @@ from llama_index.storage.docstore.mongodb import MongoDocumentStore
 from pymilvus import MilvusClient
 
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
+from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     DOCUMENT_ID,
@@ -19,7 +22,35 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     UPDATED_AT,
 )
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
-from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
+
+T = TypeVar("T")
+
+
+def run_with_event_loop(func: callable, *args, **kwargs) -> T:
+    """
+    Run a synchronous function inside a running event loop.
+
+    LlamaIndex's MilvusVectorStore internally creates an AsyncMilvusClient which requires
+    a RUNNING event loop (checked via asyncio.get_running_loop()). This helper creates
+    an event loop, runs the function inside it, and returns the result.
+
+    The event loop is kept open after execution because MilvusVectorStore keeps
+    references to AsyncMilvusClient which needs the loop.
+    """
+
+    async def _wrapper():
+        return func(*args, **kwargs)
+
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            raise RuntimeError("Event loop is closed")
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    return loop.run_until_complete(_wrapper())
+
 
 DEFAULT_DOCUMENTS: list[Document] = [
     Document(
@@ -70,29 +101,33 @@ def fill_collection(
     doc_store: MongoDocumentStore,
     nodes: list[TextNode] | None = None,
 ):
-    embeddings, _ = embed_model.to_llama_index()
+    def _fill():
+        embeddings, _ = embed_model.to_llama_index()
+        vs = vector_store.to_llama_index()
+        pipeline: IngestionPipeline = IngestionPipeline(
+            transformations=[embeddings],
+            vector_store=vs,
+            docstore=doc_store,
+        )
+        if nodes:
+            pipeline.run(nodes=nodes)
+        else:
+            pipeline.run(documents=DEFAULT_DOCUMENTS)
 
-    vector_store = vector_store.to_llama_index()
-
-    pipeline: IngestionPipeline = IngestionPipeline(
-        transformations=[embeddings],
-        vector_store=vector_store,
-        docstore=doc_store,
-    )
-    if nodes:
-        pipeline.run(nodes=nodes)
-    else:
-        pipeline.run(documents=DEFAULT_DOCUMENTS)
+    run_with_event_loop(_fill)
 
 
 def drop_collection(
     uri: str = "http://localhost:19530",
-    token: str = "root:Milvus",
+    token: str | None = None,
     collection_name: str = "development",
 ):
+    """Drop a Milvus collection. Uses MilvusSettings token if not explicitly provided."""
     try:
+        # Fall back to settings token if not provided
+        if token is None:
+            token = MilvusSettings().get_token()
         client = MilvusClient(uri=uri, token=token)
         client.drop_collection(collection_name=collection_name)
-        create_milvus_vector_store.cache_clear()
     except Exception as e:
         print(f"Failed to drop collection: {e}")

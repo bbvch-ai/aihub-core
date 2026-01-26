@@ -149,7 +149,7 @@ AZURE_OPENAI_KEY="REPLACE_WITH_AZURE_OPENAI_KEY"
 GEMINI_API_KEY="REPLACE_WITH_GEMINI_KEY"
 
 # Swiss LLM Cloud (Optional)
-SWISS_LLM_CLOUD_API_URL=""                # Optional: Swiss LLM Cloud endpoint URL
+SWISS_LLM_CLOUD_API_BASE_URL=""                # Optional: Swiss LLM Cloud endpoint URL
 SWISS_LLM_CLOUD_API_KEY=""                # Optional: Swiss LLM Cloud API key
 
 # Cohere (Optional)
@@ -201,7 +201,7 @@ S3_STORAGE_URL_SIGNING_SECRET="REPLACE_WITH_RANDOM_STRING"
 # SERVICE ENDPOINTS (Internal - Don't Change)
 # =============================================================================
 
-DOCLING_API_ENDPOINT="http://docling:5001"
+DOCLING_API_BASE_URL="http://docling:5001"
 DOCLING_API_TIMEOUT="600"
 DOCLING_HTTP_RETRIES=3
 PHOENIX_SECRET="REPLACE_WITH_RANDOM_STRING"

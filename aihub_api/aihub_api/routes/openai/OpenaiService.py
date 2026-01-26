@@ -211,7 +211,16 @@ class OpenaiService:
                     yield f"data: {chunk.model_dump_json()}\n\n"
                     await asyncio.sleep(0)
 
-            return StreamingResponse(stream_chat_completion(), media_type="text/event-stream")
+            return StreamingResponse(
+                stream_chat_completion(),
+                media_type="text/event-stream",
+                headers={
+                    "Cache-Control": "no-cache, no-store, must-revalidate, no-transform",
+                    "X-Accel-Buffering": "no",
+                    "Connection": "keep-alive",
+                    "Content-Encoding": "identity",
+                },
+            )
         else:
             kwargs = OpenaiService._filter_kwargs(
                 client.chat.completions.create,
@@ -420,6 +429,12 @@ class OpenaiService:
         return StreamingResponse(
             sse_event_generator(),
             media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate, no-transform",
+                "X-Accel-Buffering": "no",
+                "Connection": "keep-alive",
+                "Content-Encoding": "identity",
+            },
         )
 
     @staticmethod
@@ -588,7 +603,7 @@ class OpenaiService:
             "metadata": {"tags": metadata_tags},
         }
         sdk_call_kwargs["extra_headers"] = {}
-        inject(sdk_call_kwargs)
+        inject(sdk_call_kwargs["extra_headers"])
 
         return sdk_call_kwargs
 

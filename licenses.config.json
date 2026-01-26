@@ -303,6 +303,12 @@
       "notes": "Based on edoburu/pgbouncer (MIT wrapper); permissive licenses"
     },
     {
+      "service": "docker-socket-proxy",
+      "license": "Apache-2.0",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
       "service": "neo4j",
       "license": "GPL",
       "status": "✅",

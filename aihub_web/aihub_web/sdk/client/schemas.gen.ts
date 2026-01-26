@@ -57,84 +57,6 @@ export const AddAgentRequestSchema = {
     title: 'AddAgentRequest'
 } as const;
 
-export const AddMemoryToChatHistoryEventSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'The time (in ns since epoch) the event was stored in the event store'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        },
-        extended_history: {
-            items: {
-                '$ref': '#/components/schemas/ChatMessage'
-            },
-            type: 'array',
-            title: 'Extended History',
-            description: 'Chat history extended with user memories.'
-        },
-        _event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
-Used during deserialization to decide which subclass to instantiate.`,
-            readOnly: true
-        },
-        _parent_event_names: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['extended_history', '_event_name', '_parent_event_names'],
-    title: 'AddMemoryToChatHistoryEvent',
-    description: `A control and display event emitted when an agent extends chat history with retrieved memories.
-
-### Why AddMemoryToChatHistoryEvent?
-Large language models are stateless - they don't remember past conversations unless explicitly provided.
-This event signals that the agent has enriched the conversation context with relevant memories from
-previous interactions.
-
-By prepending memories as a system message, we:
-- Give the LLM access to long-term context beyond the current session
-- Maintain user privacy (memories are scoped to user/organization)
-- Keep the prompt construction process transparent and auditable
-
-This event serves both workflow control (passing extended context to LLM steps) and user transparency
-(showing what background information influenced the agent's response).`
-} as const;
-
 export const AddUserRequestSchema = {
     properties: {
         user_id: {
@@ -310,6 +232,35 @@ Used during deserialization to decide which subclass to instantiate.`,
     type: 'object',
     required: ['_event_name', '_parent_event_names'],
     title: 'AgentEvent'
+} as const;
+
+export const AgentHealthChecksSchema = {
+    properties: {
+        running: {
+            type: 'boolean',
+            title: 'Running',
+            description: 'Whether the agent runner is running.'
+        },
+        nats: {
+            type: 'boolean',
+            title: 'Nats',
+            description: 'NATS message broker connectivity.'
+        },
+        redis: {
+            type: 'boolean',
+            title: 'Redis',
+            description: 'Redis/Valkey cache connectivity.'
+        },
+        milvus: {
+            type: 'boolean',
+            title: 'Milvus',
+            description: 'Milvus vector database connectivity.'
+        }
+    },
+    type: 'object',
+    required: ['running', 'nats', 'redis', 'milvus'],
+    title: 'AgentHealthChecks',
+    description: 'Health check results for Agent service dependencies.'
 } as const;
 
 export const AgentInDTOSchema = {
@@ -1043,6 +994,40 @@ export const AnnotationURLCitationSchema = {
     title: 'AnnotationURLCitation'
 } as const;
 
+export const ApiHealthChecksSchema = {
+    properties: {
+        nats: {
+            type: 'boolean',
+            title: 'Nats',
+            description: 'NATS message broker connectivity.'
+        },
+        mongodb: {
+            type: 'boolean',
+            title: 'Mongodb',
+            description: 'MongoDB database connectivity.'
+        },
+        redis: {
+            type: 'boolean',
+            title: 'Redis',
+            description: 'Redis/Valkey cache connectivity.'
+        },
+        milvus: {
+            type: 'boolean',
+            title: 'Milvus',
+            description: 'Milvus vector database connectivity.'
+        },
+        s3: {
+            type: 'boolean',
+            title: 'S3',
+            description: 'S3/SeaweedFS object storage connectivity.'
+        }
+    },
+    type: 'object',
+    required: ['nats', 'mongodb', 'redis', 'milvus', 's3'],
+    title: 'ApiHealthChecks',
+    description: 'Health check results for API service dependencies.'
+} as const;
+
 export const AudioSchema = {
     properties: {
         id: {
@@ -1156,205 +1141,6 @@ export const AudioContentSchema = {
     },
     type: 'object',
     title: 'AudioContent'
-} as const;
-
-export const BaseRetrieveMemoryEventSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'The time (in ns since epoch) the event was stored in the event store'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        },
-        memories: {
-            items: {
-                '$ref': '#/components/schemas/Memory'
-            },
-            type: 'array',
-            title: 'Memories',
-            description: 'The list of memories that were retrieved.',
-            default: []
-        },
-        relations: {
-            items: {
-                '$ref': '#/components/schemas/MemoryRelation'
-            },
-            type: 'array',
-            title: 'Relations',
-            description: 'The list of matching memory relations.'
-        },
-        _event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
-Used during deserialization to decide which subclass to instantiate.`,
-            readOnly: true
-        },
-        _parent_event_names: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['relations', '_event_name', '_parent_event_names'],
-    title: 'BaseRetrieveMemoryEvent',
-    description: `A control and display event emitted when an agent retrieves memories from long-term storage.
-
-### Why BaseRetrieveMemoryEvent?
-This event bridges the gap between stateless conversation and stateful user context:
-- As a control event, it provides retrieved memories to downstream workflow steps
-- As a display event, it shows users what context the agent is using from past interactions
-
-Agents emit this event after semantic search through user/organization memories. The retrieved
-memories are then typically prepended to chat history as system context, enabling personalized
-responses. This transparency is crucial for user trust - they can see what the agent "remembers"
-and correct inaccuracies if needed.
-
-The event includes both individual memories and their relations in the knowledge graph, allowing
-agents to understand not just isolated facts but how concepts connect.`
-} as const;
-
-export const BaseStoreMemoryEventSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'The time (in ns since epoch) the event was stored in the event store'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        },
-        added_memories: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Added Memories',
-            description: 'Newly added memory texts'
-        },
-        updated_memories: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Updated Memories',
-            description: 'Updated memory texts'
-        },
-        deleted_memories: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Deleted Memories',
-            description: 'Deleted memory texts'
-        },
-        added_relations: {
-            items: {
-                '$ref': '#/components/schemas/MemoryRelation'
-            },
-            type: 'array',
-            title: 'Added Relations',
-            description: 'Newly added relations'
-        },
-        deleted_relations: {
-            items: {
-                '$ref': '#/components/schemas/MemoryRelation'
-            },
-            type: 'array',
-            title: 'Deleted Relations',
-            description: 'Deleted relations'
-        },
-        _event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
-Used during deserialization to decide which subclass to instantiate.`,
-            readOnly: true
-        },
-        _parent_event_names: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['added_memories', 'updated_memories', 'deleted_memories', 'added_relations', 'deleted_relations', '_event_name', '_parent_event_names'],
-    title: 'BaseStoreMemoryEvent',
-    description: `Abstract base class for memory storage events.
-
-### Why BaseStoreMemoryEvent?
-This event serves dual purposes in the Swiss AI Agent Protocol:
-- As a control event, it notifies downstream systems that memory state has changed
-- As a display event, it provides transparency to users about what was learned or stored
-
-Agents emit this event after persisting insights to long-term memory storage. The event captures
-both the semantic changes (added/updated/deleted memories) and the knowledge graph updates
-(new/removed relations between entities). This transparency is crucial for user trust - they can
-see what the agent learned and verify accuracy.
-
-The event structure follows mem0's MemoryAdded response format, enabling real-time UI updates,
-audit trails, and triggering downstream workflows that depend on memory state.
-
-Concrete subclasses differentiate between user-scoped and organization-scoped memory storage.`
 } as const;
 
 export const Body_create_transcription_openai_audio_transcriptions_postSchema = {
@@ -3009,6 +2795,9 @@ export const ChatMessageSchema = {
                         '$ref': '#/components/schemas/AudioBlock'
                     },
                     {
+                        '$ref': '#/components/schemas/VideoBlock'
+                    },
+                    {
                         '$ref': '#/components/schemas/DocumentBlock'
                     },
                     {
@@ -3019,6 +2808,12 @@ export const ChatMessageSchema = {
                     },
                     {
                         '$ref': '#/components/schemas/CitationBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ThinkingBlock'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ToolCallBlock'
                     }
                 ],
                 discriminator: {
@@ -3030,7 +2825,10 @@ export const ChatMessageSchema = {
                         citation: '#/components/schemas/CitationBlock',
                         document: '#/components/schemas/DocumentBlock',
                         image: '#/components/schemas/ImageBlock',
-                        text: '#/components/schemas/TextBlock'
+                        text: '#/components/schemas/TextBlock',
+                        thinking: '#/components/schemas/ThinkingBlock',
+                        tool_call: '#/components/schemas/ToolCallBlock',
+                        video: '#/components/schemas/VideoBlock'
                     }
                 }
             },
@@ -3907,9 +3705,6 @@ export const ContextualizedAgentEventSchema = {
                     '$ref': '#/components/schemas/LimitChatHistoryEvent'
                 },
                 {
-                    '$ref': '#/components/schemas/AddMemoryToChatHistoryEvent'
-                },
-                {
                     '$ref': '#/components/schemas/StandaloneQuestionCondenserEvent'
                 },
                 {
@@ -3995,24 +3790,6 @@ export const ContextualizedAgentEventSchema = {
                 },
                 {
                     '$ref': '#/components/schemas/SensitiveInfoRejectEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/StoreUserMemoryEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/BaseRetrieveMemoryEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/BaseStoreMemoryEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/RetrieveOrganizationMemoryEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/RetrieveUserMemoryEvent'
-                },
-                {
-                    '$ref': '#/components/schemas/StoreOrganizationMemoryEvent'
                 }
             ],
             title: 'Event',
@@ -4754,39 +4531,6 @@ export const DatePickerSchema = {
     description: 'https://formkit-primevue.netlify.app/inputs/DatePicker'
 } as const;
 
-export const DeleteAllMemoriesResponseSchema = {
-    properties: {
-        status: {
-            type: 'string',
-            title: 'Status',
-            description: "Operation status. Always 'deleted_all' on success; errors raise HTTPException."
-        }
-    },
-    type: 'object',
-    required: ['status'],
-    title: 'DeleteAllMemoriesResponse',
-    description: 'Response for deleting all memories.'
-} as const;
-
-export const DeleteMemoryResponseSchema = {
-    properties: {
-        status: {
-            type: 'string',
-            title: 'Status',
-            description: "Operation status. Always 'deleted' on success; errors raise HTTPException."
-        },
-        memory_id: {
-            type: 'string',
-            title: 'Memory Id',
-            description: 'ID of the memory that was deleted. Echoed from request path.'
-        }
-    },
-    type: 'object',
-    required: ['status', 'memory_id'],
-    title: 'DeleteMemoryResponse',
-    description: 'Response for deleting a single memory.'
-} as const;
-
 export const DeleteRoleResponseSchema = {
     properties: {
         detail: {
@@ -5129,7 +4873,7 @@ export const DocumentDTOSchema = {
         is_ingested: {
             type: 'boolean',
             title: 'Is Ingested',
-            description: 'Indicates if the document has been ingested.'
+            description: 'Whether the document has been fully ingested.'
         },
         content: {
             anyOf: [
@@ -6692,11 +6436,27 @@ export const HealthResponseSchema = {
             type: 'integer',
             title: 'Code',
             description: 'HTTP status code.'
+        },
+        checks: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/ApiHealthChecks'
+                },
+                {
+                    '$ref': '#/components/schemas/AgentHealthChecks'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Checks',
+            description: 'Individual health check results.'
         }
     },
     type: 'object',
     required: ['status', 'code'],
-    title: 'HealthResponse'
+    title: 'HealthResponse',
+    description: 'Standard health check response.'
 } as const;
 
 export const HtmlElementSchema = {
@@ -6957,9 +6717,9 @@ export const HumanInTheLoopRequestEventSchema = {
         },
         hitl_type: {
             type: 'string',
-            enum: ['input', 'confirmation'],
+            enum: ['input', 'confirmation', 'chat'],
             title: 'Hitl Type',
-            description: "The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no."
+            description: "HITL type: 'input' (free-form text), 'confirmation' (yes/no), 'chat' (chat-style)."
         },
         _event_name: {
             type: 'string',
@@ -6985,8 +6745,9 @@ Used during deserialization to decide which subclass to instantiate.`,
     description: `Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
 
 Use the specific subclasses:
-- \`HumanInTheLoopInputRequestEvent\` for free-form text input
-- \`HumanInTheLoopConfirmationRequestEvent\` for yes/no confirmation`
+- \`HumanInTheLoopInputRequestEvent\` for free-form text input (popup dialog)
+- \`HumanInTheLoopConfirmationRequestEvent\` for yes/no confirmation (popup dialog)
+- \`HumanInTheLoopChatRequestEvent\` for chat-style input (appears as regular message)`
 } as const;
 
 export const HumanInTheLoopResponseEventSchema = {
@@ -7062,8 +6823,9 @@ Used during deserialization to decide which subclass to instantiate.`,
     description: `Base response from a human operator after a HITL request.
 
 Use the specific subclasses:
-- \`HumanInTheLoopInputResponseEvent\` for text input responses
-- \`HumanInTheLoopConfirmationResponseEvent\` for yes/no confirmation responses`
+- \`HumanInTheLoopInputResponseEvent\` for text input responses (popup dialog)
+- \`HumanInTheLoopConfirmationResponseEvent\` for yes/no confirmation responses (popup dialog)
+- \`HumanInTheLoopChatResponseEvent\` for chat-style responses (regular message)`
 } as const;
 
 export const HumanProcessStepDTOSchema = {
@@ -10009,326 +9771,6 @@ export const LogprobSchema = {
     title: 'Logprob'
 } as const;
 
-export const MemoriesResponseSchema = {
-    properties: {
-        total: {
-            type: 'integer',
-            title: 'Total',
-            description: 'Total number of memories returned. Respects limit and filters. Does not include graph relation count.'
-        },
-        memories: {
-            items: {
-                '$ref': '#/components/schemas/MemoryDTO'
-            },
-            type: 'array',
-            title: 'Memories',
-            description: "List of memory items. Limited by the 'limit' query parameter and filtered by user/agent."
-        },
-        relations: {
-            items: {
-                '$ref': '#/components/schemas/MemoryRelationDTO'
-            },
-            type: 'array',
-            title: 'Relations',
-            description: 'FULL knowledge graph relations for the user. Includes all graph triples regardless of limit/filters for complete graph visualization.'
-        }
-    },
-    type: 'object',
-    required: ['total', 'memories', 'relations'],
-    title: 'MemoriesResponse',
-    description: 'Response for listing user memories with full knowledge graph.'
-} as const;
-
-export const MemorySchema = {
-    properties: {
-        id: {
-            type: 'string',
-            title: 'Id',
-            description: 'The unique identifier for the memory.'
-        },
-        owner_id: {
-            type: 'string',
-            title: 'Owner Id',
-            description: 'The user ID of the user who created the memory.'
-        },
-        memory: {
-            type: 'string',
-            title: 'Memory',
-            description: 'The memory deduced from the text data.'
-        },
-        score: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Score',
-            description: 'The score of the memory.'
-        },
-        created_at: {
-            type: 'string',
-            title: 'Created At',
-            description: 'The timestamp when the memory was created.'
-        },
-        metadata: {
-            '$ref': '#/components/schemas/MemoryMetadata',
-            description: 'The metadata associated with the memory.'
-        }
-    },
-    type: 'object',
-    required: ['id', 'owner_id', 'memory', 'created_at', 'metadata'],
-    title: 'Memory'
-} as const;
-
-export const MemoryDTOSchema = {
-    properties: {
-        id: {
-            type: 'string',
-            title: 'Id',
-            description: 'The unique identifier of the memory.'
-        },
-        memory: {
-            type: 'string',
-            title: 'Memory',
-            description: 'The memory content deduced from the text data.'
-        },
-        score: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Score',
-            description: 'The relevance score of the memory (present for search results, null otherwise).'
-        },
-        created_at: {
-            type: 'string',
-            title: 'Created At',
-            description: 'ISO timestamp when the memory was created.'
-        },
-        user_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'User Id',
-            description: 'The unique identifier of the user who owns this memory.'
-        },
-        agent_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Agent Id',
-            description: 'The unique identifier of the agent that created this memory.'
-        },
-        thread_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Thread Id',
-            description: 'The unique identifier of the thread in which this memory was created.'
-        },
-        display_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Id',
-            description: 'The unique identifier of the display in which this memory was created..'
-        },
-        run_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Run Id',
-            description: 'The unique identifier of the run in which this memory was created.'
-        }
-    },
-    type: 'object',
-    required: ['id', 'memory', 'created_at'],
-    title: 'MemoryDTO',
-    description: 'Data Transfer Object for a single memory item.'
-} as const;
-
-export const MemoryMetadataSchema = {
-    properties: {
-        user_id: {
-            type: 'string',
-            title: 'User Id',
-            description: 'The user ID.'
-        },
-        agent_id: {
-            type: 'string',
-            title: 'Agent Id',
-            description: 'The agent ID.'
-        },
-        thread_id: {
-            type: 'string',
-            title: 'Thread Id',
-            description: 'The thread ID.'
-        },
-        display_id: {
-            type: 'string',
-            title: 'Display Id',
-            description: 'The display ID.'
-        },
-        run_id: {
-            type: 'string',
-            title: 'Run Id',
-            description: 'The run ID.'
-        },
-        type: {
-            '$ref': '#/components/schemas/MemoryType',
-            description: 'The type of the memory.'
-        },
-        tenant_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tenant Id',
-            description: 'The tenant ID for multi-tenancy support.'
-        },
-        tenant_namespace: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tenant Namespace',
-            description: 'The tenant namespace for department-level scoping.'
-        }
-    },
-    type: 'object',
-    required: ['user_id', 'agent_id', 'thread_id', 'display_id', 'run_id', 'type'],
-    title: 'MemoryMetadata'
-} as const;
-
-export const MemoryRelationSchema = {
-    properties: {
-        source: {
-            type: 'string',
-            title: 'Source',
-            description: 'The source entity.'
-        },
-        relation: {
-            type: 'string',
-            title: 'Relation',
-            description: 'The relationship between the source and target entities.'
-        },
-        target: {
-            type: 'string',
-            title: 'Target',
-            description: 'The target entity.'
-        }
-    },
-    type: 'object',
-    required: ['source', 'relation', 'target'],
-    title: 'MemoryRelation',
-    description: 'Represents a knowledge graph triple'
-} as const;
-
-export const MemoryRelationDTOSchema = {
-    properties: {
-        source: {
-            type: 'string',
-            title: 'Source',
-            description: 'The source entity in the knowledge graph.'
-        },
-        relation: {
-            type: 'string',
-            title: 'Relation',
-            description: 'The relationship type between source and target entities.'
-        },
-        target: {
-            type: 'string',
-            title: 'Target',
-            description: 'The target entity in the knowledge graph.'
-        }
-    },
-    type: 'object',
-    required: ['source', 'relation', 'target'],
-    title: 'MemoryRelationDTO',
-    description: 'Data Transfer Object for a knowledge graph relation (triple).'
-} as const;
-
-export const MemorySearchResponseSchema = {
-    properties: {
-        query: {
-            type: 'string',
-            title: 'Query',
-            description: 'The original search query used.'
-        },
-        total: {
-            type: 'integer',
-            title: 'Total',
-            description: 'Total number of search results matching the query.'
-        },
-        memories: {
-            items: {
-                '$ref': '#/components/schemas/MemoryDTO'
-            },
-            type: 'array',
-            title: 'Memories',
-            description: 'List of memories matching the search query, ordered by relevance score. Each memory includes a score field indicating relevance to the query.'
-        },
-        relations: {
-            items: {
-                '$ref': '#/components/schemas/MemoryRelationDTO'
-            },
-            type: 'array',
-            title: 'Relations',
-            description: 'Knowledge graph relations involving entities from the search results. Used for highlighting matching triples in the graph visualization. Only includes relations where both source AND target appear in the search results.'
-        }
-    },
-    type: 'object',
-    required: ['query', 'total', 'memories', 'relations'],
-    title: 'MemorySearchResponse',
-    description: 'Response for searching memories with scored results and matching graph relations.'
-} as const;
-
-export const MemoryTypeSchema = {
-    type: 'string',
-    enum: ['user_memory', 'organization_memory'],
-    title: 'MemoryType'
-} as const;
-
 export const MessageSchema = {
     properties: {
         role: {
@@ -10717,7 +10159,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1765879027
+            default: 1768329188
         },
         owned_by: {
             type: 'string',
@@ -11757,6 +11199,31 @@ export const NotificationDTOSchema = {
     required: ['id', 'user_id', 'title', 'message', 'severity', 'link', 'created_at'],
     title: 'NotificationDTO',
     description: 'Data Transfer Object for a notification.'
+} as const;
+
+export const OpenChatHitlResponseSchema = {
+    properties: {
+        has_open_chat_hitl: {
+            type: 'boolean',
+            title: 'Has Open Chat Hitl',
+            description: 'Whether there is an open chat HITL request awaiting response.'
+        },
+        hitl_request: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/HumanInTheLoopRequestEvent'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'The HITL request event if there is an open chat HITL, None otherwise.'
+        }
+    },
+    type: 'object',
+    required: ['has_open_chat_hitl'],
+    title: 'OpenChatHitlResponse',
+    description: "Response indicating whether there's an open chat HITL request for a thread."
 } as const;
 
 export const PaginatedDocumentsResponseSchema = {
@@ -13264,160 +12731,6 @@ export const ResponseFormatTextSchema = {
     title: 'ResponseFormatText'
 } as const;
 
-export const RetrieveOrganizationMemoryEventSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'The time (in ns since epoch) the event was stored in the event store'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        },
-        memories: {
-            items: {
-                '$ref': '#/components/schemas/Memory'
-            },
-            type: 'array',
-            title: 'Memories',
-            description: 'The list of memories that were retrieved.',
-            default: []
-        },
-        relations: {
-            items: {
-                '$ref': '#/components/schemas/MemoryRelation'
-            },
-            type: 'array',
-            title: 'Relations',
-            description: 'The list of matching memory relations.'
-        },
-        _event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
-Used during deserialization to decide which subclass to instantiate.`,
-            readOnly: true
-        },
-        _parent_event_names: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['relations', '_event_name', '_parent_event_names'],
-    title: 'RetrieveOrganizationMemoryEvent',
-    description: `Specialized BaseRetrieveMemoryEvent for organization-wide memories.
-
-Emitted when an agent retrieves shared organizational memories from long-term storage.
-These memories are accessible to all users within the organization namespace.`
-} as const;
-
-export const RetrieveUserMemoryEventSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'The time (in ns since epoch) the event was stored in the event store'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        },
-        memories: {
-            items: {
-                '$ref': '#/components/schemas/Memory'
-            },
-            type: 'array',
-            title: 'Memories',
-            description: 'The list of memories that were retrieved.',
-            default: []
-        },
-        relations: {
-            items: {
-                '$ref': '#/components/schemas/MemoryRelation'
-            },
-            type: 'array',
-            title: 'Relations',
-            description: 'The list of matching memory relations.'
-        },
-        _event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
-Used during deserialization to decide which subclass to instantiate.`,
-            readOnly: true
-        },
-        _parent_event_names: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['relations', '_event_name', '_parent_event_names'],
-    title: 'RetrieveUserMemoryEvent',
-    description: `Specialized BaseRetrieveMemoryEvent for user-specific memories.
-
-Emitted when an agent retrieves private user memories from long-term storage.
-These memories are scoped to individual users and never shared across users.`
-} as const;
-
 export const RetrieverEventSchema = {
     properties: {
         event_id: {
@@ -14881,208 +14194,6 @@ By inheriting from both \`ControlEvent\` and \`DisplayEvent\`:
 - Informing the user interface that the conversation or task has concluded.`
 } as const;
 
-export const StoreOrganizationMemoryEventSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'The time (in ns since epoch) the event was stored in the event store'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        },
-        added_memories: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Added Memories',
-            description: 'Newly added memory texts'
-        },
-        updated_memories: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Updated Memories',
-            description: 'Updated memory texts'
-        },
-        deleted_memories: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Deleted Memories',
-            description: 'Deleted memory texts'
-        },
-        added_relations: {
-            items: {
-                '$ref': '#/components/schemas/MemoryRelation'
-            },
-            type: 'array',
-            title: 'Added Relations',
-            description: 'Newly added relations'
-        },
-        deleted_relations: {
-            items: {
-                '$ref': '#/components/schemas/MemoryRelation'
-            },
-            type: 'array',
-            title: 'Deleted Relations',
-            description: 'Deleted relations'
-        },
-        _event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
-Used during deserialization to decide which subclass to instantiate.`,
-            readOnly: true
-        },
-        _parent_event_names: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['added_memories', 'updated_memories', 'deleted_memories', 'added_relations', 'deleted_relations', '_event_name', '_parent_event_names'],
-    title: 'StoreOrganizationMemoryEvent',
-    description: `Specialized BaseStoreMemoryEvent for organization-wide memories.
-
-Emitted when an agent stores shared organizational memories to long-term storage.
-These memories are accessible to all users within the organization namespace.
-Unlike user memories (inferred from chat), organization memories are explicit facts provided by users.`
-} as const;
-
-export const StoreUserMemoryEventSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'The time (in ns since epoch) the event was stored in the event store'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    '$ref': '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        },
-        added_memories: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Added Memories',
-            description: 'Newly added memory texts'
-        },
-        updated_memories: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Updated Memories',
-            description: 'Updated memory texts'
-        },
-        deleted_memories: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Deleted Memories',
-            description: 'Deleted memory texts'
-        },
-        added_relations: {
-            items: {
-                '$ref': '#/components/schemas/MemoryRelation'
-            },
-            type: 'array',
-            title: 'Added Relations',
-            description: 'Newly added relations'
-        },
-        deleted_relations: {
-            items: {
-                '$ref': '#/components/schemas/MemoryRelation'
-            },
-            type: 'array',
-            title: 'Deleted Relations',
-            description: 'Deleted relations'
-        },
-        _event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: `The event type name, usually the class name. If unknown, uses _unknown_event_name.
-Used during deserialization to decide which subclass to instantiate.`,
-            readOnly: true
-        },
-        _parent_event_names: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['added_memories', 'updated_memories', 'deleted_memories', 'added_relations', 'deleted_relations', '_event_name', '_parent_event_names'],
-    title: 'StoreUserMemoryEvent',
-    description: `Specialized BaseStoreMemoryEvent for user-specific memories.
-
-Emitted when an agent stores private user memories to long-term storage.
-These memories are scoped to individual users and never shared across users.
-User memories are typically inferred from conversation context.`
-} as const;
-
 export const SubmittedFormDTOSchema = {
     properties: {
         process_class: {
@@ -15372,6 +14483,50 @@ export const TextareaSchema = {
     required: ['label', 'validation'],
     title: 'Textarea',
     description: 'https://formkit-primevue.netlify.app/inputs/Textarea'
+} as const;
+
+export const ThinkingBlockSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'thinking',
+            title: 'Block Type',
+            default: 'thinking'
+        },
+        content: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Content',
+            description: 'Content of the reasoning/thinking process, if available'
+        },
+        num_tokens: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Num Tokens',
+            description: 'Number of token used for reasoning/thinking, if available'
+        },
+        additional_information: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Additional Information',
+            description: 'Additional information related to the thinking/reasoning process, if available'
+        }
+    },
+    type: 'object',
+    title: 'ThinkingBlock',
+    description: 'A representation of the content streamed from reasoning/thinking processes by LLMs'
 } as const;
 
 export const ThoughtEventSchema = {
@@ -16055,6 +15210,50 @@ export const TokenResponseSchema = {
     title: 'TokenResponse'
 } as const;
 
+export const ToolCallBlockSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'tool_call',
+            title: 'Block Type',
+            default: 'tool_call'
+        },
+        tool_call_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tool Call Id',
+            description: 'ID of the tool call, if provided'
+        },
+        tool_name: {
+            type: 'string',
+            title: 'Tool Name',
+            description: 'Name of the called tool'
+        },
+        tool_kwargs: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Tool Kwargs',
+            description: 'Arguments provided to the tool, if available'
+        }
+    },
+    type: 'object',
+    required: ['tool_name'],
+    title: 'ToolCallBlock'
+} as const;
+
 export const ToolEventSchema = {
     properties: {
         event_id: {
@@ -16316,7 +15515,7 @@ export const TranscriptionVerboseSchema = {
         usage: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/openai__types__audio__transcription_verbose__Usage'
+                    '$ref': '#/components/schemas/Usage'
                 },
                 {
                     type: 'null'
@@ -16363,39 +15562,6 @@ export const TranscriptionWordSchema = {
     type: 'object',
     required: ['end', 'start', 'word'],
     title: 'TranscriptionWord'
-} as const;
-
-export const UpdateMemoryRequestSchema = {
-    properties: {
-        data: {
-            type: 'string',
-            title: 'Data',
-            description: 'New content to update the memory with.'
-        }
-    },
-    type: 'object',
-    required: ['data'],
-    title: 'UpdateMemoryRequest',
-    description: "Request for updating a memory's content."
-} as const;
-
-export const UpdateMemoryResponseSchema = {
-    properties: {
-        status: {
-            type: 'string',
-            title: 'Status',
-            description: "Operation status. Always 'updated' on success; errors raise HTTPException."
-        },
-        memory_id: {
-            type: 'string',
-            title: 'Memory Id',
-            description: 'ID of the memory that was updated. Echoed from request path.'
-        }
-    },
-    type: 'object',
-    required: ['status', 'memory_id'],
-    title: 'UpdateMemoryResponse',
-    description: 'Response for updating a memory.'
 } as const;
 
 export const UpdateNamespaceRequestSchema = {
@@ -16506,6 +15672,24 @@ export const UpdateRoleRequestSchema = {
     type: 'object',
     title: 'UpdateRoleRequest',
     description: 'Request model for updating an existing role. All fields are optional.'
+} as const;
+
+export const UsageSchema = {
+    properties: {
+        seconds: {
+            type: 'number',
+            title: 'Seconds'
+        },
+        type: {
+            type: 'string',
+            const: 'duration',
+            title: 'Type'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['seconds', 'type'],
+    title: 'Usage'
 } as const;
 
 export const UsageDurationSchema = {
@@ -16844,7 +16028,7 @@ Used during deserialization to decide which subclass to instantiate.`,
 
 ### Why UserMessageEvent?
 While \`StartEvent\` influences the workflow’s starting point and \`DisplayEvent\` represents user-facing
-output, a \`UserMessageEvent\` marks afChatMessage workflow start initiated by a user’s input. This is common in chat
+output, a \`UserMessageEvent\` marks a workflow start initiated by a user’s input. This is common in chat
 interfaces, voice assistants, or interactive dashboards, where a user’s message serves as both:
 - A display event (since it may appear in the UI history).
 - A control event triggering workflow execution from a particular starting step.
@@ -16992,6 +16176,93 @@ export const ValidationErrorSchema = {
     title: 'ValidationError'
 } as const;
 
+export const VideoBlockSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'video',
+            title: 'Block Type',
+            default: 'video'
+        },
+        video: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'binary'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Video'
+        },
+        path: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'file-path'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Path'
+        },
+        url: {
+            anyOf: [
+                {
+                    type: 'string',
+                    minLength: 1,
+                    format: 'uri'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Url'
+        },
+        video_mimetype: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Video Mimetype'
+        },
+        detail: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Detail'
+        },
+        fps: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Fps'
+        }
+    },
+    type: 'object',
+    title: 'VideoBlock',
+    description: 'A representation of video data to directly pass to/from the LLM.'
+} as const;
+
 export const WorkflowGraphSchema = {
     properties: {
         directed: {
@@ -17031,24 +16302,6 @@ export const WorkflowGraphSchema = {
     required: ['directed', 'multigraph', 'graph', 'nodes', 'links'],
     title: 'WorkflowGraph',
     description: 'Complete workflow graph representation.'
-} as const;
-
-export const openai__types__audio__transcription_verbose__UsageSchema = {
-    properties: {
-        seconds: {
-            type: 'number',
-            title: 'Seconds'
-        },
-        type: {
-            type: 'string',
-            const: 'duration',
-            title: 'Type'
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['seconds', 'type'],
-    title: 'Usage'
 } as const;
 
 export const openai__types__chat__chat_completion_message_custom_tool_call_param__CustomSchema = {

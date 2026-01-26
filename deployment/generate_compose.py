@@ -31,13 +31,13 @@ CONFIG_SPECS = [
     ("templates/configs/traefik-config.yml.j2", "configs/traefik", "traefik-config.{stage}{hardware}.yml"),
     ("templates/configs/traefik-middlewares.yml.j2", "configs/traefik", "middlewares.{stage}{hardware}.yml"),
     ("templates/configs/traefik-tls.yml.j2", "configs/traefik", "tls.{stage}{hardware}.yml"),
-    # SeaweedFS Filer config - stage/hardware variations
-    ("templates/configs/seaweed-filer-config.toml.j2", "configs/seaweedfs", "seaweed-filer-config.{stage}{hardware}.toml"),
     # Static scripts - no stage/hardware variations
+    ("templates/configs/init.Dockerfile.j2", "configs/etcd", "init.Dockerfile"),
     ("templates/configs/s3-entrypoint.sh.j2", "configs/seaweedfs", "s3-entrypoint.sh"),
     ("templates/configs/s3-init-buckets.sh.j2", "configs/seaweedfs", "init-buckets.sh"),
     ("templates/configs/pg-init-multiple-dbs.sh.j2", "configs/postgres", "init-multiple-dbs.sh"),
     ("templates/configs/openwebui-init-functions.sh.j2", "configs/openwebui", "init-functions.sh"),
+    ("templates/configs/init_etcd.sh.j2", "configs/etcd", "init_etcd.sh"),
 ]
 
 

@@ -675,9 +675,10 @@ class ToolEventHandler(EventHandler):
 class HumanInTheLoopHandler(EventHandler):
     """Handler for human-in-the-loop interactions.
 
-    Supports two types of HITL events:
-    - HumanInTheLoopConfirmationRequestEvent: Yes/No confirmation dialog
-    - HumanInTheLoopInputRequestEvent: Free-form text input dialog
+    Supports three types of HITL events:
+    - HumanInTheLoopConfirmationRequestEvent: Yes/No confirmation dialog (popup)
+    - HumanInTheLoopInputRequestEvent: Free-form text input dialog (popup)
+    - HumanInTheLoopChatRequestEvent: Chat-style input (appears as regular message)
     """
 
     async def can_handle(
@@ -695,6 +696,19 @@ class HumanInTheLoopHandler(EventHandler):
         hitl_type = event.get("hitl_type", "input")
 
         logger.info(f"Received HITL request (type={hitl_type}): {question}")
+
+        # Chat type: Display question as regular chat message, no popup
+        # User will respond by typing a normal chat message
+        if hitl_type == "chat":
+            context.state_manager.start_text_block(f"\n\n{question}\n\n")
+            await context.emitter(
+                {
+                    "type": "replace",
+                    "data": {"content": context.state_manager.serialize_to_html()},
+                }
+            )
+            # Don't send response here - it will come via the next user message
+            return True
 
         if hitl_type == "confirmation":
             result = await context.caller(
@@ -723,11 +737,13 @@ class HumanInTheLoopHandler(EventHandler):
         if result is not None and result != "":
             response_event_name = topic.get("event_name", "HumanInTheLoopResponseEvent")
             hitl_display_id = topic.get("display_id", "")
+            agent_class = topic.get("agent_class", "")
+            agent_id = topic.get("agent_id", "")
 
             response_payload = {"response": result, "request_event": event}
 
             await context.stream_service.send_hitl_response(
-                response_event_name, response_payload, hitl_display_id, context
+                response_event_name, response_payload, hitl_display_id, context, agent_class, agent_id
             )
 
         return True
@@ -1142,11 +1158,13 @@ class StreamingService:
         payload: Annotated[dict[str, Any], "Response payload"],
         display_id: Annotated[str, "HITL display ID"],
         context: Annotated[EventContext, "Original context"],
+        agent_class: Annotated[str, "Agent class identifier"],
+        agent_id: Annotated[str, "Agent instance identifier"],
     ) -> None:
         """Send HITL response back to agent"""
         await self.stream_response(
-            context.agent_class,
-            context.agent_id,
+            agent_class,
+            agent_id,
             event_name,
             payload,
             context.headers,
@@ -1432,6 +1450,26 @@ class Pipe:
 
         await event_caller({"type": "execute", "data": {"code": code}})
 
+    async def _check_open_chat_hitl(
+        self,
+        thread_id: Annotated[str, "Thread ID"],
+        headers: Annotated[dict[str, str], "Request headers"],
+    ) -> Annotated[dict[str, Any] | None, "Open chat HITL request or None"]:
+        """Query API for open chat HITL in this thread."""
+        try:
+            async with httpx.AsyncClient(timeout=self.valves.AIHUB_REQUEST_TIMEOUT) as client:
+                response = await client.get(
+                    f"{self.valves.AIHUB_BASE_URL}/api/v1/threads/{thread_id}/open-chat-hitl",
+                    headers=headers,
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("has_open_chat_hitl"):
+                        return data["hitl_request"]
+        except Exception as e:
+            logger.warning(f"Failed to check open chat HITL: {e}")
+        return None
+
     async def pipe(
         self,
         body: Annotated[dict[str, Any], "Request body"],
@@ -1473,11 +1511,34 @@ class Pipe:
                 # Process files
                 files = await self._file_service.prepare_files_for_event(__files__)
 
-                # Build event payload
-                event_payload: dict[str, Any] = {"messages": messages}
-                if files:
-                    event_payload["files"] = files
-                    logger.debug(f"Attached {len(files)} file(s) to UserMessageEvent")
+                # Check for open chat HITL - if found, send HITL response instead of UserMessageEvent
+                open_hitl = await self._check_open_chat_hitl(thread_id, headers)
+
+                if open_hitl:
+                    # Route as HITL response
+                    topic = open_hitl.get("topic", {})
+                    event_name = topic.get("event_name", "HumanInTheLoopChatResponseEvent")
+                    hitl_display_id = topic.get("display_id", display_id)
+                    # Use the user's message content as the response
+                    # Note: messages have been converted to blocks format, so extract text from there
+                    user_message_content = ""
+                    if messages:
+                        blocks = messages[-1].get("blocks", [])
+                        if blocks:
+                            user_message_content = blocks[0].get("text", "")
+                    event_payload = {
+                        "response": user_message_content,
+                        "request_event": open_hitl,
+                    }
+                    logger.info(f"Routing user message as chat HITL response for event: {event_name}")
+                else:
+                    # Normal flow - send UserMessageEvent
+                    event_name = "UserMessageEvent"
+                    hitl_display_id = display_id
+                    event_payload = {"messages": messages}
+                    if files:
+                        event_payload["files"] = files
+                        logger.debug(f"Attached {len(files)} file(s) to UserMessageEvent")
 
                 # Emit initial status
                 await __event_emitter__(
@@ -1495,17 +1556,17 @@ class Pipe:
                 state_manager = StreamingStateManager()
 
                 async def stream_start_callback():
-                    await self._set_ui_context(thread_id, display_id, __event_call__)
+                    await self._set_ui_context(thread_id, hitl_display_id, __event_call__)
 
                 # Stream the conversation
                 await self._streaming_service.stream_response(
                     agent_class,
                     agent_id,
-                    "UserMessageEvent",
+                    event_name,
                     event_payload,
                     headers,
                     thread_id,
-                    display_id,
+                    hitl_display_id,
                     __event_emitter__,
                     __event_call__,
                     state_manager,
