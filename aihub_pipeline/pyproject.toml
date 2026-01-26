@@ -22,13 +22,12 @@ llama-index-readers-file = "^0.5.6"
 matplotlib = "^3.9.2"
 adlfs = "^2025.8.0"
 lxml = "^5.4.0"
-s3fs = "^2025.12.0"
+s3fs = "^2024.10.0"
 boto3 = "^1.41.5"
 
 [tool.poetry.dependencies.aihub_lib]
-git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.258.3"
-subdirectory = "aihub_lib"
+path = "../aihub_lib"
+develop = true
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
