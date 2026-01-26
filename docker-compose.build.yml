@@ -1909,12 +1909,6 @@ services:
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
-    healthcheck:
-      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "localhost", "--port", "4000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
 
       # Neo4j
       NEO4J_URL: bolt://neo4j:7687
@@ -1925,6 +1919,12 @@ services:
       MEM0_LLM_NAME: "text-generation/large"
       MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
       MEM0_RERANKING_MODEL_NAME: "reranker"
+    healthcheck:
+      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "localhost", "--port", "4000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   
   # ===================================================================
