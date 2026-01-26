@@ -1,7 +1,7 @@
 ```yaml
 # https://vitepress.dev/reference/default-theme-home-page
 layout: home
-title: Schweizer AI Hub
+title: Swiss AI-Hub
 source_sha: "c7663d4459db0b5d3a2f3a031cf6a0fb06ddf0312fa92be834c8fd5a663aa626"
 
 hero:

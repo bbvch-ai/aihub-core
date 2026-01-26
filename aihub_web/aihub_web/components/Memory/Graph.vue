@@ -218,7 +218,7 @@ const applyLayout = (g: Graph): void => {
       adjustSizes: true,
       barnesHutOptimize: true,
       strongGravityMode: false,
-      linLogMode: false, // revert back to false
+      linLogMode: false,
       outboundAttractionDistribution: true,
     },
   })

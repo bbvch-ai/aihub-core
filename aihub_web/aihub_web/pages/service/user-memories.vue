@@ -1,3 +1,20 @@
+<template>
+  <StructuralScreen>
+    <template #top>
+      <SelectButton
+        v-if="navItems"
+        :model-value="activeNavItem"
+        :options="navItems"
+        data-key="key"
+        option-label="name"
+        size="small"
+        @update:model-value="toNavItem"
+      />
+    </template>
+    <NuxtPage />
+  </StructuralScreen>
+</template>
+
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 
@@ -49,20 +66,3 @@ const activeNavItem = computed<NavItem | undefined>(() => {
   return navItems.value?.find(navItem => navItem.isActive())
 })
 </script>
-
-<template>
-  <StructuralScreen>
-    <template #top>
-      <SelectButton
-        v-if="navItems"
-        :model-value="activeNavItem"
-        :options="navItems"
-        data-key="key"
-        option-label="name"
-        size="small"
-        @update:model-value="toNavItem"
-      />
-    </template>
-    <NuxtPage />
-  </StructuralScreen>
-</template>

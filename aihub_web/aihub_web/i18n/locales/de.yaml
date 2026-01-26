@@ -564,6 +564,22 @@ memory:
     error:
       title: "Löschen fehlgeschlagen"
       message: "Erinnerung konnte nicht gelöscht werden. Bitte versuchen Sie es erneut."
+  edit:
+    memory_content_label: "Erinnerungsinhalt"
+    edit_button: "Bearbeiten"
+    save_button: "Speichern"
+    cancel_button: "Abbrechen"
+    delete_button: "Löschen"
+    delete_confirm_header: "Erinnerung löschen"
+    delete_confirm_message: "Sind Sie sicher, dass Sie diese Erinnerung löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
+    validation_error: "Validierungsfehler"
+    validation_empty: "Der Erinnerungsinhalt darf nicht leer sein"
+  table:
+    memory: "Erinnerung"
+    agent: "Agent"
+    created: "Erstellt"
+    score: "Punktzahl"
+    pagination: "Seite {currentPage} von {totalPages}"
   search:
     button: "Suchen"
     placeholder: "Erinnerungen durchsuchen..."

@@ -14,4 +14,4 @@ class MemorySettings(EnvironmentSettings):
 
     DEFAULT_TENANT_NAMESPACE: Annotated[
         str | None, Field(description="Default tenant namespace for department-level scoping")
-    ] = "Engineering"
+    ] = None

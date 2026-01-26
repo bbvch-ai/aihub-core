@@ -78,6 +78,7 @@ class OrganizationMemoryController(Controller):
         @self.router.delete(route, tags=self.tags, response_model=DeleteAllMemoriesResponse)
         async def delete_all_organization_memories(
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.memory.organization"))],
+            # Required because OrganizationMemory.__init__ needs LocaleHandler for Mem0Service i18n graph prompts
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> DeleteAllMemoriesResponse:
             return await OrganizationMemoryService.delete_all_memories(

@@ -31,9 +31,7 @@ class OrganizationMemory:
         """Returns the tenant ID as the owner for memory scoping."""
         return self._tenant_id
 
-    async def delete_all(
-        self,
-    ):
+    async def delete_all(self):
         """Deletes all organization memories. Use with caution - affects all users in the org."""
         return await self.mem0service.delete_all(owner_id=self.owner_id)
 

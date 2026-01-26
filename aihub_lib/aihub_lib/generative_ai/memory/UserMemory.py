@@ -30,9 +30,7 @@ class UserMemory:
         """Returns the user ID as the owner for memory scoping."""
         return self._user.id
 
-    async def delete_all(
-        self,
-    ):
+    async def delete_all(self):
         """Deletes all memories for this user. Used for data cleanup or privacy requests (GDPR)."""
         return await self.mem0service.delete_all(owner_id=self.owner_id)
 

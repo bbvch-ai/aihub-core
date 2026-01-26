@@ -586,6 +586,22 @@ memory:
     error:
       title: "Delete Failed"
       message: "Failed to delete memory. Please try again."
+  edit:
+    memory_content_label: "Memory Content"
+    edit_button: "Edit"
+    save_button: "Save"
+    cancel_button: "Cancel"
+    delete_button: "Delete"
+    delete_confirm_header: "Delete Memory"
+    delete_confirm_message: "Are you sure you want to delete this memory? This action cannot be undone."
+    validation_error: "Validation Error"
+    validation_empty: "Memory content cannot be empty"
+  table:
+    memory: "Memory"
+    agent: "Agent"
+    created: "Created"
+    score: "Score"
+    pagination: "Page {currentPage} of {totalPages}"
   search:
     button: "Search"
     placeholder: "Search memories..."

@@ -563,6 +563,22 @@ memory:
     error:
       title: "Eliminazione fallita"
       message: "Impossibile eliminare il ricordo. Riprova."
+  edit:
+    memory_content_label: "Contenuto del ricordo"
+    edit_button: "Modifica"
+    save_button: "Salva"
+    cancel_button: "Annulla"
+    delete_button: "Elimina"
+    delete_confirm_header: "Elimina ricordo"
+    delete_confirm_message: "Sei sicuro di voler eliminare questo ricordo? Questa azione non può essere annullata."
+    validation_error: "Errore di validazione"
+    validation_empty: "Il contenuto del ricordo non può essere vuoto"
+  table:
+    memory: "Ricordo"
+    agent: "Agente"
+    created: "Creato"
+    score: "Punteggio"
+    pagination: "Pagina {currentPage} di {totalPages}"
   search:
     button: "Cerca"
     placeholder: "Cerca ricordi..."

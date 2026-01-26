@@ -510,7 +510,7 @@ type.
 
 ## Observability
 
-All memory operations are automatically traced in Phoenix (http://localhost:6006). Retrieval traces show the query,
+All memory operations are automatically traced in the observability dashboard. Retrieval traces show the query,
 returned memories, and relevance scores. Storage traces show extracted memories, relationships, and metadata. Chat
 history extension displays the system message with memory content.
 

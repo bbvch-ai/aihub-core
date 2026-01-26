@@ -3,7 +3,7 @@
     v-if="selectedMemory"
     :close-route="'/service/user-memories/list'"
     child-column
-    title="Memory Details"
+    :title="t('memory.detail.title')"
   >
     <MemoryEdit
       :memory="selectedMemory"
@@ -15,6 +15,7 @@
 </template>
 
 <script setup lang="ts">
+const { t } = useI18n()
 const route = useRoute()
 
 // Create user memory composables using factory
