@@ -5,6 +5,9 @@ AihubInstrumentor().instrument()
 
 
 import pytest
+
+pytestmark = [pytest.mark.azure]
+
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
