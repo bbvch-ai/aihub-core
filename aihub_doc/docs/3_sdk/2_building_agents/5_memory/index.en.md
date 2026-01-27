@@ -510,9 +510,9 @@ type.
 
 ## Observability
 
-All memory operations are automatically traced in the observability dashboard. Retrieval traces show the query,
-returned memories, and relevance scores. Storage traces show extracted memories, relationships, and metadata. Chat
-history extension displays the system message with memory content.
+All memory operations are automatically traced in the observability dashboard. Retrieval traces show the query, returned
+memories, and relevance scores. Storage traces show extracted memories, relationships, and metadata. Chat history
+extension displays the system message with memory content.
 
 All memories store full Swiss AI Agent Protocol context: `agent_id` (which agent created the memory), `thread_id` (which
 conversation thread), `display_id` (UI display context), `run_id` (workflow execution ID), and `user_id` (who the memory
