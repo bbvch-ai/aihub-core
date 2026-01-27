@@ -1,5 +1,8 @@
+from typing import Annotated
+
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from pydantic import Field
 
 
 class OrganizationMemoryAgentConfig(AgentConfig):
@@ -9,6 +12,6 @@ class OrganizationMemoryAgentConfig(AgentConfig):
     (ID and namespace) for memory scoping.
     """
 
-    llm: LLMConfig
-    tenant_id: str
-    tenant_namespace: str
+    llm: Annotated[LLMConfig, Field(description="LLM configuration for memory-aware responses")]
+    tenant_id: Annotated[str, Field(description="Tenant ID for memory scoping")]
+    tenant_namespace: Annotated[str, Field(description="Tenant namespace for memory scoping")]

@@ -1,5 +1,4 @@
 from enum import StrEnum
-from functools import cache
 from typing import Annotated
 
 from llama_index.vector_stores.milvus import MilvusVectorStore

@@ -1,7 +1,5 @@
 # ruff: noqa: E402
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
-from playground.minimal_workflow.user_memory_workflow.UserMemoryAgent import UserMemoryAgent
-from playground.minimal_workflow.user_memory_workflow.UserMemoryAgentConfig import UserMemoryAgentConfig
 
 AihubInstrumentor().instrument()
 
@@ -12,6 +10,8 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from playground.minimal_workflow.user_memory_workflow.UserMemoryAgent import UserMemoryAgent
+from playground.minimal_workflow.user_memory_workflow.UserMemoryAgentConfig import UserMemoryAgentConfig
 
 enable_logging()
 

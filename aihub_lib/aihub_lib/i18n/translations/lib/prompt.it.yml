@@ -201,22 +201,6 @@ memory:
     {% endif %}
     </organizational_context>
 
-  system_message: |
-    <user_context>
-    {% if memories %}
-    Le seguenti informazioni sull'utente sono state apprese da conversazioni precedenti:
-    {% for memory in memories %}
-    - {{ memory.memory }}
-    {% endfor %}
-    {% endif %}
-    {% if relations %}
-
-    Relazioni del grafo delle conoscenze:
-    {% for relation in relations %}
-    - {{ relation.source }} {{ relation.relation }} {{ relation.target }}
-    {% endfor %}
-    {% endif %}
-    </user_context>
   fact_extraction: |
     Sei un assistente specializzato nell'estrazione di memoria per l'agente %{agent_name}.
     

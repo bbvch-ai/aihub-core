@@ -5,6 +5,9 @@ import pytest_asyncio
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
+from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    DangerousDevelopmentOnlyAuthSettings,
+)
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
@@ -656,10 +659,6 @@ class TestUserMemoryIntegration:
         from aihub_lib.i18n.LocaleHandler import LocaleHandler
         from aihub_lib.i18n.LocaleString import LocaleString
         from llama_index.core.base.llms.types import ChatMessage, MessageRole
-
-        from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
-            DangerousDevelopmentOnlyAuthSettings,
-        )
 
         user_id = DangerousDevelopmentOnlyAuthSettings().OID
 

@@ -21,7 +21,7 @@
         <ChatMessage
           :message="message"
           :name="getMessageName(message.role)"
-          :preferred-username="''"
+          :email="''"
           :date="new Date(event.event.created_at / 1_000_000)"
           :icon="agentIcon"
         />
