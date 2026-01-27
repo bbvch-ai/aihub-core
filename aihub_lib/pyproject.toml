@@ -133,6 +133,7 @@ extend-exclude = '''
 [tool.pytest.ini_options]
 markers = [
     "slow: mark a test as slow",
+    "azure: mark tests that use Azure services",
 ]
 addopts = "--strict-markers"
 pythonpath = ["."]
