@@ -1,7 +1,7 @@
 <template>
   <div
     ref="container"
-    class="size-full"
+    class="relative size-full overflow-hidden"
     :style="{ minHeight: props.height }"
   />
 </template>
@@ -44,6 +44,8 @@ const container = ref<HTMLDivElement>()
 
 let sigma: Sigma | null = null
 let graph: Graph | null = null
+let resizeObserver: ResizeObserver | null = null
+let renderedWithValidSize = false
 
 const MIN_NODE_SIZE = 10
 const MAX_NODE_SIZE = 50
@@ -232,6 +234,9 @@ const highlightSelectedNode = (nodeId: string | undefined, colors: Colors): void
 const renderGraph = (): void => {
   if (!container.value) return
 
+  const { width } = container.value.getBoundingClientRect()
+  if (width > 0) renderedWithValidSize = true
+
   sigma?.kill()
   sigma = null
 
@@ -292,6 +297,23 @@ watch(isDark, async () => {
   renderGraph()
 })
 
-onMounted(() => renderGraph())
-onUnmounted(() => sigma?.kill())
+onMounted(() => {
+  renderGraph()
+
+  if (container.value) {
+    resizeObserver = new ResizeObserver(() => {
+      if (!container.value || renderedWithValidSize) return
+      const { width } = container.value.getBoundingClientRect()
+      if (width > 0) {
+        renderGraph()
+      }
+    })
+    resizeObserver.observe(container.value)
+  }
+})
+
+onUnmounted(() => {
+  sigma?.kill()
+  resizeObserver?.disconnect()
+})
 </script>
