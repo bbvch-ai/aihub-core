@@ -8,7 +8,6 @@
       :thread="thread"
       :events="threadEvents"
       :display-id="route.params.display_id"
-      show-chat
     />
   </StructuralColumn>
 </template>
