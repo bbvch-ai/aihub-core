@@ -670,7 +670,10 @@ services:
       - "7687:7687"
     {%- endif %}
     volumes:
-      - {{ global.volume_root }}/neo4j:/data
+      - {{ global.volume_root }}/neo4j/logs:/logs
+      - {{ global.volume_root }}/neo4j/config:/config
+      - {{ global.volume_root }}/neo4j/data:/data
+      - {{ global.volume_root }}/neo4j/plugins:/plugins
     environment:
       NEO4J_AUTH: ${NEO4J_USERNAME}/${NEO4J_PASSWORD}
     healthcheck:
@@ -1007,6 +1010,7 @@ services:
       UI_USERNAME: ${LITELLM_UI_USERNAME}
       UI_PASSWORD: ${LITELLM_UI_PASSWORD}
       LOCAL_LLM_TOKEN: ${LOCAL_LLM_TOKEN}
+      REDIS_TOKEN: ${REDIS_TOKEN}
       AZURE_OPENAI_BASE_URL: ${AZURE_OPENAI_BASE_URL}
       AZURE_OPENAI_KEY: ${AZURE_OPENAI_KEY}
       SWISS_LLM_CLOUD_API_BASE_URL: ${SWISS_LLM_CLOUD_API_BASE_URL}
