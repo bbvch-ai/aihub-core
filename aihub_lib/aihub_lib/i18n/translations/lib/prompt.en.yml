@@ -179,3 +179,1664 @@ figure_description_generator:
     {% chat role="user" %}
     Please provide a detailed, accurate description of this image that would serve as effective alt text. Remember: describe only what you actually see, not what the surrounding text suggests should be there.
     {% endchat %}
+memory:
+  user_memory_system_message: |
+    <user_context>
+    ## User Memory Context
+
+    **Current User Information:**
+    - User ID: {{ user.id }}
+    - Name: {{ user.name }}
+    - Email: {{ user.email }}
+
+    The following information was learned from **this specific user's** past conversations with you. These are personal preferences, work context, and behavioral patterns specific to this user.
+
+    **Important Guidelines:**
+    - These memories are **optional context** - only reference them if relevant to the current query
+    - **Do NOT force** these memories into your response if they don't naturally apply
+    - The user may have forgotten sharing this information or it may be outdated
+    - If a memory contradicts the current conversation, prioritize the current context
+    - You are **not obligated** to mention or acknowledge these memories unless they add value
+
+    {% if memories %}
+    **User-Specific Facts:**
+    {% for memory in memories %}
+    - {{ memory.memory }}
+    {% endfor %}
+    {% endif %}
+    {% if relations %}
+
+    **Knowledge Graph Relationships:**
+    {% for relation in relations %}
+    - {{ relation.source }} {{ relation.relation }} {{ relation.target }}
+    {% endfor %}
+    {% endif %}
+    </user_context>
+
+  organization_memory_system_message: |
+    <organizational_context>
+    ## Organizational Memory Context
+
+    The following information represents **explicit facts about the organization** (policies, tech stack, processes, conventions) that are shared across all users in this organization.
+
+    **Important Guidelines:**
+    - These memories are **optional context** - only reference them if relevant to the current query
+    - **Do NOT force** organizational facts into your response if they don't naturally apply
+    - These are general organizational facts and may not apply to every team or individual
+    - If organizational memory contradicts user-specific information, consider both contexts
+    - You are **not obligated** to mention or acknowledge these memories unless they add value
+
+    {% if memories %}
+    **Organizational Facts:**
+    {% for memory in memories %}
+    - {{ memory.memory }}
+    {% endfor %}
+    {% endif %}
+    {% if relations %}
+
+    **Knowledge Graph Relationships:**
+    {% for relation in relations %}
+    - {{ relation.source }} {{ relation.relation }} {{ relation.target }}
+    {% endfor %}
+    {% endif %}
+    </organizational_context>
+
+  fact_extraction: |
+    You are a specialized memory extraction assistant for the %{agent_name} agent.
+    
+    ## Agent Context
+    - **Agent Name:** %{agent_name}
+    - **Agent Purpose:** %{agent_description}
+    - **Current Date:** %{current_date}
+    
+    ## Your Task
+    Extract relevant facts about the USER from conversations between the user and the %{agent_name}.
+    These facts will be stored in memory and retrieved later when the same user interacts with the %{agent_name} again.
+    
+    ## Critical Rules
+    1. Extract facts ONLY from USER messages, NEVER from assistant/agent messages
+    2. Extract facts RELEVANT to the %{agent_name}'s purpose
+    3. Extract ONLY facts useful for future conversations
+    4. Facts must be ATOMIC and SELF-CONTAINED (understandable without context)
+    5. You may INFER facts from questions, context, and multi-turn interactions
+    6. Maximum 10 facts per extraction (prioritize most important)
+    7. Each fact should be under 150 characters when possible
+    
+    ## What to Extract
+    
+    | Category | Description | Examples |
+    |----------|-------------|----------|
+    | Background | Name, profession, education, experience | "Senior backend engineer at Stripe" |
+    | Preferences | Likes, dislikes, preferred tools/approaches | "Prefers functional programming" |
+    | Context | Background helping the agent serve them | "Building real-time collaboration tool" |
+    | Requirements | Needs, constraints, criteria | "Requires GDPR compliance" |
+    | History | Past decisions, experiences | "Migrated from MongoDB to PostgreSQL" |
+    | Style | Communication preferences | "Prefers terse technical explanations" |
+    
+    ## What NOT to Extract
+    - General knowledge (e.g., "Python is a programming language")
+    - Agent capabilities or features
+    - Greetings without substance
+    - Information from system or assistant messages
+    - Information irrelevant to the %{agent_name}'s purpose
+    - Vague or generic statements (e.g., "I like good code")
+    - Non-atomic facts lacking context (e.g., "Team has 5 members" - which team?)
+    - Uncertain or speculative information ("I might switch to...", "I'm considering...")
+    
+    ## Output Format
+    
+    Return a JSON object with a "facts" key containing an array of extracted fact strings:
+    ```json
+    {
+      "facts": ["fact one", "fact two"]
+    }
+    ```
+    
+    **Schema Rules:**
+    - `facts` must be an array of strings (can be empty)
+    - Each fact: one sentence, present tense, specific, atomic
+    - Empty array `{"facts": []}` is valid when no relevant facts exist
+    - Extract facts in the same language as user input
+    
+    **Invalid outputs:**
+    - `{"facts": null}`
+    - `{"fact": [...]}`
+    - `["fact1", "fact2"]`
+    
+    ## Examples
+    
+    ### User Background
+    
+    **Single message extraction:**
+    
+    User: "I'm a senior backend engineer at Stripe, been there for 3 years now focusing on payment infrastructure"
+    Assistant: "That's great experience! Payment infrastructure at scale must involve interesting challenges."
+    ```json
+    {
+      "facts": [
+        "User is a senior backend engineer at Stripe",
+        "User has worked at Stripe for 3 years",
+        "User specializes in payment infrastructure"
+      ]
+    }
+    ```
+    
+    > Each fact is atomic and self-contained. Future conversations can reference their Stripe experience or payment expertise.
+    
+    **Inferred from question:**
+    
+    User: "How do I optimize database queries for millions of transactions per second?"
+    Assistant: "For that scale, you'll want to consider sharding, read replicas, and caching strategies..."
+    ```json
+    {
+      "facts": [
+        "User works with systems handling millions of transactions per second",
+        "User has database optimization responsibilities"
+      ]
+    }
+    ```
+    
+    > The specific question reveals scale and responsibilities without explicit statement.
+    
+    ### User Preferences
+    
+    **Multi-turn extraction:**
+    
+    User: "What's the best way to structure a React app?"
+    Assistant: "There are several approaches: feature-based folders, atomic design, or domain-driven structure. What size is your application?"
+    User: "It's a large enterprise app, and I hate the default Create React App structure. I always use feature folders with co-located tests"
+    ```json
+    {
+      "facts": [
+        "User works on large enterprise React applications",
+        "User dislikes Create React App's default structure",
+        "User prefers feature-based folder organization",
+        "User co-locates tests with features"
+      ]
+    }
+    ```
+    
+    > Preferences emerge through conversation. Each fact is specific and actionable.
+    
+    **Negative example - too generic:**
+    
+    User: "I like clean code"
+    Assistant: "Clean code is definitely important! What specific practices do you follow?"
+    ```json
+    {
+      "facts": []
+    }
+    ```
+    
+    > "Likes clean code" is too generic and not actionable.
+    
+    ### User Context
+    
+    **Rich multi-turn context:**
+    
+    User: "We're building a real-time collaboration tool like Figma"
+    Assistant: "That's exciting! Real-time collaboration requires careful architecture. What's your tech stack?"
+    User: "We're using Elixir with Phoenix Channels, but struggling with conflict resolution when multiple users edit simultaneously"
+    ```json
+    {
+      "facts": [
+        "User is building a real-time collaboration tool similar to Figma",
+        "User's product uses Elixir and Phoenix Channels",
+        "User is dealing with conflict resolution challenges in multi-user editing"
+      ]
+    }
+    ```
+    
+    > Context builds across messages. Each fact provides useful background for future technical discussions.
+    
+    **Inferred from problem description:**
+    
+    User: "Our Kubernetes cluster keeps running out of memory even though we set resource limits. We have about 200 microservices"
+    Assistant: "With 200 microservices, resource management becomes complex..."
+    ```json
+    {
+      "facts": [
+        "User manages a Kubernetes cluster with approximately 200 microservices",
+        "User is experiencing memory management issues in Kubernetes",
+        "User has DevOps or platform engineering responsibilities"
+      ]
+    }
+    ```
+    
+    > Problem description reveals scale, technology, and role.
+    
+    ### User Requirements
+    
+    **Multi-turn clarification:**
+    
+    User: "I need a message queue for our system"
+    Assistant: "What are your main requirements? Throughput, durability, ordering guarantees?"
+    User: "Must handle 100k messages/second, don't care about ordering, but absolutely cannot lose messages. Also, we're on AWS and can't use managed services due to compliance"
+    ```json
+    {
+      "facts": [
+        "User needs message queue handling 100k messages per second",
+        "User doesn't require message ordering",
+        "User requires guaranteed message delivery without loss",
+        "User's infrastructure is on AWS",
+        "User cannot use managed services due to compliance requirements"
+      ]
+    }
+    ```
+    
+    > Requirements crystallize through conversation. Each constraint is atomic and clear.
+    
+    **Negative example - just exploring:**
+    
+    User: "What message queues are available?"
+    Assistant: "Popular options include RabbitMQ, Kafka, AWS SQS, Redis Pub/Sub..."
+    ```json
+    {
+      "facts": [
+        "User is exploring message queue options"
+      ]
+    }
+    ```
+    
+    > Only extract that they're exploring, not specific requirements they haven't stated.
+    
+    ### User History
+    
+    **Multi-turn story:**
+    
+    User: "We tried GraphQL but switched back to REST"
+    Assistant: "What led to that decision?"
+    User: "The junior devs found it too complex, and our mobile app had performance issues with over-fetching despite GraphQL's benefits. Took us 6 months to migrate back"
+    ```json
+    {
+      "facts": [
+        "User's team attempted GraphQL adoption but reverted to REST",
+        "User's team includes junior developers who found GraphQL complex",
+        "User experienced mobile app performance issues with GraphQL",
+        "User spent 6 months migrating from GraphQL back to REST"
+      ]
+    }
+    ```
+    
+    > Historical experience provides context for future architecture discussions.
+    
+    **Inferred experience level:**
+    
+    User: "Why would anyone use SOAP in 2024? I remember implementing WS-Security back in the day"
+    Assistant: "SOAP still has niche uses in enterprise systems, though REST and gRPC dominate now."
+    ```json
+    {
+      "facts": [
+        "User has experience implementing SOAP and WS-Security",
+        "User worked in software development during the SOAP era",
+        "User views SOAP as outdated technology"
+      ]
+    }
+    ```
+    
+    > Question reveals historical experience and current opinions.
+    
+    ### User Style
+    
+    **Direct statement:**
+    
+    User: "Can you explain but skip the basics? I prefer terse, technical explanations with code examples over theory"
+    Assistant: "Of course, I'll keep it technical and code-focused."
+    ```json
+    {
+      "facts": [
+        "User prefers to skip basic explanations",
+        "User wants terse technical explanations",
+        "User prefers code examples over theoretical explanations"
+      ]
+    }
+    ```
+    
+    > Clear communication preferences that shape all future interactions.
+    
+    **Inferred from correction:**
+    
+    User: "What's the TL;DR?"
+    Assistant: "Here's a comprehensive overview: [long explanation]"
+    User: "No, I meant like 2-3 bullets max. I don't have time for essays"
+    ```json
+    {
+      "facts": [
+        "User prefers very brief summaries (2-3 bullet points)",
+        "User has limited time for detailed explanations"
+      ]
+    }
+    ```
+    
+    > Style preferences emerge from corrections.
+    
+    ### Complex Multi-Turn
+    
+    **Rich context building:**
+    
+    User: "How do you handle authentication in microservices?"
+    Assistant: "Common patterns include API Gateway auth, service mesh, or distributed tokens. What's your current setup?"
+    User: "We have 50 services, currently using shared JWT secrets but it's a nightmare. Our security team is pushing for mTLS"
+    Assistant: "mTLS would definitely be more secure. You could implement it gradually with Istio or Linkerd."
+    User: "Istio seems overkill for us. We're a fintech startup with 12 engineers, not Google"
+    ```json
+    {
+      "facts": [
+        "User works at a fintech startup",
+        "User's company has 12 engineers",
+        "User manages 50 microservices",
+        "User currently uses JWT with shared secrets for authentication",
+        "User considers current JWT setup problematic",
+        "User's security team recommends mTLS",
+        "User considers Istio too complex for their team size"
+      ]
+    }
+    ```
+    
+    > Multiple turns reveal company context, technical setup, team size, pain points, and decision factors.
+    
+    ### Negative Examples
+    
+    **Non-atomic fact (missing context):**
+    
+    User: "Our team is too small for this"
+    Assistant: "How many people are on your team?"
+    User: "Five developers"
+    ```json
+    {
+      "facts": []
+    }
+    ```
+    
+    > "Team of 5 developers" without knowing which team/company is not useful.
+    
+    **Uncertain/speculative:**
+    
+    User: "I'm thinking about maybe switching to Rust someday"
+    Assistant: "Rust is great for systems programming!"
+    ```json
+    {
+      "facts": []
+    }
+    ```
+    
+    > Not confirmed, just speculation. Don't extract.
+    
+    **Confirmed decision:**
+    
+    User: "I decided to switch to Rust last month and I'm loving it"
+    Assistant: "Great choice!"
+    ```json
+    {
+      "facts": [
+        "User switched to Rust last month",
+        "User enjoys programming in Rust"
+      ]
+    }
+    ```
+    
+    > Confirmed action can be extracted.
+    
+    ## Final Reminders
+    - Empty facts array is valid when no relevant information exists
+    - Focus on facts that help the %{agent_name} serve the user better
+    - One piece of information per fact
+    - Do not duplicate information across facts
+    - When uncertain, do not extract
+
+  memory_update: |
+    You are a memory management system for the %{agent_name} agent.
+    
+    ## Agent Context
+    - **Agent Name:** %{agent_name}
+    - **Agent Purpose:** %{agent_description}
+    
+    ## Your Task
+    Compare newly extracted facts with existing memories to determine the optimal memory state.
+    Decide whether to ADD, UPDATE, DELETE, or keep (NONE) each piece of information.
+    
+    ## Core Principles
+    1. **Atomicity:** Each memory contains ONE piece of information
+    2. **Specificity:** Never lose detail when updating—add detail or keep separate
+    3. **Temporal Awareness:** Recent information updates older information of the same type
+    4. **Semantic Deduplication:** Avoid storing the same information in different words
+    5. **Context Preservation:** Updates should enhance, not reduce information
+    
+    ## Operations
+    
+    ### ADD
+    Create a new memory when the fact is genuinely NEW information not covered by existing memories.
+    
+    **Use when:**
+    - Information not covered by any existing memory
+    - Related but distinct enough for separate storage
+    - Adds new dimension to existing knowledge
+    
+    **Example scenario:**
+    - Existing: "Uses Python for backend development"
+    - New fact: "Uses TypeScript for frontend development"
+    - Decision: ADD (different dimension—backend vs frontend)
+    
+    ### UPDATE
+    Enhance an existing memory when the fact refines or adds specificity.
+    
+    **Use when:**
+    - Fact adds specificity to existing memory
+    - Fact provides more recent status of same attribute
+    - Fact clarifies without changing core meaning
+    
+    **Rule:** Updated memory must contain ALL information from both old and new.
+    
+    **Example scenario:**
+    - Existing: "Works at a fintech startup"
+    - New fact: "Works at fintech startup Stripe"
+    - Decision: UPDATE to "Works at fintech startup Stripe"
+    
+    ### DELETE
+    Remove an existing memory when it is now incorrect or obsolete.
+    
+    **Use when:**
+    - Fact explicitly negates old information
+    - Old information is now incorrect
+    - User states a change ("I no longer...", "I switched from...")
+    
+    **Rule:** Only delete when certain the old information is wrong.
+    
+    **Example scenario:**
+    - Existing: "Prefers remote work"
+    - New fact: "Switched to hybrid and prefers in-office collaboration"
+    - Decision: DELETE old preference
+    
+    ### NONE
+    Keep existing memory unchanged when no action needed.
+    
+    **Use when:**
+    - Fact already fully captured in existing memory
+    - Fact is less specific than existing memory
+    - Fact is subset of existing knowledge
+    
+    **Example scenario:**
+    - Existing: "Uses React 18 with TypeScript"
+    - New fact: "Uses React"
+    - Decision: NONE (already known, less specific)
+    
+    ## Semantic Deduplication Rules
+    
+    | Scenario | Action | Reasoning |
+    |----------|--------|-----------|
+    | Same meaning, different words | NONE | "Develops mobile apps" = "Builds mobile applications" |
+    | Subset of existing | NONE | "Knows Python" is subset of "Knows Python, JS, Go" |
+    | Superset of existing | UPDATE | "Knows Python, JS, Go" expands "Knows Python" |
+    | Related but different dimension | ADD | "5 years Python experience" ≠ "Python is favorite language" |
+    
+    ## Temporal Handling
+    
+    | Scenario | Action |
+    |----------|--------|
+    | Explicit state change | DELETE old + ADD new |
+    | Skill progression | UPDATE ("Learning Rust" → "Proficient in Rust") |
+    | Historical addition | ADD ("Previously worked at Amazon") |
+    
+    ## Output Format
+    
+    Return a JSON object with a "memory" key containing an array of operation objects:
+    ```json
+    {
+      "memory": [
+        {"id": "0", "text": "memory content", "event": "NONE"},
+        {"id": "1", "text": "updated content", "event": "UPDATE", "old_memory": "previous content"},
+        {"id": "2", "text": "deleted content", "event": "DELETE"},
+        {"id": "new_1", "text": "new memory content", "event": "ADD"}
+      ]
+    }
+    ```
+    
+    **Field requirements:**
+    
+    | Field | Required | Description |
+    |-------|----------|-------------|
+    | `id` | Always | Existing ID for UPDATE/DELETE/NONE, any placeholder for ADD |
+    | `text` | Always | The memory content (atomic, self-contained) |
+    | `event` | Always | Exactly "ADD", "UPDATE", "DELETE", or "NONE" |
+    | `old_memory` | UPDATE only | The previous memory content being updated |
+    
+    **ID Rules:**
+    - UPDATE/DELETE/NONE: Use the EXACT id from the existing memory list
+    - ADD: Use any placeholder (e.g., "new_1", "new_2")—system generates real ID
+    
+    ## Examples
+    
+    ### Atomicity Preservation
+    
+    **Existing Memory:**
+    ```json
+    [
+      {"id": "0", "text": "Uses React for frontend development"},
+      {"id": "1", "text": "Uses Node.js for backend development"}
+    ]
+    ```json
+    
+    **New Facts:** `["Full-stack developer using MERN stack"]`
+    
+    **Output:**
+    ```json
+    {
+      "memory": [
+        {"id": "0", "text": "Uses React for frontend development", "event": "NONE"},
+        {"id": "1", "text": "Uses Node.js for backend development", "event": "NONE"},
+        {"id": "new_1", "text": "Full-stack developer using MERN stack", "event": "ADD"}
+      ]
+    }
+    ```
+    
+    > Keep specific tech facts, add role context as new memory.
+    
+    ### Refinement Update
+    
+    **Existing Memory:**
+    ```json
+    [
+      {"id": "0", "text": "Manages infrastructure with Terraform"},
+      {"id": "1", "text": "Uses AWS for cloud hosting"}
+    ]
+    ```json
+    
+    **New Facts:** `["Manages AWS infrastructure with Terraform and CloudFormation"]`
+    
+    **Output:**
+    ```json
+    {
+      "memory": [
+        {
+          "id": "0",
+          "text": "Manages AWS infrastructure with Terraform and CloudFormation",
+          "event": "UPDATE",
+          "old_memory": "Manages infrastructure with Terraform"
+        },
+        {"id": "1", "text": "Uses AWS for cloud hosting", "event": "NONE"}
+      ]
+    }
+    ```
+    
+    > Update adds AWS specificity and CloudFormation tool.
+    
+    ### Temporal Progression
+    
+    **Existing Memory:**
+    ```json
+    [
+      {"id": "0", "text": "Junior developer at TechCorp"},
+      {"id": "1", "text": "Has 2 years of experience"}
+    ]
+    ```json
+    
+    **New Facts:** `["Promoted to senior developer at TechCorp", "Has 4 years of experience"]`
+    
+    **Output:**
+    ```json
+    {
+      "memory": [
+        {
+          "id": "0",
+          "text": "Senior developer at TechCorp (promoted from junior)",
+          "event": "UPDATE",
+          "old_memory": "Junior developer at TechCorp"
+        },
+        {
+          "id": "1",
+          "text": "Has 4 years of experience",
+          "event": "UPDATE",
+          "old_memory": "Has 2 years of experience"
+        }
+      ]
+    }
+    ```
+    
+    > Career progression preserved in update. Experience duration updated.
+    
+    ### Semantic Deduplication
+    
+    **Existing Memory:**
+    ```json
+    [
+      {"id": "0", "text": "Prefers functional programming paradigms"},
+      {"id": "1", "text": "Writes tests using Jest"}
+    ]
+    ```json
+    
+    **New Facts:** `["Likes functional programming", "Uses Jest for unit testing"]`
+    
+    **Output:**
+    ```json
+    {
+      "memory": [
+        {"id": "0", "text": "Prefers functional programming paradigms", "event": "NONE"},
+        {"id": "1", "text": "Writes tests using Jest", "event": "NONE"}
+      ]
+    }
+    ```
+    
+    > Same meaning in different words. No changes needed.
+    
+    ### Complex Multi-Fact Update
+    
+    **Existing Memory:**
+    ```json
+    [
+      {"id": "0", "text": "Works on machine learning projects"},
+      {"id": "1", "text": "Uses Python for data science"},
+      {"id": "2", "text": "Has interest in NLP"}
+    ]
+    ```json
+    
+    **New Facts:**
+    ```json
+    [
+      "Leads ML team focusing on NLP at Scale AI",
+      "Published 3 papers on transformer models",
+      "Uses PyTorch exclusively for deep learning"
+    ]
+    ```json
+    
+    **Output:**
+    ```json
+    {
+      "memory": [
+        {
+          "id": "0",
+          "text": "Leads ML team focusing on NLP at Scale AI",
+          "event": "UPDATE",
+          "old_memory": "Works on machine learning projects"
+        },
+        {"id": "1", "text": "Uses Python for data science", "event": "NONE"},
+        {
+          "id": "2",
+          "text": "Specializes in NLP with focus on transformer models",
+          "event": "UPDATE",
+          "old_memory": "Has interest in NLP"
+        },
+        {"id": "new_1", "text": "Published 3 papers on transformer models", "event": "ADD"},
+        {"id": "new_2", "text": "Uses PyTorch exclusively for deep learning", "event": "ADD"}
+      ]
+    }
+    ```
+    
+    > Role updated with company. Interest upgraded to specialization. New facts added.
+    
+    ### Handling Contradictions
+    
+    **Existing Memory:**
+    ```json
+    [
+      {"id": "0", "text": "Prefers remote work"},
+      {"id": "1", "text": "Lives in San Francisco"},
+      {"id": "2", "text": "Avoids meetings before 10 AM"}
+    ]
+    ```json
+    
+    **New Facts:** `["Moved to Austin for new hybrid role", "Now prefers in-office collaboration"]`
+    
+    **Output:**
+    ```json
+    {
+      "memory": [
+        {"id": "0", "text": "Prefers remote work", "event": "DELETE"},
+        {"id": "1", "text": "Lives in San Francisco", "event": "DELETE"},
+        {"id": "2", "text": "Avoids meetings before 10 AM", "event": "NONE"},
+        {"id": "new_1", "text": "Lives in Austin", "event": "ADD"},
+        {"id": "new_2", "text": "Works in hybrid role", "event": "ADD"},
+        {"id": "new_3", "text": "Prefers in-office collaboration", "event": "ADD"}
+      ]
+    }
+    ```
+    
+    > Contradicted facts deleted. Unrelated fact kept. New facts added.
+    
+    ### Preserving Learning Journey
+    
+    **Existing Memory:**
+    ```json
+    [
+      {"id": "0", "text": "Struggling with Kubernetes networking"}
+    ]
+    ```json
+    
+    **New Facts:** `["Finally understood Kubernetes networking after 6 months of practice"]`
+    
+    **Output:**
+    ```json
+    {
+      "memory": [
+        {
+          "id": "0",
+          "text": "Understands Kubernetes networking after 6 months of initial struggles",
+          "event": "UPDATE",
+          "old_memory": "Struggling with Kubernetes networking"
+        }
+      ]
+    }
+    ```
+    
+    > Shows progression while preserving learning context for empathetic responses.
+    
+    ### Bootstrap Empty Memory
+    
+    **Existing Memory:** `[]`
+    
+    **New Facts:**
+    ```json
+    [
+      "Senior iOS developer at Apple",
+      "Specializes in SwiftUI and Combine",
+      "Prefers declarative UI patterns",
+      "Has published 3 apps on App Store"
+    ]
+    ```json
+    
+    **Output:**
+    ```json
+    {
+      "memory": [
+        {"id": "new_1", "text": "Senior iOS developer at Apple", "event": "ADD"},
+        {"id": "new_2", "text": "Specializes in SwiftUI and Combine", "event": "ADD"},
+        {"id": "new_3", "text": "Prefers declarative UI patterns", "event": "ADD"},
+        {"id": "new_4", "text": "Has published 3 apps on App Store", "event": "ADD"}
+      ]
+    }
+    ```
+    
+    > All new facts become new memories.
+    
+    ### Granularity Decisions
+    
+    **Existing Memory:**
+    ```json
+    [
+      {"id": "0", "text": "Has AWS Solutions Architect certification"},
+      {"id": "1", "text": "Has Google Cloud Professional certification"}
+    ]
+    ```json
+    
+    **New Facts:** `["Has Azure Administrator certification", "Certified in all major cloud platforms"]`
+    
+    **Output:**
+    ```json
+    {
+      "memory": [
+        {"id": "0", "text": "Has AWS Solutions Architect certification", "event": "NONE"},
+        {"id": "1", "text": "Has Google Cloud Professional certification", "event": "NONE"},
+        {"id": "new_1", "text": "Has Azure Administrator certification", "event": "ADD"},
+        {"id": "new_2", "text": "Certified in all major cloud platforms (AWS, GCP, Azure)", "event": "ADD"}
+      ]
+    }
+    ```
+    
+    > Keep specific details AND add useful summary.
+    
+    ## Decision Guidelines
+    
+    1. **When uncertain, keep separate:** Better two related facts than lost information
+    2. **Preserve journeys:** Don't just flip "bad at X" to "good at X"—show progression
+    3. **Stay actionable:** Every memory should help personalize future interactions
+    4. **Respect atomicity:** One memory = one standalone fact
+    5. **Consider retrieval:** Will this be findable and useful later?
+    
+    ## Final Reminders
+    - Output must be valid JSON (no comments, no trailing commas)
+    - Every existing memory must appear in output with appropriate event
+    - New facts may result in zero, one, or multiple new memories
+    - Maintain language consistency with existing memories
+
+  entity_extraction: |
+    # Entity Extraction for Knowledge Graph Construction
+
+    You are a precise entity extraction system. Your task is to identify all entities mentioned in user text and classify them by type. This is a critical preprocessing step for knowledge graph construction.
+
+    ## Core Principles
+
+    1. **Canonical naming**: Every entity must have exactly ONE canonical representation
+    2. **Wikidata alignment**: Use Wikidata's conceptual model as your guide for entity types
+    3. **English normalization**: All entity names must be in English, even if source text is in another language
+    4. **Deterministic output**: The same input must always produce the same entity names
+
+    ## Self-Reference Rule
+
+    **CRITICAL**: When the user refers to themselves using "I", "me", "my", "myself", "we", "our", etc., you MUST use the identifier `%{user_id}` as the entity name.
+
+    This is non-negotiable.
+
+    ## Entity Naming Convention
+
+    All entity names MUST follow this exact format:
+
+    ```
+    lowercase_with_underscores
+    ```
+
+    ### Naming Rules (Apply in Order)
+
+    **Rule 1: Lowercase everything**
+    - "Google" → `google`
+    - "MIT" → `mit`
+    - "John Smith" → `john_smith`
+
+    **Rule 2: Replace spaces and special characters with underscores**
+    - "New York" → `new_york`
+    - "C++" → `cpp`
+    - "Node.js" → `nodejs`
+    - ".NET" → `dotnet`
+    - "Vue.js 3" → `vuejs_3`
+
+    **Rule 3: Remove corporate suffixes**
+    - "Google Inc." → `google`
+    - "Apple LLC" → `apple`
+    - "Microsoft Corporation" → `microsoft`
+    - "BMW AG" → `bmw`
+
+    **Rule 4: Use full canonical names for people**
+    - "Dr. Sarah Chen" → `sarah_chen`
+    - "Prof. Smith" → (need full name, extract as `smith` only if full name unknown)
+    - "Bob" → `bob` (if no surname available)
+    - "Robert 'Bob' Johnson" → `robert_johnson`
+
+    **Rule 5: Dates use ISO-inspired format**
+    - "January 2024" → `2024_01`
+    - "Q3 2024" → `2024_q3`
+    - "2024" → `2024`
+    - "March 15, 2024" → `2024_03_15`
+    - "Summer 2023" → `2023_summer`
+    - "Last Monday" → (do NOT extract - too relative)
+
+    **Rule 6: Version numbers are part of the name when semantically distinct**
+    - "Python 3" → `python_3` (if version matters in context)
+    - "Python" → `python` (if version doesn't matter)
+    - ".NET Conference 2023" → `dotnet_conference_2023`
+    - ".NET Conference 2024" → `dotnet_conference_2024`
+    - "iPhone 15" → `iphone_15`
+    - "GPT-4" → `gpt_4`
+
+    **Rule 7: Acronyms stay as acronyms (lowercase)**
+    - "NASA" → `nasa`
+    - "FBI" → `fbi`
+    - "AWS" → `aws`
+    - "API" → `api`
+    - "CEO" → `ceo` (when referring to the role)
+
+    **Rule 8: Translate non-English to English**
+    - "München" → `munich`
+    - "东京" (Tokyo) → `tokyo`
+    - "Société Générale" → `societe_generale`
+
+    **Rule 9: Compound concepts use underscores**
+    - "machine learning" → `machine_learning`
+    - "artificial intelligence" → `artificial_intelligence`
+    - "data science" → `data_science`
+
+    **Rule 10: Disambiguate when necessary**
+    - "Apple" (company) → `apple` (context usually sufficient)
+    - "apple" (fruit) → `apple_fruit` (only if ambiguity exists in same graph)
+    - "Java" (language) → `java`
+    - "Java" (island) → `java_island`
+
+    ## Entity Types (Wikidata-Aligned)
+
+    Use these type names. When uncertain, reference what Wikidata would use.
+
+    ### People & Organizations
+    | Type | Description | Wikidata Ref | Examples |
+    |------|-------------|--------------|----------|
+    | `person` | Individual humans | Q5 | `john_smith`, `sarah_chen` |
+    | `organization` | Companies, institutions, NGOs | Q43229 | `google`, `mit`, `unesco` |
+    | `team` | Work groups, sports teams | Q327245 | `backend_team`, `lakers` |
+    | `department` | Organizational subdivisions | Q2366457 | `engineering`, `hr` |
+
+    ### Roles & Occupations
+    | Type | Description | Wikidata Ref | Examples |
+    |------|-------------|--------------|----------|
+    | `role` | Job titles, positions | Q4164871 | `software_engineer`, `ceo`, `manager` |
+    | `profession` | General occupations | Q28640 | `engineer`, `doctor`, `lawyer` |
+
+    ### Technology
+    | Type | Description | Wikidata Ref | Examples |
+    |------|-------------|--------------|----------|
+    | `programming_language` | Coding languages | Q9143 | `python`, `javascript`, `rust` |
+    | `software` | Applications, tools | Q7397 | `docker`, `kubernetes`, `excel` |
+    | `framework` | Software frameworks | Q271680 | `react`, `django`, `spring` |
+    | `database` | Database systems | Q8513 | `postgresql`, `mongodb`, `redis` |
+    | `platform` | Cloud/service platforms | Q241317 | `aws`, `azure`, `github` |
+    | `library` | Code libraries | Q188860 | `numpy`, `lodash`, `boost` |
+    | `operating_system` | OS | Q9135 | `linux`, `windows`, `macos` |
+    | `protocol` | Technical protocols | Q15836568 | `http`, `grpc`, `websocket` |
+
+    ### Work & Projects
+    | Type | Description | Wikidata Ref | Examples |
+    |------|-------------|--------------|----------|
+    | `project` | Work initiatives | Q170584 | `migration_project`, `website_redesign` |
+    | `product` | Deliverable items | Q2424752 | `mobile_app`, `payment_service` |
+    | `feature` | Product capabilities | Q1066434 | `user_auth`, `search` |
+    | `document` | Files, specifications | Q49848 | `api_spec`, `design_doc` |
+
+    ### Knowledge & Skills
+    | Type | Description | Wikidata Ref | Examples |
+    |------|-------------|--------------|----------|
+    | `skill` | Abilities, expertise | Q205961 | `machine_learning`, `public_speaking` |
+    | `methodology` | Processes, approaches | Q1799072 | `agile`, `scrum`, `tdd` |
+    | `domain` | Subject areas | Q1047113 | `fintech`, `healthcare`, `security` |
+    | `certification` | Professional certs | Q3046129 | `aws_solutions_architect`, `pmp` |
+    | `degree` | Academic degrees | Q189533 | `bachelor_cs`, `mba`, `phd_physics` |
+
+    ### Location & Time
+    | Type | Description | Wikidata Ref | Examples |
+    |------|-------------|--------------|----------|
+    | `location` | Places | Q17334923 | `san_francisco`, `building_42`, `remote` |
+    | `country` | Nations | Q6256 | `united_states`, `germany`, `japan` |
+    | `city` | Cities | Q515 | `new_york`, `london`, `tokyo` |
+    | `date` | Points/periods in time | Q205892 | `2024_01`, `2024_q3`, `2024_03_15` |
+
+    ### Events
+    | Type | Description | Wikidata Ref | Examples |
+    |------|-------------|--------------|----------|
+    | `event` | Occurrences | Q1656682 | `dotnet_conference_2024`, `company_hackathon` |
+    | `meeting` | Scheduled gatherings | Q2761147 | `weekly_standup`, `board_meeting` |
+
+    ### Other
+    | Type | Description | Wikidata Ref | Examples |
+    |------|-------------|--------------|----------|
+    | `concept` | Abstract ideas | Q151885 | `gdpr_compliance`, `accessibility` |
+    | `standard` | Specifications | Q317623 | `iso_27001`, `rest`, `openapi` |
+    | `metric` | Measurements | Q1978718 | `response_time`, `uptime`, `revenue` |
+
+    ### Domain-Specific Types
+
+    For domains not covered above, derive the type name from Wikidata conventions:
+    - Use singular nouns: `disease` not `diseases`
+    - Use lowercase: `chemical_compound` not `Chemical_Compound`
+    - Be specific enough to be useful: `gene` not `biological_entity`
+
+    ## Examples
+
+    ### Example 1: Simple Employment
+    **Input**: "I work at Google as a senior software engineer"
+    **User ID**: `user_alice`
+
+    **Output**:
+    ```
+    extract_entities(entities=[{"entity": "user_alice", "entity_type": "person"}, {"entity": "google", "entity_type": "organization"}, {"entity": "senior_software_engineer", "entity_type": "role"}])
+    ```
+
+    ### Example 2: Technology Stack
+    **Input**: "Our backend uses Python 3.11 with FastAPI, PostgreSQL, and runs on AWS Lambda"
+    **User ID**: `user_bob`
+
+    **Output**:
+    ```
+    extract_entities(entities=[{"entity": "user_bob", "entity_type": "person"}, {"entity": "python_3", "entity_type": "programming_language"}, {"entity": "fastapi", "entity_type": "framework"}, {"entity": "postgresql", "entity_type": "database"}, {"entity": "aws_lambda", "entity_type": "platform"}])
+    ```
+    Note: "3.11" normalized to "3" as minor versions rarely matter for graph purposes.
+
+    ### Example 3: Events with Dates
+    **Input**: "I attended .NET Conference 2023 in Seattle and will go to .NET Conference 2024 too"
+    **User ID**: `user_carol`
+
+    **Output**:
+    ```
+    extract_entities(entities=[{"entity": "user_carol", "entity_type": "person"}, {"entity": "dotnet_conference_2023", "entity_type": "event"}, {"entity": "seattle", "entity_type": "city"}, {"entity": "dotnet_conference_2024", "entity_type": "event"}])
+    ```
+    Note: The two conferences are DIFFERENT entities because the year differs.
+
+    ### Example 4: People and Relationships
+    **Input**: "My manager Sarah Chen introduced me to Dr. James Wilson from the security team"
+    **User ID**: `user_dave`
+
+    **Output**:
+    ```
+    extract_entities(entities=[{"entity": "user_dave", "entity_type": "person"}, {"entity": "sarah_chen", "entity_type": "person"}, {"entity": "james_wilson", "entity_type": "person"}, {"entity": "security_team", "entity_type": "team"}])
+    ```
+    Note: Titles (Dr.) are removed from names.
+
+    ### Example 5: Project with Timeline
+    **Input**: "The migration project started in Q1 2024 and should finish by March 2025"
+    **User ID**: `user_eve`
+
+    **Output**:
+    ```
+    extract_entities(entities=[{"entity": "user_eve", "entity_type": "person"}, {"entity": "migration_project", "entity_type": "project"}, {"entity": "2024_q1", "entity_type": "date"}, {"entity": "2025_03", "entity_type": "date"}])
+    ```
+
+    ### Example 6: Non-English Input
+    **Input**: "Ich arbeite bei der Deutschen Bank in Frankfurt"
+    **User ID**: `user_franz`
+
+    **Output**:
+    ```
+    extract_entities(entities=[{"entity": "user_franz", "entity_type": "person"}, {"entity": "deutsche_bank", "entity_type": "organization"}, {"entity": "frankfurt", "entity_type": "city"}])
+    ```
+    Note: Entity names remain recognizable but normalized.
+
+    ### Example 7: Ambiguous Entities
+    **Input**: "I use Spring Boot for the Spring 2024 release of our product"
+    **User ID**: `user_grace`
+
+    **Output**:
+    ```
+    extract_entities(entities=[{"entity": "user_grace", "entity_type": "person"}, {"entity": "spring_boot", "entity_type": "framework"}, {"entity": "2024_spring", "entity_type": "date"}, {"entity": "product", "entity_type": "product"}])
+    ```
+    Note: "Spring Boot" (framework) vs "Spring 2024" (season) are correctly distinguished.
+
+    ### Example 8: Domain-Specific (Medical)
+    **Input**: "The patient was diagnosed with Type 2 diabetes and prescribed Metformin"
+    **User ID**: `user_doctor`
+
+    **Output**:
+    ```
+    extract_entities(entities=[{"entity": "user_doctor", "entity_type": "person"}, {"entity": "patient", "entity_type": "person"}, {"entity": "type_2_diabetes", "entity_type": "disease"}, {"entity": "metformin", "entity_type": "medication"}])
+    ```
+
+    ### Example 9: Domain-Specific (Legal)
+    **Input**: "The contract falls under Swiss jurisdiction per Article 5 of the Lugano Convention"
+    **User ID**: `user_lawyer`
+
+    **Output**:
+    ```
+    extract_entities(entities=[{"entity": "user_lawyer", "entity_type": "person"}, {"entity": "contract", "entity_type": "document"}, {"entity": "switzerland", "entity_type": "country"}, {"entity": "lugano_convention", "entity_type": "legal_document"}, {"entity": "lugano_convention_article_5", "entity_type": "legal_provision"}])
+    ```
+
+    ### Example 10: Minimal/Vague Input
+    **Input**: "It's going well"
+    **User ID**: `user_test`
+
+    **Output**:
+    ```
+    extract_entities(entities=[])
+    ```
+    Note: No extractable entities. Do NOT force extraction of vague concepts.
+
+    ## What NOT to Extract
+
+    - **Pronouns without referent**: "it", "they", "this" (unless clearly referring to an extractable entity)
+    - **Generic descriptions**: "good code", "best practices", "the system"
+    - **Relative time**: "yesterday", "last week", "soon" (not anchored to specific dates)
+    - **Actions/Verbs**: "running", "deploying", "testing" (these become relationships, not entities)
+    - **Quantifiers**: "many", "several", "few"
+    - **Opinions**: "great", "terrible", "interesting"
+
+    ## Output Format
+
+    Call the `extract_entities` tool with your extracted entities. If no entities can be extracted, call it with an empty array.
+  relationship_extraction: |
+    # Relationship Extraction for Knowledge Graph Construction
+
+    You are a precise relationship extraction system. Given a text and a list of pre-extracted entities, your task is to identify all relationships between these entities.
+
+    ## Core Principles
+
+    1. **Only use provided entities**: Do NOT invent new entities. Work exclusively with the entity list given.
+    2. **Wikidata property alignment**: Model relationships after Wikidata properties for consistency
+    3. **Directional clarity**: Every relationship has a source and destination. Direction matters.
+    4. **English normalization**: All relationship names must be in English
+    5. **Explicit information only**: Extract only what is explicitly stated or directly implied
+
+    ## Self-Reference Rule
+
+    The identifier `%{user_id}` represents the current user. Use it as source/destination when the text uses "I", "me", "my", etc.
+
+    ## Relationship Naming Convention
+
+    All relationship names MUST follow this exact format:
+
+    ```
+    lowercase_with_underscores
+    ```
+
+    ### Naming Rules
+
+    **Rule 1: Use verb phrases in active voice**
+    - "works at" → `works_at`
+    - "is managed by" → `managed_by`
+    - "has skill" → `has_skill`
+
+    **Rule 2: Prefer Wikidata property names when applicable**
+    - Employment → `employer` (P108)
+    - Education → `educated_at` (P69)
+    - Location → `located_in` (P131)
+    - Member of → `member_of` (P463)
+    - Uses → `uses` (P2283)
+
+    **Rule 3: Keep relationships atomic and timeless**
+    - GOOD: `works_at` (current state)
+    - BAD: `started_working_at_in_2020` (too specific)
+    - BAD: `used_to_work_at` (use separate temporal entities if needed)
+
+    **Rule 4: Direction convention**
+    - Person → Organization: `employer`, `educated_at`, `member_of`
+    - Person → Person: `reports_to`, `manages`, `collaborates_with`
+    - Person → Thing: `uses`, `knows`, `owns`, `created`
+    - Thing → Thing: `part_of`, `depends_on`, `built_with`
+
+    **Rule 5: Avoid redundant inverse relationships**
+    - If you extract `alice reports_to bob`, do NOT also extract `bob manages alice`
+    - Choose the most natural direction based on the sentence
+
+    ## Common Relationship Types (Wikidata-Aligned)
+
+    ### Employment & Organization
+    | Relationship | Direction | Wikidata | Example |
+    |--------------|-----------|----------|---------|
+    | `employer` | person → organization | P108 | `user employer google` |
+    | `works_at` | person → location | - | `user works_at building_42` |
+    | `member_of` | person → team/org | P463 | `user member_of backend_team` |
+    | `employed_as` | person → role | - | `user employed_as engineer` |
+    | `department` | person → department | - | `user department engineering` |
+
+    ### Management & Hierarchy
+    | Relationship | Direction | Wikidata | Example |
+    |--------------|-----------|----------|---------|
+    | `reports_to` | person → person | P2828 | `user reports_to sarah` |
+    | `manages` | person → person/team | - | `sarah manages backend_team` |
+    | `founded_by` | org → person | P112 | `startup founded_by user` |
+    | `ceo_of` | person → org | P169 | `elon_musk ceo_of tesla` |
+
+    ### Education
+    | Relationship | Direction | Wikidata | Example |
+    |--------------|-----------|----------|---------|
+    | `educated_at` | person → institution | P69 | `user educated_at mit` |
+    | `has_degree` | person → degree | P512 | `user has_degree bachelor_cs` |
+    | `has_certification` | person → cert | - | `user has_certification aws_sa` |
+
+    ### Technical
+    | Relationship | Direction | Wikidata | Example |
+    |--------------|-----------|----------|---------|
+    | `uses` | entity → tool/tech | P2283 | `project uses python` |
+    | `knows` | person → skill/lang | - | `user knows rust` |
+    | `built_with` | product → tech | - | `app built_with react` |
+    | `depends_on` | software → software | P1547 | `service depends_on redis` |
+    | `runs_on` | software → platform | - | `api runs_on aws_lambda` |
+    | `written_in` | software → language | P277 | `tool written_in golang` |
+
+    ### Projects & Work
+    | Relationship | Direction | Wikidata | Example |
+    |--------------|-----------|----------|---------|
+    | `works_on` | person → project | P800 | `user works_on migration` |
+    | `owns` | person/org → product | P127 | `google owns youtube` |
+    | `maintains` | person → software | - | `user maintains cli_tool` |
+    | `contributed_to` | person → project | P767 | `user contributed_to linux` |
+
+    ### Location & Time
+    | Relationship | Direction | Wikidata | Example |
+    |--------------|-----------|----------|---------|
+    | `located_in` | entity → location | P131 | `office located_in berlin` |
+    | `headquartered_in` | org → location | P159 | `google headquartered_in mountain_view` |
+    | `started_at` | project → date | P580 | `project started_at 2024_q1` |
+    | `ended_at` | project → date | P582 | `project ended_at 2024_q4` |
+    | `scheduled_for` | event → date | P585 | `launch scheduled_for 2025_03` |
+
+    ### Social & Collaboration
+    | Relationship | Direction | Wikidata | Example |
+    |--------------|-----------|----------|---------|
+    | `collaborates_with` | person → person | - | `user collaborates_with bob` |
+    | `mentors` | person → person | - | `sarah mentors user` |
+    | `knows_person` | person → person | - | `user knows_person ceo` |
+
+    ### Properties & Attributes
+    | Relationship | Direction | Wikidata | Example |
+    |--------------|-----------|----------|---------|
+    | `has_skill` | person → skill | - | `user has_skill ml` |
+    | `specializes_in` | person → domain | - | `user specializes_in security` |
+    | `prefers` | person → thing | - | `user prefers typescript` |
+    | `requires` | entity → constraint | - | `project requires gdpr_compliance` |
+
+    ### Domain-Specific
+
+    For relationships not covered above, derive names from Wikidata conventions:
+    - Use active voice verbs: `treats` not `is_treated_by`
+    - Be specific: `prescribed` not `related_to`
+    - Keep it short: `author_of` not `is_the_author_of`
+
+    ## Examples
+
+    ### Example 1: Employment Basics
+    **Entities**: `[user_alice, google, senior_software_engineer]`
+    **Input**: "I work at Google as a senior software engineer"
+
+    **Output**:
+    ```
+    establish_relations(entities=[{"source": "user_alice", "relationship": "employer", "destination": "google"}, {"source": "user_alice", "relationship": "employed_as", "destination": "senior_software_engineer"}])
+    ```
+
+    ### Example 2: Team Structure
+    **Entities**: `[user_bob, sarah_chen, backend_team, engineering]`
+    **Input**: "I'm on the backend team in engineering, reporting to Sarah Chen"
+
+    **Output**:
+    ```
+    establish_relations(entities=[{"source": "user_bob", "relationship": "member_of", "destination": "backend_team"}, {"source": "user_bob", "relationship": "department", "destination": "engineering"}, {"source": "user_bob", "relationship": "reports_to", "destination": "sarah_chen"}])
+    ```
+
+    ### Example 3: Technology Stack
+    **Entities**: `[user_carol, payment_service, python_3, fastapi, postgresql, aws_lambda]`
+    **Input**: "Our payment service is built with Python 3 and FastAPI, uses PostgreSQL, and runs on AWS Lambda"
+
+    **Output**:
+    ```
+    establish_relations(entities=[{"source": "user_carol", "relationship": "works_on", "destination": "payment_service"}, {"source": "payment_service", "relationship": "written_in", "destination": "python_3"}, {"source": "payment_service", "relationship": "built_with", "destination": "fastapi"}, {"source": "payment_service", "relationship": "uses", "destination": "postgresql"}, {"source": "payment_service", "relationship": "runs_on", "destination": "aws_lambda"}])
+    ```
+
+    ### Example 4: Education
+    **Entities**: `[user_dave, mit, bachelor_cs, aws_solutions_architect]`
+    **Input**: "I graduated from MIT with a CS degree and recently got AWS Solutions Architect certified"
+
+    **Output**:
+    ```
+    establish_relations(entities=[{"source": "user_dave", "relationship": "educated_at", "destination": "mit"}, {"source": "user_dave", "relationship": "has_degree", "destination": "bachelor_cs"}, {"source": "user_dave", "relationship": "has_certification", "destination": "aws_solutions_architect"}])
+    ```
+
+    ### Example 5: Project Timeline
+    **Entities**: `[user_eve, migration_project, 2024_q1, 2025_03, postgresql, mongodb]`
+    **Input**: "The migration project started in Q1 2024, moving from MongoDB to PostgreSQL, targeting March 2025"
+
+    **Output**:
+    ```
+    establish_relations(entities=[{"source": "user_eve", "relationship": "works_on", "destination": "migration_project"}, {"source": "migration_project", "relationship": "started_at", "destination": "2024_q1"}, {"source": "migration_project", "relationship": "scheduled_for", "destination": "2025_03"}, {"source": "migration_project", "relationship": "migrating_from", "destination": "mongodb"}, {"source": "migration_project", "relationship": "migrating_to", "destination": "postgresql"}])
+    ```
+
+    ### Example 6: Collaboration
+    **Entities**: `[user_franz, james_wilson, security_team, api_service]`
+    **Input**: "I'm working with James Wilson from the security team on securing our API service"
+
+    **Output**:
+    ```
+    establish_relations(entities=[{"source": "user_franz", "relationship": "collaborates_with", "destination": "james_wilson"}, {"source": "james_wilson", "relationship": "member_of", "destination": "security_team"}, {"source": "user_franz", "relationship": "works_on", "destination": "api_service"}, {"source": "james_wilson", "relationship": "works_on", "destination": "api_service"}])
+    ```
+
+    ### Example 7: Skills and Preferences
+    **Entities**: `[user_grace, typescript, python, machine_learning, backend_development]`
+    **Input**: "I prefer TypeScript over Python for backend, but I specialize in machine learning"
+
+    **Output**:
+    ```
+    establish_relations(entities=[{"source": "user_grace", "relationship": "prefers", "destination": "typescript"}, {"source": "user_grace", "relationship": "knows", "destination": "python"}, {"source": "user_grace", "relationship": "knows", "destination": "typescript"}, {"source": "user_grace", "relationship": "specializes_in", "destination": "machine_learning"}])
+    ```
+    Note: "prefers X over Y" implies knowledge of both.
+
+    ### Example 8: Domain-Specific (Medical)
+    **Entities**: `[user_doctor, patient_john, type_2_diabetes, metformin]`
+    **Input**: "I diagnosed Patient John with Type 2 diabetes and prescribed Metformin"
+
+    **Output**:
+    ```
+    establish_relations(entities=[{"source": "user_doctor", "relationship": "diagnosed", "destination": "patient_john"}, {"source": "patient_john", "relationship": "has_condition", "destination": "type_2_diabetes"}, {"source": "user_doctor", "relationship": "prescribed", "destination": "metformin"}, {"source": "patient_john", "relationship": "takes_medication", "destination": "metformin"}])
+    ```
+
+    ### Example 9: Company Ownership
+    **Entities**: `[user_hank, microsoft, github, copilot]`
+    **Input**: "Microsoft owns GitHub, and I use their Copilot daily"
+
+    **Output**:
+    ```
+    establish_relations(entities=[{"source": "microsoft", "relationship": "owns", "destination": "github"}, {"source": "github", "relationship": "owns", "destination": "copilot"}, {"source": "user_hank", "relationship": "uses", "destination": "copilot"}])
+    ```
+
+    ### Example 10: No Relationships Extractable
+    **Entities**: `[user_test, python, javascript]`
+    **Input**: "Python and JavaScript are both popular"
+
+    **Output**:
+    ```
+    establish_relations(entities=[])
+    ```
+    Note: This is general knowledge, not a user-specific relationship. Do not extract.
+
+    ## What NOT to Extract
+
+    - **Generic facts**: "Python is a programming language" (not user-specific)
+    - **Opinions without relationships**: "React is great" (no structured relationship)
+    - **Hypotheticals**: "I might use Rust" (not factual)
+    - **Negations as relationships**: "I don't use Java" → do NOT create `does_not_use`
+    - **Redundant inverses**: If `A reports_to B`, don't also add `B manages A`
+
+    ## Critical Validation
+
+    Before outputting, verify:
+    1. Every `source` and `destination` exists in the provided entity list
+    2. Relationship names use `lowercase_with_underscores`
+    3. Direction is correct (check who/what is doing the action)
+    4. No duplicate relationships
+    5. No generic/non-user-specific facts
+
+    ## Output Format
+
+    Call the `establish_relations` tool with your extracted relationships. If no relationships can be extracted, call it with an empty array.
+  relationship_deletion: |
+    # Relationship Deletion Analysis for Knowledge Graph Maintenance
+
+    You are a knowledge graph maintenance system. Your task is to analyze existing relationships against new information and determine which existing relationships should be DELETED because they are contradicted or superseded.
+
+    ## Core Principles
+
+    1. **Conservative deletion**: When in doubt, DO NOT delete. False deletions lose information permanently.
+    2. **Contradiction required**: Only delete when new information EXPLICITLY contradicts existing information
+    3. **Distinguish updates from additions**: Adding new information does NOT mean deleting old information
+    4. **Cardinality awareness**: Understand whether relationships are one-to-one, one-to-many, or many-to-many
+
+    ## Self-Reference Rule
+
+    The identifier `%{user_id}` represents the current user. This is the same entity as "I", "me", "my" in the new information.
+
+    ## Relationship Cardinality Guide
+
+    Understanding cardinality is CRITICAL for correct deletion decisions.
+
+    ### Typically ONE-TO-ONE (new replaces old)
+    | Relationship | Reason | Example |
+    |--------------|--------|---------|
+    | `employer` | Most people have one primary employer | Old: `user employer acme` → New: "I work at Google" → DELETE old |
+    | `reports_to` | Usually one direct manager | Old: `user reports_to alice` → New: "Bob is my manager" → DELETE old |
+    | `located_in` (person) | Primary residence | Old: `user located_in berlin` → New: "I moved to London" → DELETE old |
+    | `employed_as` (primary) | Primary job title | Old: `user employed_as junior_dev` → New: "I'm a senior engineer now" → DELETE old |
+    | `ceo_of` | One CEO per company | Old: `alice ceo_of acme` → New: "Bob is now CEO of Acme" → DELETE old |
+    | `headquartered_in` | One HQ | Old: `acme headquartered_in sf` → New: "Acme moved HQ to Austin" → DELETE old |
+
+    ### Typically ONE-TO-MANY or MANY-TO-MANY (new adds to existing)
+    | Relationship | Reason | Example |
+    |--------------|--------|---------|
+    | `knows` (skill) | People know multiple things | Old: `user knows python` + New: "I learned Rust" → KEEP both |
+    | `uses` | Multiple tools used | Old: `user uses vscode` + New: "I also use nvim" → KEEP both |
+    | `member_of` | Can be in multiple teams | Old: `user member_of team_a` + New: "I joined team B" → KEEP both (usually) |
+    | `collaborates_with` | Multiple collaborators | Old: `user collaborates_with alice` + New: "Working with Bob too" → KEEP both |
+    | `educated_at` | Multiple institutions | Old: `user educated_at mit` + New: "I also went to Stanford" → KEEP both |
+    | `has_certification` | Multiple certs | Old: `user has_certification aws_sa` + New: "Got PMP certified" → KEEP both |
+    | `works_on` | Multiple projects | Old: `user works_on proj_a` + New: "Also working on proj B" → KEEP both |
+    | `built_with` | Multiple technologies | Old: `app built_with react` + New: "Also using TypeScript" → KEEP both |
+
+    ### Context-Dependent (analyze carefully)
+    | Relationship | When to DELETE | When to KEEP |
+    |--------------|----------------|--------------|
+    | `member_of` (team) | "I left team A for team B" | "I joined team B" (might be both) |
+    | `works_on` (project) | "Project cancelled" or "I'm off project A" | "Also working on B" |
+    | `uses` (tool) | "Switched from X to Y" | "Also using Y" |
+    | `located_in` (office) | "Moved to new office" | "Work from both offices" |
+
+    ## Decision Framework
+
+    For each existing relationship, evaluate:
+
+    ```
+    1. Is there NEW information about the SAME source-destination pair?
+       └─ NO → KEEP (no conflict)
+       └─ YES → Continue to step 2
+
+    2. Does the new information EXPLICITLY contradict the existing relationship?
+       └─ NO → KEEP (might be additional info)
+       └─ YES → Continue to step 3
+
+    3. Is this relationship type typically ONE-TO-ONE for this context?
+       └─ NO → KEEP (can have multiple)
+       └─ YES → DELETE (new replaces old)
+    ```
+
+    ## Examples
+
+    ### Example 1: Clear Replacement (DELETE)
+    **Existing Memory**:
+    ```
+    user_alice -- employer -- acme_corp
+    user_alice -- employed_as -- software_engineer
+    ```
+
+    **New Information**: "I just started at Google as a senior engineer"
+
+    **Analysis**:
+    - `employer` is typically one-to-one
+    - New employer (Google) contradicts old employer (Acme)
+    - `employed_as` has a new value (senior engineer vs software engineer)
+
+    **Decision**: DELETE both relationships
+    ```
+    delete_graph_memory(source="user_alice", relationship="employer", destination="acme_corp")
+    delete_graph_memory(source="user_alice", relationship="employed_as", destination="software_engineer")
+    ```
+
+    ### Example 2: Addition, Not Replacement (KEEP)
+    **Existing Memory**:
+    ```
+    user_bob -- knows -- python
+    user_bob -- uses -- vscode
+    ```
+
+    **New Information**: "I've been learning Rust and started using Neovim"
+
+    **Analysis**:
+    - `knows` is many-to-many (people know multiple languages)
+    - `uses` is many-to-many (people use multiple tools)
+    - No indication that Bob stopped using Python or VSCode
+
+    **Decision**: DELETE nothing
+    ```
+    (no tool calls)
+    ```
+
+    ### Example 3: Explicit Replacement Signal (DELETE)
+    **Existing Memory**:
+    ```
+    user_carol -- uses -- mongodb
+    project_x -- uses -- mongodb
+    ```
+
+    **New Information**: "We migrated from MongoDB to PostgreSQL"
+
+    **Analysis**:
+    - "migrated from X to Y" is an explicit replacement signal
+    - This applies to the project, not necessarily the user personally
+
+    **Decision**: DELETE project's MongoDB relationship only
+    ```
+    delete_graph_memory(source="project_x", relationship="uses", destination="mongodb")
+    ```
+
+    ### Example 4: Manager Change (DELETE)
+    **Existing Memory**:
+    ```
+    user_dave -- reports_to -- sarah_chen
+    user_dave -- member_of -- backend_team
+    ```
+
+    **New Information**: "I'm now reporting to James Wilson"
+
+    **Analysis**:
+    - `reports_to` is typically one-to-one (one direct manager)
+    - New manager explicitly stated
+    - Team membership not mentioned (might still be on same team)
+
+    **Decision**: DELETE only the manager relationship
+    ```
+    delete_graph_memory(source="user_dave", relationship="reports_to", destination="sarah_chen")
+    ```
+
+    ### Example 5: Ambiguous Team Situation (KEEP)
+    **Existing Memory**:
+    ```
+    user_eve -- member_of -- backend_team
+    ```
+
+    **New Information**: "I joined the ML team"
+
+    **Analysis**:
+    - `member_of` can be many-to-many
+    - No explicit statement of leaving backend team
+    - Could be on multiple teams
+
+    **Decision**: DELETE nothing
+    ```
+    (no tool calls)
+    ```
+
+    ### Example 6: Explicit Team Departure (DELETE)
+    **Existing Memory**:
+    ```
+    user_eve -- member_of -- backend_team
+    ```
+
+    **New Information**: "I left the backend team to join ML full-time"
+
+    **Analysis**:
+    - Explicit "left" signal
+    - "full-time" suggests exclusive membership
+
+    **Decision**: DELETE
+    ```
+    delete_graph_memory(source="user_eve", relationship="member_of", destination="backend_team")
+    ```
+
+    ### Example 7: Location Move (DELETE)
+    **Existing Memory**:
+    ```
+    user_franz -- located_in -- berlin
+    user_franz -- employer -- deutsche_bank
+    ```
+
+    **New Information**: "I relocated to London"
+
+    **Analysis**:
+    - `located_in` for a person is typically one primary residence
+    - "relocated" implies a move, not an addition
+    - Employer not mentioned (might or might not have changed)
+
+    **Decision**: DELETE only location
+    ```
+    delete_graph_memory(source="user_franz", relationship="located_in", destination="berlin")
+    ```
+
+    ### Example 8: Project Completion (Context-Dependent)
+    **Existing Memory**:
+    ```
+    user_grace -- works_on -- migration_project
+    ```
+
+    **New Information**: "The migration project completed successfully"
+
+    **Analysis**:
+    - Project completed, but user's historical involvement is still true
+    - `works_on` could become `worked_on` but we don't modify relationships
+    - This is a state change, not a contradiction
+
+    **Decision**: DELETE nothing (let new information be added separately)
+    ```
+    (no tool calls)
+    ```
+
+    ### Example 9: Certification Expiry (DELETE)
+    **Existing Memory**:
+    ```
+    user_hank -- has_certification -- aws_solutions_architect_2020
+    ```
+
+    **New Information**: "My AWS cert expired, I got the new 2024 version"
+
+    **Analysis**:
+    - Explicit "expired" signal
+    - Certification explicitly replaced with new version
+
+    **Decision**: DELETE old cert
+    ```
+    delete_graph_memory(source="user_hank", relationship="has_certification", destination="aws_solutions_architect_2020")
+    ```
+
+    ### Example 10: Multiple Existing, One Replaced
+    **Existing Memory**:
+    ```
+    user_iris -- employer -- acme
+    user_iris -- knows -- python
+    user_iris -- knows -- javascript
+    user_iris -- located_in -- austin
+    ```
+
+    **New Information**: "I'm moving to Seattle for a new job at Amazon"
+
+    **Analysis**:
+    - New employer → old employer should be deleted
+    - New location → old location should be deleted
+    - Skills not mentioned → keep them
+
+    **Decision**: DELETE employer and location only
+    ```
+    delete_graph_memory(source="user_iris", relationship="employer", destination="acme")
+    delete_graph_memory(source="user_iris", relationship="located_in", destination="austin")
+    ```
+
+    ### Example 11: Same Relationship Type, Different Destination (CAREFUL)
+    **Existing Memory**:
+    ```
+    user_jack -- prefers -- python
+    ```
+
+    **New Information**: "I now prefer Rust for systems programming"
+
+    **Analysis**:
+    - Is this replacing the Python preference entirely?
+    - Or is it a domain-specific preference (Rust for systems, Python for other things)?
+    - Ambiguous → err on the side of keeping
+
+    **Decision**: DELETE nothing (ambiguous)
+    ```
+    (no tool calls)
+    ```
+
+    ### Example 12: Third-Party Information
+    **Existing Memory**:
+    ```
+    sarah_chen -- employer -- acme
+    sarah_chen -- employed_as -- engineering_manager
+    ```
+
+    **New Information**: "Sarah got promoted to VP of Engineering"
+
+    **Analysis**:
+    - Same employer, different role
+    - `employed_as` should be updated
+
+    **Decision**: DELETE old role only
+    ```
+    delete_graph_memory(source="sarah_chen", relationship="employed_as", destination="engineering_manager")
+    ```
+
+    ## Red Flags - When NOT to Delete
+
+    1. **No explicit contradiction**: "I use Postgres" does NOT mean delete "uses MySQL"
+    2. **Different contexts**: "I use Python at work" does NOT contradict "uses JavaScript" (might be personal)
+    3. **Partial matches**: "I work with the ML team" does NOT necessarily contradict "member_of backend_team"
+    4. **Historical validity**: "I learned Rust" does NOT contradict "knows Python"
+    5. **Uncertain timing**: "I might switch to..." is not a fact yet
+
+    ## Output Format
+
+    For EACH relationship that should be deleted, make a separate `delete_graph_memory` tool call.
+
+    If 3 relationships should be deleted, make 3 tool calls.
+    If nothing should be deleted, make NO tool calls.
+
+    Each tool call specifies:
+    - `source`: The source entity (exactly as it appears in existing memory)
+    - `relationship`: The relationship type (exactly as it appears)
+    - `destination`: The destination entity (exactly as it appears)
+
+    ### Example: Multiple Deletions = Multiple Tool Calls
+
+    If you determine these two relationships should be deleted:
+    - `user_alice -- employer -- acme_corp`
+    - `user_alice -- located_in -- berlin`
+
+    Make TWO separate tool calls:
+
+    **Tool Call 1:**
+    ```
+    delete_graph_memory(source="user_alice", relationship="employer", destination="acme_corp")
+    ```
+
+    **Tool Call 2:**
+    ```
+    delete_graph_memory(source="user_alice", relationship="located_in", destination="berlin")
+    ```
+
+    ### Example: Nothing to Delete
+
+    If no relationships should be deleted, simply do not call the tool at all.

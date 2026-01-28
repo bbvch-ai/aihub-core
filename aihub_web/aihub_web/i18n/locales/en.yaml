@@ -164,6 +164,12 @@ event:
     system: "System"
     user: "User"
     description: "Chat history was truncated based on token limits to stay within model constraints"
+  addMemoryToChatHistory:
+    summary: "Added {count} memory message to chat history | Added {count} memory messages to chat history"
+    description: "Chat history was extended with relevant memories from previous interactions"
+    assistant: "Assistant"
+    system: "System"
+    user: "User"
   reranker:
     topDocuments: "Top {count} most relevant documents:"
     query: "Search Query"
@@ -171,6 +177,21 @@ event:
     foundDocuments: "Found {count} relevant documents"
     query: "Search Query"
     chunksFound: "{count} chunks found"
+  retrieveMemory:
+    title: "Memory Retrieved"
+    memories: "Memories"
+    relations: "Knowledge Graph"
+    score: "Relevance"
+    noMemories: "No memories retrieved"
+  storeMemory:
+    title: "Memory Changes"
+    added: "Added"
+    updated: "Updated"
+    deleted: "Deleted"
+    addedRelations: "added relations"
+    deletedRelations: "deleted relations"
+    relationChanges: "Relation Changes"
+    noChanges: "No changes"
     documentsSpanning: "Spanning {count} documents"
     avgScore: "Avg relevance: {score}%"
     chunksFromDoc: "{count} chunk | {count} chunks"
@@ -215,6 +236,7 @@ service:
     title: "Services"
     description: "Here are all the services listed that you have activated"
     search: "Search"
+    button: "Search"
 
 agent:
   title: "Agents"
@@ -537,3 +559,60 @@ process:
       in_progress: "In Progress"
       done: "Done"
       steps: "Fortschritt"
+
+memory:
+  title: "Memories"
+  graph:
+    title: "Knowledge Graph"
+  list:
+    title: "Memory List"
+  detail:
+    title: "Memory Details"
+    created_at: "Created At"
+    agent_link_label: "Created by Agent"
+    thread_link_label: "Related Thread"
+    thread_title: "Thread Interaction"
+  update:
+    success:
+      title: "Success"
+      message: "Memory updated successfully"
+    error:
+      title: "Update Failed"
+      message: "Failed to update memory. Please try again."
+  delete:
+    success:
+      title: "Success"
+      message: "Memory deleted successfully"
+    error:
+      title: "Delete Failed"
+      message: "Failed to delete memory. Please try again."
+  edit:
+    memory_content_label: "Memory Content"
+    edit_button: "Edit"
+    save_button: "Save"
+    cancel_button: "Cancel"
+    delete_button: "Delete"
+    delete_confirm_header: "Delete Memory"
+    delete_confirm_message: "Are you sure you want to delete this memory? This action cannot be undone."
+    validation_error: "Validation Error"
+    validation_empty: "Memory content cannot be empty"
+  table:
+    memory: "Memory"
+    agent: "Agent"
+    created: "Created"
+    score: "Score"
+    pagination: "Page {currentPage} of {totalPages}"
+  search:
+    button: "Search"
+    placeholder: "Search memories..."
+    clear: "Clear"
+  delete_all:
+    button: "Delete All"
+    confirm_header: "Delete All Memories"
+    confirm_message: "Are you sure you want to delete all memories? This action cannot be undone."
+    success:
+      title: "Success"
+      message: "All memories deleted successfully"
+    error:
+      title: "Delete Failed"
+      message: "Failed to delete all memories. Please try again."

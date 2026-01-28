@@ -24,7 +24,7 @@ python-i18n = "^0.3.9"
 nats-py = "^2.9.0"
 pyyaml = "^6.0.2"
 llama-index-vector-stores-milvus = "^0.9.4"
-fsspec = "^2025.12.0"
+fsspec = "^2024.10.0"
 llama-index-readers-file = "^0.5.6"
 colorlog = "^6.9.0"
 openinference-instrumentation = "^0.1.38"
@@ -63,6 +63,7 @@ opentelemetry-instrumentation-logging = "^0.60b1"
 opentelemetry-instrumentation-aiohttp-client = "^0.60b1"
 llama-index-postprocessor-cohere-rerank = "^0.5.1"
 lxml = "^5.4.0"
+mem0ai = {extras = ["graph"], version = "^1.0.2"}
 html5lib = "^1.1"
 pypdf = "^6.1.3"
 boto3-stubs = {extras = ["s3"], version = "^1.42.30"}
@@ -132,6 +133,7 @@ extend-exclude = '''
 [tool.pytest.ini_options]
 markers = [
     "slow: mark a test as slow",
+    "azure: mark tests that use Azure services",
 ]
 addopts = "--strict-markers"
 pythonpath = ["."]

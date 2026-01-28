@@ -181,6 +181,27 @@ event:
     contentChunk: "{count} frammento di contenuto | {count} frammenti di contenuto"
     noChunksFound: "Nessun frammento trovato"
     noChunksFoundDescription: "La ricerca di recupero non ha trovato frammenti di contenuto rilevanti."
+  retrieveMemory:
+    title: "Memoria recuperata"
+    memories: "Memorie"
+    relations: "Grafo della conoscenza"
+    score: "Rilevanza"
+    noMemories: "Nessuna memoria recuperata"
+  storeMemory:
+    title: "Modifiche alla memoria"
+    added: "Aggiunto"
+    updated: "Aggiornato"
+    deleted: "Eliminato"
+    addedRelations: "relazioni aggiunte"
+    deletedRelations: "relazioni eliminate"
+    relationChanges: "Modifiche alle relazioni"
+    noChanges: "Nessuna modifica"
+  addMemoryToChatHistory:
+    summary: "{count} messaggio di memoria aggiunto alla cronologia | {count} messaggi di memoria aggiunti alla cronologia"
+    description: "La cronologia della chat è stata arricchita con memorie rilevanti dalle interazioni precedenti"
+    assistant: "Assistente"
+    system: "Sistema"
+    user: "Utente"
   standaloneQuestionCondenser:
     summary: "Domanda rifinita e condensata"
     condensedQuestion: "Domanda Condensata"
@@ -214,6 +235,7 @@ service:
     title: "Servizi"
     description: "Qui sono elencati tutti i servizi che hai attivato"
     search: "Cerca"
+    button: "Cerca"
 
 agent:
   title: "Agenti"
@@ -514,3 +536,60 @@ bar:
 
 process:
   title: "Processi"
+
+memory:
+  title: "Ricordi"
+  graph:
+    title: "Grafo della conoscenza"
+  list:
+    title: "Elenco dei ricordi"
+  detail:
+    title: "Dettagli del ricordo"
+    created_at: "Creato il"
+    agent_link_label: "Creato dall'agente"
+    thread_link_label: "Thread correlato"
+    thread_title: "Interazione thread"
+  update:
+    success:
+      title: "Successo"
+      message: "Ricordo aggiornato con successo"
+    error:
+      title: "Aggiornamento fallito"
+      message: "Impossibile aggiornare il ricordo. Riprova."
+  delete:
+    success:
+      title: "Successo"
+      message: "Ricordo eliminato con successo"
+    error:
+      title: "Eliminazione fallita"
+      message: "Impossibile eliminare il ricordo. Riprova."
+  edit:
+    memory_content_label: "Contenuto del ricordo"
+    edit_button: "Modifica"
+    save_button: "Salva"
+    cancel_button: "Annulla"
+    delete_button: "Elimina"
+    delete_confirm_header: "Elimina ricordo"
+    delete_confirm_message: "Sei sicuro di voler eliminare questo ricordo? Questa azione non può essere annullata."
+    validation_error: "Errore di validazione"
+    validation_empty: "Il contenuto del ricordo non può essere vuoto"
+  table:
+    memory: "Ricordo"
+    agent: "Agente"
+    created: "Creato"
+    score: "Punteggio"
+    pagination: "Pagina {currentPage} di {totalPages}"
+  search:
+    button: "Cerca"
+    placeholder: "Cerca ricordi..."
+    clear: "Cancella"
+  delete_all:
+    button: "Elimina tutto"
+    confirm_header: "Elimina tutti i ricordi"
+    confirm_message: "Sei sicuro di voler eliminare tutti i ricordi? Questa azione non può essere annullata."
+    success:
+      title: "Successo"
+      message: "Tutti i ricordi sono stati eliminati con successo"
+    error:
+      title: "Eliminazione fallita"
+      message: "Impossibile eliminare tutti i ricordi. Riprova."

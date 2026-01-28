@@ -1,0 +1,26 @@
+from typing import Annotated
+
+from pydantic import AliasChoices, BaseModel, Field
+
+
+class MemoryRelation(BaseModel):
+    """Represents a knowledge graph triple"""
+
+    source: Annotated[str, Field(description="The source entity.")]
+    relation: Annotated[
+        str,
+        Field(
+            description="The relationship between the source and target entities.",
+            validation_alias=AliasChoices("relation", "relationship"),
+        ),
+    ]
+    target: Annotated[
+        str,
+        Field(
+            description="The target entity.",
+            validation_alias=AliasChoices("target", "destination"),
+        ),
+    ]
+
+    def as_string(self) -> str:
+        return f"{self.source} -> {self.relation} -> {self.target}"

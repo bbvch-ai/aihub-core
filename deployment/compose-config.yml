@@ -31,7 +31,8 @@ image_tags:
   nats: nats:2.11.4
   valkey: valkey:8.0.5
   ferretdb: ferretdb:2.5.0
-  litellm: litellm:v1.79.1-stable
+  neo4j: neo4j:5.26.16-community
+  litellm: litellm:v1.80.5-stable.1
   docling: docling-serve-cpu:v1.9.0
   jupyter: minimal-notebook:notebook-7.0.6
   otel_collector: otel/opentelemetry-collector-contrib:latest

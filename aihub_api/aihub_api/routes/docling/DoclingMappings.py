@@ -3,10 +3,10 @@ These mappings are copied from docling.datamodel.base_models.
 We do not want to import docling here because it is very heavy.
 """
 
-from enum import Enum
+from enum import StrEnum
 
 
-class InputFormat(str, Enum):
+class InputFormat(StrEnum):
     """A document format supported by document backend parsers."""
 
     DOCX = "docx"
@@ -26,7 +26,7 @@ class InputFormat(str, Enum):
     VTT = "vtt"
 
 
-class OutputFormat(str, Enum):
+class OutputFormat(StrEnum):
     MARKDOWN = "md"
     JSON = "json"
     HTML = "html"

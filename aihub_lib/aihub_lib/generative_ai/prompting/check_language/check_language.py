@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated
 
 from llama_index.core import PromptTemplate
@@ -14,7 +14,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
 )
 
 
-class LanguageEnum(str, Enum):
+class LanguageEnum(StrEnum):
     de = NODE_LANGUAGE_GERMAN
     en = NODE_LANGUAGE_ENGLISH
     fr = NODE_LANGUAGE_FRENCH

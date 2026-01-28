@@ -185,3 +185,35 @@ user_message_event:
 standalone_question_condenser_event:
   name: "Condensatore di Domande Autonome"
   description: "L'agente riformula una domanda autonoma per migliorarne la chiarezza e la pertinenza, facilitando una risposta più precisa."
+
+new_memory_event:
+  name: "Memoria Aggiornata"
+  description: "L'agente ha aggiornato le memorie dell'utente o dell'organizzazione basate sulla conversazione"
+
+retrieve_memory_event:
+  name: "Memoria Recuperata"
+  description: "L'agente ha recuperato memorie rilevanti per il contesto"
+
+retrieve_user_memory_event:
+  name: "Memoria Utente Recuperata"
+  description: "L'agente ha recuperato memorie utente private per un contesto personalizzato"
+
+retrieve_organization_memory_event:
+  name: "Memoria Organizzativa Recuperata"
+  description: "L'agente ha recuperato memorie organizzative condivise per il contesto"
+
+store_organization_memory_event:
+  name: "Memoria Organizzativa Memorizzata"
+  description: "L'agente ha memorizzato un fatto organizzativo esplicito condiviso tra tutti gli utenti"
+
+add_memory_to_chat_history_event:
+  name: "Memoria Aggiunta al Contesto"
+  description: "L'agente ha esteso la cronologia chat con le memorie"
+
+add_user_memory_to_chat_history_event:
+  name: "Memoria Utente Aggiunta al Contesto"
+  description: "L'agente ha esteso la cronologia chat con le memorie utente private"
+
+add_organization_memory_to_chat_history_event:
+  name: "Memoria Organizzativa Aggiunta al Contesto"
+  description: "L'agente ha esteso la cronologia chat con le memorie organizzative condivise"

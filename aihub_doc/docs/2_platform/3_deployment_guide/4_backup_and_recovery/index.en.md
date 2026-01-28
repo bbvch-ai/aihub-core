@@ -11,7 +11,7 @@ instances.
 
 ::: info Multi-instancing context
 This chapter assumes a multi-instance deployment model where each organization has their own isolated AI-Hub instance.
-For multi-tenancy (logical separation within a single instance), see [Multi-tenancy](../../15_multi_tenancy/).
+For multi-tenancy (logical separation within a single instance), see [Multi-tenancy](../../16_multi_tenancy/).
 :::
 
 ## Backup approaches

@@ -1,11 +1,11 @@
 # License Report
 
-Generated on: 19.01.2026
+Generated on: 18.12.2025
 
 This document contains license information for all dependencies across the monorepo:
 
-- Python packages (Poetry): **0 packages**
-- Node.js packages (pnpm): **197 packages**
+- Python packages (Poetry): **1653 packages**
+- Node.js packages (pnpm): **204 packages**
 - External Docker images: **31 images**
 
 ### License Compatibility
@@ -22,85 +22,1692 @@ This document contains license information for all dependencies across the monor
 
 ## Python Dependencies
 
+### aihub_lib
+
+| Status | Package                                      | Version           | License                                           | Notes |
+| ------ | -------------------------------------------- | ----------------- | ------------------------------------------------- | ----- |
+| ✅     | protobuf                                     | 5.29.5            | 3-Clause BSD License                              |       |
+| ✅     | dirtyjson                                    | 1.0.8             | Academic Free License (AFL); MIT License          |       |
+| ✅     | regex                                        | 2025.11.3         | Apache-2.0 (override)                             |       |
+| ✅     | aiohttp                                      | 3.13.2            | Apache-2.0 AND MIT                                |       |
+| ✅     | arize-phoenix-otel                           | 0.13.1            | Apache-2.0                                        |       |
+| ✅     | asttokens                                    | 3.0.0             | Apache 2.0                                        |       |
+| ✅     | boto3                                        | 1.40.66           | Apache-2.0                                        |       |
+| ✅     | botocore                                     | 1.40.66           | Apache-2.0                                        |       |
+| ✅     | coverage                                     | 7.11.0            | Apache-2.0                                        |       |
+| ✅     | frozenlist                                   | 1.8.0             | Apache-2.0                                        |       |
+| ✅     | hf-xet                                       | 1.2.0             | Apache-2.0 (override)                             |       |
+| ✅     | mem0ai                                       | 1.0.1             | Apache-2.0                                        |       |
+| ✅     | openinference-instrumentation-llama-index    | 4.3.8             | Apache-2.0                                        |       |
+| ✅     | openinference-instrumentation                | 0.1.42            | Apache-2.0                                        |       |
+| ✅     | openinference-semantic-conventions           | 0.1.25            | Apache-2.0                                        |       |
+| ✅     | opentelemetry-api                            | 1.37.0            | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-exporter-otlp-proto-common     | 1.37.0            | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-exporter-otlp-proto-grpc       | 1.37.0            | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-exporter-otlp-proto-http       | 1.37.0            | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-exporter-otlp                  | 1.37.0            | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-instrumentation-aiohttp-client | 0.58b0            | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-asyncio        | 0.58b0            | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-botocore       | 0.58b0            | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-httpx          | 0.58b0            | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-jinja2         | 0.58b0            | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-logging        | 0.58b0            | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-pymongo        | 0.58b0            | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-redis          | 0.58b0            | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-requests       | 0.58b0            | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation                | 0.58b0            | Apache-2.0                                        |       |
+| ✅     | opentelemetry-propagator-aws-xray            | 1.0.2             | Apache-2.0                                        |       |
+| ✅     | opentelemetry-proto                          | 1.37.0            | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-sdk                            | 1.37.0            | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-semantic-conventions           | 0.58b0            | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-util-http                      | 0.58b0            | Apache-2.0                                        |       |
+| ✅     | python-multipart                             | 0.0.20            | Apache-2.0                                        |       |
+| ✅     | rank-bm25                                    | 0.2.2             | Apache2.0                                         |       |
+| ✅     | types-networkx                               | 3.5.0.20251104    | Apache-2.0 (override)                             |       |
+| ✅     | types-pytz                                   | 2025.2.0.20251108 | Apache-2.0                                        |       |
+| ✅     | types-PyYAML                                 | 6.0.12.20250915   | Apache-2.0 (override)                             |       |
+| ✅     | types-requests                               | 2.32.4.20250913   | Apache-2.0 (override)                             |       |
+| ✅     | cryptography                                 | 46.0.3            | Apache-2.0 OR BSD-3-Clause                        |       |
+| ✅     | orjson                                       | 3.11.4            | Apache-2.0 OR MIT                                 |       |
+| ✅     | multidict                                    | 6.7.0             | Apache License 2.0                                |       |
+| ✅     | packaging                                    | 25.0              | Apache Software License; BSD License              |       |
+| ✅     | python-dateutil                              | 2.9.0.post0       | Apache Software License; BSD License              |       |
+| ✅     | ormsgpack                                    | 1.12.0            | Apache Software License; MIT License              |       |
+| ✅     | sniffio                                      | 1.3.1             | Apache Software License; MIT License              |       |
+| ✅     | aiosignal                                    | 1.4.0             | Apache Software License                           |       |
+| ✅     | distro                                       | 1.9.0             | Apache Software License                           |       |
+| ✅     | googleapis-common-protos                     | 1.71.0            | Apache Software License                           |       |
+| ✅     | grpcio                                       | 1.76.0            | Apache Software License                           |       |
+| ✅     | huggingface-hub                              | 0.36.0            | Apache Software License                           |       |
+| ✅     | importlib_metadata                           | 8.7.0             | Apache Software License                           |       |
+| ✅     | jsonpath-ng                                  | 1.7.0             | Apache Software License                           |       |
+| ✅     | motor                                        | 3.7.1             | Apache Software License                           |       |
+| ✅     | nats-py                                      | 2.12.0            | Apache Software License                           |       |
+| ✅     | neo4j                                        | 5.28.2            | Apache Software License                           |       |
+| ✅     | nltk                                         | 3.9.2             | Apache Software License                           |       |
+| ✅     | openai                                       | 1.109.1           | Apache Software License                           |       |
+| ✅     | opentelemetry-instrumentation-milvus         | 0.47.5            | Apache Software License                           |       |
+| ✅     | opentelemetry-semantic-conventions-ai        | 0.4.13            | Apache Software License                           |       |
+| ✅     | propcache                                    | 0.4.1             | Apache Software License                           |       |
+| ✅     | pyarrow                                      | 22.0.0            | Apache Software License                           |       |
+| ✅     | pymilvus                                     | 2.6.3             | Apache Software License                           |       |
+| ✅     | pymongo                                      | 4.15.3            | Apache Software License                           |       |
+| ✅     | pytest-asyncio                               | 0.24.0            | Apache Software License                           |       |
+| ✅     | qdrant-client                                | 1.15.1            | Apache Software License                           |       |
+| ✅     | requests-toolbelt                            | 1.0.0             | Apache Software License                           |       |
+| ✅     | requests                                     | 2.32.5            | Apache Software License                           |       |
+| ✅     | s3transfer                                   | 0.14.0            | Apache Software License                           |       |
+| ✅     | safetensors                                  | 0.6.2             | Apache Software License                           |       |
+| ✅     | tenacity                                     | 9.1.2             | Apache Software License                           |       |
+| ✅     | tokenizers                                   | 0.22.1            | Apache Software License                           |       |
+| ✅     | transformers                                 | 4.57.1            | Apache Software License                           |       |
+| ✅     | tzdata                                       | 2025.2            | Apache Software License                           |       |
+| ✅     | yarl                                         | 1.22.0            | Apache Software License                           |       |
+| ✅     | click                                        | 8.3.0             | BSD-3-Clause (override)                           |       |
+| ✅     | httpcore                                     | 1.0.9             | BSD-3-Clause                                      |       |
+| ✅     | idna                                         | 3.11              | BSD-3-Clause                                      |       |
+| ✅     | ipython                                      | 9.7.0             | BSD-3-Clause                                      |       |
+| ✅     | MarkupSafe                                   | 3.0.3             | BSD-3-Clause                                      |       |
+| ✅     | portalocker                                  | 3.2.0             | BSD-3-Clause                                      |       |
+| ✅     | psutil                                       | 7.1.3             | BSD-3-Clause                                      |       |
+| ✅     | pypdf                                        | 5.9.0             | BSD-3-Clause (override)                           |       |
+| ✅     | python-dotenv                                | 1.2.1             | BSD-3-Clause                                      |       |
+| ✅     | scikit-learn                                 | 1.7.2             | BSD-3-Clause (override)                           |       |
+| ✅     | starlette                                    | 0.46.2            | BSD-3-Clause                                      |       |
+| ✅     | uvicorn                                      | 0.38.0            | BSD-3-Clause                                      |       |
+| ✅     | zstandard                                    | 0.25.0            | BSD-3-Clause                                      |       |
+| ✅     | adlfs                                        | 2024.12.0         | BSD License                                       |       |
+| ✅     | Authlib                                      | 1.6.5             | BSD License                                       |       |
+| ✅     | colorama                                     | 0.4.6             | BSD License                                       |       |
+| ✅     | contourpy                                    | 1.3.3             | BSD License                                       |       |
+| ✅     | cycler                                       | 0.12.1            | BSD License                                       |       |
+| ✅     | decorator                                    | 5.2.1             | BSD License                                       |       |
+| ✅     | flatdict                                     | 4.0.1             | BSD License                                       |       |
+| ✅     | fsspec                                       | 2024.12.0         | BSD License                                       |       |
+| ✅     | httpx                                        | 0.28.1            | BSD License                                       |       |
+| ✅     | ipython_pygments_lexers                      | 1.1.1             | BSD License                                       |       |
+| ✅     | isodate                                      | 0.7.2             | BSD License                                       |       |
+| ✅     | Jinja2                                       | 3.1.6             | BSD License                                       |       |
+| ✅     | joblib                                       | 1.5.2             | BSD License                                       |       |
+| ✅     | jsonpatch                                    | 1.33              | BSD License                                       |       |
+| ✅     | jsonpointer                                  | 3.0.0             | BSD License                                       |       |
+| ✅     | kiwisolver                                   | 1.4.9             | BSD License                                       |       |
+| ✅     | lxml                                         | 5.4.0             | BSD License                                       |       |
+| ✅     | nest-asyncio                                 | 1.6.0             | BSD License                                       |       |
+| ✅     | networkx                                     | 3.5               | BSD License                                       |       |
+| ✅     | numpy                                        | 2.3.4             | BSD License                                       |       |
+| ✅     | pandas-stubs                                 | 2.3.3.251201      | BSD License                                       |       |
+| ✅     | pandas                                       | 2.2.3             | BSD License                                       |       |
+| ✅     | prompt_toolkit                               | 3.0.52            | BSD License                                       |       |
+| ✅     | pycparser                                    | 2.23              | BSD License                                       |       |
+| ✅     | Pygments                                     | 2.19.2            | BSD License                                       |       |
+| ✅     | scipy                                        | 1.16.3            | BSD License                                       |       |
+| ✅     | striprtf                                     | 0.0.26            | BSD License                                       |       |
+| ✅     | threadpoolctl                                | 3.6.0             | BSD License                                       |       |
+| ✅     | traitlets                                    | 5.14.3            | BSD License                                       |       |
+| ✅     | webencodings                                 | 0.5.1             | BSD License                                       |       |
+| ✅     | wrapt                                        | 1.17.3            | BSD License                                       |       |
+| ✅     | xxhash                                       | 3.6.0             | BSD License                                       |       |
+| ✅     | ply                                          | 3.11              | BSD                                               |       |
+| ✅     | arize-phoenix-client                         | 1.21.0            | Elastic-2.0                                       |       |
+| ✅     | arize-phoenix-evals                          | 2.5.0             | Elastic-2.0                                       |       |
+| ✅     | arize-phoenix                                | 10.15.0           | Elastic-2.0                                       |       |
+| ✅     | dnspython                                    | 2.8.0             | ISC License (ISCL)                                |       |
+| ✅     | pexpect                                      | 4.9.0             | ISC License (ISCL)                                |       |
+| ✅     | ptyprocess                                   | 0.7.0             | ISC License (ISCL)                                |       |
+| ✅     | shellingham                                  | 1.5.4             | ISC License (ISCL)                                |       |
+| ✅     | griffe                                       | 1.14.0            | ISC (override)                                    |       |
+| ✅     | greenlet                                     | 3.2.4             | MIT AND Python-2.0                                |       |
+| ✅     | pillow                                       | 12.0.0            | MIT-CMU (override)                                |       |
+| ✅     | tqdm                                         | 4.67.1            | MIT License; Mozilla Public License 2.0 (MPL 2.0) |       |
+| ✅     | aioitertools                                 | 0.12.0            | MIT License                                       |       |
+| ✅     | aiosqlite                                    | 0.21.0            | MIT License                                       |       |
+| ✅     | annotated-types                              | 0.7.0             | MIT License                                       |       |
+| ✅     | azure-ai-documentintelligence                | 1.0.2             | MIT License                                       |       |
+| ✅     | azure-core                                   | 1.36.0            | MIT License                                       |       |
+| ✅     | azure-datalake-store                         | 0.0.53            | MIT License                                       |       |
+| ✅     | azure-storage-blob                           | 12.27.1           | MIT License                                       |       |
+| ✅     | azure-storage-file-datalake                  | 12.22.0           | MIT License                                       |       |
+| ✅     | backoff                                      | 2.2.1             | MIT License                                       |       |
+| ✅     | beautifulsoup4                               | 4.14.2            | MIT License                                       |       |
+| ✅     | black                                        | 24.10.0           | MIT License                                       |       |
+| ✅     | cachetools                                   | 5.5.2             | MIT License                                       |       |
+| ✅     | cohere                                       | 5.20.0            | MIT License                                       |       |
+| ✅     | colorlog                                     | 6.10.1            | MIT License                                       |       |
+| ✅     | dataclasses-json                             | 0.6.7             | MIT License                                       |       |
+| ✅     | Deprecated                                   | 1.3.1             | MIT License                                       |       |
+| ✅     | executing                                    | 2.2.1             | MIT License                                       |       |
+| ✅     | fastapi                                      | 0.115.14          | MIT License                                       |       |
+| ✅     | filetype                                     | 1.2.0             | MIT License                                       |       |
+| ✅     | graphql-core                                 | 3.2.7             | MIT License                                       |       |
+| ✅     | grpc-interceptor                             | 0.15.4            | MIT License                                       |       |
+| ✅     | h11                                          | 0.16.0            | MIT License                                       |       |
+| ✅     | h2                                           | 4.3.0             | MIT License                                       |       |
+| ✅     | hpack                                        | 4.1.0             | MIT License                                       |       |
+| ✅     | html5lib                                     | 1.1               | MIT License                                       |       |
+| ✅     | hyperframe                                   | 6.1.0             | MIT License                                       |       |
+| ✅     | jedi                                         | 0.19.2            | MIT License                                       |       |
+| ✅     | jiter                                        | 0.11.1            | MIT License                                       |       |
+| ✅     | jmespath                                     | 1.0.1             | MIT License                                       |       |
+| ✅     | json_repair                                  | 0.44.1            | MIT License                                       |       |
+| ✅     | langchain-neo4j                              | 0.6.0             | MIT License                                       |       |
+| ✅     | latex2mathml                                 | 3.78.1            | MIT License                                       |       |
+| ✅     | llama-index-embeddings-openai                | 0.3.1             | MIT License                                       |       |
+| ✅     | llama-index-postprocessor-cohere-rerank      | 0.3.0             | MIT License                                       |       |
+| ✅     | llama-index-storage-docstore-mongodb         | 0.3.0             | MIT License                                       |       |
+| ✅     | llama-index-storage-kvstore-mongodb          | 0.3.0             | MIT License                                       |       |
+| ✅     | Mako                                         | 1.3.10            | MIT License                                       |       |
+| ✅     | markdown-it-py                               | 4.0.0             | MIT License                                       |       |
+| ✅     | marshmallow                                  | 3.26.1            | MIT License                                       |       |
+| ✅     | mdurl                                        | 0.1.2             | MIT License                                       |       |
+| ✅     | memgraph-toolbox                             | 0.1.5             | MIT License                                       |       |
+| ✅     | mongoengine                                  | 0.29.1            | MIT License                                       |       |
+| ✅     | msal-extensions                              | 1.3.1             | MIT License                                       |       |
+| ✅     | msal                                         | 1.34.0            | MIT License                                       |       |
+| ✅     | mypy                                         | 1.18.2            | MIT License                                       |       |
+| ✅     | parse                                        | 1.20.2            | MIT License                                       |       |
+| ✅     | parso                                        | 0.8.5             | MIT License                                       |       |
+| ✅     | pluggy                                       | 1.6.0             | MIT License                                       |       |
+| ✅     | posthog                                      | 7.0.0             | MIT License                                       |       |
+| ✅     | pure_eval                                    | 0.2.3             | MIT License                                       |       |
+| ✅     | PyJWT                                        | 2.10.1            | MIT License                                       |       |
+| ✅     | pystache                                     | 0.6.8             | MIT License                                       |       |
+| ✅     | pytest-bdd                                   | 8.1.0             | MIT License                                       |       |
+| ✅     | pytest-mock                                  | 3.15.1            | MIT License                                       |       |
+| ✅     | pytest                                       | 8.4.2             | MIT License                                       |       |
+| ✅     | python-i18n                                  | 0.3.9             | MIT License                                       |       |
+| ✅     | pytz                                         | 2025.2            | MIT License                                       |       |
+| ✅     | PyYAML                                       | 6.0.3             | MIT License                                       |       |
+| ✅     | redis                                        | 5.3.1             | MIT License                                       |       |
+| ✅     | rich                                         | 14.2.0            | MIT License                                       |       |
+| ✅     | ruff                                         | 0.8.6             | MIT License                                       |       |
+| ✅     | six                                          | 1.17.0            | MIT License                                       |       |
+| ✅     | stack-data                                   | 0.6.3             | MIT License                                       |       |
+| ✅     | strawberry-graphql                           | 0.270.1           | MIT License                                       |       |
+| ✅     | tabulate                                     | 0.9.0             | MIT License                                       |       |
+| ✅     | tomlkit                                      | 0.13.3            | MIT License                                       |       |
+| ✅     | toml-sort                                    | 0.24.3            | MIT License                                       |       |
+| ✅     | typer                                        | 0.19.2            | MIT License                                       |       |
+| ✅     | typing-inspect                               | 0.9.0             | MIT License                                       |       |
+| ✅     | tiktoken                                     | 0.12.0            | MIT (override)                                    |       |
+| ✅     | alembic                                      | 1.17.1            | MIT (override)                                    |       |
+| ✅     | anyio                                        | 4.11.0            | MIT (override)                                    |       |
+| ✅     | attrs                                        | 25.4.0            | MIT (override)                                    |       |
+| ✅     | azure-identity                               | 1.25.1            | MIT                                               |       |
+| ✅     | banks                                        | 2.2.0             | BSD-3-Clause (override)                           |       |
+| ✅     | cffi                                         | 2.0.0             | MIT                                               |       |
+| ✅     | charset-normalizer                           | 3.4.4             | MIT                                               |       |
+| ✅     | docling-core                                 | 2.55.0            | MIT (override)                                    |       |
+| ✅     | fastavro                                     | 1.12.1            | MIT                                               |       |
+| ✅     | fonttools                                    | 4.60.1            | MIT                                               |       |
+| ✅     | gherkin-official                             | 29.0.0            | MIT                                               |       |
+| ✅     | httpx-sse                                    | 0.4.0             | MIT                                               |       |
+| ✅     | iniconfig                                    | 2.3.0             | MIT                                               |       |
+| ✅     | jsonref                                      | 1.1.0             | MIT                                               |       |
+| ✅     | jsonschema-specifications                    | 2025.9.1          | MIT (override)                                    |       |
+| ✅     | jsonschema                                   | 4.25.1            | MIT (override)                                    |       |
+| ✅     | kuzu                                         | 0.11.3            | MIT                                               |       |
+| ✅     | langchain-aws                                | 1.0.0             | MIT                                               |       |
+| ✅     | langchain-classic                            | 1.0.0             | MIT                                               |       |
+| ✅     | langchain-core                               | 1.0.4             | MIT                                               |       |
+| ✅     | langchain-memgraph                           | 0.1.7             | MIT                                               |       |
+| ✅     | langchain-text-splitters                     | 1.0.0             | MIT                                               |       |
+| ✅     | langchain                                    | 1.0.5             | MIT                                               |       |
+| ✅     | langgraph-checkpoint                         | 3.0.1             | MIT                                               |       |
+| ✅     | langgraph-prebuilt                           | 1.0.2             | MIT                                               |       |
+| ✅     | langgraph-sdk                                | 0.2.9             | MIT                                               |       |
+| ✅     | langgraph                                    | 1.0.3             | MIT                                               |       |
+| ✅     | langsmith                                    | 0.4.42            | MIT                                               |       |
+| ✅     | llama-index-core                             | 0.12.52.post1     | MIT (override)                                    |       |
+| ✅     | llama-index-embeddings-openai-like           | 0.1.1             | MIT (override)                                    |       |
+| ✅     | llama-index-instrumentation                  | 0.4.2             | MIT (override)                                    |       |
+| ✅     | llama-index-llms-openai-like                 | 0.3.5             | MIT (override)                                    |       |
+| ✅     | llama-index-llms-openai                      | 0.3.44            | MIT (override)                                    |       |
+| ✅     | llama-index-readers-file                     | 0.4.11            | MIT (override)                                    |       |
+| ✅     | llama-index-vector-stores-milvus             | 0.8.7             | MIT (override)                                    |       |
+| ✅     | llama-index-workflows                        | 1.3.0             | MIT (override)                                    |       |
+| ✅     | mypy_extensions                              | 1.1.0             | MIT (override)                                    |       |
+| ✅     | parse_type                                   | 0.6.6             | MIT (override)                                    |       |
+| ✅     | platformdirs                                 | 4.5.0             | MIT                                               |       |
+| ✅     | pydantic_core                                | 2.41.5            | MIT                                               |       |
+| ✅     | pydantic-settings                            | 2.11.0            | MIT                                               |       |
+| ✅     | pydantic                                     | 2.12.4            | MIT                                               |       |
+| ✅     | pyparsing                                    | 3.2.5             | MIT                                               |       |
+| ✅     | pytest-cov                                   | 6.3.0             | MIT                                               |       |
+| ✅     | referencing                                  | 0.37.0            | MIT (override)                                    |       |
+| ✅     | rpds-py                                      | 0.28.0            | MIT (override)                                    |       |
+| ✅     | soupsieve                                    | 2.8               | MIT                                               |       |
+| ✅     | SQLAlchemy                                   | 2.0.44            | MIT                                               |       |
+| ✅     | tokenize_rt                                  | 6.2.0             | MIT                                               |       |
+| ✅     | typing-inspection                            | 0.4.2             | MIT (override)                                    |       |
+| ✅     | urllib3                                      | 2.5.0             | MIT (override)                                    |       |
+| ✅     | zipp                                         | 3.23.0            | MIT (override)                                    |       |
+| ✅     | certifi                                      | 2025.10.5         | Mozilla Public License 2.0 (MPL 2.0)              |       |
+| ✅     | pathspec                                     | 0.12.1            | Mozilla Public License 2.0 (MPL 2.0)              |       |
+| ✅     | neo4j-graphrag                               | 1.9.1             | Apache-2.0 (override)                             |       |
+| ✅     | typing_extensions                            | 4.15.0            | PSF-2.0 (override)                                |       |
+| ✅     | aiohappyeyeballs                             | 2.6.1             | Python Software Foundation License                |       |
+| ✅     | defusedxml                                   | 0.7.1             | Python Software Foundation License                |       |
+| ✅     | matplotlib                                   | 3.10.7            | Python Software Foundation License                |       |
+| ✅     | email-validator                              | 2.3.0             | The Unlicense (Unlicense)                         |       |
+| ✅     | matplotlib-inline                            | 0.2.1             | BSD-3-Clause (override)                           |       |
+| ✅     | filelock                                     | 3.20.0            | Unlicense                                         |       |
+| ✅     | sqlean.py                                    | 3.50.4.5          | zlib/libpng                                       |       |
+
+### aihub_api
+
+| Status | Package                                          | Version         | License                                                      | Notes |
+| ------ | ------------------------------------------------ | --------------- | ------------------------------------------------------------ | ----- |
+| ✅     | protobuf                                         | 5.29.5          | 3-Clause BSD License                                         |       |
+| ✅     | dirtyjson                                        | 1.0.8           | Academic Free License (AFL); MIT License                     |       |
+| ✅     | regex                                            | 2025.11.3       | Apache-2.0 (override)                                        |       |
+| ✅     | aiohttp                                          | 3.13.2          | Apache-2.0 AND MIT                                           |       |
+| ✅     | arize-phoenix-otel                               | 0.13.1          | Apache-2.0                                                   |       |
+| ✅     | asttokens                                        | 3.0.0           | Apache 2.0                                                   |       |
+| ✅     | boto3                                            | 1.40.66         | Apache-2.0                                                   |       |
+| ✅     | botocore                                         | 1.40.66         | Apache-2.0                                                   |       |
+| ✅     | coverage                                         | 7.11.0          | Apache-2.0                                                   |       |
+| ✅     | cyclopts                                         | 4.2.1           | Apache-2.0                                                   |       |
+| ✅     | fastmcp                                          | 2.12.5          | Apache-2.0                                                   |       |
+| ✅     | frozenlist                                       | 1.8.0           | Apache-2.0                                                   |       |
+| ✅     | hf-xet                                           | 1.2.0           | Apache-2.0 (override)                                        |       |
+| ✅     | mem0ai                                           | 1.0.1           | Apache-2.0                                                   |       |
+| ✅     | openinference-instrumentation-llama-index        | 4.3.8           | Apache-2.0                                                   |       |
+| ✅     | openinference-instrumentation                    | 0.1.42          | Apache-2.0                                                   |       |
+| ✅     | openinference-semantic-conventions               | 0.1.25          | Apache-2.0                                                   |       |
+| ✅     | opentelemetry-api                                | 1.37.0          | Apache-2.0 (override)                                        |       |
+| ✅     | opentelemetry-exporter-otlp-proto-common         | 1.37.0          | Apache-2.0 (override)                                        |       |
+| ✅     | opentelemetry-exporter-otlp-proto-grpc           | 1.37.0          | Apache-2.0 (override)                                        |       |
+| ✅     | opentelemetry-exporter-otlp-proto-http           | 1.37.0          | Apache-2.0 (override)                                        |       |
+| ✅     | opentelemetry-exporter-otlp                      | 1.37.0          | Apache-2.0 (override)                                        |       |
+| ✅     | opentelemetry-instrumentation-aiohttp-client     | 0.58b0          | Apache-2.0                                                   |       |
+| ✅     | opentelemetry-instrumentation-asgi               | 0.58b0          | Apache-2.0                                                   |       |
+| ✅     | opentelemetry-instrumentation-asyncio            | 0.58b0          | Apache-2.0                                                   |       |
+| ✅     | opentelemetry-instrumentation-botocore           | 0.58b0          | Apache-2.0                                                   |       |
+| ✅     | opentelemetry-instrumentation-fastapi            | 0.58b0          | Apache-2.0                                                   |       |
+| ✅     | opentelemetry-instrumentation-httpx              | 0.58b0          | Apache-2.0                                                   |       |
+| ✅     | opentelemetry-instrumentation-jinja2             | 0.58b0          | Apache-2.0                                                   |       |
+| ✅     | opentelemetry-instrumentation-logging            | 0.58b0          | Apache-2.0                                                   |       |
+| ✅     | opentelemetry-instrumentation-pymongo            | 0.58b0          | Apache-2.0                                                   |       |
+| ✅     | opentelemetry-instrumentation-redis              | 0.58b0          | Apache-2.0                                                   |       |
+| ✅     | opentelemetry-instrumentation-requests           | 0.58b0          | Apache-2.0                                                   |       |
+| ✅     | opentelemetry-instrumentation                    | 0.58b0          | Apache-2.0                                                   |       |
+| ✅     | opentelemetry-propagator-aws-xray                | 1.0.2           | Apache-2.0                                                   |       |
+| ✅     | opentelemetry-proto                              | 1.37.0          | Apache-2.0 (override)                                        |       |
+| ✅     | opentelemetry-sdk                                | 1.37.0          | Apache-2.0 (override)                                        |       |
+| ✅     | opentelemetry-semantic-conventions               | 0.58b0          | Apache-2.0 (override)                                        |       |
+| ✅     | opentelemetry-util-http                          | 0.58b0          | Apache-2.0                                                   |       |
+| ✅     | python-multipart                                 | 0.0.20          | Apache-2.0                                                   |       |
+| ✅     | rank-bm25                                        | 0.2.2           | Apache2.0                                                    |       |
+| ✅     | types-PyYAML                                     | 6.0.12.20250915 | Apache-2.0 (override)                                        |       |
+| ✅     | types-requests                                   | 2.32.4.20250913 | Apache-2.0 (override)                                        |       |
+| ✅     | orjson                                           | 3.11.4          | Apache-2.0 OR MIT                                            |       |
+| ✅     | multidict                                        | 6.7.0           | Apache License 2.0                                           |       |
+| ✅     | cryptography                                     | 44.0.3          | Apache Software License; BSD License                         |       |
+| ✅     | packaging                                        | 25.0            | Apache Software License; BSD License                         |       |
+| ✅     | python-dateutil                                  | 2.9.0.post0     | Apache Software License; BSD License                         |       |
+| ✅     | ormsgpack                                        | 1.12.0          | Apache Software License; MIT License                         |       |
+| ✅     | sniffio                                          | 1.3.1           | Apache Software License; MIT License                         |       |
+| ✅     | uvloop                                           | 0.22.1          | Apache Software License; MIT License                         |       |
+| ✅     | aiosignal                                        | 1.4.0           | Apache Software License                                      |       |
+| ✅     | distro                                           | 1.9.0           | Apache Software License                                      |       |
+| ✅     | googleapis-common-protos                         | 1.71.0          | Apache Software License                                      |       |
+| ✅     | grpcio                                           | 1.76.0          | Apache Software License                                      |       |
+| ✅     | huggingface-hub                                  | 0.36.0          | Apache Software License                                      |       |
+| ✅     | importlib_metadata                               | 8.7.0           | Apache Software License                                      |       |
+| ✅     | jsonpath-ng                                      | 1.7.0           | Apache Software License                                      |       |
+| ✅     | jsonschema-path                                  | 0.3.4           | Apache Software License                                      |       |
+| ✅     | motor                                            | 3.7.1           | Apache Software License                                      |       |
+| ✅     | nats-py                                          | 2.12.0          | Apache Software License                                      |       |
+| ✅     | neo4j                                            | 5.28.2          | Apache Software License                                      |       |
+| ✅     | nltk                                             | 3.9.2           | Apache Software License                                      |       |
+| ✅     | openai                                           | 1.109.1         | Apache Software License                                      |       |
+| ✅     | openapi-spec-validator                           | 0.7.2           | Apache Software License                                      |       |
+| ✅     | opentelemetry-instrumentation-milvus             | 0.47.5          | Apache Software License                                      |       |
+| ✅     | opentelemetry-semantic-conventions-ai            | 0.4.13          | Apache Software License                                      |       |
+| ✅     | pathable                                         | 0.4.4           | Apache Software License                                      |       |
+| ✅     | propcache                                        | 0.4.1           | Apache Software License                                      |       |
+| ✅     | pyarrow                                          | 22.0.0          | Apache Software License                                      |       |
+| ✅     | pymilvus                                         | 2.6.3           | Apache Software License                                      |       |
+| ✅     | pymongo                                          | 4.15.3          | Apache Software License                                      |       |
+| ✅     | pytest-asyncio                                   | 0.24.0          | Apache Software License                                      |       |
+| ✅     | qdrant-client                                    | 1.16.1          | Apache Software License                                      |       |
+| ✅     | requests-toolbelt                                | 1.0.0           | Apache Software License                                      |       |
+| ✅     | requests                                         | 2.32.5          | Apache Software License                                      |       |
+| ✅     | s3transfer                                       | 0.14.0          | Apache Software License                                      |       |
+| ✅     | safetensors                                      | 0.6.2           | Apache Software License                                      |       |
+| ✅     | tenacity                                         | 9.1.2           | Apache Software License                                      |       |
+| ✅     | tokenizers                                       | 0.22.1          | Apache Software License                                      |       |
+| ✅     | transformers                                     | 4.57.1          | Apache Software License                                      |       |
+| ✅     | tzdata                                           | 2025.2          | Apache Software License                                      |       |
+| ✅     | yarl                                             | 1.22.0          | Apache Software License                                      |       |
+| ✅     | lazy-object-proxy                                | 1.12.0          | BSD-2-Clause                                                 |       |
+| ✅     | click                                            | 8.3.0           | BSD-3-Clause (override)                                      |       |
+| ✅     | httpcore                                         | 1.0.9           | BSD-3-Clause                                                 |       |
+| ✅     | idna                                             | 3.11            | BSD-3-Clause                                                 |       |
+| ✅     | ipython                                          | 9.7.0           | BSD-3-Clause                                                 |       |
+| ✅     | MarkupSafe                                       | 3.0.3           | BSD-3-Clause                                                 |       |
+| ✅     | portalocker                                      | 3.2.0           | BSD-3-Clause                                                 |       |
+| ✅     | psutil                                           | 7.1.3           | BSD-3-Clause                                                 |       |
+| ✅     | pypdf                                            | 5.9.0           | BSD-3-Clause (override)                                      |       |
+| ✅     | python-dotenv                                    | 1.2.1           | BSD-3-Clause                                                 |       |
+| ✅     | scikit-learn                                     | 1.7.2           | BSD-3-Clause (override)                                      |       |
+| ✅     | sse-starlette                                    | 3.0.3           | BSD-3-Clause (override)                                      |       |
+| ✅     | starlette                                        | 0.46.2          | BSD-3-Clause                                                 |       |
+| ✅     | uvicorn                                          | 0.34.3          | BSD-3-Clause                                                 |       |
+| ✅     | zstandard                                        | 0.25.0          | BSD-3-Clause                                                 |       |
+| ✅     | docutils                                         | 0.22.2          | BSD License; GNU General Public License (GPL); Public Domain |       |
+| ✅     | adlfs                                            | 2024.12.0       | BSD License                                                  |       |
+| ✅     | asgiref                                          | 3.10.0          | BSD License                                                  |       |
+| ✅     | Authlib                                          | 1.6.5           | BSD License                                                  |       |
+| ✅     | colorama                                         | 0.4.6           | BSD License                                                  |       |
+| ✅     | decorator                                        | 5.2.1           | BSD License                                                  |       |
+| ✅     | flatdict                                         | 4.0.1           | BSD License                                                  |       |
+| ✅     | fsspec                                           | 2024.12.0       | BSD License                                                  |       |
+| ✅     | httpx                                            | 0.28.1          | BSD License                                                  |       |
+| ✅     | ipython_pygments_lexers                          | 1.1.1           | BSD License                                                  |       |
+| ✅     | isodate                                          | 0.7.2           | BSD License                                                  |       |
+| ✅     | Jinja2                                           | 3.1.6           | BSD License                                                  |       |
+| ✅     | joblib                                           | 1.5.2           | BSD License                                                  |       |
+| ✅     | jsonpatch                                        | 1.33            | BSD License                                                  |       |
+| ✅     | jsonpointer                                      | 3.0.0           | BSD License                                                  |       |
+| ✅     | lxml                                             | 5.4.0           | BSD License                                                  |       |
+| ✅     | nest-asyncio                                     | 1.6.0           | BSD License                                                  |       |
+| ✅     | networkx                                         | 3.5             | BSD License                                                  |       |
+| ✅     | numpy                                            | 2.3.4           | BSD License                                                  |       |
+| ✅     | openapi-core                                     | 0.19.5          | BSD License                                                  |       |
+| ✅     | openapi-schema-validator                         | 0.6.3           | BSD License                                                  |       |
+| ✅     | pandas                                           | 2.2.3           | BSD License                                                  |       |
+| ✅     | prompt_toolkit                                   | 3.0.52          | BSD License                                                  |       |
+| ✅     | pycparser                                        | 2.23            | BSD License                                                  |       |
+| ✅     | Pygments                                         | 2.19.2          | BSD License                                                  |       |
+| ✅     | pyperclip                                        | 1.11.0          | BSD License                                                  |       |
+| ✅     | scipy                                            | 1.16.3          | BSD License                                                  |       |
+| ✅     | striprtf                                         | 0.0.26          | BSD License                                                  |       |
+| ✅     | threadpoolctl                                    | 3.6.0           | BSD License                                                  |       |
+| ✅     | traitlets                                        | 5.14.3          | BSD License                                                  |       |
+| ✅     | webencodings                                     | 0.5.1           | BSD License                                                  |       |
+| ✅     | websockets                                       | 15.0.1          | BSD License                                                  |       |
+| ✅     | Werkzeug                                         | 3.1.1           | BSD License                                                  |       |
+| ✅     | wrapt                                            | 1.17.3          | BSD License                                                  |       |
+| ✅     | xxhash                                           | 3.6.0           | BSD License                                                  |       |
+| ✅     | ply                                              | 3.11            | BSD                                                          |       |
+| ✅     | arize-phoenix-client                             | 1.21.0          | Elastic-2.0                                                  |       |
+| ✅     | arize-phoenix-evals                              | 2.5.0           | Elastic-2.0                                                  |       |
+| ✅     | arize-phoenix                                    | 10.15.0         | Elastic-2.0                                                  |       |
+| ✅     | dnspython                                        | 2.8.0           | ISC License (ISCL)                                           |       |
+| ✅     | pexpect                                          | 4.9.0           | ISC License (ISCL)                                           |       |
+| ✅     | ptyprocess                                       | 0.7.0           | ISC License (ISCL)                                           |       |
+| ✅     | shellingham                                      | 1.5.4           | ISC License (ISCL)                                           |       |
+| ✅     | griffe                                           | 1.14.0          | ISC (override)                                               |       |
+| ✅     | greenlet                                         | 3.2.4           | MIT AND Python-2.0                                           |       |
+| ✅     | pillow                                           | 12.0.0          | MIT-CMU (override)                                           |       |
+| ✅     | tqdm                                             | 4.67.1          | MIT License; Mozilla Public License 2.0 (MPL 2.0)            |       |
+| ✅     | aioitertools                                     | 0.12.0          | MIT License                                                  |       |
+| ✅     | aiosqlite                                        | 0.21.0          | MIT License                                                  |       |
+| ✅     | annotated-types                                  | 0.7.0           | MIT License                                                  |       |
+| ✅     | azure-ai-documentintelligence                    | 1.0.2           | MIT License                                                  |       |
+| ✅     | azure-common                                     | 1.1.28          | MIT License                                                  |       |
+| ✅     | azure-core                                       | 1.36.0          | MIT License                                                  |       |
+| ✅     | azure-datalake-store                             | 0.0.53          | MIT License                                                  |       |
+| ✅     | azure-mgmt-core                                  | 1.6.0           | MIT License                                                  |       |
+| ✅     | azure-mgmt-cosmosdb                              | 9.8.0           | MIT License                                                  |       |
+| ✅     | azure-mgmt-resource                              | 23.4.0          | MIT License                                                  |       |
+| ✅     | azure-storage-blob                               | 12.27.1         | MIT License                                                  |       |
+| ✅     | azure-storage-file-datalake                      | 12.22.0         | MIT License                                                  |       |
+| ✅     | backoff                                          | 2.2.1           | MIT License                                                  |       |
+| ✅     | beautifulsoup4                                   | 4.14.2          | MIT License                                                  |       |
+| ✅     | cachetools                                       | 5.5.2           | MIT License                                                  |       |
+| ✅     | cohere                                           | 5.20.0          | MIT License                                                  |       |
+| ✅     | colorlog                                         | 6.10.1          | MIT License                                                  |       |
+| ✅     | dataclasses-json                                 | 0.6.7           | MIT License                                                  |       |
+| ✅     | Deprecated                                       | 1.3.1           | MIT License                                                  |       |
+| ✅     | docstring_parser                                 | 0.17.0          | MIT License                                                  |       |
+| ✅     | exceptiongroup                                   | 1.3.0           | MIT License                                                  |       |
+| ✅     | executing                                        | 2.2.1           | MIT License                                                  |       |
+| ✅     | fastapi                                          | 0.115.14        | MIT License                                                  |       |
+| ✅     | filetype                                         | 1.2.0           | MIT License                                                  |       |
+| ✅     | graphql-core                                     | 3.2.7           | MIT License                                                  |       |
+| ✅     | grpc-interceptor                                 | 0.15.4          | MIT License                                                  |       |
+| ✅     | gunicorn                                         | 23.0.0          | MIT License                                                  |       |
+| ✅     | h11                                              | 0.16.0          | MIT License                                                  |       |
+| ✅     | h2                                               | 4.3.0           | MIT License                                                  |       |
+| ✅     | hpack                                            | 4.1.0           | MIT License                                                  |       |
+| ✅     | html5lib                                         | 1.1             | MIT License                                                  |       |
+| ✅     | hyperframe                                       | 6.1.0           | MIT License                                                  |       |
+| ✅     | jambo                                            | 0.4.0           | MIT License                                                  |       |
+| ✅     | jedi                                             | 0.19.2          | MIT License                                                  |       |
+| ✅     | jiter                                            | 0.11.1          | MIT License                                                  |       |
+| ✅     | jmespath                                         | 1.0.1           | MIT License                                                  |       |
+| ✅     | json_repair                                      | 0.44.1          | MIT License                                                  |       |
+| ✅     | langchain-neo4j                                  | 0.6.0           | MIT License                                                  |       |
+| ✅     | latex2mathml                                     | 3.78.1          | MIT License                                                  |       |
+| ✅     | llama-index-embeddings-openai                    | 0.3.1           | MIT License                                                  |       |
+| ✅     | llama-index-embeddings-text-embeddings-inference | 0.3.2           | MIT License                                                  |       |
+| ✅     | llama-index-postprocessor-cohere-rerank          | 0.3.0           | MIT License                                                  |       |
+| ✅     | llama-index-storage-docstore-mongodb             | 0.3.0           | MIT License                                                  |       |
+| ✅     | llama-index-storage-kvstore-mongodb              | 0.3.0           | MIT License                                                  |       |
+| ✅     | llama-index-utils-huggingface                    | 0.3.0           | MIT License                                                  |       |
+| ✅     | Mako                                             | 1.3.10          | MIT License                                                  |       |
+| ✅     | markdown-it-py                                   | 4.0.0           | MIT License                                                  |       |
+| ✅     | marshmallow                                      | 3.26.1          | MIT License                                                  |       |
+| ✅     | mcp                                              | 1.16.0          | MIT License                                                  |       |
+| ✅     | mdurl                                            | 0.1.2           | MIT License                                                  |       |
+| ✅     | memgraph-toolbox                                 | 0.1.5           | MIT License                                                  |       |
+| ✅     | mongoengine                                      | 0.29.1          | MIT License                                                  |       |
+| ✅     | msal-extensions                                  | 1.3.1           | MIT License                                                  |       |
+| ✅     | msal                                             | 1.34.0          | MIT License                                                  |       |
+| ✅     | mypy                                             | 1.18.2          | MIT License                                                  |       |
+| ✅     | openapi-pydantic                                 | 0.5.1           | MIT License                                                  |       |
+| ✅     | parse                                            | 1.20.2          | MIT License                                                  |       |
+| ✅     | parso                                            | 0.8.5           | MIT License                                                  |       |
+| ✅     | pluggy                                           | 1.6.0           | MIT License                                                  |       |
+| ✅     | posthog                                          | 7.0.1           | MIT License                                                  |       |
+| ✅     | pure_eval                                        | 0.2.3           | MIT License                                                  |       |
+| ✅     | pydub                                            | 0.25.1          | MIT License                                                  |       |
+| ✅     | PyJWT                                            | 2.10.1          | MIT License                                                  |       |
+| ✅     | pystache                                         | 0.6.8           | MIT License                                                  |       |
+| ✅     | pytest-bdd                                       | 8.1.0           | MIT License                                                  |       |
+| ✅     | pytest-mock                                      | 3.15.1          | MIT License                                                  |       |
+| ✅     | pytest                                           | 8.4.2           | MIT License                                                  |       |
+| ✅     | python-i18n                                      | 0.3.9           | MIT License                                                  |       |
+| ✅     | pytokens                                         | 0.3.0           | MIT License                                                  |       |
+| ✅     | pytz                                             | 2025.2          | MIT License                                                  |       |
+| ✅     | PyYAML                                           | 6.0.3           | MIT License                                                  |       |
+| ✅     | redis                                            | 5.3.1           | MIT License                                                  |       |
+| ✅     | rfc3339-validator                                | 0.1.4           | MIT License                                                  |       |
+| ✅     | rich                                             | 14.2.0          | MIT License                                                  |       |
+| ✅     | ruff                                             | 0.8.6           | MIT License                                                  |       |
+| ✅     | six                                              | 1.17.0          | MIT License                                                  |       |
+| ✅     | stack-data                                       | 0.6.3           | MIT License                                                  |       |
+| ✅     | strawberry-graphql                               | 0.270.1         | MIT License                                                  |       |
+| ✅     | tabulate                                         | 0.9.0           | MIT License                                                  |       |
+| ✅     | tomlkit                                          | 0.13.3          | MIT License                                                  |       |
+| ✅     | toml-sort                                        | 0.24.3          | MIT License                                                  |       |
+| ✅     | typer                                            | 0.19.2          | MIT License                                                  |       |
+| ✅     | typing-inspect                                   | 0.9.0           | MIT License                                                  |       |
+| ✅     | watchfiles                                       | 1.1.1           | MIT License                                                  |       |
+| ✅     | tiktoken                                         | 0.12.0          | MIT (override)                                               |       |
+| ✅     | alembic                                          | 1.17.1          | MIT (override)                                               |       |
+| ✅     | anyio                                            | 4.11.0          | MIT (override)                                               |       |
+| ✅     | asgi-lifespan                                    | 2.1.0           | MIT                                                          |       |
+| ✅     | attrs                                            | 25.4.0          | MIT (override)                                               |       |
+| ✅     | azure-identity                                   | 1.25.1          | MIT                                                          |       |
+| ✅     | banks                                            | 2.2.0           | BSD-3-Clause (override)                                      |       |
+| ✅     | black                                            | 25.9.0          | MIT                                                          |       |
+| ✅     | cffi                                             | 2.0.0           | MIT                                                          |       |
+| ✅     | charset-normalizer                               | 3.4.4           | MIT                                                          |       |
+| ✅     | docling-core                                     | 2.55.0          | MIT (override)                                               |       |
+| ✅     | fastavro                                         | 1.12.1          | MIT                                                          |       |
+| ✅     | gherkin-official                                 | 29.0.0          | MIT                                                          |       |
+| ✅     | httptools                                        | 0.7.1           | MIT                                                          |       |
+| ✅     | httpx-sse                                        | 0.4.0           | MIT                                                          |       |
+| ✅     | iniconfig                                        | 2.3.0           | MIT                                                          |       |
+| ✅     | jsonref                                          | 1.1.0           | MIT                                                          |       |
+| ✅     | jsonschema-specifications                        | 2025.9.1        | MIT (override)                                               |       |
+| ✅     | jsonschema                                       | 4.25.1          | MIT (override)                                               |       |
+| ✅     | kuzu                                             | 0.11.3          | MIT                                                          |       |
+| ✅     | langchain-aws                                    | 1.1.0           | MIT                                                          |       |
+| ✅     | langchain-classic                                | 1.0.0           | MIT                                                          |       |
+| ✅     | langchain-core                                   | 1.1.0           | MIT                                                          |       |
+| ✅     | langchain-memgraph                               | 0.1.7           | MIT                                                          |       |
+| ✅     | langchain-text-splitters                         | 1.0.0           | MIT                                                          |       |
+| ✅     | langchain                                        | 1.1.0           | MIT                                                          |       |
+| ✅     | langgraph-checkpoint                             | 3.0.1           | MIT                                                          |       |
+| ✅     | langgraph-prebuilt                               | 1.0.5           | MIT                                                          |       |
+| ✅     | langgraph-sdk                                    | 0.2.10          | MIT                                                          |       |
+| ✅     | langgraph                                        | 1.0.3           | MIT                                                          |       |
+| ✅     | langsmith                                        | 0.4.47          | MIT                                                          |       |
+| ✅     | llama-index-core                                 | 0.12.52.post1   | MIT (override)                                               |       |
+| ✅     | llama-index-embeddings-openai-like               | 0.1.1           | MIT (override)                                               |       |
+| ✅     | llama-index-instrumentation                      | 0.4.2           | MIT (override)                                               |       |
+| ✅     | llama-index-llms-openai-like                     | 0.3.5           | MIT (override)                                               |       |
+| ✅     | llama-index-llms-openai                          | 0.3.44          | MIT (override)                                               |       |
+| ✅     | llama-index-readers-file                         | 0.4.11          | MIT (override)                                               |       |
+| ✅     | llama-index-vector-stores-milvus                 | 0.8.7           | MIT (override)                                               |       |
+| ✅     | llama-index-workflows                            | 1.3.0           | MIT (override)                                               |       |
+| ✅     | more-itertools                                   | 10.8.0          | MIT                                                          |       |
+| ✅     | mypy_extensions                                  | 1.1.0           | MIT (override)                                               |       |
+| ✅     | parse_type                                       | 0.6.6           | MIT (override)                                               |       |
+| ✅     | platformdirs                                     | 4.5.0           | MIT                                                          |       |
+| ✅     | pydantic_core                                    | 2.41.5          | MIT                                                          |       |
+| ✅     | pydantic-settings                                | 2.11.0          | MIT                                                          |       |
+| ✅     | pydantic                                         | 2.12.4          | MIT                                                          |       |
+| ✅     | pytest-cov                                       | 6.3.0           | MIT                                                          |       |
+| ✅     | referencing                                      | 0.36.2          | MIT (override)                                               |       |
+| ✅     | rich-rst                                         | 1.3.2           | MIT                                                          |       |
+| ✅     | rpds-py                                          | 0.28.0          | MIT (override)                                               |       |
+| ✅     | soupsieve                                        | 2.8             | MIT                                                          |       |
+| ✅     | SQLAlchemy                                       | 2.0.44          | MIT                                                          |       |
+| ✅     | stringcase                                       | 1.2.0           | MIT                                                          |       |
+| ✅     | tokenize_rt                                      | 6.2.0           | MIT                                                          |       |
+| ✅     | typing-inspection                                | 0.4.2           | MIT (override)                                               |       |
+| ✅     | urllib3                                          | 2.5.0           | MIT (override)                                               |       |
+| ✅     | zipp                                             | 3.23.0          | MIT (override)                                               |       |
+| ✅     | certifi                                          | 2025.10.5       | Mozilla Public License 2.0 (MPL 2.0)                         |       |
+| ✅     | pathspec                                         | 0.12.1          | Mozilla Public License 2.0 (MPL 2.0)                         |       |
+| ✅     | neo4j-graphrag                                   | 1.9.1           | Apache-2.0 (override)                                        |       |
+| ✅     | audioop-lts                                      | 0.2.2           | PSF-2.0 (override)                                           |       |
+| ✅     | typing_extensions                                | 4.15.0          | PSF-2.0 (override)                                           |       |
+| ✅     | aiohappyeyeballs                                 | 2.6.1           | Python Software Foundation License                           |       |
+| ✅     | defusedxml                                       | 0.7.1           | Python Software Foundation License                           |       |
+| ✅     | email-validator                                  | 2.3.0           | The Unlicense (Unlicense)                                    |       |
+| ✅     | matplotlib-inline                                | 0.2.1           | BSD-3-Clause (override)                                      |       |
+| ✅     | filelock                                         | 3.20.0          | Unlicense                                                    |       |
+| ✅     | sqlean.py                                        | 3.50.4.5        | zlib/libpng                                                  |       |
+
+### aihub_bot
+
+| Status | Package                                      | Version         | License                                           | Notes |
+| ------ | -------------------------------------------- | --------------- | ------------------------------------------------- | ----- |
+| ✅     | protobuf                                     | 5.29.5          | 3-Clause BSD License                              |       |
+| ✅     | dirtyjson                                    | 1.0.8           | Academic Free License (AFL); MIT License          |       |
+| ✅     | regex                                        | 2025.11.3       | Apache-2.0 (override)                             |       |
+| ✅     | aiohttp                                      | 3.13.2          | Apache-2.0 AND MIT                                |       |
+| ✅     | arize-phoenix-otel                           | 0.13.1          | Apache-2.0                                        |       |
+| ✅     | asttokens                                    | 3.0.1           | Apache 2.0                                        |       |
+| ✅     | boto3                                        | 1.40.74         | Apache-2.0                                        |       |
+| ✅     | botocore                                     | 1.40.74         | Apache-2.0                                        |       |
+| ✅     | coverage                                     | 7.11.3          | Apache-2.0                                        |       |
+| ✅     | frozenlist                                   | 1.8.0           | Apache-2.0                                        |       |
+| ✅     | hf-xet                                       | 1.2.0           | Apache-2.0 (override)                             |       |
+| ✅     | mem0ai                                       | 1.0.1           | Apache-2.0                                        |       |
+| ✅     | openinference-instrumentation-llama-index    | 4.3.8           | Apache-2.0                                        |       |
+| ✅     | openinference-instrumentation                | 0.1.42          | Apache-2.0                                        |       |
+| ✅     | openinference-semantic-conventions           | 0.1.25          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-api                            | 1.37.0          | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-exporter-otlp-proto-common     | 1.37.0          | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-exporter-otlp-proto-grpc       | 1.37.0          | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-exporter-otlp-proto-http       | 1.37.0          | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-exporter-otlp                  | 1.37.0          | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-instrumentation-aiohttp-client | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-asyncio        | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-botocore       | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-httpx          | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-jinja2         | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-logging        | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-pymongo        | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-redis          | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-requests       | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation                | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-propagator-aws-xray            | 1.0.2           | Apache-2.0                                        |       |
+| ✅     | opentelemetry-proto                          | 1.37.0          | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-sdk                            | 1.37.0          | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-semantic-conventions           | 0.58b0          | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-util-http                      | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | python-multipart                             | 0.0.20          | Apache-2.0                                        |       |
+| ✅     | rank-bm25                                    | 0.2.2           | Apache2.0                                         |       |
+| ✅     | types-PyYAML                                 | 6.0.12.20250915 | Apache-2.0 (override)                             |       |
+| ✅     | types-requests                               | 2.32.4.20250913 | Apache-2.0 (override)                             |       |
+| ✅     | orjson                                       | 3.11.4          | Apache-2.0 OR MIT                                 |       |
+| ✅     | multidict                                    | 6.7.0           | Apache License 2.0                                |       |
+| ✅     | cryptography                                 | 44.0.3          | Apache Software License; BSD License              |       |
+| ✅     | packaging                                    | 25.0            | Apache Software License; BSD License              |       |
+| ✅     | python-dateutil                              | 2.9.0.post0     | Apache Software License; BSD License              |       |
+| ✅     | ormsgpack                                    | 1.12.0          | Apache Software License; MIT License              |       |
+| ✅     | sniffio                                      | 1.3.1           | Apache Software License; MIT License              |       |
+| ✅     | aiosignal                                    | 1.4.0           | Apache Software License                           |       |
+| ✅     | distro                                       | 1.9.0           | Apache Software License                           |       |
+| ✅     | googleapis-common-protos                     | 1.72.0          | Apache Software License                           |       |
+| ✅     | grpcio                                       | 1.76.0          | Apache Software License                           |       |
+| ✅     | huggingface-hub                              | 0.36.0          | Apache Software License                           |       |
+| ✅     | importlib_metadata                           | 8.7.0           | Apache Software License                           |       |
+| ✅     | jsonpath-ng                                  | 1.7.0           | Apache Software License                           |       |
+| ✅     | motor                                        | 3.7.1           | Apache Software License                           |       |
+| ✅     | nats-py                                      | 2.12.0          | Apache Software License                           |       |
+| ✅     | neo4j                                        | 5.28.2          | Apache Software License                           |       |
+| ✅     | nltk                                         | 3.9.2           | Apache Software License                           |       |
+| ✅     | openai                                       | 1.109.1         | Apache Software License                           |       |
+| ✅     | opentelemetry-instrumentation-milvus         | 0.47.5          | Apache Software License                           |       |
+| ✅     | opentelemetry-semantic-conventions-ai        | 0.4.13          | Apache Software License                           |       |
+| ✅     | propcache                                    | 0.4.1           | Apache Software License                           |       |
+| ✅     | pyarrow                                      | 22.0.0          | Apache Software License                           |       |
+| ✅     | pymilvus                                     | 2.6.3           | Apache Software License                           |       |
+| ✅     | pymongo                                      | 4.15.4          | Apache Software License                           |       |
+| ✅     | pytest-asyncio                               | 0.24.0          | Apache Software License                           |       |
+| ✅     | qdrant-client                                | 1.16.1          | Apache Software License                           |       |
+| ✅     | requests-toolbelt                            | 1.0.0           | Apache Software License                           |       |
+| ✅     | requests                                     | 2.32.5          | Apache Software License                           |       |
+| ✅     | s3transfer                                   | 0.14.0          | Apache Software License                           |       |
+| ✅     | safetensors                                  | 0.6.2           | Apache Software License                           |       |
+| ✅     | tenacity                                     | 9.1.2           | Apache Software License                           |       |
+| ✅     | tokenizers                                   | 0.22.1          | Apache Software License                           |       |
+| ✅     | transformers                                 | 4.57.1          | Apache Software License                           |       |
+| ✅     | tzdata                                       | 2025.2          | Apache Software License                           |       |
+| ✅     | yarl                                         | 1.22.0          | Apache Software License                           |       |
+| ✅     | click                                        | 8.3.1           | BSD-3-Clause (override)                           |       |
+| ✅     | httpcore                                     | 1.0.9           | BSD-3-Clause                                      |       |
+| ✅     | idna                                         | 3.11            | BSD-3-Clause                                      |       |
+| ✅     | ipython                                      | 9.7.0           | BSD-3-Clause                                      |       |
+| ✅     | MarkupSafe                                   | 3.0.3           | BSD-3-Clause                                      |       |
+| ✅     | oauthlib                                     | 3.3.1           | BSD-3-Clause                                      |       |
+| ✅     | portalocker                                  | 3.2.0           | BSD-3-Clause                                      |       |
+| ✅     | psutil                                       | 7.1.3           | BSD-3-Clause                                      |       |
+| ✅     | pypdf                                        | 5.9.0           | BSD-3-Clause (override)                           |       |
+| ✅     | python-dotenv                                | 1.2.1           | BSD-3-Clause                                      |       |
+| ✅     | scikit-learn                                 | 1.7.2           | BSD-3-Clause (override)                           |       |
+| ✅     | starlette                                    | 0.46.2          | BSD-3-Clause                                      |       |
+| ✅     | uvicorn                                      | 0.34.3          | BSD-3-Clause                                      |       |
+| ✅     | zstandard                                    | 0.25.0          | BSD-3-Clause                                      |       |
+| ✅     | adlfs                                        | 2024.12.0       | BSD License                                       |       |
+| ✅     | Authlib                                      | 1.6.5           | BSD License                                       |       |
+| ✅     | colorama                                     | 0.4.6           | BSD License                                       |       |
+| ✅     | decorator                                    | 5.2.1           | BSD License                                       |       |
+| ✅     | flatdict                                     | 4.0.1           | BSD License                                       |       |
+| ✅     | fsspec                                       | 2024.12.0       | BSD License                                       |       |
+| ✅     | httpx                                        | 0.28.1          | BSD License                                       |       |
+| ✅     | ipython_pygments_lexers                      | 1.1.1           | BSD License                                       |       |
+| ✅     | isodate                                      | 0.7.2           | BSD License                                       |       |
+| ✅     | Jinja2                                       | 3.1.6           | BSD License                                       |       |
+| ✅     | joblib                                       | 1.5.2           | BSD License                                       |       |
+| ✅     | jsonpatch                                    | 1.33            | BSD License                                       |       |
+| ✅     | jsonpointer                                  | 3.0.0           | BSD License                                       |       |
+| ✅     | lxml                                         | 5.4.0           | BSD License                                       |       |
+| ✅     | nest-asyncio                                 | 1.6.0           | BSD License                                       |       |
+| ✅     | networkx                                     | 3.5             | BSD License                                       |       |
+| ✅     | numpy                                        | 2.3.5           | BSD License                                       |       |
+| ✅     | pandas                                       | 2.2.3           | BSD License                                       |       |
+| ✅     | prompt_toolkit                               | 3.0.52          | BSD License                                       |       |
+| ✅     | pycparser                                    | 2.23            | BSD License                                       |       |
+| ✅     | Pygments                                     | 2.19.2          | BSD License                                       |       |
+| ✅     | requests-oauthlib                            | 2.0.0           | BSD License                                       |       |
+| ✅     | scipy                                        | 1.16.3          | BSD License                                       |       |
+| ✅     | striprtf                                     | 0.0.26          | BSD License                                       |       |
+| ✅     | threadpoolctl                                | 3.6.0           | BSD License                                       |       |
+| ✅     | traitlets                                    | 5.14.3          | BSD License                                       |       |
+| ✅     | webencodings                                 | 0.5.1           | BSD License                                       |       |
+| ✅     | wrapt                                        | 1.17.3          | BSD License                                       |       |
+| ✅     | xxhash                                       | 3.6.0           | BSD License                                       |       |
+| ✅     | ply                                          | 3.11            | BSD                                               |       |
+| ✅     | arize-phoenix-client                         | 1.23.0          | Elastic-2.0                                       |       |
+| ✅     | arize-phoenix-evals                          | 2.6.0           | Elastic-2.0                                       |       |
+| ✅     | arize-phoenix                                | 10.15.0         | Elastic-2.0                                       |       |
+| ✅     | dnspython                                    | 2.8.0           | ISC License (ISCL)                                |       |
+| ✅     | pexpect                                      | 4.9.0           | ISC License (ISCL)                                |       |
+| ✅     | ptyprocess                                   | 0.7.0           | ISC License (ISCL)                                |       |
+| ✅     | shellingham                                  | 1.5.4           | ISC License (ISCL)                                |       |
+| ✅     | griffe                                       | 1.15.0          | ISC (override)                                    |       |
+| ✅     | greenlet                                     | 3.2.4           | MIT AND Python-2.0                                |       |
+| ✅     | pillow                                       | 12.0.0          | MIT-CMU (override)                                |       |
+| ✅     | tqdm                                         | 4.67.1          | MIT License; Mozilla Public License 2.0 (MPL 2.0) |       |
+| ✅     | aiosqlite                                    | 0.21.0          | MIT License                                       |       |
+| ✅     | annotated-types                              | 0.7.0           | MIT License                                       |       |
+| ✅     | azure-ai-documentintelligence                | 1.0.2           | MIT License                                       |       |
+| ✅     | azure-common                                 | 1.1.28          | MIT License                                       |       |
+| ✅     | azure-core                                   | 1.36.0          | MIT License                                       |       |
+| ✅     | azure-datalake-store                         | 0.0.53          | MIT License                                       |       |
+| ✅     | azure-mgmt-core                              | 1.6.0           | MIT License                                       |       |
+| ✅     | azure-mgmt-resource                          | 23.4.0          | MIT License                                       |       |
+| ✅     | azure-storage-blob                           | 12.27.1         | MIT License                                       |       |
+| ✅     | azure-storage-file-datalake                  | 12.22.0         | MIT License                                       |       |
+| ✅     | backoff                                      | 2.2.1           | MIT License                                       |       |
+| ✅     | beautifulsoup4                               | 4.14.2          | MIT License                                       |       |
+| ✅     | cachetools                                   | 5.5.2           | MIT License                                       |       |
+| ✅     | cohere                                       | 5.20.0          | MIT License                                       |       |
+| ✅     | colorlog                                     | 6.10.1          | MIT License                                       |       |
+| ✅     | dataclasses-json                             | 0.6.7           | MIT License                                       |       |
+| ✅     | Deprecated                                   | 1.3.1           | MIT License                                       |       |
+| ✅     | executing                                    | 2.2.1           | MIT License                                       |       |
+| ✅     | fastapi                                      | 0.115.14        | MIT License                                       |       |
+| ✅     | filetype                                     | 1.2.0           | MIT License                                       |       |
+| ✅     | graphql-core                                 | 3.2.7           | MIT License                                       |       |
+| ✅     | grpc-interceptor                             | 0.15.4          | MIT License                                       |       |
+| ✅     | gunicorn                                     | 23.0.0          | MIT License                                       |       |
+| ✅     | h11                                          | 0.16.0          | MIT License                                       |       |
+| ✅     | h2                                           | 4.3.0           | MIT License                                       |       |
+| ✅     | hpack                                        | 4.1.0           | MIT License                                       |       |
+| ✅     | html5lib                                     | 1.1             | MIT License                                       |       |
+| ✅     | hyperframe                                   | 6.1.0           | MIT License                                       |       |
+| ✅     | jedi                                         | 0.19.2          | MIT License                                       |       |
+| ✅     | jiter                                        | 0.12.0          | MIT License                                       |       |
+| ✅     | jmespath                                     | 1.0.1           | MIT License                                       |       |
+| ✅     | json_repair                                  | 0.44.1          | MIT License                                       |       |
+| ✅     | langchain-neo4j                              | 0.6.0           | MIT License                                       |       |
+| ✅     | latex2mathml                                 | 3.78.1          | MIT License                                       |       |
+| ✅     | llama-index-embeddings-openai                | 0.3.1           | MIT License                                       |       |
+| ✅     | llama-index-postprocessor-cohere-rerank      | 0.3.0           | MIT License                                       |       |
+| ✅     | llama-index-storage-docstore-mongodb         | 0.3.0           | MIT License                                       |       |
+| ✅     | llama-index-storage-kvstore-mongodb          | 0.3.0           | MIT License                                       |       |
+| ✅     | Mako                                         | 1.3.10          | MIT License                                       |       |
+| ✅     | markdown-it-py                               | 4.0.0           | MIT License                                       |       |
+| ✅     | marshmallow                                  | 3.26.1          | MIT License                                       |       |
+| ✅     | mdurl                                        | 0.1.2           | MIT License                                       |       |
+| ✅     | memgraph-toolbox                             | 0.1.5           | MIT License                                       |       |
+| ✅     | mongoengine                                  | 0.29.1          | MIT License                                       |       |
+| ✅     | msal-extensions                              | 1.3.1           | MIT License                                       |       |
+| ✅     | msal                                         | 1.34.0          | MIT License                                       |       |
+| ✅     | msrest                                       | 0.7.1           | MIT License                                       |       |
+| ✅     | mypy                                         | 1.18.2          | MIT License                                       |       |
+| ✅     | parse                                        | 1.20.2          | MIT License                                       |       |
+| ✅     | parso                                        | 0.8.5           | MIT License                                       |       |
+| ✅     | pluggy                                       | 1.6.0           | MIT License                                       |       |
+| ✅     | posthog                                      | 7.0.1           | MIT License                                       |       |
+| ✅     | pure_eval                                    | 0.2.3           | MIT License                                       |       |
+| ✅     | PyJWT                                        | 2.10.1          | MIT License                                       |       |
+| ✅     | pystache                                     | 0.6.8           | MIT License                                       |       |
+| ✅     | pytest-bdd                                   | 8.1.0           | MIT License                                       |       |
+| ✅     | pytest-mock                                  | 3.15.1          | MIT License                                       |       |
+| ✅     | pytest                                       | 8.4.2           | MIT License                                       |       |
+| ✅     | python-i18n                                  | 0.3.9           | MIT License                                       |       |
+| ✅     | pytokens                                     | 0.3.0           | MIT License                                       |       |
+| ✅     | pytz                                         | 2025.2          | MIT License                                       |       |
+| ✅     | PyYAML                                       | 6.0.3           | MIT License                                       |       |
+| ✅     | redis                                        | 5.3.1           | MIT License                                       |       |
+| ✅     | rich                                         | 14.2.0          | MIT License                                       |       |
+| ✅     | ruff                                         | 0.8.6           | MIT License                                       |       |
+| ✅     | six                                          | 1.17.0          | MIT License                                       |       |
+| ✅     | stack-data                                   | 0.6.3           | MIT License                                       |       |
+| ✅     | strawberry-graphql                           | 0.270.1         | MIT License                                       |       |
+| ✅     | tabulate                                     | 0.9.0           | MIT License                                       |       |
+| ✅     | tomlkit                                      | 0.13.3          | MIT License                                       |       |
+| ✅     | toml-sort                                    | 0.24.3          | MIT License                                       |       |
+| ✅     | typer                                        | 0.19.2          | MIT License                                       |       |
+| ✅     | typing-inspect                               | 0.9.0           | MIT License                                       |       |
+| ✅     | tiktoken                                     | 0.12.0          | MIT (override)                                    |       |
+| ✅     | aioitertools                                 | 0.13.0          | MIT                                               |       |
+| ✅     | alembic                                      | 1.17.2          | MIT (override)                                    |       |
+| ✅     | anyio                                        | 4.11.0          | MIT (override)                                    |       |
+| ✅     | asgi-lifespan                                | 2.1.0           | MIT                                               |       |
+| ✅     | attrs                                        | 25.4.0          | MIT (override)                                    |       |
+| ✅     | azure-identity                               | 1.25.1          | MIT                                               |       |
+| ✅     | azure-mgmt-cosmosdb                          | 9.9.0           | MIT                                               |       |
+| ✅     | banks                                        | 2.2.0           | BSD-3-Clause (override)                           |       |
+| ✅     | black                                        | 25.11.0         | MIT                                               |       |
+| ✅     | cffi                                         | 2.0.0           | MIT                                               |       |
+| ✅     | charset-normalizer                           | 3.4.4           | MIT                                               |       |
+| ✅     | docling-core                                 | 2.55.0          | MIT (override)                                    |       |
+| ✅     | fastavro                                     | 1.12.1          | MIT                                               |       |
+| ✅     | gherkin-official                             | 29.0.0          | MIT                                               |       |
+| ✅     | httpx-sse                                    | 0.4.0           | MIT                                               |       |
+| ✅     | iniconfig                                    | 2.3.0           | MIT                                               |       |
+| ✅     | jsonref                                      | 1.1.0           | MIT                                               |       |
+| ✅     | jsonschema-specifications                    | 2025.9.1        | MIT (override)                                    |       |
+| ✅     | jsonschema                                   | 4.25.1          | MIT (override)                                    |       |
+| ✅     | kuzu                                         | 0.11.3          | MIT                                               |       |
+| ✅     | langchain-aws                                | 1.1.0           | MIT                                               |       |
+| ✅     | langchain-classic                            | 1.0.0           | MIT                                               |       |
+| ✅     | langchain-core                               | 1.1.0           | MIT                                               |       |
+| ✅     | langchain-memgraph                           | 0.1.7           | MIT                                               |       |
+| ✅     | langchain-text-splitters                     | 1.0.0           | MIT                                               |       |
+| ✅     | langchain                                    | 1.1.0           | MIT                                               |       |
+| ✅     | langgraph-checkpoint                         | 3.0.1           | MIT                                               |       |
+| ✅     | langgraph-prebuilt                           | 1.0.5           | MIT                                               |       |
+| ✅     | langgraph-sdk                                | 0.2.10          | MIT                                               |       |
+| ✅     | langgraph                                    | 1.0.3           | MIT                                               |       |
+| ✅     | langsmith                                    | 0.4.47          | MIT                                               |       |
+| ✅     | llama-index-core                             | 0.12.52.post1   | MIT (override)                                    |       |
+| ✅     | llama-index-embeddings-openai-like           | 0.1.1           | MIT (override)                                    |       |
+| ✅     | llama-index-instrumentation                  | 0.4.2           | MIT (override)                                    |       |
+| ✅     | llama-index-llms-openai-like                 | 0.3.5           | MIT (override)                                    |       |
+| ✅     | llama-index-llms-openai                      | 0.3.44          | MIT (override)                                    |       |
+| ✅     | llama-index-readers-file                     | 0.4.11          | MIT (override)                                    |       |
+| ✅     | llama-index-vector-stores-milvus             | 0.8.7           | MIT (override)                                    |       |
+| ✅     | llama-index-workflows                        | 1.3.0           | MIT (override)                                    |       |
+| ✅     | microsoft-agents-activity                    | 0.5.3           | MIT                                               |       |
+| ✅     | microsoft-agents-authentication-msal         | 0.5.3           | MIT                                               |       |
+| ✅     | microsoft-agents-hosting-aiohttp             | 0.5.3           | MIT                                               |       |
+| ✅     | microsoft-agents-hosting-core                | 0.5.3           | MIT                                               |       |
+| ✅     | mypy_extensions                              | 1.1.0           | MIT (override)                                    |       |
+| ✅     | parse_type                                   | 0.6.6           | MIT (override)                                    |       |
+| ✅     | platformdirs                                 | 4.5.0           | MIT                                               |       |
+| ✅     | pydantic_core                                | 2.41.5          | MIT                                               |       |
+| ✅     | pydantic-settings                            | 2.12.0          | MIT                                               |       |
+| ✅     | pydantic                                     | 2.12.4          | MIT                                               |       |
+| ✅     | pytest-cov                                   | 6.3.0           | MIT                                               |       |
+| ✅     | referencing                                  | 0.37.0          | MIT (override)                                    |       |
+| ✅     | rpds-py                                      | 0.29.0          | MIT (override)                                    |       |
+| ✅     | soupsieve                                    | 2.8             | MIT                                               |       |
+| ✅     | SQLAlchemy                                   | 2.0.44          | MIT                                               |       |
+| ✅     | tokenize_rt                                  | 6.2.0           | MIT                                               |       |
+| ✅     | typing-inspection                            | 0.4.2           | MIT (override)                                    |       |
+| ✅     | urllib3                                      | 2.5.0           | MIT (override)                                    |       |
+| ✅     | zipp                                         | 3.23.0          | MIT (override)                                    |       |
+| ✅     | certifi                                      | 2025.11.12      | Mozilla Public License 2.0 (MPL 2.0)              |       |
+| ✅     | pathspec                                     | 0.12.1          | Mozilla Public License 2.0 (MPL 2.0)              |       |
+| ✅     | neo4j-graphrag                               | 1.9.1           | Apache-2.0 (override)                             |       |
+| ✅     | typing_extensions                            | 4.15.0          | PSF-2.0 (override)                                |       |
+| ✅     | aiohappyeyeballs                             | 2.6.1           | Python Software Foundation License                |       |
+| ✅     | defusedxml                                   | 0.7.1           | Python Software Foundation License                |       |
+| ✅     | email-validator                              | 2.3.0           | The Unlicense (Unlicense)                         |       |
+| ✅     | matplotlib-inline                            | 0.2.1           | BSD-3-Clause (override)                           |       |
+| ✅     | filelock                                     | 3.20.0          | Unlicense                                         |       |
+| ✅     | sqlean.py                                    | 3.50.4.5        | zlib/libpng                                       |       |
+
+### aihub_agent
+
+| Status | Package                                      | Version         | License                                           | Notes |
+| ------ | -------------------------------------------- | --------------- | ------------------------------------------------- | ----- |
+| ✅     | protobuf                                     | 5.29.5          | 3-Clause BSD License                              |       |
+| ✅     | dirtyjson                                    | 1.0.8           | Academic Free License (AFL); MIT License          |       |
+| ✅     | regex                                        | 2025.11.3       | Apache-2.0 (override)                             |       |
+| ✅     | aiohttp                                      | 3.13.2          | Apache-2.0 AND MIT                                |       |
+| ✅     | arize-phoenix-otel                           | 0.13.1          | Apache-2.0                                        |       |
+| ✅     | asttokens                                    | 3.0.0           | Apache 2.0                                        |       |
+| ✅     | boto3                                        | 1.40.66         | Apache-2.0                                        |       |
+| ✅     | botocore                                     | 1.40.66         | Apache-2.0                                        |       |
+| ✅     | coverage                                     | 7.11.0          | Apache-2.0                                        |       |
+| ✅     | frozenlist                                   | 1.8.0           | Apache-2.0                                        |       |
+| ✅     | hf-xet                                       | 1.2.0           | Apache-2.0 (override)                             |       |
+| ✅     | mem0ai                                       | 1.0.1           | Apache-2.0                                        |       |
+| ✅     | openinference-instrumentation-llama-index    | 4.3.8           | Apache-2.0                                        |       |
+| ✅     | openinference-instrumentation                | 0.1.42          | Apache-2.0                                        |       |
+| ✅     | openinference-semantic-conventions           | 0.1.25          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-api                            | 1.37.0          | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-exporter-otlp-proto-common     | 1.37.0          | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-exporter-otlp-proto-grpc       | 1.37.0          | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-exporter-otlp-proto-http       | 1.37.0          | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-exporter-otlp                  | 1.37.0          | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-instrumentation-aiohttp-client | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-asyncio        | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-botocore       | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-httpx          | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-jinja2         | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-logging        | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-pymongo        | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-redis          | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-requests       | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation                | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-propagator-aws-xray            | 1.0.2           | Apache-2.0                                        |       |
+| ✅     | opentelemetry-proto                          | 1.37.0          | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-sdk                            | 1.37.0          | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-semantic-conventions           | 0.58b0          | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-util-http                      | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | python-multipart                             | 0.0.20          | Apache-2.0                                        |       |
+| ✅     | rank-bm25                                    | 0.2.2           | Apache2.0                                         |       |
+| ✅     | types-PyYAML                                 | 6.0.12.20250915 | Apache-2.0 (override)                             |       |
+| ✅     | types-requests                               | 2.32.4.20250913 | Apache-2.0 (override)                             |       |
+| ✅     | cryptography                                 | 46.0.3          | Apache-2.0 OR BSD-3-Clause                        |       |
+| ✅     | orjson                                       | 3.11.4          | Apache-2.0 OR MIT                                 |       |
+| ✅     | multidict                                    | 6.7.0           | Apache License 2.0                                |       |
+| ✅     | packaging                                    | 25.0            | Apache Software License; BSD License              |       |
+| ✅     | python-dateutil                              | 2.9.0.post0     | Apache Software License; BSD License              |       |
+| ✅     | ormsgpack                                    | 1.12.0          | Apache Software License; MIT License              |       |
+| ✅     | sniffio                                      | 1.3.1           | Apache Software License; MIT License              |       |
+| ✅     | aiosignal                                    | 1.4.0           | Apache Software License                           |       |
+| ✅     | distro                                       | 1.9.0           | Apache Software License                           |       |
+| ✅     | googleapis-common-protos                     | 1.71.0          | Apache Software License                           |       |
+| ✅     | grpcio                                       | 1.76.0          | Apache Software License                           |       |
+| ✅     | huggingface-hub                              | 0.36.0          | Apache Software License                           |       |
+| ✅     | importlib_metadata                           | 8.7.0           | Apache Software License                           |       |
+| ✅     | jsonpath-ng                                  | 1.7.0           | Apache Software License                           |       |
+| ✅     | motor                                        | 3.7.1           | Apache Software License                           |       |
+| ✅     | nats-py                                      | 2.12.0          | Apache Software License                           |       |
+| ✅     | neo4j                                        | 5.28.2          | Apache Software License                           |       |
+| ✅     | nltk                                         | 3.9.2           | Apache Software License                           |       |
+| ✅     | openai                                       | 1.109.1         | Apache Software License                           |       |
+| ✅     | opentelemetry-instrumentation-milvus         | 0.47.5          | Apache Software License                           |       |
+| ✅     | opentelemetry-semantic-conventions-ai        | 0.4.13          | Apache Software License                           |       |
+| ✅     | propcache                                    | 0.4.1           | Apache Software License                           |       |
+| ✅     | pyarrow                                      | 22.0.0          | Apache Software License                           |       |
+| ✅     | pymilvus                                     | 2.6.3           | Apache Software License                           |       |
+| ✅     | pymongo                                      | 4.15.3          | Apache Software License                           |       |
+| ✅     | pytest-asyncio                               | 0.24.0          | Apache Software License                           |       |
+| ✅     | qdrant-client                                | 1.16.1          | Apache Software License                           |       |
+| ✅     | requests-toolbelt                            | 1.0.0           | Apache Software License                           |       |
+| ✅     | requests                                     | 2.32.5          | Apache Software License                           |       |
+| ✅     | s3transfer                                   | 0.14.0          | Apache Software License                           |       |
+| ✅     | safetensors                                  | 0.6.2           | Apache Software License                           |       |
+| ✅     | tenacity                                     | 9.1.2           | Apache Software License                           |       |
+| ✅     | tokenizers                                   | 0.22.1          | Apache Software License                           |       |
+| ✅     | transformers                                 | 4.57.1          | Apache Software License                           |       |
+| ✅     | tzdata                                       | 2025.2          | Apache Software License                           |       |
+| ✅     | yarl                                         | 1.22.0          | Apache Software License                           |       |
+| ✅     | click                                        | 8.3.0           | BSD-3-Clause (override)                           |       |
+| ✅     | httpcore                                     | 1.0.9           | BSD-3-Clause                                      |       |
+| ✅     | idna                                         | 3.11            | BSD-3-Clause                                      |       |
+| ✅     | ipython                                      | 9.7.0           | BSD-3-Clause                                      |       |
+| ✅     | MarkupSafe                                   | 3.0.3           | BSD-3-Clause                                      |       |
+| ✅     | portalocker                                  | 3.2.0           | BSD-3-Clause                                      |       |
+| ✅     | psutil                                       | 7.1.3           | BSD-3-Clause                                      |       |
+| ✅     | pypdf                                        | 5.9.0           | BSD-3-Clause (override)                           |       |
+| ✅     | python-dotenv                                | 1.2.1           | BSD-3-Clause                                      |       |
+| ✅     | scikit-learn                                 | 1.7.2           | BSD-3-Clause (override)                           |       |
+| ✅     | starlette                                    | 0.46.2          | BSD-3-Clause                                      |       |
+| ✅     | uvicorn                                      | 0.38.0          | BSD-3-Clause                                      |       |
+| ✅     | zstandard                                    | 0.25.0          | BSD-3-Clause                                      |       |
+| ✅     | adlfs                                        | 2024.12.0       | BSD License                                       |       |
+| ✅     | Authlib                                      | 1.6.5           | BSD License                                       |       |
+| ✅     | colorama                                     | 0.4.6           | BSD License                                       |       |
+| ✅     | contourpy                                    | 1.3.3           | BSD License                                       |       |
+| ✅     | cycler                                       | 0.12.1          | BSD License                                       |       |
+| ✅     | decorator                                    | 5.2.1           | BSD License                                       |       |
+| ✅     | flatdict                                     | 4.0.1           | BSD License                                       |       |
+| ✅     | fsspec                                       | 2024.12.0       | BSD License                                       |       |
+| ✅     | httpx                                        | 0.28.1          | BSD License                                       |       |
+| ✅     | ipython_pygments_lexers                      | 1.1.1           | BSD License                                       |       |
+| ✅     | isodate                                      | 0.7.2           | BSD License                                       |       |
+| ✅     | Jinja2                                       | 3.1.6           | BSD License                                       |       |
+| ✅     | joblib                                       | 1.5.2           | BSD License                                       |       |
+| ✅     | jsonpatch                                    | 1.33            | BSD License                                       |       |
+| ✅     | jsonpointer                                  | 3.0.0           | BSD License                                       |       |
+| ✅     | kiwisolver                                   | 1.4.9           | BSD License                                       |       |
+| ✅     | lxml                                         | 5.4.0           | BSD License                                       |       |
+| ✅     | nest-asyncio                                 | 1.6.0           | BSD License                                       |       |
+| ✅     | networkx                                     | 3.5             | BSD License                                       |       |
+| ✅     | numpy                                        | 2.3.4           | BSD License                                       |       |
+| ✅     | pandas                                       | 2.2.3           | BSD License                                       |       |
+| ✅     | prompt_toolkit                               | 3.0.52          | BSD License                                       |       |
+| ✅     | pycparser                                    | 2.23            | BSD License                                       |       |
+| ✅     | Pygments                                     | 2.19.2          | BSD License                                       |       |
+| ✅     | scipy                                        | 1.16.3          | BSD License                                       |       |
+| ✅     | seaborn                                      | 0.13.2          | BSD License                                       |       |
+| ✅     | striprtf                                     | 0.0.26          | BSD License                                       |       |
+| ✅     | threadpoolctl                                | 3.6.0           | BSD License                                       |       |
+| ✅     | traitlets                                    | 5.14.3          | BSD License                                       |       |
+| ✅     | webencodings                                 | 0.5.1           | BSD License                                       |       |
+| ✅     | wrapt                                        | 1.17.3          | BSD License                                       |       |
+| ✅     | xxhash                                       | 3.6.0           | BSD License                                       |       |
+| ✅     | ply                                          | 3.11            | BSD                                               |       |
+| ✅     | arize-phoenix-client                         | 1.21.0          | Elastic-2.0                                       |       |
+| ✅     | arize-phoenix-evals                          | 2.5.0           | Elastic-2.0                                       |       |
+| ✅     | arize-phoenix                                | 10.15.0         | Elastic-2.0                                       |       |
+| ✅     | dnspython                                    | 2.8.0           | ISC License (ISCL)                                |       |
+| ✅     | pexpect                                      | 4.9.0           | ISC License (ISCL)                                |       |
+| ✅     | ptyprocess                                   | 0.7.0           | ISC License (ISCL)                                |       |
+| ✅     | shellingham                                  | 1.5.4           | ISC License (ISCL)                                |       |
+| ✅     | griffe                                       | 1.14.0          | ISC (override)                                    |       |
+| ✅     | greenlet                                     | 3.2.4           | MIT AND Python-2.0                                |       |
+| ✅     | pillow                                       | 12.0.0          | MIT-CMU (override)                                |       |
+| ✅     | tqdm                                         | 4.67.1          | MIT License; Mozilla Public License 2.0 (MPL 2.0) |       |
+| ✅     | aioitertools                                 | 0.12.0          | MIT License                                       |       |
+| ✅     | aiosqlite                                    | 0.21.0          | MIT License                                       |       |
+| ✅     | annotated-types                              | 0.7.0           | MIT License                                       |       |
+| ✅     | azure-ai-documentintelligence                | 1.0.2           | MIT License                                       |       |
+| ✅     | azure-core                                   | 1.36.0          | MIT License                                       |       |
+| ✅     | azure-datalake-store                         | 0.0.53          | MIT License                                       |       |
+| ✅     | azure-storage-blob                           | 12.27.1         | MIT License                                       |       |
+| ✅     | azure-storage-file-datalake                  | 12.22.0         | MIT License                                       |       |
+| ✅     | backoff                                      | 2.2.1           | MIT License                                       |       |
+| ✅     | beautifulsoup4                               | 4.14.2          | MIT License                                       |       |
+| ✅     | cachetools                                   | 5.5.2           | MIT License                                       |       |
+| ✅     | cohere                                       | 5.20.0          | MIT License                                       |       |
+| ✅     | colorlog                                     | 6.10.1          | MIT License                                       |       |
+| ✅     | dataclasses-json                             | 0.6.7           | MIT License                                       |       |
+| ✅     | Deprecated                                   | 1.3.1           | MIT License                                       |       |
+| ✅     | executing                                    | 2.2.1           | MIT License                                       |       |
+| ✅     | fastapi                                      | 0.115.14        | MIT License                                       |       |
+| ✅     | filetype                                     | 1.2.0           | MIT License                                       |       |
+| ✅     | graphql-core                                 | 3.2.7           | MIT License                                       |       |
+| ✅     | grpc-interceptor                             | 0.15.4          | MIT License                                       |       |
+| ✅     | h11                                          | 0.16.0          | MIT License                                       |       |
+| ✅     | h2                                           | 4.3.0           | MIT License                                       |       |
+| ✅     | hpack                                        | 4.1.0           | MIT License                                       |       |
+| ✅     | html5lib                                     | 1.1             | MIT License                                       |       |
+| ✅     | hyperframe                                   | 6.1.0           | MIT License                                       |       |
+| ✅     | jedi                                         | 0.19.2          | MIT License                                       |       |
+| ✅     | jiter                                        | 0.11.1          | MIT License                                       |       |
+| ✅     | jmespath                                     | 1.0.1           | MIT License                                       |       |
+| ✅     | json_repair                                  | 0.44.1          | MIT License                                       |       |
+| ✅     | langchain-neo4j                              | 0.6.0           | MIT License                                       |       |
+| ✅     | latex2mathml                                 | 3.78.1          | MIT License                                       |       |
+| ✅     | llama-index-embeddings-openai                | 0.3.1           | MIT License                                       |       |
+| ✅     | llama-index-llms-azure-openai                | 0.3.2           | MIT License                                       |       |
+| ✅     | llama-index-postprocessor-cohere-rerank      | 0.3.0           | MIT License                                       |       |
+| ✅     | llama-index-storage-docstore-mongodb         | 0.3.0           | MIT License                                       |       |
+| ✅     | llama-index-storage-kvstore-mongodb          | 0.3.0           | MIT License                                       |       |
+| ✅     | Mako                                         | 1.3.10          | MIT License                                       |       |
+| ✅     | markdown-it-py                               | 4.0.0           | MIT License                                       |       |
+| ✅     | marshmallow                                  | 3.26.1          | MIT License                                       |       |
+| ✅     | mdurl                                        | 0.1.2           | MIT License                                       |       |
+| ✅     | memgraph-toolbox                             | 0.1.5           | MIT License                                       |       |
+| ✅     | mongoengine                                  | 0.29.1          | MIT License                                       |       |
+| ✅     | msal-extensions                              | 1.3.1           | MIT License                                       |       |
+| ✅     | msal                                         | 1.34.0          | MIT License                                       |       |
+| ✅     | mypy                                         | 1.18.2          | MIT License                                       |       |
+| ✅     | parse                                        | 1.20.2          | MIT License                                       |       |
+| ✅     | parso                                        | 0.8.5           | MIT License                                       |       |
+| ✅     | pluggy                                       | 1.6.0           | MIT License                                       |       |
+| ✅     | posthog                                      | 7.0.1           | MIT License                                       |       |
+| ✅     | pure_eval                                    | 0.2.3           | MIT License                                       |       |
+| ✅     | PyJWT                                        | 2.10.1          | MIT License                                       |       |
+| ✅     | pystache                                     | 0.6.8           | MIT License                                       |       |
+| ✅     | pytest-bdd                                   | 8.1.0           | MIT License                                       |       |
+| ✅     | pytest-mock                                  | 3.15.1          | MIT License                                       |       |
+| ✅     | pytest                                       | 8.4.2           | MIT License                                       |       |
+| ✅     | python-i18n                                  | 0.3.9           | MIT License                                       |       |
+| ✅     | pytokens                                     | 0.3.0           | MIT License                                       |       |
+| ✅     | pytz                                         | 2025.2          | MIT License                                       |       |
+| ✅     | PyYAML                                       | 6.0.3           | MIT License                                       |       |
+| ✅     | redis                                        | 5.3.1           | MIT License                                       |       |
+| ✅     | rich                                         | 14.2.0          | MIT License                                       |       |
+| ✅     | ruff                                         | 0.8.6           | MIT License                                       |       |
+| ✅     | six                                          | 1.17.0          | MIT License                                       |       |
+| ✅     | stack-data                                   | 0.6.3           | MIT License                                       |       |
+| ✅     | strawberry-graphql                           | 0.270.1         | MIT License                                       |       |
+| ✅     | tabulate                                     | 0.9.0           | MIT License                                       |       |
+| ✅     | tomlkit                                      | 0.13.3          | MIT License                                       |       |
+| ✅     | toml-sort                                    | 0.24.3          | MIT License                                       |       |
+| ✅     | typer                                        | 0.19.2          | MIT License                                       |       |
+| ✅     | typing-inspect                               | 0.9.0           | MIT License                                       |       |
+| ✅     | tiktoken                                     | 0.12.0          | MIT (override)                                    |       |
+| ✅     | alembic                                      | 1.17.1          | MIT (override)                                    |       |
+| ✅     | anyio                                        | 4.11.0          | MIT (override)                                    |       |
+| ✅     | attrs                                        | 25.4.0          | MIT (override)                                    |       |
+| ✅     | azure-identity                               | 1.25.1          | MIT                                               |       |
+| ✅     | banks                                        | 2.2.0           | BSD-3-Clause (override)                           |       |
+| ✅     | black                                        | 25.9.0          | MIT                                               |       |
+| ✅     | cffi                                         | 2.0.0           | MIT                                               |       |
+| ✅     | charset-normalizer                           | 3.4.4           | MIT                                               |       |
+| ✅     | docling-core                                 | 2.55.0          | MIT (override)                                    |       |
+| ✅     | fastavro                                     | 1.12.1          | MIT                                               |       |
+| ✅     | fonttools                                    | 4.60.1          | MIT                                               |       |
+| ✅     | gherkin-official                             | 29.0.0          | MIT                                               |       |
+| ✅     | httpx-sse                                    | 0.4.0           | MIT                                               |       |
+| ✅     | iniconfig                                    | 2.3.0           | MIT                                               |       |
+| ✅     | jsonref                                      | 1.1.0           | MIT                                               |       |
+| ✅     | jsonschema-specifications                    | 2025.9.1        | MIT (override)                                    |       |
+| ✅     | jsonschema                                   | 4.25.1          | MIT (override)                                    |       |
+| ✅     | kuzu                                         | 0.11.3          | MIT                                               |       |
+| ✅     | langchain-aws                                | 1.1.0           | MIT                                               |       |
+| ✅     | langchain-classic                            | 1.0.0           | MIT                                               |       |
+| ✅     | langchain-core                               | 1.1.0           | MIT                                               |       |
+| ✅     | langchain-memgraph                           | 0.1.7           | MIT                                               |       |
+| ✅     | langchain-text-splitters                     | 1.0.0           | MIT                                               |       |
+| ✅     | langchain                                    | 1.1.0           | MIT                                               |       |
+| ✅     | langgraph-checkpoint                         | 3.0.1           | MIT                                               |       |
+| ✅     | langgraph-prebuilt                           | 1.0.5           | MIT                                               |       |
+| ✅     | langgraph-sdk                                | 0.2.10          | MIT                                               |       |
+| ✅     | langgraph                                    | 1.0.3           | MIT                                               |       |
+| ✅     | langsmith                                    | 0.4.47          | MIT                                               |       |
+| ✅     | llama-index-core                             | 0.12.52.post1   | MIT (override)                                    |       |
+| ✅     | llama-index-embeddings-openai-like           | 0.1.1           | MIT (override)                                    |       |
+| ✅     | llama-index-instrumentation                  | 0.4.2           | MIT (override)                                    |       |
+| ✅     | llama-index-llms-openai-like                 | 0.3.5           | MIT (override)                                    |       |
+| ✅     | llama-index-llms-openai                      | 0.3.44          | MIT (override)                                    |       |
+| ✅     | llama-index-readers-file                     | 0.4.11          | MIT (override)                                    |       |
+| ✅     | llama-index-vector-stores-milvus             | 0.8.7           | MIT (override)                                    |       |
+| ✅     | llama-index-workflows                        | 1.3.0           | MIT (override)                                    |       |
+| ✅     | mypy_extensions                              | 1.1.0           | MIT (override)                                    |       |
+| ✅     | parse_type                                   | 0.6.6           | MIT (override)                                    |       |
+| ✅     | platformdirs                                 | 4.5.0           | MIT                                               |       |
+| ✅     | pydantic_core                                | 2.41.5          | MIT                                               |       |
+| ✅     | pydantic-settings                            | 2.11.0          | MIT                                               |       |
+| ✅     | pydantic                                     | 2.12.4          | MIT                                               |       |
+| ✅     | pyparsing                                    | 3.2.5           | MIT                                               |       |
+| ✅     | pytest-cov                                   | 6.3.0           | MIT                                               |       |
+| ✅     | referencing                                  | 0.37.0          | MIT (override)                                    |       |
+| ✅     | rpds-py                                      | 0.28.0          | MIT (override)                                    |       |
+| ✅     | soupsieve                                    | 2.8             | MIT                                               |       |
+| ✅     | SQLAlchemy                                   | 2.0.44          | MIT                                               |       |
+| ✅     | stringcase                                   | 1.2.0           | MIT                                               |       |
+| ✅     | tokenize_rt                                  | 6.2.0           | MIT                                               |       |
+| ✅     | typing-inspection                            | 0.4.2           | MIT (override)                                    |       |
+| ✅     | urllib3                                      | 2.5.0           | MIT (override)                                    |       |
+| ✅     | zipp                                         | 3.23.0          | MIT (override)                                    |       |
+| ✅     | certifi                                      | 2025.10.5       | Mozilla Public License 2.0 (MPL 2.0)              |       |
+| ✅     | pathspec                                     | 0.12.1          | Mozilla Public License 2.0 (MPL 2.0)              |       |
+| ✅     | neo4j-graphrag                               | 1.9.1           | Apache-2.0 (override)                             |       |
+| ✅     | typing_extensions                            | 4.15.0          | PSF-2.0 (override)                                |       |
+| ✅     | aiohappyeyeballs                             | 2.6.1           | Python Software Foundation License                |       |
+| ✅     | defusedxml                                   | 0.7.1           | Python Software Foundation License                |       |
+| ✅     | matplotlib                                   | 3.10.7          | Python Software Foundation License                |       |
+| ✅     | email-validator                              | 2.3.0           | The Unlicense (Unlicense)                         |       |
+| ✅     | matplotlib-inline                            | 0.2.1           | BSD-3-Clause (override)                           |       |
+| ✅     | filelock                                     | 3.20.0          | Unlicense                                         |       |
+| ✅     | sqlean.py                                    | 3.50.4.5        | zlib/libpng                                       |       |
+
+### aihub_process
+
+| Status | Package                                      | Version         | License                                           | Notes |
+| ------ | -------------------------------------------- | --------------- | ------------------------------------------------- | ----- |
+| ✅     | protobuf                                     | 5.29.5          | 3-Clause BSD License                              |       |
+| ✅     | dirtyjson                                    | 1.0.8           | Academic Free License (AFL); MIT License          |       |
+| ✅     | regex                                        | 2025.11.3       | Apache-2.0 (override)                             |       |
+| ✅     | aiohttp                                      | 3.13.2          | Apache-2.0 AND MIT                                |       |
+| ✅     | arize-phoenix-otel                           | 0.13.1          | Apache-2.0                                        |       |
+| ✅     | asttokens                                    | 3.0.0           | Apache 2.0                                        |       |
+| ✅     | boto3                                        | 1.40.66         | Apache-2.0                                        |       |
+| ✅     | botocore                                     | 1.40.66         | Apache-2.0                                        |       |
+| ✅     | coverage                                     | 7.11.0          | Apache-2.0                                        |       |
+| ✅     | frozenlist                                   | 1.8.0           | Apache-2.0                                        |       |
+| ✅     | hf-xet                                       | 1.2.0           | Apache-2.0 (override)                             |       |
+| ✅     | mem0ai                                       | 1.0.1           | Apache-2.0                                        |       |
+| ✅     | openinference-instrumentation-llama-index    | 4.3.8           | Apache-2.0                                        |       |
+| ✅     | openinference-instrumentation                | 0.1.42          | Apache-2.0                                        |       |
+| ✅     | openinference-semantic-conventions           | 0.1.25          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-api                            | 1.37.0          | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-exporter-otlp-proto-common     | 1.37.0          | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-exporter-otlp-proto-grpc       | 1.37.0          | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-exporter-otlp-proto-http       | 1.37.0          | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-exporter-otlp                  | 1.37.0          | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-instrumentation-aiohttp-client | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-asyncio        | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-botocore       | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-httpx          | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-jinja2         | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-logging        | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-pymongo        | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-redis          | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation-requests       | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-instrumentation                | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | opentelemetry-propagator-aws-xray            | 1.0.2           | Apache-2.0                                        |       |
+| ✅     | opentelemetry-proto                          | 1.37.0          | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-sdk                            | 1.37.0          | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-semantic-conventions           | 0.58b0          | Apache-2.0 (override)                             |       |
+| ✅     | opentelemetry-util-http                      | 0.58b0          | Apache-2.0                                        |       |
+| ✅     | python-multipart                             | 0.0.20          | Apache-2.0                                        |       |
+| ✅     | rank-bm25                                    | 0.2.2           | Apache2.0                                         |       |
+| ✅     | types-PyYAML                                 | 6.0.12.20250915 | Apache-2.0 (override)                             |       |
+| ✅     | types-requests                               | 2.32.4.20250913 | Apache-2.0 (override)                             |       |
+| ✅     | cryptography                                 | 46.0.3          | Apache-2.0 OR BSD-3-Clause                        |       |
+| ✅     | orjson                                       | 3.11.4          | Apache-2.0 OR MIT                                 |       |
+| ✅     | multidict                                    | 6.7.0           | Apache License 2.0                                |       |
+| ✅     | packaging                                    | 25.0            | Apache Software License; BSD License              |       |
+| ✅     | python-dateutil                              | 2.9.0.post0     | Apache Software License; BSD License              |       |
+| ✅     | ormsgpack                                    | 1.12.0          | Apache Software License; MIT License              |       |
+| ✅     | sniffio                                      | 1.3.1           | Apache Software License; MIT License              |       |
+| ✅     | uvloop                                       | 0.22.1          | Apache Software License; MIT License              |       |
+| ✅     | aiosignal                                    | 1.4.0           | Apache Software License                           |       |
+| ✅     | distro                                       | 1.9.0           | Apache Software License                           |       |
+| ✅     | googleapis-common-protos                     | 1.71.0          | Apache Software License                           |       |
+| ✅     | grpcio                                       | 1.76.0          | Apache Software License                           |       |
+| ✅     | huggingface-hub                              | 0.36.0          | Apache Software License                           |       |
+| ✅     | importlib_metadata                           | 8.7.0           | Apache Software License                           |       |
+| ✅     | jsonpath-ng                                  | 1.7.0           | Apache Software License                           |       |
+| ✅     | motor                                        | 3.7.1           | Apache Software License                           |       |
+| ✅     | nats-py                                      | 2.12.0          | Apache Software License                           |       |
+| ✅     | neo4j                                        | 5.28.2          | Apache Software License                           |       |
+| ✅     | nltk                                         | 3.9.2           | Apache Software License                           |       |
+| ✅     | openai                                       | 1.109.1         | Apache Software License                           |       |
+| ✅     | opentelemetry-instrumentation-milvus         | 0.47.5          | Apache Software License                           |       |
+| ✅     | opentelemetry-semantic-conventions-ai        | 0.4.13          | Apache Software License                           |       |
+| ✅     | propcache                                    | 0.4.1           | Apache Software License                           |       |
+| ✅     | pyarrow                                      | 22.0.0          | Apache Software License                           |       |
+| ✅     | pymilvus                                     | 2.6.3           | Apache Software License                           |       |
+| ✅     | pymongo                                      | 4.15.3          | Apache Software License                           |       |
+| ✅     | pytest-asyncio                               | 0.24.0          | Apache Software License                           |       |
+| ✅     | qdrant-client                                | 1.16.1          | Apache Software License                           |       |
+| ✅     | requests-toolbelt                            | 1.0.0           | Apache Software License                           |       |
+| ✅     | requests                                     | 2.32.5          | Apache Software License                           |       |
+| ✅     | s3transfer                                   | 0.14.0          | Apache Software License                           |       |
+| ✅     | safetensors                                  | 0.6.2           | Apache Software License                           |       |
+| ✅     | tenacity                                     | 9.1.2           | Apache Software License                           |       |
+| ✅     | tokenizers                                   | 0.22.1          | Apache Software License                           |       |
+| ✅     | transformers                                 | 4.57.1          | Apache Software License                           |       |
+| ✅     | tzdata                                       | 2025.2          | Apache Software License                           |       |
+| ✅     | yarl                                         | 1.22.0          | Apache Software License                           |       |
+| ✅     | click                                        | 8.3.0           | BSD-3-Clause (override)                           |       |
+| ✅     | httpcore                                     | 1.0.9           | BSD-3-Clause                                      |       |
+| ✅     | idna                                         | 3.11            | BSD-3-Clause                                      |       |
+| ✅     | ipython                                      | 9.7.0           | BSD-3-Clause                                      |       |
+| ✅     | MarkupSafe                                   | 3.0.3           | BSD-3-Clause                                      |       |
+| ✅     | portalocker                                  | 3.2.0           | BSD-3-Clause                                      |       |
+| ✅     | psutil                                       | 7.1.3           | BSD-3-Clause                                      |       |
+| ✅     | pypdf                                        | 5.9.0           | BSD-3-Clause (override)                           |       |
+| ✅     | python-dotenv                                | 1.2.1           | BSD-3-Clause                                      |       |
+| ✅     | scikit-learn                                 | 1.7.2           | BSD-3-Clause (override)                           |       |
+| ✅     | starlette                                    | 0.46.2          | BSD-3-Clause                                      |       |
+| ✅     | uvicorn                                      | 0.34.3          | BSD-3-Clause                                      |       |
+| ✅     | zstandard                                    | 0.25.0          | BSD-3-Clause                                      |       |
+| ✅     | adlfs                                        | 2024.12.0       | BSD License                                       |       |
+| ✅     | Authlib                                      | 1.6.5           | BSD License                                       |       |
+| ✅     | colorama                                     | 0.4.6           | BSD License                                       |       |
+| ✅     | decorator                                    | 5.2.1           | BSD License                                       |       |
+| ✅     | flatdict                                     | 4.0.1           | BSD License                                       |       |
+| ✅     | fsspec                                       | 2024.12.0       | BSD License                                       |       |
+| ✅     | httpx                                        | 0.28.1          | BSD License                                       |       |
+| ✅     | ipython_pygments_lexers                      | 1.1.1           | BSD License                                       |       |
+| ✅     | isodate                                      | 0.7.2           | BSD License                                       |       |
+| ✅     | Jinja2                                       | 3.1.6           | BSD License                                       |       |
+| ✅     | joblib                                       | 1.5.2           | BSD License                                       |       |
+| ✅     | jsonpatch                                    | 1.33            | BSD License                                       |       |
+| ✅     | jsonpointer                                  | 3.0.0           | BSD License                                       |       |
+| ✅     | lxml                                         | 5.4.0           | BSD License                                       |       |
+| ✅     | nest-asyncio                                 | 1.6.0           | BSD License                                       |       |
+| ✅     | networkx                                     | 3.5             | BSD License                                       |       |
+| ✅     | numpy                                        | 2.3.4           | BSD License                                       |       |
+| ✅     | pandas                                       | 2.2.3           | BSD License                                       |       |
+| ✅     | prompt_toolkit                               | 3.0.52          | BSD License                                       |       |
+| ✅     | pycparser                                    | 2.23            | BSD License                                       |       |
+| ✅     | Pygments                                     | 2.19.2          | BSD License                                       |       |
+| ✅     | scipy                                        | 1.16.3          | BSD License                                       |       |
+| ✅     | striprtf                                     | 0.0.26          | BSD License                                       |       |
+| ✅     | threadpoolctl                                | 3.6.0           | BSD License                                       |       |
+| ✅     | traitlets                                    | 5.14.3          | BSD License                                       |       |
+| ✅     | webencodings                                 | 0.5.1           | BSD License                                       |       |
+| ✅     | websockets                                   | 15.0.1          | BSD License                                       |       |
+| ✅     | wrapt                                        | 1.17.3          | BSD License                                       |       |
+| ✅     | xxhash                                       | 3.6.0           | BSD License                                       |       |
+| ✅     | ply                                          | 3.11            | BSD                                               |       |
+| ✅     | arize-phoenix-client                         | 1.21.0          | Elastic-2.0                                       |       |
+| ✅     | arize-phoenix-evals                          | 2.5.0           | Elastic-2.0                                       |       |
+| ✅     | arize-phoenix                                | 10.15.0         | Elastic-2.0                                       |       |
+| ✅     | dnspython                                    | 2.8.0           | ISC License (ISCL)                                |       |
+| ✅     | pexpect                                      | 4.9.0           | ISC License (ISCL)                                |       |
+| ✅     | ptyprocess                                   | 0.7.0           | ISC License (ISCL)                                |       |
+| ✅     | shellingham                                  | 1.5.4           | ISC License (ISCL)                                |       |
+| ✅     | griffe                                       | 1.14.0          | ISC (override)                                    |       |
+| ✅     | greenlet                                     | 3.2.4           | MIT AND Python-2.0                                |       |
+| ✅     | pillow                                       | 12.0.0          | MIT-CMU (override)                                |       |
+| ✅     | tqdm                                         | 4.67.1          | MIT License; Mozilla Public License 2.0 (MPL 2.0) |       |
+| ✅     | aioitertools                                 | 0.12.0          | MIT License                                       |       |
+| ✅     | aiosqlite                                    | 0.21.0          | MIT License                                       |       |
+| ✅     | annotated-types                              | 0.7.0           | MIT License                                       |       |
+| ✅     | azure-ai-documentintelligence                | 1.0.2           | MIT License                                       |       |
+| ✅     | azure-core                                   | 1.36.0          | MIT License                                       |       |
+| ✅     | azure-datalake-store                         | 0.0.53          | MIT License                                       |       |
+| ✅     | azure-storage-blob                           | 12.27.1         | MIT License                                       |       |
+| ✅     | azure-storage-file-datalake                  | 12.22.0         | MIT License                                       |       |
+| ✅     | backoff                                      | 2.2.1           | MIT License                                       |       |
+| ✅     | beautifulsoup4                               | 4.14.2          | MIT License                                       |       |
+| ✅     | cachetools                                   | 5.5.2           | MIT License                                       |       |
+| ✅     | cohere                                       | 5.20.0          | MIT License                                       |       |
+| ✅     | colorlog                                     | 6.10.1          | MIT License                                       |       |
+| ✅     | dataclasses-json                             | 0.6.7           | MIT License                                       |       |
+| ✅     | Deprecated                                   | 1.3.1           | MIT License                                       |       |
+| ✅     | executing                                    | 2.2.1           | MIT License                                       |       |
+| ✅     | fastapi                                      | 0.115.14        | MIT License                                       |       |
+| ✅     | filetype                                     | 1.2.0           | MIT License                                       |       |
+| ✅     | graphql-core                                 | 3.2.7           | MIT License                                       |       |
+| ✅     | grpc-interceptor                             | 0.15.4          | MIT License                                       |       |
+| ✅     | h11                                          | 0.16.0          | MIT License                                       |       |
+| ✅     | h2                                           | 4.3.0           | MIT License                                       |       |
+| ✅     | hpack                                        | 4.1.0           | MIT License                                       |       |
+| ✅     | html5lib                                     | 1.1             | MIT License                                       |       |
+| ✅     | hyperframe                                   | 6.1.0           | MIT License                                       |       |
+| ✅     | jedi                                         | 0.19.2          | MIT License                                       |       |
+| ✅     | jiter                                        | 0.11.1          | MIT License                                       |       |
+| ✅     | jmespath                                     | 1.0.1           | MIT License                                       |       |
+| ✅     | json_repair                                  | 0.44.1          | MIT License                                       |       |
+| ✅     | langchain-neo4j                              | 0.6.0           | MIT License                                       |       |
+| ✅     | latex2mathml                                 | 3.78.1          | MIT License                                       |       |
+| ✅     | llama-index-embeddings-openai                | 0.3.1           | MIT License                                       |       |
+| ✅     | llama-index-llms-azure-openai                | 0.3.2           | MIT License                                       |       |
+| ✅     | llama-index-postprocessor-cohere-rerank      | 0.3.0           | MIT License                                       |       |
+| ✅     | llama-index-storage-docstore-mongodb         | 0.3.0           | MIT License                                       |       |
+| ✅     | llama-index-storage-kvstore-mongodb          | 0.3.0           | MIT License                                       |       |
+| ✅     | Mako                                         | 1.3.10          | MIT License                                       |       |
+| ✅     | markdown-it-py                               | 4.0.0           | MIT License                                       |       |
+| ✅     | marshmallow                                  | 3.26.1          | MIT License                                       |       |
+| ✅     | mdurl                                        | 0.1.2           | MIT License                                       |       |
+| ✅     | memgraph-toolbox                             | 0.1.5           | MIT License                                       |       |
+| ✅     | mongoengine                                  | 0.29.1          | MIT License                                       |       |
+| ✅     | msal-extensions                              | 1.3.1           | MIT License                                       |       |
+| ✅     | msal                                         | 1.34.0          | MIT License                                       |       |
+| ✅     | mypy                                         | 1.18.2          | MIT License                                       |       |
+| ✅     | parse                                        | 1.20.2          | MIT License                                       |       |
+| ✅     | parso                                        | 0.8.5           | MIT License                                       |       |
+| ✅     | pluggy                                       | 1.6.0           | MIT License                                       |       |
+| ✅     | posthog                                      | 7.0.1           | MIT License                                       |       |
+| ✅     | pure_eval                                    | 0.2.3           | MIT License                                       |       |
+| ✅     | PyJWT                                        | 2.10.1          | MIT License                                       |       |
+| ✅     | pystache                                     | 0.6.8           | MIT License                                       |       |
+| ✅     | pytest-bdd                                   | 8.1.0           | MIT License                                       |       |
+| ✅     | pytest-mock                                  | 3.15.1          | MIT License                                       |       |
+| ✅     | pytest                                       | 8.4.2           | MIT License                                       |       |
+| ✅     | python-i18n                                  | 0.3.9           | MIT License                                       |       |
+| ✅     | pytokens                                     | 0.3.0           | MIT License                                       |       |
+| ✅     | pytz                                         | 2025.2          | MIT License                                       |       |
+| ✅     | PyYAML                                       | 6.0.3           | MIT License                                       |       |
+| ✅     | redis                                        | 5.3.1           | MIT License                                       |       |
+| ✅     | rich                                         | 14.2.0          | MIT License                                       |       |
+| ✅     | ruff                                         | 0.8.6           | MIT License                                       |       |
+| ✅     | six                                          | 1.17.0          | MIT License                                       |       |
+| ✅     | stack-data                                   | 0.6.3           | MIT License                                       |       |
+| ✅     | strawberry-graphql                           | 0.270.1         | MIT License                                       |       |
+| ✅     | tabulate                                     | 0.9.0           | MIT License                                       |       |
+| ✅     | tomlkit                                      | 0.13.3          | MIT License                                       |       |
+| ✅     | toml-sort                                    | 0.24.3          | MIT License                                       |       |
+| ✅     | typer                                        | 0.19.2          | MIT License                                       |       |
+| ✅     | typing-inspect                               | 0.9.0           | MIT License                                       |       |
+| ✅     | watchfiles                                   | 1.1.1           | MIT License                                       |       |
+| ✅     | tiktoken                                     | 0.12.0          | MIT (override)                                    |       |
+| ✅     | alembic                                      | 1.17.1          | MIT (override)                                    |       |
+| ✅     | anyio                                        | 4.11.0          | MIT (override)                                    |       |
+| ✅     | asgi-lifespan                                | 2.1.0           | MIT                                               |       |
+| ✅     | attrs                                        | 25.4.0          | MIT (override)                                    |       |
+| ✅     | azure-identity                               | 1.25.1          | MIT                                               |       |
+| ✅     | banks                                        | 2.2.0           | BSD-3-Clause (override)                           |       |
+| ✅     | black                                        | 25.9.0          | MIT                                               |       |
+| ✅     | cffi                                         | 2.0.0           | MIT                                               |       |
+| ✅     | charset-normalizer                           | 3.4.4           | MIT                                               |       |
+| ✅     | docling-core                                 | 2.55.0          | MIT (override)                                    |       |
+| ✅     | fastavro                                     | 1.12.1          | MIT                                               |       |
+| ✅     | gherkin-official                             | 29.0.0          | MIT                                               |       |
+| ✅     | httptools                                    | 0.7.1           | MIT                                               |       |
+| ✅     | httpx-sse                                    | 0.4.0           | MIT                                               |       |
+| ✅     | iniconfig                                    | 2.3.0           | MIT                                               |       |
+| ✅     | jsonref                                      | 1.1.0           | MIT                                               |       |
+| ✅     | jsonschema-specifications                    | 2025.9.1        | MIT (override)                                    |       |
+| ✅     | jsonschema                                   | 4.25.1          | MIT (override)                                    |       |
+| ✅     | kuzu                                         | 0.11.3          | MIT                                               |       |
+| ✅     | langchain-aws                                | 1.1.0           | MIT                                               |       |
+| ✅     | langchain-classic                            | 1.0.0           | MIT                                               |       |
+| ✅     | langchain-core                               | 1.1.0           | MIT                                               |       |
+| ✅     | langchain-memgraph                           | 0.1.7           | MIT                                               |       |
+| ✅     | langchain-text-splitters                     | 1.0.0           | MIT                                               |       |
+| ✅     | langchain                                    | 1.1.0           | MIT                                               |       |
+| ✅     | langgraph-checkpoint                         | 3.0.1           | MIT                                               |       |
+| ✅     | langgraph-prebuilt                           | 1.0.5           | MIT                                               |       |
+| ✅     | langgraph-sdk                                | 0.2.10          | MIT                                               |       |
+| ✅     | langgraph                                    | 1.0.3           | MIT                                               |       |
+| ✅     | langsmith                                    | 0.4.47          | MIT                                               |       |
+| ✅     | llama-index-core                             | 0.12.52.post1   | MIT (override)                                    |       |
+| ✅     | llama-index-embeddings-openai-like           | 0.1.1           | MIT (override)                                    |       |
+| ✅     | llama-index-instrumentation                  | 0.4.2           | MIT (override)                                    |       |
+| ✅     | llama-index-llms-openai-like                 | 0.3.5           | MIT (override)                                    |       |
+| ✅     | llama-index-llms-openai                      | 0.3.44          | MIT (override)                                    |       |
+| ✅     | llama-index-readers-file                     | 0.4.11          | MIT (override)                                    |       |
+| ✅     | llama-index-vector-stores-milvus             | 0.8.7           | MIT (override)                                    |       |
+| ✅     | llama-index-workflows                        | 1.3.0           | MIT (override)                                    |       |
+| ✅     | mypy_extensions                              | 1.1.0           | MIT (override)                                    |       |
+| ✅     | parse_type                                   | 0.6.6           | MIT (override)                                    |       |
+| ✅     | platformdirs                                 | 4.5.0           | MIT                                               |       |
+| ✅     | pydantic_core                                | 2.41.5          | MIT                                               |       |
+| ✅     | pydantic-settings                            | 2.11.0          | MIT                                               |       |
+| ✅     | pydantic                                     | 2.12.4          | MIT                                               |       |
+| ✅     | pytest-cov                                   | 6.3.0           | MIT                                               |       |
+| ✅     | referencing                                  | 0.37.0          | MIT (override)                                    |       |
+| ✅     | rpds-py                                      | 0.28.0          | MIT (override)                                    |       |
+| ✅     | soupsieve                                    | 2.8             | MIT                                               |       |
+| ✅     | SQLAlchemy                                   | 2.0.44          | MIT                                               |       |
+| ✅     | stringcase                                   | 1.2.0           | MIT                                               |       |
+| ✅     | tokenize_rt                                  | 6.2.0           | MIT                                               |       |
+| ✅     | typing-inspection                            | 0.4.2           | MIT (override)                                    |       |
+| ✅     | urllib3                                      | 2.5.0           | MIT (override)                                    |       |
+| ✅     | zipp                                         | 3.23.0          | MIT (override)                                    |       |
+| ✅     | certifi                                      | 2025.10.5       | Mozilla Public License 2.0 (MPL 2.0)              |       |
+| ✅     | pathspec                                     | 0.12.1          | Mozilla Public License 2.0 (MPL 2.0)              |       |
+| ✅     | neo4j-graphrag                               | 1.9.1           | Apache-2.0 (override)                             |       |
+| ✅     | typing_extensions                            | 4.15.0          | PSF-2.0 (override)                                |       |
+| ✅     | aiohappyeyeballs                             | 2.6.1           | Python Software Foundation License                |       |
+| ✅     | defusedxml                                   | 0.7.1           | Python Software Foundation License                |       |
+| ✅     | email-validator                              | 2.3.0           | The Unlicense (Unlicense)                         |       |
+| ✅     | matplotlib-inline                            | 0.2.1           | BSD-3-Clause (override)                           |       |
+| ✅     | filelock                                     | 3.20.0          | Unlicense                                         |       |
+| ✅     | sqlean.py                                    | 3.50.4.5        | zlib/libpng                                       |       |
+
+### aihub_pipeline
+
+| Status | Package                                      | Version         | License                                             | Notes |
+| ------ | -------------------------------------------- | --------------- | --------------------------------------------------- | ----- |
+| ✅     | protobuf                                     | 5.29.5          | 3-Clause BSD License                                |       |
+| ✅     | dirtyjson                                    | 1.0.8           | Academic Free License (AFL); MIT License            |       |
+| ✅     | regex                                        | 2025.11.3       | Apache-2.0 (override)                               |       |
+| ✅     | aiohttp                                      | 3.13.2          | Apache-2.0 AND MIT                                  |       |
+| ✅     | aiobotocore                                  | 2.25.1          | Apache-2.0                                          |       |
+| ✅     | arize-phoenix-otel                           | 0.13.1          | Apache-2.0                                          |       |
+| ✅     | boto3                                        | 1.40.61         | Apache-2.0                                          |       |
+| ✅     | botocore                                     | 1.40.61         | Apache-2.0                                          |       |
+| ✅     | coverage                                     | 7.11.0          | Apache-2.0                                          |       |
+| ✅     | frozenlist                                   | 1.8.0           | Apache-2.0                                          |       |
+| ✅     | hf-xet                                       | 1.2.0           | Apache-2.0 (override)                               |       |
+| ✅     | mem0ai                                       | 1.0.1           | Apache-2.0                                          |       |
+| ✅     | openinference-instrumentation-llama-index    | 4.3.8           | Apache-2.0                                          |       |
+| ✅     | openinference-instrumentation                | 0.1.42          | Apache-2.0                                          |       |
+| ✅     | openinference-semantic-conventions           | 0.1.25          | Apache-2.0                                          |       |
+| ✅     | opentelemetry-api                            | 1.37.0          | Apache-2.0 (override)                               |       |
+| ✅     | opentelemetry-exporter-otlp-proto-common     | 1.37.0          | Apache-2.0 (override)                               |       |
+| ✅     | opentelemetry-exporter-otlp-proto-grpc       | 1.37.0          | Apache-2.0 (override)                               |       |
+| ✅     | opentelemetry-exporter-otlp-proto-http       | 1.37.0          | Apache-2.0 (override)                               |       |
+| ✅     | opentelemetry-exporter-otlp                  | 1.37.0          | Apache-2.0 (override)                               |       |
+| ✅     | opentelemetry-instrumentation-aiohttp-client | 0.58b0          | Apache-2.0                                          |       |
+| ✅     | opentelemetry-instrumentation-asyncio        | 0.58b0          | Apache-2.0                                          |       |
+| ✅     | opentelemetry-instrumentation-botocore       | 0.58b0          | Apache-2.0                                          |       |
+| ✅     | opentelemetry-instrumentation-httpx          | 0.58b0          | Apache-2.0                                          |       |
+| ✅     | opentelemetry-instrumentation-jinja2         | 0.58b0          | Apache-2.0                                          |       |
+| ✅     | opentelemetry-instrumentation-logging        | 0.58b0          | Apache-2.0                                          |       |
+| ✅     | opentelemetry-instrumentation-pymongo        | 0.58b0          | Apache-2.0                                          |       |
+| ✅     | opentelemetry-instrumentation-redis          | 0.58b0          | Apache-2.0                                          |       |
+| ✅     | opentelemetry-instrumentation-requests       | 0.58b0          | Apache-2.0                                          |       |
+| ✅     | opentelemetry-instrumentation                | 0.58b0          | Apache-2.0                                          |       |
+| ✅     | opentelemetry-propagator-aws-xray            | 1.0.2           | Apache-2.0                                          |       |
+| ✅     | opentelemetry-proto                          | 1.37.0          | Apache-2.0 (override)                               |       |
+| ✅     | opentelemetry-sdk                            | 1.37.0          | Apache-2.0 (override)                               |       |
+| ✅     | opentelemetry-semantic-conventions           | 0.58b0          | Apache-2.0 (override)                               |       |
+| ✅     | opentelemetry-util-http                      | 0.58b0          | Apache-2.0                                          |       |
+| ✅     | python-multipart                             | 0.0.20          | Apache-2.0                                          |       |
+| ✅     | rank-bm25                                    | 0.2.2           | Apache2.0                                           |       |
+| ✅     | types-PyYAML                                 | 6.0.12.20250915 | Apache-2.0 (override)                               |       |
+| ✅     | types-requests                               | 2.32.4.20250913 | Apache-2.0 (override)                               |       |
+| ✅     | cryptography                                 | 46.0.3          | Apache-2.0 OR BSD-3-Clause                          |       |
+| ✅     | orjson                                       | 3.11.4          | Apache-2.0 OR MIT                                   |       |
+| ✅     | multidict                                    | 6.7.0           | Apache License 2.0                                  |       |
+| ✅     | packaging                                    | 25.0            | Apache Software License; BSD License                |       |
+| ✅     | python-dateutil                              | 2.9.0.post0     | Apache Software License; BSD License                |       |
+| ✅     | ormsgpack                                    | 1.12.0          | Apache Software License; MIT License                |       |
+| ✅     | sniffio                                      | 1.3.1           | Apache Software License; MIT License                |       |
+| ✅     | uvloop                                       | 0.22.1          | Apache Software License; MIT License                |       |
+| ✅     | aiosignal                                    | 1.4.0           | Apache Software License                             |       |
+| ✅     | dagster-aws                                  | 0.27.16         | Apache Software License                             |       |
+| ✅     | dagster-azure                                | 0.27.16         | Apache Software License                             |       |
+| ✅     | dagster-graphql                              | 1.11.16         | Apache Software License                             |       |
+| ✅     | dagster-pipes                                | 1.11.16         | Apache Software License                             |       |
+| ✅     | dagster-postgres                             | 0.27.16         | Apache Software License                             |       |
+| ✅     | dagster_shared                               | 1.11.16         | Apache Software License                             |       |
+| ✅     | dagster                                      | 1.11.16         | Apache Software License                             |       |
+| ✅     | dagster-webserver                            | 1.11.16         | Apache Software License                             |       |
+| ✅     | distro                                       | 1.9.0           | Apache Software License                             |       |
+| ✅     | googleapis-common-protos                     | 1.71.0          | Apache Software License                             |       |
+| ✅     | grpcio-health-checking                       | 1.71.2          | Apache Software License                             |       |
+| ✅     | grpcio                                       | 1.76.0          | Apache Software License                             |       |
+| ✅     | huggingface-hub                              | 0.36.0          | Apache Software License                             |       |
+| ✅     | importlib_metadata                           | 8.7.0           | Apache Software License                             |       |
+| ✅     | jsonpath-ng                                  | 1.7.0           | Apache Software License                             |       |
+| ✅     | motor                                        | 3.7.1           | Apache Software License                             |       |
+| ✅     | nats-py                                      | 2.12.0          | Apache Software License                             |       |
+| ✅     | neo4j                                        | 5.28.2          | Apache Software License                             |       |
+| ✅     | nltk                                         | 3.9.2           | Apache Software License                             |       |
+| ✅     | openai                                       | 1.109.1         | Apache Software License                             |       |
+| ✅     | opentelemetry-instrumentation-milvus         | 0.47.5          | Apache Software License                             |       |
+| ✅     | opentelemetry-semantic-conventions-ai        | 0.4.13          | Apache Software License                             |       |
+| ✅     | propcache                                    | 0.4.1           | Apache Software License                             |       |
+| ✅     | pyarrow                                      | 22.0.0          | Apache Software License                             |       |
+| ✅     | pymilvus                                     | 2.6.3           | Apache Software License                             |       |
+| ✅     | pymongo                                      | 4.15.3          | Apache Software License                             |       |
+| ✅     | pytest-asyncio                               | 0.24.0          | Apache Software License                             |       |
+| ✅     | qdrant-client                                | 1.16.1          | Apache Software License                             |       |
+| ✅     | requests-toolbelt                            | 1.0.0           | Apache Software License                             |       |
+| ✅     | requests                                     | 2.32.5          | Apache Software License                             |       |
+| ✅     | s3transfer                                   | 0.14.0          | Apache Software License                             |       |
+| ✅     | safetensors                                  | 0.6.2           | Apache Software License                             |       |
+| ✅     | tenacity                                     | 9.1.2           | Apache Software License                             |       |
+| ✅     | tokenizers                                   | 0.22.1          | Apache Software License                             |       |
+| ✅     | toposort                                     | 1.10            | Apache Software License                             |       |
+| ✅     | transformers                                 | 4.57.1          | Apache Software License                             |       |
+| ✅     | tzdata                                       | 2025.2          | Apache Software License                             |       |
+| ✅     | watchdog                                     | 6.0.0           | Apache Software License                             |       |
+| ✅     | yarl                                         | 1.22.0          | Apache Software License                             |       |
+| ✅     | click                                        | 8.3.0           | BSD-3-Clause (override)                             |       |
+| ✅     | httpcore                                     | 1.0.9           | BSD-3-Clause                                        |       |
+| ✅     | idna                                         | 3.11            | BSD-3-Clause                                        |       |
+| ✅     | MarkupSafe                                   | 3.0.3           | BSD-3-Clause                                        |       |
+| ✅     | portalocker                                  | 3.2.0           | BSD-3-Clause                                        |       |
+| ✅     | psutil                                       | 7.1.3           | BSD-3-Clause                                        |       |
+| ✅     | pypdf                                        | 5.9.0           | BSD-3-Clause (override)                             |       |
+| ✅     | python-dotenv                                | 1.2.1           | BSD-3-Clause                                        |       |
+| ✅     | scikit-learn                                 | 1.7.2           | BSD-3-Clause (override)                             |       |
+| ✅     | starlette                                    | 0.46.2          | BSD-3-Clause                                        |       |
+| ✅     | uvicorn                                      | 0.38.0          | BSD-3-Clause                                        |       |
+| ✅     | zstandard                                    | 0.25.0          | BSD-3-Clause                                        |       |
+| ✅     | adlfs                                        | 2024.12.0       | BSD License                                         |       |
+| ✅     | Authlib                                      | 1.6.5           | BSD License                                         |       |
+| ✅     | colorama                                     | 0.4.6           | BSD License                                         |       |
+| ✅     | contourpy                                    | 1.3.3           | BSD License                                         |       |
+| ✅     | cycler                                       | 0.12.1          | BSD License                                         |       |
+| ✅     | flatdict                                     | 4.0.1           | BSD License                                         |       |
+| ✅     | fsspec                                       | 2024.12.0       | BSD License                                         |       |
+| ✅     | httpx                                        | 0.28.1          | BSD License                                         |       |
+| ✅     | isodate                                      | 0.7.2           | BSD License                                         |       |
+| ✅     | Jinja2                                       | 3.1.6           | BSD License                                         |       |
+| ✅     | joblib                                       | 1.5.2           | BSD License                                         |       |
+| ✅     | jsonpatch                                    | 1.33            | BSD License                                         |       |
+| ✅     | jsonpointer                                  | 3.0.0           | BSD License                                         |       |
+| ✅     | kiwisolver                                   | 1.4.9           | BSD License                                         |       |
+| ✅     | lxml                                         | 5.4.0           | BSD License                                         |       |
+| ✅     | nest-asyncio                                 | 1.6.0           | BSD License                                         |       |
+| ✅     | networkx                                     | 3.5             | BSD License                                         |       |
+| ✅     | numpy                                        | 2.3.4           | BSD License                                         |       |
+| ✅     | pandas                                       | 2.2.3           | BSD License                                         |       |
+| ✅     | pycparser                                    | 2.23            | BSD License                                         |       |
+| ✅     | Pygments                                     | 2.19.2          | BSD License                                         |       |
+| ✅     | s3fs                                         | 2024.12.0       | BSD License                                         |       |
+| ✅     | scipy                                        | 1.16.3          | BSD License                                         |       |
+| ✅     | striprtf                                     | 0.0.26          | BSD License                                         |       |
+| ✅     | threadpoolctl                                | 3.6.0           | BSD License                                         |       |
+| ✅     | webencodings                                 | 0.5.1           | BSD License                                         |       |
+| ✅     | websockets                                   | 15.0.1          | BSD License                                         |       |
+| ✅     | wrapt                                        | 1.17.3          | BSD License                                         |       |
+| ✅     | xxhash                                       | 3.6.0           | BSD License                                         |       |
+| ✅     | antlr4-python3-runtime                       | 4.13.2          | BSD                                                 |       |
+| ✅     | ply                                          | 3.11            | BSD                                                 |       |
+| ✅     | arize-phoenix-client                         | 1.21.0          | Elastic-2.0                                         |       |
+| ✅     | arize-phoenix-evals                          | 2.5.0           | Elastic-2.0                                         |       |
+| ✅     | arize-phoenix                                | 10.15.0         | Elastic-2.0                                         |       |
+| ✅     | psycopg2-binary                              | 2.9.11          | GNU Library or Lesser General Public License (LGPL) |       |
+| ✅     | dnspython                                    | 2.8.0           | ISC License (ISCL)                                  |       |
+| ✅     | shellingham                                  | 1.5.4           | ISC License (ISCL)                                  |       |
+| ✅     | griffe                                       | 1.14.0          | ISC (override)                                      |       |
+| ✅     | greenlet                                     | 3.2.4           | MIT AND Python-2.0                                  |       |
+| ✅     | pillow                                       | 12.0.0          | MIT-CMU (override)                                  |       |
+| ✅     | tqdm                                         | 4.67.1          | MIT License; Mozilla Public License 2.0 (MPL 2.0)   |       |
+| ✅     | aioitertools                                 | 0.12.0          | MIT License                                         |       |
+| ✅     | aiosqlite                                    | 0.21.0          | MIT License                                         |       |
+| ✅     | annotated-types                              | 0.7.0           | MIT License                                         |       |
+| ✅     | azure-ai-documentintelligence                | 1.0.2           | MIT License                                         |       |
+| ✅     | azure-core                                   | 1.36.0          | MIT License                                         |       |
+| ✅     | azure-datalake-store                         | 0.0.53          | MIT License                                         |       |
+| ✅     | azure-storage-blob                           | 12.27.1         | MIT License                                         |       |
+| ✅     | azure-storage-file-datalake                  | 12.22.0         | MIT License                                         |       |
+| ✅     | backoff                                      | 2.2.1           | MIT License                                         |       |
+| ✅     | beautifulsoup4                               | 4.14.2          | MIT License                                         |       |
+| ✅     | cachetools                                   | 5.5.2           | MIT License                                         |       |
+| ✅     | cohere                                       | 5.20.0          | MIT License                                         |       |
+| ✅     | coloredlogs                                  | 14.0            | MIT License                                         |       |
+| ✅     | colorlog                                     | 6.10.1          | MIT License                                         |       |
+| ✅     | dataclasses-json                             | 0.6.7           | MIT License                                         |       |
+| ✅     | Deprecated                                   | 1.3.1           | MIT License                                         |       |
+| ✅     | docstring_parser                             | 0.17.0          | MIT License                                         |       |
+| ✅     | fastapi                                      | 0.115.14        | MIT License                                         |       |
+| ✅     | filetype                                     | 1.2.0           | MIT License                                         |       |
+| ✅     | graphql-core                                 | 3.2.6           | MIT License                                         |       |
+| ✅     | graphql-relay                                | 3.2.0           | MIT License                                         |       |
+| ✅     | grpc-interceptor                             | 0.15.4          | MIT License                                         |       |
+| ✅     | h11                                          | 0.16.0          | MIT License                                         |       |
+| ✅     | h2                                           | 4.3.0           | MIT License                                         |       |
+| ✅     | hpack                                        | 4.1.0           | MIT License                                         |       |
+| ✅     | html5lib                                     | 1.1             | MIT License                                         |       |
+| ✅     | humanfriendly                                | 10.0            | MIT License                                         |       |
+| ✅     | hyperframe                                   | 6.1.0           | MIT License                                         |       |
+| ✅     | jiter                                        | 0.11.1          | MIT License                                         |       |
+| ✅     | jmespath                                     | 1.0.1           | MIT License                                         |       |
+| ✅     | json_repair                                  | 0.44.1          | MIT License                                         |       |
+| ✅     | langchain-neo4j                              | 0.6.0           | MIT License                                         |       |
+| ✅     | latex2mathml                                 | 3.78.1          | MIT License                                         |       |
+| ✅     | llama-index-embeddings-openai                | 0.3.1           | MIT License                                         |       |
+| ✅     | llama-index-postprocessor-cohere-rerank      | 0.3.0           | MIT License                                         |       |
+| ✅     | llama-index-storage-docstore-mongodb         | 0.3.0           | MIT License                                         |       |
+| ✅     | llama-index-storage-kvstore-mongodb          | 0.3.0           | MIT License                                         |       |
+| ✅     | Mako                                         | 1.3.10          | MIT License                                         |       |
+| ✅     | markdown-it-py                               | 4.0.0           | MIT License                                         |       |
+| ✅     | marshmallow                                  | 3.26.1          | MIT License                                         |       |
+| ✅     | mdurl                                        | 0.1.2           | MIT License                                         |       |
+| ✅     | memgraph-toolbox                             | 0.1.5           | MIT License                                         |       |
+| ✅     | mongoengine                                  | 0.29.1          | MIT License                                         |       |
+| ✅     | msal-extensions                              | 1.3.1           | MIT License                                         |       |
+| ✅     | msal                                         | 1.34.0          | MIT License                                         |       |
+| ✅     | mypy                                         | 1.18.2          | MIT License                                         |       |
+| ✅     | pluggy                                       | 1.6.0           | MIT License                                         |       |
+| ✅     | posthog                                      | 7.0.1           | MIT License                                         |       |
+| ✅     | PyJWT                                        | 2.10.1          | MIT License                                         |       |
+| ✅     | pystache                                     | 0.6.8           | MIT License                                         |       |
+| ✅     | pytest-mock                                  | 3.15.1          | MIT License                                         |       |
+| ✅     | pytest                                       | 8.4.2           | MIT License                                         |       |
+| ✅     | python-i18n                                  | 0.3.9           | MIT License                                         |       |
+| ✅     | pytz                                         | 2025.2          | MIT License                                         |       |
+| ✅     | PyYAML                                       | 6.0.3           | MIT License                                         |       |
+| ✅     | redis                                        | 5.3.1           | MIT License                                         |       |
+| ✅     | rich                                         | 14.2.0          | MIT License                                         |       |
+| ✅     | ruff                                         | 0.8.6           | MIT License                                         |       |
+| ✅     | six                                          | 1.17.0          | MIT License                                         |       |
+| ✅     | strawberry-graphql                           | 0.270.1         | MIT License                                         |       |
+| ✅     | tabulate                                     | 0.9.0           | MIT License                                         |       |
+| ✅     | tomlkit                                      | 0.13.3          | MIT License                                         |       |
+| ✅     | typer                                        | 0.19.2          | MIT License                                         |       |
+| ✅     | typing-inspect                               | 0.9.0           | MIT License                                         |       |
+| ✅     | watchfiles                                   | 1.1.1           | MIT License                                         |       |
+| ✅     | tiktoken                                     | 0.12.0          | MIT (override)                                      |       |
+| ✅     | alembic                                      | 1.17.1          | MIT (override)                                      |       |
+| ✅     | anyio                                        | 4.11.0          | MIT (override)                                      |       |
+| ✅     | attrs                                        | 25.4.0          | MIT (override)                                      |       |
+| ✅     | azure-identity                               | 1.25.1          | MIT                                                 |       |
+| ✅     | banks                                        | 2.2.0           | BSD-3-Clause (override)                             |       |
+| ✅     | cffi                                         | 2.0.0           | MIT                                                 |       |
+| ✅     | charset-normalizer                           | 3.4.4           | MIT                                                 |       |
+| ✅     | docling-core                                 | 2.55.0          | MIT (override)                                      |       |
+| ✅     | fastavro                                     | 1.12.1          | MIT                                                 |       |
+| ✅     | fonttools                                    | 4.60.1          | MIT                                                 |       |
+| ✅     | gql                                          | 3.5.3           | MIT                                                 |       |
+| ✅     | graphene                                     | 3.4.3           | MIT                                                 |       |
+| ✅     | httptools                                    | 0.7.1           | MIT                                                 |       |
+| ✅     | httpx-sse                                    | 0.4.0           | MIT                                                 |       |
+| ✅     | iniconfig                                    | 2.3.0           | MIT                                                 |       |
+| ✅     | jsonref                                      | 1.1.0           | MIT                                                 |       |
+| ✅     | jsonschema-specifications                    | 2025.9.1        | MIT (override)                                      |       |
+| ✅     | jsonschema                                   | 4.25.1          | MIT (override)                                      |       |
+| ✅     | kuzu                                         | 0.11.3          | MIT                                                 |       |
+| ✅     | langchain-aws                                | 1.1.0           | MIT                                                 |       |
+| ✅     | langchain-classic                            | 1.0.0           | MIT                                                 |       |
+| ✅     | langchain-core                               | 1.1.0           | MIT                                                 |       |
+| ✅     | langchain-memgraph                           | 0.1.7           | MIT                                                 |       |
+| ✅     | langchain-text-splitters                     | 1.0.0           | MIT                                                 |       |
+| ✅     | langchain                                    | 1.1.0           | MIT                                                 |       |
+| ✅     | langgraph-checkpoint                         | 3.0.1           | MIT                                                 |       |
+| ✅     | langgraph-prebuilt                           | 1.0.5           | MIT                                                 |       |
+| ✅     | langgraph-sdk                                | 0.2.10          | MIT                                                 |       |
+| ✅     | langgraph                                    | 1.0.3           | MIT                                                 |       |
+| ✅     | langsmith                                    | 0.4.47          | MIT                                                 |       |
+| ✅     | llama-index-core                             | 0.12.52.post1   | MIT (override)                                      |       |
+| ✅     | llama-index-embeddings-openai-like           | 0.1.1           | MIT (override)                                      |       |
+| ✅     | llama-index-instrumentation                  | 0.4.2           | MIT (override)                                      |       |
+| ✅     | llama-index-llms-openai-like                 | 0.3.5           | MIT (override)                                      |       |
+| ✅     | llama-index-llms-openai                      | 0.3.44          | MIT (override)                                      |       |
+| ✅     | llama-index-readers-file                     | 0.4.11          | MIT (override)                                      |       |
+| ✅     | llama-index-vector-stores-milvus             | 0.8.7           | MIT (override)                                      |       |
+| ✅     | llama-index-workflows                        | 1.3.0           | MIT (override)                                      |       |
+| ✅     | mypy_extensions                              | 1.1.0           | MIT (override)                                      |       |
+| ✅     | platformdirs                                 | 4.5.0           | MIT                                                 |       |
+| ✅     | pydantic_core                                | 2.41.5          | MIT                                                 |       |
+| ✅     | pydantic-settings                            | 2.11.0          | MIT                                                 |       |
+| ✅     | pydantic                                     | 2.12.4          | MIT                                                 |       |
+| ✅     | pyparsing                                    | 3.2.5           | MIT                                                 |       |
+| ✅     | pytest-cov                                   | 6.3.0           | MIT                                                 |       |
+| ✅     | referencing                                  | 0.37.0          | MIT (override)                                      |       |
+| ✅     | rpds-py                                      | 0.28.0          | MIT (override)                                      |       |
+| ✅     | soupsieve                                    | 2.8             | MIT                                                 |       |
+| ✅     | SQLAlchemy                                   | 2.0.44          | MIT                                                 |       |
+| ✅     | typing-inspection                            | 0.4.2           | MIT (override)                                      |       |
+| ✅     | universal_pathlib                            | 0.3.4           | MIT                                                 |       |
+| ✅     | urllib3                                      | 2.5.0           | MIT (override)                                      |       |
+| ✅     | zipp                                         | 3.23.0          | MIT (override)                                      |       |
+| ✅     | structlog                                    | 25.5.0          | MIT OR Apache-2.0                                   |       |
+| ✅     | certifi                                      | 2025.10.5       | Mozilla Public License 2.0 (MPL 2.0)                |       |
+| ✅     | pathspec                                     | 0.12.1          | Mozilla Public License 2.0 (MPL 2.0)                |       |
+| ✅     | neo4j-graphrag                               | 1.9.1           | Apache-2.0 (override)                               |       |
+| ✅     | typing_extensions                            | 4.15.0          | PSF-2.0 (override)                                  |       |
+| ✅     | aiohappyeyeballs                             | 2.6.1           | Python Software Foundation License                  |       |
+| ✅     | defusedxml                                   | 0.7.1           | Python Software Foundation License                  |       |
+| ✅     | matplotlib                                   | 3.10.7          | Python Software Foundation License                  |       |
+| ✅     | pathlib_abc                                  | 0.5.2           | Python Software Foundation License                  |       |
+| ✅     | email-validator                              | 2.3.0           | The Unlicense (Unlicense)                           |       |
+| ✅     | filelock                                     | 3.20.0          | Unlicense                                           |       |
+| ✅     | sqlean.py                                    | 3.50.4.5        | zlib/libpng                                         |       |
+
 ## JavaScript/TypeScript Dependencies
 
 ### aihub_web (Node.js)
 
 | Status | Package                            | Version | License                                       | Notes |
 | ------ | ---------------------------------- | ------- | --------------------------------------------- | ----- |
-| ✅     | @babel/helper-string-parser        | 7.27.1  | MIT                                           |       |
-| ✅     | @babel/helper-validator-identifier | 7.27.1  | MIT                                           |       |
-| ✅     | @babel/parser                      | 7.28.4  | MIT                                           |       |
-| ✅     | @babel/types                       | 7.28.4  | MIT                                           |       |
-| ✅     | @dagrejs/dagre                     | 1.1.5   | MIT                                           |       |
-| ✅     | @dagrejs/graphlib                  | 2.2.4   | MIT                                           |       |
-| ✅     | @floating-ui/core                  | 1.7.3   | MIT                                           |       |
-| ✅     | @floating-ui/dom                   | 1.7.4   | MIT                                           |       |
-| ✅     | @floating-ui/utils                 | 0.2.10  | MIT                                           |       |
-| ✅     | @floating-ui/vue                   | 1.1.9   | MIT                                           |       |
-| ✅     | @hey-api/client-fetch              | 0.12.0  | MIT                                           |       |
-| ✅     | @hey-api/json-schema-ref-parser    | 1.0.6   | MIT                                           |       |
-| ✅     | @hey-api/openapi-ts                | 0.71.1  | MIT                                           |       |
-| ✅     | @internationalized/date            | 3.9.0   | Apache-2.0                                    |       |
-| ✅     | @internationalized/number          | 3.6.5   | Apache-2.0                                    |       |
-| ✅     | @jridgewell/gen-mapping            | 0.3.13  | MIT                                           |       |
-| ✅     | @jridgewell/remapping              | 2.3.5   | MIT                                           |       |
-| ✅     | @jridgewell/resolve-uri            | 3.1.2   | MIT                                           |       |
-| ✅     | @jridgewell/sourcemap-codec        | 1.5.5   | MIT                                           |       |
-| ✅     | @jridgewell/trace-mapping          | 0.3.31  | MIT                                           |       |
-| ✅     | @jsdevtools/ono                    | 7.1.3   | MIT                                           |       |
-| ✅     | @nuxt/kit                          | 3.19.2  | MIT                                           |       |
-| ✅     | @pinia/colada                      | 0.17.6  | MIT                                           |       |
-| ✅     | @pinia/colada-nuxt                 | 0.2.3   | MIT                                           |       |
-| ✅     | @pinia/nuxt                        | 0.11.2  | MIT                                           |       |
-| ✅     | @primeuix/forms                    | 0.1.0   | MIT                                           |       |
-| ✅     | @primeuix/styled                   | 0.6.4   | MIT                                           |       |
-| ✅     | @primeuix/styles                   | 1.2.5   | MIT                                           |       |
-| ✅     | @primeuix/themes                   | 1.1.1   | MIT                                           |       |
-| ✅     | @primeuix/utils                    | 0.5.4   | MIT                                           |       |
-| ✅     | @primevue/core                     | 4.3.6   | MIT                                           |       |
-| ✅     | @primevue/forms                    | 4.3.9   | MIT                                           |       |
-| ✅     | @primevue/icons                    | 4.3.6   | MIT                                           |       |
-| ✅     | @socket.io/component-emitter       | 3.1.2   | MIT                                           |       |
-| ✅     | @svgdotjs/svg.draggable.js         | 3.0.6   | MIT                                           |       |
-| ✅     | @svgdotjs/svg.filter.js            | 3.0.9   | MIT                                           |       |
-| ✅     | @svgdotjs/svg.js                   | 3.2.5   | MIT                                           |       |
-| ✅     | @svgdotjs/svg.resize.js            | 2.0.5   | MIT                                           |       |
-| ✅     | @svgdotjs/svg.select.js            | 4.0.3   | MIT                                           |       |
-| ✅     | @swc/helpers                       | 0.5.17  | Apache-2.0                                    |       |
-| ✅     | @tanstack/virtual-core             | 3.13.12 | MIT                                           |       |
-| ✅     | @tanstack/vue-virtual              | 3.13.12 | MIT                                           |       |
-| ✅     | @types/estree                      | 1.0.8   | MIT                                           |       |
-| ✅     | @types/json-schema                 | 7.0.15  | MIT                                           |       |
-| ✅     | @types/web-bluetooth               | 0.0.20  | MIT                                           |       |
-| ✅     | @vue-flow/background               | 1.3.2   | MIT                                           |       |
-| ✅     | @vue-flow/controls                 | 1.1.3   | MIT                                           |       |
-| ✅     | @vue-flow/core                     | 1.46.5  | MIT                                           |       |
-| ✅     | @vue-flow/minimap                  | 1.5.4   | MIT                                           |       |
-| ✅     | @vue/compiler-core                 | 3.5.17  | MIT                                           |       |
-| ✅     | @vue/compiler-dom                  | 3.5.17  | MIT                                           |       |
-| ✅     | @vue/compiler-sfc                  | 3.5.17  | MIT                                           |       |
-| ✅     | @vue/compiler-ssr                  | 3.5.17  | MIT                                           |       |
-| ✅     | @vue/devtools-api                  | 6.6.4   | MIT                                           |       |
-| ✅     | @vue/devtools-kit                  | 7.7.7   | MIT                                           |       |
-| ✅     | @vue/devtools-shared               | 7.7.7   | MIT                                           |       |
-| ✅     | @vue/reactivity                    | 3.5.17  | MIT                                           |       |
-| ✅     | @vue/runtime-core                  | 3.5.17  | MIT                                           |       |
-| ✅     | @vue/runtime-dom                   | 3.5.17  | MIT                                           |       |
-| ✅     | @vue/server-renderer               | 3.5.17  | MIT                                           |       |
-| ✅     | @vue/shared                        | 3.5.17  | MIT                                           |       |
-| ✅     | @vueuse/core                       | 10.11.1 | MIT                                           |       |
-| ✅     | @vueuse/integrations               | 13.9.0  | MIT                                           |       |
-| ✅     | @vueuse/math                       | 13.9.0  | MIT                                           |       |
-| ✅     | @vueuse/metadata                   | 10.11.1 | MIT                                           |       |
-| ✅     | @vueuse/router                     | 13.9.0  | MIT                                           |       |
-| ✅     | @vueuse/shared                     | 10.11.1 | MIT                                           |       |
-| ✅     | @yr/monotone-cubic-spline          | 1.0.3   | MIT                                           |       |
 | ✅     | acorn                              | 8.15.0  | MIT                                           |       |
 | ✅     | ansi-colors                        | 4.1.3   | MIT                                           |       |
 | ✅     | apexcharts                         | 4.7.0   | MIT                                           |       |
 | ✅     | argparse                           | 2.0.1   | Python Software Foundation License (override) |       |
 | ✅     | aria-hidden                        | 1.2.6   | MIT                                           |       |
+| ✅     | @babel/helper-string-parser        | 7.27.1  | MIT                                           |       |
+| ✅     | @babel/helper-validator-identifier | 7.27.1  | MIT                                           |       |
+| ✅     | @babel/parser                      | 7.28.4  | MIT                                           |       |
+| ✅     | @babel/types                       | 7.28.4  | MIT                                           |       |
 | ✅     | birpc                              | 2.6.1   | MIT                                           |       |
 | ✅     | c12                                | 2.0.1   | MIT                                           |       |
 | ✅     | change-case                        | 5.4.4   | MIT                                           |       |
@@ -124,6 +1731,8 @@ This document contains license information for all dependencies across the monor
 | ✅     | d3-timer                           | 3.0.1   | ISC                                           |       |
 | ✅     | d3-transition                      | 3.0.1   | ISC                                           |       |
 | ✅     | d3-zoom                            | 3.0.0   | ISC                                           |       |
+| ✅     | @dagrejs/dagre                     | 1.1.5   | MIT                                           |       |
+| ✅     | @dagrejs/graphlib                  | 2.2.4   | MIT                                           |       |
 | ✅     | date-fns                           | 4.1.0   | MIT                                           |       |
 | ✅     | debug                              | 4.3.7   | MIT                                           |       |
 | ✅     | defu                               | 6.1.4   | MIT                                           |       |
@@ -136,19 +1745,39 @@ This document contains license information for all dependencies across the monor
 | ✅     | escape-string-regexp               | 5.0.0   | MIT                                           |       |
 | ✅     | estree-walker                      | 2.0.2   | MIT                                           |       |
 | ✅     | eventemitter3                      | 5.0.1   | MIT                                           |       |
+| ✅     | events                             | 3.3.0   | MIT                                           |       |
 | ✅     | exsolve                            | 1.0.7   | MIT                                           |       |
 | ✅     | fast-deep-equal                    | 3.1.3   | MIT                                           |       |
 | ✅     | fast-diff                          | 1.3.0   | Apache-2.0                                    |       |
 | ✅     | fdir                               | 6.5.0   | MIT                                           |       |
+| ✅     | @floating-ui/core                  | 1.7.3   | MIT                                           |       |
+| ✅     | @floating-ui/dom                   | 1.7.4   | MIT                                           |       |
+| ✅     | @floating-ui/utils                 | 0.2.10  | MIT                                           |       |
+| ✅     | @floating-ui/vue                   | 1.1.9   | MIT                                           |       |
 | ✅     | fs-minipass                        | 2.1.0   | ISC                                           |       |
 | ✅     | fuse.js                            | 7.1.0   | Apache-2.0                                    |       |
 | ✅     | giget                              | 1.2.5   | MIT                                           |       |
+| ✅     | graphology                         | 0.26.0  | MIT                                           |       |
+| ✅     | graphology-layout-forceatlas2      | 0.10.1  | MIT                                           |       |
+| ✅     | graphology-types                   | 0.24.8  | MIT                                           |       |
+| ✅     | graphology-utils                   | 2.5.2   | MIT                                           |       |
 | ✅     | gridstack                          | 12.3.3  | MIT                                           |       |
 | ✅     | handlebars                         | 4.7.8   | MIT                                           |       |
+| ✅     | @hey-api/client-fetch              | 0.12.0  | MIT                                           |       |
+| ✅     | @hey-api/json-schema-ref-parser    | 1.0.6   | MIT                                           |       |
+| ✅     | @hey-api/openapi-ts                | 0.71.1  | MIT                                           |       |
 | ✅     | hookable                           | 5.5.3   | MIT                                           |       |
 | ✅     | ignore                             | 7.0.5   | MIT                                           |       |
+| ✅     | @internationalized/date            | 3.9.0   | Apache-2.0                                    |       |
+| ✅     | @internationalized/number          | 3.6.5   | Apache-2.0                                    |       |
 | ✅     | is-what                            | 4.1.16  | MIT                                           |       |
 | ✅     | jiti                               | 2.6.0   | MIT                                           |       |
+| ✅     | @jridgewell/gen-mapping            | 0.3.13  | MIT                                           |       |
+| ✅     | @jridgewell/remapping              | 2.3.5   | MIT                                           |       |
+| ✅     | @jridgewell/resolve-uri            | 3.1.2   | MIT                                           |       |
+| ✅     | @jridgewell/sourcemap-codec        | 1.5.5   | MIT                                           |       |
+| ✅     | @jridgewell/trace-mapping          | 0.3.31  | MIT                                           |       |
+| ✅     | @jsdevtools/ono                    | 7.1.3   | MIT                                           |       |
 | ✅     | js-tokens                          | 9.0.1   | MIT                                           |       |
 | ✅     | js-yaml                            | 4.1.0   | MIT                                           |       |
 | ✅     | jwt-decode                         | 4.0.0   | MIT                                           |       |
@@ -156,12 +1785,12 @@ This document contains license information for all dependencies across the monor
 | ✅     | knitwork                           | 1.2.0   | MIT                                           |       |
 | ✅     | local-pkg                          | 1.1.2   | MIT                                           |       |
 | ✅     | lodash                             | 4.17.21 | MIT                                           |       |
-| ✅     | lodash-es                          | 4.17.21 | MIT                                           |       |
 | ✅     | lodash.clonedeep                   | 4.5.0   | MIT                                           |       |
+| ✅     | lodash-es                          | 4.17.21 | MIT                                           |       |
 | ✅     | lodash.isequal                     | 4.5.0   | MIT                                           |       |
 | ✅     | lucide-vue-next                    | 0.513.0 | ISC                                           |       |
-| ✅     | magic-string                       | 0.30.19 | MIT                                           |       |
 | ✅     | magicast                           | 0.3.5   | MIT                                           |       |
+| ✅     | magic-string                       | 0.30.19 | MIT                                           |       |
 | ✅     | minimist                           | 1.2.8   | MIT                                           |       |
 | ✅     | minipass                           | 3.3.6   | ISC                                           |       |
 | ✅     | minizlib                           | 2.1.2   | MIT                                           |       |
@@ -172,6 +1801,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | nanoid                             | 3.3.11  | MIT                                           |       |
 | ✅     | neo-async                          | 2.6.2   | MIT                                           |       |
 | ✅     | node-fetch-native                  | 1.6.7   | MIT                                           |       |
+| ✅     | @nuxt/kit                          | 3.19.2  | MIT                                           |       |
 | ✅     | nypm                               | 0.5.4   | MIT                                           |       |
 | ✅     | ohash                              | 1.1.6   | MIT                                           |       |
 | ✅     | oidc-client-ts                     | 3.3.0   | Apache-2.0                                    |       |
@@ -181,10 +1811,21 @@ This document contains license information for all dependencies across the monor
 | ✅     | picocolors                         | 1.1.1   | ISC                                           |       |
 | ✅     | picomatch                          | 4.0.3   | MIT                                           |       |
 | ✅     | pinia                              | 3.0.3   | MIT                                           |       |
+| ✅     | @pinia/colada                      | 0.17.6  | MIT                                           |       |
+| ✅     | @pinia/colada-nuxt                 | 0.2.3   | MIT                                           |       |
+| ✅     | @pinia/nuxt                        | 0.11.2  | MIT                                           |       |
 | ✅     | pkg-types                          | 1.3.1   | MIT                                           |       |
 | ✅     | postcss                            | 8.5.6   | MIT                                           |       |
 | ✅     | primeicons                         | 7.0.0   | MIT                                           |       |
+| ✅     | @primeuix/forms                    | 0.1.0   | MIT                                           |       |
+| ✅     | @primeuix/styled                   | 0.6.4   | MIT                                           |       |
+| ✅     | @primeuix/styles                   | 1.2.5   | MIT                                           |       |
+| ✅     | @primeuix/themes                   | 1.1.1   | MIT                                           |       |
+| ✅     | @primeuix/utils                    | 0.5.4   | MIT                                           |       |
 | ✅     | primevue                           | 4.3.6   | MIT                                           |       |
+| ✅     | @primevue/core                     | 4.3.6   | MIT                                           |       |
+| ✅     | @primevue/forms                    | 4.3.9   | MIT                                           |       |
+| ✅     | @primevue/icons                    | 4.3.6   | MIT                                           |       |
 | ✅     | quansync                           | 0.2.11  | MIT                                           |       |
 | ✅     | quill                              | 2.0.3   | BSD-3-Clause                                  |       |
 | ✅     | quill-delta                        | 5.1.0   | MIT                                           |       |
@@ -194,7 +1835,10 @@ This document contains license information for all dependencies across the monor
 | ✅     | rfdc                               | 1.4.1   | MIT                                           |       |
 | ✅     | scule                              | 1.3.0   | MIT                                           |       |
 | ✅     | semver                             | 7.7.2   | ISC                                           |       |
+| ✅     | sigma                              | 3.0.2   | MIT                                           |       |
+| ✅     | @sigma/edge-curve                  | 3.1.0   | MIT                                           |       |
 | ✅     | socket.io-client                   | 4.8.1   | MIT                                           |       |
+| ✅     | @socket.io/component-emitter       | 3.1.2   | MIT                                           |       |
 | ✅     | socket.io-parser                   | 4.2.4   | MIT                                           |       |
 | ✅     | source-map                         | 0.6.1   | BSD-3-Clause                                  |       |
 | ✅     | source-map-js                      | 1.2.1   | BSD-3-Clause                                  |       |
@@ -202,12 +1846,23 @@ This document contains license information for all dependencies across the monor
 | ✅     | std-env                            | 3.9.0   | MIT                                           |       |
 | ✅     | strip-literal                      | 3.1.0   | MIT                                           |       |
 | ✅     | superjson                          | 2.2.2   | MIT                                           |       |
+| ✅     | @svgdotjs/svg.draggable.js         | 3.0.6   | MIT                                           |       |
+| ✅     | @svgdotjs/svg.filter.js            | 3.0.9   | MIT                                           |       |
+| ✅     | @svgdotjs/svg.js                   | 3.2.5   | MIT                                           |       |
+| ✅     | @svgdotjs/svg.resize.js            | 2.0.5   | MIT                                           |       |
+| ✅     | @svgdotjs/svg.select.js            | 4.0.3   | MIT                                           |       |
+| ✅     | @swc/helpers                       | 0.5.17  | Apache-2.0                                    |       |
 | ✅     | tailwind-merge                     | 3.3.1   | MIT                                           |       |
+| ✅     | @tanstack/virtual-core             | 3.13.12 | MIT                                           |       |
+| ✅     | @tanstack/vue-virtual              | 3.13.12 | MIT                                           |       |
 | ✅     | tar                                | 6.2.1   | ISC                                           |       |
 | ✅     | tinyexec                           | 0.3.2   | MIT                                           |       |
 | ✅     | tinyglobby                         | 0.2.15  | MIT                                           |       |
 | ✅     | tslib                              | 2.8.1   | 0BSD                                          |       |
 | ✅     | typescript                         | 5.9.2   | Apache-2.0                                    |       |
+| ✅     | @types/estree                      | 1.0.8   | MIT                                           |       |
+| ✅     | @types/json-schema                 | 7.0.15  | MIT                                           |       |
+| ✅     | @types/web-bluetooth               | 0.0.20  | MIT                                           |       |
 | ✅     | ufo                                | 1.6.1   | MIT                                           |       |
 | ✅     | uglify-js                          | 3.19.3  | BSD-2-Clause                                  |       |
 | ✅     | unctx                              | 2.4.1   | MIT                                           |       |
@@ -217,14 +1872,37 @@ This document contains license information for all dependencies across the monor
 | ✅     | untyped                            | 2.0.0   | MIT                                           |       |
 | ✅     | uuid                               | 11.1.0  | MIT                                           |       |
 | ✅     | vue                                | 3.5.17  | MIT                                           |       |
-| ✅     | vue-demi                           | 0.14.10 | MIT                                           |       |
-| ✅     | vue-router                         | 4.5.1   | MIT                                           |       |
 | ✅     | vue3-apexcharts                    | 1.8.0   | MIT                                           |       |
+| ✅     | @vue/compiler-core                 | 3.5.17  | MIT                                           |       |
+| ✅     | @vue/compiler-dom                  | 3.5.17  | MIT                                           |       |
+| ✅     | @vue/compiler-sfc                  | 3.5.17  | MIT                                           |       |
+| ✅     | @vue/compiler-ssr                  | 3.5.17  | MIT                                           |       |
+| ✅     | vue-demi                           | 0.14.10 | MIT                                           |       |
+| ✅     | @vue/devtools-api                  | 6.6.4   | MIT                                           |       |
+| ✅     | @vue/devtools-kit                  | 7.7.7   | MIT                                           |       |
+| ✅     | @vue/devtools-shared               | 7.7.7   | MIT                                           |       |
+| ✅     | @vue-flow/background               | 1.3.2   | MIT                                           |       |
+| ✅     | @vue-flow/controls                 | 1.1.3   | MIT                                           |       |
+| ✅     | @vue-flow/core                     | 1.46.5  | MIT                                           |       |
+| ✅     | @vue-flow/minimap                  | 1.5.4   | MIT                                           |       |
+| ✅     | @vue/reactivity                    | 3.5.17  | MIT                                           |       |
+| ✅     | vue-router                         | 4.5.1   | MIT                                           |       |
+| ✅     | @vue/runtime-core                  | 3.5.17  | MIT                                           |       |
+| ✅     | @vue/runtime-dom                   | 3.5.17  | MIT                                           |       |
+| ✅     | @vue/server-renderer               | 3.5.17  | MIT                                           |       |
+| ✅     | @vue/shared                        | 3.5.17  | MIT                                           |       |
+| ✅     | @vueuse/core                       | 10.11.1 | MIT                                           |       |
+| ✅     | @vueuse/integrations               | 13.9.0  | MIT                                           |       |
+| ✅     | @vueuse/math                       | 13.9.0  | MIT                                           |       |
+| ✅     | @vueuse/metadata                   | 10.11.1 | MIT                                           |       |
+| ✅     | @vueuse/router                     | 13.9.0  | MIT                                           |       |
+| ✅     | @vueuse/shared                     | 10.11.1 | MIT                                           |       |
 | ✅     | webpack-virtual-modules            | 0.6.2   | MIT                                           |       |
 | ✅     | wordwrap                           | 1.0.0   | MIT                                           |       |
 | ✅     | ws                                 | 8.17.1  | MIT                                           |       |
 | ✅     | xmlhttprequest-ssl                 | 2.1.2   | MIT                                           |       |
 | ✅     | yallist                            | 4.0.0   | ISC                                           |       |
+| ✅     | @yr/monotone-cubic-spline          | 1.0.3   | MIT                                           |       |
 
 ## Docker Images
 
@@ -236,7 +1914,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | oauth2-proxy                    | `ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest`                             | MIT                | Permissive license                                                |
 | ✅     | llama.cpp                       | `ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-cuda-b7003`                   | MIT                | Permissive license                                                |
 | ✅     | minimal-notebook                | `ghcr.io/bbvch-ai/aihub-core/minimal-notebook:notebook-7.0.6`               | BSD-3-Clause       | Jupyter base image                                                |
-| ✅     | docker-socket-proxy             | `tecnativa/docker-socket-proxy:0.3`                                         | Apache-2.0         | Permissive license                                                |
+| ✅     | neo4j                           | `ghcr.io/bbvch-ai/aihub-core/neo4j:5.26.16-community`                       | GPL                | Permissive license                                                |
 | ✅     | docling-serve-cpu               | `ghcr.io/bbvch-ai/aihub-core/docling-serve-cpu:v1.9.0`                      | MIT                | Permissive license                                                |
 | ✅     | pgvector                        | `ghcr.io/bbvch-ai/aihub-core/pgvector:pg17`                                 | PostgreSQL License | BSD-style permissive license                                      |
 | ✅     | etcd                            | `ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.25`                                  | Apache-2.0         | Permissive license                                                |
@@ -249,12 +1927,12 @@ This document contains license information for all dependencies across the monor
 | ✅     | valkey                          | `ghcr.io/bbvch-ai/aihub-core/valkey:8.0.5`                                  | BSD-3-Clause       | Redis-compatible, standard BSD-3-Clause license                   |
 | ✅     | postgres                        | `ghcr.io/bbvch-ai/aihub-core/postgres:17`                                   | PostgreSQL License | BSD-style permissive license                                      |
 | ✅     | dagster                         | `ghcr.io/bbvch-ai/aihub-core/dagster:latest`                                | Apache-2.0         | Permissive license                                                |
+| ✅     | litellm                         | `ghcr.io/bbvch-ai/aihub-core/litellm:v1.80.5-stable.1`                      | MIT                | Permissive license                                                |
 | ✅     | attu                            | `ghcr.io/bbvch-ai/aihub-core/attu:v2.5.12`                                  | Apache-2.0         | Permissive license                                                |
 | ✅     | milvus                          | `ghcr.io/bbvch-ai/aihub-core/milvus:v2.6.7`                                 | Apache-2.0         | Permissive license                                                |
 | ✅     | presidio-anonymizer             | `ghcr.io/bbvch-ai/aihub-core/presidio-anonymizer:2.2.359`                   | MIT                | Permissive license                                                |
 | ✅     | speaches                        | `ghcr.io/bbvch-ai/aihub-core/speaches:0.8.3-cuda-12.6.3`                    | MIT                | Permissive license                                                |
 | ✅     | llama.cpp                       | `ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b7003`                        | MIT                | Permissive license                                                |
-| ✅     | litellm                         | `ghcr.io/bbvch-ai/aihub-core/litellm:v1.79.1-stable`                        | MIT                | Permissive license                                                |
 | ✅     | ferretdb                        | `ghcr.io/bbvch-ai/aihub-core/ferretdb:2.5.0`                                | Apache-2.0         | Permissive license                                                |
 | ✅     | seaweedfs                       | `ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97`                                | Apache-2.0         | Permissive license                                                |
 | ✅     | speaches                        | `ghcr.io/bbvch-ai/aihub-core/speaches:0.8.3-cpu`                            | MIT                | Permissive license                                                |
