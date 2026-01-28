@@ -1,11 +1,22 @@
 from datetime import datetime
+from functools import lru_cache
 from typing import Literal
 
+from aihub_lib.auth.access.RoleLimitService import RoleLimitService
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
+from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from fastapi import HTTPException
+from redis.asyncio import Redis
 
-from aihub_api.routes.usage.dto.UserUsageDTO import UserUsageDTO
+from aihub_api.routes.usage.dto.UserUsageDTO import AgentUsageDTO, UserUsageDTO
+
+
+@lru_cache
+def _get_redis_client() -> Redis:
+    """Cached Redis client instance."""
+    return RedisSettings.create_client()
+
 
 # User-friendly budget exceeded messages in multiple languages
 BUDGET_EXCEEDED_MESSAGES = {
@@ -115,6 +126,23 @@ class UsageService:
             is_approaching_limit = spend >= (max_budget * 0.8)
             is_over_limit = spend >= max_budget
 
+        # Get agent usage from role-based limits
+        agent_usage_dto = None
+        try:
+            role_limit_service = RoleLimitService(redis=_get_redis_client())
+            agent_usage = await role_limit_service.get_agent_usage(user)
+            agent_usage_dto = AgentUsageDTO(
+                current_count=agent_usage.current_count,
+                limit=agent_usage.limit,
+                period=agent_usage.period,
+                reset_at=agent_usage.reset_at,
+                usage_percent=agent_usage.usage_percent,
+                is_over_limit=agent_usage.is_over_limit,
+            )
+        except Exception:
+            # If we can't get agent usage, continue without it
+            pass
+
         return UserUsageDTO(
             user_id=user.id,
             spend=spend,
@@ -127,6 +155,7 @@ class UsageService:
             usage_percent=usage_percent,
             is_approaching_limit=is_approaching_limit,
             is_over_limit=is_over_limit,
+            agent_usage=agent_usage_dto,
         )
 
     @staticmethod

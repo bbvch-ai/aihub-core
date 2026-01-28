@@ -6,6 +6,7 @@ from typing import Annotated, override
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.access.AccessChecker import AccessChecker
+from aihub_lib.auth.access.RoleLimitService import RoleLimitService
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.no_trace import no_trace
@@ -45,6 +46,7 @@ from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.routes.agent.dto.AgentInstanceDTO import AgentInstanceDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
 from aihub_api.routes.usage.UsageService import UsageService
+from aihub_api.services.dependencies.use_role_limit_service import use_role_limit_service
 from aihub_api.services.EndpointsDiscoveryService import EndpointsDiscoveryService
 from aihub_api.services.ModelCreationService import ModelCreationService
 
@@ -321,11 +323,15 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 UserIdentity,
                 Security(agent_controller.user_with_permission(f"aihub.user.agent.{agent_class}.{agent_id}")),
             ],
+            role_limit_service: Annotated[RoleLimitService, Depends(use_role_limit_service)],
             thread_id: Annotated[str, Query(pattern=r"^[a-f0-9]{24}$")] = None,
             display_id: Annotated[str, Query(pattern=r"^[a-f0-9]{24}$")] = None,
             t: LocaleHandler = Depends(use_locale),
         ) -> response_union_type:
             """Send a specific event type to a specific agent. Returns either a stop event or HITL request event."""
+            # Check role-based agent call limit
+            await role_limit_service.check_agent_limit(user, locale=t.locale)
+
             # Check user budget before executing agent (agents use service account, not user keys)
             await UsageService.check_user_budget(user, locale=t.locale)
 
@@ -368,6 +374,10 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             if isinstance(response_event, ExceptionEvent):
                 raise HTTPException(status_code=response_event.http_status_code, detail=response_event.message)
 
+            # Increment agent usage counter on successful execution
+            limits = await role_limit_service.get_effective_limits(user)
+            await role_limit_service.increment_usage(user.id, limits.agent_calls_period)
+
             return response_event
 
         return send_event
@@ -396,11 +406,15 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 UserIdentity,
                 Security(agent_controller.user_with_permission(f"aihub.user.agent.{agent_class}.{agent_id}")),
             ],
+            role_limit_service: Annotated[RoleLimitService, Depends(use_role_limit_service)],
             thread_id: Annotated[str, Query(pattern=r"^[a-f0-9]{24}$")] = None,
             display_id: Annotated[str, Query(pattern=r"^[a-f0-9]{24}$")] = None,
             t: LocaleHandler = Depends(use_locale),
         ) -> StreamingResponse:
             """Send a specific event type to a specific agent and stream all events as SSE."""
+            # Check role-based agent call limit
+            await role_limit_service.check_agent_limit(user, locale=t.locale)
+
             # Check user budget before executing agent (agents use service account, not user keys)
             await UsageService.check_user_budget(user, locale=t.locale)
 
@@ -422,6 +436,9 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 )
                 if not (user_in_thread or thread_belongs_to_users_process):
                     raise agent_controller.not_authorized_to_view_exception
+
+            # Get effective limits before starting stream
+            effective_limits = await role_limit_service.get_effective_limits(user)
 
             resources = await AgentService.send_agent_input_event_stream(
                 nc=nc,
@@ -460,6 +477,9 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                         continue
                     except asyncio.CancelledError:
                         break
+
+                # Increment agent usage counter on successful stream completion
+                await role_limit_service.increment_usage(user.id, effective_limits.agent_calls_period)
 
                 # Final event to signal stream end
                 yield "data: [DONE]\n\n"

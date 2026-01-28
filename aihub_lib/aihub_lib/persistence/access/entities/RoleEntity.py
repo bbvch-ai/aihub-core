@@ -1,13 +1,17 @@
 from __future__ import annotations
 
-from mongoengine import Document, ListField, StringField
+from mongoengine import Document, IntField, ListField, StringField
 
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 
 class RoleEntity(Document):
     """
-    Represents a role in the system, which contains a set of access rules.
+    Represents a role in the system, which contains a set of access rules and rate limits.
+
+    Rate limits are merged across roles using most-permissive-wins strategy:
+    - If any role has None (unlimited), user gets unlimited
+    - Otherwise, highest limit value is used
     """
 
     meta = {
@@ -21,6 +25,10 @@ class RoleEntity(Document):
     name = StringField(required=True, unique=True)
     description = StringField(required=True)
     access_rules = ListField(StringField(), default=list)
+
+    # Agent rate limits (None = unlimited)
+    agent_calls_limit = IntField(default=None)
+    agent_calls_period = StringField(default="1mo")
 
     @classmethod
     @trace_fn
@@ -54,3 +62,12 @@ class RoleEntity(Document):
         """
         existing_roles_query = RoleEntity.objects(name__in=role_names).only("name")
         return [role.name for role in existing_roles_query]
+
+    @classmethod
+    @trace_fn
+    def get_roles_with_limits(cls, role_names: list[str]) -> list[RoleEntity]:
+        """
+        Fetches roles with their limit configurations for merging.
+        Used by RoleLimitService to determine effective limits.
+        """
+        return list(cls.objects(name__in=list(set(role_names))))
