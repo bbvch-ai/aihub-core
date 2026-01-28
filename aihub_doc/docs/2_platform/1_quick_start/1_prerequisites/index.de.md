@@ -1,6 +1,6 @@
 ---
 title: Voraussetzungen
-source_sha: 0b188ec77305fd1ddfa05ae547e646ac52da75ab3bac73d8d37169977222fd31
+source_sha: d2d8723b112874c0de1ae82e116aeab206c5f9cc41a958c6de2b665f9fdceb6d
 ---
 
 # Voraussetzungen
@@ -8,13 +8,12 @@ source_sha: 0b188ec77305fd1ddfa05ae547e646ac52da75ab3bac73d8d37169977222fd31
 Dieser Leitfaden behandelt die Voraussetzungen für das Deployment der AI-Hub Plattform.
 
 ::: tip Wählen Sie Ihren Deployment-Typ
-Die Voraussetzungen unterscheiden sich je nach Deployment-Typ:
+Die Voraussetzungen unterscheiden sich je nach Ihrem Deployment-Typ:
 
-- **Produktions-Deployment**: Deployment auf einen Server mit einem echten Domainnamen und automatischen
-  SSL-Zertifikaten
-- **Lokales Deployment**: Ausführung auf Ihrer lokalen Maschine mit `127.0.0.1.nip.io` und selbstsignierten Zertifikaten
+- **Produktions-Deployment**: Deployment auf einem Server mit echtem Domainnamen und automatischen SSL-Zertifikaten
+- **Lokales Deployment**: Ausführung auf Ihrem lokalen Rechner mit `127.0.0.1.nip.io` und selbstsignierten Zertifikaten
 
-Befolgen Sie nur die Abschnitte, die für Ihren Deployment-Typ relevant sind.
+Folgen Sie nur den Abschnitten, die für Ihren Deployment-Typ relevant sind.
 :::
 
 ## Allgemeine Anforderungen (Alle Deployments)
@@ -38,9 +37,9 @@ Diese Anforderungen gelten sowohl für Produktions- als auch für lokale Deploym
 - **Netzwerk**: Hochbandbreitenverbindung für eine schnellere Ersteinrichtung
 
 ::: warning
-Die Plattform betreibt mehrere Services gleichzeitig (Datenbanken, Vektorspeicher, LLM-Proxys, Weboberflächen,
-Verarbeitungs-Engines). Systeme unterhalb der Mindestanforderungen werden Servicefehler oder eine verminderte Leistung
-aufweisen.
+Die Plattform betreibt mehrere Services gleichzeitig (Datenbanken, Vektorspeicher, LLM-Proxies, Weboberflächen,
+Verarbeitungs-Engines). Systeme unterhalb der Mindestanforderungen werden Service-Ausfälle oder eine verminderte
+Leistung aufweisen.
 :::
 
 ### Softwareanforderungen
@@ -59,7 +58,7 @@ aufweisen.
 #### Netzwerkkonfiguration
 
 - **Offene Ports**: 80 (HTTP), 443 (HTTPS)
-- **Internetzugang**: Erforderlich für Docker-Image-Downloads und Updates
+- **Internetzugriff**: Erforderlich für Docker-Image-Downloads und -Updates
 
 #### Verifizierung
 
@@ -75,60 +74,60 @@ Alle Befehle müssen erfolgreich abgeschlossen werden.
 
 ### Einrichtung des Authentifizierungsanbieters
 
-Die Plattform benötigt einen OAuth2/OpenID Connect Identity Provider für sowohl Produktions- als auch lokale
-Deployments. Dieser Leitfaden dokumentiert die Einrichtung von Azure Entra ID. Andere Provider (Google, Okta, Auth0)
+Die Plattform benötigt einen OAuth2/OpenID Connect Identitätsanbieter sowohl für Produktions- als auch für lokale
+Deployments. Dieser Leitfaden dokumentiert die Einrichtung von Azure Entra ID. Andere Anbieter (Google, Okta, Auth0)
 können nach ähnlichen Mustern konfiguriert werden.
 
 #### Azure Entra ID Einrichtung
 
-Führen Sie die folgenden Schritte im Azure Portal aus, um die Authentifizierung vorzubereiten:
+Führen Sie die folgenden Schritte im Azure-Portal aus, um die Authentifizierung vorzubereiten:
 
 **Schritt 1: App-Registrierung erstellen**
 
 1. Navigieren Sie zu **Azure Portal** → **Azure Active Directory** → **App-Registrierungen**
-2. Klicken Sie auf **"Neue Registrierung"**
+2. Klicken Sie auf **„Neue Registrierung“**
 3. Konfigurieren Sie die Registrierung:
    - **Name**: `Swiss AI Hub` (oder die Namenskonvention Ihrer Organisation)
    - **Unterstützte Kontotypen**: Wählen Sie basierend auf den Anforderungen
-     - `Konten nur in diesem Organisationsverzeichnis` (Single-Tenant — empfohlen für die meisten Deployments)
+     - `Nur Konten in diesem Organisationsverzeichnis` (Single-Tenant – für die meisten Deployments empfohlen)
    - **Umleitungs-URI**: Leer lassen (wird in Schritt 5 konfiguriert)
-4. Klicken Sie auf **"Registrieren"**
+4. Klicken Sie auf **„Registrieren“**
 
 **Schritt 2: Token-Version konfigurieren**
 
-Die Plattform erfordert Access Token Version 2 für die ordnungsgemäße Authentifizierung.
+Die Plattform erfordert die Zugriffs-Token-Version 2 für eine ordnungsgemäße Authentifizierung.
 
-1. Navigieren Sie zu **"Manifest"**
+1. Navigieren Sie zu **„Manifest“**
 2. Suchen Sie die Eigenschaft `requestedAccessTokenVersion`
 3. Ändern Sie den Wert von `null` oder `1` auf `2`:
    ```json
    "requestedAccessTokenVersion": 2
    ```
-4. Klicken Sie oben im Manifest-Editor auf **"Speichern"**
+4. Klicken Sie oben im Manifest-Editor auf **„Speichern“**
 
 ::: warning
-Access Token Version 2 ist erforderlich, damit die Plattform korrekt funktioniert. Version 1 Token werden nicht
+Zugriffs-Token-Version 2 ist erforderlich, damit die Plattform korrekt funktioniert. Token der Version 1 werden nicht
 unterstützt und führen zu Authentifizierungsfehlern.
 :::
 
 **Schritt 3: API-Berechtigungen konfigurieren**
 
-1. Navigieren Sie zu **"API-Berechtigungen"** → **"Berechtigung hinzufügen"**
-2. Wählen Sie **"Microsoft Graph"** → **"Delegierte Berechtigungen"**
+1. Navigieren Sie zu **„API-Berechtigungen“** → **„Eine Berechtigung hinzufügen“**
+2. Wählen Sie **„Microsoft Graph“** → **„Delegierte Berechtigungen“**
 3. Fügen Sie die folgenden Berechtigungen hinzu:
-   - `openid` - Erforderlich für OpenID Connect-Authentifizierung
+   - `openid` - Erforderlich für die OpenID Connect Authentifizierung
    - `profile` - Erforderlich für grundlegende Benutzerprofilinformationen
    - `email` - Erforderlich für die E-Mail-Adresse
-   - `offline_access` - Erforderlich für Refresh Tokens
+   - `offline_access` - Erforderlich für Refresh-Token
    - `User.Read` - Erforderlich für das Lesen von Benutzerprofilen
-   - `Group.Read.All` - Erforderlich für Gruppenmitgliedschaftsinformationen
-4. Wählen Sie **"Microsoft Graph"** → **"Anwendungsberechtigungen"**
+   - `Group.Read.All` - Erforderlich für Informationen zur Gruppenmitgliedschaft
+4. Wählen Sie **„Microsoft Graph“** → **„Anwendungsberechtigungen“**
 5. Fügen Sie die folgenden Berechtigungen hinzu:
-   - `User.ReadBasic.All` - Erforderlich zum Lesen der grundlegenden Profile aller Benutzer
-   - `Directory.Read.All` - Erforderlich zum Lesen von Verzeichnisdaten
-   - `ProfilePhoto.Read.All` - Erforderlich zum Lesen von Profilfotos
-6. Klicken Sie auf **"Administratorzustimmung für [Ihre Organisation] erteilen"**
-7. Überprüfen Sie, ob alle Berechtigungen den Status **"Für [Ihre Organisation] erteilt"** anzeigen
+   - `User.ReadBasic.All` - Erforderlich für das Lesen der grundlegenden Profile aller Benutzer
+   - `Directory.Read.All` - Erforderlich für das Lesen von Verzeichnisdaten
+   - `ProfilePhoto.Read.All` - Erforderlich für das Lesen von Profilfotos
+6. Klicken Sie auf **„Administratorzustimmung für [Ihre Organisation] erteilen“**
+7. Vergewissern Sie sich, dass alle Berechtigungen den Status **„Für [Ihre Organisation] erteilt“** anzeigen.
 
 ::: warning
 Alle aufgeführten Berechtigungen sind für die Funktionalität der Plattform erforderlich. Fehlende Berechtigungen führen
@@ -137,43 +136,43 @@ während des Deployments zu Authentifizierungs- oder Autorisierungsfehlern.
 
 **Schritt 4: Client-Geheimnis erstellen**
 
-1. Navigieren Sie zu **"Zertifikate & Geheimnisse"** → **"Client-Geheimnisse"** → **"Neues Client-Geheimnis"**
+1. Navigieren Sie zu **„Zertifikate & Geheimnisse“** → **„Client-Geheimnisse“** → **„Neues Client-Geheimnis“**
 2. Konfigurieren Sie das Geheimnis:
-   - **Beschreibung**: Geben Sie einen aussagekräftigen Namen ein (z.B. `AI-Hub Secret`)
-   - **Läuft ab**: Wählen Sie den Ablaufzeitraum (12-24 Monate empfohlen)
-3. Klicken Sie auf **"Hinzufügen"**
-4. **Kopieren Sie sofort den Geheimniswert** in einen sicheren Speicher
-5. Notieren Sie diesen Wert als `[CLIENT_SECRET]` für die Deployment-Konfiguration
+   - **Beschreibung**: Geben Sie einen aussagekräftigen Namen ein (z.B. `AI-Hub Geheimnis`)
+   - **Gültigkeit**: Wählen Sie den Gültigkeitszeitraum (12-24 Monate empfohlen)
+3. Klicken Sie auf **„Hinzufügen“**
+4. **Kopieren Sie den geheimen Wert sofort** in einen sicheren Speicher.
+5. Notieren Sie diesen Wert als `[CLIENT_SECRET]` für die Deployment-Konfiguration.
 
 ::: danger
-Der Client-Geheimniswert wird nur einmal direkt nach der Erstellung angezeigt. Geht der Wert verloren, muss ein neues
-Geheimnis erstellt werden. Speichern Sie ihn in einem Passwort-Manager oder einem sicheren Tresor.
+Der Wert des Client-Geheimnisses wird nur einmal direkt nach der Erstellung angezeigt. Geht der Wert verloren, muss ein
+neues Geheimnis erstellt werden. Speichern Sie ihn in einem Passwortmanager oder einem sicheren Tresor.
 :::
 
 **Schritt 5: App-Rollen konfigurieren**
 
-App-Rollen ermöglichen die rollenbasierte Zugriffskontrolle (RBAC) für Plattformbenutzer.
+App-Rollen ermöglichen die rollenbasierte Zugriffssteuerung (RBAC) für Plattformbenutzer.
 
 Erstellen Sie drei App-Rollen nach diesem Prozess:
 
-1. Navigieren Sie zu **"App-Rollen"** → **"App-Rolle erstellen"**
+1. Navigieren Sie zu **„App-Rollen“** → **„App-Rolle erstellen“**
 2. Erstellen Sie jede der folgenden Rollen:
 
-**Administratorrolle:**
+**Administrator-Rolle:**
 
 - **Anzeigename**: `AIHubAdmin`
 - **Zulässige Mitgliedstypen**: `Benutzer/Gruppen`
 - **Wert**: `AIHubAdmin`
 - **Beschreibung**: `Administratorzugriff auf die AI-Hub Plattform`
 
-**Benutzerrolle:**
+**Benutzer-Rolle:**
 
 - **Anzeigename**: `AIHubUser`
 - **Zulässige Mitgliedstypen**: `Benutzer/Gruppen`
 - **Wert**: `AIHubUser`
 - **Beschreibung**: `Standard-Benutzerzugriff auf die AI-Hub Plattform`
 
-**Entwicklerrolle:**
+**Entwickler-Rolle:**
 
 - **Anzeigename**: `AIHubDeveloper`
 - **Zulässige Mitgliedstypen**: `Benutzer/Gruppen`
@@ -182,20 +181,20 @@ Erstellen Sie drei App-Rollen nach diesem Prozess:
 
 ::: tip
 Die Rolle `AIHubDeveloper` ist erforderlich, um auf das Dagster Pipeline Orchestrierungs-Dashboard und die SeaweedFS
-Data Lake Konsole unter `datalake.${DOMAIN}` zuzugreifen. Benutzer ohne diese Rolle können die Haupt-AI-Hub-Oberfläche
-und OpenWebUI weiterhin nutzen.
+Data Lake Konsole unter `datalake.${DOMAIN}` zuzugreifen. Benutzer ohne diese Rolle können weiterhin die
+Haupt-AI-Hub-Oberfläche und OpenWebUI nutzen.
 :::
 
 **Schritt 6: SPA-Umleitungs-URIs konfigurieren**
 
-Single-Page Application (SPA) Umleitungs-URIs sind für die Hauptweboberfläche mit mehrsprachiger Unterstützung
+Single-Page Application (SPA)-Umleitungs-URIs sind für die Hauptweboberfläche mit mehrsprachiger Unterstützung
 erforderlich.
 
-1. Navigieren Sie zu **"Authentifizierung"** → **"Plattform hinzufügen"** → **"Single-Page-Anwendung"**
+1. Navigieren Sie zu **„Authentifizierung“** → **„Plattform hinzufügen“** → **„Einzelseitenanwendung“**
 
 2. Fügen Sie Umleitungs-URIs basierend auf Ihrem Deployment-Typ hinzu:
 
-   **Für Produktion:** Ersetzen Sie `your-domain.com` durch Ihre tatsächliche Domain
+   **Für die Produktion:** Ersetzen Sie `your-domain.com` durch Ihre tatsächliche Domain
 
    ```
    https://your-domain.com/de/auth/callback
@@ -214,23 +213,23 @@ erforderlich.
    ```
 
    ::: tip
-Sie können sowohl Produktions- als auch lokale URIs für Testzwecke zur selben App-Registrierung hinzufügen.
+Sie können sowohl Produktions- als auch lokale URIs zur selben App-Registrierung für Testzwecke hinzufügen.
    :::
 
 3. Token-Einstellungen konfigurieren:
-   - **Zugriffstoken** aktivieren (für implizite Flows verwendet)
-   - **ID-Token** aktivieren (für implizite Flows verwendet)
-4. Klicken Sie auf **"Konfigurieren"**
+   - Aktivieren Sie **Access-Token** (werden für implizite Flows verwendet)
+   - Aktivieren Sie **ID-Token** (werden für implizite Flows verwendet)
+4. Klicken Sie auf **„Konfigurieren“**
 
-**Schritt 7: Webanwendungs-Umleitungs-URIs konfigurieren**
+**Schritt 7: Umleitungs-URIs für Webanwendungen konfigurieren**
 
-Webanwendungs-Umleitungs-URIs sind für integrierte Services (OpenWebUI, Dagster, Data Lake) erforderlich.
+Umleitungs-URIs für Webanwendungen sind für integrierte Services (OpenWebUI, Dagster, Data Lake) erforderlich.
 
-1. Navigieren Sie zu **"Authentifizierung"** → **"Plattform hinzufügen"** → **"Web"**
+1. Navigieren Sie zu **„Authentifizierung“** → **„Plattform hinzufügen“** → **„Web“**
 
 2. Fügen Sie Umleitungs-URIs basierend auf Ihrem Deployment-Typ hinzu:
 
-   **Für Produktion:** Ersetzen Sie `your-domain.com` durch Ihre tatsächliche Domain
+   **Für die Produktion:** Ersetzen Sie `your-domain.com` durch Ihre tatsächliche Domain
 
    ```
    https://openwebui.your-domain.com/oauth/oidc/callback
@@ -250,17 +249,17 @@ Webanwendungs-Umleitungs-URIs sind für integrierte Services (OpenWebUI, Dagster
 
 3. Token-Einstellungen konfigurieren:
 
-   - **ID-Token** aktivieren (für hybride Flows verwendet)
+   - Aktivieren Sie **ID-Token** (werden für hybride Flows verwendet)
 
-4. Klicken Sie auf **"Konfigurieren"**
+4. Klicken Sie auf **„Konfigurieren“**
 
-::: warning Unterscheidung nach Plattformtyp
-Die Konfiguration des Plattformtyps (SPA vs. Web) ist entscheidend für die Auswahl des OAuth2-Flows:
+::: warning Unterscheidung der Plattformtypen
+Die Plattformtyp-Konfiguration (SPA vs. Web) ist entscheidend für die Auswahl des OAuth2-Flows:
 
 - **SPA-Plattform**: Sprachspezifische Callbacks (`/de/`, `/en/`, `/fr/`, `/it/`) verwenden den PKCE-Flow ohne
   Client-Geheimnis
-- **Web-Plattform**: Service-Callbacks (`openwebui`, `dagster`, `datalake`, `attu`) verwenden den Authorization Code
-  Flow mit Client-Geheimnis
+- **Web-Plattform**: Service-Callbacks (`openwebui`, `dagster`, `datalake`, `attu`) verwenden den
+  Autorisierungscode-Flow mit Client-Geheimnis
 
 Fehlkonfigurierte Plattformtypen führen zu Authentifizierungsfehlern:
 `AADSTS9002326: Cross-origin token redemption is permitted only for the 'Single-Page Application' client-type`. Stellen
@@ -269,17 +268,17 @@ Sie sicher, dass Umleitungs-URIs unter dem korrekten Plattformtyp registriert si
 
 **Erforderliche Authentifizierungsinformationen**
 
-Nach Abschluss der Azure-Einrichtung sollten Sie über Folgendes verfügen:
+Nach Abschluss der Azure-Einrichtung sollten Sie folgendes haben:
 
 - `[CLIENT_ID]` - Anwendungs- (Client-) ID
-- `[CLIENT_SECRET]` - Client-Geheimniswert
+- `[CLIENT_SECRET]` - Wert des Client-Geheimnisses
 - `[TENANT_ID]` - Verzeichnis- (Tenant-) ID
 
 Sie benötigen diese Werte während der Konfiguration des Plattform-Deployments.
 
 ---
 
-## Voraussetzungen für Produktions-Deployments
+## Voraussetzungen für das Produktions-Deployment
 
 ::: danger Nur für Produktions-Deployments
 **Überspringen Sie diesen gesamten Abschnitt, wenn Sie lokal testen.** Diese Schritte sind nur erforderlich, wenn Sie
@@ -294,30 +293,30 @@ IP-Adresse Ihres Servers zeigen:
 - `aihub.example.com` - Haupt-Weboberfläche
 - `openwebui.aihub.example.com` - Chat-UI
 - `dagster.aihub.example.com` - Pipeline-Orchestrierung
-- `datalake.aihub.example.com` - Data Lake-Konsole
+- `datalake.aihub.example.com` - Data Lake Konsole
 - `litellm.aihub.example.com` - LiteLLM-Proxy
-- `attu.aihub.example.com` - Milvus-Vektordatenbank-UI
-- `traefik.aihub.example.com` - Reverse Proxy Dashboard
+- `attu.aihub.example.com` - Milvus Vektordatenbank-UI
+- `traefik.aihub.example.com` - Reverse-Proxy-Dashboard
 
-Ersetzen Sie `aihub.example.com` durch Ihre tatsächliche Domain. Erstellen Sie A-Records oder CNAMEs für alle sieben
+Ersetzen Sie `aihub.example.com` durch Ihre tatsächliche Domain. Erstellen Sie A-Einträge oder CNAMEs für alle sieben
 Subdomains, die auf die IP-Adresse Ihres Servers zeigen.
 
 ::: warning DNS-Anforderungen für SSL
-- DNS-Einträge müssen global zugänglich sein, damit Let's Encrypt SSL-Zertifikate bereitgestellt werden können.
-- Die VM muss ihre eigenen Domainnamen auflösen können (interne DNS-Auflösung).
+- DNS-Einträge müssen für die Bereitstellung von Let's Encrypt SSL-Zertifikaten global zugänglich sein.
+- Die VM muss in der Lage sein, ihre eigenen Domainnamen aufzulösen (interne DNS-Auflösung).
 - Konfigurieren Sie die Nameserver korrekt, um OAuth-Authentifizierungs-Timeouts zu vermeiden.
 
-Siehe [Netzwerkanforderungen](../../3_deployment_guide/7_network_requirements/) für detaillierte DNS-Konfiguration und
-Fehlerbehebung.
+Siehe [Netzwerkanforderungen](/de/docs/3_deployment_guide/7_network_requirements/) für detaillierte DNS-Konfiguration
+und Fehlerbehebung.
 :::
 
 ---
 
-## Voraussetzungen für lokale Deployments
+## Voraussetzungen für das lokale Deployment
 
 ::: danger Nur für lokales Deployment
 **Überspringen Sie diesen gesamten Abschnitt, wenn Sie in Produktion deployen.** Diese Schritte sind nur erforderlich,
-wenn Sie die Plattform auf Ihrer lokalen Maschine deployen.
+wenn Sie die Plattform auf Ihrem lokalen Rechner deployen.
 :::
 
 ### mkcert installieren
@@ -364,7 +363,7 @@ mkcert -version
 
 ::: tip Was ist mkcert?
 **mkcert** ist ein Tool, das lokal vertrauenswürdige SSL-Zertifikate ohne komplexe Konfiguration generiert. Es
-installiert automatisch eine lokale Zertifizierungsstelle (CA) in Ihrem System-Vertrauensspeicher, sodass die von ihm
+installiert automatisch eine lokale Zertifizierungsstelle (CA) in Ihrem System-Trust-Store, sodass die von ihm
 generierten Zertifikate von Ihrem Browser als vertrauenswürdig eingestuft werden.
 :::
 
@@ -372,5 +371,5 @@ generierten Zertifikate von Ihrem Browser als vertrauenswürdig eingestuft werde
 
 ## Nächste Schritte
 
-Fahren Sie mit dem [One-Command Deployment](../2_one_command_deployment/) fort, um die Plattform mithilfe der erfassten
-Konfigurationswerte zu deployen.
+Fahren Sie mit dem [One-Command-Deployment](/de/docs/2_deployment_guide/2_one_command_deployment/) fort, um die
+Plattform mithilfe der aufgezeichneten Konfigurationswerte zu deployen.

@@ -16,7 +16,7 @@ class UserMessageEvent(StartEvent):
 
     ### Why UserMessageEvent?
     While `StartEvent` influences the workflow’s starting point and `DisplayEvent` represents user-facing
-    output, a `UserMessageEvent` marks a workflow start initiated by a user’s input. This is common in chat
+    output, a `UserMessageEvent` marks a ChatMessage workflow start initiated by a user's input. This is common in chat
     interfaces, voice assistants, or interactive dashboards, where a user’s message serves as both:
     - A display event (since it may appear in the UI history).
     - A control event triggering workflow execution from a particular starting step.

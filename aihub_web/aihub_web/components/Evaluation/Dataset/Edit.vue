@@ -9,6 +9,7 @@
     <DataTable
       v-else
       :value="modelValue.items"
+      size="small"
     >
       <Column
         field="question"

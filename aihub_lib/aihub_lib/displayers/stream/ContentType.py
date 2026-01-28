@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class ContentType(Enum):
+class ContentType(StrEnum):
     """Internal enum to represent different types of content being processed."""
 
     REGULAR = "regular"
