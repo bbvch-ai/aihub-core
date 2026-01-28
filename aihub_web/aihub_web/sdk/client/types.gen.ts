@@ -17320,5 +17320,5 @@ export type ProcessDocumentResponses = {
 export type ProcessDocumentResponse = ProcessDocumentResponses[keyof ProcessDocumentResponses];
 
 export type ClientOptions = {
-    baseURL: 'http://localhost:8000' | (string & {});
+    baseURL: `${string}://${string}/api/v1` | (string & {});
 };
