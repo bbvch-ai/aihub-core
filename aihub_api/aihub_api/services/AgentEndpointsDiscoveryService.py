@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 from functools import reduce
 from operator import or_
@@ -412,11 +413,36 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             t: LocaleHandler = Depends(use_locale),
         ) -> StreamingResponse:
             """Send a specific event type to a specific agent and stream all events as SSE."""
+
+            # Helper to return error as SSE stream for OpenWebUI to display
+            def error_stream(message: str):
+                async def generate():
+                    error_event = {"type": "error", "message": message}
+                    yield f"data: {json.dumps(error_event)}\n\n"
+                    yield "data: [DONE]\n\n"
+
+                return StreamingResponse(
+                    generate(),
+                    media_type="text/event-stream",
+                    headers={
+                        "Cache-Control": "no-cache, no-store, must-revalidate, no-transform",
+                        "X-Accel-Buffering": "no",
+                        "Connection": "keep-alive",
+                        "Content-Encoding": "identity",
+                    },
+                )
+
             # Check role-based agent call limit
-            await role_limit_service.check_agent_limit(user, locale=t.locale)
+            try:
+                await role_limit_service.check_agent_limit(user, locale=t.locale)
+            except HTTPException as e:
+                return error_stream(e.detail)
 
             # Check user budget before executing agent (agents use service account, not user keys)
-            await UsageService.check_user_budget(user, locale=t.locale)
+            try:
+                await UsageService.check_user_budget(user, locale=t.locale)
+            except HTTPException as e:
+                return error_stream(e.detail)
 
             if thread_id is not None:
                 try:
