@@ -3546,6 +3546,16 @@ export type CreateRoleRequest = {
      * A list of access rules granted by this role.
      */
     access_rules?: Array<string>;
+    /**
+     * Agent Calls Limit
+     * Maximum agent calls per period. None means unlimited.
+     */
+    agent_calls_limit?: number | null;
+    /**
+     * Agent Calls Period
+     * Period for agent call limit reset (e.g., '1mo', '1d', '1h').
+     */
+    agent_calls_period?: string;
 };
 
 /**
@@ -11355,6 +11365,16 @@ export type RoleResponse = {
      * The list of access rules for the role.
      */
     access_rules: Array<string>;
+    /**
+     * Agent Calls Limit
+     * Maximum agent calls per period. None means unlimited.
+     */
+    agent_calls_limit?: number | null;
+    /**
+     * Agent Calls Period
+     * Period for agent call limit reset (e.g., '1mo', '1d', '1h').
+     */
+    agent_calls_period?: string;
 };
 
 /**
@@ -14277,6 +14297,16 @@ export type UpdateRoleRequest = {
      * The new list of access rules.
      */
     access_rules?: Array<string> | null;
+    /**
+     * Agent Calls Limit
+     * Maximum agent calls per period. None means unlimited.
+     */
+    agent_calls_limit?: number | null;
+    /**
+     * Agent Calls Period
+     * Period for agent call limit reset (e.g., '1mo', '1d', '1h').
+     */
+    agent_calls_period?: string | null;
 };
 
 /**

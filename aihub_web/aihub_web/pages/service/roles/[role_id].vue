@@ -65,6 +65,8 @@ const clonedRole = ref<CreateRoleRequest>({
   name: '',
   description: '',
   access_rules: [],
+  agent_calls_limit: null,
+  agent_calls_period: '1mo',
 })
 watch(role, (newRole: RoleResponse) => {
   if (!newRole) {

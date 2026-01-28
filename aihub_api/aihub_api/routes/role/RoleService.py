@@ -14,7 +14,13 @@ class RoleService:
         Creates a new role.
         Raises NotUniqueError if a role with the same name already exists.
         """
-        role = RoleEntity(name=data.name, description=data.description, access_rules=data.access_rules)
+        role = RoleEntity(
+            name=data.name,
+            description=data.description,
+            access_rules=data.access_rules,
+            agent_calls_limit=data.agent_calls_limit,
+            agent_calls_period=data.agent_calls_period,
+        )
         role.save()
         return RoleResponse.from_role_entity(role)
 

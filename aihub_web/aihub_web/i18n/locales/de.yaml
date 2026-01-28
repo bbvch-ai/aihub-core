@@ -486,6 +486,12 @@ role:
   is_new: "Neu"
   save_button: "Speichern"
   access_rules: "Zugriffsregeln"
+  agent_limits: "Agent-Limits"
+  agent_calls_limit: "Agent-Aufruflimit"
+  agent_calls_limit_help: "Maximale Anzahl von Agent-Aufrufen pro Zeitraum. Leer lassen für unbegrenzt."
+  agent_calls_period: "Rücksetzungszeitraum"
+  agent_calls_period_help: "Zeitraum, nach dem das Limit zurückgesetzt wird."
+  unlimited: "Unbegrenzt"
   create_dialog:
     description: "Erstellen Sie eine neue Rolle mit Zugriffsregeln. Um die neue Rolle Benutzern zuzuweisen, verwenden Sie bitte Ihr AD."
   remove_dialog:

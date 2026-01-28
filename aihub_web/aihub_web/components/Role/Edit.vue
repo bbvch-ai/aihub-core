@@ -26,6 +26,54 @@
         </label>
       </FloatLabel>
     </div>
+
+    <!-- Agent Limits Section -->
+    <div class="border-t pt-4">
+      <h3 class="mb-3 text-lg font-semibold">
+        {{ t('role.agent_limits') }}
+      </h3>
+      <div class="flex flex-col gap-3">
+        <div class="flex flex-col gap-1">
+          <label
+            for="agent_calls_limit"
+            class="text-sm font-medium"
+          >
+            {{ t('role.agent_calls_limit') }}
+          </label>
+          <InputNumber
+            id="agent_calls_limit"
+            v-model="role.agent_calls_limit"
+            :placeholder="t('role.unlimited')"
+            :min="0"
+            class="w-full"
+            show-buttons
+          />
+          <small class="text-surface-500">
+            {{ t('role.agent_calls_limit_help') }}
+          </small>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label
+            for="agent_calls_period"
+            class="text-sm font-medium"
+          >
+            {{ t('role.agent_calls_period') }}
+          </label>
+          <Select
+            id="agent_calls_period"
+            v-model="role.agent_calls_period"
+            :options="periodOptions"
+            option-label="label"
+            option-value="value"
+            class="w-full"
+          />
+          <small class="text-surface-500">
+            {{ t('role.agent_calls_period_help') }}
+          </small>
+        </div>
+      </div>
+    </div>
+
     <DataTable
       :value="accessRules"
       data-key="id"
@@ -108,10 +156,23 @@ const emit = defineEmits<{
 }>()
 
 const initialAccessRules = ref<string[]>([...(props.modelValue.access_rules ?? [])])
-const role = ref<RoleResponse | CreateRoleRequest>(props.modelValue)
+const role = ref<RoleResponse | CreateRoleRequest>({
+  ...props.modelValue,
+  agent_calls_period: props.modelValue.agent_calls_period ?? '1mo',
+})
+
+const periodOptions = [
+  { label: '1 Hour', value: '1h' },
+  { label: '1 Day', value: '1d' },
+  { label: '1 Week', value: '7d' },
+  { label: '1 Month', value: '1mo' },
+]
 
 watch(() => props.modelValue, (newValue) => {
-  role.value = newValue
+  role.value = {
+    ...newValue,
+    agent_calls_period: newValue.agent_calls_period ?? '1mo',
+  }
 }, { deep: true })
 
 const accessRules = computed(() => {
@@ -125,7 +186,13 @@ const accessRules = computed(() => {
 
 const newRule = ref<string>('')
 
-watch(() => [role.value.name, role.value.description, JSON.stringify(role.value.access_rules)], () => {
+watch(() => [
+  role.value.name,
+  role.value.description,
+  JSON.stringify(role.value.access_rules),
+  role.value.agent_calls_limit,
+  role.value.agent_calls_period,
+], () => {
   emit('update:modelValue', role.value)
 })
 

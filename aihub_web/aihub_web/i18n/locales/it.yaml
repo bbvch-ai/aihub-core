@@ -485,6 +485,12 @@ role:
   is_new: "Nuovo"
   save_button: "Salva"
   access_rules: "Regole di accesso"
+  agent_limits: "Limiti agente"
+  agent_calls_limit: "Limite chiamate agente"
+  agent_calls_limit_help: "Numero massimo di chiamate agente per periodo. Lascia vuoto per illimitato."
+  agent_calls_period: "Periodo di ripristino"
+  agent_calls_period_help: "Periodo dopo il quale il limite viene ripristinato."
+  unlimited: "Illimitato"
   create_dialog:
     description: "Crea un nuovo ruolo con regole di accesso. Per assegnare il nuovo ruolo agli utenti, utilizza il tuo AD."
   remove_dialog:
