@@ -661,7 +661,7 @@ services:
     volumes:
       - {{ global.volume_root }}/ferretdb-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${MONGO_USERNAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${MONGO_USERNAME} -d postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -1122,13 +1122,14 @@ services:
 
   playwright:
     container_name: playwright-server
-    image: {{ global.registry_prefix }}{{ image_tags.playwright }}
+    build:
+      context: ./configs/playwright
+      dockerfile: Dockerfile
     restart: always
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "3036:3000"
     {%- endif %}
-    command: npx playwright@v1.49.0 run-server --port 3000 --host 0.0.0.0
     environment:
       NODE_ENV: production
     healthcheck:
@@ -1143,7 +1144,8 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - backend
+      - backend  # Internal service communication
+      - egress   # Outbound internet access for web browsing
 
   # ===================================================================
   # Document Processing Stack
@@ -1493,6 +1495,12 @@ services:
       USER_PERMISSIONS_FEATURES_IMAGE_GENERATION: True
       USER_PERMISSIONS_FEATURES_CODE_INTERPRETER: True
       USER_PERMISSIONS_FEATURES_NOTES: True
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
     logging:
       driver: json-file
       options:
@@ -1860,6 +1868,8 @@ services:
         condition: service_started
       ferretdb:
         condition: service_started
+      milvus-standalone:
+        condition: service_healthy
     environment:
       # Log Level
       LOG_LEVEL: ${LOG_LEVEL}
@@ -2559,3 +2569,9 @@ networks:
     {%- if stage != 'dev' %}
     internal: true
     {%- endif %}
+  egress:
+    # Network for services that need outbound internet access only (no ingress)
+    # ICC disabled: containers on this network cannot communicate with each other
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "false"

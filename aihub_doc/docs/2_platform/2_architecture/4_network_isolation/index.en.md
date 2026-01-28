@@ -10,14 +10,17 @@ network layer.
 
 ## Network Zones
 
-The platform uses four isolated Docker networks:
+The platform uses five isolated Docker networks:
 
-| Network   | Purpose                              | External Access |
-|-----------|--------------------------------------|-----------------|
-| `proxy`   | External traffic via Traefik         | Yes             |
-| `backend` | Internal application services        | No              |
-| `data`    | Databases and message broker         | No              |
-| `storage` | SeaweedFS object storage             | No              |
+| Network   | Purpose                              | External Access | ICC Enabled |
+|-----------|--------------------------------------|-----------------|-------------|
+| `proxy`   | External traffic via Traefik         | Ingress + Egress| Yes         |
+| `backend` | Internal application services        | No              | Yes         |
+| `data`    | Databases and message broker         | No              | Yes         |
+| `storage` | SeaweedFS object storage             | No              | Yes         |
+| `egress`  | Outbound internet access only        | Egress only     | No          |
+
+The `egress` network is designed for services that need to reach the internet (outbound) but should not be reachable from the internet (no ingress). Inter-Container Communication (ICC) is disabled on this network, meaning containers cannot communicate with each other via this network—they can only use it for outbound internet access.
 
 ## Service Network Assignments
 
@@ -45,7 +48,7 @@ Internal application and processing services:
 - **llama-cpp-***: Local LLM inference (chat, embedding, reranking)
 - **speaches**: Speech-to-text and text-to-speech
 - **jupyter**: Code execution environment
-- **playwright**: Web scraping and automation
+- **playwright**: Web scraping and automation (also on `egress` for internet access)
 - **agents**: All agent workers (rag, expert, wrapping)
 - **pipelines**: Data processing pipelines
 - **dagster-***: Pipeline orchestration
@@ -75,12 +78,21 @@ Distributed object storage cluster:
 - **seaweedfs-s3**: S3 API gateway
 - **etcd**: Filer metadata backend
 
+### Egress Network Services
+
+Services that require outbound internet access but no inbound access:
+
+- **playwright**: Web scraping and browser automation (needs to fetch web pages)
+
+This network has ICC (Inter-Container Communication) disabled, preventing lateral movement between containers on this network. Services use `egress` solely for outbound internet access and must use other networks (e.g., `backend`) for inter-service communication.
+
 ## Network Topology
 
 ```mermaid
 flowchart TB
     subgraph Internet
         ext[External Traffic]
+        websites[External Websites]
     end
 
     subgraph proxy[PROXY NETWORK]
@@ -104,6 +116,10 @@ flowchart TB
         pipelines[pipelines]
         phoenix[phoenix]
         otel[otel-collector]
+    end
+
+    subgraph egress[EGRESS NETWORK - ICC Disabled]
+        playwright_egress[playwright]
     end
 
     subgraph data[DATA NETWORK]
@@ -131,6 +147,7 @@ flowchart TB
     api --> litellm
     api --> agents
     openwebui --> litellm
+    openwebui --> playwright
     agents --> nats
     agents --> milvus
     pipelines --> nats
@@ -144,6 +161,8 @@ flowchart TB
     s3proxy --> swfiler
     swfiler --> swvolume
     swvolume --> swmaster
+
+    playwright_egress -->|outbound only| websites
 ```
 
 ## Security Implications
@@ -164,13 +183,16 @@ flowchart TB
 
 ### Service Visibility Matrix
 
-| From \ To | proxy | backend | data | storage |
-|-----------|-------|---------|------|---------|
-| External  | ✓     | ✗       | ✗    | ✗       |
-| proxy     | ✓     | ✓       | ✗    | ✗       |
-| backend   | ✗     | ✓       | ✓    | ✓       |
-| data      | ✗     | ✗       | ✓    | ✓       |
-| storage   | ✗     | ✗       | ✗    | ✓       |
+| From \ To | proxy | backend | data | storage | egress | Internet |
+|-----------|-------|---------|------|---------|--------|----------|
+| External  | ✓     | ✗       | ✗    | ✗       | ✗      | -        |
+| proxy     | ✓     | ✓       | ✗    | ✗       | ✗      | ✓        |
+| backend   | ✗     | ✓       | ✓    | ✓       | ✗      | ✗        |
+| data      | ✗     | ✗       | ✓    | ✓       | ✗      | ✗        |
+| storage   | ✗     | ✗       | ✗    | ✓       | ✗      | ✗        |
+| egress    | ✗     | ✗       | ✗    | ✗       | ✗*     | ✓        |
+
+*ICC disabled on egress network - containers cannot communicate with each other via this network.
 
 ## Operational Considerations
 
@@ -178,10 +200,13 @@ flowchart TB
 
 When adding a new service, determine which networks it needs:
 
-1. **Needs external access?** → Add to `proxy`
+1. **Needs external access (ingress)?** → Add to `proxy`
 2. **Is an application service?** → Add to `backend`
 3. **Needs database access?** → Add to `data`
 4. **Needs object storage?** → Add to `storage`
+5. **Needs outbound internet only (no ingress)?** → Add to `egress`
+
+Note: The `egress` network is specifically for services that need to reach external websites/APIs but should not be reachable from outside. It has ICC disabled, so services on `egress` cannot communicate with each other—use `backend` for inter-service communication.
 
 ### Debugging Network Issues
 

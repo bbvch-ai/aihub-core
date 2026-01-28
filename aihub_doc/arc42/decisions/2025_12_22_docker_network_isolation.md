@@ -14,22 +14,24 @@ including databases and storage systems. Defense in depth requires network segme
 
 ## Decision
 
-We implement Docker network isolation using four distinct networks:
+We implement Docker network isolation using five distinct networks:
 
-| Network   | Internal | Purpose                              |
-|-----------|----------|--------------------------------------|
-| `proxy`   | No       | External traffic via Traefik         |
-| `backend` | Yes      | Internal application services        |
-| `data`    | Yes      | Databases, caches, message broker    |
-| `storage` | Yes      | SeaweedFS distributed storage        |
+| Network   | Internal | ICC     | Purpose                                    |
+|-----------|----------|---------|-------------------------------------------|
+| `proxy`   | No       | Yes     | External traffic via Traefik (ingress)    |
+| `backend` | Yes      | Yes     | Internal application services             |
+| `data`    | Yes      | Yes     | Databases, caches, message broker         |
+| `storage` | Yes      | Yes     | SeaweedFS distributed storage             |
+| `egress`  | No       | No      | Outbound internet access only (no ingress)|
 
-Services are assigned to only the networks they require. The `internal: true` flag prevents direct external access.
+Services are assigned to only the networks they require. The `internal: true` flag prevents direct external access. The `egress` network has ICC (Inter-Container Communication) disabled, ensuring containers can only reach the internet but not each other via this network.
 
 **Example assignments:**
 - `traefik`: proxy, backend
 - `api`: proxy, backend, data, storage
 - `postgres`: data
 - `seaweedfs-*`: storage
+- `playwright`: backend, egress (needs outbound internet for web browsing)
 
 ## Consequences
 

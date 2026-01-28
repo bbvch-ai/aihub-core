@@ -557,7 +557,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/ferretdb-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${MONGO_USERNAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${MONGO_USERNAME} -d postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -791,11 +791,12 @@ services:
 
   playwright:
     container_name: playwright-server
-    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.54.1-jammy
+    build:
+      context: ./configs/playwright
+      dockerfile: Dockerfile
     restart: always
     ports:
       - "3036:3000"
-    command: npx playwright@v1.49.0 run-server --port 3000 --host 0.0.0.0
     environment:
       NODE_ENV: production
     healthcheck:
@@ -810,7 +811,8 @@ services:
         max-size: 10m
         max-file: 2
     networks:
-      - backend
+      - backend  # Internal service communication
+      - egress   # Outbound internet access for web browsing
 
   # ===================================================================
   # Document Processing Stack
@@ -1098,6 +1100,12 @@ services:
       USER_PERMISSIONS_FEATURES_IMAGE_GENERATION: True
       USER_PERMISSIONS_FEATURES_CODE_INTERPRETER: True
       USER_PERMISSIONS_FEATURES_NOTES: True
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
     logging:
       driver: json-file
       options:
@@ -1411,6 +1419,8 @@ services:
         condition: service_started
       ferretdb:
         condition: service_started
+      milvus-standalone:
+        condition: service_healthy
     environment:
       # Log Level
       LOG_LEVEL: ${LOG_LEVEL}
@@ -1708,7 +1718,7 @@ services:
   expert_rag_agent:
     container_name: expert-rag-agent
     restart: always
-    image: ghcr.io/bbvch-ai/aihub-core/expert_rag_agent:latest
+    image: ghcr.io/bbvch-ai/aihub-core/expert_rag_agent:nightly
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -1770,7 +1780,7 @@ services:
   expert_asking_agent:
     container_name: expert-asking-agent
     restart: always
-    image: ghcr.io/bbvch-ai/aihub-core/expert_asking_agent:latest
+    image: ghcr.io/bbvch-ai/aihub-core/expert_asking_agent:nightly
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -1891,7 +1901,7 @@ services:
   shared_rag_pipeline:
     container_name: shared-rag-pipeline
     restart: always
-    image: ghcr.io/bbvch-ai/aihub-core/shared_rag_pipeline:latest
+    image: ghcr.io/bbvch-ai/aihub-core/shared_rag_pipeline:nightly
     environment:
       PYTHONUNBUFFERED: 1
       LOG_LEVEL: ${LOG_LEVEL}
@@ -2030,3 +2040,9 @@ networks:
   storage:
     driver: bridge
     internal: true
+  egress:
+    # Network for services that need outbound internet access only (no ingress)
+    # ICC disabled: containers on this network cannot communicate with each other
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "false"
