@@ -1718,7 +1718,7 @@ services:
   expert_rag_agent:
     container_name: expert-rag-agent
     restart: always
-    image: ghcr.io/bbvch-ai/aihub-core/expert_rag_agent:nightly
+    image: ghcr.io/bbvch-ai/aihub-core/expert_rag_agent:latest
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -1780,7 +1780,7 @@ services:
   expert_asking_agent:
     container_name: expert-asking-agent
     restart: always
-    image: ghcr.io/bbvch-ai/aihub-core/expert_asking_agent:nightly
+    image: ghcr.io/bbvch-ai/aihub-core/expert_asking_agent:latest
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -1901,7 +1901,7 @@ services:
   shared_rag_pipeline:
     container_name: shared-rag-pipeline
     restart: always
-    image: ghcr.io/bbvch-ai/aihub-core/shared_rag_pipeline:nightly
+    image: ghcr.io/bbvch-ai/aihub-core/shared_rag_pipeline:latest
     environment:
       PYTHONUNBUFFERED: 1
       LOG_LEVEL: ${LOG_LEVEL}
