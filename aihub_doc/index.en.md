@@ -85,7 +85,7 @@ rapid time-to-value without complex cloud configurations. Get started with the
 The Swiss AI Hub platform includes **built-in integrations for Microsoft Teams and Slack**. This allows your employees
 to interact securely with AI agents, which have access to relevant company knowledge, directly within the collaboration
 tools they use every day, improving workflow. See details on
-[Slack & Teams Integrations](docs/2_platform/16_slack_teams_integrations/).
+[Slack & Teams Integrations](docs/2_platform/17_slack_teams_integrations/).
 :::
 
 ::: details How can our organization centrally manage access and usage of various AI models (e.g., GPT-4, Gemini, local models)?
@@ -104,7 +104,7 @@ budgets to prevent unexpected costs. Learn more about [Cost Control](docs/2_plat
 ::: details Our Swiss company has strict data privacy rules preventing the use of public AI clouds. What secure AI solution can we use?
 The Swiss AI Hub is ideal for this. As an open-source platform *you* deploy, you can install it **fully on-premise** and
 use **local, self-hosted LLMs**. This ensures that absolutely no data (prompts, responses, documents) ever leaves your
-secure network perimeter. Review our comprehensive [Security features](docs/2_platform/19_security/).
+secure network perimeter. Review our comprehensive [Security features](docs/2_platform/20_security/).
 :::
 
 ::: details We have AI prototypes using frameworks like LangChain but find deploying them reliably in production difficult. How can the Swiss AI Hub help?
@@ -124,7 +124,7 @@ company knowledge safely.
 ::: details Different teams in our organization are using various AI tools, creating silos. How can we create a unified, governed AI approach?
 The Swiss AI Hub can serve as your **central, unified AI platform**. It provides common infrastructure that all teams
 can build upon, ensures consistent governance and security policies, offers unified monitoring, and includes an
-[OpenAI-Compatible API](docs/2_platform/17_api/1_openai_compatible_api/) allowing integration with many existing tools,
+[OpenAI-Compatible API](docs/2_platform/18_api/1_openai_compatible_api/) allowing integration with many existing tools,
 helping to **reduce fragmentation**.
 :::
 
@@ -158,9 +158,9 @@ example, via a Slack message), and then seamlessly resume its work once the huma
 
 ::: details How does the Swiss AI Hub connect and integrate with our existing enterprise software like SharePoint or internal databases?
 The platform offers **flexible integration options**. AI agents can make direct API calls to external systems; external
-systems can trigger agents via the platform's [Agent Interaction API](docs/2_platform/17_api/2_agent_interaction_api/);
+systems can trigger agents via the platform's [Agent Interaction API](docs/2_platform/18_api/2_agent_interaction_api/);
 automated Data Pipelines can sync knowledge from sources like SharePoint; and standard protocols are supported for
-custom connections. See [External Integrations](docs/2_platform/21_external_integrations/).
+custom connections. See [External Integrations](docs/2_platform/22_external_integrations/).
 :::
 
 ::: details How does using an open-source platform like Swiss AI Hub benefit the broader Swiss AI community?

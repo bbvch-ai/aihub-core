@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated
 
 from pydantic import Field, SecretStr
@@ -7,7 +7,7 @@ from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import 
 from aihub_lib.settings.EnvironmentSettings import EnvironmentSettings
 
 
-class PipelineType(Enum):
+class PipelineType(StrEnum):
     """Enum for document loader types."""
 
     VLM = "vlm"

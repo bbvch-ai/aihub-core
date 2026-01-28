@@ -30,7 +30,7 @@ import os
 import time
 import urllib.parse
 from abc import ABC, abstractmethod
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Annotated, Optional, Protocol, Self, Callable
 from urllib.parse import urlparse
 
@@ -51,7 +51,7 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 
 
-class BlockType(str, Enum):
+class BlockType(StrEnum):
     TEXT = "text"
     THINKING = "thinking"
     TOOL = "tool"

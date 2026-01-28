@@ -13,6 +13,17 @@ from .guard import GuardRejectionEvent
 from .human_in_the_loop import HumanInTheLoop
 from .human_in_the_loop.request import HumanInTheLoopRequestEvent
 from .human_in_the_loop.response import HumanInTheLoopResponseEvent
+from .memory import (
+    AddMemoryToChatHistoryEvent,
+    AddOrganizationMemoryToChatHistoryEvent,
+    AddUserMemoryToChatHistoryEvent,
+    BaseRetrieveMemoryEvent,
+    BaseStoreMemoryEvent,
+    RetrieveOrganizationMemoryEvent,
+    RetrieveUserMemoryEvent,
+    StoreOrganizationMemoryEvent,
+    StoreUserMemoryEvent,
+)
 from .process import ProcessEvent, ProcessExceptionEvent, ProcessStartEvent, ProcessStopEvent
 from .semantic import (
     AgentEvent,
@@ -62,6 +73,9 @@ __all__ = [
     "UserMessageEvent",
     "GuardRejectionEvent",
     "LimitChatHistoryEvent",
+    "AddMemoryToChatHistoryEvent",
+    "AddOrganizationMemoryToChatHistoryEvent",
+    "AddUserMemoryToChatHistoryEvent",
     "StandaloneQuestionCondenserEvent",
     "WorkEvent",
     "AgentWorkEvent",
@@ -75,4 +89,10 @@ __all__ = [
     "ProcessExceptionEvent",
     "ProcessStartEvent",
     "ProcessStopEvent",
+    "BaseRetrieveMemoryEvent",
+    "BaseStoreMemoryEvent",
+    "RetrieveOrganizationMemoryEvent",
+    "RetrieveUserMemoryEvent",
+    "StoreOrganizationMemoryEvent",
+    "StoreUserMemoryEvent",
 ]
