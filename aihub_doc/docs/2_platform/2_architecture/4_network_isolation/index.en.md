@@ -224,7 +224,7 @@ If a service cannot reach another service:
 docker network ls
 
 # Inspect a specific network
-docker network inspect aihub-core_backend
+docker network inspect backend
 
 # See which networks a container is connected to
 docker inspect <container> --format '{{json .NetworkSettings.Networks}}'

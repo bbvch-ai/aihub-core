@@ -281,6 +281,7 @@ services:
     {%- if stage != 'dev' %}
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.seaweedfs-s3.rule=Host(`s3.${DOMAIN}`)"
       - "traefik.http.routers.seaweedfs-s3.priority=4000"
       - "traefik.http.routers.seaweedfs-s3.entrypoints=websecure"
@@ -358,6 +359,7 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.seaweedfs-filer.rule=Host(`datalake.${DOMAIN}`)"
       - "traefik.http.routers.seaweedfs-filer.priority=4000"
       - "traefik.http.routers.seaweedfs-filer.entrypoints=websecure"
@@ -554,6 +556,7 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.attu.rule=Host(`attu.${DOMAIN}`)"
       - "traefik.http.routers.attu.priority=4000"
       - "traefik.http.routers.attu.entrypoints=websecure"
