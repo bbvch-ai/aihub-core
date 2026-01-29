@@ -11,7 +11,7 @@ optionally share backend LLM resources.
 
 ::: info Multi-tenancy vs Multi-instancing
 This chapter describes **multi-instancing** (multiple isolated AI-Hub instances). For **multi-tenancy** (multiple
-organizational boundaries within a single instance), see [Multi-tenancy](../../15_multi_tenancy/).
+organizational boundaries within a single instance), see [Multi-tenancy](../../16_multi_tenancy/).
 
 Both deployment models are valid and serve different purposes. Multi-instancing provides hard isolation between
 organizations, while multi-tenancy provides logical separation within a shared platform instance.
@@ -86,7 +86,7 @@ isolation from the main insurance department.
 Even a misconfiguration of the AI-Hub cannot cause data leakage between instances. Admins from one instance cannot
 configure or access another instance without a separate login.
 
-For logical separation within a shared platform, use [multi-tenancy](../../15_multi_tenancy/) instead.
+For logical separation within a shared platform, use [multi-tenancy](../../16_multi_tenancy/) instead.
 :::
 
 ### Shared LLM backend
@@ -110,7 +110,7 @@ The setup meets Swiss Data Protection Law (revDSG), GDPR data isolation requirem
 standards.
 
 ::: info Multi-tenancy within instances
-Each instance can also use [multi-tenancy](../../15_multi_tenancy/) to create logical boundaries for departments,
+Each instance can also use [multi-tenancy](../../16_multi_tenancy/) to create logical boundaries for departments,
 customers, or projects within that instance. Multi-tenancy provides flexible access control while maintaining hard
 isolation between instances.
 :::
@@ -294,7 +294,7 @@ Secrets are managed via environment variables, Azure Key Vault, or Docker secret
 
 ## Next steps
 
-- [Multi-tenancy](../../15_multi_tenancy/) - Logical separation within a single instance
+- [Multi-tenancy](../../16_multi_tenancy/) - Logical separation within a single instance
 - [Production Configuration](../2_production_configuration/) - Configuration guide for production deployments
 - [Scaling Considerations](../3_scaling_considerations/) - Scaling instances
 - [Backup and Recovery](../4_backup_and_recovery/) - Backup strategies for per-instance architecture
@@ -308,7 +308,7 @@ Secrets are managed via environment variables, Azure Key Vault, or Docker secret
 No. Each instance has its own isolated set of agents and pipelines. However, the same agent definitions (code) can be
 deployed across multiple instances. Customizations are instance-specific.
 
-For sharing agents within an organization, use [multi-tenancy](../../15_multi_tenancy/) to create logical boundaries
+For sharing agents within an organization, use [multi-tenancy](../../16_multi_tenancy/) to create logical boundaries
 within a single instance.
 :::
 
@@ -317,7 +317,7 @@ within a single instance.
 databases, vector stores, and application servers. Even a misconfiguration cannot cause data leakage between instances.
 Use this when you need absolute isolation (e.g., different legal entities, highly sensitive departments).
 
-**Multi-tenancy** ([chapter 15](../../15_multi_tenancy/)) means creating organizational boundaries within a single
+**Multi-tenancy** ([chapter 15](../../16_multi_tenancy/)) means creating organizational boundaries within a single
 AI-Hub instance. Multiple tenants share infrastructure but have logical separation through access control. Use this for
 departments, projects, or customers within the same organization.
 
@@ -369,8 +369,8 @@ update schedules.
 
 ## Related documentation
 
-- [Multi-tenancy](../../15_multi_tenancy/) - Creating organizational boundaries within an instance
+- [Multi-tenancy](../../16_multi_tenancy/) - Creating organizational boundaries within an instance
 - [Core Components](../../2_architecture/1_core_components/) - AI-Hub architecture
 - [Authentication & Authorization](../../11_access_management/1_authentication_setup/) - Authentication configuration
 - [Monitoring and Alerting](../5_monitoring_and_alerting/) - Observability for multi-instance deployments
-- [Swiss Data Protection](../../20_compliance/3_dsg/) - revDSG compliance for public sector
+- [Swiss Data Protection](../../21_compliance/3_dsg/) - revDSG compliance for public sector

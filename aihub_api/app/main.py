@@ -15,6 +15,7 @@ from aihub_api.routes.file.FileController import FileController
 from aihub_api.routes.health.ApiHealthController import ApiHealthController
 from aihub_api.routes.i18n.I18nController import I18nController
 from aihub_api.routes.knowledge.KnowledgeController import KnowledgeController
+from aihub_api.routes.memory import OrganizationMemoryController, UserMemoryController
 from aihub_api.routes.notification.NotificationController import NotificationController
 from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_api.routes.process.ProcessController import ProcessController
@@ -93,6 +94,18 @@ runner.mount(
     .get_supported_file_types(),
     FileController(auth=auth).get_file_url().get_file_redirect().get_anonymous_file_url().get_anonymous_file_redirect(),
     NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
+    UserMemoryController(auth=auth)
+    .get_user_memories()
+    .search_user_memories()
+    .delete_user_memory()
+    .delete_all_user_memories()
+    .update_user_memory(),
+    OrganizationMemoryController(auth=auth)
+    .get_organization_memories()
+    .search_organization_memories()
+    .delete_organization_memory()
+    .delete_all_organization_memories()
+    .update_organization_memory(),
     DoclingController(auth=auth).parse_document(),
 )
 

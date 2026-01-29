@@ -404,6 +404,39 @@ services:
       - data
 
   # ===================================================================
+  # Neo4j Stack (Graph Database)
+  # ===================================================================
+  # Neo4j provides graph database capabilities for relationship-based
+  # data modeling and querying.
+  # ===================================================================
+
+  neo4j:
+    container_name: neo4j
+    image: ghcr.io/bbvch-ai/aihub-core/neo4j:5.26.16-community
+    restart: always
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/neo4j/logs:/logs
+      - ${VOLUME_ROOT:-./.docker-volumes}/neo4j/config:/config
+      - ${VOLUME_ROOT:-./.docker-volumes}/neo4j/data:/data
+      - ${VOLUME_ROOT:-./.docker-volumes}/neo4j/plugins:/plugins
+    environment:
+      NEO4J_AUTH: ${NEO4J_USERNAME}/${NEO4J_PASSWORD}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:7474"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+
+  # ===================================================================
   # Phoenix Stack (ML Observability)
   # ===================================================================
   # Phoenix helps visualize and debug AI model traces and evaluations.
@@ -663,7 +696,7 @@ services:
 
   litellm:
     container_name: litellm
-    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.79.1-stable
+    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.80.5-stable.1
     restart: always
     ports:
       - "4000:4000"
@@ -673,6 +706,7 @@ services:
       UI_USERNAME: ${LITELLM_UI_USERNAME}
       UI_PASSWORD: ${LITELLM_UI_PASSWORD}
       LOCAL_LLM_TOKEN: ${LOCAL_LLM_TOKEN}
+      REDIS_TOKEN: ${REDIS_TOKEN}
       AZURE_OPENAI_BASE_URL: ${AZURE_OPENAI_BASE_URL}
       AZURE_OPENAI_KEY: ${AZURE_OPENAI_KEY}
       SWISS_LLM_CLOUD_API_BASE_URL: ${SWISS_LLM_CLOUD_API_BASE_URL}

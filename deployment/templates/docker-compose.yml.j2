@@ -695,6 +695,41 @@ services:
       - data
 
   # ===================================================================
+  # Neo4j Stack (Graph Database)
+  # ===================================================================
+  # Neo4j provides graph database capabilities for relationship-based
+  # data modeling and querying.
+  # ===================================================================
+
+  neo4j:
+    container_name: neo4j
+    image: {{ global.registry_prefix }}{{ image_tags.neo4j }}
+    restart: always
+    {%- if stage == 'dev' %}
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    {%- endif %}
+    volumes:
+      - {{ global.volume_root }}/neo4j/logs:/logs
+      - {{ global.volume_root }}/neo4j/config:/config
+      - {{ global.volume_root }}/neo4j/data:/data
+      - {{ global.volume_root }}/neo4j/plugins:/plugins
+    environment:
+      NEO4J_AUTH: ${NEO4J_USERNAME}/${NEO4J_PASSWORD}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:7474"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+
+  # ===================================================================
   # Phoenix Stack (ML Observability)
   # ===================================================================
   # Phoenix helps visualize and debug AI model traces and evaluations.
@@ -1035,6 +1070,7 @@ services:
       UI_USERNAME: ${LITELLM_UI_USERNAME}
       UI_PASSWORD: ${LITELLM_UI_PASSWORD}
       LOCAL_LLM_TOKEN: ${LOCAL_LLM_TOKEN}
+      REDIS_TOKEN: ${REDIS_TOKEN}
       AZURE_OPENAI_BASE_URL: ${AZURE_OPENAI_BASE_URL}
       AZURE_OPENAI_KEY: ${AZURE_OPENAI_KEY}
       SWISS_LLM_CLOUD_API_BASE_URL: ${SWISS_LLM_CLOUD_API_BASE_URL}
@@ -1945,6 +1981,16 @@ services:
       REDIS_URL: {{ REDIS_ENDPOINT }}
       REDIS_TOKEN: ${REDIS_TOKEN}
 
+      # Neo4j
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: "text-generation/large"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
+      MEM0_RERANKING_MODEL_NAME: "reranker"
+
       # Jupyter (for open-webui code interpreter)
       JUPYTER_URL: {{ JUPYTER_URL }}
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
@@ -2113,6 +2159,16 @@ services:
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
       MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
+      # Neo4j
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: "text-generation/large"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
+      MEM0_RERANKING_MODEL_NAME: "reranker"
+
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
@@ -2185,6 +2241,16 @@ services:
       # REDIS
       REDIS_URL: {{ REDIS_ENDPOINT }}
       REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Neo4j
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: "text-generation/large"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
+      MEM0_RERANKING_MODEL_NAME: "reranker"
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -2468,6 +2534,16 @@ services:
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+
+      # Neo4j
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: "text-generation/large"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
+      MEM0_RERANKING_MODEL_NAME: "reranker"
     healthcheck:
       test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "localhost", "--port", "4000"]
       interval: 30s
@@ -2508,6 +2584,12 @@ services:
       NATS_ENDPOINT: {{ NATS_ENDPOINT }}
       NATS_TOKEN: ${NATS_TOKEN}
       MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+      MEM0_LLM_NAME: "text-generation/large"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
+      MEM0_RERANKING_MODEL_NAME: "reranker"
       LOG_LEVEL: ${LOG_LEVEL}
       NUM_WORKERS: 1
       AIHUB_API_VERSION: ${AIHUB_API_VERSION}

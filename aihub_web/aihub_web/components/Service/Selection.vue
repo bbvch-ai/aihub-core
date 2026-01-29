@@ -43,7 +43,7 @@
         />
       </IconField>
     </div>
-    <div class="relative flex w-[500px] grow flex-wrap justify-between gap-3 p-5">
+    <div class="relative grid grid-cols-4 gap-3 p-5">
       <template v-if="appsLoading">
         <skeleton
           v-for="i in 6"
@@ -58,7 +58,12 @@
         <div
           v-for="app in shownApps"
           :key="app.path"
-          class="rounded-2xl border p-3 hover:bg-surface-500/5 dark:border-surface-700"
+          :class="[
+            'rounded-2xl border p-3 transition-colors',
+            isActiveApp(app.path)
+              ? 'border-primary-500 bg-primary-500/10 dark:border-primary-400 dark:bg-primary-400/10'
+              : 'hover:bg-surface-500/5 dark:border-surface-700',
+          ]"
         >
           <nuxt-link-locale
             :to="app.path"
@@ -68,10 +73,15 @@
             <div class="flex h-[60px] min-w-[80px] flex-col items-center justify-center gap-2 ">
               <Icon
                 :name="app.icon"
-                style="color: #9c9c9c"
+                :style="isActiveApp(app.path) ? 'color: var(--p-primary-500)' : 'color: #9c9c9c'"
                 class="size-6"
               />
-              <p class="text-sm font-medium">
+              <p
+                :class="[
+                  'text-sm font-medium',
+                  isActiveApp(app.path) ? 'text-primary-500 dark:text-primary-400' : '',
+                ]"
+              >
                 {{ app.label }}
               </p>
             </div>
@@ -95,16 +105,37 @@ import type { MenuItem } from 'primevue/menuitem'
 const router = useRouter()
 const localeRoute = useLocaleRoute()
 const route = useRoute()
+const localePath = useLocalePath()
 
 const { apps, appsLoading } = useApps()
 const { t } = useI18n()
 
 const shownApps = computed(() => {
-  return search.value ? apps.value.filter((app: MenuItem) => app.label?.toLowerCase().includes(search.value.toLowerCase())) : apps.value
+  return search.value
+    ? apps.value.filter((app: MenuItem) => {
+        const label = typeof app.label === 'string'
+          ? app.label
+          : ''
+        return label.toLowerCase().includes(search.value.toLowerCase())
+      })
+    : apps.value
 })
 
+const isActiveApp = (appPath: string | undefined) => {
+  if (!appPath) return false
+  const localizedPath = localePath(appPath)
+  // For home page, only match exact path
+  if (appPath === '/') {
+    return route.path === localizedPath
+  }
+  // For other pages, match exact or nested routes
+  return route.path === localizedPath || route.path.startsWith(localizedPath + '/')
+}
+
 const search = ref('')
-watch(() => route.path, () => search.value = '')
+watch(() => route.path, () => {
+  search.value = ''
+})
 
 const op = ref()
 const toggle = (event: Event) => {
@@ -113,8 +144,11 @@ const toggle = (event: Event) => {
 
 const onEnter = (event: Event) => {
   if (shownApps.value.length > 0) {
-    router.push(localeRoute(shownApps.value[0].path))
-    toggle(event)
+    const firstAppRoute = localeRoute(shownApps.value[0].path)
+    if (firstAppRoute) {
+      router.push(firstAppRoute)
+      toggle(event)
+    }
   }
 }
 </script>
