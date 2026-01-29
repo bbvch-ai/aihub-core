@@ -23,6 +23,9 @@ import {
   EventDisplayGuardRejectionEvent,
   EventDisplayRouterEvent,
   EventDisplayExceptionEvent,
+  EventDisplayBaseRetrieveMemoryEvent,
+  EventDisplayBaseStoreMemoryEvent,
+  EventDisplayAddMemoryToChatHistoryEvent,
 } from '#components'
 
 export const useEventComponent = () => {
@@ -57,6 +60,9 @@ export const useEventComponent = () => {
       StopEvent: EventDisplayStopEvent,
       RouterEvent: EventDisplayRouterEvent,
       ExceptionEvent: EventDisplayExceptionEvent,
+      BaseRetrieveMemoryEvent: EventDisplayBaseRetrieveMemoryEvent,
+      BaseStoreMemoryEvent: EventDisplayBaseStoreMemoryEvent,
+      AddMemoryToChatHistoryEvent: EventDisplayAddMemoryToChatHistoryEvent,
     }
     const exact_match = mapping[event.event._event_name]
     if (exact_match) {

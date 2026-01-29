@@ -46,6 +46,7 @@
       v-model:expanded-rows="expandedRows"
       data-key="example_id"
       removable-sort
+      size="small"
       :value="experiment.items"
     >
       <Column

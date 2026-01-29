@@ -8,6 +8,7 @@
     :sort-field="sortField ?? undefined"
     :sort-order="sortOrder"
     removable-sort
+    size="small"
     @update:selection="handleSelection"
     @sort="handleSort"
   >

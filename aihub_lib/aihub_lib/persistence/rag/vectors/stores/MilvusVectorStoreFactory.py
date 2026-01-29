@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated
 
 from llama_index.vector_stores.milvus import MilvusVectorStore
@@ -18,7 +18,7 @@ from aihub_lib.persistence.rag.vectors.stores.MilvusPartitionManager import crea
 from aihub_lib.persistence.rag.vectors.stores.PartitionAwareMilvusVectorStore import PartitionAwareMilvusVectorStore
 
 
-class MilvusIndexType(str, Enum):
+class MilvusIndexType(StrEnum):
     HNSW = "HNSW"  # RAG optimal: 97-99% recall, fastest queries, highest memory (enable mmap to reduce)
     DISKANN = "DISKANN"  # Memory-constrained: 90-95% recall, 90% less RAM, requires NVMe SSD
     IVF_FLAT = "IVF_FLAT"  # Balanced: 95-98% recall, 50% less memory than HNSW

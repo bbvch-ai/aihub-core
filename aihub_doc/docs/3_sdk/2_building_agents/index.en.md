@@ -26,10 +26,12 @@ This guide is structured to build your knowledge progressively:
 3. [**Human in the Loop**](./3_human_in_the_loop/) - Building interactive workflows that require human approval or
    input.
 4. [**Multi-Agent Systems**](./4_multi_agent_systems/) - Coordinating multiple agents to solve complex problems.
-5. [**Testing and Debugging**](./5_testing_and_debugging/) - Best practices for ensuring your agent is reliable and
+5. [**Memory**](./5_memory/) - Adding persistent memory to your agents for user preferences and organizational
+   knowledge.
+6. [**Testing and Debugging**](./6_testing_and_debugging/) - Best practices for ensuring your agent is reliable and
    correct.
-6. [**Production Deployment**](./6_production_deployment/) - Guidelines for packaging and deploying your agent.
-7. [**Agent Observation**](./7_agent_observation/) - Monitoring your agent's behavior and performance with integrated
+7. [**Production Deployment**](./7_production_deployment/) - Guidelines for packaging and deploying your agent.
+8. [**Agent Observation**](./8_agent_observation/) - Monitoring your agent's behavior and performance with integrated
    tracing.
 
 ## Key Principles of the SDK

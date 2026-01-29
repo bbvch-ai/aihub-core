@@ -1,6 +1,7 @@
 <template>
   <DataTable
     :value="agents"
+    size="small"
     table-style="min-width: 50rem"
     selection-mode="single"
     @update:selection="emit('selected', $event)"
