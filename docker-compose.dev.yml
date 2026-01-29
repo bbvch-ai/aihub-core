@@ -1126,6 +1126,7 @@ services:
 # - backend: Internal application and processing services
 # - data:    Databases, caches, and message broker
 # - storage: SeaweedFS distributed object storage
+# - egress:  Outbound internet only, ICC disabled (containers isolated)
 #
 # Services are assigned to only the networks they require.
 # Networks marked with 'internal: true' cannot be accessed from
@@ -1146,8 +1147,6 @@ networks:
     driver: bridge
   egress:
     name: egress
-    # Network for services that need outbound internet access only (no ingress)
-    # ICC disabled: containers on this network cannot communicate with each other
     driver: bridge
     driver_opts:
       com.docker.network.bridge.enable_icc: "false"
