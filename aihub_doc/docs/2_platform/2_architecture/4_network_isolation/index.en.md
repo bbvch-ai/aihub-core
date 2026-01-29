@@ -63,6 +63,7 @@ Persistence and messaging infrastructure:
 - **pgbouncer**: Connection pooler for Dagster
 - **postgres-ferretdb**: PostgreSQL backend for FerretDB
 - **ferretdb**: MongoDB-compatible document store
+- **neo4j**: Graph database for Mem0 memory storage
 - **milvus-standalone**: Vector database
 - **etcd**: Distributed key-value store (Milvus metadata)
 - **valkey**: Redis-compatible in-memory cache
@@ -125,6 +126,7 @@ flowchart TB
     subgraph data[DATA NETWORK]
         postgres[postgres]
         ferretdb[ferretdb]
+        neo4j[neo4j]
         milvus[milvus]
         valkey[valkey]
         nats[nats]
@@ -150,6 +152,7 @@ flowchart TB
     openwebui --> playwright
     agents --> nats
     agents --> milvus
+    agents --> neo4j
     pipelines --> nats
     dagster --> postgres
     phoenix --> postgres
