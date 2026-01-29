@@ -34,7 +34,6 @@
                 :placeholder="t('dashboard.select_data_type')"
               />
               <Select
-                v-if="hasAgentAccess"
                 v-model="agent"
                 :options="agents"
                 option-label="agent_config.name"
@@ -71,7 +70,7 @@ import type { AgentDto, TimeRange } from '@core/sdk/client'
 import type { DashboardWidget } from '@core/types/DashboardWidget'
 import type { GridStackElement } from 'gridstack'
 
-const { agents, agentsAreLoading, hasAgentAccess } = useAgents()
+const { agents, agentsAreLoading } = useAgents()
 const { t } = useI18n()
 const { myUser, myUserIsLoading } = useMyUser()
 const { saveDashboard } = useSaveDashboard()
