@@ -131,9 +131,9 @@ OAUTH_CLIENT_ID="REPLACE_WITH_YOUR_CLIENT_ID"
 OAUTH_CLIENT_SECRET="REPLACE_WITH_YOUR_CLIENT_SECRET"
 OAUTH_AUTHORITY_URL="https://login.microsoftonline.com/REPLACE_WITH_YOUR_TENANT_ID"
 OAUTH_TENANT_ID="REPLACE_WITH_YOUR_TENANT_ID"
-DAGSTER_OAUTH_COOKIE_SECRET="REPLACE_WITH_16_HEX_CHARS"
-SEAWEEDFS_OAUTH_COOKIE_SECRET="REPLACE_WITH_16_HEX_CHARS"
-ATTU_OAUTH_COOKIE_SECRET="REPLACE_WITH_16_HEX_CHARS"
+OAUTH_COOKIE_SECRET_DAGSTER="REPLACE_WITH_16_HEX_CHARS"
+OAUTH_COOKIE_SECRET_SEAWEEDFS="REPLACE_WITH_16_HEX_CHARS"
+OAUTH_COOKIE_SECRET_ATTU="REPLACE_WITH_16_HEX_CHARS"
 
 # Azure-specific OAuth (same values as above)
 AZURE_CLIENT_ID="REPLACE_WITH_YOUR_CLIENT_ID"
@@ -204,8 +204,8 @@ AIHUB_CREATE_DEFAULT_ROLES="True"
 ADMIN_EMAIL="admin@your-company.com"
 
 # OAuth Group Restrictions (Azure AD group names)
-DAGSTER_OAUTH_ALLOWED_GROUPS="AIHubAdmin"
-SEAWEEDFS_OAUTH_ALLOWED_GROUPS="AIHubAdmin"
+OAUTH_ALLOWED_GROUPS_DAGSTER="AIHubAdmin"
+OAUTH_ALLOWED_GROUPS_SEAWEEDFS="AIHubAdmin"
 
 # -----------------------------------------------------------------------------
 # Expert Asking Agent Configuration (Optional - for expert escalation)
@@ -277,9 +277,9 @@ Use these commands to generate secure random strings:
 openssl rand -hex 32
 
 # For OAuth cookie secrets (32 characters each - generate separately for each service)
-openssl rand -hex 16  # For DAGSTER_OAUTH_COOKIE_SECRET
-openssl rand -hex 16  # For SEAWEEDFS_OAUTH_COOKIE_SECRET
-openssl rand -hex 16  # For ATTU_OAUTH_COOKIE_SECRET
+openssl rand -hex 16  # For OAUTH_COOKIE_SECRET_DAGSTER
+openssl rand -hex 16  # For OAUTH_COOKIE_SECRET_SEAWEEDFS
+openssl rand -hex 16  # For OAUTH_COOKIE_SECRET_ATTU
 ```
 
 Run the appropriate command for each placeholder.
