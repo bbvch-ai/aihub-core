@@ -64,7 +64,7 @@ class Mem0Settings(EnvironmentSettings):
                     "db_name": "default",
                     "collection_name": "memories",
                     "embedding_model_dims": milvus.DIMENSION,
-                    "metric_type": "COSINE"
+                    "metric_type": "COSINE",
                 },
             ),
             reranker=RerankerConfig(

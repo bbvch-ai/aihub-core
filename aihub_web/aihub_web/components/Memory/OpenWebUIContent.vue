@@ -11,7 +11,10 @@
 
     <!-- List View -->
     <div v-if="selectedView === 'list'">
-      <div v-if="agentMemoriesAreLoading" class="flex items-center justify-center p-8">
+      <div
+        v-if="agentMemoriesAreLoading"
+        class="flex items-center justify-center p-8"
+      >
         <ProgressSpinner />
       </div>
       <div v-else>
@@ -28,10 +31,16 @@
 
     <!-- Graph View -->
     <div v-else-if="selectedView === 'graph'">
-      <div v-if="allMemoriesAreLoading" class="flex items-center justify-center p-8">
+      <div
+        v-if="allMemoriesAreLoading"
+        class="flex items-center justify-center p-8"
+      >
         <ProgressSpinner />
       </div>
-      <div v-else class="h-[600px]">
+      <div
+        v-else
+        class="h-[600px]"
+      >
         <MemoryGraph
           :memories="allMemoriesData?.memories || []"
           :relations="allRelations"
