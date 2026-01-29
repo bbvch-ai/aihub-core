@@ -21,7 +21,7 @@ class SuiteService:
         access_checker = AccessChecker.from_user(user)
         for controller in runner.controllers:
             user_service_access = access_checker.access_level_for_service(controller.service_name)
-            if user_service_access == AccessLevel.ACCESS_DENIED:
+            if user_service_access != AccessLevel.ACCESS_ADMIN:
                 continue
 
             if controller.additionally_required_permission:
