@@ -720,7 +720,6 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: False
-      REDIS_TOKEN: ${REDIS_TOKEN}
       DOCLING_API_KEY: ${DOCLING_API_KEY}
     volumes:
       - ./configs/litellm/litellm-config.dev.yml:/app/config.yml
