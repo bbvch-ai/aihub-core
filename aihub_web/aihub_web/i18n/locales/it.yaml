@@ -619,3 +619,12 @@ memory:
     error:
       title: "Eliminazione fallita"
       message: "Impossibile eliminare tutti i ricordi. Riprova."
+
+openwebui:
+  memories:
+    title: "Ricordi dell'Agente"
+    select_agent: "Seleziona Agente"
+    list: "Lista"
+    graph: "Grafico"
+    user_memories: "Ricordi dell'Utente"
+    org_memories: "Ricordi dell'Organizzazione"

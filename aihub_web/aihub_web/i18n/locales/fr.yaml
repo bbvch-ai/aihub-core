@@ -619,3 +619,12 @@ memory:
     error:
       title: "Suppression échouée"
       message: "Échec de la suppression de tous les souvenirs. Veuillez réessayer."
+
+openwebui:
+  memories:
+    title: "Souvenirs de l'Agent"
+    select_agent: "Sélectionner l'Agent"
+    list: "Liste"
+    graph: "Graphe"
+    user_memories: "Souvenirs de l'Utilisateur"
+    org_memories: "Souvenirs de l'Organisation"

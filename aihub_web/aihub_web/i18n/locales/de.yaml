@@ -620,3 +620,12 @@ memory:
     error:
       title: "Löschen fehlgeschlagen"
       message: "Alle Erinnerungen konnten nicht gelöscht werden. Bitte versuchen Sie es erneut."
+
+openwebui:
+  memories:
+    title: "Agent-Erinnerungen"
+    select_agent: "Agent auswählen"
+    list: "Liste"
+    graph: "Graph"
+    user_memories: "Benutzererinnerungen"
+    org_memories: "Organisationserinnerungen"

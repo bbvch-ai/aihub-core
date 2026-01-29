@@ -642,3 +642,12 @@ memory:
     error:
       title: "Delete Failed"
       message: "Failed to delete all memories. Please try again."
+
+openwebui:
+  memories:
+    title: "Agent Memories"
+    select_agent: "Select Agent"
+    list: "List"
+    graph: "Graph"
+    user_memories: "User Memories"
+    org_memories: "Organization Memories"
