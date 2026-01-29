@@ -36,6 +36,22 @@ async def initialize_roles() -> None:
 
     if AIHubSettings().CREATE_DEFAULT_ROLES:
         await initialize_role(
+            name="AIHubBasicUser",
+            description="Grants basic user access to essential AI-Hub services",
+            access_rules=[
+                "aihub.user.basic.>",
+                "aihub.admin.service.myaccount",
+                "aihub.user.service.notification",
+                "aihub.user.service.suite",
+                "aihub.user.service.event",
+                "aihub.admin.service.openai",
+                "aihub.user.service.thread",
+                "aihub.user.service.agent",
+                "aihub.user.service.knowledge",
+                "aihub.user.knowledge.defaultknowledge.defaultnamespace",
+            ],
+        )
+        await initialize_role(
             name="AIHubUser",
             description="Grants global user access to AI-Hub",
             access_rules=["aihub.user.>"],
