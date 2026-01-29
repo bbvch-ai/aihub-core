@@ -206,6 +206,7 @@ ADMIN_EMAIL="admin@your-company.com"
 # OAuth Group Restrictions (Azure AD group names)
 OAUTH_ALLOWED_GROUPS_DAGSTER="AIHubAdmin"
 OAUTH_ALLOWED_GROUPS_SEAWEEDFS="AIHubAdmin"
+OAUTH_ALLOWED_GROUPS_ATTU="AIHubAdmin"
 
 # -----------------------------------------------------------------------------
 # Expert Asking Agent Configuration (Optional - for expert escalation)

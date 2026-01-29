@@ -92,41 +92,65 @@ Kopieren Sie diese Vorlage in Ihre `.env`-Datei und ersetzen Sie die Platzhalter
 
 ```env
 # =============================================================================
-# BASIC PLATFORM CONFIGURATION
+# AI-Hub Produktions-Umgebungskonfiguration
+# =============================================================================
+# Diese Datei enthält NUR die Umgebungsvariablen, die konfiguriert werden müssen.
+# Alle internen Docker-Netzwerk-Endpunkte sind in den Compose-Dateien hartcodiert.
 # =============================================================================
 
-LOG_LEVEL="WARNING"                    # Options: CRITICAL, ERROR, WARNING, INFO, DEBUG
-ENV="prod"                             # Options: dev, test, prod
+# -----------------------------------------------------------------------------
+# Allgemeine Einstellungen
+# -----------------------------------------------------------------------------
+LOG_LEVEL="INFO"
+ENV="prod"
 DOMAIN="REPLACE_WITH_YOUR_DOMAIN"
 
-# Traefik Configuration
+# Let's Encrypt / Traefik
 ACME_EMAIL="admin@your-company.com"
-ADMIN_PASSWORD_HASH=""                 # Generate with: htpasswd -nb admin yourpassword
+ADMIN_PASSWORD_HASH=""
 
-# =============================================================================
-# AUTHENTICATION CONFIGURATION
-# =============================================================================
+# -----------------------------------------------------------------------------
+# API-Schlüssel (Externe Dienste) - Mindestens einen LLM-Anbieter konfigurieren
+# -----------------------------------------------------------------------------
+AZURE_OPENAI_KEY="REPLACE_WITH_AZURE_OPENAI_KEY"
+AZURE_OPENAI_BASE_URL="REPLACE_WITH_AZURE_OPENAI_BASE_URL"
+GEMINI_API_KEY=""
+JINA_API_KEY=""
+HUGGINGFACE_API_KEY=""
 
-# General Authentication Settings
-AUTH_ENABLE_API_ACCESS="True"
-AUTH_OPEN_WEBUI_SIGNING_SECRET="REPLACE_WITH_RANDOM_STRING"
+# Optionale Anbieter
+SWISS_LLM_CLOUD_API_BASE_URL=""
+SWISS_LLM_CLOUD_API_KEY=""
+COHERE_API_BASE=""
+COHERE_API_KEY=""
+
+# -----------------------------------------------------------------------------
+# OAuth2 / OIDC Konfiguration (ERFORDERLICH)
+# -----------------------------------------------------------------------------
 AUTH_IDENTITY_PROVIDER="azure"
-
-# OAuth2 Configuration (from Prerequisites setup)
+OAUTH_PROVIDER_NAME="Azure AD"
 OAUTH_CLIENT_ID="REPLACE_WITH_YOUR_CLIENT_ID"
 OAUTH_CLIENT_SECRET="REPLACE_WITH_YOUR_CLIENT_SECRET"
 OAUTH_AUTHORITY_URL="https://login.microsoftonline.com/REPLACE_WITH_YOUR_TENANT_ID"
-OAUTH_PROVIDER_NAME="azure"
 OAUTH_TENANT_ID="REPLACE_WITH_YOUR_TENANT_ID"
 OAUTH_COOKIE_SECRET_DAGSTER="REPLACE_WITH_16_HEX_CHARS"
 OAUTH_COOKIE_SECRET_SEAWEEDFS="REPLACE_WITH_16_HEX_CHARS"
 OAUTH_COOKIE_SECRET_ATTU="REPLACE_WITH_16_HEX_CHARS"
 
-# =============================================================================
-# PLATFORM ACCESS CONFIGURATION
-# =============================================================================
+# Azure-spezifische OAuth (gleiche Werte wie oben)
+AZURE_CLIENT_ID="REPLACE_WITH_YOUR_CLIENT_ID"
+AZURE_TENANT_ID="REPLACE_WITH_YOUR_TENANT_ID"
+AZURE_CLIENT_SECRET="REPLACE_WITH_YOUR_CLIENT_SECRET"
 
-# Superuser Configuration
+# OAuth Custom Branding (optional)
+OAUTH_CUSTOM_SIGN_IN_LOGO=""
+
+# -----------------------------------------------------------------------------
+# Authentifizierung & Sicherheit (ERFORDERLICH - Neue Secrets generieren!)
+# -----------------------------------------------------------------------------
+AUTH_OPEN_WEBUI_SIGNING_SECRET="REPLACE_WITH_RANDOM_STRING"
+
+# Superuser-Konfiguration
 SUPERUSER_ENABLED="True"
 SUPERUSER_NAME="AI-Hub Superuser"
 SUPERUSER_EMAIL="admin@your-company.com"
@@ -134,163 +158,129 @@ SUPERUSER_OID="REPLACE_WITH_RANDOM_STRING"
 SUPERUSER_ROLE="AIHubSuperuser"
 SUPERUSER_TOKEN="REPLACE_WITH_RANDOM_STRING"
 
-# Platform Settings
-AIHUB_API_VERSION="dev"
-AIHUB_FRONTEND_ORIGIN="https://REPLACE_WITH_YOUR_DOMAIN"
-AIHUB_CREATE_DEFAULT_ROLES="True"
-
-# =============================================================================
-# AI MODEL ACCESS (Configure at least one)
-# =============================================================================
-
-# Azure OpenAI (Recommended)
-AZURE_OPENAI_BASE_URL="REPLACE_WITH_AZURE_OPENAI_BASE_URL"
-AZURE_OPENAI_KEY="REPLACE_WITH_AZURE_OPENAI_KEY"
-
-# Google Gemini (Alternative)
-GEMINI_API_KEY="REPLACE_WITH_GEMINI_KEY"
-
-# Swiss LLM Cloud (Optional)
-SWISS_LLM_CLOUD_API_BASE_URL=""                # Optional: Swiss LLM Cloud endpoint URL
-SWISS_LLM_CLOUD_API_KEY=""                # Optional: Swiss LLM Cloud API key
-
-# Cohere (Optional)
-COHERE_API_BASE=""                        # Optional: Cohere API base URL
-COHERE_API_KEY=""                         # Optional: Cohere API key
-
-# Hugging Face (Optional)
-HUGGINGFACE_API_KEY=""                    # Optional: For Hugging Face model access
-
-# =============================================================================
-# LITELLM PROXY CONFIGURATION
-# =============================================================================
-
-LITELLM_UI_USERNAME="admin"
-LITELLM_UI_PASSWORD="REPLACE_WITH_RANDOM_STRING"
-LITELLM_MASTER_KEY="REPLACE_WITH_RANDOM_STRING"
-LITE_LLM_PROXY_BASE_URL="http://litellm:4000"
-LITE_LLM_PROXY_API_KEY="REPLACE_WITH_RANDOM_STRING"
-
-# =============================================================================
-# DATABASE CONFIGURATION
-# =============================================================================
-
+# -----------------------------------------------------------------------------
+# Datenbank-Zugangsdaten (ERFORDERLICH - Starke Passwörter verwenden!)
+# -----------------------------------------------------------------------------
 # PostgreSQL
 POSTGRES_USER="admin"
 POSTGRES_PASSWORD="REPLACE_WITH_RANDOM_STRING"
 
-# FerretDB (MongoDB-compatible)
+# MongoDB (FerretDB)
 MONGO_USERNAME="admin"
 MONGO_PASSWORD="REPLACE_WITH_RANDOM_STRING"
-MONGO_CONNECTION_STRING="mongodb://admin:REPLACE_WITH_SAME_MONGO_PASSWORD@ferretdb:27017/"
 
-# Valkey (Redis-compatible)
-REDIS_URL="redis://localhost:6379"
+# S3 Storage (SeaweedFS)
+S3_STORAGE_ACCESS_KEY="admin"
+S3_STORAGE_SECRET_KEY="REPLACE_WITH_RANDOM_STRING"
+# Öffentlicher Endpunkt für presigned URLs (automatisch als https://s3.${DOMAIN} in docker-compose konfiguriert)
+# S3_STORAGE_PUBLIC_ENDPOINT wird automatisch gesetzt - nur überschreiben bei benutzerdefinierter S3-Domain
 
-# =============================================================================
-# STORAGE CONFIGURATION
-# =============================================================================
+# -----------------------------------------------------------------------------
+# LiteLLM Konfiguration (ERFORDERLICH)
+# -----------------------------------------------------------------------------
+LITELLM_UI_USERNAME="admin"
+LITELLM_UI_PASSWORD="REPLACE_WITH_RANDOM_STRING"
+LITELLM_MASTER_KEY="REPLACE_WITH_RANDOM_STRING"
 
-# SeaweedFS S3 Storage
-SEAWEEDFS_ROOT_USER="admin"
-SEAWEEDFS_ROOT_PASSWORD="REPLACE_WITH_RANDOM_STRING"
-S3_STORAGE_ENDPOINT="http://seaweedfs:8333"
-S3_STORAGE_ACCESS_KEY="admin"                         # Must match SEAWEEDFS_ROOT_USER
-S3_STORAGE_SECRET_KEY="REPLACE_WITH_SAME_SEAWEEDFS_PASSWORD"
-S3_STORAGE_URL_SIGNING_SECRET="REPLACE_WITH_RANDOM_STRING"
-
-# =============================================================================
-# SERVICE ENDPOINTS (Internal - Don't Change)
-# =============================================================================
-
-DOCLING_API_BASE_URL="http://docling:5001"
-DOCLING_API_TIMEOUT="600"
-DOCLING_HTTP_RETRIES=3
-PHOENIX_SECRET="REPLACE_WITH_RANDOM_STRING"
-PHOENIX_ENDPOINT="http://phoenix:6006"
-NATS_ENDPOINT="nats://localhost:4222"
-DAGSTER_HOME="~/.dagster_home"
-OAUTH_ALLOWED_GROUPS_DAGSTER="AIHubDeveloper"
-OAUTH_ALLOWED_GROUPS_SEAWEEDFS="AIHubDeveloper"
+# -----------------------------------------------------------------------------
+# Service-Konfiguration
+# -----------------------------------------------------------------------------
 JUPYTER_TOKEN="REPLACE_WITH_RANDOM_STRING"
+PHOENIX_SECRET="REPLACE_WITH_RANDOM_STRING"
+
+# Docling-Konfiguration
+DOCLING_API_TIMEOUT="600"
+DOCLING_VLM_MODEL_NAME="text-generation/ocr"
+DOCLING_HTTP_RETRIES=3
+
+# Milvus-Konfiguration (muss mit den Dimensionen Ihres Embedding-Modells übereinstimmen)
 MILVUS_DIMENSION="3072"
 
-# =============================================================================
-# OBSERVABILITY CONFIGURATION
-# =============================================================================
+# -----------------------------------------------------------------------------
+# AI-Hub Anwendungseinstellungen
+# -----------------------------------------------------------------------------
+AIHUB_API_VERSION="latest"
+AIHUB_CREATE_DEFAULT_ROLES="True"
 
-# OpenTelemetry Cloud Exporter (Optional - for production monitoring)
-OTEL_ENABLED="true"                           # Enable/disable OTEL collection
-OTEL_EXPORTER_OTLP_PROTOCOL="grpc"           # Protocol for OTEL export
-OTEL_CLOUD_ENDPOINT="localhost:4317"         # Cloud OTEL endpoint (e.g., Grafana Cloud: "otlp.grafana.net:443")
-OTEL_CLOUD_HEADERS=""                         # Authentication headers (e.g., "Authorization=Bearer YOUR_TOKEN")
+# Admin-Einstellungen
+ADMIN_EMAIL="admin@your-company.com"
 
-# =============================================================================
-# BOT DEVELOPMENT CONFIGURATION
-# =============================================================================
+# OAuth Gruppenbeschränkungen (Azure AD Gruppennamen)
+OAUTH_ALLOWED_GROUPS_DAGSTER="AIHubAdmin"
+OAUTH_ALLOWED_GROUPS_SEAWEEDFS="AIHubAdmin"
+OAUTH_ALLOWED_GROUPS_ATTU="AIHubAdmin"
 
-BOT_AUTH_FAKE_NAME="Bot"
-BOT_AUTH_FAKE_EMAIL="bot@bot.com"
-BOT_AUTH_FAKE_OID="00000000-0000-0000-0000-000000000000"
-BOT_AUTH_FAKE_ROLES="AIHubBot"
+# -----------------------------------------------------------------------------
+# Expert Asking Agent Konfiguration (Optional - für Experten-Eskalation)
+# -----------------------------------------------------------------------------
+# Kanaltyp: "teams" oder "slack"
+EXPERT_ASKING_CHANNEL_TYPE="teams"
 
-# =============================================================================
-# OPTIONAL INTEGRATIONS
-# =============================================================================
+# Teams-Konfiguration (erforderlich wenn EXPERT_ASKING_CHANNEL_TYPE="teams")
+TEAMS_CHANNEL_ID="REPLACE_WITH_TEAMS_CHANNEL_ID"
+TEAMS_TENANT_ID="REPLACE_WITH_TEAMS_TENANT_ID"
+TEAMS_BOT_ID="REPLACE_WITH_TEAMS_BOT_ID"
 
-# Jina AI Search (Optional)
-JINA_API_KEY=""
+# Slack-Konfiguration (erforderlich wenn EXPERT_ASKING_CHANNEL_TYPE="slack")
+SLACK_CHANNEL_ID=""
+SLACK_SERVICE_URL="https://slack.botframework.com"
 
-# OpenTelemetry Configuration (Optional)
-OTEL_ENABLED="False"
+# -----------------------------------------------------------------------------
+# OpenTelemetry Konfiguration (Optional)
+# -----------------------------------------------------------------------------
+OTEL_ENABLED="true"
 OTEL_EXPORTER_OTLP_PROTOCOL="grpc"
-OTEL_CLOUD_ENDPOINT=""
+OTEL_RESOURCE_SERVICE_VERSION="1.0.0"
+OTEL_RESOURCE_SERVICE_NAMESPACE="swiss-ai-hub"
+
+# Cloud OTEL (optional - für externe Observability-Plattformen)
+OTEL_CLOUD_ENDPOINT="placeholder:1234"
 OTEL_CLOUD_HEADERS=""
-
-# Signoz Telemetry (Optional)
-SIGNOZ_INGESTION_CLOUD_ENDPOINT=""
-SIGNOZ_INGESTION_KEY=""
-
 ```
 
 ### Konfigurationsrichtlinien
 
 **Kritische Werte zum Ersetzen:**
 
-1. **Authentifizierungswerte** (aus den Voraussetzungen):
+1. **Domain** - Setzen Sie `DOMAIN` auf Ihre Produktions-Domain (z.B. `aihub.yourcompany.com`) oder `127.0.0.1.nip.io`
+   für lokale Tests
+
+2. **Authentifizierungswerte** (aus den Voraussetzungen):
 
    - `REPLACE_WITH_YOUR_CLIENT_ID` → Ihre Azure App Registration Client ID
    - `REPLACE_WITH_YOUR_CLIENT_SECRET` → Ihr Azure App Registration Client Secret
-   - `REPLACE_WITH_YOUR_TENANT_ID` → Ihre Azure Tenant ID (erscheint zweimal)
+   - `REPLACE_WITH_YOUR_TENANT_ID` → Ihre Azure Tenant ID
 
-2. **KI-Modellzugriff** (mindestens einen konfigurieren):
+3. **KI-Modellzugriff** (mindestens einen konfigurieren):
 
    - `REPLACE_WITH_AZURE_OPENAI_BASE_URL` → Ihre Azure OpenAI Endpunkt-URL
    - `REPLACE_WITH_AZURE_OPENAI_KEY` → Ihr Azure OpenAI API-Schlüssel
-   - `REPLACE_WITH_GEMINI_KEY` → Ihr Google Gemini API-Schlüssel
 
-3. **Zufällige Zeichenketten** (eindeutige Werte generieren):
+4. **Secrets** (eindeutige Werte für jeden generieren):
 
-   - Ersetzen Sie alle `REPLACE_WITH_RANDOM_STRING` durch eindeutige zufällige Zeichenketten (verwenden Sie
-     `openssl rand -hex 32`)
-   - Ersetzen Sie `REPLACE_WITH_16_HEX_CHARS` durch eine 16-Byte-Hex-Zeichenkette (verwenden Sie `openssl rand -hex 16`)
-   - Verwenden Sie unterschiedliche Werte für jeden Platzhalter
-   - Mindestens 32 Zeichen werden für die Sicherheit empfohlen
+   - Ersetzen Sie alle `REPLACE_WITH_RANDOM_STRING` mit: `openssl rand -hex 32`
+   - Ersetzen Sie `REPLACE_WITH_16_HEX_CHARS` mit: `openssl rand -hex 16`
 
-**Domain-Konfiguration:**
+5. **Experten-Eskalation** (optional - für Expert-in-the-Loop-Funktionen):
 
-- Für lokale Tests: Behalten Sie `AIHUB_FRONTEND_ORIGIN="https://127.0.0.1.nip.io"` bei
-- Für die Produktion: Ändern Sie dies zu Ihrer tatsächlichen Domain (z.B. `https://aihub.your-company.com`)
+   - `REPLACE_WITH_TEAMS_CHANNEL_ID` → Ihre Teams-Kanal-ID (Format: `19:xxx@thread.tacv2`)
+   - `REPLACE_WITH_TEAMS_TENANT_ID` → Ihre Azure AD Tenant ID
+   - `REPLACE_WITH_TEAMS_BOT_ID` → Ihre Azure Bot Service Application ID
+
+::: info Vereinfachte Konfiguration
+Interne Service-Endpunkte (wie Datenbank-URLs, Message Queues, etc.) sind jetzt in den Docker Compose-Dateien
+hartcodiert. Sie müssen nur Zugangsdaten und externe Service-Verbindungen konfigurieren.
+:::
 
 ::: tip Zufällige Zeichenketten generieren
 Verwenden Sie diese Befehle, um sichere zufällige Zeichenketten zu generieren:
 
 ```bash
-# For most secrets (64 characters)
+# Für die meisten Secrets (64 Zeichen)
 openssl rand -hex 32
 
-# For OAuth cookie secrets (32 characters each - generate separately for each service)
-openssl rand -hex 16  # For OAUTH_COOKIE_SECRET_DAGSTER, OAUTH_COOKIE_SECRET_ATTU, ...
+# Für OAuth Cookie Secrets (32 Zeichen jeweils - separat für jeden Service generieren)
+openssl rand -hex 16  # Für OAUTH_COOKIE_SECRET_DAGSTER, OAUTH_COOKIE_SECRET_ATTU, ...
 ```
 
 Führen Sie den entsprechenden Befehl für jeden Platzhalter aus.
