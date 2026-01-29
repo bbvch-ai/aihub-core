@@ -153,9 +153,9 @@ neues Geheimnis erstellt werden. Speichern Sie ihn in einem Passwortmanager oder
 
 App-Rollen ermöglichen die rollenbasierte Zugriffssteuerung (RBAC) für Plattformbenutzer.
 
-Erstellen Sie drei App-Rollen nach diesem Prozess:
+Erstellen Sie vier App-Rollen nach diesem Prozess:
 
-1. Navigieren Sie zu **„App-Rollen“** → **„App-Rolle erstellen“**
+1. Navigieren Sie zu **„App-Rollen"** → **„App-Rolle erstellen"**
 2. Erstellen Sie jede der folgenden Rollen:
 
 **Administrator-Rolle:**
@@ -171,6 +171,13 @@ Erstellen Sie drei App-Rollen nach diesem Prozess:
 - **Zulässige Mitgliedstypen**: `Benutzer/Gruppen`
 - **Wert**: `AIHubUser`
 - **Beschreibung**: `Standard-Benutzerzugriff auf die AI-Hub Plattform`
+
+**Basis-Benutzer-Rolle:**
+
+- **Anzeigename**: `AIHubBasicUser`
+- **Zulässige Mitgliedstypen**: `Benutzer/Gruppen`
+- **Wert**: `AIHubBasicUser`
+- **Beschreibung**: `Basis-Benutzerzugriff nur für Chat-Nutzung ohne Service-Verwaltungsoberfläche`
 
 **Entwickler-Rolle:**
 
