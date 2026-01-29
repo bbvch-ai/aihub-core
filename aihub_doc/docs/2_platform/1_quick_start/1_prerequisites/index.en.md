@@ -150,7 +150,7 @@ created. Store in a password manager or secure vault.
 
 App roles enable role-based access control (RBAC) for platform users.
 
-Create three app roles following this process:
+Create four app roles following this process:
 
 1. Navigate to **"App roles"** → **"Create app role"**
 2. Create each of the following roles:
@@ -168,6 +168,13 @@ Create three app roles following this process:
 - **Allowed member types**: `Users/Groups`
 - **Value**: `AIHubUser`
 - **Description**: `Standard user access to AI-Hub platform`
+
+**Basic user role:**
+
+- **Display name**: `AIHubBasicUser`
+- **Allowed member types**: `Users/Groups`
+- **Value**: `AIHubBasicUser`
+- **Description**: `Basic user access for chat-only usage without service management UI`
 
 **Developer role:**
 
