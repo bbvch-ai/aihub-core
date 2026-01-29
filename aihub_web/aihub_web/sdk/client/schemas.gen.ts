@@ -92,7 +92,7 @@ export const AddMemoryToChatHistoryEventSchema = {
         },
         extended_history: {
             items: {
-                '$ref': '#/components/schemas/ChatMessage'
+                '$ref': '#/components/schemas/ChatMessage-Output'
             },
             type: 'array',
             title: 'Extended History',
@@ -170,7 +170,7 @@ export const AddOrganizationMemoryToChatHistoryEventSchema = {
         },
         extended_history: {
             items: {
-                '$ref': '#/components/schemas/ChatMessage'
+                '$ref': '#/components/schemas/ChatMessage-Output'
             },
             type: 'array',
             title: 'Extended History',
@@ -238,7 +238,7 @@ export const AddUserMemoryToChatHistoryEventSchema = {
         },
         extended_history: {
             items: {
-                '$ref': '#/components/schemas/ChatMessage'
+                '$ref': '#/components/schemas/ChatMessage-Output'
             },
             type: 'array',
             title: 'Extended History',
@@ -1255,7 +1255,72 @@ export const AudioSchema = {
     title: 'Audio'
 } as const;
 
-export const AudioBlockSchema = {
+export const AudioBlock_InputSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'audio',
+            title: 'Block Type',
+            default: 'audio'
+        },
+        audio: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'binary'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Audio'
+        },
+        path: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'file-path'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Path'
+        },
+        url: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 2083,
+                    minLength: 1,
+                    format: 'uri'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Url'
+        },
+        format: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Format'
+        }
+    },
+    type: 'object',
+    title: 'AudioBlock'
+} as const;
+
+export const AudioBlock_OutputSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -1641,6 +1706,24 @@ export const Body_create_transcription_openai_audio_transcriptions_postSchema = 
     title: 'Body_create_transcription_openai_audio_transcriptions_post'
 } as const;
 
+export const BucketNamespacePairSchema = {
+    properties: {
+        bucket_name: {
+            type: 'string',
+            title: 'Bucket Name',
+            description: 'The name of the bucket'
+        },
+        namespace_name: {
+            type: 'string',
+            title: 'Namespace Name',
+            description: 'The name of the selected namespace in the bucket'
+        }
+    },
+    type: 'object',
+    required: ['bucket_name', 'namespace_name'],
+    title: 'BucketNamespacePair'
+} as const;
+
 export const BulkUpdateNotificationRequestSchema = {
     properties: {
         notification_ids: {
@@ -1679,7 +1762,24 @@ export const CacheControlSchema = {
     title: 'CacheControl'
 } as const;
 
-export const CachePointSchema = {
+export const CachePoint_InputSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'cache',
+            title: 'Block Type',
+            default: 'cache'
+        },
+        cache_control: {
+            '$ref': '#/components/schemas/CacheControl'
+        }
+    },
+    type: 'object',
+    required: ['cache_control'],
+    title: 'CachePoint'
+} as const;
+
+export const CachePoint_OutputSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -3189,7 +3289,75 @@ export const ChatCompletionUserMessageParamSchema = {
 export const ChatMessageSchema = {
     properties: {
         role: {
-            '$ref': '#/components/schemas/MessageRole',
+            '$ref': '#/components/schemas/MessageRole-Input',
+            default: 'user'
+        },
+        additional_kwargs: {
+            '$ref': '#/components/schemas/additional_kwargs'
+        },
+        blocks: {
+            items: {
+                oneOf: [
+                    {
+                        '$ref': '#/components/schemas/TextBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ImageBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/AudioBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/VideoBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/DocumentBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CachePoint-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CitableBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CitationBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ThinkingBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ToolCallBlock-Input'
+                    }
+                ],
+                discriminator: {
+                    propertyName: 'block_type',
+                    mapping: {
+                        audio: '#/components/schemas/AudioBlock-Input',
+                        cache: '#/components/schemas/CachePoint-Input',
+                        citable: '#/components/schemas/CitableBlock-Input',
+                        citation: '#/components/schemas/CitationBlock-Input',
+                        document: '#/components/schemas/DocumentBlock-Input',
+                        image: '#/components/schemas/ImageBlock-Input',
+                        text: '#/components/schemas/TextBlock-Input',
+                        thinking: '#/components/schemas/ThinkingBlock-Input',
+                        tool_call: '#/components/schemas/ToolCallBlock-Input',
+                        video: '#/components/schemas/VideoBlock-Input'
+                    }
+                }
+            },
+            type: 'array',
+            title: 'Blocks'
+        }
+    },
+    type: 'object',
+    required: ['additional_kwargs'],
+    title: 'ChatMessage'
+} as const;
+
+export const ChatMessage_OutputSchema = {
+    properties: {
+        role: {
+            '$ref': '#/components/schemas/MessageRole-Output',
             default: 'user'
         },
         additional_kwargs: {
@@ -3199,49 +3367,49 @@ export const ChatMessageSchema = {
             items: {
                 oneOf: [
                     {
-                        '$ref': '#/components/schemas/TextBlock'
+                        '$ref': '#/components/schemas/TextBlock-Output'
                     },
                     {
-                        '$ref': '#/components/schemas/ImageBlock'
+                        '$ref': '#/components/schemas/ImageBlock-Output'
                     },
                     {
-                        '$ref': '#/components/schemas/AudioBlock'
+                        '$ref': '#/components/schemas/AudioBlock-Output'
                     },
                     {
-                        '$ref': '#/components/schemas/VideoBlock'
+                        '$ref': '#/components/schemas/VideoBlock-Output'
                     },
                     {
-                        '$ref': '#/components/schemas/DocumentBlock'
+                        '$ref': '#/components/schemas/DocumentBlock-Output'
                     },
                     {
-                        '$ref': '#/components/schemas/CachePoint'
+                        '$ref': '#/components/schemas/CachePoint-Output'
                     },
                     {
-                        '$ref': '#/components/schemas/CitableBlock'
+                        '$ref': '#/components/schemas/CitableBlock-Output'
                     },
                     {
-                        '$ref': '#/components/schemas/CitationBlock'
+                        '$ref': '#/components/schemas/CitationBlock-Output'
                     },
                     {
-                        '$ref': '#/components/schemas/ThinkingBlock'
+                        '$ref': '#/components/schemas/ThinkingBlock-Output'
                     },
                     {
-                        '$ref': '#/components/schemas/ToolCallBlock'
+                        '$ref': '#/components/schemas/ToolCallBlock-Output'
                     }
                 ],
                 discriminator: {
                     propertyName: 'block_type',
                     mapping: {
-                        audio: '#/components/schemas/AudioBlock',
-                        cache: '#/components/schemas/CachePoint',
-                        citable: '#/components/schemas/CitableBlock',
-                        citation: '#/components/schemas/CitationBlock',
-                        document: '#/components/schemas/DocumentBlock',
-                        image: '#/components/schemas/ImageBlock',
-                        text: '#/components/schemas/TextBlock',
-                        thinking: '#/components/schemas/ThinkingBlock',
-                        tool_call: '#/components/schemas/ToolCallBlock',
-                        video: '#/components/schemas/VideoBlock'
+                        audio: '#/components/schemas/AudioBlock-Output',
+                        cache: '#/components/schemas/CachePoint-Output',
+                        citable: '#/components/schemas/CitableBlock-Output',
+                        citation: '#/components/schemas/CitationBlock-Output',
+                        document: '#/components/schemas/DocumentBlock-Output',
+                        image: '#/components/schemas/ImageBlock-Output',
+                        text: '#/components/schemas/TextBlock-Output',
+                        thinking: '#/components/schemas/ThinkingBlock-Output',
+                        tool_call: '#/components/schemas/ToolCallBlock-Output',
+                        video: '#/components/schemas/VideoBlock-Output'
                     }
                 }
             },
@@ -3573,7 +3741,7 @@ responses as they are generated, improving user experience by not forcing them t
 for the entire answer.`
 } as const;
 
-export const CitableBlockSchema = {
+export const CitableBlock_InputSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -3593,21 +3761,68 @@ export const CitableBlockSchema = {
             items: {
                 oneOf: [
                     {
-                        '$ref': '#/components/schemas/TextBlock'
+                        '$ref': '#/components/schemas/TextBlock-Input'
                     },
                     {
-                        '$ref': '#/components/schemas/ImageBlock'
+                        '$ref': '#/components/schemas/ImageBlock-Input'
                     },
                     {
-                        '$ref': '#/components/schemas/DocumentBlock'
+                        '$ref': '#/components/schemas/DocumentBlock-Input'
                     }
                 ],
                 discriminator: {
                     propertyName: 'block_type',
                     mapping: {
-                        document: '#/components/schemas/DocumentBlock',
-                        image: '#/components/schemas/ImageBlock',
-                        text: '#/components/schemas/TextBlock'
+                        document: '#/components/schemas/DocumentBlock-Input',
+                        image: '#/components/schemas/ImageBlock-Input',
+                        text: '#/components/schemas/TextBlock-Input'
+                    }
+                }
+            },
+            type: 'array',
+            title: 'Content'
+        }
+    },
+    type: 'object',
+    required: ['title', 'source', 'content'],
+    title: 'CitableBlock'
+} as const;
+
+export const CitableBlock_OutputSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'citable',
+            title: 'Block Type',
+            default: 'citable'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        source: {
+            type: 'string',
+            title: 'Source'
+        },
+        content: {
+            items: {
+                oneOf: [
+                    {
+                        '$ref': '#/components/schemas/TextBlock-Output'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ImageBlock-Output'
+                    },
+                    {
+                        '$ref': '#/components/schemas/DocumentBlock-Output'
+                    }
+                ],
+                discriminator: {
+                    propertyName: 'block_type',
+                    mapping: {
+                        document: '#/components/schemas/DocumentBlock-Output',
+                        image: '#/components/schemas/ImageBlock-Output',
+                        text: '#/components/schemas/TextBlock-Output'
                     }
                 }
             },
@@ -3621,7 +3836,7 @@ export const CitableBlockSchema = {
     description: 'Supports providing citable content to LLMs that have built-in citation support.'
 } as const;
 
-export const CitationBlockSchema = {
+export const CitationBlock_InputSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -3632,18 +3847,61 @@ export const CitationBlockSchema = {
         cited_content: {
             oneOf: [
                 {
-                    '$ref': '#/components/schemas/TextBlock'
+                    '$ref': '#/components/schemas/TextBlock-Input'
                 },
                 {
-                    '$ref': '#/components/schemas/ImageBlock'
+                    '$ref': '#/components/schemas/ImageBlock-Input'
                 }
             ],
             title: 'Cited Content',
             discriminator: {
                 propertyName: 'block_type',
                 mapping: {
-                    image: '#/components/schemas/ImageBlock',
-                    text: '#/components/schemas/TextBlock'
+                    image: '#/components/schemas/ImageBlock-Input',
+                    text: '#/components/schemas/TextBlock-Input'
+                }
+            }
+        },
+        source: {
+            type: 'string',
+            title: 'Source'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        additional_location_info: {
+            '$ref': '#/components/schemas/additional_location_info'
+        }
+    },
+    type: 'object',
+    required: ['cited_content', 'source', 'title', 'additional_location_info'],
+    title: 'CitationBlock'
+} as const;
+
+export const CitationBlock_OutputSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'citation',
+            title: 'Block Type',
+            default: 'citation'
+        },
+        cited_content: {
+            oneOf: [
+                {
+                    '$ref': '#/components/schemas/TextBlock-Output'
+                },
+                {
+                    '$ref': '#/components/schemas/ImageBlock-Output'
+                }
+            ],
+            title: 'Cited Content',
+            discriminator: {
+                propertyName: 'block_type',
+                mapping: {
+                    image: '#/components/schemas/ImageBlock-Output',
+                    text: '#/components/schemas/TextBlock-Output'
                 }
             }
         },
@@ -5200,7 +5458,80 @@ export const DisplayStatisticsSchema = {
     description: 'Statistics for a display, including its runs, intended for API response.'
 } as const;
 
-export const DocumentBlockSchema = {
+export const DocumentBlock_InputSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'document',
+            title: 'Block Type',
+            default: 'document'
+        },
+        data: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'binary'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Data'
+        },
+        path: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'file-path'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Path'
+        },
+        url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Url'
+        },
+        title: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Title'
+        },
+        document_mimetype: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Document Mimetype'
+        }
+    },
+    type: 'object',
+    title: 'DocumentBlock'
+} as const;
+
+export const DocumentBlock_OutputSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -7595,7 +7926,83 @@ export const ImageSchema = {
     title: 'Image'
 } as const;
 
-export const ImageBlockSchema = {
+export const ImageBlock_InputSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'image',
+            title: 'Block Type',
+            default: 'image'
+        },
+        image: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'binary'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Image'
+        },
+        path: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'file-path'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Path'
+        },
+        url: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 2083,
+                    minLength: 1,
+                    format: 'uri'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Url'
+        },
+        image_mimetype: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Image Mimetype'
+        },
+        detail: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Detail'
+        }
+    },
+    type: 'object',
+    title: 'ImageBlock'
+} as const;
+
+export const ImageBlock_OutputSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -7874,7 +8281,7 @@ export const ImagesResponseSchema = {
         usage: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/Usage'
+                    '$ref': '#/components/schemas/openai__types__images_response__Usage'
                 },
                 {
                     type: 'null'
@@ -9914,7 +10321,7 @@ export const LimitChatHistoryEventSchema = {
         },
         limited_history: {
             items: {
-                '$ref': '#/components/schemas/ChatMessage'
+                '$ref': '#/components/schemas/ChatMessage-Output'
             },
             type: 'array',
             title: 'Limited History',
@@ -10675,7 +11082,13 @@ export const MessageSchema = {
     title: 'Message'
 } as const;
 
-export const MessageRoleSchema = {
+export const MessageRole_InputSchema = {
+    type: 'string',
+    enum: ['system', 'developer', 'user', 'assistant', 'function', 'tool', 'chatbot', 'model'],
+    title: 'MessageRole'
+} as const;
+
+export const MessageRole_OutputSchema = {
     type: 'string',
     enum: ['system', 'developer', 'user', 'assistant', 'function', 'tool', 'chatbot', 'model'],
     title: 'MessageRole',
@@ -10955,7 +11368,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1769595935
+            default: 1769692819
         },
         owned_by: {
             type: 'string',
@@ -11671,6 +12084,45 @@ export const MultiSelectSchema = {
     required: ['label', 'options', 'validation'],
     title: 'MultiSelect',
     description: 'https://formkit-primevue.netlify.app/inputs/MultiSelect'
+} as const;
+
+export const NamespaceAwareUserMessageEventInputSchema = {
+    properties: {
+        messages: {
+            items: {
+                '$ref': '#/components/schemas/jambo__parser__object_type_parser__ChatMessage__2'
+            },
+            type: 'array',
+            title: 'Messages',
+            description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.'
+        },
+        files: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__UserUploadedFile'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Files',
+            description: 'A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.'
+        },
+        selected_namespaces: {
+            items: {
+                '$ref': '#/components/schemas/BucketNamespacePair'
+            },
+            type: 'array',
+            title: 'Selected Namespaces',
+            description: 'List of bucket-namespace pairs for RAG retrieval filtering.'
+        }
+    },
+    type: 'object',
+    required: ['selected_namespaces'],
+    title: 'NamespaceAwareUserMessageEventInput'
 } as const;
 
 export const NamespaceDTOSchema = {
@@ -14990,7 +15442,7 @@ export const StandaloneQuestionCondenserEventSchema = {
             description: 'Display description for the event'
         },
         condensed_chat_message: {
-            '$ref': '#/components/schemas/ChatMessage',
+            '$ref': '#/components/schemas/ChatMessage-Output',
             description: 'Single chat message containing the condensed user question.'
         },
         _event_name: {
@@ -15166,6 +15618,35 @@ By inheriting from both \`ControlEvent\` and \`DisplayEvent\`:
 ### Use Cases
 - Signaling that a response is ready, and no more actions are needed.
 - Informing the user interface that the conversation or task has concluded.`
+} as const;
+
+export const StopEventOutputSchema = {
+    properties: {
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        }
+    },
+    type: 'object',
+    title: 'StopEventOutput'
 } as const;
 
 export const StoreOrganizationMemoryEventSchema = {
@@ -15409,7 +15890,25 @@ export const SuiteDTOSchema = {
     title: 'SuiteDTO'
 } as const;
 
-export const TextBlockSchema = {
+export const TextBlock_InputSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'text',
+            title: 'Block Type',
+            default: 'text'
+        },
+        text: {
+            type: 'string',
+            title: 'Text'
+        }
+    },
+    type: 'object',
+    required: ['text'],
+    title: 'TextBlock'
+} as const;
+
+export const TextBlock_OutputSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -15661,7 +16160,48 @@ export const TextareaSchema = {
     description: 'https://formkit-primevue.netlify.app/inputs/Textarea'
 } as const;
 
-export const ThinkingBlockSchema = {
+export const ThinkingBlock_InputSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'thinking',
+            title: 'Block Type',
+            default: 'thinking'
+        },
+        content: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Content',
+            description: 'Content of the reasoning/thinking process, if available'
+        },
+        num_tokens: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Num Tokens',
+            description: 'Number of token used for reasoning/thinking, if available'
+        },
+        additional_information: {
+            '$ref': '#/components/schemas/additional_information'
+        }
+    },
+    type: 'object',
+    required: ['additional_information'],
+    title: 'ThinkingBlock'
+} as const;
+
+export const ThinkingBlock_OutputSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -16386,7 +16926,50 @@ export const TokenResponseSchema = {
     title: 'TokenResponse'
 } as const;
 
-export const ToolCallBlockSchema = {
+export const ToolCallBlock_InputSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'tool_call',
+            title: 'Block Type',
+            default: 'tool_call'
+        },
+        tool_call_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tool Call Id',
+            description: 'ID of the tool call, if provided'
+        },
+        tool_name: {
+            type: 'string',
+            title: 'Tool Name',
+            description: 'Name of the called tool'
+        },
+        tool_kwargs: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/tool_kwargs'
+                },
+                {
+                    type: 'string'
+                }
+            ],
+            title: 'Tool Kwargs',
+            description: 'Arguments provided to the tool, if available'
+        }
+    },
+    type: 'object',
+    required: ['tool_name'],
+    title: 'ToolCallBlock'
+} as const;
+
+export const ToolCallBlock_OutputSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -16691,7 +17274,7 @@ export const TranscriptionVerboseSchema = {
         usage: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/openai__types__audio__transcription_verbose__Usage'
+                    '$ref': '#/components/schemas/Usage'
                 },
                 {
                     type: 'null'
@@ -16885,25 +17468,19 @@ export const UpdateRoleRequestSchema = {
 
 export const UsageSchema = {
     properties: {
-        input_tokens: {
-            type: 'integer',
-            title: 'Input Tokens'
+        seconds: {
+            type: 'number',
+            title: 'Seconds'
         },
-        input_tokens_details: {
-            '$ref': '#/components/schemas/UsageInputTokensDetails'
-        },
-        output_tokens: {
-            type: 'integer',
-            title: 'Output Tokens'
-        },
-        total_tokens: {
-            type: 'integer',
-            title: 'Total Tokens'
+        type: {
+            type: 'string',
+            const: 'duration',
+            title: 'Type'
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['input_tokens', 'input_tokens_details', 'output_tokens', 'total_tokens'],
+    required: ['seconds', 'type'],
     title: 'Usage'
 } as const;
 
@@ -17196,7 +17773,7 @@ export const UserMessageEventSchema = {
         },
         messages: {
             items: {
-                '$ref': '#/components/schemas/ChatMessage'
+                '$ref': '#/components/schemas/ChatMessage-Output'
             },
             type: 'array',
             title: 'Messages',
@@ -17207,7 +17784,7 @@ export const UserMessageEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/UserUploadedFile'
+                        '$ref': '#/components/schemas/UserUploadedFile-Output'
                     },
                     type: 'array'
                 },
@@ -17263,7 +17840,61 @@ This flexible design allows mixing and matching start events to adapt how and wh
 are triggered, depending on the source of the event.`
 } as const;
 
+export const UserMessageEventInputSchema = {
+    properties: {
+        messages: {
+            items: {
+                '$ref': '#/components/schemas/ChatMessage'
+            },
+            type: 'array',
+            title: 'Messages',
+            description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.'
+        },
+        files: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__UserUploadedFile'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Files',
+            description: 'A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.'
+        }
+    },
+    type: 'object',
+    title: 'UserMessageEventInput'
+} as const;
+
 export const UserUploadedFileSchema = {
+    properties: {
+        filename: {
+            type: 'string',
+            title: 'Filename',
+            description: 'The name of the uploaded file, including the extension.'
+        },
+        file_data: {
+            type: 'string',
+            title: 'File Data',
+            description: 'Base64 encoded content of the uploaded file.'
+        },
+        file_type: {
+            type: 'string',
+            title: 'File Type',
+            description: 'The MIME type of the uploaded file.',
+            examples: ['image/png', 'application/pdf']
+        }
+    },
+    type: 'object',
+    required: ['filename', 'file_data', 'file_type'],
+    title: 'UserUploadedFile'
+} as const;
+
+export const UserUploadedFile_OutputSchema = {
     properties: {
         filename: {
             type: 'string',
@@ -17391,7 +18022,94 @@ export const ValidationErrorSchema = {
     title: 'ValidationError'
 } as const;
 
-export const VideoBlockSchema = {
+export const VideoBlock_InputSchema = {
+    properties: {
+        block_type: {
+            type: 'string',
+            const: 'video',
+            title: 'Block Type',
+            default: 'video'
+        },
+        video: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'binary'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Video'
+        },
+        path: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'file-path'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Path'
+        },
+        url: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 2083,
+                    minLength: 1,
+                    format: 'uri'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Url'
+        },
+        video_mimetype: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Video Mimetype'
+        },
+        detail: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Detail'
+        },
+        fps: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Fps'
+        }
+    },
+    type: 'object',
+    title: 'VideoBlock'
+} as const;
+
+export const VideoBlock_OutputSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -17519,22 +18237,113 @@ export const WorkflowGraphSchema = {
     description: 'Complete workflow graph representation.'
 } as const;
 
-export const openai__types__audio__transcription_verbose__UsageSchema = {
+export const additional_informationSchema = {
+    properties: {},
+    type: 'object',
+    title: 'additional_information'
+} as const;
+
+export const additional_kwargsSchema = {
+    properties: {},
+    type: 'object',
+    title: 'additional_kwargs'
+} as const;
+
+export const additional_location_infoSchema = {
+    properties: {},
+    type: 'object',
+    title: 'additional_location_info'
+} as const;
+
+export const jambo__parser__object_type_parser__ChatMessage__2Schema = {
     properties: {
-        seconds: {
-            type: 'number',
-            title: 'Seconds'
+        role: {
+            '$ref': '#/components/schemas/MessageRole-Input',
+            default: 'user'
         },
-        type: {
-            type: 'string',
-            const: 'duration',
-            title: 'Type'
+        additional_kwargs: {
+            '$ref': '#/components/schemas/additional_kwargs'
+        },
+        blocks: {
+            items: {
+                oneOf: [
+                    {
+                        '$ref': '#/components/schemas/TextBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ImageBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/AudioBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/VideoBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/DocumentBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CachePoint-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CitableBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CitationBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ThinkingBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ToolCallBlock-Input'
+                    }
+                ],
+                discriminator: {
+                    propertyName: 'block_type',
+                    mapping: {
+                        audio: '#/components/schemas/AudioBlock-Input',
+                        cache: '#/components/schemas/CachePoint-Input',
+                        citable: '#/components/schemas/CitableBlock-Input',
+                        citation: '#/components/schemas/CitationBlock-Input',
+                        document: '#/components/schemas/DocumentBlock-Input',
+                        image: '#/components/schemas/ImageBlock-Input',
+                        text: '#/components/schemas/TextBlock-Input',
+                        thinking: '#/components/schemas/ThinkingBlock-Input',
+                        tool_call: '#/components/schemas/ToolCallBlock-Input',
+                        video: '#/components/schemas/VideoBlock-Input'
+                    }
+                }
+            },
+            type: 'array',
+            title: 'Blocks'
         }
     },
-    additionalProperties: true,
     type: 'object',
-    required: ['seconds', 'type'],
-    title: 'Usage'
+    required: ['additional_kwargs'],
+    title: 'ChatMessage'
+} as const;
+
+export const jambo__parser__object_type_parser__UserUploadedFileSchema = {
+    properties: {
+        filename: {
+            type: 'string',
+            title: 'Filename',
+            description: 'The name of the uploaded file, including the extension.'
+        },
+        file_data: {
+            type: 'string',
+            title: 'File Data',
+            description: 'Base64 encoded content of the uploaded file.'
+        },
+        file_type: {
+            type: 'string',
+            title: 'File Type',
+            description: 'The MIME type of the uploaded file.'
+        }
+    },
+    type: 'object',
+    required: ['filename', 'file_data', 'file_type'],
+    title: 'UserUploadedFile'
 } as const;
 
 export const openai__types__chat__chat_completion_message_custom_tool_call_param__CustomSchema = {
@@ -17617,4 +18426,34 @@ export const openai__types__chat__completion_create_params__FunctionSchema = {
     type: 'object',
     required: ['name'],
     title: 'Function'
+} as const;
+
+export const openai__types__images_response__UsageSchema = {
+    properties: {
+        input_tokens: {
+            type: 'integer',
+            title: 'Input Tokens'
+        },
+        input_tokens_details: {
+            '$ref': '#/components/schemas/UsageInputTokensDetails'
+        },
+        output_tokens: {
+            type: 'integer',
+            title: 'Output Tokens'
+        },
+        total_tokens: {
+            type: 'integer',
+            title: 'Total Tokens'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['input_tokens', 'input_tokens_details', 'output_tokens', 'total_tokens'],
+    title: 'Usage'
+} as const;
+
+export const tool_kwargsSchema = {
+    properties: {},
+    type: 'object',
+    title: 'tool_kwargs'
 } as const;

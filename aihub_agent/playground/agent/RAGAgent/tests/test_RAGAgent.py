@@ -25,9 +25,7 @@ from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryE
 from aihub_lib.nats.events.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
 from aihub_lib.nats.events.guard.FewShotAcceptEvent import FewShotAcceptEvent
 from aihub_lib.nats.events.guard.FewShotRejectEvent import FewShotRejectEvent
-from aihub_lib.nats.events.memory.history.AddOrganizationMemoryToChatHistoryEvent import (
-    AddOrganizationMemoryToChatHistoryEvent,
-)
+from aihub_lib.nats.events.memory.history.AddMemoryToChatHistoryEvent import AddMemoryToChatHistoryEvent
 from aihub_lib.nats.events.memory.retrieve.RetrieveOrganizationMemoryEvent import RetrieveOrganizationMemoryEvent
 from aihub_lib.nats.events.semantic.reranker import RerankerEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
@@ -519,6 +517,6 @@ def _(agent_runner: AgentTestRunner):
 @then("an AddOrganizationMemoryToChatHistoryEvent is present")
 def _(agent_runner: AgentTestRunner):
     """Assert that organization memories were added to chat history."""
-    event = agent_runner.get_event_of_class(AddOrganizationMemoryToChatHistoryEvent)
-    assert event is not None, "AddOrganizationMemoryToChatHistoryEvent was not emitted"
+    event = agent_runner.get_event_of_class(AddMemoryToChatHistoryEvent)
+    assert event is not None, "AddMemoryToChatHistoryEvent was not emitted"
     assert event.extended_history, "Chat history was not extended with organization memory"
