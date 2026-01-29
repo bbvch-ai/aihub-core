@@ -179,6 +179,8 @@ async def main():
             enable_organization_memory=True,
             tenant_id="AIHub",
             tenant_namespace="default",
+            enable_user_memory_retrieval=True,
+            enable_user_memory_storage=True,
         ),
     )
 
