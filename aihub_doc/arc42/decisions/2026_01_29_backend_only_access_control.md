@@ -4,11 +4,18 @@
 
 When implementing access control for the hierarchical permission system, two key challenges emerged:
 
-1. **Authorization Location**: Should authorization checks happen in both frontend (hiding UI elements) and backend (enforcing access), or exclusively on the backend?
+1. **Authorization Location**: Should authorization checks happen in both frontend (hiding UI elements) and backend (
+   enforcing access), or exclusively on the backend?
 
-2. **Service Visibility vs Service Access**: A "basic user" who only needs to chat with agents must have `aihub.user.service.agent` and `aihub.user.service.thread` permissions to use the chat functionality. However, granting these permissions previously made the Agent and Thread service management pages visible in the suite navigation, exposing configuration UI meant only for administrators.
+2. **Service Visibility vs Service Access**: A "basic user" who only needs to chat with agents must have
+   `aihub.user.service.agent` and `aihub.user.service.thread` permissions to use the chat functionality. However,
+   granting these permissions previously made the Agent and Thread service management pages visible in the suite
+   navigation, exposing configuration UI not meant for basic users.
 
-The dual-enforcement approach would allow proactive hiding of inaccessible features by checking permissions before rendering UI or making API calls. However, this creates fundamental concerns around security, maintainability, and consistency. Additionally, it fails to solve the service visibility problem since the frontend would see the user has service access and display it in navigation.
+The dual-enforcement approach would allow proactive hiding of inaccessible features by checking permissions before
+rendering UI or making API calls. However, this creates fundamental concerns around security, maintainability, and
+consistency. Additionally, it fails to solve the service visibility problem since the frontend would see the user has
+service access and display it in navigation.
 
 ## Decision Drivers
 
@@ -38,7 +45,8 @@ The `/api/v1/suite` endpoint restricts service visibility to admin-level access:
 - Previously: Showed services where `user_service_access != ACCESS_DENIED` (user OR admin)
 - Now: Shows services where `user_service_access == ACCESS_ADMIN` (admin only)
 
-This separates **service visibility** (what appears in navigation) from **service access** (what endpoints user can call):
+This separates **service visibility** (what appears in navigation) from **service access** (what endpoints user can
+call):
 
 - Basic users with `aihub.user.service.agent` can call agent endpoints for chat functionality
 - But the Agent service management page only appears in navigation for users with `aihub.admin.service.agent`
@@ -48,7 +56,9 @@ This separates **service visibility** (what appears in navigation) from **servic
 
 - Frontend checks permissions via suite configuration to hide inaccessible UI elements
 - Backend enforces actual access control
-- **Rejected because**: Creates duplication, security false-sense, and maintenance burden. Also fails to separate service visibility from service access—users would see all services they can access, defeating the "chat-only" use case.
+- **Rejected because**: Creates duplication, security false-sense, and maintenance burden. Also fails to separate
+  service visibility from service access—users would see all services they can access, defeating the "chat-only" use
+  case.
 
 ## Consequences
 
@@ -70,4 +80,5 @@ This separates **service visibility** (what appears in navigation) from **servic
 
 ### Trade-offs
 
-- **Service Discovery**: Regular users cannot use `/api/v1/suite` to discover what services they have access to—they must know the endpoints directly or receive 403 errors when attempting access
+- **Service Discovery**: Regular users cannot use `/api/v1/suite` to discover what services they have access to—they
+  must know the endpoints directly or receive 403 errors when attempting access
