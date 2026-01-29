@@ -211,3 +211,18 @@ Feature: User Access Control Checker
     And the access rule "aihub.user.agent.class-a.*"
     When the access checker checks for the permission "aihub.user.agent.class-a.id-1"
     Then the result should be ACCESS_USER
+
+  Scenario Outline: Case sensitivity support for uppercase class names
+    Given the access rule "<access_rule>"
+    When the access checker checks for the permission "<permission_template>"
+    Then the result should be <expected_level>
+
+    Examples:
+      | access_rule                                | permission_template                           | expected_level |
+      # Exact match with uppercase agent class
+      | aihub.user.agent.RAGAgent.rag_dev_agent   | aihub.user.agent.RAGAgent.rag_dev_agent       | ACCESS_USER    |
+      | aihub.user.agent.RAGAgent.*               | aihub.user.agent.RAGAgent.rag_dev_agent       | ACCESS_USER    |
+      | aihub.user.agent.RAGAgent.>               | aihub.user.agent.RAGAgent.rag_dev_agent       | ACCESS_USER    |
+      # Mixed case in various components
+      | aihub.user.agent.MyAgent.MyId123          | aihub.user.agent.MyAgent.MyId123              | ACCESS_USER    |
+      | aihub.admin.agent.RAGAgent.*              | aihub.user.agent.RAGAgent.rag_dev_agent       | ACCESS_ADMIN   |
