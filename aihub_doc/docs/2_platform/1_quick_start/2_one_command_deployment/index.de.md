@@ -118,6 +118,7 @@ OAUTH_CLIENT_SECRET="REPLACE_WITH_YOUR_CLIENT_SECRET"
 OAUTH_AUTHORITY_URL="https://login.microsoftonline.com/REPLACE_WITH_YOUR_TENANT_ID"
 OAUTH_PROVIDER_NAME="azure"
 OAUTH_TENANT_ID="REPLACE_WITH_YOUR_TENANT_ID"
+OAUTH_COOKIE_SECRET="REPLACE_WITH_16_HEX_CHARS"
 OAUTH_COOKIE_SECRET_DAGSTER="REPLACE_WITH_16_HEX_CHARS"
 OAUTH_COOKIE_SECRET_SEAWEEDFS="REPLACE_WITH_16_HEX_CHARS"
 OAUTH_COOKIE_SECRET_ATTU="REPLACE_WITH_16_HEX_CHARS"
@@ -290,9 +291,7 @@ Verwenden Sie diese Befehle, um sichere zufällige Zeichenketten zu generieren:
 openssl rand -hex 32
 
 # For OAuth cookie secrets (32 characters each - generate separately for each service)
-openssl rand -hex 16  # For OAUTH_COOKIE_SECRET_DAGSTER
-openssl rand -hex 16  # For OAUTH_COOKIE_SECRET_SEAWEEDFS
-openssl rand -hex 16  # For OAUTH_COOKIE_SECRET_ATTU
+openssl rand -hex 16  # For OAUTH_COOKIE_SECRET, OAUTH_COOKIE_SECRET_DAGSTER, ...
 ```
 
 Führen Sie den entsprechenden Befehl für jeden Platzhalter aus.
