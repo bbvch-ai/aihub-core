@@ -14,73 +14,10 @@ from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 
 from aihub_api.routes.openai.OpenaiController import OpenaiController
-from aihub_api.routes.user.UserController import UserController
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 BASE_URL = "http://test"
-USAGE_ENDPOINT = "/api/v1/users/me/usage"
 CHAT_ENDPOINT = "/api/v1/openai/chat/completions"
-
-
-@pytest_asyncio.fixture(scope="function")
-async def api_client_with_usage():
-    """Create an API client with UserController and OpenaiController endpoints mounted."""
-    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
-    user_controller = UserController(auth=auth).get_my_usage()
-    runner = ApiTestRunner()
-    runner.mount(user_controller)
-    app = runner.create_app()
-
-    async with LifespanManager(app) as lifespan:
-        async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
-            yield client
-
-
-@pytest.mark.asyncio
-@patch("aihub_api.routes.user.UserService.UsageLimitService")
-async def test_usage_endpoint_returns_status(mock_usage_service: MagicMock, api_client_with_usage: AsyncClient):
-    """Test GET /users/me/usage returns usage status."""
-    mock_usage_service.get_usage_status = AsyncMock(
-        return_value=UsageStatus(
-            current_count=42,
-            limit=100,
-            period="1d",
-            reset_at=None,
-            is_exceeded=False,
-        )
-    )
-
-    response = await api_client_with_usage.get(USAGE_ENDPOINT)
-    assert response.status_code == 200, f"Response: {response.text}"
-    data = response.json()
-
-    assert data["current_count"] == 42
-    assert data["limit"] == 100
-    assert data["period"] == "1d"
-    assert data["is_exceeded"] is False
-
-
-@pytest.mark.asyncio
-@patch("aihub_api.routes.user.UserService.UsageLimitService")
-async def test_usage_endpoint_returns_unlimited(mock_usage_service: MagicMock, api_client_with_usage: AsyncClient):
-    """Test GET /users/me/usage returns unlimited status."""
-    mock_usage_service.get_usage_status = AsyncMock(
-        return_value=UsageStatus(
-            current_count=0,
-            limit=None,
-            period=None,
-            reset_at=None,
-            is_exceeded=False,
-        )
-    )
-
-    response = await api_client_with_usage.get(USAGE_ENDPOINT)
-    assert response.status_code == 200, f"Response: {response.text}"
-    data = response.json()
-
-    assert data["limit"] is None
-    assert data["period"] is None
-    assert data["is_exceeded"] is False
 
 
 class TestUsageLimitEnforcement:

@@ -1,15 +1,12 @@
 from typing import TYPE_CHECKING
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.auth.usage import UsageLimitService
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.user.UserEntity import Dashboard, DashboardItem, UserEntity
 from mongoengine import DoesNotExist
 from nats.aio.client import Client as NATS
-from redis.asyncio import Redis
 
 from aihub_api.routes.user.dto.Dashboard.DashboardDTO import DashboardDTO
-from aihub_api.routes.user.dto.UsageStatusDTO import UsageStatusDTO
 from aihub_api.routes.user.dto.UserDTO import UserDTO
 from aihub_api.routes.user.dto.UserWithAccessDTO import UserWithAccessDTO
 
@@ -110,10 +107,3 @@ class UserService:
         user_entity.dashboard = Dashboard(children=dashboard_items, **dashboard_data_dict)
         user_entity.save()
 
-    @staticmethod
-    async def get_user_usage(
-        redis: Redis, user: UserIdentity, agent_path: str | None = None
-    ) -> UsageStatusDTO:
-        """Get the current usage status for the authenticated user."""
-        status = await UsageLimitService.get_usage_status(redis, user.id, user.roles, agent_path=agent_path)
-        return UsageStatusDTO.from_usage_status(status, agent_path=agent_path)

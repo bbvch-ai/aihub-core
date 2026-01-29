@@ -4,19 +4,16 @@ from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.infrastructure.redis.use_redis import use_redis
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
-from fastapi import Body, Depends, Path, Query, Security
+from fastapi import Body, Depends, Path, Security
 from nats.aio.client import Client as NATS
-from redis.asyncio import Redis
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.pagination.type.PageNumber import PageNumber
 from aihub_api.pagination.type.PageSize import PageSize
 from aihub_api.routes.user.dto.Dashboard.DashboardDTO import DashboardDTO
 from aihub_api.routes.user.dto.PaginatedUsersResponse import PaginatedUsersResponse
-from aihub_api.routes.user.dto.UsageStatusDTO import UsageStatusDTO
 from aihub_api.routes.user.dto.UserWithAccessDTO import UserWithAccessDTO
 from aihub_api.routes.user.UserService import UserService
 
@@ -139,22 +136,3 @@ class UserController(Controller):
 
         return self
 
-    def get_my_usage(self, route: str = "/me/usage") -> "UserController":
-        """
-        Registers an endpoint to retrieve the currently logged-in user's usage status.
-        """
-
-        @self.router.get(route, tags=self.tags)
-        async def get_my_usage(
-            redis: Annotated[Redis, Depends(use_redis)],
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
-            agent_path: Annotated[str | None, Query(description="Optional agent path (e.g. 'LLMWrappingAgent.my_agent') to get per-agent usage.")] = None,
-        ) -> UsageStatusDTO:
-            """
-            Returns the current usage status for the logged-in user, including
-            agent call count, limit, period, and reset time.
-            Optionally filtered by agent_path for pattern-based limits.
-            """
-            return await UserService.get_user_usage(redis, user, agent_path=agent_path)
-
-        return self

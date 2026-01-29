@@ -9862,7 +9862,7 @@ export const LLMEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/aihub_lib__nats__events__semantic__llm__Message__Message'
+                        '$ref': '#/components/schemas/Message'
                     },
                     type: 'array'
                 },
@@ -9877,7 +9877,7 @@ export const LLMEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/aihub_lib__nats__events__semantic__llm__Message__Message'
+                        '$ref': '#/components/schemas/Message'
                     },
                     type: 'array'
                 },
@@ -10088,7 +10088,7 @@ export const LLMStopEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/aihub_lib__nats__events__semantic__llm__Message__Message'
+                        '$ref': '#/components/schemas/Message'
                     },
                     type: 'array'
                 },
@@ -10103,7 +10103,7 @@ export const LLMStopEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/aihub_lib__nats__events__semantic__llm__Message__Message'
+                        '$ref': '#/components/schemas/Message'
                     },
                     type: 'array'
                 },
@@ -10305,7 +10305,7 @@ export const LLMStopEventOutputSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/Message'
+                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__Message'
                     },
                     type: 'array'
                 },
@@ -10320,7 +10320,7 @@ export const LLMStopEventOutputSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/Message'
+                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__Message'
                     },
                     type: 'array'
                 },
@@ -10532,53 +10532,6 @@ Used during deserialization to decide which subclass to instantiate.`,
     required: ['limited_history', '_event_name', '_parent_event_names'],
     title: 'LimitChatHistoryEvent',
     description: 'Limits the chat messages based on number of input tokens.'
-} as const;
-
-export const LimitStatusDTOSchema = {
-    properties: {
-        pattern: {
-            type: 'string',
-            title: 'Pattern',
-            description: 'The matched pattern for this limit.'
-        },
-        limit: {
-            type: 'integer',
-            title: 'Limit',
-            description: 'Maximum agent calls allowed per period.'
-        },
-        period: {
-            type: 'string',
-            title: 'Period',
-            description: 'The period for the limit: 1h, 1d, 7d, 1mo.'
-        },
-        current_count: {
-            type: 'integer',
-            title: 'Current Count',
-            description: 'Current number of agent calls in this period.'
-        },
-        reset_at: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Reset At',
-            description: 'When the usage counter resets.'
-        },
-        is_exceeded: {
-            type: 'boolean',
-            title: 'Is Exceeded',
-            description: 'Whether this specific limit has been exceeded.'
-        }
-    },
-    type: 'object',
-    required: ['pattern', 'limit', 'period', 'current_count', 'reset_at', 'is_exceeded'],
-    title: 'LimitStatusDTO',
-    description: "Response model for a single effective limit's status."
 } as const;
 
 export const ListboxSchema = {
@@ -11227,7 +11180,8 @@ export const MessageSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/tool_calls'
+                        additionalProperties: true,
+                        type: 'object'
                     },
                     type: 'array'
                 },
@@ -11253,12 +11207,14 @@ export const MessageSchema = {
         function_call_arguments_json: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/function_call_arguments_json'
+                    additionalProperties: true,
+                    type: 'object'
                 },
                 {
                     type: 'null'
                 }
             ],
+            title: 'Function Call Arguments Json',
             description: 'JSON representing arguments passed to the function during a function call.'
         },
         tool_call_id: {
@@ -11297,10 +11253,15 @@ export const MessageSchema = {
             ],
             title: 'Contents',
             description: 'The message contents as an array of content blocks (text, image, audio).'
+        },
+        content: {
+            type: 'string',
+            title: 'Content',
+            readOnly: true
         }
     },
     type: 'object',
-    required: ['role'],
+    required: ['role', 'content'],
     title: 'Message'
 } as const;
 
@@ -11590,7 +11551,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1769700914
+            default: 1769705651
         },
         owned_by: {
             type: 'string',
@@ -17721,40 +17682,6 @@ export const UsageLimitDTOSchema = {
     description: 'Pattern-based usage limit rule.'
 } as const;
 
-export const UsageStatusDTOSchema = {
-    properties: {
-        limits: {
-            items: {
-                '$ref': '#/components/schemas/LimitStatusDTO'
-            },
-            type: 'array',
-            title: 'Limits',
-            description: 'All matching limits with their current status.'
-        },
-        is_exceeded: {
-            type: 'boolean',
-            title: 'Is Exceeded',
-            description: 'Whether any usage limit has been exceeded.'
-        },
-        agent_path: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Agent Path',
-            description: 'The agent path this status refers to, if any.'
-        }
-    },
-    type: 'object',
-    required: ['limits', 'is_exceeded'],
-    title: 'UsageStatusDTO',
-    description: "Response model representing a user's current usage status across all matching limits."
-} as const;
-
 export const UsageTokensSchema = {
     properties: {
         input_tokens: {
@@ -18490,7 +18417,43 @@ export const additional_location_infoSchema = {
     title: 'additional_location_info'
 } as const;
 
-export const aihub_lib__nats__events__semantic__llm__Message__MessageSchema = {
+export const aihub_lib__nats__events__user__UserUploadedFile__UserUploadedFileSchema = {
+    properties: {
+        filename: {
+            type: 'string',
+            title: 'Filename',
+            description: 'The name of the uploaded file, including the extension.'
+        },
+        file_data: {
+            type: 'string',
+            title: 'File Data',
+            description: 'Base64 encoded content of the uploaded file.'
+        },
+        file_type: {
+            type: 'string',
+            title: 'File Type',
+            description: 'The MIME type of the uploaded file.',
+            examples: ['image/png', 'application/pdf']
+        }
+    },
+    type: 'object',
+    required: ['filename', 'file_data', 'file_type'],
+    title: 'UserUploadedFile'
+} as const;
+
+export const function_call_arguments_jsonSchema = {
+    properties: {},
+    type: 'object',
+    title: 'function_call_arguments_json'
+} as const;
+
+export const invocation_parametersSchema = {
+    properties: {},
+    type: 'object',
+    title: 'invocation_parameters'
+} as const;
+
+export const jambo__parser__object_type_parser__MessageSchema = {
     properties: {
         role: {
             type: 'string',
@@ -18513,8 +18476,7 @@ export const aihub_lib__nats__events__semantic__llm__Message__MessageSchema = {
             anyOf: [
                 {
                     items: {
-                        additionalProperties: true,
-                        type: 'object'
+                        '$ref': '#/components/schemas/tool_calls'
                     },
                     type: 'array'
                 },
@@ -18540,14 +18502,12 @@ export const aihub_lib__nats__events__semantic__llm__Message__MessageSchema = {
         function_call_arguments_json: {
             anyOf: [
                 {
-                    additionalProperties: true,
-                    type: 'object'
+                    '$ref': '#/components/schemas/function_call_arguments_json'
                 },
                 {
                     type: 'null'
                 }
             ],
-            title: 'Function Call Arguments Json',
             description: 'JSON representing arguments passed to the function during a function call.'
         },
         tool_call_id: {
@@ -18586,52 +18546,11 @@ export const aihub_lib__nats__events__semantic__llm__Message__MessageSchema = {
             ],
             title: 'Contents',
             description: 'The message contents as an array of content blocks (text, image, audio).'
-        },
-        content: {
-            type: 'string',
-            title: 'Content',
-            readOnly: true
         }
     },
     type: 'object',
-    required: ['role', 'content'],
+    required: ['role'],
     title: 'Message'
-} as const;
-
-export const aihub_lib__nats__events__user__UserUploadedFile__UserUploadedFileSchema = {
-    properties: {
-        filename: {
-            type: 'string',
-            title: 'Filename',
-            description: 'The name of the uploaded file, including the extension.'
-        },
-        file_data: {
-            type: 'string',
-            title: 'File Data',
-            description: 'Base64 encoded content of the uploaded file.'
-        },
-        file_type: {
-            type: 'string',
-            title: 'File Type',
-            description: 'The MIME type of the uploaded file.',
-            examples: ['image/png', 'application/pdf']
-        }
-    },
-    type: 'object',
-    required: ['filename', 'file_data', 'file_type'],
-    title: 'UserUploadedFile'
-} as const;
-
-export const function_call_arguments_jsonSchema = {
-    properties: {},
-    type: 'object',
-    title: 'function_call_arguments_json'
-} as const;
-
-export const invocation_parametersSchema = {
-    properties: {},
-    type: 'object',
-    title: 'invocation_parameters'
 } as const;
 
 export const openai__types__chat__chat_completion_message_custom_tool_call_param__CustomSchema = {
