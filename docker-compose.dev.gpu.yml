@@ -686,6 +686,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: False
+      REDIS_TOKEN: ${REDIS_TOKEN}
     volumes:
       - ./configs/litellm/litellm-config.dev.gpu.yml:/app/config.yml
     command: --config /app/config.yml
@@ -1175,14 +1176,19 @@ services:
 # ===================================================================
 networks:
   proxy:
+    name: proxy
     driver: bridge
   backend:
+    name: backend
     driver: bridge
   data:
+    name: data
     driver: bridge
   storage:
+    name: storage
     driver: bridge
   egress:
+    name: egress
     # Network for services that need outbound internet access only (no ingress)
     # ICC disabled: containers on this network cannot communicate with each other
     driver: bridge

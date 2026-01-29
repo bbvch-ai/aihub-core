@@ -1048,6 +1048,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: False
+      REDIS_TOKEN: ${REDIS_TOKEN}
       {%- if not gpu_enabled %}
       DOCLING_API_KEY: ${DOCLING_API_KEY}
       {%- endif %}
@@ -1075,6 +1076,7 @@ services:
     {%- if stage != 'dev' %}
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.litellm.rule=Host(`litellm.${DOMAIN}`)"
       - "traefik.http.routers.litellm.entrypoints=websecure"
       - "traefik.http.routers.litellm.middlewares=security-headers@file"
@@ -1509,6 +1511,7 @@ services:
     {%- if stage != 'dev' %}
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       # --- Routers ---
       - "traefik.http.routers.openwebui-api-auth.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/api/v1/auths`)"
       - "traefik.http.routers.openwebui-api-auth.priority=7000"
@@ -1628,6 +1631,7 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.dagster.rule=Host(`dagster.${DOMAIN}`)"
       - "traefik.http.routers.dagster.entrypoints=websecure"
       - "traefik.http.routers.dagster.middlewares=security-headers@file"
@@ -1817,6 +1821,7 @@ services:
       {%- endif %}
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       # --- HTTP to HTTPS Redirect and ACME Challenge ---
       {%- if stage in ['latest', 'nightly'] %}
       - "traefik.http.routers.acme-challenge.rule=PathPrefix(`/.well-known/acme-challenge/`)"
@@ -1973,6 +1978,7 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/v1`)"
       - "traefik.http.routers.api.priority=6000"
       - "traefik.http.routers.api.entrypoints=websecure"
@@ -2027,6 +2033,7 @@ services:
       - proxy  # Static frontend only needs proxy access
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       # --- Routers ---
       - "traefik.http.routers.web-static.rule=Host(`${DOMAIN}`) && PathPrefix(`/_nuxt`)"
       - "traefik.http.routers.web-static.priority=2000"
@@ -2523,6 +2530,7 @@ services:
     {%- if stage not in ['dev'] %}
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.bot.rule=Host(`bot.${DOMAIN}`)"
       - "traefik.http.routers.bot.entrypoints=websecure"
       - "traefik.http.routers.bot.tls=true"
@@ -2553,23 +2561,28 @@ services:
 # ===================================================================
 networks:
   proxy:
+    name: proxy
     driver: bridge
   backend:
+    name: backend
     driver: bridge
     {%- if stage != 'dev' %}
     internal: true
     {%- endif %}
   data:
+    name: data
     driver: bridge
     {%- if stage != 'dev' %}
     internal: true
     {%- endif %}
   storage:
+    name: storage
     driver: bridge
     {%- if stage != 'dev' %}
     internal: true
     {%- endif %}
   egress:
+    name: egress
     # Network for services that need outbound internet access only (no ingress)
     # ICC disabled: containers on this network cannot communicate with each other
     driver: bridge
