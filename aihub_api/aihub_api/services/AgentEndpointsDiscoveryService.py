@@ -7,8 +7,10 @@ from typing import Annotated, override
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.auth.usage import UsageLimitService, build_exceeded_detail
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.no_trace import no_trace
+from aihub_lib.infrastructure.redis.use_redis import use_redis
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributor import (
     use_external_agent_event_distributor,
@@ -36,6 +38,7 @@ from fastapi import Body, Depends, FastAPI, HTTPException, Query, Security
 from mongoengine import DoesNotExist
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
+from redis.asyncio import Redis
 from starlette.responses import StreamingResponse
 from stringcase import snakecase
 
@@ -312,6 +315,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
 
         async def send_event(
             nc: Annotated[NATS, Depends(use_nats)],
+            redis: Annotated[Redis, Depends(use_redis)],
             start_event_input: Annotated[input_type, Body],
             external_agent_event_distributor: Annotated[
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
@@ -325,6 +329,13 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             t: LocaleHandler = Depends(use_locale),
         ) -> response_union_type:
             """Send a specific event type to a specific agent. Returns either a stop event or HITL request event."""
+            # Usage limit check for agent calls (pattern-based)
+            usage_status = await UsageLimitService.check_and_increment(
+                redis, user.id, user.roles, agent_path=f"{agent_class}.{agent_id}"
+            )
+            if usage_status.is_exceeded:
+                raise HTTPException(status_code=429, detail=build_exceeded_detail(usage_status))
+
             if thread_id is not None:
                 try:
                     thread = await ThreadService.get_thread_by_id(thread_id, t=t)
@@ -384,6 +395,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
 
         async def stream_event(
             nc: Annotated[NATS, Depends(use_nats)],
+            redis: Annotated[Redis, Depends(use_redis)],
             start_event_input: Annotated[input_type, Body],
             external_agent_event_distributor: Annotated[
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
@@ -397,6 +409,13 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             t: LocaleHandler = Depends(use_locale),
         ) -> StreamingResponse:
             """Send a specific event type to a specific agent and stream all events as SSE."""
+            # Usage limit check for agent calls (pattern-based)
+            usage_status = await UsageLimitService.check_and_increment(
+                redis, user.id, user.roles, agent_path=f"{agent_class}.{agent_id}"
+            )
+            if usage_status.is_exceeded:
+                raise HTTPException(status_code=429, detail=build_exceeded_detail(usage_status))
+
             if thread_id is not None:
                 try:
                     thread = await ThreadService.get_thread_by_id(thread_id, t=t)
@@ -457,15 +476,29 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 # Final event to signal stream end
                 yield "data: [DONE]\n\n"
 
+            # Build response headers
+            response_headers = {
+                "Cache-Control": "no-cache, no-store, must-revalidate, no-transform",
+                "X-Accel-Buffering": "no",
+                "Connection": "keep-alive",
+                "Content-Encoding": "identity",
+            }
+
+            # Add usage warning headers if approaching limit (80%+)
+            if usage_status.limit is not None and usage_status.current_count is not None:
+                usage_percentage = (usage_status.current_count / usage_status.limit) * 100
+                if usage_percentage >= 80:
+                    remaining = usage_status.limit - usage_status.current_count
+                    response_headers["X-Usage-Warning"] = "true"
+                    response_headers["X-Usage-Current"] = str(usage_status.current_count)
+                    response_headers["X-Usage-Limit"] = str(usage_status.limit)
+                    response_headers["X-Usage-Remaining"] = str(remaining)
+                    response_headers["X-Usage-Period"] = usage_status.period or ""
+
             return StreamingResponse(
                 sse_event_generator(),
                 media_type="text/event-stream",
-                headers={
-                    "Cache-Control": "no-cache, no-store, must-revalidate, no-transform",
-                    "X-Accel-Buffering": "no",
-                    "Connection": "keep-alive",
-                    "Content-Encoding": "identity",
-                },
+                headers=response_headers,
             )
 
         return stream_event

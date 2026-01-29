@@ -1,0 +1,564 @@
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
+from aihub_lib.auth.usage.UsageLimitService import (
+    PERIOD_SECONDS,
+    EffectiveLimit,
+    UsageLimitPeriod,
+    UsageLimitService,
+)
+
+
+P = "aihub.user.agent."
+
+
+class TestPatternMatching:
+    """Tests for UsageLimitService._pattern_matches"""
+
+    def test_wildcard_gt_matches_any_path(self):
+        assert UsageLimitService._pattern_matches(f"{P}>", f"{P}LLMWrappingAgent.dev_agent")
+
+    def test_wildcard_gt_matches_single_segment(self):
+        assert UsageLimitService._pattern_matches(f"{P}>", f"{P}LLMWrappingAgent")
+
+    def test_agent_class_gt_matches_any_agent_id(self):
+        assert UsageLimitService._pattern_matches(f"{P}LLMWrappingAgent.>", f"{P}LLMWrappingAgent.dev_agent")
+
+    def test_agent_class_gt_does_not_match_different_class(self):
+        assert not UsageLimitService._pattern_matches(f"{P}LLMWrappingAgent.>", f"{P}RagAgent.dev_agent")
+
+    def test_exact_match(self):
+        assert UsageLimitService._pattern_matches(f"{P}LLMWrappingAgent.dev_agent", f"{P}LLMWrappingAgent.dev_agent")
+
+    def test_exact_no_match(self):
+        assert not UsageLimitService._pattern_matches(f"{P}LLMWrappingAgent.dev_agent", f"{P}LLMWrappingAgent.other")
+
+    def test_star_matches_single_level(self):
+        assert UsageLimitService._pattern_matches(f"{P}LLMWrappingAgent.*", f"{P}LLMWrappingAgent.dev_agent")
+
+    def test_star_does_not_match_multi_level(self):
+        assert not UsageLimitService._pattern_matches(f"{P}*", f"{P}LLMWrappingAgent.dev_agent")
+
+    def test_gt_requires_at_least_one_segment(self):
+        assert UsageLimitService._pattern_matches(f"{P}>", f"{P}anything")
+
+
+class TestSpecificity:
+    """Tests for UsageLimitService._specificity"""
+
+    def test_gt_only(self):
+        assert UsageLimitService._specificity(f"{P}>") == 3  # aihub, user, agent
+
+    def test_class_gt(self):
+        assert UsageLimitService._specificity(f"{P}LLMWrappingAgent.>") == 4
+
+    def test_exact(self):
+        assert UsageLimitService._specificity(f"{P}LLMWrappingAgent.dev_agent") == 5
+
+    def test_star_not_counted(self):
+        assert UsageLimitService._specificity(f"{P}LLMWrappingAgent.*") == 4
+
+
+class TestGetEffectiveLimitsForRoles:
+    """Tests for UsageLimitService.get_effective_limits_for_roles"""
+
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    def test_unlimited_when_no_roles_have_limits(self, mock_role_entity: MagicMock):
+        mock_role_entity.get_usage_limits_for_roles.return_value = [[], []]
+
+        limits = UsageLimitService.get_effective_limits_for_roles(["role1", "role2"], agent_path="LLMWrappingAgent.dev")
+
+        assert limits == []
+
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    def test_returns_empty_when_no_roles(self, mock_role_entity: MagicMock):
+        mock_role_entity.get_usage_limits_for_roles.return_value = []
+
+        limits = UsageLimitService.get_effective_limits_for_roles([])
+
+        assert limits == []
+
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    def test_single_role_with_catchall(self, mock_role_entity: MagicMock):
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [(f"{P}>", 100, "1d")],
+        ]
+
+        limits = UsageLimitService.get_effective_limits_for_roles(
+            ["role1"], agent_path="LLMWrappingAgent.dev_agent"
+        )
+
+        assert len(limits) == 1
+        assert limits[0].limit == 100
+        assert limits[0].period == "1d"
+        assert limits[0].pattern == f"{P}>"
+
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    def test_all_matching_patterns_returned_independently(self, mock_role_entity: MagicMock):
+        """Both catchall and class-level patterns should be returned as independent limits."""
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [
+                (f"{P}>", 100, "1d"),
+                (f"{P}LLMWrappingAgent.>", 20, "1h"),
+            ],
+        ]
+
+        limits = UsageLimitService.get_effective_limits_for_roles(
+            ["role1"], agent_path="LLMWrappingAgent.dev_agent"
+        )
+
+        assert len(limits) == 2
+        patterns = {el.pattern for el in limits}
+        assert f"{P}>" in patterns
+        assert f"{P}LLMWrappingAgent.>" in patterns
+
+        catchall = next(el for el in limits if el.pattern == f"{P}>")
+        assert catchall.limit == 100
+        assert catchall.period == "1d"
+
+        class_level = next(el for el in limits if el.pattern == f"{P}LLMWrappingAgent.>")
+        assert class_level.limit == 20
+        assert class_level.period == "1h"
+
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    def test_same_pattern_across_roles_highest_limit_wins(self, mock_role_entity: MagicMock):
+        """For the same pattern across roles, take the highest limit."""
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [(f"{P}>", 50, "1d")],
+            [(f"{P}>", 200, "1d")],
+        ]
+
+        limits = UsageLimitService.get_effective_limits_for_roles(
+            ["role1", "role2"], agent_path="LLMWrappingAgent.dev_agent"
+        )
+
+        assert len(limits) == 1
+        assert limits[0].limit == 200
+        assert limits[0].period == "1d"
+
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    def test_different_patterns_across_roles_are_independent(self, mock_role_entity: MagicMock):
+        """
+        Role A: > = 50/day
+        Role B: > = 100/day, LLMWrappingAgent.> = 10/hour
+        Result: > = 100/day (highest), LLMWrappingAgent.> = 10/hour (only from B)
+        """
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [(f"{P}>", 50, "1d")],
+            [(f"{P}>", 100, "1d"), (f"{P}LLMWrappingAgent.>", 10, "1h")],
+        ]
+
+        limits = UsageLimitService.get_effective_limits_for_roles(
+            ["roleA", "roleB"], agent_path="LLMWrappingAgent.dev_agent"
+        )
+
+        assert len(limits) == 2
+        catchall = next(el for el in limits if el.pattern == f"{P}>")
+        assert catchall.limit == 100
+
+        class_level = next(el for el in limits if el.pattern == f"{P}LLMWrappingAgent.>")
+        assert class_level.limit == 10
+        assert class_level.period == "1h"
+
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    def test_no_matching_pattern_returns_empty(self, mock_role_entity: MagicMock):
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [(f"{P}RagAgent.>", 10, "1h")],
+        ]
+
+        limits = UsageLimitService.get_effective_limits_for_roles(
+            ["role1"], agent_path="LLMWrappingAgent.dev_agent"
+        )
+
+        assert limits == []
+
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    def test_no_agent_path_picks_most_permissive_rule(self, mock_role_entity: MagicMock):
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [(f"{P}>", 100, "1d"), (f"{P}LLMWrappingAgent.>", 20, "1h")],
+        ]
+
+        limits = UsageLimitService.get_effective_limits_for_roles(["role1"])
+
+        assert len(limits) == 1
+        assert limits[0].limit == 100
+        assert limits[0].period == "1d"
+
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    def test_role_without_limits_contributes_nothing(self, mock_role_entity: MagicMock):
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [(f"{P}>", 50, "1d")],
+            [],
+        ]
+
+        limits = UsageLimitService.get_effective_limits_for_roles(
+            ["role1", "role2"], agent_path="LLMWrappingAgent.dev_agent"
+        )
+
+        assert len(limits) == 1
+        assert limits[0].limit == 50
+
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    def test_three_levels_all_returned(self, mock_role_entity: MagicMock):
+        """Catchall + class-level + instance-level: all three are independent limits."""
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [
+                (f"{P}>", 100, "1d"),
+                (f"{P}LLMWrappingAgent.>", 50, "1d"),
+                (f"{P}LLMWrappingAgent.dev_agent", 10, "1h"),
+            ],
+        ]
+
+        limits = UsageLimitService.get_effective_limits_for_roles(
+            ["role1"], agent_path="LLMWrappingAgent.dev_agent"
+        )
+
+        assert len(limits) == 3
+        patterns = {el.pattern for el in limits}
+        assert f"{P}>" in patterns
+        assert f"{P}LLMWrappingAgent.>" in patterns
+        assert f"{P}LLMWrappingAgent.dev_agent" in patterns
+
+
+class TestGetEffectiveLimitForRolesLegacy:
+    """Tests for the legacy get_effective_limit_for_roles (single most specific)."""
+
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    def test_returns_most_specific(self, mock_role_entity: MagicMock):
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [
+                (f"{P}>", 100, "1d"),
+                (f"{P}LLMWrappingAgent.>", 20, "1h"),
+            ],
+        ]
+
+        limit, period, pattern = UsageLimitService.get_effective_limit_for_roles(
+            ["role1"], agent_path="LLMWrappingAgent.dev_agent"
+        )
+
+        assert limit == 20
+        assert period == "1h"
+        assert pattern == f"{P}LLMWrappingAgent.>"
+
+
+class TestGetUsageStatus:
+    """Tests for UsageLimitService.get_usage_status"""
+
+    @pytest.mark.asyncio
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    async def test_unlimited_user_returns_empty_limits(self, mock_role_entity: MagicMock):
+        mock_role_entity.get_usage_limits_for_roles.return_value = [[]]
+        redis = AsyncMock()
+
+        status = await UsageLimitService.get_usage_status(redis, "user123", ["admin"])
+
+        assert status.limits == []
+        assert status.is_exceeded is False
+        redis.get.assert_not_called()
+
+    @pytest.mark.asyncio
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    async def test_returns_all_matching_limits_with_counts(self, mock_role_entity: MagicMock):
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [(f"{P}>", 100, "1d"), (f"{P}LLMWrappingAgent.>", 10, "1h")]
+        ]
+        redis = AsyncMock()
+        redis.get.side_effect = [b"42", b"5"]
+        redis.ttl.side_effect = [3600, 1800]
+
+        status = await UsageLimitService.get_usage_status(
+            redis, "user123", ["user"], agent_path="LLMWrappingAgent.dev"
+        )
+
+        assert len(status.limits) == 2
+        assert status.is_exceeded is False
+
+    @pytest.mark.asyncio
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    async def test_exceeded_when_any_limit_at_capacity(self, mock_role_entity: MagicMock):
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [(f"{P}>", 100, "1d"), (f"{P}LLMWrappingAgent.>", 10, "1h")]
+        ]
+        redis = AsyncMock()
+        # catchall: 42/100 (ok), class: 10/10 (exceeded)
+        redis.get.side_effect = [b"42", b"10"]
+        redis.ttl.side_effect = [3600, 1800]
+
+        status = await UsageLimitService.get_usage_status(
+            redis, "user123", ["user"], agent_path="LLMWrappingAgent.dev"
+        )
+
+        assert status.is_exceeded is True
+        exceeded_limits = [ls for ls in status.limits if ls.is_exceeded]
+        assert len(exceeded_limits) == 1
+        assert exceeded_limits[0].pattern == f"{P}LLMWrappingAgent.>"
+
+
+class TestCheckAndIncrement:
+    """Tests for UsageLimitService.check_and_increment"""
+
+    @pytest.mark.asyncio
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    async def test_unlimited_does_not_increment(self, mock_role_entity: MagicMock):
+        mock_role_entity.get_usage_limits_for_roles.return_value = [[]]
+        redis = AsyncMock()
+
+        status = await UsageLimitService.check_and_increment(redis, "user123", ["admin"])
+
+        assert status.limits == []
+        assert status.is_exceeded is False
+        redis.incr.assert_not_called()
+
+    @pytest.mark.asyncio
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    async def test_increments_all_matching_counters(self, mock_role_entity: MagicMock):
+        """With catchall + class-level, BOTH Redis counters get incremented."""
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [(f"{P}>", 100, "1d"), (f"{P}LLMWrappingAgent.>", 20, "1h")]
+        ]
+        redis = AsyncMock()
+        redis.get.side_effect = [b"5", b"3"]
+        redis.incr.side_effect = [6, 4]
+        redis.ttl.return_value = 80000
+
+        status = await UsageLimitService.check_and_increment(
+            redis, "user1", ["role1"], agent_path="LLMWrappingAgent.dev"
+        )
+
+        assert len(status.limits) == 2
+        assert status.is_exceeded is False
+        assert redis.incr.call_count == 2
+        incr_keys = {call.args[0] for call in redis.incr.call_args_list}
+        assert f"usage:agent_calls:user1:{P}>:1d" in incr_keys
+        assert f"usage:agent_calls:user1:{P}LLMWrappingAgent.>:1h" in incr_keys
+
+    @pytest.mark.asyncio
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    async def test_does_not_increment_any_when_one_exceeded(self, mock_role_entity: MagicMock):
+        """If any limit is exceeded, NO counters get incremented."""
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [(f"{P}>", 100, "1d"), (f"{P}LLMWrappingAgent.>", 10, "1h")]
+        ]
+        redis = AsyncMock()
+        # catchall: 5/100 (ok), class: 10/10 (exceeded)
+        redis.get.side_effect = [b"5", b"10"]
+        redis.ttl.return_value = 1800
+
+        status = await UsageLimitService.check_and_increment(
+            redis, "user1", ["role1"], agent_path="LLMWrappingAgent.dev"
+        )
+
+        assert status.is_exceeded is True
+        redis.incr.assert_not_called()
+
+    @pytest.mark.asyncio
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    async def test_sets_ttl_on_first_increment(self, mock_role_entity: MagicMock):
+        mock_role_entity.get_usage_limits_for_roles.return_value = [[(f"{P}>", 100, "1d")]]
+        redis = AsyncMock()
+        redis.get.return_value = None
+        redis.incr.return_value = 1
+        redis.ttl.return_value = PERIOD_SECONDS["1d"]
+
+        await UsageLimitService.check_and_increment(
+            redis, "user123", ["user"], agent_path="LLMWrappingAgent.dev"
+        )
+
+        redis.expire.assert_called_once_with(f"usage:agent_calls:user123:{P}>:1d", PERIOD_SECONDS["1d"])
+
+    @pytest.mark.asyncio
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    async def test_sets_ttl_on_all_counters_on_first_increment(self, mock_role_entity: MagicMock):
+        """Both counters get TTL set when both are new (count=1)."""
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [(f"{P}>", 100, "1d"), (f"{P}LLMWrappingAgent.>", 20, "1h")]
+        ]
+        redis = AsyncMock()
+        redis.get.side_effect = [None, None]
+        redis.incr.side_effect = [1, 1]
+        redis.ttl.return_value = 3600
+
+        await UsageLimitService.check_and_increment(
+            redis, "user1", ["role1"], agent_path="LLMWrappingAgent.dev"
+        )
+
+        assert redis.expire.call_count == 2
+
+
+class TestMultiRoleWithIndependentLimits:
+    """Multi-role scenarios with independent limits."""
+
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    def test_same_pattern_across_roles_highest_wins(self, mock_role_entity: MagicMock):
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [(f"{P}>", 50, "1d")],
+            [(f"{P}>", 200, "1d")],
+        ]
+
+        limits = UsageLimitService.get_effective_limits_for_roles(
+            ["roleA", "roleB"], agent_path="LLMWrappingAgent.dev_agent"
+        )
+
+        assert len(limits) == 1
+        assert limits[0].limit == 200
+
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    def test_different_patterns_stay_independent(self, mock_role_entity: MagicMock):
+        """
+        Role A: > = 50/day, LLMWrappingAgent.> = 10/hour
+        Role B: > = 100/day
+        Result: > = 100/day, LLMWrappingAgent.> = 10/hour
+        """
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [(f"{P}>", 50, "1d"), (f"{P}LLMWrappingAgent.>", 10, "1h")],
+            [(f"{P}>", 100, "1d")],
+        ]
+
+        limits = UsageLimitService.get_effective_limits_for_roles(
+            ["roleA", "roleB"], agent_path="LLMWrappingAgent.dev_agent"
+        )
+
+        assert len(limits) == 2
+        catchall = next(el for el in limits if el.pattern == f"{P}>")
+        assert catchall.limit == 100
+
+        class_level = next(el for el in limits if el.pattern == f"{P}LLMWrappingAgent.>")
+        assert class_level.limit == 10
+
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    def test_three_roles_highest_per_pattern(self, mock_role_entity: MagicMock):
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [(f"{P}>", 10, "1d")],
+            [(f"{P}>", 500, "1d")],
+            [(f"{P}>", 100, "1d")],
+        ]
+
+        limits = UsageLimitService.get_effective_limits_for_roles(
+            ["r1", "r2", "r3"], agent_path="LLMWrappingAgent.dev_agent"
+        )
+
+        assert len(limits) == 1
+        assert limits[0].limit == 500
+
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    def test_both_roles_no_limits_means_unlimited(self, mock_role_entity: MagicMock):
+        mock_role_entity.get_usage_limits_for_roles.return_value = [[], []]
+
+        limits = UsageLimitService.get_effective_limits_for_roles(
+            ["roleA", "roleB"], agent_path="LLMWrappingAgent.dev_agent"
+        )
+
+        assert limits == []
+
+
+class TestCheckAndIncrementIntegration:
+    """End-to-end check_and_increment with multi-limit enforcement."""
+
+    @pytest.mark.asyncio
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    async def test_increments_all_counters_when_none_exceeded(self, mock_role_entity: MagicMock):
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [(f"{P}>", 100, "1d"), (f"{P}LLMWrappingAgent.>", 20, "1h")],
+        ]
+        redis = AsyncMock()
+        redis.get.side_effect = [b"3", b"5"]
+        redis.incr.side_effect = [4, 6]
+        redis.ttl.return_value = 80000
+
+        status = await UsageLimitService.check_and_increment(
+            redis, "user1", ["role1"], agent_path="LLMWrappingAgent.dev_agent"
+        )
+
+        assert status.is_exceeded is False
+        assert redis.incr.call_count == 2
+
+    @pytest.mark.asyncio
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    async def test_blocks_when_class_level_exceeded_catchall_ok(self, mock_role_entity: MagicMock):
+        """Even though catchall has room, class-level exceeded blocks the call."""
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [(f"{P}>", 100, "1d"), (f"{P}LLMWrappingAgent.>", 10, "1h")],
+        ]
+        redis = AsyncMock()
+        redis.get.side_effect = [b"5", b"10"]  # catchall ok, class exceeded
+        redis.ttl.return_value = 1800
+
+        status = await UsageLimitService.check_and_increment(
+            redis, "user1", ["role1"], agent_path="LLMWrappingAgent.dev_agent"
+        )
+
+        assert status.is_exceeded is True
+        redis.incr.assert_not_called()
+
+    @pytest.mark.asyncio
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    async def test_multi_role_highest_limit_applied_per_pattern(self, mock_role_entity: MagicMock):
+        """Two roles with same catchall → highest wins, both limits enforced."""
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [(f"{P}>", 50, "1d")],
+            [(f"{P}>", 200, "1d")],
+        ]
+        redis = AsyncMock()
+        redis.get.return_value = b"60"  # 60 < 200, ok
+        redis.incr.return_value = 61
+        redis.ttl.return_value = 70000
+
+        status = await UsageLimitService.check_and_increment(
+            redis, "user1", ["roleA", "roleB"], agent_path="LLMWrappingAgent.dev_agent"
+        )
+
+        assert status.is_exceeded is False
+        assert len(status.limits) == 1
+        assert status.limits[0].limit == 200
+        assert status.limits[0].current_count == 61
+
+
+class TestBackwardCompatProperties:
+    """Test backward-compat properties on UsageStatus."""
+
+    @pytest.mark.asyncio
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    async def test_limit_property_returns_most_restrictive(self, mock_role_entity: MagicMock):
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [(f"{P}>", 100, "1d"), (f"{P}LLMWrappingAgent.>", 10, "1h")]
+        ]
+        redis = AsyncMock()
+        redis.get.side_effect = [b"42", b"9"]
+        redis.ttl.return_value = 3600
+
+        status = await UsageLimitService.get_usage_status(
+            redis, "user1", ["role1"], agent_path="LLMWrappingAgent.dev"
+        )
+
+        # 9/10 = 0.9 ratio vs 42/100 = 0.42 ratio → class-level is most restrictive
+        assert status.limit == 10
+        assert status.period == "1h"
+        assert status.current_count == 9
+
+    @pytest.mark.asyncio
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    async def test_properties_return_none_when_unlimited(self, mock_role_entity: MagicMock):
+        mock_role_entity.get_usage_limits_for_roles.return_value = [[]]
+        redis = AsyncMock()
+
+        status = await UsageLimitService.get_usage_status(redis, "user1", ["admin"])
+
+        assert status.limit is None
+        assert status.period is None
+        assert status.current_count == 0
+        assert status.reset_at is None
+
+
+class TestPeriodConstants:
+    """Tests for period duration constants."""
+
+    def test_all_periods_have_durations(self):
+        for period in UsageLimitPeriod:
+            assert period.value in PERIOD_SECONDS
+
+    def test_period_durations_are_correct(self):
+        assert PERIOD_SECONDS["1h"] == 3600
+        assert PERIOD_SECONDS["1d"] == 86400
+        assert PERIOD_SECONDS["7d"] == 604800
+        assert PERIOD_SECONDS["1mo"] == 2592000

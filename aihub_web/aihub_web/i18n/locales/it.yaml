@@ -485,6 +485,13 @@ role:
   is_new: "Nuovo"
   save_button: "Salva"
   access_rules: "Regole di accesso"
+  usage_limits: "Limiti di utilizzo"
+  usage_pattern: "Modello"
+  usage_limit_value: "Limite"
+  usage_period: "Periodo"
+  calls_per: "chiamate"
+  unlimited: "Illimitato"
+  no_access_rules: "Nessuna regola di accesso definita"
   create_dialog:
     description: "Crea un nuovo ruolo con regole di accesso. Per assegnare il nuovo ruolo agli utenti, utilizza il tuo AD."
   remove_dialog:
@@ -498,6 +505,20 @@ role:
   role_saved:
     summary: "Ruolo salvato"
     detail: "Ruolo salvato con successo, le nuove regole di accesso hanno effetto immediato."
+
+usage:
+  title: "Utilizzo"
+  calls_remaining: "{current} / {limit} chiamate agente"
+  unlimited_calls: "Chiamate agente illimitate"
+  resets_at: "Reset {time}"
+  limit_exceeded: "Limite chiamate agente raggiunto"
+  limit_exceeded_detail: "Attendere fino a {time} o contattare l'amministratore"
+
+period:
+  1h: "All'ora"
+  1d: "Al giorno"
+  7d: "Alla settimana"
+  1mo: "Al mese"
 
 notification:
   title: "Notifiche"

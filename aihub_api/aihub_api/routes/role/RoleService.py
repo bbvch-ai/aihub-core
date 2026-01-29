@@ -1,5 +1,6 @@
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
+from aihub_lib.auth.usage.UsageLimitService import PATTERN_PREFIX
+from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity, UsageLimit
 
 from aihub_api.routes.role.dto.CreateRoleRequest import CreateRoleRequest
 from aihub_api.routes.role.dto.RoleResponse import RoleResponse
@@ -14,7 +15,15 @@ class RoleService:
         Creates a new role.
         Raises NotUniqueError if a role with the same name already exists.
         """
-        role = RoleEntity(name=data.name, description=data.description, access_rules=data.access_rules)
+        role = RoleEntity(
+            name=data.name,
+            description=data.description,
+            access_rules=data.access_rules,
+            usage_limits=[
+                UsageLimit(pattern=PATTERN_PREFIX + ul.pattern, limit=ul.limit, period=ul.period)
+                for ul in data.usage_limits
+            ],
+        )
         role.save()
         return RoleResponse.from_role_entity(role)
 
@@ -47,6 +56,12 @@ class RoleService:
         update_data = data.model_dump(exclude_unset=True)
         if not update_data:
             return RoleResponse.from_role_entity(role)
+
+        if "usage_limits" in update_data:
+            update_data["usage_limits"] = [
+                UsageLimit(pattern=PATTERN_PREFIX + ul["pattern"], limit=ul["limit"], period=ul["period"])
+                for ul in update_data["usage_limits"]
+            ]
 
         role.modify(**update_data)
         role.reload()

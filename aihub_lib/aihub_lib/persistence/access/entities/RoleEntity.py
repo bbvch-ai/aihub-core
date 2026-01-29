@@ -1,8 +1,16 @@
 from __future__ import annotations
 
-from mongoengine import Document, ListField, StringField
+from mongoengine import Document, EmbeddedDocument, EmbeddedDocumentListField, IntField, ListField, StringField
 
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+
+
+class UsageLimit(EmbeddedDocument):
+    """Pattern-based usage limit rule (NATS-style wildcards: * single-level, > multi-level)."""
+
+    pattern = StringField(required=True)
+    limit = IntField(required=True)
+    period = StringField(required=True, choices=["1h", "1d", "7d", "1mo"])
 
 
 class RoleEntity(Document):
@@ -21,6 +29,7 @@ class RoleEntity(Document):
     name = StringField(required=True, unique=True)
     description = StringField(required=True)
     access_rules = ListField(StringField(), default=list)
+    usage_limits = EmbeddedDocumentListField(UsageLimit, default=list)
 
     @classmethod
     @trace_fn
@@ -54,3 +63,13 @@ class RoleEntity(Document):
         """
         existing_roles_query = RoleEntity.objects(name__in=role_names).only("name")
         return [role.name for role in existing_roles_query]
+
+    @classmethod
+    @trace_fn
+    def get_usage_limits_for_roles(cls, role_names: list[str]) -> list[list[tuple[str, int, str]]]:
+        """
+        Returns a list of usage_limits per role. Each element is a list of (pattern, limit, period) tuples
+        for one role. Roles without usage_limits return an empty list.
+        """
+        roles = cls.objects(name__in=role_names).only("usage_limits")
+        return [[(ul.pattern, ul.limit, ul.period) for ul in role.usage_limits] for role in roles]

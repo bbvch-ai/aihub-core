@@ -44,7 +44,13 @@ async def main():
     runner.mount(
         ApiHealthController(auth=auth).get_health().get_ready(),
         SuiteController(auth=auth).get_suite(),
-        UserController(auth=auth).get_my_user().get_user().get_users().get_my_dashboard().update_my_dashboard(),
+        UserController(auth=auth)
+        .get_my_user()
+        .get_user()
+        .get_users()
+        .get_my_dashboard()
+        .update_my_dashboard()
+        .get_my_usage(),
         I18nController(auth=auth).get_my_locale(),
         EventController(auth=auth).ws().get_agent_events_in_thread().get_agent_event_timeseries(),
         ThreadController(auth=auth)

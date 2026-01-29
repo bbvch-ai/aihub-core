@@ -962,6 +962,10 @@ class EventProcessorFactory:
 class StreamingService:
     """Manages streaming operations and SSE processing"""
 
+    # Supported languages for error messages
+    SUPPORTED_LANGUAGES = {"en", "de", "fr", "it"}
+    DEFAULT_LANGUAGE = "en"
+
     def __init__(
         self,
         base_url: Annotated[str, "AI-Hub base URL"],
@@ -970,6 +974,25 @@ class StreamingService:
         self._base_url = base_url
         self._timeout = timeout
         self._event_processor = EventProcessorFactory.create_chain()
+
+    @staticmethod
+    def detect_language(accept_language: Annotated[str | None, "Accept-Language header value"]) -> str:
+        """
+        Detect preferred language from Accept-Language header.
+        Returns the best matching supported language or default (en).
+        """
+        if not accept_language:
+            return StreamingService.DEFAULT_LANGUAGE
+
+        # Parse Accept-Language header (e.g., "de-CH,de;q=0.9,en;q=0.8")
+        for part in accept_language.split(","):
+            lang = part.split(";")[0].strip().lower()
+            # Extract base language (e.g., "de-CH" -> "de")
+            base_lang = lang.split("-")[0]
+            if base_lang in StreamingService.SUPPORTED_LANGUAGES:
+                return base_lang
+
+        return StreamingService.DEFAULT_LANGUAGE
 
     def build_endpoint_url(
         self,
@@ -997,6 +1020,7 @@ class StreamingService:
         event_caller: Annotated[EventCaller, "Event caller function"],
         state_manager: Annotated[StreamingStateManager, "State manager"],
         stream_start_callback: Annotated[Callable | None, "Stream start callback"] = None,
+        preferred_lang: Annotated[str, "Preferred language for error messages"] = "en",
     ) -> None:
         """Stream an event and process responses"""
         endpoint_url = self.build_endpoint_url(agent_class, agent_id, event_name, thread_id, display_id)
@@ -1017,26 +1041,45 @@ class StreamingService:
 
         async with httpx.AsyncClient(timeout=None, follow_redirects=True) as client:
             try:
-                await self._process_stream(
+                result = await self._process_stream(
                     client,
                     endpoint_url,
                     event_payload,
                     headers,
                     context,
                     stream_start_callback,
+                    preferred_lang,
                 )
-                # Finalize any open blocks when stream ends normally
-                state_manager.finalize_all_blocks()
-                # Emit final state if there were unclosed blocks
-                await event_emitter(
-                    {
-                        "type": "replace",
-                        "data": {"content": state_manager.serialize_to_html()},
-                    }
-                )
-            except httpx.HTTPStatusError as e:
-                state_manager.finalize_all_blocks()
-                await self._handle_http_error(e, event_emitter)
+
+                if result and result.get("type") == "error":
+                    # HTTP error occurred - handle it
+                    state_manager.finalize_all_blocks()
+                    await self._handle_http_error_from_info(result, event_emitter)
+                else:
+                    # Finalize any open blocks when stream ends normally
+                    state_manager.finalize_all_blocks()
+                    # Emit final state if there were unclosed blocks
+                    await event_emitter(
+                        {
+                            "type": "replace",
+                            "data": {"content": state_manager.serialize_to_html()},
+                        }
+                    )
+
+                    # Show usage warning if approaching limit
+                    if result and result.get("type") == "usage_warning":
+                        remaining = result.get("remaining", "?")
+                        limit = result.get("limit", "?")
+                        current = result.get("current", "?")
+                        period = result.get("period", "?")
+                        await event_emitter(
+                            {
+                                "type": "chat:message:delta",
+                                "data": {
+                                    "content": f"\n\n> [!WARNING]\n> ⚠️ **Usage limit warning:** {remaining} calls remaining ({current}/{limit} per {period})\n"
+                                },
+                            }
+                        )
             except Exception as e:
                 state_manager.finalize_all_blocks()
                 await self._handle_general_error(e, event_emitter)
@@ -1049,10 +1092,31 @@ class StreamingService:
         headers: Annotated[dict[str, str], "Request headers"],
         context: Annotated[EventContext, "Processing context"],
         stream_start_callback: Annotated[Callable | None, "Stream start callback"] = None,
-    ) -> None:
-        """Process the SSE stream"""
+        preferred_lang: Annotated[str, "Preferred language for errors"] = "en",
+    ) -> Annotated[dict[str, Any] | None, "Error info or usage warning info, None on success without warning"]:
+        """Process the SSE stream. Returns dict with error or usage_warning info, None on plain success."""
         async with client.stream("POST", url, json=payload, headers=headers) as response:
-            response.raise_for_status()
+            # Check for error status codes before processing stream
+            if response.status_code >= 400:
+                # Read error body while still in context
+                error_body = await response.aread()
+                return {
+                    "type": "error",
+                    "status_code": response.status_code,
+                    "body": error_body.decode(),
+                    "preferred_lang": preferred_lang,
+                }
+
+            # Check for usage warning headers
+            usage_warning = None
+            if response.headers.get("X-Usage-Warning") == "true":
+                usage_warning = {
+                    "type": "usage_warning",
+                    "current": response.headers.get("X-Usage-Current"),
+                    "limit": response.headers.get("X-Usage-Limit"),
+                    "remaining": response.headers.get("X-Usage-Remaining"),
+                    "period": response.headers.get("X-Usage-Period"),
+                }
 
             if stream_start_callback:
                 await stream_start_callback()
@@ -1060,6 +1124,8 @@ class StreamingService:
             async for line in response.aiter_lines():
                 if not await self._process_line(line, context):
                     break
+
+        return usage_warning
 
     async def _process_line(
         self,
@@ -1091,18 +1157,62 @@ class StreamingService:
             logger.exception(f"Error processing event: {e}")
             return True
 
-    async def _handle_http_error(
+    async def _handle_http_error_from_info(
         self,
-        error: Annotated[httpx.HTTPStatusError, "HTTP error"],
+        error_info: Annotated[dict[str, Any], "Error info with status_code, body, preferred_lang"],
         emitter: Annotated[EventEmitter, "Event emitter"],
     ) -> None:
-        """Handle HTTP errors"""
-        error_msg = f"HTTP {error.response.status_code}"
-        try:
-            error_detail = await error.response.aread()
-            error_msg = f"{error_msg}: {error_detail.decode()}"
-        except Exception:
-            pass
+        """Handle HTTP errors with multilingual support using pre-read error info"""
+        status_code = error_info["status_code"]
+        error_body = error_info["body"]
+        preferred_lang = error_info.get("preferred_lang", "en")
+        error_msg = f"HTTP {status_code}"
+
+        logger.debug(f"HTTP {status_code} error body: {error_body}")
+
+        # Special handling for 429 (usage limit exceeded)
+        if status_code == 429:
+            try:
+                error_data = json.loads(error_body)
+                detail = error_data.get("detail", {})
+                logger.debug(f"429 error detail: {detail}, type: {type(detail)}")
+
+                if isinstance(detail, dict) and detail.get("error") == "usage_limit_exceeded":
+                    # Try multi-limit display from 'limits' array
+                    limits_array = detail.get("limits", [])
+                    exceeded_limits = [ls for ls in limits_array if ls.get("is_exceeded")]
+
+                    if exceeded_limits:
+                        # Build a line per exceeded limit using human-readable scope/period
+                        lines: list[str] = []
+                        for ls in exceeded_limits:
+                            scope = ls.get("scope", {}).get(preferred_lang) or ls.get("pattern", "")
+                            period_lbl = ls.get("period_label", {}).get(preferred_lang) or ls.get("period", "?")
+                            lines.append(f"{ls.get('current_count', '?')}/{ls.get('limit', '?')} per {period_lbl} ({scope})")
+                        error_msg = "Usage limit exceeded: " + " · ".join(lines)
+                    else:
+                        # Fallback: use translated messages from API
+                        messages = detail.get("messages", {})
+                        logger.debug(f"429 messages: {messages}, preferred_lang: {preferred_lang}")
+
+                        if messages:
+                            error_msg = messages.get(preferred_lang) or messages.get("en", "Usage limit exceeded")
+                        else:
+                            limit = detail.get("limit", "unknown")
+                            period = detail.get("period", "unknown")
+                            error_msg = f"Usage limit reached: {limit} agent calls per {period}"
+
+                    # Add reset time
+                    reset_at_local = detail.get("reset_at_local")
+                    if reset_at_local:
+                        error_msg += f" • Resets at {reset_at_local}"
+                else:
+                    error_msg = f"{error_msg}: {error_body}"
+            except (json.JSONDecodeError, KeyError) as parse_err:
+                logger.warning(f"Failed to parse 429 error body: {parse_err}")
+                error_msg = f"{error_msg}: {error_body}"
+        else:
+            error_msg = f"{error_msg}: {error_body}"
 
         logger.error(f"HTTP error: {error_msg}")
 
@@ -1160,6 +1270,7 @@ class StreamingService:
         context: Annotated[EventContext, "Original context"],
         agent_class: Annotated[str, "Agent class identifier"],
         agent_id: Annotated[str, "Agent instance identifier"],
+        preferred_lang: Annotated[str, "Preferred language"] = "en",
     ) -> None:
         """Send HITL response back to agent"""
         await self.stream_response(
@@ -1173,6 +1284,7 @@ class StreamingService:
             context.emitter,
             context.caller,
             context.state_manager,
+            preferred_lang=preferred_lang,
         )
 
 
@@ -1450,6 +1562,19 @@ class Pipe:
 
         await event_caller({"type": "execute", "data": {"code": code}})
 
+    def _get_preferred_language(
+        self,
+        request: Annotated[Any, "HTTP request object"],
+    ) -> Annotated[str, "Preferred language code"]:
+        """Extract preferred language from request Accept-Language header."""
+        if request is None:
+            return StreamingService.DEFAULT_LANGUAGE
+        try:
+            accept_lang = request.headers.get("Accept-Language", "")
+            return StreamingService.detect_language(accept_lang)
+        except Exception:
+            return StreamingService.DEFAULT_LANGUAGE
+
     async def _check_open_chat_hitl(
         self,
         thread_id: Annotated[str, "Thread ID"],
@@ -1477,6 +1602,7 @@ class Pipe:
         __metadata__: Annotated[dict[str, str], "Request metadata"],
         __event_emitter__: Annotated[Any, "Event emitter function"],
         __event_call__: Annotated[Any, "Event caller function"],
+        __request__: Annotated[Any, "HTTP request object"] = None,
         __files__: Annotated[Optional[list[dict[str, Any]]], "Uploaded files"] = None,
         **kwargs,
     ) -> Annotated[str, "Response (always empty for streaming)"]:
@@ -1558,6 +1684,9 @@ class Pipe:
                 async def stream_start_callback():
                     await self._set_ui_context(thread_id, hitl_display_id, __event_call__)
 
+                # Detect preferred language for error messages
+                preferred_lang = self._get_preferred_language(__request__)
+
                 # Stream the conversation
                 await self._streaming_service.stream_response(
                     agent_class,
@@ -1571,6 +1700,7 @@ class Pipe:
                     __event_call__,
                     state_manager,
                     stream_start_callback,
+                    preferred_lang,
                 )
 
                 # Emit completion status
