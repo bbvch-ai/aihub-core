@@ -5,6 +5,108 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.259.0] - 2026-01-28 - Empowering Agents with Long-Term Memory and Knowledge Graphs
+
+### Added
+
+- ✨ **Introduced Agent Memory System:** Agents can now learn from past conversations and organizational facts, providing
+  long-term personalization and shared knowledge, powered by `mem0` and `Neo4j`.
+- 🧠 **User Memory Capabilities:** Agents can automatically learn and store private user preferences, working styles, and
+  individual context from conversations, enabling highly personalized interactions.
+- 🏢 **Organization Memory for Shared Knowledge:** Agents can now leverage explicit, shared organizational facts
+  (policies, tech stack, processes) accessible to all users within a tenant, fostering consistent and institutional
+  knowledge.
+- 📈 **New Memory Management API Endpoints:** Introduced comprehensive API endpoints for viewing, searching, updating,
+  and deleting both user and organization memories via the platform's API.
+- 📊 **Interactive Memory Knowledge Graphs:** The web interface now visualizes memory relationships as interactive
+  knowledge graphs, helping users understand how concepts are connected within their memories.
+- 📺 **Dedicated Memory Management UI:** New sections in the web interface provide dedicated pages for managing and
+  exploring personal user memories and shared organization memories.
+- ⚙️ **Integrated Neo4j Graph Database:** Incorporated Neo4j for powerful graph-based memory storage and retrieval,
+  enabling rich relational understanding between concepts.
+- 🧩 **Microsoft Teams Support for Expert Asking Agent:** The Expert Asking Agent can now escalate questions to human
+  experts via Microsoft Teams, expanding its capabilities beyond Slack integration.
+- ⏱️ **Run Duration and Cost Metrics in Event List:** The event list now displays the duration and total cost for each
+  agent run, enhancing observability and cost transparency.
+- 📄 **Comprehensive Agent Memory Documentation:** Added detailed guides on User Memory, Organization Memory, and how to
+  build memory-enhanced agents using the SDK.
+- ⚖️ **Automated Python Dependency License Scanning:** Python packages now have their licenses automatically scanned and
+  reported in `LICENSES.md`, significantly improving license transparency and compliance.
+
+### Changed
+
+- 🛠️ **Refactored AI Utility Modules:** Reorganized general AI utility functions into more logical and specialized
+  modules: `chat_history`, `rerank`, and `retrieval`, improving code structure and maintainability.
+- 📦 **Updated LiteLLM Proxy Configuration:** Improved model parameter handling in LiteLLM by adding `drop_params` for
+  better compatibility and efficiency across various models.
+- 📏 **Adjusted Milvus Embedding Dimension:** Updated the default Milvus embedding dimension to 1024 in development
+  environments, optimizing vector storage for newer embedding models.
+- 📄 **Renumbered Platform Documentation Chapters:** Reorganized the platform documentation structure to logically
+  integrate the new memory features and improve navigability.
+- 📄 **Renumbered Agent SDK Documentation:** Restructured the Agent SDK documentation to seamlessly integrate new memory
+  patterns and improve readability for developers.
+
+### Fixed
+
+- 🐛 **Corrected Redis Host in LiteLLM Configuration:** Ensured LiteLLM correctly references `valkey` (the
+  Redis-compatible service) within the Docker network instead of `localhost`, resolving connectivity issues.
+
+### Refactor
+
+- 🧹 **Standardized Enum Usage:** Converted several `enum.Enum` implementations to `enum.StrEnum` across the codebase for
+  improved type safety and consistency.
+
+### Removed
+
+- 🗑️ **Deprecated GDPR Documentation:** Removed previous GDPR documentation pages, as the content has been updated and
+  integrated into the new compliance and memory management sections.
+
+---
+
+## [v0.258.4] - 2026-01-19 - Enhanced Service Health, API Stability, and Richer Chat Interactions
+
+### Added
+
+- ✨ **Comprehensive Service Health Checks:** Introduced new liveness and readiness endpoints for the API, Agents, and
+  Processes, providing detailed dependency status for critical infrastructure like NATS, MongoDB, Redis, Milvus, and S3.
+- ⚙️ **Centralized Health Check Server:** Implemented a generic HTTP health check server running in a background thread
+  for Agents and Processes, ensuring consistent and robust monitoring across all services.
+- 🚀 **New Model Management API Endpoints:** Added dedicated API endpoints to retrieve lists of all available models
+  grouped by type, and to fetch detailed information for specific models.
+- 💬 **Expanded Chat Message Blocks:** Introduced support for new message content types, including **VideoBlock**,
+  **ThinkingBlock**, and **ToolCallBlock**, significantly enriching conversational capabilities and allowing for more
+  complex multimodal interactions.
+- 🗣️ **Chat-style Human-in-the-Loop (HITL):** Added a new `chat` type for Human-in-the-Loop requests, enabling users to
+  provide input and respond to prompts directly within the regular chat interface, improving user experience.
+- 🧩 **FastAPI Infrastructure Client Dependencies:** Introduced new FastAPI dependencies (`use_milvus`, `use_redis`,
+  `use_s3`, `use_s3_public`, `use_s3_service`, `use_vector_store_factory`) to standardize access to shared Milvus,
+  Redis, and S3 clients and vector store factories, promoting consistency and reusability.
+
+### Changed
+
+- ⬆️ **Agent and Process Runner Upgrades:** Integrated Agent and Process runners with the newly introduced health check
+  server, now providing detailed readiness statuses for their respective dependencies (NATS, Redis, Milvus).
+- ✅ **API Readiness Checks:** The API service now utilizes the `ApiHealthController` for comprehensive readiness checks,
+  moving beyond a simple liveness probe to verify all critical service dependencies.
+- 🔗 **Milvus Client Reusability:** Refactored Milvus vector store creation to reuse a shared `MilvusClient` instance
+  across the application, improving connection pooling efficiency and enabling centralized health monitoring.
+- 📍 **Bot Service Port Update:** Corrected the exposed port for the Bot service from 8000 to 8001 to align with standard
+  deployment configurations.
+- 🔒 **Milvus Authentication Variable:** Standardized Milvus client authentication across various services by updating
+  the `MILVUS_TOKEN` environment variable to `MILVUS_ROOT_PASSWORD` for consistency and clarity.
+- 🛡️ **Enhanced SDK Endpoint Security:** Applied security headers to all endpoints within the generated TypeScript SDK
+  client, improving overall API security.
+
+### Refactor
+
+- 🧹 **S3 File Access Service Modernization:** Refactored the `S3AnonymousFileAccessService` to accept injected S3 client
+  instances, significantly improving testability and streamlining resource management.
+- ♻️ **Knowledge Controller Dependency Injection:** Migrated direct instantiation of `VectorStoreFactory` and
+  `S3AnonymousFileAccessService` within the `KnowledgeController` to FastAPI's dependency injection system, enhancing
+  modularity and maintainability.
+
+---
+
 ## [v0.258.3] - 2026-01-19 - Hardened Docker Integration with Socket Proxy
 
 ### Security

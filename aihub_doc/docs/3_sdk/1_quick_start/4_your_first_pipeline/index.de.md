@@ -1,12 +1,12 @@
 ---
 title: Ihre erste Pipeline
-source_sha: 9a11be49cd81ff051969e541e5e13a67ea7d757acc5cc5dee257d59c3da16d7d
+source_sha: 3b41b01b445d343341f7d5b7160b72768f10d117f313f751c76d44d7e90be072
 ---
 
 # Ihre erste Pipeline
 
-Erstellen Sie Ihre erste Datenverarbeitungspipeline mithilfe des AI-Hub Pipeline (`aihub_pipeline`) SDK – eine
-vollständige Datentransformationspipeline mit mehreren verbundenen Assets.
+Erstellen Sie Ihre erste Datenverarbeitungspipeline mit dem AI-Hub Pipeline (`aihub_pipeline`) SDK – eine vollständige
+Datentransformationspipeline mit mehreren verbundenen Assets.
 
 ## Was Sie lernen werden
 
@@ -20,17 +20,17 @@ Dieser Quickstart behandelt die wesentlichen Bausteine:
 
 ## Voraussetzungen
 
-Sie benötigen eine laufende AI-Hub Entwicklungsumgebung. Bevor Sie beginnen, stellen Sie sicher, dass Sie die Schritte
-zur [Einrichtung der Entwicklungsumgebung](../1_dev_environment_setup/) abgeschlossen haben.
+Sie benötigen eine laufende AI-Hub Entwicklungsumgebung. Stellen Sie vor dem Start sicher, dass Sie die Schritte zur
+[Entwicklungsumgebung Einrichtung](../1_dev_environment_setup/) abgeschlossen haben.
 
 ## Wie Pipelines funktionieren
 
-AI-Hub Pipelines sind **Datenverarbeitungsworkflows**, die auf Dagster basieren und aus drei wesentlichen Teilen
+AI-Hub Pipelines sind **Datenverarbeitungs-Workflows**, die auf Dagster basieren und aus drei wesentlichen Teilen
 bestehen:
 
 - **Assets**: Funktionen, die Daten erstellen, transformieren oder konsumieren
-- **Abhängigkeiten**: Automatischer Datenfluss zwischen Assets basierend auf Funktionsparametern
-- **Ressourcen**: Gemeinsam genutzte Konfigurationen und Services für externe Systeme
+- **Dependencies**: Automatischer Datenfluss zwischen Assets basierend auf Funktionsparametern
+- **Resources**: Geteilte Konfiguration und Services zu externen Systemen
 
 ## Erstellen Sie Ihre erste Pipeline
 
@@ -38,7 +38,7 @@ Lassen Sie uns eine Datenpipeline erstellen, die Benutzer-Feedback-Daten verarbe
 
 ### Beginnen Sie mit einer einfachen Pipeline
 
-Lassen Sie uns zunächst die Grundlagen einer Pipeline an einem minimalen Beispiel verstehen:
+Lassen Sie uns zunächst die Grundlagen von Pipelines anhand eines minimalen Beispiels verstehen:
 
 #### 1. Erstellen Sie Ihre grundlegenden Assets (`simple_pipeline.py`):
 
@@ -98,26 +98,26 @@ defs = Definitions(assets=[raw_feedback_data, cleaned_feedback])
 poetry run dagster dev -f simple_pipeline.py
 ```
 
-Öffnen Sie `http://localhost:3000` und Sie sehen:
+Öffnen Sie `http://localhost:3000` und Sie werden sehen:
 
-- **Asset-Lineage-Graph**: raw_feedback_data → cleaned_feedback
-- **Materialisieren-Buttons** zur Ausführung von Assets
-- **Asset-Details**, die Inputs, Outputs und Ausführungslogs anzeigen
+- **Asset-Abstammungsgraph**: raw_feedback_data → cleaned_feedback
+- **Materialize-Buttons** zum Ausführen von Assets
+- **Asset-Details**, die Inputs, Outputs und Ausführungs-Logs zeigen
 
-Klicken Sie auf **„Materialize all“**, um die Pipeline auszuführen und den Datenfluss zu sehen!
+Klicken Sie auf **„Materialize all"**, um die Pipeline auszuführen und den Datenfluss zu sehen!
 
 ## Erstellen Sie eine echte AI-Hub Pipeline
 
 Lassen Sie uns nun eine realistische Pipeline mit dem `aihub_pipeline` SDK erstellen, die Dokumentenverarbeitungsmuster
 demonstriert. Wir werden dies Schritt für Schritt aufschlüsseln, um jede Komponente zu verstehen.
 
-### 1. Die AI-Hub Pipeline-Struktur verstehen
+### 1. Verständnis der AI-Hub Pipeline-Struktur
 
 AI-Hub Pipelines folgen diesen Schlüsselmustern:
 
 - **Asset Factories**: Wiederverwendbare Funktionen, die konfigurierte Assets erstellen
-- **Ressourcen**: Konfigurierte Services wie Parser, Stores und Embedding-Modelle
-- **Dynamische Partitionen**: Jedes Dokument wird zu einer separaten Partition für die parallele Verarbeitung
+- **Resources**: Konfigurierte Services wie Parser, Stores und Embedding-Modelle
+- **Dynamic Partitions**: Jedes Dokument wird zu einer separaten Partition für die Parallelverarbeitung
 
 ### 2. Richten Sie Ihre Pipeline-Konfiguration ein
 
@@ -145,73 +145,73 @@ from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParse
 from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
 
 # Pipeline configuration - defines where data flows between assets
-DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])      # Speicher für Rohdateien
-DOCUMENT_KEY = AssetKey(["playground", "documents"])       # Geparsed Dokumente
+DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])      # Rohdatenspeicher
+DOCUMENT_KEY = AssetKey(["playground", "documents"])       # Geparste Dokumente
 NODES_KEY = AssetKey(["playground", "nodes"])              # Dokumenten-Chunks mit Embeddings
 
 # Storage configuration
 CONTAINER_NAME = "playground"    # S3 Bucket-/Container-Name
 DIRECTORY_NAME = "documents"     # Ordner für Dokumente
-NAMESPACE_NAME = DIRECTORY_NAME  # Vector-Store-Namespace
-STORE_NAME = CONTAINER_NAME      # Dokumentenspeicher-Name
+NAMESPACE_NAME = DIRECTORY_NAME  # Vector Store Namespace
+STORE_NAME = CONTAINER_NAME      # Dokumenten-Store-Name
 
-# Dynamische Partitionen ermöglichen die parallele Verarbeitung einzelner Dokumente
+# Dynamic partitions allow parallel processing of individual documents
 document_partitions = DynamicPartitionsDefinition(name="document_partitions")
 ```
 
 ### 3. Erstellen Sie Ihre Pipeline-Assets
 
-Erstellen Sie als Nächstes die drei Haupt-Assets, die Ihre Verarbeitungspipeline bilden:
+Als Nächstes erstellen Sie die drei Haupt-Assets, die Ihre Verarbeitungspipeline bilden:
 
 ```python
-# Erstellen Sie die Pipeline-Assets mithilfe von AI-Hub Factories
+# Create the pipeline assets using AI-Hub factories
 
-# 1. Observable Data Lake – überwacht neue/geänderte Dateien
+# 1. Observable Data Lake - watches for new/changed files
 observable_asset = observable_data_lake_factory(
     asset_key=DATA_LAKE_KEY, 
     partitions=document_partitions
 )
 
-# 2. Dokumente-Asset – verarbeitet Rohdateien in strukturierte Dokumente
+# 2. Documents Asset - processes raw files into structured documents
 documents_asset = documents_factory(
     asset_key=DOCUMENT_KEY,
-    data_lake_key=DATA_LAKE_KEY,    # Hängt vom Data Lake ab
-    partitions=document_partitions   # Eine Partition pro Dokument
+    data_lake_key=DATA_LAKE_KEY,    # Depends on data lake 
+    partitions=document_partitions   # One partition per document
 )
 
-# 3. Nodes-Asset – zerlegt Dokumente in Chunks und erstellt Embeddings
+# 3. Nodes Asset - chunks documents and creates embeddings
 nodes_asset = nodes_factory(
     asset_key=NODES_KEY,
-    document_key=DOCUMENT_KEY,       # Hängt von Dokumenten ab
-    partitions=document_partitions   # Eine Partition pro Dokument
+    document_key=DOCUMENT_KEY,       # Depends on documents
+    partitions=document_partitions   # One partition per document
 )
 
-# Alle Assets kombinieren
+# Combine all assets
 assets = [observable_asset, documents_asset, nodes_asset]
 ```
 
-**Die Asset Factories verstehen:**
+**Verständnis der Asset Factories:**
 
 - `observable_data_lake_factory`: Erstellt ein Asset, das Dateiänderungen überwacht
 - `documents_factory`: Erstellt ein Asset, das Dateien in RefDoc-Objekte mit Metadaten parst
-- `nodes_factory`: Erstellt ein Asset, das Dokumente zerlegt und Vektor-Embeddings generiert
+- `nodes_factory`: Erstellt ein Asset, das Dokumente in Chunks zerlegt und Vektor-Embeddings generiert
 
 ### 4. Konfigurieren Sie Ihre Pipeline-Ressourcen
 
 Konfigurieren Sie nun die Ressourcen (Services), die Ihre Pipeline benötigt:
 
 ```python
-# Ressourcenkonfiguration – zur besseren Übersichtlichkeit in logische Gruppen unterteilt
+# Resource configuration - split into logical groups for clarity
 
-# A. Speicher- und I/O-Ressourcen
+# A. Storage and I/O Resources
 storage_resources = {
-    # Data Lake I/O Manager für S3-kompatiblen Speicher
+    # Data lake I/O managers for S3-compatible storage
     **default_io_manager_s3_datalake_resources(
         container_name=CONTAINER_NAME, 
         directory_name=DIRECTORY_NAME
     ),
     
-    # Data Lake Ressourcen für die Dateiverwaltung
+    # Data lake resources for file management
     **s3_data_lake_resources(
         container_name=CONTAINER_NAME,
         directory_name=DIRECTORY_NAME,
@@ -219,18 +219,18 @@ storage_resources = {
     ),
 }
 
-# B. Dokumentenverarbeitungsressourcen  
+# B. Document Processing Resources  
 processing_resources = {
-    # Dokumenten-Parser – verwendet KI-gestütztes Docling für PDF/Word/etc.
+    # Document parser - uses AI-powered Docling for PDF/Word/etc
     "document_parser": DocumentParserResource(loader_type=LoaderType.DOCLING),
     
-    # Node-Parser – zerlegt Dokumente mithilfe struktureller Elemente  
+    # Node parser - chunks documents using structural elements  
     "node_parser": MarkdownStructuralNodeParserResource(),
 }
 
-# C. Datenbank- und Suchressourcen
+# C. Database and Search Resources
 database_resources = {
-    # Vector Store und Dokumentenspeicher (MongoDB + Milvus)
+    # Vector store and document store (MongoDB + Milvus)
     **local_mongo_milvus_storage_context_resource(
         vector_store_uri="http://localhost:19530",  # Milvus-Verbindung
         store_name=STORE_NAME,
@@ -238,9 +238,9 @@ database_resources = {
     ),
 }
 
-# D. KI-Modell-Ressourcen
+# D. AI Model Resources
 ai_resources = {
-    # Embedding-Modell zum Erstellen von Vektorrepräsentationen
+    # Embedding model for creating vector representations
     "embedding_model": EmbeddingModelResource(
         embedding_config=EmbeddingModelConfig(
             model_name="azure/text-embedding-3-large"
@@ -248,7 +248,7 @@ ai_resources = {
     ),
 }
 
-# Alle Ressourcen kombinieren
+# Combine all resources
 all_resources = {
     **storage_resources,
     **processing_resources, 
@@ -259,10 +259,10 @@ all_resources = {
 
 ### 5. Definieren Sie Ihre komplette Pipeline
 
-Führen Sie abschließend alles in der Pipeline-Definition zusammen:
+Führen Sie schließlich alles in der Pipeline-Definition zusammen:
 
 ```python
-# Definieren Sie die komplette Pipeline
+# Define the complete pipeline
 defs = Definitions(
     assets=assets,           # Die drei Verarbeitungs-Assets
     resources=all_resources, # Alle konfigurierten Services
@@ -333,7 +333,7 @@ defs = Definitions(
 poetry run dagster dev -f my_document_pipeline.py
 ```
 
-Sie sehen die vollständige Dokumentenverarbeitungspipeline:
+Sie werden die komplette Dokumentenverarbeitungspipeline sehen:
 
 ```
 data_lake (observable) → documents → nodes
@@ -341,15 +341,15 @@ data_lake (observable) → documents → nodes
                        (DocStore)  (VectorStore)
 ```
 
-### 7. Den Datenfluss verstehen:
+### 7. Verständnis des Datenflusses:
 
 1. **Observable Data Lake**: Überwacht neue PDF-, Word-, Markdown- usw. Dateien
-2. **Documents**: Parsed Dateien mithilfe von KI-gestützter Dokumentenintelligenz (Docling)
-3. **Nodes**: Zerlegt Dokumente mithilfe struktureller Analyse und generiert Embeddings
+2. **Documents**: Parst Dateien mithilfe von KI-gestützter Dokumentenintelligenz (Docling)
+3. **Nodes**: Zerlegt Dokumente durch strukturelles Parsen und generiert Embeddings
 
-### 8. Fügen Sie Ihrer Pipeline Jobs und Zeitplanung hinzu
+### 8. Fügen Sie Jobs und Scheduling zu Ihrer Pipeline hinzu
 
-Für Produktions-Pipelines möchten Sie Jobs und Zeitplanung hinzufügen. Erweitern wir die Pipeline:
+Für Produktions-Pipelines möchten Sie Jobs und Scheduling hinzufügen. Erweitern wir die Pipeline:
 
 ```python
 # Add these imports to my_document_pipeline.py
@@ -357,69 +357,69 @@ from aihub_pipeline.jobs.factory import observe_source_job
 from aihub_pipeline.schedules.factory import daily_schedule_at
 from aihub_pipeline.sensors.factory import default_automation_sensor
 
-# Erstellen Sie Jobs für verschiedene Operationen
+# Create jobs for different operations
 observe_job = observe_source_job(
     observable_asset=observable_asset,
     namespace_name=NAMESPACE_NAME,
 )
 
-# Aktualisieren Sie Ihre Pipeline-Definition, um Jobs und Zeitpläne einzuschließen
+# Update your pipeline definition to include jobs and schedules
 defs = Definitions(
     assets=assets,
     resources={
-        # ... Ihre bestehenden Ressourcen ...
+        # ... your existing resources ...
     },
     
-    # Fügen Sie Jobs für Pipeline-Operationen hinzu
+    # Add jobs for pipeline operations
     jobs=[observe_job],
     
-    # Fügen Sie Zeitplanung hinzu – tägliche Beobachtung um Mitternacht
+    # Add scheduling - observe daily at midnight
     schedules=[daily_schedule_at(observe_job, hour=0, minute=0)],
     
-    # Fügen Sie Sensoren für die Automatisierung hinzu
+    # Add sensors for automation
     sensors=[default_automation_sensor(assets)],
 )
 ```
 
-**Jobs und Zeitplanung verstehen:**
+**Verständnis von Jobs und Scheduling:**
 
-- **observe_job**: Manuelles Auslösen der Beobachtung des Data Lakes
-- **daily_schedule_at**: Zeitplanung der automatischen Data Lake Beobachtung
-- **default_automation_sensor**: Automatisches Auslösen der Asset-Verarbeitung bei Änderungen der Abhängigkeiten
+- **observe_job**: Manuelles Auslösen der Überwachung des Data Lake
+- **daily_schedule_at**: Planen Sie die automatische Data Lake-Überwachung
+- **default_automation_sensor**: Automatische Auslösung der Asset-Verarbeitung, wenn sich Abhängigkeiten ändern
 
 Ihre Pipeline unterstützt nun:
 
-- **Manuelle Ausführung**: Materialisieren einzelner Assets in der Dagster UI
-- **Geplante Beobachtung**: Tägliche Überprüfung auf neue Dokumente
+- **Manuelle Ausführung**: Materialisieren Sie einzelne Assets in der Dagster UI
+- **Geplante Überwachung**: Tägliche Überprüfungen auf neue Dokumente
 - **Automatische Verarbeitung**: Assets werden automatisch verarbeitet, wenn Upstream-Änderungen erkannt werden
 
-### 9. Überwachung mit AI-Hub Observability Tools:
+### 9. Überwachen Sie mit AI-Hub Observability-Tools:
 
-- **Dagster UI** (`http://localhost:3000`): Asset-Lineage, Ausführungslogs und Materialisierungs-Historie
-- **MongoDB Compass**: Inspektion des Dokumentenspeichers
+- **Dagster UI** (`http://localhost:3000`): Asset-Abstammung, Ausführungs-Logs und Materialisierungs-Historie
+- **MongoDB Compass**: Inspektion des Dokumenten-Stores
 - **Milvus (Attu)**: Überwachung der Vektordatenbank
 
 ::: tip SeaweedFS Filer
-In Produktion ist die SeaweedFS Filer Web-UI unter `datalake.${DOMAIN}` zugänglich (OAuth2 geschützt, erfordert die
-Rolle AIHubDeveloper). Im Entwicklungsmodus ist sie unter `http://localhost:8889` zum Durchsuchen hochgeladener Dateien
-und zum Debuggen des Speichers verfügbar.
+Im Produktionsbetrieb ist die SeaweedFS Filer Web UI unter `datalake.${DOMAIN}` (OAuth2-geschützt, erfordert die Rolle
+`AIHubDeveloper`) zugänglich. Im Entwicklungsmodus ist sie unter `http://localhost:8889` zum Durchsuchen hochgeladener
+Dateien und zur Fehlerbehebung der Speicherung verfügbar.
 :::
 
-### 10. AI-Hub Pipeline-Muster verstehen
+### 10. Verständnis der AI-Hub Pipeline-Muster
 
 Ihre AI-Hub Pipeline demonstriert Schlüsselmuster:
 
-1. **Observable Assets**: Erkennen neue Dokumente automatisch ohne manuelles Eingreifen
-2. **Dynamische Partitionen**: Jedes Dokument wird unabhängig verarbeitet
-3. **Ressourcenmanagement**: Konfigurierbare Parser, Modelle und Speicher-Backends
-4. **Automatisierungsrichtlinien**: Eifrige Verarbeitung, wenn Upstream-Assets sich ändern
+1. **Observable Assets**: Erkennen neue Dokumente automatisch ohne manuellen Eingriff
+2. **Dynamic Partitions**: Jedes Dokument wird unabhängig verarbeitet
+3. **Resource Management**: Konfigurierbare Parser, LLMs und Speicher-Backends
+4. **Automation Policies**: Eifrige Verarbeitung, wenn sich Upstream-Assets ändern
 
 ## Was Sie gelernt haben
 
 - **AI-Hub SDK Nutzung**: Verwendung von Factories, Ressourcen und typisierten Datenobjekten aus `aihub_pipeline`
 - **Dokumentenverarbeitungspipeline**: Vollständiger Fluss von Rohdateien zu durchsuchbaren Embeddings
 - **Asset Factory Nutzung**: Verwendung bestehender Factories wie `documents_factory` und `nodes_factory`
-- **Ressourcenkonfiguration**: Einrichtung von Parsers, LLMs und Speichersystemen
+- **Ressourcenkonfiguration**: Einrichtung von Parsern, LLMs und Speichersystemen
 - **Observability**: Überwachung von KI-gestützten Pipelines mit Dagster
 - **Produktionsreife**: Skalierbare, automatisierte und wartbare Pipeline-Architektur
 

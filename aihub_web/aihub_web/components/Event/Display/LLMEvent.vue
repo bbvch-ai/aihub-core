@@ -13,7 +13,7 @@
         <ChatMessage
           :message="message"
           :name="message.role == 'user' ? 'User' : event.event.chat_model_name"
-          :preferred-username="message.role == 'user' ? '' : event.event.provider"
+          :email="message.role == 'user' ? '' : event.event.provider"
           :date="new Date(event.event.created_at / 1_000_000)"
           :icon="agentIcon"
         />
@@ -27,7 +27,7 @@
         <ChatMessage
           :message="message"
           :name="message.role == 'user' ? 'User' : event.event.chat_model_name"
-          :preferred-username="message.role == 'user' ? '' : event.event.provider"
+          :email="message.role == 'user' ? '' : event.event.provider"
           :date="new Date(event.event.created_at / 1_000_000)"
           :icon="agentIcon"
         />

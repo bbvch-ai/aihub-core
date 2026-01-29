@@ -54,6 +54,7 @@ model_list:
       model: openai/granite-docling
       api_base: http://vllm-docling:8182/v1
       api_key: os.environ/LOCAL_LLM_TOKEN
+      drop_params: true
     model_info:
       mode: chat
       max_input_tokens: 8192
@@ -70,6 +71,8 @@ model_list:
       model: openai/qwen-3-embedding
       api_base: http://llama-cpp-embedding:8182/v1
       api_key: os.environ/LOCAL_LLM_TOKEN
+      additional_drop_params: ["dimensions"]
+      drop_params: true
     model_info:
       mode: embedding
 
@@ -78,6 +81,8 @@ model_list:
       model: openai/qwen-3-embedding
       api_base: http://llama-cpp-embedding:8182/v1
       api_key: os.environ/LOCAL_LLM_TOKEN
+      additional_drop_params: ["dimensions"]
+      drop_params: true
     model_info:
       mode: embedding
 
@@ -90,6 +95,7 @@ model_list:
       model: jina_ai/qwen-3-reranking
       api_base: http://llama-cpp-reranker:8182/
       api_key: os.environ/LOCAL_LLM_TOKEN
+      drop_params: true
     model_info:
       mode: rerank
 
@@ -103,6 +109,7 @@ model_list:
       api_base: os.environ/AZURE_OPENAI_BASE_URL
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2024-02-01"
+      drop_params: true
     model_info:
       mode: image_generation
       base_model: azure/dall-e-3
@@ -116,6 +123,7 @@ model_list:
       model: openai/whisper-small
       api_base: http://speaches:8000/
       api_key: XXX
+      drop_params: true
     model_info:
       mode: audio_transcription
       base_model: openai/whisper-1
@@ -125,6 +133,7 @@ model_list:
       model: openai/kokoro-82m
       api_base: http://speaches:8000/
       api_key: XXX
+      drop_params: true
     model_info:
       mode: audio_speech
       base_model: openai/tts-1
@@ -180,7 +189,7 @@ litellm_settings:
   cache: true
   cache_params:
     type: "redis"
-    host: "localhost"
+    host: "valkey"
     port: 6379
     password: os.environ/REDIS_TOKEN
   # Prompt injection detection settings

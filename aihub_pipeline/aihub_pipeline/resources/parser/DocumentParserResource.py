@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated
 
 from aihub_lib.generative_ai.document.loaders.DoclingLoader import DoclingLoader
@@ -15,7 +15,7 @@ from llama_index.readers.file import EpubReader, IPYNBReader, RTFReader
 from pydantic import Field
 
 
-class LoaderType(Enum):
+class LoaderType(StrEnum):
     """Enum for document loader types."""
 
     DOCLING = "docling"
