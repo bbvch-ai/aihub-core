@@ -107,6 +107,7 @@ thread:
     hierarchy: "Hierarchie"
     chat: "Chat"
     display: "Turns"
+    memories: "Erinnerungen"
   list:
     name: "Name"
     agents: "Agenten"
@@ -136,6 +137,18 @@ thread:
     title: "Hierarchische Ansicht der Turns"
   chat:
     title: "Chat-Ansicht"
+  memories:
+    title: "Thread-Erinnerungen"
+    description: "Während {threadName} gesammelte Erinnerungen"
+    delete_all:
+      confirm_header: "Alle Thread-Erinnerungen löschen"
+      confirm_message: "Sind Sie sicher, dass Sie alle Erinnerungen aus diesem Thread löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
+      success:
+        title: "Erfolgreich"
+        message: "Alle Thread-Erinnerungen wurden erfolgreich gelöscht"
+      error:
+        title: "Löschen fehlgeschlagen"
+        message: "Fehler beim Löschen der Thread-Erinnerungen. Bitte versuchen Sie es erneut."
 
 chat:
   assistant: "Assistent"
@@ -260,6 +273,7 @@ agent:
     basic: "Grundlegend"
     workflow: "Workflow"
     threads: "Threads"
+    memories: "Erinnerungen"
     chat: "Chat"
   availableAgents: "Verfügbare Agenten"
   list:
@@ -276,6 +290,18 @@ agent:
     title: "Agenten-Workflow"
   threads:
     title: "Agenten-Threads"
+  memories:
+    title: "Agenten-Erinnerungen"
+    description: "Von {agentName} gesammelte Erinnerungen über Sie"
+    delete_all:
+      confirm_header: "Alle Agenten-Erinnerungen löschen"
+      confirm_message: "Sind Sie sicher, dass Sie alle von diesem Agenten gesammelten Erinnerungen löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
+      success:
+        title: "Erfolgreich"
+        message: "Alle Agenten-Erinnerungen wurden erfolgreich gelöscht"
+      error:
+        title: "Löschen fehlgeschlagen"
+        message: "Fehler beim Löschen der Agenten-Erinnerungen. Bitte versuchen Sie es erneut."
 
 document:
   list:
