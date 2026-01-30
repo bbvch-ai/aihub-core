@@ -1,15 +1,15 @@
 from typing import Annotated
 
-from fastapi import Depends, Security
-
-from aihub_api.i18n.dependencies.use_locale import use_locale
-from aihub_api.routes.suite.SuiteService import SuiteService
-from aihub_api.routes.suite.dto.SuiteDTO import SuiteDTO
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
+from fastapi import Depends, Security
+
+from aihub_api.i18n.dependencies.use_locale import use_locale
+from aihub_api.routes.suite.dto.SuiteDTO import SuiteDTO
+from aihub_api.routes.suite.SuiteService import SuiteService
 
 
 class SuiteController(Controller):

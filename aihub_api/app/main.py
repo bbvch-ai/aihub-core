@@ -15,8 +15,8 @@ from aihub_api.routes.file.FileController import FileController
 from aihub_api.routes.health.ApiHealthController import ApiHealthController
 from aihub_api.routes.i18n.I18nController import I18nController
 from aihub_api.routes.knowledge.KnowledgeController import KnowledgeController
-from aihub_api.routes.my_account.MyAccountController import MyAccountController
 from aihub_api.routes.memory import OrganizationMemoryController, UserMemoryController
+from aihub_api.routes.my_account.MyAccountController import MyAccountController
 from aihub_api.routes.notification.NotificationController import NotificationController
 from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_api.routes.process.ProcessController import ProcessController
