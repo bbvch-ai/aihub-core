@@ -619,5 +619,3 @@ class TestDuplicatePatternWithinSameRole:
 
         assert len(limits) == 1
         assert limits[0].limit == 50
-
-

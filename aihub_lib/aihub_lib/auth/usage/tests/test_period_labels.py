@@ -150,7 +150,6 @@ class TestDescribePattern:
         assert describe_pattern("aihub.user.agent.>", "fr") == "tous les agents"
 
 
-
 class TestBuildExceededDetail:
     """Tests for build_exceeded_detail function."""
 
