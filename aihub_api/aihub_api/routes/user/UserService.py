@@ -106,4 +106,3 @@ class UserService:
 
         user_entity.dashboard = Dashboard(children=dashboard_items, **dashboard_data_dict)
         user_entity.save()
-

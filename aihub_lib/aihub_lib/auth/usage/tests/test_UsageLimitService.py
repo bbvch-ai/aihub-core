@@ -3,12 +3,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from aihub_lib.auth.usage.UsageLimitService import (
-    PERIOD_SECONDS,
-    EffectiveLimit,
     UsageLimitPeriod,
     UsageLimitService,
 )
-
 
 P = "aihub.user.agent."
 
@@ -67,7 +64,9 @@ class TestGetEffectiveLimitsForRoles:
     def test_unlimited_when_no_roles_have_limits(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[], []]
 
-        limits = UsageLimitService.get_effective_limits_for_roles(["role1", "role2"], agent_path="LLMWrappingAgent.dev")
+        limits = UsageLimitService.get_effective_limits_for_roles(
+            ["role1", "role2"], resource_path=f"{P}LLMWrappingAgent.dev"
+        )
 
         assert limits == []
 
@@ -86,7 +85,7 @@ class TestGetEffectiveLimitsForRoles:
         ]
 
         limits = UsageLimitService.get_effective_limits_for_roles(
-            ["role1"], agent_path="LLMWrappingAgent.dev_agent"
+            ["role1"], resource_path=f"{P}LLMWrappingAgent.dev_agent"
         )
 
         assert len(limits) == 1
@@ -105,7 +104,7 @@ class TestGetEffectiveLimitsForRoles:
         ]
 
         limits = UsageLimitService.get_effective_limits_for_roles(
-            ["role1"], agent_path="LLMWrappingAgent.dev_agent"
+            ["role1"], resource_path=f"{P}LLMWrappingAgent.dev_agent"
         )
 
         assert len(limits) == 2
@@ -130,7 +129,7 @@ class TestGetEffectiveLimitsForRoles:
         ]
 
         limits = UsageLimitService.get_effective_limits_for_roles(
-            ["role1", "role2"], agent_path="LLMWrappingAgent.dev_agent"
+            ["role1", "role2"], resource_path=f"{P}LLMWrappingAgent.dev_agent"
         )
 
         assert len(limits) == 1
@@ -150,7 +149,7 @@ class TestGetEffectiveLimitsForRoles:
         ]
 
         limits = UsageLimitService.get_effective_limits_for_roles(
-            ["roleA", "roleB"], agent_path="LLMWrappingAgent.dev_agent"
+            ["roleA", "roleB"], resource_path=f"{P}LLMWrappingAgent.dev_agent"
         )
 
         assert len(limits) == 2
@@ -168,13 +167,13 @@ class TestGetEffectiveLimitsForRoles:
         ]
 
         limits = UsageLimitService.get_effective_limits_for_roles(
-            ["role1"], agent_path="LLMWrappingAgent.dev_agent"
+            ["role1"], resource_path=f"{P}LLMWrappingAgent.dev_agent"
         )
 
         assert limits == []
 
     @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
-    def test_no_agent_path_picks_most_permissive_rule(self, mock_role_entity: MagicMock):
+    def test_no_resource_path_picks_most_permissive_rule(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [(f"{P}>", 100, "1d"), (f"{P}LLMWrappingAgent.>", 20, "1h")],
         ]
@@ -193,7 +192,7 @@ class TestGetEffectiveLimitsForRoles:
         ]
 
         limits = UsageLimitService.get_effective_limits_for_roles(
-            ["role1", "role2"], agent_path="LLMWrappingAgent.dev_agent"
+            ["role1", "role2"], resource_path=f"{P}LLMWrappingAgent.dev_agent"
         )
 
         assert len(limits) == 1
@@ -211,7 +210,7 @@ class TestGetEffectiveLimitsForRoles:
         ]
 
         limits = UsageLimitService.get_effective_limits_for_roles(
-            ["role1"], agent_path="LLMWrappingAgent.dev_agent"
+            ["role1"], resource_path=f"{P}LLMWrappingAgent.dev_agent"
         )
 
         assert len(limits) == 3
@@ -234,7 +233,7 @@ class TestGetEffectiveLimitForRolesLegacy:
         ]
 
         limit, period, pattern = UsageLimitService.get_effective_limit_for_roles(
-            ["role1"], agent_path="LLMWrappingAgent.dev_agent"
+            ["role1"], resource_path=f"{P}LLMWrappingAgent.dev_agent"
         )
 
         assert limit == 20
@@ -268,7 +267,7 @@ class TestGetUsageStatus:
         redis.ttl.side_effect = [3600, 1800]
 
         status = await UsageLimitService.get_usage_status(
-            redis, "user123", ["user"], agent_path="LLMWrappingAgent.dev"
+            redis, "user123", ["user"], resource_path=f"{P}LLMWrappingAgent.dev"
         )
 
         assert len(status.limits) == 2
@@ -286,7 +285,7 @@ class TestGetUsageStatus:
         redis.ttl.side_effect = [3600, 1800]
 
         status = await UsageLimitService.get_usage_status(
-            redis, "user123", ["user"], agent_path="LLMWrappingAgent.dev"
+            redis, "user123", ["user"], resource_path=f"{P}LLMWrappingAgent.dev"
         )
 
         assert status.is_exceeded is True
@@ -323,15 +322,15 @@ class TestCheckAndIncrement:
         redis.ttl.return_value = 80000
 
         status = await UsageLimitService.check_and_increment(
-            redis, "user1", ["role1"], agent_path="LLMWrappingAgent.dev"
+            redis, "user1", ["role1"], resource_path=f"{P}LLMWrappingAgent.dev"
         )
 
         assert len(status.limits) == 2
         assert status.is_exceeded is False
         assert redis.incr.call_count == 2
         incr_keys = {call.args[0] for call in redis.incr.call_args_list}
-        assert f"usage:agent_calls:user1:{P}>:1d" in incr_keys
-        assert f"usage:agent_calls:user1:{P}LLMWrappingAgent.>:1h" in incr_keys
+        assert f"usage:calls:user1:{P}>:1d" in incr_keys
+        assert f"usage:calls:user1:{P}LLMWrappingAgent.>:1h" in incr_keys
 
     @pytest.mark.asyncio
     @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
@@ -346,7 +345,7 @@ class TestCheckAndIncrement:
         redis.ttl.return_value = 1800
 
         status = await UsageLimitService.check_and_increment(
-            redis, "user1", ["role1"], agent_path="LLMWrappingAgent.dev"
+            redis, "user1", ["role1"], resource_path=f"{P}LLMWrappingAgent.dev"
         )
 
         assert status.is_exceeded is True
@@ -359,13 +358,13 @@ class TestCheckAndIncrement:
         redis = AsyncMock()
         redis.get.return_value = None
         redis.incr.return_value = 1
-        redis.ttl.return_value = PERIOD_SECONDS["1d"]
+        redis.ttl.return_value = UsageLimitPeriod.ONE_DAY.seconds
 
         await UsageLimitService.check_and_increment(
-            redis, "user123", ["user"], agent_path="LLMWrappingAgent.dev"
+            redis, "user123", ["user"], resource_path=f"{P}LLMWrappingAgent.dev"
         )
 
-        redis.expire.assert_called_once_with(f"usage:agent_calls:user123:{P}>:1d", PERIOD_SECONDS["1d"])
+        redis.expire.assert_called_once_with(f"usage:calls:user123:{P}>:1d", UsageLimitPeriod.ONE_DAY.seconds)
 
     @pytest.mark.asyncio
     @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
@@ -379,9 +378,7 @@ class TestCheckAndIncrement:
         redis.incr.side_effect = [1, 1]
         redis.ttl.return_value = 3600
 
-        await UsageLimitService.check_and_increment(
-            redis, "user1", ["role1"], agent_path="LLMWrappingAgent.dev"
-        )
+        await UsageLimitService.check_and_increment(redis, "user1", ["role1"], resource_path=f"{P}LLMWrappingAgent.dev")
 
         assert redis.expire.call_count == 2
 
@@ -397,7 +394,7 @@ class TestMultiRoleWithIndependentLimits:
         ]
 
         limits = UsageLimitService.get_effective_limits_for_roles(
-            ["roleA", "roleB"], agent_path="LLMWrappingAgent.dev_agent"
+            ["roleA", "roleB"], resource_path=f"{P}LLMWrappingAgent.dev_agent"
         )
 
         assert len(limits) == 1
@@ -416,7 +413,7 @@ class TestMultiRoleWithIndependentLimits:
         ]
 
         limits = UsageLimitService.get_effective_limits_for_roles(
-            ["roleA", "roleB"], agent_path="LLMWrappingAgent.dev_agent"
+            ["roleA", "roleB"], resource_path=f"{P}LLMWrappingAgent.dev_agent"
         )
 
         assert len(limits) == 2
@@ -435,7 +432,7 @@ class TestMultiRoleWithIndependentLimits:
         ]
 
         limits = UsageLimitService.get_effective_limits_for_roles(
-            ["r1", "r2", "r3"], agent_path="LLMWrappingAgent.dev_agent"
+            ["r1", "r2", "r3"], resource_path=f"{P}LLMWrappingAgent.dev_agent"
         )
 
         assert len(limits) == 1
@@ -446,7 +443,7 @@ class TestMultiRoleWithIndependentLimits:
         mock_role_entity.get_usage_limits_for_roles.return_value = [[], []]
 
         limits = UsageLimitService.get_effective_limits_for_roles(
-            ["roleA", "roleB"], agent_path="LLMWrappingAgent.dev_agent"
+            ["roleA", "roleB"], resource_path=f"{P}LLMWrappingAgent.dev_agent"
         )
 
         assert limits == []
@@ -467,7 +464,7 @@ class TestCheckAndIncrementIntegration:
         redis.ttl.return_value = 80000
 
         status = await UsageLimitService.check_and_increment(
-            redis, "user1", ["role1"], agent_path="LLMWrappingAgent.dev_agent"
+            redis, "user1", ["role1"], resource_path=f"{P}LLMWrappingAgent.dev_agent"
         )
 
         assert status.is_exceeded is False
@@ -485,7 +482,7 @@ class TestCheckAndIncrementIntegration:
         redis.ttl.return_value = 1800
 
         status = await UsageLimitService.check_and_increment(
-            redis, "user1", ["role1"], agent_path="LLMWrappingAgent.dev_agent"
+            redis, "user1", ["role1"], resource_path=f"{P}LLMWrappingAgent.dev_agent"
         )
 
         assert status.is_exceeded is True
@@ -505,7 +502,7 @@ class TestCheckAndIncrementIntegration:
         redis.ttl.return_value = 70000
 
         status = await UsageLimitService.check_and_increment(
-            redis, "user1", ["roleA", "roleB"], agent_path="LLMWrappingAgent.dev_agent"
+            redis, "user1", ["roleA", "roleB"], resource_path=f"{P}LLMWrappingAgent.dev_agent"
         )
 
         assert status.is_exceeded is False
@@ -528,7 +525,7 @@ class TestBackwardCompatProperties:
         redis.ttl.return_value = 3600
 
         status = await UsageLimitService.get_usage_status(
-            redis, "user1", ["role1"], agent_path="LLMWrappingAgent.dev"
+            redis, "user1", ["role1"], resource_path=f"{P}LLMWrappingAgent.dev"
         )
 
         # 9/10 = 0.9 ratio vs 42/100 = 0.42 ratio → class-level is most restrictive
@@ -555,10 +552,103 @@ class TestPeriodConstants:
 
     def test_all_periods_have_durations(self):
         for period in UsageLimitPeriod:
-            assert period.value in PERIOD_SECONDS
+            assert period.seconds > 0
 
     def test_period_durations_are_correct(self):
-        assert PERIOD_SECONDS["1h"] == 3600
-        assert PERIOD_SECONDS["1d"] == 86400
-        assert PERIOD_SECONDS["7d"] == 604800
-        assert PERIOD_SECONDS["1mo"] == 2592000
+        assert UsageLimitPeriod.ONE_HOUR.seconds == 3600
+        assert UsageLimitPeriod.ONE_DAY.seconds == 86400
+        assert UsageLimitPeriod.SEVEN_DAYS.seconds == 604800
+        assert UsageLimitPeriod.ONE_MONTH.seconds == 2592000
+
+
+class TestDuplicatePatternWithinSameRole:
+    """Duplicate patterns within a single role should resolve to the most restrictive."""
+
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    def test_same_pattern_within_role_picks_lowest_limit(self, mock_role_entity: MagicMock):
+        """Two identical patterns on one role: the tighter limit (20) wins over the looser one (100)."""
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [
+                (f"{P}>", 100, "1d"),
+                (f"{P}>", 20, "1d"),
+            ],
+        ]
+
+        limits = UsageLimitService.get_effective_limits_for_roles(
+            ["role1"], resource_path=f"{P}LLMWrappingAgent.dev_agent"
+        )
+
+        assert len(limits) == 1
+        assert limits[0].limit == 20
+
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    def test_same_pattern_within_role_lowest_wins_then_cross_role_highest_wins(self, mock_role_entity: MagicMock):
+        """
+        Role A: > = 100/day and > = 20/day → intra-role dedup picks 20
+        Role B: > = 50/day
+        Cross-role merge: max(20, 50) = 50
+        """
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [(f"{P}>", 100, "1d"), (f"{P}>", 20, "1d")],
+            [(f"{P}>", 50, "1d")],
+        ]
+
+        limits = UsageLimitService.get_effective_limits_for_roles(
+            ["roleA", "roleB"], resource_path=f"{P}LLMWrappingAgent.dev_agent"
+        )
+
+        assert len(limits) == 1
+        assert limits[0].limit == 50
+
+
+class TestNonAgentResourceExtensibility:
+    """Verify that the service works with non-agent resource prefixes."""
+
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    def test_process_pattern_matches_process_path(self, mock_role_entity: MagicMock):
+        """A process pattern matches a process resource path."""
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [("aihub.user.process.>", 50, "1d")],
+        ]
+
+        limits = UsageLimitService.get_effective_limits_for_roles(
+            ["role1"], resource_path="aihub.user.process.MyProcess.v1"
+        )
+
+        assert len(limits) == 1
+        assert limits[0].pattern == "aihub.user.process.>"
+        assert limits[0].limit == 50
+
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    def test_agent_pattern_does_not_match_process_path(self, mock_role_entity: MagicMock):
+        """An agent pattern does not match a process resource path."""
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [(f"{P}>", 100, "1d")],
+        ]
+
+        limits = UsageLimitService.get_effective_limits_for_roles(
+            ["role1"], resource_path="aihub.user.process.MyProcess.v1"
+        )
+
+        assert limits == []
+
+    @pytest.mark.asyncio
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    async def test_check_and_increment_with_process_path(self, mock_role_entity: MagicMock):
+        """check_and_increment works with process resource paths."""
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [("aihub.user.process.>", 100, "1d")],
+        ]
+        redis = AsyncMock()
+        redis.get.return_value = b"5"
+        redis.incr.return_value = 6
+        redis.ttl.return_value = 80000
+
+        status = await UsageLimitService.check_and_increment(
+            redis, "user1", ["role1"], resource_path="aihub.user.process.MyProcess.v1"
+        )
+
+        assert status.is_exceeded is False
+        assert redis.incr.call_count == 1
+        incr_key = redis.incr.call_args_list[0].args[0]
+        assert "usage:calls:user1:aihub.user.process.>:1d" == incr_key

@@ -2567,7 +2567,7 @@ export type ChatCompletionUserMessageParam = {
 /**
  * ChatMessage
  */
-export type ChatMessageInput = {
+export type ChatMessage = {
     role?: MessageRoleInput;
     additional_kwargs: AdditionalKwargs;
     /**
@@ -6489,8 +6489,8 @@ export type ImagesResponse = {
      * Size
      */
     size?: ('1024x1024' | '1024x1536' | '1536x1024') | null;
-    usage?: OpenaiTypesImagesResponseUsage | null;
-    [key: string]: unknown | number | (('transparent' | 'opaque') | null) | (Array<Image> | null) | (('png' | 'webp' | 'jpeg') | null) | (('low' | 'medium' | 'high') | null) | (('1024x1024' | '1024x1536' | '1536x1024') | null) | (OpenaiTypesImagesResponseUsage | null) | undefined;
+    usage?: Usage | null;
+    [key: string]: unknown | number | (('transparent' | 'opaque') | null) | (Array<Image> | null) | (('png' | 'webp' | 'jpeg') | null) | (('low' | 'medium' | 'high') | null) | (('1024x1024' | '1024x1536' | '1536x1024') | null) | (Usage | null) | undefined;
 };
 
 /**
@@ -13074,6 +13074,20 @@ export type StopEventWritable = {
 };
 
 /**
+ * StopEventOutput
+ */
+export type StopEventOutput = {
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+};
+
+/**
  * StoreOrganizationMemoryEvent
  * Specialized BaseStoreMemoryEvent for organization-wide memories.
  *
@@ -14518,12 +14532,12 @@ export type TranscriptionVerbose = {
      * Segments
      */
     segments?: Array<TranscriptionSegment> | null;
-    usage?: Usage | null;
+    usage?: OpenaiTypesAudioTranscriptionVerboseUsage | null;
     /**
      * Words
      */
     words?: Array<TranscriptionWord> | null;
-    [key: string]: unknown | number | string | (Array<TranscriptionSegment> | null) | (Usage | null) | (Array<TranscriptionWord> | null) | undefined;
+    [key: string]: unknown | number | string | (Array<TranscriptionSegment> | null) | (OpenaiTypesAudioTranscriptionVerboseUsage | null) | (Array<TranscriptionWord> | null) | undefined;
 };
 
 /**
@@ -14639,14 +14653,19 @@ export type UpdateRoleRequest = {
  */
 export type Usage = {
     /**
-     * Seconds
+     * Input Tokens
      */
-    seconds: number;
+    input_tokens: number;
+    input_tokens_details: UsageInputTokensDetails;
     /**
-     * Type
+     * Output Tokens
      */
-    type: 'duration';
-    [key: string]: unknown | number | 'duration';
+    output_tokens: number;
+    /**
+     * Total Tokens
+     */
+    total_tokens: number;
+    [key: string]: unknown | number | UsageInputTokensDetails;
 };
 
 /**
@@ -14686,12 +14705,12 @@ export type UsageInputTokensDetails = {
 export type UsageLimitDto = {
     /**
      * Pattern
-     * NATS-style pattern (e.g. '>', 'LLMWrappingAgent.>', 'LLMWrappingAgent.dev_agent').
+     * Full dotted resource pattern with wildcards (e.g. 'aihub.user.agent.>', 'aihub.user.process.MyProcess.*'). Legacy patterns without 'aihub.user.' prefix are auto-normalized to 'aihub.user.agent.<pattern>'.
      */
     pattern: string;
     /**
      * Limit
-     * Max agent calls per period for this pattern.
+     * Max calls per period for this pattern.
      */
     limit: number;
     /**
@@ -14998,7 +15017,7 @@ export type UserMessageEventInput = {
      * Messages
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessageInput>;
+    messages?: Array<JamboParserObjectTypeParserChatMessage2>;
     /**
      * Files
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
@@ -15240,6 +15259,99 @@ export type AdditionalLocationInfo = {
 };
 
 /**
+ * LLMStopEventOutput
+ */
+export type AihubApiServicesModelCreationServiceLlmStopEventOutput2 = {
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Input Messages
+     * List of messages sent to the LLM as input.
+     */
+    input_messages?: Array<JamboParserObjectTypeParserMessage> | null;
+    /**
+     * Output Messages
+     * List of messages received from the LLM as output.
+     */
+    output_messages?: Array<JamboParserObjectTypeParserMessage> | null;
+    /**
+     * Parameters used during the invocation of the LLM.
+     */
+    invocation_parameters?: InvocationParameters | null;
+    /**
+     * Chat Model Name
+     * The name of the language model being utilized.
+     */
+    chat_model_name?: string | null;
+    /**
+     * Provider
+     * The hosting provider of the LLM, e.g., OpenAI, Azure.
+     */
+    provider?: string | null;
+    /**
+     * System
+     * The AI product as identified by the client or server.
+     */
+    system?: string | null;
+    /**
+     * Prompt Template
+     * The prompt template as a Python f-string.
+     */
+    prompt_template?: string | null;
+    /**
+     * A dictionary of input variables to the prompt template.
+     */
+    prompt_template_variables?: PromptTemplateVariables | null;
+    /**
+     * Prompt Template Version
+     * The version of the prompt template being used.
+     */
+    prompt_template_version?: string | null;
+    /**
+     * Token Count Prompt
+     * The number of tokens in the prompt.
+     */
+    token_count_prompt?: number | null;
+    /**
+     * Token Count Completion
+     * The number of tokens in the completion.
+     */
+    token_count_completion?: number | null;
+    /**
+     * Token Count Total
+     * The total number of tokens, including both prompt and completion.
+     */
+    token_count_total?: number | null;
+    /**
+     * Tools
+     * List of tools that are advertised to the LLM to be able to call.
+     */
+    tools?: Array<Tools> | null;
+};
+
+/**
+ * UserMessageEventInput
+ */
+export type AihubApiServicesModelCreationServiceUserMessageEventInput1 = {
+    /**
+     * Messages
+     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
+     */
+    messages?: Array<ChatMessage>;
+    /**
+     * Files
+     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
+     */
+    files?: Array<UserUploadedFile> | null;
+};
+
+/**
  * UserUploadedFile
  */
 export type AihubLibNatsEventsUserUserUploadedFileUserUploadedFile = {
@@ -15272,6 +15384,38 @@ export type FunctionCallArgumentsJson = {
  */
 export type InvocationParameters = {
     [key: string]: unknown;
+};
+
+/**
+ * ChatMessage
+ */
+export type JamboParserObjectTypeParserChatMessage2 = {
+    role?: MessageRoleInput;
+    additional_kwargs: AdditionalKwargs;
+    /**
+     * Blocks
+     */
+    blocks?: Array<({
+        block_type: 'text';
+    } & TextBlockInput) | ({
+        block_type: 'image';
+    } & ImageBlockInput) | ({
+        block_type: 'audio';
+    } & AudioBlockInput) | ({
+        block_type: 'video';
+    } & VideoBlockInput) | ({
+        block_type: 'document';
+    } & DocumentBlockInput) | ({
+        block_type: 'cache';
+    } & CachePointInput) | ({
+        block_type: 'citable';
+    } & CitableBlockInput) | ({
+        block_type: 'citation';
+    } & CitationBlockInput) | ({
+        block_type: 'thinking';
+    } & ThinkingBlockInput) | ({
+        block_type: 'tool_call';
+    } & ToolCallBlockInput)>;
 };
 
 /**
@@ -15312,6 +15456,21 @@ export type JamboParserObjectTypeParserMessage = {
      * The message contents as an array of content blocks (text, image, audio).
      */
     contents?: Array<TextContent | ImageContent | AudioContent> | null;
+};
+
+/**
+ * Usage
+ */
+export type OpenaiTypesAudioTranscriptionVerboseUsage = {
+    /**
+     * Seconds
+     */
+    seconds: number;
+    /**
+     * Type
+     */
+    type: 'duration';
+    [key: string]: unknown | number | 'duration';
 };
 
 /**
@@ -15387,26 +15546,6 @@ export type OpenaiTypesChatCompletionCreateParamsFunction = {
     [key: string]: unknown | string | {
         [key: string]: unknown;
     } | undefined;
-};
-
-/**
- * Usage
- */
-export type OpenaiTypesImagesResponseUsage = {
-    /**
-     * Input Tokens
-     */
-    input_tokens: number;
-    input_tokens_details: UsageInputTokensDetails;
-    /**
-     * Output Tokens
-     */
-    output_tokens: number;
-    /**
-     * Total Tokens
-     */
-    total_tokens: number;
-    [key: string]: unknown | number | UsageInputTokensDetails;
 };
 
 /**
@@ -17892,7 +18031,7 @@ export type ProcessDocumentResponses = {
 export type ProcessDocumentResponse = ProcessDocumentResponses[keyof ProcessDocumentResponses];
 
 export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostData = {
-    body: UserMessageEventInput;
+    body: AihubApiServicesModelCreationServiceUserMessageEventInput1;
     path?: never;
     query?: {
         /**
@@ -17926,7 +18065,7 @@ export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgent
 export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponse = SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponses[keyof SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponses];
 
 export type StreamUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventStreamPostData = {
-    body: UserMessageEventInput;
+    body: AihubApiServicesModelCreationServiceUserMessageEventInput1;
     path?: never;
     query?: {
         /**
@@ -17951,6 +18090,73 @@ export type StreamUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAge
 export type StreamUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventStreamPostError = StreamUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventStreamPostErrors[keyof StreamUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventStreamPostErrors];
 
 export type StreamUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventStreamPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type SendUserMessageEventToFewShotAgentRagAgentAgentsFewShotAgentRagAgentUserMessageEventPostData = {
+    body: UserMessageEventInput;
+    path?: never;
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/FewShotAgent/rag_agent/UserMessageEvent';
+};
+
+export type SendUserMessageEventToFewShotAgentRagAgentAgentsFewShotAgentRagAgentUserMessageEventPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SendUserMessageEventToFewShotAgentRagAgentAgentsFewShotAgentRagAgentUserMessageEventPostError = SendUserMessageEventToFewShotAgentRagAgentAgentsFewShotAgentRagAgentUserMessageEventPostErrors[keyof SendUserMessageEventToFewShotAgentRagAgentAgentsFewShotAgentRagAgentUserMessageEventPostErrors];
+
+export type SendUserMessageEventToFewShotAgentRagAgentAgentsFewShotAgentRagAgentUserMessageEventPostResponses = {
+    /**
+     * Response Send User Message Event To Few Shot Agent Rag Agent Agents Fewshotagent Rag Agent Usermessageevent Post
+     * Successful Response
+     */
+    200: StopEventOutput | AihubApiServicesModelCreationServiceLlmStopEventOutput2;
+};
+
+export type SendUserMessageEventToFewShotAgentRagAgentAgentsFewShotAgentRagAgentUserMessageEventPostResponse = SendUserMessageEventToFewShotAgentRagAgentAgentsFewShotAgentRagAgentUserMessageEventPostResponses[keyof SendUserMessageEventToFewShotAgentRagAgentAgentsFewShotAgentRagAgentUserMessageEventPostResponses];
+
+export type StreamUserMessageEventToFewShotAgentRagAgentAgentsFewShotAgentRagAgentUserMessageEventStreamPostData = {
+    body: UserMessageEventInput;
+    path?: never;
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/FewShotAgent/rag_agent/UserMessageEvent/stream';
+};
+
+export type StreamUserMessageEventToFewShotAgentRagAgentAgentsFewShotAgentRagAgentUserMessageEventStreamPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type StreamUserMessageEventToFewShotAgentRagAgentAgentsFewShotAgentRagAgentUserMessageEventStreamPostError = StreamUserMessageEventToFewShotAgentRagAgentAgentsFewShotAgentRagAgentUserMessageEventStreamPostErrors[keyof StreamUserMessageEventToFewShotAgentRagAgentAgentsFewShotAgentRagAgentUserMessageEventStreamPostErrors];
+
+export type StreamUserMessageEventToFewShotAgentRagAgentAgentsFewShotAgentRagAgentUserMessageEventStreamPostResponses = {
     /**
      * Successful Response
      */

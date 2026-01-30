@@ -70,6 +70,19 @@ class RoleEntity(Document):
         """
         Returns a list of usage_limits per role. Each element is a list of (pattern, limit, period) tuples
         for one role. Roles without usage_limits return an empty list.
+
+        Legacy patterns without an ``aihub.user.`` prefix are normalized to
+        ``aihub.user.agent.<pattern>`` for backward compatibility.
         """
         roles = cls.objects(name__in=role_names).only("usage_limits")
-        return [[(ul.pattern, ul.limit, ul.period) for ul in role.usage_limits] for role in roles]
+        return [
+            [(cls._normalize_usage_pattern(ul.pattern), ul.limit, ul.period) for ul in role.usage_limits]
+            for role in roles
+        ]
+
+    @staticmethod
+    def _normalize_usage_pattern(pattern: str) -> str:
+        """Prefix legacy patterns that lack the ``aihub.user.`` namespace."""
+        if pattern.startswith("aihub.user."):
+            return pattern
+        return f"aihub.user.agent.{pattern}"

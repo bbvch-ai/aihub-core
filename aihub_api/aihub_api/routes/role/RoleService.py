@@ -1,10 +1,16 @@
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from aihub_lib.auth.usage.UsageLimitService import PATTERN_PREFIX
 from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity, UsageLimit
 
 from aihub_api.routes.role.dto.CreateRoleRequest import CreateRoleRequest
 from aihub_api.routes.role.dto.RoleResponse import RoleResponse
 from aihub_api.routes.role.dto.UpdateRoleRequest import UpdateRoleRequest
+
+
+def _normalize_usage_pattern(pattern: str) -> str:
+    """Prefix legacy patterns that lack the ``aihub.user.`` namespace."""
+    if pattern.startswith("aihub.user."):
+        return pattern
+    return f"aihub.user.agent.{pattern}"
 
 
 class RoleService:
@@ -20,7 +26,7 @@ class RoleService:
             description=data.description,
             access_rules=data.access_rules,
             usage_limits=[
-                UsageLimit(pattern=PATTERN_PREFIX + ul.pattern, limit=ul.limit, period=ul.period)
+                UsageLimit(pattern=_normalize_usage_pattern(ul.pattern), limit=ul.limit, period=ul.period)
                 for ul in data.usage_limits
             ],
         )
@@ -59,7 +65,7 @@ class RoleService:
 
         if "usage_limits" in update_data:
             update_data["usage_limits"] = [
-                UsageLimit(pattern=PATTERN_PREFIX + ul["pattern"], limit=ul["limit"], period=ul["period"])
+                UsageLimit(pattern=_normalize_usage_pattern(ul["pattern"]), limit=ul["limit"], period=ul["period"])
                 for ul in update_data["usage_limits"]
             ]
 

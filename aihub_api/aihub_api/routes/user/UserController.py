@@ -135,4 +135,3 @@ class UserController(Controller):
             return None
 
         return self
-

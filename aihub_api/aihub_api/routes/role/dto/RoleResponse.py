@@ -1,6 +1,5 @@
 from typing import Annotated
 
-from aihub_lib.auth.usage.UsageLimitService import PATTERN_PREFIX
 from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 from pydantic import BaseModel, Field
 
@@ -27,7 +26,7 @@ class RoleResponse(BaseModel):
             access_rules=role_entity.access_rules,
             usage_limits=[
                 UsageLimitDTO(
-                    pattern=ul.pattern.removeprefix(PATTERN_PREFIX),
+                    pattern=ul.pattern,
                     limit=ul.limit,
                     period=ul.period,
                 )

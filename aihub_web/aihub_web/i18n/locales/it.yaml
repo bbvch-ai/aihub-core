@@ -70,7 +70,7 @@ http_error:
     404: "Spiacenti, non siamo riusciti a trovare quella pagina."
     405: "Questa azione non è consentita qui."
     408: "La richiesta è scaduta. Riprova."
-    429: "Troppe richieste. Attendi un momento."
+    429: "Troppe richieste."
 
     # 5xx Server Errors
     500: "Si è verificato un errore sui nostri server."

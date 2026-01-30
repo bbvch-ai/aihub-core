@@ -34,59 +34,12 @@ from bson import ObjectId
 
 logger = logging.getLogger(__name__)
 
-# Supported languages for error messages
-SUPPORTED_LANGUAGES = {"en", "de", "fr", "it"}
-DEFAULT_LANGUAGE = "en"
 
-
-def _format_429_message(detail: dict, preferred_lang: str) -> str:
-    """Extract a user-facing error message from a 429 response detail dict."""
-    # Try multi-limit display from 'limits' array
-    limits_array = detail.get("limits", [])
-    exceeded_limits = [ls for ls in limits_array if ls.get("is_exceeded")]
-
-    if exceeded_limits:
-        lines: list[str] = []
-        for ls in exceeded_limits:
-            scope = ls.get("scope", {}).get(preferred_lang) or ls.get("pattern", "")
-            period_lbl = ls.get("period_label", {}).get(preferred_lang) or ls.get("period", "?")
-            lines.append(
-                f"{ls.get('current_count', '?')}/{ls.get('limit', '?')} per {period_lbl} ({scope})"
-            )
-        msg = "Usage limit exceeded: " + " · ".join(lines)
-    else:
-        # Fallback: use translated messages
-        messages = detail.get("messages", {})
-        if messages:
-            msg = messages.get(preferred_lang) or messages.get("en", "Usage limit exceeded")
-        else:
-            limit = detail.get("limit", "unknown")
-            period = detail.get("period", "unknown")
-            msg = f"Usage limit reached: {limit} agent calls per {period}"
-
-    reset_at_local = detail.get("reset_at_local")
-    if reset_at_local:
-        msg += f" • Resets at {reset_at_local}"
-    return msg
-
-
-def detect_language(accept_language: str | None) -> str:
-    """
-    Detect preferred language from Accept-Language header.
-    Returns the best matching supported language or default (en).
-    """
-    if not accept_language:
-        return DEFAULT_LANGUAGE
-
-    # Parse Accept-Language header (e.g., "de-CH,de;q=0.9,en;q=0.8")
-    for part in accept_language.split(","):
-        lang = part.split(";")[0].strip().lower()
-        # Extract base language (e.g., "de-CH" -> "de")
-        base_lang = lang.split("-")[0]
-        if base_lang in SUPPORTED_LANGUAGES:
-            return base_lang
-
-    return DEFAULT_LANGUAGE
+def _extract_429_message(detail: dict) -> str:
+    """Extract the pre-formatted error message from a 429 response detail dict."""
+    if message := detail.get("message"):
+        return message
+    return detail.get("messages", {}).get("en", "Usage limit exceeded")
 
 
 # ============================================================================
@@ -193,9 +146,7 @@ class Pipe:
                 "Accept": "application/json",
             }
 
-            async with httpx.AsyncClient(
-                timeout=self.valves.AIHUB_REQUEST_TIMEOUT, follow_redirects=True
-            ) as client:
+            async with httpx.AsyncClient(timeout=self.valves.AIHUB_REQUEST_TIMEOUT, follow_redirects=True) as client:
                 response = await client.get(
                     f"{self.valves.AIHUB_BASE_URL}/api/v1/openai/models",
                     headers=headers,
@@ -216,10 +167,7 @@ class Pipe:
 
     def _validate_configuration(self) -> Annotated[bool, "Configuration validity"]:
         """Validate required configuration"""
-        return bool(
-            self.valves.AIHUB_SUPERUSER_API_KEY
-            and self.valves.OPEN_WEBUI_SIGNING_SECRET
-        )
+        return bool(self.valves.AIHUB_SUPERUSER_API_KEY and self.valves.OPEN_WEBUI_SIGNING_SECRET)
 
     def _extract_model_id(
         self, model_id_with_pipe_prefix: Annotated[str, "Model ID from request"]
@@ -253,9 +201,7 @@ class Pipe:
         This is an async generator function that yields lines of streaming output.
         """
         # Prepare headers and payload
-        headers = self._auth_service.prepare_headers(
-            __user__["name"], __user__["email"]
-        )
+        headers = self._auth_service.prepare_headers(__user__["name"], __user__["email"])
         model_id = self._extract_model_id(body["model"])
         thread_id = self._str_to_object_id(__metadata__.get("chat_id"))
         display_id = self._str_to_object_id(__metadata__.get("message_id"))
@@ -286,14 +232,6 @@ class Pipe:
                     error_body = await stream_response.aread()
                     error_detail = error_body.decode()
 
-                    # Detect preferred language from request
-                    preferred_lang = DEFAULT_LANGUAGE
-                    try:
-                        accept_lang = __request__.headers.get("Accept-Language", "") if __request__ else ""
-                        preferred_lang = detect_language(accept_lang)
-                    except Exception:
-                        pass
-
                     logger.debug(f"HTTP {stream_response.status_code} error body: {error_detail}")
 
                     # Special handling for 429 (usage limit exceeded)
@@ -301,11 +239,8 @@ class Pipe:
                         try:
                             error_data = json.loads(error_detail)
                             detail = error_data.get("detail", {})
-                            logger.debug(f"429 error detail: {detail}, type: {type(detail)}")
-
                             if isinstance(detail, dict) and detail.get("error") == "usage_limit_exceeded":
-                                error_msg = _format_429_message(detail, preferred_lang)
-                                yield f"data: {json.dumps({'error': error_msg})}\n\n"
+                                yield f"data: {json.dumps({'error': _extract_429_message(detail)})}\n\n"
                                 return
                         except (json.JSONDecodeError, KeyError) as parse_err:
                             logger.warning(f"Failed to parse 429 error body: {parse_err}")
@@ -369,9 +304,7 @@ class Pipe:
         Handle non-streaming requests, returning a dict with the completion response.
         This is a regular async function that returns a dictionary.
         """
-        headers = self._auth_service.prepare_headers(
-            __user__["name"], __user__["email"]
-        )
+        headers = self._auth_service.prepare_headers(__user__["name"], __user__["email"])
         model_id = self._extract_model_id(body["model"])
         thread_id = self._str_to_object_id(__metadata__.get("chat_id"))
         display_id = self._str_to_object_id(__metadata__.get("message_id"))
@@ -387,9 +320,7 @@ class Pipe:
 
         try:
             # Use a separate client for non-streaming requests
-            async with httpx.AsyncClient(
-                timeout=self.valves.AIHUB_REQUEST_TIMEOUT, follow_redirects=True
-            ) as client:
+            async with httpx.AsyncClient(timeout=self.valves.AIHUB_REQUEST_TIMEOUT, follow_redirects=True) as client:
                 response = await client.post(
                     url=f"{self.valves.AIHUB_BASE_URL}/api/v1/openai/chat/completions",
                     json=payload,
@@ -402,39 +333,24 @@ class Pipe:
             return completion_response
 
         except httpx.HTTPStatusError as e:
-            # Detect preferred language from request
-            preferred_lang = DEFAULT_LANGUAGE
-            try:
-                accept_lang = __request__.headers.get("Accept-Language", "") if __request__ else ""
-                preferred_lang = detect_language(accept_lang)
-            except Exception:
-                pass
-
             error_detail = "(Could not decode error body)"
             try:
-                # For non-streaming, body is already available
                 error_detail = e.response.text
                 logger.debug(f"HTTP {e.response.status_code} error body: {error_detail}")
 
-                # Special handling for 429 (usage limit exceeded)
                 if e.response.status_code == 429:
                     try:
                         error_data = json.loads(error_detail)
                         detail = error_data.get("detail", {})
-                        logger.debug(f"429 error detail: {detail}, type: {type(detail)}")
-
                         if isinstance(detail, dict) and detail.get("error") == "usage_limit_exceeded":
-                            error_msg = _format_429_message(detail, preferred_lang)
-                            return {"error": error_msg}
+                            return {"error": _extract_429_message(detail)}
                     except (json.JSONDecodeError, KeyError) as parse_err:
                         logger.warning(f"Failed to parse 429 error body: {parse_err}")
             except Exception as read_err:
                 logger.warning(f"Failed to read error response body: {read_err}")
 
             logger.error(f"HTTP error: {e.response.status_code} - {error_detail}")
-            return {
-                "error": f"API Error: Status {e.response.status_code} - {error_detail}"
-            }
+            return {"error": f"API Error: Status {e.response.status_code} - {error_detail}"}
 
         except Exception as e:
             logger.exception(f"Error during non-streaming request: {e}")
@@ -450,9 +366,7 @@ class Pipe:
         """Main pipeline entry point"""
 
         is_streaming = body.get("stream", False)
-        logger.debug(
-            f"Request type: {'streaming' if is_streaming else 'non-streaming'}"
-        )
+        logger.debug(f"Request type: {'streaming' if is_streaming else 'non-streaming'}")
 
         if is_streaming:
             # For streaming, we return the async generator object directly

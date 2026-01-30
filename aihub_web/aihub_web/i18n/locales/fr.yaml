@@ -70,7 +70,7 @@ http_error:
     404: "Désolé, nous n'avons pas pu trouver cette page."
     405: "Cette action n'est pas autorisée ici."
     408: "La requête a expiré. Veuillez réessayer."
-    429: "Trop de requêtes. Veuillez patienter un instant."
+    429: "Trop de requêtes."
 
     # 5xx Server Errors
     500: "Une erreur s'est produite sur nos serveurs."

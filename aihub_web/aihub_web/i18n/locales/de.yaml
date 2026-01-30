@@ -70,7 +70,7 @@ http_error:
     404: "Entschuldigung, wir konnten diese Seite nicht finden."
     405: "Diese Aktion ist hier nicht erlaubt."
     408: "Die Anfrage hat das Zeitlimit überschritten. Bitte versuchen Sie es erneut."
-    429: "Zu viele Anfragen. Bitte warten Sie einen Moment."
+    429: "Zu viele Anfragen."
 
     # 5xx Server Errors
     500: "Auf unseren Servern ist ein Fehler aufgetreten."

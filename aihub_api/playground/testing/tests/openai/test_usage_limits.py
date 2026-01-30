@@ -1,7 +1,6 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-import pytest_asyncio
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
@@ -77,7 +76,7 @@ class TestUsageLimitEnforcement:
                     "messages": [{"role": "user", "content": "Hello"}],
                     "stream": False,
                 }
-                response = await client.post(CHAT_ENDPOINT, json=payload)
+                await client.post(CHAT_ENDPOINT, json=payload)
 
                 # The actual response may succeed or fail depending on model availability,
                 # but the key point is that check_and_increment should NOT be called

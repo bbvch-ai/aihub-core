@@ -3268,7 +3268,7 @@ export const ChatCompletionUserMessageParamSchema = {
     title: 'ChatCompletionUserMessageParam'
 } as const;
 
-export const ChatMessage_InputSchema = {
+export const ChatMessageSchema = {
     properties: {
         role: {
             '$ref': '#/components/schemas/MessageRole-Input',
@@ -8272,7 +8272,7 @@ export const ImagesResponseSchema = {
         usage: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/openai__types__images_response__Usage'
+                    '$ref': '#/components/schemas/Usage'
                 },
                 {
                     type: 'null'
@@ -11551,7 +11551,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1769705651
+            default: 1769781052
         },
         owned_by: {
             type: 'string',
@@ -15773,6 +15773,35 @@ By inheriting from both \`ControlEvent\` and \`DisplayEvent\`:
 - Informing the user interface that the conversation or task has concluded.`
 } as const;
 
+export const StopEventOutputSchema = {
+    properties: {
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        }
+    },
+    type: 'object',
+    title: 'StopEventOutput'
+} as const;
+
 export const StoreOrganizationMemoryEventSchema = {
     properties: {
         event_id: {
@@ -17398,7 +17427,7 @@ export const TranscriptionVerboseSchema = {
         usage: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/Usage'
+                    '$ref': '#/components/schemas/openai__types__audio__transcription_verbose__Usage'
                 },
                 {
                     type: 'null'
@@ -17607,19 +17636,25 @@ export const UpdateRoleRequestSchema = {
 
 export const UsageSchema = {
     properties: {
-        seconds: {
-            type: 'number',
-            title: 'Seconds'
+        input_tokens: {
+            type: 'integer',
+            title: 'Input Tokens'
         },
-        type: {
-            type: 'string',
-            const: 'duration',
-            title: 'Type'
+        input_tokens_details: {
+            '$ref': '#/components/schemas/UsageInputTokensDetails'
+        },
+        output_tokens: {
+            type: 'integer',
+            title: 'Output Tokens'
+        },
+        total_tokens: {
+            type: 'integer',
+            title: 'Total Tokens'
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['seconds', 'type'],
+    required: ['input_tokens', 'input_tokens_details', 'output_tokens', 'total_tokens'],
     title: 'Usage'
 } as const;
 
@@ -17663,12 +17698,12 @@ export const UsageLimitDTOSchema = {
         pattern: {
             type: 'string',
             title: 'Pattern',
-            description: "NATS-style pattern (e.g. '>', 'LLMWrappingAgent.>', 'LLMWrappingAgent.dev_agent')."
+            description: "Full dotted resource pattern with wildcards (e.g. 'aihub.user.agent.>', 'aihub.user.process.MyProcess.*'). Legacy patterns without 'aihub.user.' prefix are auto-normalized to 'aihub.user.agent.<pattern>'."
         },
         limit: {
             type: 'integer',
             title: 'Limit',
-            description: 'Max agent calls per period for this pattern.'
+            description: 'Max calls per period for this pattern.'
         },
         period: {
             type: 'string',
@@ -18007,7 +18042,7 @@ export const UserMessageEventInputSchema = {
     properties: {
         messages: {
             items: {
-                '$ref': '#/components/schemas/ChatMessage-Input'
+                '$ref': '#/components/schemas/jambo__parser__object_type_parser__ChatMessage__2'
             },
             type: 'array',
             title: 'Messages',
@@ -18417,6 +18452,228 @@ export const additional_location_infoSchema = {
     title: 'additional_location_info'
 } as const;
 
+export const aihub_api__services__ModelCreationService__LLMStopEventOutput__2Schema = {
+    properties: {
+        display_name: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        input_messages: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__Message'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Input Messages',
+            description: 'List of messages sent to the LLM as input.'
+        },
+        output_messages: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__Message'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Output Messages',
+            description: 'List of messages received from the LLM as output.'
+        },
+        invocation_parameters: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/invocation_parameters'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Parameters used during the invocation of the LLM.'
+        },
+        chat_model_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Chat Model Name',
+            description: 'The name of the language model being utilized.'
+        },
+        provider: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Provider',
+            description: 'The hosting provider of the LLM, e.g., OpenAI, Azure.'
+        },
+        system: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'System',
+            description: 'The AI product as identified by the client or server.'
+        },
+        prompt_template: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Prompt Template',
+            description: 'The prompt template as a Python f-string.'
+        },
+        prompt_template_variables: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/prompt_template_variables'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'A dictionary of input variables to the prompt template.'
+        },
+        prompt_template_version: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Prompt Template Version',
+            description: 'The version of the prompt template being used.'
+        },
+        token_count_prompt: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Token Count Prompt',
+            description: 'The number of tokens in the prompt.'
+        },
+        token_count_completion: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Token Count Completion',
+            description: 'The number of tokens in the completion.'
+        },
+        token_count_total: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Token Count Total',
+            description: 'The total number of tokens, including both prompt and completion.'
+        },
+        tools: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/tools'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tools',
+            description: 'List of tools that are advertised to the LLM to be able to call.'
+        }
+    },
+    type: 'object',
+    title: 'LLMStopEventOutput'
+} as const;
+
+export const aihub_api__services__ModelCreationService__UserMessageEventInput__1Schema = {
+    properties: {
+        messages: {
+            items: {
+                '$ref': '#/components/schemas/ChatMessage'
+            },
+            type: 'array',
+            title: 'Messages',
+            description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.'
+        },
+        files: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/UserUploadedFile'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Files',
+            description: 'A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.'
+        }
+    },
+    type: 'object',
+    title: 'UserMessageEventInput'
+} as const;
+
 export const aihub_lib__nats__events__user__UserUploadedFile__UserUploadedFileSchema = {
     properties: {
         filename: {
@@ -18451,6 +18708,74 @@ export const invocation_parametersSchema = {
     properties: {},
     type: 'object',
     title: 'invocation_parameters'
+} as const;
+
+export const jambo__parser__object_type_parser__ChatMessage__2Schema = {
+    properties: {
+        role: {
+            '$ref': '#/components/schemas/MessageRole-Input',
+            default: 'user'
+        },
+        additional_kwargs: {
+            '$ref': '#/components/schemas/additional_kwargs'
+        },
+        blocks: {
+            items: {
+                oneOf: [
+                    {
+                        '$ref': '#/components/schemas/TextBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ImageBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/AudioBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/VideoBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/DocumentBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CachePoint-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CitableBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/CitationBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ThinkingBlock-Input'
+                    },
+                    {
+                        '$ref': '#/components/schemas/ToolCallBlock-Input'
+                    }
+                ],
+                discriminator: {
+                    propertyName: 'block_type',
+                    mapping: {
+                        audio: '#/components/schemas/AudioBlock-Input',
+                        cache: '#/components/schemas/CachePoint-Input',
+                        citable: '#/components/schemas/CitableBlock-Input',
+                        citation: '#/components/schemas/CitationBlock-Input',
+                        document: '#/components/schemas/DocumentBlock-Input',
+                        image: '#/components/schemas/ImageBlock-Input',
+                        text: '#/components/schemas/TextBlock-Input',
+                        thinking: '#/components/schemas/ThinkingBlock-Input',
+                        tool_call: '#/components/schemas/ToolCallBlock-Input',
+                        video: '#/components/schemas/VideoBlock-Input'
+                    }
+                }
+            },
+            type: 'array',
+            title: 'Blocks'
+        }
+    },
+    type: 'object',
+    required: ['additional_kwargs'],
+    title: 'ChatMessage'
 } as const;
 
 export const jambo__parser__object_type_parser__MessageSchema = {
@@ -18553,6 +18878,24 @@ export const jambo__parser__object_type_parser__MessageSchema = {
     title: 'Message'
 } as const;
 
+export const openai__types__audio__transcription_verbose__UsageSchema = {
+    properties: {
+        seconds: {
+            type: 'number',
+            title: 'Seconds'
+        },
+        type: {
+            type: 'string',
+            const: 'duration',
+            title: 'Type'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['seconds', 'type'],
+    title: 'Usage'
+} as const;
+
 export const openai__types__chat__chat_completion_message_custom_tool_call_param__CustomSchema = {
     properties: {
         input: {
@@ -18633,30 +18976,6 @@ export const openai__types__chat__completion_create_params__FunctionSchema = {
     type: 'object',
     required: ['name'],
     title: 'Function'
-} as const;
-
-export const openai__types__images_response__UsageSchema = {
-    properties: {
-        input_tokens: {
-            type: 'integer',
-            title: 'Input Tokens'
-        },
-        input_tokens_details: {
-            '$ref': '#/components/schemas/UsageInputTokensDetails'
-        },
-        output_tokens: {
-            type: 'integer',
-            title: 'Output Tokens'
-        },
-        total_tokens: {
-            type: 'integer',
-            title: 'Total Tokens'
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['input_tokens', 'input_tokens_details', 'output_tokens', 'total_tokens'],
-    title: 'Usage'
 } as const;
 
 export const prompt_template_variablesSchema = {

@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from collections.abc import AsyncIterator
 from typing import Annotated, Literal
@@ -6,8 +5,6 @@ from typing import Annotated, Literal
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.auth.usage import UsageLimitService, build_exceeded_detail
-from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.redis.use_redis import use_redis
@@ -17,12 +14,12 @@ from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributo
 )
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.routes.Controller import Controller
-from fastapi import Body, Depends, File, Form, HTTPException, Security, UploadFile
+from fastapi import Body, Depends, File, Form, Security, UploadFile
 from nats.aio.client import Client as NATS
-from redis.asyncio import Redis
 from openai.types import ImagesResponse
 from openai.types.audio import Transcription, TranscriptionVerbose
 from openai.types.chat import ChatCompletion
+from redis.asyncio import Redis
 from starlette.responses import StreamingResponse
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
@@ -239,27 +236,15 @@ class OpenaiController(Controller):
 
             if model_name.count("/") == 1:
                 agent_class, agent_id = model_name.split("/")
-
-                # Only enforce agent access and usage limits for actual registered agents,
-                # not for regular LLM models (e.g. "text-generation/mini")
-                agent_entity = await asyncio.to_thread(AgentEntity.get_agent, agent_class, agent_id)
-                if agent_entity is not None:
-                    if not AccessChecker.from_user(user).has_access_to_agent(agent_class, agent_id):
-                        raise ValueError(f"User {user.id} does not have permission to access model {model_name}")
-
-                    # Usage limit check for agent calls (pattern-based)
-                    agent_path = f"{agent_class}.{agent_id}"
-                    usage_status = await UsageLimitService.check_and_increment(
-                        redis, user.id, user.roles, agent_path=agent_path
-                    )
-                    if usage_status.is_exceeded:
-                        raise HTTPException(status_code=429, detail=build_exceeded_detail(usage_status))
+                if not AccessChecker.from_user(user).has_access_to_agent(agent_class, agent_id):
+                    raise ValueError(f"User {user.id} does not have permission to access model {model_name}")
 
             return await OpenaiService.chat_completion_with_assistants(
                 model_name=model_name,
                 chat_completion_request=completion_request,
                 user=user,
                 nc=nc,
+                redis=redis,
                 external_agent_event_distributor=external_agent_event_distributor,
                 t=t,
             )

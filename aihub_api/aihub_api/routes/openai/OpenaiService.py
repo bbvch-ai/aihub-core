@@ -26,6 +26,7 @@ from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
 from opentelemetry.propagate import inject
 from pydantic import BaseModel
 from pydub import AudioSegment
+from redis.asyncio import Redis
 from starlette.responses import StreamingResponse
 
 from aihub_api.audio.AudioChunkingService import AudioChunkingService, TranscriptionChunk
@@ -240,6 +241,7 @@ class OpenaiService:
         chat_completion_request: ChatCompletionRequest,
         user: UserIdentity,
         nc: NATS,
+        redis: Redis | None = None,
         external_agent_event_distributor: ExternalAgentEventDistributor,
         t: LocaleHandler,
     ) -> ChatCompletion | StreamingResponse:
@@ -270,6 +272,7 @@ class OpenaiService:
                 chat_completion_request=chat_completion_request,
                 user=user,
                 nc=nc,
+                redis=redis,
                 external_agent_event_distributor=external_agent_event_distributor,
                 locale=t.locale,
             )
@@ -280,6 +283,7 @@ class OpenaiService:
             chat_completion_request=chat_completion_request,
             user=user,
             nc=nc,
+            redis=redis,
             external_agent_event_distributor=external_agent_event_distributor,
             locale=t.locale,
         )
@@ -293,6 +297,7 @@ class OpenaiService:
         chat_completion_request: ChatCompletionRequest,
         user: UserIdentity,
         nc: NATS,
+        redis: Redis | None = None,
         external_agent_event_distributor: ExternalAgentEventDistributor,
         locale: str | None = None,
     ):
@@ -314,6 +319,7 @@ class OpenaiService:
             display_id=str_to_object_id(display_id),
             files=files,
             locale=locale,
+            redis=redis,
         )
         # Wait until all events are processed
         await resources.stop_signal.wait()
@@ -355,6 +361,7 @@ class OpenaiService:
         chat_completion_request: ChatCompletionRequest,
         user: UserIdentity,
         nc: NATS,
+        redis: Redis | None = None,
         external_agent_event_distributor: ExternalAgentEventDistributor,
         locale: str | None = None,
     ):
@@ -376,6 +383,7 @@ class OpenaiService:
             display_id=str_to_object_id(display_id),
             files=files,
             locale=locale,
+            redis=redis,
         )
 
         async def sse_event_generator():

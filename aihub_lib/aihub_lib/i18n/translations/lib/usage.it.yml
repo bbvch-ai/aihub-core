@@ -1,0 +1,29 @@
+periods:
+  1h: "ora"
+  1d: "giorno"
+  7d: "settimana"
+  1mo: "mese"
+
+weekdays:
+  monday: "lunedì"
+  tuesday: "martedì"
+  wednesday: "mercoledì"
+  thursday: "giovedì"
+  friday: "venerdì"
+  saturday: "sabato"
+  sunday: "domenica"
+
+scope:
+  all_agents: "tutti gli agenti"
+  all_processes: "tutti i processi"
+  all_resources: "tutte le risorse"
+
+messages:
+  limit_warning: "Avviso limite di utilizzo: %{remaining} chiamate rimanenti"
+  limit_exceeded: "Limite di utilizzo raggiunto"
+  limit_reached: "Limite di utilizzo raggiunto: %{limit} chiamate per %{period}"
+  limit_detail: "%{current}/%{limit} per %{period} (%{scope})"
+  resets_at: "Reset alle %{time}"
+  resets_tomorrow_at: "Reset domani alle %{time}"
+  resets_on_weekday_at: "Reset %{weekday} alle %{time}"
+  resets_on_date_at: "Reset il %{date} alle %{time}"

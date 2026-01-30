@@ -1068,15 +1068,12 @@ class StreamingService:
 
                     # Show usage warning if approaching limit
                     if result and result.get("type") == "usage_warning":
-                        remaining = result.get("remaining", "?")
-                        limit = result.get("limit", "?")
-                        current = result.get("current", "?")
-                        period = result.get("period", "?")
+                        warning_msg = result.get("message", "Usage limit warning")
                         await event_emitter(
                             {
                                 "type": "chat:message:delta",
                                 "data": {
-                                    "content": f"\n\n> [!WARNING]\n> ⚠️ **Usage limit warning:** {remaining} calls remaining ({current}/{limit} per {period})\n"
+                                    "content": f"\n\n> [!WARNING]\n> ⚠️ **{warning_msg}**\n"
                                 },
                             }
                         )
@@ -1112,10 +1109,7 @@ class StreamingService:
             if response.headers.get("X-Usage-Warning") == "true":
                 usage_warning = {
                     "type": "usage_warning",
-                    "current": response.headers.get("X-Usage-Current"),
-                    "limit": response.headers.get("X-Usage-Limit"),
-                    "remaining": response.headers.get("X-Usage-Remaining"),
-                    "period": response.headers.get("X-Usage-Period"),
+                    "message": response.headers.get("X-Usage-Warning-Message", "Usage limit warning"),
                 }
 
             if stream_start_callback:
@@ -1178,34 +1172,7 @@ class StreamingService:
                 logger.debug(f"429 error detail: {detail}, type: {type(detail)}")
 
                 if isinstance(detail, dict) and detail.get("error") == "usage_limit_exceeded":
-                    # Try multi-limit display from 'limits' array
-                    limits_array = detail.get("limits", [])
-                    exceeded_limits = [ls for ls in limits_array if ls.get("is_exceeded")]
-
-                    if exceeded_limits:
-                        # Build a line per exceeded limit using human-readable scope/period
-                        lines: list[str] = []
-                        for ls in exceeded_limits:
-                            scope = ls.get("scope", {}).get(preferred_lang) or ls.get("pattern", "")
-                            period_lbl = ls.get("period_label", {}).get(preferred_lang) or ls.get("period", "?")
-                            lines.append(f"{ls.get('current_count', '?')}/{ls.get('limit', '?')} per {period_lbl} ({scope})")
-                        error_msg = "Usage limit exceeded: " + " · ".join(lines)
-                    else:
-                        # Fallback: use translated messages from API
-                        messages = detail.get("messages", {})
-                        logger.debug(f"429 messages: {messages}, preferred_lang: {preferred_lang}")
-
-                        if messages:
-                            error_msg = messages.get(preferred_lang) or messages.get("en", "Usage limit exceeded")
-                        else:
-                            limit = detail.get("limit", "unknown")
-                            period = detail.get("period", "unknown")
-                            error_msg = f"Usage limit reached: {limit} agent calls per {period}"
-
-                    # Add reset time
-                    reset_at_local = detail.get("reset_at_local")
-                    if reset_at_local:
-                        error_msg += f" • Resets at {reset_at_local}"
+                    error_msg = detail.get("message", "Usage limit exceeded")
                 else:
                     error_msg = f"{error_msg}: {error_body}"
             except (json.JSONDecodeError, KeyError) as parse_err:

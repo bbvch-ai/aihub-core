@@ -69,7 +69,7 @@
       </DataTable>
       <span
         v-else
-        class="text-sm text-muted-color italic"
+        class="text-sm italic text-muted-color"
       >
         {{ t('role.no_access_rules') }}
       </span>
@@ -126,7 +126,7 @@
             >
               <td class="py-2">
                 <Badge
-                  :value="`aihub.user.agent.${ul.pattern}`"
+                  :value="displayPattern(ul.pattern)"
                   severity="secondary"
                   class="border border-gray-400/30"
                 />
@@ -261,6 +261,12 @@ const periodLabelMap: Record<string, string> = {
   '1d': t('period.1d'),
   '7d': t('period.7d'),
   '1mo': t('period.1mo'),
+}
+
+const AGENT_PREFIX = 'aihub.user.agent.'
+
+const displayPattern = (pattern: string): string => {
+  return pattern.startsWith(AGENT_PREFIX) ? pattern : `${AGENT_PREFIX}${pattern}`
 }
 
 const newPattern = ref('>')

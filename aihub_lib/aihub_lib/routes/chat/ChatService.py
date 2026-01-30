@@ -8,9 +8,12 @@ from bson import ObjectId
 from fastapi import HTTPException
 from llama_index.core.base.llms.types import ChatMessage
 from nats.aio.client import Client as NATS
+from redis.asyncio import Redis
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.auth.usage.period_labels import build_exceeded_detail
+from aihub_lib.auth.usage.UsageLimitService import ResourceType, UsageLimitService
 from aihub_lib.generative_ai.resources.costs.LLMCosts import LLMCosts
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
@@ -72,6 +75,27 @@ class ChatService:
     """
     Orchestrates chat interactions for both streaming and JSON-based endpoints.
     """
+
+    @staticmethod
+    async def _check_usage_limit(
+        redis: Redis | None,
+        user: UserIdentity,
+        agent_class: str,
+        agent_id: str,
+        locale: str | None = None,
+    ) -> None:
+        """Check usage limits and raise 429 if exceeded. No-op when redis is None."""
+        if redis is None:
+            return
+        resource_path = UsageLimitService.build_resource_path(ResourceType.AGENT, agent_class, agent_id)
+        usage_status = await UsageLimitService.check_and_increment(
+            redis, user.id, user.roles, resource_path=resource_path
+        )
+        if usage_status.is_exceeded:
+            raise HTTPException(
+                status_code=429,
+                detail=build_exceeded_detail(usage_status, locale=locale or "en"),
+            )
 
     @staticmethod
     def _initialize_interaction(
@@ -178,10 +202,12 @@ class ChatService:
         display_id: ObjectId | None = None,
         files: list[UserUploadedFile] | None = None,
         locale: str | None = None,
+        redis: Redis | None = None,
     ) -> StreamingResources:
         """
         Starts a streaming chat interaction and returns the resources for SSE streaming.
         """
+        await ChatService._check_usage_limit(redis, user, agent_class, agent_id, locale)
         external_event, topic_manager = ChatService._initialize_interaction(
             user=user,
             agent_class=agent_class,
@@ -253,10 +279,12 @@ class ChatService:
         display_id: ObjectId | None = None,
         files: list[UserUploadedFile] | None = None,
         locale: str | None = None,
+        redis: Redis | None = None,
     ) -> JsonResources:
         """
         Starts a JSON-based chat interaction, waiting for all events before returning.
         """
+        await ChatService._check_usage_limit(redis, user, agent_class, agent_id, locale)
         external_event, topic_manager = ChatService._initialize_interaction(
             user=user,
             agent_class=agent_class,

@@ -70,7 +70,7 @@ http_error:
     404: "Sorry, we couldn't find that page."
     405: "That action is not allowed here."
     408: "The request timed out. Please try again."
-    429: "Too many requests. Please wait a moment."
+    429: "Too many requests."
 
     # 5xx Server Errors
     500: "Something went wrong on our servers."

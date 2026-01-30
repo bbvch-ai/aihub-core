@@ -6,8 +6,15 @@ from pydantic import BaseModel, Field
 class UsageLimitDTO(BaseModel):
     """Pattern-based usage limit rule."""
 
-    pattern: Annotated[str, Field(description="NATS-style pattern (e.g. '>', 'LLMWrappingAgent.>', 'LLMWrappingAgent.dev_agent').")]
-    limit: Annotated[int, Field(description="Max agent calls per period for this pattern.")]
+    pattern: Annotated[
+        str,
+        Field(
+            description="Full dotted resource pattern with wildcards "
+            "(e.g. 'aihub.user.agent.>', 'aihub.user.process.MyProcess.*'). "
+            "Legacy patterns without 'aihub.user.' prefix are auto-normalized to 'aihub.user.agent.<pattern>'."
+        ),
+    ]
+    limit: Annotated[int, Field(description="Max calls per period for this pattern.")]
     period: Annotated[str, Field(description="Period for limit: 1h, 1d, 7d, 1mo.")]
 
 

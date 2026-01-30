@@ -1,0 +1,29 @@
+periods:
+  1h: "Stunde"
+  1d: "Tag"
+  7d: "Woche"
+  1mo: "Monat"
+
+weekdays:
+  monday: "Montag"
+  tuesday: "Dienstag"
+  wednesday: "Mittwoch"
+  thursday: "Donnerstag"
+  friday: "Freitag"
+  saturday: "Samstag"
+  sunday: "Sonntag"
+
+scope:
+  all_agents: "alle Agenten"
+  all_processes: "alle Prozesse"
+  all_resources: "alle Ressourcen"
+
+messages:
+  limit_warning: "Nutzungslimit-Warnung: %{remaining} Aufrufe verbleibend"
+  limit_exceeded: "Nutzungslimit erreicht"
+  limit_reached: "Nutzungslimit erreicht: %{limit} Aufrufe pro %{period}"
+  limit_detail: "%{current}/%{limit} pro %{period} (%{scope})"
+  resets_at: "Zurückgesetzt um %{time}"
+  resets_tomorrow_at: "Zurückgesetzt morgen um %{time}"
+  resets_on_weekday_at: "Zurückgesetzt am %{weekday} um %{time}"
+  resets_on_date_at: "Zurückgesetzt am %{date} um %{time}"
