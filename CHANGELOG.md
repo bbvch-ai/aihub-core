@@ -5,6 +5,68 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.259.2] - 2026-01-30 - Strengthened Security with Docker Network Isolation
+
+### Security
+
+- 🔑 Implemented a comprehensive **Docker network isolation strategy**, segmenting the platform into `proxy`, `backend`,
+  `data`, `storage`, and `egress` networks to significantly enhance security posture. This limits lateral movement and
+  reduces the blast radius in case of a breach.
+- 🔒 Configured `internal: true` for core `backend`, `data`, and `storage` Docker networks (in non-development
+  environments), preventing direct external access to sensitive internal services.
+- 🚫 Explicitly disabled Inter-Container Communication (ICC) on the dedicated `egress` network, ensuring that services
+  requiring outbound internet access cannot communicate with other containers on that network, further isolating them.
+
+### Refactor
+
+- 🔄 Systematically updated **Docker Compose deployment configurations** across all environments (`dev`, `build`,
+  `local`, `latest`, `nightly`) to integrate the new multi-network architecture, assigning each service to its specific,
+  isolated network zone.
+
+### Added
+
+- 📄 Introduced detailed **documentation for Docker Network Isolation**, providing a clear overview of the new network
+  topology, service assignments, security benefits, and operational guidelines.
+- 🩺 Implemented a new **health check for the Open WebUI** service to improve monitoring and ensure its availability.
+
+### Changed
+
+- 🛠️ Migrated the **Playwright service to a custom Dockerfile build process**, providing greater control over its
+  runtime environment and dependencies.
+- ⬇️ Pinned the **Playwright image version to `v1.49.0-jammy`** to ensure stability and compatibility within the new
+  custom build setup.
+- 🔗 Updated **service dependencies for `api` and `bot`**, ensuring they now explicitly await the healthy state of Milvus
+  and Neo4j, respectively, for more robust startup sequences.
+- 🧹 Refined **health check commands for `postgres-ferretdb` and `litellm`** for improved accuracy and reliability.
+
+---
+
+## [v0.259.1] - 2026-01-30 - Enhanced OAuth Security and Granular Access Control
+
+### Security
+
+- 🔑 **Improved OAuth Cookie Secret Management:** Replaced the single shared OAuth cookie secret with individual,
+  service-specific secrets (`OAUTH_COOKIE_SECRET_DAGSTER`, `OAUTH_COOKIE_SECRET_SEAWEEDFS`, `OAUTH_COOKIE_SECRET_ATTU`).
+  This significantly enhances security by isolating session cookies for different platform components (Dagster,
+  SeaweedFS, Attu).
+
+### Changed
+
+- 🔄 **Refined OAuth Group Restrictions:** Renamed and segregated OAuth allowed group configurations to be
+  service-specific (e.g., `DAGSTER_OAUTH_ALLOWED_GROUPS` is now `OAUTH_ALLOWED_GROUPS_DAGSTER`). This provides more
+  granular control over user access for each component.
+- 📄 **Updated Environment Variable Configuration:** Adjusted `.env` templates and all Docker Compose configurations to
+  reflect the new, service-specific OAuth cookie secrets and allowed group variables, streamlining secure setup.
+- 📚 **Revised Documentation for OAuth Setup:** Updated quick start guides and secret generation instructions to provide
+  clear guidance on configuring the new, separate OAuth cookie secrets for each service.
+
+### Removed
+
+- 🗑️ **Deprecated Shared OAuth Cookie Secret:** The generic `OAUTH_COOKIE_SECRET` environment variable has been removed
+  in favor of service-specific secrets, reducing potential security exposure.
+
+---
+
 ## [v0.259.0] - 2026-01-28 - Empowering Agents with Long-Term Memory and Knowledge Graphs
 
 ### Added
