@@ -92,14 +92,14 @@ Kopieren Sie diese Vorlage in Ihre `.env`-Datei und ersetzen Sie die Platzhalter
 
 ```env
 # =============================================================================
-# AI-Hub Production Environment Configuration
+# AI-Hub Produktions-Umgebungskonfiguration
 # =============================================================================
-# This file contains ONLY the environment variables that must be configured.
-# All internal Docker network endpoints are hardcoded in the compose files.
+# Diese Datei enthält NUR die Umgebungsvariablen, die konfiguriert werden müssen.
+# Alle internen Docker-Netzwerk-Endpunkte sind in den Compose-Dateien hartcodiert.
 # =============================================================================
 
 # -----------------------------------------------------------------------------
-# General Settings
+# Allgemeine Einstellungen
 # -----------------------------------------------------------------------------
 LOG_LEVEL="INFO"
 ENV="prod"
@@ -110,7 +110,7 @@ ACME_EMAIL="admin@your-company.com"
 ADMIN_PASSWORD_HASH=""
 
 # -----------------------------------------------------------------------------
-# API Keys (External Services) - Configure at least one LLM provider
+# API-Schlüssel (Externe Dienste) - Mindestens einen LLM-Anbieter konfigurieren
 # -----------------------------------------------------------------------------
 AZURE_OPENAI_KEY="REPLACE_WITH_AZURE_OPENAI_KEY"
 AZURE_OPENAI_BASE_URL="REPLACE_WITH_AZURE_OPENAI_BASE_URL"
@@ -118,14 +118,14 @@ GEMINI_API_KEY=""
 JINA_API_KEY=""
 HUGGINGFACE_API_KEY=""
 
-# Optional providers
+# Optionale Anbieter
 SWISS_LLM_CLOUD_API_BASE_URL=""
 SWISS_LLM_CLOUD_API_KEY=""
 COHERE_API_BASE=""
 COHERE_API_KEY=""
 
 # -----------------------------------------------------------------------------
-# OAuth2 / OIDC Configuration (REQUIRED)
+# OAuth2 / OIDC Konfiguration (ERFORDERLICH)
 # -----------------------------------------------------------------------------
 AUTH_IDENTITY_PROVIDER="azure"
 OAUTH_PROVIDER_NAME="Azure AD"
@@ -133,9 +133,11 @@ OAUTH_CLIENT_ID="REPLACE_WITH_YOUR_CLIENT_ID"
 OAUTH_CLIENT_SECRET="REPLACE_WITH_YOUR_CLIENT_SECRET"
 OAUTH_AUTHORITY_URL="https://login.microsoftonline.com/REPLACE_WITH_YOUR_TENANT_ID"
 OAUTH_TENANT_ID="REPLACE_WITH_YOUR_TENANT_ID"
-OAUTH_COOKIE_SECRET="REPLACE_WITH_16_HEX_CHARS"
+OAUTH_COOKIE_SECRET_DAGSTER="REPLACE_WITH_16_HEX_CHARS"
+OAUTH_COOKIE_SECRET_SEAWEEDFS="REPLACE_WITH_16_HEX_CHARS"
+OAUTH_COOKIE_SECRET_ATTU="REPLACE_WITH_16_HEX_CHARS"
 
-# Azure-specific OAuth (same values as above)
+# Azure-spezifische OAuth (gleiche Werte wie oben)
 AZURE_CLIENT_ID="REPLACE_WITH_YOUR_CLIENT_ID"
 AZURE_TENANT_ID="REPLACE_WITH_YOUR_TENANT_ID"
 AZURE_CLIENT_SECRET="REPLACE_WITH_YOUR_CLIENT_SECRET"
@@ -144,11 +146,11 @@ AZURE_CLIENT_SECRET="REPLACE_WITH_YOUR_CLIENT_SECRET"
 OAUTH_CUSTOM_SIGN_IN_LOGO=""
 
 # -----------------------------------------------------------------------------
-# Authentication & Security (REQUIRED - Generate new secrets!)
+# Authentifizierung & Sicherheit (ERFORDERLICH - Neue Secrets generieren!)
 # -----------------------------------------------------------------------------
 AUTH_OPEN_WEBUI_SIGNING_SECRET="REPLACE_WITH_RANDOM_STRING"
 
-# Superuser Configuration
+# Superuser-Konfiguration
 SUPERUSER_ENABLED="True"
 SUPERUSER_NAME="AI-Hub Superuser"
 SUPERUSER_EMAIL="admin@your-company.com"
@@ -157,80 +159,81 @@ SUPERUSER_ROLE="AIHubSuperuser"
 SUPERUSER_TOKEN="REPLACE_WITH_RANDOM_STRING"
 
 # -----------------------------------------------------------------------------
-# Database Credentials (REQUIRED - Use strong passwords!)
+# Datenbank-Zugangsdaten (ERFORDERLICH - Starke Passwörter verwenden!)
 # -----------------------------------------------------------------------------
-# PostgreSQL 
+# PostgreSQL
 POSTGRES_USER="admin"
 POSTGRES_PASSWORD="REPLACE_WITH_RANDOM_STRING"
 
-# MongoDB (FerretDB) 
+# MongoDB (FerretDB)
 MONGO_USERNAME="admin"
 MONGO_PASSWORD="REPLACE_WITH_RANDOM_STRING"
 
-# S3 Storage (SeaweedFS) 
+# S3 Storage (SeaweedFS)
 S3_STORAGE_ACCESS_KEY="admin"
 S3_STORAGE_SECRET_KEY="REPLACE_WITH_RANDOM_STRING"
-# Public endpoint for presigned URLs (auto-configured as https://s3.${DOMAIN} in docker-compose)
-# S3_STORAGE_PUBLIC_ENDPOINT is set automatically - only override if using a custom S3 domain
+# Öffentlicher Endpunkt für presigned URLs (automatisch als https://s3.${DOMAIN} in docker-compose konfiguriert)
+# S3_STORAGE_PUBLIC_ENDPOINT wird automatisch gesetzt - nur überschreiben bei benutzerdefinierter S3-Domain
 
 # -----------------------------------------------------------------------------
-# LiteLLM Configuration (REQUIRED)
+# LiteLLM Konfiguration (ERFORDERLICH)
 # -----------------------------------------------------------------------------
 LITELLM_UI_USERNAME="admin"
 LITELLM_UI_PASSWORD="REPLACE_WITH_RANDOM_STRING"
 LITELLM_MASTER_KEY="REPLACE_WITH_RANDOM_STRING"
 
 # -----------------------------------------------------------------------------
-# Service Configuration
+# Service-Konfiguration
 # -----------------------------------------------------------------------------
 JUPYTER_TOKEN="REPLACE_WITH_RANDOM_STRING"
 PHOENIX_SECRET="REPLACE_WITH_RANDOM_STRING"
 
-# Docling Configuration
+# Docling-Konfiguration
 DOCLING_API_TIMEOUT="600"
 DOCLING_VLM_MODEL_NAME="text-generation/ocr"
 DOCLING_HTTP_RETRIES=3
 
-# Milvus Configuration (must match your embedding model dimensions)
+# Milvus-Konfiguration (muss mit den Dimensionen Ihres Embedding-Modells übereinstimmen)
 MILVUS_DIMENSION="3072"
 
 # -----------------------------------------------------------------------------
-# AI-Hub Application Settings
+# AI-Hub Anwendungseinstellungen
 # -----------------------------------------------------------------------------
 AIHUB_API_VERSION="latest"
 AIHUB_CREATE_DEFAULT_ROLES="True"
 
-# Admin Settings
+# Admin-Einstellungen
 ADMIN_EMAIL="admin@your-company.com"
 
-# OAuth Group Restrictions (Azure AD group names)
-DAGSTER_OAUTH_ALLOWED_GROUPS="AIHubAdmin"
-SEAWEEDFS_OAUTH_ALLOWED_GROUPS="AIHubAdmin"
+# OAuth Gruppenbeschränkungen (Azure AD Gruppennamen)
+OAUTH_ALLOWED_GROUPS_DAGSTER="AIHubAdmin"
+OAUTH_ALLOWED_GROUPS_SEAWEEDFS="AIHubAdmin"
+OAUTH_ALLOWED_GROUPS_ATTU="AIHubAdmin"
 
 # -----------------------------------------------------------------------------
-# Expert Asking Agent Configuration (Optional - for expert escalation)
+# Expert Asking Agent Konfiguration (Optional - für Experten-Eskalation)
 # -----------------------------------------------------------------------------
-# Channel type: "teams" or "slack"
+# Kanaltyp: "teams" oder "slack"
 EXPERT_ASKING_CHANNEL_TYPE="teams"
 
-# Teams Configuration (required if EXPERT_ASKING_CHANNEL_TYPE="teams")
+# Teams-Konfiguration (erforderlich wenn EXPERT_ASKING_CHANNEL_TYPE="teams")
 TEAMS_CHANNEL_ID="REPLACE_WITH_TEAMS_CHANNEL_ID"
 TEAMS_TENANT_ID="REPLACE_WITH_TEAMS_TENANT_ID"
 TEAMS_BOT_ID="REPLACE_WITH_TEAMS_BOT_ID"
 
-# Slack Configuration (required if EXPERT_ASKING_CHANNEL_TYPE="slack")
+# Slack-Konfiguration (erforderlich wenn EXPERT_ASKING_CHANNEL_TYPE="slack")
 SLACK_CHANNEL_ID=""
 SLACK_SERVICE_URL="https://slack.botframework.com"
 
 # -----------------------------------------------------------------------------
-# OpenTelemetry Configuration (Optional)
+# OpenTelemetry Konfiguration (Optional)
 # -----------------------------------------------------------------------------
 OTEL_ENABLED="true"
 OTEL_EXPORTER_OTLP_PROTOCOL="grpc"
 OTEL_RESOURCE_SERVICE_VERSION="1.0.0"
 OTEL_RESOURCE_SERVICE_NAMESPACE="swiss-ai-hub"
 
-# Cloud OTEL (optional - for external observability platforms)
+# Cloud OTEL (optional - für externe Observability-Plattformen)
 OTEL_CLOUD_ENDPOINT="placeholder:1234"
 OTEL_CLOUD_HEADERS=""
 ```
@@ -255,8 +258,8 @@ OTEL_CLOUD_HEADERS=""
 
 4. **Geheimnisse** (generieren Sie für jedes eindeutige Werte):
 
-   - Ersetzen Sie alle `REPLACE_WITH_RANDOM_STRING` durch: `openssl rand -hex 32`
-   - Ersetzen Sie `REPLACE_WITH_16_HEX_CHARS` durch: `openssl rand -hex 16`
+   - Ersetzen Sie alle `REPLACE_WITH_RANDOM_STRING` mit: `openssl rand -hex 32`
+   - Ersetzen Sie `REPLACE_WITH_16_HEX_CHARS` mit: `openssl rand -hex 16`
 
 5. **Experten-Eskalation** (optional – für Expert-in-the-Loop-Funktionen):
 

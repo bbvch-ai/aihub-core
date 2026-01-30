@@ -41,6 +41,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
 
   seaweedfs-volume:
     container_name: seaweedfs-volume
@@ -68,6 +70,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
 
   seaweedfs-filer:
     container_name: seaweedfs-filer
@@ -113,6 +117,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
+      - data  # For etcd access
 
   seaweedfs-s3:
     container_name: seaweedfs-s3
@@ -150,6 +157,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
+      - backend  # Internal access from application services
 
   seaweedfs-init:
     container_name: seaweedfs-init
@@ -173,6 +183,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
+      - backend
 
   
 
@@ -217,6 +230,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data     # Milvus metadata storage
+      - storage  # SeaweedFS filer metadata
 
   etcd-init:
     container_name: etcd-init
@@ -236,6 +252,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
+      - storage  # Used by SeaweedFS filer for metadata
 
   milvus-standalone:
     container_name: milvus
@@ -275,6 +294,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
+      - storage  # For S3 access to SeaweedFS
 
   attu:
     container_name: attu
@@ -296,6 +318,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   
 
@@ -326,6 +350,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   
 
@@ -346,7 +372,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/ferretdb-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${MONGO_USERNAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${MONGO_USERNAME} -d postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -355,6 +381,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   ferretdb:
     container_name: ferretdb
@@ -372,6 +400,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   # ===================================================================
   # Neo4j Stack (Graph Database)
@@ -405,6 +435,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data  # Graph database for Mem0 memory storage
 
   # ===================================================================
   # Phoenix Stack (ML Observability)
@@ -432,6 +464,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
+      - data  # For PostgreSQL access
 
   # ===================================================================
   # Nats & Valkey Stack (Messaging and Caching)
@@ -461,6 +496,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data  # Message broker is part of data infrastructure
 
   valkey:
     container_name: valkey
@@ -483,6 +520,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data  # Cache is part of data infrastructure
   # ===================================================================
   # AI Model Serving (Local Inference)
   # ===================================================================
@@ -521,6 +560,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   llama-cpp-embedding:
     container_name: llama-cpp-embedding
@@ -556,6 +597,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   llama-cpp-reranker:
     container_name: llama-cpp-reranker
@@ -591,6 +634,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   # ===================================================================
   # Audio Model Serving (SST/TTS)
@@ -617,6 +662,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 5s
+    networks:
+      - backend
 
   # ===================================================================
   # LiteLLM Stack (Model Proxy and Guardrails)
@@ -634,6 +681,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   presidio-anonymizer:
     container_name: presidio-anonymizer
@@ -644,6 +693,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   litellm:
     container_name: litellm
@@ -682,7 +733,7 @@ services:
       presidio-anonymizer:
         condition: service_started
     healthcheck:
-      test: [ "CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:4000/health/liveliness" ]
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health/liveliness')" ]
       timeout: 10s
       interval: 30s
       retries: 3
@@ -692,6 +743,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
+      - data  # For PostgreSQL access
 
   # ===================================================================
   # Utility & Code Execution Services
@@ -716,14 +770,17 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   playwright:
     container_name: playwright-server
-    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.54.1-jammy
+    build:
+      context: ./configs/playwright
+      dockerfile: Dockerfile
     restart: always
     ports:
       - "3036:3000"
-    command: npx playwright@v1.49.0 run-server --port 3000 --host 0.0.0.0
     environment:
       NODE_ENV: production
     healthcheck:
@@ -737,6 +794,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend  # Internal service communication
+      - egress   # Outbound internet access for web browsing
 
   # ===================================================================
   # Document Processing Stack
@@ -772,6 +832,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   
   vllm-docling:
@@ -814,6 +876,8 @@ services:
             - driver: nvidia
               device_ids: [ '0' ]
               capabilities: [ gpu ]
+    networks:
+      - backend
 
   # ===================================================================
   # Observability Stack
@@ -846,6 +910,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   # ===================================================================
   # Open WebUI Stack (Primary User Interface)
@@ -1063,6 +1129,12 @@ services:
       USER_PERMISSIONS_FEATURES_IMAGE_GENERATION: True
       USER_PERMISSIONS_FEATURES_CODE_INTERPRETER: True
       USER_PERMISSIONS_FEATURES_NOTES: True
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
     logging:
       driver: json-file
       options:
@@ -1091,6 +1163,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   
 
@@ -1118,3 +1192,39 @@ services:
   
 
   
+
+# ===================================================================
+# Network Configuration
+# ===================================================================
+# Network isolation provides defense-in-depth security by limiting
+# which services can communicate with each other. Each network zone
+# serves a specific purpose:
+#
+# - proxy:   External traffic ingress (Traefik routes here)
+# - backend: Internal application and processing services
+# - data:    Databases, caches, and message broker
+# - storage: SeaweedFS distributed object storage
+# - egress:  Outbound internet only, ICC disabled (containers isolated)
+#
+# Services are assigned to only the networks they require.
+# Networks marked with 'internal: true' cannot be accessed from
+# outside the Docker network, even if ports are exposed.
+# ===================================================================
+networks:
+  proxy:
+    name: proxy
+    driver: bridge
+  backend:
+    name: backend
+    driver: bridge
+  data:
+    name: data
+    driver: bridge
+  storage:
+    name: storage
+    driver: bridge
+  egress:
+    name: egress
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "false"
