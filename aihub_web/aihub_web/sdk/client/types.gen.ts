@@ -6500,8 +6500,8 @@ export type ImagesResponse = {
      * Size
      */
     size?: ('1024x1024' | '1024x1536' | '1536x1024') | null;
-    usage?: OpenaiTypesImagesResponseUsage | null;
-    [key: string]: unknown | number | (('transparent' | 'opaque') | null) | (Array<Image> | null) | (('png' | 'webp' | 'jpeg') | null) | (('low' | 'medium' | 'high') | null) | (('1024x1024' | '1024x1536' | '1536x1024') | null) | (OpenaiTypesImagesResponseUsage | null) | undefined;
+    usage?: Usage | null;
+    [key: string]: unknown | number | (('transparent' | 'opaque') | null) | (Array<Image> | null) | (('png' | 'webp' | 'jpeg') | null) | (('low' | 'medium' | 'high') | null) | (('1024x1024' | '1024x1536' | '1536x1024') | null) | (Usage | null) | undefined;
 };
 
 /**
@@ -9781,7 +9781,7 @@ export type NamespaceAwareUserMessageEventInput = {
      * Messages
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<JamboParserObjectTypeParserChatMessage1>;
+    messages?: Array<ChatMessage>;
     /**
      * Files
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
@@ -14545,12 +14545,12 @@ export type TranscriptionVerbose = {
      * Segments
      */
     segments?: Array<TranscriptionSegment> | null;
-    usage?: Usage | null;
+    usage?: OpenaiTypesAudioTranscriptionVerboseUsage | null;
     /**
      * Words
      */
     words?: Array<TranscriptionWord> | null;
-    [key: string]: unknown | number | string | (Array<TranscriptionSegment> | null) | (Usage | null) | (Array<TranscriptionWord> | null) | undefined;
+    [key: string]: unknown | number | string | (Array<TranscriptionSegment> | null) | (OpenaiTypesAudioTranscriptionVerboseUsage | null) | (Array<TranscriptionWord> | null) | undefined;
 };
 
 /**
@@ -14661,14 +14661,19 @@ export type UpdateRoleRequest = {
  */
 export type Usage = {
     /**
-     * Seconds
+     * Input Tokens
      */
-    seconds: number;
+    input_tokens: number;
+    input_tokens_details: UsageInputTokensDetails;
     /**
-     * Type
+     * Output Tokens
      */
-    type: 'duration';
-    [key: string]: unknown | number | 'duration';
+    output_tokens: number;
+    /**
+     * Total Tokens
+     */
+    total_tokens: number;
+    [key: string]: unknown | number | UsageInputTokensDetails;
 };
 
 /**
@@ -14998,7 +15003,7 @@ export type UserMessageEventInput = {
      * Messages
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessage>;
+    messages?: Array<JamboParserObjectTypeParserChatMessage2>;
     /**
      * Files
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
@@ -15277,7 +15282,7 @@ export type InvocationParameters = {
 /**
  * ChatMessage
  */
-export type JamboParserObjectTypeParserChatMessage1 = {
+export type JamboParserObjectTypeParserChatMessage2 = {
     role?: MessageRoleInput;
     additional_kwargs: AdditionalKwargs;
     /**
@@ -15344,6 +15349,21 @@ export type JamboParserObjectTypeParserMessage = {
      * The message contents as an array of content blocks (text, image, audio).
      */
     contents?: Array<TextContent | ImageContent | AudioContent> | null;
+};
+
+/**
+ * Usage
+ */
+export type OpenaiTypesAudioTranscriptionVerboseUsage = {
+    /**
+     * Seconds
+     */
+    seconds: number;
+    /**
+     * Type
+     */
+    type: 'duration';
+    [key: string]: unknown | number | 'duration';
 };
 
 /**
@@ -15419,26 +15439,6 @@ export type OpenaiTypesChatCompletionCreateParamsFunction = {
     [key: string]: unknown | string | {
         [key: string]: unknown;
     } | undefined;
-};
-
-/**
- * Usage
- */
-export type OpenaiTypesImagesResponseUsage = {
-    /**
-     * Input Tokens
-     */
-    input_tokens: number;
-    input_tokens_details: UsageInputTokensDetails;
-    /**
-     * Output Tokens
-     */
-    output_tokens: number;
-    /**
-     * Total Tokens
-     */
-    total_tokens: number;
-    [key: string]: unknown | number | UsageInputTokensDetails;
 };
 
 /**
