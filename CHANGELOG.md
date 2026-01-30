@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.259.1] - 2026-01-30 - Enhanced OAuth Security and Granular Access Control
+
+### Security
+
+- 🔑 **Improved OAuth Cookie Secret Management:** Replaced the single shared OAuth cookie secret with individual,
+  service-specific secrets (`OAUTH_COOKIE_SECRET_DAGSTER`, `OAUTH_COOKIE_SECRET_SEAWEEDFS`, `OAUTH_COOKIE_SECRET_ATTU`).
+  This significantly enhances security by isolating session cookies for different platform components (Dagster,
+  SeaweedFS, Attu).
+
+### Changed
+
+- 🔄 **Refined OAuth Group Restrictions:** Renamed and segregated OAuth allowed group configurations to be
+  service-specific (e.g., `DAGSTER_OAUTH_ALLOWED_GROUPS` is now `OAUTH_ALLOWED_GROUPS_DAGSTER`). This provides more
+  granular control over user access for each component.
+- 📄 **Updated Environment Variable Configuration:** Adjusted `.env` templates and all Docker Compose configurations to
+  reflect the new, service-specific OAuth cookie secrets and allowed group variables, streamlining secure setup.
+- 📚 **Revised Documentation for OAuth Setup:** Updated quick start guides and secret generation instructions to provide
+  clear guidance on configuring the new, separate OAuth cookie secrets for each service.
+
+### Removed
+
+- 🗑️ **Deprecated Shared OAuth Cookie Secret:** The generic `OAUTH_COOKIE_SECRET` environment variable has been removed
+  in favor of service-specific secrets, reducing potential security exposure.
+
+---
+
 ## [v0.259.0] - 2026-01-28 - Empowering Agents with Long-Term Memory and Knowledge Graphs
 
 ### Added
