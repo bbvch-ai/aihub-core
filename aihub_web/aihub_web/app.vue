@@ -23,8 +23,15 @@ client.setConfig({
   onRequest: ({ options }) => {
     options.headers.set('lang', locale.value)
   },
-  onResponseError: async ({ response }) => {
+  onResponseError: async ({ response, request }) => {
     console.error('This is the options on error', response)
+
+    // Skip toast for permission errors on agents list (used by dashboard widget selector)
+    // User might not have agent permissions, but dashboard should still work
+    if (response.status === 403 && request.includes('/agents')) {
+      return
+    }
+
     toast.add({
       severity: 'error',
       summary: t(`http_error.code.${response.status}`),
