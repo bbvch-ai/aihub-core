@@ -16,7 +16,6 @@ _LOCALES = ("en", "de", "fr", "it")
 
 _RESOURCE_PREFIX_SCOPE_KEYS: dict[str, str] = {
     "aihub.user.agent.": "all_agents",
-    "aihub.user.process.": "all_processes",
 }
 
 

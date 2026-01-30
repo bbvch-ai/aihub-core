@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from redis.asyncio import Redis
 
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
+from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity, RoleUsageLimit
 
 logger = logging.getLogger(__name__)
 
@@ -69,16 +69,19 @@ class UsageStatus(BaseModel):
 
     @property
     def period(self) -> UsageLimitPeriod | None:
+        """Period of the most restrictive limit."""
         entry = self._most_restrictive
         return entry.period if entry else None
 
     @property
     def current_count(self) -> int:
+        """Current count of the most restrictive limit."""
         entry = self._most_restrictive
         return entry.current_count if entry else 0
 
     @property
     def reset_at(self) -> datetime | None:
+        """Reset timestamp of the most restrictive limit."""
         entry = self._most_restrictive
         return entry.reset_at if entry else None
 
@@ -97,7 +100,6 @@ class ResourceType(StrEnum):
     """Known resource type prefixes for usage limits."""
 
     AGENT = "agent"
-    PROCESS = "process"
 
 
 _RESOURCE_PATH_PREFIX = "aihub.user"
@@ -211,24 +213,28 @@ class UsageLimitService:
 
     @staticmethod
     def _most_permissive_limit(
-        all_role_limits: list[list[tuple[str, int, str]]],
+        all_role_limits: list[list[RoleUsageLimit]],
     ) -> list[EffectiveLimit]:
         """Without a resource path, return the single most permissive rule across all roles."""
         best: EffectiveLimit | None = None
         best_period_seconds = 0
 
         for role_limits in all_role_limits:
-            for pattern, limit, period in role_limits:
-                period_seconds = UsageLimitPeriod(period).seconds
-                if best is None or limit > best.limit or (limit == best.limit and period_seconds > best_period_seconds):
-                    best = EffectiveLimit(pattern=pattern, limit=limit, period=period)
+            for rl in role_limits:
+                period_seconds = UsageLimitPeriod(rl.period).seconds
+                if (
+                    best is None
+                    or rl.limit > best.limit
+                    or (rl.limit == best.limit and period_seconds > best_period_seconds)
+                ):
+                    best = EffectiveLimit(pattern=rl.pattern, limit=rl.limit, period=rl.period)
                     best_period_seconds = period_seconds
 
         return [best] if best else []
 
     @staticmethod
     def _matching_limits_for_resource(
-        all_role_limits: list[list[tuple[str, int, str]]],
+        all_role_limits: list[list[RoleUsageLimit]],
         resource_path: str,
     ) -> list[EffectiveLimit]:
         """Collect matching patterns with two-phase deduplication.
@@ -239,20 +245,16 @@ class UsageLimitService:
            (highest limit) — roles grant capabilities.
         """
         # Phase 1: per-role dedup (most restrictive wins within a role)
-        per_role_best: list[dict[str, tuple[int, str]]] = []
+        per_role_best: list[dict[str, RoleUsageLimit]] = []
         for role_limits in all_role_limits:
             if not role_limits:
                 continue
-            role_best: dict[str, tuple[int, str]] = {}
-            for pattern, limit, period in role_limits:
-                if not UsageLimitService._pattern_matches(pattern, resource_path):
+            role_best: dict[str, RoleUsageLimit] = {}
+            for rl in role_limits:
+                if not UsageLimitService._pattern_matches(rl.pattern, resource_path):
                     continue
-                if pattern not in role_best:
-                    role_best[pattern] = (limit, period)
-                else:
-                    existing_limit, existing_period = role_best[pattern]
-                    if limit < existing_limit:
-                        role_best[pattern] = (limit, period)
+                if rl.pattern not in role_best or rl.limit < role_best[rl.pattern].limit:
+                    role_best[rl.pattern] = rl
             if role_best:
                 per_role_best.append(role_best)
 
@@ -260,21 +262,21 @@ class UsageLimitService:
             return []
 
         # Phase 2: cross-role merge (most permissive wins across roles)
-        merged: dict[str, tuple[int, str, int]] = {}
+        merged: dict[str, RoleUsageLimit] = {}
         for role_best in per_role_best:
-            for pattern, (limit, period) in role_best.items():
-                period_seconds = UsageLimitPeriod(period).seconds
+            for pattern, rl in role_best.items():
                 if pattern not in merged:
-                    merged[pattern] = (limit, period, period_seconds)
+                    merged[pattern] = rl
                 else:
-                    existing_limit, _, existing_period_seconds = merged[pattern]
-                    if limit > existing_limit or (limit == existing_limit and period_seconds > existing_period_seconds):
-                        merged[pattern] = (limit, period, period_seconds)
+                    existing = merged[pattern]
+                    period_seconds = UsageLimitPeriod(rl.period).seconds
+                    existing_period_seconds = UsageLimitPeriod(existing.period).seconds
+                    if rl.limit > existing.limit or (
+                        rl.limit == existing.limit and period_seconds > existing_period_seconds
+                    ):
+                        merged[pattern] = rl
 
-        return [
-            EffectiveLimit(pattern=pattern, limit=limit, period=period)
-            for pattern, (limit, period, _) in merged.items()
-        ]
+        return [EffectiveLimit(pattern=rl.pattern, limit=rl.limit, period=rl.period) for rl in merged.values()]
 
     @staticmethod
     @trace_fn

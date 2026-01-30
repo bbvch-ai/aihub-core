@@ -1,8 +1,19 @@
 from __future__ import annotations
 
+from typing import Annotated
+
 from mongoengine import Document, EmbeddedDocument, EmbeddedDocumentListField, IntField, ListField, StringField
+from pydantic import BaseModel, Field
 
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+
+
+class RoleUsageLimit(BaseModel):
+    """Typed representation of a single usage limit rule from a role."""
+
+    pattern: Annotated[str, Field(description="Full dotted resource pattern with optional wildcards")]
+    limit: Annotated[int, Field(ge=0, description="Maximum number of allowed calls in the period")]
+    period: Annotated[str, Field(description="Time window for the limit (1h, 1d, 7d, 1mo)")]
 
 
 class UsageLimit(EmbeddedDocument):
@@ -66,17 +77,19 @@ class RoleEntity(Document):
 
     @classmethod
     @trace_fn
-    def get_usage_limits_for_roles(cls, role_names: list[str]) -> list[list[tuple[str, int, str]]]:
+    def get_usage_limits_for_roles(cls, role_names: list[str]) -> list[list[RoleUsageLimit]]:
         """
-        Returns a list of usage_limits per role. Each element is a list of (pattern, limit, period) tuples
-        for one role. Roles without usage_limits return an empty list.
+        Returns a list of usage_limits per role.
 
         Legacy patterns without an ``aihub.user.`` prefix are normalized to
         ``aihub.user.agent.<pattern>`` for backward compatibility.
         """
         roles = cls.objects(name__in=role_names).only("usage_limits")
         return [
-            [(cls._normalize_usage_pattern(ul.pattern), ul.limit, ul.period) for ul in role.usage_limits]
+            [
+                RoleUsageLimit(pattern=cls._normalize_usage_pattern(ul.pattern), limit=ul.limit, period=ul.period)
+                for ul in role.usage_limits
+            ]
             for role in roles
         ]
 

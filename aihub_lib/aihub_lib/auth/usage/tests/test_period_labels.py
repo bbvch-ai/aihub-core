@@ -149,17 +149,6 @@ class TestDescribePattern:
     def test_french_locale(self):
         assert describe_pattern("aihub.user.agent.>", "fr") == "tous les agents"
 
-    def test_process_catch_all(self):
-        assert describe_pattern("aihub.user.process.>") == "all processes"
-
-    def test_process_catch_all_german(self):
-        assert describe_pattern("aihub.user.process.>", "de") == "alle Prozesse"
-
-    def test_process_specific_class(self):
-        assert describe_pattern("aihub.user.process.MyProcess.*") == "MyProcess"
-
-    def test_process_fully_specific(self):
-        assert describe_pattern("aihub.user.process.MyProcess.v1") == "MyProcess/v1"
 
 
 class TestBuildExceededDetail:

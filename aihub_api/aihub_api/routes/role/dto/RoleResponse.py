@@ -26,10 +26,10 @@ class RoleResponse(BaseModel):
             access_rules=role_entity.access_rules,
             usage_limits=[
                 UsageLimitDTO(
-                    pattern=ul.pattern,
-                    limit=ul.limit,
-                    period=ul.period,
+                    pattern=usage_limit.pattern,
+                    limit=usage_limit.limit,
+                    period=usage_limit.period,
                 )
-                for ul in (role_entity.usage_limits or [])
+                for usage_limit in (role_entity.usage_limits or [])
             ],
         )

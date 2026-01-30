@@ -15,7 +15,7 @@ weekdays:
 
 scope:
   all_agents: "alle Agenten"
-  all_processes: "alle Prozesse"
+
   all_resources: "alle Ressourcen"
 
 messages:
