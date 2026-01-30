@@ -1,11 +1,5 @@
 from typing import Annotated
 
-from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
-from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.dependencies.use_nats import use_nats
-from aihub_lib.routes.Controller import Controller
 from fastapi import Body, Depends, Security
 from nats.aio.client import Client as NATS
 
@@ -13,6 +7,12 @@ from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.my_account.MyAccountService import MyAccountService
 from aihub_api.routes.user.dto.Dashboard.DashboardDTO import DashboardDTO
 from aihub_api.routes.user.dto.UserWithAccessDTO import UserWithAccessDTO
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.dependencies.use_nats import use_nats
+from aihub_lib.routes.Controller import Controller
 
 
 class MyAccountController(Controller):
@@ -46,7 +46,7 @@ class MyAccountController(Controller):
         async def get_my_account(
             nc: Annotated[NATS, Depends(use_nats)],
             t: Annotated[LocaleHandler, Depends(use_locale)],
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.basic.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.?>"))],
         ) -> UserWithAccessDTO:
             """
             Returns the currently logged-in user's account information including access permissions.
@@ -62,7 +62,7 @@ class MyAccountController(Controller):
 
         @self.router.get(route, tags=self.tags)
         async def get_my_dashboard(
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.?>"))],
         ) -> DashboardDTO | None:
             """
             Returns the user's dashboard settings, or null if none exist.
@@ -79,7 +79,7 @@ class MyAccountController(Controller):
         @self.router.put(route, tags=self.tags, status_code=204)
         async def update_my_dashboard(
             dashboard_dto: Annotated[DashboardDTO, Body],
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.?>"))],
         ) -> None:
             """
             Updates the user's dashboard settings.

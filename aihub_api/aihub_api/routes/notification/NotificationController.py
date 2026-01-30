@@ -1,14 +1,10 @@
 from typing import Annotated
 
-from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
-from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Query, Security
 from mongoengine import DoesNotExist
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
+from aihub_api.routes.notification.NotificationService import NotificationService
 from aihub_api.routes.notification.dto.NotificationDTO import (
     NotificationDTO,
 )
@@ -17,7 +13,11 @@ from aihub_api.routes.notification.dto.UpdateNotificationRequest import (
     BulkUpdateNotificationRequest,
     UpdateNotificationRequest,
 )
-from aihub_api.routes.notification.NotificationService import NotificationService
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.routes.Controller import Controller
 
 
 class NotificationController(Controller):
@@ -38,7 +38,7 @@ class NotificationController(Controller):
     def get_notifications(self, route: str = "") -> "NotificationController":
         @self.router.get(route, tags=self.tags, response_model=PaginatedNotificationsResponse)
         async def get_notifications(
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.basic.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
             page: int = Query(1, ge=1),
             page_size: int = Query(20, ge=1, le=100),
@@ -58,7 +58,7 @@ class NotificationController(Controller):
         async def update_notification(
             notification_id: str,
             updates: UpdateNotificationRequest,
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.basic.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> NotificationDTO:
             """Partially updates a notification (e.g., marks it as read or done)."""
@@ -75,7 +75,7 @@ class NotificationController(Controller):
         @self.router.patch(route, tags=self.tags, response_model=list[NotificationDTO])
         async def update_notifications_bulk(
             bulk_updates: BulkUpdateNotificationRequest,
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.basic.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> list[NotificationDTO]:
             """Partially updates a list of notifications (e.g., marks them as read or done)."""
