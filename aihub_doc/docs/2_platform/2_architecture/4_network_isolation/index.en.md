@@ -4,23 +4,25 @@ title: Docker Network Isolation
 
 # Docker Network Isolation
 
-The AI-Hub platform implements network segmentation to enforce security boundaries between services. This defense-in-depth
-approach limits the blast radius of potential security breaches and enforces the principle of least privilege at the
-network layer.
+The AI-Hub platform implements network segmentation to enforce security boundaries between services. This
+defense-in-depth approach limits the blast radius of potential security breaches and enforces the principle of least
+privilege at the network layer.
 
 ## Network Zones
 
 The platform uses five isolated Docker networks:
 
-| Network   | Purpose                              | External Access | ICC Enabled |
-|-----------|--------------------------------------|-----------------|-------------|
-| `proxy`   | External traffic via Traefik         | Ingress + Egress| Yes         |
-| `backend` | Internal application services        | No              | Yes         |
-| `data`    | Databases and message broker         | No              | Yes         |
-| `storage` | SeaweedFS object storage             | No              | Yes         |
-| `egress`  | Outbound internet access only        | Egress only     | No          |
+| Network   | Purpose                       | External Access  | ICC Enabled |
+| --------- | ----------------------------- | ---------------- | ----------- |
+| `proxy`   | External traffic via Traefik  | Ingress + Egress | Yes         |
+| `backend` | Internal application services | No               | Yes         |
+| `data`    | Databases and message broker  | No               | Yes         |
+| `storage` | SeaweedFS object storage      | No               | Yes         |
+| `egress`  | Outbound internet access only | Egress only      | No          |
 
-The `egress` network is designed for services that need to reach the internet (outbound) but should not be reachable from the internet (no ingress). Inter-Container Communication (ICC) is disabled on this network, meaning containers cannot communicate with each other via this network—they can only use it for outbound internet access.
+The `egress` network is designed for services that need to reach the internet (outbound) but should not be reachable
+from the internet (no ingress). Inter-Container Communication (ICC) is disabled on this network, meaning containers
+cannot communicate with each other via this network—they can only use it for outbound internet access.
 
 ## Service Network Assignments
 
@@ -36,7 +38,7 @@ Services accessible from outside the Docker network:
 - **open-webui**: Chat interface
 - **bot**: MS Teams/Slack integration
 - **seaweedfs-s3**: S3-compatible storage API
-- **oauth2proxy-***: Authentication proxies
+- **oauth2proxy-**\*: Authentication proxies
 
 ### Backend Network Services
 
@@ -45,13 +47,13 @@ Internal application and processing services:
 - **litellm**: LLM gateway and request routing
 - **docling**: Document parsing and extraction
 - **presidio-analyzer/anonymizer**: PII detection and anonymization
-- **llama-cpp-***: Local LLM inference (chat, embedding, reranking)
+- **llama-cpp-**\*: Local LLM inference (chat, embedding, reranking)
 - **speaches**: Speech-to-text and text-to-speech
 - **jupyter**: Code execution environment
 - **playwright**: Web scraping and automation (also on `egress` for internet access)
 - **agents**: All agent workers (rag, expert, wrapping)
 - **pipelines**: Data processing pipelines
-- **dagster-***: Pipeline orchestration
+- **dagster-**\*: Pipeline orchestration
 - **phoenix**: AI observability
 - **otel-collector**: Telemetry aggregation
 
@@ -85,7 +87,9 @@ Services that require outbound internet access but no inbound access:
 
 - **playwright**: Web scraping and browser automation (needs to fetch web pages)
 
-This network has ICC (Inter-Container Communication) disabled, preventing lateral movement between containers on this network. Services use `egress` solely for outbound internet access and must use other networks (e.g., `backend`) for inter-service communication.
+This network has ICC (Inter-Container Communication) disabled, preventing lateral movement between containers on this
+network. Services use `egress` solely for outbound internet access and must use other networks (e.g., `backend`) for
+inter-service communication.
 
 ## Network Topology
 
@@ -173,29 +177,32 @@ flowchart TB
 ### What Each Network Boundary Protects
 
 **Proxy → Backend Boundary**
+
 - External users cannot directly access internal processing services
 - Compromised Traefik cannot reach databases without going through API
 
 **Backend → Data Boundary**
+
 - Processing services access databases through defined interfaces
 - Compromised AI service cannot directly manipulate other databases
 
 **Data → Storage Boundary**
+
 - SeaweedFS internal cluster communication is isolated
 - Database services cannot interfere with storage operations
 
 ### Service Visibility Matrix
 
-| From \ To | proxy | backend | data | storage | egress | Internet |
-|-----------|-------|---------|------|---------|--------|----------|
-| External  | ✓     | ✗       | ✗    | ✗       | ✗      | -        |
-| proxy     | ✓     | ✓       | ✗    | ✗       | ✗      | ✓        |
-| backend   | ✗     | ✓       | ✓    | ✓       | ✗      | ✗        |
-| data      | ✗     | ✗       | ✓    | ✓       | ✗      | ✗        |
-| storage   | ✗     | ✗       | ✗    | ✓       | ✗      | ✗        |
-| egress    | ✗     | ✗       | ✗    | ✗       | ✗*     | ✓        |
+| From \\ To | proxy | backend | data | storage | egress | Internet |
+| ---------- | ----- | ------- | ---- | ------- | ------ | -------- |
+| External   | ✓     | ✗       | ✗    | ✗       | ✗      | -        |
+| proxy      | ✓     | ✓       | ✗    | ✗       | ✗      | ✓        |
+| backend    | ✗     | ✓       | ✓    | ✓       | ✗      | ✗        |
+| data       | ✗     | ✗       | ✓    | ✓       | ✗      | ✗        |
+| storage    | ✗     | ✗       | ✗    | ✓       | ✗      | ✗        |
+| egress     | ✗     | ✗       | ✗    | ✗       | ✗\*    | ✓        |
 
-*ICC disabled on egress network - containers cannot communicate with each other via this network.
+\*ICC disabled on egress network - containers cannot communicate with each other via this network.
 
 ## Operational Considerations
 
@@ -209,7 +216,9 @@ When adding a new service, determine which networks it needs:
 4. **Needs object storage?** → Add to `storage`
 5. **Needs outbound internet only (no ingress)?** → Add to `egress`
 
-Note: The `egress` network is specifically for services that need to reach external websites/APIs but should not be reachable from outside. It has ICC disabled, so services on `egress` cannot communicate with each other—use `backend` for inter-service communication.
+Note: The `egress` network is specifically for services that need to reach external websites/APIs but should not be
+reachable from outside. It has ICC disabled, so services on `egress` cannot communicate with each other—use `backend`
+for inter-service communication.
 
 ### Debugging Network Issues
 
