@@ -95,6 +95,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
 
   seaweedfs-volume:
     container_name: seaweedfs-volume
@@ -122,6 +124,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
 
   seaweedfs-filer:
     container_name: seaweedfs-filer
@@ -167,6 +171,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
+      - data  # For etcd access
 
   seaweedfs-s3:
     container_name: seaweedfs-s3
@@ -206,12 +213,17 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.seaweedfs-s3.rule=Host(`s3.${DOMAIN}`)"
       - "traefik.http.routers.seaweedfs-s3.priority=4000"
       - "traefik.http.routers.seaweedfs-s3.entrypoints=websecure"
       - "traefik.http.routers.seaweedfs-s3.tls=true"
       - "traefik.http.routers.seaweedfs-s3.middlewares=security-headers@file"
       - "traefik.http.services.seaweedfs-s3.loadbalancer.server.port=9000"
+    networks:
+      - storage
+      - backend  # Internal access from application services
+      - proxy    # External S3 API access via Traefik
 
   seaweedfs-init:
     container_name: seaweedfs-init
@@ -235,6 +247,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
+      - backend
 
   oauth2proxy-seaweed:
     container_name: oauth2proxy-seaweed
@@ -268,12 +283,16 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.seaweedfs-filer.rule=Host(`datalake.${DOMAIN}`)"
       - "traefik.http.routers.seaweedfs-filer.priority=4000"
       - "traefik.http.routers.seaweedfs-filer.entrypoints=websecure"
       - "traefik.http.routers.seaweedfs-filer.tls=true"
       - "traefik.http.routers.seaweedfs-filer.middlewares=security-headers@file"
       - "traefik.http.services.seaweedfs-filer.loadbalancer.server.port=4181"
+    networks:
+      - proxy
+      - storage
   
 
   # ===================================================================
@@ -317,6 +336,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data     # Milvus metadata storage
+      - storage  # SeaweedFS filer metadata
 
   etcd-init:
     container_name: etcd-init
@@ -336,6 +358,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
+      - storage  # Used by SeaweedFS filer for metadata
 
   milvus-standalone:
     container_name: milvus
@@ -375,6 +400,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
+      - storage  # For S3 access to SeaweedFS
 
   attu:
     container_name: attu
@@ -396,6 +424,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   oauth2proxy-attu:
     container_name: oauth2proxy-attu
@@ -428,12 +458,16 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.attu.rule=Host(`attu.${DOMAIN}`)"
       - "traefik.http.routers.attu.priority=4000"
       - "traefik.http.routers.attu.entrypoints=websecure"
       - "traefik.http.routers.attu.tls=true"
       - "traefik.http.routers.attu.middlewares=security-headers@file"
       - "traefik.http.services.attu.loadbalancer.server.port=4182"
+    networks:
+      - proxy
+      - data
   
 
   # ===================================================================
@@ -463,6 +497,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   
   # ===================================================================
@@ -503,6 +539,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
   
 
   # ===================================================================
@@ -522,7 +560,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/ferretdb-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${MONGO_USERNAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${MONGO_USERNAME} -d postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -531,6 +569,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   ferretdb:
     container_name: ferretdb
@@ -548,6 +588,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   # ===================================================================
   # Neo4j Stack (Graph Database)
@@ -578,6 +620,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data  # Graph database for Mem0 memory storage
 
   # ===================================================================
   # Phoenix Stack (ML Observability)
@@ -605,6 +649,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
+      - data  # For PostgreSQL access
 
   # ===================================================================
   # Nats & Valkey Stack (Messaging and Caching)
@@ -634,6 +681,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data  # Message broker is part of data infrastructure
 
   valkey:
     container_name: valkey
@@ -656,6 +705,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data  # Cache is part of data infrastructure
 
   # ===================================================================
   # LiteLLM Stack (Model Proxy and Guardrails)
@@ -673,6 +724,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   presidio-anonymizer:
     container_name: presidio-anonymizer
@@ -683,6 +736,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   litellm:
     container_name: litellm
@@ -721,7 +776,7 @@ services:
       presidio-anonymizer:
         condition: service_started
     healthcheck:
-      test: [ "CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:4000/health/liveliness" ]
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health/liveliness')" ]
       timeout: 10s
       interval: 30s
       retries: 3
@@ -733,11 +788,16 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.litellm.rule=Host(`litellm.${DOMAIN}`)"
       - "traefik.http.routers.litellm.entrypoints=websecure"
       - "traefik.http.routers.litellm.middlewares=security-headers@file"
       - "traefik.http.services.litellm.loadbalancer.server.port=4000"
       - "traefik.http.routers.litellm.tls=true"
+    networks:
+      - backend
+      - data  # For PostgreSQL access
+      - proxy  # For external API access via Traefik
 
   # ===================================================================
   # Utility & Code Execution Services
@@ -762,14 +822,17 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   playwright:
     container_name: playwright-server
-    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.54.1-jammy
+    build:
+      context: ./configs/playwright
+      dockerfile: Dockerfile
     restart: always
     ports:
       - "3036:3000"
-    command: npx playwright@v1.49.0 run-server --port 3000 --host 0.0.0.0
     environment:
       NODE_ENV: production
     healthcheck:
@@ -783,6 +846,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend  # Internal service communication
+      - egress   # Outbound internet access for web browsing
 
   # ===================================================================
   # Document Processing Stack
@@ -818,6 +884,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   
   vllm-docling:
@@ -860,6 +928,8 @@ services:
             - driver: nvidia
               device_ids: [ '0' ]
               capabilities: [ gpu ]
+    networks:
+      - backend
 
   # ===================================================================
   # Observability Stack
@@ -892,6 +962,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   # ===================================================================
   # Open WebUI Stack (Primary User Interface)
@@ -1108,6 +1180,12 @@ services:
       USER_PERMISSIONS_FEATURES_IMAGE_GENERATION: True
       USER_PERMISSIONS_FEATURES_CODE_INTERPRETER: True
       USER_PERMISSIONS_FEATURES_NOTES: True
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
     logging:
       driver: json-file
       options:
@@ -1115,6 +1193,7 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       # --- Routers ---
       - "traefik.http.routers.openwebui-api-auth.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/api/v1/auths`)"
       - "traefik.http.routers.openwebui-api-auth.priority=7000"
@@ -1156,6 +1235,11 @@ services:
       - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customrequestheaders.X-Forwarded-Host=openwebui.${DOMAIN}"
       - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customRequestHeaders.X-Forwarded-Port=443"
       - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customRequestHeaders.X-Real-IP=%{remote_addr}"
+    networks:
+      - proxy
+      - backend
+      - data
+      - storage
 
   openwebui-init:
     container_name: openwebui-init
@@ -1179,6 +1263,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   
   # ===================================================================
@@ -1216,11 +1302,15 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.dagster.rule=Host(`dagster.${DOMAIN}`)"
       - "traefik.http.routers.dagster.entrypoints=websecure"
       - "traefik.http.routers.dagster.middlewares=security-headers@file"
       - "traefik.http.services.dagster.loadbalancer.server.port=4180"
       - "traefik.http.routers.dagster.tls=true"
+    networks:
+      - proxy
+      - backend
 
   dagster-webserver:
     container_name: dagster-webserver
@@ -1261,6 +1351,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
+      - data
 
   dagster-daemon:
     container_name: dagster-daemon
@@ -1294,6 +1387,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
+      - data
 
   
   # ===================================================================
@@ -1343,6 +1439,8 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=false"
+    networks:
+      - backend  # Only Traefik needs to access this service
 
   # ===================================================================
   # Traefik (Reverse Proxy)
@@ -1372,6 +1470,7 @@ services:
       TRAEFIK_LOG_LEVEL: ${LOG_LEVEL}
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       # --- HTTP to HTTPS Redirect and ACME Challenge ---
       - "traefik.http.routers.http-catch.rule=HostRegexp(`{host:.+}`) && !PathPrefix(`/.well-known/acme-challenge/`)"
       - "traefik.http.routers.http-catch.entrypoints=web"
@@ -1385,6 +1484,9 @@ services:
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:${ADMIN_PASSWORD_HASH}"
       - "traefik.http.routers.traefik.middlewares=traefik-auth"
+    networks:
+      - proxy
+      - backend  # Traefik routes to backend services
 
   
   # ===================================================================
@@ -1406,6 +1508,10 @@ services:
         condition: service_started
       ferretdb:
         condition: service_started
+      milvus-standalone:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
     environment:
       # Log Level
       LOG_LEVEL: ${LOG_LEVEL}
@@ -1519,12 +1625,18 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/v1`)"
       - "traefik.http.routers.api.priority=6000"
       - "traefik.http.routers.api.entrypoints=websecure"
       - "traefik.http.routers.api.middlewares=security-headers@file"
       - "traefik.http.services.api.loadbalancer.server.port=8000"
       - "traefik.http.routers.api.tls=true"
+    networks:
+      - proxy
+      - backend
+      - data
+      - storage
 
   
   # ===================================================================
@@ -1555,8 +1667,11 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - proxy  # Static frontend only needs proxy access
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       # --- Routers ---
       - "traefik.http.routers.web-static.rule=Host(`${DOMAIN}`) && PathPrefix(`/_nuxt`)"
       - "traefik.http.routers.web-static.priority=2000"
@@ -1650,6 +1765,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
+      - data
 
   
   rag_agent:
@@ -1720,6 +1838,10 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    networks:
+      - backend
+      - data
+      - storage
 
   
   expert_rag_agent:
@@ -1780,6 +1902,10 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    networks:
+      - backend
+      - data
+      - storage
 
   
   expert_asking_agent:
@@ -1836,6 +1962,9 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    networks:
+      - backend
+      - data
 
   
   default_rag_pipeline:
@@ -1898,6 +2027,10 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    networks:
+      - backend
+      - data
+      - storage
 
   
   shared_rag_pipeline:
@@ -1970,6 +2103,10 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    networks:
+      - backend
+      - data
+      - storage
 
   
   # ===================================================================
@@ -1984,9 +2121,14 @@ services:
       context: .
       dockerfile: ./aihub_bot/Dockerfile
     depends_on:
-      - ferretdb
-      - nats
-      - traefik
+      ferretdb:
+        condition: service_started
+      nats:
+        condition: service_started
+      traefik:
+        condition: service_started
+      neo4j:
+          condition: service_healthy
     ports:
       - "8001:8001"
     environment:
@@ -2020,8 +2162,52 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.bot.rule=Host(`bot.${DOMAIN}`)"
       - "traefik.http.routers.bot.entrypoints=websecure"
       - "traefik.http.routers.bot.tls=true"
       - "traefik.http.routers.bot.middlewares=security-headers@file"
       - "traefik.http.services.bot.loadbalancer.server.port=8001"
+    networks:
+      - proxy
+      - backend
+      - data
+
+# ===================================================================
+# Network Configuration
+# ===================================================================
+# Network isolation provides defense-in-depth security by limiting
+# which services can communicate with each other. Each network zone
+# serves a specific purpose:
+#
+# - proxy:   External traffic ingress (Traefik routes here)
+# - backend: Internal application and processing services
+# - data:    Databases, caches, and message broker
+# - storage: SeaweedFS distributed object storage
+# - egress:  Outbound internet only, ICC disabled (containers isolated)
+#
+# Services are assigned to only the networks they require.
+# Networks marked with 'internal: true' cannot be accessed from
+# outside the Docker network, even if ports are exposed.
+# ===================================================================
+networks:
+  proxy:
+    name: proxy
+    driver: bridge
+  backend:
+    name: backend
+    driver: bridge
+    internal: true
+  data:
+    name: data
+    driver: bridge
+    internal: true
+  storage:
+    name: storage
+    driver: bridge
+    internal: true
+  egress:
+    name: egress
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "false"

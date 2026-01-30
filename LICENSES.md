@@ -6,7 +6,7 @@ This document contains license information for all dependencies across the monor
 
 - Python packages (Poetry): **1695 packages**
 - Node.js packages (pnpm): **204 packages**
-- External Docker images: **32 images**
+- External Docker images: **31 images**
 
 ### License Compatibility
 
@@ -1964,7 +1964,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | presidio-analyzer               | `ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359`                     | MIT                | Permissive license                                                |
 | ✅     | nats                            | `ghcr.io/bbvch-ai/aihub-core/nats:2.11.4`                                   | Apache-2.0         | Permissive license                                                |
 | ✅     | vllm-openai                     | `ghcr.io/bbvch-ai/aihub-core/vllm-openai:v0.11.0`                           | Apache-2.0         | Permissive license                                                |
-| ✅     | playwright                      | `ghcr.io/bbvch-ai/aihub-core/playwright:v1.54.1-jammy`                      | Apache-2.0         | Permissive license                                                |
 | ✅     | postgres-documentdb             | `ghcr.io/bbvch-ai/aihub-core/postgres-documentdb:17.0.106.0-ferretdb-2.5.0` | Apache-2.0         | Permissive licenses                                               |
 | ✅     | traefik                         | `ghcr.io/bbvch-ai/aihub-core/traefik:v3.6.2`                                | Apache-2.0         | Permissive license                                                |
 | ✅     | valkey                          | `ghcr.io/bbvch-ai/aihub-core/valkey:8.0.5`                                  | BSD-3-Clause       | Redis-compatible, standard BSD-3-Clause license                   |
