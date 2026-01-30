@@ -1156,29 +1156,23 @@ class StreamingService:
         error_info: Annotated[dict[str, Any], "Error info with status_code, body, preferred_lang"],
         emitter: Annotated[EventEmitter, "Event emitter"],
     ) -> None:
-        """Handle HTTP errors with multilingual support using pre-read error info"""
+        """Handle HTTP errors using the pre-formatted message from the API response."""
         status_code = error_info["status_code"]
         error_body = error_info["body"]
-        preferred_lang = error_info.get("preferred_lang", "en")
         error_msg = f"HTTP {status_code}"
 
         logger.debug(f"HTTP {status_code} error body: {error_body}")
 
-        # Special handling for 429 (usage limit exceeded)
-        if status_code == 429:
-            try:
-                error_data = json.loads(error_body)
-                detail = error_data.get("detail", {})
-                logger.debug(f"429 error detail: {detail}, type: {type(detail)}")
-
-                if isinstance(detail, dict) and detail.get("error") == "usage_limit_exceeded":
-                    error_msg = detail.get("message", "Usage limit exceeded")
-                else:
-                    error_msg = f"{error_msg}: {error_body}"
-            except (json.JSONDecodeError, KeyError) as parse_err:
-                logger.warning(f"Failed to parse 429 error body: {parse_err}")
+        try:
+            error_data = json.loads(error_body)
+            detail = error_data.get("detail", {})
+            if isinstance(detail, dict) and detail.get("message"):
+                error_msg = detail["message"]
+            elif isinstance(detail, str):
+                error_msg = detail
+            else:
                 error_msg = f"{error_msg}: {error_body}"
-        else:
+        except (json.JSONDecodeError, KeyError):
             error_msg = f"{error_msg}: {error_body}"
 
         logger.error(f"HTTP error: {error_msg}")

@@ -35,11 +35,13 @@ from bson import ObjectId
 logger = logging.getLogger(__name__)
 
 
-def _extract_429_message(detail: dict) -> str:
-    """Extract the pre-formatted error message from a 429 response detail dict."""
-    if message := detail.get("message"):
-        return message
-    return detail.get("messages", {}).get("en", "Usage limit exceeded")
+def _extract_error_message(detail: dict | str, fallback: str = "Unknown error") -> str:
+    """Extract a human-readable message from a structured error detail."""
+    if isinstance(detail, str):
+        return detail
+    if isinstance(detail, dict) and detail.get("message"):
+        return detail["message"]
+    return fallback
 
 
 # ============================================================================
@@ -233,21 +235,16 @@ class Pipe:
                     error_detail = error_body.decode()
 
                     logger.debug(f"HTTP {stream_response.status_code} error body: {error_detail}")
-
-                    # Special handling for 429 (usage limit exceeded)
-                    if stream_response.status_code == 429:
-                        try:
-                            error_data = json.loads(error_detail)
-                            detail = error_data.get("detail", {})
-                            if isinstance(detail, dict) and detail.get("error") == "usage_limit_exceeded":
-                                yield f"data: {json.dumps({'error': _extract_429_message(detail)})}\n\n"
-                                return
-                        except (json.JSONDecodeError, KeyError) as parse_err:
-                            logger.warning(f"Failed to parse 429 error body: {parse_err}")
-
-                    # Generic error handling for other status codes
                     logger.error(f"HTTP error: {stream_response.status_code} - {error_detail}")
-                    yield f"data: {json.dumps({'error': f'API Error: Status {stream_response.status_code}'})}\n\n"
+
+                    try:
+                        error_data = json.loads(error_detail)
+                        detail = error_data.get("detail", error_detail)
+                        error_msg = _extract_error_message(detail, fallback=f"API Error: Status {stream_response.status_code}")
+                    except (json.JSONDecodeError, KeyError):
+                        error_msg = f"API Error: Status {stream_response.status_code}"
+
+                    yield f"data: {json.dumps({'error': error_msg})}\n\n"
                     return
 
                 # Process the stream line by line
@@ -338,14 +335,13 @@ class Pipe:
                 error_detail = e.response.text
                 logger.debug(f"HTTP {e.response.status_code} error body: {error_detail}")
 
-                if e.response.status_code == 429:
-                    try:
-                        error_data = json.loads(error_detail)
-                        detail = error_data.get("detail", {})
-                        if isinstance(detail, dict) and detail.get("error") == "usage_limit_exceeded":
-                            return {"error": _extract_429_message(detail)}
-                    except (json.JSONDecodeError, KeyError) as parse_err:
-                        logger.warning(f"Failed to parse 429 error body: {parse_err}")
+                try:
+                    error_data = json.loads(error_detail)
+                    detail = error_data.get("detail", error_detail)
+                    error_msg = _extract_error_message(detail, fallback=f"API Error: Status {e.response.status_code}")
+                    return {"error": error_msg}
+                except (json.JSONDecodeError, KeyError):
+                    pass
             except Exception as read_err:
                 logger.warning(f"Failed to read error response body: {read_err}")
 
