@@ -7,7 +7,7 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
-from aihub_lib.auth.usage import UsageStatus
+from aihub_lib.auth.usage import EffectiveLimitStatus, UsageLimitPeriod, UsageStatus
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_admin_only  # noqa: F401
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
@@ -19,22 +19,32 @@ BASE_URL = "http://test"
 CHAT_ENDPOINT = "/api/v1/openai/chat/completions"
 
 
+def _exceeded_status(*, limit: int = 100, current_count: int = 101, period: str = "1d") -> UsageStatus:
+    """Build a UsageStatus that is exceeded."""
+    return UsageStatus(
+        limits=[
+            EffectiveLimitStatus(
+                pattern="aihub.user.agent.>",
+                limit=limit,
+                period=UsageLimitPeriod(period),
+                current_count=current_count,
+                reset_at=None,
+                is_exceeded=True,
+            )
+        ],
+        is_exceeded=True,
+    )
+
+
 class TestUsageLimitEnforcement:
     """Tests for usage limit enforcement in OpenAI chat completions."""
 
     @pytest.mark.asyncio
-    @patch("aihub_api.routes.openai.OpenaiController.UsageLimitService")
+    @patch("aihub_lib.routes.chat.ChatService.UsageLimitService")
     async def test_returns_429_when_limit_exceeded(self, mock_usage_service: MagicMock):
         """Test that a 429 error is returned when usage limit is exceeded."""
-        mock_usage_service.check_and_increment = AsyncMock(
-            return_value=UsageStatus(
-                current_count=101,
-                limit=100,
-                period="1d",
-                reset_at=None,
-                is_exceeded=True,
-            )
-        )
+        mock_usage_service.check_and_increment = AsyncMock(return_value=_exceeded_status())
+        mock_usage_service.build_resource_path = MagicMock(return_value="aihub.user.agent.TestAgent.test_id")
 
         auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
         controller = OpenaiController(auth=auth).chat_completion_with_assistants()
@@ -56,10 +66,10 @@ class TestUsageLimitEnforcement:
                 data = response.json()
                 assert data["detail"]["error"] == "usage_limit_exceeded"
                 assert data["detail"]["limit"] == 100
-                assert data["detail"]["period"] == "1d"
+                assert data["detail"]["period"] == UsageLimitPeriod.ONE_DAY
 
     @pytest.mark.asyncio
-    @patch("aihub_api.routes.openai.OpenaiController.UsageLimitService")
+    @patch("aihub_lib.routes.chat.ChatService.UsageLimitService")
     async def test_direct_model_calls_not_counted(self, mock_usage_service: MagicMock):
         """Test that direct model calls (not agent calls) are not counted."""
         auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
