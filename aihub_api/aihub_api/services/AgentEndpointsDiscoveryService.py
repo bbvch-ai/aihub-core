@@ -8,7 +8,7 @@ from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.auth.usage import UsageLimitService, build_exceeded_detail, build_warning_message
-from aihub_lib.auth.usage.UsageLimitService import ResourceType
+from aihub_lib.auth.usage.UsageLimitService import ResourceType, UsageStatus
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.no_trace import no_trace
 from aihub_lib.infrastructure.redis.use_redis import use_redis
@@ -300,6 +300,23 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         logger.info(f"Registered {endpoint_type} streaming endpoint: {stream_path}".strip())
 
     @staticmethod
+    async def _check_usage_limit(
+        redis: Redis,
+        user: UserIdentity,
+        agent_class: str,
+        agent_id: str,
+        locale: str,
+    ) -> UsageStatus:
+        """Check usage limits for an agent call and raise 429 if exceeded."""
+        resource_path = UsageLimitService.build_resource_path(ResourceType.AGENT, agent_class, agent_id)
+        usage_status = await UsageLimitService.check_and_increment(
+            redis, user.id, user.roles, resource_path=resource_path
+        )
+        if usage_status.is_exceeded:
+            raise HTTPException(status_code=429, detail=build_exceeded_detail(usage_status, locale=locale))
+        return usage_status
+
+    @staticmethod
     def _create_endpoint(
         *,
         input_type: type[BaseModel],
@@ -330,13 +347,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             t: LocaleHandler = Depends(use_locale),
         ) -> response_union_type:
             """Send a specific event type to a specific agent. Returns either a stop event or HITL request event."""
-            # Usage limit check for agent calls (pattern-based)
-            resource_path = UsageLimitService.build_resource_path(ResourceType.AGENT, agent_class, agent_id)
-            usage_status = await UsageLimitService.check_and_increment(
-                redis, user.id, user.roles, resource_path=resource_path
-            )
-            if usage_status.is_exceeded:
-                raise HTTPException(status_code=429, detail=build_exceeded_detail(usage_status, locale=t.locale))
+            await AgentEndpointsDiscoveryService._check_usage_limit(redis, user, agent_class, agent_id, t.locale)
 
             if thread_id is not None:
                 try:
@@ -411,13 +422,9 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             t: LocaleHandler = Depends(use_locale),
         ) -> StreamingResponse:
             """Send a specific event type to a specific agent and stream all events as SSE."""
-            # Usage limit check for agent calls (pattern-based)
-            resource_path = UsageLimitService.build_resource_path(ResourceType.AGENT, agent_class, agent_id)
-            usage_status = await UsageLimitService.check_and_increment(
-                redis, user.id, user.roles, resource_path=resource_path
+            usage_status = await AgentEndpointsDiscoveryService._check_usage_limit(
+                redis, user, agent_class, agent_id, t.locale
             )
-            if usage_status.is_exceeded:
-                raise HTTPException(status_code=429, detail=build_exceeded_detail(usage_status, locale=t.locale))
 
             if thread_id is not None:
                 try:

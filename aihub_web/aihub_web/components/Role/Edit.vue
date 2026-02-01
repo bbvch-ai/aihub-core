@@ -279,6 +279,10 @@ const addUsageLimit = () => {
   if (!role.value.usage_limits) {
     role.value.usage_limits = []
   }
+  const duplicate = role.value.usage_limits.some(
+    ul => ul.pattern === newPattern.value && ul.period === newPeriod.value,
+  )
+  if (duplicate) return
   role.value.usage_limits.push({
     pattern: newPattern.value,
     limit,

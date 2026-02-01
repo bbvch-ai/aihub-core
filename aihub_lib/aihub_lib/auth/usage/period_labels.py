@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import zoneinfo
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
@@ -79,8 +80,6 @@ def _format_reset_label(reset_at: datetime, locale: str) -> str:
     - Within 7 days → "Resets on Wednesday at 11:35"
     - Further   → "Resets on 15.02.2025 at 11:35"
     """
-    import zoneinfo
-
     user_tz = zoneinfo.ZoneInfo("Europe/Zurich")
     local_reset = reset_at.astimezone(user_tz)
     local_now = datetime.now(user_tz)
@@ -108,8 +107,6 @@ def build_exceeded_detail(usage_status: UsageStatus, locale: str = "en") -> dict
     ready for display. The ``messages`` dict and ``limits`` array are kept for
     backward compatibility.
     """
-    import zoneinfo
-
     error_messages = build_usage_limit_messages(usage_status.limit, usage_status.period)
 
     reset_at_local = None
@@ -119,8 +116,7 @@ def build_exceeded_detail(usage_status: UsageStatus, locale: str = "en") -> dict
         delta = usage_status.reset_at - now
         reset_in_seconds = max(0, int(delta.total_seconds()))
 
-        user_tz = zoneinfo.ZoneInfo("Europe/Zurich")
-        local_time = usage_status.reset_at.astimezone(user_tz)
+        local_time = usage_status.reset_at.astimezone(zoneinfo.ZoneInfo("Europe/Zurich"))
         reset_at_local = local_time.strftime("%H:%M")
 
     reset_label = _format_reset_label(usage_status.reset_at, locale) if usage_status.reset_at else None

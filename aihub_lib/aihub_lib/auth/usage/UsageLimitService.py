@@ -102,6 +102,14 @@ class ResourceType(StrEnum):
     AGENT = "agent"
 
 
+_INCR_WITH_TTL_SCRIPT = """
+local count = redis.call('INCR', KEYS[1])
+if count == 1 or redis.call('TTL', KEYS[1]) < 0 then
+    redis.call('EXPIRE', KEYS[1], ARGV[1])
+end
+return count
+"""
+
 _RESOURCE_PATH_PREFIX = "aihub.user"
 
 
@@ -137,6 +145,8 @@ class UsageLimitService:
 
         for i, part in enumerate(pattern_parts):
             if part == ">":
+                if i != len(pattern_parts) - 1:
+                    raise ValueError(f"Invalid pattern: '>' must be the last segment, got {pattern!r}")
                 return i < len(concrete_parts)
             if i >= len(concrete_parts):
                 return False
@@ -151,6 +161,8 @@ class UsageLimitService:
 
     @staticmethod
     def _build_redis_key(user_id: str, pattern: str, period: UsageLimitPeriod) -> str:
+        if ":" in user_id or "\n" in user_id or "\r" in user_id:
+            raise ValueError(f"Invalid user_id for Redis key: must not contain ':' or newlines, got {user_id!r}")
         return f"usage:calls:{user_id}:{pattern}:{period}"
 
     @staticmethod
@@ -304,11 +316,12 @@ class UsageLimitService:
         if not effective_limits:
             return UsageStatus(limits=[], is_exceeded=False)
 
+        keys = [UsageLimitService._build_redis_key(user_id, el.pattern, el.period) for el in effective_limits]
+        raw_values = await redis.mget(keys)
+
         limit_statuses: list[EffectiveLimitStatus] = []
-        for effective_limit in effective_limits:
-            key = UsageLimitService._build_redis_key(user_id, effective_limit.pattern, effective_limit.period)
-            raw_count = await redis.get(key)
-            current_count = int(raw_count) if raw_count else 0
+        for effective_limit, key, raw in zip(effective_limits, keys, raw_values):
+            current_count = int(raw) if raw else 0
             limit_statuses.append(
                 await UsageLimitService._build_limit_status(redis, effective_limit, key, current_count)
             )
@@ -347,14 +360,10 @@ class UsageLimitService:
         user_id: str,
         effective_limits: list[EffectiveLimit],
     ) -> list[tuple[EffectiveLimit, str, int]]:
-        """Read current counter values for all effective limits."""
-        checks: list[tuple[EffectiveLimit, str, int]] = []
-        for effective_limit in effective_limits:
-            key = UsageLimitService._build_redis_key(user_id, effective_limit.pattern, effective_limit.period)
-            raw_count = await redis.get(key)
-            current_count = int(raw_count) if raw_count else 0
-            checks.append((effective_limit, key, current_count))
-        return checks
+        """Read current counter values for all effective limits using a single MGET call."""
+        keys = [UsageLimitService._build_redis_key(user_id, el.pattern, el.period) for el in effective_limits]
+        raw_values = await redis.mget(keys)
+        return [(el, key, int(raw) if raw else 0) for el, key, raw in zip(effective_limits, keys, raw_values)]
 
     @staticmethod
     async def _build_status_from_checks(
@@ -381,13 +390,10 @@ class UsageLimitService:
 
         for effective_limit, key, _ in checks:
             ttl_seconds = effective_limit.period.seconds
-            new_count = await redis.incr(key)
+            new_count = await redis.eval(_INCR_WITH_TTL_SCRIPT, 1, key, ttl_seconds)
             logger.debug(
                 f"Usage incremented: user={user_id}, key={key}, new_count={new_count}, limit={effective_limit.limit}"
             )
-
-            if new_count == 1:
-                await redis.expire(key, ttl_seconds)
 
             limit_statuses.append(
                 await UsageLimitService._build_limit_status(redis, effective_limit, key, new_count, post_increment=True)

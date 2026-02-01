@@ -20,7 +20,7 @@ class UsageLimit(EmbeddedDocument):
     """Pattern-based usage limit rule (NATS-style wildcards: * single-level, > multi-level)."""
 
     pattern = StringField(required=True)
-    limit = IntField(required=True)
+    limit = IntField(required=True, min_value=0)
     period = StringField(required=True, choices=["1h", "1d", "7d", "1mo"])
 
 
