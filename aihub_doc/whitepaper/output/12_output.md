@@ -3,7 +3,8 @@
 Die Akzeptanz einer Enterprise-KI-Plattform steht und fällt mit ihrer Benutzerfreundlichkeit. Selbst die
 leistungsfähigsten Modelle und sichersten Architekturen bleiben wirkungslos, wenn die Bedienung komplex ist oder
 etablierte Arbeitsweisen stört. Mitarbeitende erwarten heute von Unternehmenssoftware denselben Komfort («Consumer Grade
-Experience»), den sie von privaten Apps gewohnt sind – ohne dabei Kompromisse bei der Datensicherheit einzugehen.
+Experience»), den sie von privaten Applikationen gewohnt sind – ohne dabei Kompromisse bei der Datensicherheit
+einzugehen.
 
 Dieses Kapitel beleuchtet die Interaktionsschicht des Swiss AI Hub. Es zeigt auf, wie die Plattform durch eine
 integrierte Suite, multimodale Eingaben und eine radikale Transparenz Vertrauen schafft und Barrieren abbaut, um KI von
@@ -11,168 +12,148 @@ einem Expertenwerkzeug zu einem intuitiven Begleiter für die gesamte Belegschaf
 
 ## Auf einen Blick
 
-- **Integrierte Produktivitäts-Suite:** Eine einheitliche Benutzeroberfläche bündelt Chat, Wissensverwaltung und
-  Agenten-Steuerung, um Kontextwechsel zu minimieren und die Lernkurve flach zu halten.
-- **Barrierefreie Multimodalität:** Nahtlose Unterstützung von Spracheingabe, Dokumenten-Uploads und direkter
-  Bildschirmfreigabe ermöglicht natürliche Interaktionen jenseits von reinem Text.
-- **Evidenzbasierte Transparenz:** KI-Antworten werden durch interaktive Zitationen direkt mit den Quellen aus der
-  Wissensdatenbank verknüpft, was eine sofortige Faktenprüfung ermöglicht.
-- **Kanal-Unabhängigkeit:** Durch native Integrationen in Microsoft Teams und Slack holt die Plattform den Nutzer dort
-  ab, wo die Zusammenarbeit stattfindet, inklusive Experten-Eskalation («Bot-in-the-Loop»).
-- **Schweizer Mehrsprachigkeit:** Die Oberfläche und Verarbeitung unterstützen nativ Deutsch, Französisch, Italienisch
-  und Englisch, um den Anforderungen nationaler Organisationen gerecht zu werden.
+- **Integrierte Produktivitäts-Suite:** Eine einheitliche Benutzeroberfläche bündelt Chat, Wissensverwaltung,
+  Prozessmonitoring und Evaluation, um Kontextwechsel zu minimieren.
+- **Barrierefreie Multimodalität:** Die nahtlose Unterstützung von Spracheingabe (inkl. Schweizerdeutsch),
+  Dokumenten-Uploads und Vision-Fähigkeiten ermöglicht natürliche Interaktionsformen.
+- **Evidenzbasierte Transparenz:** KI-Antworten werden durch interaktive Zitationen direkt mit den Quellen verknüpft,
+  während Tracing-Dashboards die Argumentationskette der Agenten offenlegen.
+- **Kanal-Unabhängigkeit:** Durch die Integration in Microsoft Teams und Slack holt die Plattform den Nutzer dort ab, wo
+  die Zusammenarbeit stattfindet, inklusive Experten-Eskalation («Bot-in-the-Loop»).
+- **Nutzerzentrierte Datenhoheit:** Granulare Funktionen für den Export und die Löschung von Chat-Verläufen sowie die
+  Verwaltung des Benutzergedächtnisses sichern die Einhaltung von Betroffenenrechten.
 
-## Eine integrierte Suite statt isolierter Tools
+## Die integrierte Suite («Integrated Productivity Suite»)
 
 ### Geschäftlicher Nutzen
 
-In vielen Unternehmen führt die Einführung von KI zu einer Fragmentierung der Tool-Landschaft. Mitarbeitende müssen
-zwischen verschiedenen Anwendungen wechseln – hier ein Chatbot für HR-Fragen, dort ein separates Tool für
-Dokumentenanalyse. Dieser ständige Kontextwechsel («Context Switching») vernichtet Produktivität und erhöht den
-Schulungsaufwand. Unternehmen benötigen eine zentrale Anlaufstelle, die verschiedene KI-Funktionalitäten unter einer
-einheitlichen Oberfläche bündelt. Dies reduziert die Lernkurve drastisch, da Navigationskonzepte und Designsprache
-konsistent bleiben, unabhängig davon, ob ein Agenten-Profil konfiguriert oder eine Wissensdatenbank durchsucht wird.
+In vielen Unternehmen führt die Einführung von KI zu einer gefährlichen Tool-Fragmentierung. Mitarbeitende müssen
+zwischen isolierten Anwendungen wechseln – einem Chatbot für HR-Fragen, einem separaten Tool für die Dokumentenanalyse
+und einem weiteren für das Prozessmonitoring. Dieser ständige Kontextwechsel («Context Switching») vernichtet
+Produktivität und erhöht den Schulungsaufwand massiv. Unternehmen benötigen eine zentrale Anlaufstelle, die alle
+KI-Dienste unter einer einheitlichen Oberfläche bündelt. Dies reduziert die Lernkurve, da Navigationskonzepte und
+Designsprache konsistent bleiben, und steigert die Effizienz durch einen nahtlosen Informationsfluss zwischen den
+Diensten.
 
 ### Konzeptioneller Ansatz
 
-Der Swiss AI Hub verfolgt den Ansatz einer integrierten Produktivitäts-Suite, vergleichbar mit modernen
-Office-Umgebungen. Die Benutzeroberfläche ist nicht als Ansammlung loser Werkzeuge konzipiert, sondern als kohärentes
-Ökosystem. Ein zentraler Service-Katalog dient als Einstiegspunkt. Das Design-Prinzip der Kontext-Persistenz stellt
-sicher, dass Nutzer nahtlos zwischen Aufgaben – etwa der Analyse eines Dokuments und der anschliessenden Abfrage eines
-Agenten – wechseln können, ohne den Faden zu verlieren. Die Authentifizierung erfolgt einmalig (Single Sign-On),
-woraufhin alle autorisierten Dienste zur Verfügung stehen.
+Der Swiss AI Hub verfolgt den Ansatz einer integrierten Suite, vergleichbar mit modernen Office-Umgebungen. Die
+Benutzeroberfläche ist kein loses Sammelsurium von Werkzeugen, sondern ein kohärentes Ökosystem. Ein zentraler
+Service-Katalog dient als Einstiegspunkt für alle autorisierten Rollen. Das Design-Prinzip der Kontext-Persistenz stellt
+sicher, dass Nutzer nahtlos zwischen Aufgaben wechseln können – etwa von der Analyse eines Dokuments im
+Wissensmanagement direkt zur Interaktion mit einem darauf spezialisierten Agenten-Profil –, ohne den Faden zu verlieren.
+Das System passt sich dabei durch dynamische Dienstsichtbarkeit («Security by Invisibility») automatisch an die
+Berechtigungen des Nutzers an.
 
 ### Technische Umsetzung im Swiss AI Hub
 
-Die Benutzeroberfläche basiert auf einer tief integrierten Implementierung der Open WebUI, die um
-unternehmensspezifische Funktionen erweitert wurde:
+Die Benutzeroberfläche basiert auf einer tief integrierten Implementierung der Open WebUI, die als primäre
+Chat-Schnittstelle dient und um unternehmensspezifische Module erweitert wurde:
 
-- **Service-Katalog:** Nutzer finden hier alle verfügbaren Agenten, visualisiert mit Statusindikatoren und
-  Beschreibungen. Ein Klick genügt, um eine Chat-Sitzung zu initiieren oder die zugrundeliegende Workflow-Logik
-  einzusehen.
-- **Persistente Navigation:** Eine permanente Seitenleiste ermöglicht den Zugriff auf Chat-Historie, Wissensverwaltung
-  und Agenten-Steuerung von überall in der Applikation.
-- **Intelligentes UI:** Die Oberfläche nutzt moderne Web-Technologien (WebSockets) für Echtzeit-Updates.
-  Skeleton-Screens sorgen für eine gefühlte hohe Performance, während Agenten-Antworten als Stream («Token-by-Token»)
-  dargestellt werden, sodass der Nutzer bereits lesen kann, während die Antwort noch generiert wird.
-- **Artefakt-Verwaltung:** Nutzer können vergangene Chat-Verläufe durchsuchen, umbenennen, exportieren oder
-  unwiderruflich löschen. Auch das Bearbeiten der eigenen letzten Nachricht ist möglich, um die Antwort des Agenten neu
-  zu generieren.
+- **Zentraler Service-Katalog:** Über eine persistente Seitenleiste greifen Nutzer auf spezialisierte Dienste zu:
+  Agentenverwaltung, Thread-Management (Konversationshistorie), Wissensverwaltung, Prozessverwaltung und den
+  Evaluierungsdienst.
+- **Intelligentes UI-Framework:** Die Oberfläche nutzt WebSockets für Echtzeit-Updates und Streaming-Antworten
+  («Token-by-Token»). Skeleton-Screens sorgen für eine gefühlte hohe Performance während der Ladezeiten.
+- **Integrationsarchitektur:** Open WebUI ist via iframe eingebettet und kommuniziert über eine sichere PostMessage-API
+  mit der Suite-Plattform. Dies ermöglicht die Synchronisation von Authentifizierung (SSO) und den Austausch von
+  Metadaten zwischen Chat und Backend-Diensten.
+- **PWA-Unterstützung:** Die Plattform kann als Progressive Web App installiert werden, was eine native Nutzung auf
+  mobilen Endgeräten inklusive Push-Benachrichtigungen ermöglicht.
 
 ## Multimodale Interaktion und Barrierefreiheit
 
 ### Geschäftlicher Nutzen
 
 Menschliche Kommunikation ist nicht auf getippten Text beschränkt. In vielen Arbeitssituationen – etwa im Aussendienst,
-im Spital oder bei der schnellen Erfassung von Ideen – ist die Tastatur ein Hindernis. Eine inklusive Plattform muss
-verschiedene Eingabekanäle unterstützen, um Barrieren abzubauen und die Effizienz zu steigern. Zudem ist in der
-mehrsprachigen Schweiz die Unterstützung der lokalen Landessprachen kein Luxus, sondern eine Grundvoraussetzung für die
-breite Akzeptanz in der Verwaltung und in national tätigen Unternehmen.
+bei der schnellen Erfassung von Sitzungsprotokollen oder bei der Analyse von Diagrammen – ist die Tastatur ein
+Hindernis. Eine inklusive Plattform muss verschiedene Eingabekanäle unterstützen, um Barrieren abzubauen. Zudem ist in
+der Schweiz die Unterstützung lokaler Landessprachen und Dialekte eine Grundvoraussetzung für die Akzeptanz. Eine
+multimodale Schnittstelle erhöht die Datenerfassungsgeschwindigkeit und ermöglicht es auch Mitarbeitenden mit physischen
+Einschränkungen, die Vorteile der KI uneingeschränkt zu nutzen.
 
 ### Konzeptioneller Ansatz
 
-Die Plattform löst sich von der reinen Text-Eingabe und ermöglicht eine multimodale Interaktion. Nutzer können mit dem
-System sprechen, Bilder zeigen oder Dokumente hochladen. Das Konzept sieht vor, dass die KI den Kontext unabhängig vom
-Eingabemedium versteht. Ein gesprochener Satz wird ebenso präzise verarbeitet wie ein hochgeladener Screenshot einer
-Fehlermeldung. Dies fördert nicht nur die Effizienz, sondern auch die Barrierefreiheit für Menschen mit Einschränkungen.
+Die Plattform löst sich von der reinen Text-Eingabe und ermöglicht eine intuitive, multimodale Interaktion. Nutzer
+können mit dem System sprechen, Bilder zur Analyse hochladen oder Dokumente per Drag-and-Drop direkt in einen Chat
+ziehen. Das Konzept sieht vor, dass die KI den Kontext unabhängig vom Medium versteht. Ein gesprochener Satz wird ebenso
+präzise verarbeitet wie ein hochgeladener Screenshot einer Fehlermeldung. Durch die Integration von Vision-Modellen
+transformiert sich die KI von einem reinen Text-Statisten zu einem visuellen Partner, der komplexe Informationen
+interpretieren kann.
 
 ### Technische Umsetzung im Swiss AI Hub
 
-Der Swiss AI Hub integriert fortschrittliche Eingabetechnologien direkt in die Chat-Oberfläche:
+Der Swiss AI Hub integriert fortschrittliche Eingabetechnologien direkt in die Schnittstelle:
 
-- **Spracheingabe:** Über das Mikrofon-Symbol können Nachrichten diktiert werden. Die Plattform unterstützt
-  Transkription in Deutsch (inklusive Schweizerdeutsch), Englisch, Französisch und Italienisch. Antworten können auf
-  Wunsch via Text-to-Speech vorgelesen werden, was insbesondere sehbehinderten Nutzern zugutekommt.
-- **Bildschirmfreigabe und Vision:** Nutzer können über die Funktion «Aufnehmen» direkt Browser-Tabs, Fenster oder den
-  gesamten Bildschirm teilen. Modelle mit Vision-Fähigkeiten analysieren diese visuellen Informationen – beispielsweise
-  um Diagramme zu erklären oder Text aus einem Screenshot zu extrahieren.
-- **Dokumenten-Interaktion:** Dateien (PDF, Office, Text) lassen sich per Drag-and-Drop in den Chat ziehen. Dies erlaubt
-  «Ad-hoc RAG», bei dem Nutzer Fragen zu einem spezifischen Dokument stellen können, ohne es permanent in eine
-  Wissensdatenbank ingestieren zu müssen.
+- **Sprachverarbeitung:** Über eine integrierte Aufnahmefunktion können Nachrichten diktiert werden. Die Plattform
+  unterstützt Transkription für Deutsch (inkl. Schweizerdeutsch), Französisch, Italienisch und Englisch. Antworten
+  können via Text-to-Speech vorgelesen werden.
+- **Ad-hoc RAG & Dokumenten-Interaktion:** Dateien (PDF, Office, TXT) lassen sich direkt in den Chat hochladen. Die
+  Plattform nutzt spezialisierte Parser wie PyMuPDF, um Inhalte sofort für den Agenten zugänglich zu machen, ohne sie
+  permanent in eine Wissensdatenbank ingestieren zu müssen.
+- **Vision-Fähigkeiten:** Nutzer können Bilder oder Screenshots einfügen. Modelle mit Sehfunktionen analysieren diese,
+  extrahieren Texte oder erklären komplexe Diagramme und Mermaid-Visualisierungen.
+- **Markdown- & LaTeX-Support:** Antworten werden reichhaltig formatiert dargestellt, einschliesslich mathematischer
+  Notationen, Tabellen und Code-Blöcken mit Syntaxhervorhebung.
 
-## Vertrauen durch Quellentransparenz und Kontrolle
+## Vertrauen durch Quellentransparenz und Datenkontrolle
 
 ### Geschäftlicher Nutzen
 
-In einem geschäftlichen Kontext ist eine KI-Antwort wertlos, wenn ihre Herkunft unklar ist. Nutzer müssen verifizieren
-können, ob eine Aussage auf aktuellen Unternehmensrichtlinien basiert oder eine Halluzination des Modells ist. Mangelnde
-Transparenz führt zu Misstrauen und verhindert den Einsatz in kritischen Prozessen. Zudem ist es für die kontinuierliche
-Verbesserung der Systeme essenziell, dass Nutzer Feedback zur Qualität der Antworten geben können.
+KI-Antworten sind im geschäftlichen Umfeld nur dann wertvoll, wenn sie verifizierbar sind. Nutzer müssen wissen, ob eine
+Aussage auf einer aktuellen Richtlinie basiert oder eine Halluzination des Modells ist. Transparenz ist der Schlüssel
+zur Risikominimierung und zur Einhaltung regulatorischer Vorgaben wie dem revDSG. Gleichzeitig müssen Nutzer die volle
+Kontrolle über ihre digitalen Spuren behalten. Die Möglichkeit, eigene Daten einzusehen, zu exportieren oder zu löschen,
+ist nicht nur ein Komfortmerkmal, sondern eine rechtliche Notwendigkeit zur Erfüllung von Betroffenenrechten.
 
 ### Konzeptioneller Ansatz
 
-Um dem «Black-Box»-Phänomen entgegenzuwirken, implementiert die Plattform Mechanismen zur evidenzbasierten Interaktion.
-Jede Behauptung eines Agenten, die auf Retrieval-Augmented Generation (RAG) beruht, muss belegbar sein. Das Interface
-stellt diese Belege proaktiv zur Verfügung, ohne den Lesefluss zu stören. Gleichzeitig werden Nutzer in den
-Qualitätssicherungsprozess eingebunden, indem sie Antworten bewerten können, was wiederum die Optimierung der
-Agenten-Profile steuert.
+Um dem «Black-Box-Phänomen» entgegenzuwirken, implementiert die Plattform Mechanismen zur evidenzbasierten Interaktion.
+Jede Behauptung eines Agenten, die auf Retrieval-Augmented Generation (RAG) beruht, wird proaktiv mit Belegen
+untermauert. Parallel dazu wird die Argumentationskette des Agenten (Tracing) offengelegt. Das Konzept der Datenhoheit
+wird durch ein dediziertes Gedächtnis-Management ergänzt, bei dem Nutzer genau steuern können, welche persönlichen
+Präferenzen sich das System über Konversationen hinweg merken darf.
 
 ### Technische Umsetzung im Swiss AI Hub
 
-Die Transparenz wird durch spezifische UI-Komponenten sichergestellt:
+- **Interaktives Quellen-Panel:** Bei RAG-Antworten werden Referenzen eingeblendet. Ein Klick öffnet ein Panel mit dem
+  Originaltext-Abschnitt («Chunk»), den Metadaten des Dokuments und dem Relevanz-Score.
+- **Observability-Integration:** Über eine Ereignisanzeige (basierend auf Arize Phoenix) können Nutzer die
+  «Gedankenschritte» eines Agenten einsehen – von der Tool-Wahl bis zur Datenabfrage.
+- **Gedächtnisverwaltung:** Der Benutzerspeicher erlaubt es, gelernte Fakten (z. B. «Nutzer bevorzugt Python»)
+  einzusehen, zu korrigieren oder zu löschen. Das Organisationsgedächtnis dient hingegen als geteilte Faktenbasis für
+  das gesamte Unternehmen.
+- **Feedback-System & Arena-Modus:** Nutzer können Antworten bewerten. Im Arena-Modus können zwei Modelle parallel
+  verglichen werden, wobei die Bewertungen in ein internes Elo-Rating einfliessen, um die besten Modelle für spezifische
+  Aufgaben zu identifizieren.
 
-- **Interaktive Zitation:** Wenn ein Agent Wissen aus einer Wissensdatenbank nutzt, werden die verwendeten Referenzen
-  direkt unter der Antwort angezeigt. Ein Klick auf die Zitation öffnet ein Seiten-Panel, das das Originaldokument, den
-  exakten Textausschnitt («Chunk») und die Relevanz-Scores anzeigt. Dies ermöglicht eine sofortige Faktenprüfung.
-- **Feedback-Schleife & Elo-Rating:** Nutzer können Antworten mit «Daumen hoch/runter» bewerten und schriftliches
-  Feedback geben. Diese Daten fliessen in eine interne Bestenliste (Elo-Rating) ein, die Administratoren hilft, die
-  effektivsten Modelle für spezifische Aufgaben zu identifizieren.
-- **Gedanken-Protokoll:** Für komplexe Agenten-Workflows kann der Nutzer die «Gedankenschritte» (Thought Events)
-  aufklappen. Dies visualisiert, welche Tools der Agent aufgerufen hat und wie er Schritt für Schritt zu seiner
-  Schlussfolgerung gelangt ist.
-
-## Nahtlose Integration in Kollaborations-Tools
+## Nahtlose Integration in den Arbeitsalltag
 
 ### Geschäftlicher Nutzen
 
-Die Einführung neuer Software scheitert oft an der Gewohnheit der Nutzer. Wenn Mitarbeitende ihren gewohnten
-Arbeitsplatz – sei es Microsoft Teams oder Slack – verlassen müssen, um eine KI zu konsultieren, entsteht eine Hürde.
-Die effektivste KI ist jene, die als «virtueller Kollege» dort präsent ist, wo die Zusammenarbeit im Team bereits
-stattfindet. Dies senkt die Hemmschwelle zur Nutzung und ermöglicht es, KI-Support direkt in Gruppendiskussionen
-einzubinden.
+Die effektivste KI ist jene, die dort präsent ist, wo die Zusammenarbeit bereits stattfindet. Wenn Mitarbeitende ihren
+gewohnten Arbeitsplatz in Microsoft Teams oder Slack verlassen müssen, um eine KI zu konsultieren, entsteht eine Hürde,
+die die Nutzungshäufigkeit senkt. Durch die Einbettung der KI in bestehende Kanäle wird sie zu einem virtuellen
+Teammitglied. Dies ermöglicht nicht nur schnellere Antworten, sondern auch hybride Workflows, bei denen die KI bei
+komplexen Entscheidungen menschliche Experten proaktiv einbezieht.
 
 ### Konzeptioneller Ansatz
 
-Der Swiss AI Hub verfolgt eine Strategie der Kanal-Unabhängigkeit. Die Benutzeroberfläche ist nicht auf den Webbrowser
-beschränkt. Durch die Integration in Messenger-Dienste wird die KI Teil des Teams. Das Konzept unterstützt dabei auch
-hybride Arbeitsweisen: Ein Agent kann eine Aufgabe in Teams entgegennehmen, bei Unsicherheit einen menschlichen Experten
-in einem definierten Kanal um Rat fragen («Bot-in-the-Loop») und nach Erhalt der Antwort den Prozess autonom fortsetzen.
+Der Swiss AI Hub verfolgt eine Strategie der Kanal-Unabhängigkeit. Die Plattform fungiert als zentrales Hirn, das
+verschiedene Kommunikationskanäle gleichzeitig bedient. Das Konzept des «Bot-in-the-Loop» ermöglicht es KI-Agenten,
+Aufgaben autonom zu bearbeiten und bei Bedarf Experten-Feedback via Messenger einzuholen. Sobald der Mensch antwortet,
+nimmt der Agent den Kontext wieder auf und führt den Prozess fort. Dies sichert die Qualität und behält die menschliche
+Kontrolle («Human Oversight») bei geschäftskritischen Aufgaben.
 
 ### Technische Umsetzung im Swiss AI Hub
 
-Die Anbindung erfolgt über den integrierten Azure Bot Service, der als Brücke zwischen der Plattform und den Kanälen
-fungiert:
+Die Anbindung erfolgt über die Bot Framework API und den Azure Bot Service:
 
-- **Native Clients:** In Microsoft Teams und Slack agiert der Agent als normaler Kontakt. Er unterstützt
-  Rich-Text-Formatierung, Datei-Uploads und Streaming-Antworten (Tipp-Indikator), sodass sich die Interaktion natürlich
-  anfühlt.
-- **Kontext-Erhalt:** Die Plattform speichert den Konversationszustand persistent. Ein Nutzer kann eine Diskussion
-  beginnen und später fortsetzen, da der Agent Zugriff auf die Historie hat.
-- **Experten-Eskalation:** Über strukturierte Workflows können Agenten Fragen in Experten-Channels posten. Die Antwort
-  des menschlichen Experten wird vom System erfasst und in den Wissenskontext des Agenten integriert, wodurch ein
-  organisatorischer Lerneffekt entsteht.
-
-## Lokalisierung und Internationalisierung
-
-### Geschäftlicher Nutzen
-
-Für Schweizer Organisationen ist die Unterstützung der Landessprachen essenziell. Eine Plattform, die nur auf Englisch
-verfügbar ist oder schlechte Übersetzungen liefert, wird von der Belegschaft nicht akzeptiert. Behörden und Unternehmen
-müssen sicherstellen, dass Mitarbeiter in der Deutschschweiz, der Romandie und im Tessin gleichberechtigten Zugang zu
-den KI-Diensten haben.
-
-### Konzeptioneller Ansatz
-
-Internationalisierung ist tief im System verankert. Die Plattform unterscheidet zwischen der Sprache der
-Benutzeroberfläche (statische Elemente) und der Sprache der generierten Inhalte. Nutzer können ihre bevorzugte Sprache
-im Profil wählen, was sofortige Auswirkungen auf die gesamte Interaktion hat. Das System ist darauf ausgelegt, dynamisch
-generierte Inhalte – wie Beschreibungen von Agenten oder Fehlermeldungen – ebenfalls in der Zielsprache auszugeben.
-
-### Technische Umsetzung im Swiss AI Hub
-
-- **Vollständige UI-Übersetzung:** Alle Menüs, Dialoge und Hilfetexte sind in Deutsch, Englisch, Französisch und
-  Italienisch verfügbar. Fehlt eine Übersetzung, greift das System auf Deutsch zurück.
-- **Formatierung:** Zahlen, Datumsangaben und Währungen werden automatisch gemäss den regionalen Konventionen der
-  gewählten Sprache formatiert (z.B. «31.12.2024» für Deutsch vs. «12/31/2024» für Englisch).
-- **Inhaltliche Adaption:** Dynamische Inhalte wie Namespace-Namen oder Agenten-Beschreibungen passen sich der gewählten
-  Sprache an. Dies stellt sicher, dass Nutzer keine Sprachmischung erleben und sich intuitiv zurechtfinden.
+- **Native Messenger-Integration:** Agenten agieren als vollwertige Kontakte in Microsoft Teams und Slack. Sie
+  unterstützen Thread-Kontexte, Datei-Uploads und Echtzeit-Streaming.
+- **Eskalations-Workflows:** Agenten können strukturierte Fragen in Experten-Kanäle posten. Die Antwort des Menschen
+  wird automatisch erfasst und in den laufenden Prozess integriert.
+- **Zentrale Konfiguration:** Über die `bot_paths` in der MongoDB werden interne Routing-Pfade definiert, die festlegen,
+  welches Agenten-Profil auf welche Kanal-Anfrage reagiert.
+- **Datenschutz:** Für alle Messenger-Interaktionen gelten dieselben Aufbewahrungsrichtlinien (z. B. 30 Tage für
+  ephemere Daten) und Sicherheitsstandards wie für die Web-Oberfläche.

@@ -21,40 +21,13 @@ import argparse
 import os
 import subprocess
 import sys
-import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
 
-from jinja2 import Environment, FileSystemLoader, Template
+from jinja2 import Environment, FileSystemLoader
 
-
-# --- ANSI Color Codes ---
-class Colors:
-    """ANSI color codes for terminal output."""
-
-    RED = "\033[0;31m"
-    GREEN = "\033[0;32m"
-    YELLOW = "\033[1;33m"
-    BLUE = "\033[0;34m"
-    NC = "\033[0m"  # No Color
-
-    @classmethod
-    def red(cls, text: str) -> str:
-        return f"{cls.RED}{text}{cls.NC}"
-
-    @classmethod
-    def green(cls, text: str) -> str:
-        return f"{cls.GREEN}{text}{cls.NC}"
-
-    @classmethod
-    def yellow(cls, text: str) -> str:
-        return f"{cls.YELLOW}{text}{cls.NC}"
-
-    @classmethod
-    def blue(cls, text: str) -> str:
-        return f"{cls.BLUE}{text}{cls.NC}"
+from llm_utils import Colors, UsageTracker, call_llm
 
 
 @dataclass
@@ -86,7 +59,7 @@ class GeneratorConfig:
     general_prompt_file: Path
     glossary_file: Path
     project_root: Path  # Root of the aihub-core project
-    llm_model: str = "gemini-3-pro-preview"
+    llm_model: str = "gemini-3-flash-preview"
     max_retries: int = 3
     retry_delay: int = 5
     lang_suffix: str = ".de.md"
@@ -98,6 +71,7 @@ class WhitepaperGenerator:
     def __init__(self, config: GeneratorConfig):
         """Initialize the generator with configuration."""
         self.config = config
+        self.usage_tracker = UsageTracker(model=config.llm_model)
 
         # Initialize Jinja2 environment
         self.env = Environment(
@@ -327,46 +301,14 @@ class WhitepaperGenerator:
             existing_chapter=existing_chapter,
         )
 
-    def call_llm(self, prompt: str, model: str) -> tuple[bool, str]:
-        """
-        Call LLM with the given prompt.
-
-        Returns:
-            Tuple of (success: bool, output: str)
-        """
-        # Use temp file to avoid shell argument length limits
-        with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as tmp:
-            tmp.write(prompt)
-            tmp_path = tmp.name
-
-        try:
-            result = subprocess.run(
-                ["llm", "--no-stream", "-m", model],
-                stdin=open(tmp_path, "r"),
-                capture_output=True,
-                text=True,
-            )
-
-            return (result.returncode == 0, result.stdout if result.returncode == 0 else result.stderr)
-        finally:
-            Path(tmp_path).unlink(missing_ok=True)
-
-    def generate_chapter(self, chapter_id: str) -> bool:
-        """Generate a single chapter using LLM."""
-        output_file = self.config.output_dir / f"{chapter_id}_output.md"
-        prompt_file = self.config.prompts_dir / f"{chapter_id}_prompt.md"
-
-        # Print header
+    def _print_chapter_header(self, chapter_id: str, output_file: Path, prompt_file: Path) -> None:
+        """Print chapter generation header."""
         print(Colors.blue("═" * 51))
         if output_file.exists():
             print(Colors.green(f"Improving Existing Chapter: {chapter_id}"))
         else:
             print(Colors.green(f"Generating New Chapter: {chapter_id}"))
         print(Colors.blue("═" * 51))
-
-        if not prompt_file.exists():
-            print(Colors.red(f"✗ Prompt file not found: {prompt_file}"), file=sys.stderr)
-            return False
 
         print(Colors.blue(f"📝 Using prompt: {prompt_file}"))
         print(Colors.blue(f"🤖 Using model: {self.config.llm_model}"))
@@ -375,7 +317,8 @@ class WhitepaperGenerator:
         if output_file.exists():
             print(Colors.yellow("📄 Existing chapter found - will improve with new documentation"))
 
-        # Collect and show source documents
+    def _collect_and_show_sources(self, chapter_id: str) -> int:
+        """Collect and display source documents. Returns file count."""
         print(Colors.blue("📚 Collecting source documentation..."))
         source_files = self.get_source_files(chapter_id)
         file_count = 0
@@ -388,18 +331,17 @@ class WhitepaperGenerator:
             if full_path.exists():
                 print(Colors.blue(f"  📄 {de_doc_path}"))
                 file_count += 1
+            elif (self.config.docs_root / doc_path).exists():
+                print(Colors.blue(f"  📄 {doc_path}"))
+                file_count += 1
             else:
-                full_path = self.config.docs_root / doc_path
-                if full_path.exists():
-                    print(Colors.blue(f"  📄 {doc_path}"))
-                    file_count += 1
-                else:
-                    print(Colors.yellow(f"  ⚠️  Not found: {doc_path}"), file=sys.stderr)
-                    print(Colors.yellow(f"      (Looking for: {full_path})"), file=sys.stderr)
+                print(Colors.yellow(f"  ⚠️  Not found: {doc_path}"), file=sys.stderr)
 
         print(Colors.green(f"  ✓ Collected {file_count} source document(s)"))
+        return file_count
 
-        # Check and show previous chapters
+    def _show_previous_chapters(self, chapter_id: str) -> None:
+        """Show information about previous chapters."""
         print(Colors.blue("📖 Checking for previous chapters..."))
         previous_chapters = self.load_previous_chapters(chapter_id)
 
@@ -410,7 +352,45 @@ class WhitepaperGenerator:
                 print(Colors.blue(f"  📗 Chapter {chapter.id} (for context)"))
             print(Colors.green(f"  ✓ Including {len(previous_chapters)} previous chapter(s) for consistency"))
 
-        # Build prompt
+    def _call_llm_with_retry(self, prompt: str, output_file: Path) -> bool:
+        """Call LLM with retry logic. Returns True on success."""
+        for attempt in range(1, self.config.max_retries + 1):
+            print(Colors.blue(f"🔄 Attempt {attempt}/{self.config.max_retries}: Calling LLM..."))
+
+            success, output = call_llm(prompt, self.config.llm_model)
+            self.usage_tracker.track_last_call()
+
+            if success:
+                output_file.write_text(output)
+                word_count = len(output.split())
+                print(Colors.green("✓ Chapter generated successfully"))
+                print(Colors.green(f"  📄 Output: {output_file}"))
+                print(Colors.green(f"  📊 Word count: {word_count}"))
+                return True
+
+            print(Colors.yellow(f"⚠️  LLM call failed on attempt {attempt}"), file=sys.stderr)
+            if output:
+                print(Colors.yellow(f"     Error output: {output[:300]}"), file=sys.stderr)
+
+            if attempt < self.config.max_retries:
+                print(Colors.yellow(f"⏳ Waiting {self.config.retry_delay}s before retry..."))
+                time.sleep(self.config.retry_delay)
+
+        return False
+
+    def generate_chapter(self, chapter_id: str) -> bool:
+        """Generate a single chapter using LLM."""
+        output_file = self.config.output_dir / f"{chapter_id}_output.md"
+        prompt_file = self.config.prompts_dir / f"{chapter_id}_prompt.md"
+
+        if not prompt_file.exists():
+            print(Colors.red(f"✗ Prompt file not found: {prompt_file}"), file=sys.stderr)
+            return False
+
+        self._print_chapter_header(chapter_id, output_file, prompt_file)
+        self._collect_and_show_sources(chapter_id)
+        self._show_previous_chapters(chapter_id)
+
         print(Colors.blue("🔨 Building combined prompt..."))
         try:
             prompt = self.build_prompt(chapter_id)
@@ -421,35 +401,14 @@ class WhitepaperGenerator:
         prompt_size = len(prompt.encode("utf-8"))
         print(Colors.blue(f"  📊 Combined prompt size: {self._format_bytes(prompt_size)}"))
 
-        # Generate with retry logic
-        for attempt in range(1, self.config.max_retries + 1):
-            print(Colors.blue(f"🔄 Attempt {attempt}/{self.config.max_retries}: Calling LLM..."))
+        if not self._call_llm_with_retry(prompt, output_file):
+            print(
+                Colors.red(f"✗ Failed to generate chapter {chapter_id} after {self.config.max_retries} attempts"),
+                file=sys.stderr,
+            )
+            return False
 
-            success, output = self.call_llm(prompt, self.config.llm_model)
-
-            if success:
-                # Write output
-                output_file.write_text(output)
-
-                word_count = len(output.split())
-                print(Colors.green("✓ Chapter generated successfully"))
-                print(Colors.green(f"  📄 Output: {output_file}"))
-                print(Colors.green(f"  📊 Word count: {word_count}"))
-                return True
-            else:
-                print(Colors.yellow(f"⚠️  LLM call failed on attempt {attempt}"), file=sys.stderr)
-                if output:
-                    print(Colors.yellow(f"     Error output: {output[:300]}"), file=sys.stderr)
-
-                if attempt < self.config.max_retries:
-                    print(Colors.yellow(f"⏳ Waiting {self.config.retry_delay}s before retry..."))
-                    time.sleep(self.config.retry_delay)
-
-        print(
-            Colors.red(f"✗ Failed to generate chapter {chapter_id} after {self.config.max_retries} attempts"),
-            file=sys.stderr,
-        )
-        return False
+        return True
 
     def list_chapters(self) -> None:
         """List all available chapters."""
@@ -508,8 +467,8 @@ Examples:
     parser.add_argument(
         "--model",
         "-m",
-        default=os.environ.get("LLM_MODEL", "gemini-3-pro-preview"),
-        help="LLM model to use (default: gemini-3-pro-preview, or LLM_MODEL env var)",
+        default=os.environ.get("LLM_MODEL", "gemini-3-flash-preview"),
+        help="LLM model to use (default: gemini-3-flash-preview, or LLM_MODEL env var)",
     )
 
     args = parser.parse_args()
@@ -598,6 +557,9 @@ Examples:
     else:
         # Format all output files if all chapters succeeded
         generator.format_output_directory()
+
+    # Print usage summary
+    print(generator.usage_tracker.format_summary())
 
     print()
     if not failed_chapters:

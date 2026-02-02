@@ -1,161 +1,163 @@
 # Sicherheitsarchitektur
 
-Sicherheit ist im Kontext von Enterprise-KI kein nachgelagertes Feature, sondern das fundamentale Fundament. Ein System,
-das tiefgreifende Einblicke in Unternehmenswissen gewährt und automatisierte Entscheidungen trifft, muss nach den
-strengsten Standards gehärtet sein. Der Swiss AI Hub verfolgt hierbei keinen isolierten Ansatz, sondern integriert
-Sicherheit ganzheitlich in jede Schicht der Plattform – von der physischen Infrastruktur über den Netzwerkverkehr bis
-hin zur semantischen Analyse von KI-Prompts.
+In der Ära von Enterprise-KI ist Sicherheit kein nachgelagertes Merkmal, sondern das fundamentale Fundament jeder
+vertrauenswürdigen Architektur. Ein System, das tiefgreifende Einblicke in geschäftskritisches Unternehmenswissen
+gewährt, muss nach den strengsten Standards gehärtet sein. Der Swiss AI Hub verfolgt hierbei eine ganzheitliche
+Strategie, welche die Sicherheit in jede Schicht der Plattform integriert – von der physischen Isolation über den
+Netzwerkverkehr bis hin zur semantischen Filterung von KI-Inhalten.
 
-Dieses Kapitel detailliert die Sicherheitsarchitektur, die auf dem Prinzip der «Defense-in-Depth» (Verteidigung in der
-Tiefe) basiert. Es beschreibt, wie Identitäten verwaltet, Daten kryptografisch geschützt und Angriffe proaktiv abgewehrt
-werden, um die Vertraulichkeit, Integrität und Verfügbarkeit (CIA-Triade) zu gewährleisten.
+Dieses Kapitel detailliert die Sicherheitsarchitektur, die konsequent dem Prinzip der «Defense-in-Depth» (Verteidigung
+in der Tiefe) folgt. Es beschreibt, wie Identitäten föderiert, Daten kryptografisch geschützt und Angriffsvektoren
+proaktiv neutralisiert werden, um die Vertraulichkeit, Integrität und Verfügbarkeit aller Informationen dauerhaft zu
+gewährleisten.
 
 ## Auf einen Blick
 
-- **Mehrschichtige Abwehr:** Ein Defense-in-Depth-Ansatz kombiniert Netzwerksicherheit, Container-Härtung und
-  Applikationsschutz, um Angriffe durch redundante Barrieren abzuwehren.
-- **Identitäts-Föderation:** Integration bestehender Enterprise-Identitäten (z.B. Entra ID) via OIDC und OAuth 2.0 mit
-  Unterstützung für PKCE und Multi-Faktor-Authentifizierung.
-- **Kryptografischer Schutz:** Durchgängige Verschlüsselung mittels TLS 1.2+ für Datenübertragung (Data-in-Transit) und
-  Architekturkonzepte für LUKS-Volume-Verschlüsselung im Ruhezustand.
-- **Semantische Firewalls:** Einsatz von «Input Guards» und «Output Guards» sowie Presidio zur Abwehr von Prompt
-  Injections und zur Maskierung von PII auf Plattform-Ebene.
-- **Härtung gegen KI-Vektoren:** Strikte Validierung von Datei-Uploads (MIME-Type-Check) und Blockierung von
-  Path-Traversal-Angriffen schützen vor Malware und Sabotage.
+- **Defense-in-Depth Architektur:** Ein mehrschichtiges Sicherheitsmodell kombiniert strikte Netzwerkisolation in fünf
+  Zonen mit gehärteten Container-Umgebungen.
+- **Unternehmenstaugliche Identitätsföderation:** Native Integration von Microsoft Entra ID via OIDC und OAuth 2.0
+  inklusive PKCE für höchste Authentifizierungsstandards.
+- **Lückenlose Datenverschlüsselung:** Erzwingung von TLS 1.2+ für den Datentransfer sowie LUKS-basierte Verschlüsselung
+  für ruhende Daten («Data-at-Rest»).
+- **KI-spezifische Schutzmechanismen:** Plattformweiter PII-Schutz mittels Presidio sowie granulare Eingangs- und
+  Ausgangsfilter (Guards) auf Agenten-Ebene.
+- **Automatisierte Validierung:** Strenge technische Filter blockieren Path-Traversal, Malware-Uploads und
+  Prompt-Injections bereits am Netzwerkrand.
 
 ## Mehrschichtige Abwehr und Netzwerk-Isolation
 
 ### Geschäftlicher Nutzen
 
-Die Bedrohungslandschaft für IT-Infrastrukturen entwickelt sich rasant weiter. Herkömmliche Perimeter-Sicherheit, die
-sich auf eine einzige Firewall verlässt, ist für moderne Anwendungen unzureichend. Unternehmen benötigen eine
-Architektur, die davon ausgeht, dass einzelne Barrieren überwunden werden könnten, und deshalb redundante
-Schutzmechanismen bereithält. Dies minimiert das Risiko eines erfolgreichen Einbruchs drastisch und begrenzt im
-Ernstfall den Schadenradius («Blast Radius»). Für CIOs bedeutet dies eine widerstandsfähige Infrastruktur, die auch
-gezielten Angriffen standhält und den unterbrechungsfreien Geschäftsbetrieb sichert.
+Die Bedrohungslandschaft für moderne IT-Infrastrukturen ist hochdynamisch und erfordert Schutzmassnahmen, die über eine
+klassische Perimeter-Firewall hinausgehen. Unternehmen benötigen eine Architektur, die auch bei der Kompromittierung
+einzelner Komponenten widerstandsfähig bleibt und den Schadensradius («Blast Radius») effektiv begrenzt. Für
+Entscheidungsträger bedeutet dies die Sicherstellung der Business Continuity sowie den Schutz vor lateralen Bewegungen
+von Angreifern innerhalb des Netzwerks. Eine robuste Isolation schützt zudem die Reputation, indem sie sicherstellt,
+dass sensible Backend-Systeme niemals direkt dem öffentlichen Internet ausgesetzt sind.
 
 ### Konzeptioneller Ansatz
 
-Das Sicherheitsmodell des Swiss AI Hub basiert auf dem Konzept der strikten Isolation und der minimalen Exposition.
-Anstatt alle Dienste direkt dem Netzwerk auszusetzen, operiert die Plattform wie eine Festung mit einem einzigen, streng
-bewachten Tor. Dahinterliegende Komponenten kommunizieren in abgeschotteten Segmenten. Selbst wenn ein Angreifer das
-äussere Tor überwinden würde, stünde er vor weiteren verschlossenen Türen. Zudem folgt die Plattform dem Prinzip der
-«Immutable Infrastructure»: Container werden bei Updates komplett neu gebaut und ersetzt, statt gepatcht zu werden, was
-die Konsistenz der Sicherheitskonfigurationen garantiert.
+Der Swiss AI Hub implementiert eine strikte Segmentierung auf Netzwerk- und Prozessebene. Das Konzept basiert auf der
+Annahme, dass kein Dienst implizit vertrauenswürdig ist (Zero-Trust). Statt einer flachen Netzwerkstruktur werden
+Dienste in logische Sicherheitszonen unterteilt. Die Kommunikation zwischen diesen Zonen ist streng reglementiert und
+folgt dem Prinzip der minimalen Rechtevergabe. Ergänzt wird dies durch eine «Immutable Infrastructure»-Strategie:
+Container werden bei jedem Update vollständig ersetzt statt gepatcht, was eine konsistente und geprüfte
+Sicherheitskonfiguration über alle Umgebungen hinweg garantiert.
 
 ### Technische Umsetzung im Swiss AI Hub
 
-Technisch realisiert die Plattform dies durch eine Kombination aus Reverse Proxy, Container-Isolation und striktem
-Netzwerk-Routing:
+Die technische Realisierung basiert auf einer Isolation mittels fünf dedizierter Docker-Netzwerke:
 
-- **Single Entry Point:** Der gesamte eingehende Verkehr wird ausschliesslich über **Traefik** als Reverse Proxy
-  geleitet. Nur die Ports 80 (HTTP) und 443 (HTTPS) sind nach aussen geöffnet; alle anderen Ports bleiben durch die
-  Netzwerk-Firewall (NSG) blockiert.
-- **Interne Netzwerke:** Backend-Dienste wie die Vektordatenbank, die API oder das LLM-Gateway laufen in isolierten
-  Docker-Netzwerken. Sie sind von aussen nicht direkt adressierbar und akzeptieren nur Verkehr von authentifizierten
-  internen Komponenten.
-- **Container-Härtung:** Anwendungsprozesse werden konsequent als Nicht-Root-Benutzer (UID 1000, GID 1000) ausgeführt.
-  Dies verhindert, dass eine Sicherheitslücke in der Applikation zu einer Übernahme des Host-Systems (Container Escape)
-  führt.
-- **Minimale Basis-Images:** Die Verwendung von minimalen Slim-Images reduziert die Angriffsfläche erheblich, da
-  unnötige Systemwerkzeuge und potenzielle Schwachstellen aus dem Betriebssystem entfernt sind. Multi-Stage-Builds
-  stellen sicher, dass keine Compiler oder Build-Tools in die Produktionsumgebung gelangen.
+- **Zoneneinteilung:** Die Netzwerke umfassen «Proxy» (externer Traffic via Traefik), «Backend» (Anwendungsdienste),
+  «Data» (Datenbanken), «Storage» (Dateisysteme) und «Egress» (reiner ausgehender Internetverkehr).
+- **Single Entry Point:** Traefik fungiert als einziger Ingress-Controller. Nur die Ports 80 und 443 sind nach aussen
+  geöffnet. Alle Backend-Dienste wie das LLM-Gateway oder die Vektordatenbank bleiben für das Internet unsichtbar.
+- **Egress-Härtung:** Das ausgehende Netzwerk für Dienste wie Web-Scraper ist so konfiguriert, dass die
+  Inter-Container-Kommunikation (ICC) deaktiviert ist. Dies verhindert, dass ein kompromittierter Scraper andere interne
+  Dienste angreifen kann.
+- **Container-Sicherheit:** Alle Prozesse werden als Nicht-Root-Benutzer (UID/GID 1000) ausgeführt. Die Verwendung
+  minimaler «Slim-Images» und Multi-Stage-Builds reduziert die Angriffsfläche, da unnötige Systemwerkzeuge und Compiler
+  aus den Produktionsumgebungen entfernt werden.
 
 ## Identitätsmanagement und Zugriffskontrolle
 
 ### Geschäftlicher Nutzen
 
-Passwörter sind oft das schwächste Glied in der Sicherheitskette. Die Verwaltung separater Benutzerkonten für jede
-Applikation erhöht nicht nur den administrativen Aufwand, sondern auch das Risiko von Passwort-Diebstahl und Phishing.
-Unternehmen fordern daher eine nahtlose Integration in ihre bestehenden Identitätssysteme. Mitarbeiter sollen sich mit
-ihren gewohnten Unternehmens-Zugangsdaten anmelden können (Single Sign-On), während Administratoren Zugriffe zentral
-steuern und bei Austritt eines Mitarbeiters sofort entziehen können.
+In einer Enterprise-Umgebung ist die fragmentierte Verwaltung von Benutzerzugängen ein erhebliches Sicherheits- und
+Effizienzrisiko. Mitarbeitende fordern einen nahtlosen Zugriff via Single Sign-On (SSO), während die IT-Administration
+eine zentrale Kontrolle über Berechtigungen und den sofortigen Entzug von Zugriffen bei Austritten sicherstellen muss.
+Eine moderne Identitätsstrategie eliminiert die Gefahr schwacher Passwörter durch die Durchsetzung von
+Multi-Faktor-Authentifizierung (MFA) und stellt sicher, dass jede Aktion innerhalb der Plattform einer eindeutigen
+Identität zugeordnet werden kann.
 
 ### Konzeptioneller Ansatz
 
-Der Swiss AI Hub vermeidet die Speicherung von sensiblen Anmeldedaten. Stattdessen setzt die Architektur auf föderierte
-Identitäten. Die Plattform vertraut einem externen Identity Provider (IDP) die Authentifizierung an und übernimmt selbst
-nur die Autorisierung. Dies bedeutet, dass Sicherheitsrichtlinien des Unternehmens – wie die Pflicht zur
-Multi-Faktor-Authentifizierung (MFA) oder konditionale Zugriffsregeln (z.B. nur von Firmen-Laptops) – automatisch auch
-für den AI Hub gelten, ohne dass diese dort separat konfiguriert werden müssen.
+Der Swiss AI Hub nutzt föderierte Identitäten, um die Authentifizierung an bewährte Enterprise Identity Provider (IDP)
+zu delegieren. Die Plattform selbst speichert keine Passwörter, sondern vertraut kryptografisch signierten Tokens. Die
+Autorisierung ist strikt von der Authentifizierung getrennt: Während der IDP bestätigt, wer ein Benutzer ist, bestimmt
+die Plattform basierend auf einem hierarchischen Rollensystem, was dieser Benutzer tun darf. Dies ermöglicht eine
+feingranulare Steuerung, bei welcher der Zugriff auf Agenten-Profile und Wissensdatenbanken exakt auf die
+organisatorische Rolle zugeschnitten ist.
 
 ### Technische Umsetzung im Swiss AI Hub
 
-Die Umsetzung erfolgt strikt nach offenen Industriestandards, um maximale Kompatibilität zu gewährleisten:
+Die Umsetzung erfolgt konsequent über offene Industriestandards:
 
-- **Protokolle:** Die Plattform nutzt **OpenID Connect (OIDC)** und **OAuth 2.0**. Dies ermöglicht die Integration mit
-  Microsoft Entra ID (Azure AD), Keycloak oder jedem anderen OIDC-konformen Provider. Für interaktive Anmeldungen wird
-  der sichere Authorization Code Flow mit **PKCE** (Proof Key for Code Exchange) verwendet.
-- **Token-Validierung:** Bei jedem API-Aufruf prüft das System die Gültigkeit des übermittelten JSON Web Tokens (JWT).
-  Dabei werden kryptografische Signaturen (RSA-256) gegen die öffentlichen Schlüssel des Ausstellers (JWKS) validiert.
-  Die Prüfung umfasst Aussteller, Zielgruppe, Ablaufzeit und Signaturintegrität.
-- **Rollen-Mapping:** Benutzergruppen aus dem Active Directory werden über die Microsoft Graph API abgerufen und
-  automatisch auf interne Rollen (wie *AgentVerwender-Rolle* oder *WissensVerwalter-Rolle*) abgebildet.
-- **Audit-Fähigkeit:** Sicherheitsereignisse bei Authentifizierung und Autorisierung werden strukturiert protokolliert
-  und können über OpenTelemetry-Schnittstellen überwacht werden, um Anomalien in Echtzeit zu erkennen.
+- **Protokolle:** Die Plattform implementiert OpenID Connect (OIDC) und OAuth 2.0. Für interaktive Anmeldungen wird der
+  Authorization Code Flow mit PKCE (Proof Key for Code Exchange) verwendet, um Abfangversuche von Codes zu verhindern.
+- **Integration:** Microsoft Entra ID (Azure AD) wird nativ unterstützt. Die Plattform ruft via Microsoft Graph API
+  Profilinformationen und Gruppenmitgliedschaften ab, die automatisch auf interne Rollen wie die
+  *WissensVerwalter-Rolle* gemappt werden.
+- **Token-Validierung:** Jeder API-Aufruf erfordert einen gültigen JSON Web Token (JWT). Die Validierung erfolgt gegen
+  die öffentlichen Schlüssel (JWKS) des Identity Providers, wobei Signatur, Aussteller, Zielgruppe und Ablaufzeit
+  geprüft werden.
+- **Audit-Protokollierung:** Alle Authentifizierungs- und Autorisierungsereignisse werden als strukturierte
+  OpenTelemetry-Events erfasst. Dies schafft einen lückenlosen Audit-Trail für Compliance-Prüfungen und ermöglicht die
+  Echtzeit-Überwachung von Anomalien.
 
-## Schutz der Datenintegrität und Verschlüsselung
+## Kryptografische Absicherung und Datenintegrität
 
 ### Geschäftlicher Nutzen
 
-Daten sind das Kapital des modernen Unternehmens. Ihr Schutz vor Diebstahl – sei es durch physische Entwendung von
-Servern oder durch Abhören von Leitungen – ist essenziell für die Compliance (DSG/DSGVO) und den Erhalt von
-Geschäftsgeheimnissen. Eine Enterprise-Architektur muss garantieren, dass Daten für Unbefugte unlesbar sind, egal wo sie
-sich befinden. Dies schützt das Unternehmen vor Reputationsschäden und rechtlichen Konsequenzen im Falle eines
-Sicherheitsvorfalls.
+Der Schutz der Vertraulichkeit von Unternehmensdaten ist im Kontext des Schweizer Datenschutzgesetzes (revDSG) eine
+gesetzliche Pflicht. Datenverluste durch das Abhören von Netzwerkleitungen oder den physischen Diebstahl von
+Speichermedien können existenzbedrohende finanzielle Folgen und Reputationsschäden nach sich ziehen. Eine durchgängige
+Verschlüsselung stellt sicher, dass Informationen für unbefugte Dritte wertlos bleiben, selbst wenn physische oder
+netzwerkbasierte Barrieren überwunden werden. Dies ist die Voraussetzung für das Vertrauen von Kunden und Partnern in
+die digitale Integrität des Unternehmens.
 
 ### Konzeptioneller Ansatz
 
-Die Sicherheitsarchitektur erzwingt Verschlüsselung in zwei Zuständen: während der Übertragung (Data-in-Transit) und im
-Ruhezustand (Data-at-Rest). Das Konzept sieht vor, dass keine Daten im Klartext über Netzwerkknoten gesendet oder auf
-Festplatten geschrieben werden. Die Schlüsselverwaltung erfolgt dabei unabhängig von den Daten, was eine Rotation von
-Schlüsseln ermöglicht, ohne die Datensätze neu schreiben zu müssen.
+Die Sicherheitsstrategie erzwingt Verschlüsselung in allen Zuständen. Während der Übertragung («Data-in-Transit») wird
+eine Punkt-zu-Punkt-Verschlüsselung zwischen Client, Plattform und externen Modellanbietern sichergestellt. Für ruhende
+Daten («Data-at-Rest») sieht das Architekturkonzept eine vollständige Abstraktion der Speicherschicht vor. Die
+Schlüsselverwaltung erfolgt unabhängig von den Datenbeständen, was eine regelmässige Schlüsselrotation ohne
+Beeinträchtigung der Datenverfügbarkeit ermöglicht.
 
 ### Technische Umsetzung im Swiss AI Hub
 
-- **Verschlüsselung im Transit:** Traefik erzwingt **TLS 1.2 oder TLS 1.3** für alle externen Verbindungen und
-  implementiert HSTS (Strict-Transport-Security). Veraltete Protokolle werden abgelehnt. Zertifikate werden in
-  Produktionsumgebungen automatisch via Let's Encrypt verwaltet oder können als eigene Unternehmenszertifikate
-  hinterlegt werden. Auch die ausgehende Kommunikation zu externen Cloud-LLMs (z.B. Azure OpenAI) oder
-  Identitätsanbietern erfolgt ausschliesslich über HTTPS.
-- **Verschlüsselung im Ruhezustand:** Das Architekturkonzept für die Speicherung basiert auf Docker-Volumes, die mittels
-  **LUKS (Linux Unified Key Setup)** verschlüsselt werden. Dies bietet eine AES-256-Verschlüsselung im XTS-Modus auf
-  Blockebene für alle Datenbanken (PostgreSQL, Milvus) und Dateisysteme. Sollte eine Festplatte physisch aus dem
-  Rechenzentrum entwendet werden, bleiben die Daten ohne den Entschlüsselungscode unlesbar.
+- **Verschlüsselung im Transit:** Traefik erzwingt TLS 1.2 oder TLS 1.3 für alle Verbindungen. Veraltete Chiffren werden
+  abgelehnt. HSTS (Strict-Transport-Security) sorgt dafür, dass Browser ausschliesslich verschlüsselte Verbindungen
+  nutzen. Auch die Kommunikation zu LLM-Providern (z.B. Azure OpenAI) erfolgt ausschliesslich über HTTPS.
+- **Verschlüsselung im Ruhezustand:** Das System nutzt Docker-Volumes, die mittels LUKS (Linux Unified Key Setup)
+  verschlüsselt werden können. Dies bietet eine AES-256-Verschlüsselung auf Blockebene für PostgreSQL, Milvus und den
+  Dokumentenspeicher SeaweedFS.
+- **Sicherheits-Header:** Zur Abwehr von Web-Angriffen werden Header wie Content-Security-Policy (CSP) und
+  X-Frame-Options gesetzt, die das Einbetten in fremde Frames und MIME-Typ-Vortäuschungen verhindern.
+- **Integritätsprüfung:** Alle Verbindungen zu externen Diensten validieren die Zertifikatsketten gegen
+  vertrauenswürdige Root-Zertifizierungsstellen, um Man-in-the-Middle-Angriffe auszuschliessen.
 
-## Anwendungs-Sicherheit und KI-Schutzschilde
+## Anwendungssicherheit und KI-Schutzschilde
 
 ### Geschäftlicher Nutzen
 
-KI-Anwendungen sind neuen Angriffsvektoren ausgesetzt, die traditionelle Firewalls nicht erkennen. Angriffe wie «Prompt
-Injection», bei denen Benutzer versuchen, die KI zu manipulieren, oder das Hochladen von mit Malware verseuchten
-Dokumenten stellen ernsthafte Risiken dar. Zudem besteht die Gefahr, dass die KI unbeabsichtigt sensible Informationen
-preisgibt. Ein robustes System muss daher nicht nur die Infrastruktur schützen, sondern auch die Inhalte verstehen und
-filtern, die verarbeitet werden.
+KI-Systeme führen neue Risikoklassen ein, die durch klassische Firewalls nicht abgedeckt werden. Manipulative Eingaben
+(«Prompt Injections») können versuchen, interne Anweisungen zu extrahieren oder Filter zu umgehen. Zudem besteht die
+Gefahr, dass Personenidentifizierbare Informationen (PII) unbeabsichtigt an Cloud-Modelle gesendet werden. Ein
+umfassender Schutzmechanismus muss daher sowohl die technische Integrität (Malware-Schutz) als auch die semantische
+Ebene (Inhaltsschutz) absichern. Dies ermöglicht es Unternehmen, die Innovationskraft grosser Sprachmodelle zu nutzen,
+ohne die Kontrolle über den Informationsabfluss zu verlieren.
 
 ### Konzeptioneller Ansatz
 
-Der Ansatz lautet «Validierung und Sanitisierung». Jede Eingabe – ob Text-Prompt oder Datei-Upload – wird als potenziell
-gefährlich betrachtet. Bevor Daten verarbeitet werden, durchlaufen sie mehrere Filterstufen. Dies umfasst formale
-technische Prüfungen sowie semantische Analysen auf zwei Ebenen: der Plattform-Ebene (für generellen PII-Schutz) und der
-Agenten-Ebene (für spezifische Verhaltensregeln). Spezialisierte «Guards» fungieren als inhaltliche Firewalls.
+Der Swiss AI Hub implementiert ein mehrstufiges Filtersystem aus «Input Guards» und «Output Guards». Jede Interaktion
+wird als potenziell bösartig eingestuft, bis sie validiert ist. Auf Plattformebene werden Daten anonymisiert, bevor sie
+den geschützten Bereich verlassen. Auf Agentenebene wird sichergestellt, dass die Antworten der KI qualitativ hochwertig
+sind und keine sensiblen Daten aus internen Wissensdatenbanken preisgeben.
 
 ### Technische Umsetzung im Swiss AI Hub
 
-Die Plattform setzt spezifische Mechanismen gegen diese Bedrohungen ein:
+Die Plattform kombiniert technische Validierung mit semantischer Analyse:
 
-- **Eingabevalidierung bei Dateien:** Uploads werden gegen eine strikte Whitelist von ca. 40 erlaubten Dateitypen
-  geprüft. Dabei wird nicht nur die Dateiendung, sondern der tatsächliche MIME-Typ validiert, um Tarnversuche (MIME-Type
-  Spoofing) zu entlarven. Dateinamen werden bereinigt, um Path-Traversal-Angriffe (z.B. `../../etc/passwd`) und
-  Null-Byte-Injections zu verhindern.
-- **Plattform-Ebene PII-Schutz (Presidio):** Auf Ebene des LLM-Gateways (LiteLLM) scannt **Presidio** alle Eingaben.
-  Sensible Daten wie E-Mail-Adressen oder Kreditkartennummern werden erkannt und entweder maskiert (ersetzt durch
-  Platzhalter wie `[PERSON]`) oder die Anfrage wird im «Blockierungsmodus» komplett abgelehnt, bevor sie einen externen
-  Anbieter erreicht.
-- **Agenten-Ebene Guards:**
-  - **Eingangs-Schutzmechanismen:** Validieren, ob die Frage thematisch zum Agenten passt (Topic Guard) oder gegen
-    Richtlinien verstösst.
-  - **Ausgangs-Schutzmechanismen:** Prüfen die Antwort der KI. Der «Kontext-Ausreichend-Schutzmechanismus» verhindert
-    Halluzinationen bei RAG-Anfragen. Ein spezialisierter PII-Guard auf dieser Ebene redigiert sensible Daten (wie
-    Mitarbeiter-E-Mails), die eventuell aus internen Dokumenten abgerufen wurden, bevor sie dem Nutzer angezeigt werden
-    (`[REDACTED]`).
+- **Eingabevalidierung:** Datei-Uploads werden gegen eine Whitelist von über 40 Typen geprüft. Der tatsächliche MIME-Typ
+  wird validiert, um getarnte ausführbare Dateien zu blockieren. Dateinamen werden von Zeichen gereinigt, die
+  Path-Traversal-Angriffe (`../`) ermöglichen könnten.
+- **PII-Anonymisierung (Presidio):** Im LLM-Gateway scannt Presidio jeden Prompt. Im «Maskierungsmodus» werden Namen
+  oder E-Mails durch Platzhalter wie `[PERSON]` ersetzt. Im «Blockierungsmodus» werden hochsensible Anfragen (z.B.
+  Kreditkartennummern) sofort abgewiesen.
+- **Agenten-Guards:** Spezialisierte Wächter prüfen die Interaktion. Der «Kontext-Ausreichend-Schutzmechanismus»
+  verhindert Halluzinationen, indem er Antworten blockiert, die nicht durch Quellen in der Wissensdatenbank belegt sind.
+  Ein PII-Guard auf der Ausgangsseite redigiert sensible Daten aus Agenten-Antworten zu `[REDACTED]`, bevor der Benutzer
+  diese sieht.
+- **Daten-Lifecycle:** Ephemere Daten in Caches und temporären Speichern werden nach 30 Tagen automatisch gelöscht, um
+  die Datensparsamkeit gemäss revDSG technisch zu erzwingen.

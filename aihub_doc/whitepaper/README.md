@@ -4,6 +4,18 @@ Automated LLM-based system for generating business-focused whitepaper chapters f
 
 ## How It Works
 
+The generator consists of two scripts:
+
+1. **`generate-sources.py`** - LLM-based source discovery (optional, run when docs change)
+2. **`generate-whitepaper.py`** - Chapter generation from sources
+
+### Source Discovery
+
+The source discovery script scans all documentation files and uses an LLM to determine which docs are relevant for each
+chapter. This eliminates manual maintenance of `sources/*.txt` files as documentation grows.
+
+### Chapter Generation
+
 The generator builds a combined prompt containing:
 
 1. **Terminology Glossary** (`glossary.md`) - Consistent term definitions
@@ -19,8 +31,9 @@ clean, maintainable prompt construction.
 
 ```
 whitepaper/
-├── generate-whitepaper.py     # Main generator script
-├── glossary.md                # Terminology definitions (NEW!)
+├── generate-sources.py        # LLM-based source discovery
+├── generate-whitepaper.py     # Main chapter generator
+├── glossary.md                # Terminology definitions
 ├── general_prompt.md          # General writing instructions
 ├── templates/                 # Jinja2 prompt templates
 │   └── full_prompt.j2
@@ -28,14 +41,17 @@ whitepaper/
 │   ├── 00_prompt.md          # Executive Summary
 │   ├── 01_prompt.md          # Business Challenge
 │   └── XX_prompt.md          # More chapters...
-├── sources/                   # Source doc mappings
+├── sources/                   # Source doc mappings (auto-generated)
 │   ├── 00_sources.txt        # Docs for Executive Summary
 │   ├── 01_sources.txt        # Docs for Business Challenge
 │   └── XX_sources.txt        # More sources...
-└── output/                    # Generated chapters
-    ├── 00_output.md
-    ├── 01_output.md
-    └── XX_output.md
+├── output/                    # Generated chapters
+│   ├── 00_output.md
+│   ├── 01_output.md
+│   └── XX_output.md
+├── whitepaper.tex             # LaTeX template for PDF
+├── metadata.yaml              # PDF metadata (title, author, date)
+└── whitepaper.pdf             # Generated PDF output
 ```
 
 ## Prerequisites
@@ -54,11 +70,84 @@ pip install mdformat mdformat-gfm mdformat-frontmatter mdformat-myst mdformat-py
 llm keys set gemini      # For Gemini (default)
 llm keys set anthropic   # For Claude
 llm keys set openai      # For GPT-4
+
+# 5. Install pandoc and LaTeX for PDF generation
+# macOS:
+brew install pandoc
+brew install --cask mactex
+
+# Ubuntu/Debian:
+sudo apt install pandoc texlive-xetex texlive-fonts-recommended
 ```
 
 ## Usage
 
-### Generate All Chapters
+### Recommended Workflow (Makefile)
+
+```bash
+# Full pipeline: discover sources, generate chapters, build PDF
+make all
+
+# Or run individual steps:
+make sources    # Update source mappings
+make chapters   # Generate whitepaper chapters
+make pdf        # Build PDF from chapters
+
+# Clean generated files
+make clean
+```
+
+### Manual Workflow
+
+```bash
+# 1. Update source mappings when documentation changes
+./generate-sources.py
+
+# 2. Generate whitepaper chapters
+./generate-whitepaper.py
+
+# 3. Build PDF
+make pdf
+```
+
+### Source Discovery (generate-sources.py)
+
+Automatically discovers which documentation files are relevant for each chapter using LLM analysis. Run this when:
+
+- Documentation structure changes (new files, renamed files, deleted files)
+- Chapter prompts are updated with new topics
+- You want to refresh source mappings
+
+```bash
+# Update sources for all chapters
+./generate-sources.py
+
+# Update specific chapters only
+./generate-sources.py 03 05 07
+
+# Preview without writing files
+./generate-sources.py --dry-run
+
+# List chapters and their source counts
+./generate-sources.py --list
+
+# Use a different model
+./generate-sources.py --model claude-3-5-sonnet-20241022
+```
+
+The script:
+
+1. Scans all `*.en.md` files in `aihub_doc/docs/`
+2. Extracts title and summary from each file
+3. Sends chapter prompt + doc manifest to LLM
+4. LLM returns relevant file paths
+5. Writes validated paths to `sources/XX_sources.txt`
+
+**Note:** Generated source files can be manually adjusted. The script adds a comment indicating they were auto-generated.
+
+### Chapter Generation (generate-whitepaper.py)
+
+Generate All Chapters
 
 ```bash
 ./generate-whitepaper.py
@@ -118,6 +207,22 @@ The script automatically includes all previously generated chapters in the promp
 Generated markdown files are automatically formatted using `mdformat` with your project's `pyproject.toml` configuration
 (line wrapping at 120 characters, GFM extensions, etc.).
 
+### 5. Cost Tracking
+
+Both scripts track token usage and display an estimated cost summary at the end of each run:
+
+```
+💰 Usage Summary
+────────────────────────────────────
+  LLM Calls:      17
+  Input tokens:   245,000
+  Output tokens:  42,000
+  Total tokens:   287,000
+  Est. cost:      $0.5940 USD
+```
+
+Pricing is based on official Gemini API rates from https://ai.google.dev/gemini-api/docs/pricing
+
 ## Creating a New Chapter
 
 ### 1. Create Chapter Prompt: `prompts/XX_prompt.md`
@@ -146,7 +251,17 @@ Describe what this chapter accomplishes...
 - Length: 5-6 pages (2000-2400 words)
 ```
 
-### 2. Create Sources List: `sources/XX_sources.txt`
+### 2. Discover Sources Automatically
+
+```bash
+# Let LLM find relevant documentation
+./generate-sources.py XX
+
+# Review the generated sources file
+cat sources/XX_sources.txt
+```
+
+Alternatively, create `sources/XX_sources.txt` manually:
 
 ```
 # Source Documentation for Chapter X
@@ -232,12 +347,14 @@ pip install mdformat-pyproject mdformat-gfm mdformat-frontmatter mdformat-myst
 
 ## Best Practices
 
-1. **Generate sequentially** (00, 01, 02...) for best consistency
-2. **Review and iterate** on prompts before moving to next chapter
-3. **Commit everything** - prompts, sources, outputs, and glossary
-4. **Update glossary first** when introducing new terminology
-5. **Test with different models** to find the best fit for each chapter
-6. **Keep source lists focused** - only include directly relevant docs
+1. **Run source discovery first** when documentation changes significantly
+2. **Generate sequentially** (00, 01, 02...) for best consistency
+3. **Review and iterate** on prompts before moving to next chapter
+4. **Commit everything** - prompts, sources, outputs, and glossary
+5. **Update glossary first** when introducing new terminology
+6. **Test with different models** to find the best fit for each chapter
+7. **Review auto-generated sources** - LLM discovery is good but not perfect; adjust manually if needed
+8. **Use dry-run mode** (`--dry-run`) to preview source discovery before committing
 
 ## Advanced: Template Customization
 
