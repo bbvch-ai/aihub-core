@@ -115,7 +115,6 @@ jobs:
       contents: read
 
     strategy:
-      fail-fast: false
       matrix: ${{ fromJson(needs.discover-images.outputs.matrix) }}
 
     steps:
