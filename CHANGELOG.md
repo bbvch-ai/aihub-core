@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.259.3] - 2024-07-29 - Automated Latest Tagging Workflow Enhancement
+
+### Changed
+
+- 🚀 **Automated Docker Image Discovery for 'latest' Tagging:** The GitHub Actions workflow responsible for promoting
+  release tags to "latest" now dynamically identifies all custom application Docker images. It parses
+  `deployment/compose-config.yml` to automatically detect images marked for local builds, removing the need for manual
+  updates to the workflow when new services are added or removed.
+- 📄 **Improved Workflow Documentation:** Comprehensive comments have been added to the `set-latest.yml` GitHub Actions
+  workflow, clearly detailing its purpose, usage, and the logic used for image selection and promotion.
+
+---
+
 ## [v0.259.2] - 2026-01-30 - Strengthened Security with Docker Network Isolation
 
 ### Security
