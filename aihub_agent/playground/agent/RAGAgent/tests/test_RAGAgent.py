@@ -60,7 +60,28 @@ def event_loop():
 scenarios("./features/rag_agent.feature")
 
 
-# Mark the organization memory scenario as requiring Azure
+# Mark Azure-dependent scenarios
+@pytest.mark.azure
+@scenario("./features/rag_agent.feature", "Test RAGAgent with multi-language system prompt")
+def test_test_ragagent_with_multilanguage_system_prompt():
+    """Test RAGAgent with multi-language system prompts (requires Azure)."""
+    pass
+
+
+@pytest.mark.azure
+@scenario("./features/rag_agent.feature", "Test RAGAgent with valid self hosted configuration")
+def test_test_ragagent_with_valid_self_hosted_configuration():
+    """Test RAGAgent with valid self hosted configuration (requires Azure)."""
+    pass
+
+
+@pytest.mark.azure
+@scenario("./features/rag_agent.feature", "Test RAGAgent with reranking enabled")
+def test_test_ragagent_with_reranking_enabled():
+    """Test RAGAgent with reranking enabled (requires Azure)."""
+    pass
+
+
 @pytest.mark.azure
 @scenario(
     "./features/rag_agent.feature", "Test RAGAgent retrieves organization memory alongside knowledge base documents"
