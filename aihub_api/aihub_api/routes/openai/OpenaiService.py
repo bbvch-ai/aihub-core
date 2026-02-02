@@ -9,7 +9,8 @@ from typing import Any, Literal
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.auth.usage.period_labels import build_exceeded_detail
-from aihub_lib.auth.usage.UsageLimitService import ResourceType, UsageLimitService
+from aihub_lib.auth.usage.usage_limit_models import ResourceType
+from aihub_lib.auth.usage.UsageLimitService import UsageLimitService
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
 from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
@@ -301,14 +302,14 @@ class OpenaiService:
         """Check usage limits and raise 429 if exceeded. No-op when redis is None."""
         if redis is None:
             return
-        resource_path = UsageLimitService.build_resource_path(ResourceType.AGENT, agent_class, agent_id)
+        resource_path = UsageLimitService.build_resource_path("aihub.user", ResourceType.AGENT, agent_class, agent_id)
         usage_status = await UsageLimitService.check_and_increment(
             redis, user.id, user.roles, resource_path=resource_path
         )
         if usage_status.is_exceeded:
             raise HTTPException(
                 status_code=429,
-                detail=build_exceeded_detail(usage_status, locale=locale or "en"),
+                detail=build_exceeded_detail(usage_status, locale=locale or "en").model_dump(),
             )
 
     @staticmethod

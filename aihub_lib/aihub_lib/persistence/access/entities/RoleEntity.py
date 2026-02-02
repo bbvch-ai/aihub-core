@@ -1,19 +1,9 @@
 from __future__ import annotations
 
-from typing import Annotated
-
 from mongoengine import Document, EmbeddedDocument, EmbeddedDocumentListField, IntField, ListField, StringField
-from pydantic import BaseModel, Field
 
+from aihub_lib.auth.usage.usage_limit_models import RoleUsageLimit
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-
-
-class RoleUsageLimit(BaseModel):
-    """Typed representation of a single usage limit rule from a role."""
-
-    pattern: Annotated[str, Field(description="Full dotted resource pattern with optional wildcards")]
-    limit: Annotated[int, Field(ge=0, description="Maximum number of allowed calls in the period")]
-    period: Annotated[str, Field(description="Time window for the limit (1h, 1d, 7d, 1mo)")]
 
 
 class UsageLimit(EmbeddedDocument):

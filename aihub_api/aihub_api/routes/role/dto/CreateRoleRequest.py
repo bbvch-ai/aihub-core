@@ -1,5 +1,6 @@
 from typing import Annotated
 
+from aihub_lib.auth.usage import UsageLimitPeriod
 from pydantic import BaseModel, Field
 
 
@@ -14,7 +15,7 @@ class UsageLimitDTO(BaseModel):
         ),
     ]
     limit: Annotated[int, Field(description="Max calls per period for this pattern.")]
-    period: Annotated[str, Field(description="Period for limit: 1h, 1d, 7d, 1mo.")]
+    period: Annotated[UsageLimitPeriod, Field(description="Period for limit: 1h, 1d, 7d, 1mo.")]
 
 
 class CreateRoleRequest(BaseModel):

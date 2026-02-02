@@ -7,7 +7,7 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
-from aihub_lib.auth.usage import EffectiveLimitStatus, UsageLimitPeriod, UsageStatus
+from aihub_lib.auth.usage import RoleUsageLimitStatus, UsageLimitPeriod, UsageStatus
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_admin_only  # noqa: F401
 from asgi_lifespan import LifespanManager
 from fastapi import HTTPException
@@ -24,7 +24,7 @@ def _exceeded_status(*, limit: int = 100, current_count: int = 101, period: str 
     """Build a UsageStatus that is exceeded."""
     return UsageStatus(
         limits=[
-            EffectiveLimitStatus(
+            RoleUsageLimitStatus(
                 pattern="aihub.user.agent.>",
                 limit=limit,
                 period=UsageLimitPeriod(period),
@@ -57,7 +57,7 @@ class TestUsageLimitEnforcement:
         exceeded = _exceeded_status()
         mock_get_agent.return_value = _mock_agent_dto()
         mock_check_usage.side_effect = HTTPException(
-            status_code=429, detail=build_exceeded_detail(exceeded, locale="en")
+            status_code=429, detail=build_exceeded_detail(exceeded, locale="en").model_dump()
         )
 
         auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())

@@ -2,11 +2,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from aihub_lib.auth.usage.UsageLimitService import (
-    UsageLimitPeriod,
-    UsageLimitService,
-)
-from aihub_lib.persistence.access.entities.RoleEntity import RoleUsageLimit
+from aihub_lib.auth.usage.usage_limit_models import RoleUsageLimit, UsageLimitPeriod
+from aihub_lib.auth.usage.UsageLimitService import UsageLimitService
 
 AGENT_PREFIX = "aihub.user.agent."
 
@@ -236,8 +233,8 @@ class TestGetEffectiveLimitsForRoles:
         assert f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent" in patterns
 
 
-class TestGetEffectiveLimitForRolesLegacy:
-    """Tests for the legacy get_effective_limit_for_roles (single most specific)."""
+class TestGetEffectiveLimitForRoles:
+    """Tests for get_effective_limit_for_roles (single most specific)."""
 
     @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
     def test_returns_most_specific(self, mock_role_entity: MagicMock):
@@ -248,13 +245,22 @@ class TestGetEffectiveLimitForRolesLegacy:
             ],
         ]
 
-        limit, period, pattern = UsageLimitService.get_effective_limit_for_roles(
+        result = UsageLimitService.get_effective_limit_for_roles(
             ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
-        assert limit == 20
-        assert period == "1h"
-        assert pattern == f"{AGENT_PREFIX}LLMWrappingAgent.>"
+        assert result is not None
+        assert result.limit == 20
+        assert result.period == "1h"
+        assert result.pattern == f"{AGENT_PREFIX}LLMWrappingAgent.>"
+
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    def test_returns_none_when_no_limits(self, mock_role_entity: MagicMock):
+        mock_role_entity.get_usage_limits_for_roles.return_value = [[]]
+
+        result = UsageLimitService.get_effective_limit_for_roles(["role1"], resource_path=f"{AGENT_PREFIX}Foo.bar")
+
+        assert result is None
 
 
 class TestGetUsageStatus:

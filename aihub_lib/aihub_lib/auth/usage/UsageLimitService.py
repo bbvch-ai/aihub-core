@@ -1,105 +1,29 @@
 from __future__ import annotations
 
-import logging
 from datetime import UTC, datetime, timedelta
-from enum import StrEnum
 from typing import Annotated
 
 from pydantic import BaseModel, Field
 from redis.asyncio import Redis
 
+from aihub_lib.auth.usage.usage_limit_models import (
+    ResourceType,
+    RoleUsageLimit,
+    RoleUsageLimitStatus,
+    UsageLimitPeriod,
+    UsageStatus,
+)
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity, RoleUsageLimit
-
-logger = logging.getLogger(__name__)
 
 
-class UsageLimitPeriod(StrEnum):
-    """Supported usage limit periods."""
+class CounterSnapshot(BaseModel):
+    """A read of one Redis usage counter — gives each field a name instead of a raw tuple."""
 
-    ONE_HOUR = "1h"
-    ONE_DAY = "1d"
-    SEVEN_DAYS = "7d"
-    ONE_MONTH = "1mo"
+    model_config = {"frozen": True}
 
-    @property
-    def seconds(self) -> int:
-        """Duration of this period in seconds."""
-        match self:
-            case UsageLimitPeriod.ONE_HOUR:
-                return 3600
-            case UsageLimitPeriod.ONE_DAY:
-                return 86400
-            case UsageLimitPeriod.SEVEN_DAYS:
-                return 604800
-            case UsageLimitPeriod.ONE_MONTH:
-                return 2592000
-
-
-class EffectiveLimit(BaseModel):
-    """A single resolved limit: pattern + limit + period."""
-
-    pattern: Annotated[str, Field(description="Dotted resource pattern with optional wildcards (* single, > multi)")]
-    limit: Annotated[int, Field(ge=0, description="Maximum number of allowed calls in the period")]
-    period: Annotated[UsageLimitPeriod, Field(description="Time window for the limit")]
-
-
-class EffectiveLimitStatus(BaseModel):
-    """Runtime status for one effective limit."""
-
-    pattern: Annotated[str, Field(description="Dotted resource pattern with optional wildcards (* single, > multi)")]
-    limit: Annotated[int, Field(ge=0, description="Maximum number of allowed calls in the period")]
-    period: Annotated[UsageLimitPeriod, Field(description="Time window for the limit")]
-    current_count: Annotated[int, Field(ge=0, description="Number of calls made in the current period")]
-    reset_at: Annotated[datetime | None, Field(description="UTC timestamp when the counter resets")]
-    is_exceeded: Annotated[bool, Field(description="Whether the limit has been reached or exceeded")]
-
-
-class UsageStatus(BaseModel):
-    """Current usage status for a user across all matching limits."""
-
-    limits: Annotated[list[EffectiveLimitStatus], Field(description="Status of each applicable limit")]
-    is_exceeded: Annotated[bool, Field(description="Whether any limit has been exceeded")]
-
-    @property
-    def limit(self) -> int | None:
-        """Most restrictive limit value — the exceeded or closest-to-exceeded limit."""
-        entry = self._most_restrictive
-        return entry.limit if entry else None
-
-    @property
-    def period(self) -> UsageLimitPeriod | None:
-        """Period of the most restrictive limit."""
-        entry = self._most_restrictive
-        return entry.period if entry else None
-
-    @property
-    def current_count(self) -> int:
-        """Current count of the most restrictive limit."""
-        entry = self._most_restrictive
-        return entry.current_count if entry else 0
-
-    @property
-    def reset_at(self) -> datetime | None:
-        """Reset timestamp of the most restrictive limit."""
-        entry = self._most_restrictive
-        return entry.reset_at if entry else None
-
-    @property
-    def _most_restrictive(self) -> EffectiveLimitStatus | None:
-        """The exceeded limit (first found) or the one closest to being exceeded."""
-        if not self.limits:
-            return None
-        for entry in self.limits:
-            if entry.is_exceeded:
-                return entry
-        return max(self.limits, key=lambda e: e.current_count / e.limit if e.limit > 0 else 0)
-
-
-class ResourceType(StrEnum):
-    """Known resource type prefixes for usage limits."""
-
-    AGENT = "agent"
+    effective_limit: Annotated[RoleUsageLimit, Field(description="The resolved limit rule this counter tracks")]
+    redis_key: Annotated[str, Field(description="Redis key used for the counter")]
+    current_count: Annotated[int, Field(ge=0, description="Number of calls recorded so far")]
 
 
 _INCR_WITH_TTL_SCRIPT = """
@@ -109,8 +33,6 @@ if count == 1 or redis.call('TTL', KEYS[1]) < 0 then
 end
 return count
 """
-
-_RESOURCE_PATH_PREFIX = "aihub.user"
 
 
 class UsageLimitService:
@@ -124,18 +46,16 @@ class UsageLimitService:
     All matching patterns are enforced independently. For the same pattern across roles,
     the highest limit (most permissive) wins. Different patterns are independent limits.
     Redis counters are keyed by the matched pattern, not the concrete resource path.
-
-    Use :meth:`build_resource_path` to construct the full dotted path from parts.
     """
 
     @staticmethod
-    def build_resource_path(resource_type: ResourceType, resource_class: str, resource_id: str) -> str:
+    def build_resource_path(scope: str, resource_type: ResourceType, resource_class: str, resource_id: str) -> str:
         """Build a fully qualified resource path from its parts.
 
-        >>> UsageLimitService.build_resource_path(ResourceType.AGENT, "MyAgent", "v1")
+        >>> UsageLimitService.build_resource_path("aihub.user", ResourceType.AGENT, "MyAgent", "v1")
         'aihub.user.agent.MyAgent.v1'
         """
-        return f"{_RESOURCE_PATH_PREFIX}.{resource_type}.{resource_class}.{resource_id}"
+        return f"{scope}.{resource_type}.{resource_class}.{resource_id}"
 
     @staticmethod
     def _pattern_matches(pattern: str, concrete_path: str) -> bool:
@@ -157,7 +77,7 @@ class UsageLimitService:
     @staticmethod
     def _specificity(pattern: str) -> int:
         """Non-wildcard segment count — higher means more specific."""
-        return sum(1 for p in pattern.split(".") if p not in ("*", ">"))
+        return sum(1 for segment in pattern.split(".") if segment not in ("*", ">"))
 
     @staticmethod
     def _build_redis_key(user_id: str, pattern: str, period: UsageLimitPeriod) -> str:
@@ -176,12 +96,12 @@ class UsageLimitService:
     @staticmethod
     async def _build_limit_status(
         redis: Redis,
-        effective_limit: EffectiveLimit,
+        effective_limit: RoleUsageLimit,
         key: str,
         current_count: int,
         *,
         post_increment: bool = False,
-    ) -> EffectiveLimitStatus:
+    ) -> RoleUsageLimitStatus:
         """Build a status snapshot for a single effective limit.
 
         After increment the count already includes the current call, so exceeded
@@ -192,7 +112,7 @@ class UsageLimitService:
         is_exceeded = (
             current_count > effective_limit.limit if post_increment else current_count >= effective_limit.limit
         )
-        return EffectiveLimitStatus(
+        return RoleUsageLimitStatus(
             pattern=effective_limit.pattern,
             limit=effective_limit.limit,
             period=effective_limit.period,
@@ -206,13 +126,15 @@ class UsageLimitService:
     def get_effective_limits_for_roles(
         role_names: list[str],
         resource_path: str | None = None,
-    ) -> list[EffectiveLimit]:
+    ) -> list[RoleUsageLimit]:
         """
         Resolve all effective usage limits from the user's roles.
 
         Empty list means unlimited. For identical patterns across roles the most permissive
         limit wins; different patterns are enforced independently.
         """
+        from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
+
         all_role_limits = RoleEntity.get_usage_limits_for_roles(role_names)
 
         if not any(role_limits for role_limits in all_role_limits):
@@ -224,31 +146,60 @@ class UsageLimitService:
         return UsageLimitService._matching_limits_for_resource(all_role_limits, resource_path)
 
     @staticmethod
+    def _is_more_permissive(candidate: RoleUsageLimit, existing: RoleUsageLimit) -> bool:
+        """Higher limit wins; on tie, longer period wins."""
+        if candidate.limit != existing.limit:
+            return candidate.limit > existing.limit
+        return UsageLimitPeriod(candidate.period).seconds > UsageLimitPeriod(existing.period).seconds
+
+    @staticmethod
     def _most_permissive_limit(
         all_role_limits: list[list[RoleUsageLimit]],
-    ) -> list[EffectiveLimit]:
+    ) -> list[RoleUsageLimit]:
         """Without a resource path, return the single most permissive rule across all roles."""
-        best: EffectiveLimit | None = None
-        best_period_seconds = 0
+        best: RoleUsageLimit | None = None
 
         for role_limits in all_role_limits:
-            for rl in role_limits:
-                period_seconds = UsageLimitPeriod(rl.period).seconds
-                if (
-                    best is None
-                    or rl.limit > best.limit
-                    or (rl.limit == best.limit and period_seconds > best_period_seconds)
-                ):
-                    best = EffectiveLimit(pattern=rl.pattern, limit=rl.limit, period=rl.period)
-                    best_period_seconds = period_seconds
+            for role_limit in role_limits:
+                if best is None or UsageLimitService._is_more_permissive(role_limit, best):
+                    best = role_limit
 
-        return [best] if best else []
+        if best is None:
+            return []
+        return [RoleUsageLimit(pattern=best.pattern, limit=best.limit, period=best.period)]
+
+    @staticmethod
+    def _most_restrictive_per_role(
+        role_limits: list[RoleUsageLimit],
+        resource_path: str,
+    ) -> dict[str, RoleUsageLimit]:
+        """Within a single role, keep only the most restrictive limit per pattern."""
+        best: dict[str, RoleUsageLimit] = {}
+        for role_limit in role_limits:
+            if not UsageLimitService._pattern_matches(role_limit.pattern, resource_path):
+                continue
+            if role_limit.pattern not in best or role_limit.limit < best[role_limit.pattern].limit:
+                best[role_limit.pattern] = role_limit
+        return best
+
+    @staticmethod
+    def _merge_across_roles(per_role_best: list[dict[str, RoleUsageLimit]]) -> list[RoleUsageLimit]:
+        """Across roles, the most permissive limit wins for each pattern."""
+        merged: dict[str, RoleUsageLimit] = {}
+        for role_best in per_role_best:
+            for pattern, role_limit in role_best.items():
+                if pattern not in merged or UsageLimitService._is_more_permissive(role_limit, merged[pattern]):
+                    merged[pattern] = role_limit
+        return [
+            RoleUsageLimit(pattern=role_limit.pattern, limit=role_limit.limit, period=role_limit.period)
+            for role_limit in merged.values()
+        ]
 
     @staticmethod
     def _matching_limits_for_resource(
         all_role_limits: list[list[RoleUsageLimit]],
         resource_path: str,
-    ) -> list[EffectiveLimit]:
+    ) -> list[RoleUsageLimit]:
         """Collect matching patterns with two-phase deduplication.
 
         1. **Within** a single role: duplicate patterns are reduced to the most
@@ -256,52 +207,29 @@ class UsageLimitService:
         2. **Across** roles: the same pattern is resolved to the most permissive
            (highest limit) — roles grant capabilities.
         """
-        # Phase 1: per-role dedup (most restrictive wins within a role)
-        per_role_best: list[dict[str, RoleUsageLimit]] = []
-        for role_limits in all_role_limits:
-            if not role_limits:
-                continue
-            role_best: dict[str, RoleUsageLimit] = {}
-            for rl in role_limits:
-                if not UsageLimitService._pattern_matches(rl.pattern, resource_path):
-                    continue
-                if rl.pattern not in role_best or rl.limit < role_best[rl.pattern].limit:
-                    role_best[rl.pattern] = rl
-            if role_best:
-                per_role_best.append(role_best)
+        per_role_best = [
+            role_best
+            for role_limits in all_role_limits
+            if role_limits
+            if (role_best := UsageLimitService._most_restrictive_per_role(role_limits, resource_path))
+        ]
 
         if not per_role_best:
             return []
 
-        # Phase 2: cross-role merge (most permissive wins across roles)
-        merged: dict[str, RoleUsageLimit] = {}
-        for role_best in per_role_best:
-            for pattern, rl in role_best.items():
-                if pattern not in merged:
-                    merged[pattern] = rl
-                else:
-                    existing = merged[pattern]
-                    period_seconds = UsageLimitPeriod(rl.period).seconds
-                    existing_period_seconds = UsageLimitPeriod(existing.period).seconds
-                    if rl.limit > existing.limit or (
-                        rl.limit == existing.limit and period_seconds > existing_period_seconds
-                    ):
-                        merged[pattern] = rl
-
-        return [EffectiveLimit(pattern=rl.pattern, limit=rl.limit, period=rl.period) for rl in merged.values()]
+        return UsageLimitService._merge_across_roles(per_role_best)
 
     @staticmethod
     @trace_fn
     def get_effective_limit_for_roles(
         role_names: list[str],
         resource_path: str | None = None,
-    ) -> tuple[int | None, UsageLimitPeriod | None, str | None]:
-        """Legacy single-limit accessor — returns the most specific matching limit."""
+    ) -> RoleUsageLimit | None:
+        """Return the most specific matching limit across all roles."""
         limits = UsageLimitService.get_effective_limits_for_roles(role_names, resource_path)
         if not limits:
-            return None, None, None
-        best = max(limits, key=lambda el: UsageLimitService._specificity(el.pattern))
-        return best.limit, best.period, best.pattern
+            return None
+        return max(limits, key=lambda effective_limit: UsageLimitService._specificity(effective_limit.pattern))
 
     @staticmethod
     @trace_fn
@@ -316,12 +244,15 @@ class UsageLimitService:
         if not effective_limits:
             return UsageStatus(limits=[], is_exceeded=False)
 
-        keys = [UsageLimitService._build_redis_key(user_id, el.pattern, el.period) for el in effective_limits]
+        keys = [
+            UsageLimitService._build_redis_key(user_id, effective_limit.pattern, effective_limit.period)
+            for effective_limit in effective_limits
+        ]
         raw_values = await redis.mget(keys)
 
-        limit_statuses: list[EffectiveLimitStatus] = []
-        for effective_limit, key, raw in zip(effective_limits, keys, raw_values):
-            current_count = int(raw) if raw else 0
+        limit_statuses: list[RoleUsageLimitStatus] = []
+        for effective_limit, key, raw_value in zip(effective_limits, keys, raw_values):
+            current_count = int(raw_value) if raw_value else 0
             limit_statuses.append(
                 await UsageLimitService._build_limit_status(redis, effective_limit, key, current_count)
             )
@@ -344,59 +275,64 @@ class UsageLimitService:
         if not effective_limits:
             return UsageStatus(limits=[], is_exceeded=False)
 
-        checks = await UsageLimitService._read_all_counters(redis, user_id, effective_limits)
-        any_exceeded = any(current_count >= el.limit for el, _, current_count in checks)
-
-        logger.debug(f"Usage check: user={user_id}, limits={len(effective_limits)}, any_exceeded={any_exceeded}")
+        snapshots = await UsageLimitService._read_all_counters(redis, user_id, effective_limits)
+        any_exceeded = any(snapshot.current_count >= snapshot.effective_limit.limit for snapshot in snapshots)
 
         if any_exceeded:
-            return await UsageLimitService._build_status_from_checks(redis, checks, is_exceeded=True)
+            return await UsageLimitService._build_status_from_snapshots(redis, snapshots, is_exceeded=True)
 
-        return await UsageLimitService._increment_all_counters(redis, user_id, checks)
+        return await UsageLimitService._increment_all_counters(redis, snapshots)
 
     @staticmethod
     async def _read_all_counters(
         redis: Redis,
         user_id: str,
-        effective_limits: list[EffectiveLimit],
-    ) -> list[tuple[EffectiveLimit, str, int]]:
+        effective_limits: list[RoleUsageLimit],
+    ) -> list[CounterSnapshot]:
         """Read current counter values for all effective limits using a single MGET call."""
-        keys = [UsageLimitService._build_redis_key(user_id, el.pattern, el.period) for el in effective_limits]
+        keys = [
+            UsageLimitService._build_redis_key(user_id, effective_limit.pattern, effective_limit.period)
+            for effective_limit in effective_limits
+        ]
         raw_values = await redis.mget(keys)
-        return [(el, key, int(raw) if raw else 0) for el, key, raw in zip(effective_limits, keys, raw_values)]
+        return [
+            CounterSnapshot(
+                effective_limit=effective_limit, redis_key=key, current_count=int(raw_value) if raw_value else 0
+            )
+            for effective_limit, key, raw_value in zip(effective_limits, keys, raw_values)
+        ]
 
     @staticmethod
-    async def _build_status_from_checks(
+    async def _build_status_from_snapshots(
         redis: Redis,
-        checks: list[tuple[EffectiveLimit, str, int]],
+        snapshots: list[CounterSnapshot],
         *,
         is_exceeded: bool,
     ) -> UsageStatus:
         """Build a UsageStatus from pre-read counter values."""
         limit_statuses = [
-            await UsageLimitService._build_limit_status(redis, effective_limit, key, current_count)
-            for effective_limit, key, current_count in checks
+            await UsageLimitService._build_limit_status(
+                redis, snapshot.effective_limit, snapshot.redis_key, snapshot.current_count
+            )
+            for snapshot in snapshots
         ]
         return UsageStatus(limits=limit_statuses, is_exceeded=is_exceeded)
 
     @staticmethod
     async def _increment_all_counters(
         redis: Redis,
-        user_id: str,
-        checks: list[tuple[EffectiveLimit, str, int]],
+        snapshots: list[CounterSnapshot],
     ) -> UsageStatus:
         """Increment all counters and return the resulting status."""
-        limit_statuses: list[EffectiveLimitStatus] = []
+        limit_statuses: list[RoleUsageLimitStatus] = []
 
-        for effective_limit, key, _ in checks:
-            ttl_seconds = effective_limit.period.seconds
-            new_count = await redis.eval(_INCR_WITH_TTL_SCRIPT, 1, key, ttl_seconds)
-            logger.debug(
-                f"Usage incremented: user={user_id}, key={key}, new_count={new_count}, limit={effective_limit.limit}"
-            )
-
+        for snapshot in snapshots:
+            ttl_seconds = snapshot.effective_limit.period.seconds
+            new_count = int(await redis.eval(_INCR_WITH_TTL_SCRIPT, 1, snapshot.redis_key, str(ttl_seconds)))
             limit_statuses.append(
-                await UsageLimitService._build_limit_status(redis, effective_limit, key, new_count, post_increment=True)
+                await UsageLimitService._build_limit_status(
+                    redis, snapshot.effective_limit, snapshot.redis_key, new_count, post_increment=True
+                )
             )
 
         return UsageStatus(
