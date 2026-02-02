@@ -84,6 +84,7 @@
         <Button
           type="button"
           icon="pi pi-plus"
+          :label="t('role.add_button')"
           size="small"
           :disabled="!newRule"
           @click="addRule"
@@ -206,6 +207,7 @@
                 <Button
                   type="button"
                   icon="pi pi-plus"
+                  :label="t('role.add_button')"
                   size="small"
                   :disabled="!newPattern || !newLimitStr || !newPeriod"
                   @click="addUsageLimit"

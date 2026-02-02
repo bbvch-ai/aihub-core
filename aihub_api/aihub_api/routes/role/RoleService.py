@@ -18,10 +18,7 @@ class RoleService:
             name=data.name,
             description=data.description,
             access_rules=data.access_rules,
-            usage_limits=[
-                UsageLimit(pattern=RoleEntity._normalize_usage_pattern(ul.pattern), limit=ul.limit, period=ul.period)
-                for ul in data.usage_limits
-            ],
+            usage_limits=[UsageLimit(pattern=ul.pattern, limit=ul.limit, period=ul.period) for ul in data.usage_limits],
         )
         role.save()
         return RoleResponse.from_role_entity(role)
@@ -58,9 +55,7 @@ class RoleService:
 
         if "usage_limits" in update_data:
             update_data["usage_limits"] = [
-                UsageLimit(
-                    pattern=RoleEntity._normalize_usage_pattern(ul["pattern"]), limit=ul["limit"], period=ul["period"]
-                )
+                UsageLimit(pattern=ul["pattern"], limit=ul["limit"], period=ul["period"])
                 for ul in update_data["usage_limits"]
             ]
 

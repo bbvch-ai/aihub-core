@@ -11,7 +11,6 @@ class UsageLimitDTO(BaseModel):
         Field(
             description="Full dotted resource pattern with wildcards "
             "(e.g. 'aihub.user.agent.>', 'aihub.user.process.MyProcess.*'). "
-            "Legacy patterns without 'aihub.user.' prefix are auto-normalized to 'aihub.user.agent.<pattern>'."
         ),
     ]
     limit: Annotated[int, Field(description="Max calls per period for this pattern.")]

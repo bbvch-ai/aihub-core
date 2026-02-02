@@ -80,22 +80,9 @@ class RoleEntity(Document):
     def get_usage_limits_for_roles(cls, role_names: list[str]) -> list[list[RoleUsageLimit]]:
         """
         Returns a list of usage_limits per role.
-
-        Legacy patterns without an ``aihub.user.`` prefix are normalized to
-        ``aihub.user.agent.<pattern>`` for backward compatibility.
         """
         roles = cls.objects(name__in=role_names).only("usage_limits")
         return [
-            [
-                RoleUsageLimit(pattern=cls._normalize_usage_pattern(ul.pattern), limit=ul.limit, period=ul.period)
-                for ul in role.usage_limits
-            ]
+            [RoleUsageLimit(pattern=ul.pattern, limit=ul.limit, period=ul.period) for ul in role.usage_limits]
             for role in roles
         ]
-
-    @staticmethod
-    def _normalize_usage_pattern(pattern: str) -> str:
-        """Prefix legacy patterns that lack the ``aihub.user.`` namespace."""
-        if pattern.startswith("aihub.user."):
-            return pattern
-        return f"aihub.user.agent.{pattern}"
