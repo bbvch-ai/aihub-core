@@ -8272,7 +8272,7 @@ export const ImagesResponseSchema = {
         usage: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/Usage'
+                    '$ref': '#/components/schemas/openai__types__images_response__Usage'
                 },
                 {
                     type: 'null'
@@ -9862,7 +9862,7 @@ export const LLMEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/Message'
+                        '$ref': '#/components/schemas/aihub_lib__nats__events__semantic__llm__Message__Message'
                     },
                     type: 'array'
                 },
@@ -9877,7 +9877,7 @@ export const LLMEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/Message'
+                        '$ref': '#/components/schemas/aihub_lib__nats__events__semantic__llm__Message__Message'
                     },
                     type: 'array'
                 },
@@ -10088,7 +10088,7 @@ export const LLMStopEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/Message'
+                        '$ref': '#/components/schemas/aihub_lib__nats__events__semantic__llm__Message__Message'
                     },
                     type: 'array'
                 },
@@ -10103,7 +10103,7 @@ export const LLMStopEventSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/Message'
+                        '$ref': '#/components/schemas/aihub_lib__nats__events__semantic__llm__Message__Message'
                     },
                     type: 'array'
                 },
@@ -10305,7 +10305,7 @@ export const LLMStopEventOutputSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__Message'
+                        '$ref': '#/components/schemas/Message'
                     },
                     type: 'array'
                 },
@@ -10320,7 +10320,7 @@ export const LLMStopEventOutputSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__Message'
+                        '$ref': '#/components/schemas/Message'
                     },
                     type: 'array'
                 },
@@ -11180,8 +11180,7 @@ export const MessageSchema = {
             anyOf: [
                 {
                     items: {
-                        additionalProperties: true,
-                        type: 'object'
+                        '$ref': '#/components/schemas/tool_calls'
                     },
                     type: 'array'
                 },
@@ -11207,14 +11206,12 @@ export const MessageSchema = {
         function_call_arguments_json: {
             anyOf: [
                 {
-                    additionalProperties: true,
-                    type: 'object'
+                    '$ref': '#/components/schemas/function_call_arguments_json'
                 },
                 {
                     type: 'null'
                 }
             ],
-            title: 'Function Call Arguments Json',
             description: 'JSON representing arguments passed to the function during a function call.'
         },
         tool_call_id: {
@@ -11253,15 +11250,10 @@ export const MessageSchema = {
             ],
             title: 'Contents',
             description: 'The message contents as an array of content blocks (text, image, audio).'
-        },
-        content: {
-            type: 'string',
-            title: 'Content',
-            readOnly: true
         }
     },
     type: 'object',
-    required: ['role', 'content'],
+    required: ['role'],
     title: 'Message'
 } as const;
 
@@ -11551,7 +11543,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1770041288
+            default: 1770042110
         },
         owned_by: {
             type: 'string',
@@ -17398,7 +17390,7 @@ export const TranscriptionVerboseSchema = {
         usage: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/openai__types__audio__transcription_verbose__Usage'
+                    '$ref': '#/components/schemas/Usage'
                 },
                 {
                     type: 'null'
@@ -17607,25 +17599,19 @@ export const UpdateRoleRequestSchema = {
 
 export const UsageSchema = {
     properties: {
-        input_tokens: {
-            type: 'integer',
-            title: 'Input Tokens'
+        seconds: {
+            type: 'number',
+            title: 'Seconds'
         },
-        input_tokens_details: {
-            '$ref': '#/components/schemas/UsageInputTokensDetails'
-        },
-        output_tokens: {
-            type: 'integer',
-            title: 'Output Tokens'
-        },
-        total_tokens: {
-            type: 'integer',
-            title: 'Total Tokens'
+        type: {
+            type: 'string',
+            const: 'duration',
+            title: 'Type'
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['input_tokens', 'input_tokens_details', 'output_tokens', 'total_tokens'],
+    required: ['seconds', 'type'],
     title: 'Usage'
 } as const;
 
@@ -18430,19 +18416,7 @@ export const additional_location_infoSchema = {
     title: 'additional_location_info'
 } as const;
 
-export const function_call_arguments_jsonSchema = {
-    properties: {},
-    type: 'object',
-    title: 'function_call_arguments_json'
-} as const;
-
-export const invocation_parametersSchema = {
-    properties: {},
-    type: 'object',
-    title: 'invocation_parameters'
-} as const;
-
-export const jambo__parser__object_type_parser__MessageSchema = {
+export const aihub_lib__nats__events__semantic__llm__Message__MessageSchema = {
     properties: {
         role: {
             type: 'string',
@@ -18465,7 +18439,8 @@ export const jambo__parser__object_type_parser__MessageSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/tool_calls'
+                        additionalProperties: true,
+                        type: 'object'
                     },
                     type: 'array'
                 },
@@ -18491,12 +18466,14 @@ export const jambo__parser__object_type_parser__MessageSchema = {
         function_call_arguments_json: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/function_call_arguments_json'
+                    additionalProperties: true,
+                    type: 'object'
                 },
                 {
                     type: 'null'
                 }
             ],
+            title: 'Function Call Arguments Json',
             description: 'JSON representing arguments passed to the function during a function call.'
         },
         tool_call_id: {
@@ -18535,11 +18512,28 @@ export const jambo__parser__object_type_parser__MessageSchema = {
             ],
             title: 'Contents',
             description: 'The message contents as an array of content blocks (text, image, audio).'
+        },
+        content: {
+            type: 'string',
+            title: 'Content',
+            readOnly: true
         }
     },
     type: 'object',
-    required: ['role'],
+    required: ['role', 'content'],
     title: 'Message'
+} as const;
+
+export const function_call_arguments_jsonSchema = {
+    properties: {},
+    type: 'object',
+    title: 'function_call_arguments_json'
+} as const;
+
+export const invocation_parametersSchema = {
+    properties: {},
+    type: 'object',
+    title: 'invocation_parameters'
 } as const;
 
 export const jambo__parser__object_type_parser__UserUploadedFileSchema = {
@@ -18563,24 +18557,6 @@ export const jambo__parser__object_type_parser__UserUploadedFileSchema = {
     type: 'object',
     required: ['filename', 'file_data', 'file_type'],
     title: 'UserUploadedFile'
-} as const;
-
-export const openai__types__audio__transcription_verbose__UsageSchema = {
-    properties: {
-        seconds: {
-            type: 'number',
-            title: 'Seconds'
-        },
-        type: {
-            type: 'string',
-            const: 'duration',
-            title: 'Type'
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['seconds', 'type'],
-    title: 'Usage'
 } as const;
 
 export const openai__types__chat__chat_completion_message_custom_tool_call_param__CustomSchema = {
@@ -18663,6 +18639,30 @@ export const openai__types__chat__completion_create_params__FunctionSchema = {
     type: 'object',
     required: ['name'],
     title: 'Function'
+} as const;
+
+export const openai__types__images_response__UsageSchema = {
+    properties: {
+        input_tokens: {
+            type: 'integer',
+            title: 'Input Tokens'
+        },
+        input_tokens_details: {
+            '$ref': '#/components/schemas/UsageInputTokensDetails'
+        },
+        output_tokens: {
+            type: 'integer',
+            title: 'Output Tokens'
+        },
+        total_tokens: {
+            type: 'integer',
+            title: 'Total Tokens'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['input_tokens', 'input_tokens_details', 'output_tokens', 'total_tokens'],
+    title: 'Usage'
 } as const;
 
 export const prompt_template_variablesSchema = {

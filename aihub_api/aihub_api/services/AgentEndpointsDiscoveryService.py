@@ -7,7 +7,7 @@ from typing import Annotated, override
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.auth.usage import UsageLimitService, build_exceeded_detail, build_warning_message
+from aihub_lib.auth.usage import UsageLimitService, build_exceeded_detail, build_streaming_response_headers
 from aihub_lib.auth.usage.usage_limit_models import ResourceType, UsageStatus
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.no_trace import no_trace
@@ -486,25 +486,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 # Final event to signal stream end
                 yield "data: [DONE]\n\n"
 
-            # Build response headers
-            response_headers = {
-                "Cache-Control": "no-cache, no-store, must-revalidate, no-transform",
-                "X-Accel-Buffering": "no",
-                "Connection": "keep-alive",
-                "Content-Encoding": "identity",
-            }
-
-            # Add usage warning headers if approaching limit (80%+)
-            if usage_status.limit is not None and usage_status.current_count is not None:
-                usage_percentage = (usage_status.current_count / usage_status.limit) * 100
-                if usage_percentage >= 80:
-                    remaining = usage_status.limit - usage_status.current_count
-                    response_headers["X-Usage-Warning"] = "true"
-                    response_headers["X-Usage-Warning-Message"] = build_warning_message(usage_status, locale=t.locale)
-                    response_headers["X-Usage-Current"] = str(usage_status.current_count)
-                    response_headers["X-Usage-Limit"] = str(usage_status.limit)
-                    response_headers["X-Usage-Remaining"] = str(remaining)
-                    response_headers["X-Usage-Period"] = usage_status.period or ""
+            response_headers = build_streaming_response_headers(usage_status, locale=t.locale)
 
             return StreamingResponse(
                 sse_event_generator(),
