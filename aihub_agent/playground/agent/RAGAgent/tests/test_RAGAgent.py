@@ -36,7 +36,7 @@ from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_
 from dotenv import load_dotenv
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
-from pytest_bdd import given, parsers, scenarios, then, when
+from pytest_bdd import given, parsers, scenario, scenarios, then, when
 
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
@@ -56,7 +56,20 @@ def event_loop():
     loop.close()
 
 
+# Load all scenarios
 scenarios("./features/rag_agent.feature")
+
+
+# Mark the organization memory scenario as requiring Azure
+@pytest.mark.azure
+@scenario(
+    "./features/rag_agent.feature", "Test RAGAgent retrieves organization memory alongside knowledge base documents"
+)
+def test_test_ragagent_retrieves_organization_memory_alongside_knowledge_base_documents():
+    """Test RAGAgent with organization memory (requires Azure Mem0 service)."""
+    pass
+
+
 load_dotenv(Path(__file__).parent / ".env")
 
 
@@ -476,6 +489,7 @@ def _(agent_runner: AgentTestRunner, model_name: str):
 # ====== Organization Memory Retrieval Step Definitions ======
 
 
+@pytest.mark.azure
 @pytest.mark.usefixtures("memory_enabled_agent_config")
 @given("a RAGAgent runner with organization memory enabled", target_fixture="agent_runner")
 def _(memory_enabled_agent_config):
