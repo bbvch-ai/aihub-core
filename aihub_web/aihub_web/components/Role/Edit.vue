@@ -118,6 +118,20 @@
             <col style="width: 6rem;">
             <col style="width: 3rem;">
           </colgroup>
+          <thead>
+            <tr>
+              <th class="py-2 text-start font-medium">
+                {{ t('role.usage_pattern') }}
+              </th>
+              <th class="py-2 text-start font-medium">
+                {{ t('role.usage_limit_value') }}
+              </th>
+              <th class="py-2 text-start font-medium">
+                {{ t('role.usage_period') }}
+              </th>
+              <th />
+            </tr>
+          </thead>
           <tbody>
             <tr
               v-for="ul in (role.usage_limits ?? [])"

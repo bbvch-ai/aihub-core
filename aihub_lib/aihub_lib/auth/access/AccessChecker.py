@@ -47,7 +47,7 @@ class AccessChecker:
         """Ensures a users access_rules follows the strict format."""
         if not access_rule.startswith(("aihub.user.", "aihub.admin.")):
             return False
-        if not re.fullmatch(r"[a-zA-Z0-9\.\-\_\*\>]+", access_rule):
+        if not re.fullmatch(r"[a-z0-9\.\-\_\*\>]+", access_rule):
             return False
         parts = access_rule.split(".")
         if ">" in parts and parts[-1] != ">":
