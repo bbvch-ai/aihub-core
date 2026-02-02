@@ -10,6 +10,7 @@ from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousD
 from aihub_lib.auth.usage import EffectiveLimitStatus, UsageLimitPeriod, UsageStatus
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_admin_only  # noqa: F401
 from asgi_lifespan import LifespanManager
+from fastapi import HTTPException
 from httpx import ASGITransport, AsyncClient
 
 from aihub_api.routes.openai.OpenaiController import OpenaiController
@@ -36,15 +37,30 @@ def _exceeded_status(*, limit: int = 100, current_count: int = 101, period: str 
     )
 
 
+def _mock_agent_dto() -> MagicMock:
+    """Create a mock agent DTO that passes the is_conversational check."""
+    dto = MagicMock()
+    dto.is_conversational = True
+    return dto
+
+
 class TestUsageLimitEnforcement:
     """Tests for usage limit enforcement in OpenAI chat completions."""
 
     @pytest.mark.asyncio
-    @patch("aihub_lib.routes.chat.ChatService.UsageLimitService")
-    async def test_returns_429_when_limit_exceeded(self, mock_usage_service: MagicMock):
+    @patch("aihub_api.routes.openai.OpenaiService.AgentService.get_agent", new_callable=AsyncMock)
+    @patch("aihub_lib.routes.chat.ChatService.ChatService._check_usage_limit", new_callable=AsyncMock)
+    async def test_returns_429_when_limit_exceeded(
+        self, mock_check_usage: AsyncMock, mock_get_agent: AsyncMock
+    ):
         """Test that a 429 error is returned when usage limit is exceeded."""
-        mock_usage_service.check_and_increment = AsyncMock(return_value=_exceeded_status())
-        mock_usage_service.build_resource_path = MagicMock(return_value="aihub.user.agent.TestAgent.test_id")
+        from aihub_lib.auth.usage.period_labels import build_exceeded_detail
+
+        exceeded = _exceeded_status()
+        mock_get_agent.return_value = _mock_agent_dto()
+        mock_check_usage.side_effect = HTTPException(
+            status_code=429, detail=build_exceeded_detail(exceeded, locale="en")
+        )
 
         auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
         controller = OpenaiController(auth=auth).chat_completion_with_assistants()
@@ -54,7 +70,6 @@ class TestUsageLimitEnforcement:
 
         async with LifespanManager(app) as lifespan:
             async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
-                # Use an agent model format (has a single slash)
                 payload = {
                     "model": "TestAgent/test_id",
                     "messages": [{"role": "user", "content": "Hello"}],
@@ -69,8 +84,8 @@ class TestUsageLimitEnforcement:
                 assert data["detail"]["period"] == UsageLimitPeriod.ONE_DAY
 
     @pytest.mark.asyncio
-    @patch("aihub_lib.routes.chat.ChatService.UsageLimitService")
-    async def test_direct_model_calls_not_counted(self, mock_usage_service: MagicMock):
+    @patch("aihub_lib.routes.chat.ChatService.ChatService._check_usage_limit", new_callable=AsyncMock)
+    async def test_direct_model_calls_not_counted(self, mock_check_usage: AsyncMock):
         """Test that direct model calls (not agent calls) are not counted."""
         auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
         controller = OpenaiController(auth=auth).chat_completion_with_assistants()
@@ -80,7 +95,6 @@ class TestUsageLimitEnforcement:
 
         async with LifespanManager(app) as lifespan:
             async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
-                # Use a direct model format (has two slashes: category/size)
                 payload = {
                     "model": "text-generation/mini",
                     "messages": [{"role": "user", "content": "Hello"}],
@@ -88,6 +102,5 @@ class TestUsageLimitEnforcement:
                 }
                 await client.post(CHAT_ENDPOINT, json=payload)
 
-                # The actual response may succeed or fail depending on model availability,
-                # but the key point is that check_and_increment should NOT be called
-                mock_usage_service.check_and_increment.assert_not_called()
+                # Direct model calls don't go through ChatService, so _check_usage_limit should not be called
+                mock_check_usage.assert_not_called()

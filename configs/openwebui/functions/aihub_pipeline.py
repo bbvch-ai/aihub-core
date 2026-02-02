@@ -1073,7 +1073,7 @@ class StreamingService:
                             {
                                 "type": "chat:message:delta",
                                 "data": {
-                                    "content": f"\n\n> [!WARNING]\n> ⚠️ **{warning_msg}**\n"
+                                    "content": f"\n\n> [!WARNING]\n> {warning_msg}\n"
                                 },
                             }
                         )
