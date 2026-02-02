@@ -76,10 +76,6 @@ type DocumentInfo = {
 }
 
 const extractBucket = (source: string): string => {
-  // Insights are stored in MongoDB, not S3 - use 'insights' as virtual database
-  if (source.startsWith('insight:')) {
-    return 'insights'
-  }
   const match = source.match(/(?:s3:\/\/|^\/)([^/]+)/)
   return match?.[1] ?? ''
 }

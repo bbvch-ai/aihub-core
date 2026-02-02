@@ -19,6 +19,9 @@ type MemoryType = 'user' | 'organization'
 
 interface MemoryContext {
   type: MemoryType
+  agent_class?: string
+  agent_id?: string
+  thread_id?: string
 }
 
 /**
@@ -37,16 +40,17 @@ interface MemoryContext {
  * const { useMemories, useMemorySearch } = createMemoryComposables({ type: 'organization' })
  */
 export function createMemoryComposables(context: MemoryContext) {
-  const { type } = context
+  const { type, agent_class, agent_id, thread_id } = context
 
   /**
    * Generate cache keys with proper scoping for user vs organization memory
    */
   const getCacheKey = (operation: string, params: Record<string, unknown> = {}) => {
+    const baseParams = { ...params, agent_class, agent_id, thread_id }
     if (type === 'user') {
-      return ['memories', 'user', operation, params]
+      return ['memories', 'user', operation, baseParams]
     }
-    return ['memories', 'organization', operation, params]
+    return ['memories', 'organization', operation, baseParams]
   }
 
   /**
@@ -64,7 +68,23 @@ export function createMemoryComposables(context: MemoryContext) {
       staleTime: minutesToMilliseconds(5),
       enabled: true,
       query: async () => {
+        // Use search endpoint when filters are provided (agent_class/agent_id/thread_id)
+        const hasFilters = agent_class || agent_id || thread_id
+
         if (type === 'user') {
+          if (hasFilters) {
+            // Search endpoint supports filtering
+            return await searchUserMemories({
+              composable: '$fetch',
+              query: {
+                query: '', // Empty query returns all memories
+                limit: 1000,
+                agent_class: agent_class || null,
+                agent_id: agent_id || null,
+                thread_id: thread_id || null,
+              },
+            })
+          }
           return await getUserMemories({
             composable: '$fetch',
             query: { limit: 1000 },
@@ -72,6 +92,18 @@ export function createMemoryComposables(context: MemoryContext) {
         }
 
         // Organization memory - tenant_id and tenant_namespace come from env-var only
+        if (hasFilters) {
+          return await searchOrganizationMemories({
+            composable: '$fetch',
+            query: {
+              query: '', // Empty query returns all memories
+              limit: 1000,
+              agent_class: agent_class || null,
+              agent_id: agent_id || null,
+              thread_id: thread_id || null,
+            },
+          })
+        }
         return await getOrganizationMemories({
           composable: '$fetch',
           query: {
@@ -143,6 +175,9 @@ export function createMemoryComposables(context: MemoryContext) {
             query: {
               query: query.value,
               limit: limit.value,
+              agent_class: agent_class || null,
+              agent_id: agent_id || null,
+              thread_id: thread_id || null,
             },
           })
         }
@@ -153,6 +188,9 @@ export function createMemoryComposables(context: MemoryContext) {
           query: {
             query: query.value,
             limit: limit.value,
+            agent_class: agent_class || null,
+            agent_id: agent_id || null,
+            thread_id: thread_id || null,
           },
         })
       },

@@ -6300,8 +6300,8 @@ export type ImagesResponse = {
      * Size
      */
     size?: ('1024x1024' | '1024x1536' | '1536x1024') | null;
-    usage?: Usage | null;
-    [key: string]: unknown | number | (('transparent' | 'opaque') | null) | (Array<Image> | null) | (('png' | 'webp' | 'jpeg') | null) | (('low' | 'medium' | 'high') | null) | (('1024x1024' | '1024x1536' | '1536x1024') | null) | (Usage | null) | undefined;
+    usage?: OpenaiTypesImagesResponseUsage | null;
+    [key: string]: unknown | number | (('transparent' | 'opaque') | null) | (Array<Image> | null) | (('png' | 'webp' | 'jpeg') | null) | (('low' | 'medium' | 'high') | null) | (('1024x1024' | '1024x1536' | '1536x1024') | null) | (OpenaiTypesImagesResponseUsage | null) | undefined;
 };
 
 /**
@@ -14168,12 +14168,12 @@ export type TranscriptionVerbose = {
      * Segments
      */
     segments?: Array<TranscriptionSegment> | null;
-    usage?: OpenaiTypesAudioTranscriptionVerboseUsage | null;
+    usage?: Usage | null;
     /**
      * Words
      */
     words?: Array<TranscriptionWord> | null;
-    [key: string]: unknown | number | string | (Array<TranscriptionSegment> | null) | (OpenaiTypesAudioTranscriptionVerboseUsage | null) | (Array<TranscriptionWord> | null) | undefined;
+    [key: string]: unknown | number | string | (Array<TranscriptionSegment> | null) | (Usage | null) | (Array<TranscriptionWord> | null) | undefined;
 };
 
 /**
@@ -14284,19 +14284,14 @@ export type UpdateRoleRequest = {
  */
 export type Usage = {
     /**
-     * Input Tokens
+     * Seconds
      */
-    input_tokens: number;
-    input_tokens_details: UsageInputTokensDetails;
+    seconds: number;
     /**
-     * Output Tokens
+     * Type
      */
-    output_tokens: number;
-    /**
-     * Total Tokens
-     */
-    total_tokens: number;
-    [key: string]: unknown | number | UsageInputTokensDetails;
+    type: 'duration';
+    [key: string]: unknown | number | 'duration';
 };
 
 /**
@@ -14776,21 +14771,6 @@ export type WorkflowGraph = {
 };
 
 /**
- * Usage
- */
-export type OpenaiTypesAudioTranscriptionVerboseUsage = {
-    /**
-     * Seconds
-     */
-    seconds: number;
-    /**
-     * Type
-     */
-    type: 'duration';
-    [key: string]: unknown | number | 'duration';
-};
-
-/**
  * Custom
  */
 export type OpenaiTypesChatChatCompletionMessageCustomToolCallParamCustom = {
@@ -14863,6 +14843,26 @@ export type OpenaiTypesChatCompletionCreateParamsFunction = {
     [key: string]: unknown | string | {
         [key: string]: unknown;
     } | undefined;
+};
+
+/**
+ * Usage
+ */
+export type OpenaiTypesImagesResponseUsage = {
+    /**
+     * Input Tokens
+     */
+    input_tokens: number;
+    input_tokens_details: UsageInputTokensDetails;
+    /**
+     * Output Tokens
+     */
+    output_tokens: number;
+    /**
+     * Total Tokens
+     */
+    total_tokens: number;
+    [key: string]: unknown | number | UsageInputTokensDetails;
 };
 
 export type GetHealthData = {
@@ -17055,6 +17055,11 @@ export type SearchUserMemoriesData = {
          */
         limit?: number;
         /**
+         * Agent Class
+         * Filter by agent class
+         */
+        agent_class?: string | null;
+        /**
          * Agent Id
          * Filter by agent ID
          */
@@ -17209,6 +17214,11 @@ export type SearchOrganizationMemoriesData = {
          * Maximum number of results to return
          */
         limit?: number;
+        /**
+         * Agent Class
+         * Filter by agent class
+         */
+        agent_class?: string | null;
         /**
          * Agent Id
          * Filter by agent ID

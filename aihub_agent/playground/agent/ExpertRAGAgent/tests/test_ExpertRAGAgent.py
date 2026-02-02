@@ -34,7 +34,7 @@ from dotenv import load_dotenv
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from mongoengine import connect, disconnect
-from pytest_bdd import given, parsers, scenarios, then, when
+from pytest_bdd import given, parsers, scenario, scenarios, then, when
 
 from aihub_agent.agents.ExpertAskingAgent.events.AnswerStopEvent import AnswerStopEvent
 from aihub_agent.agents.ExpertRagAgent.configs.ExpertRAGAgentConfig import ExpertRAGAgentConfig
@@ -47,6 +47,23 @@ from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 enable_logging()
 
 scenarios("./features/expert_rag_agent.feature")
+
+
+# Mark expert escalation scenarios as requiring Azure (uses Mem0 service)
+@pytest.mark.azure
+@scenario("./features/expert_rag_agent.feature", "Test ExpertRAGAgent handles user declining expert escalation")
+def test_test_expertragagent_handles_user_declining_expert_escalation():
+    """Test ExpertRAGAgent with user declining expert escalation (requires Azure)."""
+    pass
+
+
+@pytest.mark.azure
+@scenario("./features/expert_rag_agent.feature", "Test ExpertRAGAgent expert escalation user accepts")
+def test_test_expertragagent_expert_escalation_user_accepts():
+    """Test ExpertRAGAgent with user accepting expert escalation (requires Azure)."""
+    pass
+
+
 load_dotenv(Path(__file__).parent / ".env")
 
 TIMEOUT = 240
@@ -141,6 +158,7 @@ def expert_rag_agent_config(test_collection):
     )
 
 
+@pytest.mark.azure
 @pytest.mark.usefixtures("expert_rag_agent_config")
 @given("an ExpertRAGAgent runner with expert escalation enabled", target_fixture="expert_rag_agent_runner")
 def _(expert_rag_agent_config):

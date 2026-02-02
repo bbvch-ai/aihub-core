@@ -106,6 +106,7 @@ thread:
     hierarchy: "Gerarchia"
     chat: "Chat"
     display: "Turni"
+    memories: "Memorie"
   list:
     name: "Nome"
     agents: "Agenti"
@@ -135,6 +136,18 @@ thread:
     title: "Vista gerarchica sui turni"
   chat:
     title: "Vista Chat"
+  memories:
+    title: "Memorie del thread"
+    description: "Memorie raccolte durante {threadName}"
+    delete_all:
+      confirm_header: "Elimina tutte le memorie del thread"
+      confirm_message: "Sei sicuro di voler eliminare tutte le memorie da questo thread? Questa azione non può essere annullata."
+      success:
+        title: "Successo"
+        message: "Tutte le memorie del thread sono state eliminate con successo"
+      error:
+        title: "Eliminazione fallita"
+        message: "Impossibile eliminare le memorie del thread. Riprova."
 
 chat:
   assistant: "Assistente"
@@ -259,6 +272,7 @@ agent:
     basic: "Base"
     workflow: "Flusso di lavoro"
     threads: "Thread"
+    memories: "Memorie"
     chat: "Chat"
   availableAgents: "Agenti disponibili"
   list:
@@ -275,6 +289,18 @@ agent:
     title: "Flusso di lavoro agentico"
   threads:
     title: "Thread dell'agente"
+  memories:
+    title: "Memorie dell'agente"
+    description: "Memorie raccolte da {agentName} su di te"
+    delete_all:
+      confirm_header: "Elimina tutte le memorie dell'agente"
+      confirm_message: "Sei sicuro di voler eliminare tutte le memorie raccolte da questo agente? Questa azione non può essere annullata."
+      success:
+        title: "Successo"
+        message: "Tutte le memorie dell'agente sono state eliminate con successo"
+      error:
+        title: "Eliminazione fallita"
+        message: "Impossibile eliminare le memorie dell'agente. Riprova."
 
 document:
   list:
@@ -593,3 +619,12 @@ memory:
     error:
       title: "Eliminazione fallita"
       message: "Impossibile eliminare tutti i ricordi. Riprova."
+
+openwebui:
+  memories:
+    title: "Ricordi dell'Agente"
+    select_agent: "Seleziona Agente"
+    list: "Lista"
+    graph: "Grafico"
+    user_memories: "Ricordi dell'Utente"
+    org_memories: "Ricordi dell'Organizzazione"

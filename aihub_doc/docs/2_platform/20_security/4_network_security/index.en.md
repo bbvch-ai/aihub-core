@@ -75,7 +75,8 @@ principle of least privilege at the network layer. Services are assigned only to
 - **Egress network** allows outbound internet access only, with Inter-Container Communication (ICC) disabled
 - Services needing to browse external websites (e.g., playwright) use the `egress` network without exposing ingress
 
-See [Network Isolation](../../2_architecture/4_network_isolation/) for detailed network topology and service assignments.
+See [Network Isolation](../../2_architecture/4_network_isolation/) for detailed network topology and service
+assignments.
 
 ### Data protection
 

@@ -47,7 +47,8 @@ class Mem0Service:
             "_tenant_id": tenant_id,
             "_tenant_namespace": tenant_namespace,
         }
-        metadata = {k: str(v) for k, v in metadata.items() if v is not None}
+        # Filter out None values and empty strings
+        metadata = {k: str(v) for k, v in metadata.items() if v is not None and v != ""}
         added_memory = await self._memory.add(
             messages,
             user_id=owner_id,
@@ -121,7 +122,8 @@ class Mem0Service:
             "_tenant_id": tenant_id,
             "_tenant_namespace": tenant_namespace,
         }
-        filters = {k: str(v) for k, v in filters.items() if v is not None}
+        # Filter out None values and empty strings
+        filters = {k: str(v) for k, v in filters.items() if v is not None and v != ""}
         memories = await self._memory.search(
             query=query,
             user_id=owner_id,

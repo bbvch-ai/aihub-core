@@ -1,4 +1,0 @@
-from aihub_lib.generative_ai.retrievers.InsightRetrieverConfig import InsightRetrieverConfig
-from aihub_lib.generative_ai.retrievers.KnowledgeRetrieverConfig import KnowledgeRetrieverConfig
-
-type RetrieverConfig = KnowledgeRetrieverConfig | InsightRetrieverConfig

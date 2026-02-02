@@ -7874,7 +7874,7 @@ export const ImagesResponseSchema = {
         usage: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/Usage'
+                    '$ref': '#/components/schemas/openai__types__images_response__Usage'
                 },
                 {
                     type: 'null'
@@ -10955,7 +10955,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1769595935
+            default: 1770020744
         },
         owned_by: {
             type: 'string',
@@ -16691,7 +16691,7 @@ export const TranscriptionVerboseSchema = {
         usage: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/openai__types__audio__transcription_verbose__Usage'
+                    '$ref': '#/components/schemas/Usage'
                 },
                 {
                     type: 'null'
@@ -16885,25 +16885,19 @@ export const UpdateRoleRequestSchema = {
 
 export const UsageSchema = {
     properties: {
-        input_tokens: {
-            type: 'integer',
-            title: 'Input Tokens'
+        seconds: {
+            type: 'number',
+            title: 'Seconds'
         },
-        input_tokens_details: {
-            '$ref': '#/components/schemas/UsageInputTokensDetails'
-        },
-        output_tokens: {
-            type: 'integer',
-            title: 'Output Tokens'
-        },
-        total_tokens: {
-            type: 'integer',
-            title: 'Total Tokens'
+        type: {
+            type: 'string',
+            const: 'duration',
+            title: 'Type'
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['input_tokens', 'input_tokens_details', 'output_tokens', 'total_tokens'],
+    required: ['seconds', 'type'],
     title: 'Usage'
 } as const;
 
@@ -17519,24 +17513,6 @@ export const WorkflowGraphSchema = {
     description: 'Complete workflow graph representation.'
 } as const;
 
-export const openai__types__audio__transcription_verbose__UsageSchema = {
-    properties: {
-        seconds: {
-            type: 'number',
-            title: 'Seconds'
-        },
-        type: {
-            type: 'string',
-            const: 'duration',
-            title: 'Type'
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['seconds', 'type'],
-    title: 'Usage'
-} as const;
-
 export const openai__types__chat__chat_completion_message_custom_tool_call_param__CustomSchema = {
     properties: {
         input: {
@@ -17617,4 +17593,28 @@ export const openai__types__chat__completion_create_params__FunctionSchema = {
     type: 'object',
     required: ['name'],
     title: 'Function'
+} as const;
+
+export const openai__types__images_response__UsageSchema = {
+    properties: {
+        input_tokens: {
+            type: 'integer',
+            title: 'Input Tokens'
+        },
+        input_tokens_details: {
+            '$ref': '#/components/schemas/UsageInputTokensDetails'
+        },
+        output_tokens: {
+            type: 'integer',
+            title: 'Output Tokens'
+        },
+        total_tokens: {
+            type: 'integer',
+            title: 'Total Tokens'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['input_tokens', 'input_tokens_details', 'output_tokens', 'total_tokens'],
+    title: 'Usage'
 } as const;

@@ -12,7 +12,7 @@ from aihub_lib.generative_ai.resources.models.llm.message_preprocessor import me
 from aihub_lib.generative_ai.retrieval.combine_nodes_in_order import combine_nodes_in_order
 from aihub_lib.generative_ai.retrieval.condense_standalone_question import condense_standalone_question
 from aihub_lib.generative_ai.retrieval.retrieve_from_all_sources import retrieve_from_all_sources
-from aihub_lib.generative_ai.retrievers.RetrieverConfig import RetrieverConfig
+from aihub_lib.generative_ai.retrievers.KnowledgeRetrieverConfig import KnowledgeRetrieverConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import LimitChatHistoryEvent, StandaloneQuestionCondenserEvent
@@ -23,7 +23,7 @@ from aihub_lib.nats.events.guard import (
     FewShotAcceptEvent,
     FewShotRejectEvent,
 )
-from aihub_lib.nats.events.semantic.llm import LLMStopEvent
+from aihub_lib.nats.events.semantic.llm import LLMEvent, LLMStopEvent
 from aihub_lib.nats.events.semantic.reranker import RerankerEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -66,7 +66,8 @@ async def do_respond_with_llm(
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
-) -> LLMStopEvent:
+    as_stop_step: bool = True,
+) -> LLMStopEvent | LLMEvent:
     """Generate LLM response with proper message building and streaming."""
     await displayer.display_thought(t("agent.thought.write_answer_based_on_information"))
 
@@ -93,7 +94,7 @@ async def do_respond_with_llm(
     messages = merge_consecutive_messages(messages)
 
     async with llm_config.cost_reporting_llm(displayer) as llm:
-        return await displayer.display_llm_stream(llm_config, llm, messages, as_stop_step=True)
+        return await displayer.display_llm_stream(llm_config, llm, messages, as_stop_step=as_stop_step)
 
 
 async def do_few_shot_guard(
@@ -123,7 +124,7 @@ async def do_few_shot_guard(
 
 async def do_retrieve(
     event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
-    retrievers: list[RetrieverConfig],
+    retrievers: list[KnowledgeRetrieverConfig],
     t: LocaleHandler,
 ) -> RetrieverEvent:
     """Retrieve nodes from all sources and return RetrieverEvent."""
