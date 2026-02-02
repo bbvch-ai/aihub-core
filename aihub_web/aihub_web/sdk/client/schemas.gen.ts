@@ -8272,7 +8272,7 @@ export const ImagesResponseSchema = {
         usage: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/openai__types__images_response__Usage'
+                    '$ref': '#/components/schemas/Usage'
                 },
                 {
                     type: 'null'
@@ -11312,7 +11312,7 @@ export const MetadataSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/UserUploadedFile'
+                        '$ref': '#/components/schemas/aihub_lib__nats__events__user__UserUploadedFile__UserUploadedFile'
                     },
                     type: 'array'
                 },
@@ -11543,7 +11543,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1770042110
+            default: 1770044903
         },
         owned_by: {
             type: 'string',
@@ -17390,7 +17390,7 @@ export const TranscriptionVerboseSchema = {
         usage: {
             anyOf: [
                 {
-                    '$ref': '#/components/schemas/Usage'
+                    '$ref': '#/components/schemas/openai__types__audio__transcription_verbose__Usage'
                 },
                 {
                     type: 'null'
@@ -17599,19 +17599,25 @@ export const UpdateRoleRequestSchema = {
 
 export const UsageSchema = {
     properties: {
-        seconds: {
-            type: 'number',
-            title: 'Seconds'
+        input_tokens: {
+            type: 'integer',
+            title: 'Input Tokens'
         },
-        type: {
-            type: 'string',
-            const: 'duration',
-            title: 'Type'
+        input_tokens_details: {
+            '$ref': '#/components/schemas/UsageInputTokensDetails'
+        },
+        output_tokens: {
+            type: 'integer',
+            title: 'Output Tokens'
+        },
+        total_tokens: {
+            type: 'integer',
+            title: 'Total Tokens'
         }
     },
     additionalProperties: true,
     type: 'object',
-    required: ['seconds', 'type'],
+    required: ['input_tokens', 'input_tokens_details', 'output_tokens', 'total_tokens'],
     title: 'Usage'
 } as const;
 
@@ -18015,7 +18021,7 @@ export const UserMessageEventInputSchema = {
             anyOf: [
                 {
                     items: {
-                        '$ref': '#/components/schemas/jambo__parser__object_type_parser__UserUploadedFile'
+                        '$ref': '#/components/schemas/UserUploadedFile'
                     },
                     type: 'array'
                 },
@@ -18046,8 +18052,7 @@ export const UserUploadedFileSchema = {
         file_type: {
             type: 'string',
             title: 'File Type',
-            description: 'The MIME type of the uploaded file.',
-            examples: ['image/png', 'application/pdf']
+            description: 'The MIME type of the uploaded file.'
         }
     },
     type: 'object',
@@ -18524,19 +18529,7 @@ export const aihub_lib__nats__events__semantic__llm__Message__MessageSchema = {
     title: 'Message'
 } as const;
 
-export const function_call_arguments_jsonSchema = {
-    properties: {},
-    type: 'object',
-    title: 'function_call_arguments_json'
-} as const;
-
-export const invocation_parametersSchema = {
-    properties: {},
-    type: 'object',
-    title: 'invocation_parameters'
-} as const;
-
-export const jambo__parser__object_type_parser__UserUploadedFileSchema = {
+export const aihub_lib__nats__events__user__UserUploadedFile__UserUploadedFileSchema = {
     properties: {
         filename: {
             type: 'string',
@@ -18551,12 +18544,43 @@ export const jambo__parser__object_type_parser__UserUploadedFileSchema = {
         file_type: {
             type: 'string',
             title: 'File Type',
-            description: 'The MIME type of the uploaded file.'
+            description: 'The MIME type of the uploaded file.',
+            examples: ['image/png', 'application/pdf']
         }
     },
     type: 'object',
     required: ['filename', 'file_data', 'file_type'],
     title: 'UserUploadedFile'
+} as const;
+
+export const function_call_arguments_jsonSchema = {
+    properties: {},
+    type: 'object',
+    title: 'function_call_arguments_json'
+} as const;
+
+export const invocation_parametersSchema = {
+    properties: {},
+    type: 'object',
+    title: 'invocation_parameters'
+} as const;
+
+export const openai__types__audio__transcription_verbose__UsageSchema = {
+    properties: {
+        seconds: {
+            type: 'number',
+            title: 'Seconds'
+        },
+        type: {
+            type: 'string',
+            const: 'duration',
+            title: 'Type'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: ['seconds', 'type'],
+    title: 'Usage'
 } as const;
 
 export const openai__types__chat__chat_completion_message_custom_tool_call_param__CustomSchema = {
@@ -18639,30 +18663,6 @@ export const openai__types__chat__completion_create_params__FunctionSchema = {
     type: 'object',
     required: ['name'],
     title: 'Function'
-} as const;
-
-export const openai__types__images_response__UsageSchema = {
-    properties: {
-        input_tokens: {
-            type: 'integer',
-            title: 'Input Tokens'
-        },
-        input_tokens_details: {
-            '$ref': '#/components/schemas/UsageInputTokensDetails'
-        },
-        output_tokens: {
-            type: 'integer',
-            title: 'Output Tokens'
-        },
-        total_tokens: {
-            type: 'integer',
-            title: 'Total Tokens'
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: ['input_tokens', 'input_tokens_details', 'output_tokens', 'total_tokens'],
-    title: 'Usage'
 } as const;
 
 export const prompt_template_variablesSchema = {

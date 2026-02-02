@@ -6489,8 +6489,8 @@ export type ImagesResponse = {
      * Size
      */
     size?: ('1024x1024' | '1024x1536' | '1536x1024') | null;
-    usage?: OpenaiTypesImagesResponseUsage | null;
-    [key: string]: unknown | number | (('transparent' | 'opaque') | null) | (Array<Image> | null) | (('png' | 'webp' | 'jpeg') | null) | (('low' | 'medium' | 'high') | null) | (('1024x1024' | '1024x1536' | '1536x1024') | null) | (OpenaiTypesImagesResponseUsage | null) | undefined;
+    usage?: Usage | null;
+    [key: string]: unknown | number | (('transparent' | 'opaque') | null) | (Array<Image> | null) | (('png' | 'webp' | 'jpeg') | null) | (('low' | 'medium' | 'high') | null) | (('1024x1024' | '1024x1536' | '1536x1024') | null) | (Usage | null) | undefined;
 };
 
 /**
@@ -9080,7 +9080,7 @@ export type Metadata = {
      * Files
      * List of files to attach to the request, if supported by the model.
      */
-    files?: Array<UserUploadedFile> | null;
+    files?: Array<AihubLibNatsEventsUserUserUploadedFileUserUploadedFile> | null;
 };
 
 /**
@@ -14464,12 +14464,12 @@ export type TranscriptionVerbose = {
      * Segments
      */
     segments?: Array<TranscriptionSegment> | null;
-    usage?: Usage | null;
+    usage?: OpenaiTypesAudioTranscriptionVerboseUsage | null;
     /**
      * Words
      */
     words?: Array<TranscriptionWord> | null;
-    [key: string]: unknown | number | string | (Array<TranscriptionSegment> | null) | (Usage | null) | (Array<TranscriptionWord> | null) | undefined;
+    [key: string]: unknown | number | string | (Array<TranscriptionSegment> | null) | (OpenaiTypesAudioTranscriptionVerboseUsage | null) | (Array<TranscriptionWord> | null) | undefined;
 };
 
 /**
@@ -14585,14 +14585,19 @@ export type UpdateRoleRequest = {
  */
 export type Usage = {
     /**
-     * Seconds
+     * Input Tokens
      */
-    seconds: number;
+    input_tokens: number;
+    input_tokens_details: UsageInputTokensDetails;
     /**
-     * Type
+     * Output Tokens
      */
-    type: 'duration';
-    [key: string]: unknown | number | 'duration';
+    output_tokens: number;
+    /**
+     * Total Tokens
+     */
+    total_tokens: number;
+    [key: string]: unknown | number | UsageInputTokensDetails;
 };
 
 /**
@@ -14965,7 +14970,7 @@ export type UserMessageEventInput = {
      * Files
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
      */
-    files?: Array<JamboParserObjectTypeParserUserUploadedFile> | null;
+    files?: Array<UserUploadedFile> | null;
 };
 
 /**
@@ -15296,23 +15301,9 @@ export type AihubLibNatsEventsSemanticLlmMessageMessageWritable = {
 };
 
 /**
- * function_call_arguments_json
- */
-export type FunctionCallArgumentsJson = {
-    [key: string]: unknown;
-};
-
-/**
- * invocation_parameters
- */
-export type InvocationParameters = {
-    [key: string]: unknown;
-};
-
-/**
  * UserUploadedFile
  */
-export type JamboParserObjectTypeParserUserUploadedFile = {
+export type AihubLibNatsEventsUserUserUploadedFileUserUploadedFile = {
     /**
      * Filename
      * The name of the uploaded file, including the extension.
@@ -15328,6 +15319,35 @@ export type JamboParserObjectTypeParserUserUploadedFile = {
      * The MIME type of the uploaded file.
      */
     file_type: string;
+};
+
+/**
+ * function_call_arguments_json
+ */
+export type FunctionCallArgumentsJson = {
+    [key: string]: unknown;
+};
+
+/**
+ * invocation_parameters
+ */
+export type InvocationParameters = {
+    [key: string]: unknown;
+};
+
+/**
+ * Usage
+ */
+export type OpenaiTypesAudioTranscriptionVerboseUsage = {
+    /**
+     * Seconds
+     */
+    seconds: number;
+    /**
+     * Type
+     */
+    type: 'duration';
+    [key: string]: unknown | number | 'duration';
 };
 
 /**
@@ -15403,26 +15423,6 @@ export type OpenaiTypesChatCompletionCreateParamsFunction = {
     [key: string]: unknown | string | {
         [key: string]: unknown;
     } | undefined;
-};
-
-/**
- * Usage
- */
-export type OpenaiTypesImagesResponseUsage = {
-    /**
-     * Input Tokens
-     */
-    input_tokens: number;
-    input_tokens_details: UsageInputTokensDetails;
-    /**
-     * Output Tokens
-     */
-    output_tokens: number;
-    /**
-     * Total Tokens
-     */
-    total_tokens: number;
-    [key: string]: unknown | number | UsageInputTokensDetails;
 };
 
 /**

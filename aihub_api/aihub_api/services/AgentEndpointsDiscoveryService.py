@@ -7,7 +7,7 @@ from typing import Annotated, override
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.auth.usage import UsageLimitService, build_exceeded_detail, build_streaming_response_headers
+from aihub_lib.auth.usage import UsageLimitService, build_streaming_response_headers
 from aihub_lib.auth.usage.usage_limit_models import ResourceType, UsageStatus
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.no_trace import no_trace
@@ -308,13 +308,9 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         locale: str,
     ) -> UsageStatus:
         """Check usage limits for an agent call and raise 429 if exceeded."""
-        resource_path = UsageLimitService.build_resource_path("aihub.user", ResourceType.AGENT, agent_class, agent_id)
-        usage_status = await UsageLimitService.check_and_increment(
-            redis, user.id, user.roles, resource_path=resource_path
+        return await UsageLimitService.check_and_raise(
+            redis, user, ResourceType.AGENT, agent_class, agent_id, locale=locale
         )
-        if usage_status.is_exceeded:
-            raise HTTPException(status_code=429, detail=build_exceeded_detail(usage_status, locale=locale).model_dump())
-        return usage_status
 
     @staticmethod
     def _create_endpoint(

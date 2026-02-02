@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import Annotated
 
-from pydantic import BaseModel, Field
 from redis.asyncio import Redis
 
+from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.auth.usage.usage_limit_models import (
     ResourceType,
     RoleUsageLimit,
@@ -15,23 +14,49 @@ from aihub_lib.auth.usage.usage_limit_models import (
 )
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
+_CHECK_AND_INCREMENT_SCRIPT = """
+-- Lua script that atomically checks all limits and increments all counters
+-- only if none are exceeded. Returns an array of current counts.
+--
+-- KEYS: Redis counter keys (one per limit)
+-- ARGV: For each key i: ARGV[2*i - 1] = limit, ARGV[2*i] = ttl_seconds
+--
+-- Return format: {exceeded_flag, count1, count2, ...}
+--   exceeded_flag = 1 if any limit is at or above its max, 0 otherwise
 
-class CounterSnapshot(BaseModel):
-    """A read of one Redis usage counter — gives each field a name instead of a raw tuple."""
+local n = #KEYS
+local counts = {}
+local exceeded = 0
 
-    model_config = {"frozen": True}
-
-    effective_limit: Annotated[RoleUsageLimit, Field(description="The resolved limit rule this counter tracks")]
-    redis_key: Annotated[str, Field(description="Redis key used for the counter")]
-    current_count: Annotated[int, Field(ge=0, description="Number of calls recorded so far")]
-
-
-_INCR_WITH_TTL_SCRIPT = """
-local count = redis.call('INCR', KEYS[1])
-if count == 1 or redis.call('TTL', KEYS[1]) < 0 then
-    redis.call('EXPIRE', KEYS[1], ARGV[1])
+-- Phase 1: read all counters and check limits
+for i = 1, n do
+    local raw = redis.call('GET', KEYS[i])
+    local count = raw and tonumber(raw) or 0
+    counts[i] = count
+    local limit = tonumber(ARGV[2 * i - 1])
+    if count >= limit then
+        exceeded = 1
+    end
 end
-return count
+
+-- Phase 2: increment all counters only if none exceeded
+if exceeded == 0 then
+    for i = 1, n do
+        local ttl = tonumber(ARGV[2 * i])
+        local new_count = redis.call('INCR', KEYS[i])
+        if new_count == 1 or redis.call('TTL', KEYS[i]) < 0 then
+            redis.call('EXPIRE', KEYS[i], ttl)
+        end
+        counts[i] = new_count
+    end
+end
+
+-- Return exceeded flag followed by all counts
+local result = {exceeded}
+for i = 1, n do
+    result[i + 1] = counts[i]
+end
+return result
 """
 
 
@@ -270,72 +295,64 @@ class UsageLimitService:
         role_names: list[str],
         resource_path: str | None = None,
     ) -> UsageStatus:
-        """Atomically check all usage limits and increment all counters if none exceeded."""
+        """Atomically check all usage limits and increment all counters if none exceeded.
+
+        Uses a single Lua script so the check-then-increment is atomic within Redis,
+        preventing race conditions under concurrent requests.
+        """
         effective_limits = UsageLimitService.get_effective_limits_for_roles(role_names, resource_path)
         if not effective_limits:
             return UsageStatus(limits=[], is_exceeded=False)
 
-        snapshots = await UsageLimitService._read_all_counters(redis, user_id, effective_limits)
-        any_exceeded = any(snapshot.current_count >= snapshot.effective_limit.limit for snapshot in snapshots)
+        keys = [UsageLimitService._build_redis_key(user_id, el.pattern, el.period) for el in effective_limits]
+        # ARGV alternates: limit1, ttl1, limit2, ttl2, ...
+        argv = []
+        for el in effective_limits:
+            argv.append(str(el.limit))
+            argv.append(str(el.period.seconds))
 
-        if any_exceeded:
-            return await UsageLimitService._build_status_from_snapshots(redis, snapshots, is_exceeded=True)
+        result = await redis.eval(_CHECK_AND_INCREMENT_SCRIPT, len(keys), *keys, *argv)
+        exceeded_flag = int(result[0])
+        counts = [int(result[i + 1]) for i in range(len(effective_limits))]
+        post_increment = exceeded_flag == 0
 
-        return await UsageLimitService._increment_all_counters(redis, snapshots)
-
-    @staticmethod
-    async def _read_all_counters(
-        redis: Redis,
-        user_id: str,
-        effective_limits: list[RoleUsageLimit],
-    ) -> list[CounterSnapshot]:
-        """Read current counter values for all effective limits using a single MGET call."""
-        keys = [
-            UsageLimitService._build_redis_key(user_id, effective_limit.pattern, effective_limit.period)
-            for effective_limit in effective_limits
-        ]
-        raw_values = await redis.mget(keys)
-        return [
-            CounterSnapshot(
-                effective_limit=effective_limit, redis_key=key, current_count=int(raw_value) if raw_value else 0
-            )
-            for effective_limit, key, raw_value in zip(effective_limits, keys, raw_values)
-        ]
-
-    @staticmethod
-    async def _build_status_from_snapshots(
-        redis: Redis,
-        snapshots: list[CounterSnapshot],
-        *,
-        is_exceeded: bool,
-    ) -> UsageStatus:
-        """Build a UsageStatus from pre-read counter values."""
-        limit_statuses = [
-            await UsageLimitService._build_limit_status(
-                redis, snapshot.effective_limit, snapshot.redis_key, snapshot.current_count
-            )
-            for snapshot in snapshots
-        ]
-        return UsageStatus(limits=limit_statuses, is_exceeded=is_exceeded)
-
-    @staticmethod
-    async def _increment_all_counters(
-        redis: Redis,
-        snapshots: list[CounterSnapshot],
-    ) -> UsageStatus:
-        """Increment all counters and return the resulting status."""
         limit_statuses: list[RoleUsageLimitStatus] = []
-
-        for snapshot in snapshots:
-            ttl_seconds = snapshot.effective_limit.period.seconds
-            new_count = int(await redis.eval(_INCR_WITH_TTL_SCRIPT, 1, snapshot.redis_key, str(ttl_seconds)))
+        for el, key, count in zip(effective_limits, keys, counts):
             limit_statuses.append(
-                await UsageLimitService._build_limit_status(
-                    redis, snapshot.effective_limit, snapshot.redis_key, new_count, post_increment=True
-                )
+                await UsageLimitService._build_limit_status(redis, el, key, count, post_increment=post_increment)
             )
 
         return UsageStatus(
             limits=limit_statuses,
             is_exceeded=any(status.is_exceeded for status in limit_statuses),
         )
+
+    @staticmethod
+    @trace_fn
+    async def check_and_raise(
+        redis: Redis,
+        user: UserIdentity,
+        resource_type: ResourceType,
+        resource_class: str,
+        resource_id: str,
+        locale: str = "en",
+    ) -> UsageStatus:
+        """Check usage limits, increment counters, and raise HTTP 429 if exceeded.
+
+        Convenience wrapper combining ``check_and_increment`` with the HTTP error
+        response so callers don't duplicate the raise logic.
+        """
+        from fastapi import HTTPException
+
+        from aihub_lib.auth.usage.period_labels import build_exceeded_detail
+
+        resource_path = UsageLimitService.build_resource_path("aihub.user", resource_type, resource_class, resource_id)
+        usage_status = await UsageLimitService.check_and_increment(
+            redis, user.id, user.roles, resource_path=resource_path
+        )
+        if usage_status.is_exceeded:
+            raise HTTPException(
+                status_code=429,
+                detail=build_exceeded_detail(usage_status, locale=locale).model_dump(),
+            )
+        return usage_status

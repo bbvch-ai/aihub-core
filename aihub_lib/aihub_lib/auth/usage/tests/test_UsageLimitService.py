@@ -317,7 +317,7 @@ class TestGetUsageStatus:
 
 
 class TestCheckAndIncrement:
-    """Tests for UsageLimitService.check_and_increment"""
+    """Tests for UsageLimitService.check_and_increment (atomic Lua script)."""
 
     @pytest.mark.asyncio
     @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
@@ -334,13 +334,13 @@ class TestCheckAndIncrement:
     @pytest.mark.asyncio
     @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
     async def test_increments_all_matching_counters(self, mock_role_entity: MagicMock):
-        """With catchall + class-level, BOTH Redis counters get incremented via Lua script."""
+        """With catchall + class-level, a single atomic Lua call increments both counters."""
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 20, "1h")]
         ]
         redis = AsyncMock()
-        redis.mget.return_value = [b"5", b"3"]
-        redis.eval.side_effect = [6, 4]
+        # Lua returns: [exceeded_flag=0, count1=6, count2=4]
+        redis.eval.return_value = [0, 6, 4]
         redis.ttl.return_value = 80000
 
         status = await UsageLimitService.check_and_increment(
@@ -349,18 +349,18 @@ class TestCheckAndIncrement:
 
         assert len(status.limits) == 2
         assert status.is_exceeded is False
-        assert redis.eval.call_count == 2
+        redis.eval.assert_called_once()
 
     @pytest.mark.asyncio
     @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
     async def test_does_not_increment_any_when_one_exceeded(self, mock_role_entity: MagicMock):
-        """If any limit is exceeded, NO counters get incremented."""
+        """If any limit is exceeded, the Lua script returns pre-increment counts."""
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 10, "1h")]
         ]
         redis = AsyncMock()
-        # catchall: 5/100 (ok), class: 10/10 (exceeded)
-        redis.mget.return_value = [b"5", b"10"]
+        # Lua returns: [exceeded_flag=1, count1=5, count2=10]
+        redis.eval.return_value = [1, 5, 10]
         redis.ttl.return_value = 1800
 
         status = await UsageLimitService.check_and_increment(
@@ -368,16 +368,17 @@ class TestCheckAndIncrement:
         )
 
         assert status.is_exceeded is True
-        redis.eval.assert_not_called()
+        # Only one eval call (the atomic script), no separate increments
+        redis.eval.assert_called_once()
 
     @pytest.mark.asyncio
     @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
-    async def test_increments_via_lua_script(self, mock_role_entity: MagicMock):
-        """Increment uses atomic Lua script (INCR + EXPIRE)."""
+    async def test_single_limit_increments_atomically(self, mock_role_entity: MagicMock):
+        """Single limit uses the same atomic Lua script."""
         mock_role_entity.get_usage_limits_for_roles.return_value = [[rl(f"{AGENT_PREFIX}>", 100, "1d")]]
         redis = AsyncMock()
-        redis.mget.return_value = [None]
-        redis.eval.return_value = 1
+        # Lua returns: [exceeded_flag=0, count=1]
+        redis.eval.return_value = [0, 1]
         redis.ttl.return_value = UsageLimitPeriod.ONE_DAY.seconds
 
         await UsageLimitService.check_and_increment(
@@ -385,24 +386,6 @@ class TestCheckAndIncrement:
         )
 
         redis.eval.assert_called_once()
-
-    @pytest.mark.asyncio
-    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
-    async def test_increments_all_counters_via_lua_script(self, mock_role_entity: MagicMock):
-        """Both counters get incremented via Lua script."""
-        mock_role_entity.get_usage_limits_for_roles.return_value = [
-            [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 20, "1h")]
-        ]
-        redis = AsyncMock()
-        redis.mget.return_value = [None, None]
-        redis.eval.side_effect = [1, 1]
-        redis.ttl.return_value = 3600
-
-        await UsageLimitService.check_and_increment(
-            redis, "user1", ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
-        )
-
-        assert redis.eval.call_count == 2
 
 
 class TestMultiRoleWithIndependentLimits:
@@ -481,8 +464,8 @@ class TestCheckAndIncrementIntegration:
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 20, "1h")],
         ]
         redis = AsyncMock()
-        redis.mget.return_value = [b"3", b"5"]
-        redis.eval.side_effect = [4, 6]
+        # Lua returns: [exceeded_flag=0, count1=4, count2=6]
+        redis.eval.return_value = [0, 4, 6]
         redis.ttl.return_value = 80000
 
         status = await UsageLimitService.check_and_increment(
@@ -490,7 +473,7 @@ class TestCheckAndIncrementIntegration:
         )
 
         assert status.is_exceeded is False
-        assert redis.eval.call_count == 2
+        redis.eval.assert_called_once()
 
     @pytest.mark.asyncio
     @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
@@ -500,7 +483,8 @@ class TestCheckAndIncrementIntegration:
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 10, "1h")],
         ]
         redis = AsyncMock()
-        redis.mget.return_value = [b"5", b"10"]  # catchall ok, class exceeded
+        # Lua returns: [exceeded_flag=1, count1=5, count2=10] (not incremented)
+        redis.eval.return_value = [1, 5, 10]
         redis.ttl.return_value = 1800
 
         status = await UsageLimitService.check_and_increment(
@@ -508,7 +492,7 @@ class TestCheckAndIncrementIntegration:
         )
 
         assert status.is_exceeded is True
-        redis.eval.assert_not_called()
+        redis.eval.assert_called_once()
 
     @pytest.mark.asyncio
     @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
@@ -519,8 +503,8 @@ class TestCheckAndIncrementIntegration:
             [rl(f"{AGENT_PREFIX}>", 200, "1d")],
         ]
         redis = AsyncMock()
-        redis.mget.return_value = [b"60"]  # 60 < 200, ok
-        redis.eval.return_value = 61
+        # Lua returns: [exceeded_flag=0, count=61]
+        redis.eval.return_value = [0, 61]
         redis.ttl.return_value = 70000
 
         status = await UsageLimitService.check_and_increment(

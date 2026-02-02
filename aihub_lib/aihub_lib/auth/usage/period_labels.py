@@ -13,8 +13,7 @@ from aihub_lib.i18n.LocaleString import LocaleString
 _LOCALES = LocaleHandler.LOCALE_WHITE_LIST
 _DEFAULT_TIMEZONE = zoneinfo.ZoneInfo("Europe/Zurich")
 
-_RESOURCE_PATH_PREFIX = "aihub.user."
-_RESOURCE_TYPE_SEGMENT_INDEX = 2
+_SCOPE_PREFIX = "aihub.user."
 
 
 def _t(key: str, locale: str, **kwargs: str | int) -> str:
@@ -33,21 +32,6 @@ def get_period_label(period: UsageLimitPeriod | None, locale: str = "en") -> str
     return result
 
 
-def _extract_resource_parts(pattern: str) -> tuple[str, str]:
-    """Extract the resource suffix and derive the i18n scope key from the pattern.
-
-    Patterns follow ``aihub.user.<resource_type>.<class>.<id>``.
-    The scope key is derived as ``all_<resource_type>s`` (e.g. ``all_agents``),
-    so new resource types get a scope key automatically without a manual mapping.
-    """
-    segments = pattern.split(".")
-    if len(segments) > _RESOURCE_TYPE_SEGMENT_INDEX and pattern.startswith(_RESOURCE_PATH_PREFIX):
-        resource_type = segments[_RESOURCE_TYPE_SEGMENT_INDEX]
-        suffix = ".".join(segments[_RESOURCE_TYPE_SEGMENT_INDEX + 1 :])
-        return suffix, f"all_{resource_type}s"
-    return pattern, "all_resources"
-
-
 def describe_pattern(pattern: str, locale: str = "en") -> str:
     """Convert a dotted usage limit pattern to a human-readable scope label.
 
@@ -58,16 +42,24 @@ def describe_pattern(pattern: str, locale: str = "en") -> str:
         ``aihub.user.agent.MyAgent.v1``   → "MyAgent/v1"
         ``aihub.user.process.>``          → "all processes"
     """
-    suffix, scope_key = _extract_resource_parts(pattern)
+    if not pattern.startswith(_SCOPE_PREFIX):
+        return pattern
 
-    if not suffix or suffix in (">", "*") or all(segment in ("*", ">") for segment in suffix.split(".")):
-        return _t(f"scope.{scope_key}", locale)
+    # Strip "aihub.user." → "agent.MyAgent.v1" or "agent.>"
+    remainder = pattern[len(_SCOPE_PREFIX) :]
+    parts = remainder.split(".", 1)
+    resource_type = parts[0]
+    suffix = parts[1] if len(parts) > 1 else ""
 
-    parts = suffix.split(".")
-    if len(parts) == 2 and parts[1] in ("*", ">"):
-        return parts[0]
+    # All wildcards → "all agents" / "all processes"
+    if not suffix or all(s in ("*", ">") for s in suffix.split(".")):
+        return _t(f"scope.all_{resource_type}s", locale)
 
-    return "/".join(parts)
+    suffix_parts = suffix.split(".")
+    if len(suffix_parts) == 2 and suffix_parts[1] in ("*", ">"):
+        return suffix_parts[0]
+
+    return "/".join(suffix_parts)
 
 
 _WEEKDAY_KEYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
