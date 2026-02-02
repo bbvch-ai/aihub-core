@@ -69,7 +69,7 @@
         <template #body="slotProps">
           <Tag
             v-if="slotProps.data.score != null"
-            :value="(1/slotProps.data.score).toFixed(2)"
+            :value="slotProps.data.score.toFixed(2)"
             :severity="getScoreSeverity(1/slotProps.data.score)"
             rounded
           />
