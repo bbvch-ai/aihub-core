@@ -27,9 +27,9 @@
 #     valkey: valkey:8.0.5          # These are external images we don't build
 #     milvus: milvus:v2.6.7
 #
-#   The yq query selects entries where:
-#     1. The value is a map (type == "!!map") - not a simple string
-#     2. The map contains a "latest" key - confirms it's deployed to latest stage
+#   The Python script selects entries where:
+#     1. The value is a dict (not a simple string)
+#     2. The dict contains a "latest" key - confirms it's deployed to latest stage
 #
 #   Result: api, bot, web, dagster, and all *_agent/*_pipeline images are
 #   automatically included. Adding a new agent or pipeline to compose-config.yml
@@ -61,13 +61,14 @@ jobs:
       - name: Parse custom app images from compose-config.yml
         id: parse
         run: |
-          # Extract image names where value is a map with a "latest" key
-          images=$(yq -o=json '
-            .image_tags
-            | to_entries
-            | map(select(.value | type == "!!map" and has("latest")))
-            | map(.key)
-          ' deployment/compose-config.yml)
+          # Extract image names where value is a dict with a "latest" key
+          images=$(python3 -c "
+          import yaml, json
+          with open('deployment/compose-config.yml') as f:
+              config = yaml.safe_load(f)
+          images = [k for k, v in config['image_tags'].items() if isinstance(v, dict) and 'latest' in v]
+          print(json.dumps(images))
+          ")
 
           echo "Discovered images: $images"
           echo "matrix={\"image\":$images}" >> $GITHUB_OUTPUT
