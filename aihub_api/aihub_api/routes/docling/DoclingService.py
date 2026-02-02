@@ -1,7 +1,7 @@
 import base64
 import logging
 
-from aihub_lib.generative_ai.document.loaders.DoclingLoader import DoclingLoader
+from aihub_lib.generative_ai.document.loaders.DoclingLoader import DoclingLoader, _fix_pdf_mediabox
 
 from aihub_api.routes.docling.dto.DocumentConversionResponse import (
     DocumentConversionMetadata,
@@ -16,6 +16,7 @@ class DoclingService:
     async def convert_from_bytes(content: bytes, filename: str) -> DocumentConversionResponse:
         logger.info(f"Converting document: {filename} ({len(content)} bytes)")
 
+        content = _fix_pdf_mediabox(content, filename)
         file_content = base64.b64encode(content).decode("utf-8")
 
         loader = DoclingLoader()

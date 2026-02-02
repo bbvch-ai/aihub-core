@@ -181,6 +181,27 @@ event:
     contentChunk: "{count} fragment de contenu | {count} fragments de contenu"
     noChunksFound: "Aucun fragment trouvé"
     noChunksFoundDescription: "La recherche de récupération n'a trouvé aucun fragment de contenu pertinent."
+  retrieveMemory:
+    title: "Mémoire récupérée"
+    memories: "Mémoires"
+    relations: "Graphe de connaissances"
+    score: "Pertinence"
+    noMemories: "Aucune mémoire récupérée"
+  storeMemory:
+    title: "Modifications de mémoire"
+    added: "Ajouté"
+    updated: "Mis à jour"
+    deleted: "Supprimé"
+    addedRelations: "relations ajoutées"
+    deletedRelations: "relations supprimées"
+    relationChanges: "Modifications des relations"
+    noChanges: "Aucune modification"
+  addMemoryToChatHistory:
+    summary: "{count} message de mémoire ajouté à l'historique | {count} messages de mémoire ajoutés à l'historique"
+    description: "L'historique de chat a été enrichi avec des mémoires pertinentes des interactions précédentes"
+    assistant: "Assistant"
+    system: "Système"
+    user: "Utilisateur"
   standaloneQuestionCondenser:
     summary: "Question affinée et condensée"
     condensedQuestion: "Question Condensée"
@@ -214,6 +235,7 @@ service:
     title: "Services"
     description: "Voici tous les services que vous avez activés"
     search: "Rechercher"
+    button: "Rechercher"
 
 agent:
   title: "Agents"
@@ -272,11 +294,20 @@ knowledge:
   navigation:
     document:
       basic: "Aperçu"
+      original: "Original"
       content: "Contenu"
       nodes: "Morceaux"
       summary: "Résumés"
+  original:
+    not_available: "La vue du document original est uniquement disponible pour les fichiers PDF."
+    load_error: "Échec du chargement du document original."
+    view_button: "Voir l'original"
+    open_new_tab: "Ouvrir dans un nouvel onglet"
+    click_to_view: "Cliquez sur le bouton ci-dessous pour afficher le document PDF original."
   documents:
     title: "Documents"
+    search:
+      placeholder: "Rechercher par titre de document..."
     upload:
       title: "Télécharger des documents"
       drag_and_drop: "Glissez les fichiers ici ou cliquez pour sélectionner des fichiers"
@@ -505,3 +536,60 @@ bar:
 
 process:
   title: "Processus"
+
+memory:
+  title: "Souvenirs"
+  graph:
+    title: "Graphe de connaissances"
+  list:
+    title: "Liste des souvenirs"
+  detail:
+    title: "Détails du souvenir"
+    created_at: "Créé le"
+    agent_link_label: "Créé par l'agent"
+    thread_link_label: "Thread associé"
+    thread_title: "Interaction du thread"
+  update:
+    success:
+      title: "Succès"
+      message: "Souvenir mis à jour avec succès"
+    error:
+      title: "Mise à jour échouée"
+      message: "Échec de la mise à jour du souvenir. Veuillez réessayer."
+  delete:
+    success:
+      title: "Succès"
+      message: "Souvenir supprimé avec succès"
+    error:
+      title: "Suppression échouée"
+      message: "Échec de la suppression du souvenir. Veuillez réessayer."
+  edit:
+    memory_content_label: "Contenu du souvenir"
+    edit_button: "Modifier"
+    save_button: "Enregistrer"
+    cancel_button: "Annuler"
+    delete_button: "Supprimer"
+    delete_confirm_header: "Supprimer le souvenir"
+    delete_confirm_message: "Êtes-vous sûr de vouloir supprimer ce souvenir ? Cette action est irréversible."
+    validation_error: "Erreur de validation"
+    validation_empty: "Le contenu du souvenir ne peut pas être vide"
+  table:
+    memory: "Souvenir"
+    agent: "Agent"
+    created: "Créé"
+    score: "Score"
+    pagination: "Page {currentPage} sur {totalPages}"
+  search:
+    button: "Rechercher"
+    placeholder: "Rechercher des souvenirs..."
+    clear: "Effacer"
+  delete_all:
+    button: "Tout supprimer"
+    confirm_header: "Supprimer tous les souvenirs"
+    confirm_message: "Êtes-vous sûr de vouloir supprimer tous les souvenirs ? Cette action est irréversible."
+    success:
+      title: "Succès"
+      message: "Tous les souvenirs ont été supprimés avec succès"
+    error:
+      title: "Suppression échouée"
+      message: "Échec de la suppression de tous les souvenirs. Veuillez réessayer."

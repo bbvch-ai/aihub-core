@@ -1,18 +1,16 @@
-from aihub_lib.nats.events.human_in_the_loop import (
-    HumanInTheLoopRequestEvent,
-    HumanInTheLoopResponseEvent,
-)
-from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoop import HumanInTheLoop
+from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopInput
+from aihub_lib.nats.events.human_in_the_loop.request import HumanInTheLoopInputRequestEvent
+from aihub_lib.nats.events.human_in_the_loop.response import HumanInTheLoopInputResponseEvent
 
 
-class FirstStepHumanInTheLoopRequestEvent(HumanInTheLoopRequestEvent):
+class FirstStepHumanInTheLoopRequestEvent(HumanInTheLoopInputRequestEvent):
     pass
 
 
-class FirstStepHumanInTheLoopResponseEvent(HumanInTheLoopResponseEvent):
+class FirstStepHumanInTheLoopResponseEvent(HumanInTheLoopInputResponseEvent):
     pass
 
 
-class FirstStepHumanInTheLoop(HumanInTheLoop):
+class FirstStepHumanInTheLoop(HumanInTheLoopInput):
     request = FirstStepHumanInTheLoopRequestEvent
     response = FirstStepHumanInTheLoopResponseEvent

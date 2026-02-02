@@ -1,5 +1,6 @@
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.s3.S3StorageSettings import S3StorageSettings
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import MilvusIndexType
 from dagster._config.pythonic_config import ConfigurableResourceFactory
@@ -75,14 +76,16 @@ def mongo_document_store_resource(
 def milvus_vector_store_resource(
     vector_store_uri: str,
     vector_store_name: str,
-    dimensions: int = 3072,
+    dimensions: int,
     index_type: MilvusIndexType = MilvusIndexType.HNSW,
 ) -> dict[str, ConfigurableResourceFactory]:
+    milvus_settings = MilvusSettings()
     vector_store = MilvusVectorStoreResource(
         uri=vector_store_uri,
         collection_name=vector_store_name,
         embedding_vector_dimension=dimensions,
         index_type=index_type,
+        token=milvus_settings.get_token(),
     )
     vector_store_io_manager = VectorStoreIOManager(vector_store=vector_store)
     return {
@@ -94,7 +97,7 @@ def milvus_vector_store_resource(
 def local_mongo_milvus_storage_context_resource(
     vector_store_uri: str,
     store_name: str,
-    dimensions: int = 3072,
+    dimensions: int,
 ) -> dict[str, ConfigurableResourceFactory]:
     return {
         **mongo_document_store_resource(document_store_name=store_name),
@@ -128,7 +131,7 @@ def default_io_manager_s3_datalake_resources(container_name: str) -> dict[str, C
 
 def default_llm_resources() -> dict[str, ConfigurableResourceFactory]:
     embedding_model_resource = EmbeddingModelResource(
-        embedding_config=EmbeddingModelConfig(model_name="embedding/small")
+        embedding_config=EmbeddingModelConfig(model_name="embedding/large")
     )
     language_model = LanguageModelResource(llm_config=LLMConfig(model_name="text-generation/mini"))
     return {

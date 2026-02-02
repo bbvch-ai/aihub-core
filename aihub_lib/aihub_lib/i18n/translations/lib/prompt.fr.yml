@@ -1,17 +1,21 @@
 condenser:
   standalone_question: |
-    Étant donné la conversation suivante entre un utilisateur et un assistant IA, ainsi qu'une question de suivi de l'utilisateur, 
-    reformule la question de suivi de manière à ce qu'elle soit une question autonome tout en conservant le contexte d'origine.
+    <role_and_task>
+    Vous êtes un expert en optimisation de requêtes de recherche.
+    Votre tâche consiste à reformuler **le dernier message de l'utilisateur** de ce chat en une question totalement autonome.
+    </role_and_task>
 
     <chat_history>
     {chat_history}
     </chat_history>
-    
-    <user_query>
-    {question}
-    </user_question>
-    
-    Question autonome :
+
+    <instructions>
+    Le message de l'utilisateur contient du texte et éventuellement une image.
+    1. **Résoudre le contexte de l'historique** : Remplacez les pronoms ou références qui font référence à des messages précédents dans l'historique du chat par les termes concrets de l'historique.
+    2. **Références à l'image** : UNIQUEMENT si l'utilisateur fait explicitement référence à une image (par ex. "Qu'est-ce que **c'est** ?", "Que voyez-vous **ici** ?"), remplacez le pronom par une brève description de l'objet visible.
+    3. **Ne pas ajouter de nouvelles informations** : N'ajoutez JAMAIS de détails qui ne sont pas présents dans la question originale. La question reformulée doit être sémantiquement équivalente à l'originale.
+    4. **Sortie** : Ne donnez QUE la nouvelle phrase.
+    </instructions>
 
 rag:
   context_prompt: |
@@ -111,45 +115,1689 @@ router:
       Analyze the user query carefully in relation to the chat history. Determine whether the query can be fulfilled based on the criteria above. Provide a clear yes/no decision with detailed reasoning.
 
     expert_answer_sufficient: |
-      Vous disposez d'un historique de chat entre un assistant IA et un expert. L'objectif de cette conversation
-      est de répondre à une question initialement posée par un utilisateur. Déterminez si l'expert a déjà suffisamment
-      répondu à la question en fonction de l'historique du chat.
+      La réponse de l'expert répond-elle à la question de l'utilisateur ?
 
-       <chat_history>
+      <expert_response>
       {% for message in chat_history %}
-      <message role="{{ message.role.value }}">
+      {% if message.role.value == 'user' %}
       {% for block in message.blocks %}
       {% if block.block_type == 'text' %}
       {{ block.text }}
       {% endif %}
       {% endfor %}
-      </message>
+      {% endif %}
       {% endfor %}
-      </chat_history>
+      </expert_response>
 
-      <user_query>
-      %{question}
-      </user_query>
+      <user_question>
+      {{ query }}
+      </user_question>
 
-      <answered_criteria>
-      <is_answered>
-      Une question est considérée comme répondue si L'UN des critères suivants est vrai :
-      * L'expert a fourni une réponse complète et précise à la question de l'utilisateur
-      * L'expert a fourni une réponse partielle, mais l'utilisateur peut toujours comprendre les points principaux
-      * L'expert a indiqué où la réponse peut être trouvée
-      * L'expert a fourni des informations contextuelles, peut-être dans le message système, qui - directement ou indirectement - répondent à la question
-      </is_answered>
-      <is_not_answered>
-      Une question est considérée comme non répondue si L'UN des critères suivants est vrai :
-      * L'expert n'a fourni aucune réponse à la question de l'utilisateur
-      * L'expert a fourni une réponse, mais elle est incomplète ou inexacte
-      * L'expert a fourni une réponse, mais elle n'est pas pertinente pour la question de l'utilisateur
-      * L'expert a fourni une réponse, mais elle n'est pas claire ou compréhensible
-      * L'expert indique qu'il ne connaît pas la réponse
-      </is_not_answered>
-      </answered_criteria>
+      La question EST répondue si l'expert a fourni des informations qui répondent directement à TOUTES les parties de ce qui a été demandé.
+      La question n'est PAS répondue si :
+      - L'expert dit explicitement qu'il ne sait pas ou refuse de répondre
+      - La question comporte plusieurs parties et seules certaines ont été répondues
 
       Analysez soigneusement l'historique du chat par rapport à la question de l'utilisateur. Déterminez si l'expert a déjà suffisamment répondu à la question selon les critères ci-dessus. Fournissez une décision claire avec un raisonnement détaillé.
+memory:
+  user_memory_system_message: |
+    <user_context>
+    ## Contexte de Mémoire Utilisateur
+
+    **Informations de l'Utilisateur Actuel:**
+    - ID Utilisateur: {{ user.id }}
+    - Nom: {{ user.name }}
+    - E-mail: {{ user.email }}
+
+    Les informations suivantes ont été apprises des conversations passées de **cet utilisateur spécifique** avec vous. Ce sont des préférences personnelles, un contexte de travail et des modèles comportementaux spécifiques à cet utilisateur.
+
+    **Directives Importantes:**
+    - Ces mémoires sont du **contexte optionnel** - ne les référencez que si elles sont pertinentes pour la requête actuelle
+    - **NE forcez PAS** ces mémoires dans votre réponse si elles ne s'appliquent pas naturellement
+    - L'utilisateur a peut-être oublié avoir partagé ces informations ou elles peuvent être obsolètes
+    - Si une mémoire contredit la conversation actuelle, priorisez le contexte actuel
+    - Vous n'êtes **pas obligé** de mentionner ou de reconnaître ces mémoires sauf si elles apportent de la valeur
+
+    {% if memories %}
+    **Faits Spécifiques à l'Utilisateur:**
+    {% for memory in memories %}
+    - {{ memory.memory }}
+    {% endfor %}
+    {% endif %}
+    {% if relations %}
+
+    **Relations du Graphe de Connaissances:**
+    {% for relation in relations %}
+    - {{ relation.source }} {{ relation.relation }} {{ relation.target }}
+    {% endfor %}
+    {% endif %}
+    </user_context>
+
+  organization_memory_system_message: |
+    <organizational_context>
+    ## Contexte de Mémoire Organisationnelle
+
+    Les informations suivantes représentent des **faits explicites sur l'organisation** (politiques, stack technologique, processus, conventions) partagés entre tous les utilisateurs de cette organisation.
+
+    **Directives Importantes:**
+    - Ces mémoires sont du **contexte optionnel** - ne les référencez que si elles sont pertinentes pour la requête actuelle
+    - **NE forcez PAS** les faits organisationnels dans votre réponse s'ils ne s'appliquent pas naturellement
+    - Ce sont des faits organisationnels généraux et peuvent ne pas s'appliquer à chaque équipe ou individu
+    - Si la mémoire organisationnelle contredit les informations spécifiques à l'utilisateur, considérez les deux contextes
+    - Vous n'êtes **pas obligé** de mentionner ou d'reconnaître ces mémoires sauf si elles apportent de la valeur
+
+    {% if memories %}
+    **Faits Organisationnels:**
+    {% for memory in memories %}
+    - {{ memory.memory }}
+    {% endfor %}
+    {% endif %}
+    {% if relations %}
+
+    **Relations du Graphe de Connaissances:**
+    {% for relation in relations %}
+    - {{ relation.source }} {{ relation.relation }} {{ relation.target }}
+    {% endfor %}
+    {% endif %}
+    </organizational_context>
+
+  fact_extraction: |
+    Tu es un assistant spécialisé dans l'extraction de mémoire pour l'agent %{agent_name}.
+    
+    ## Contexte de l'agent
+    - **Nom de l'agent :** %{agent_name}
+    - **Objectif de l'agent :** %{agent_description}
+    - **Date actuelle :** %{current_date}
+    
+    ## Ta tâche
+    Extrais les faits pertinents sur l'UTILISATEUR à partir des conversations entre l'utilisateur et le %{agent_name}.
+    Ces faits seront stockés en mémoire et récupérés plus tard lorsque le même utilisateur interagira à nouveau avec le %{agent_name}.
+    
+    ## Règles critiques
+    1. Extrais les faits UNIQUEMENT des messages de l'UTILISATEUR, JAMAIS des messages de l'assistant/agent
+    2. Extrais les faits PERTINENTS pour l'objectif du %{agent_name}
+    3. Extrais UNIQUEMENT les faits utiles pour les conversations futures
+    4. Les faits doivent être ATOMIQUES et AUTONOMES (compréhensibles sans contexte)
+    5. Tu peux DÉDUIRE des faits à partir de questions, du contexte et des interactions multi-tours
+    6. Maximum 10 faits par extraction (priorise les plus importants)
+    7. Chaque fait devrait faire moins de 150 caractères si possible
+    
+    ## Ce qu'il faut extraire
+    
+    | Catégorie | Description | Exemples |
+    |-----------|-------------|----------|
+    | Parcours | Nom, profession, formation, expérience | "Ingénieur backend senior chez Stripe" |
+    | Préférences | Goûts, aversions, outils/approches préférés | "Préfère la programmation fonctionnelle" |
+    | Contexte | Informations aidant l'agent à mieux servir l'utilisateur | "Construit un outil de collaboration en temps réel" |
+    | Exigences | Besoins, contraintes, critères | "Nécessite la conformité RGPD" |
+    | Historique | Décisions passées, expériences | "Migration de MongoDB vers PostgreSQL" |
+    | Style | Préférences de communication | "Préfère des explications techniques concises" |
+    
+    ## Ce qu'il ne faut PAS extraire
+    - Connaissances générales (ex. "Python est un langage de programmation")
+    - Capacités ou fonctionnalités de l'agent
+    - Salutations sans substance
+    - Informations provenant des messages système ou de l'assistant
+    - Informations non pertinentes pour l'objectif du %{agent_name}
+    - Déclarations vagues ou génériques (ex. "J'aime le bon code")
+    - Faits non atomiques manquant de contexte (ex. "L'équipe a 5 membres" - quelle équipe ?)
+    - Informations incertaines ou spéculatives ("Je pourrais passer à...", "J'envisage...")
+    
+    ## Format de sortie
+    
+    Retourne un objet JSON avec une clé "facts" contenant un tableau de chaînes de faits extraits :
+    ```json
+    {
+      "facts": ["fait un", "fait deux"]
+    }
+    ```
+    
+    **Règles du schéma :**
+    - `facts` doit être un tableau de chaînes (peut être vide)
+    - Chaque fait : une phrase, au présent, spécifique, atomique
+    - Un tableau vide `{"facts": []}` est valide quand aucun fait pertinent n'existe
+    - Extrais les faits dans la même langue que l'entrée de l'utilisateur
+    
+    **Sorties invalides :**
+    - `{"facts": null}`
+    - `{"fact": [...]}`
+    - `["fact1", "fact2"]`
+    
+    ## Exemples
+    
+    ### Parcours de l'utilisateur
+    
+    **Extraction d'un seul message :**
+    
+    User: "Je suis ingénieur backend senior chez Stripe, j'y travaille depuis 3 ans maintenant, spécialisé dans l'infrastructure de paiement"
+    Assistant: "C'est une excellente expérience ! L'infrastructure de paiement à grande échelle doit impliquer des défis intéressants."
+    ```json
+    {
+      "facts": [
+        "L'utilisateur est ingénieur backend senior chez Stripe",
+        "L'utilisateur travaille chez Stripe depuis 3 ans",
+        "L'utilisateur est spécialisé dans l'infrastructure de paiement"
+      ]
+    }
+    ```
+    
+    > Chaque fait est atomique et autonome. Les conversations futures peuvent référencer leur expérience chez Stripe ou leur expertise en paiement.
+    
+    **Déduit d'une question :**
+    
+    User: "Comment optimiser les requêtes de base de données pour des millions de transactions par seconde ?"
+    Assistant: "Pour cette échelle, tu voudras considérer le sharding, les réplicas de lecture et les stratégies de mise en cache..."
+    ```json
+    {
+      "facts": [
+        "L'utilisateur travaille avec des systèmes gérant des millions de transactions par seconde",
+        "L'utilisateur a des responsabilités d'optimisation de base de données"
+      ]
+    }
+    ```
+    
+    > La question spécifique révèle l'échelle et les responsabilités sans déclaration explicite.
+    
+    ### Préférences de l'utilisateur
+    
+    **Extraction multi-tours :**
+    
+    User: "Quelle est la meilleure façon de structurer une application React ?"
+    Assistant: "Il y a plusieurs approches : dossiers basés sur les fonctionnalités, atomic design, ou structure orientée domaine. Quelle est la taille de ton application ?"
+    User: "C'est une grande application d'entreprise, et je déteste la structure par défaut de Create React App. J'utilise toujours des dossiers par fonctionnalité avec des tests colocalisés"
+    ```json
+    {
+      "facts": [
+        "L'utilisateur travaille sur de grandes applications React d'entreprise",
+        "L'utilisateur n'aime pas la structure par défaut de Create React App",
+        "L'utilisateur préfère l'organisation par dossiers de fonctionnalités",
+        "L'utilisateur colocalise les tests avec les fonctionnalités"
+      ]
+    }
+    ```
+    
+    > Les préférences émergent à travers la conversation. Chaque fait est spécifique et actionnable.
+    
+    **Exemple négatif - trop générique :**
+    
+    User: "J'aime le code propre"
+    Assistant: "Le code propre est définitivement important ! Quelles pratiques spécifiques suis-tu ?"
+    ```json
+    {
+      "facts": []
+    }
+    ```
+    
+    > "Aime le code propre" est trop générique et non actionnable.
+    
+    ### Contexte de l'utilisateur
+    
+    **Contexte multi-tours riche :**
+    
+    User: "Nous construisons un outil de collaboration en temps réel comme Figma"
+    Assistant: "C'est passionnant ! La collaboration en temps réel nécessite une architecture soignée. Quel est votre stack technique ?"
+    User: "Nous utilisons Elixir avec Phoenix Channels, mais nous avons du mal avec la résolution de conflits quand plusieurs utilisateurs éditent simultanément"
+    ```json
+    {
+      "facts": [
+        "L'utilisateur construit un outil de collaboration en temps réel similaire à Figma",
+        "Le produit de l'utilisateur utilise Elixir et Phoenix Channels",
+        "L'utilisateur fait face à des défis de résolution de conflits dans l'édition multi-utilisateurs"
+      ]
+    }
+    ```
+    
+    > Le contexte se construit à travers les messages. Chaque fait fournit un arrière-plan utile pour les discussions techniques futures.
+    
+    **Déduit de la description du problème :**
+    
+    User: "Notre cluster Kubernetes manque constamment de mémoire même si nous avons défini des limites de ressources. Nous avons environ 200 microservices"
+    Assistant: "Avec 200 microservices, la gestion des ressources devient complexe..."
+    ```json
+    {
+      "facts": [
+        "L'utilisateur gère un cluster Kubernetes avec environ 200 microservices",
+        "L'utilisateur rencontre des problèmes de gestion de mémoire dans Kubernetes",
+        "L'utilisateur a des responsabilités DevOps ou d'ingénierie de plateforme"
+      ]
+    }
+    ```
+    
+    > La description du problème révèle l'échelle, la technologie et le rôle.
+    
+    ### Exigences de l'utilisateur
+    
+    **Clarification multi-tours :**
+    
+    User: "J'ai besoin d'une file de messages pour notre système"
+    Assistant: "Quelles sont tes principales exigences ? Débit, durabilité, garanties d'ordre ?"
+    User: "Doit gérer 100k messages/seconde, l'ordre n'est pas important, mais ne doit absolument pas perdre de messages. De plus, nous sommes sur AWS et ne pouvons pas utiliser de services gérés pour des raisons de conformité"
+    ```json
+    {
+      "facts": [
+        "L'utilisateur a besoin d'une file de messages gérant 100k messages par seconde",
+        "L'utilisateur n'a pas besoin d'ordre des messages",
+        "L'utilisateur exige une livraison de messages garantie sans perte",
+        "L'infrastructure de l'utilisateur est sur AWS",
+        "L'utilisateur ne peut pas utiliser de services gérés en raison d'exigences de conformité"
+      ]
+    }
+    ```
+    
+    > Les exigences se cristallisent à travers la conversation. Chaque contrainte est atomique et claire.
+    
+    **Exemple négatif - simple exploration :**
+    
+    User: "Quelles files de messages sont disponibles ?"
+    Assistant: "Les options populaires incluent RabbitMQ, Kafka, AWS SQS, Redis Pub/Sub..."
+    ```json
+    {
+      "facts": [
+        "L'utilisateur explore les options de files de messages"
+      ]
+    }
+    ```
+    
+    > N'extrais que le fait qu'ils explorent, pas des exigences spécifiques qu'ils n'ont pas énoncées.
+    
+    ### Historique de l'utilisateur
+    
+    **Histoire multi-tours :**
+    
+    User: "Nous avons essayé GraphQL mais sommes revenus à REST"
+    Assistant: "Qu'est-ce qui a conduit à cette décision ?"
+    User: "Les développeurs juniors l'ont trouvé trop complexe, et notre application mobile avait des problèmes de performance avec l'over-fetching malgré les avantages de GraphQL. Il nous a fallu 6 mois pour migrer en retour"
+    ```json
+    {
+      "facts": [
+        "L'équipe de l'utilisateur a tenté l'adoption de GraphQL mais est revenue à REST",
+        "L'équipe de l'utilisateur inclut des développeurs juniors qui ont trouvé GraphQL complexe",
+        "L'utilisateur a connu des problèmes de performance d'application mobile avec GraphQL",
+        "L'utilisateur a passé 6 mois à migrer de GraphQL vers REST"
+      ]
+    }
+    ```
+    
+    > L'expérience historique fournit un contexte pour les discussions d'architecture futures.
+    
+    **Niveau d'expérience déduit :**
+    
+    User: "Pourquoi quelqu'un utiliserait-il SOAP en 2024 ? Je me souviens avoir implémenté WS-Security à l'époque"
+    Assistant: "SOAP a encore des utilisations de niche dans les systèmes d'entreprise, bien que REST et gRPC dominent maintenant."
+    ```json
+    {
+      "facts": [
+        "L'utilisateur a de l'expérience dans l'implémentation de SOAP et WS-Security",
+        "L'utilisateur a travaillé dans le développement logiciel pendant l'ère SOAP",
+        "L'utilisateur considère SOAP comme une technologie obsolète"
+      ]
+    }
+    ```
+    
+    > La question révèle l'expérience historique et les opinions actuelles.
+    
+    ### Style de l'utilisateur
+    
+    **Déclaration directe :**
+    
+    User: "Peux-tu expliquer mais sauter les bases ? Je préfère des explications techniques concises avec des exemples de code plutôt que de la théorie"
+    Assistant: "Bien sûr, je vais garder ça technique et centré sur le code."
+    ```json
+    {
+      "facts": [
+        "L'utilisateur préfère sauter les explications de base",
+        "L'utilisateur veut des explications techniques concises",
+        "L'utilisateur préfère les exemples de code aux explications théoriques"
+      ]
+    }
+    ```
+    
+    > Préférences de communication claires qui façonnent toutes les interactions futures.
+    
+    **Déduit d'une correction :**
+    
+    User: "C'est quoi le TL;DR ?"
+    Assistant: "Voici un aperçu complet : [longue explication]"
+    User: "Non, je voulais dire genre 2-3 points maximum. J'ai pas le temps pour des dissertations"
+    ```json
+    {
+      "facts": [
+        "L'utilisateur préfère des résumés très brefs (2-3 points)",
+        "L'utilisateur a un temps limité pour les explications détaillées"
+      ]
+    }
+    ```
+    
+    > Les préférences de style émergent des corrections.
+    
+    ### Multi-tours complexe
+    
+    **Construction de contexte riche :**
+    
+    User: "Comment gérez-vous l'authentification dans les microservices ?"
+    Assistant: "Les patterns courants incluent l'auth via API Gateway, le service mesh, ou les tokens distribués. Quel est votre setup actuel ?"
+    User: "Nous avons 50 services, actuellement on utilise des secrets JWT partagés mais c'est un cauchemar. Notre équipe sécurité pousse pour mTLS"
+    Assistant: "mTLS serait définitivement plus sécurisé. Vous pourriez l'implémenter progressivement avec Istio ou Linkerd."
+    User: "Istio semble excessif pour nous. Nous sommes une startup fintech avec 12 ingénieurs, pas Google"
+    ```json
+    {
+      "facts": [
+        "L'utilisateur travaille dans une startup fintech",
+        "L'entreprise de l'utilisateur a 12 ingénieurs",
+        "L'utilisateur gère 50 microservices",
+        "L'utilisateur utilise actuellement JWT avec des secrets partagés pour l'authentification",
+        "L'utilisateur considère le setup JWT actuel comme problématique",
+        "L'équipe sécurité de l'utilisateur recommande mTLS",
+        "L'utilisateur considère Istio trop complexe pour la taille de leur équipe"
+      ]
+    }
+    ```
+    
+    > Plusieurs tours révèlent le contexte de l'entreprise, le setup technique, la taille de l'équipe, les points de douleur et les facteurs de décision.
+    
+    ### Exemples négatifs
+    
+    **Fait non atomique (contexte manquant) :**
+    
+    User: "Notre équipe est trop petite pour ça"
+    Assistant: "Combien de personnes sont dans ton équipe ?"
+    User: "Cinq développeurs"
+    ```json
+    {
+      "facts": []
+    }
+    ```
+    
+    > "Équipe de 5 développeurs" sans savoir quelle équipe/entreprise n'est pas utile.
+    
+    **Incertain/spéculatif :**
+    
+    User: "Je pense à peut-être passer à Rust un jour"
+    Assistant: "Rust est super pour la programmation système !"
+    ```json
+    {
+      "facts": []
+    }
+    ```
+    
+    > Non confirmé, juste de la spéculation. Ne pas extraire.
+    
+    **Décision confirmée :**
+    
+    User: "J'ai décidé de passer à Rust le mois dernier et j'adore"
+    Assistant: "Excellent choix !"
+    ```json
+    {
+      "facts": [
+        "L'utilisateur est passé à Rust le mois dernier",
+        "L'utilisateur aime programmer en Rust"
+      ]
+    }
+    ```
+    
+    > Une action confirmée peut être extraite.
+    
+    ## Rappels finaux
+    - Un tableau de faits vide est valide quand aucune information pertinente n'existe
+    - Concentre-toi sur les faits qui aident le %{agent_name} à mieux servir l'utilisateur
+    - Une information par fait
+    - Ne duplique pas les informations entre les faits
+    - En cas de doute, n'extrais pas
+  memory_update: |
+    Tu es un système de gestion de mémoire pour l'agent %{agent_name}.
+    
+    ## Contexte de l'agent
+    - **Nom de l'agent :** %{agent_name}
+    - **Objectif de l'agent :** %{agent_description}
+    
+    ## Ta tâche
+    Compare les faits nouvellement extraits avec les souvenirs existants pour déterminer l'état optimal de la mémoire.
+    Décide s'il faut AJOUTER, METTRE À JOUR, SUPPRIMER ou conserver (AUCUN) chaque information.
+    
+    ## Principes fondamentaux
+    1. **Atomicité :** Chaque souvenir contient UNE seule information
+    2. **Spécificité :** Ne jamais perdre de détails lors de la mise à jour—ajouter des détails ou garder séparément
+    3. **Conscience temporelle :** Les informations récentes mettent à jour les informations plus anciennes du même type
+    4. **Déduplication sémantique :** Éviter de stocker la même information avec des mots différents
+    5. **Préservation du contexte :** Les mises à jour doivent enrichir, pas réduire l'information
+    
+    ## Opérations
+    
+    ### ADD
+    Crée un nouveau souvenir quand le fait est une information VÉRITABLEMENT NOUVELLE non couverte par les souvenirs existants.
+    
+    **Utiliser quand :**
+    - L'information n'est couverte par aucun souvenir existant
+    - Liée mais suffisamment distincte pour un stockage séparé
+    - Ajoute une nouvelle dimension aux connaissances existantes
+    
+    **Exemple de scénario :**
+    - Existant : "Utilise Python pour le développement backend"
+    - Nouveau fait : "Utilise TypeScript pour le développement frontend"
+    - Décision : ADD (dimension différente—backend vs frontend)
+    
+    ### UPDATE
+    Enrichis un souvenir existant quand le fait affine ou ajoute de la spécificité.
+    
+    **Utiliser quand :**
+    - Le fait ajoute de la spécificité au souvenir existant
+    - Le fait fournit un statut plus récent du même attribut
+    - Le fait clarifie sans changer le sens principal
+    
+    **Règle :** Le souvenir mis à jour doit contenir TOUTES les informations de l'ancien et du nouveau.
+    
+    **Exemple de scénario :**
+    - Existant : "Travaille dans une startup fintech"
+    - Nouveau fait : "Travaille dans la startup fintech Stripe"
+    - Décision : UPDATE vers "Travaille dans la startup fintech Stripe"
+    
+    ### DELETE
+    Supprime un souvenir existant quand il est maintenant incorrect ou obsolète.
+    
+    **Utiliser quand :**
+    - Le fait nie explicitement l'ancienne information
+    - L'ancienne information est maintenant incorrecte
+    - L'utilisateur indique un changement ("Je ne... plus", "J'ai changé de...")
+    
+    **Règle :** Ne supprimer que lorsqu'il est certain que l'ancienne information est fausse.
+    
+    **Exemple de scénario :**
+    - Existant : "Préfère le travail à distance"
+    - Nouveau fait : "Est passé en hybride et préfère la collaboration au bureau"
+    - Décision : DELETE l'ancienne préférence
+    
+    ### NONE
+    Garde le souvenir existant inchangé quand aucune action n'est nécessaire.
+    
+    **Utiliser quand :**
+    - Le fait est déjà entièrement capturé dans le souvenir existant
+    - Le fait est moins spécifique que le souvenir existant
+    - Le fait est un sous-ensemble des connaissances existantes
+    
+    **Exemple de scénario :**
+    - Existant : "Utilise React 18 avec TypeScript"
+    - Nouveau fait : "Utilise React"
+    - Décision : NONE (déjà connu, moins spécifique)
+    
+    ## Règles de déduplication sémantique
+    
+    | Scénario | Action | Raisonnement |
+    |----------|--------|--------------|
+    | Même sens, mots différents | NONE | "Développe des apps mobiles" = "Construit des applications mobiles" |
+    | Sous-ensemble de l'existant | NONE | "Connaît Python" est sous-ensemble de "Connaît Python, JS, Go" |
+    | Sur-ensemble de l'existant | UPDATE | "Connaît Python, JS, Go" étend "Connaît Python" |
+    | Lié mais dimension différente | ADD | "5 ans d'expérience Python" ≠ "Python est son langage préféré" |
+    
+    ## Gestion temporelle
+    
+    | Scénario | Action |
+    |----------|--------|
+    | Changement d'état explicite | DELETE ancien + ADD nouveau |
+    | Progression de compétence | UPDATE ("Apprend Rust" → "Maîtrise Rust") |
+    | Ajout historique | ADD ("A travaillé précédemment chez Amazon") |
+    
+    ## Format de sortie
+    
+    Retourne un objet JSON avec une clé "memory" contenant un tableau d'objets d'opération :
+    ```json
+    {
+      "memory": [
+        {"id": "0", "text": "contenu du souvenir", "event": "NONE"},
+        {"id": "1", "text": "contenu mis à jour", "event": "UPDATE", "old_memory": "contenu précédent"},
+        {"id": "2", "text": "contenu supprimé", "event": "DELETE"},
+        {"id": "new_1", "text": "nouveau contenu de souvenir", "event": "ADD"}
+      ]
+    }
+    ```
+    
+    **Exigences des champs :**
+    
+    | Champ | Requis | Description |
+    |-------|--------|-------------|
+    | `id` | Toujours | ID existant pour UPDATE/DELETE/NONE, placeholder quelconque pour ADD |
+    | `text` | Toujours | Le contenu du souvenir (atomique, autonome) |
+    | `event` | Toujours | Exactement "ADD", "UPDATE", "DELETE" ou "NONE" |
+    | `old_memory` | UPDATE uniquement | Le contenu précédent du souvenir mis à jour |
+    
+    **Règles d'ID :**
+    - UPDATE/DELETE/NONE : Utilise l'ID EXACT de la liste des souvenirs existants
+    - ADD : Utilise n'importe quel placeholder (ex. "new_1", "new_2")—le système génère l'ID réel
+    
+    ## Exemples
+    
+    ### Préservation de l'atomicité
+    
+    **Souvenir existant :**
+    ```json
+    [
+      {"id": "0", "text": "Utilise React pour le développement frontend"},
+      {"id": "1", "text": "Utilise Node.js pour le développement backend"}
+    ]
+    ```json
+    
+    **Nouveaux faits :** `["Développeur full-stack utilisant la stack MERN"]`
+    
+    **Sortie :**
+    ```json
+    {
+      "memory": [
+        {"id": "0", "text": "Utilise React pour le développement frontend", "event": "NONE"},
+        {"id": "1", "text": "Utilise Node.js pour le développement backend", "event": "NONE"},
+        {"id": "new_1", "text": "Développeur full-stack utilisant la stack MERN", "event": "ADD"}
+      ]
+    }
+    ```
+    
+    > Garde les faits tech spécifiques, ajoute le contexte de rôle comme nouveau souvenir.
+    
+    ### Mise à jour par raffinement
+    
+    **Souvenir existant :**
+    ```json
+    [
+      {"id": "0", "text": "Gère l'infrastructure avec Terraform"},
+      {"id": "1", "text": "Utilise AWS pour l'hébergement cloud"}
+    ]
+    ```json
+    
+    **Nouveaux faits :** `["Gère l'infrastructure AWS avec Terraform et CloudFormation"]`
+    
+    **Sortie :**
+    ```json
+    {
+      "memory": [
+        {
+          "id": "0",
+          "text": "Gère l'infrastructure AWS avec Terraform et CloudFormation",
+          "event": "UPDATE",
+          "old_memory": "Gère l'infrastructure avec Terraform"
+        },
+        {"id": "1", "text": "Utilise AWS pour l'hébergement cloud", "event": "NONE"}
+      ]
+    }
+    ```
+    
+    > La mise à jour ajoute la spécificité AWS et l'outil CloudFormation.
+    
+    ### Progression temporelle
+    
+    **Souvenir existant :**
+    ```json
+    [
+      {"id": "0", "text": "Développeur junior chez TechCorp"},
+      {"id": "1", "text": "A 2 ans d'expérience"}
+    ]
+    ```json
+    
+    **Nouveaux faits :** `["Promu développeur senior chez TechCorp", "A 4 ans d'expérience"]`
+    
+    **Sortie :**
+    ```json
+    {
+      "memory": [
+        {
+          "id": "0",
+          "text": "Développeur senior chez TechCorp (promu de junior)",
+          "event": "UPDATE",
+          "old_memory": "Développeur junior chez TechCorp"
+        },
+        {
+          "id": "1",
+          "text": "A 4 ans d'expérience",
+          "event": "UPDATE",
+          "old_memory": "A 2 ans d'expérience"
+        }
+      ]
+    }
+    ```
+    
+    > Progression de carrière préservée dans la mise à jour. Durée d'expérience mise à jour.
+    
+    ### Déduplication sémantique
+    
+    **Souvenir existant :**
+    ```json
+    [
+      {"id": "0", "text": "Préfère les paradigmes de programmation fonctionnelle"},
+      {"id": "1", "text": "Écrit des tests avec Jest"}
+    ]
+    ```json
+    
+    **Nouveaux faits :** `["Aime la programmation fonctionnelle", "Utilise Jest pour les tests unitaires"]`
+    
+    **Sortie :**
+    ```json
+    {
+      "memory": [
+        {"id": "0", "text": "Préfère les paradigmes de programmation fonctionnelle", "event": "NONE"},
+        {"id": "1", "text": "Écrit des tests avec Jest", "event": "NONE"}
+      ]
+    }
+    ```
+    
+    > Même sens avec des mots différents. Aucun changement nécessaire.
+    
+    ### Mise à jour multi-faits complexe
+    
+    **Souvenir existant :**
+    ```json
+    [
+      {"id": "0", "text": "Travaille sur des projets de machine learning"},
+      {"id": "1", "text": "Utilise Python pour la data science"},
+      {"id": "2", "text": "S'intéresse au NLP"}
+    ]
+    ```json
+    
+    **Nouveaux faits :**
+    ```json
+    [
+      "Dirige une équipe ML focalisée sur le NLP chez Scale AI",
+      "A publié 3 articles sur les modèles transformer",
+      "Utilise exclusivement PyTorch pour le deep learning"
+    ]
+    ```json
+    
+    **Sortie :**
+    ```json
+    {
+      "memory": [
+        {
+          "id": "0",
+          "text": "Dirige une équipe ML focalisée sur le NLP chez Scale AI",
+          "event": "UPDATE",
+          "old_memory": "Travaille sur des projets de machine learning"
+        },
+        {"id": "1", "text": "Utilise Python pour la data science", "event": "NONE"},
+        {
+          "id": "2",
+          "text": "Spécialisé en NLP avec focus sur les modèles transformer",
+          "event": "UPDATE",
+          "old_memory": "S'intéresse au NLP"
+        },
+        {"id": "new_1", "text": "A publié 3 articles sur les modèles transformer", "event": "ADD"},
+        {"id": "new_2", "text": "Utilise exclusivement PyTorch pour le deep learning", "event": "ADD"}
+      ]
+    }
+    ```
+    
+    > Rôle mis à jour avec l'entreprise. Intérêt promu en spécialisation. Nouveaux faits ajoutés.
+    
+    ### Gestion des contradictions
+    
+    **Souvenir existant :**
+    ```json
+    [
+      {"id": "0", "text": "Préfère le travail à distance"},
+      {"id": "1", "text": "Vit à San Francisco"},
+      {"id": "2", "text": "Évite les réunions avant 10h"}
+    ]
+    ```json
+    
+    **Nouveaux faits :** `["A déménagé à Austin pour un nouveau rôle hybride", "Préfère maintenant la collaboration au bureau"]`
+    
+    **Sortie :**
+    ```json
+    {
+      "memory": [
+        {"id": "0", "text": "Préfère le travail à distance", "event": "DELETE"},
+        {"id": "1", "text": "Vit à San Francisco", "event": "DELETE"},
+        {"id": "2", "text": "Évite les réunions avant 10h", "event": "NONE"},
+        {"id": "new_1", "text": "Vit à Austin", "event": "ADD"},
+        {"id": "new_2", "text": "Travaille en mode hybride", "event": "ADD"},
+        {"id": "new_3", "text": "Préfère la collaboration au bureau", "event": "ADD"}
+      ]
+    }
+    ```
+    
+    > Faits contredits supprimés. Fait non lié conservé. Nouveaux faits ajoutés.
+    
+    ### Préservation du parcours d'apprentissage
+    
+    **Souvenir existant :**
+    ```json
+    [
+      {"id": "0", "text": "A des difficultés avec le networking Kubernetes"}
+    ]
+    ```json
+    
+    **Nouveaux faits :** `["A finalement compris le networking Kubernetes après 6 mois de pratique"]`
+    
+    **Sortie :**
+    ```json
+    {
+      "memory": [
+        {
+          "id": "0",
+          "text": "Comprend le networking Kubernetes après 6 mois de difficultés initiales",
+          "event": "UPDATE",
+          "old_memory": "A des difficultés avec le networking Kubernetes"
+        }
+      ]
+    }
+    ```
+    
+    > Montre la progression tout en préservant le contexte d'apprentissage pour des réponses empathiques.
+    
+    ### Initialisation mémoire vide
+    
+    **Souvenir existant :** `[]`
+    
+    **Nouveaux faits :**
+    ```json
+    [
+      "Développeur iOS senior chez Apple",
+      "Spécialisé en SwiftUI et Combine",
+      "Préfère les patterns d'UI déclaratifs",
+      "A publié 3 apps sur l'App Store"
+    ]
+    ```json
+    
+    **Sortie :**
+    ```json
+    {
+      "memory": [
+        {"id": "new_1", "text": "Développeur iOS senior chez Apple", "event": "ADD"},
+        {"id": "new_2", "text": "Spécialisé en SwiftUI et Combine", "event": "ADD"},
+        {"id": "new_3", "text": "Préfère les patterns d'UI déclaratifs", "event": "ADD"},
+        {"id": "new_4", "text": "A publié 3 apps sur l'App Store", "event": "ADD"}
+      ]
+    }
+    ```
+    
+    > Tous les nouveaux faits deviennent de nouveaux souvenirs.
+    
+    ### Décisions de granularité
+    
+    **Souvenir existant :**
+    ```json
+    [
+      {"id": "0", "text": "A la certification AWS Solutions Architect"},
+      {"id": "1", "text": "A la certification Google Cloud Professional"}
+    ]
+    ```json
+    
+    **Nouveaux faits :** `["A la certification Azure Administrator", "Certifié sur toutes les grandes plateformes cloud"]`
+    
+    **Sortie :**
+    ```json
+    {
+      "memory": [
+        {"id": "0", "text": "A la certification AWS Solutions Architect", "event": "NONE"},
+        {"id": "1", "text": "A la certification Google Cloud Professional", "event": "NONE"},
+        {"id": "new_1", "text": "A la certification Azure Administrator", "event": "ADD"},
+        {"id": "new_2", "text": "Certifié sur toutes les grandes plateformes cloud (AWS, GCP, Azure)", "event": "ADD"}
+      ]
+    }
+    ```
+    
+    > Garde les détails spécifiques ET ajoute un résumé utile.
+    
+    ## Directives de décision
+    
+    1. **En cas de doute, garder séparé :** Mieux vaut deux faits liés qu'une information perdue
+    2. **Préserver les parcours :** Ne pas simplement changer "mauvais en X" en "bon en X"—montrer la progression
+    3. **Rester actionnable :** Chaque souvenir devrait aider à personnaliser les interactions futures
+    4. **Respecter l'atomicité :** Un souvenir = un fait autonome
+    5. **Penser à la récupération :** Sera-ce trouvable et utile plus tard ?
+    
+    ## Rappels finaux
+    - La sortie doit être du JSON valide (pas de commentaires, pas de virgules finales)
+    - Chaque souvenir existant doit apparaître dans la sortie avec l'événement approprié
+    - Les nouveaux faits peuvent résulter en zéro, un ou plusieurs nouveaux souvenirs
+    - Maintenir la cohérence linguistique avec les souvenirs existants
+  entity_extraction: |
+    # Extraction d'entités pour la construction de graphes de connaissances
+    
+    Tu es un système d'extraction d'entités précis. Ta tâche est d'identifier toutes les entités mentionnées dans le texte utilisateur et de les classifier par type. C'est une étape de prétraitement critique pour la construction de graphes de connaissances.
+    
+    ## Principes fondamentaux
+    
+    1. **Nommage canonique** : Chaque entité doit avoir exactement UNE représentation canonique
+    2. **Alignement Wikidata** : Utilise le modèle conceptuel de Wikidata comme guide pour les types d'entités
+    3. **Normalisation en anglais** : Tous les noms d'entités doivent être en anglais, même si le texte source est dans une autre langue
+    4. **Sortie déterministe** : La même entrée doit toujours produire les mêmes noms d'entités
+    
+    ## Règle d'auto-référence
+    
+    **CRITIQUE** : Quand l'utilisateur se réfère à lui-même en utilisant "je", "me", "mon", "ma", "mes", "moi-même", "nous", "notre", etc., tu DOIS utiliser l'identifiant `%{user_id}` comme nom d'entité.
+    
+    C'est non négociable.
+    
+    ## Convention de nommage des entités
+    
+    Tous les noms d'entités DOIVENT suivre ce format exact :
+    
+    ```
+    minuscules_avec_underscores
+    ```
+    
+    ### Règles de nommage (Appliquer dans l'ordre)
+    
+    **Règle 1 : Tout en minuscules**
+    - "Google" → `google`
+    - "MIT" → `mit`
+    - "John Smith" → `john_smith`
+    
+    **Règle 2 : Remplacer les espaces et caractères spéciaux par des underscores**
+    - "New York" → `new_york`
+    - "C++" → `cpp`
+    - "Node.js" → `nodejs`
+    - ".NET" → `dotnet`
+    - "Vue.js 3" → `vuejs_3`
+    
+    **Règle 3 : Supprimer les suffixes d'entreprise**
+    - "Google Inc." → `google`
+    - "Apple LLC" → `apple`
+    - "Microsoft Corporation" → `microsoft`
+    - "BMW AG" → `bmw`
+    
+    **Règle 4 : Utiliser les noms canoniques complets pour les personnes**
+    - "Dr. Sarah Chen" → `sarah_chen`
+    - "Prof. Smith" → (nom complet nécessaire, extraire comme `smith` seulement si nom complet inconnu)
+    - "Bob" → `bob` (si pas de nom de famille disponible)
+    - "Robert 'Bob' Johnson" → `robert_johnson`
+    
+    **Règle 5 : Les dates utilisent un format inspiré ISO**
+    - "Janvier 2024" → `2024_01`
+    - "T3 2024" → `2024_q3`
+    - "2024" → `2024`
+    - "15 Mars 2024" → `2024_03_15`
+    - "Été 2023" → `2023_summer`
+    - "Lundi dernier" → (NE PAS extraire - trop relatif)
+    
+    **Règle 6 : Les numéros de version font partie du nom quand sémantiquement distincts**
+    - "Python 3" → `python_3` (si la version importe dans le contexte)
+    - "Python" → `python` (si la version n'importe pas)
+    - ".NET Conference 2023" → `dotnet_conference_2023`
+    - ".NET Conference 2024" → `dotnet_conference_2024`
+    - "iPhone 15" → `iphone_15`
+    - "GPT-4" → `gpt_4`
+    
+    **Règle 7 : Les acronymes restent des acronymes (en minuscules)**
+    - "NASA" → `nasa`
+    - "FBI" → `fbi`
+    - "AWS" → `aws`
+    - "API" → `api`
+    - "CEO" → `ceo` (quand on réfère au rôle)
+    
+    **Règle 8 : Traduire le non-anglais vers l'anglais**
+    - "München" → `munich`
+    - "东京" (Tokyo) → `tokyo`
+    - "Société Générale" → `societe_generale`
+    
+    **Règle 9 : Les concepts composés utilisent des underscores**
+    - "apprentissage automatique" → `machine_learning`
+    - "intelligence artificielle" → `artificial_intelligence`
+    - "science des données" → `data_science`
+    
+    **Règle 10 : Désambiguïser si nécessaire**
+    - "Apple" (entreprise) → `apple` (le contexte suffit généralement)
+    - "pomme" (fruit) → `apple_fruit` (seulement si ambiguïté dans le même graphe)
+    - "Java" (langage) → `java`
+    - "Java" (île) → `java_island`
+    
+    ## Types d'entités (alignés Wikidata)
+    
+    Utilise ces noms de types. En cas de doute, réfère-toi à ce que Wikidata utiliserait.
+    
+    ### Personnes & Organisations
+    | Type | Description | Réf Wikidata | Exemples |
+    |------|-------------|--------------|----------|
+    | `person` | Individus humains | Q5 | `john_smith`, `sarah_chen` |
+    | `organization` | Entreprises, institutions, ONG | Q43229 | `google`, `mit`, `unesco` |
+    | `team` | Groupes de travail, équipes sportives | Q327245 | `backend_team`, `lakers` |
+    | `department` | Subdivisions organisationnelles | Q2366457 | `engineering`, `hr` |
+    
+    ### Rôles & Professions
+    | Type | Description | Réf Wikidata | Exemples |
+    |------|-------------|--------------|----------|
+    | `role` | Titres de poste, positions | Q4164871 | `software_engineer`, `ceo`, `manager` |
+    | `profession` | Professions générales | Q28640 | `engineer`, `doctor`, `lawyer` |
+    
+    ### Technologie
+    | Type | Description | Réf Wikidata | Exemples |
+    |------|-------------|--------------|----------|
+    | `programming_language` | Langages de programmation | Q9143 | `python`, `javascript`, `rust` |
+    | `software` | Applications, outils | Q7397 | `docker`, `kubernetes`, `excel` |
+    | `framework` | Frameworks logiciels | Q271680 | `react`, `django`, `spring` |
+    | `database` | Systèmes de base de données | Q8513 | `postgresql`, `mongodb`, `redis` |
+    | `platform` | Plateformes cloud/service | Q241317 | `aws`, `azure`, `github` |
+    | `library` | Bibliothèques de code | Q188860 | `numpy`, `lodash`, `boost` |
+    | `operating_system` | Systèmes d'exploitation | Q9135 | `linux`, `windows`, `macos` |
+    | `protocol` | Protocoles techniques | Q15836568 | `http`, `grpc`, `websocket` |
+    
+    ### Travail & Projets
+    | Type | Description | Réf Wikidata | Exemples |
+    |------|-------------|--------------|----------|
+    | `project` | Initiatives de travail | Q170584 | `migration_project`, `website_redesign` |
+    | `product` | Éléments livrables | Q2424752 | `mobile_app`, `payment_service` |
+    | `feature` | Capacités du produit | Q1066434 | `user_auth`, `search` |
+    | `document` | Fichiers, spécifications | Q49848 | `api_spec`, `design_doc` |
+    
+    ### Connaissances & Compétences
+    | Type | Description | Réf Wikidata | Exemples |
+    |------|-------------|--------------|----------|
+    | `skill` | Capacités, expertise | Q205961 | `machine_learning`, `public_speaking` |
+    | `methodology` | Processus, approches | Q1799072 | `agile`, `scrum`, `tdd` |
+    | `domain` | Domaines de spécialité | Q1047113 | `fintech`, `healthcare`, `security` |
+    | `certification` | Certifications professionnelles | Q3046129 | `aws_solutions_architect`, `pmp` |
+    | `degree` | Diplômes académiques | Q189533 | `bachelor_cs`, `mba`, `phd_physics` |
+    
+    ### Lieu & Temps
+    | Type | Description | Réf Wikidata | Exemples |
+    |------|-------------|--------------|----------|
+    | `location` | Lieux | Q17334923 | `san_francisco`, `building_42`, `remote` |
+    | `country` | Nations | Q6256 | `united_states`, `germany`, `japan` |
+    | `city` | Villes | Q515 | `new_york`, `london`, `tokyo` |
+    | `date` | Points/périodes dans le temps | Q205892 | `2024_01`, `2024_q3`, `2024_03_15` |
+    
+    ### Événements
+    | Type | Description | Réf Wikidata | Exemples |
+    |------|-------------|--------------|----------|
+    | `event` | Occurrences | Q1656682 | `dotnet_conference_2024`, `company_hackathon` |
+    | `meeting` | Rassemblements planifiés | Q2761147 | `weekly_standup`, `board_meeting` |
+    
+    ### Autres
+    | Type | Description | Réf Wikidata | Exemples |
+    |------|-------------|--------------|----------|
+    | `concept` | Idées abstraites | Q151885 | `gdpr_compliance`, `accessibility` |
+    | `standard` | Spécifications | Q317623 | `iso_27001`, `rest`, `openapi` |
+    | `metric` | Mesures | Q1978718 | `response_time`, `uptime`, `revenue` |
+    
+    ### Types spécifiques au domaine
+    
+    Pour les domaines non couverts ci-dessus, dérive le nom de type des conventions Wikidata :
+    - Utilise des noms singuliers : `disease` pas `diseases`
+    - Utilise des minuscules : `chemical_compound` pas `Chemical_Compound`
+    - Sois assez spécifique pour être utile : `gene` pas `biological_entity`
+    
+    ## Exemples
+    
+    ### Exemple 1 : Emploi simple
+    **Entrée** : "Je travaille chez Google en tant qu'ingénieur logiciel senior"
+    **ID Utilisateur** : `user_alice`
+    
+    **Sortie** :
+    ```
+    extract_entities(entities=[{"entity": "user_alice", "entity_type": "person"}, {"entity": "google", "entity_type": "organization"}, {"entity": "senior_software_engineer", "entity_type": "role"}])
+    ```
+    
+    ### Exemple 2 : Stack technologique
+    **Entrée** : "Notre backend utilise Python 3.11 avec FastAPI, PostgreSQL, et tourne sur AWS Lambda"
+    **ID Utilisateur** : `user_bob`
+    
+    **Sortie** :
+    ```
+    extract_entities(entities=[{"entity": "user_bob", "entity_type": "person"}, {"entity": "python_3", "entity_type": "programming_language"}, {"entity": "fastapi", "entity_type": "framework"}, {"entity": "postgresql", "entity_type": "database"}, {"entity": "aws_lambda", "entity_type": "platform"}])
+    ```
+    Note : "3.11" normalisé en "3" car les versions mineures importent rarement pour le graphe.
+    
+    ### Exemple 3 : Événements avec dates
+    **Entrée** : "J'ai assisté à la .NET Conference 2023 à Seattle et j'irai aussi à la .NET Conference 2024"
+    **ID Utilisateur** : `user_carol`
+    
+    **Sortie** :
+    ```
+    extract_entities(entities=[{"entity": "user_carol", "entity_type": "person"}, {"entity": "dotnet_conference_2023", "entity_type": "event"}, {"entity": "seattle", "entity_type": "city"}, {"entity": "dotnet_conference_2024", "entity_type": "event"}])
+    ```
+    Note : Les deux conférences sont des entités DIFFÉRENTES car l'année diffère.
+    
+    ### Exemple 4 : Personnes et relations
+    **Entrée** : "Ma manager Sarah Chen m'a présenté au Dr. James Wilson de l'équipe sécurité"
+    **ID Utilisateur** : `user_dave`
+    
+    **Sortie** :
+    ```
+    extract_entities(entities=[{"entity": "user_dave", "entity_type": "person"}, {"entity": "sarah_chen", "entity_type": "person"}, {"entity": "james_wilson", "entity_type": "person"}, {"entity": "security_team", "entity_type": "team"}])
+    ```
+    Note : Les titres (Dr.) sont supprimés des noms.
+    
+    ### Exemple 5 : Projet avec calendrier
+    **Entrée** : "Le projet de migration a commencé au T1 2024 et devrait se terminer d'ici mars 2025"
+    **ID Utilisateur** : `user_eve`
+    
+    **Sortie** :
+    ```
+    extract_entities(entities=[{"entity": "user_eve", "entity_type": "person"}, {"entity": "migration_project", "entity_type": "project"}, {"entity": "2024_q1", "entity_type": "date"}, {"entity": "2025_03", "entity_type": "date"}])
+    ```
+    
+    ### Exemple 6 : Entrée non-anglaise
+    **Entrée** : "Je travaille à la Deutsche Bank à Francfort"
+    **ID Utilisateur** : `user_franz`
+    
+    **Sortie** :
+    ```
+    extract_entities(entities=[{"entity": "user_franz", "entity_type": "person"}, {"entity": "deutsche_bank", "entity_type": "organization"}, {"entity": "frankfurt", "entity_type": "city"}])
+    ```
+    Note : Les noms d'entités restent reconnaissables mais normalisés.
+    
+    ### Exemple 7 : Entités ambiguës
+    **Entrée** : "J'utilise Spring Boot pour la release Printemps 2024 de notre produit"
+    **ID Utilisateur** : `user_grace`
+    
+    **Sortie** :
+    ```
+    extract_entities(entities=[{"entity": "user_grace", "entity_type": "person"}, {"entity": "spring_boot", "entity_type": "framework"}, {"entity": "2024_spring", "entity_type": "date"}, {"entity": "product", "entity_type": "product"}])
+    ```
+    Note : "Spring Boot" (framework) vs "Printemps 2024" (saison) sont correctement distingués.
+    
+    ### Exemple 8 : Spécifique au domaine (Médical)
+    **Entrée** : "Le patient a été diagnostiqué avec un diabète de type 2 et s'est vu prescrire de la Metformine"
+    **ID Utilisateur** : `user_doctor`
+    
+    **Sortie** :
+    ```
+    extract_entities(entities=[{"entity": "user_doctor", "entity_type": "person"}, {"entity": "patient", "entity_type": "person"}, {"entity": "type_2_diabetes", "entity_type": "disease"}, {"entity": "metformin", "entity_type": "medication"}])
+    ```
+    
+    ### Exemple 9 : Spécifique au domaine (Juridique)
+    **Entrée** : "Le contrat relève de la juridiction suisse selon l'Article 5 de la Convention de Lugano"
+    **ID Utilisateur** : `user_lawyer`
+    
+    **Sortie** :
+    ```
+    extract_entities(entities=[{"entity": "user_lawyer", "entity_type": "person"}, {"entity": "contract", "entity_type": "document"}, {"entity": "switzerland", "entity_type": "country"}, {"entity": "lugano_convention", "entity_type": "legal_document"}, {"entity": "lugano_convention_article_5", "entity_type": "legal_provision"}])
+    ```
+    
+    ### Exemple 10 : Entrée minimale/vague
+    **Entrée** : "Ça va bien"
+    **ID Utilisateur** : `user_test`
+    
+    **Sortie** :
+    ```
+    extract_entities(entities=[])
+    ```
+    Note : Pas d'entités extractibles. NE PAS forcer l'extraction de concepts vagues.
+    
+    ## Ce qu'il ne faut PAS extraire
+    
+    - **Pronoms sans référent** : "il", "ils", "ceci" (sauf s'ils réfèrent clairement à une entité extractible)
+    - **Descriptions génériques** : "bon code", "meilleures pratiques", "le système"
+    - **Temps relatif** : "hier", "la semaine dernière", "bientôt" (non ancrés à des dates spécifiques)
+    - **Actions/Verbes** : "exécuter", "déployer", "tester" (ceux-ci deviennent des relations, pas des entités)
+    - **Quantificateurs** : "beaucoup", "plusieurs", "peu"
+    - **Opinions** : "super", "terrible", "intéressant"
+    
+    ## Format de sortie
+    
+    Appelle l'outil `extract_entities` avec tes entités extraites. Si aucune entité ne peut être extraite, appelle-le avec un tableau vide.
+  relationship_extraction: |
+    # Extraction de relations pour la construction de graphes de connaissances
+    
+    Tu es un système d'extraction de relations précis. Étant donné un texte et une liste d'entités pré-extraites, ta tâche est d'identifier toutes les relations entre ces entités.
+    
+    ## Principes fondamentaux
+    
+    1. **Utiliser uniquement les entités fournies** : N'invente PAS de nouvelles entités. Travaille exclusivement avec la liste d'entités donnée.
+    2. **Alignement sur les propriétés Wikidata** : Modélise les relations d'après les propriétés Wikidata pour la cohérence
+    3. **Clarté directionnelle** : Chaque relation a une source et une destination. La direction compte.
+    4. **Normalisation en anglais** : Tous les noms de relations doivent être en anglais
+    5. **Informations explicites uniquement** : N'extrais que ce qui est explicitement déclaré ou directement impliqué
+    
+    ## Règle d'auto-référence
+    
+    L'identifiant `%{user_id}` représente l'utilisateur actuel. Utilise-le comme source/destination quand le texte utilise "je", "me", "mon", etc.
+    
+    ## Convention de nommage des relations
+    
+    Tous les noms de relations DOIVENT suivre ce format exact :
+    
+    ```
+    minuscules_avec_underscores
+    ```
+    
+    ### Règles de nommage
+    
+    **Règle 1 : Utiliser des phrases verbales à la voix active**
+    - "travaille chez" → `works_at`
+    - "est géré par" → `managed_by`
+    - "a la compétence" → `has_skill`
+    
+    **Règle 2 : Préférer les noms de propriétés Wikidata quand applicable**
+    - Emploi → `employer` (P108)
+    - Éducation → `educated_at` (P69)
+    - Localisation → `located_in` (P131)
+    - Membre de → `member_of` (P463)
+    - Utilise → `uses` (P2283)
+    
+    **Règle 3 : Garder les relations atomiques et intemporelles**
+    - BIEN : `works_at` (état actuel)
+    - MAL : `started_working_at_in_2020` (trop spécifique)
+    - MAL : `used_to_work_at` (utiliser des entités temporelles séparées si nécessaire)
+    
+    **Règle 4 : Convention de direction**
+    - Personne → Organisation : `employer`, `educated_at`, `member_of`
+    - Personne → Personne : `reports_to`, `manages`, `collaborates_with`
+    - Personne → Chose : `uses`, `knows`, `owns`, `created`
+    - Chose → Chose : `part_of`, `depends_on`, `built_with`
+    
+    **Règle 5 : Éviter les relations inverses redondantes**
+    - Si tu extrais `alice reports_to bob`, N'extrais PAS aussi `bob manages alice`
+    - Choisis la direction la plus naturelle basée sur la phrase
+    
+    ## Types de relations courants (alignés Wikidata)
+    
+    ### Emploi & Organisation
+    | Relation | Direction | Wikidata | Exemple |
+    |----------|-----------|----------|---------|
+    | `employer` | personne → organisation | P108 | `user employer google` |
+    | `works_at` | personne → lieu | - | `user works_at building_42` |
+    | `member_of` | personne → équipe/org | P463 | `user member_of backend_team` |
+    | `employed_as` | personne → rôle | - | `user employed_as engineer` |
+    | `department` | personne → département | - | `user department engineering` |
+    
+    ### Management & Hiérarchie
+    | Relation | Direction | Wikidata | Exemple |
+    |----------|-----------|----------|---------|
+    | `reports_to` | personne → personne | P2828 | `user reports_to sarah` |
+    | `manages` | personne → personne/équipe | - | `sarah manages backend_team` |
+    | `founded_by` | org → personne | P112 | `startup founded_by user` |
+    | `ceo_of` | personne → org | P169 | `elon_musk ceo_of tesla` |
+    
+    ### Éducation
+    | Relation | Direction | Wikidata | Exemple |
+    |----------|-----------|----------|---------|
+    | `educated_at` | personne → institution | P69 | `user educated_at mit` |
+    | `has_degree` | personne → diplôme | P512 | `user has_degree bachelor_cs` |
+    | `has_certification` | personne → cert | - | `user has_certification aws_sa` |
+    
+    ### Technique
+    | Relation | Direction | Wikidata | Exemple |
+    |----------|-----------|----------|---------|
+    | `uses` | entité → outil/tech | P2283 | `project uses python` |
+    | `knows` | personne → compétence/langage | - | `user knows rust` |
+    | `built_with` | produit → tech | - | `app built_with react` |
+    | `depends_on` | logiciel → logiciel | P1547 | `service depends_on redis` |
+    | `runs_on` | logiciel → plateforme | - | `api runs_on aws_lambda` |
+    | `written_in` | logiciel → langage | P277 | `tool written_in golang` |
+    
+    ### Projets & Travail
+    | Relation | Direction | Wikidata | Exemple |
+    |----------|-----------|----------|---------|
+    | `works_on` | personne → projet | P800 | `user works_on migration` |
+    | `owns` | personne/org → produit | P127 | `google owns youtube` |
+    | `maintains` | personne → logiciel | - | `user maintains cli_tool` |
+    | `contributed_to` | personne → projet | P767 | `user contributed_to linux` |
+    
+    ### Lieu & Temps
+    | Relation | Direction | Wikidata | Exemple |
+    |----------|-----------|----------|---------|
+    | `located_in` | entité → lieu | P131 | `office located_in berlin` |
+    | `headquartered_in` | org → lieu | P159 | `google headquartered_in mountain_view` |
+    | `started_at` | projet → date | P580 | `project started_at 2024_q1` |
+    | `ended_at` | projet → date | P582 | `project ended_at 2024_q4` |
+    | `scheduled_for` | événement → date | P585 | `launch scheduled_for 2025_03` |
+    
+    ### Social & Collaboration
+    | Relation | Direction | Wikidata | Exemple |
+    |----------|-----------|----------|---------|
+    | `collaborates_with` | personne → personne | - | `user collaborates_with bob` |
+    | `mentors` | personne → personne | - | `sarah mentors user` |
+    | `knows_person` | personne → personne | - | `user knows_person ceo` |
+    
+    ### Propriétés & Attributs
+    | Relation | Direction | Wikidata | Exemple |
+    |----------|-----------|----------|---------|
+    | `has_skill` | personne → compétence | - | `user has_skill ml` |
+    | `specializes_in` | personne → domaine | - | `user specializes_in security` |
+    | `prefers` | personne → chose | - | `user prefers typescript` |
+    | `requires` | entité → contrainte | - | `project requires gdpr_compliance` |
+    
+    ### Spécifique au domaine
+    
+    Pour les relations non couvertes ci-dessus, dérive les noms des conventions Wikidata :
+    - Utilise des verbes à la voix active : `treats` pas `is_treated_by`
+    - Sois spécifique : `prescribed` pas `related_to`
+    - Garde-le court : `author_of` pas `is_the_author_of`
+    
+    ## Exemples
+    
+    ### Exemple 1 : Bases de l'emploi
+    **Entités** : `[user_alice, google, senior_software_engineer]`
+    **Entrée** : "Je travaille chez Google en tant qu'ingénieur logiciel senior"
+    
+    **Sortie** :
+    ```
+    establish_relations(entities=[{"source": "user_alice", "relationship": "employer", "destination": "google"}, {"source": "user_alice", "relationship": "employed_as", "destination": "senior_software_engineer"}])
+    ```
+    
+    ### Exemple 2 : Structure d'équipe
+    **Entités** : `[user_bob, sarah_chen, backend_team, engineering]`
+    **Entrée** : "Je suis dans l'équipe backend en engineering, sous la responsabilité de Sarah Chen"
+    
+    **Sortie** :
+    ```
+    establish_relations(entities=[{"source": "user_bob", "relationship": "member_of", "destination": "backend_team"}, {"source": "user_bob", "relationship": "department", "destination": "engineering"}, {"source": "user_bob", "relationship": "reports_to", "destination": "sarah_chen"}])
+    ```
+    
+    ### Exemple 3 : Stack technologique
+    **Entités** : `[user_carol, payment_service, python_3, fastapi, postgresql, aws_lambda]`
+    **Entrée** : "Notre service de paiement est construit avec Python 3 et FastAPI, utilise PostgreSQL, et tourne sur AWS Lambda"
+    
+    **Sortie** :
+    ```
+    establish_relations(entities=[{"source": "user_carol", "relationship": "works_on", "destination": "payment_service"}, {"source": "payment_service", "relationship": "written_in", "destination": "python_3"}, {"source": "payment_service", "relationship": "built_with", "destination": "fastapi"}, {"source": "payment_service", "relationship": "uses", "destination": "postgresql"}, {"source": "payment_service", "relationship": "runs_on", "destination": "aws_lambda"}])
+    ```
+    
+    ### Exemple 4 : Éducation
+    **Entités** : `[user_dave, mit, bachelor_cs, aws_solutions_architect]`
+    **Entrée** : "J'ai obtenu mon diplôme du MIT en informatique et j'ai récemment obtenu la certification AWS Solutions Architect"
+    
+    **Sortie** :
+    ```
+    establish_relations(entities=[{"source": "user_dave", "relationship": "educated_at", "destination": "mit"}, {"source": "user_dave", "relationship": "has_degree", "destination": "bachelor_cs"}, {"source": "user_dave", "relationship": "has_certification", "destination": "aws_solutions_architect"}])
+    ```
+    
+    ### Exemple 5 : Calendrier de projet
+    **Entités** : `[user_eve, migration_project, 2024_q1, 2025_03, postgresql, mongodb]`
+    **Entrée** : "Le projet de migration a commencé au T1 2024, passant de MongoDB à PostgreSQL, avec pour objectif mars 2025"
+    
+    **Sortie** :
+    ```
+    establish_relations(entities=[{"source": "user_eve", "relationship": "works_on", "destination": "migration_project"}, {"source": "migration_project", "relationship": "started_at", "destination": "2024_q1"}, {"source": "migration_project", "relationship": "scheduled_for", "destination": "2025_03"}, {"source": "migration_project", "relationship": "migrating_from", "destination": "mongodb"}, {"source": "migration_project", "relationship": "migrating_to", "destination": "postgresql"}])
+    ```
+    
+    ### Exemple 6 : Collaboration
+    **Entités** : `[user_franz, james_wilson, security_team, api_service]`
+    **Entrée** : "Je travaille avec James Wilson de l'équipe sécurité sur la sécurisation de notre service API"
+    
+    **Sortie** :
+    ```
+    establish_relations(entities=[{"source": "user_franz", "relationship": "collaborates_with", "destination": "james_wilson"}, {"source": "james_wilson", "relationship": "member_of", "destination": "security_team"}, {"source": "user_franz", "relationship": "works_on", "destination": "api_service"}, {"source": "james_wilson", "relationship": "works_on", "destination": "api_service"}])
+    ```
+    
+    ### Exemple 7 : Compétences et préférences
+    **Entités** : `[user_grace, typescript, python, machine_learning, backend_development]`
+    **Entrée** : "Je préfère TypeScript à Python pour le backend, mais je me spécialise en machine learning"
+    
+    **Sortie** :
+    ```
+    establish_relations(entities=[{"source": "user_grace", "relationship": "prefers", "destination": "typescript"}, {"source": "user_grace", "relationship": "knows", "destination": "python"}, {"source": "user_grace", "relationship": "knows", "destination": "typescript"}, {"source": "user_grace", "relationship": "specializes_in", "destination": "machine_learning"}])
+    ```
+    Note : "préfère X à Y" implique la connaissance des deux.
+    
+    ### Exemple 8 : Spécifique au domaine (Médical)
+    **Entités** : `[user_doctor, patient_john, type_2_diabetes, metformin]`
+    **Entrée** : "J'ai diagnostiqué le Patient John avec un diabète de type 2 et prescrit de la Metformine"
+    
+    **Sortie** :
+    ```
+    establish_relations(entities=[{"source": "user_doctor", "relationship": "diagnosed", "destination": "patient_john"}, {"source": "patient_john", "relationship": "has_condition", "destination": "type_2_diabetes"}, {"source": "user_doctor", "relationship": "prescribed", "destination": "metformin"}, {"source": "patient_john", "relationship": "takes_medication", "destination": "metformin"}])
+    ```
+    
+    ### Exemple 9 : Propriété d'entreprise
+    **Entités** : `[user_hank, microsoft, github, copilot]`
+    **Entrée** : "Microsoft possède GitHub, et j'utilise leur Copilot quotidiennement"
+    
+    **Sortie** :
+    ```
+    establish_relations(entities=[{"source": "microsoft", "relationship": "owns", "destination": "github"}, {"source": "github", "relationship": "owns", "destination": "copilot"}, {"source": "user_hank", "relationship": "uses", "destination": "copilot"}])
+    ```
+    
+    ### Exemple 10 : Aucune relation extractible
+    **Entités** : `[user_test, python, javascript]`
+    **Entrée** : "Python et JavaScript sont tous deux populaires"
+    
+    **Sortie** :
+    ```
+    establish_relations(entities=[])
+    ```
+    Note : C'est une connaissance générale, pas une relation spécifique à l'utilisateur. Ne pas extraire.
+    
+    ## Ce qu'il ne faut PAS extraire
+    
+    - **Faits génériques** : "Python est un langage de programmation" (pas spécifique à l'utilisateur)
+    - **Opinions sans relations** : "React est super" (pas de relation structurée)
+    - **Hypothétiques** : "Je pourrais utiliser Rust" (pas factuel)
+    - **Négations comme relations** : "Je n'utilise pas Java" → NE PAS créer `does_not_use`
+    - **Inverses redondants** : Si `A reports_to B`, n'ajoute pas aussi `B manages A`
+    
+    ## Validation critique
+    
+    Avant de produire la sortie, vérifie :
+    1. Chaque `source` et `destination` existe dans la liste d'entités fournie
+    2. Les noms de relations utilisent `minuscules_avec_underscores`
+    3. La direction est correcte (vérifie qui/quoi fait l'action)
+    4. Pas de relations en double
+    5. Pas de faits génériques/non spécifiques à l'utilisateur
+    
+    ## Format de sortie
+    
+    Appelle l'outil `establish_relations` avec tes relations extraites. Si aucune relation ne peut être extraite, appelle-le avec un tableau vide.
+  relationship_deletion: |
+    # Analyse de suppression de relations pour la maintenance de graphes de connaissances
+    
+    Tu es un système de maintenance de graphes de connaissances. Ta tâche est d'analyser les relations existantes par rapport aux nouvelles informations et de déterminer quelles relations existantes doivent être SUPPRIMÉES parce qu'elles sont contredites ou remplacées.
+    
+    ## Principes fondamentaux
+    
+    1. **Suppression conservative** : En cas de doute, NE PAS supprimer. Les fausses suppressions perdent des informations de façon permanente.
+    2. **Contradiction requise** : Ne supprimer que quand les nouvelles informations contredisent EXPLICITEMENT les informations existantes
+    3. **Distinguer les mises à jour des ajouts** : Ajouter de nouvelles informations NE signifie PAS supprimer les anciennes
+    4. **Conscience de la cardinalité** : Comprendre si les relations sont un-à-un, un-à-plusieurs ou plusieurs-à-plusieurs
+    
+    ## Règle d'auto-référence
+    
+    L'identifiant `%{user_id}` représente l'utilisateur actuel. C'est la même entité que "je", "me", "mon" dans les nouvelles informations.
+    
+    ## Guide de cardinalité des relations
+    
+    Comprendre la cardinalité est CRITIQUE pour des décisions de suppression correctes.
+    
+    ### Typiquement UN-À-UN (nouveau remplace ancien)
+    | Relation | Raison | Exemple |
+    |----------|--------|---------|
+    | `employer` | La plupart des gens ont un employeur principal | Ancien : `user employer acme` → Nouveau : "Je travaille chez Google" → SUPPRIMER ancien |
+    | `reports_to` | Généralement un seul manager direct | Ancien : `user reports_to alice` → Nouveau : "Bob est mon manager" → SUPPRIMER ancien |
+    | `located_in` (personne) | Résidence principale | Ancien : `user located_in berlin` → Nouveau : "J'ai déménagé à Londres" → SUPPRIMER ancien |
+    | `employed_as` (principal) | Titre de poste principal | Ancien : `user employed_as junior_dev` → Nouveau : "Je suis maintenant ingénieur senior" → SUPPRIMER ancien |
+    | `ceo_of` | Un seul CEO par entreprise | Ancien : `alice ceo_of acme` → Nouveau : "Bob est maintenant CEO d'Acme" → SUPPRIMER ancien |
+    | `headquartered_in` | Un seul siège social | Ancien : `acme headquartered_in sf` → Nouveau : "Acme a déplacé son siège à Austin" → SUPPRIMER ancien |
+    
+    ### Typiquement UN-À-PLUSIEURS ou PLUSIEURS-À-PLUSIEURS (nouveau s'ajoute à l'existant)
+    | Relation | Raison | Exemple |
+    |----------|--------|---------|
+    | `knows` (compétence) | Les gens connaissent plusieurs choses | Ancien : `user knows python` + Nouveau : "J'ai appris Rust" → GARDER les deux |
+    | `uses` | Plusieurs outils utilisés | Ancien : `user uses vscode` + Nouveau : "J'utilise aussi nvim" → GARDER les deux |
+    | `member_of` | Peut être dans plusieurs équipes | Ancien : `user member_of team_a` + Nouveau : "J'ai rejoint l'équipe B" → GARDER les deux (généralement) |
+    | `collaborates_with` | Plusieurs collaborateurs | Ancien : `user collaborates_with alice` + Nouveau : "Je travaille aussi avec Bob" → GARDER les deux |
+    | `educated_at` | Plusieurs institutions | Ancien : `user educated_at mit` + Nouveau : "J'ai aussi fait Stanford" → GARDER les deux |
+    | `has_certification` | Plusieurs certifications | Ancien : `user has_certification aws_sa` + Nouveau : "J'ai obtenu la certification PMP" → GARDER les deux |
+    | `works_on` | Plusieurs projets | Ancien : `user works_on proj_a` + Nouveau : "Je travaille aussi sur le projet B" → GARDER les deux |
+    | `built_with` | Plusieurs technologies | Ancien : `app built_with react` + Nouveau : "On utilise aussi TypeScript" → GARDER les deux |
+    
+    ### Dépendant du contexte (analyser soigneusement)
+    | Relation | Quand SUPPRIMER | Quand GARDER |
+    |----------|-----------------|--------------|
+    | `member_of` (équipe) | "J'ai quitté l'équipe A pour l'équipe B" | "J'ai rejoint l'équipe B" (pourrait être les deux) |
+    | `works_on` (projet) | "Projet annulé" ou "Je ne suis plus sur le projet A" | "Je travaille aussi sur B" |
+    | `uses` (outil) | "Passé de X à Y" | "J'utilise aussi Y" |
+    | `located_in` (bureau) | "Déménagé au nouveau bureau" | "Je travaille des deux bureaux" |
+    
+    ## Cadre de décision
+    
+    Pour chaque relation existante, évalue :
+    
+    ```
+    1. Y a-t-il de NOUVELLES informations sur la MÊME paire source-destination ?
+       └─ NON → GARDER (pas de conflit)
+       └─ OUI → Passer à l'étape 2
+    
+    2. Les nouvelles informations contredisent-elles EXPLICITEMENT la relation existante ?
+       └─ NON → GARDER (pourrait être une info supplémentaire)
+       └─ OUI → Passer à l'étape 3
+    
+    3. Ce type de relation est-il typiquement UN-À-UN pour ce contexte ?
+       └─ NON → GARDER (peut en avoir plusieurs)
+       └─ OUI → SUPPRIMER (nouveau remplace ancien)
+    ```
+    
+    ## Exemples
+    
+    ### Exemple 1 : Remplacement clair (SUPPRIMER)
+    **Mémoire existante** :
+    ```
+    user_alice -- employer -- acme_corp
+    user_alice -- employed_as -- software_engineer
+    ```
+    
+    **Nouvelle information** : "Je viens de commencer chez Google en tant qu'ingénieur senior"
+    
+    **Analyse** :
+    - `employer` est typiquement un-à-un
+    - Nouvel employeur (Google) contredit l'ancien employeur (Acme)
+    - `employed_as` a une nouvelle valeur (ingénieur senior vs ingénieur logiciel)
+    
+    **Décision** : SUPPRIMER les deux relations
+    ```
+    delete_graph_memory(source="user_alice", relationship="employer", destination="acme_corp")
+    delete_graph_memory(source="user_alice", relationship="employed_as", destination="software_engineer")
+    ```
+    
+    ### Exemple 2 : Ajout, pas remplacement (GARDER)
+    **Mémoire existante** :
+    ```
+    user_bob -- knows -- python
+    user_bob -- uses -- vscode
+    ```
+    
+    **Nouvelle information** : "J'apprends Rust et j'ai commencé à utiliser Neovim"
+    
+    **Analyse** :
+    - `knows` est plusieurs-à-plusieurs (les gens connaissent plusieurs langages)
+    - `uses` est plusieurs-à-plusieurs (les gens utilisent plusieurs outils)
+    - Aucune indication que Bob a arrêté d'utiliser Python ou VSCode
+    
+    **Décision** : Ne rien SUPPRIMER
+    ```
+    (pas d'appels d'outils)
+    ```
+    
+    ### Exemple 3 : Signal de remplacement explicite (SUPPRIMER)
+    **Mémoire existante** :
+    ```
+    user_carol -- uses -- mongodb
+    project_x -- uses -- mongodb
+    ```
+    
+    **Nouvelle information** : "Nous avons migré de MongoDB vers PostgreSQL"
+    
+    **Analyse** :
+    - "migré de X vers Y" est un signal de remplacement explicite
+    - Cela s'applique au projet, pas nécessairement à l'utilisateur personnellement
+    
+    **Décision** : SUPPRIMER uniquement la relation MongoDB du projet
+    ```
+    delete_graph_memory(source="project_x", relationship="uses", destination="mongodb")
+    ```
+    
+    ### Exemple 4 : Changement de manager (SUPPRIMER)
+    **Mémoire existante** :
+    ```
+    user_dave -- reports_to -- sarah_chen
+    user_dave -- member_of -- backend_team
+    ```
+    
+    **Nouvelle information** : "Je rapporte maintenant à James Wilson"
+    
+    **Analyse** :
+    - `reports_to` est typiquement un-à-un (un seul manager direct)
+    - Nouveau manager explicitement mentionné
+    - Appartenance à l'équipe non mentionnée (pourrait encore être dans la même équipe)
+    
+    **Décision** : SUPPRIMER uniquement la relation de manager
+    ```
+    delete_graph_memory(source="user_dave", relationship="reports_to", destination="sarah_chen")
+    ```
+    
+    ### Exemple 5 : Situation d'équipe ambiguë (GARDER)
+    **Mémoire existante** :
+    ```
+    user_eve -- member_of -- backend_team
+    ```
+    
+    **Nouvelle information** : "J'ai rejoint l'équipe ML"
+    
+    **Analyse** :
+    - `member_of` peut être plusieurs-à-plusieurs
+    - Pas de déclaration explicite de départ de l'équipe backend
+    - Pourrait être dans plusieurs équipes
+    
+    **Décision** : Ne rien SUPPRIMER
+    ```
+    (pas d'appels d'outils)
+    ```
+    
+    ### Exemple 6 : Départ d'équipe explicite (SUPPRIMER)
+    **Mémoire existante** :
+    ```
+    user_eve -- member_of -- backend_team
+    ```
+    
+    **Nouvelle information** : "J'ai quitté l'équipe backend pour rejoindre ML à temps plein"
+    
+    **Analyse** :
+    - Signal "quitté" explicite
+    - "à temps plein" suggère une appartenance exclusive
+    
+    **Décision** : SUPPRIMER
+    ```
+    delete_graph_memory(source="user_eve", relationship="member_of", destination="backend_team")
+    ```
+    
+    ### Exemple 7 : Déménagement (SUPPRIMER)
+    **Mémoire existante** :
+    ```
+    user_franz -- located_in -- berlin
+    user_franz -- employer -- deutsche_bank
+    ```
+    
+    **Nouvelle information** : "Je me suis installé à Londres"
+    
+    **Analyse** :
+    - `located_in` pour une personne est typiquement une résidence principale
+    - "installé" implique un déménagement, pas un ajout
+    - Employeur non mentionné (pourrait avoir changé ou non)
+    
+    **Décision** : SUPPRIMER uniquement la localisation
+    ```
+    delete_graph_memory(source="user_franz", relationship="located_in", destination="berlin")
+    ```
+    
+    ### Exemple 8 : Achèvement de projet (dépend du contexte)
+    **Mémoire existante** :
+    ```
+    user_grace -- works_on -- migration_project
+    ```
+    
+    **Nouvelle information** : "Le projet de migration s'est terminé avec succès"
+    
+    **Analyse** :
+    - Projet terminé, mais l'implication historique de l'utilisateur est toujours vraie
+    - `works_on` pourrait devenir `worked_on` mais on ne modifie pas les relations
+    - C'est un changement d'état, pas une contradiction
+    
+    **Décision** : Ne rien SUPPRIMER (laisser les nouvelles informations être ajoutées séparément)
+    ```
+    (pas d'appels d'outils)
+    ```
+    
+    ### Exemple 9 : Expiration de certification (SUPPRIMER)
+    **Mémoire existante** :
+    ```
+    user_hank -- has_certification -- aws_solutions_architect_2020
+    ```
+    
+    **Nouvelle information** : "Ma certification AWS a expiré, j'ai obtenu la nouvelle version 2024"
+    
+    **Analyse** :
+    - Signal "expiré" explicite
+    - Certification explicitement remplacée par une nouvelle version
+    
+    **Décision** : SUPPRIMER l'ancienne certification
+    ```
+    delete_graph_memory(source="user_hank", relationship="has_certification", destination="aws_solutions_architect_2020")
+    ```
+    
+    ### Exemple 10 : Plusieurs existantes, une remplacée
+    **Mémoire existante** :
+    ```
+    user_iris -- employer -- acme
+    user_iris -- knows -- python
+    user_iris -- knows -- javascript
+    user_iris -- located_in -- austin
+    ```
+    
+    **Nouvelle information** : "Je déménage à Seattle pour un nouveau poste chez Amazon"
+    
+    **Analyse** :
+    - Nouvel employeur → ancien employeur doit être supprimé
+    - Nouvelle localisation → ancienne localisation doit être supprimée
+    - Compétences non mentionnées → les garder
+    
+    **Décision** : SUPPRIMER uniquement employeur et localisation
+    ```
+    delete_graph_memory(source="user_iris", relationship="employer", destination="acme")
+    delete_graph_memory(source="user_iris", relationship="located_in", destination="austin")
+    ```
+    
+    ### Exemple 11 : Même type de relation, destination différente (ATTENTION)
+    **Mémoire existante** :
+    ```
+    user_jack -- prefers -- python
+    ```
+    
+    **Nouvelle information** : "Je préfère maintenant Rust pour la programmation système"
+    
+    **Analyse** :
+    - Est-ce que cela remplace entièrement la préférence Python ?
+    - Ou est-ce une préférence spécifique au domaine (Rust pour les systèmes, Python pour autre chose) ?
+    - Ambigu → pencher vers le maintien
+    
+    **Décision** : Ne rien SUPPRIMER (ambigu)
+    ```
+    (pas d'appels d'outils)
+    ```
+    
+    ### Exemple 12 : Information tierce partie
+    **Mémoire existante** :
+    ```
+    sarah_chen -- employer -- acme
+    sarah_chen -- employed_as -- engineering_manager
+    ```
+    
+    **Nouvelle information** : "Sarah a été promue VP of Engineering"
+    
+    **Analyse** :
+    - Même employeur, rôle différent
+    - `employed_as` devrait être mis à jour
+    
+    **Décision** : SUPPRIMER uniquement l'ancien rôle
+    ```
+    delete_graph_memory(source="sarah_chen", relationship="employed_as", destination="engineering_manager")
+    ```
+    
+    ## Signaux d'alerte - Quand NE PAS supprimer
+    
+    1. **Pas de contradiction explicite** : "J'utilise Postgres" NE signifie PAS supprimer "uses MySQL"
+    2. **Contextes différents** : "J'utilise Python au travail" NE contredit PAS "uses JavaScript" (pourrait être personnel)
+    3. **Correspondances partielles** : "Je travaille avec l'équipe ML" NE contredit PAS nécessairement "member_of backend_team"
+    4. **Validité historique** : "J'ai appris Rust" NE contredit PAS "knows Python"
+    5. **Timing incertain** : "Je pourrais passer à..." n'est pas encore un fait
+    
+    ## Format de sortie
+    
+    Pour CHAQUE relation qui devrait être supprimée, fais un appel `delete_graph_memory` séparé.
+    
+    Si 3 relations doivent être supprimées, fais 3 appels d'outils.
+    Si rien ne doit être supprimé, ne fais AUCUN appel d'outil.
+    
+    Chaque appel d'outil spécifie :
+    - `source` : L'entité source (exactement comme elle apparaît dans la mémoire existante)
+    - `relationship` : Le type de relation (exactement comme il apparaît)
+    - `destination` : L'entité destination (exactement comme elle apparaît)
+    
+    ### Exemple : Suppressions multiples = Appels d'outils multiples
+    
+    Si tu détermines que ces deux relations doivent être supprimées :
+    - `user_alice -- employer -- acme_corp`
+    - `user_alice -- located_in -- berlin`
+    
+    Fais DEUX appels d'outils séparés :
+    
+    **Appel d'outil 1 :**
+    ```
+    delete_graph_memory(source="user_alice", relationship="employer", destination="acme_corp")
+    ```
+    
+    **Appel d'outil 2 :**
+    ```
+    delete_graph_memory(source="user_alice", relationship="located_in", destination="berlin")
+    ```
+    
+    ### Exemple : Rien à supprimer
+    
+    Si aucune relation ne doit être supprimée, n'appelle simplement pas l'outil du tout.
 summarizer:
   summarize: |
     Tâche : Résume le texte suivant sous forme de TL;DR :
@@ -172,22 +1820,23 @@ figure_description_generator:
     {% chat role="system" %}
     Vous êtes un expert dans la création de descriptions d'images de haute qualité pour l'accessibilité des documents.
     Votre tâche consiste à générer un texte alt détaillé pour les figures dans les documents qui :
-    
+
     1. Décrit de manière concise le contenu visuel (images, graphiques, diagrammes, etc.)
     2. Capture l'information clé transmise par la figure
     3. Pour les graphiques et les diagrammes : description de la structure, identification des axes, des points de données et des tendances
     4. Pour les tableaux : description de la structure et résumé des principaux points de données
     5. Extraction de tout texte visible dans l'image, le cas échéant
     6. Utilise un langage technique approprié tout en restant accessible
-    7. Utilise le texte environnant fourni pour comprendre le rôle de l'image, sans laisser le contexte modifier la description factuelle et visuelle.
-    8. Évite toute verbosité ou spéculation inutile
-    
+    7. Évite toute verbosité ou spéculation inutile
+
+    CRITIQUE : Décrivez UNIQUEMENT ce que vous voyez réellement dans l'image. Le texte environnant est fourni pour le contexte concernant la terminologie et la langue, mais vous ne devez JAMAIS supposer que l'image représente quelque chose mentionné dans le texte. Si le texte mentionne « un chat » mais que vous voyez un fruit, décrivez le fruit. Si vous ne pouvez pas identifier un objet avec certitude, décrivez ses propriétés visuelles (forme, couleur, texture) sans deviner ce qu'il représente.
+
     Formulez vos descriptions sous forme de paragraphes concis et factuels qui pourraient être utilisés directement comme texte alternatif.
     Concentrez-vous sur l'information et aidez le lecteur à comprendre ce qu'il ne peut pas voir.
-    N'inventez PAS d'informations, ne faites référence qu'à ce que vous pouvez voir dans l'image.
     Rédigez votre réponse dans la MÊME langue que le texte de contexte et le texte de l'image.
     {% endchat %}
-    
+
     {% chat role="user" %}
-    Veuillez fournir une description détaillée et précise de cette image qui servirait de texte alt efficace.
+    Veuillez fournir une description détaillée et précise de cette image qui servirait de texte alt efficace. Rappel : décrivez uniquement ce que vous voyez réellement, pas ce que le texte environnant suggère.
     {% endchat %}
+    

@@ -1,13 +1,33 @@
 import { type DocumentDto, getDocumentsForNamespace } from '@core/sdk/client'
 
+export interface SortState {
+  field: string | null
+  order: 1 | -1
+}
+
 export const useDocuments = defineQuery(() => {
   const route = useRoute()
+  const isRouteReady = useRouteReady('db', 'namespace')
+
   const currentPage = ref(1)
   const pageSize = ref(10)
+  const searchQuery = ref<string | null>(null)
+  const sortState = ref<SortState>({ field: null, order: 1 })
+
+  const database = computed(() => route.params.db as string)
+  const namespace = computed(() => route.params.namespace as string)
 
   const documentsQuery = useQuery({
-    key: () => ['knowledge', 'databases', route.params.db as string, 'namespaces', route.params.namespace as string, 'documents', { page: currentPage.value, size: pageSize.value }],
+    key: () => ['knowledge', 'databases', database.value, 'namespaces', namespace.value, 'documents', { page: currentPage.value, size: pageSize.value, search: searchQuery.value, sortField: sortState.value.field, sortOrder: sortState.value.order }],
+    enabled: () => isRouteReady.value,
     query: async () => {
+      const db = database.value
+      const ns = namespace.value
+
+      if (!db || !ns) {
+        throw new Error('Database and namespace are required')
+      }
+
       const pageToFetch = Math.max(1, currentPage.value)
 
       return await getDocumentsForNamespace({
@@ -15,10 +35,13 @@ export const useDocuments = defineQuery(() => {
         query: {
           page: pageToFetch,
           page_size: pageSize.value,
+          search: searchQuery.value ?? undefined,
+          sort_field: sortState.value.field ?? undefined,
+          sort_order: sortState.value.order,
         },
         path: {
-          database: route.params.db,
-          namespace: route.params.namespace,
+          database: db,
+          namespace: ns,
         },
       })
     },
@@ -38,6 +61,16 @@ export const useDocuments = defineQuery(() => {
     }
   }
 
+  const setSearch = (query: string | null) => {
+    searchQuery.value = query && query.trim() ? query.trim() : null
+    currentPage.value = 1
+  }
+
+  const setSort = (field: string | null, order: 1 | -1 = 1) => {
+    sortState.value = { field, order }
+    currentPage.value = 1
+  }
+
   const paginationMeta = computed(() => {
     const data = documentsQuery.state.value?.data
 
@@ -51,16 +84,23 @@ export const useDocuments = defineQuery(() => {
 
   const documents = computed(() => (documentsQuery.state.value?.data)?.documents ?? [] as DocumentDto[])
 
-  const isLoading = computed(() => documentsQuery.asyncStatus.value === 'loading')
+  // Only show loading on initial load, not during refetch/search when we have data
+  const isLoading = computed(() => documentsQuery.asyncStatus.value === 'loading' && !documentsQuery.state.value?.data)
+  const isFetching = computed(() => documentsQuery.asyncStatus.value === 'loading')
 
   return {
     documents,
     isLoading,
+    isFetching,
     pagination: paginationMeta,
     currentPage,
     pageSize,
+    searchQuery,
+    sortState,
     setPage,
     setPageSize,
+    setSearch,
+    setSort,
     refetch: documentsQuery.refetch,
   }
 })

@@ -1,6 +1,6 @@
 from typing import Annotated, ClassVar
 
-from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pydantic import Field
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -16,7 +16,7 @@ class UserMessageEvent(StartEvent):
 
     ### Why UserMessageEvent?
     While `StartEvent` influences the workflow’s starting point and `DisplayEvent` represents user-facing
-    output, a `UserMessageEvent` marks a workflow start initiated by a user’s input. This is common in chat
+    output, a `UserMessageEvent` marks a ChatMessage workflow start initiated by a user's input. This is common in chat
     interfaces, voice assistants, or interactive dashboards, where a user’s message serves as both:
     - A display event (since it may appear in the UI history).
     - A control event triggering workflow execution from a particular starting step.
@@ -67,7 +67,17 @@ class UserMessageEvent(StartEvent):
     @property
     def user_query(self) -> str:
         """
-        Extracts the user query from the chat history, returning the last user message.
+        Extracts the user query text from the chat history, returning the last user message content.
+        Note: This only returns text content. Use last_user_message for full message with all blocks.
         """
-        user_messages = [msg for msg in self.messages if msg.role == "user"]
+        user_messages = [msg for msg in self.messages if msg.role == MessageRole.USER]
         return user_messages[-1].content if user_messages else ""
+
+    @property
+    def last_user_message(self) -> ChatMessage:
+        """
+        Extracts the complete last user message (with all blocks including images/audio) from chat history.
+        Use this when passing messages to LLMs to preserve multimodal content.
+        """
+        user_messages = [msg for msg in self.messages if msg.role == MessageRole.USER]
+        return user_messages[-1] if user_messages else ChatMessage(role=MessageRole.USER, content="")

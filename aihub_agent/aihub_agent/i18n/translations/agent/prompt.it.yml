@@ -1,6 +1,11 @@
 guard:
   reject: |
-    Informa l'utente che non puoi rispondere alla domanda per il seguente motivo:
+    {prompt}
     <Motivo del rifiuto>
     {reason}
     </Motivo del rifiuto>
+expert_context: |
+  Hai ricevuto la seguente conversazione con un esperto. Usa queste informazioni per rispondere alla domanda dell'utente.
+  <CONVERSAZIONE_ESPERTO>
+  %{expert_conversation}
+  </CONVERSAZIONE_ESPERTO>

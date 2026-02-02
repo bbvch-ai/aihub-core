@@ -23,6 +23,10 @@ def generate_figure_descriptions(
 ) -> RefDocDocument:
     """Injects image Markdown tags into the document content by replacing HTML figure tags."""
 
+    if ref_doc.text_resource is None:
+        context.log.warning(f"Document has no text content, skipping figure description generation: {ref_doc.id_}")
+        return ref_doc
+
     soup = BeautifulSoup(ref_doc.text_resource.text, "html.parser")
     figure_tags = soup.find_all(NODE_CONTENT_TYPE_FIGURE)
     for i, figure_tag in enumerate(figure_tags):

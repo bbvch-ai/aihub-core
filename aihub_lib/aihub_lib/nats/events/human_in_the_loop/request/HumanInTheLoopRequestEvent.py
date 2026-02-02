@@ -1,4 +1,4 @@
-from typing import Annotated, ClassVar
+from typing import Annotated, ClassVar, Literal
 
 from pydantic import Field
 
@@ -7,15 +7,18 @@ from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
+# Type discriminator for HITL request events
+HitlRequestType = Literal["input", "confirmation", "chat"]
+
 
 class HumanInTheLoopRequestEvent(ControlAndDisplayEvent):
     """
-    An event asking a human for input, guidance, or approval at a critical juncture in a workflow.
+    Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
 
-    ### Why HumanInTheLoopRequestEvent?
-    In automated workflows, certain decisions may require human validation. This event:
-    - Is a `DisplayEvent`, so it can appear in user interfaces.
-    - Carries a question and a topic indicating where the subsequent response should be sent.
+    Use the specific subclasses:
+    - `HumanInTheLoopInputRequestEvent` for free-form text input (popup dialog)
+    - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation (popup dialog)
+    - `HumanInTheLoopChatRequestEvent` for chat-style input (appears as regular message)
     """
 
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.hitl_request_event.name")
@@ -29,5 +32,11 @@ class HumanInTheLoopRequestEvent(ControlAndDisplayEvent):
         Field(
             description="A partial or full agent topic specifying the event type and name of the expected response "
             "event, ensuring the correct workflow step resumes once the human replies.",
+        ),
+    ]
+    hitl_type: Annotated[
+        HitlRequestType,
+        Field(
+            description="HITL type: 'input' (free-form text), 'confirmation' (yes/no), 'chat' (chat-style).",
         ),
     ]

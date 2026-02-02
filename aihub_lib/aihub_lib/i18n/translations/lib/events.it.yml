@@ -90,6 +90,10 @@ context_insufficient_reject_event:
   name: "Contesto Insufficiente Disponibile"
   description: "È necessario più contesto per rispondere correttamente alla query dell'utente."
 
+expert_reject_event:
+  name: "Escalation Esperto Rifiutata"
+  description: "L'utente ha rifiutato di inoltrare la sua domanda a un esperto umano."
+
 sensitive_info_accept_event:
   name: "Risposta Sicura da Condividere"
   description: "La risposta non contiene informazioni sensibili e può essere condivisa in sicurezza."
@@ -102,9 +106,33 @@ hitl_request_event:
   name: "Richiesta all'Utente"
   description: "L'agente ha bisogno di informazioni aggiuntive dall'utente per continuare con il compito."
 
+hitl_input_request_event:
+  name: "Richiesta di Input"
+  description: "L'agente ha bisogno di un input testuale dall'utente per continuare con il compito."
+
+hitl_confirmation_request_event:
+  name: "Richiesta di Conferma"
+  description: "L'agente ha bisogno di una conferma sì/no dall'utente per continuare con il compito."
+
 hitl_response_event:
   name: "Risposta dell'Utente Ricevuta"
   description: "L'utente ha risposto alla richiesta, e l'agente può procedere con il compito."
+
+hitl_input_response_event:
+  name: "Input Ricevuto"
+  description: "L'utente ha fornito un input testuale, e l'agente può procedere con il compito."
+
+hitl_confirmation_response_event:
+  name: "Conferma Ricevuta"
+  description: "L'utente ha confermato o rifiutato, e l'agente può procedere con il compito."
+
+hitl_chat_request_event:
+  name: "Domanda Chat"
+  description: "L'agente ha posto una domanda che può essere risposta tramite un messaggio di chat."
+
+hitl_chat_response_event:
+  name: "Risposta Chat Ricevuta"
+  description: "L'utente ha risposto tramite messaggio di chat, e l'agente può procedere con il compito."
 
 router_event:
   name: "Percorso ottimale scelto"
@@ -157,3 +185,35 @@ user_message_event:
 standalone_question_condenser_event:
   name: "Condensatore di Domande Autonome"
   description: "L'agente riformula una domanda autonoma per migliorarne la chiarezza e la pertinenza, facilitando una risposta più precisa."
+
+new_memory_event:
+  name: "Memoria Aggiornata"
+  description: "L'agente ha aggiornato le memorie dell'utente o dell'organizzazione basate sulla conversazione"
+
+retrieve_memory_event:
+  name: "Memoria Recuperata"
+  description: "L'agente ha recuperato memorie rilevanti per il contesto"
+
+retrieve_user_memory_event:
+  name: "Memoria Utente Recuperata"
+  description: "L'agente ha recuperato memorie utente private per un contesto personalizzato"
+
+retrieve_organization_memory_event:
+  name: "Memoria Organizzativa Recuperata"
+  description: "L'agente ha recuperato memorie organizzative condivise per il contesto"
+
+store_organization_memory_event:
+  name: "Memoria Organizzativa Memorizzata"
+  description: "L'agente ha memorizzato un fatto organizzativo esplicito condiviso tra tutti gli utenti"
+
+add_memory_to_chat_history_event:
+  name: "Memoria Aggiunta al Contesto"
+  description: "L'agente ha esteso la cronologia chat con le memorie"
+
+add_user_memory_to_chat_history_event:
+  name: "Memoria Utente Aggiunta al Contesto"
+  description: "L'agente ha esteso la cronologia chat con le memorie utente private"
+
+add_organization_memory_to_chat_history_event:
+  name: "Memoria Organizzativa Aggiunta al Contesto"
+  description: "L'agente ha esteso la cronologia chat con le memorie organizzative condivise"

@@ -3,10 +3,15 @@ from typing import Annotated, Any, override
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import (
+    AddMemoryToChatHistoryEvent,
+    AddOrganizationMemoryToChatHistoryEvent,
+    AddUserMemoryToChatHistoryEvent,
     AgentEvent,
     AgentInTheLoopExceptionEvent,
     AgentInTheLoopRequestEvent,
     AgentInTheLoopResponseEvent,
+    BaseRetrieveMemoryEvent,
+    BaseStoreMemoryEvent,
     ChainEvent,
     ChunkEvent,
     DisplayEvent,
@@ -20,10 +25,14 @@ from aihub_lib.nats.events import (
     LLMEvent,
     LLMStopEvent,
     RerankerEvent,
+    RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
+    RetrieveUserMemoryEvent,
     StandaloneQuestionCondenserEvent,
     StartEvent,
     StopEvent,
+    StoreOrganizationMemoryEvent,
+    StoreUserMemoryEvent,
     ThoughtEvent,
     ToolEvent,
     UserMessageEvent,
@@ -54,6 +63,9 @@ DisplayEvents = (
     | Annotated[AgentInTheLoopExceptionEvent, Tag("AgentInTheLoopExceptionEvent")]
     | Annotated[HumanInTheLoopResponseEvent, Tag("HumanInTheLoopResponseEvent")]
     | Annotated[LimitChatHistoryEvent, Tag("LimitChatHistoryEvent")]
+    | Annotated[AddMemoryToChatHistoryEvent, Tag("AddMemoryToChatHistoryEvent")]
+    | Annotated[AddUserMemoryToChatHistoryEvent, Tag("AddUserMemoryToChatHistoryEvent")]
+    | Annotated[AddOrganizationMemoryToChatHistoryEvent, Tag("AddOrganizationMemoryToChatHistoryEvent")]
     | Annotated[StandaloneQuestionCondenserEvent, Tag("StandaloneQuestionCondenserEvent")]
     | Annotated[LLMCostEvent, Tag("LLMCostEvent")]
     | Annotated[ChunkEvent, Tag("ChunkEvent")]
@@ -83,6 +95,12 @@ DisplayEvents = (
     | Annotated[FewShotRejectEvent, Tag("FewShotRejectEvent")]
     | Annotated[SensitiveInfoAcceptEvent, Tag("SensitiveInfoAcceptEvent")]
     | Annotated[SensitiveInfoRejectEvent, Tag("SensitiveInfoRejectEvent")]
+    | Annotated[StoreUserMemoryEvent, Tag("StoreUserMemoryEvent")]
+    | Annotated[BaseRetrieveMemoryEvent, Tag("BaseRetrieveMemoryEvent")]
+    | Annotated[BaseStoreMemoryEvent, Tag("BaseStoreMemoryEvent")]
+    | Annotated[RetrieveOrganizationMemoryEvent, Tag("RetrieveOrganizationMemoryEvent")]
+    | Annotated[RetrieveUserMemoryEvent, Tag("RetrieveUserMemoryEvent")]
+    | Annotated[StoreOrganizationMemoryEvent, Tag("StoreOrganizationMemoryEvent")]
 )
 
 

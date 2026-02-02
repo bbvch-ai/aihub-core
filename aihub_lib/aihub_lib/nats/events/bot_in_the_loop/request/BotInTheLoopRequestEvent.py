@@ -72,14 +72,10 @@ class BotInTheLoopRequestEvent(ControlEvent):
         ),
     ]
     question: Annotated[str, Field(description="The query or prompt presented to the human operator.")]
-    slack_config: Annotated[
-        SlackConfig | None,
-        Field(description="Configuration details for sending the request via Slack."),
-    ] = None
-    teams_config: Annotated[
-        TeamsConfig | None,
-        Field(description="Configuration details for sending the request via Microsoft Teams."),
-    ] = None
+    channel_config: Annotated[
+        SlackConfig | TeamsConfig,
+        Field(description="Configuration details for sending the request via Slack or Teams."),
+    ]
     topic: Annotated[
         PartialAgentTopic | AgentInstanceTopic,
         Field(

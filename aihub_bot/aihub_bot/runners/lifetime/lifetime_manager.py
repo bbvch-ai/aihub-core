@@ -10,7 +10,6 @@ from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
-from nats.aio.client import Client as NATS
 
 from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity
 from aihub_bot.routes.bot_in_the_loop.BotInTheLoopHandler import BotInTheLoopHandler
@@ -20,12 +19,11 @@ from aihub_bot.routes.bot_in_the_loop.BotInTheLoopHandler import BotInTheLoopHan
 async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
     logging.info("Initializing NATS connection and resources")
 
-    nc = NATS()
-
     # Connect to MongoDB via Cosmos
     connect(
         db=AIHubSettings().MONGO_MAIN_DB_NAME,
         host=MongoSettings().CONNECTION_STRING.get_secret_value(),
+        uuidRepresentation="standard",
     )
 
     # Configure TTL index after connection is established
@@ -36,7 +34,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
     try:
         # Connect to NATS and setup JetStream
-        await nc.connect(servers=[NatsSettings().ENDPOINT])
+        nc = await NatsSettings.create_client()
         js = nc.jetstream()
 
         topic_manager = AgentTopicManager()

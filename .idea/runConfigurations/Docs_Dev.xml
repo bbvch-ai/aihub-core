@@ -5,7 +5,6 @@
     <scripts>
       <script value="docs:dev" />
     </scripts>
-    <node-interpreter value="project" />
     <envs />
     <method v="2" />
   </configuration>

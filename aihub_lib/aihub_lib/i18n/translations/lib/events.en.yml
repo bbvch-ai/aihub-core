@@ -90,6 +90,10 @@ context_insufficient_reject_event:
   name: "Insufficient Context Available"
   description: "More context is needed to properly answer the user's query."
 
+expert_reject_event:
+  name: "Expert Escalation Declined"
+  description: "The user declined to escalate their question to a human expert."
+
 sensitive_info_accept_event:
   name: "Response Safe to Share"
   description: "The response does not contain sensitive information and can be safely shared."
@@ -102,9 +106,33 @@ hitl_request_event:
   name: "User Query"
   description: "The agent needs additional information from the user to continue with the task."
 
+hitl_input_request_event:
+  name: "User Input Request"
+  description: "The agent needs text input from the user to continue with the task."
+
+hitl_confirmation_request_event:
+  name: "User Confirmation Request"
+  description: "The agent needs a yes/no confirmation from the user to continue with the task."
+
 hitl_response_event:
   name: "User Response Received"
   description: "The user has answered the query, and the agent can proceed with the task."
+
+hitl_input_response_event:
+  name: "User Input Received"
+  description: "The user has provided text input, and the agent can proceed with the task."
+
+hitl_confirmation_response_event:
+  name: "User Confirmation Received"
+  description: "The user has confirmed or declined, and the agent can proceed with the task."
+
+hitl_chat_request_event:
+  name: "Chat Question"
+  description: "The agent has asked a question that can be answered by typing a chat message."
+
+hitl_chat_response_event:
+  name: "Chat Answer Received"
+  description: "The user has answered via chat message, and the agent can proceed with the task."
 
 router_event:
   name: "Decided for optimal next path"
@@ -157,3 +185,35 @@ user_message_event:
 standalone_question_condenser_event:
   name: "Question Condensed"
   description: "The user's request has been condensed to a standalone question for better retrieval."
+
+new_memory_event:
+  name: "Memory Updated"
+  description: "Agent updated user or organization memories based on conversation"
+
+retrieve_memory_event:
+  name: "Memory Retrieved"
+  description: "Agent retrieved relevant memories for context"
+
+retrieve_user_memory_event:
+  name: "User Memory Retrieved"
+  description: "Agent retrieved private user memories for personalized context"
+
+retrieve_organization_memory_event:
+  name: "Organization Memory Retrieved"
+  description: "Agent retrieved shared organizational memories for context"
+
+store_organization_memory_event:
+  name: "Organization Memory Stored"
+  description: "Agent stored explicit organizational fact shared across all users"
+
+add_memory_to_chat_history_event:
+  name: "Memory Added to Context"
+  description: "Agent extended chat history with memories"
+
+add_user_memory_to_chat_history_event:
+  name: "User Memory Added to Context"
+  description: "Agent extended chat history with private user memories"
+
+add_organization_memory_to_chat_history_event:
+  name: "Organization Memory Added to Context"
+  description: "Agent extended chat history with shared organizational memories"

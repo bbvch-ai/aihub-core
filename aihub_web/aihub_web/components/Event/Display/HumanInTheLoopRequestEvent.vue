@@ -9,7 +9,7 @@
       <ChatMessage
         :message="message"
         :name="event.agent_class"
-        :preferred-username="event.agent_id"
+        :email="event.agent_id"
         :date="new Date(event.event.created_at / 1_000_000)"
         :icon="agentIcon"
       />

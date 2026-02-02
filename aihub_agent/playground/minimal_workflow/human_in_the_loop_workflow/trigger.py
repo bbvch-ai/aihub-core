@@ -6,7 +6,7 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 )
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
-from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoop import HumanInTheLoop
+from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopInput
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
@@ -38,10 +38,10 @@ async def main():
             ),
         )
         await sleep(1)
-        request_event = HumanInTheLoop.request(question="Shall I continue?", topic=PartialAgentTopic())
+        request_event = HumanInTheLoopInput.request(question="Shall I continue?", topic=PartialAgentTopic())
         await runner.send_event_from_topic(
             topic=topic,
-            start_event=HumanInTheLoop.response(response="Yes, Please!", request_event=request_event),
+            start_event=HumanInTheLoopInput.response(response="Yes, Please!", request_event=request_event),
         )
 
 

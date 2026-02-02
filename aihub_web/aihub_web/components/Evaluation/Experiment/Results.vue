@@ -26,19 +26,19 @@
           <span class="font-semibold">
             {{ t('evaluation.experiment.result.correctness') }}
           </span>
-          <Rating :model-value="useRound(experiment.correctness.avg_score * 5)" />
+          <Rating :model-value="useRound((experiment.correctness?.avg_score ?? 0) * 5)" />
         </div>
         <div class="flex flex-col items-start gap-2">
           <span class="font-semibold">
             {{ t('evaluation.experiment.result.completeness') }}
           </span>
-          <Rating :model-value="useRound(experiment.completeness.avg_score * 5)" />
+          <Rating :model-value="useRound((experiment.completeness?.avg_score ?? 0) * 5)" />
         </div>
         <div class="flex flex-col items-start gap-2">
           <span class="font-semibold">
             {{ t('evaluation.experiment.result.conciseness') }}
           </span>
-          <Rating :model-value="useRound(experiment.conciseness.avg_score * 5)" />
+          <Rating :model-value="useRound((experiment.conciseness?.avg_score ?? 0) * 5)" />
         </div>
       </div>
     </Panel>
@@ -46,6 +46,7 @@
       v-model:expanded-rows="expandedRows"
       data-key="example_id"
       removable-sort
+      size="small"
       :value="experiment.items"
     >
       <Column
@@ -73,7 +74,7 @@
         :header="t('evaluation.experiment.result.correctness')"
       >
         <template #body="{ data }">
-          <Rating :model-value="useRound(data.correctness.score * 5)" />
+          <Rating :model-value="useRound((data.correctness?.score ?? 0) * 5)" />
         </template>
       </Column>
       <Column
@@ -83,7 +84,7 @@
         :header="t('evaluation.experiment.result.completeness')"
       >
         <template #body="{ data }">
-          <Rating :model-value="useRound(data.completeness.score * 5)" />
+          <Rating :model-value="useRound((data.completeness?.score ?? 0) * 5)" />
         </template>
       </Column>
       <Column
@@ -93,7 +94,7 @@
         :header="t('evaluation.experiment.result.conciseness')"
       >
         <template #body="{ data }">
-          <Rating :model-value="useRound(data.conciseness.score * 5)" />
+          <Rating :model-value="useRound((data.conciseness?.score ?? 0) * 5)" />
         </template>
       </Column>
       <Column
@@ -136,13 +137,13 @@
             <span class="font-bold">{{ t('evaluation.experiment.result.assistant_answer') }}: </span> {{ data.assistant_answer }}
           </p>
           <p>
-            <span class="font-bold">{{ t('evaluation.experiment.result.correctness') }} </span> {{ data.correctness.explanation }}
+            <span class="font-bold">{{ t('evaluation.experiment.result.correctness') }} </span> {{ data.correctness?.explanation }}
           </p>
           <p>
-            <span class="font-bold">{{ t('evaluation.experiment.result.completeness') }} </span> {{ data.completeness.explanation }}
+            <span class="font-bold">{{ t('evaluation.experiment.result.completeness') }} </span> {{ data.completeness?.explanation }}
           </p>
           <p>
-            <span class="font-bold">{{ t('evaluation.experiment.result.conciseness') }} </span> {{ data.conciseness.explanation }}
+            <span class="font-bold">{{ t('evaluation.experiment.result.conciseness') }} </span> {{ data.conciseness?.explanation }}
           </p>
         </div>
       </template>

@@ -2,8 +2,11 @@
 # Dagster Configuration - Stage: {{ stage }}
 # ===================================================================
 # Generated from template. Do not edit directly.
-# This configuration is used for containerized Dagster deployments.
-# Dev stage runs Dagster locally and does not use this config.
+{%- if stage != 'dev' %}
+# Uses PgBouncer (pgbouncer:6432) for connection pooling to prevent exhaustion.
+{%- else %}
+# Connects directly to PostgreSQL (postgres:5432) without PgBouncer.
+{%- endif %}
 # ===================================================================
 
 run_storage:
@@ -11,39 +14,63 @@ run_storage:
   class: PostgresRunStorage
   config:
     postgres_db:
+{%- if stage != 'dev' %}
+      hostname: pgbouncer
+{%- else %}
       hostname: postgres
+{%- endif %}
       username:
         env: POSTGRES_USER
       password:
         env: POSTGRES_PASSWORD
       db_name: dagster
+{%- if stage != 'dev' %}
+      port: 6432
+{%- else %}
       port: 5432
+{%- endif %}
 
 event_log_storage:
   module: dagster_postgres.event_log
   class: PostgresEventLogStorage
   config:
     postgres_db:
+{%- if stage != 'dev' %}
+      hostname: pgbouncer
+{%- else %}
       hostname: postgres
+{%- endif %}
       username:
         env: POSTGRES_USER
       password:
         env: POSTGRES_PASSWORD
       db_name: dagster
+{%- if stage != 'dev' %}
+      port: 6432
+{%- else %}
       port: 5432
+{%- endif %}
 
 schedule_storage:
   module: dagster_postgres.schedule_storage
   class: PostgresScheduleStorage
   config:
     postgres_db:
+{%- if stage != 'dev' %}
+      hostname: pgbouncer
+{%- else %}
       hostname: postgres
+{%- endif %}
       username:
         env: POSTGRES_USER
       password:
         env: POSTGRES_PASSWORD
       db_name: dagster
+{%- if stage != 'dev' %}
+      port: 6432
+{%- else %}
       port: 5432
+{%- endif %}
 
 compute_logs:
   module: dagster.core.storage.noop_compute_log_manager
@@ -69,3 +96,10 @@ run_coordinator:
 
 telemetry:
   enabled: false
+
+run_monitoring:
+  enabled: true
+  max_runtime_seconds: 7200      # Cancel runs exceeding 2 hours
+  start_timeout_seconds: 300     # Fail if worker doesn't start in 5 min
+  cancel_timeout_seconds: 180    # Force-cancel stuck CANCELING runs after 3 min
+  poll_interval_seconds: 120     # Check run status every 2 min

@@ -4,6 +4,16 @@
     class="relative rounded-3xl border border-surface-100 bg-white p-9 dark:border-surface-600 dark:bg-surface-800"
   >
     <KnowledgeDocumentOverview :document="document">
+      <div class="mb-4 flex justify-end">
+        <Button
+          v-if="document?.source && !document.source.startsWith('insight:')"
+          icon="pi pi-external-link"
+          :label="t('knowledge.original.view_button')"
+          size="small"
+          variant="outlined"
+          @click="openOriginalDocument"
+        />
+      </div>
       <KnowledgeNodeContent
         v-for="node in combinedNodes"
         :key="node.node.id"
@@ -26,6 +36,9 @@ const props = defineProps<{
   inputNodes: IngestedNode[]
   showInactive: boolean
 }>()
+
+const { t } = useI18n()
+const { getDocumentSourceUrl } = useDocumentUrl()
 
 const { data: document, isPending: documentIsLoading } = useQuery<IngestedDocument>({
   key: () => ['knowledge', 'db', props.db, 'namespace', props.namespace, 'document', props.documentId as string],
@@ -58,6 +71,18 @@ const { data: documentNodes, isPending: documentNodesAreLoading } = useQuery<Nod
     })
   },
 })
+
+const openOriginalDocument = async () => {
+  if (!document.value?.source) return
+
+  try {
+    const url = await getDocumentSourceUrl(document.value.source)
+    window.open(url, '_blank')
+  }
+  catch (e) {
+    console.error('Error opening document:', e)
+  }
+}
 
 const combinedNodes = computed<{ node: IngestedNode, isActive: boolean }[]>(() => {
   const combNodes: { node: IngestedNode, isActive: boolean }[] = [];

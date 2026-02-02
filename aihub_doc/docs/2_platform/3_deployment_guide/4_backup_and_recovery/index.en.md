@@ -11,7 +11,7 @@ instances.
 
 ::: info Multi-instancing context
 This chapter assumes a multi-instance deployment model where each organization has their own isolated AI-Hub instance.
-For multi-tenancy (logical separation within a single instance), see [Multi-tenancy](../../15_multi_tenancy/).
+For multi-tenancy (logical separation within a single instance), see [Multi-tenancy](../../16_multi_tenancy/).
 :::
 
 ## Backup approaches
@@ -50,14 +50,16 @@ portability.
 Milvus stores vector embeddings for RAG. Export collections to S3-compatible storage. Embeddings can be regenerated from
 source documents if needed.
 
-SeaweedFS stores user-uploaded documents, RAG knowledge base files, and chat attachments. Use S3-compatible sync tools.
+SeaweedFS stores user-uploaded documents, RAG knowledge base files, and chat attachments. The SeaweedFS Filer uses etcd
+for metadata storage (backed up with etcd snapshots below). Back up the actual file data using S3-compatible sync tools.
 
 Valkey stores cache data and WebSocket session state for OpenWebUI. Valkey persists to disk automatically. Back up the
 data volume.
 
 NATS stores event streams and message persistence for the event-driven architecture. Back up the data volume.
 
-etcd stores Milvus metadata and service discovery information. Use snapshot-based backup.
+etcd stores Milvus coordination metadata, SeaweedFS Filer metadata, and service discovery information. Use
+snapshot-based backup.
 
 Configuration includes environment variables, SSL certificates, and Docker compose files. Encrypt backups. Store
 encryption keys separately (HSM, key management services, multiple secure locations).

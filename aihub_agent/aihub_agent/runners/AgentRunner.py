@@ -2,6 +2,11 @@ import asyncio
 import logging
 
 from aihub_lib.agents.AgentConfig import AgentConfig
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
+from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
+from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
+from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
     AgentClassDiscoveryResponseEvent,
@@ -18,9 +23,15 @@ from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentCla
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
 from aihub_lib.nats.workflow.visualizers.WorkflowVisualizer import WorkflowVisualizer
+from aihub_lib.routes.health.dto.HealthResponse import AgentHealthChecks
+from aihub_lib.routes.health.health_checks import check_milvus, check_nats_sync, check_redis_sync
+from aihub_lib.routes.health.HealthServer import HealthCheckProvider, HealthServer
+from mongoengine import connect, disconnect
+from mongoengine.connection import get_connection
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
-from redis.asyncio import ConnectionPool, Redis
+from pymilvus import MilvusClient
+from redis.asyncio import Redis
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.dispatchers.AgentDispatcher import AgentDispatcher
@@ -29,7 +40,7 @@ from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
 logger = logging.getLogger(__name__)
 
 
-class AgentRunner:
+class AgentRunner(HealthCheckProvider):
     """
     An agent runner is responsible for connecting with external services like NATs, JetStream, and Redis, as well
     as running the agent through an agent dispatcher.
@@ -38,19 +49,16 @@ class AgentRunner:
 
     def __init__(
         self,
-        servers: list[str],
-        redis_url: str,
         agent_type: type[Agent],
         default_agent_config: AgentConfig,
         locale_paths: list[str] | None = None,
+        health_port: int = 8080,
     ):
         if not isinstance(agent_type, type):
             raise ValueError("agent_type must be a class, not an instance or module.")
         if not issubclass(agent_type, Agent):
             raise ValueError("agent_type must be a subclass of Agent.")
 
-        self.servers = servers
-        self.redis_url = redis_url
         self.agent_type = agent_type
         self.default_agent_config = default_agent_config
         self.agent_config_type = default_agent_config.__class__
@@ -64,6 +72,8 @@ class AgentRunner:
 
         self.nc: NATS | None = None
         self.js: JetStreamContext | None = None
+        self.redis: Redis | None = None
+        self.milvus_client: MilvusClient | None = None
 
         self.dispatcher: AgentDispatcher | None = None
 
@@ -72,6 +82,29 @@ class AgentRunner:
         self.nc_publisher: NCPublisher[AgentClassDiscoveryResponseEvent] | None = None
 
         self.locale_handler = AgentLocaleHandler(locale_paths=locale_paths)
+
+        self._loop: asyncio.AbstractEventLoop | None = None
+        self._health_server = HealthServer(
+            provider=self,
+            default_port=health_port,
+            port_env_var="AGENT_HEALTH_PORT",
+        )
+
+    @property
+    def entity_name(self) -> str:
+        return self.agent_class
+
+    @property
+    def entity_type(self) -> str:
+        return "agent"
+
+    def get_readiness_checks(self) -> AgentHealthChecks:
+        return AgentHealthChecks(
+            running=self.running,
+            nats=check_nats_sync(self.nc, self._loop) if self._loop else False,
+            redis=check_redis_sync(self.redis, self._loop) if self._loop else False,
+            milvus=check_milvus(self.milvus_client),
+        )
 
     async def discovery_handler(self, event: ClassDiscoveryRequestEvent, topic: AgentClassDiscoveryTopic):
         """
@@ -127,13 +160,26 @@ class AgentRunner:
 
         self.running = True
         self._stop_signal.clear()
+        self._loop = asyncio.get_running_loop()
 
-        self.nc = NATS()
-        await self.nc.connect(servers=self.servers)
-
+        # Connect to NATs and Redis
+        self.nc = await NatsSettings.create_client()
         self.js = self.nc.jetstream(timeout=60, publish_async_max_pending=10_000)
-        _, host, port = self.redis_url.split(":")
-        self.redis = Redis(connection_pool=ConnectionPool(host=host[2:], port=port))
+        self.redis = RedisSettings.create_client()
+
+        # Connect to Milvus
+        milvus_settings = MilvusSettings()
+        self.milvus_client = MilvusClient(uri=milvus_settings.URL, token=milvus_settings.get_token())
+
+        # Connect to MongoDB (skip if already connected)
+        try:
+            get_connection()
+        except Exception:
+            connect(
+                db=AIHubSettings().MONGO_MAIN_DB_NAME,
+                host=MongoSettings().CONNECTION_STRING.get_secret_value(),
+                uuidRepresentation="standard",
+            )
 
         # Initialize dispatcher
         self.dispatcher = AgentDispatcher(
@@ -170,6 +216,9 @@ class AgentRunner:
         logger.debug(f"{self.agent_class} is now running and subscribed to incoming messages.")
         self._loop_task = asyncio.create_task(self._run_loop())
 
+        # Start health check server
+        self._health_server.start()
+
     async def stop(self):
         """
         Stops the agent by setting a stop event, unsubscribing, and closing the NATS connection.
@@ -179,6 +228,9 @@ class AgentRunner:
             return
 
         logger.debug(f"Shutting down {self.agent_class}...")
+
+        # Stop health check server first
+        self._health_server.stop()
         self._stop_signal.set()
 
         if self._loop_task is not None:
@@ -198,6 +250,11 @@ class AgentRunner:
 
         if self.redis:
             await self.redis.close()
+
+        if self.milvus_client:
+            self.milvus_client.close()
+
+        disconnect()
 
     async def _run_loop(self):
         """A background task that keeps the runner alive until stopped."""

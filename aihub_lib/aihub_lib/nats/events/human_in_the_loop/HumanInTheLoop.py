@@ -1,43 +1,26 @@
-from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import HumanInTheLoopRequestEvent
-from aihub_lib.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import HumanInTheLoopResponseEvent
-from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
-from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
+from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoopChat import HumanInTheLoopChat
+from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoopConfirmation import HumanInTheLoopConfirmation
+from aihub_lib.nats.events.human_in_the_loop.HumanInTheLoopInput import HumanInTheLoopInput
+from aihub_lib.nats.events.human_in_the_loop.request import HumanInTheLoopRequestEvent
+from aihub_lib.nats.events.human_in_the_loop.response import HumanInTheLoopResponseEvent
 
 
 class HumanInTheLoop:
     """
     A helper for triggering human-in-the-loop (HITL) steps within a workflow.
-    The HITL pattern allows the system to pause execution and ask a human operator for guidance
-    or approval before proceeding.
 
-    ### Why HumanInTheLoop?
-    In automated workflows, certain decisions or validations may be too sensitive or complex for
-    the AI agent alone. HITL steps:
-    - Pause at a critical point.
-    - Ask a human a question or request confirmation.
-    - Resume execution once the human response is received.
+    Use the specific helpers for type-safe interactions:
+    - `HumanInTheLoop.input` for free-form text input (popup dialog)
+    - `HumanInTheLoop.confirmation` for yes/no confirmation (popup dialog)
+    - `HumanInTheLoop.chat` for chat-style input (appears as regular message)
 
-    This class:
-    - Provides a convenient `invoke` method to create a `HumanInTheLoopRequestEvent`.
-    - Defines `request` and `response` attributes pointing to event classes representing HITL requests and responses.
+    Or use the base classes directly via `request` and `response` attributes.
     """
 
     request = HumanInTheLoopRequestEvent
     response = HumanInTheLoopResponseEvent
 
-    @classmethod
-    def invoke(cls, **kwargs):
-        """
-        Create a `HumanInTheLoopRequestEvent` to prompt a human for input.
-
-        The `invoke` method constructs the request event and attaches a partial topic indicating where
-        the corresponding `HumanInTheLoopResponseEvent` should be directed. This ensures that once
-        a human responds, the workflow can resume from the correct point.
-        """
-        return cls.request(
-            **kwargs,
-            topic=PartialAgentTopic(
-                event_type=AgentTopicManager.CONTROL_EVENT,
-                event_name=cls.response.event_name_from_class(),
-            ),
-        )
+    # Typed helpers
+    input = HumanInTheLoopInput
+    confirmation = HumanInTheLoopConfirmation
+    chat = HumanInTheLoopChat

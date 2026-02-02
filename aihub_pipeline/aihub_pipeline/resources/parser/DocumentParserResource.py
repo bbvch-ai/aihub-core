@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated
 
 from aihub_lib.generative_ai.document.loaders.DoclingLoader import DoclingLoader
@@ -15,7 +15,7 @@ from llama_index.readers.file import EpubReader, IPYNBReader, RTFReader
 from pydantic import Field
 
 
-class LoaderType(Enum):
+class LoaderType(StrEnum):
     """Enum for document loader types."""
 
     DOCLING = "docling"
@@ -108,4 +108,5 @@ class DocumentParserResource(ConfigurableResource):
         reader_cls = extension_to_reader.get(filetype)
         if reader_cls is None:
             raise ValueError(f"Unsupported file extension: {filetype}")
+
         return reader_cls()

@@ -38,7 +38,6 @@ class SourceFile(MinimalSourceFile):
 
     Example implementations:
         - SharePointFile: Files retrieved from Microsoft SharePoint
-        - LocalFile: Files from local or network file systems
         - S3File: Files from AWS S3 buckets
     """
 

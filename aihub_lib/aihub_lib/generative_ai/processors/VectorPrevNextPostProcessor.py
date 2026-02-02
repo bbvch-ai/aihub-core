@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated
 
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
@@ -9,7 +9,7 @@ from pydantic import Field, field_validator
 from aihub_lib.persistence.rag.vectors.node_metadata import INDEX
 
 
-class ModeOptions(str, Enum):
+class ModeOptions(StrEnum):
     NEXT = "next"
     PREVIOUS = "previous"
     BOTH = "both"

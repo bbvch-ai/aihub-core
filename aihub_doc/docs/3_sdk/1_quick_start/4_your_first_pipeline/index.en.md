@@ -396,9 +396,14 @@ Your pipeline now supports:
 ### 9. Monitor with AI-Hub observability tools:
 
 - **Dagster UI** (`http://localhost:3000`): Asset lineage, execution logs, and materialization history
-- **SeaweedFS Filer** (`http://localhost:9001`): Data lake file management
 - **MongoDB Compass**: Document store inspection
 - **Milvus (Attu)**: Vector database monitoring
+
+::: tip SeaweedFS Filer
+In production, the SeaweedFS Filer web UI is accessible at `datalake.${DOMAIN}` (OAuth2 protected, requires
+AIHubDeveloper role). In development mode, it's available at `http://localhost:8889` for browsing uploaded files and
+debugging storage.
+:::
 
 ### 10. Understanding AI-Hub pipeline patterns
 

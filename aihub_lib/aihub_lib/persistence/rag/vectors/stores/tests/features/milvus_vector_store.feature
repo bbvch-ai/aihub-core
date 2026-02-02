@@ -4,7 +4,7 @@ Feature: Milvus Vector Store Factory Configuration
 
   Background:
     Given a Milvus server is running at "http://localhost:19530"
-    And the embedding dimension is 1536
+    And the embedding dimension is 3072
 
   Scenario: Create collection with manual partitions and correct schema
     Given I want to create a collection named "test_manual_partitions"

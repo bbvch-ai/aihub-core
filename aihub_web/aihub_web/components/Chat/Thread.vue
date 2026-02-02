@@ -9,7 +9,7 @@
         is-clickable
         :message="message"
         :name="message.name"
-        :preferred-username="message.email"
+        :email="message.email"
         :date="message.date"
         :image="message.userImage"
         :icon="message.icon"

@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 from bson import ObjectId
@@ -19,14 +19,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class TimeRange(Enum):
+class TimeRange(StrEnum):
     ONE_HOUR = "1h"
     TWENTY_FOUR_HOURS = "24h"
     THIRTY_DAYS = "30d"
     THREE_SIXTY_FIVE_DAYS = "365d"
 
 
-class Resolution(Enum):
+class Resolution(StrEnum):
     ONE_MINUTE = "1m"
     ONE_HOUR = "1h"
     ONE_DAY = "1d"

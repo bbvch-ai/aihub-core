@@ -1,68 +1,29 @@
 follow_up_question: |
-  You are given a chat history between an AI assistant and an expert. The goal of this conversation
-  is to answer a question originally posed by a user. However, the experts answer seemed to be insufficient.
+  The expert was asked: "{{ question }}"
 
-   <chat_history>
-    {% for message in chat_history %}
-    <message role="{{ message.role.value }}">
-      {% for block in message.blocks %}
-      {% if block.block_type == 'text' %}
-      {{ block.text }}
-      {% endif %}
-      {% endfor %}
-    </message>
-    {% endfor %}
-  </chat_history>
+  Their response:
+  {% for message in chat_history %}
+  {% if message.role.value == 'user' %}
+  {% for block in message.blocks %}
+  {% if block.block_type == 'text' %}
+  {{ block.text }}
+  {% endif %}
+  {% endfor %}
+  {% endif %}
+  {% endfor %}
 
-  <user_query>
-    %{question}
-  </user_query>
-  
-  Please formulate a follow-up question to the expert that addresses the insufficiency in their previous answer.
-  The question should be clear and concise, and it should help the expert provide a more complete answer to the user's original question.
+  The expert either said they don't know, didn't answer, or only answered part of the question.
+  Ask for the specific missing information. Keep it short and polite. Only ask for what was originally requested but not yet answered.
 
-knowledge_snippet_prompt: |
-  {% chat role="system" %}
-  You are given a chat history between an AI assistant and an expert. The goal of this conversation
-  was to answer a question originally posed by a user. The expert could successfully provide the answer
-
-  <user_query>
-    %{question}
-  </user_query>
-
-  <chat_history> 
-    {% for message in chat_history %}
-    <message role="{{ message.role.value }}">
-      {% for block in message.blocks %}
-      {% if block.block_type == 'text' %}
-      {{ block.text }}
-      {% endif %}
-      {% endfor %}
-    </message>
-    {% endfor %}
-  </chat_history>
-  {% endchat %}
-
-  {% chat role="user" %}
-  Now that the answer is provided, please extract the key-knowledge from this conversation that the user was missing. 
-  This knowledge snippet should be a concise summary of the most important information that the user needed to know.
-  The snippet will be returned to the user, hence, from the snippet alone, the answer to the question must be obvious.
-  However, the snippet will also be added to the knowledge base, hence, the snippet should not simply contain
-  the answer to the question, but the knowledge that is required to answer the question.
-  {% endchat %}
-
-knowledge_snippet: |
-  %{content}
-  
-  Knowledge was submitted via Slack by user %{expert_name} on %{date} at %{time}.
+routes:
+  answer_sufficient: "The expert answered the question. Choose this if the expert provided ANY direct answer."
+  answer_insufficient: "The expert did NOT answer. Choose ONLY if the expert said 'I don't know' or refused to answer."
 
 thoughts:
   asking_question: "Asking question to expert: '%{question}'."
   expert_responded: "Expert has responded: '%{response}'."
   determine_sufficient: "Verify if the expert's answer is sufficient."
-  answer_sufficient: "The expert's answer is sufficient! Creating a knowledge snippet now."
-  saving_knowledge: "Saving the knowledge snippet to the database."
-  knowledge_saved: "Knowledge has been saved under %{filename}."
+  answer_sufficient: "The expert's answer is sufficient."
   max_questions_reached: "Maximum number of follow-up questions reached."
   returning_insufficient: "Returning to the user with an insufficient answer."
   answer_not_sufficient: "Answer is not sufficient, formulating a follow-up question."

@@ -35,13 +35,7 @@
     <div class="fadeout-gradient"></div>
   </div>
 </template>
-
-<script setup>
-// No script needed - pure CSS animations
-</script>
-
 <style>
-/* Custom CSS for animations and special effects that can't be done with UnoCSS */
 .gradients-container {
   filter: url(#goo) blur(120px);
 }
@@ -62,7 +56,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 100%);
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, var(--vp-c-bg) 100%);
 }
 
 .gradient-orb {

@@ -8,6 +8,55 @@
 {%- set stage_postfix = stage + ".gpu" if gpu_enabled else stage %}
 {%- set hardware = 'gpu' if gpu_enabled else 'cpu' %}
 
+{#- ===================================================================
+    Internal Service Endpoints (Identical Across All Stages)
+    ===================================================================
+    These are the internal Docker network endpoints that never change
+    between stages or hardware variants. They are hardcoded here to
+    avoid unnecessary environment variable indirection.
+    =================================================================== #}
+{%- set SEAWEEDFS_MASTER_ENDPOINT = "seaweedfs-master:9333" %}
+{%- set SEAWEEDFS_FILER_ENDPOINT = "seaweedfs-filer:8888" %}
+{%- set SEAWEEDFS_S3_ENDPOINT = "seaweedfs-s3:9000" %}
+{%- set SEAWEEDFS_FILER_URL = "http://seaweedfs-filer:8888" %}
+{%- set S3_STORAGE_ENDPOINT = "http://seaweedfs-s3:9000" %}
+{%- set S3_STORAGE_PUBLIC_ENDPOINT = "http://localhost:9000" if stage == 'dev' else "https://s3.${DOMAIN}" %}
+{%- set ETCD_ENDPOINTS = "etcd:2379" %}
+{%- set MILVUS_ENDPOINT = "http://milvus-standalone:19530" %}
+{%- set MILVUS_HOST = "milvus-standalone" %}
+{%- set MILVUS_PORT = "19530" %}
+{%- set PHOENIX_ENDPOINT = "http://phoenix:6006" %}
+{%- set NATS_ENDPOINT = "nats://nats:4222" %}
+{%- set REDIS_ENDPOINT = "redis://valkey:6379" %}
+{%- set LITE_LLM_PROXY_BASE_URL = "http://litellm:4000" %}
+{%- set JUPYTER_URL = "http://jupyter:8888" %}
+{%- set DOCLING_API_BASE_URL = "http://docling:5001" %}
+{%- set PRESIDIO_ANALYZER_API_BASE = "http://presidio-analyzer:3000" %}
+{%- set PRESIDIO_ANONYMIZER_API_BASE = "http://presidio-anonymizer:3000" %}
+{%- set PLAYWRIGHT_WS_URL = "ws://playwright:3000" %}
+{%- set DAGSTER_WEBSERVER_URL = "http://dagster-webserver:3000" %}
+{%- set OTEL_EXPORTER_OTLP_ENDPOINT = "http://otel-collector:4317" %}
+
+{#- ===================================================================
+    Extract version tag from image string for OpenTelemetry versioning
+    ===================================================================
+    In production (local/nightly/latest), we want OTEL_RESOURCE_SERVICE_VERSION
+    to match the Docker image tag for accurate version tracking.
+
+    Examples:
+      - "api:nightly" → "nightly"
+      - "api:latest" → "latest"
+      - "localbuild" → ${OTEL_RESOURCE_SERVICE_VERSION} (env var fallback)
+    =================================================================== #}
+{%- macro get_service_version(service_name) -%}
+  {%- set image_tag = image_tags[service_name][stage] -%}
+  {%- if image_tag and image_tag != 'localbuild' and ':' in image_tag -%}
+    {{ image_tag.split(':')[1] }}
+  {%- else -%}
+    ${OTEL_RESOURCE_SERVICE_VERSION}
+  {%- endif -%}
+{%- endmacro -%}
+
 {% if stage != 'dev' %}
 # ===================================================================
 # TRAEFIK PRIORITY RULES
@@ -76,7 +125,7 @@ services:
     container_name: seaweedfs-master
     image: {{ global.registry_prefix }}{{ image_tags.seaweedfs }}
     restart: always
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     expose:
       - "9333"   # Master HTTP port
       - "19333"  # Master gRPC port
@@ -92,6 +141,8 @@ services:
       -volumeSizeLimitMB=29000
       {%- endif %}
       -volumePreallocate=false
+    environment:
+      WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
     volumes:
       - {{ global.volume_root }}/seaweedfs-master:/data
     healthcheck:
@@ -105,23 +156,27 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
 
   seaweedfs-volume:
     container_name: seaweedfs-volume
     image: "{{ global.registry_prefix }}{{ image_tags.seaweedfs }}"
     restart: always
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     expose:
       - "8080"
       - "18080"
     {%- endif %}
     command: >
       volume
-      -mserver="seaweedfs-master:9333"
+      -mserver="{{ SEAWEEDFS_MASTER_ENDPOINT }}"
       -ip.bind=0.0.0.0
       -port=8080
       -max=100
       -dataCenter=dc1
+    environment:
+      WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
     volumes:
       - {{ global.volume_root }}/seaweedfs-volume:/data
     depends_on:
@@ -132,25 +187,44 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
 
   seaweedfs-filer:
     container_name: seaweedfs-filer
     image: {{ global.registry_prefix }}{{ image_tags.seaweedfs }}
     restart: always
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "8889:8888"
       - "18888"
     {%- endif %}
     command: >
       filer
-      -master="seaweedfs-master:9333"
+      -master="{{ SEAWEEDFS_MASTER_ENDPOINT }}"
       -ip.bind=0.0.0.0
+    environment:
+      # Internal JWT Authentication
+      WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
+
+      # Etcd Configuration (SeaweedFS reads WEED_ETCD_* env vars)
+      WEED_ETCD_ENABLED: "true"
+      WEED_ETCD_SERVERS: http://etcd:2379
+      WEED_ETCD_TIMEOUT: 3s
+      WEED_ETCD_USERNAME: root
+      WEED_ETCD_PASSWORD: ${ETCD_TOKEN}
+
+      # Disable default leveldb2 store when using etcd
+      WEED_LEVELDB2_ENABLED: "false"
     volumes:
       - {{ global.volume_root }}/seaweedfs-filer:/data
     depends_on:
-      - seaweedfs-master
-      - seaweedfs-volume
+      seaweedfs-master:
+        condition: service_started
+      seaweedfs-volume:
+        condition: service_started
+      etcd-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/"]
       interval: 30s
@@ -162,12 +236,15 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
+      - data  # For etcd access
 
   seaweedfs-s3:
     container_name: seaweedfs-s3
     image: {{ global.registry_prefix }}{{ image_tags.seaweedfs }}
     restart: always
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "9000:9000"
     {%- endif %}
@@ -179,9 +256,12 @@ services:
       SEAWEEDFS_S3_USER: ${S3_STORAGE_ACCESS_KEY}
       SEAWEEDFS_S3_PASSWORD: ${S3_STORAGE_SECRET_KEY}
 
+      # Internal JWT Authentication
+      WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
+
       # S3 Service Configuration
       S3_PORT: "9000"
-      S3_FILER: "seaweedfs-filer:8888"
+      S3_FILER: "{{ SEAWEEDFS_FILER_ENDPOINT }}"
       S3_BIND_IP: "0.0.0.0"
       S3_ALLOW_EMPTY_FOLDER: true
     depends_on:
@@ -198,6 +278,27 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    {%- if stage != 'dev' %}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.seaweedfs-s3.rule=Host(`s3.${DOMAIN}`)"
+      - "traefik.http.routers.seaweedfs-s3.priority=4000"
+      - "traefik.http.routers.seaweedfs-s3.entrypoints=websecure"
+      {%- if stage not in ['local', 'build'] %}
+      - "traefik.http.routers.seaweedfs-s3.tls.certresolver=letsencrypt"
+      {%- else %}
+      - "traefik.http.routers.seaweedfs-s3.tls=true"
+      {%- endif %}
+      - "traefik.http.routers.seaweedfs-s3.middlewares=security-headers@file"
+      - "traefik.http.services.seaweedfs-s3.loadbalancer.server.port=9000"
+    {%- endif %}
+    networks:
+      - storage
+      - backend  # Internal access from application services
+      {%- if stage != 'dev' %}
+      - proxy    # External S3 API access via Traefik
+      {%- endif %}
 
   seaweedfs-init:
     container_name: seaweedfs-init
@@ -209,6 +310,10 @@ services:
     environment:
       AWS_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
       AWS_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_ENDPOINT: http://seaweedfs-s3:9000
+      AIHUB_CREATE_DEFAULT_BUCKETS: ${AIHUB_CREATE_DEFAULT_BUCKETS}
+      AIHUB_DEFAULT_BUCKET_NAME: ${AIHUB_DEFAULT_BUCKET_NAME}
+      AIHUB_SHARED_BUCKET_NAME: ${AIHUB_SHARED_BUCKET_NAME}
     volumes:
       - ./configs/seaweedfs/init-buckets.sh:/usr/local/bin/init-buckets.sh:ro
     entrypoint: [ "/bin/sh", "/usr/local/bin/init-buckets.sh" ]
@@ -217,6 +322,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
+      - backend
 
   {% if stage != 'dev' -%}
   oauth2proxy-seaweed:
@@ -227,18 +335,18 @@ services:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4181
       OAUTH2_PROXY_COOKIE_SECURE: False
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
-      OAUTH2_PROXY_UPSTREAMS: http://seaweedfs-filer:8888
-      OAUTH2_PROXY_ALLOWED_GROUPS: ${SEAWEEDFS_OAUTH_ALLOWED_GROUPS}
+      OAUTH2_PROXY_UPSTREAMS: {{ SEAWEEDFS_FILER_URL }}
+      OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_SEAWEEDFS}
       OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
       OAUTH2_PROXY_SCOPE: openid email profile
       OAUTH2_PROXY_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH2_PROXY_PROVIDER: oidc
       OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
       OAUTH2_PROXY_OIDC_ISSUER_URL: ${OAUTH_AUTHORITY_URL}/v2.0
-      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET}
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET_SEAWEEDFS}
       OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
       OAUTH2_PROXY_EMAIL_DOMAINS: "*"
-      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: https://aiagentsstpublicblobs.blob.core.windows.net/logos/Bbv-Logo_farbig.png
+      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: ${OAUTH_CUSTOM_SIGN_IN_LOGO}
       OAUTH2_PROXY_REVERSE_PROXY: True
       OAUTH2_PROXY_REDIRECT_URL: https://datalake.${DOMAIN}
     depends_on:
@@ -251,6 +359,7 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.seaweedfs-filer.rule=Host(`datalake.${DOMAIN}`)"
       - "traefik.http.routers.seaweedfs-filer.priority=4000"
       - "traefik.http.routers.seaweedfs-filer.entrypoints=websecure"
@@ -261,6 +370,9 @@ services:
       {%- endif %}
       - "traefik.http.routers.seaweedfs-filer.middlewares=security-headers@file"
       - "traefik.http.services.seaweedfs-filer.loadbalancer.server.port=4181"
+    networks:
+      - proxy
+      - storage
   {% endif %}
 
   # ===================================================================
@@ -273,25 +385,75 @@ services:
     container_name: etcd
     image: {{ global.registry_prefix }}{{ image_tags.etcd }}
     restart: always
+    {%- if stage in ['dev', 'local', 'build'] %}
+    command:
+      - etcd
+      - --name=s1
+      - --data-dir=/etcd
+      - --listen-client-urls=http://0.0.0.0:2379
+      - --advertise-client-urls=http://etcd:2379
+      - --listen-peer-urls=http://0.0.0.0:2380
+      - --initial-advertise-peer-urls=http://etcd:2380
+      - --initial-cluster=s1=http://etcd:2380
+      - --auth-token=simple
+    {%- else %}
+    command:
+      - etcd
+      - --name=s1
+      - --data-dir=/etcd
+      - --listen-client-urls=http://0.0.0.0:2379
+      - --advertise-client-urls=http://127.0.0.1:2379
+      - --listen-peer-urls=http://0.0.0.0:2380
+      - --initial-advertise-peer-urls=http://127.0.0.1:2380
+      - --initial-cluster=s1=http://127.0.0.1:2380
+      - --auth-token=simple
+    {%- endif %}
     environment:
       ETCD_AUTO_COMPACTION_MODE: revision
       ETCD_AUTO_COMPACTION_RETENTION: 1000
       ETCD_QUOTA_BACKEND_BYTES: 4294967296
       ETCD_SNAPSHOT_COUNT: 50000
+      # Token for healthcheck (used after auth is enabled by etcd-init)
+      ETCD_TOKEN: ${ETCD_TOKEN}
     volumes:
       - {{ global.volume_root }}/etcd-data:/etcd
-    {%- if stage == 'dev' %}
-    command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
-    {%- else %}
-    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
-    {%- endif %}
     healthcheck:
-      test: [ "CMD", "etcdctl", "endpoint", "health" ]
+      # Use credentials for healthcheck to work after auth is enabled
+      test: [ "CMD", "etcdctl", "--user=root:${ETCD_TOKEN}", "endpoint", "health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     logging:
       driver: json-file
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data     # Milvus metadata storage
+      - storage  # SeaweedFS filer metadata
+
+  etcd-init:
+    container_name: etcd-init
+    build:
+      context: ./configs/etcd
+      dockerfile: init.Dockerfile
+    restart: no
+    depends_on:
+      etcd:
+        condition: service_started
+    environment:
+      ETCDCTL_ENDPOINTS: http://etcd:2379
+      ETCDCTL_API: "3"
+      ETCD_ROOT_PASSWORD: ${ETCD_TOKEN}
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data
+      - storage  # Used by SeaweedFS filer for metadata
 
   milvus-standalone:
     container_name: milvus
@@ -301,24 +463,31 @@ services:
     security_opt:
       - seccomp:unconfined
     environment:
-      ETCD_ENDPOINTS: etcd:2379
-      MINIO_ADDRESS: seaweedfs-s3:9000
+      # Etcd Configuration (dots in YAML become underscores in env vars)
+      ETCD_ENDPOINTS: {{ ETCD_ENDPOINTS }}
+      ETCD_ROOTPATH: milvus
+      ETCD_AUTH_USERNAME: root
+      ETCD_AUTH_PASSWORD: ${ETCD_TOKEN}
+      # MinIO/S3 Storage Configuration
+      MINIO_ADDRESS: {{ SEAWEEDFS_S3_ENDPOINT }}
       MINIO_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
       MINIO_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
+      # Token-based authentication - root password for Milvus
+      COMMON_SECURITY_DEFAULTROOTPASSWORD: ${MILVUS_ROOT_PASSWORD}
     volumes:
       - {{ global.volume_root }}/milvus-data:/var/lib/milvus
       - ./configs/milvus/milvus-config.{{ stage_postfix }}.yml:/milvus/configs/milvus.yaml
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9091/healthz" ]
       start_period: 90s
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "19530:19530"
       - "9091:9091"
     {%- endif %}
     depends_on:
-      etcd:
-        condition: service_healthy
+      etcd-init:
+        condition: service_completed_successfully
       seaweedfs-s3:
         condition: service_healthy
     logging:
@@ -326,6 +495,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
+      - storage  # For S3 access to SeaweedFS
 
   attu:
     container_name: attu
@@ -333,16 +505,15 @@ services:
     restart: always
     depends_on:
       - milvus-standalone
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "3003:3000"
     {%- endif %}
     environment:
-      {%- if stage == 'dev' %}
-      MILVUS_URL: http://milvus-standalone:19530
-      {%- else %}
-      MILVUS_URL: milvus-standalone:19530
-      {%- endif %}
+      MILVUS_URL: {{ MILVUS_HOST }}:{{ MILVUS_PORT }}
+      # Milvus authentication credentials (root username is hardcoded in Milvus)
+      ATTU_LOGIN_USERNAME: root
+      ATTU_LOGIN_PASSWORD: ${MILVUS_ROOT_PASSWORD}
     healthcheck:
       test: ["NONE"]
     logging:
@@ -350,9 +521,42 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    {%- if stage != 'dev' %}
+    networks:
+      - data
+
+  {% if stage != 'dev' -%}
+  oauth2proxy-attu:
+    container_name: oauth2proxy-attu
+    image: {{ image_tags.oauth2proxy }}
+    restart: always
+    environment:
+      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4182
+      OAUTH2_PROXY_COOKIE_SECURE: False
+      OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
+      OAUTH2_PROXY_UPSTREAMS: http://attu:3000
+      OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_ATTU}
+      OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
+      OAUTH2_PROXY_SCOPE: openid email profile
+      OAUTH2_PROXY_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH2_PROXY_PROVIDER: oidc
+      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
+      OAUTH2_PROXY_OIDC_ISSUER_URL: ${OAUTH_AUTHORITY_URL}/v2.0
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET_ATTU}
+      OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OAUTH2_PROXY_EMAIL_DOMAINS: "*"
+      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: https://aiagentsstpublicblobs.blob.core.windows.net/logos/Bbv-Logo_farbig.png
+      OAUTH2_PROXY_REVERSE_PROXY: True
+      OAUTH2_PROXY_REDIRECT_URL: https://attu.${DOMAIN}
+    depends_on:
+      - attu
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.attu.rule=Host(`attu.${DOMAIN}`)"
       - "traefik.http.routers.attu.priority=4000"
       - "traefik.http.routers.attu.entrypoints=websecure"
@@ -362,8 +566,11 @@ services:
       - "traefik.http.routers.attu.tls=true"
       {%- endif %}
       - "traefik.http.routers.attu.middlewares=security-headers@file"
-      - "traefik.http.services.attu.loadbalancer.server.port=3000"
-    {%- endif %}
+      - "traefik.http.services.attu.loadbalancer.server.port=4182"
+    networks:
+      - proxy
+      - data
+  {% endif %}
 
   # ===================================================================
   # Postgres Stack (SQL Database)
@@ -382,7 +589,7 @@ services:
     volumes:
       - {{ global.volume_root }}/postgres-data:/var/lib/postgresql/data
       - ./configs/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "5432:5432"
     {%- endif %}
@@ -394,6 +601,51 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
+
+  {% if stage != 'dev' %}
+  # ===================================================================
+  # PgBouncer (Connection Pooler for Dagster)
+  # ===================================================================
+  pgbouncer:
+    container_name: pgbouncer
+    image: {{ global.registry_prefix }}{{ image_tags.pgbouncer }}
+    restart: always
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: dagster
+      AUTH_TYPE: scram-sha-256
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: "${PGBOUNCER_MAX_CLIENT_CONN:-1000}"
+      DEFAULT_POOL_SIZE: "${PGBOUNCER_DEFAULT_POOL_SIZE:-20}"
+      MIN_POOL_SIZE: "${PGBOUNCER_MIN_POOL_SIZE:-2}"
+      RESERVE_POOL_SIZE: "${PGBOUNCER_RESERVE_POOL_SIZE:-3}"
+      LISTEN_ADDR: "0.0.0.0"
+      LISTEN_PORT: "6432"
+      ADMIN_USERS: ${POSTGRES_USER}
+      LOG_CONNECTIONS: "0"
+      LOG_DISCONNECTIONS: "0"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-h", "127.0.0.1", "-p", "6432", "-U", "${POSTGRES_USER}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data
+  {% endif %}
 
   # ===================================================================
   # FerretDB Stack (MongoDB Compatibility)
@@ -412,7 +664,7 @@ services:
     volumes:
       - {{ global.volume_root }}/ferretdb-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${MONGO_USERNAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${MONGO_USERNAME} -d postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -421,12 +673,14 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   ferretdb:
     container_name: ferretdb
     image: {{ global.registry_prefix }}{{ image_tags.ferretdb }}
     restart: always
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "27017:27017"
     {%- endif %}
@@ -440,6 +694,45 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
+
+  # ===================================================================
+  # Neo4j Stack (Graph Database)
+  # ===================================================================
+  # Neo4j provides graph database capabilities for relationship-based
+  # data modeling and querying.
+  # ===================================================================
+
+  neo4j:
+    container_name: neo4j
+    image: {{ global.registry_prefix }}{{ image_tags.neo4j }}
+    restart: always
+    {%- if stage == 'dev' %}
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    {%- endif %}
+    volumes:
+      - {{ global.volume_root }}/neo4j/logs:/logs
+      - {{ global.volume_root }}/neo4j/config:/config
+      - {{ global.volume_root }}/neo4j/data:/data
+      - {{ global.volume_root }}/neo4j/plugins:/plugins
+    environment:
+      NEO4J_AUTH: ${NEO4J_USERNAME}/${NEO4J_PASSWORD}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:7474"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data  # Graph database for Mem0 memory storage
 
   # ===================================================================
   # Phoenix Stack (ML Observability)
@@ -454,7 +747,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "6006:6006"
       - "6007:6007"
@@ -469,6 +762,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
+      - data  # For PostgreSQL access
 
   # ===================================================================
   # Nats & Valkey Stack (Messaging and Caching)
@@ -482,12 +778,15 @@ services:
     image: {{ global.registry_prefix }}{{ image_tags.nats }}
     restart: always
     command: -c /etc/nats/nats-server.conf
+    environment:
+      # Token-based authentication for NATS clients
+      NATS_TOKEN: ${NATS_TOKEN}
     volumes:
       - ./configs/nats/nats-config.{{ stage_postfix }}.conf:/etc/nats/nats-server.conf
       - {{ global.volume_root }}/nats:/data/nats
     healthcheck:
       test: [ "NONE" ]
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "4222:4222"
       - "8222:8222"
@@ -497,28 +796,36 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data  # Message broker is part of data infrastructure
 
   valkey:
     container_name: valkey
     image: {{ global.registry_prefix }}{{ image_tags.valkey }}
     restart: always
-    command: valkey-server --save 30 1 --loglevel warning
+    # Password authentication enabled via --requirepass
+    command: valkey-server --save 30 1 --loglevel warning --requirepass ${REDIS_TOKEN}
     volumes:
       - {{ global.volume_root }}/valkey-data:/data
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "6379:6379"
     {%- endif %}
     healthcheck:
-      test: [ "CMD", "valkey-cli", "ping" ]
+      # Use REDISCLI_AUTH to authenticate for health check
+      test: [ "CMD-SHELL", "REDISCLI_AUTH=${REDIS_TOKEN} valkey-cli ping" ]
       start_period: 5s
+    environment:
+      REDIS_TOKEN: ${REDIS_TOKEN}
     logging:
       driver: json-file
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data  # Cache is part of data infrastructure
 
-  {%- if gpu_enabled or stage == 'dev' %}
+  {%- if (gpu_enabled and stage in ['nightly', 'latest']) or stage == 'dev' %}
   # ===================================================================
   # AI Model Serving (Local Inference)
   # ===================================================================
@@ -532,7 +839,7 @@ services:
     platform: "linux/amd64"
     image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_gpu if llama_cpp_use_gpu else image_tags.llama_cpp_cpu }}
     restart: always
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "8182:8182"
     {%- endif %}
@@ -542,25 +849,20 @@ services:
       - {{ global.volume_root }}/llamacpp-cache:/root/.cache/llama.cpp
     environment:
       HF_HOME: /root/.cache/huggingface
+      LLAMA_API_KEY: ${LOCAL_LLM_TOKEN}
     command: >
-      {%- if stage in ['dev', 'local', 'build'] %}
-      -hf google/gemma-3-4b-it-qat-q4_0-gguf
-      --hf-token ${HUGGINGFACE_API_KEY}
-      --alias gemma-3-4b
-      --port 8182
-      --host 0.0.0.0
-      -c 8196
-      {%- else %}
-      -hf google/gemma-3-12b-it-qat-q4_0-gguf
-      --hf-token ${HUGGINGFACE_API_KEY}
-      --alias gemma-3-12b
-      --port 128000
-      --host 0.0.0.0
-      -c 8196
-      {%- endif %}
       {%- if llama_cpp_use_gpu %}
+      -hf google/gemma-3-12b-it-qat-q4_0-gguf
+      --alias gemma-3-12b
       -ngl -1
+      {%- else %}
+      -hf google/gemma-3-4b-it-qat-q4_0-gguf
+      --alias gemma-3-4b
       {%- endif %}
+      --port 8182
+      --hf-token ${HUGGINGFACE_API_KEY}
+      --host 0.0.0.0
+      -c 8196
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
       timeout: 10s
@@ -581,13 +883,15 @@ services:
               device_ids: [ '0' ]
               capabilities: [ gpu ]
     {%- endif %}
+    networks:
+      - backend
 
   llama-cpp-embedding:
     container_name: llama-cpp-embedding
     platform: "linux/amd64"
     image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_gpu if llama_cpp_use_gpu else image_tags.llama_cpp_cpu }}
     restart: always
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "8183:8182"
     {%- endif %}
@@ -597,6 +901,7 @@ services:
       - {{ global.volume_root }}/llamacpp-cache:/root/.cache/llama.cpp
     environment:
       HF_HOME: /root/.cache/huggingface
+      LLAMA_API_KEY: ${LOCAL_LLM_TOKEN}
     command: >
       -hf Qwen/Qwen3-Embedding-0.6B-GGUF
       --hf-token ${HUGGINGFACE_API_KEY}
@@ -629,13 +934,15 @@ services:
               device_ids: [ '0' ]
               capabilities: [ gpu ]
     {%- endif %}
+    networks:
+      - backend
 
   llama-cpp-reranker:
     container_name: llama-cpp-reranker
     platform: "linux/amd64"
     image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_gpu if llama_cpp_use_gpu else image_tags.llama_cpp_cpu }}
     restart: always
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "8184:8182"
     {%- endif %}
@@ -645,6 +952,7 @@ services:
       - {{ global.volume_root }}/llamacpp-cache:/root/.cache/llama.cpp
     environment:
       HF_HOME: /root/.cache/huggingface
+      LLAMA_API_KEY: ${LOCAL_LLM_TOKEN}
     command: >
       -hf ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF
       --hf-token ${HUGGINGFACE_API_KEY}
@@ -677,6 +985,252 @@ services:
               device_ids: [ '0' ]
               capabilities: [ gpu ]
     {%- endif %}
+    networks:
+      - backend
+
+  # ===================================================================
+  # Audio Model Serving (SST/TTS)
+  # ===================================================================
+  # We are using speaches to serve audio models in an openai
+  # compatible format. GPU variants are only used for 'nightly' and
+  # 'latest' stages when GPU is enabled.
+  # ===================================================================
+
+  {%- set speaches_use_gpu = gpu_enabled and stage in ['nightly', 'latest'] %}
+  speaches:
+    container_name: speaches
+    image: {{ global.registry_prefix }}{{ image_tags.speaches_gpu if speaches_use_gpu else image_tags.speaches_cpu }}
+    restart: unless-stopped
+    {%- if stage in ['dev', 'local', 'build'] %}
+    ports:
+      - "8185:8000"
+    {%- endif %}
+    volumes:
+      - {{ global.volume_root }}/huggingface:/root/.cache/huggingface
+    environment:
+      HF_HOME: /root/.cache/huggingface
+      HF_TOKEN: ${HUGGINGFACE_API_KEY}
+      ENABLE_UI: False
+    healthcheck:
+      test: [ "CMD", "curl", "--fail", "http://0.0.0.0:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    {%- if speaches_use_gpu %}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '0' ]
+              capabilities: [ gpu ]
+    {%- endif %}
+    networks:
+      - backend
+  {%- endif %}
+
+  # ===================================================================
+  # LiteLLM Stack (Model Proxy and Guardrails)
+  # ===================================================================
+  # This stack provides a unified interface to various LLMs,
+  # handles PII filtering, and manages API keys.
+  # ===================================================================
+
+  presidio-analyzer:
+    container_name: presidio-analyzer
+    image: {{ global.registry_prefix }}{{ image_tags.presidio_analyzer }}
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - backend
+
+  presidio-anonymizer:
+    container_name: presidio-anonymizer
+    image: {{ global.registry_prefix }}{{ image_tags.presidio_anonymizer }}
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - backend
+
+  litellm:
+    container_name: litellm
+    image: {{ global.registry_prefix }}{{ image_tags.litellm }}
+    restart: always
+    {%- if stage in ['dev', 'local', 'build'] %}
+    ports:
+      - "4000:4000"
+    {%- endif %}
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/litellm"
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
+      UI_USERNAME: ${LITELLM_UI_USERNAME}
+      UI_PASSWORD: ${LITELLM_UI_PASSWORD}
+      LOCAL_LLM_TOKEN: ${LOCAL_LLM_TOKEN}
+      REDIS_TOKEN: ${REDIS_TOKEN}
+      AZURE_OPENAI_BASE_URL: ${AZURE_OPENAI_BASE_URL}
+      AZURE_OPENAI_KEY: ${AZURE_OPENAI_KEY}
+      SWISS_LLM_CLOUD_API_BASE_URL: ${SWISS_LLM_CLOUD_API_BASE_URL}
+      SWISS_LLM_CLOUD_API_KEY: ${SWISS_LLM_CLOUD_API_KEY}
+      COHERE_API_BASE: ${COHERE_API_BASE}
+      COHERE_API_KEY: ${COHERE_API_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      HUGGINGFACE_API_KEY: ${HUGGINGFACE_API_KEY}
+      PRESIDIO_ANALYZER_API_BASE: {{ PRESIDIO_ANALYZER_API_BASE }}
+      PRESIDIO_ANONYMIZER_API_BASE: {{ PRESIDIO_ANONYMIZER_API_BASE }}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      SET_VERBOSE: False
+      {%- if not gpu_enabled %}
+      DOCLING_API_KEY: ${DOCLING_API_KEY}
+      {%- endif %}
+    volumes:
+      - ./configs/litellm/litellm-config.{{ stage_postfix }}.yml:/app/config.yml
+    command: --config /app/config.yml
+    depends_on:
+      postgres:
+        condition: service_healthy
+      presidio-analyzer:
+        condition: service_started
+      presidio-anonymizer:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health/liveliness')" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 120s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    {%- if stage != 'dev' %}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.litellm.rule=Host(`litellm.${DOMAIN}`)"
+      - "traefik.http.routers.litellm.entrypoints=websecure"
+      - "traefik.http.routers.litellm.middlewares=security-headers@file"
+      - "traefik.http.services.litellm.loadbalancer.server.port=4000"
+      {%- if stage not in ['local', 'build'] %}
+      - "traefik.http.routers.litellm.tls.certresolver=letsencrypt"
+      {%- else %}
+      - "traefik.http.routers.litellm.tls=true"
+      {%- endif %}
+    {%- endif %}
+    networks:
+      - backend
+      - data  # For PostgreSQL access
+      {%- if stage != 'dev' %}
+      - proxy  # For external API access via Traefik
+      {%- endif %}
+
+  # ===================================================================
+  # Utility & Code Execution Services
+  # ===================================================================
+  # These services provide code execution runtimes (Jupyter) and
+  # browser automation (Playwright) for various platform features.
+  # ===================================================================
+
+  jupyter:
+    container_name: jupyter-lab
+    image: {{ global.registry_prefix }}{{ image_tags.jupyter }}
+    restart: always
+    {%- if stage in ['dev', 'local', 'build'] %}
+    ports:
+      - "8888:8888"
+    {%- endif %}
+    volumes:
+      - {{ global.volume_root }}/jupyter-data:/home/jovyan/work
+    environment:
+      JUPYTER_ENABLE_LAB: yes
+      JUPYTER_TOKEN: ${JUPYTER_TOKEN}
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - backend
+
+  playwright:
+    container_name: playwright-server
+    build:
+      context: ./configs/playwright
+      dockerfile: Dockerfile
+    restart: always
+    {%- if stage in ['dev', 'local', 'build'] %}
+    ports:
+      - "3036:3000"
+    {%- endif %}
+    environment:
+      NODE_ENV: production
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - backend  # Internal service communication
+      - egress   # Outbound internet access for web browsing
+
+  # ===================================================================
+  # Document Processing Stack
+  # ===================================================================
+  # This stack, powered by Docling, handles OCR and parsing of
+  # uploaded documents for the RAG pipeline.
+  # ===================================================================
+
+  docling:
+    container_name: docling
+    image: {{ global.registry_prefix }}{{ image_tags.docling }}
+    restart: always
+    {%- if stage in ['dev', 'local', 'build'] %}
+    ports:
+      - "5001:5001"
+    {%- endif %}
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
+    environment:
+      DOCLING_SERVE_ARTIFACTS_PATH: "/models"
+      DOCLING_SERVE_LOAD_MODELS_AT_BOOT: 0
+      DOCLING_SERVE_MAX_SYNC_WAIT: 600
+      DOCLING_SERVE_ENABLE_REMOTE_SERVICES: 1
+      DOCLING_SERVE_API_KEY: ${DOCLING_API_KEY}
+      DOCLING_SERVE_SINGLE_USE_RESULTS: 1
+      DOCLING_SERVE_RESULT_REMOVAL_DELAY: 30
+      {%- if stage in ['dev', 'local', 'build'] %}
+      DOCLING_SERVE_ENABLE_UI: 1
+      {%- endif %}
+    depends_on:
+      {%- if gpu_enabled %}
+      vllm-docling:
+        condition: service_healthy
+      {%- endif %}
+      litellm:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - backend
 
   {% if gpu_enabled %}
   vllm-docling:
@@ -684,7 +1238,7 @@ services:
     platform: "linux/amd64"
     image: {{ global.registry_prefix }}{{ image_tags.vllm }}
     restart: always
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "8186:8182"
     {%- endif %}
@@ -693,6 +1247,7 @@ services:
     environment:
       HF_HOME: /root/.cache/huggingface
       HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
+      VLLM_API_KEY: ${LOCAL_LLM_TOKEN}
     command: >
       --model ibm-granite/granite-docling-258M
       --served-model-name granite-docling
@@ -720,222 +1275,9 @@ services:
             - driver: nvidia
               device_ids: [ '0' ]
               capabilities: [ gpu ]
+    networks:
+      - backend
   {%- endif %}
-
-  # ===================================================================
-  # Audio Model Serving (SST/TTS)
-  # ===================================================================
-  # We are using speaches to serve audio models in an openai
-  # compatible format. GPU variants are only used for 'nightly' and
-  # 'latest' stages when GPU is enabled.
-  # ===================================================================
-
-  {%- set speaches_use_gpu = gpu_enabled and stage in ['nightly', 'latest'] %}
-  speaches:
-    container_name: speaches
-    image: {{ global.registry_prefix }}{{ image_tags.speaches_gpu if speaches_use_gpu else image_tags.speaches_cpu }}
-    restart: unless-stopped
-    {%- if stage == 'dev' %}
-    ports:
-      - "8185:8000"
-    {%- endif %}
-    volumes:
-      - {{ global.volume_root }}/huggingface:/root/.cache/huggingface
-    environment:
-      HF_HOME: /root/.cache/huggingface
-      HF_TOKEN: ${HUGGINGFACE_API_KEY}
-      ENABLE_UI: False
-    healthcheck:
-      test: [ "CMD", "curl", "--fail", "http://0.0.0.0:8000/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 5s
-    {%- if speaches_use_gpu %}
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: [ '0' ]
-              capabilities: [ gpu ]
-    {%- endif %}
-  {%- endif %}
-
-  # ===================================================================
-  # LiteLLM Stack (Model Proxy and Guardrails)
-  # ===================================================================
-  # This stack provides a unified interface to various LLMs,
-  # handles PII filtering, and manages API keys.
-  # ===================================================================
-
-  presidio-analyzer:
-    container_name: presidio-analyzer
-    image: {{ global.registry_prefix }}{{ image_tags.presidio_analyzer }}
-    restart: always
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
-
-  presidio-anonymizer:
-    container_name: presidio-anonymizer
-    image: {{ global.registry_prefix }}{{ image_tags.presidio_anonymizer }}
-    restart: always
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
-
-  litellm:
-    container_name: litellm
-    image: {{ global.registry_prefix }}{{ image_tags.litellm }}
-    restart: always
-    {%- if stage == 'dev' %}
-    ports:
-      - "4000:4000"
-    {%- endif %}
-    environment:
-      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/litellm"
-      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
-      UI_USERNAME: ${LITELLM_UI_USERNAME}
-      UI_PASSWORD: ${LITELLM_UI_PASSWORD}
-      AZURE_OPENAI_BASE_URL: ${AZURE_OPENAI_BASE_URL}
-      AZURE_OPENAI_KEY: ${AZURE_OPENAI_KEY}
-      SWISS_LLM_CLOUD_API_URL: ${SWISS_LLM_CLOUD_API_URL}
-      SWISS_LLM_CLOUD_API_KEY: ${SWISS_LLM_CLOUD_API_KEY}
-      COHERE_API_BASE: ${COHERE_API_BASE}
-      COHERE_API_KEY: ${COHERE_API_KEY}
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
-      HUGGINGFACE_API_KEY: ${HUGGINGFACE_API_KEY}
-      PRESIDIO_ANALYZER_API_BASE: http://presidio-analyzer:3000
-      PRESIDIO_ANONYMIZER_API_BASE: http://presidio-anonymizer:3000
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
-      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
-      SET_VERBOSE: False
-    volumes:
-      - ./configs/litellm/litellm-config.{{ stage_postfix }}.yml:/app/config.yml
-    command: --config /app/config.yml
-    depends_on:
-      postgres:
-        condition: service_healthy
-      presidio-analyzer:
-        condition: service_started
-      presidio-anonymizer:
-        condition: service_started
-    healthcheck:
-      test: [ "CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:4000/health/liveliness" ]
-      timeout: 10s
-      interval: 30s
-      retries: 3
-      start_period: 60s
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
-    {%- if stage != 'dev' %}
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.litellm.rule=Host(`litellm.${DOMAIN}`)"
-      - "traefik.http.routers.litellm.entrypoints=websecure"
-      - "traefik.http.routers.litellm.middlewares=security-headers@file"
-      - "traefik.http.services.litellm.loadbalancer.server.port=4000"
-      {%- if stage not in ['local', 'build'] %}
-      - "traefik.http.routers.litellm.tls.certresolver=letsencrypt"
-      {%- else %}
-      - "traefik.http.routers.litellm.tls=true"
-      {%- endif %}
-    {%- endif %}
-
-  # ===================================================================
-  # Utility & Code Execution Services
-  # ===================================================================
-  # These services provide code execution runtimes (Jupyter) and
-  # browser automation (Playwright) for various platform features.
-  # ===================================================================
-
-  jupyter:
-    container_name: jupyter-lab
-    image: {{ global.registry_prefix }}{{ image_tags.jupyter }}
-    restart: always
-    {%- if stage == 'dev' %}
-    ports:
-      - "8888:8888"
-    {%- endif %}
-    volumes:
-      - {{ global.volume_root }}/jupyter-data:/home/jovyan/work
-    environment:
-      JUPYTER_ENABLE_LAB: yes
-      JUPYTER_TOKEN: ${JUPYTER_TOKEN}
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
-
-  playwright:
-    container_name: playwright-server
-    image: {{ global.registry_prefix }}{{ image_tags.playwright }}
-    restart: always
-    {%- if stage == 'dev' %}
-    ports:
-      - "3036:3000"
-    {%- endif %}
-    command: npx playwright@v1.49.0 run-server --port 3000 --host 0.0.0.0
-    environment:
-      NODE_ENV: production
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:3000/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
-
-  # ===================================================================
-  # Document Processing Stack
-  # ===================================================================
-  # This stack, powered by Docling, handles OCR and parsing of
-  # uploaded documents for the RAG pipeline.
-  # ===================================================================
-
-  docling:
-    container_name: docling
-    image: {{ global.registry_prefix }}{{ image_tags.docling }}
-    restart: always
-    {%- if stage == 'dev' %}
-    ports:
-      - "5001:5001"
-    {%- endif %}
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
-    environment:
-      DOCLING_SERVE_ARTIFACTS_PATH: "/models"
-      DOCLING_SERVE_LOAD_MODELS_AT_BOOT: 0
-      DOCLING_SERVE_MAX_SYNC_WAIT: 600
-      DOCLING_SERVE_ENABLE_REMOTE_SERVICES: 1
-      {%- if stage == 'dev' %}
-      DOCLING_SERVE_ENABLE_UI: 1
-      {%- endif %}
-    depends_on:
-      {%- if gpu_enabled %}
-      vllm-docling:
-        condition: service_healthy
-      {%- endif %}
-      litellm:
-        condition: service_healthy
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
 
   # ===================================================================
   # Observability Stack
@@ -954,13 +1296,15 @@ services:
       - OTEL_CLOUD_HEADERS=${OTEL_CLOUD_HEADERS}
     volumes:
       - ./configs/otel/otel-config.{{ stage_postfix }}.yml:/etc/otel-config.yml
-    {%- if stage == 'dev' %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "4317:4317"
       - "4318:4318"
       - "13133:13133"
       - "55679:55679"
     {%- endif %}
+    depends_on:
+      - phoenix
     healthcheck:
       test: [ "NONE" ]
     logging:
@@ -968,6 +1312,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   # ===================================================================
   # Open WebUI Stack (Primary User Interface)
@@ -1003,7 +1349,8 @@ services:
       # --- General Settings ---
       WEBUI_NAME: Swiss AI-Hub
       DEFAULT_LOCALE: de
-      ENABLE_BASE_MODELS_CACHE: True
+      # Disable model caching to ensure pipeline models (agents) are always fetched
+      ENABLE_BASE_MODELS_CACHE: False
       ENABLE_COMMUNITY_SHARING: False
       ENABLE_USER_WEBHOOKS: False
       ENABLE_LOGIN_FORM: False
@@ -1013,13 +1360,11 @@ services:
       # --- Stage-Specific URLs and Environment ---
       {%- if stage == 'dev' %}
       WEBUI_URL: http://localhost:8080
-      ENV: ${ENV}
-      GLOBAL_LOG_LEVEL: ${LOG_LEVEL}
       {%- else %}
       WEBUI_URL: https://openwebui.${DOMAIN}
-      ENV: prod
-      GLOBAL_LOG_LEVEL: ${LOG_LEVEL}
       {%- endif %}
+      ENV: ${ENV}
+      GLOBAL_LOG_LEVEL: ${LOG_LEVEL}
 
       # --- Telemetry ---
       ENABLE_OTEL: True
@@ -1090,6 +1435,7 @@ services:
 
       # --- AI-Hub Internal Connection ---
       AIHUB_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000
+      AIHUB_FRONTEND_URL: {{ 'http://localhost:3000' if stage == 'dev' else 'https://${DOMAIN}' }}
       AIHUB_SUPERUSER_API_KEY: ${SUPERUSER_TOKEN}
       OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
       AIHUB_PIPELINE_PREFIX: "aihub/"
@@ -1102,14 +1448,14 @@ services:
       DATABASE_HOST: {{ 'localhost' if stage == 'dev' else 'postgres' }}
       DATABASE_PORT: 5432
       DATABASE_NAME: openwebui
-      REDIS_URL: redis://{{ 'localhost' if stage == 'dev' else 'valkey' }}:6379/1
+      REDIS_URL: redis://default:${REDIS_TOKEN}@{{ 'localhost' if stage == 'dev' else 'valkey' }}:6379/10
       REDIS_KEY_PREFIX: open-webui
 
       # --- Web Server ---
       UVICORN_WORKERS: {{ '1' if stage == 'dev' else '8' }}
       ENABLE_WEBSOCKET_SUPPORT: True
       WEBSOCKET_MANAGER: redis
-      WEBSOCKET_REDIS_URL: redis://{{ 'localhost' if stage == 'dev' else 'valkey' }}:6379/1
+      WEBSOCKET_REDIS_URL: redis://default:${REDIS_TOKEN}@{{ 'localhost' if stage == 'dev' else 'valkey' }}:6379/11
       THREAD_POOL_SIZE: {{ '8' if stage == 'dev' else '32' }}
       CORS_ALLOW_ORIGIN: "*" # TODO: Make this more secure
 
@@ -1117,7 +1463,7 @@ services:
       ENABLE_ADMIN_EXPORT: True
       ENABLE_ADMIN_CHAT_ACCESS: False
       SHOW_ADMIN_DETAILS: True
-      ADMIN_EMAIL: admin@ai-hub.bbv.ch
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
 
       # --- Code Execution ---
       CODE_EXECUTION_ENGINE: jupyter
@@ -1133,6 +1479,7 @@ services:
       VECTOR_DB: milvus
       MILVUS_DB: default
       MILVUS_URI: http://{{ 'localhost' if stage == 'dev' else 'milvus-standalone' }}:19530
+      MILVUS_TOKEN: root:${MILVUS_ROOT_PASSWORD}
       MILVUS_INDEX_TYPE: HNSW
       MILVUS_METRIC_TYPE: COSINE
       MILVUS_HNSW_M: 16
@@ -1147,7 +1494,7 @@ services:
       EXTERNAL_DOCUMENT_LOADER_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/docling
       EXTERNAL_DOCUMENT_LOADER_API_KEY: ${SUPERUSER_TOKEN}
       RAG_EMBEDDING_ENGINE: openai
-      RAG_EMBEDDING_MODEL: embedding/small
+      RAG_EMBEDDING_MODEL: embedding/large
       RAG_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/openai
       RAG_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
 
@@ -1159,7 +1506,7 @@ services:
       WEB_SEARCH_CONCURRENT_REQUESTS: 6
       BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: True
       WEB_LOADER_ENGINE: playwright
-      PLAYWRIGHT_WS_URL: ws://playwright:3000
+      PLAYWRIGHT_WS_URL: {{ PLAYWRIGHT_WS_URL }}
       FILE_IMAGE_COMPRESSION_WIDTH: 796
       FILE_IMAGE_COMPRESSION_HEIGHT: 796
 
@@ -1190,6 +1537,12 @@ services:
       USER_PERMISSIONS_FEATURES_IMAGE_GENERATION: True
       USER_PERMISSIONS_FEATURES_CODE_INTERPRETER: True
       USER_PERMISSIONS_FEATURES_NOTES: True
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
     logging:
       driver: json-file
       options:
@@ -1198,6 +1551,7 @@ services:
     {%- if stage != 'dev' %}
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       # --- Routers ---
       - "traefik.http.routers.openwebui-api-auth.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/api/v1/auths`)"
       - "traefik.http.routers.openwebui-api-auth.priority=7000"
@@ -1248,6 +1602,38 @@ services:
       - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customRequestHeaders.X-Forwarded-Port=443"
       - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customRequestHeaders.X-Real-IP=%{remote_addr}"
     {%- endif %}
+    {%- if stage != 'dev' %}
+    networks:
+      - proxy
+      - backend
+      - data
+      - storage
+    {%- endif %}
+
+  openwebui-init:
+    container_name: openwebui-init
+    image: {{ global.registry_prefix }}postgres:17
+    restart: "no"
+    depends_on:
+      open-webui:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: openwebui
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./configs/openwebui/init-functions.sh:/init-functions.sh:ro
+      - ./configs/openwebui/functions:/functions:ro
+    entrypoint: ["/bin/sh", "/init-functions.sh"]
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data
 
   {% if image_tags.dagster[stage] %}
   # ===================================================================
@@ -1264,20 +1650,20 @@ services:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
       OAUTH2_PROXY_COOKIE_SECURE: False
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
-      OAUTH2_PROXY_UPSTREAMS: http://dagster-webserver:3000
+      OAUTH2_PROXY_UPSTREAMS: {{ DAGSTER_WEBSERVER_URL }}
       OAUTH2_PROXY_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH2_PROXY_PROVIDER: oidc
       OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
       OAUTH2_PROXY_OIDC_ISSUER_URL: ${OAUTH_AUTHORITY_URL}/v2.0
-      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET}
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET_DAGSTER}
       OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
       OAUTH2_PROXY_EMAIL_DOMAINS: "*"
       OAUTH2_PROXY_REVERSE_PROXY: True
       OAUTH2_PROXY_REDIRECT_URL: https://dagster.${DOMAIN}
       OAUTH2_PROXY_SCOPE: openid email profile
-      OAUTH2_PROXY_ALLOWED_GROUPS: ${DAGSTER_OAUTH_ALLOWED_GROUPS}
+      OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_DAGSTER}
       OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
-      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: https://aiagentsstpublicblobs.blob.core.windows.net/logos/Bbv-Logo_farbig.png
+      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: ${OAUTH_CUSTOM_SIGN_IN_LOGO}
     logging:
       driver: json-file
       options:
@@ -1285,6 +1671,7 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.dagster.rule=Host(`dagster.${DOMAIN}`)"
       - "traefik.http.routers.dagster.entrypoints=websecure"
       - "traefik.http.routers.dagster.middlewares=security-headers@file"
@@ -1294,6 +1681,9 @@ services:
       {%- else %}
       - "traefik.http.routers.dagster.tls=true"
       {%- endif %}
+    networks:
+      - proxy
+      - backend
 
   dagster-webserver:
     container_name: dagster-webserver
@@ -1304,6 +1694,13 @@ services:
       dockerfile: ./aihub_pipeline/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.dagster[stage] }}
+    {%- endif %}
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+    {%- if stage in ['dev', 'local', 'build'] %}
+    ports:
+      - "3002:3000"
     {%- endif %}
     entrypoint:
       - dagster-webserver
@@ -1321,11 +1718,21 @@ services:
       DAGSTER_HOME: /dagster_home
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      LOG_LEVEL: ${LOG_LEVEL}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/server_info"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     logging:
       driver: json-file
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
+      - data
 
   dagster-daemon:
     container_name: dagster-daemon
@@ -1337,6 +1744,9 @@ services:
     {%- else %}
     image: "{{ global.registry_prefix }}{{ image_tags.dagster[stage] }}"
     {%- endif %}
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
     entrypoint:
       - dagster-daemon
       - run
@@ -1348,14 +1758,74 @@ services:
       DAGSTER_HOME: /dagster_home
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      LOG_LEVEL: ${LOG_LEVEL}
+    healthcheck:
+      test: ["CMD", "dagster-daemon", "liveness-check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     logging:
       driver: json-file
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
+      - data
   {%- endif %}
 
   {% if stage != 'dev' %}
+  # ===================================================================
+  # Docker Socket Proxy (Security Layer)
+  # ===================================================================
+  # Provides filtered, read-only access to the Docker socket for Traefik.
+  # This prevents potential container escape attacks if Traefik is
+  # compromised, as the proxy only exposes the minimal Docker API
+  # endpoints required for service discovery.
+  # ===================================================================
+  docker-socket-proxy:
+    container_name: docker-socket-proxy
+    image: "{{ image_tags.docker_socket_proxy }}"
+    restart: always
+    # Required for Docker socket access in SELinux/AppArmor environments
+    privileged: true
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:2375/_ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      # Security: Only enable required Docker API sections
+      CONTAINERS: 1    # Required for Traefik to discover services
+      NETWORKS: 1      # Required for Traefik network routing
+      # Explicitly disable dangerous permissions (defaults are already 0, but explicit is clearer)
+      BUILD: 0
+      COMMIT: 0
+      CONFIGS: 0
+      DISTRIBUTION: 0
+      EXEC: 0
+      IMAGES: 0
+      POST: 0
+      SECRETS: 0
+      SERVICES: 0
+      SWARM: 0
+      SYSTEM: 0
+      TASKS: 0
+      VOLUMES: 0
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels:
+      - "traefik.enable=false"
+    networks:
+      - backend  # Only Traefik needs to access this service
+
   # ===================================================================
   # Traefik (Reverse Proxy)
   # ===================================================================
@@ -1366,13 +1836,15 @@ services:
     container_name: traefik
     image: "{{ global.registry_prefix }}{{ image_tags.traefik }}"
     restart: always
+    depends_on:
+      docker-socket-proxy:
+        condition: service_healthy
     healthcheck:
       test: [ "NONE" ]
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./configs/traefik/traefik-config.{{ stage_postfix }}.yml:/etc/traefik/traefik.yml:ro"
       - "./configs/traefik/middlewares.{{ stage_postfix }}.yml:/etc/traefik/dynamic/middlewares.yml:ro"
       {%- if stage in ['dev', 'local', 'build'] %}
@@ -1389,6 +1861,7 @@ services:
       {%- endif %}
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       # --- HTTP to HTTPS Redirect and ACME Challenge ---
       {%- if stage in ['latest', 'nightly'] %}
       - "traefik.http.routers.acme-challenge.rule=PathPrefix(`/.well-known/acme-challenge/`)"
@@ -1411,6 +1884,9 @@ services:
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:${ADMIN_PASSWORD_HASH}"
       - "traefik.http.routers.traefik.middlewares=traefik-auth"
+    networks:
+      - proxy
+      - backend  # Traefik routes to backend services
   {%- endif %}
 
   {% if image_tags.api[stage] %}
@@ -1437,6 +1913,10 @@ services:
         condition: service_started
       ferretdb:
         condition: service_started
+      milvus-standalone:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
     environment:
       # Log Level
       LOG_LEVEL: ${LOG_LEVEL}
@@ -1470,54 +1950,79 @@ services:
       AIHUB_API_VERSION: ${AIHUB_API_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
       AIHUB_CREATE_DEFAULT_ROLES: True
+      AIHUB_CREATE_DEFAULT_BUCKETS: True
+      AIHUB_DEFAULT_BUCKET_NAME: ${AIHUB_DEFAULT_BUCKET_NAME}
+      AIHUB_SHARED_BUCKET_NAME: ${AIHUB_SHARED_BUCKET_NAME}
+      AIHUB_DEFAULT_NAMESPACE_NAME: ${AIHUB_DEFAULT_NAMESPACE_NAME}
+      AIHUB_SHARED_NAMESPACE_NAME: ${AIHUB_SHARED_NAMESPACE_NAME}
 
       # LiteLLM Access
-      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Mongo DB
-      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
 
       # MILVUS
-      MILVUS_URL: http://milvus-standalone
-      MILVUS_DIMENSION: 3072
+      MILVUS_URL: {{ MILVUS_ENDPOINT }}
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
       # S3 Access connection
-      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      S3_STORAGE_PUBLIC_ENDPOINT: {{ S3_STORAGE_PUBLIC_ENDPOINT }}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
       # Phoenix
-      PHOENIX_ENDPOINT: http://phoenix:6006
+      PHOENIX_ENDPOINT: {{ PHOENIX_ENDPOINT }}
 
       # NATs
-      NATS_ENDPOINT: nats://nats:4222
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # REDIS
-      REDIS_URL: redis://valkey:6379
+      REDIS_URL: {{ REDIS_ENDPOINT }}
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Neo4j
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: "text-generation/large"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
+      MEM0_RERANKING_MODEL_NAME: "reranker"
 
       # Jupyter (for open-webui code interpreter)
-      JUPYTER_URL: http://jupyter:8888
+      JUPYTER_URL: {{ JUPYTER_URL }}
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
 
       # Docling
-      DOCLING_API_ENDPOINT: ${DOCLING_API_ENDPOINT}
+      DOCLING_API_BASE_URL: {{ DOCLING_API_BASE_URL }}
       DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
-      DOCLING_HOSTED_VLM_API_ENDPOINT: ${DOCLING_HOSTED_VLM_API_ENDPOINT}
-      DOCLING_HOSTED_VLM_API_KEY: ${DOCLING_HOSTED_VLM_API_KEY}
+      DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
+      DOCLING_HOSTED_VLM_API_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      DOCLING_HOSTED_VLM_API_KEY: ${LITELLM_MASTER_KEY}
       DOCLING_VLM_MODEL_NAME: ${DOCLING_VLM_MODEL_NAME}
+      DOCLING_HTTP_RETRIES: ${DOCLING_HTTP_RETRIES}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
-      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: api
-      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
+      OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('api') }}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     logging:
       driver: json-file
       options:
@@ -1525,6 +2030,7 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/v1`)"
       - "traefik.http.routers.api.priority=6000"
       - "traefik.http.routers.api.entrypoints=websecure"
@@ -1535,6 +2041,11 @@ services:
       {%- else %}
       - "traefik.http.routers.api.tls=true"
       {%- endif %}
+    networks:
+      - proxy
+      - backend
+      - data
+      - storage
   {%- endif %}
 
   {% if image_tags.web[stage] %}
@@ -1558,14 +2069,23 @@ services:
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
       WEBUI_URL: https://openwebui.${DOMAIN}
-      WS_ENDPOINT: wss://${DOMAIN}/api/v1/event/ws
+      WS_ENDPOINT: wss://${DOMAIN}/api/v1/events/ws
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     logging:
       driver: json-file
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - proxy  # Static frontend only needs proxy access
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       # --- Routers ---
       - "traefik.http.routers.web-static.rule=Host(`${DOMAIN}`) && PathPrefix(`/_nuxt`)"
       - "traefik.http.routers.web-static.priority=2000"
@@ -1619,28 +2139,63 @@ services:
     image: {{ global.registry_prefix }}{{ image_tags.llm_wrapping_agent[stage] }}
     {%- endif %}
     environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
       # LiteLLM Access
-      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
       # NATs
-      NATS_ENDPOINT: nats://nats:4222
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # REDIS
-      REDIS_URL: redis://valkey:6379
+      REDIS_URL: {{ REDIS_ENDPOINT }}
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Milvus
+      MILVUS_URL: {{ MILVUS_ENDPOINT }}
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # Neo4j
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: "text-generation/large"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
+      MEM0_RERANKING_MODEL_NAME: "reranker"
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
-      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
-      OTEL_RESOURCE_SERVICE_NAME: api
-      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: llm-wrapping-agent
+      OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('llm_wrapping_agent') }}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     logging:
       driver: json-file
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
+      - data
   {%- endif %}
 
   {% if image_tags.rag_agent[stage] %}
@@ -1655,37 +2210,204 @@ services:
     image: {{ global.registry_prefix }}{{ image_tags.rag_agent[stage] }}
     {%- endif %}
     environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      AIHUB_DEFAULT_BUCKET_NAME: ${AIHUB_DEFAULT_BUCKET_NAME}
+      AIHUB_SHARED_BUCKET_NAME: ${AIHUB_SHARED_BUCKET_NAME}
+      AIHUB_DEFAULT_NAMESPACE_NAME: ${AIHUB_DEFAULT_NAMESPACE_NAME}
+      AIHUB_SHARED_NAMESPACE_NAME: ${AIHUB_SHARED_NAMESPACE_NAME}
+
       # LiteLLM Access
-      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Mongo DB
-      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
 
       # MILVUS
-      MILVUS_URL: http://milvus-standalone
-      MILVUS_DIMENSION: 3072
+      MILVUS_URL: {{ MILVUS_ENDPOINT }}
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
       # S3 Access connection
-      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      S3_STORAGE_PUBLIC_ENDPOINT: {{ S3_STORAGE_PUBLIC_ENDPOINT }}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
       # NATs
-      NATS_ENDPOINT: nats://nats:4222
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # REDIS
-      REDIS_URL: redis://valkey:6379
+      REDIS_URL: {{ REDIS_ENDPOINT }}
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Neo4j
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: "text-generation/large"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
+      MEM0_RERANKING_MODEL_NAME: "reranker"
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
-      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
-      OTEL_RESOURCE_SERVICE_NAME: api
-      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: rag-agent
+      OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('rag_agent') }}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - backend
+      - data
+      - storage
+  {%- endif %}
+
+  {% if image_tags.expert_rag_agent[stage] %}
+  expert_rag_agent:
+    container_name: expert-rag-agent
+    restart: always
+    {%- if image_tags.expert_rag_agent[stage] == 'localbuild' %}
+    build:
+      context: .
+      dockerfile: ./aihub_agent/app/expert_rag_agent/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.expert_rag_agent[stage] }}
+    {%- endif %}
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      AIHUB_DEFAULT_BUCKET_NAME: ${AIHUB_DEFAULT_BUCKET_NAME}
+      AIHUB_SHARED_BUCKET_NAME: ${AIHUB_SHARED_BUCKET_NAME}
+      AIHUB_DEFAULT_NAMESPACE_NAME: ${AIHUB_DEFAULT_NAMESPACE_NAME}
+      AIHUB_SHARED_NAMESPACE_NAME: ${AIHUB_SHARED_NAMESPACE_NAME}
+
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # MILVUS
+      MILVUS_URL: {{ MILVUS_ENDPOINT }}
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # S3 Access connection
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      S3_STORAGE_PUBLIC_ENDPOINT: {{ S3_STORAGE_PUBLIC_ENDPOINT }}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+
+      # NATs
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # REDIS
+      REDIS_URL: {{ REDIS_ENDPOINT }}
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: expert-rag-agent
+      OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('expert_rag_agent') }}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - backend
+      - data
+      - storage
+  {%- endif %}
+
+  {% if image_tags.expert_asking_agent[stage] %}
+  expert_asking_agent:
+    container_name: expert-asking-agent
+    restart: always
+    {%- if image_tags.expert_asking_agent[stage] == 'localbuild' %}
+    build:
+      context: .
+      dockerfile: ./aihub_agent/app/expert_asking_agent/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.expert_asking_agent[stage] }}
+    {%- endif %}
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # NATs
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # REDIS
+      REDIS_URL: {{ REDIS_ENDPOINT }}
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Milvus
+      MILVUS_URL: {{ MILVUS_ENDPOINT }}
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # Channel Configuration (Teams or Slack)
+      EXPERT_ASKING_CHANNEL_TYPE: ${EXPERT_ASKING_CHANNEL_TYPE}
+      TEAMS_CHANNEL_ID: ${TEAMS_CHANNEL_ID}
+      TEAMS_TENANT_ID: ${TEAMS_TENANT_ID}
+      TEAMS_BOT_ID: ${TEAMS_BOT_ID}
+      SLACK_CHANNEL_ID: ${SLACK_CHANNEL_ID}
+      SLACK_SERVICE_URL: ${SLACK_SERVICE_URL}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: expert-asking-agent
+      OTEL_RESOURCE_SERVICE_VERSION: {{ get_service_version('expert_asking_agent') }}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - backend
+      - data
   {%- endif %}
 
   {% if image_tags.default_rag_pipeline[stage] %}
@@ -1701,45 +2423,143 @@ services:
     {%- endif %}
     environment:
       PYTHONUNBUFFERED: 1
+      LOG_LEVEL: ${LOG_LEVEL}
 
       # AI-Hub Settings
       AIHUB_API_VERSION: ${AIHUB_API_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      AIHUB_DEFAULT_BUCKET_NAME: ${AIHUB_DEFAULT_BUCKET_NAME}
 
       # NATS
-      NATS_ENDPOINT: "nats://nats:4222"
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # LiteLLM Proxy Server Settings
-      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Docling
-      DOCLING_API_ENDPOINT: http://docling:5001/v1alpha/convert/source
-      DOCLING_API_TIMEOUT: 600
-      DOCLING_HOSTED_VLM_API_ENDPOINT: http://litellm:4000
+      DOCLING_API_BASE_URL: {{ DOCLING_API_BASE_URL }}
+      DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
+      DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
+      DOCLING_HOSTED_VLM_API_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
       DOCLING_HOSTED_VLM_API_KEY: ${LITELLM_MASTER_KEY}
-      DOCLING_VLM_MODEL_NAME: text-generation/ocr
+      DOCLING_VLM_MODEL_NAME: ${DOCLING_VLM_MODEL_NAME}
+      DOCLING_HTTP_RETRIES: ${DOCLING_HTTP_RETRIES}
 
       # Postgres
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
       # Mongo DB
-      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
 
       # MILVUS
-      MILVUS_URL: http://milvus-standalone
-      MILVUS_DIMENSION: 3072
+      MILVUS_URL: {{ MILVUS_ENDPOINT }}
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
       # DAGSTER
       DAGSTER_HOME: /dagster_home
 
       # S3 Access connection (access and secret key same as SeaweedFS)
-      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      S3_STORAGE_PUBLIC_ENDPOINT: {{ S3_STORAGE_PUBLIC_ENDPOINT }}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+    healthcheck:
+      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "localhost", "--port", "4000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - backend
+      - data
+      - storage
+  {%- endif %}
+
+  {% if image_tags.shared_rag_pipeline[stage] %}
+  shared_rag_pipeline:
+    container_name: shared-rag-pipeline
+    restart: always
+    {%- if image_tags.shared_rag_pipeline[stage] == 'localbuild' %}
+    build:
+      context: .
+      dockerfile: ./aihub_pipeline/app/shared_rag_pipeline/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.shared_rag_pipeline[stage] }}
+    {%- endif %}
+    environment:
+      PYTHONUNBUFFERED: 1
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+      AIHUB_SHARED_BUCKET_NAME: ${AIHUB_SHARED_BUCKET_NAME}
+
+      # NATS
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # LiteLLM Proxy Server Settings
+      LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # Docling
+      DOCLING_API_BASE_URL: {{ DOCLING_API_BASE_URL }}
+      DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
+      DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
+      DOCLING_HOSTED_VLM_API_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
+      DOCLING_HOSTED_VLM_API_KEY: ${LITELLM_MASTER_KEY}
+      DOCLING_VLM_MODEL_NAME: ${DOCLING_VLM_MODEL_NAME}
+      DOCLING_HTTP_RETRIES: ${DOCLING_HTTP_RETRIES}
+
+      # Postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # MILVUS
+      MILVUS_URL: {{ MILVUS_ENDPOINT }}
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # DAGSTER
+      DAGSTER_HOME: /dagster_home
+
+      # S3 Access connection (access and secret key same as SeaweedFS)
+      S3_STORAGE_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
+      S3_STORAGE_PUBLIC_ENDPOINT: {{ S3_STORAGE_PUBLIC_ENDPOINT }}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+
+      # Neo4j
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: "text-generation/large"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
+      MEM0_RERANKING_MODEL_NAME: "reranker"
+    healthcheck:
+      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "localhost", "--port", "4000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - backend
+      - data
+      - storage
   {%- endif %}
 
   {% if image_tags.bot[stage] %}
@@ -1759,12 +2579,28 @@ services:
     image: {{ global.registry_prefix }}{{ image_tags.bot[stage] }}
     {%- endif %}
     depends_on:
-      - ferretdb
-      - nats
-      - traefik
+      ferretdb:
+        condition: service_started
+      nats:
+        condition: service_started
+      traefik:
+        condition: service_started
+      neo4j:
+          condition: service_healthy
+    {%- if stage in ['dev', 'local', 'build'] %}
+    ports:
+      - "8001:8001"
+    {%- endif %}
     environment:
-      NATS_ENDPOINT: nats://nats:4222
-      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017
+      NATS_ENDPOINT: {{ NATS_ENDPOINT }}
+      NATS_TOKEN: ${NATS_TOKEN}
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+      MEM0_LLM_NAME: "text-generation/large"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
+      MEM0_RERANKING_MODEL_NAME: "reranker"
       LOG_LEVEL: ${LOG_LEVEL}
       NUM_WORKERS: 1
       AIHUB_API_VERSION: ${AIHUB_API_VERSION}
@@ -1773,9 +2609,74 @@ services:
       DANGEROUS_DEV_ONLY_AUTH_FAKE_EMAIL: ${BOT_AUTH_FAKE_EMAIL}
       DANGEROUS_DEV_ONLY_AUTH_FAKE_OID: ${BOT_AUTH_FAKE_OID}
       DANGEROUS_DEV_ONLY_AUTH_FAKE_ROLES: ${BOT_AUTH_FAKE_ROLES}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     logging:
       driver: json-file
       options:
         max-size: 10m
         max-file: 2
+    {%- if stage not in ['dev'] %}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.bot.rule=Host(`bot.${DOMAIN}`)"
+      - "traefik.http.routers.bot.entrypoints=websecure"
+      - "traefik.http.routers.bot.tls=true"
+      - "traefik.http.routers.bot.middlewares=security-headers@file"
+      - "traefik.http.services.bot.loadbalancer.server.port=8001"
+    {%- endif %}
+    networks:
+      - proxy
+      - backend
+      - data
   {%- endif %}
+
+# ===================================================================
+# Network Configuration
+# ===================================================================
+# Network isolation provides defense-in-depth security by limiting
+# which services can communicate with each other. Each network zone
+# serves a specific purpose:
+#
+# - proxy:   External traffic ingress (Traefik routes here)
+# - backend: Internal application and processing services
+# - data:    Databases, caches, and message broker
+# - storage: SeaweedFS distributed object storage
+# - egress:  Outbound internet only, ICC disabled (containers isolated)
+#
+# Services are assigned to only the networks they require.
+# Networks marked with 'internal: true' cannot be accessed from
+# outside the Docker network, even if ports are exposed.
+# ===================================================================
+networks:
+  proxy:
+    name: proxy
+    driver: bridge
+  backend:
+    name: backend
+    driver: bridge
+    {%- if stage != 'dev' %}
+    internal: true
+    {%- endif %}
+  data:
+    name: data
+    driver: bridge
+    {%- if stage != 'dev' %}
+    internal: true
+    {%- endif %}
+  storage:
+    name: storage
+    driver: bridge
+    {%- if stage != 'dev' %}
+    internal: true
+    {%- endif %}
+  egress:
+    name: egress
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "false"

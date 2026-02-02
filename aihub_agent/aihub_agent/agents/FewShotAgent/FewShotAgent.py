@@ -1,8 +1,8 @@
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.generative_ai.chat_history.limit_chat_history import limit_chat_history
 from aihub_lib.generative_ai.guards.agent_description_guard import agent_description_guard
 from aihub_lib.generative_ai.prompting.few_shot.create_few_shot_messages import create_few_shot_messages
-from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
-from aihub_lib.generative_ai.utils.limit_chat_history import limit_chat_history
+from aihub_lib.generative_ai.retrieval.condense_standalone_question import condense_standalone_question
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import LLMStopEvent, StopEvent, UserMessageEvent
 from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
@@ -89,10 +89,9 @@ class FewShotAgent(Agent):
         async with agent_config.llm.cost_reporting_llm(displayer) as llm:
             condensed_question = condense_standalone_question(
                 chat_history=chat_history_event.limited_history,
-                message=start_event.user_query,
+                message=start_event.last_user_message,
                 t=t,
                 llm=llm,
-                condense_prompt=agent_config.condense_question_prompt,
             )
             return FewShotStandaloneQuestionCondenserEvent(condensed_chat_message=condensed_question)
 

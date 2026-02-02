@@ -6,6 +6,7 @@ from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQu
 from llama_index.core.vector_stores.utils import node_to_metadata_dict
 from llama_index.vector_stores.milvus import MilvusVectorStore
 from llama_index.vector_stores.milvus.utils import BaseSparseEmbeddingFunction
+from pymilvus import MilvusClient
 
 from aihub_lib.persistence.rag.vectors.node_metadata import NAMESPACE
 from aihub_lib.persistence.rag.vectors.stores.MilvusPartitionManager import (
@@ -26,6 +27,9 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
     """
     Memory-efficient Milvus store that loads only queried partitions based on namespace.
 
+    Accepts a pre-configured MilvusClient for dependency injection, enabling
+    connection reuse across the application and proper health checking.
+
     Limitations:
     - Copies insertion logic from base class (LlamaIndex doesn't support partition injection)
     - Overrides HYBRID search (base class doesn't forward kwargs to _hybrid_search)
@@ -34,11 +38,31 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
     - add(): Just set partition_name= per batch
     - query(): Just set partition_names= in kwargs
 
-    Backward compatibility: Falls back to base class for collections that do not have exactly 1023 manual partitions (e.g., collections created before this PR or with a different partition count).
+    Backward compatibility: Falls back to base class for collections that do not have exactly 1023 manual partitions
+    (e.g., collections created before this PR or with a different partition count).
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        client: MilvusClient,
+        uri: str,
+        token: str | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Initialize with a pre-configured MilvusClient.
+
+        LlamaIndex's MilvusVectorStore creates its own internal clients. We pass uri/token
+        to satisfy the parent, then override with our pre-configured client for actual operations.
+        This enables connection reuse and proper health checking.
+        """
+        # Pass uri/token to parent so it doesn't use the default './milvus_llamaindex.db'
+        super().__init__(uri=uri, token=token or "", *args, **kwargs)
+
+        # Override the parent's internally-created client with our pre-configured one
+        self._milvusclient = client
+
         self._has_manual_partitions: bool | None = None
 
     def _check_has_manual_partitions(self) -> bool:
@@ -242,3 +266,31 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
 
         nodes, similarities, ids = self._parse_from_milvus_results(res)
         return nodes, similarities, ids
+
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes associated with a ref_doc_id, scoped to a specific partition.
+        """
+        # Backward compatibility: fallback to base class if no manual partitions
+        if not self._check_has_manual_partitions():
+            return super().delete(ref_doc_id)
+
+        partition_name = delete_kwargs.get("partition_name")
+        doc_ids = [ref_doc_id] if not isinstance(ref_doc_id, list) else ref_doc_id
+        doc_ids_expr = ['"' + entry + '"' for entry in doc_ids]
+
+        entries = self.client.query(
+            collection_name=self.collection_name,
+            filter=f"{self.doc_id_field} in [{','.join(doc_ids_expr)}]",
+            partition_names=[partition_name] if partition_name else None,
+            output_fields=["id"],
+        )
+
+        if len(entries) > 0:
+            ids_to_delete = [entry["id"] for entry in entries]
+
+            self.client.delete(
+                collection_name=self.collection_name,
+                pks=ids_to_delete,
+                partition_name=partition_name,
+            )

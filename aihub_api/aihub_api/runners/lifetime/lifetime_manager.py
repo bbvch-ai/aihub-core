@@ -2,22 +2,27 @@ import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
+import boto3
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
+from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
+from aihub_lib.infrastructure.s3.S3StorageSettings import S3StorageSettings
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
+from botocore.config import Config
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
-from nats.aio.client import Client as NATS
+from pymilvus import MilvusClient
 
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.persistance.events.EventPersister import EventPersister
-from aihub_api.runners.lifetime.initialize_db import initialize_roles
+from aihub_api.runners.lifetime.initialize_db import initialize_knowledge_buckets, initialize_roles
 from aihub_api.services.AgentEndpointsDiscoveryService import AgentEndpointsDiscoveryService
 from aihub_api.services.ProcessEndpointsDiscoveryService import ProcessEndpointsDiscoveryService
 from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
@@ -68,17 +73,43 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
     logging.info("Initializing NATS connection and resources")
 
-    nc = NATS()
-
     # Connect to MongoDB via Cosmos
     connect(
         db=AIHubSettings().MONGO_MAIN_DB_NAME,
         host=MongoSettings().CONNECTION_STRING.get_secret_value(),
+        uuidRepresentation="standard",
+    )
+
+    # Connect to Redis
+    redis = RedisSettings.create_client()
+
+    # Connect to Milvus
+    milvus_settings = MilvusSettings()
+    milvus_client = MilvusClient(uri=milvus_settings.URL, token=milvus_settings.get_token())
+
+    # Connect to S3 (SeaweedFS)
+    s3_settings = S3StorageSettings()
+    s3_client = boto3.client(
+        "s3",
+        endpoint_url=s3_settings.ENDPOINT,
+        aws_access_key_id=s3_settings.ACCESS_KEY,
+        aws_secret_access_key=s3_settings.SECRET_KEY.get_secret_value(),
+        region_name=s3_settings.REGION,
+        config=Config(signature_version="s3v4"),
+    )
+    # Public client for generating presigned URLs accessible from browsers
+    s3_public_client = boto3.client(
+        "s3",
+        endpoint_url=s3_settings.get_public_endpoint(),
+        aws_access_key_id=s3_settings.ACCESS_KEY,
+        aws_secret_access_key=s3_settings.SECRET_KEY.get_secret_value(),
+        region_name=s3_settings.REGION,
+        config=Config(signature_version="s3v4"),
     )
 
     try:
         # Connect to NATS and setup JetStream
-        await nc.connect(servers=[NatsSettings().ENDPOINT])
+        nc = await NatsSettings.create_client()
         js = nc.jetstream()
 
         # Persist all events
@@ -118,6 +149,11 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         # Store resources in app state
         app.state.nc = nc
         app.state.js = js
+        app.state.redis = redis
+        app.state.milvus_client = milvus_client
+        app.state.s3_client = s3_client
+        app.state.s3_public_client = s3_public_client
+        app.state.s3_settings = s3_settings
         app.state.ws_manager = ws_manager
         app.state.ws_sender = ws_sender
         app.state.external_agent_event_distributor = external_agent_event_distributor
@@ -154,6 +190,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             logger.warning("Unable to start ProcessEndpointsDiscoveryService due to missing state.process_controller")
 
         await initialize_roles()
+        await initialize_knowledge_buckets()
 
         # Yield control back to FastAPI to start serving requests
         yield
@@ -171,6 +208,16 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             await app.state.process_discovery_service.stop()
 
         disconnect()
+
+        # Close Redis connection
+        await redis.aclose()
+
+        # Close Milvus connection
+        milvus_client.close()
+
+        # Close S3 connections
+        s3_client.close()
+        s3_public_client.close()
 
     finally:
         # Close NATS connection on exit

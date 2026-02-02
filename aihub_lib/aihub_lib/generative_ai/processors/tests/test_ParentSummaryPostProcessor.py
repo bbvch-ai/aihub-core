@@ -1,4 +1,3 @@
-import asyncio
 from time import sleep, time
 
 import pytest
@@ -18,17 +17,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     UPDATED_AT,
 )
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
-from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_collection
-
-
-# Set up an event loop for the test session
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create an instance of the default event loop for the test session."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
+from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_collection, run_with_event_loop
 
 scenarios("features/parent_summary_post_processor.feature")
 
@@ -65,15 +54,12 @@ def _(nodes, datatable):
 
 
 @pytest.fixture()
-def milvus_vector_store(nodes_with_relationships, event_loop):
-    # Use event_loop fixture to ensure there's an active event loop
-    asyncio.set_event_loop(event_loop)
-
+def milvus_vector_store(nodes_with_relationships):
     collection_name = "parent_summary_test"
 
     drop_collection(collection_name=collection_name)
 
-    embedding_config = EmbeddingModelConfig(model_name="embedding/small")
+    embedding_config = EmbeddingModelConfig(model_name="embedding/large")
 
     vector_store = MilvusVectorStoreConfig(
         uri="http://localhost:19530",
@@ -95,7 +81,7 @@ def milvus_vector_store(nodes_with_relationships, event_loop):
 
 @given("a valid vector store with all nodes", target_fixture="vector_store")
 def _(milvus_vector_store):
-    return milvus_vector_store.to_llama_index()
+    return run_with_event_loop(milvus_vector_store.to_llama_index)
 
 
 @given(parsers.parse("starting nodes are:"), target_fixture="starting_nodes")

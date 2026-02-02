@@ -4,6 +4,7 @@
     table-style="min-width: 50rem"
     selection-mode="single"
     :selection="selectedThread"
+    size="small"
     @update:selection="emit('selected', $event)"
   >
     <Column

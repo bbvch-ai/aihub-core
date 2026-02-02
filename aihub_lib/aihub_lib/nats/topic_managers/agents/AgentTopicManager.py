@@ -32,14 +32,7 @@ class AgentTopicManager(TopicManager):
         agent_id: Annotated[str, "Agent ID filter or '*'"] = "*",
     ) -> str:
         """Returns a subject for receiving agent discovery responses."""
-        return (
-            f"{self.INSTANCE_DISCOVERY_TOPIC}."
-            f"{self.AGENT_TOPIC}."
-            f"{agent_class}."
-            f"{agent_id}."
-            f"response."
-            f"{call_id}"
-        )
+        return f"{self.INSTANCE_DISCOVERY_TOPIC}.{self.AGENT_TOPIC}.{agent_class}.{agent_id}.response.{call_id}"
 
     def get_agent_class_discovery_subject_response(
         self,

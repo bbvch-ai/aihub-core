@@ -29,6 +29,7 @@ from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics import AgentInstanceDiscoveryTopic
+from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
 from bson import ObjectId
 from fastapi import Body, Depends, FastAPI, HTTPException, Query, Security
@@ -133,29 +134,35 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
     @override
     async def _discover_and_register(self):
         """Discovers agents and registers endpoints that accept their starting events"""
-        agents: list[AgentInstanceDTO] = await AgentService.discover_agent_instances(self.nc)
+        # Step 1: Discover agents via NATS - updates last_discovered in DB for responding agents
+        discovered_agents: list[AgentInstanceDTO] = await AgentService.discover_agent_instances(self.nc)
 
-        # Deregister old endpoints
-        for registered_agent_class, registered_agent_id in list(self.registered_entities):
-            self._deregister_endpoints(registered_agent_class, registered_agent_id)
+        # Step 2: Get what SHOULD be registered (online agents from database)
+        agents_list = await asyncio.to_thread(AgentEntity.get_agents)
+        online_agent_keys = {(agent.agent_class, agent.agent_id) for agent in agents_list if agent.is_online}
+
+        # Step 3: Deregister endpoints for agents no longer online (5-min threshold)
+        for agent_class, agent_id in list(self.registered_entities):
+            if (agent_class, agent_id) not in online_agent_keys:
+                self._deregister_endpoints(agent_class, agent_id)
+
         self.app.openapi_schema = None
 
-        # Register new endpoints for configured agents
-        for agent in agents:
+        # Step 4: Register endpoints for newly discovered online agents
+        for agent in discovered_agents:
             agent_key = (agent.agent_class, agent.agent_id)
-
-            self._register_agent_endpoints(
-                agent_class=agent.agent_class,
-                agent_id=agent.agent_id,
-                start_events=agent.start_events,
-                stop_events=agent.stop_events,
-                hitl_request_events=agent.hitl_request_events,
-                hitl_response_events=agent.hitl_response_events,
-                config=agent.agent_config,
-            )
-
-            self.registered_entities.add(agent_key)
-            logger.info(f"Registered endpoints for configured agent: {agent.agent_class}.{agent.agent_id}")
+            if agent_key in online_agent_keys and agent_key not in self.registered_entities:
+                self._register_agent_endpoints(
+                    agent_class=agent.agent_class,
+                    agent_id=agent.agent_id,
+                    start_events=agent.start_events,
+                    stop_events=agent.stop_events,
+                    hitl_request_events=agent.hitl_request_events,
+                    hitl_response_events=agent.hitl_response_events,
+                    config=agent.agent_config,
+                )
+                self.registered_entities.add(agent_key)
+                logger.info(f"Registered endpoints for agent: {agent.agent_class}.{agent.agent_id}")
 
     def _register_agent_endpoints(
         self,
@@ -453,6 +460,12 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             return StreamingResponse(
                 sse_event_generator(),
                 media_type="text/event-stream",
+                headers={
+                    "Cache-Control": "no-cache, no-store, must-revalidate, no-transform",
+                    "X-Accel-Buffering": "no",
+                    "Connection": "keep-alive",
+                    "Content-Encoding": "identity",
+                },
             )
 
         return stream_event
