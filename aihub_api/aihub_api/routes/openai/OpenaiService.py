@@ -8,6 +8,8 @@ from datetime import UTC, datetime
 from typing import Any, Literal
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.auth.usage.period_labels import build_exceeded_detail
+from aihub_lib.auth.usage.UsageLimitService import ResourceType, UsageLimitService
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
 from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
@@ -289,6 +291,27 @@ class OpenaiService:
         )
 
     @staticmethod
+    async def _check_usage_limit(
+        redis: Redis | None,
+        user: UserIdentity,
+        agent_class: str,
+        agent_id: str,
+        locale: str | None = None,
+    ) -> None:
+        """Check usage limits and raise 429 if exceeded. No-op when redis is None."""
+        if redis is None:
+            return
+        resource_path = UsageLimitService.build_resource_path(ResourceType.AGENT, agent_class, agent_id)
+        usage_status = await UsageLimitService.check_and_increment(
+            redis, user.id, user.roles, resource_path=resource_path
+        )
+        if usage_status.is_exceeded:
+            raise HTTPException(
+                status_code=429,
+                detail=build_exceeded_detail(usage_status, locale=locale or "en"),
+            )
+
+    @staticmethod
     @trace_fn
     async def json_assistant(
         *,
@@ -308,6 +331,8 @@ class OpenaiService:
             )
         files = OpenaiService._extract_files(chat_completion_request)
 
+        await OpenaiService._check_usage_limit(redis, user, agent_class, agent_id, locale)
+
         resources: JsonResources = await ChatService.start_json_chat_interaction(
             user=user,
             agent_class=agent_class,
@@ -319,7 +344,6 @@ class OpenaiService:
             display_id=str_to_object_id(display_id),
             files=files,
             locale=locale,
-            redis=redis,
         )
         # Wait until all events are processed
         await resources.stop_signal.wait()
@@ -372,6 +396,8 @@ class OpenaiService:
             )
         files = OpenaiService._extract_files(chat_completion_request)
 
+        await OpenaiService._check_usage_limit(redis, user, agent_class, agent_id, locale)
+
         resources: StreamingResources = await ChatService.start_stream_chat_interaction(
             user=user,
             agent_class=agent_class,
@@ -383,7 +409,6 @@ class OpenaiService:
             display_id=str_to_object_id(display_id),
             files=files,
             locale=locale,
-            redis=redis,
         )
 
         async def sse_event_generator():
