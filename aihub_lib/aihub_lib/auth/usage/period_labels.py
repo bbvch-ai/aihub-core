@@ -227,33 +227,25 @@ def build_warning_message(usage_status: UsageStatus, locale: str = "en") -> str:
 
 _USAGE_WARNING_THRESHOLD_PERCENT = 80
 
-_SSE_HEADERS: dict[str, str] = {
-    "Cache-Control": "no-cache, no-store, must-revalidate, no-transform",
-    "X-Accel-Buffering": "no",
-    "Connection": "keep-alive",
-    "Content-Encoding": "identity",
-}
 
-
-def build_streaming_response_headers(usage_status: UsageStatus, locale: str = "en") -> dict[str, str]:
-    """Build SSE response headers, adding usage warning headers when usage reaches 80%+."""
-    headers = dict(_SSE_HEADERS)
-
+def build_usage_warning_headers(usage_status: UsageStatus, locale: str = "en") -> dict[str, str]:
+    """Build usage warning headers when usage reaches 80%+. Returns empty dict if below threshold."""
     if usage_status.limit is None or usage_status.current_count is None:
-        return headers
+        return {}
 
     usage_percentage = (usage_status.current_count / usage_status.limit) * 100
     if usage_percentage < _USAGE_WARNING_THRESHOLD_PERCENT:
-        return headers
+        return {}
 
     remaining = usage_status.limit - usage_status.current_count
-    headers["X-Usage-Warning"] = "true"
-    headers["X-Usage-Warning-Message"] = build_warning_message(usage_status, locale=locale)
-    headers["X-Usage-Current"] = str(usage_status.current_count)
-    headers["X-Usage-Limit"] = str(usage_status.limit)
-    headers["X-Usage-Remaining"] = str(remaining)
-    headers["X-Usage-Period"] = usage_status.period or ""
-    return headers
+    return {
+        "X-Usage-Warning": "true",
+        "X-Usage-Warning-Message": build_warning_message(usage_status, locale=locale),
+        "X-Usage-Current": str(usage_status.current_count),
+        "X-Usage-Limit": str(usage_status.limit),
+        "X-Usage-Remaining": str(remaining),
+        "X-Usage-Period": usage_status.period or "",
+    }
 
 
 def build_usage_limit_messages(limit: int | None, period: UsageLimitPeriod | None) -> LocaleString:

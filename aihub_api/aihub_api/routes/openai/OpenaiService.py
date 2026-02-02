@@ -291,19 +291,6 @@ class OpenaiService:
         )
 
     @staticmethod
-    async def _check_usage_limit(
-        redis: Redis,
-        user: UserIdentity,
-        agent_class: str,
-        agent_id: str,
-        locale: str | None = None,
-    ) -> None:
-        """Check usage limits and raise 429 if exceeded."""
-        await UsageLimitService.check_and_raise(
-            redis, user, ResourceType.AGENT, agent_class, agent_id, locale=locale or "en"
-        )
-
-    @staticmethod
     @trace_fn
     async def json_assistant(
         *,
@@ -323,7 +310,7 @@ class OpenaiService:
             )
         files = OpenaiService._extract_files(chat_completion_request)
 
-        await OpenaiService._check_usage_limit(redis, user, agent_class, agent_id, locale)
+        await UsageLimitService.check_and_raise(redis, user, ResourceType.AGENT, agent_class, agent_id, locale=locale or "en")
 
         resources: JsonResources = await ChatService.start_json_chat_interaction(
             user=user,
@@ -388,7 +375,7 @@ class OpenaiService:
             )
         files = OpenaiService._extract_files(chat_completion_request)
 
-        await OpenaiService._check_usage_limit(redis, user, agent_class, agent_id, locale)
+        await UsageLimitService.check_and_raise(redis, user, ResourceType.AGENT, agent_class, agent_id, locale=locale or "en")
 
         resources: StreamingResources = await ChatService.start_stream_chat_interaction(
             user=user,

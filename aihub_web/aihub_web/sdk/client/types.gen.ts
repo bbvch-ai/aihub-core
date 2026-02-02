@@ -7930,12 +7930,12 @@ export type LlmEventReadable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
+    input_messages?: Array<MessageReadable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
+    output_messages?: Array<MessageReadable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -8008,7 +8008,7 @@ export type LlmEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageReadable> | null) | (Array<MessageReadable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -8042,12 +8042,12 @@ export type LlmEventWritable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
+    input_messages?: Array<MessageWritable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
+    output_messages?: Array<MessageWritable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -8109,7 +8109,7 @@ export type LlmEventWritable = {
     tools?: Array<{
         [key: string]: unknown;
     }> | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageWritable> | null) | (Array<MessageWritable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -8143,12 +8143,12 @@ export type LlmStopEventReadable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
+    input_messages?: Array<MessageReadable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
+    output_messages?: Array<MessageReadable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -8221,7 +8221,7 @@ export type LlmStopEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageReadable> | null) | (Array<MessageReadable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -8255,12 +8255,12 @@ export type LlmStopEventWritable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
+    input_messages?: Array<MessageWritable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
+    output_messages?: Array<MessageWritable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -8322,7 +8322,7 @@ export type LlmStopEventWritable = {
     tools?: Array<{
         [key: string]: unknown;
     }> | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageWritable> | null) | (Array<MessageWritable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -8347,12 +8347,12 @@ export type LlmStopEventOutput = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<Message> | null;
+    input_messages?: Array<JamboParserObjectTypeParserMessage> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<Message> | null;
+    output_messages?: Array<JamboParserObjectTypeParserMessage> | null;
     /**
      * Parameters used during the invocation of the LLM.
      */
@@ -8980,7 +8980,7 @@ export const MemoryType = {
 /**
  * Message
  */
-export type Message = {
+export type MessageReadable = {
     /**
      * Role
      * The role of the message, such as 'user', 'assistant', or 'system'.
@@ -8995,16 +8995,70 @@ export type Message = {
      * Tool Calls
      * List of tool calls generated by the model, such as function calls.
      */
-    tool_calls?: Array<ToolCalls> | null;
+    tool_calls?: Array<{
+        [key: string]: unknown;
+    }> | null;
     /**
      * Function Call Name
      * The name of the function being called in the message.
      */
     function_call_name?: string | null;
     /**
+     * Function Call Arguments Json
      * JSON representing arguments passed to the function during a function call.
      */
-    function_call_arguments_json?: FunctionCallArgumentsJson | null;
+    function_call_arguments_json?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Tool Call Id
+     * The ID of the tool call, if applicable.
+     */
+    tool_call_id?: string | null;
+    /**
+     * Contents
+     * The message contents as an array of content blocks (text, image, audio).
+     */
+    contents?: Array<TextContent | ImageContent | AudioContent> | null;
+    /**
+     * Content
+     */
+    readonly content: string;
+};
+
+/**
+ * Message
+ */
+export type MessageWritable = {
+    /**
+     * Role
+     * The role of the message, such as 'user', 'assistant', or 'system'.
+     */
+    role: string;
+    /**
+     * Name
+     * The name of the function or agent generating the message.
+     */
+    name?: string | null;
+    /**
+     * Tool Calls
+     * List of tool calls generated by the model, such as function calls.
+     */
+    tool_calls?: Array<{
+        [key: string]: unknown;
+    }> | null;
+    /**
+     * Function Call Name
+     * The name of the function being called in the message.
+     */
+    function_call_name?: string | null;
+    /**
+     * Function Call Arguments Json
+     * JSON representing arguments passed to the function during a function call.
+     */
+    function_call_arguments_json?: {
+        [key: string]: unknown;
+    } | null;
     /**
      * Tool Call Id
      * The ID of the tool call, if applicable.
@@ -15207,100 +15261,6 @@ export type AdditionalLocationInfo = {
 };
 
 /**
- * Message
- */
-export type AihubLibNatsEventsSemanticLlmMessageMessageReadable = {
-    /**
-     * Role
-     * The role of the message, such as 'user', 'assistant', or 'system'.
-     */
-    role: string;
-    /**
-     * Name
-     * The name of the function or agent generating the message.
-     */
-    name?: string | null;
-    /**
-     * Tool Calls
-     * List of tool calls generated by the model, such as function calls.
-     */
-    tool_calls?: Array<{
-        [key: string]: unknown;
-    }> | null;
-    /**
-     * Function Call Name
-     * The name of the function being called in the message.
-     */
-    function_call_name?: string | null;
-    /**
-     * Function Call Arguments Json
-     * JSON representing arguments passed to the function during a function call.
-     */
-    function_call_arguments_json?: {
-        [key: string]: unknown;
-    } | null;
-    /**
-     * Tool Call Id
-     * The ID of the tool call, if applicable.
-     */
-    tool_call_id?: string | null;
-    /**
-     * Contents
-     * The message contents as an array of content blocks (text, image, audio).
-     */
-    contents?: Array<TextContent | ImageContent | AudioContent> | null;
-    /**
-     * Content
-     */
-    readonly content: string;
-};
-
-/**
- * Message
- */
-export type AihubLibNatsEventsSemanticLlmMessageMessageWritable = {
-    /**
-     * Role
-     * The role of the message, such as 'user', 'assistant', or 'system'.
-     */
-    role: string;
-    /**
-     * Name
-     * The name of the function or agent generating the message.
-     */
-    name?: string | null;
-    /**
-     * Tool Calls
-     * List of tool calls generated by the model, such as function calls.
-     */
-    tool_calls?: Array<{
-        [key: string]: unknown;
-    }> | null;
-    /**
-     * Function Call Name
-     * The name of the function being called in the message.
-     */
-    function_call_name?: string | null;
-    /**
-     * Function Call Arguments Json
-     * JSON representing arguments passed to the function during a function call.
-     */
-    function_call_arguments_json?: {
-        [key: string]: unknown;
-    } | null;
-    /**
-     * Tool Call Id
-     * The ID of the tool call, if applicable.
-     */
-    tool_call_id?: string | null;
-    /**
-     * Contents
-     * The message contents as an array of content blocks (text, image, audio).
-     */
-    contents?: Array<TextContent | ImageContent | AudioContent> | null;
-};
-
-/**
  * UserUploadedFile
  */
 export type AihubLibNatsEventsUserUserUploadedFileUserUploadedFile = {
@@ -15333,6 +15293,46 @@ export type FunctionCallArgumentsJson = {
  */
 export type InvocationParameters = {
     [key: string]: unknown;
+};
+
+/**
+ * Message
+ */
+export type JamboParserObjectTypeParserMessage = {
+    /**
+     * Role
+     * The role of the message, such as 'user', 'assistant', or 'system'.
+     */
+    role: string;
+    /**
+     * Name
+     * The name of the function or agent generating the message.
+     */
+    name?: string | null;
+    /**
+     * Tool Calls
+     * List of tool calls generated by the model, such as function calls.
+     */
+    tool_calls?: Array<ToolCalls> | null;
+    /**
+     * Function Call Name
+     * The name of the function being called in the message.
+     */
+    function_call_name?: string | null;
+    /**
+     * JSON representing arguments passed to the function during a function call.
+     */
+    function_call_arguments_json?: FunctionCallArgumentsJson | null;
+    /**
+     * Tool Call Id
+     * The ID of the tool call, if applicable.
+     */
+    tool_call_id?: string | null;
+    /**
+     * Contents
+     * The message contents as an array of content blocks (text, image, audio).
+     */
+    contents?: Array<TextContent | ImageContent | AudioContent> | null;
 };
 
 /**

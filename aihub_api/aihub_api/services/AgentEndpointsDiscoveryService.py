@@ -7,7 +7,7 @@ from typing import Annotated, override
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.auth.usage import UsageLimitService, build_streaming_response_headers
+from aihub_lib.auth.usage import UsageLimitService, build_usage_warning_headers
 from aihub_lib.auth.usage.usage_limit_models import ResourceType, UsageStatus
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.no_trace import no_trace
@@ -300,19 +300,6 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         logger.info(f"Registered {endpoint_type} streaming endpoint: {stream_path}".strip())
 
     @staticmethod
-    async def _check_usage_limit(
-        redis: Redis,
-        user: UserIdentity,
-        agent_class: str,
-        agent_id: str,
-        locale: str,
-    ) -> UsageStatus:
-        """Check usage limits for an agent call and raise 429 if exceeded."""
-        return await UsageLimitService.check_and_raise(
-            redis, user, ResourceType.AGENT, agent_class, agent_id, locale=locale
-        )
-
-    @staticmethod
     def _create_endpoint(
         *,
         input_type: type[BaseModel],
@@ -343,7 +330,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             t: LocaleHandler = Depends(use_locale),
         ) -> response_union_type:
             """Send a specific event type to a specific agent. Returns either a stop event or HITL request event."""
-            await AgentEndpointsDiscoveryService._check_usage_limit(redis, user, agent_class, agent_id, t.locale)
+            await UsageLimitService.check_and_raise(redis, user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale)
 
             if thread_id is not None:
                 try:
@@ -418,8 +405,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             t: LocaleHandler = Depends(use_locale),
         ) -> StreamingResponse:
             """Send a specific event type to a specific agent and stream all events as SSE."""
-            usage_status = await AgentEndpointsDiscoveryService._check_usage_limit(
-                redis, user, agent_class, agent_id, t.locale
+            usage_status = await UsageLimitService.check_and_raise(
+                redis, user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale
             )
 
             if thread_id is not None:
@@ -482,7 +469,13 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 # Final event to signal stream end
                 yield "data: [DONE]\n\n"
 
-            response_headers = build_streaming_response_headers(usage_status, locale=t.locale)
+            response_headers = {
+                "Cache-Control": "no-cache, no-store, must-revalidate, no-transform",
+                "X-Accel-Buffering": "no",
+                "Connection": "keep-alive",
+                "Content-Encoding": "identity",
+                **build_usage_warning_headers(usage_status, locale=t.locale),
+            }
 
             return StreamingResponse(
                 sse_event_generator(),

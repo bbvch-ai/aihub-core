@@ -49,7 +49,7 @@ class TestUsageLimitEnforcement:
 
     @pytest.mark.asyncio
     @patch("aihub_api.routes.openai.OpenaiService.AgentService.get_agent", new_callable=AsyncMock)
-    @patch("aihub_api.routes.openai.OpenaiService.OpenaiService._check_usage_limit", new_callable=AsyncMock)
+    @patch("aihub_api.routes.openai.OpenaiService.UsageLimitService.check_and_raise", new_callable=AsyncMock)
     async def test_returns_429_when_limit_exceeded(self, mock_check_usage: AsyncMock, mock_get_agent: AsyncMock):
         """Test that a 429 error is returned when usage limit is exceeded."""
         from aihub_lib.auth.usage.period_labels import build_exceeded_detail
@@ -82,7 +82,7 @@ class TestUsageLimitEnforcement:
                 assert data["detail"]["period"] == UsageLimitPeriod.ONE_DAY
 
     @pytest.mark.asyncio
-    @patch("aihub_api.routes.openai.OpenaiService.OpenaiService._check_usage_limit", new_callable=AsyncMock)
+    @patch("aihub_api.routes.openai.OpenaiService.UsageLimitService.check_and_raise", new_callable=AsyncMock)
     async def test_direct_model_calls_not_counted(self, mock_check_usage: AsyncMock):
         """Test that direct model calls (not agent calls) are not counted."""
         auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
@@ -100,5 +100,5 @@ class TestUsageLimitEnforcement:
                 }
                 await client.post(CHAT_ENDPOINT, json=payload)
 
-                # Direct model calls don't go through ChatService, so _check_usage_limit should not be called
+                # Direct model calls don't go through ChatService, so check_and_raise should not be called
                 mock_check_usage.assert_not_called()

@@ -1,21 +1,8 @@
 from typing import Annotated
 
-from aihub_lib.auth.usage import UsageLimitPeriod
 from pydantic import BaseModel, Field
 
-
-class UsageLimitDTO(BaseModel):
-    """Pattern-based usage limit rule."""
-
-    pattern: Annotated[
-        str,
-        Field(
-            description="Full dotted resource pattern with wildcards "
-            "(e.g. 'aihub.user.agent.>', 'aihub.user.process.MyProcess.*'). "
-        ),
-    ]
-    limit: Annotated[int, Field(description="Max calls per period for this pattern.")]
-    period: Annotated[UsageLimitPeriod, Field(description="Period for limit: 1h, 1d, 7d, 1mo.")]
+from aihub_api.routes.role.dto.UsageLimitDTO import UsageLimitDTO
 
 
 class CreateRoleRequest(BaseModel):

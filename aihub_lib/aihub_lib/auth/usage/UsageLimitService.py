@@ -172,10 +172,10 @@ class UsageLimitService:
 
     @staticmethod
     def _is_more_permissive(candidate: RoleUsageLimit, existing: RoleUsageLimit) -> bool:
-        """Higher limit wins; on tie, longer period wins."""
+        """Higher limit wins; on tie, shorter period wins (same count in less time = higher allowed rate)."""
         if candidate.limit != existing.limit:
             return candidate.limit > existing.limit
-        return UsageLimitPeriod(candidate.period).seconds > UsageLimitPeriod(existing.period).seconds
+        return UsageLimitPeriod(candidate.period).seconds < UsageLimitPeriod(existing.period).seconds
 
     @staticmethod
     def _most_permissive_limit(
@@ -197,24 +197,27 @@ class UsageLimitService:
     def _most_restrictive_per_role(
         role_limits: list[RoleUsageLimit],
         resource_path: str,
-    ) -> dict[str, RoleUsageLimit]:
-        """Within a single role, keep only the most restrictive limit per pattern."""
-        best: dict[str, RoleUsageLimit] = {}
+    ) -> dict[tuple[str, UsageLimitPeriod], RoleUsageLimit]:
+        """Within a single role, keep only the most restrictive limit per (pattern, period)."""
+        best: dict[tuple[str, UsageLimitPeriod], RoleUsageLimit] = {}
         for role_limit in role_limits:
             if not UsageLimitService._pattern_matches(role_limit.pattern, resource_path):
                 continue
-            if role_limit.pattern not in best or role_limit.limit < best[role_limit.pattern].limit:
-                best[role_limit.pattern] = role_limit
+            key = (role_limit.pattern, role_limit.period)
+            if key not in best or role_limit.limit < best[key].limit:
+                best[key] = role_limit
         return best
 
     @staticmethod
-    def _merge_across_roles(per_role_best: list[dict[str, RoleUsageLimit]]) -> list[RoleUsageLimit]:
-        """Across roles, the most permissive limit wins for each pattern."""
-        merged: dict[str, RoleUsageLimit] = {}
+    def _merge_across_roles(
+        per_role_best: list[dict[tuple[str, UsageLimitPeriod], RoleUsageLimit]],
+    ) -> list[RoleUsageLimit]:
+        """Across roles, the most permissive limit wins for each (pattern, period)."""
+        merged: dict[tuple[str, UsageLimitPeriod], RoleUsageLimit] = {}
         for role_best in per_role_best:
-            for pattern, role_limit in role_best.items():
-                if pattern not in merged or UsageLimitService._is_more_permissive(role_limit, merged[pattern]):
-                    merged[pattern] = role_limit
+            for key, role_limit in role_best.items():
+                if key not in merged or UsageLimitService._is_more_permissive(role_limit, merged[key]):
+                    merged[key] = role_limit
         return [
             RoleUsageLimit(pattern=role_limit.pattern, limit=role_limit.limit, period=role_limit.period)
             for role_limit in merged.values()
@@ -227,9 +230,9 @@ class UsageLimitService:
     ) -> list[RoleUsageLimit]:
         """Collect matching patterns with two-phase deduplication.
 
-        1. **Within** a single role: duplicate patterns are reduced to the most
-           restrictive (lowest limit) — the admin intended the tighter constraint.
-        2. **Across** roles: the same pattern is resolved to the most permissive
+        1. **Within** a single role: duplicate (pattern, period) pairs are reduced to the
+           most restrictive (lowest limit) — the admin intended the tighter constraint.
+        2. **Across** roles: the same (pattern, period) is resolved to the most permissive
            (highest limit) — roles grant capabilities.
         """
         per_role_best = [

@@ -1,8 +1,9 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from fastapi import HTTPException
 
-from aihub_lib.auth.usage.usage_limit_models import RoleUsageLimit, UsageLimitPeriod
+from aihub_lib.auth.usage.usage_limit_models import ResourceType, RoleUsageLimit, UsageLimitPeriod
 from aihub_lib.auth.usage.UsageLimitService import UsageLimitService
 
 AGENT_PREFIX = "aihub.user.agent."
@@ -588,6 +589,25 @@ class TestDuplicatePatternWithinSameRole:
         assert limits[0].limit == 20
 
     @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    def test_same_pattern_different_periods_kept_independently(self, mock_role_entity: MagicMock):
+        """Same pattern with different periods are independent limits, both kept."""
+        mock_role_entity.get_usage_limits_for_roles.return_value = [
+            [
+                rl(f"{AGENT_PREFIX}>", 100, "1d"),
+                rl(f"{AGENT_PREFIX}>", 20, "1h"),
+            ],
+        ]
+
+        limits = UsageLimitService.get_effective_limits_for_roles(
+            ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
+        )
+
+        assert len(limits) == 2
+        periods = {el.period for el in limits}
+        assert "1d" in periods
+        assert "1h" in periods
+
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
     def test_same_pattern_within_role_lowest_wins_then_cross_role_highest_wins(self, mock_role_entity: MagicMock):
         """
         Role A: > = 100/day and > = 20/day → intra-role dedup picks 20
@@ -605,3 +625,59 @@ class TestDuplicatePatternWithinSameRole:
 
         assert len(limits) == 1
         assert limits[0].limit == 50
+
+
+class TestCheckAndRaise:
+    """Tests for UsageLimitService.check_and_raise (HTTP 429 path)."""
+
+    @pytest.mark.asyncio
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    async def test_raises_429_when_exceeded(self, mock_role_entity: MagicMock):
+        mock_role_entity.get_usage_limits_for_roles.return_value = [[rl(f"{AGENT_PREFIX}>", 10, "1h")]]
+        redis = AsyncMock()
+        redis.eval.return_value = [1, 10]
+        redis.ttl.return_value = 1800
+
+        user = MagicMock()
+        user.id = "user123"
+        user.roles = ["role1"]
+
+        with pytest.raises(HTTPException) as exc_info:
+            await UsageLimitService.check_and_raise(redis, user, ResourceType.AGENT, "MyAgent", "v1", locale="en")
+
+        assert exc_info.value.status_code == 429
+        detail = exc_info.value.detail
+        assert detail["error"] == "usage_limit_exceeded"
+        assert detail["limit"] == 10
+        assert detail["period"] == "1h"
+
+    @pytest.mark.asyncio
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    async def test_does_not_raise_when_within_limit(self, mock_role_entity: MagicMock):
+        mock_role_entity.get_usage_limits_for_roles.return_value = [[rl(f"{AGENT_PREFIX}>", 100, "1d")]]
+        redis = AsyncMock()
+        redis.eval.return_value = [0, 5]
+        redis.ttl.return_value = 80000
+
+        user = MagicMock()
+        user.id = "user123"
+        user.roles = ["role1"]
+
+        status = await UsageLimitService.check_and_raise(redis, user, ResourceType.AGENT, "MyAgent", "v1", locale="en")
+
+        assert status.is_exceeded is False
+
+    @pytest.mark.asyncio
+    @patch("aihub_lib.auth.usage.UsageLimitService.RoleEntity")
+    async def test_unlimited_user_passes(self, mock_role_entity: MagicMock):
+        mock_role_entity.get_usage_limits_for_roles.return_value = [[]]
+        redis = AsyncMock()
+
+        user = MagicMock()
+        user.id = "user123"
+        user.roles = ["admin"]
+
+        status = await UsageLimitService.check_and_raise(redis, user, ResourceType.AGENT, "MyAgent", "v1", locale="en")
+
+        assert status.is_exceeded is False
+        assert status.limits == []

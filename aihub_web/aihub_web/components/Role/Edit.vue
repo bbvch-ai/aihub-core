@@ -39,10 +39,10 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 
-import type { CreateRoleRequest, RoleResponse } from '@core/sdk/client'
-
 import AccessRulesEditor from './AccessRulesEditor.vue'
 import UsageLimitsEditor from './UsageLimitsEditor.vue'
+
+import type { CreateRoleRequest, RoleResponse } from '@core/sdk/client'
 
 const { t } = useI18n()
 

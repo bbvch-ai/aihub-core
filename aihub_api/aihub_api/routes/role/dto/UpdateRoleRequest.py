@@ -2,7 +2,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
-from aihub_api.routes.role.dto.CreateRoleRequest import UsageLimitDTO
+from aihub_api.routes.role.dto.UsageLimitDTO import UsageLimitDTO
 
 
 class UpdateRoleRequest(BaseModel):
