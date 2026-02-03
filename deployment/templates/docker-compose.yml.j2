@@ -843,8 +843,8 @@ services:
       {%- if stage == 'dev' %}
       - "--rc-no-auth"  # Only in dev!
       {%- else %}
-      - "--rc-user=${RCLONE_RC_USER:-admin}"
-      - "--rc-pass=${RCLONE_RC_PASS:-changeme}"
+      - "--rc-user=${RCLONE_RC_USER}"
+      - "--rc-pass=${RCLONE_RC_PASS}"
       {%- endif %}
       - "--log-level=INFO"
       - "--config=/dev/null"  # Disable config file, use environment variables only

@@ -695,8 +695,8 @@ services:
       - "rcd"
       - "--rc-addr=0.0.0.0:5572"
       - "--rc-serve"
-      - "--rc-user=${RCLONE_RC_USER:-admin}"
-      - "--rc-pass=${RCLONE_RC_PASS:-changeme}"
+      - "--rc-user=${RCLONE_RC_USER}"
+      - "--rc-pass=${RCLONE_RC_PASS}"
       - "--log-level=INFO"
       - "--config=/dev/null"  # Disable config file, use environment variables only
     networks:
