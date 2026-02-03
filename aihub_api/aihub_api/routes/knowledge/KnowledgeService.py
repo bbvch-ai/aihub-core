@@ -15,7 +15,6 @@ from aihub_lib.nats.events.pipeline.SourceUpdatedEvent import SourceUpdatedEvent
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
-from aihub_lib.persistence.insight import InsightEntity
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
 from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
 from aihub_lib.persistence.rag.documents.entities.RefDoc import RefDoc
@@ -113,18 +112,7 @@ class KnowledgeService:
     @staticmethod
     @trace_fn
     def get_document_by_id(db: str, document_id: str) -> DocumentDTO:
-        """
-        Retrieves a single document by its ID.
-
-        For insights (db='insights'), retrieves from MongoDB InsightEntity.
-        For regular documents, retrieves from the RefDoc docstore.
-        """
-        # Check if this is an insight document
-        insight = InsightEntity.get_by_id(document_id)
-        if insight is not None:
-            return DocumentDTO.from_insight(insight)
-
-        # Fall back to regular document lookup
+        """Retrieves a single document by its ID from the knowledge database."""
         KnowledgeService._ensure_db_exists(db)
         ref_doc = RefDoc.by_id(db_alias=db, doc_id=document_id)
         return DocumentDTO.from_ref_doc(ref_doc)
@@ -169,12 +157,7 @@ class KnowledgeService:
         t: LocaleHandler,
         node_type: NodeTypeValue = NODE_TYPE_CONTENT,
     ) -> list[IngestedNode]:
-        # Check if the document_id corresponds to an insight stored in MongoDB
-        insight = InsightEntity.get_by_id(document_id)
-        if insight is not None and insight.namespace == namespace:
-            return [insight.to_ingested_node(t)]
-
-        # Fall back to vector store query for regular documents
+        """Retrieves nodes for a document from the vector store."""
         filters = MetadataFilters(
             filters=[
                 MetadataFilter(key=DOCUMENT_ID, value=document_id),
@@ -191,10 +174,10 @@ class KnowledgeService:
     @staticmethod
     @trace_fn
     def get_summary_nodes(
-        db: str, namespace: str, document_id: str, vector_store_factory: VectorStoreFactory
+        db: str, namespace: str, document_id: str, vector_store_factory: VectorStoreFactory, t: LocaleHandler
     ) -> list[NodeSummaryDTO]:
         nodes = KnowledgeService.get_nodes(
-            db, namespace, document_id, vector_store_factory, t=LocaleHandler(), node_type=NODE_TYPE_SUMMARY
+            db, namespace, document_id, vector_store_factory, t=t, node_type=NODE_TYPE_SUMMARY
         )
         summaries: dict[int, NodeSummaryDTO] = {i: NodeSummaryDTO(level=i, nodes=[]) for i in range(0, 7)}
         for node in nodes:

@@ -112,6 +112,7 @@ thread:
     hierarchy: "Hiérarchie"
     chat: "Chat"
     display: "Tours"
+    memories: "Mémoires"
   list:
     name: "Nom"
     agents: "Agents"
@@ -141,6 +142,18 @@ thread:
     title: "Vue hiérarchique des tours"
   chat:
     title: "Vue Chat"
+  memories:
+    title: "Mémoires du fil de discussion"
+    description: "Mémoires collectées pendant {threadName}"
+    delete_all:
+      confirm_header: "Supprimer toutes les mémoires du fil"
+      confirm_message: "Êtes-vous sûr de vouloir supprimer toutes les mémoires de ce fil de discussion ? Cette action ne peut pas être annulée."
+      success:
+        title: "Succès"
+        message: "Toutes les mémoires du fil ont été supprimées avec succès"
+      error:
+        title: "Échec de la suppression"
+        message: "Impossible de supprimer les mémoires du fil. Veuillez réessayer."
 
 chat:
   assistant: "Assistant"
@@ -265,6 +278,7 @@ agent:
     basic: "De base"
     workflow: "Flux de travail"
     threads: "Fils de discussion"
+    memories: "Mémoires"
     chat: "Chat"
   availableAgents: "Agents disponibles"
   list:
@@ -281,6 +295,18 @@ agent:
     title: "Flux de travail agentique"
   threads:
     title: "Fils de discussion de l'agent"
+  memories:
+    title: "Mémoires de l'agent"
+    description: "Mémoires collectées par {agentName} à votre sujet"
+    delete_all:
+      confirm_header: "Supprimer toutes les mémoires de l'agent"
+      confirm_message: "Êtes-vous sûr de vouloir supprimer toutes les mémoires collectées par cet agent ? Cette action ne peut pas être annulée."
+      success:
+        title: "Succès"
+        message: "Toutes les mémoires de l'agent ont été supprimées avec succès"
+      error:
+        title: "Échec de la suppression"
+        message: "Échec de la suppression des mémoires de l'agent. Veuillez réessayer."
 
 document:
   list:
@@ -599,3 +625,12 @@ memory:
     error:
       title: "Suppression échouée"
       message: "Échec de la suppression de tous les souvenirs. Veuillez réessayer."
+
+openwebui:
+  memories:
+    title: "Souvenirs de l'Agent"
+    select_agent: "Sélectionner l'Agent"
+    list: "Liste"
+    graph: "Graphe"
+    user_memories: "Souvenirs de l'Utilisateur"
+    org_memories: "Souvenirs de l'Organisation"

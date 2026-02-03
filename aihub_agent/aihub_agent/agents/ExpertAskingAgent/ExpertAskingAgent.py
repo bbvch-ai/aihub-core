@@ -1,10 +1,12 @@
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
 from aihub_lib.generative_ai.routing.route_to_event_using_llm import route_to_event_using_llm
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoop
+from aihub_lib.nats.events.memory.store.StoreOrganizationMemoryEvent import StoreOrganizationMemoryEvent
 from aihub_lib.nats.events.router.RouteOptions import RouteOptions
 from aihub_lib.nats.events.router.RouterEvent import RouterEvent
-from aihub_lib.persistence.insight import InsightCreator, InsightEntity, InsightMessage, InsightSource
+from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 from llama_index.core.prompts import RichPromptTemplate
 
@@ -128,6 +130,8 @@ class ExpertAskingAgent(Agent):
         displayer: EventDisplayer,
         run_context: RunContext,
         thread_context: ThreadContext,
+        memory: AgentMemory,
+        topic: AgentInstanceTopic,
         t: AgentLocaleHandler,
     ) -> AnswerStopEvent | ExpertAnswerInsufficientEvent:
         await displayer.display_thought(t("agent.expert_asking_agent.thoughts.determine_sufficient"))
@@ -137,23 +141,21 @@ class ExpertAskingAgent(Agent):
             chat_history = await run_context.get("chat_history", [])
             chat_history = [ChatMessage(**message) for message in chat_history]
 
-            # Create insight from expert conversation
-            InsightEntity.create_insight(
-                question=initial_question_event.question_to_expert,
-                expert_answer=event.response,
-                conversation=[InsightMessage(role=msg.role, content=msg.content) for msg in chat_history],
-                namespace=agent_config.insight_namespace,
-                source=InsightSource(
-                    thread_id=thread_context.thread_id,
-                    expert_user_id=event.expert_user_id,
-                    expert_name=event.expert_name,
-                ),
-                creator=InsightCreator(
-                    agent_class=agent_config.agent_class,
-                    agent_id=agent_config.agent_id,
-                    user_id=initial_question_event.user.id,
-                    user_name=initial_question_event.user.name,
-                ),
+            # Store expert conversation as organization memory
+            memory_text = f"Question: {initial_question_event.question_to_expert}\n\nExpert Answer: {event.response}"
+            memory_added = await memory.add_organization_memory(
+                memory=memory_text,
+                user_id=initial_question_event.user.id,
+                thread_id=topic.thread_id,
+                display_id=topic.display_id,
+                run_id=topic.run_id,
+                tenant_id=agent_config.tenant_id,
+                tenant_namespace=agent_config.tenant_namespace,
+            )
+
+            # Emit event for observability
+            await displayer.display_event(
+                StoreOrganizationMemoryEvent.from_memory_added_object(memory_added=memory_added)
             )
 
             return AnswerStopEvent(expert_answer=event.response, expert_conversation=chat_history)

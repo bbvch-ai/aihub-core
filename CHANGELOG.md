@@ -5,6 +5,68 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.260.0] - 2026-02-02 - Enhanced Memory Management and Agent Context
+
+### Added
+
+- 🧠 **Introduced Comprehensive User and Organization Memory**: A new, robust memory system has been implemented across
+  `RAGAgent` and `ExpertRAGAgent`, allowing agents to retrieve personalized user memories and organization-wide
+  knowledge.
+- 🦾 **New Agent Workflow Steps for Memory Management**: Added dedicated agent steps for `ExpertRAGAgent` and `RAGAgent`
+  to retrieve user memories, retrieve organization memories, inject them into chat history, and store new user memories
+  from conversations.
+- ⚙️ **Configurable Memory Options for RAG Agents**: `RAGAgentConfig` and `ExpertAskingAgentConfig` now include explicit
+  configuration fields to enable/disable organization memory retrieval, user memory retrieval, and user memory storage,
+  along with `tenant_id` and `tenant_namespace` for scoping.
+- 🗄️ **Memory Management Pages in Web UI**: Dedicated UI pages are now available for managing user memories associated
+  with specific agents and threads, providing a centralized view for collected knowledge.
+- 📊 **OpenWebUI Integration for Agent Memories**: Introduced new UI components and an OpenWebUI function to display
+  agent-specific user memories directly within the chat interface, with toggleable list and graph views.
+- 🔍 **Advanced Memory Search Filters in API**: Added `agent_class` and `agent_id` parameters to the User and
+  Organization Memory search API endpoints, enabling more precise filtering of stored memories.
+- 💬 **Localized Memory Interface**: Extended translation files to support the new memory management sections and views
+  across multiple languages.
+- ⚡️ **Granular LLM Event Handling**: The `do_respond_with_llm` step function now supports returning an `LLMEvent` for
+  intermediate steps, allowing for post-LLM processing (like memory storage) before a final `StopEvent` is emitted.
+
+### Changed
+
+- 🔄 **Expert Conversation Storage Refactored**: `ExpertAskingAgent` now stores expert conversations as general
+  "organization memories" instead of the specialized "insights," aligning with the new unified memory system.
+- 🧪 **RAG Agent Test Suite Updated**: The RAG Agent test suite has been updated to remove references to the deprecated
+  insight system and now tests the new organization memory retrieval.
+- 💻 **SDK Schema Generalization**: The `Usage` schema in the SDK has been generalized to represent duration, with
+  specific token usage details moved to an image-response-specific schema.
+- 🎨 **Enhanced Memory List UI**: Improved the visual presentation of the memory list component in the web UI with
+  striped rows, better column styling, and severity-based tagging for relevance scores.
+
+### Removed
+
+- 🗑️ **Deprecated Insight System**: The entire "insight" persistence and retrieval system, including `InsightEntity`,
+  `InsightRetriever`, related configurations, API endpoints, and UI logic, has been removed.
+- 🧹 **Cleanup of Insight-Related Code**: All code paths, imports, and translation files associated with the old insight
+  system have been meticulously removed from the codebase.
+
+### Fixed
+
+- 🐛 **Improved Mem0 Metadata Filtering**: Corrected Mem0 service logic to accurately filter out empty strings in
+  addition to `None` values when processing metadata and filters, preventing unintended memory retrieval behavior.
+
+---
+
+## [v0.259.3] - 2024-07-29 - Automated Latest Tagging Workflow Enhancement
+
+### Changed
+
+- 🚀 **Automated Docker Image Discovery for 'latest' Tagging:** The GitHub Actions workflow responsible for promoting
+  release tags to "latest" now dynamically identifies all custom application Docker images. It parses
+  `deployment/compose-config.yml` to automatically detect images marked for local builds, removing the need for manual
+  updates to the workflow when new services are added or removed.
+- 📄 **Improved Workflow Documentation:** Comprehensive comments have been added to the `set-latest.yml` GitHub Actions
+  workflow, clearly detailing its purpose, usage, and the logic used for image selection and promotion.
+
+---
+
 ## [v0.259.2] - 2026-01-30 - Strengthened Security with Docker Network Isolation
 
 ### Security

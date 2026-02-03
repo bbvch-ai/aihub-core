@@ -113,6 +113,7 @@ thread:
     hierarchy: "Hierarchy"
     chat: "Chat"
     display: "Turns"
+    memories: "Memories"
   list:
     name: "Name"
     agents: "Agents"
@@ -142,6 +143,18 @@ thread:
     title: "Hierarchical View on Turns"
   chat:
     title: "Chat view"
+  memories:
+    title: "Thread Memories"
+    description: "Memories collected during {threadName}"
+    delete_all:
+      confirm_header: "Delete All Thread Memories"
+      confirm_message: "Are you sure you want to delete all memories from this thread? This action cannot be undone."
+      success:
+        title: "Success"
+        message: "All thread memories deleted successfully"
+      error:
+        title: "Delete Failed"
+        message: "Failed to delete thread memories. Please try again."
 
 chat:
   assistant: "Assistant"
@@ -266,6 +279,7 @@ agent:
     basic: "Basic"
     workflow: "Workflow"
     threads: "Threads"
+    memories: "Memories"
     chat: "Chat"
   availableAgents: "Available Agents"
   list:
@@ -282,6 +296,18 @@ agent:
     title: "Agentic Workflow"
   threads:
     title: "Agent Threads"
+  memories:
+    title: "Agent Memories"
+    description: "Memories collected by {agentName} about you"
+    delete_all:
+      confirm_header: "Delete All Agent Memories"
+      confirm_message: "Are you sure you want to delete all memories collected by this agent? This action cannot be undone."
+      success:
+        title: "Success"
+        message: "All agent memories deleted successfully"
+      error:
+        title: "Delete Failed"
+        message: "Failed to delete agent memories. Please try again."
 
 document:
   list:
@@ -622,3 +648,12 @@ memory:
     error:
       title: "Delete Failed"
       message: "Failed to delete all memories. Please try again."
+
+openwebui:
+  memories:
+    title: "Agent Memories"
+    select_agent: "Select Agent"
+    list: "List"
+    graph: "Graph"
+    user_memories: "User Memories"
+    org_memories: "Organization Memories"
