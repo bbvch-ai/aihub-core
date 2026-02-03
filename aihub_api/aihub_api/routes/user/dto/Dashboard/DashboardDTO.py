@@ -17,6 +17,5 @@ class DashboardDTO(BaseModel):
         list[DashboardItemDTO],
         Field(
             description="List of widgets (dashboard items) within the grid.",
-            max_length=100,
         ),
     ] = []
