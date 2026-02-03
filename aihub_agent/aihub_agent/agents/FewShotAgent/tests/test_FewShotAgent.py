@@ -19,7 +19,7 @@ from aihub_agent.agents.FewShotAgent.events.FewShotStandaloneQuestionCondenserEv
     FewShotStandaloneQuestionCondenserEvent,
 )
 from aihub_agent.agents.FewShotAgent.FewShotAgent import FewShotAgent
-from aihub_agent.agents.FewShotAgent.FewShowAgentConfig import FewShotAgentConfig
+from aihub_agent.agents.FewShotAgent.FewShotAgentConfig import FewShotAgentConfig
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_agent.steps.prompting.few_shot_step.FewShotStepConfig import FewShotStepConfig
 

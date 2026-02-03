@@ -37,3 +37,22 @@ messages:
   expert_unable_to_answer: Der Experte konnte die Frage nicht beantworten, ich bitte
     um Entschuldigung.
   expert_error_occurred: Bei der Kommunikation mit dem Experten ist ein Fehler aufgetreten.
+steps:
+  handle_insufficient_context:
+    name: "Unzureichenden Kontext behandeln"
+    description: "Behandelt unzureichenden Kontext durch Einholung der Experten-Zustimmung."
+  consent_answer:
+    name: "Zustimmungsantwort"
+    description: "Benutzer hat die Zustimmungsfrage beantwortet."
+  invoke_expert_agent:
+    name: "ExpertAskingAgent aufrufen"
+    description: "Leitet Anfrage an ExpertAskingAgent weiter, der Experten befragt."
+  expert_answer_positive:
+    name: "Experten-Antwort positiv"
+    description: "ExpertAskingAgent konnte Informationen vom Experten extrahieren."
+  expert_answer_negative:
+    name: "Experten-Antwort negativ"
+    description: "ExpertAskingAgent konnte KEINE Informationen vom Experten extrahieren."
+  expert_answer_error:
+    name: "Experten-Antwort Fehler"
+    description: "ExpertAskingAgent ist auf einen Fehler gestossen."

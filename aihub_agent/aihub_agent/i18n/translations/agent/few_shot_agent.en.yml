@@ -6,3 +6,22 @@ config:
   number_of_input_tokens:
     label: Max Input Tokens
     help: Maximum number of tokens allowed in the input context
+steps:
+  limit_chat_history:
+    name: "Limit Chat History"
+    description: "Truncates incoming chat messages to fit within the configured token limit."
+  agent_suitability_guard:
+    name: "Agent Suitability Guard"
+    description: "Checks whether the agent is suitable for handling the user's request."
+  condense_standalone_question:
+    name: "Condense Standalone Question"
+    description: "Condenses the chat history and user query into a standalone question."
+  create_few_shot_examples:
+    name: "Create Few-Shot Examples"
+    description: "Prepares few-shot examples and creates the full context for LLM."
+  respond_with_llm:
+    name: "Respond with LLM"
+    description: "Generates a response using the LLM based on few-shot examples."
+  stop:
+    name: "Stop"
+    description: "Stops the agent when request is rejected by suitability guard."

@@ -1,13 +1,13 @@
 from typing import Annotated, Self
 
-from aihub_agent.i18n.AgentLocaleString import AgentLocaleString
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.events.form import InputNumber, LocaleInput
+from aihub_lib.nats.events.form.constraints import Gt
 from pydantic import Field
 
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.form import LocaleInput, InputNumber
-from aihub_lib.nats.events.form.constraints import Gt
+from aihub_agent.i18n.AgentLocaleString import AgentLocaleString
 
 
 class LLMWrappingAgentConfig(AgentConfig):

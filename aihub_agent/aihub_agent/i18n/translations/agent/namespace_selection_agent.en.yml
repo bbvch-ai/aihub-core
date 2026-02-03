@@ -86,3 +86,29 @@ prompts:
     - Do NOT invent names - use only the actual names shown above.
 
     '
+steps:
+  initialize_determination:
+    name: "Initialize Namespace Determination"
+    description: "Fetches namespaces and initializes the determination loop"
+  determine_namespaces:
+    name: "Determine Namespaces"
+    description: "LLM analyzes conversation to determine namespaces"
+  process_follow_up:
+    name: "Process Follow-Up"
+    description: "Processes user's follow-up response and continues determination"
+  process_approval_approved:
+    name: "Process Approval - Approved"
+    description: "Stores selection and forwards to RAG agent"
+  process_approval_rejected:
+    name: "Process Approval - Rejected"
+    description: "Adds rejection to conversation and loops back"
+  rag_response:
+    name: "RAG Response"
+    description: "Handles response from RAG agent"
+  rag_error:
+    name: "RAG Error"
+    description: "Handles error from RAG agent"
+  forward_to_rag:
+    name: "Forward to RAG"
+    description: "Forwards query to RAG agent with namespace selection"
+

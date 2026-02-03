@@ -11,7 +11,7 @@ class ProcessConfigDTO(BaseModel):
     ]
     name: Annotated[str, Field(description="The name of the process.")]
     description: Annotated[str, Field(description="The description of the process.")]
-    icon: Annotated[str, Field(description="The icon representing the agent.")] = "mage:robot"
+    icon: Annotated[str, Field(description="The icon representing the process.")] = "mage:arrowlist"
 
     @classmethod
     def from_process_config(cls, process_config: ProcessConfig, t: LocaleHandler) -> Self:

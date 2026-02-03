@@ -31,8 +31,8 @@ class RetrievalAgent(Agent):
     icon: ClassVar[str] = "mage:search"
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.retrieval.retrieve_nodes.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.retrieval.retrieve_nodes.description"),
+        name=AgentLocaleString.from_i18n_path("agent.retrieval_agent.steps.retrieve_nodes.name"),
+        description=AgentLocaleString.from_i18n_path("agent.retrieval_agent.steps.retrieve_nodes.description"),
         icon="mage:search",
     )
     async def retrieve_step(
@@ -71,8 +71,8 @@ class RetrievalAgent(Agent):
         return RetrieverEvent.from_nodes(nodes)
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.retrieval.order_nodes.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.retrieval.order_nodes.description"),
+        name=AgentLocaleString.from_i18n_path("agent.retrieval_agent.steps.order_nodes.name"),
+        description=AgentLocaleString.from_i18n_path("agent.retrieval_agent.steps.order_nodes.description"),
         icon="mage:arrowlist",
     )
     async def order_nodes_by_documents_step(
@@ -93,8 +93,8 @@ class RetrievalAgent(Agent):
         return InOrderNodeCombinerEvent(context_message=ordered_nodes)
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.retrieval.stop.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.retrieval.stop.description"),
+        name=AgentLocaleString.from_i18n_path("agent.retrieval_agent.steps.stop.name"),
+        description=AgentLocaleString.from_i18n_path("agent.retrieval_agent.steps.stop.description"),
         icon="mage:check",
     )
     async def stop_step(

@@ -86,6 +86,8 @@ class AgentDispatcher(BaseDispatcher):
         from the local agent_config to produce the final runtime configuration.
     """
 
+    _AGENT_CONFIG_KEY = "_agent_config"
+
     def __init__(
         self,
         agent: Annotated[type[Agent], "The agent class defining steps and logic."],
@@ -152,10 +154,10 @@ class AgentDispatcher(BaseDispatcher):
                     f"Agent class '{agent_config_dict.get('agent_class')}' "
                     f"does not match agent class '{self.agent.__name__}'"
                 )
-            await run_context.set("_agent_config", agent_config_dict)
+            await run_context.set(self._AGENT_CONFIG_KEY, agent_config_dict)
 
         if agent_config_dict is None:
-            agent_config_dict = await run_context.get("_agent_config")
+            agent_config_dict = await run_context.get(self._AGENT_CONFIG_KEY)
             if agent_config_dict is None:
                 raise ValueError(f"No agent config found for event {event.event_name} and topic {topic}")
 

@@ -276,8 +276,8 @@ class ExpertRAGAgent(Agent):
         return AddMemoryToChatHistoryEvent(extended_history=chat_history)
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.rag.limit_chat_history.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.rag.limit_chat_history.description"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.limit_chat_history.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.limit_chat_history.description"),
         icon="mage:edit",
         precondition=memory_added_to_chat_history,
     )
@@ -292,8 +292,8 @@ class ExpertRAGAgent(Agent):
         return do_limit_chat_history(messages, agent_config.number_of_input_tokens)
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.rag.condense_standalone_question.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.rag.condense_standalone_question.description"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.condense_standalone_question.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.condense_standalone_question.description"),
         icon="mage:archive",
     )
     async def condense_standalone_question_step(
@@ -309,8 +309,8 @@ class ExpertRAGAgent(Agent):
         )
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.rag.few_shot_guard.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.rag.few_shot_guard.description"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.few_shot_guard.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.few_shot_guard.description"),
         icon="mage:shield-check",
     )
     async def few_shot_guard_step(
@@ -325,8 +325,8 @@ class ExpertRAGAgent(Agent):
         )
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.rag.retrieve_nodes.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.rag.retrieve_nodes.description"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_nodes.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_nodes.description"),
         icon="mage:search",
     )
     async def retrieve_step(
@@ -345,8 +345,8 @@ class ExpertRAGAgent(Agent):
         return await do_retrieve(event, retrievers, t)
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.rag.rerank_nodes.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.rag.rerank_nodes.description"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.rerank_nodes.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.rerank_nodes.description"),
         icon="mage:arrow-down",
         precondition=reranking_enabled,
     )
@@ -363,8 +363,8 @@ class ExpertRAGAgent(Agent):
         )
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.rag.order_nodes.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.rag.order_nodes.description"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.order_nodes.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.order_nodes.description"),
         icon="mage:arrowlist",
         precondition=reranking_complete_or_disabled,
     )
@@ -378,8 +378,8 @@ class ExpertRAGAgent(Agent):
         return await do_order_nodes_by_documents(event, t, agent_config.context_prompt, displayer)
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.rag.context_sufficient_guard.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.rag.context_sufficient_guard.description"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.context_sufficient_guard.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.context_sufficient_guard.description"),
         icon="mage:check-circle",
     )
     async def context_sufficient_guard_step(
@@ -403,8 +403,10 @@ class ExpertRAGAgent(Agent):
         )
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.rag.limit_chat_history_with_context.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.rag.limit_chat_history_with_context.description"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.limit_chat_history_with_context.name"),
+        description=AgentLocaleString.from_i18n_path(
+            "agent.rag_agent.steps.limit_chat_history_with_context.description"
+        ),
         icon="mage:edit",
         precondition=context_ready_for_history_limit,
     )
@@ -427,8 +429,10 @@ class ExpertRAGAgent(Agent):
     # --- Expert Escalation Steps ---
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.expert_rag.handle_insufficient_context.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.expert_rag.handle_insufficient_context.description"),
+        name=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.handle_insufficient_context.name"),
+        description=AgentLocaleString.from_i18n_path(
+            "agent.expert_rag_agent.steps.handle_insufficient_context.description"
+        ),
         icon="mage:message-check",
     )
     async def insufficient_context_ask_expert_step(
@@ -442,8 +446,8 @@ class ExpertRAGAgent(Agent):
         return HumanInTheLoop.confirmation.invoke(question=t("agent.expert_rag_agent.messages.consent_question"))
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.expert_rag.consent_answer.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.expert_rag.consent_answer.description"),
+        name=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.consent_answer.name"),
+        description=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.consent_answer.description"),
         icon="mage:message-question-mark",
     )
     async def user_expert_inquiry_response(
@@ -460,8 +464,8 @@ class ExpertRAGAgent(Agent):
         return ExpertRejectEvent(reason="User declined expert escalation")
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.expert_rag.invoke_expert_agent.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.expert_rag.invoke_expert_agent.description"),
+        name=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.invoke_expert_agent.name"),
+        description=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.invoke_expert_agent.description"),
         icon="mage:robot",
     )
     async def forward_to_expert_asking_agent_step(
@@ -497,8 +501,8 @@ class ExpertRAGAgent(Agent):
 
     @step(
         precondition=is_answer_response,
-        name=AgentLocaleString.from_i18n_path("agent.steps.expert_rag.expert_answer_positive.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.expert_rag.expert_answer_positive.description"),
+        name=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.expert_answer_positive.name"),
+        description=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.expert_answer_positive.description"),
         icon="mage:user-check",
     )
     async def expert_answered_step(
@@ -525,8 +529,8 @@ class ExpertRAGAgent(Agent):
 
     @step(
         precondition=is_no_answer_response,
-        name=AgentLocaleString.from_i18n_path("agent.steps.expert_rag.expert_answer_negative.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.expert_rag.expert_answer_negative.description"),
+        name=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.expert_answer_negative.name"),
+        description=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.expert_answer_negative.description"),
         icon="mage:user-cross",
     )
     async def expert_not_answered_step(
@@ -543,8 +547,8 @@ class ExpertRAGAgent(Agent):
         return StopEvent()
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.expert_rag.expert_answer_error.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.expert_rag.expert_answer_error.description"),
+        name=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.expert_answer_error.name"),
+        description=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.expert_answer_error.description"),
         icon="mage:exclamation-circle",
     )
     async def expert_exception_step(
@@ -567,8 +571,8 @@ class ExpertRAGAgent(Agent):
         return StopEvent()
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.rag.respond_with_llm.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.rag.respond_with_llm.description"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.respond_with_llm.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.respond_with_llm.description"),
         icon="mage:message",
     )
     async def respond_with_llm_step(

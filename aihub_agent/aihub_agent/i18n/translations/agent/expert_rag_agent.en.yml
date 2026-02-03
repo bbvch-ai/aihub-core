@@ -35,3 +35,22 @@ messages:
     I will get back to you.
   expert_unable_to_answer: The expert was unable to answer the question, I apologize.
   expert_error_occurred: An error occurred when communicating with the expert.
+steps:
+  handle_insufficient_context:
+    name: "Handle Insufficient Context"
+    description: "Handle insufficient context by asking for expert consent."
+  consent_answer:
+    name: "Consent Answer"
+    description: "User answered the question for consent."
+  invoke_expert_agent:
+    name: "Invoke ExpertAskingAgent"
+    description: "Forwarding request to ExpertAskingAgent that will prompt experts."
+  expert_answer_positive:
+    name: "Expert Answer Positive"
+    description: "ExpertAskingAgent was able to extract information from expert."
+  expert_answer_negative:
+    name: "Expert Answer Negative"
+    description: "ExpertAskingAgent was NOT able to extract information from expert."
+  expert_answer_error:
+    name: "Expert Answer Error"
+    description: "ExpertAskingAgent encountered an error."

@@ -111,3 +111,31 @@ config:
   enable_user_memory_storage:
     label: Activer le stockage de mémoire utilisateur
     help: Stocker les nouvelles mémoires des conversations pour une récupération future.
+steps:
+  limit_chat_history:
+    name: "Limiter l'historique du chat"
+    description: "Tronque les messages de chat entrants pour respecter la limite de tokens configurée"
+  condense_standalone_question:
+    name: "Condenser la question autonome"
+    description: "Condense l'historique du chat et la requête utilisateur en une question autonome."
+  few_shot_guard:
+    name: "Garde Few-Shot"
+    description: "Protège la question pour s'assurer qu'elle est appropriée pour l'agent."
+  retrieve_nodes:
+    name: "Récupérer les nœuds"
+    description: "Récupère les nœuds pertinents des sources de connaissances."
+  rerank_nodes:
+    name: "Reclasser les nœuds récupérés"
+    description: "Reclasse les documents récupérés avec un modèle de reclassement pour une meilleure pertinence"
+  order_nodes:
+    name: "Ordonner les nœuds par documents"
+    description: "Ordonne les nœuds récupérés par leurs documents sources."
+  context_sufficient_guard:
+    name: "Garde de contexte suffisant"
+    description: "Protège le contexte pour s'assurer qu'il est suffisant pour générer une réponse."
+  limit_chat_history_with_context:
+    name: "Limiter l'historique avec contexte"
+    description: "Inclut le contexte combiné et tronque à nouveau l'historique du chat."
+  respond_with_llm:
+    name: "Répondre avec LLM"
+    description: "Génère une réponse en utilisant le LLM configuré."

@@ -57,3 +57,17 @@ follow_up_question: 'L''expert a été interrogé : "{{ question }}"
   que ce qui a été initialement demandé mais pas encore répondu.
 
   '
+steps:
+  invoke_expert:
+    name: "Invoquer l'expert"
+    description: "Pose une question à un groupe d'experts."
+  expert_response:
+    name: "Réponse de l'expert"
+    description: "Traite la réponse de l'expert."
+  response_sufficient_router:
+    name: "Routeur de réponse suffisante"
+    description: "Vérifie si l'expert a suffisamment répondu à la question."
+  follow_up_question:
+    name: "Question de suivi"
+    description: "Pose une question de suivi à l'expert car la réponse n'est pas encore suffisante."
+

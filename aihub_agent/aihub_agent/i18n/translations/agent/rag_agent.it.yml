@@ -109,3 +109,31 @@ config:
   enable_user_memory_storage:
     label: Abilita archiviazione memoria utente
     help: Se archiviare nuove memorie dalle conversazioni per il recupero futuro.
+steps:
+  limit_chat_history:
+    name: "Limita cronologia chat"
+    description: "Tronca i messaggi di chat in arrivo per rispettare il limite di token configurato"
+  condense_standalone_question:
+    name: "Condensa domanda autonoma"
+    description: "Condensa la cronologia della chat e la query utente in una domanda autonoma."
+  few_shot_guard:
+    name: "Guardia Few-Shot"
+    description: "Protegge la domanda per assicurarsi che sia appropriata per l'agente."
+  retrieve_nodes:
+    name: "Recupera nodi"
+    description: "Recupera i nodi rilevanti dalle fonti di conoscenza."
+  rerank_nodes:
+    name: "Riclassifica nodi recuperati"
+    description: "Riclassifica i documenti recuperati con un modello di riclassificazione per una migliore rilevanza"
+  order_nodes:
+    name: "Ordina nodi per documenti"
+    description: "Ordina i nodi recuperati per i loro documenti sorgente."
+  context_sufficient_guard:
+    name: "Guardia contesto sufficiente"
+    description: "Protegge il contesto per assicurarsi che sia sufficiente per generare una risposta."
+  limit_chat_history_with_context:
+    name: "Limita cronologia con contesto"
+    description: "Include il contesto combinato e tronca nuovamente la cronologia della chat."
+  respond_with_llm:
+    name: "Rispondi con LLM"
+    description: "Genera una risposta utilizzando il LLM configurato."

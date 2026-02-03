@@ -16,7 +16,7 @@ from aihub_agent.agents.FewShotAgent.events.FewShotEvent import FewShotEvent
 from aihub_agent.agents.FewShotAgent.events.FewShotStandaloneQuestionCondenserEvent import (
     FewShotStandaloneQuestionCondenserEvent,
 )
-from aihub_agent.agents.FewShotAgent.FewShowAgentConfig import FewShotAgentConfig
+from aihub_agent.agents.FewShotAgent.FewShotAgentConfig import FewShotAgentConfig
 from aihub_agent.i18n.AgentLocaleString import AgentLocaleString
 from aihub_agent.workflow.decorators.step import step
 
@@ -42,8 +42,8 @@ class FewShotAgent(Agent):
     icon: ClassVar[str] = "mage:book"
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.few_shot.limit_chat_history.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.few_shot.limit_chat_history.description"),
+        name=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.limit_chat_history.name"),
+        description=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.limit_chat_history.description"),
         icon="mage:edit",
     )
     async def limit_chat_history_step(
@@ -61,8 +61,8 @@ class FewShotAgent(Agent):
         return LimitChatHistoryEvent(limited_history=limited_chat_history)
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.few_shot.agent_suitability_guard.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.few_shot.agent_suitability_guard.description"),
+        name=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.agent_suitability_guard.name"),
+        description=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.agent_suitability_guard.description"),
         icon="mage:shield-check",
     )
     async def right_agent_guard(
@@ -89,8 +89,10 @@ class FewShotAgent(Agent):
         )
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.few_shot.condense_standalone_question.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.few_shot.condense_standalone_question.description"),
+        name=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.condense_standalone_question.name"),
+        description=AgentLocaleString.from_i18n_path(
+            "agent.few_shot_agent.steps.condense_standalone_question.description"
+        ),
         icon="mage:archive",
     )
     async def condense_standalone_question_step(
@@ -117,8 +119,8 @@ class FewShotAgent(Agent):
             return FewShotStandaloneQuestionCondenserEvent(condensed_chat_message=condensed_question)
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.few_shot.create_few_shot_examples.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.few_shot.create_few_shot_examples.description"),
+        name=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.create_few_shot_examples.name"),
+        description=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.create_few_shot_examples.description"),
         icon="mage:checklist",
     )
     async def create_few_shot_examples(
@@ -154,8 +156,8 @@ class FewShotAgent(Agent):
         )
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.few_shot.respond_with_llm.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.few_shot.respond_with_llm.description"),
+        name=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.respond_with_llm.name"),
+        description=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.respond_with_llm.description"),
         icon="mage:message",
     )
     async def respond_with_llm_step(
@@ -173,8 +175,8 @@ class FewShotAgent(Agent):
             return await displayer.display_llm_stream(agent_config.llm, llm, event.full_context, as_stop_step=True)
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.few_shot.stop.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.few_shot.stop.description"),
+        name=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.stop.name"),
+        description=AgentLocaleString.from_i18n_path("agent.few_shot_agent.steps.stop.description"),
         icon="mage:cancel",
     )
     async def stop_step(self, _: AgentSuitabilityRejectEvent) -> StopEvent:

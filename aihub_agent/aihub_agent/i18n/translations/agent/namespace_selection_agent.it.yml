@@ -88,3 +88,29 @@ prompts:
     - NON inventare nomi - usa solo i nomi reali mostrati sopra.
 
     '
+steps:
+  initialize_determination:
+    name: "Inizializza determinazione namespace"
+    description: "Recupera i namespace e inizializza il ciclo di determinazione"
+  determine_namespaces:
+    name: "Determina namespace"
+    description: "Il LLM analizza la conversazione per determinare i namespace"
+  process_follow_up:
+    name: "Elabora follow-up"
+    description: "Elabora la risposta di follow-up dell'utente e continua la determinazione"
+  process_approval_approved:
+    name: "Elabora approvazione - Approvato"
+    description: "Salva la selezione e inoltra all'agente RAG"
+  process_approval_rejected:
+    name: "Elabora approvazione - Rifiutato"
+    description: "Aggiunge il rifiuto alla conversazione e torna al ciclo"
+  rag_response:
+    name: "Risposta RAG"
+    description: "Gestisce la risposta dall'agente RAG"
+  rag_error:
+    name: "Errore RAG"
+    description: "Gestisce l'errore dall'agente RAG"
+  forward_to_rag:
+    name: "Inoltra al RAG"
+    description: "Inoltra la query all'agente RAG con la selezione del namespace"
+

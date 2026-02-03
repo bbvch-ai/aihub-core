@@ -2,3 +2,10 @@ metadata:
   name: Assistant Instruit
   description: Assistant IA qui suit vos instructions en texte clair pour vous aider
     dans vos tâches et répondre aux questions
+steps:
+  limit_chat_history:
+    name: "Limiter l'historique du chat"
+    description: "Tronque les messages du chat entrants pour respecter la limite de jetons configurée."
+  start:
+    name: "Traiter le message de l'utilisateur"
+    description: "Transmet le message de l'utilisateur au LLM et diffuse la réponse en continu."

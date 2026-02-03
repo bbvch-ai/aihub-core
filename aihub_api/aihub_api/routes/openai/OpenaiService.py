@@ -73,7 +73,6 @@ class OpenaiService:
     async def get_models_with_assistants(
         *,
         t: LocaleHandler,
-        exclude_webui_agents: bool,
     ) -> ModelResponse:
         """
         Retrieve the list of available chat models and assistants.
@@ -82,12 +81,6 @@ class OpenaiService:
         model_response = await OpenaiService.get_models()
         chat_models = model_response.data
         agent_instance_dtos = await AgentService.get_all_agent_instances(t, online=True)
-
-        # Ensures we have no recursive webui agent discovery
-        if exclude_webui_agents:
-            agent_instance_dtos = [
-                agent_instance for agent_instance in agent_instance_dtos if agent_instance.agent_class != "WebuiAgent"
-            ]
 
         assistants = [
             ModelDetails(
@@ -581,8 +574,6 @@ class OpenaiService:
         sdk_method_signature = inspect.signature(sdk_fn)
         sdk_known_param_names = set(sdk_method_signature.parameters.keys())
         payload_dict = fn_kwargs_model.model_dump(exclude_unset=True)
-
-        # Logged-in user is always identified towards open-webui
         payload_dict["user"] = user.id
 
         sdk_call_kwargs: dict[str, Any] = {}

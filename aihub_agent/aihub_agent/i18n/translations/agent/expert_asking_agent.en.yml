@@ -56,3 +56,17 @@ follow_up_question: 'The expert was asked: "{{ question }}"
   what was originally requested but not yet answered.
 
   '
+steps:
+  invoke_expert:
+    name: "Invoke Expert Step"
+    description: "Poses question to a group of experts."
+  expert_response:
+    name: "Expert Response"
+    description: "Processes the expert response."
+  response_sufficient_router:
+    name: "Response Sufficient Router"
+    description: "Checks whether the expert has sufficiently answered the question yet."
+  follow_up_question:
+    name: "Follow up question"
+    description: "Poses follow up question to expert as answer is not sufficient yet."
+

@@ -57,3 +57,17 @@ follow_up_question: 'Der Experte wurde gefragt: "{{ question }}"
   wurde.
 
   '
+steps:
+  invoke_expert:
+    name: "Experten aufrufen"
+    description: "Stellt eine Frage an eine Gruppe von Experten."
+  expert_response:
+    name: "Experten-Antwort"
+    description: "Verarbeitet die Antwort des Experten."
+  response_sufficient_router:
+    name: "Antwort-Ausreichend-Router"
+    description: "Prüft, ob der Experte die Frage ausreichend beantwortet hat."
+  follow_up_question:
+    name: "Nachfrage"
+    description: "Stellt eine Nachfrage an den Experten, da die Antwort noch nicht ausreicht."
+

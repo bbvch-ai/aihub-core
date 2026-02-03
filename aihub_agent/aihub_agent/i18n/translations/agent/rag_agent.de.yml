@@ -111,3 +111,31 @@ config:
     label: Benutzergedächtnis-Speicherung aktivieren
     help: Ob neue Erinnerungen aus Gesprächen für zukünftigen Abruf gespeichert werden
       sollen.
+steps:
+  limit_chat_history:
+    name: "Chat-Verlauf begrenzen"
+    description: "Kürzt eingehende Chat-Nachrichten auf das konfigurierte Token-Limit"
+  condense_standalone_question:
+    name: "Eigenständige Frage kondensieren"
+    description: "Fasst den Chat-Verlauf und die Benutzeranfrage zu einer eigenständigen Frage zusammen."
+  few_shot_guard:
+    name: "Few-Shot-Schutz"
+    description: "Schützt die Frage, um sicherzustellen, dass sie für den Agenten geeignet ist."
+  retrieve_nodes:
+    name: "Knoten abrufen"
+    description: "Ruft relevante Knoten aus Wissensquellen ab."
+  rerank_nodes:
+    name: "Abgerufene Knoten neu ordnen"
+    description: "Ordnet abgerufene Dokumente mit einem Reranking-Modell für bessere Relevanz neu"
+  order_nodes:
+    name: "Knoten nach Dokumenten ordnen"
+    description: "Ordnet die abgerufenen Knoten nach ihren Quelldokumenten."
+  context_sufficient_guard:
+    name: "Kontext-Ausreichend-Schutz"
+    description: "Schützt den Kontext, um sicherzustellen, dass er für eine Antwort ausreicht."
+  limit_chat_history_with_context:
+    name: "Chat-Verlauf mit Kontext begrenzen"
+    description: "Fügt den kombinierten Kontext hinzu und kürzt den Chat-Verlauf erneut."
+  respond_with_llm:
+    name: "Mit LLM antworten"
+    description: "Generiert eine Antwort mit dem konfigurierten LLM."

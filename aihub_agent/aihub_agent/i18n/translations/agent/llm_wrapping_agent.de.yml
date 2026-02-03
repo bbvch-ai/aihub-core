@@ -2,3 +2,10 @@ metadata:
   name: Instruierter Assistent
   description: KI-Assistent, der Ihren Anweisungen in Klartext folgt, um bei Aufgaben
     zu helfen und Fragen zu beantworten
+steps:
+  limit_chat_history:
+    name: "Chat-Verlauf begrenzen"
+    description: "Kürzt eingehende Chat-Nachrichten, um innerhalb des konfigurierten Token-Limits zu bleiben."
+  start:
+    name: "Benutzernachricht verarbeiten"
+    description: "Leitet die Benutzernachricht an das LLM weiter und streamt die Antwort."

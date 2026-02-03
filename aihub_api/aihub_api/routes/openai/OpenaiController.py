@@ -88,7 +88,6 @@ class OpenaiController(Controller):
     def get_models_with_assistants(
         self,
         route: str = "/models",
-        exclude_webui_agents: Annotated[bool, "Ensures WebUI assistants are not returned to prevent recursion"] = False,
     ) -> Self:
         @self.router.get(
             route,
@@ -102,9 +101,7 @@ class OpenaiController(Controller):
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> ModelResponse:
-            model_response = await OpenaiService.get_models_with_assistants(
-                t=t, exclude_webui_agents=exclude_webui_agents
-            )
+            model_response = await OpenaiService.get_models_with_assistants(t=t)
             access_checker = AccessChecker.from_user(user)
             model_response.data = [
                 m

@@ -35,3 +35,22 @@ messages:
   expert_unable_to_answer: L'esperto non è stato in grado di rispondere alla domanda,
     mi scuso.
   expert_error_occurred: Si è verificato un errore durante la comunicazione con l'esperto.
+steps:
+  handle_insufficient_context:
+    name: "Gestisci contesto insufficiente"
+    description: "Gestisce il contesto insufficiente chiedendo il consenso per l'esperto."
+  consent_answer:
+    name: "Risposta consenso"
+    description: "L'utente ha risposto alla domanda di consenso."
+  invoke_expert_agent:
+    name: "Invoca ExpertAskingAgent"
+    description: "Inoltra la richiesta a ExpertAskingAgent che interrogherà gli esperti."
+  expert_answer_positive:
+    name: "Risposta esperto positiva"
+    description: "ExpertAskingAgent è riuscito a estrarre informazioni dall'esperto."
+  expert_answer_negative:
+    name: "Risposta esperto negativa"
+    description: "ExpertAskingAgent NON è riuscito a estrarre informazioni dall'esperto."
+  expert_answer_error:
+    name: "Errore risposta esperto"
+    description: "ExpertAskingAgent ha incontrato un errore."

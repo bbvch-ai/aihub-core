@@ -8,7 +8,7 @@ import asyncio
 from aihub_lib.infrastructure.logging.logger import enable_logging
 
 from aihub_agent.agents.FewShotAgent.FewShotAgent import FewShotAgent
-from aihub_agent.agents.FewShotAgent.FewShowAgentConfig import FewShotAgentConfig
+from aihub_agent.agents.FewShotAgent.FewShotAgentConfig import FewShotAgentConfig
 from aihub_agent.runners.AgentRunner import AgentRunner
 
 enable_logging()

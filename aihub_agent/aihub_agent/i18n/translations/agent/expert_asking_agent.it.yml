@@ -57,3 +57,17 @@ follow_up_question: 'All''esperto è stato chiesto: "{{ question }}"
   che è stato originariamente richiesto ma non ancora risposto.
 
   '
+steps:
+  invoke_expert:
+    name: "Invoca esperto"
+    description: "Pone una domanda a un gruppo di esperti."
+  expert_response:
+    name: "Risposta esperto"
+    description: "Elabora la risposta dell'esperto."
+  response_sufficient_router:
+    name: "Router risposta sufficiente"
+    description: "Verifica se l'esperto ha risposto sufficientemente alla domanda."
+  follow_up_question:
+    name: "Domanda di follow-up"
+    description: "Pone una domanda di follow-up all'esperto poiché la risposta non è ancora sufficiente."
+

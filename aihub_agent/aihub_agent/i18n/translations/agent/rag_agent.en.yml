@@ -107,3 +107,31 @@ config:
   enable_user_memory_storage:
     label: Enable user memory storage
     help: Whether to store new memories from conversations for future retrieval.
+steps:
+  limit_chat_history:
+    name: "Limit Chat History"
+    description: "Truncates incoming chat messages to fit within the configured token limit"
+  condense_standalone_question:
+    name: "Condense Standalone Question"
+    description: "Condenses the chat history and user query into a standalone question."
+  few_shot_guard:
+    name: "Few Shot Guard"
+    description: "Guards the question to ensure it is appropriate for the agent to answer."
+  retrieve_nodes:
+    name: "Retrieve Nodes"
+    description: "Retrieves relevant nodes from knowledge sources."
+  rerank_nodes:
+    name: "Rerank Retrieved Nodes"
+    description: "Reranks retrieved documents using a dedicated reranking model for improved relevance"
+  order_nodes:
+    name: "Order Nodes by Documents"
+    description: "Orders the retrieved nodes by their source documents."
+  context_sufficient_guard:
+    name: "Context Sufficient Guard"
+    description: "Guards the context to ensure it is sufficient for generating a response."
+  limit_chat_history_with_context:
+    name: "Limit Chat History with Context"
+    description: "Includes the combined context and truncates chat history again."
+  respond_with_llm:
+    name: "Respond with LLM"
+    description: "Generates a response using the configured LLM."

@@ -111,9 +111,9 @@ class NamespaceSelectionAgent(Agent):
     # === First-time flow: No selection exists ===
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.namespace_selection.initialize_determination.name"),
+        name=AgentLocaleString.from_i18n_path("agent.namespace_selection_agent.steps.initialize_determination.name"),
         description=AgentLocaleString.from_i18n_path(
-            "agent.steps.namespace_selection.initialize_determination.description"
+            "agent.namespace_selection_agent.steps.initialize_determination.description"
         ),
         icon="mage:search",
         precondition=needs_selection,
@@ -156,9 +156,9 @@ class NamespaceSelectionAgent(Agent):
         return DetermineNamespacesEvent()
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.namespace_selection.determine_namespaces.name"),
+        name=AgentLocaleString.from_i18n_path("agent.namespace_selection_agent.steps.determine_namespaces.name"),
         description=AgentLocaleString.from_i18n_path(
-            "agent.steps.namespace_selection.determine_namespaces.description"
+            "agent.namespace_selection_agent.steps.determine_namespaces.description"
         ),
         icon="mage:light-bulb",
     )
@@ -226,8 +226,10 @@ class NamespaceSelectionAgent(Agent):
         return NamespaceApprovalHitl.invoke(question=approval_question)
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.namespace_selection.process_follow_up.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.namespace_selection.process_follow_up.description"),
+        name=AgentLocaleString.from_i18n_path("agent.namespace_selection_agent.steps.process_follow_up.name"),
+        description=AgentLocaleString.from_i18n_path(
+            "agent.namespace_selection_agent.steps.process_follow_up.description"
+        ),
         icon="mage:message-dots",
     )
     async def process_follow_up_step(
@@ -253,9 +255,9 @@ class NamespaceSelectionAgent(Agent):
         return DetermineNamespacesEvent()
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.namespace_selection.process_approval_approved.name"),
+        name=AgentLocaleString.from_i18n_path("agent.namespace_selection_agent.steps.process_approval_approved.name"),
         description=AgentLocaleString.from_i18n_path(
-            "agent.steps.namespace_selection.process_approval_approved.description"
+            "agent.namespace_selection_agent.steps.process_approval_approved.description"
         ),
         icon="mage:check",
         precondition=is_namespace_approved,
@@ -296,9 +298,9 @@ class NamespaceSelectionAgent(Agent):
         )
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.namespace_selection.process_approval_rejected.name"),
+        name=AgentLocaleString.from_i18n_path("agent.namespace_selection_agent.steps.process_approval_rejected.name"),
         description=AgentLocaleString.from_i18n_path(
-            "agent.steps.namespace_selection.process_approval_rejected.description"
+            "agent.namespace_selection_agent.steps.process_approval_rejected.description"
         ),
         icon="mage:x",
         precondition=is_namespace_rejected,
@@ -330,8 +332,8 @@ class NamespaceSelectionAgent(Agent):
         return DetermineNamespacesEvent()
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.namespace_selection.rag_response.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.namespace_selection.rag_response.description"),
+        name=AgentLocaleString.from_i18n_path("agent.namespace_selection_agent.steps.rag_response.name"),
+        description=AgentLocaleString.from_i18n_path("agent.namespace_selection_agent.steps.rag_response.description"),
         icon="mage:message",
     )
     async def rag_response_step(
@@ -342,8 +344,8 @@ class NamespaceSelectionAgent(Agent):
         return event.stop_event
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.namespace_selection.rag_error.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.namespace_selection.rag_error.description"),
+        name=AgentLocaleString.from_i18n_path("agent.namespace_selection_agent.steps.rag_error.name"),
+        description=AgentLocaleString.from_i18n_path("agent.namespace_selection_agent.steps.rag_error.description"),
         icon="mage:exclamation-triangle",
     )
     async def rag_exception_step(
@@ -369,8 +371,10 @@ class NamespaceSelectionAgent(Agent):
     # === Subsequent messages: Selection exists ===
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.namespace_selection.forward_to_rag.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.namespace_selection.forward_to_rag.description"),
+        name=AgentLocaleString.from_i18n_path("agent.namespace_selection_agent.steps.forward_to_rag.name"),
+        description=AgentLocaleString.from_i18n_path(
+            "agent.namespace_selection_agent.steps.forward_to_rag.description"
+        ),
         icon="mage:upload",
         precondition=has_selection,
     )

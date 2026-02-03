@@ -249,8 +249,8 @@ class RAGAgent(Agent):
         return AddMemoryToChatHistoryEvent(extended_history=chat_history)
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.rag.limit_chat_history.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.rag.limit_chat_history.description"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.limit_chat_history.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.limit_chat_history.description"),
         icon="mage:edit",
         precondition=memory_added_to_chat_history,
     )
@@ -265,8 +265,8 @@ class RAGAgent(Agent):
         return do_limit_chat_history(messages, agent_config.number_of_input_tokens)
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.rag.condense_standalone_question.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.rag.condense_standalone_question.description"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.condense_standalone_question.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.condense_standalone_question.description"),
         icon="mage:archive",
     )
     async def condense_standalone_question_step(
@@ -282,8 +282,8 @@ class RAGAgent(Agent):
         )
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.rag.few_shot_guard.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.rag.few_shot_guard.description"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.few_shot_guard.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.few_shot_guard.description"),
         icon="mage:shield-check",
     )
     async def few_shot_guard_step(
@@ -298,8 +298,8 @@ class RAGAgent(Agent):
         )
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.rag.retrieve_nodes.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.rag.retrieve_nodes.description"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_nodes.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_nodes.description"),
         icon="mage:search",
     )
     async def retrieve_step(
@@ -318,8 +318,8 @@ class RAGAgent(Agent):
         return await do_retrieve(event, retrievers, t)
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.rag.rerank_nodes.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.rag.rerank_nodes.description"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.rerank_nodes.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.rerank_nodes.description"),
         icon="mage:arrow-down",
         precondition=reranking_enabled,
     )
@@ -336,8 +336,8 @@ class RAGAgent(Agent):
         )
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.rag.order_nodes.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.rag.order_nodes.description"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.order_nodes.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.order_nodes.description"),
         icon="mage:arrowlist",
         precondition=reranking_complete_or_disabled,
     )
@@ -351,8 +351,8 @@ class RAGAgent(Agent):
         return await do_order_nodes_by_documents(event, t, agent_config.context_prompt, displayer)
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.rag.context_sufficient_guard.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.rag.context_sufficient_guard.description"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.context_sufficient_guard.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.context_sufficient_guard.description"),
         icon="mage:check-circle",
     )
     async def context_sufficient_guard_step(
@@ -376,8 +376,10 @@ class RAGAgent(Agent):
         )
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.rag.limit_chat_history_with_context.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.rag.limit_chat_history_with_context.description"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.limit_chat_history_with_context.name"),
+        description=AgentLocaleString.from_i18n_path(
+            "agent.rag_agent.steps.limit_chat_history_with_context.description"
+        ),
         icon="mage:edit",
         precondition=context_ready_for_history_limit,
     )
@@ -398,8 +400,8 @@ class RAGAgent(Agent):
         )
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.rag.respond_with_llm.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.rag.respond_with_llm.description"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.respond_with_llm.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.respond_with_llm.description"),
         icon="mage:message",
     )
     async def respond_with_llm_step(

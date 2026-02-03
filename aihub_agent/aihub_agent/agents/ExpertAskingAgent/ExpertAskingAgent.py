@@ -40,8 +40,8 @@ class ExpertAskingAgent(Agent):
     icon: ClassVar[str] = "mage:building-a"
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.expert_asking.invoke_expert.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.expert_asking.invoke_expert.description"),
+        name=AgentLocaleString.from_i18n_path("agent.expert_asking_agent.steps.invoke_expert.name"),
+        description=AgentLocaleString.from_i18n_path("agent.expert_asking_agent.steps.invoke_expert.description"),
         icon="mage:users",
     )
     async def start_step(
@@ -68,8 +68,8 @@ class ExpertAskingAgent(Agent):
         )
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.expert_asking.expert_response.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.expert_asking.expert_response.description"),
+        name=AgentLocaleString.from_i18n_path("agent.expert_asking_agent.steps.expert_response.name"),
+        description=AgentLocaleString.from_i18n_path("agent.expert_asking_agent.steps.expert_response.description"),
         icon="mage:message-question-mark",
     )
     async def expert_response_step(
@@ -126,9 +126,9 @@ class ExpertAskingAgent(Agent):
             )
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.expert_asking.response_sufficient_router.name"),
+        name=AgentLocaleString.from_i18n_path("agent.expert_asking_agent.steps.response_sufficient_router.name"),
         description=AgentLocaleString.from_i18n_path(
-            "agent.steps.expert_asking.response_sufficient_router.description"
+            "agent.expert_asking_agent.steps.response_sufficient_router.description"
         ),
         icon="mage:message",
     )
@@ -172,8 +172,8 @@ class ExpertAskingAgent(Agent):
         return event
 
     @step(
-        name=AgentLocaleString.from_i18n_path("agent.steps.expert_asking.follow_up_question.name"),
-        description=AgentLocaleString.from_i18n_path("agent.steps.expert_asking.follow_up_question.description"),
+        name=AgentLocaleString.from_i18n_path("agent.expert_asking_agent.steps.follow_up_question.name"),
+        description=AgentLocaleString.from_i18n_path("agent.expert_asking_agent.steps.follow_up_question.description"),
         icon="mage:user-cross",
     )
     async def follow_up_question(
