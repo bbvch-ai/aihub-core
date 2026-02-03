@@ -1,5 +1,8 @@
 <template>
-  <div v-if="isAgentAdmin" class="">
+  <div
+    v-if="isAgentAdmin"
+    class=""
+  >
     <h1 class="w-full pb-32 pt-72 text-center text-6xl">
       {{ t('welcome') }}
     </h1>
@@ -29,4 +32,3 @@ watch(
   { immediate: true },
 )
 </script>
-
