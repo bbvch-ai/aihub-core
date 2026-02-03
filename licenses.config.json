@@ -51,7 +51,10 @@
       "Elastic-2.0",
       "Mozilla Public License",
       "MPL",
-      "LGPL"
+      "LGPL",
+      "CC0-1.0",
+      "CC-BY-4.0",
+      "BlueOak-1.0.0"
     ],
     "unknown": [
       "UNKNOWN",
@@ -121,6 +124,24 @@
       "license": "Proprietary",
       "status": "✅",
       "notes": "Approved for use per Microsoft's terms of service."
+    },
+    {
+      "name": "node-forge",
+      "license": "(BSD-3-Clause OR GPL-2.0)",
+      "status": "✅",
+      "notes": "Dual-licensed; using under BSD-3-Clause (permissive)."
+    },
+    {
+      "name": "copy-paste",
+      "license": "MIT",
+      "status": "✅",
+      "notes": "MIT license per package.json; npm reports Unknown due to missing SPDX in older format."
+    },
+    {
+      "name": "vue3-apexcharts",
+      "license": "MIT",
+      "status": "✅",
+      "notes": "MIT license per GitHub repo; npm reports Unknown due to missing license field."
     }
   ],
   "docker_licenses": [
