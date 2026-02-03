@@ -310,7 +310,7 @@ class OpenaiService:
             )
         files = OpenaiService._extract_files(chat_completion_request)
 
-        await UsageLimitService.check_and_raise(redis, user, ResourceType.AGENT, agent_class, agent_id, locale=locale or "en")
+        await UsageLimitService.check_and_raise(redis, user, ResourceType.AGENT, agent_class, agent_id, locale=locale)
 
         resources: JsonResources = await ChatService.start_json_chat_interaction(
             user=user,
@@ -375,7 +375,7 @@ class OpenaiService:
             )
         files = OpenaiService._extract_files(chat_completion_request)
 
-        await UsageLimitService.check_and_raise(redis, user, ResourceType.AGENT, agent_class, agent_id, locale=locale or "en")
+        await UsageLimitService.check_and_raise(redis, user, ResourceType.AGENT, agent_class, agent_id, locale=locale)
 
         resources: StreamingResources = await ChatService.start_stream_chat_interaction(
             user=user,
