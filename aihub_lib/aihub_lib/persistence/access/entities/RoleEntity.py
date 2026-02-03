@@ -42,6 +42,15 @@ class RoleEntity(Document):
     access_rules = ListField(StringField(), default=list)
     usage_limits = EmbeddedDocumentListField(UsageLimit, default=list)
 
+    def clean(self) -> None:
+        """Reject duplicate (pattern, period) combinations in usage_limits."""
+        seen: set[tuple[str, str]] = set()
+        for limit in self.usage_limits:
+            key = (limit.pattern, limit.period)
+            if key in seen:
+                raise ValidationError(f"Duplicate usage limit: pattern '{limit.pattern}' with period '{limit.period}'")
+            seen.add(key)
+
     @classmethod
     @trace_fn
     def get_role_by_name(cls, role_name: str) -> RoleEntity | None:

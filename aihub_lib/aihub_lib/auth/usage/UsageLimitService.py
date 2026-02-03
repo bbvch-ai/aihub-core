@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime, timedelta
 
 from redis.asyncio import Redis
@@ -12,6 +13,7 @@ from aihub_lib.auth.usage.usage_limit_models import (
     UsageLimitPeriod,
     UsageStatus,
 )
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 _CHECK_AND_INCREMENT_SCRIPT = """
@@ -125,8 +127,8 @@ class UsageLimitService:
     @staticmethod
     async def _batch_resolve_reset_at(redis: Redis, keys: list[str]) -> list[datetime | None]:
         """Batch fetch TTLs for multiple keys and convert to reset timestamps."""
-        import asyncio
-
+        if not keys:
+            return []
         ttls = await asyncio.gather(*[redis.ttl(key) for key in keys])
         return [UsageLimitService._ttl_to_reset_at(ttl) for ttl in ttls]
 
@@ -182,81 +184,36 @@ class UsageLimitService:
         return UsageLimitService._matching_limits_for_resource(all_role_limits, resource_path)
 
     @staticmethod
-    def _is_more_permissive(candidate: RoleUsageLimit, existing: RoleUsageLimit) -> bool:
-        """Higher limit wins; on tie, shorter period wins (same count in less time = higher allowed rate)."""
-        if candidate.limit != existing.limit:
-            return candidate.limit > existing.limit
-        return UsageLimitPeriod(candidate.period).seconds < UsageLimitPeriod(existing.period).seconds
-
-    @staticmethod
     def _most_permissive_limit(
         all_role_limits: list[list[RoleUsageLimit]],
     ) -> list[RoleUsageLimit]:
         """Without a resource path, return the single most permissive rule across all roles."""
         best: RoleUsageLimit | None = None
-
         for role_limits in all_role_limits:
-            for role_limit in role_limits:
-                if best is None or UsageLimitService._is_more_permissive(role_limit, best):
-                    best = role_limit
-
-        if best is None:
-            return []
-        return [RoleUsageLimit(pattern=best.pattern, limit=best.limit, period=best.period)]
-
-    @staticmethod
-    def _most_restrictive_per_role(
-        role_limits: list[RoleUsageLimit],
-        resource_path: str,
-    ) -> dict[tuple[str, UsageLimitPeriod], RoleUsageLimit]:
-        """Within a single role, keep only the most restrictive limit per (pattern, period)."""
-        best: dict[tuple[str, UsageLimitPeriod], RoleUsageLimit] = {}
-        for role_limit in role_limits:
-            if not UsageLimitService._pattern_matches(role_limit.pattern, resource_path):
-                continue
-            key = (role_limit.pattern, role_limit.period)
-            if key not in best or role_limit.limit < best[key].limit:
-                best[key] = role_limit
-        return best
-
-    @staticmethod
-    def _merge_across_roles(
-        per_role_best: list[dict[tuple[str, UsageLimitPeriod], RoleUsageLimit]],
-    ) -> list[RoleUsageLimit]:
-        """Across roles, the most permissive limit wins for each (pattern, period)."""
-        merged: dict[tuple[str, UsageLimitPeriod], RoleUsageLimit] = {}
-        for role_best in per_role_best:
-            for key, role_limit in role_best.items():
-                if key not in merged or UsageLimitService._is_more_permissive(role_limit, merged[key]):
-                    merged[key] = role_limit
-        return [
-            RoleUsageLimit(pattern=role_limit.pattern, limit=role_limit.limit, period=role_limit.period)
-            for role_limit in merged.values()
-        ]
+            for limit in role_limits:
+                if best is None or limit.limit > best.limit:
+                    best = limit
+        return [best] if best else []
 
     @staticmethod
     def _matching_limits_for_resource(
         all_role_limits: list[list[RoleUsageLimit]],
         resource_path: str,
     ) -> list[RoleUsageLimit]:
-        """Collect matching patterns with two-phase deduplication.
+        """Collect matching limits, taking the most permissive (highest) per (pattern, period).
 
-        1. **Within** a single role: duplicate (pattern, period) pairs are reduced to the
-           most restrictive (lowest limit) — the admin intended the tighter constraint.
-        2. **Across** roles: the same (pattern, period) is resolved to the most permissive
-           (highest limit) — roles grant capabilities.
+        RoleEntity.clean() guarantees no duplicate (pattern, period) within a role,
+        so we only need to merge across roles — highest limit wins.
         """
-        per_role_best = [
-            role_best
-            for role_limits in all_role_limits
-            if role_limits
-            if (role_best := UsageLimitService._most_restrictive_per_role(role_limits, resource_path))
-        ]
-
-        if not per_role_best:
-            return []
-
-        return UsageLimitService._merge_across_roles(per_role_best)
+        merged: dict[tuple[str, str], RoleUsageLimit] = {}
+        for role_limits in all_role_limits:
+            for limit in role_limits:
+                if not UsageLimitService._pattern_matches(limit.pattern, resource_path):
+                    continue
+                key = (limit.pattern, limit.period)
+                if key not in merged or limit.limit > merged[key].limit:
+                    merged[key] = limit
+        return list(merged.values())
 
     @staticmethod
     @trace_fn
@@ -319,23 +276,23 @@ class UsageLimitService:
         if not effective_limits:
             return UsageStatus(limits=[], is_exceeded=False)
 
-        keys = [UsageLimitService._build_redis_key(user_id, el.pattern, el.period) for el in effective_limits]
+        keys = [UsageLimitService._build_redis_key(user_id, limit.pattern, limit.period) for limit in effective_limits]
         # ARGV alternates: limit1, ttl1, limit2, ttl2, ...
-        argv = []
-        for el in effective_limits:
-            argv.append(str(el.limit))
-            argv.append(str(el.period.seconds))
+        argv: list[str] = []
+        for limit in effective_limits:
+            argv.append(str(limit.limit))
+            argv.append(str(limit.period.seconds))
 
         result = await redis.eval(_CHECK_AND_INCREMENT_SCRIPT, len(keys), *keys, *argv)
         exceeded_flag = int(result[0])
-        counts = [int(result[i + 1]) for i in range(len(effective_limits))]
+        counts = [int(count) for count in result[1:]]
         post_increment = exceeded_flag == 0
 
         reset_ats = await UsageLimitService._batch_resolve_reset_at(redis, keys)
 
         limit_statuses = [
-            UsageLimitService._build_limit_status(el, count, reset_at, post_increment=post_increment)
-            for el, count, reset_at in zip(effective_limits, counts, reset_ats)
+            UsageLimitService._build_limit_status(limit, count, reset_at, post_increment=post_increment)
+            for limit, count, reset_at in zip(effective_limits, counts, reset_ats)
         ]
 
         return UsageStatus(
@@ -351,7 +308,7 @@ class UsageLimitService:
         resource_type: ResourceType,
         resource_class: str,
         resource_id: str,
-        locale: str = "en",
+        locale: str | None = None,
     ) -> UsageStatus:
         """Check usage limits, increment counters, and raise HTTP 429 if exceeded.
 
@@ -367,8 +324,9 @@ class UsageLimitService:
             redis, user.id, user.roles, resource_path=resource_path
         )
         if usage_status.is_exceeded:
+            effective_locale = locale or LocaleHandler.DEFAULT_LOCALE
             raise HTTPException(
                 status_code=429,
-                detail=build_exceeded_detail(usage_status, locale=locale).model_dump(),
+                detail=build_exceeded_detail(usage_status, locale=effective_locale).model_dump(),
             )
         return usage_status

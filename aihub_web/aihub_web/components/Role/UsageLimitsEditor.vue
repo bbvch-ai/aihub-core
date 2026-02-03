@@ -41,8 +41,8 @@
         </thead>
         <tbody>
           <tr
-            v-for="ul in limits"
-            :key="ul.pattern"
+            v-for="(ul, index) in limits"
+            :key="`${ul.pattern}-${ul.period}-${index}`"
             class="border-b border-surface-200 dark:border-surface-700"
           >
             <td class="py-2">
@@ -56,7 +56,7 @@
               {{ ul.limit }} {{ t('role.calls_per') }}
             </td>
             <td class="py-2">
-              {{ periodLabelMap[ul.period] ?? ul.period }}
+              {{ getPeriodLabel(ul.period) }}
             </td>
             <td class="py-2 text-end">
               <Button
@@ -65,7 +65,7 @@
                 variant="text"
                 rounded
                 size="small"
-                @click="remove(ul.pattern)"
+                @click="remove(ul.pattern, ul.period)"
               />
             </td>
           </tr>
@@ -75,7 +75,7 @@
             <td class="py-2">
               <div class="flex items-center">
                 <span class="whitespace-nowrap rounded-l border border-r-0 border-surface-300 bg-surface-100 px-2 py-1.5 text-xs text-muted-color dark:border-surface-600 dark:bg-surface-800">
-                  aihub.user.agent.
+                  {{ AGENT_PREFIX }}
                 </span>
                 <InputText
                   v-model="newPattern"
@@ -87,7 +87,7 @@
             </td>
             <td class="py-2">
               <InputText
-                v-model.number="newLimitStr"
+                v-model.number="newLimit"
                 type="number"
                 min="1"
                 :placeholder="t('role.usage_limit_value')"
@@ -115,7 +115,7 @@
                 icon="pi pi-plus"
                 :label="t('role.add_button')"
                 size="small"
-                :disabled="!newPattern || !newLimitStr || !newPeriod"
+                :disabled="!canAdd"
                 @click="add"
               />
             </td>
@@ -134,58 +134,47 @@ import type { UsageLimitDTO } from '@core/sdk/client'
 const { t } = useI18n()
 
 const AGENT_PREFIX = 'aihub.user.agent.'
+const PERIOD_VALUES = ['1h', '1d', '7d', '1mo'] as const
 
 const limits = defineModel<UsageLimitDTO[]>('limits', { required: true })
 
-const hasLimits = ref(!!limits.value.length)
-
 const isUnlimited = computed({
-  get: () => !hasLimits.value,
+  get: () => limits.value.length === 0,
   set: (val: boolean) => {
-    hasLimits.value = !val
     if (val) {
       limits.value = []
     }
   },
 })
 
-watch(() => limits.value.length, (len) => {
-  hasLimits.value = !!len
-})
+const periodOptions = computed(() =>
+  PERIOD_VALUES.map(value => ({ value, label: t(`period.${value}`) })),
+)
 
-const periodOptions = [
-  { label: t('period.1h'), value: '1h' },
-  { label: t('period.1d'), value: '1d' },
-  { label: t('period.7d'), value: '7d' },
-  { label: t('period.1mo'), value: '1mo' },
-]
-
-const periodLabelMap: Record<string, string> = {
-  '1h': t('period.1h'),
-  '1d': t('period.1d'),
-  '7d': t('period.7d'),
-  '1mo': t('period.1mo'),
-}
+const getPeriodLabel = (period: string): string => t(`period.${period}`)
 
 const newPattern = ref('>')
-const newLimitStr = ref<number | string>(100)
-const newPeriod = ref('1d')
+const newLimit = ref<number>(100)
+const newPeriod = ref<string>('1d')
+
+const canAdd = computed(() => {
+  if (!newPattern.value || !newLimit.value || newLimit.value < 1 || !newPeriod.value) {
+    return false
+  }
+  const fullPattern = `${AGENT_PREFIX}${newPattern.value}`
+  return !limits.value.some(ul => ul.pattern === fullPattern && ul.period === newPeriod.value)
+})
 
 const add = () => {
-  const limit = Number(newLimitStr.value)
-  if (!newPattern.value || !limit || !newPeriod.value) return
+  if (!canAdd.value) return
   const fullPattern = `${AGENT_PREFIX}${newPattern.value}`
-  const duplicate = limits.value.some(
-    ul => ul.pattern === fullPattern && ul.period === newPeriod.value,
-  )
-  if (duplicate) return
-  limits.value.push({ pattern: fullPattern, limit, period: newPeriod.value })
+  limits.value.push({ pattern: fullPattern, limit: newLimit.value, period: newPeriod.value })
   newPattern.value = '>'
-  newLimitStr.value = 100
+  newLimit.value = 100
   newPeriod.value = '1d'
 }
 
-const remove = (pattern: string) => {
-  limits.value = limits.value.filter(ul => ul.pattern !== pattern)
+const remove = (pattern: string, period: string) => {
+  limits.value = limits.value.filter(ul => !(ul.pattern === pattern && ul.period === period))
 }
 </script>

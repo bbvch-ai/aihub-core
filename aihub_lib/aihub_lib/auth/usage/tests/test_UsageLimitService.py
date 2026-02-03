@@ -568,25 +568,8 @@ class TestPeriodConstants:
         assert UsageLimitPeriod.ONE_MONTH.seconds == 2592000
 
 
-class TestDuplicatePatternWithinSameRole:
-    """Duplicate patterns within a single role should resolve to the most restrictive."""
-
-    @patch("aihub_lib.persistence.access.entities.RoleEntity.RoleEntity")
-    def test_same_pattern_within_role_picks_lowest_limit(self, mock_role_entity: MagicMock):
-        """Two identical patterns on one role: the tighter limit (20) wins over the looser one (100)."""
-        mock_role_entity.get_usage_limits_for_roles.return_value = [
-            [
-                rl(f"{AGENT_PREFIX}>", 100, "1d"),
-                rl(f"{AGENT_PREFIX}>", 20, "1d"),
-            ],
-        ]
-
-        limits = UsageLimitService.get_effective_limits_for_roles(
-            ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
-        )
-
-        assert len(limits) == 1
-        assert limits[0].limit == 20
+class TestPatternPeriodCombinations:
+    """Tests for (pattern, period) handling - duplicates prevented at RoleEntity level."""
 
     @patch("aihub_lib.persistence.access.entities.RoleEntity.RoleEntity")
     def test_same_pattern_different_periods_kept_independently(self, mock_role_entity: MagicMock):
@@ -603,28 +586,9 @@ class TestDuplicatePatternWithinSameRole:
         )
 
         assert len(limits) == 2
-        periods = {el.period for el in limits}
+        periods = {limit.period for limit in limits}
         assert "1d" in periods
         assert "1h" in periods
-
-    @patch("aihub_lib.persistence.access.entities.RoleEntity.RoleEntity")
-    def test_same_pattern_within_role_lowest_wins_then_cross_role_highest_wins(self, mock_role_entity: MagicMock):
-        """
-        Role A: > = 100/day and > = 20/day → intra-role dedup picks 20
-        Role B: > = 50/day
-        Cross-role merge: max(20, 50) = 50
-        """
-        mock_role_entity.get_usage_limits_for_roles.return_value = [
-            [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}>", 20, "1d")],
-            [rl(f"{AGENT_PREFIX}>", 50, "1d")],
-        ]
-
-        limits = UsageLimitService.get_effective_limits_for_roles(
-            ["roleA", "roleB"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
-        )
-
-        assert len(limits) == 1
-        assert limits[0].limit == 50
 
 
 class TestCheckAndRaise:
