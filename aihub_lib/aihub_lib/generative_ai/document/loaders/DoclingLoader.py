@@ -342,7 +342,7 @@ class DoclingLoader(BaseReader):
         """Execute the async conversion request and poll for completion."""
         try:
             async with httpx.AsyncClient(timeout=self._get_httpx_timeout()) as client:
-                logger.debug(f"[DoclingLoader] Submitting async job to {self.config.BASE_API_URL} for: {filename}")
+                logger.debug(f"[DoclingLoader] Submitting async job to {self.config.API_BASE_URL} for: {filename}")
                 response = await client.post(
                     f"{self.config.API_BASE_URL}/v1/convert/source/async",
                     json=request_body,
@@ -498,7 +498,7 @@ class DoclingLoader(BaseReader):
         delay = self.config.CLEAR_RESULTS_DELAY
         try:
             response = await client.get(
-                f"{self.config.BASE_API_URL}/v1/clear/results",
+                f"{self.config.API_BASE_URL}/v1/clear/results",
                 params={"older_than": delay},
                 headers={"Content-Type": "application/json"},
             )

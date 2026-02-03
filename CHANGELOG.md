@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.260.1] - 2026-02-03 - API Configuration Standardization for Docling Loader
+
+### Refactor
+
+- 🧹 **Standardized API Base URL Configuration:** Renamed the internal configuration variable for the Docling API base
+  URL from `BASE_API_URL` to `API_BASE_URL` within the `DoclingLoader` for improved consistency and clarity in the
+  codebase.
+
+---
+
 ## [v0.260.0] - 2026-02-02 - Enhanced Memory Management and Agent Context
 
 ### Added
