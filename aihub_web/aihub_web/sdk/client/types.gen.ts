@@ -3546,6 +3546,11 @@ export type CreateRoleRequest = {
      * A list of access rules granted by this role.
      */
     access_rules?: Array<string>;
+    /**
+     * Usage Limits
+     * Pattern-based usage limit rules.
+     */
+    usage_limits?: Array<UsageLimitDto>;
 };
 
 /**
@@ -11355,6 +11360,11 @@ export type RoleResponse = {
      * The list of access rules for the role.
      */
     access_rules: Array<string>;
+    /**
+     * Usage Limits
+     * Pattern-based usage limit rules.
+     */
+    usage_limits?: Array<UsageLimitDto>;
 };
 
 /**
@@ -14277,6 +14287,11 @@ export type UpdateRoleRequest = {
      * The new list of access rules.
      */
     access_rules?: Array<string> | null;
+    /**
+     * Usage Limits
+     * Pattern-based usage limit rules.
+     */
+    usage_limits?: Array<UsageLimitDto> | null;
 };
 
 /**
@@ -14323,6 +14338,44 @@ export type UsageInputTokensDetails = {
     text_tokens: number;
     [key: string]: unknown | number;
 };
+
+/**
+ * UsageLimitDTO
+ * Pattern-based usage limit rule.
+ */
+export type UsageLimitDto = {
+    /**
+     * Pattern
+     * Full dotted resource pattern with wildcards (e.g. 'aihub.user.agent.>', 'aihub.user.process.MyProcess.*').
+     */
+    pattern: string;
+    /**
+     * Limit
+     * Max calls per period for this pattern.
+     */
+    limit: number;
+    /**
+     * Period for limit: 1h, 1d, 7d, 1mo.
+     */
+    period: UsageLimitPeriod;
+};
+
+/**
+ * UsageLimitPeriod
+ * Supported usage limit periods.
+ */
+export type UsageLimitPeriod = '1h' | '1d' | '7d' | '1mo';
+
+/**
+ * UsageLimitPeriod
+ * Supported usage limit periods.
+ */
+export const UsageLimitPeriod = {
+    '1H': '1h',
+    '1D': '1d',
+    '7D': '7d',
+    '1MO': '1mo'
+} as const;
 
 /**
  * UsageTokens

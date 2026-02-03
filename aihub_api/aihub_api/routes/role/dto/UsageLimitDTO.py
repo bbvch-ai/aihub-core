@@ -14,7 +14,7 @@ class UsageLimitDTO(BaseModel):
             "(e.g. 'aihub.user.agent.>', 'aihub.user.process.MyProcess.*'). "
         ),
     ]
-    limit: Annotated[int, Field(ge=0, description="Max calls per period for this pattern.")]
+    limit: Annotated[int, Field(ge=1, description="Max calls per period for this pattern.")]
     period: Annotated[UsageLimitPeriod, Field(description="Period for limit: 1h, 1d, 7d, 1mo.")]
 
     @field_validator("pattern")

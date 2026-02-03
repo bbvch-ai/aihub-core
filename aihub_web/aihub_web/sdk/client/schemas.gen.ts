@@ -4334,6 +4334,15 @@ export const CreateRoleRequestSchema = {
             title: 'Access Rules',
             description: 'A list of access rules granted by this role.',
             default: []
+        },
+        usage_limits: {
+            items: {
+                '$ref': '#/components/schemas/UsageLimitDTO'
+            },
+            type: 'array',
+            title: 'Usage Limits',
+            description: 'Pattern-based usage limit rules.',
+            default: []
         }
     },
     type: 'object',
@@ -10955,7 +10964,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1770020744
+            default: 1770123001
         },
         owned_by: {
             type: 'string',
@@ -13814,6 +13823,15 @@ export const RoleResponseSchema = {
             type: 'array',
             title: 'Access Rules',
             description: 'The list of access rules for the role.'
+        },
+        usage_limits: {
+            items: {
+                '$ref': '#/components/schemas/UsageLimitDTO'
+            },
+            type: 'array',
+            title: 'Usage Limits',
+            description: 'Pattern-based usage limit rules.',
+            default: []
         }
     },
     type: 'object',
@@ -16876,6 +16894,21 @@ export const UpdateRoleRequestSchema = {
             ],
             title: 'Access Rules',
             description: 'The new list of access rules.'
+        },
+        usage_limits: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/UsageLimitDTO'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Usage Limits',
+            description: 'Pattern-based usage limit rules.'
         }
     },
     type: 'object',
@@ -16934,6 +16967,37 @@ export const UsageInputTokensDetailsSchema = {
     type: 'object',
     required: ['image_tokens', 'text_tokens'],
     title: 'UsageInputTokensDetails'
+} as const;
+
+export const UsageLimitDTOSchema = {
+    properties: {
+        pattern: {
+            type: 'string',
+            title: 'Pattern',
+            description: "Full dotted resource pattern with wildcards (e.g. 'aihub.user.agent.>', 'aihub.user.process.MyProcess.*'). "
+        },
+        limit: {
+            type: 'integer',
+            minimum: 1,
+            title: 'Limit',
+            description: 'Max calls per period for this pattern.'
+        },
+        period: {
+            '$ref': '#/components/schemas/UsageLimitPeriod',
+            description: 'Period for limit: 1h, 1d, 7d, 1mo.'
+        }
+    },
+    type: 'object',
+    required: ['pattern', 'limit', 'period'],
+    title: 'UsageLimitDTO',
+    description: 'Pattern-based usage limit rule.'
+} as const;
+
+export const UsageLimitPeriodSchema = {
+    type: 'string',
+    enum: ['1h', '1d', '7d', '1mo'],
+    title: 'UsageLimitPeriod',
+    description: 'Supported usage limit periods.'
 } as const;
 
 export const UsageTokensSchema = {
