@@ -260,18 +260,22 @@ class AuthenticationService:
         self,
         user_name: Annotated[str, "User's name"],
         user_email: Annotated[str, "User's email address"],
+        accept_language: Annotated[str | None, "Accept-Language header value"] = None,
     ) -> Annotated[dict[str, str], "HTTP headers with authentication"]:
         """Prepare authenticated request headers"""
         clean_username = urllib.parse.quote(user_name, safe="") if user_name else ""
         signature = self.sign_user_headers(clean_username, user_email)
 
-        return {
+        headers = {
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
             "X-OpenWebUI-User-Name": clean_username,
             "X-OpenWebUI-User-Email": user_email,
             "X-OpenWebUI-Signature": signature,
         }
+        if accept_language:
+            headers["Accept-Language"] = accept_language
+        return headers
 
 
 # ============================================================================
@@ -962,10 +966,6 @@ class EventProcessorFactory:
 class StreamingService:
     """Manages streaming operations and SSE processing"""
 
-    # Supported languages for error messages
-    SUPPORTED_LANGUAGES = {"en", "de", "fr", "it"}
-    DEFAULT_LANGUAGE = "en"
-
     def __init__(
         self,
         base_url: Annotated[str, "AI-Hub base URL"],
@@ -974,25 +974,6 @@ class StreamingService:
         self._base_url = base_url
         self._timeout = timeout
         self._event_processor = EventProcessorFactory.create_chain()
-
-    @staticmethod
-    def detect_language(accept_language: Annotated[str | None, "Accept-Language header value"]) -> str:
-        """
-        Detect preferred language from Accept-Language header.
-        Returns the best matching supported language or default (en).
-        """
-        if not accept_language:
-            return StreamingService.DEFAULT_LANGUAGE
-
-        # Parse Accept-Language header (e.g., "de-CH,de;q=0.9,en;q=0.8")
-        for part in accept_language.split(","):
-            lang = part.split(";")[0].strip().lower()
-            # Extract base language (e.g., "de-CH" -> "de")
-            base_lang = lang.split("-")[0]
-            if base_lang in StreamingService.SUPPORTED_LANGUAGES:
-                return base_lang
-
-        return StreamingService.DEFAULT_LANGUAGE
 
     def build_endpoint_url(
         self,
@@ -1020,7 +1001,6 @@ class StreamingService:
         event_caller: Annotated[EventCaller, "Event caller function"],
         state_manager: Annotated[StreamingStateManager, "State manager"],
         stream_start_callback: Annotated[Callable | None, "Stream start callback"] = None,
-        preferred_lang: Annotated[str, "Preferred language for error messages"] = "en",
     ) -> None:
         """Stream an event and process responses"""
         endpoint_url = self.build_endpoint_url(agent_class, agent_id, event_name, thread_id, display_id)
@@ -1048,7 +1028,6 @@ class StreamingService:
                     headers,
                     context,
                     stream_start_callback,
-                    preferred_lang,
                 )
 
                 if result and result.get("type") == "error":
@@ -1089,7 +1068,6 @@ class StreamingService:
         headers: Annotated[dict[str, str], "Request headers"],
         context: Annotated[EventContext, "Processing context"],
         stream_start_callback: Annotated[Callable | None, "Stream start callback"] = None,
-        preferred_lang: Annotated[str, "Preferred language for errors"] = "en",
     ) -> Annotated[dict[str, Any] | None, "Error info or usage warning info, None on success without warning"]:
         """Process the SSE stream. Returns dict with error or usage_warning info, None on plain success."""
         async with client.stream("POST", url, json=payload, headers=headers) as response:
@@ -1101,7 +1079,6 @@ class StreamingService:
                     "type": "error",
                     "status_code": response.status_code,
                     "body": error_body.decode(),
-                    "preferred_lang": preferred_lang,
                 }
 
             # Check for usage warning headers
@@ -1153,7 +1130,7 @@ class StreamingService:
 
     async def _handle_http_error_from_info(
         self,
-        error_info: Annotated[dict[str, Any], "Error info with status_code, body, preferred_lang"],
+        error_info: Annotated[dict[str, Any], "Error info with status_code and body"],
         emitter: Annotated[EventEmitter, "Event emitter"],
     ) -> None:
         """Handle HTTP errors using the pre-formatted message from the API response."""
@@ -1231,7 +1208,6 @@ class StreamingService:
         context: Annotated[EventContext, "Original context"],
         agent_class: Annotated[str, "Agent class identifier"],
         agent_id: Annotated[str, "Agent instance identifier"],
-        preferred_lang: Annotated[str, "Preferred language"] = "en",
     ) -> None:
         """Send HITL response back to agent"""
         await self.stream_response(
@@ -1245,7 +1221,6 @@ class StreamingService:
             context.emitter,
             context.caller,
             context.state_manager,
-            preferred_lang=preferred_lang,
         )
 
 
@@ -1523,19 +1498,6 @@ class Pipe:
 
         await event_caller({"type": "execute", "data": {"code": code}})
 
-    def _get_preferred_language(
-        self,
-        request: Annotated[Any, "HTTP request object"],
-    ) -> Annotated[str, "Preferred language code"]:
-        """Extract preferred language from request Accept-Language header."""
-        if request is None:
-            return StreamingService.DEFAULT_LANGUAGE
-        try:
-            accept_lang = request.headers.get("Accept-Language", "")
-            return StreamingService.detect_language(accept_lang)
-        except Exception:
-            return StreamingService.DEFAULT_LANGUAGE
-
     async def _check_open_chat_hitl(
         self,
         thread_id: Annotated[str, "Thread ID"],
@@ -1588,8 +1550,9 @@ class Pipe:
                 logger.debug(f"Processing request for {agent_class}.{agent_id}")
                 logger.debug(f"Thread ID: {thread_id}, Display ID: {display_id}")
 
-                # Prepare authentication
-                headers = self._auth_service.prepare_headers(__user__["name"], __user__["email"])
+                # Prepare authentication (forward Accept-Language for localized error messages)
+                accept_language = __request__.headers.get("Accept-Language") if __request__ else None
+                headers = self._auth_service.prepare_headers(__user__["name"], __user__["email"], accept_language)
                 inject(headers)
 
                 # Convert messages
@@ -1645,9 +1608,6 @@ class Pipe:
                 async def stream_start_callback():
                     await self._set_ui_context(thread_id, hitl_display_id, __event_call__)
 
-                # Detect preferred language for error messages
-                preferred_lang = self._get_preferred_language(__request__)
-
                 # Stream the conversation
                 await self._streaming_service.stream_response(
                     agent_class,
@@ -1661,7 +1621,6 @@ class Pipe:
                     __event_call__,
                     state_manager,
                     stream_start_callback,
-                    preferred_lang,
                 )
 
                 # Emit completion status
