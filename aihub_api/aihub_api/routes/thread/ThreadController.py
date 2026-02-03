@@ -40,7 +40,7 @@ class ThreadController(Controller):
 
     name = ApiLocaleString.from_i18n_path("api.controllers.thread.name")
     description = ApiLocaleString.from_i18n_path("api.controllers.thread.description")
-    icon = "mage:message"
+    icon = "mage:message-information"
 
     not_authorized_to_view_exception = HTTPException(status_code=403, detail="Not authorized to view this thread")
     not_authorized_to_modify_exception = HTTPException(status_code=403, detail="Not authorized to modify this thread")

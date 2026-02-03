@@ -58,7 +58,7 @@ class OpenaiController(Controller):
 
     name = ApiLocaleString.from_i18n_path("api.controllers.openai.name")
     description = ApiLocaleString.from_i18n_path("api.controllers.openai.description")
-    icon = "mage:robot"
+    icon = "mage:message-conversation"
 
     def __init__(
         self,

@@ -6,7 +6,7 @@
   >
     <template #icon>
       <Icon
-        name="mage:layout-grid"
+        name="mage:dots-menu"
         size="xl"
       />
     </template>
@@ -59,10 +59,10 @@
           v-for="app in shownApps"
           :key="app.path"
           :class="[
-            'rounded-2xl border p-3 transition-colors',
+            'rounded-2xl border  p-3 transition-colors hover:border-primary-500 dark:border-primary-900  hover:dark:border-primary-400',
             isActiveApp(app.path)
-              ? 'border-primary-500 bg-primary-500/10 dark:border-primary-400 dark:bg-primary-400/10'
-              : 'hover:bg-surface-500/5 dark:border-surface-700',
+              ? 'bg-surface-200 dark:bg-surface-800'
+              : 'bg-surface-100 dark:bg-surface-900',
           ]"
         >
           <nuxt-link-locale
@@ -70,16 +70,14 @@
             class="flex h-[50px] items-center justify-center"
             @click="toggle"
           >
-            <div class="flex h-[60px] min-w-[80px] flex-col items-center justify-center gap-2 ">
+            <div class="flex h-[60px] min-w-[80px] flex-col items-center justify-center gap-2">
               <Icon
                 :name="app.icon"
-                :style="isActiveApp(app.path) ? 'color: var(--p-primary-500)' : 'color: #9c9c9c'"
                 class="size-6"
               />
               <p
                 :class="[
                   'text-sm font-medium',
-                  isActiveApp(app.path) ? 'text-primary-500 dark:text-primary-400' : '',
                 ]"
               >
                 {{ app.label }}

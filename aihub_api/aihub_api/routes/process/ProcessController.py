@@ -42,7 +42,7 @@ class ProcessController(Controller):
 
     name = ApiLocaleString.from_i18n_path("api.controllers.process.name")
     description = ApiLocaleString.from_i18n_path("api.controllers.process.description")
-    icon = "mage:broadcast"
+    icon = "mage:arrowlist"
 
     def __init__(
         self, *, auth: AuthHandler, route: str = "/processes", additionally_required_permission: str | None = None
@@ -287,12 +287,16 @@ class ProcessController(Controller):
             process_config = ProcessConfig(
                 process_class=process_class,
                 process_id=process_id,
-                name=config_entity.name.to_locale_string()
-                if config_entity.name
-                else (ProcessConfig.from_entity(default_config).name if default_config else None),
-                description=config_entity.description.to_locale_string()
-                if config_entity.description
-                else (ProcessConfig.from_entity(default_config).description if default_config else None),
+                name=(
+                    config_entity.name.to_locale_string()
+                    if config_entity.name
+                    else (ProcessConfig.from_entity(default_config).name if default_config else None)
+                ),
+                description=(
+                    config_entity.description.to_locale_string()
+                    if config_entity.description
+                    else (ProcessConfig.from_entity(default_config).description if default_config else None)
+                ),
                 icon=config_entity.icon or (class_entity.icon if class_entity else "mage:broadcast"),
             )
 
