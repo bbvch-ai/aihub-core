@@ -1,0 +1,131 @@
+# Étapes RAG partagées (utilisées par RAGAgent et ExpertRAGAgent)
+rag:
+  limit_chat_history:
+    name: "Limiter l'historique du chat"
+    description: "Tronque les messages de chat entrants pour respecter la limite de tokens configurée"
+  condense_standalone_question:
+    name: "Condenser la question autonome"
+    description: "Condense l'historique du chat et la requête utilisateur en une question autonome."
+  few_shot_guard:
+    name: "Garde Few-Shot"
+    description: "Protège la question pour s'assurer qu'elle est appropriée pour l'agent."
+  retrieve_nodes:
+    name: "Récupérer les nœuds"
+    description: "Récupère les nœuds pertinents des sources de connaissances."
+  rerank_nodes:
+    name: "Reclasser les nœuds récupérés"
+    description: "Reclasse les documents récupérés avec un modèle de reclassement pour une meilleure pertinence"
+  order_nodes:
+    name: "Ordonner les nœuds par documents"
+    description: "Ordonne les nœuds récupérés par leurs documents sources."
+  context_sufficient_guard:
+    name: "Garde de contexte suffisant"
+    description: "Protège le contexte pour s'assurer qu'il est suffisant pour générer une réponse."
+  limit_chat_history_with_context:
+    name: "Limiter l'historique avec contexte"
+    description: "Inclut le contexte combiné et tronque à nouveau l'historique du chat."
+  respond_with_llm:
+    name: "Répondre avec LLM"
+    description: "Génère une réponse en utilisant le LLM configuré."
+
+# Étapes spécifiques à ExpertRAGAgent
+expert_rag:
+  handle_insufficient_context:
+    name: "Gérer le contexte insuffisant"
+    description: "Gère le contexte insuffisant en demandant le consentement pour l'expert."
+  consent_answer:
+    name: "Réponse de consentement"
+    description: "L'utilisateur a répondu à la question de consentement."
+  invoke_expert_agent:
+    name: "Invoquer ExpertAskingAgent"
+    description: "Transmet la demande à ExpertAskingAgent qui interrogera les experts."
+  expert_answer_positive:
+    name: "Réponse expert positive"
+    description: "ExpertAskingAgent a pu extraire des informations de l'expert."
+  expert_answer_negative:
+    name: "Réponse expert négative"
+    description: "ExpertAskingAgent n'a PAS pu extraire d'informations de l'expert."
+  expert_answer_error:
+    name: "Erreur réponse expert"
+    description: "ExpertAskingAgent a rencontré une erreur."
+
+# Étapes ExpertAskingAgent
+expert_asking:
+  invoke_expert:
+    name: "Invoquer l'expert"
+    description: "Pose une question à un groupe d'experts."
+  expert_response:
+    name: "Réponse de l'expert"
+    description: "Traite la réponse de l'expert."
+  response_sufficient_router:
+    name: "Routeur de réponse suffisante"
+    description: "Vérifie si l'expert a suffisamment répondu à la question."
+  follow_up_question:
+    name: "Question de suivi"
+    description: "Pose une question de suivi à l'expert car la réponse n'est pas encore suffisante."
+
+# Étapes NamespaceSelectionAgent
+namespace_selection:
+  initialize_determination:
+    name: "Initialiser la détermination de namespace"
+    description: "Récupère les namespaces et initialise la boucle de détermination"
+  determine_namespaces:
+    name: "Déterminer les namespaces"
+    description: "Le LLM analyse la conversation pour déterminer les namespaces"
+  process_follow_up:
+    name: "Traiter le suivi"
+    description: "Traite la réponse de suivi de l'utilisateur et continue la détermination"
+  process_approval_approved:
+    name: "Traiter l'approbation - Approuvé"
+    description: "Enregistre la sélection et transmet à l'agent RAG"
+  process_approval_rejected:
+    name: "Traiter l'approbation - Rejeté"
+    description: "Ajoute le rejet à la conversation et revient à la boucle"
+  rag_response:
+    name: "Réponse RAG"
+    description: "Gère la réponse de l'agent RAG"
+  rag_error:
+    name: "Erreur RAG"
+    description: "Gère l'erreur de l'agent RAG"
+  forward_to_rag:
+    name: "Transmettre au RAG"
+    description: "Transmet la requête à l'agent RAG avec la sélection de namespace"
+
+# Étapes RetrievalAgent
+retrieval:
+  retrieve_nodes:
+    name: "Récupérer les nœuds"
+    description: "Récupère les nœuds pertinents de la base de connaissances."
+  order_nodes:
+    name: "Ordonner les nœuds par documents"
+    description: "Ordonne les nœuds récupérés par leurs documents sources."
+  stop:
+    name: "Étape d'arrêt"
+    description: "Arrête l'agent et retourne les nœuds ordonnés comme messages de contexte."
+
+# Étapes LLMWrappingAgent
+llm_wrapping:
+  start:
+    name: "Traiter le message de l'utilisateur"
+    description: "Transmet le message de l'utilisateur au LLM et diffuse la réponse en continu."
+
+# Étapes FewShotAgent
+few_shot:
+  limit_chat_history:
+    name: "Limiter l'historique du chat"
+    description: "Tronque les messages du chat entrants pour respecter la limite de jetons configurée."
+  agent_suitability_guard:
+    name: "Vérification de l'adéquation de l'agent"
+    description: "Vérifie si l'agent est adapté pour traiter la demande de l'utilisateur."
+  condense_standalone_question:
+    name: "Condenser la question autonome"
+    description: "Condense l'historique du chat et la requête de l'utilisateur en une question autonome."
+  create_few_shot_examples:
+    name: "Créer des exemples Few-Shot"
+    description: "Prépare les exemples Few-Shot et crée le contexte complet pour le LLM."
+  respond_with_llm:
+    name: "Répondre avec LLM"
+    description: "Génère une réponse en utilisant le LLM basé sur des exemples Few-Shot."
+  stop:
+    name: "Arrêter"
+    description: "Arrête l'agent lorsque la demande est rejetée par la vérification d'adéquation."

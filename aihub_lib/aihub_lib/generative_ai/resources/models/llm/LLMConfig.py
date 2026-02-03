@@ -1,44 +1,89 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.llms.openai_like import OpenAILike
 from opentelemetry.propagate import inject
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
 from aihub_lib.generative_ai.resources.models.llm.LiteLLMBase import LiteLLMBase
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
+from aihub_lib.nats.events.form.constraints import Ge, Le
+from aihub_lib.nats.events.form.elements.Checkbox import Checkbox
+from aihub_lib.nats.events.form.elements.InputNumber import InputNumber
+from aihub_lib.nats.events.form.elements.ModelSelect import ModelSelect
+from aihub_lib.nats.events.form.Form import Form
 
 
-class LLMParameter(BaseModel):
+class LLMParameter(Form):
     """
     Parameters for a chat-based LLM.
 
     Chat-oriented models might need parameters controlling randomness, token limits, or repetition.
     By defining them here, we standardize parameter handling and ensure easy customization.
+
+    Supports duality pattern: instantiate with InputNumber/Checkbox for form mode,
+    or with primitive values for data mode.
     """
 
-    temperature: float = Field(
-        default=0.0,
-        description="The temperature to use during generation.",
-        ge=0.0,
-        le=2.0,
-    )
-    logprobs: bool | None = Field(
-        description="Whether to return logprobs per token.",
-        default=None,
-    )
-    top_logprobs: int = Field(
-        description="The number of top token log probs to return.",
-        default=0,
-        ge=0,
-        le=20,
-    )
-    timeout: float = Field(
-        default=600.0,
-        description="The timeout, in seconds, for API requests.",
-        ge=0,
-    )
+    temperature: Annotated[
+        float | InputNumber,
+        Field(default=0.0, description="The temperature to use during generation."),
+        Ge(0.0),
+        Le(2.0),
+    ] = 0.0
+    logprobs: Annotated[
+        bool | None | Checkbox,
+        Field(
+            description="Whether to return logprobs per token.",
+            default=None,
+        ),
+    ] = None
+    top_logprobs: Annotated[
+        int | InputNumber,
+        Field(default=0, description="The number of top token log probs to return."),
+        Ge(0),
+        Le(20),
+    ] = 0
+    timeout: Annotated[
+        float | InputNumber,
+        Field(default=600.0, description="The timeout, in seconds, for API requests."),
+        Ge(0),
+    ] = 600.0
+
+    @classmethod
+    def as_form(cls) -> Self:
+        """Factory method to create a form-mode LLMParameter with input elements."""
+        return cls(
+            temperature=InputNumber(
+                label=LocaleString.from_i18n_path("lib.llm.config.temperature.label"),
+                help=LocaleString.from_i18n_path("lib.llm.config.temperature.help"),
+                min=0.0,
+                max=2.0,
+                step=0.1,
+                value=0.1,
+            ),
+            logprobs=Checkbox(
+                label=LocaleString.from_i18n_path("lib.llm.config.logprobs.label"),
+                help=LocaleString.from_i18n_path("lib.llm.config.logprobs.help"),
+                ref="llm_logprobs_enabled",
+            ),
+            top_logprobs=InputNumber(
+                label=LocaleString.from_i18n_path("lib.llm.config.top_logprobs.label"),
+                help=LocaleString.from_i18n_path("lib.llm.config.top_logprobs.help"),
+                min=0,
+                max=20,
+                step=1,
+                condition_if="$get(llm_logprobs_enabled).value",
+            ),
+            timeout=InputNumber(
+                label=LocaleString.from_i18n_path("lib.llm.config.timeout.label"),
+                help=LocaleString.from_i18n_path("lib.llm.config.timeout.help"),
+                min=0,
+                step=10,
+            ),
+        )
 
 
 class LLMConfig(LiteLLMBase[OpenAILike]):
@@ -49,12 +94,26 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
     ### Why LLMConfig?
     Chat models (like OpenAI's ChatGPT variants) often require parameters like temperature or max_tokens.
     With LLMConfig, we integrate these parameters and the cost tracking mechanism in one place.
+
+    Supports duality pattern for form rendering and data validation.
     """
 
-    model_name: Annotated[str, Field(description="Name of the chat-based LLM model.")]
-    default_parameter: Annotated[LLMParameter, Field(description="Default parameters for the chat-based LLM.")] = (
-        LLMParameter()
-    )
+    default_parameter: Annotated[
+        LLMParameter,
+        Field(description="Default parameters for the chat-based LLM."),
+    ] = LLMParameter()
+
+    @classmethod
+    def as_form(cls) -> Self:
+        """Factory method to create a form-mode LLMConfig."""
+        return cls(
+            model_name=ModelSelect(
+                label=LocaleString.from_i18n_path("lib.llm.config.model.label"),
+                help=LocaleString.from_i18n_path("lib.llm.config.model.help"),
+                mode="chat",
+            ),
+            default_parameter=LLMParameter.as_form(),
+        )
 
     def to_llama_index(self) -> tuple[OpenAILike, LLMCostTracker]:
         """

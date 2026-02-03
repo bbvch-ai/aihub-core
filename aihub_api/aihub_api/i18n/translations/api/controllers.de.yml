@@ -1,0 +1,67 @@
+agent:
+  name: "KI-Assistenten"
+  description: "KI-Assistenten durchsuchen und nutzen"
+
+docling:
+  name: "Dokumentenkonverter"
+  description: "Dokumente in verschiedene Formate konvertieren"
+
+evaluation:
+  name: "Qualitätsprüfung"
+  description: "KI-Assistenten testen und bewerten"
+
+event:
+  name: "Aktivitätsprotokoll"
+  description: "Systemaktivitäten und Ereignisse anzeigen"
+
+file:
+  name: "Dateizugriff"
+  description: "Auf Dateien zugreifen und diese teilen"
+
+i18n:
+  name: "Spracheinstellungen"
+  description: "Verwalten Sie Ihre Spracheinstellungen"
+
+knowledge:
+  name: "Wissensdatenbank"
+  description: "Verwalten Sie Ihre Wissensdatenbank und Dokumente"
+
+model:
+  name: "KI-Modelle"
+  description: "Verfügbare KI-Modelle anzeigen"
+
+notification:
+  name: "Benachrichtigungen"
+  description: "Benachrichtigungen anzeigen und verwalten"
+
+openai:
+  name: "Chat"
+  description: "Gespräche mit KI-Assistenten führen"
+
+process:
+  name: "Arbeitsabläufe"
+  description: "Automatisierte Geschäftsprozesse verwalten"
+
+role:
+  name: "Benutzerrollen"
+  description: "Zugriffsrechte und Rollen konfigurieren"
+
+suite:
+  name: "Plattformübersicht"
+  description: "Plattformfunktionen und Einstellungen anzeigen"
+
+thread:
+  name: "Unterhaltungen"
+  description: "Gesprächsverlauf verwalten"
+
+token:
+  name: "API-Schlüssel"
+  description: "API-Zugriffsschlüssel erstellen und verwalten"
+
+translation:
+  name: "Übersetzung"
+  description: "Text in alle unterstützten Sprachen übersetzen"
+
+user:
+  name: "Mein Konto"
+  description: "Kontoeinstellungen verwalten"

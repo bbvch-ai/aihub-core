@@ -3,14 +3,14 @@
     <div class="flex items-center gap-6 text-sm text-surface-600 dark:text-surface-400">
       <div class="flex items-center gap-2">
         <Icon
-          name="material-symbols:article-outline"
+          name="mage:file"
           class="size-4"
         />
         <span>{{ t('event.retriever.sourceDocument', documentCount) }}</span>
       </div>
       <div class="flex items-center gap-2">
         <Icon
-          name="material-symbols:view-agenda-outline"
+          name="mage:checklist"
           class="size-4"
         />
         <span>{{ t('event.retriever.contentChunk', totalNodeCount) }}</span>
@@ -22,7 +22,7 @@
       class="flex flex-col items-center gap-3 rounded-lg p-8 text-center"
     >
       <Icon
-        name="material-symbols:search-off"
+        name="mage:cancel"
         class="size-8 text-surface-400"
       />
       <div>
@@ -50,7 +50,7 @@
         >
           <div class="flex items-center gap-2">
             <Icon
-              name="material-symbols:article-outline"
+              name="mage:file"
               class="size-4 text-surface-500"
             />
             <h3 class="font-medium text-surface-700 dark:text-surface-300">

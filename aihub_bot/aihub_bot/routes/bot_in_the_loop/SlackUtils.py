@@ -32,7 +32,6 @@ class SlackUtils:
         if not data.get("ok", False):
             raise ValueError(f"auth.test API error: {data.get('error', 'Unknown error')}")
 
-        # Extract the bot_id and team_id from the response
         bot_id = data.get("bot_id")
         team_id = data.get("team_id")
 

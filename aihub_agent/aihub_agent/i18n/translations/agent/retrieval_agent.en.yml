@@ -1,0 +1,4 @@
+metadata:
+  name: Retrieval Agent
+  description: Simplified RAG agent focused on retrieving relevant information from
+    a knowledge base

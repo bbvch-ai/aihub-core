@@ -1,0 +1,91 @@
+metadata:
+  name: Assistant de Navigation Documentaire
+  description: Assistant IA qui vous aide à trouver et sélectionner les bonnes sources
+    de connaissances pour vos questions
+config:
+  bucket_names:
+    label: Bases de connaissances
+    help: Sélectionnez les bases de connaissances à interroger
+  max_conversation_history_entries:
+    label: Max entrées historique
+  approval_message_template:
+    label: Modèle de message d'approbation
+defaults:
+  approval_message_template: 'Sur la base de votre demande, je suggère d''interroger
+    les sources de connaissances suivantes :
+
+
+    {namespaces}
+
+
+    Approuvez-vous cette sélection ?
+
+    '
+delegation_config:
+  rag_agent:
+    label: Agent RAG
+    help: Sélectionnez l'agent RAG auquel transmettre les requêtes
+    class_placeholder: Sélectionner le type d'agent
+    id_placeholder: Sélectionner l'instance de l'agent
+thoughts:
+  fetching_namespaces: Recherche des sources de connaissances disponibles
+  starting_determination: Détermination des sources à consulter
+  analyzing_request: Compréhension de votre demande
+  llm_decision: '%{reasoning}'
+  processing_follow_up: Traitement de votre réponse
+  selection_approved: Sources confirmées
+  selection_rejected: Recherche de sources alternatives
+  forwarding_to_rag: Recherche d'informations pertinentes
+  rag_error: 'Une erreur s''est produite lors de la recherche : %{error_message}'
+messages:
+  default_follow_up: Pourriez-vous fournir plus de détails sur votre demande afin
+    que je puisse déterminer les sources de connaissances les plus pertinentes ?
+  user_rejected_selection: J'ai rejeté la sélection de namespaces proposée. Veuillez
+    suggérer d'autres namespaces.
+  rag_error: Une erreur s'est produite lors du traitement de votre demande. Veuillez
+    réessayer.
+  invalid_selection: 'Votre sélection était invalide. Vous avez sélectionné : %{selected}.
+    Les namespaces disponibles sont : %{available_namespaces}. Veuillez sélectionner
+    uniquement parmi les namespaces disponibles listés.'
+prompts:
+  determination: 'Vous êtes un assistant de sélection de namespaces. Votre tâche est
+    d''analyser la demande d''un utilisateur et de déterminer quelles sources de connaissances
+    (namespaces) seraient les plus pertinentes pour répondre à sa requête.
+
+
+    Historique de la conversation :
+
+    <conversation_history>
+
+    {{ conversation_history }}
+
+    </conversation_history>
+
+
+    <available_namespaces>
+
+    {{ available_namespaces }}
+
+    </available_namespaces>
+
+
+    Instructions :
+
+    1. Si l''intention de l''utilisateur est suffisamment claire pour sélectionner
+    des namespaces spécifiques, définissez has_enough_information=true et fournissez
+    selected_namespaces en associant chaque bucket à exactement un namespace.
+
+    2. Si vous avez besoin de plus d''informations, définissez has_enough_information=false
+    et posez une follow_up_question.
+
+
+    CONTRAINTES CRITIQUES :
+
+    - Chaque bucket DOIT avoir exactement UN namespace sélectionné - ni plus, ni moins.
+
+    - Votre follow_up_question DOIT lister les noms exacts des namespaces de <available_namespaces>
+    ci-dessus comme options.
+
+    - N''inventez PAS de noms - utilisez uniquement les noms réels affichés ci-dessus.
+
+    '

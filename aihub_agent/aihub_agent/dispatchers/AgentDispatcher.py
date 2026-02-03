@@ -11,6 +11,8 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher, EventsAndKwargs
 from aihub_lib.nats.events import BaseEvent, ControlEvent, ExceptionEvent, StartEvent
 from aihub_lib.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent import AgentInTheLoopRequestEvent
+from aihub_lib.nats.events.form.Form import Form
+from aihub_lib.nats.rpc.AgentConfigClient import AgentConfigClient
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
@@ -31,6 +33,37 @@ from aihub_agent.tracing.AgentRunTracer import AgentRunTracer
 logger = logging.getLogger(__name__)
 
 
+def _transform_formkit_arrays(data: Any) -> Any:
+    """
+    Recursively transforms FormKit-style dict arrays back to Python lists.
+
+    FormKit stores arrays as dicts with sequential numeric string keys:
+    {'0': {...}, '1': {...}} -> [{...}, {...}]
+
+    This transformation is needed when loading config from the database.
+
+    To avoid false positives with legitimate dicts that have numeric string keys,
+    we also verify that all values are dicts (FormKit arrays always contain objects).
+    """
+    if isinstance(data, dict):
+        keys = list(data.keys())
+        if keys and all(isinstance(k, str) and k.isdigit() for k in keys):
+            sorted_keys = sorted(keys, key=int)
+            if sorted_keys == [str(i) for i in range(len(keys))]:
+                # Additional check: FormKit arrays contain objects, not primitives
+                # This prevents false positives with dicts like {"0": "value", "1": "other"}
+                values = [data[k] for k in sorted_keys]
+                if all(isinstance(v, dict) for v in values):
+                    return [_transform_formkit_arrays(data[k]) for k in sorted_keys]
+
+        # Regular dict - recursively transform values
+        return {k: _transform_formkit_arrays(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [_transform_formkit_arrays(item) for item in data]
+    else:
+        return data
+
+
 class AgentDispatcher(BaseDispatcher):
     """
     The AgentDispatcher builds on the BaseDispatcher and adds functionality that is only specific to agentic
@@ -43,12 +76,22 @@ class AgentDispatcher(BaseDispatcher):
 
     2. **Tracing and Telemetry:**
         Through `AgentRunTracer`, it logs start/end times of runs and steps, aiding observability.
+
+    3. **Configuration Fetching via RPC:**
+        When processing StartEvents, the dispatcher fetches the agent configuration from the API
+        via NATS request-reply using the agent_id from the event. This decouples configuration
+        management from event payloads.
+
+        The fetched config is merged with non-configurable values (deployment-specific settings)
+        from the local agent_config to produce the final runtime configuration.
     """
 
     def __init__(
         self,
         agent: Annotated[type[Agent], "The agent class defining steps and logic."],
-        default_agent_config: Annotated[AgentConfig, "Configuration object for the agent, including step configs."],
+        agent_config: Annotated[
+            AgentConfig, "Form-mode configuration with FormKit elements and non-configurable values."
+        ],
         nc: Annotated[NATS, "NATS client for messaging."],
         js: Annotated[
             JetStreamContext,
@@ -60,12 +103,18 @@ class AgentDispatcher(BaseDispatcher):
     ):
         super().__init__(nc, js, redis, topic_manager, AgentClassTopic, dispatch_entity_name=agent.__name__)
         self.agent = agent
-        self.default_agent_config = default_agent_config
+        self.agent_config = agent_config
         self.locale_handler = locale_handler
 
-        self.agent_config_type: type[AgentConfig] = self.default_agent_config.__class__
+        self.agent_config_type: type[AgentConfig] = self.agent_config.__class__
+
+        # Pre-compute non-configurable values for merging with incoming configs
+        self._non_configurable_values = agent_config.get_non_configurable_values()
 
         self.agent_run_tracer = AgentRunTracer(redis=redis)
+
+        # Client for fetching agent configuration via NATS RPC
+        self._config_client = AgentConfigClient(nc=nc)
 
     @override
     async def handle_event(
@@ -88,7 +137,16 @@ class AgentDispatcher(BaseDispatcher):
         agent_config_dict: dict[str, Any] | None = None
 
         if event.is_start_event:
-            agent_config_dict: dict[str, Any] = event.agent_config or self.default_agent_config.model_dump()
+            event = cast(StartEvent, event)
+
+            submitted_config = await self._config_client.fetch_config(
+                agent_class=self.agent.__name__,
+                agent_id=topic.agent_id,
+            )
+
+            # Deep merge: non-configurable values (from form-mode config) + configurable values (from submission)
+            agent_config_dict = Form.deep_merge(self._non_configurable_values, submitted_config)
+
             if agent_config_dict.get("agent_class") != self.agent.__name__:
                 raise ValueError(
                     f"Agent class '{agent_config_dict.get('agent_class')}' "
@@ -97,10 +155,12 @@ class AgentDispatcher(BaseDispatcher):
             await run_context.set("_agent_config", agent_config_dict)
 
         if agent_config_dict is None:
-            agent_config_dict: dict[str, Any] = await run_context.get("_agent_config")
+            agent_config_dict = await run_context.get("_agent_config")
             if agent_config_dict is None:
                 raise ValueError(f"No agent config found for event {event.event_name} and topic {topic}")
 
+        # Transform FormKit-style arrays (dict with numeric keys) to Python lists
+        agent_config_dict = _transform_formkit_arrays(agent_config_dict)
         run_agent_config = self.agent_config_type.model_validate(agent_config_dict)
         topic = AgentInstanceTopic.from_agent_class_topic(
             agent_class_topic=topic,
@@ -116,7 +176,7 @@ class AgentDispatcher(BaseDispatcher):
             # Store any initial data from the StartEvent into run_context
             event_data = event.to_context_dict()
             for key, value in event_data.items():
-                logger.debug(f"Setting key '{key}' in run_context to '{value}'")
+                logger.debug(f"Setting key '{key}' in run_context")
                 await run_context.set(key, value)
 
         if event.is_stop_event or event.is_exception_event:
@@ -277,7 +337,7 @@ class AgentDispatcher(BaseDispatcher):
 
                 for event in result:
                     if event.is_hitl_request_event:
-                        logger.debug(f"Handling special event: HumanInTheLoopRequestEvent: {event}")
+                        logger.debug(f"Handling special event: HumanInTheLoopRequestEvent: {event.event_name}")
                         # Complete the event's topic info
                         event.topic = AgentInstanceTopic.from_partial_topic(
                             partial_topic=event.topic,
@@ -290,7 +350,7 @@ class AgentDispatcher(BaseDispatcher):
                         )
 
                     if event.is_bitl_request_event:
-                        logger.debug(f"Handling special event: BotInTheLoopRequestEvent: {event}")
+                        logger.debug(f"Handling special event: BotInTheLoopRequestEvent: {event.event_name}")
                         # Complete the event's topic info
                         event.topic = AgentInstanceTopic.from_partial_topic(
                             partial_topic=event.topic,
@@ -303,7 +363,7 @@ class AgentDispatcher(BaseDispatcher):
                         )
 
                     if event.is_aitl_request_event:
-                        logger.debug(f"Handling special event: AgentInTheLoopRequestEvent: {event}")
+                        logger.debug(f"Handling special event: AgentInTheLoopRequestEvent: {event.event_name}")
                         await self.trigger_agent_in_the_loop(event, topic)
 
                     await self.publish_event(event, topic)

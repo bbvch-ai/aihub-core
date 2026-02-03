@@ -1,0 +1,8 @@
+metadata:
+  name: Assistente Insegnabile
+  description: Assistente IA che impara dagli esempi che fornisci per capire come
+    desideri che risponda
+config:
+  number_of_input_tokens:
+    label: Token di input max
+    help: Numero massimo di token consentiti nel contesto di input

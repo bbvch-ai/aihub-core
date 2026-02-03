@@ -1,3 +1,6 @@
+from typing import ClassVar
+
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StopEvent
 from aihub_lib.nats.events.bot_in_the_loop.BotInTheLoop import BotInTheLoop
 
@@ -8,6 +11,19 @@ from playground.agent.BotInTheLoopAgent.events.BotInTheLoopAgentStartEvent impor
 
 
 class BotInTheLoopAgent(Agent):
+    """Agent demonstrating bot-in-the-loop patterns."""
+
+    name: ClassVar[LocaleString] = LocaleString(
+        en="Bot In The Loop Agent",
+        de="Bot-in-the-Loop Agent",
+        fr="Agent Bot dans la Boucle",
+        it="Agente Bot-in-the-Loop",
+    )
+    description: ClassVar[LocaleString] = LocaleString(
+        en="Agent for BITL demo", de="Agent für BITL Demo", fr="Agent pour démo BITL", it="Agente per demo BITL"
+    )
+    icon: ClassVar[str] = "mage:robot"
+
     @step()
     async def start_step(
         self, start_event: BotInTheLoopAgentStartEvent, run_context: RunContext

@@ -1,6 +1,17 @@
 test: "Ceci est un test"
 welcome: "Bienvenue sur bbv ai-hub"
 
+common:
+  actions:
+    save: "Enregistrer"
+    cancel: "Annuler"
+    create: "Créer"
+    delete: "Supprimer"
+    edit: "Modifier"
+  loading: "Chargement..."
+  selectModel: "Sélectionner un modèle"
+  selectDatabase: "Sélectionner une base de données"
+
 models:
   title: "Modèles"
   error: "Erreur lors du chargement des modèles"
@@ -253,6 +264,12 @@ service:
 agent:
   title: "Agents"
   can_chat: "Peut chatter"
+  navigation:
+    basic: "Aperçu"
+    workflow: "Flux de travail"
+    threads: "Fils de discussion"
+    configuration: "Configuration"
+    chat: "Chat"
   overview:
     startEvents: "Événements de démarrage"
     stopEvents: "Événements d'arrêt"
@@ -263,17 +280,18 @@ agent:
     status: "Statut:"
     online: "En ligne"
     offline: "Hors ligne"
+  configuration:
+    title: "Configuration de l'agent"
+    description: "Configurez le comportement d'exécution et les paramètres de cet agent"
+    runtimeSettings: "Paramètres d'exécution"
+    noConfiguration: "Aucune configuration disponible pour cet agent"
+    saveSuccess: "Configuration enregistrée avec succès"
+    saveError: "Échec de l'enregistrement de la configuration"
   chat:
     title: "Démarrer un nouveau chat"
     placeholder: "Tapez le message que vous souhaitez envoyer à l'agent"
     createThreadAndSend: "Créer un fil de discussion et envoyer"
     manuallyCreatedThread: "Fil de discussion créé manuellement"
-  navigation:
-    basic: "De base"
-    workflow: "Flux de travail"
-    threads: "Fils de discussion"
-    memories: "Mémoires"
-    chat: "Chat"
   availableAgents: "Agents disponibles"
   list:
     name: "Nom"
@@ -289,6 +307,43 @@ agent:
     title: "Flux de travail agentique"
   threads:
     title: "Fils de discussion de l'agent"
+  create:
+    button: "Créer un nouvel agent"
+    title: "Créer un nouvel agent"
+    cancel: "Annuler"
+    selectClass: "Type d'agent"
+    selectClassPlaceholder: "Sélectionner un type d'agent..."
+    agentId: "ID de l'agent"
+    agentIdPlaceholder: "mon-nouvel-agent"
+    agentIdHelp: "Identifiant unique (lettres minuscules, chiffres, tirets, underscores)"
+    agentIdInvalid: "Seules les lettres minuscules, les chiffres, les tirets et les underscores sont autorisés"
+    agentIdTooLong: "L'ID de l'agent doit comporter au maximum 100 caractères"
+    configuration: "Configuration"
+    noAgentClasses: "Aucun type d'agent disponible. Assurez-vous qu'au moins un agent est en cours d'exécution."
+    submit: "Créer l'agent"
+    success: "Agent créé avec succès"
+    error: "Échec de la création de l'agent"
+    steps:
+      basicInfo: "Informations de base"
+  delete:
+    button: "Supprimer"
+    title: "Supprimer l'agent"
+    confirm: "Êtes-vous sûr de vouloir supprimer cet agent ?"
+    confirmMessage: "Cette action est irréversible. La configuration de l'agent sera définitivement supprimée."
+    success: "Agent supprimé avec succès"
+    error: "Échec de la suppression de l'agent"
+    cannotDeleteDefault: "Les configurations d'agents par défaut ne peuvent pas être supprimées"
+  add_instance:
+    title: "Ajouter un agent"
+    description: "Créer une nouvelle instance d'agent"
+  selector:
+    class:
+      label: "Type d'agent"
+      placeholder: "Sélectionner un type d'agent..."
+    id:
+      label: "Profil d'agent"
+      placeholder: "Sélectionner un profil d'agent..."
+      help: "Choisissez le profil d'agent spécifique à utiliser"
   memories:
     title: "Mémoires de l'agent"
     description: "Mémoires collectées par {agentName} à votre sujet"
@@ -562,6 +617,73 @@ bar:
 
 process:
   title: "Processus"
+  overview:
+    name: "Nom"
+    class: "Classe"
+    processId: "ID du processus"
+    status: "Statut"
+    online: "En ligne"
+    offline: "Hors ligne"
+  navigation:
+    overview: "Aperçu"
+    walkthroughs: "Exécutions"
+    start: "Démarrer une exécution"
+    configuration: "Configuration"
+  list:
+    online: "En ligne"
+    offline: "Hors ligne"
+  configuration:
+    title: "Configuration du processus"
+    description: "Configurez le comportement d'exécution de cette instance de processus."
+    runtimeSettings: "Paramètres d'exécution"
+    saveSuccess: "Configuration enregistrée avec succès"
+    saveError: "Échec de l'enregistrement de la configuration"
+    noConfiguration: "Aucune configuration disponible pour ce processus."
+  create:
+    title: "Créer un nouveau processus"
+    selectClass: "Type de processus"
+    selectClassPlaceholder: "Sélectionnez un type de processus..."
+    noProcessClasses: "Aucun type de processus disponible."
+    steps:
+      basicInfo: "Informations de base"
+    submit: "Créer le processus"
+    cancel: "Annuler"
+    success: "Processus créé avec succès"
+    error: "Échec de la création du processus"
+  delete:
+    button: "Supprimer"
+    title: "Supprimer le processus"
+    confirmMessage: "Êtes-vous sûr de vouloir supprimer cette instance de processus ? Cette action est irréversible."
+    success: "Processus supprimé avec succès"
+    error: "Échec de la suppression du processus"
+  add_instance:
+    title: "Ajouter un processus"
+    description: "Créer une nouvelle instance de processus"
+  walkthrough:
+    list:
+      created: "Créé"
+      updated: "Dernière interaction"
+      agents: "Agents"
+      users: "Utilisateurs"
+      state: "État"
+      in_progress: "En cours"
+      done: "Terminé"
+      steps: "Progression"
+
+form:
+  locale_input:
+    translate_tooltip: "Traduire dans toutes les langues"
+
+lib:
+  vectorStore:
+    label: "Stockage vectoriel"
+    help: "Sélectionner la base de connaissances et les espaces de noms à rechercher"
+    database:
+      label: "Base de données"
+    namespaces:
+      label: "Espaces de noms"
+      placeholder: "Sélectionner les espaces de noms (vide = tous)"
+      help: "Laisser vide pour rechercher tous les espaces de noms"
 
 memory:
   title: "Souvenirs"

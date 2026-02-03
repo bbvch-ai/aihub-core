@@ -1670,10 +1670,6 @@ services:
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
-      # AI-Hub Settings
-      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
-      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
-
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
@@ -1735,14 +1731,6 @@ services:
       dockerfile: ./aihub_agent/app/rag_agent/Dockerfile
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
-
-      # AI-Hub Settings
-      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
-      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
-      AIHUB_DEFAULT_BUCKET_NAME: ${AIHUB_DEFAULT_BUCKET_NAME}
-      AIHUB_SHARED_BUCKET_NAME: ${AIHUB_SHARED_BUCKET_NAME}
-      AIHUB_DEFAULT_NAMESPACE_NAME: ${AIHUB_DEFAULT_NAMESPACE_NAME}
-      AIHUB_SHARED_NAMESPACE_NAME: ${AIHUB_SHARED_NAMESPACE_NAME}
 
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
@@ -1810,14 +1798,6 @@ services:
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
-      # AI-Hub Settings
-      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
-      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
-      AIHUB_DEFAULT_BUCKET_NAME: ${AIHUB_DEFAULT_BUCKET_NAME}
-      AIHUB_SHARED_BUCKET_NAME: ${AIHUB_SHARED_BUCKET_NAME}
-      AIHUB_DEFAULT_NAMESPACE_NAME: ${AIHUB_DEFAULT_NAMESPACE_NAME}
-      AIHUB_SHARED_NAMESPACE_NAME: ${AIHUB_SHARED_NAMESPACE_NAME}
-
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
@@ -1874,10 +1854,6 @@ services:
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
-      # AI-Hub Settings
-      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
-      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
-
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
@@ -1911,6 +1887,146 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: expert-asking-agent
+      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - backend
+      - data
+
+  
+  retrieval_agent:
+    container_name: retrieval-agent
+    restart: always
+    build:
+      context: .
+      dockerfile: ./aihub_agent/app/retrieval_agent/Dockerfile
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # MILVUS
+      MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # S3 Access connection
+      S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
+      S3_STORAGE_PUBLIC_ENDPOINT: https://s3.${DOMAIN}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
+      ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+
+      # NATs
+      NATS_ENDPOINT: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # REDIS
+      REDIS_URL: redis://valkey:6379
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: retrieval-agent
+      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - backend
+      - data
+      - storage
+
+  
+  few_shot_agent:
+    container_name: few-shot-agent
+    restart: always
+    build:
+      context: .
+      dockerfile: ./aihub_agent/app/few_shot_agent/Dockerfile
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # NATs
+      NATS_ENDPOINT: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # REDIS
+      REDIS_URL: redis://valkey:6379
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: few-shot-agent
+      OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
+      OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - backend
+      - data
+
+  
+  namespace_selection_agent:
+    container_name: namespace-selection-agent
+    restart: always
+    build:
+      context: .
+      dockerfile: ./aihub_agent/app/namespace_selection_agent/Dockerfile
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # LiteLLM Access
+      LITE_LLM_PROXY_BASE_URL: http://litellm:4000
+      LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # NATs
+      NATS_ENDPOINT: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
+
+      # REDIS
+      REDIS_URL: redis://valkey:6379
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # OpenTelemetry Configuration
+      OTEL_ENABLED: ${OTEL_ENABLED}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_RESOURCE_SERVICE_NAME: namespace-selection-agent
       OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     healthcheck:

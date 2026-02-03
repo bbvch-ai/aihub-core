@@ -96,7 +96,6 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
     data_lake_file_system: ResourceDependency[AzureBlobFileSystem]
 
     def handle_output(self, context: OutputContext, obj: DataLakeFile | list[DataLakeFile]) -> None:
-        # Check if obj is a single DataLakeFile or a list of DataLakeFiles
         if isinstance(obj, DataLakeFile):
             data_lake_files = [obj]
         elif isinstance(obj, list) and all(isinstance(item, DataLakeFile) for item in obj):
@@ -121,12 +120,10 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
             # Encode metadata before setting it on the file
             encoded_metadata = self._encode_metadata(data_lake_file.metadata)
 
-            # Set metadata
             file_path_without_org = file_path.split("/", 1)[1]  # Remove the organization from the path
             file_client = self.data_lake_client.raw_client.get_file_client(file_path_without_org)
             file_client.set_metadata(encoded_metadata)
 
-            # Set content settings (e.g., content type and MD5 hash)
             content_settings = ContentSettings(
                 content_type=data_lake_file.content_type,
                 content_md5=base64.b64decode(data_lake_file.hash),

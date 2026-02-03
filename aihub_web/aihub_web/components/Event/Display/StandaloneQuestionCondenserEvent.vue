@@ -2,12 +2,12 @@
   <EventDisplayBase
     :event="event"
     :thread="thread"
-    icon="material-symbols:quiz"
+    icon="mage:question-mark-circle"
   >
     <div class="flex flex-col gap-2">
       <span class="text-sm font-medium text-surface-600 dark:text-surface-400">
         <Icon
-          name="material-symbols:compress"
+          name="mage:archive"
           class="size-4"
         />
         {{ t('event.standaloneQuestionCondenser.condensedQuestion') }}
@@ -23,13 +23,13 @@
 
 <script setup lang="ts">
 import type {
-  StandaloneQuestionCondenserEventReadable,
+  StandaloneQuestionCondenserEvent,
   ThreadDto,
-  AgentEventReadable,
+  ContextualizedAgentEvent,
 } from '@core/sdk/client'
 
 const props = defineProps<{
-  event: AgentEventReadable & { event: StandaloneQuestionCondenserEventReadable }
+  event: ContextualizedAgentEvent & { event: StandaloneQuestionCondenserEvent }
   thread: ThreadDto
 }>()
 

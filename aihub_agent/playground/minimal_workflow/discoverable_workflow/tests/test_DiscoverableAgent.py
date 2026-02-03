@@ -21,7 +21,7 @@ scenarios("./features/discoverable_agent.feature")
 def _():
     return AgentTestRunner(
         agent_type=DiscoverableAgent,
-        default_agent_config=DiscoverableAgentConfig(
+        agent_config=DiscoverableAgentConfig(
             agent_id="discoverable_agent",
             agent_class=DiscoverableAgent.__name__,
             name=LocaleString(en="Discoverable Agent"),

@@ -16,7 +16,7 @@ from redis.asyncio import Redis
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.context.thread.ThreadContext import ThreadContext
-from aihub_agent.dispatchers.AgentDispatcher import AgentDispatcher
+from aihub_agent.dispatchers.AgentDispatcher import AgentDispatcher, _transform_formkit_arrays
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
 from aihub_agent.tracing.AgentRunTracer import AgentRunTracer
 from aihub_agent.workflow.decorators.precondition import precondition
@@ -188,7 +188,7 @@ def agent_dispatcher(mock_agent_config, nats_client, jetstream_context, redis_cl
     # Create the dispatcher with real instantiation
     dispatcher = AgentDispatcher(
         agent=MockAgent,
-        default_agent_config=mock_agent_config,
+        agent_config=mock_agent_config,
         nc=nats_client,
         js=jetstream_context,
         redis=redis_client,
@@ -211,6 +211,10 @@ def agent_dispatcher(mock_agent_config, nats_client, jetstream_context, redis_cl
     dispatcher.js_publisher = Mock()
     dispatcher.nc_publisher = Mock()
 
+    # Mock the config client to return the mock agent config
+    dispatcher._config_client = Mock()
+    dispatcher._config_client.fetch_config = AsyncMock(return_value=mock_agent_config.model_dump())
+
     return dispatcher
 
 
@@ -218,9 +222,20 @@ class TestAgentDispatcherHandleEvent:
     """Test cases for AgentDispatcher.handle_event method."""
 
     @pytest.mark.asyncio
-    async def test_handle_start_event_with_agent_config(self, agent_dispatcher, agent_topic, mock_agent_config):
-        """Test handling StartEvent with agent config sets up context correctly."""
-        # Arrange
+    async def test_handle_start_event_fetches_config_via_rpc(self, agent_dispatcher, mock_agent_config):
+        """Test handling StartEvent fetches config via RPC and sets up context correctly."""
+        # Arrange - Create a topic with specific agent_id that we want to test
+        custom_topic = AgentInstanceTopic(
+            agent_class="MockAgent",
+            agent_id="custom_agent",
+            thread_id=str(ObjectId()),
+            run_id=str(ObjectId()),
+            display_id=str(ObjectId()),
+            event_id=str(ObjectId()),
+            event_type="control_event",
+            event_name="StartEvent",
+        )
+
         custom_config = AgentConfig(
             agent_class="MockAgent",
             agent_id="custom_agent",
@@ -229,7 +244,11 @@ class TestAgentDispatcherHandleEvent:
             icon="custom-icon",
         )
 
-        start_event = StartEvent(agent_config=custom_config.model_dump())
+        # StartEvent no longer has agent_id - it comes from the topic
+        start_event = StartEvent()
+
+        # Mock the config client to return the custom config
+        agent_dispatcher._config_client.fetch_config = AsyncMock(return_value=custom_config.model_dump())
 
         # Mock the tracer instance on the dispatcher
         mock_tracer = Mock(spec=AgentRunTracer)
@@ -242,23 +261,27 @@ class TestAgentDispatcherHandleEvent:
         ):
             mock_base_handle.return_value = None
 
-            # Act
-            await agent_dispatcher.handle_event(start_event, agent_topic)
+            # Act - agent_id comes from the topic, not the event
+            await agent_dispatcher.handle_event(start_event, custom_topic)
+
+            # Assert - Verify config was fetched via RPC using agent_id from topic
+            agent_dispatcher._config_client.fetch_config.assert_called_once_with(
+                agent_class="MockAgent",
+                agent_id="custom_agent",
+            )
 
             # Assert - Check that the config was properly stored in the real context
-            run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
+            run_context = RunContext.for_topic(agent_dispatcher.redis, custom_topic)
             stored_config = await run_context.get("_agent_config")
-            assert stored_config == custom_config.model_dump()
+            assert stored_config["agent_id"] == "custom_agent"
 
             # Verify tracing was initialized
             mock_tracer.trace_run_start.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_handle_start_event_without_agent_config_uses_default(
-        self, agent_dispatcher, agent_topic, mock_agent_config
-    ):
-        """Test handling StartEvent without agent config uses default config."""
-        # Arrange
+    async def test_handle_start_event_uses_agent_id_from_topic(self, agent_dispatcher, agent_topic, mock_agent_config):
+        """Test handling StartEvent uses agent_id from the topic (not the event) to fetch config."""
+        # Arrange - agent_id comes from the topic, not the event
         start_event = StartEvent()
 
         # Mock the tracer instance on the dispatcher
@@ -275,7 +298,13 @@ class TestAgentDispatcherHandleEvent:
             # Act
             await agent_dispatcher.handle_event(start_event, agent_topic)
 
-            # Assert - Check that default config was used
+            # Assert - Check that config was fetched using agent_id from topic
+            agent_dispatcher._config_client.fetch_config.assert_called_once_with(
+                agent_class="MockAgent",
+                agent_id="test_agent",  # This comes from agent_topic fixture
+            )
+
+            # Assert - Check that default config was used (from the mock)
             run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
             stored_config = await run_context.get("_agent_config")
             assert stored_config == mock_agent_config.model_dump()
@@ -286,7 +315,7 @@ class TestAgentDispatcherHandleEvent:
         # Arrange - First set up some data in the context
         stop_event = StopEvent()
         run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
-        await run_context.set("_agent_config", agent_dispatcher.default_agent_config.model_dump())
+        await run_context.set("_agent_config", agent_dispatcher.agent_config.model_dump())
         await run_context.set("test_data", "test_value")
 
         # Mock tracer for stop event processing
@@ -315,7 +344,7 @@ class TestAgentDispatcherHandleEvent:
         exception_event = ExceptionEvent(message="Test exception")
 
         mock_run_context = Mock(spec=RunContext)
-        mock_run_context.get = AsyncMock(return_value=agent_dispatcher.default_agent_config.model_dump())
+        mock_run_context.get = AsyncMock(return_value=agent_dispatcher.agent_config.model_dump())
 
         mock_thread_context = Mock(spec=ThreadContext)
 
@@ -342,12 +371,12 @@ class TestAgentDispatcherHandleEvent:
     @pytest.mark.asyncio
     async def test_handle_event_triggers_ready_steps(self, agent_dispatcher, agent_topic):
         """Test that handle_event triggers steps that are ready to execute."""
-        # Arrange
+        # Arrange - agent_id comes from the topic, not the event
         start_event = StartEvent()
 
         mock_run_context = Mock(spec=RunContext)
         mock_run_context.set = AsyncMock()
-        mock_run_context.get = AsyncMock(return_value=agent_dispatcher.default_agent_config.model_dump())
+        mock_run_context.get = AsyncMock(return_value=agent_dispatcher.agent_config.model_dump())
 
         mock_thread_context = Mock(spec=ThreadContext)
 
@@ -389,7 +418,7 @@ class TestAgentDispatcherHandleEvent:
     ):
         """Test that non-start events retrieve agent config from run context."""
         # Arrange - First store config in context
-        stored_config = agent_dispatcher.default_agent_config.model_dump()
+        stored_config = agent_dispatcher.agent_config.model_dump()
 
         # Pre-populate the context with config
         run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
@@ -433,7 +462,7 @@ class TestAgentDispatcherHandleEvent:
     @pytest.mark.asyncio
     async def test_handle_event_stores_start_event_context_data(self, agent_dispatcher, agent_topic):
         """Test that StartEvent context data is stored in run context."""
-        # Arrange
+        # Arrange - agent_id comes from the topic, not the event
         start_event = StartEvent()
         agent_dispatcher.agent.get_steps_waiting_for_event = Mock(return_value=[])
 
@@ -466,7 +495,7 @@ class TestAgentDispatcherStepExecution:
     @pytest.mark.asyncio
     async def test_step_execution_with_max_executions_limit(self, agent_dispatcher, agent_topic):
         """Test that steps respect max_executions_per_run limit."""
-        # Arrange
+        # Arrange - agent_id comes from the topic, not the event
         start_event = StartEvent()
 
         # Use the actual MockAgent limited_step method (max_executions_per_run=1)
@@ -497,7 +526,7 @@ class TestAgentDispatcherStepExecution:
     @pytest.mark.asyncio
     async def test_step_execution_with_precondition(self, agent_dispatcher, agent_topic):
         """Test that steps with preconditions are evaluated correctly."""
-        # Arrange
+        # Arrange - agent_id comes from the topic, not the event
         start_event = StartEvent()
         start_event.condition = True  # Set condition for precondition to check
 
@@ -539,11 +568,14 @@ class TestAgentDispatcherErrorHandling:
     """Test cases for error handling in AgentDispatcher."""
 
     @pytest.mark.asyncio
-    async def test_handle_event_with_invalid_agent_config_type(self, agent_dispatcher, agent_topic):
-        """Test handling of invalid agent config type validation."""
-        # Arrange
+    async def test_handle_event_with_invalid_agent_config_from_rpc(self, agent_dispatcher, agent_topic):
+        """Test handling of invalid agent config returned by RPC."""
+        # Arrange - agent_id comes from the topic, not the event
         invalid_config: dict[str, Any] = {"invalid": "config"}
-        start_event = StartEvent(agent_config=invalid_config)
+        start_event = StartEvent()
+
+        # Mock the config client to return invalid config
+        agent_dispatcher._config_client.fetch_config = AsyncMock(return_value=invalid_config)
 
         mock_run_context = Mock(spec=RunContext)
         mock_run_context.set = AsyncMock()
@@ -561,7 +593,7 @@ class TestAgentDispatcherErrorHandling:
     @pytest.mark.asyncio
     async def test_handle_event_with_context_setup_failure(self, agent_dispatcher, agent_topic):
         """Test handling of context setup failures."""
-        # Arrange
+        # Arrange - agent_id comes from the topic, not the event
         start_event = StartEvent()
 
         # Mock RunContext to raise an exception during initialization
@@ -599,7 +631,11 @@ class TestAgentDispatcherIntegration:
             icon="integration-icon",
         )
 
-        start_event = StartEvent(agent_config=custom_config.model_dump())
+        # agent_id comes from the topic, not the event
+        start_event = StartEvent()
+
+        # Mock the config client to return the custom config
+        agent_dispatcher._config_client.fetch_config = AsyncMock(return_value=custom_config.model_dump())
 
         # Use the actual MockAgent start_step method
         mock_step_method = MockAgent.start_step
@@ -635,7 +671,7 @@ class TestAgentDispatcherIntegration:
 
             # 1. Config should be stored in real context
             stored_config = await run_context.get("_agent_config")
-            assert stored_config == custom_config.model_dump()
+            assert stored_config["agent_id"] == "integration_test_agent"
 
             # 2. Tracing should be initialized
             mock_tracer.trace_run_start.assert_called_once()
@@ -652,3 +688,58 @@ class TestAgentDispatcherIntegration:
             # 5. Background task should be created for step execution
             assert len(agent_dispatcher._background_tasks) == 1
             mock_task.add_done_callback.assert_called_once()
+
+
+class TestTransformFormkitArrays:
+    """Tests for the _transform_formkit_arrays function."""
+
+    def test_transforms_dict_with_numeric_keys_and_dict_values_to_list(self):
+        """Test that dict with numeric string keys and dict values is converted to a list."""
+        data = {"0": {"name": "item1"}, "1": {"name": "item2"}}
+        result = _transform_formkit_arrays(data)
+        assert result == [{"name": "item1"}, {"name": "item2"}]
+
+    def test_preserves_dict_with_numeric_keys_and_primitive_values(self):
+        """Test that dict with numeric string keys but primitive values is NOT converted."""
+        # This is the new conservative behavior - primitive values means it's not a FormKit array
+        data = {"0": "value1", "1": "value2"}
+        result = _transform_formkit_arrays(data)
+        # Should NOT be converted because values are primitives, not dicts
+        assert result == {"0": "value1", "1": "value2"}
+
+    def test_preserves_regular_dict(self):
+        """Test that regular dicts with non-numeric keys are preserved."""
+        data = {"name": "test", "value": 123}
+        result = _transform_formkit_arrays(data)
+        assert result == {"name": "test", "value": 123}
+
+    def test_transforms_nested_formkit_arrays(self):
+        """Test that nested FormKit arrays are properly transformed."""
+        data = {
+            "items": {
+                "0": {"subItems": {"0": {"name": "nested1"}, "1": {"name": "nested2"}}},
+                "1": {"subItems": {"0": {"name": "nested3"}}},
+            }
+        }
+        result = _transform_formkit_arrays(data)
+        expected = {
+            "items": [
+                {"subItems": [{"name": "nested1"}, {"name": "nested2"}]},
+                {"subItems": [{"name": "nested3"}]},
+            ]
+        }
+        assert result == expected
+
+    def test_preserves_lists(self):
+        """Test that regular lists are preserved (items are recursively transformed)."""
+        data = [{"0": {"a": 1}, "1": {"b": 2}}, {"name": "test"}]
+        result = _transform_formkit_arrays(data)
+        expected = [[{"a": 1}, {"b": 2}], {"name": "test"}]
+        assert result == expected
+
+    def test_preserves_primitives(self):
+        """Test that primitive values are returned as-is."""
+        assert _transform_formkit_arrays("string") == "string"
+        assert _transform_formkit_arrays(123) == 123
+        assert _transform_formkit_arrays(True) is True
+        assert _transform_formkit_arrays(None) is None

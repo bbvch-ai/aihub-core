@@ -40,7 +40,6 @@ class ContentExtractor:
         """Extract all content (text and files) from an activity."""
         content = []
 
-        # Process different content types
         content.extend(ContentExtractor._extract_text_content(activity))
         content.extend(ContentExtractor._extract_slack_files(path, activity))
         content.extend(ContentExtractor._extract_attachments(activity))
@@ -122,7 +121,6 @@ class ContentExtractor:
                 continue
 
             try:
-                # Process based on attachment type
                 if attachment.content_type == "application/vnd.microsoft.teams.file.download.info":
                     file_info = ContentExtractor._from_teams_file(attachment)
                 else:
@@ -180,7 +178,6 @@ class ContentExtractor:
             response = httpx.get(file_info.url, headers=file_info.headers)
             response.raise_for_status()
 
-            # Update file info with fetched content
             file_info.content_bytes = response.content
             file_info.content_type = response.headers.get("content-type")
 
@@ -205,7 +202,6 @@ class ContentExtractor:
         # Ensure we have the file content
         file_info = ContentExtractor._fetch_file(file_info)
 
-        # Process by content type
         if file_info.content_type and file_info.content_type.startswith("image/"):
             data_url = ContentExtractor._to_base64_data_url(file_info)
             return Content(text=data_url, type="image_url")

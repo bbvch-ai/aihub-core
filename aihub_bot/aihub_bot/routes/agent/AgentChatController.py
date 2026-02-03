@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated
+from typing import Annotated, Self
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -62,7 +62,7 @@ class AgentChatController(Controller):
         self,
         route: str = "/completions/{agent_class}/{agent_id}/json",
         typing_timeout_seconds: int = 60,
-    ) -> "AgentChatController":
+    ) -> Self:
         @self.router.post(
             route,
             summary="Synchronous chat completions",
@@ -107,7 +107,7 @@ class AgentChatController(Controller):
         self,
         route: str = "/completions/{agent_class}/{agent_id}/stream",
         typing_timeout_seconds: int = 60,
-    ) -> "AgentChatController":
+    ) -> Self:
         @self.router.post(
             route,
             summary="Asynchronous chat completions",

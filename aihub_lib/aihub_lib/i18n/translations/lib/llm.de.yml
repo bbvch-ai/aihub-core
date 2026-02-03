@@ -1,0 +1,16 @@
+config:
+  model:
+    label: "LLM-Modell"
+    help: "Wählen Sie das Sprachmodell für die Antwortgenerierung. Verschiedene Modelle haben unterschiedliche Fähigkeiten und Kosten."
+  temperature:
+    label: "Temperatur"
+    help: "Steuert Zufälligkeit: 0 = deterministisch, 2 = sehr kreativ. Niedrigere Werte für sachliche Aufgaben."
+  logprobs:
+    label: "Log-Wahrscheinlichkeiten zurückgeben"
+    help: "Token-Level Log-Wahrscheinlichkeiten in der Antwort einschliessen. Nützlich zur Analyse der Modellkonfidenz."
+  top_logprobs:
+    label: "Top-Log-Wahrscheinlichkeiten"
+    help: "Anzahl der wahrscheinlichsten Tokens, für die Wahrscheinlichkeiten zurückgegeben werden (0-20). Erfordert aktivierte Log-Wahrscheinlichkeiten."
+  timeout:
+    label: "Zeitüberschreitung (Sekunden)"
+    help: "Maximale Wartezeit auf eine Antwort vom LLM. Bei komplexen Anfragen oder langsamen Verbindungen erhöhen."

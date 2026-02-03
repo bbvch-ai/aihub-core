@@ -1,0 +1,90 @@
+metadata:
+  name: Assistente di Navigazione Documentale
+  description: Assistente IA che ti aiuta a trovare e selezionare le giuste fonti
+    di conoscenza per le tue domande
+config:
+  bucket_names:
+    label: Database di conoscenza
+    help: Seleziona i database di conoscenza da interrogare
+  max_conversation_history_entries:
+    label: Max voci cronologia
+  approval_message_template:
+    label: Modello messaggio approvazione
+defaults:
+  approval_message_template: 'In base alla tua richiesta, suggerisco di interrogare
+    le seguenti fonti di conoscenza:
+
+
+    {namespaces}
+
+
+    Approvi questa selezione?
+
+    '
+delegation_config:
+  rag_agent:
+    label: Agente RAG
+    help: Seleziona l'agente RAG a cui inoltrare le query
+    class_placeholder: Seleziona tipo di agente
+    id_placeholder: Seleziona istanza dell'agente
+thoughts:
+  fetching_namespaces: Ricerca delle fonti di conoscenza disponibili
+  starting_determination: Determinazione delle fonti da consultare
+  analyzing_request: Comprensione della richiesta
+  llm_decision: '%{reasoning}'
+  processing_follow_up: Elaborazione della risposta
+  selection_approved: Fonti confermate
+  selection_rejected: Ricerca di fonti alternative
+  forwarding_to_rag: Ricerca di informazioni pertinenti
+  rag_error: 'Si è verificato un errore durante la ricerca: %{error_message}'
+messages:
+  default_follow_up: Potresti fornire maggiori dettagli sulla tua richiesta in modo
+    che io possa determinare le fonti di conoscenza più rilevanti?
+  user_rejected_selection: Ho rifiutato la selezione dei namespace proposta. Per favore
+    suggerisci namespace diversi.
+  rag_error: Si è verificato un errore durante l'elaborazione della richiesta. Riprova.
+  invalid_selection: 'La tua selezione non era valida. Hai selezionato: %{selected}.
+    I namespace disponibili sono: %{available_namespaces}. Seleziona solo dai namespace
+    disponibili elencati.'
+prompts:
+  determination: 'Sei un assistente per la selezione dei namespace. Il tuo compito
+    è analizzare la richiesta di un utente e determinare quali fonti di conoscenza
+    (namespace) sarebbero più rilevanti per rispondere alla sua domanda.
+
+
+    Cronologia della conversazione:
+
+    <conversation_history>
+
+    {{ conversation_history }}
+
+    </conversation_history>
+
+
+    <available_namespaces>
+
+    {{ available_namespaces }}
+
+    </available_namespaces>
+
+
+    Istruzioni:
+
+    1. Se l''intento dell''utente è sufficientemente chiaro per selezionare namespace
+    specifici, imposta has_enough_information=true e fornisci selected_namespaces
+    mappando ogni bucket a esattamente un namespace.
+
+    2. Se hai bisogno di più informazioni, imposta has_enough_information=false e
+    fai una follow_up_question.
+
+
+    VINCOLI CRITICI:
+
+    - Ogni bucket DEVE avere esattamente UN namespace selezionato - né più, né meno.
+
+    - La tua follow_up_question DEVE elencare i nomi esatti dei namespace da <available_namespaces>
+    sopra come opzioni.
+
+    - NON inventare nomi - usa solo i nomi reali mostrati sopra.
+
+    '

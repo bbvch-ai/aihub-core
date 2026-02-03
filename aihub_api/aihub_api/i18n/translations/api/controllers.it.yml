@@ -1,0 +1,67 @@
+agent:
+  name: "Assistenti IA"
+  description: "Esplora e interagisci con gli assistenti IA"
+
+docling:
+  name: "Convertitore di documenti"
+  description: "Converti documenti in formati diversi"
+
+evaluation:
+  name: "Test di qualità"
+  description: "Testa e valuta la qualità degli assistenti IA"
+
+event:
+  name: "Registro attività"
+  description: "Visualizza attività di sistema ed eventi"
+
+file:
+  name: "Accesso ai file"
+  description: "Accedi e condividi i tuoi file"
+
+i18n:
+  name: "Impostazioni lingua"
+  description: "Gestisci le tue preferenze linguistiche"
+
+knowledge:
+  name: "Base di conoscenza"
+  description: "Gestisci la tua base di conoscenza e documenti"
+
+model:
+  name: "Modelli IA"
+  description: "Visualizza i modelli IA disponibili"
+
+notification:
+  name: "Notifiche"
+  description: "Visualizza e gestisci le tue notifiche"
+
+openai:
+  name: "Chat"
+  description: "Conversa con gli assistenti IA"
+
+process:
+  name: "Flussi di lavoro"
+  description: "Gestisci processi aziendali automatizzati"
+
+role:
+  name: "Ruoli utente"
+  description: "Configura permessi di accesso e ruoli"
+
+suite:
+  name: "Panoramica della piattaforma"
+  description: "Visualizza funzionalità e impostazioni della piattaforma"
+
+thread:
+  name: "Conversazioni"
+  description: "Gestisci la cronologia delle conversazioni"
+
+token:
+  name: "Chiavi API"
+  description: "Crea e gestisci chiavi di accesso API"
+
+translation:
+  name: "Traduzione"
+  description: "Traduci il testo in tutte le lingue supportate"
+
+user:
+  name: "Il mio account"
+  description: "Gestisci le impostazioni del tuo account"

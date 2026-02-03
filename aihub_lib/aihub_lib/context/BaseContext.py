@@ -90,7 +90,6 @@ class BaseContext:
         """
         try:
             pattern = f"{self.store_name}:*"
-            # Get all keys with the prefix
             cursor = b"0"
             keys_to_delete = []
 
@@ -136,7 +135,6 @@ class BaseContext:
                 try:
                     value = await self.redis.get(key)
                     if value:
-                        # Extract the original key (remove the store_name prefix)
                         original_key = key.decode().split(":", 1)[1]
                         all_data[original_key] = json.loads(value.decode())
                 except Exception as e:

@@ -23,7 +23,7 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=MultiLocaleAgent,
-        default_agent_config=MultiLocaleAgentConfig(
+        agent_config=MultiLocaleAgentConfig(
             agent_id="multi_locale_agent",
             agent_class=MultiLocaleAgent.__name__,
             name=LocaleString(en="Multi Locale Agent"),

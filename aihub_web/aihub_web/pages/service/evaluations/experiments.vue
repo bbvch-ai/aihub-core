@@ -37,7 +37,7 @@
             show-clear
             :options="filterableAgents"
             option-label="agent_config.name"
-            :option-value="(agent: MinimalAgentDto) => `${agent.agent_class}.${agent.agent_id}`"
+            :option-value="(agent: MinimalAgentInstanceDto) => `${agent.agent_class}.${agent.agent_id}`"
             :placeholder="t('evaluation.experiment.filter_by_assistant')"
             :loading="experimentsAreLoading"
           />
@@ -86,7 +86,7 @@
 </template>
 
 <script setup lang="ts">
-import type { MinimalExperiment, MinimalAgentDto, MinimalDataset } from '@core/sdk/client'
+import type { MinimalExperiment, MinimalAgentInstanceDto, MinimalDataset } from '@core/sdk/client'
 
 import { useLocalePath } from '#i18n'
 
@@ -106,7 +106,7 @@ const toExperiment = (experiment: MinimalExperiment) => {
   router.push(localePath(`/service/evaluations/experiments/${experiment.id}`))
 }
 
-const filterableAgents = computed<MinimalAgentDto[]>(() => {
+const filterableAgents = computed<MinimalAgentInstanceDto[]>(() => {
   if (!experiments.value) {
     return []
   }

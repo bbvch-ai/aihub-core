@@ -82,7 +82,7 @@
         </div>
         <div class="flex flex-col gap-3">
           <h3 class="text-2xl">
-            {{ t('process.title') }}}
+            {{ t('process.title') }}
           </h3>
           <div class="flex flex-wrap gap-2">
             <Tag

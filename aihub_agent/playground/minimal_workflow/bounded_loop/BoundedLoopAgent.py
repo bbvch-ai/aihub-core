@@ -1,3 +1,6 @@
+from typing import ClassVar
+
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StopEvent, UserMessageEvent
 
 from aihub_agent.agents.Agent import Agent
@@ -10,6 +13,19 @@ from playground.minimal_workflow.bounded_loop.events.DecisionEvent import Decisi
 
 
 class BoundedLoopAgent(Agent):
+    """Agent demonstrating bounded loop patterns."""
+
+    name: ClassVar[LocaleString] = LocaleString(
+        en="Bounded Loop Agent", de="Begrenzte Schleife Agent", fr="Agent Boucle Limitée", it="Agente Loop Limitato"
+    )
+    description: ClassVar[LocaleString] = LocaleString(
+        en="Agent for bounded loop demo",
+        de="Agent für begrenzte Schleife Demo",
+        fr="Agent pour démo boucle limitée",
+        it="Agente per demo loop limitato",
+    )
+    icon: ClassVar[str] = "mage:refresh"
+
     @step()
     async def start_step(self, event: UserMessageEvent, run_context: RunContext) -> BeginEvent:
         print("[SimpleAgent.start_step]")

@@ -2,7 +2,7 @@
   <EventDisplayBase
     :event="event"
     :thread="thread"
-    icon="mdi:robot-confused"
+    icon="mage:robot-sad"
     :is-warning="isOpen"
   >
     <div class="py-5">
@@ -19,14 +19,14 @@
 
 <script setup lang="ts">
 import type {
-  ChatMessageOutput,
-  HumanInTheLoopRequestEventOutputReadable,
+  ChatMessage,
+  HumanInTheLoopRequestEvent,
   ThreadDto,
-  AgentEventReadable,
+  ContextualizedAgentEvent,
 } from '@core/sdk/client'
 
 const props = defineProps<{
-  event: AgentEventReadable & { event: HumanInTheLoopRequestEventOutputReadable }
+  event: ContextualizedAgentEvent & { event: HumanInTheLoopRequestEvent }
   thread: ThreadDto
 }>()
 
@@ -37,7 +37,7 @@ const isOpen = computed<boolean>(() => {
   return runForEvent(props.thread, props.event)?.open_hitl ?? false
 })
 
-const message = computed<ChatMessageOutput>(() => {
+const message = computed<ChatMessage>(() => {
   return {
     role: 'assistant',
     agent_class: props.event.agent_class,

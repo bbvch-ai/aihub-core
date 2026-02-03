@@ -1,4 +1,4 @@
-from typing import Annotated, ClassVar
+from typing import Annotated, ClassVar, Self
 
 from pydantic import Field, model_validator
 
@@ -30,7 +30,7 @@ class DisplayEvent(BaseEvent):
     display_description: Annotated[LocaleString | None, Field(description="Display description for the event")] = None
 
     @model_validator(mode="after")
-    def set_default_values(self) -> "DisplayEvent":
+    def set_default_values(self) -> Self:
         """Set default values from class if instance values are None."""
         if not self.display_name:
             self.display_name = self.__class__._display_name

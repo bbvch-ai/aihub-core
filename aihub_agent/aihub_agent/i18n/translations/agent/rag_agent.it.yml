@@ -1,0 +1,111 @@
+metadata:
+  name: Assistente di Intelligenza Documentale
+  description: Assistente IA che cerca e analizza i tuoi documenti per fornire risposte
+    informate e consapevoli del contesto
+config:
+  number_of_input_tokens:
+    label: Token di input max
+    help: Numero massimo di token consentiti nell'input del LLM. Limita la dimensione
+      del contesto per gestire i costi ed evitare di superare i limiti del modello.
+  check_context_sufficiency:
+    label: Verifica sufficienza contesto
+    help: Quando abilitato, l'agente verifica se il contesto recuperato contiene informazioni
+      sufficienti prima di generare una risposta.
+  max_hops:
+    label: Salti di recupero max
+    help: Numero massimo di iterazioni di recupero quando il contesto iniziale è insufficiente.
+      Valori più alti possono migliorare le risposte ma aumentano la latenza.
+  system_prompt:
+    label: Prompt di sistema
+    help: Istruzioni che definiscono personalità, ruolo e linee guida comportamentali
+      dell'agente. Imposta il tono generale e le capacità.
+    default: "<persona>\nSei RAG Agent, un assistente per il recupero della conoscenza.\
+      \ La tua missione principale è fornire risposte accurate utilizzando esclusivamente\
+      \ le informazioni dei documenti recuperati.\n</persona>\n\n<rules>\n- DEVE:\
+      \ Rispondere utilizzando SOLO il contesto e i documenti recuperati\n- DEVE:\
+      \ Citare passaggi specifici che supportano la risposta\n- MAI: Utilizzare conoscenze\
+      \ generali oltre il contesto fornito\n- VIETATO: Speculazioni o supposizioni\
+      \ non presenti nei documenti recuperati\n</rules>\n\n<instructions>\nSegui questo\
+      \ processo:\n    1. Analizza il contesto recuperato\n    2. Identifica i passaggi\
+      \ rilevanti\n    3. Estrai le informazioni chiave\n    4. Fornisci la risposta\
+      \ con citazioni dirette.\nQuando il contesto è insufficiente, indica che non\
+      \ puoi rispondere alla domanda con le informazioni disponibili.\n</instructions>\n"
+  context_prompt:
+    label: Prompt di contesto
+    help: Modello per presentare i documenti recuperati al LLM. Usa segnaposto come
+      {context} per inserire il contenuto recuperato.
+    default: '{% chat role="user" %}
+
+      Ti vengono fornite informazioni di contesto aggiuntive sotto forma di documenti
+      strutturati. Ogni documento segue un
+
+      formato coerente, che inizia con `<REFERENCE_DOCUMENT [metadata]>` e termina
+      con `</REFERENCE_DOCUMENT>`. Questi documenti contengono
+
+      dettagli essenziali che dovrebbero essere utilizzati per comprendere e rispondere
+      accuratamente alla richiesta dell''utente.
+
+
+      Ogni documento include metadati come fonte, namespace, tipo, lingua, versione
+      e timestamp. Il contenuto
+
+      di questi documenti fornisce informazioni cruciali rilevanti per il contesto
+      dato.
+
+
+      Di seguito sono riportati i documenti pertinenti:
+
+
+      <context_documents>
+
+      {% for block in context_blocks %}
+
+      {% if block.block_type == ''text'' %}
+
+      {{ block.text }}
+
+      {% endif %}
+
+      {% if block.block_type == ''image'' %}
+
+      {{ block.url.__str__() | image}}
+
+      {% endif %}
+
+      {% endfor %}
+
+      </context_documents>
+
+
+      Istruzione: Utilizzando le informazioni dai documenti forniti, genera una risposta
+      dettagliata e ben strutturata
+
+      alla domanda dell''utente.
+
+      {% endchat %}
+
+      '
+  context_insufficient_prompt:
+    label: Prompt contesto insufficiente
+    help: Messaggio mostrato quando l'agente non trova informazioni sufficienti. Guida
+      come l'agente comunica le limitazioni.
+    default: 'Informa l''utente che non puoi rispondere alla domanda per il seguente
+      motivo:'
+  reranking_enabled:
+    label: Abilita riclassificazione
+    help: Usa un modello di riclassificazione per migliorare la rilevanza dei documenti
+      recuperati prima di passarli al LLM.
+  enable_organization_memory:
+    label: Abilita memoria organizzativa
+    help: Se recuperare le memorie organizzative (conoscenze esperte condivise tra
+      utenti) per il contesto.
+  tenant_namespace:
+    label: Namespace del tenant
+    help: Namespace per l'isolamento della memoria a livello dipartimentale. Lasciare
+      vuoto per l'ambito organizzativo predefinito.
+  enable_user_memory_retrieval:
+    label: Abilita recupero memoria utente
+    help: Se recuperare le memorie specifiche dell'utente per un contesto personalizzato.
+  enable_user_memory_storage:
+    label: Abilita archiviazione memoria utente
+    help: Se archiviare nuove memorie dalle conversazioni per il recupero futuro.

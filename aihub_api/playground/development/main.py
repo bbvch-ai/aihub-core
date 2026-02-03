@@ -1,5 +1,8 @@
 # ruff: noqa: E402
+from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
+
 from aihub_api.routes.health.ApiHealthController import ApiHealthController
+from aihub_api.routes.translation.TranslationController import TranslationController
 
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
 
@@ -8,7 +11,6 @@ AihubInstrumentor().instrument()
 import asyncio
 
 import nest_asyncio
-from aihub_lib.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.infrastructure.logging.logger import enable_logging
 
@@ -56,17 +58,31 @@ async def main():
         .add_user_to_thread()
         .remove_user_from_thread()
         .get_open_chat_hitl(),
-        ModelController(auth=auth).get_models().get_model(),
-        AgentController(auth=auth).get_agent().get_agent_threads().get_agents().discover_agents(),
+        ModelController(auth=auth).get_litellm_models().get_litellm_models_by_mode().get_litellm_model(),
+        AgentController(auth=auth)
+        .get_agent_classes()
+        .get_agent_class()
+        .get_agent_class_instances()
+        .create_agent_instance()
+        .get_agent_instance()
+        .update_agent_instance()
+        .delete_agent_instance()
+        .get_agent_instance_threads()
+        .get_all_agent_instances(),
         ProcessController(auth=auth)
-        .get_process()
-        .get_processes()
-        .discover_processes()
+        .get_process_classes()
+        .get_process_class()
+        .get_process_class_instances()
+        .create_process_instance()
+        .get_process_instance()
+        .update_process_instance()
+        .delete_process_instance()
+        .get_all_process_instances()
         .get_process_walkthroughs()
         .get_process_start_forms()
+        .get_process_open_forms()
         .send_process_start_form()
-        .send_process_open_form()
-        .get_process_open_forms(),
+        .send_process_open_form(),
         TokenController(auth=auth).create_token().list_tokens().revoke_token(),
         RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
         OpenaiController(auth=auth)
@@ -121,6 +137,7 @@ async def main():
         .delete_all_organization_memories()
         .update_organization_memory(),
         DoclingController(auth=auth).parse_document(),
+        TranslationController(auth=auth).translate(),
     )
 
     await runner.run()

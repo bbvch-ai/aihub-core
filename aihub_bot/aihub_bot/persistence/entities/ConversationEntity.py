@@ -1,6 +1,7 @@
 import logging
 import re
 from datetime import UTC, datetime
+from typing import Self
 
 from mongoengine import (
     BooleanField,
@@ -171,7 +172,6 @@ class ConversationEntity(Document):
     def update_ttl_index(cls, conversation_ttl_days: float):
         collection = cls._get_collection()
 
-        # Convert days to seconds
         ttl_seconds = int(conversation_ttl_days * 24 * 60 * 60)
 
         # Drop existing TTL index if it exists
@@ -181,7 +181,6 @@ class ConversationEntity(Document):
             # Index might not exist, that's ok
             pass
 
-        # Create new TTL index
         collection.create_index([("last_activity", 1)], expireAfterSeconds=ttl_seconds)
 
     @classmethod
@@ -190,7 +189,7 @@ class ConversationEntity(Document):
         conversation_id: str,
         bot_id: str,
         messages: list[Message],
-    ) -> "ConversationEntity":
+    ) -> Self:
         conversation_id = _clean_conversation_id(conversation_id, bot_id)
         conversation = cls(
             conversation_id=conversation_id, bot_id=bot_id, messages=messages, last_activity=datetime.utcnow()
@@ -212,7 +211,7 @@ class ConversationEntity(Document):
         conversation_id: str,
         bot_id: str,
         messages: list[Message],
-    ) -> "ConversationEntity":
+    ) -> Self:
         conversation_id = _clean_conversation_id(conversation_id, bot_id)
         conversation = cls.get_conversation_by_conversation_id(conversation_id, bot_id)
         if conversation is None:
@@ -222,7 +221,7 @@ class ConversationEntity(Document):
         return conversation.save()
 
     @classmethod
-    def get_conversation_by_conversation_id(cls, conversation_id: str, bot_id: str) -> "ConversationEntity":
+    def get_conversation_by_conversation_id(cls, conversation_id: str, bot_id: str) -> Self:
         conversation_id = _clean_conversation_id(conversation_id, bot_id)
         return cls.objects().filter(conversation_id=conversation_id, bot_id=bot_id).first()
 
@@ -239,9 +238,7 @@ class ConversationEntity(Document):
         return conversation.is_mentioned
 
     @classmethod
-    def set_conversation_is_mentioned(
-        cls, conversation_id: str, bot_id: str, is_mentioned: bool
-    ) -> "ConversationEntity":
+    def set_conversation_is_mentioned(cls, conversation_id: str, bot_id: str, is_mentioned: bool) -> Self:
         conversation_id = _clean_conversation_id(conversation_id, bot_id)
         conversation = cls.get_conversation_by_conversation_id(conversation_id, bot_id)
         conversation.is_mentioned = is_mentioned

@@ -1,0 +1,113 @@
+metadata:
+  name: Dokumentenintelligenz-Assistent
+  description: KI-Assistent, der Ihre Dokumente durchsucht und analysiert, um fundierte,
+    kontextbezogene Antworten zu geben
+config:
+  number_of_input_tokens:
+    label: Maximale Eingabe-Tokens
+    help: Maximale Anzahl von Tokens in der LLM-Eingabe. Begrenzt die Kontextgrösse
+      zur Kostenkontrolle und Vermeidung von Modellgrenzen.
+  check_context_sufficiency:
+    label: Kontext-Suffizienz prüfen
+    help: Wenn aktiviert, prüft der Agent, ob der abgerufene Kontext genügend Informationen
+      enthält, bevor eine Antwort generiert wird.
+  max_hops:
+    label: Maximale Abruf-Sprünge
+    help: Maximale Anzahl von Abruf-Iterationen, wenn der ursprüngliche Kontext unzureichend
+      ist. Höhere Werte können Antworten verbessern, erhöhen aber die Latenz.
+  system_prompt:
+    label: Systemprompt
+    help: Anweisungen, die Persönlichkeit, Rolle und Verhaltensrichtlinien des Agenten
+      definieren. Legt den Gesamtton und die Fähigkeiten fest.
+    default: "<persona>\nDu bist RAG Agent, ein Wissensabruf-Assistent. Deine Hauptaufgabe\
+      \ ist es, präzise Antworten ausschliesslich basierend auf abgerufenen Dokumentinformationen\
+      \ zu liefern.\n</persona>\n\n<rules>\n- MUSS: Antworte NUR mit abgerufenem Kontext\
+      \ und Dokumenten\n- MUSS: Zitiere spezifische Passagen, die deine Antwort unterstützen\n\
+      - NIEMALS: Allgemeinwissen ausserhalb des bereitgestellten Kontexts verwenden\n\
+      - VERBOTEN: Spekulationen oder Annahmen, die nicht in den abgerufenen Dokumenten\
+      \ stehen\n</rules>\n\n<instructions>\nBefolge diesen Prozess:\n    1. Analysiere\
+      \ den abgerufenen Kontext\n    2. Identifiziere relevante Passagen\n    3. Extrahiere\
+      \ Schlüsselinformationen\n    4. Liefere Antworten mit direkten Zitaten.\nWenn\
+      \ der Kontext unzureichend ist, teile mit, dass du die Frage mit den verfügbaren\
+      \ Informationen nicht beantworten kannst.\n</instructions>\n"
+  context_prompt:
+    label: Kontextprompt
+    help: Vorlage zur Präsentation abgerufener Dokumente an das LLM. Verwenden Sie
+      Platzhalter wie {context} zum Einfügen abgerufener Inhalte.
+    default: '{% chat role="user" %}
+
+      Sie erhalten zusätzliche Kontextinformationen in Form von strukturierten Dokumenten.
+      Jedes Dokument folgt einem
+
+      einheitlichen Format, beginnend mit `<REFERENCE_DOCUMENT [metadata]>` und endend
+      mit `</REFERENCE_DOCUMENT>`. Diese Dokumente enthalten
+
+      wesentliche Details, die genutzt werden sollten, um die Anfrage des Benutzers
+      genau zu verstehen und zu beantworten.
+
+
+      Jedes Dokument enthält Metadaten wie Quelle, Namespace, Typ, Sprache, Version
+      und Zeitstempel. Der Inhalt
+
+      dieser Dokumente liefert wichtige Erkenntnisse, die für den gegebenen Kontext
+      relevant sind.
+
+
+      Nachfolgend finden Sie die relevanten Dokumente:
+
+
+      <context_documents>
+
+      {% for block in context_blocks %}
+
+      {% if block.block_type == ''text'' %}
+
+      {{ block.text }}
+
+      {% endif %}
+
+      {% if block.block_type == ''image'' %}
+
+      {{ block.url.__str__() | image}}
+
+      {% endif %}
+
+      {% endfor %}
+
+      </context_documents>
+
+
+      Anweisung: Erstellen Sie anhand der Informationen aus den bereitgestellten Dokumenten
+      eine detaillierte und gut strukturierte Antwort
+
+      auf die Frage des Benutzers.
+
+      {% endchat %}
+
+      '
+  context_insufficient_prompt:
+    label: Unzureichender-Kontext-Prompt
+    help: Nachricht, die angezeigt wird, wenn der Agent nicht genügend Informationen
+      findet. Leitet, wie der Agent Einschränkungen kommuniziert.
+    default: 'Informiere den Benutzer, dass du die Frage nicht beantworten kannst,
+      aufgrund des folgenden Grundes:'
+  reranking_enabled:
+    label: Reranking aktivieren
+    help: Verwenden Sie ein Reranking-Modell, um die Relevanz der abgerufenen Dokumente
+      zu verbessern, bevor sie an das LLM übergeben werden.
+  enable_organization_memory:
+    label: Organisationsgedächtnis aktivieren
+    help: Ob Organisationserinnerungen (Expertenwissen, das zwischen Benutzern geteilt
+      wird) für den Kontext abgerufen werden sollen.
+  tenant_namespace:
+    label: Mandanten-Namespace
+    help: Namespace für die abteilungsspezifische Speicherisolierung. Leer lassen für
+      den Standard-Organisationsbereich.
+  enable_user_memory_retrieval:
+    label: Benutzergedächtnis-Abruf aktivieren
+    help: Ob benutzerspezifische Erinnerungen für personalisierten Kontext abgerufen
+      werden sollen.
+  enable_user_memory_storage:
+    label: Benutzergedächtnis-Speicherung aktivieren
+    help: Ob neue Erinnerungen aus Gesprächen für zukünftigen Abruf gespeichert werden
+      sollen.

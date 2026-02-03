@@ -23,7 +23,7 @@ const route = useRoute()
 const localePath = useLocalePath()
 const { t } = useI18n()
 
-const { agent } = useAgent()
+const { agentInstance } = useAgentInstance()
 
 const subPath = (path: string) => {
   return `/service/agents/${route.params.agent_class}-${route.params.agent_id}/${path}`
@@ -39,19 +39,22 @@ const isActive = (path: string) => {
 const navItems = computed<NavItem[]>(() => {
   const items: NavItem[] = [
     { name: t('agent.navigation.basic'), key: 'basic', path: subPath('overview'), isActive: isActive('overview') },
+    { name: t('agent.navigation.configuration'), key: 'configuration', path: subPath('configuration'), isActive: isActive('configuration') },
     { name: t('agent.navigation.workflow'), key: 'workflow', path: subPath('workflow'), isActive: isActive('workflow') },
     { name: t('agent.navigation.threads'), key: 'threads', path: subPath('threads'), isActive: isActive('threads') },
     { name: t('agent.navigation.memories'), key: 'memories', path: subPath('memories'), isActive: isActive('memories') },
   ]
-  if (agent.value?.is_conversational) {
+  if (agentInstance.value?.is_conversational) {
     items.push({ name: t('agent.navigation.chat'), key: 'chat', path: subPath('chat'), isActive: isActive('chat') },
     )
   }
   return items
 })
 
-const toNavItem = (navItem: NavItem) => {
-  router.push(localePath(navItem.path))
+const toNavItem = (navItem: NavItem | null) => {
+  if (navItem) {
+    router.push(localePath(navItem.path))
+  }
 }
 
 const activeNavItem = computed<NavItem | undefined>(() => {

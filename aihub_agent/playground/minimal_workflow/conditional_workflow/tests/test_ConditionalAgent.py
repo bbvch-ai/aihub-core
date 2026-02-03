@@ -22,7 +22,7 @@ scenarios("features/conditional_agent.feature")
 def _():
     return AgentTestRunner(
         agent_type=ConditionalAgent,
-        default_agent_config=ConditionalAgentConfig(
+        agent_config=ConditionalAgentConfig(
             agent_id="conditional_agent",
             agent_class=ConditionalAgent.__name__,
             name=LocaleString(en="Conditional Agent"),

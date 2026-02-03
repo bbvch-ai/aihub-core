@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Callable
-from typing import Annotated, cast
+from typing import Annotated, Self, cast
 
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoopRequestEvent
@@ -64,11 +64,9 @@ class BotInTheLoopHandler:
 
     async def _get_slack_ids(self, path: str) -> SlackIds:
         """Get bot_id and team_id using the Slack auth.test API."""
-        # Check cache first
         if path in self.slack_ids_cache:
             return self.slack_ids_cache[path]
 
-        # Get the Slack token from the path entity
         slack_token = PathEntity.get_slack_token_by_path(path)
         if not slack_token:
             raise ValueError(f"No Slack token found for path {path}")
@@ -132,7 +130,6 @@ class BotInTheLoopHandler:
         if credentials is None:
             raise ValueError(f"No credentials found for path: {self.path}")
 
-        # Convert ConversationReference to Activity for the new SDK
         continuation_activity = conversation_reference.get_continuation_activity()
 
         await adapter.continue_conversation(
@@ -249,5 +246,5 @@ class BotInTheLoopHandler:
         return callback
 
     @staticmethod
-    def use_bot_in_the_loop_handler(request: Request) -> "BotInTheLoopHandler":
+    def use_bot_in_the_loop_handler(request: Request) -> Self:
         return request.app.state.bot_in_the_loop_handler

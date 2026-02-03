@@ -6,7 +6,7 @@
   >
     <template #icon>
       <Icon
-        name="akar-icons:dot-grid"
+        name="mage:layout-grid"
         size="xl"
       />
     </template>

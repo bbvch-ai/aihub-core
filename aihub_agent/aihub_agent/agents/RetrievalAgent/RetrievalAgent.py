@@ -1,9 +1,10 @@
+from typing import ClassVar
+
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.retrieval.combine_nodes_in_order import combine_nodes_in_order
 from aihub_lib.generative_ai.retrieval.retrieve_nodes import retrieve_nodes
 from aihub_lib.generative_ai.retrieval.retrieve_prev_next_nodes import retrieve_prev_next_nodes
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 
 from aihub_agent.agents.Agent import Agent
@@ -11,6 +12,7 @@ from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderN
 from aihub_agent.agents.RetrievalAgent.configs.RetrievalAgentConfig import RetrievalAgentConfig
 from aihub_agent.agents.RetrievalAgent.events.QuestionStartEvent import QuestionStartEvent
 from aihub_agent.agents.RetrievalAgent.events.RetrievalResponseEvent import RetrievalResponseEvent
+from aihub_agent.i18n.AgentLocaleString import AgentLocaleString
 from aihub_agent.workflow.decorators.step import step
 
 
@@ -22,9 +24,16 @@ class RetrievalAgent(Agent):
     when we have for example different data sources and each source has its own retrieval agent.
     """
 
+    name: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.retrieval_agent.metadata.name")
+    description: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path(
+        "agent.retrieval_agent.metadata.description"
+    )
+    icon: ClassVar[str] = "mage:search"
+
     @step(
-        name=LocaleString(en="Retrieve nodes"),
-        description=LocaleString(en="Retrieves relevant nodes from the knowledge base."),
+        name=AgentLocaleString.from_i18n_path("agent.steps.retrieval.retrieve_nodes.name"),
+        description=AgentLocaleString.from_i18n_path("agent.steps.retrieval.retrieve_nodes.description"),
+        icon="mage:search",
     )
     async def retrieve_step(
         self,
@@ -46,7 +55,7 @@ class RetrievalAgent(Agent):
             message=event.question,
             retrieve_k=retriever.retrieve_k,
             embed_model=embedding,
-            index_namespaces=retriever.index_namespaces,
+            index_namespaces=retriever.vector_store.index_namespaces,
             query_mode=retriever.query_mode,
             node_types=retriever.node_types,
             vector_store=vector_store,
@@ -62,8 +71,9 @@ class RetrievalAgent(Agent):
         return RetrieverEvent.from_nodes(nodes)
 
     @step(
-        name=LocaleString(en="Order nodes by documents"),
-        description=LocaleString(en="Orders the retrieved nodes by their source documents."),
+        name=AgentLocaleString.from_i18n_path("agent.steps.retrieval.order_nodes.name"),
+        description=AgentLocaleString.from_i18n_path("agent.steps.retrieval.order_nodes.description"),
+        icon="mage:arrowlist",
     )
     async def order_nodes_by_documents_step(
         self,
@@ -83,8 +93,9 @@ class RetrievalAgent(Agent):
         return InOrderNodeCombinerEvent(context_message=ordered_nodes)
 
     @step(
-        name=LocaleString(en="Stop step"),
-        description=LocaleString(en="Stops the agent and returns the ordered nodes as context messages."),
+        name=AgentLocaleString.from_i18n_path("agent.steps.retrieval.stop.name"),
+        description=AgentLocaleString.from_i18n_path("agent.steps.retrieval.stop.description"),
+        icon="mage:check",
     )
     async def stop_step(
         self, event: InOrderNodeCombinerEvent, retriever_event: RetrieverEvent

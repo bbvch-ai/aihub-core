@@ -1,10 +1,42 @@
-from typing import Annotated
+from typing import Annotated, Self
 
-from pydantic import BaseModel, Field
+from aihub_lib.agents.AgentRef import AgentRef
+from aihub_lib.nats.events.form.elements.AgentSelector import AgentSelector
+from aihub_lib.nats.events.form.Form import Form
+from pydantic import Field
+
+from aihub_agent.i18n.AgentLocaleString import AgentLocaleString
 
 
-class RAGDelegationConfig(BaseModel):
-    """Configuration for delegating queries to a RAG agent."""
+class RAGDelegationConfig(Form):
+    """
+    Configuration for delegating queries to a RAG agent.
 
-    rag_agent_class: Annotated[str, Field(description="The class name of the target RAG agent.")]
-    rag_agent_id: Annotated[str, Field(description="The instance ID of the target RAG agent.")]
+    Uses AgentSelector filtered to agents that accept NamespaceAwareUserMessageEvent.
+    """
+
+    rag_agent: Annotated[
+        AgentRef | AgentSelector,
+        Field(description="The target RAG agent to delegate queries to."),
+    ]
+
+    @classmethod
+    def as_form(cls) -> Self:
+        """Factory method to create a form-mode RAGDelegationConfig."""
+        return cls(
+            rag_agent=AgentSelector(
+                label=AgentLocaleString.from_i18n_path(
+                    "agent.namespace_selection_agent.delegation_config.rag_agent.label"
+                ),
+                help=AgentLocaleString.from_i18n_path(
+                    "agent.namespace_selection_agent.delegation_config.rag_agent.help"
+                ),
+                start_event="NamespaceAwareUserMessageEvent",
+                class_placeholder=AgentLocaleString.from_i18n_path(
+                    "agent.namespace_selection_agent.delegation_config.rag_agent.class_placeholder"
+                ),
+                id_placeholder=AgentLocaleString.from_i18n_path(
+                    "agent.namespace_selection_agent.delegation_config.rag_agent.id_placeholder"
+                ),
+            ),
+        )

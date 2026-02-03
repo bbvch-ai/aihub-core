@@ -1,9 +1,12 @@
 import functools
+from typing import ClassVar
 
 from aihub_lib.nats.events import HumanInTheLoopRequestEvent, HumanInTheLoopResponseEvent
 from aihub_lib.nats.events.control.start import StartEvent
 from aihub_lib.nats.events.control.stop import StopEvent
 from aihub_lib.nats.workflow.DispatchableWorkflow import DispatchableWorkflow
+
+from aihub_agent.i18n.AgentLocaleString import AgentLocaleString
 
 
 class Agent(DispatchableWorkflow):
@@ -33,7 +36,16 @@ class Agent(DispatchableWorkflow):
     Usually, marking the agent as an assistant is as simply as accepting the UserMessageEvent as a StartEvent,
     as it makes the agent 'conversational'. However, try not to limit your agents to conversations only, as it
     makes the agent inflexible to participate in other types of interactions.
+
+    To define class-level metadata, override these class variables in your subclass:
+    - name: Display name for the agent class (LocaleString)
+    - description: Description of the agent's purpose (LocaleString)
+    - icon: Icon identifier for the agent (str)
     """
+
+    name: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.base_agent.metadata.name")
+    description: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.base_agent.metadata.description")
+    icon: ClassVar[str] = "mage:robot"
 
     STEP_ANNOTATION = "_is_agent_step"
 

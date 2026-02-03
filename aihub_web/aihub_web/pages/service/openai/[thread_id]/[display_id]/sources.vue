@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import type { AgentEventReadable, RetrieverEventReadable, IngestedNode } from '@core/sdk/client'
+import type { ContextualizedAgentEvent, RetrieverEventReadable, IngestedNode } from '@core/sdk/client'
 
 const route = useRoute()
 const router = useRouter()
@@ -62,8 +62,8 @@ const closeSources = () => {
   router.push(localeRoute('/service/openai'))
 }
 
-const retrieveEvents = computed<AgentEventReadable[]>(() => {
-  return threadEvents.value?.filter((event: AgentEventReadable) => {
+const retrieveEvents = computed<ContextualizedAgentEvent[]>(() => {
+  return threadEvents.value?.filter((event: ContextualizedAgentEvent) => {
     return event.display_id === route.params.display_id && event.event.nodes
   })
 })
@@ -82,7 +82,7 @@ const extractBucket = (source: string): string => {
 
 const documentMap = computed<Record<string, DocumentInfo>>(() => {
   const docs: Record<string, DocumentInfo> = {}
-  retrieveEvents.value?.forEach((event: AgentEventReadable & { event: RetrieverEventReadable }) => {
+  retrieveEvents.value?.forEach((event: ContextualizedAgentEvent & { event: RetrieverEventReadable }) => {
     (event.event.nodes ?? []).forEach((node: IngestedNode) => {
       if (!(node.document_id in docs)) {
         docs[node.document_id] = {

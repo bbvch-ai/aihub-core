@@ -1,0 +1,131 @@
+# Shared RAG steps (used by RAGAgent and ExpertRAGAgent)
+rag:
+  limit_chat_history:
+    name: "Limit Chat History"
+    description: "Truncates incoming chat messages to fit within the configured token limit"
+  condense_standalone_question:
+    name: "Condense Standalone Question"
+    description: "Condenses the chat history and user query into a standalone question."
+  few_shot_guard:
+    name: "Few Shot Guard"
+    description: "Guards the question to ensure it is appropriate for the agent to answer."
+  retrieve_nodes:
+    name: "Retrieve Nodes"
+    description: "Retrieves relevant nodes from knowledge sources."
+  rerank_nodes:
+    name: "Rerank Retrieved Nodes"
+    description: "Reranks retrieved documents using a dedicated reranking model for improved relevance"
+  order_nodes:
+    name: "Order Nodes by Documents"
+    description: "Orders the retrieved nodes by their source documents."
+  context_sufficient_guard:
+    name: "Context Sufficient Guard"
+    description: "Guards the context to ensure it is sufficient for generating a response."
+  limit_chat_history_with_context:
+    name: "Limit Chat History with Context"
+    description: "Includes the combined context and truncates chat history again."
+  respond_with_llm:
+    name: "Respond with LLM"
+    description: "Generates a response using the configured LLM."
+
+# ExpertRAGAgent-specific steps
+expert_rag:
+  handle_insufficient_context:
+    name: "Handle Insufficient Context"
+    description: "Handle insufficient context by asking for expert consent."
+  consent_answer:
+    name: "Consent Answer"
+    description: "User answered the question for consent."
+  invoke_expert_agent:
+    name: "Invoke ExpertAskingAgent"
+    description: "Forwarding request to ExpertAskingAgent that will prompt experts."
+  expert_answer_positive:
+    name: "Expert Answer Positive"
+    description: "ExpertAskingAgent was able to extract information from expert."
+  expert_answer_negative:
+    name: "Expert Answer Negative"
+    description: "ExpertAskingAgent was NOT able to extract information from expert."
+  expert_answer_error:
+    name: "Expert Answer Error"
+    description: "ExpertAskingAgent encountered an error."
+
+# ExpertAskingAgent steps
+expert_asking:
+  invoke_expert:
+    name: "Invoke Expert Step"
+    description: "Poses question to a group of experts."
+  expert_response:
+    name: "Expert Response"
+    description: "Processes the expert response."
+  response_sufficient_router:
+    name: "Response Sufficient Router"
+    description: "Checks whether the expert has sufficiently answered the question yet."
+  follow_up_question:
+    name: "Follow up question"
+    description: "Poses follow up question to expert as answer is not sufficient yet."
+
+# NamespaceSelectionAgent steps
+namespace_selection:
+  initialize_determination:
+    name: "Initialize Namespace Determination"
+    description: "Fetches namespaces and initializes the determination loop"
+  determine_namespaces:
+    name: "Determine Namespaces"
+    description: "LLM analyzes conversation to determine namespaces"
+  process_follow_up:
+    name: "Process Follow-Up"
+    description: "Processes user's follow-up response and continues determination"
+  process_approval_approved:
+    name: "Process Approval - Approved"
+    description: "Stores selection and forwards to RAG agent"
+  process_approval_rejected:
+    name: "Process Approval - Rejected"
+    description: "Adds rejection to conversation and loops back"
+  rag_response:
+    name: "RAG Response"
+    description: "Handles response from RAG agent"
+  rag_error:
+    name: "RAG Error"
+    description: "Handles error from RAG agent"
+  forward_to_rag:
+    name: "Forward to RAG"
+    description: "Forwards query to RAG agent with namespace selection"
+
+# RetrievalAgent steps
+retrieval:
+  retrieve_nodes:
+    name: "Retrieve nodes"
+    description: "Retrieves relevant nodes from the knowledge base."
+  order_nodes:
+    name: "Order nodes by documents"
+    description: "Orders the retrieved nodes by their source documents."
+  stop:
+    name: "Stop step"
+    description: "Stops the agent and returns the ordered nodes as context messages."
+
+# LLMWrappingAgent steps
+llm_wrapping:
+  start:
+    name: "Process User Message"
+    description: "Forwards the user message to the LLM and streams the response."
+
+# FewShotAgent steps
+few_shot:
+  limit_chat_history:
+    name: "Limit Chat History"
+    description: "Truncates incoming chat messages to fit within the configured token limit."
+  agent_suitability_guard:
+    name: "Agent Suitability Guard"
+    description: "Checks whether the agent is suitable for handling the user's request."
+  condense_standalone_question:
+    name: "Condense Standalone Question"
+    description: "Condenses the chat history and user query into a standalone question."
+  create_few_shot_examples:
+    name: "Create Few-Shot Examples"
+    description: "Prepares few-shot examples and creates the full context for LLM."
+  respond_with_llm:
+    name: "Respond with LLM"
+    description: "Generates a response using the LLM based on few-shot examples."
+  stop:
+    name: "Stop"
+    description: "Stops the agent when request is rejected by suitability guard."

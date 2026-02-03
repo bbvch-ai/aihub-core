@@ -1,7 +1,7 @@
 import html
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Annotated, Any
+from typing import Annotated, Any, Self
 
 import bs4
 from bs4.element import PageElement
@@ -145,7 +145,6 @@ class MarkdownContentSplitter:
         if new_header_level > 0:
             self.current_headers[f"h{new_header_level}"] = new_header
 
-        # Clear lower-level headers if moving to a higher level
         for i in range(new_header_level + 1, 7):
             self.current_headers[f"h{i}"] = None
 
@@ -303,7 +302,6 @@ class NodeCreatorFromSplits:
         @param nodes: The nodes to set relationships for.
         """
         for prev_node, curr_node in zip(nodes, nodes[1:]):
-            # Check if the nodes share the same heading at each level (h1 to h6)
             same_heading = True
             for i in range(1, 7):
                 if prev_node.metadata.get(f"h{i}") != curr_node.metadata.get(f"h{i}"):
@@ -336,7 +334,6 @@ class NodeCreatorFromSplits:
         if last_nodes_stack:
             nodes[0].relationships[NodeRelationship.PREVIOUS] = RelatedNodeInfo(node_id=last_nodes_stack[-1][1].node_id)
 
-        # Update the stack with the last node of the current level
         last_nodes_stack.append((header_level, nodes[-1]))
 
 
@@ -419,7 +416,7 @@ class MarkdownStructuralNodeParser(NodeParser):
         chunk_size: int = 512,
         chunk_overlap: int = 0,
         callback_manager: CallbackManager | None = None,
-    ) -> "MarkdownStructuralNodeParser":
+    ) -> Self:
         return cls(
             include_metadata=include_metadata,
             metadata=metadata or DEFAULT_METADATA.copy(),

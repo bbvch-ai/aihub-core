@@ -1,6 +1,7 @@
 import re
 import secrets
 from datetime import UTC, datetime
+from typing import Self
 
 from bson import ObjectId
 from mongoengine import DateTimeField, Document, IntField, StringField
@@ -22,7 +23,7 @@ class BearerToken(Document):
 
     @classmethod
     @trace_fn
-    def verify_token(cls, token_str: str) -> "BearerToken":
+    def verify_token(cls, token_str: str) -> Self:
         """
         Verifies that the provided token string is valid:
           - Matches the expected format.
@@ -34,7 +35,6 @@ class BearerToken(Document):
         if not match:
             raise ValueError("Invalid token format")
 
-        # Extract the MongoDB ObjectID from the token string
         oid = match.group("oid")
 
         try:
@@ -43,7 +43,6 @@ class BearerToken(Document):
         except DoesNotExist:
             raise ValueError("Token not found")
 
-        # Check that the token string exactly matches the stored token
         if token_obj.token != token_str:
             raise ValueError("Token mismatch")
 
@@ -59,12 +58,11 @@ class BearerToken(Document):
 
     @classmethod
     @trace_fn
-    def create_new_token(cls, name: str, expiry_date: datetime, user_oid: str) -> "BearerToken":
+    def create_new_token(cls, name: str, expiry_date: datetime, user_oid: str) -> Self:
         """
         Creates a new API token. The token is generated using the document's ID
         and a secure, random string.
         """
-        # Generate a secure random part for the token
         random_part = secrets.token_urlsafe(128)[:128]
         token_obj = cls(
             name=name,

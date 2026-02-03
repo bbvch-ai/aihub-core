@@ -154,6 +154,7 @@ def jetstream_context():
 def topic_manager():
     """Create a topic manager for testing."""
     mock_manager = Mock(spec=ProcessClassTopicManager)
+    mock_manager.process_class = "MockProcess"
     mock_manager.get_process_class_topic = Mock(return_value="process.MockProcess")
     mock_manager.get_process_thread_topic_manager = Mock()
     # Mock the get_stream method that BaseDispatcher needs
@@ -191,7 +192,7 @@ def process_dispatcher(
     # Create the dispatcher with real instantiation
     dispatcher = ProcessDispatcher(
         process=MockProcess,
-        default_process_config=mock_process_config,
+        process_config=mock_process_config,
         nc=nats_client,
         js=jetstream_context,
         redis=redis_client,
@@ -208,6 +209,8 @@ def process_dispatcher(
     dispatcher.step_store.mark_execution_context_as_crashed = AsyncMock()
     dispatcher.step_store.delete_all = AsyncMock()
     dispatcher.step_store.get_execution_count = AsyncMock(return_value=0)
+    dispatcher.step_store.was_called_with_events = AsyncMock(return_value=False)
+    dispatcher.step_store.report_execution_context_with_events = AsyncMock()
     dispatcher._step_meets_basic_execution_requirements = AsyncMock(return_value=True)
 
     # Mock publisher methods to avoid actual NATS publishing during tests
@@ -281,7 +284,8 @@ class TestProcessDispatcherHandleEvent:
             # Assert - Check that default config was used
             walkthrough_context = WalkthroughContext(process_dispatcher.redis, process_topic.process_walkthrough_id)
             stored_config = await walkthrough_context.get("_process_config")
-            assert stored_config == mock_process_config.model_dump()
+            # Compare without private fields like _form_name
+            assert stored_config == mock_process_config.model_dump(exclude={"_form_name"})
 
     @pytest.mark.asyncio
     async def test_handle_stop_event_cleans_up_context(self, process_dispatcher, process_topic):
@@ -289,7 +293,7 @@ class TestProcessDispatcherHandleEvent:
         # Arrange - First set up some data in the context
         stop_event = CustomProcessStopEvent(payload="Test stop event")
         walkthrough_context = WalkthroughContext(process_dispatcher.redis, process_topic.process_walkthrough_id)
-        await walkthrough_context.set("_process_config", process_dispatcher.default_process_config.model_dump())
+        await walkthrough_context.set("_process_config", process_dispatcher.process_config.model_dump())
         await walkthrough_context.set("test_data", "test_value")
 
         with (
@@ -313,7 +317,7 @@ class TestProcessDispatcherHandleEvent:
         exception_event = ProcessExceptionEvent(message="Test exception")
 
         mock_walkthrough_context = Mock(spec=WalkthroughContext)
-        mock_walkthrough_context.get = AsyncMock(return_value=process_dispatcher.default_process_config.model_dump())
+        mock_walkthrough_context.get = AsyncMock(return_value=process_dispatcher.process_config.model_dump())
 
         with (
             patch(
@@ -341,7 +345,7 @@ class TestProcessDispatcherHandleEvent:
 
         mock_walkthrough_context = Mock(spec=WalkthroughContext)
         mock_walkthrough_context.set = AsyncMock()
-        mock_walkthrough_context.get = AsyncMock(return_value=process_dispatcher.default_process_config.model_dump())
+        mock_walkthrough_context.get = AsyncMock(return_value=process_dispatcher.process_config.model_dump())
 
         # Use the actual MockProcess step method
         mock_step_method = MockProcess.start_step
@@ -377,7 +381,7 @@ class TestProcessDispatcherHandleEvent:
     ):
         """Test that non-start events retrieve process config from walkthrough context."""
         # Arrange - First store config in context
-        stored_config = process_dispatcher.default_process_config.model_dump()
+        stored_config = process_dispatcher.process_config.model_dump()
 
         # Pre-populate the context with config
         walkthrough_context = WalkthroughContext(process_dispatcher.redis, process_topic.process_walkthrough_id)
@@ -431,18 +435,13 @@ class TestProcessDispatcherErrorHandling:
     ):
         """Test handling of invalid process config type validation."""
         # Arrange
-        invalid_config: dict[str, Any] = {"invalid": "config"}
+        # Create a config missing required fields that aren't in non-configurable values
+        invalid_config: dict[str, Any] = {"name": "invalid"}  # Missing required fields like process_class, process_id
         start_event = InitialProcessWorkEvent(
             process_config=invalid_config, process_stop_event=mock_initial_process_stop_event
         )
 
-        mock_walkthrough_context = Mock(spec=WalkthroughContext)
-        mock_walkthrough_context.set = AsyncMock()
-
         with (
-            patch(
-                "aihub_process.dispatchers.ProcessDispatcher.WalkthroughContext", return_value=mock_walkthrough_context
-            ),
             patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
             mock_base_handle.return_value = None

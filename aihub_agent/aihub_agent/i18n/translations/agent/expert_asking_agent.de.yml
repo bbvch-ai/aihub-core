@@ -1,29 +1,59 @@
-follow_up_question: |
-  Der Experte wurde gefragt: "{{ question }}"
+metadata:
+  name: Experten-Koordinator-Agent
+  description: Autonomer Agent, der mit menschlichen Experten koordiniert, um spezialisiertes
+    Wissen zu sammeln und zu extrahieren
+config:
+  channel_type:
+    label: Kanaltyp
+    help: Wählen Sie den Kommunikationskanal für die Experteneskalation
+    teams_label: Microsoft Teams
+    slack_label: Slack
+  loop_max:
+    label: Max. Schleifen
+  insight_namespace:
+    label: Insight-Namespace
+routes:
+  answer_sufficient: Der Experte hat die Frage beantwortet. Wählen Sie dies, wenn
+    der Experte IRGENDEINE direkte Antwort gegeben hat.
+  answer_insufficient: Der Experte hat NICHT geantwortet. Wählen Sie dies NUR, wenn
+    der Experte 'Ich weiss nicht' sagte oder die Antwort verweigerte.
+thoughts:
+  asking_question: 'Frage an Experten stellen: ''%{question}''.'
+  expert_responded: 'Experte hat geantwortet: ''%{response}''.'
+  determine_sufficient: Überprüfen, ob die Antwort des Experten ausreichend ist.
+  answer_sufficient: Die Antwort des Experten ist ausreichend.
+  max_questions_reached: Maximale Anzahl an Folgefragen erreicht.
+  returning_insufficient: Kehre zum Benutzer mit einer unzureichenden Antwort zurück.
+  answer_not_sufficient: Antwort ist nicht ausreichend, formuliere eine Folgefrage.
+follow_up_question: 'Der Experte wurde gefragt: "{{ question }}"
+
 
   Seine Antwort:
+
   {% for message in chat_history %}
-  {% if message.role.value == 'user' %}
+
+  {% if message.role.value == ''user'' %}
+
   {% for block in message.blocks %}
-  {% if block.block_type == 'text' %}
+
+  {% if block.block_type == ''text'' %}
+
   {{ block.text }}
+
   {% endif %}
+
   {% endfor %}
+
   {% endif %}
+
   {% endfor %}
 
-  Der Experte sagte entweder, dass er es nicht weiss, hat nicht geantwortet, oder hat nur einen Teil der Frage beantwortet.
-  Fragen Sie nach den spezifischen fehlenden Informationen. Halten Sie es kurz und höflich. Fragen Sie nur nach dem, was ursprünglich angefragt aber noch nicht beantwortet wurde.
 
-routes:
-  answer_sufficient: "Der Experte hat die Frage beantwortet. Wählen Sie dies, wenn der Experte IRGENDEINE direkte Antwort gegeben hat."
-  answer_insufficient: "Der Experte hat NICHT geantwortet. Wählen Sie dies NUR, wenn der Experte 'Ich weiss nicht' sagte oder die Antwort verweigerte."
+  Der Experte sagte entweder, dass er es nicht weiss, hat nicht geantwortet, oder
+  hat nur einen Teil der Frage beantwortet.
 
-thoughts:
-  asking_question: "Frage an Experten stellen: '%{question}'."
-  expert_responded: "Experte hat geantwortet: '%{response}'."
-  determine_sufficient: "Überprüfen, ob die Antwort des Experten ausreichend ist."
-  answer_sufficient: "Die Antwort des Experten ist ausreichend."
-  max_questions_reached: "Maximale Anzahl an Folgefragen erreicht."
-  returning_insufficient: "Kehre zum Benutzer mit einer unzureichenden Antwort zurück."
-  answer_not_sufficient: "Antwort ist nicht ausreichend, formuliere eine Folgefrage."
+  Fragen Sie nach den spezifischen fehlenden Informationen. Halten Sie es kurz und
+  höflich. Fragen Sie nur nach dem, was ursprünglich angefragt aber noch nicht beantwortet
+  wurde.
+
+  '

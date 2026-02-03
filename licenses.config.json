@@ -17,11 +17,14 @@
     "process",
     "pipeline",
     "llm_wrapping_agent",
+    "few_shot_agent",
     "default_rag_pipeline",
     "shared_rag_pipeline",
+    "retrieval_agent",
     "rag_agent",
     "expert_rag_agent",
-    "expert_asking_agent"
+    "expert_asking_agent",
+    "namespace_selection_agent"
   ],
   "license_categories": {
     "restrictive": [
