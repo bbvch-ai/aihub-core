@@ -2,6 +2,37 @@
 
 Automated LLM-based system for generating business-focused whitepaper chapters from technical documentation.
 
+## Directory Structure
+
+```
+whitepaper/
+├── chapters/                          # Self-contained chapter folders
+│   ├── 00-executive-summary/
+│   │   ├── prompt.md                  # Chapter writing instructions
+│   │   ├── sources.md                # Source doc mappings
+│   │   └── output.md                  # Generated chapter
+│   ├── 01-business-challenge/
+│   │   └── ...
+│   └── XX-chapter-name/
+│       └── ...
+├── config/                            # Configuration files
+│   ├── glossary.md                    # Terminology definitions
+│   ├── general_prompt.md              # General writing instructions
+│   └── metadata.yaml                  # PDF metadata (title, author, date)
+├── scripts/                           # Generation scripts
+│   ├── generate-sources.py            # LLM-based source discovery
+│   ├── generate-whitepaper.py         # Chapter generation
+│   └── llm_utils.py                   # Shared utilities
+├── templates/                         # Jinja2 prompt templates
+│   └── full_prompt.j2
+├── graphics/                          # Images for the whitepaper
+├── build/                             # Build output
+│   ├── whitepaper.tex                 # LaTeX template
+│   └── whitepaper.pdf                 # Generated PDF
+├── Makefile                           # Build automation
+└── README.md
+```
+
 ## How It Works
 
 The generator consists of two scripts:
@@ -12,47 +43,19 @@ The generator consists of two scripts:
 ### Source Discovery
 
 The source discovery script scans all documentation files and uses an LLM to determine which docs are relevant for each
-chapter. This eliminates manual maintenance of `sources/*.txt` files as documentation grows.
+chapter. This eliminates manual maintenance of `sources.md` files as documentation grows.
 
 ### Chapter Generation
 
 The generator builds a combined prompt containing:
 
-1. **Terminology Glossary** (`glossary.md`) - Consistent term definitions
-2. **Previous Chapters** (`output/`) - For style consistency
-3. **Source Documentation** (from `sources/XX_sources.txt`) - Technical facts
-4. **Chapter Instructions** (`prompts/XX_prompt.md`) - What to write
-5. **General Guidelines** (`general_prompt.md`) - Writing style
+1. **Terminology Glossary** (`config/glossary.md`) - Consistent term definitions
+2. **Previous Chapters** (from earlier `chapters/*/output.md`) - For style consistency
+3. **Source Documentation** (from `chapters/XX/sources.md`) - Technical facts
+4. **Chapter Instructions** (`chapters/XX/prompt.md`) - What to write
+5. **General Guidelines** (`config/general_prompt.md`) - Writing style
 
-This prompt is sent to an LLM, which generates a polished business chapter. The generator uses **Jinja2 templates** for
-clean, maintainable prompt construction.
-
-## Directory Structure
-
-```
-whitepaper/
-├── generate-sources.py        # LLM-based source discovery
-├── generate-whitepaper.py     # Main chapter generator
-├── glossary.md                # Terminology definitions
-├── general_prompt.md          # General writing instructions
-├── templates/                 # Jinja2 prompt templates
-│   └── full_prompt.j2
-├── prompts/                   # Chapter-specific prompts
-│   ├── 00_prompt.md          # Executive Summary
-│   ├── 01_prompt.md          # Business Challenge
-│   └── XX_prompt.md          # More chapters...
-├── sources/                   # Source doc mappings (auto-generated)
-│   ├── 00_sources.txt        # Docs for Executive Summary
-│   ├── 01_sources.txt        # Docs for Business Challenge
-│   └── XX_sources.txt        # More sources...
-├── output/                    # Generated chapters
-│   ├── 00_output.md
-│   ├── 01_output.md
-│   └── XX_output.md
-├── whitepaper.tex             # LaTeX template for PDF
-├── metadata.yaml              # PDF metadata (title, author, date)
-└── whitepaper.pdf             # Generated PDF output
-```
+This prompt is sent to an LLM, which generates a polished business chapter.
 
 ## Prerequisites
 
@@ -101,10 +104,10 @@ make clean
 
 ```bash
 # 1. Update source mappings when documentation changes
-./generate-sources.py
+python scripts/generate-sources.py
 
 # 2. Generate whitepaper chapters
-./generate-whitepaper.py
+python scripts/generate-whitepaper.py
 
 # 3. Build PDF
 make pdf
@@ -120,19 +123,19 @@ Automatically discovers which documentation files are relevant for each chapter 
 
 ```bash
 # Update sources for all chapters
-./generate-sources.py
+python scripts/generate-sources.py
 
 # Update specific chapters only
-./generate-sources.py 03 05 07
+python scripts/generate-sources.py 03-data-sovereignty 05-administration-governance
 
 # Preview without writing files
-./generate-sources.py --dry-run
+python scripts/generate-sources.py --dry-run
 
 # List chapters and their source counts
-./generate-sources.py --list
+python scripts/generate-sources.py --list
 
 # Use a different model
-./generate-sources.py --model claude-3-5-sonnet-20241022
+python scripts/generate-sources.py --model claude-3-5-sonnet-20241022
 ```
 
 The script:
@@ -141,7 +144,7 @@ The script:
 2. Extracts title and summary from each file
 3. Sends chapter prompt + doc manifest to LLM
 4. LLM returns relevant file paths
-5. Writes validated paths to `sources/XX_sources.txt`
+5. Writes validated paths to `chapters/XX/sources.md`
 
 **Note:** Generated source files can be manually adjusted. The script adds a comment indicating they were auto-generated.
 
@@ -150,42 +153,52 @@ The script:
 Generate All Chapters
 
 ```bash
-./generate-whitepaper.py
+python scripts/generate-whitepaper.py
 ```
 
 ### Generate Specific Chapters
 
 ```bash
-./generate-whitepaper.py 00 03 07
+python scripts/generate-whitepaper.py 00 03
 ```
 
 ### List Available Chapters
 
 ```bash
-./generate-whitepaper.py --list
+python scripts/generate-whitepaper.py --list
 ```
 
 ### Use Different Model
 
 ```bash
-./generate-whitepaper.py --model claude-3-5-sonnet-20241022
-./generate-whitepaper.py --model gpt-4
+python scripts/generate-whitepaper.py --model claude-3-5-sonnet-20241022
+python scripts/generate-whitepaper.py --model gpt-4
 ```
 
 ### Get Help
 
 ```bash
-./generate-whitepaper.py --help
+python scripts/generate-whitepaper.py --help
 ```
 
 ## Key Features
 
-### 1. Terminology Glossary
+### 1. Chapter-Centric Organization
 
-The `glossary.md` file ensures consistent terminology across all chapters. When you define terms here, the LLM will use
-them consistently throughout the whitepaper.
+Each chapter is self-contained in its own folder with all related files:
 
-### 2. Intelligent Regeneration
+- `prompt.md` - Writing instructions for this chapter
+- `sources.md` - Documentation files to use as source material
+- `output.md` - Generated chapter content
+
+This makes it easy to understand what each chapter is about and find all related files.
+
+### 2. Terminology Glossary
+
+The `config/glossary.md` file ensures consistent terminology across all chapters. When you define terms here, the LLM
+will use them consistently throughout the whitepaper.
+
+### 3. Intelligent Regeneration
 
 When regenerating an existing chapter, the script:
 
@@ -194,7 +207,7 @@ When regenerating an existing chapter, the script:
 - Preserves manual edits that don't conflict with source docs
 - Maintains consistent style
 
-### 3. Chapter Consistency
+### 4. Chapter Consistency
 
 The script automatically includes all previously generated chapters in the prompt to ensure:
 
@@ -202,12 +215,12 @@ The script automatically includes all previously generated chapters in the promp
 - Coherent narrative flow
 - No repetition across chapters
 
-### 4. Automatic Formatting
+### 5. Automatic Formatting
 
-Generated markdown files are automatically formatted using `mdformat` with your project's `pyproject.toml` configuration
-(line wrapping at 120 characters, GFM extensions, etc.).
+Generated markdown files are automatically formatted using `mdformat` with your project's `pyproject.toml`
+configuration (line wrapping at 120 characters, GFM extensions, etc.).
 
-### 5. Cost Tracking
+### 6. Cost Tracking
 
 Both scripts track token usage and display an estimated cost summary at the end of each run:
 
@@ -221,47 +234,56 @@ Both scripts track token usage and display an estimated cost summary at the end 
   Est. cost:      $0.5940 USD
 ```
 
-Pricing is based on official Gemini API rates from https://ai.google.dev/gemini-api/docs/pricing
-
 ## Creating a New Chapter
 
-### 1. Create Chapter Prompt: `prompts/XX_prompt.md`
+### 1. Create Chapter Directory
+
+```bash
+mkdir chapters/XX-chapter-name
+```
+
+### 2. Create Chapter Prompt: `chapters/XX-chapter-name/prompt.md`
 
 ```markdown
 # Chapter X: Your Title
 
 ## Chapter Objective
+
 Describe what this chapter accomplishes...
 
 ## Target Audience
+
 - Decision makers evaluating...
 - Administrators planning...
 
 ## Key Topics to Cover
+
 - Topic 1
 - Topic 2
 - Topic 3
 
 ## Questions This Chapter Must Answer
+
 - Question 1?
 - Question 2?
 
 ## Writing Style
+
 - Tone: Business-focused, accessible
 - Length: 5-6 pages (2000-2400 words)
 ```
 
-### 2. Discover Sources Automatically
+### 3. Discover Sources Automatically
 
 ```bash
 # Let LLM find relevant documentation
-./generate-sources.py XX
+python scripts/generate-sources.py XX-chapter-name
 
 # Review the generated sources file
-cat sources/XX_sources.txt
+cat chapters/XX-chapter-name/sources.md
 ```
 
-Alternatively, create `sources/XX_sources.txt` manually:
+Alternatively, create `chapters/XX-chapter-name/sources.md` manually:
 
 ```
 # Source Documentation for Chapter X
@@ -271,25 +293,25 @@ Alternatively, create `sources/XX_sources.txt` manually:
 2_platform/5_agents/2_rag_agent/index.en.md
 ```
 
-### 3. Generate the Chapter
+### 4. Generate the Chapter
 
 ```bash
-./generate-whitepaper.py XX
+python scripts/generate-whitepaper.py XX-chapter-name
 ```
 
-### 4. Review and Iterate
+### 5. Review and Iterate
 
-- Review `output/XX_output.md`
+- Review `chapters/XX-chapter-name/output.md`
 - Refine prompt if needed
 - Regenerate until satisfied
 
 ## Glossary Management
 
-The `glossary.md` file defines standard terminology. When adding terms:
+The `config/glossary.md` file defines standard terminology. When adding terms:
 
 1. **Verwendung:** How to write it (e.g., "Agenten-Profil")
-3. **Definition:** What it means
-4. **Kontext:** Additional context or usage notes
+2. **Definition:** What it means
+3. **Kontext:** Additional context or usage notes
 
 The glossary is automatically included in every chapter generation prompt.
 
@@ -335,7 +357,7 @@ Add to the chapter prompt:
 - Verify source file paths are correct
 - Check API rate limits
 - Try a different model
-- Check `sources/XX_sources.txt` for typos
+- Check `chapters/XX/sources.md` for typos
 
 ### No line breaks in output
 
@@ -374,7 +396,7 @@ Conditional content here
 {% endfor %}
 ```
 
-Then update `generate-whitepaper.py` to pass the new variables to `template.render()`.
+Then update `scripts/generate-whitepaper.py` to pass the new variables to `template.render()`.
 
 ## Support
 

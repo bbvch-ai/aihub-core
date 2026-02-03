@@ -1,16 +1,26 @@
 \documentclass[11pt,a4paper]{article}
 
 \usepackage[a4paper,margin=2.5cm,includefoot]{geometry}
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
-\usepackage{lmodern}          % Latin Modern (for math etc.)
-\usepackage[scaled=0.95]{helvet} % Helvetica as sans-serif (Arial-ish)
-\renewcommand{\familydefault}{\sfdefault} % use sans serif as main text font
+
+% XeLaTeX font setup for proper Unicode support (including German „quotes")
+\usepackage{fontspec}
+\setmainfont{TeX Gyre Heros}[  % Helvetica clone with full Unicode support
+  Scale=0.95,
+  Ligatures=TeX
+]
+\setsansfont{TeX Gyre Heros}[Scale=0.95]
+
+% Fallback if TeX Gyre Heros is not available
+% \setmainfont{Arial}
+% \setsansfont{Arial}
 
 \usepackage{graphicx}
 \graphicspath{{graphics/}} % note the double braces
 \usepackage{array}
 \usepackage{booktabs}
+\usepackage{polyglossia}      % XeLaTeX language support
+\setmainlanguage{german}
+\usepackage{csquotes}         % Proper quotation mark handling
 \usepackage{hyperref}
 \usepackage{fancyhdr}
 \usepackage{lastpage}

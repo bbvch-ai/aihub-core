@@ -3,16 +3,16 @@
 Source Discovery for Swiss AI-Hub Whitepaper
 
 Uses LLM to automatically discover which documentation files are relevant
-for each whitepaper chapter, eliminating manual maintenance of sources.txt files.
+for each whitepaper chapter, eliminating manual maintenance of sources.md files.
 
-This solves the problem of sources.txt files drifting out of sync as
+This solves the problem of sources.md files drifting out of sync as
 documentation grows and changes.
 
 Usage:
-  python generate-sources.py              # Update sources for all chapters
-  python generate-sources.py 01 03 05     # Update specific chapters
-  python generate-sources.py --list       # List available chapters
-  python generate-sources.py --dry-run    # Preview without writing files
+  python generate-sources.py                        # Update sources for all chapters
+  python generate-sources.py 00-executive-summary   # Update specific chapter
+  python generate-sources.py --list                 # List available chapters
+  python generate-sources.py --dry-run              # Preview without writing files
 """
 
 import argparse
@@ -23,6 +23,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from llm_utils import Colors, UsageTracker, call_llm
+
+# File name constants
+PROMPT_FILE = "prompt.md"
+SOURCES_FILE = "sources.md"
 
 
 @dataclass
@@ -38,9 +42,8 @@ class DocInfo:
 class Config:
     """Configuration for source discovery."""
 
-    script_dir: Path
-    prompts_dir: Path
-    sources_dir: Path
+    whitepaper_dir: Path
+    chapters_dir: Path
     docs_root: Path
     llm_model: str = "gemini-3-flash-preview"  # Use fast model for discovery
 
@@ -52,25 +55,18 @@ def extract_doc_info(file_path: Path, docs_root: Path) -> DocInfo | None:
     except Exception:
         return None
 
-    # Get relative path
     rel_path = str(file_path.relative_to(docs_root))
 
-    # Extract title from first # heading
     title_match = re.search(r"^#\s+(.+)$", content, re.MULTILINE)
     title = title_match.group(1).strip() if title_match else file_path.stem
 
-    # Extract summary - first non-empty paragraph after title
-    # Skip frontmatter if present
     content_without_frontmatter = re.sub(r"^---.*?---\s*", "", content, flags=re.DOTALL)
 
-    # Find first paragraph (non-heading, non-empty lines)
     paragraphs = re.split(r"\n\s*\n", content_without_frontmatter)
     summary = ""
     for para in paragraphs:
         para = para.strip()
-        # Skip headings, empty lines, and very short content
         if para and not para.startswith("#") and len(para) > 20:
-            # Take first 200 chars
             summary = para[:200].replace("\n", " ")
             break
 
@@ -149,20 +145,16 @@ def parse_llm_output(output: str, valid_paths: set[str]) -> list[str]:
     for line in output.strip().split("\n"):
         line = line.strip()
 
-        # Keep comment lines for organization
         if line.startswith("#"):
             lines.append(line)
             continue
 
-        # Skip empty lines
         if not line:
             continue
 
-        # Validate path exists in our documentation
         if line in valid_paths:
             lines.append(line)
         else:
-            # Try common variations
             variations = [
                 line,
                 line.replace(".de.md", ".en.md"),
@@ -177,14 +169,15 @@ def parse_llm_output(output: str, valid_paths: set[str]) -> list[str]:
 
 
 def discover_sources_for_chapter(
-    chapter_id: str,
+    chapter_name: str,
     config: Config,
     doc_manifest: str,
     valid_paths: set[str],
     usage_tracker: UsageTracker,
 ) -> list[str] | None:
     """Discover relevant source files for a chapter using LLM."""
-    prompt_file = config.prompts_dir / f"{chapter_id}_prompt.md"
+    chapter_dir = config.chapters_dir / chapter_name
+    prompt_file = chapter_dir / PROMPT_FILE
 
     if not prompt_file.exists():
         print(Colors.red(f"✗ Prompt file not found: {prompt_file}"), file=sys.stderr)
@@ -198,7 +191,6 @@ def discover_sources_for_chapter(
     print(Colors.blue(f"  🤖 Calling LLM ({config.llm_model})..."))
     success, output = call_llm(prompt, config.llm_model)
 
-    # Track usage
     usage_tracker.track_last_call()
 
     if not success:
@@ -211,13 +203,13 @@ def discover_sources_for_chapter(
     return sources
 
 
-def write_sources_file(chapter_id: str, sources: list[str], config: Config) -> None:
+def write_sources_file(chapter_name: str, sources: list[str], config: Config) -> None:
     """Write sources to the sources file."""
-    output_file = config.sources_dir / f"{chapter_id}_sources.txt"
+    chapter_dir = config.chapters_dir / chapter_name
+    output_file = chapter_dir / SOURCES_FILE
 
-    # Read chapter prompt to get title for header
-    prompt_file = config.prompts_dir / f"{chapter_id}_prompt.md"
-    chapter_title = f"Chapter {chapter_id}"
+    prompt_file = chapter_dir / PROMPT_FILE
+    chapter_title = chapter_name
     if prompt_file.exists():
         first_line = prompt_file.read_text().split("\n")[0]
         if first_line.startswith("#"):
@@ -235,25 +227,67 @@ def write_sources_file(chapter_id: str, sources: list[str], config: Config) -> N
     output_file.write_text("\n".join(lines))
 
 
-def get_all_chapter_ids(prompts_dir: Path) -> list[str]:
-    """Get all available chapter IDs from prompts directory."""
-    chapter_ids = []
-    for prompt_file in sorted(prompts_dir.glob("*_prompt.md")):
-        chapter_id = prompt_file.stem.replace("_prompt", "")
-        chapter_ids.append(chapter_id)
-    return chapter_ids
+def get_all_chapter_names(chapters_dir: Path) -> list[str]:
+    """Get all available chapter names from chapters directory."""
+    chapter_names = []
+    for chapter_dir in sorted(chapters_dir.iterdir()):
+        if chapter_dir.is_dir() and (chapter_dir / PROMPT_FILE).exists():
+            chapter_names.append(chapter_dir.name)
+    return chapter_names
+
+
+def resolve_chapter_name(chapter_input: str, chapters_dir: Path) -> str | None:
+    """
+    Resolve a chapter input to the full chapter name.
+
+    Supports:
+    - Full name: "01-business-challenge" -> "01-business-challenge"
+    - Numeric prefix: "01" -> "01-business-challenge"
+    - Partial match: "business" -> "01-business-challenge" (if unique)
+
+    Returns None if no match or ambiguous.
+    """
+    all_chapters = get_all_chapter_names(chapters_dir)
+
+    # Exact match
+    if chapter_input in all_chapters:
+        return chapter_input
+
+    # Prefix match (e.g., "01" matches "01-business-challenge")
+    prefix_matches = [c for c in all_chapters if c.startswith(chapter_input + "-") or c == chapter_input]
+    if len(prefix_matches) == 1:
+        return prefix_matches[0]
+
+    # Numeric prefix match (e.g., "1" matches "01-...")
+    try:
+        num = int(chapter_input)
+        num_prefix = f"{num:02d}-"
+        num_matches = [c for c in all_chapters if c.startswith(num_prefix)]
+        if len(num_matches) == 1:
+            return num_matches[0]
+    except ValueError:
+        pass
+
+    # Substring match (if unique)
+    substring_matches = [c for c in all_chapters if chapter_input in c]
+    if len(substring_matches) == 1:
+        return substring_matches[0]
+
+    return None
 
 
 def list_chapters(config: Config) -> None:
     """List all available chapters."""
     print(Colors.blue("Available chapters:"))
 
-    for prompt_file in sorted(config.prompts_dir.glob("*_prompt.md")):
-        chapter_id = prompt_file.stem.replace("_prompt", "")
-        sources_file = config.sources_dir / f"{chapter_id}_sources.txt"
+    for chapter_dir in sorted(config.chapters_dir.iterdir()):
+        if not chapter_dir.is_dir():
+            continue
+
+        chapter_name = chapter_dir.name
+        sources_file = chapter_dir / SOURCES_FILE
         has_sources = "✓" if sources_file.exists() else " "
 
-        # Count sources if file exists
         source_count = 0
         if sources_file.exists():
             for line in sources_file.read_text().split("\n"):
@@ -261,7 +295,7 @@ def list_chapters(config: Config) -> None:
                 if line and not line.startswith("#"):
                     source_count += 1
 
-        print(f"  {chapter_id}: sources[{has_sources}] ({source_count} files)")
+        print(f"  {chapter_name}: sources[{has_sources}] ({source_count} files)")
 
 
 def parse_args() -> argparse.Namespace:
@@ -273,7 +307,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "chapters",
         nargs="*",
-        help="Chapter IDs to update (e.g., 01 03 05). If not specified, updates all.",
+        help="Chapter names to update (e.g., 00-executive-summary). If not specified, updates all.",
     )
     parser.add_argument(
         "--list",
@@ -299,11 +333,11 @@ def parse_args() -> argparse.Namespace:
 def create_config(model: str) -> Config:
     """Create configuration from script location."""
     script_dir = Path(__file__).parent.resolve()
+    whitepaper_dir = script_dir.parent
     return Config(
-        script_dir=script_dir,
-        prompts_dir=script_dir / "prompts",
-        sources_dir=script_dir / "sources",
-        docs_root=script_dir.parent / "docs",
+        whitepaper_dir=whitepaper_dir,
+        chapters_dir=whitepaper_dir / "chapters",
+        docs_root=whitepaper_dir.parent / "docs",
         llm_model=model,
     )
 
@@ -313,8 +347,8 @@ def validate_config(config: Config) -> bool:
     if not config.docs_root.exists():
         print(Colors.red(f"Error: Documentation root not found: {config.docs_root}"), file=sys.stderr)
         return False
-    if not config.prompts_dir.exists():
-        print(Colors.red(f"Error: Prompts directory not found: {config.prompts_dir}"), file=sys.stderr)
+    if not config.chapters_dir.exists():
+        print(Colors.red(f"Error: Chapters directory not found: {config.chapters_dir}"), file=sys.stderr)
         return False
     return True
 
@@ -340,7 +374,7 @@ def print_header(chapters: list[str], model: str, dry_run: bool) -> None:
     print(Colors.blue("║       Source Discovery for Whitepaper           ║"))
     print(Colors.blue("╚══════════════════════════════════════════════════╝"))
     print()
-    print(Colors.green(f"Chapters to process: {', '.join(chapters)}"))
+    print(Colors.green(f"Chapters to process: {len(chapters)}"))
     print(Colors.blue(f"Model: {model}"))
     if dry_run:
         print(Colors.yellow("DRY RUN - no files will be written"))
@@ -348,7 +382,7 @@ def print_header(chapters: list[str], model: str, dry_run: bool) -> None:
 
 
 def process_single_chapter(
-    chapter_id: str,
+    chapter_name: str,
     idx: int,
     total: int,
     config: Config,
@@ -359,10 +393,10 @@ def process_single_chapter(
 ) -> bool:
     """Process a single chapter. Returns True on success."""
     print(Colors.blue("━" * 51))
-    print(Colors.blue(f"Chapter {chapter_id} ({idx}/{total})"))
+    print(Colors.blue(f"Chapter {chapter_name} ({idx}/{total})"))
     print(Colors.blue("━" * 51))
 
-    sources = discover_sources_for_chapter(chapter_id, config, doc_manifest, valid_paths, usage_tracker)
+    sources = discover_sources_for_chapter(chapter_name, config, doc_manifest, valid_paths, usage_tracker)
 
     if sources is None:
         print(Colors.red("  ✗ Failed to discover sources"))
@@ -378,9 +412,8 @@ def process_single_chapter(
         if len(sources) > 10:
             print(Colors.yellow(f"    ... and {len(sources) - 10} more"))
     else:
-        config.sources_dir.mkdir(parents=True, exist_ok=True)
-        write_sources_file(chapter_id, sources, config)
-        output_file = config.sources_dir / f"{chapter_id}_sources.txt"
+        write_sources_file(chapter_name, sources, config)
+        output_file = config.chapters_dir / chapter_name / SOURCES_FILE
         print(Colors.green(f"  ✓ Written to {output_file}"))
 
     print()
@@ -398,6 +431,38 @@ def print_summary(success_count: int, fail_count: int, usage_tracker: UsageTrack
     print(usage_tracker.format_summary())
 
 
+def resolve_chapters_from_args(chapter_inputs: list[str], chapters_dir: Path) -> list[str] | None:
+    """Resolve chapter inputs to full chapter names. Returns None on error."""
+    chapters = []
+    for chapter_input in chapter_inputs:
+        resolved = resolve_chapter_name(chapter_input, chapters_dir)
+        if resolved:
+            chapters.append(resolved)
+        else:
+            print(Colors.red(f"Error: Could not resolve chapter '{chapter_input}'"), file=sys.stderr)
+            print(Colors.yellow("  Use --list to see available chapters"), file=sys.stderr)
+            return None
+    return chapters
+
+
+def run_source_discovery(
+    chapters: list[str], config: Config, doc_manifest: str, valid_paths: set[str], dry_run: bool
+) -> int:
+    """Run source discovery for chapters. Returns exit code."""
+    usage_tracker = UsageTracker(model=config.llm_model)
+    success_count = 0
+    fail_count = 0
+
+    for idx, chapter_name in enumerate(chapters, start=1):
+        if process_single_chapter(chapter_name, idx, len(chapters), config, doc_manifest, valid_paths, usage_tracker, dry_run):
+            success_count += 1
+        else:
+            fail_count += 1
+
+    print_summary(success_count, fail_count, usage_tracker)
+    return 1 if fail_count > 0 else 0
+
+
 def main() -> int:
     """Main entry point."""
     args = parse_args()
@@ -412,28 +477,19 @@ def main() -> int:
 
     doc_manifest, valid_paths = prepare_documentation(config)
 
-    chapters = args.chapters if args.chapters else get_all_chapter_ids(config.prompts_dir)
+    if args.chapters:
+        chapters = resolve_chapters_from_args(args.chapters, config.chapters_dir)
+        if chapters is None:
+            return 1
+    else:
+        chapters = get_all_chapter_names(config.chapters_dir)
+
     if not chapters:
         print(Colors.yellow("No chapters found to process"))
         return 0
 
     print_header(chapters, config.llm_model, args.dry_run)
-
-    usage_tracker = UsageTracker(model=config.llm_model)
-    success_count = 0
-    fail_count = 0
-
-    for idx, chapter_id in enumerate(chapters, start=1):
-        if process_single_chapter(
-            chapter_id, idx, len(chapters), config, doc_manifest, valid_paths, usage_tracker, args.dry_run
-        ):
-            success_count += 1
-        else:
-            fail_count += 1
-
-    print_summary(success_count, fail_count, usage_tracker)
-
-    return 1 if fail_count > 0 else 0
+    return run_source_discovery(chapters, config, doc_manifest, valid_paths, args.dry_run)
 
 
 if __name__ == "__main__":

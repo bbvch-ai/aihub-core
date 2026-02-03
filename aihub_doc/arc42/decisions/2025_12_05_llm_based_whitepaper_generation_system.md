@@ -13,33 +13,60 @@ automatically like technical docs). Traditional manual creation is time-consumin
 - **Professional Output**: LaTeX provides automated, professional typesetting without Word dependencies
 - **Manual Control**: Whitepaper updates are deliberate, not automatic with every code change
 - **Source Synchronization**: Source-to-chapter mappings must stay in sync as documentation grows
+- **Discoverability**: Should be immediately clear what each chapter is about
+- **Cohesion**: Related files (prompt, sources, output) should be grouped together
 
 ## Decision
 
-**Iterative, Python-based LLM whitepaper generator** with these key components:
+**Iterative, Python-based LLM whitepaper generator** with chapter-centric organization:
 
-1. **LLM-Based Source Discovery**: A separate `generate-sources.py` script uses LLM to automatically discover which
-   documentation files are relevant for each chapter. This eliminates manual maintenance of `sources/*.txt` files as
-   documentation evolves. The script scans all docs, builds a manifest (path + title + summary), and asks the LLM to
-   identify relevant files based on chapter objectives.
+### Directory Structure
 
-2. **Iterative Chapter Generation**: Generate chapters sequentially, passing previous chapters as context to maintain
+```
+whitepaper/
+├── chapters/                          # Self-contained chapter folders
+│   ├── 00-executive-summary/
+│   │   ├── prompt.md                  # Writing instructions
+│   │   ├── sources.txt                # Source doc mappings
+│   │   └── output.md                  # Generated output
+│   ├── 01-business-challenge/
+│   └── ...
+├── config/                            # Configuration
+│   ├── glossary.md                    # Terminology definitions
+│   ├── general_prompt.md              # Writing style guidelines
+│   └── metadata.yaml                  # PDF metadata
+├── scripts/                           # Generation scripts
+│   ├── generate-whitepaper.py
+│   ├── generate-sources.py
+│   └── llm_utils.py
+├── templates/                         # Jinja2 templates
+├── graphics/                          # Images
+├── build/                             # Build artifacts
+│   ├── whitepaper.tex
+│   └── whitepaper.pdf
+└── Makefile
+```
+
+### Key Components
+
+1. **Chapter-Centric Organization**: Each chapter is a self-contained folder with descriptive name
+   (e.g., `03-data-sovereignty` instead of just `03`). All related files (prompt, sources, output) live together.
+
+2. **LLM-Based Source Discovery**: `generate-sources.py` uses LLM to automatically discover which documentation files
+   are relevant for each chapter. This eliminates manual maintenance as documentation evolves.
+
+3. **Iterative Chapter Generation**: Generate chapters sequentially, passing previous chapters as context to maintain
    narrative flow. Each prompt includes: glossary, previous chapters, source docs, chapter instructions.
 
-3. **Python + Jinja2**: Use Python (not shell) with Jinja2 templates for clean separation of logic and content. More
-   maintainable and testable than shell scripts.
+4. **Python + Jinja2**: Use Python (not shell) with Jinja2 templates for clean separation of logic and content.
 
-4. **Centralized Glossary**: Single `glossary.md` defines all business terms (Agenten-Profil, Wissensdatenbank, etc.),
-   included in every generation to ensure consistency.
+5. **Centralized Glossary**: Single `config/glossary.md` defines all business terms, included in every generation.
 
-5. **Manual CLI Triggering**: Generate via `./generate-sources.py` then `./generate-whitepaper.py [chapters]` -
-   deliberate regeneration, not automatic.
+6. **Manual CLI Triggering**: Generate via `make all` or individual scripts - deliberate regeneration, not automatic.
 
-6. **LaTeX/PDF Output**: Direct markdown → LaTeX → PDF pipeline (no Word) for professional typesetting and full
-   automation.
+7. **LaTeX/PDF Output**: Direct markdown → LaTeX → PDF pipeline for professional typesetting.
 
-7. **Modular Architecture**: Separate files for glossary, general instructions, chapter prompts, source mappings, and
-   templates - business stakeholders can edit requirements without touching code.
+8. **Separation of Concerns**: Scripts in `scripts/`, config in `config/`, build output in `build/`.
 
 ## Consequences
 
@@ -51,7 +78,9 @@ automatically like technical docs). Traditional manual creation is time-consumin
 - Flexible - prompts and glossary editable without code changes
 - Cost-controlled through manual triggering
 - Source mappings stay synchronized with documentation automatically via LLM discovery
-- No manual maintenance burden as documentation grows (198+ files)
+- Chapter folders immediately show what each chapter covers
+- All chapter-related files in one place (easier to review, modify, delete)
+- Easy to add new chapters (create folder with 3 files)
 
 **Negative:**
 
@@ -68,5 +97,5 @@ automatically like technical docs). Traditional manual creation is time-consumin
 - Python vs. shell: Chose Python for maintainability over simplicity
 - LaTeX vs. Word: Chose LaTeX for automation over familiarity
 - Sequential vs. parallel: Chose sequential for consistency over speed
-- LLM vs. embedding-based source discovery: Chose simple LLM-only approach over embedding retrieval for lower complexity;
-  token cost (~10-20K per chapter) is acceptable given infrequent usage
+- Chapter folders vs. flat files: Chose folders for discoverability over simplicity
+- LLM vs. embedding-based source discovery: Chose simple LLM-only approach for lower complexity
