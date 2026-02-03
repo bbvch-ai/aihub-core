@@ -44,7 +44,7 @@ if exceeded == 0 then
     for i = 1, n do
         local ttl = tonumber(ARGV[2 * i])
         local new_count = redis.call('INCR', KEYS[i])
-        if new_count == 1 or redis.call('TTL', KEYS[i]) < 0 then
+        if new_count == 1 or redis.call('TTL', KEYS[i]) <= 0 then
             redis.call('EXPIRE', KEYS[i], ttl)
         end
         counts[i] = new_count
@@ -105,25 +105,36 @@ class UsageLimitService:
         return sum(1 for segment in pattern.split(".") if segment not in ("*", ">"))
 
     @staticmethod
+    def _validate_user_id(user_id: str) -> None:
+        """Validate user_id contains no characters that could cause Redis key injection."""
+        if not user_id or ":" in user_id or "\n" in user_id or "\r" in user_id:
+            raise ValueError(f"Invalid user_id for Redis: must not be empty or contain ':'/newlines, got {user_id!r}")
+
+    @staticmethod
     def _build_redis_key(user_id: str, pattern: str, period: UsageLimitPeriod) -> str:
-        if ":" in user_id or "\n" in user_id or "\r" in user_id:
-            raise ValueError(f"Invalid user_id for Redis key: must not contain ':' or newlines, got {user_id!r}")
+        UsageLimitService._validate_user_id(user_id)
         return f"usage:calls:{user_id}:{pattern}:{period}"
 
     @staticmethod
-    async def _resolve_reset_at(redis: Redis, key: str) -> datetime | None:
-        """Derive the reset timestamp from the Redis TTL of a counter key."""
-        ttl = await redis.ttl(key)
+    def _ttl_to_reset_at(ttl: int) -> datetime | None:
+        """Convert a TTL value to a reset timestamp."""
         if ttl <= 0:
             return None
         return datetime.now(UTC).replace(microsecond=0) + timedelta(seconds=ttl)
 
     @staticmethod
-    async def _build_limit_status(
-        redis: Redis,
+    async def _batch_resolve_reset_at(redis: Redis, keys: list[str]) -> list[datetime | None]:
+        """Batch fetch TTLs for multiple keys and convert to reset timestamps."""
+        import asyncio
+
+        ttls = await asyncio.gather(*[redis.ttl(key) for key in keys])
+        return [UsageLimitService._ttl_to_reset_at(ttl) for ttl in ttls]
+
+    @staticmethod
+    def _build_limit_status(
         effective_limit: RoleUsageLimit,
-        key: str,
         current_count: int,
+        reset_at: datetime | None,
         *,
         post_increment: bool = False,
     ) -> RoleUsageLimitStatus:
@@ -142,7 +153,7 @@ class UsageLimitService:
             limit=effective_limit.limit,
             period=effective_limit.period,
             current_count=current_count,
-            reset_at=await UsageLimitService._resolve_reset_at(redis, key),
+            reset_at=reset_at,
             is_exceeded=is_exceeded,
         )
 
@@ -268,6 +279,7 @@ class UsageLimitService:
         resource_path: str | None = None,
     ) -> UsageStatus:
         """Get current usage status without incrementing any counter."""
+        UsageLimitService._validate_user_id(user_id)
         effective_limits = UsageLimitService.get_effective_limits_for_roles(role_names, resource_path)
         if not effective_limits:
             return UsageStatus(limits=[], is_exceeded=False)
@@ -277,13 +289,12 @@ class UsageLimitService:
             for effective_limit in effective_limits
         ]
         raw_values = await redis.mget(keys)
+        reset_ats = await UsageLimitService._batch_resolve_reset_at(redis, keys)
 
-        limit_statuses: list[RoleUsageLimitStatus] = []
-        for effective_limit, key, raw_value in zip(effective_limits, keys, raw_values):
-            current_count = int(raw_value) if raw_value else 0
-            limit_statuses.append(
-                await UsageLimitService._build_limit_status(redis, effective_limit, key, current_count)
-            )
+        limit_statuses = [
+            UsageLimitService._build_limit_status(effective_limit, int(raw_value) if raw_value else 0, reset_at)
+            for effective_limit, raw_value, reset_at in zip(effective_limits, raw_values, reset_ats)
+        ]
 
         return UsageStatus(
             limits=limit_statuses,
@@ -303,6 +314,7 @@ class UsageLimitService:
         Uses a single Lua script so the check-then-increment is atomic within Redis,
         preventing race conditions under concurrent requests.
         """
+        UsageLimitService._validate_user_id(user_id)
         effective_limits = UsageLimitService.get_effective_limits_for_roles(role_names, resource_path)
         if not effective_limits:
             return UsageStatus(limits=[], is_exceeded=False)
@@ -319,11 +331,12 @@ class UsageLimitService:
         counts = [int(result[i + 1]) for i in range(len(effective_limits))]
         post_increment = exceeded_flag == 0
 
-        limit_statuses: list[RoleUsageLimitStatus] = []
-        for el, key, count in zip(effective_limits, keys, counts):
-            limit_statuses.append(
-                await UsageLimitService._build_limit_status(redis, el, key, count, post_increment=post_increment)
-            )
+        reset_ats = await UsageLimitService._batch_resolve_reset_at(redis, keys)
+
+        limit_statuses = [
+            UsageLimitService._build_limit_status(el, count, reset_at, post_increment=post_increment)
+            for el, count, reset_at in zip(effective_limits, counts, reset_ats)
+        ]
 
         return UsageStatus(
             limits=limit_statuses,

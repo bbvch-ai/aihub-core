@@ -11,7 +11,7 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 
 _LOCALES = LocaleHandler.LOCALE_WHITE_LIST
-_DEFAULT_TIMEZONE = zoneinfo.ZoneInfo("Europe/Zurich")
+_DEFAULT_TIMEZONE = zoneinfo.ZoneInfo("Europe/Zurich")  # Most users are in Europe/Zurich timezone
 
 _SCOPE_PREFIX = "aihub.user."
 
@@ -65,7 +65,7 @@ def describe_pattern(pattern: str, locale: str = "en") -> str:
 _WEEKDAY_KEYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 
 
-def _format_reset_label(reset_at: datetime, locale: str) -> str:
+def _format_reset_label(reset_at: datetime, locale: str, timezone: zoneinfo.ZoneInfo = _DEFAULT_TIMEZONE) -> str:
     """Build a localized reset label that adapts to how far away the reset is.
 
     - Same day  → "Resets at 11:35"
@@ -73,8 +73,8 @@ def _format_reset_label(reset_at: datetime, locale: str) -> str:
     - Within 7 days → "Resets on Wednesday at 11:35"
     - Further   → "Resets on 15.02.2025 at 11:35"
     """
-    local_reset = reset_at.astimezone(_DEFAULT_TIMEZONE)
-    local_now = datetime.now(_DEFAULT_TIMEZONE)
+    local_reset = reset_at.astimezone(timezone)
+    local_now = datetime.now(timezone)
     time_str = local_reset.strftime("%H:%M")
 
     days_until = (local_reset.date() - local_now.date()).days
@@ -129,9 +129,9 @@ def _build_limit_detail(limit_status: RoleUsageLimitStatus) -> LimitDetail:
     )
 
 
-def _compute_reset_fields(reset_at: datetime) -> tuple[str, int]:
-    """Derive local time string and seconds-until-reset from a UTC reset timestamp."""
-    local_time = reset_at.astimezone(_DEFAULT_TIMEZONE)
+def _compute_reset_fields(reset_at: datetime, timezone: zoneinfo.ZoneInfo = _DEFAULT_TIMEZONE) -> tuple[str, int]:
+    """Derive local time string and seconds-until-reset from a reset timestamp."""
+    local_time = reset_at.astimezone(timezone)
     reset_at_local = local_time.strftime("%H:%M")
 
     delta = reset_at - datetime.now(UTC)
@@ -244,7 +244,7 @@ def build_usage_warning_headers(usage_status: UsageStatus, locale: str = "en") -
         "X-Usage-Current": str(usage_status.current_count),
         "X-Usage-Limit": str(usage_status.limit),
         "X-Usage-Remaining": str(remaining),
-        "X-Usage-Period": usage_status.period or "",
+        "X-Usage-Period": usage_status.period.value if usage_status.period else "",
     }
 
 
