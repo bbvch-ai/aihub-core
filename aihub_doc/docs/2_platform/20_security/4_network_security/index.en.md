@@ -66,6 +66,18 @@ Application services run as non-root users in isolated Docker containers with mi
 rules prevent direct communication between unrelated services. Resource limits mitigate resource exhaustion attacks.
 Images get updated regularly with security patches.
 
+### Network segmentation
+
+The platform uses five isolated Docker networks (`proxy`, `backend`, `data`, `storage`, `egress`) to enforce the
+principle of least privilege at the network layer. Services are assigned only to the networks they require:
+
+- **Internal networks** (`backend`, `data`, `storage`) have no external internet access
+- **Egress network** allows outbound internet access only, with Inter-Container Communication (ICC) disabled
+- Services needing to browse external websites (e.g., playwright) use the `egress` network without exposing ingress
+
+See [Network Isolation](../../2_architecture/4_network_isolation/) for detailed network topology and service
+assignments.
+
 ### Data protection
 
 Presidio automatically detects and anonymizes Personally Identifiable Information (PII) in LLM requests. AI-powered
@@ -74,6 +86,7 @@ processing.
 
 ## Related documentation
 
+- [Network isolation](../../2_architecture/4_network_isolation/) - Docker network zones and service assignments
 - [Network requirements](../../3_deployment_guide/7_network_requirements/) - Firewall rules and connectivity
 - [Deployment options](../../3_deployment_guide/1_deployment_options/) - Architecture and hosting strategies
 - [Container security](../3_container_security/) - Container isolation and hardening

@@ -42,14 +42,21 @@ class UserMemoryService:
         user: UserIdentity,
         query: str,
         limit: int,
+        agent_class: str | None,
         agent_id: str | None,
         thread_id: str | None,
         t: LocaleHandler,
     ) -> MemorySearchResponse:
+        # Combine agent_class and agent_id into mem0 format: "agent_class/agent_id"
+        # This matches how AgentMemory stores agent_id (see AgentMemory.agent_id property)
+        combined_agent_id = None
+        if agent_class and agent_id:
+            combined_agent_id = f"{agent_class}/{agent_id}"
+
         user_memory = UserMemory(user=user, t=t)
         search_result = await user_memory.search_user_memory(
             query=query,
-            agent_id=agent_id,
+            agent_id=combined_agent_id,
             thread_id=thread_id,
             limit=limit,
         )

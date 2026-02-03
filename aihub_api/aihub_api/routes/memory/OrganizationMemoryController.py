@@ -47,12 +47,14 @@ class OrganizationMemoryController(Controller):
             t: Annotated[LocaleHandler, Depends(use_locale)],
             query: Annotated[str, Query(description="Search query for semantic search")],
             limit: Annotated[int, Query(ge=1, le=1000, description="Maximum number of results to return")] = 100,
+            agent_class: Annotated[str | None, Query(description="Filter by agent class")] = None,
             agent_id: Annotated[str | None, Query(description="Filter by agent ID")] = None,
             thread_id: Annotated[str | None, Query(description="Filter by thread ID")] = None,
         ) -> MemorySearchResponse:
             return await OrganizationMemoryService.search_memories(
                 query=query,
                 limit=limit,
+                agent_class=agent_class,
                 agent_id=agent_id,
                 thread_id=thread_id,
                 t=t,

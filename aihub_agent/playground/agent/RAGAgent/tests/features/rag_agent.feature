@@ -38,11 +38,13 @@ Feature: RAG Agent
     * an LLMEvent is present with a generated response
     * a StopEvent is present
 
-  Scenario: Test RAGAgent retrieves insights alongside knowledge base documents
-    Given a RAGAgent runner with insight retriever enabled
-    * test insights are pre-seeded in the database
+  Scenario: Test RAGAgent retrieves organization memory alongside knowledge base documents
+    Given a RAGAgent runner with organization memory enabled
+    * organization memories are pre-seeded in the system
     When the start event is sent with a user query "What is machine learning?"
-    Then a RetrieverEvent is present with retrieved nodes
+    Then a RetrieveOrganizationMemoryEvent is present
+    * an AddOrganizationMemoryToChatHistoryEvent is present
+    * a RetrieverEvent is present with retrieved nodes
     * an LLMEvent is present with a generated response
     * a StopEvent is present
 
