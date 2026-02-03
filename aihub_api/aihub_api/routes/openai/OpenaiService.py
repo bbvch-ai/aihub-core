@@ -603,7 +603,7 @@ class OpenaiService:
             "metadata": {"tags": metadata_tags},
         }
         sdk_call_kwargs["extra_headers"] = {}
-        inject(sdk_call_kwargs)
+        inject(sdk_call_kwargs["extra_headers"])
 
         return sdk_call_kwargs
 

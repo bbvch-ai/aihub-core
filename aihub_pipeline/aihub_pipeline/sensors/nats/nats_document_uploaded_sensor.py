@@ -8,7 +8,6 @@ from aihub_lib.nats.polling.JSPoller import JSPoller
 from aihub_lib.nats.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
 from dagster import DefaultSensorStatus, RunRequest, SensorEvaluationContext, sensor
 from dagster._core.definitions.target import ExecutableDefinition
-from nats.aio.client import Client as NATS
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +34,8 @@ def nats_document_uploaded_sensor(
         """Poll NATS JetStream for SourceUpdatedEvent messages and trigger a single pipeline run."""
 
         async def check_for_events():
-            nc = NATS()
             try:
-                await nc.connect(servers=[NatsSettings().ENDPOINT])
+                nc = await NatsSettings.create_client()
                 js = nc.jetstream()
 
                 stream_name, stream_subject = topic_manager.get_stream()

@@ -75,8 +75,8 @@ type DocumentInfo = {
   nodes: IngestedNode[]
 }
 
-const extractBucket = (path: string): string => {
-  const match = path.match(/(?:s3:\/\/|^\/)([^/]+)/)
+const extractBucket = (source: string): string => {
+  const match = source.match(/(?:s3:\/\/|^\/)([^/]+)/)
   return match?.[1] ?? ''
 }
 

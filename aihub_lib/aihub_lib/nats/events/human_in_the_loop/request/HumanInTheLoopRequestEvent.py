@@ -8,7 +8,7 @@ from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 # Type discriminator for HITL request events
-HitlRequestType = Literal["input", "confirmation"]
+HitlRequestType = Literal["input", "confirmation", "chat"]
 
 
 class HumanInTheLoopRequestEvent(ControlAndDisplayEvent):
@@ -16,8 +16,9 @@ class HumanInTheLoopRequestEvent(ControlAndDisplayEvent):
     Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
 
     Use the specific subclasses:
-    - `HumanInTheLoopInputRequestEvent` for free-form text input
-    - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation
+    - `HumanInTheLoopInputRequestEvent` for free-form text input (popup dialog)
+    - `HumanInTheLoopConfirmationRequestEvent` for yes/no confirmation (popup dialog)
+    - `HumanInTheLoopChatRequestEvent` for chat-style input (appears as regular message)
     """
 
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.hitl_request_event.name")
@@ -36,36 +37,6 @@ class HumanInTheLoopRequestEvent(ControlAndDisplayEvent):
     hitl_type: Annotated[
         HitlRequestType,
         Field(
-            description="The type of HITL interaction: 'input' for free-form text, 'confirmation' for yes/no.",
+            description="HITL type: 'input' (free-form text), 'confirmation' (yes/no), 'chat' (chat-style).",
         ),
     ]
-
-
-class HumanInTheLoopInputRequestEvent(HumanInTheLoopRequestEvent):
-    """Request free-form text input from a human operator."""
-
-    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.hitl_input_request_event.name")
-    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
-        "lib.events.hitl_input_request_event.description"
-    )
-
-    hitl_type: Annotated[
-        Literal["input"],
-        Field(default="input", description="Fixed to 'input' for text input requests."),
-    ] = "input"
-
-
-class HumanInTheLoopConfirmationRequestEvent(HumanInTheLoopRequestEvent):
-    """Request yes/no confirmation from a human operator."""
-
-    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path(
-        "lib.events.hitl_confirmation_request_event.name"
-    )
-    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(
-        "lib.events.hitl_confirmation_request_event.description"
-    )
-
-    hitl_type: Annotated[
-        Literal["confirmation"],
-        Field(default="confirmation", description="Fixed to 'confirmation' for yes/no requests."),
-    ] = "confirmation"

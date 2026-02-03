@@ -10,14 +10,11 @@ from aihub_lib.generative_ai.processors.models.RetrieveSummariesConfig import Re
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.generative_ai.retrievers.InsightRetrieverConfig import InsightRetrieverConfig
 from aihub_lib.generative_ai.retrievers.KnowledgeRetrieverConfig import KnowledgeRetrieverConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
-from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
-from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 
@@ -31,7 +28,6 @@ enable_logging()
 
 
 async def main():
-    servers_list = [NatsSettings().ENDPOINT]
     aihub_settings = AIHubSettings()
     runner = AgentRunner(
         agent_type=ExpertRAGAgent,
@@ -198,19 +194,16 @@ async def main():
                         max_parent_levels=2,
                     ),
                 ),
-                InsightRetrieverConfig(
-                    namespace="default",
-                    agent_class="ExpertAskingAgent",
-                    agent_id="expert_agent",
-                ),
             ],
+            # Organization memory configuration (replaces InsightRetrieverConfig)
+            enable_organization_memory=True,
+            tenant_id="AIHub",
+            tenant_namespace="default",
             expert_escalation=ExpertEscalationConfig(
                 expert_asking_agent_class=ExpertAskingAgent.__name__,
                 expert_asking_agent_id="expert_agent",
             ),
         ),
-        redis_url=RedisSettings().URL,
-        servers=servers_list,
     )
 
     await runner.run_forever()

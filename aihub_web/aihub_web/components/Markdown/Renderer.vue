@@ -46,7 +46,7 @@ defineProps<{
 }
 
 .content :deep(blockquote) {
-  @apply px-4 py-3 my-4 italic border-s-4 dark:border-gray-500/20 dark:bg-gray-800/20;
+  @apply px-4 py-3 my-4 italic border-s-4 dark:border-gray-500/20 dark:bg-surface-800/20;
 }
 
 .content :deep(ul) {

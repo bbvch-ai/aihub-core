@@ -109,7 +109,8 @@
     "opentelemetry-proto": "Apache-2.0",
     "opentelemetry-sdk": "Apache-2.0",
     "opentelemetry-semantic-conventions": "Apache-2.0",
-    "types-requests": "Apache-2.0"
+    "types-requests": "Apache-2.0",
+    "neo4j-graphrag": "Apache-2.0"
   },
   "reviewed_packages": [
     {
@@ -300,6 +301,18 @@
       "license": "ISC",
       "status": "✅",
       "notes": "Based on edoburu/pgbouncer (MIT wrapper); permissive licenses"
+    },
+    {
+      "service": "docker-socket-proxy",
+      "license": "Apache-2.0",
+      "status": "✅",
+      "notes": "Permissive license"
+    },
+    {
+      "service": "neo4j",
+      "license": "GPL",
+      "status": "✅",
+      "notes": "Permissive license"
     },
     {
       "service": "rclone",

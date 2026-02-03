@@ -14,7 +14,7 @@
         <ChatMessage
           :message="message"
           :name="message.role == 'user' ? event.event.user.name : message.role"
-          :preferred-username="message.role == 'user' ? event.event.user.email : ''"
+          :email="message.role == 'user' ? event.event.user.email : ''"
           :date="new Date(event.event.created_at / 1_000_000)"
           :icon="agentIcon"
         />

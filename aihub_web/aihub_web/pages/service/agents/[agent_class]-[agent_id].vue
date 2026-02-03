@@ -9,7 +9,9 @@
       size="small"
       @update:model-value="toNavItem"
     />
-    <NuxtPage />
+    <div class="flex gap-8">
+      <NuxtPage />
+    </div>
   </div>
 </template>
 
@@ -39,6 +41,7 @@ const navItems = computed<NavItem[]>(() => {
     { name: t('agent.navigation.basic'), key: 'basic', path: subPath('overview'), isActive: isActive('overview') },
     { name: t('agent.navigation.workflow'), key: 'workflow', path: subPath('workflow'), isActive: isActive('workflow') },
     { name: t('agent.navigation.threads'), key: 'threads', path: subPath('threads'), isActive: isActive('threads') },
+    { name: t('agent.navigation.memories'), key: 'memories', path: subPath('memories'), isActive: isActive('memories') },
   ]
   if (agent.value?.is_conversational) {
     items.push({ name: t('agent.navigation.chat'), key: 'chat', path: subPath('chat'), isActive: isActive('chat') },

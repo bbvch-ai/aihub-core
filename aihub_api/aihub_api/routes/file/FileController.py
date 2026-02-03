@@ -4,8 +4,9 @@ from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.s3.use_s3 import use_s3_service
 from aihub_lib.routes.Controller import Controller
-from fastapi import Query, Security
+from fastapi import Depends, Query, Security
 
 from aihub_api.routes.file.dto.SignedUrlDto import SignedUrlDto
 from aihub_api.routes.file.FileService import FileService
@@ -39,11 +40,12 @@ class FileController(Controller):
             container: str,
             file_path: str,
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
         ) -> SignedUrlDto:
             """
             Generates a short-lived secure link to the blob resource, and returns the URL.
             """
-            sas_url = S3AnonymousFileAccessService().generate_sas_url(container, file_path)
+            sas_url = s3_service.generate_sas_url(container, file_path)
             return SignedUrlDto(url=sas_url)
 
         return self
@@ -54,11 +56,12 @@ class FileController(Controller):
             container: str,
             file_path: str,
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
         ):
             """
             Generates a short-lived secure link to the blob resource, and redirects the user to it.
             """
-            return FileService.get_authenticated_file_redirect(container, file_path)
+            return FileService.get_authenticated_file_redirect(container, file_path, s3_service)
 
         return self
 
@@ -67,13 +70,16 @@ class FileController(Controller):
         async def get_anonymous_file_url(
             container: str,
             file_path: str,
+            s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
             expires: int = Query(..., description="The UNIX timestamp when the link expires."),
             signature: str = Query(..., description="The signature to validate the request."),
         ):
             """
             Provides access to a file via a temporary, signed URL and returns the URL.
             """
-            return SignedUrlDto(url=FileService.get_anonymous_file_url(container, file_path, expires, signature))
+            return SignedUrlDto(
+                url=FileService.get_anonymous_file_url(container, file_path, expires, signature, s3_service)
+            )
 
         return self
 
@@ -84,12 +90,13 @@ class FileController(Controller):
         async def get_anonymous_file_redirect(
             container: str,
             file_path: str,
+            s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
             expires: int = Query(..., description="The UNIX timestamp when the link expires."),
             signature: str = Query(..., description="The signature to validate the request."),
         ):
             """
             Provides access to a file via a temporary URL and redirects the user to it.
             """
-            return FileService.get_anonymous_file_redirect(container, file_path, expires, signature)
+            return FileService.get_anonymous_file_redirect(container, file_path, expires, signature, s3_service)
 
         return self

@@ -7,7 +7,8 @@ from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.nats.events import StartEvent
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
-from aihub_agent.agents.FewShotAgent import FewShotAgent, FewShotAgentConfig
+from aihub_agent.agents.FewShotAgent import FewShotAgent
+from aihub_agent.agents.FewShotAgent.FewShowAgentConfig import FewShotAgentConfig
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
 from aihub_agent.steps.prompting.few_shot_step.FewShotStepConfig import FewShotStepConfig
 

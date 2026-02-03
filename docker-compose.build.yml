@@ -4,8 +4,6 @@
 # To make changes, edit the following files and then run the generator script:
 #   - deployment/compose-config.yml (for changing values and versions)
 #   - deployment/templates/docker-compose.yml.j2 (for changing structure and logic)
-
-
 # ===================================================================
 # TRAEFIK PRIORITY RULES
 # ===================================================================
@@ -82,6 +80,8 @@ services:
       -defaultReplication=000
       -volumeSizeLimitMB=1024
       -volumePreallocate=false
+    environment:
+      WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-master:/data
     healthcheck:
@@ -95,6 +95,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
 
   seaweedfs-volume:
     container_name: seaweedfs-volume
@@ -110,6 +112,8 @@ services:
       -port=8080
       -max=100
       -dataCenter=dc1
+    environment:
+      WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-volume:/data
     depends_on:
@@ -120,6 +124,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
 
   seaweedfs-filer:
     container_name: seaweedfs-filer
@@ -132,13 +138,28 @@ services:
       filer
       -master="seaweedfs-master:9333"
       -ip.bind=0.0.0.0
+    environment:
+      # Internal JWT Authentication
+      WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
+
+      # Etcd Configuration (SeaweedFS reads WEED_ETCD_* env vars)
+      WEED_ETCD_ENABLED: "true"
+      WEED_ETCD_SERVERS: http://etcd:2379
+      WEED_ETCD_TIMEOUT: 3s
+      WEED_ETCD_USERNAME: root
+      WEED_ETCD_PASSWORD: ${ETCD_TOKEN}
+
+      # Disable default leveldb2 store when using etcd
+      WEED_LEVELDB2_ENABLED: "false"
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/seaweedfs-filer:/data
-      - ./configs/seaweedfs/seaweed-filer-config.build.toml:/etc/seaweedfs/filer.toml:ro
     depends_on:
-      - seaweedfs-master
-      - seaweedfs-volume
-      - etcd
+      seaweedfs-master:
+        condition: service_started
+      seaweedfs-volume:
+        condition: service_started
+      etcd-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/"]
       interval: 30s
@@ -150,6 +171,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
+      - data  # For etcd access
 
   seaweedfs-s3:
     container_name: seaweedfs-s3
@@ -164,6 +188,9 @@ services:
       # S3 Authentication
       SEAWEEDFS_S3_USER: ${S3_STORAGE_ACCESS_KEY}
       SEAWEEDFS_S3_PASSWORD: ${S3_STORAGE_SECRET_KEY}
+
+      # Internal JWT Authentication
+      WEED_JWT_SIGNING_KEY: ${SEAWEEDFS_TOKEN}
 
       # S3 Service Configuration
       S3_PORT: "9000"
@@ -186,12 +213,17 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.seaweedfs-s3.rule=Host(`s3.${DOMAIN}`)"
       - "traefik.http.routers.seaweedfs-s3.priority=4000"
       - "traefik.http.routers.seaweedfs-s3.entrypoints=websecure"
       - "traefik.http.routers.seaweedfs-s3.tls=true"
       - "traefik.http.routers.seaweedfs-s3.middlewares=security-headers@file"
       - "traefik.http.services.seaweedfs-s3.loadbalancer.server.port=9000"
+    networks:
+      - storage
+      - backend  # Internal access from application services
+      - proxy    # External S3 API access via Traefik
 
   seaweedfs-init:
     container_name: seaweedfs-init
@@ -215,6 +247,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - storage
+      - backend
 
   oauth2proxy-seaweed:
     container_name: oauth2proxy-seaweed
@@ -225,14 +260,14 @@ services:
       OAUTH2_PROXY_COOKIE_SECURE: False
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
       OAUTH2_PROXY_UPSTREAMS: http://seaweedfs-filer:8888
-      OAUTH2_PROXY_ALLOWED_GROUPS: ${SEAWEEDFS_OAUTH_ALLOWED_GROUPS}
+      OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_SEAWEEDFS}
       OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
       OAUTH2_PROXY_SCOPE: openid email profile
       OAUTH2_PROXY_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH2_PROXY_PROVIDER: oidc
       OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
       OAUTH2_PROXY_OIDC_ISSUER_URL: ${OAUTH_AUTHORITY_URL}/v2.0
-      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET}
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET_SEAWEEDFS}
       OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
       OAUTH2_PROXY_EMAIL_DOMAINS: "*"
       OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: ${OAUTH_CUSTOM_SIGN_IN_LOGO}
@@ -248,12 +283,16 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.seaweedfs-filer.rule=Host(`datalake.${DOMAIN}`)"
       - "traefik.http.routers.seaweedfs-filer.priority=4000"
       - "traefik.http.routers.seaweedfs-filer.entrypoints=websecure"
       - "traefik.http.routers.seaweedfs-filer.tls=true"
       - "traefik.http.routers.seaweedfs-filer.middlewares=security-headers@file"
       - "traefik.http.services.seaweedfs-filer.loadbalancer.server.port=4181"
+    networks:
+      - proxy
+      - storage
   
 
   # ===================================================================
@@ -266,21 +305,62 @@ services:
     container_name: etcd
     image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.25
     restart: always
+    command:
+      - etcd
+      - --name=s1
+      - --data-dir=/etcd
+      - --listen-client-urls=http://0.0.0.0:2379
+      - --advertise-client-urls=http://etcd:2379
+      - --listen-peer-urls=http://0.0.0.0:2380
+      - --initial-advertise-peer-urls=http://etcd:2380
+      - --initial-cluster=s1=http://etcd:2380
+      - --auth-token=simple
     environment:
       ETCD_AUTO_COMPACTION_MODE: revision
       ETCD_AUTO_COMPACTION_RETENTION: 1000
       ETCD_QUOTA_BACKEND_BYTES: 4294967296
       ETCD_SNAPSHOT_COUNT: 50000
+      # Token for healthcheck (used after auth is enabled by etcd-init)
+      ETCD_TOKEN: ${ETCD_TOKEN}
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/etcd-data:/etcd
-    command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
     healthcheck:
-      test: [ "CMD", "etcdctl", "endpoint", "health" ]
+      # Use credentials for healthcheck to work after auth is enabled
+      test: [ "CMD", "etcdctl", "--user=root:${ETCD_TOKEN}", "endpoint", "health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     logging:
       driver: json-file
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data     # Milvus metadata storage
+      - storage  # SeaweedFS filer metadata
+
+  etcd-init:
+    container_name: etcd-init
+    build:
+      context: ./configs/etcd
+      dockerfile: init.Dockerfile
+    restart: no
+    depends_on:
+      etcd:
+        condition: service_started
+    environment:
+      ETCDCTL_ENDPOINTS: http://etcd:2379
+      ETCDCTL_API: "3"
+      ETCD_ROOT_PASSWORD: ${ETCD_TOKEN}
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data
+      - storage  # Used by SeaweedFS filer for metadata
 
   milvus-standalone:
     container_name: milvus
@@ -290,10 +370,17 @@ services:
     security_opt:
       - seccomp:unconfined
     environment:
+      # Etcd Configuration (dots in YAML become underscores in env vars)
       ETCD_ENDPOINTS: etcd:2379
+      ETCD_ROOTPATH: milvus
+      ETCD_AUTH_USERNAME: root
+      ETCD_AUTH_PASSWORD: ${ETCD_TOKEN}
+      # MinIO/S3 Storage Configuration
       MINIO_ADDRESS: seaweedfs-s3:9000
       MINIO_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
       MINIO_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
+      # Token-based authentication - root password for Milvus
+      COMMON_SECURITY_DEFAULTROOTPASSWORD: ${MILVUS_ROOT_PASSWORD}
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/milvus-data:/var/lib/milvus
       - ./configs/milvus/milvus-config.build.yml:/milvus/configs/milvus.yaml
@@ -304,8 +391,8 @@ services:
       - "19530:19530"
       - "9091:9091"
     depends_on:
-      etcd:
-        condition: service_healthy
+      etcd-init:
+        condition: service_completed_successfully
       seaweedfs-s3:
         condition: service_healthy
     logging:
@@ -313,6 +400,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
+      - storage  # For S3 access to SeaweedFS
 
   attu:
     container_name: attu
@@ -324,6 +414,9 @@ services:
       - "3003:3000"
     environment:
       MILVUS_URL: milvus-standalone:19530
+      # Milvus authentication credentials (root username is hardcoded in Milvus)
+      ATTU_LOGIN_USERNAME: root
+      ATTU_LOGIN_PASSWORD: ${MILVUS_ROOT_PASSWORD}
     healthcheck:
       test: ["NONE"]
     logging:
@@ -331,6 +424,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   oauth2proxy-attu:
     container_name: oauth2proxy-attu
@@ -341,14 +436,14 @@ services:
       OAUTH2_PROXY_COOKIE_SECURE: False
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
       OAUTH2_PROXY_UPSTREAMS: http://attu:3000
-      OAUTH2_PROXY_ALLOWED_GROUPS: ${ATTU_OAUTH_ALLOWED_GROUPS}
+      OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_ATTU}
       OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
       OAUTH2_PROXY_SCOPE: openid email profile
       OAUTH2_PROXY_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH2_PROXY_PROVIDER: oidc
       OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
       OAUTH2_PROXY_OIDC_ISSUER_URL: ${OAUTH_AUTHORITY_URL}/v2.0
-      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET}
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET_ATTU}
       OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
       OAUTH2_PROXY_EMAIL_DOMAINS: "*"
       OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: https://aiagentsstpublicblobs.blob.core.windows.net/logos/Bbv-Logo_farbig.png
@@ -363,12 +458,16 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.attu.rule=Host(`attu.${DOMAIN}`)"
       - "traefik.http.routers.attu.priority=4000"
       - "traefik.http.routers.attu.entrypoints=websecure"
       - "traefik.http.routers.attu.tls=true"
       - "traefik.http.routers.attu.middlewares=security-headers@file"
       - "traefik.http.services.attu.loadbalancer.server.port=4182"
+    networks:
+      - proxy
+      - data
   
 
   # ===================================================================
@@ -398,6 +497,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   
   # ===================================================================
@@ -438,6 +539,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
   
 
   # ===================================================================
@@ -457,7 +560,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/ferretdb-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${MONGO_USERNAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${MONGO_USERNAME} -d postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -466,6 +569,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   ferretdb:
     container_name: ferretdb
@@ -483,6 +588,40 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
+
+  # ===================================================================
+  # Neo4j Stack (Graph Database)
+  # ===================================================================
+  # Neo4j provides graph database capabilities for relationship-based
+  # data modeling and querying.
+  # ===================================================================
+
+  neo4j:
+    container_name: neo4j
+    image: ghcr.io/bbvch-ai/aihub-core/neo4j:5.26.16-community
+    restart: always
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/neo4j/logs:/logs
+      - ${VOLUME_ROOT:-./.docker-volumes}/neo4j/config:/config
+      - ${VOLUME_ROOT:-./.docker-volumes}/neo4j/data:/data
+      - ${VOLUME_ROOT:-./.docker-volumes}/neo4j/plugins:/plugins
+    environment:
+      NEO4J_AUTH: ${NEO4J_USERNAME}/${NEO4J_PASSWORD}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:7474"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data  # Graph database for Mem0 memory storage
 
   # ===================================================================
   # Phoenix Stack (ML Observability)
@@ -510,6 +649,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
+      - data  # For PostgreSQL access
 
   # ===================================================================
   # Nats & Valkey Stack (Messaging and Caching)
@@ -523,6 +665,9 @@ services:
     image: ghcr.io/bbvch-ai/aihub-core/nats:2.11.4
     restart: always
     command: -c /etc/nats/nats-server.conf
+    environment:
+      # Token-based authentication for NATS clients
+      NATS_TOKEN: ${NATS_TOKEN}
     volumes:
       - ./configs/nats/nats-config.build.conf:/etc/nats/nats-server.conf
       - ${VOLUME_ROOT:-./.docker-volumes}/nats:/data/nats
@@ -536,24 +681,32 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data  # Message broker is part of data infrastructure
 
   valkey:
     container_name: valkey
     image: ghcr.io/bbvch-ai/aihub-core/valkey:8.0.5
     restart: always
-    command: valkey-server --save 30 1 --loglevel warning
+    # Password authentication enabled via --requirepass
+    command: valkey-server --save 30 1 --loglevel warning --requirepass ${REDIS_TOKEN}
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/valkey-data:/data
     ports:
       - "6379:6379"
     healthcheck:
-      test: [ "CMD", "valkey-cli", "ping" ]
+      # Use REDISCLI_AUTH to authenticate for health check
+      test: [ "CMD-SHELL", "REDISCLI_AUTH=${REDIS_TOKEN} valkey-cli ping" ]
       start_period: 5s
+    environment:
+      REDIS_TOKEN: ${REDIS_TOKEN}
     logging:
       driver: json-file
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data  # Cache is part of data infrastructure
 
   # ===================================================================
   # Rclone (Universal Cloud Storage Sync)
@@ -604,6 +757,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   presidio-anonymizer:
     container_name: presidio-anonymizer
@@ -614,10 +769,12 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   litellm:
     container_name: litellm
-    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.79.1-stable
+    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.80.5-stable.1
     restart: always
     ports:
       - "4000:4000"
@@ -626,9 +783,11 @@ services:
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
       UI_USERNAME: ${LITELLM_UI_USERNAME}
       UI_PASSWORD: ${LITELLM_UI_PASSWORD}
+      LOCAL_LLM_TOKEN: ${LOCAL_LLM_TOKEN}
+      REDIS_TOKEN: ${REDIS_TOKEN}
       AZURE_OPENAI_BASE_URL: ${AZURE_OPENAI_BASE_URL}
       AZURE_OPENAI_KEY: ${AZURE_OPENAI_KEY}
-      SWISS_LLM_CLOUD_API_URL: ${SWISS_LLM_CLOUD_API_URL}
+      SWISS_LLM_CLOUD_API_BASE_URL: ${SWISS_LLM_CLOUD_API_BASE_URL}
       SWISS_LLM_CLOUD_API_KEY: ${SWISS_LLM_CLOUD_API_KEY}
       COHERE_API_BASE: ${COHERE_API_BASE}
       COHERE_API_KEY: ${COHERE_API_KEY}
@@ -651,7 +810,7 @@ services:
       presidio-anonymizer:
         condition: service_started
     healthcheck:
-      test: [ "CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:4000/health/liveliness" ]
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health/liveliness')" ]
       timeout: 10s
       interval: 30s
       retries: 3
@@ -663,11 +822,16 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.litellm.rule=Host(`litellm.${DOMAIN}`)"
       - "traefik.http.routers.litellm.entrypoints=websecure"
       - "traefik.http.routers.litellm.middlewares=security-headers@file"
       - "traefik.http.services.litellm.loadbalancer.server.port=4000"
       - "traefik.http.routers.litellm.tls=true"
+    networks:
+      - backend
+      - data  # For PostgreSQL access
+      - proxy  # For external API access via Traefik
 
   # ===================================================================
   # Utility & Code Execution Services
@@ -692,14 +856,17 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   playwright:
     container_name: playwright-server
-    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.54.1-jammy
+    build:
+      context: ./configs/playwright
+      dockerfile: Dockerfile
     restart: always
     ports:
       - "3036:3000"
-    command: npx playwright@v1.49.0 run-server --port 3000 --host 0.0.0.0
     environment:
       NODE_ENV: production
     healthcheck:
@@ -713,6 +880,9 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend  # Internal service communication
+      - egress   # Outbound internet access for web browsing
 
   # ===================================================================
   # Document Processing Stack
@@ -734,6 +904,9 @@ services:
       DOCLING_SERVE_LOAD_MODELS_AT_BOOT: 0
       DOCLING_SERVE_MAX_SYNC_WAIT: 600
       DOCLING_SERVE_ENABLE_REMOTE_SERVICES: 1
+      DOCLING_SERVE_API_KEY: ${DOCLING_API_KEY}
+      DOCLING_SERVE_SINGLE_USE_RESULTS: 1
+      DOCLING_SERVE_RESULT_REMOVAL_DELAY: 30
       DOCLING_SERVE_ENABLE_UI: 1
     depends_on:
       litellm:
@@ -743,6 +916,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   
 
@@ -768,6 +943,8 @@ services:
       - "4318:4318"
       - "13133:13133"
       - "55679:55679"
+    depends_on:
+      - phoenix
     healthcheck:
       test: [ "NONE" ]
     logging:
@@ -775,6 +952,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
 
   # ===================================================================
   # Open WebUI Stack (Primary User Interface)
@@ -902,14 +1081,14 @@ services:
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
       DATABASE_NAME: openwebui
-      REDIS_URL: redis://valkey:6379/1
+      REDIS_URL: redis://default:${REDIS_TOKEN}@valkey:6379/10
       REDIS_KEY_PREFIX: open-webui
 
       # --- Web Server ---
       UVICORN_WORKERS: 8
       ENABLE_WEBSOCKET_SUPPORT: True
       WEBSOCKET_MANAGER: redis
-      WEBSOCKET_REDIS_URL: redis://valkey:6379/1
+      WEBSOCKET_REDIS_URL: redis://default:${REDIS_TOKEN}@valkey:6379/11
       THREAD_POOL_SIZE: 32
       CORS_ALLOW_ORIGIN: "*" # TODO: Make this more secure
 
@@ -933,6 +1112,7 @@ services:
       VECTOR_DB: milvus
       MILVUS_DB: default
       MILVUS_URI: http://milvus-standalone:19530
+      MILVUS_TOKEN: root:${MILVUS_ROOT_PASSWORD}
       MILVUS_INDEX_TYPE: HNSW
       MILVUS_METRIC_TYPE: COSINE
       MILVUS_HNSW_M: 16
@@ -990,6 +1170,12 @@ services:
       USER_PERMISSIONS_FEATURES_IMAGE_GENERATION: True
       USER_PERMISSIONS_FEATURES_CODE_INTERPRETER: True
       USER_PERMISSIONS_FEATURES_NOTES: True
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
     logging:
       driver: json-file
       options:
@@ -997,6 +1183,7 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       # --- Routers ---
       - "traefik.http.routers.openwebui-api-auth.rule=Host(`openwebui.${DOMAIN}`) && PathPrefix(`/api/v1/auths`)"
       - "traefik.http.routers.openwebui-api-auth.priority=7000"
@@ -1038,6 +1225,11 @@ services:
       - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customrequestheaders.X-Forwarded-Host=openwebui.${DOMAIN}"
       - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customRequestHeaders.X-Forwarded-Port=443"
       - "traefik.http.middlewares.openwebui-forwarded-headers.headers.customRequestHeaders.X-Real-IP=%{remote_addr}"
+    networks:
+      - proxy
+      - backend
+      - data
+      - storage
 
   openwebui-init:
     container_name: openwebui-init
@@ -1061,6 +1253,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data
 
   
   # ===================================================================
@@ -1082,13 +1276,13 @@ services:
       OAUTH2_PROXY_PROVIDER: oidc
       OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
       OAUTH2_PROXY_OIDC_ISSUER_URL: ${OAUTH_AUTHORITY_URL}/v2.0
-      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET}
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET_DAGSTER}
       OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
       OAUTH2_PROXY_EMAIL_DOMAINS: "*"
       OAUTH2_PROXY_REVERSE_PROXY: True
       OAUTH2_PROXY_REDIRECT_URL: https://dagster.${DOMAIN}
       OAUTH2_PROXY_SCOPE: openid email profile
-      OAUTH2_PROXY_ALLOWED_GROUPS: ${DAGSTER_OAUTH_ALLOWED_GROUPS}
+      OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_DAGSTER}
       OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
       OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: ${OAUTH_CUSTOM_SIGN_IN_LOGO}
     logging:
@@ -1098,11 +1292,15 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.dagster.rule=Host(`dagster.${DOMAIN}`)"
       - "traefik.http.routers.dagster.entrypoints=websecure"
       - "traefik.http.routers.dagster.middlewares=security-headers@file"
       - "traefik.http.services.dagster.loadbalancer.server.port=4180"
       - "traefik.http.routers.dagster.tls=true"
+    networks:
+      - proxy
+      - backend
 
   dagster-webserver:
     container_name: dagster-webserver
@@ -1132,11 +1330,20 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       LOG_LEVEL: ${LOG_LEVEL}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/server_info"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     logging:
       driver: json-file
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
+      - data
 
   dagster-daemon:
     container_name: dagster-daemon
@@ -1159,13 +1366,72 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       LOG_LEVEL: ${LOG_LEVEL}
+    healthcheck:
+      test: ["CMD", "dagster-daemon", "liveness-check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     logging:
       driver: json-file
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
+      - data
 
   
+  # ===================================================================
+  # Docker Socket Proxy (Security Layer)
+  # ===================================================================
+  # Provides filtered, read-only access to the Docker socket for Traefik.
+  # This prevents potential container escape attacks if Traefik is
+  # compromised, as the proxy only exposes the minimal Docker API
+  # endpoints required for service discovery.
+  # ===================================================================
+  docker-socket-proxy:
+    container_name: docker-socket-proxy
+    image: "tecnativa/docker-socket-proxy:0.3"
+    restart: always
+    # Required for Docker socket access in SELinux/AppArmor environments
+    privileged: true
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:2375/_ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      # Security: Only enable required Docker API sections
+      CONTAINERS: 1    # Required for Traefik to discover services
+      NETWORKS: 1      # Required for Traefik network routing
+      # Explicitly disable dangerous permissions (defaults are already 0, but explicit is clearer)
+      BUILD: 0
+      COMMIT: 0
+      CONFIGS: 0
+      DISTRIBUTION: 0
+      EXEC: 0
+      IMAGES: 0
+      POST: 0
+      SECRETS: 0
+      SERVICES: 0
+      SWARM: 0
+      SYSTEM: 0
+      TASKS: 0
+      VOLUMES: 0
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels:
+      - "traefik.enable=false"
+    networks:
+      - backend  # Only Traefik needs to access this service
+
   # ===================================================================
   # Traefik (Reverse Proxy)
   # ===================================================================
@@ -1176,13 +1442,15 @@ services:
     container_name: traefik
     image: "ghcr.io/bbvch-ai/aihub-core/traefik:v3.6.2"
     restart: always
+    depends_on:
+      docker-socket-proxy:
+        condition: service_healthy
     healthcheck:
       test: [ "NONE" ]
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./configs/traefik/traefik-config.build.yml:/etc/traefik/traefik.yml:ro"
       - "./configs/traefik/middlewares.build.yml:/etc/traefik/dynamic/middlewares.yml:ro"
       - "./configs/traefik/tls.build.yml:/etc/traefik/dynamic/tls.yml:ro"
@@ -1192,6 +1460,7 @@ services:
       TRAEFIK_LOG_LEVEL: ${LOG_LEVEL}
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       # --- HTTP to HTTPS Redirect and ACME Challenge ---
       - "traefik.http.routers.http-catch.rule=HostRegexp(`{host:.+}`) && !PathPrefix(`/.well-known/acme-challenge/`)"
       - "traefik.http.routers.http-catch.entrypoints=web"
@@ -1205,6 +1474,9 @@ services:
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:${ADMIN_PASSWORD_HASH}"
       - "traefik.http.routers.traefik.middlewares=traefik-auth"
+    networks:
+      - proxy
+      - backend  # Traefik routes to backend services
 
   
   # ===================================================================
@@ -1226,6 +1498,10 @@ services:
         condition: service_started
       ferretdb:
         condition: service_started
+      milvus-standalone:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
     environment:
       # Log Level
       LOG_LEVEL: ${LOG_LEVEL}
@@ -1275,6 +1551,7 @@ services:
       # MILVUS
       MILVUS_URL: http://milvus-standalone:19530
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
       # S3 Access connection
       S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
@@ -1289,19 +1566,31 @@ services:
 
       # NATs
       NATS_ENDPOINT: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # REDIS
       REDIS_URL: redis://valkey:6379
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Neo4j
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: "text-generation/large"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
+      MEM0_RERANKING_MODEL_NAME: "reranker"
 
       # Jupyter (for open-webui code interpreter)
       JUPYTER_URL: http://jupyter:8888
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
 
       # Docling
-      DOCLING_BASE_API_URL: http://docling:5001
+      DOCLING_API_BASE_URL: http://docling:5001
       DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
       DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
-      DOCLING_HOSTED_VLM_API_ENDPOINT: http://litellm:4000
+      DOCLING_HOSTED_VLM_API_BASE_URL: http://litellm:4000
       DOCLING_HOSTED_VLM_API_KEY: ${LITELLM_MASTER_KEY}
       DOCLING_VLM_MODEL_NAME: ${DOCLING_VLM_MODEL_NAME}
       DOCLING_HTTP_RETRIES: ${DOCLING_HTTP_RETRIES}
@@ -1309,12 +1598,16 @@ services:
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
-      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: api
       OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     logging:
       driver: json-file
       options:
@@ -1322,12 +1615,18 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api/v1`)"
       - "traefik.http.routers.api.priority=6000"
       - "traefik.http.routers.api.entrypoints=websecure"
       - "traefik.http.routers.api.middlewares=security-headers@file"
       - "traefik.http.services.api.loadbalancer.server.port=8000"
       - "traefik.http.routers.api.tls=true"
+    networks:
+      - proxy
+      - backend
+      - data
+      - storage
 
   
   # ===================================================================
@@ -1347,13 +1646,22 @@ services:
       OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
       WEBUI_URL: https://openwebui.${DOMAIN}
       WS_ENDPOINT: wss://${DOMAIN}/api/v1/events/ws
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     logging:
       driver: json-file
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - proxy  # Static frontend only needs proxy access
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       # --- Routers ---
       - "traefik.http.routers.web-static.rule=Host(`${DOMAIN}`) && PathPrefix(`/_nuxt`)"
       - "traefik.http.routers.web-static.priority=2000"
@@ -1403,24 +1711,53 @@ services:
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
       # NATs
       NATS_ENDPOINT: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # REDIS
       REDIS_URL: redis://valkey:6379
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Milvus
+      MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # Neo4j
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: "text-generation/large"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
+      MEM0_RERANKING_MODEL_NAME: "reranker"
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
-      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: llm-wrapping-agent
       OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     logging:
       driver: json-file
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - backend
+      - data
 
   
   rag_agent:
@@ -1450,6 +1787,7 @@ services:
       # MILVUS
       MILVUS_URL: http://milvus-standalone:19530
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
       # S3 Access connection
       S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
@@ -1461,17 +1799,39 @@ services:
 
       # NATs
       NATS_ENDPOINT: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # REDIS
       REDIS_URL: redis://valkey:6379
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Neo4j
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: "text-generation/large"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
+      MEM0_RERANKING_MODEL_NAME: "reranker"
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
-      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: rag-agent
       OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - backend
+      - data
+      - storage
 
   
   expert_rag_agent:
@@ -1501,6 +1861,7 @@ services:
       # MILVUS
       MILVUS_URL: http://milvus-standalone:19530
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
       # S3 Access connection
       S3_STORAGE_ENDPOINT: http://seaweedfs-s3:9000
@@ -1512,17 +1873,29 @@ services:
 
       # NATs
       NATS_ENDPOINT: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # REDIS
       REDIS_URL: redis://valkey:6379
+      REDIS_TOKEN: ${REDIS_TOKEN}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
-      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: expert-rag-agent
       OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - backend
+      - data
+      - storage
 
   
   expert_asking_agent:
@@ -1544,9 +1917,19 @@ services:
 
       # NATs
       NATS_ENDPOINT: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # REDIS
       REDIS_URL: redis://valkey:6379
+      REDIS_TOKEN: ${REDIS_TOKEN}
+
+      # Milvus
+      MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
+      # Mongo DB
+      MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
 
       # Channel Configuration (Teams or Slack)
       EXPERT_ASKING_CHANNEL_TYPE: ${EXPERT_ASKING_CHANNEL_TYPE}
@@ -1559,10 +1942,19 @@ services:
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
-      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_RESOURCE_SERVICE_NAME: expert-asking-agent
       OTEL_RESOURCE_SERVICE_VERSION: ${OTEL_RESOURCE_SERVICE_VERSION}
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - backend
+      - data
 
   
   default_rag_pipeline:
@@ -1582,16 +1974,17 @@ services:
 
       # NATS
       NATS_ENDPOINT: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # LiteLLM Proxy Server Settings
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Docling
-      DOCLING_BASE_API_URL: http://docling:5001
+      DOCLING_API_BASE_URL: http://docling:5001
       DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
       DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
-      DOCLING_HOSTED_VLM_API_ENDPOINT: http://litellm:4000
+      DOCLING_HOSTED_VLM_API_BASE_URL: http://litellm:4000
       DOCLING_HOSTED_VLM_API_KEY: ${LITELLM_MASTER_KEY}
       DOCLING_VLM_MODEL_NAME: ${DOCLING_VLM_MODEL_NAME}
       DOCLING_HTTP_RETRIES: ${DOCLING_HTTP_RETRIES}
@@ -1606,6 +1999,7 @@ services:
       # MILVUS
       MILVUS_URL: http://milvus-standalone:19530
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
       # DAGSTER
       DAGSTER_HOME: /dagster_home
@@ -1617,6 +2011,16 @@ services:
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+    healthcheck:
+      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "localhost", "--port", "4000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - backend
+      - data
+      - storage
 
   
   shared_rag_pipeline:
@@ -1636,16 +2040,17 @@ services:
 
       # NATS
       NATS_ENDPOINT: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
 
       # LiteLLM Proxy Server Settings
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
       # Docling
-      DOCLING_BASE_API_URL: http://docling:5001
+      DOCLING_API_BASE_URL: http://docling:5001
       DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
       DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
-      DOCLING_HOSTED_VLM_API_ENDPOINT: http://litellm:4000
+      DOCLING_HOSTED_VLM_API_BASE_URL: http://litellm:4000
       DOCLING_HOSTED_VLM_API_KEY: ${LITELLM_MASTER_KEY}
       DOCLING_VLM_MODEL_NAME: ${DOCLING_VLM_MODEL_NAME}
       DOCLING_HTTP_RETRIES: ${DOCLING_HTTP_RETRIES}
@@ -1660,6 +2065,7 @@ services:
       # MILVUS
       MILVUS_URL: http://milvus-standalone:19530
       MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
       # DAGSTER
       DAGSTER_HOME: /dagster_home
@@ -1671,6 +2077,26 @@ services:
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
+
+      # Neo4j
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+
+      # Mem0
+      MEM0_LLM_NAME: "text-generation/large"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
+      MEM0_RERANKING_MODEL_NAME: "reranker"
+    healthcheck:
+      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "localhost", "--port", "4000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - backend
+      - data
+      - storage
 
   
   # ===================================================================
@@ -1685,14 +2111,26 @@ services:
       context: .
       dockerfile: ./aihub_bot/Dockerfile
     depends_on:
-      - ferretdb
-      - nats
-      - traefik
+      ferretdb:
+        condition: service_started
+      nats:
+        condition: service_started
+      traefik:
+        condition: service_started
+      neo4j:
+          condition: service_healthy
     ports:
       - "8001:8001"
     environment:
       NATS_ENDPOINT: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
       MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+      NEO4J_URL: bolt://neo4j:7687
+      NEO4J_USERNAME: ${NEO4J_USERNAME}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+      MEM0_LLM_NAME: "text-generation/large"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
+      MEM0_RERANKING_MODEL_NAME: "reranker"
       LOG_LEVEL: ${LOG_LEVEL}
       NUM_WORKERS: 1
       AIHUB_API_VERSION: ${AIHUB_API_VERSION}
@@ -1701,6 +2139,12 @@ services:
       DANGEROUS_DEV_ONLY_AUTH_FAKE_EMAIL: ${BOT_AUTH_FAKE_EMAIL}
       DANGEROUS_DEV_ONLY_AUTH_FAKE_OID: ${BOT_AUTH_FAKE_OID}
       DANGEROUS_DEV_ONLY_AUTH_FAKE_ROLES: ${BOT_AUTH_FAKE_ROLES}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     logging:
       driver: json-file
       options:
@@ -1708,8 +2152,52 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.bot.rule=Host(`bot.${DOMAIN}`)"
       - "traefik.http.routers.bot.entrypoints=websecure"
       - "traefik.http.routers.bot.tls=true"
       - "traefik.http.routers.bot.middlewares=security-headers@file"
-      - "traefik.http.services.bot.loadbalancer.server.port=8000"
+      - "traefik.http.services.bot.loadbalancer.server.port=8001"
+    networks:
+      - proxy
+      - backend
+      - data
+
+# ===================================================================
+# Network Configuration
+# ===================================================================
+# Network isolation provides defense-in-depth security by limiting
+# which services can communicate with each other. Each network zone
+# serves a specific purpose:
+#
+# - proxy:   External traffic ingress (Traefik routes here)
+# - backend: Internal application and processing services
+# - data:    Databases, caches, and message broker
+# - storage: SeaweedFS distributed object storage
+# - egress:  Outbound internet only, ICC disabled (containers isolated)
+#
+# Services are assigned to only the networks they require.
+# Networks marked with 'internal: true' cannot be accessed from
+# outside the Docker network, even if ports are exposed.
+# ===================================================================
+networks:
+  proxy:
+    name: proxy
+    driver: bridge
+  backend:
+    name: backend
+    driver: bridge
+    internal: true
+  data:
+    name: data
+    driver: bridge
+    internal: true
+  storage:
+    name: storage
+    driver: bridge
+    internal: true
+  egress:
+    name: egress
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "false"

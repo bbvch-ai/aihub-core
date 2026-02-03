@@ -42,6 +42,7 @@ const navItems = computed<NavItem[]>(() => {
     { name: t('thread.navigation.hierarchy'), key: 'hierarchy', path: subPath('hierarchy'), isActive: isActive('hierarchy') },
     { name: t('thread.navigation.chat'), key: 'chat', path: subPath('chat'), isActive: isActive('chat') },
     { name: t('thread.navigation.display'), key: 'display', path: subPath('display'), isActive: isActive('display') },
+    { name: t('thread.navigation.memories'), key: 'memories', path: subPath('memories'), isActive: isActive('memories') },
   ]
 })
 

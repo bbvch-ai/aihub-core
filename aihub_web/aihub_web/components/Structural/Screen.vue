@@ -3,7 +3,7 @@
     <div class="px-8 pt-8">
       <slot name="top" />
     </div>
-    <div class="flex justify-start gap-8 px-8">
+    <div class="flex flex-col justify-start gap-8 px-8 2xl:flex-row">
       <slot />
     </div>
   </div>

@@ -38,17 +38,17 @@ jobs:
       matrix:
         include:
           - module: aihub_lib
-            docker_compose_services: "postgres nats valkey postgres-ferretdb ferretdb llama-cpp llama-cpp-embedding litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init etcd milvus-standalone"
+            docker_compose_services: "postgres nats valkey postgres-ferretdb ferretdb llama-cpp llama-cpp-embedding litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init etcd-init etcd milvus-standalone neo4j"
           - module: aihub_api
-            docker_compose_services: "postgres nats valkey postgres-ferretdb ferretdb llama-cpp llama-cpp-embedding litellm"
+            docker_compose_services: "postgres nats valkey postgres-ferretdb ferretdb llama-cpp llama-cpp-embedding litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init etcd-init etcd milvus-standalone neo4j"
           - module: aihub_pipeline
             docker_compose_services: ""
           - module: aihub_agent
-            docker_compose_services: "postgres phoenix nats valkey postgres-ferretdb ferretdb llama-cpp llama-cpp-reranker llama-cpp-embedding litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init etcd milvus-standalone"
+            docker_compose_services: "postgres phoenix otel-collector nats valkey postgres-ferretdb ferretdb llama-cpp llama-cpp-reranker llama-cpp-embedding litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init etcd-init etcd milvus-standalone neo4j"
           - module: aihub_bot
             docker_compose_services: "nats valkey postgres-ferretdb ferretdb"
           - module: aihub_process
-            docker_compose_services: "postgres phoenix nats valkey postgres-ferretdb ferretdb"
+            docker_compose_services: "postgres nats valkey postgres-ferretdb ferretdb llama-cpp llama-cpp-embedding litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init etcd-init etcd milvus-standalone"
 
     steps:
       - name: Checkout repository

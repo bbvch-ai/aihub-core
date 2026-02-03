@@ -5,6 +5,617 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.260.1] - 2026-02-03 - API Configuration Standardization for Docling Loader
+
+### Refactor
+
+- 🧹 **Standardized API Base URL Configuration:** Renamed the internal configuration variable for the Docling API base
+  URL from `BASE_API_URL` to `API_BASE_URL` within the `DoclingLoader` for improved consistency and clarity in the
+  codebase.
+
+---
+
+## [v0.260.0] - 2026-02-02 - Enhanced Memory Management and Agent Context
+
+### Added
+
+- 🧠 **Introduced Comprehensive User and Organization Memory**: A new, robust memory system has been implemented across
+  `RAGAgent` and `ExpertRAGAgent`, allowing agents to retrieve personalized user memories and organization-wide
+  knowledge.
+- 🦾 **New Agent Workflow Steps for Memory Management**: Added dedicated agent steps for `ExpertRAGAgent` and `RAGAgent`
+  to retrieve user memories, retrieve organization memories, inject them into chat history, and store new user memories
+  from conversations.
+- ⚙️ **Configurable Memory Options for RAG Agents**: `RAGAgentConfig` and `ExpertAskingAgentConfig` now include explicit
+  configuration fields to enable/disable organization memory retrieval, user memory retrieval, and user memory storage,
+  along with `tenant_id` and `tenant_namespace` for scoping.
+- 🗄️ **Memory Management Pages in Web UI**: Dedicated UI pages are now available for managing user memories associated
+  with specific agents and threads, providing a centralized view for collected knowledge.
+- 📊 **OpenWebUI Integration for Agent Memories**: Introduced new UI components and an OpenWebUI function to display
+  agent-specific user memories directly within the chat interface, with toggleable list and graph views.
+- 🔍 **Advanced Memory Search Filters in API**: Added `agent_class` and `agent_id` parameters to the User and
+  Organization Memory search API endpoints, enabling more precise filtering of stored memories.
+- 💬 **Localized Memory Interface**: Extended translation files to support the new memory management sections and views
+  across multiple languages.
+- ⚡️ **Granular LLM Event Handling**: The `do_respond_with_llm` step function now supports returning an `LLMEvent` for
+  intermediate steps, allowing for post-LLM processing (like memory storage) before a final `StopEvent` is emitted.
+
+### Changed
+
+- 🔄 **Expert Conversation Storage Refactored**: `ExpertAskingAgent` now stores expert conversations as general
+  "organization memories" instead of the specialized "insights," aligning with the new unified memory system.
+- 🧪 **RAG Agent Test Suite Updated**: The RAG Agent test suite has been updated to remove references to the deprecated
+  insight system and now tests the new organization memory retrieval.
+- 💻 **SDK Schema Generalization**: The `Usage` schema in the SDK has been generalized to represent duration, with
+  specific token usage details moved to an image-response-specific schema.
+- 🎨 **Enhanced Memory List UI**: Improved the visual presentation of the memory list component in the web UI with
+  striped rows, better column styling, and severity-based tagging for relevance scores.
+
+### Removed
+
+- 🗑️ **Deprecated Insight System**: The entire "insight" persistence and retrieval system, including `InsightEntity`,
+  `InsightRetriever`, related configurations, API endpoints, and UI logic, has been removed.
+- 🧹 **Cleanup of Insight-Related Code**: All code paths, imports, and translation files associated with the old insight
+  system have been meticulously removed from the codebase.
+
+### Fixed
+
+- 🐛 **Improved Mem0 Metadata Filtering**: Corrected Mem0 service logic to accurately filter out empty strings in
+  addition to `None` values when processing metadata and filters, preventing unintended memory retrieval behavior.
+
+---
+
+## [v0.259.3] - 2024-07-29 - Automated Latest Tagging Workflow Enhancement
+
+### Changed
+
+- 🚀 **Automated Docker Image Discovery for 'latest' Tagging:** The GitHub Actions workflow responsible for promoting
+  release tags to "latest" now dynamically identifies all custom application Docker images. It parses
+  `deployment/compose-config.yml` to automatically detect images marked for local builds, removing the need for manual
+  updates to the workflow when new services are added or removed.
+- 📄 **Improved Workflow Documentation:** Comprehensive comments have been added to the `set-latest.yml` GitHub Actions
+  workflow, clearly detailing its purpose, usage, and the logic used for image selection and promotion.
+
+---
+
+## [v0.259.2] - 2026-01-30 - Strengthened Security with Docker Network Isolation
+
+### Security
+
+- 🔑 Implemented a comprehensive **Docker network isolation strategy**, segmenting the platform into `proxy`, `backend`,
+  `data`, `storage`, and `egress` networks to significantly enhance security posture. This limits lateral movement and
+  reduces the blast radius in case of a breach.
+- 🔒 Configured `internal: true` for core `backend`, `data`, and `storage` Docker networks (in non-development
+  environments), preventing direct external access to sensitive internal services.
+- 🚫 Explicitly disabled Inter-Container Communication (ICC) on the dedicated `egress` network, ensuring that services
+  requiring outbound internet access cannot communicate with other containers on that network, further isolating them.
+
+### Refactor
+
+- 🔄 Systematically updated **Docker Compose deployment configurations** across all environments (`dev`, `build`,
+  `local`, `latest`, `nightly`) to integrate the new multi-network architecture, assigning each service to its specific,
+  isolated network zone.
+
+### Added
+
+- 📄 Introduced detailed **documentation for Docker Network Isolation**, providing a clear overview of the new network
+  topology, service assignments, security benefits, and operational guidelines.
+- 🩺 Implemented a new **health check for the Open WebUI** service to improve monitoring and ensure its availability.
+
+### Changed
+
+- 🛠️ Migrated the **Playwright service to a custom Dockerfile build process**, providing greater control over its
+  runtime environment and dependencies.
+- ⬇️ Pinned the **Playwright image version to `v1.49.0-jammy`** to ensure stability and compatibility within the new
+  custom build setup.
+- 🔗 Updated **service dependencies for `api` and `bot`**, ensuring they now explicitly await the healthy state of Milvus
+  and Neo4j, respectively, for more robust startup sequences.
+- 🧹 Refined **health check commands for `postgres-ferretdb` and `litellm`** for improved accuracy and reliability.
+
+---
+
+## [v0.259.1] - 2026-01-30 - Enhanced OAuth Security and Granular Access Control
+
+### Security
+
+- 🔑 **Improved OAuth Cookie Secret Management:** Replaced the single shared OAuth cookie secret with individual,
+  service-specific secrets (`OAUTH_COOKIE_SECRET_DAGSTER`, `OAUTH_COOKIE_SECRET_SEAWEEDFS`, `OAUTH_COOKIE_SECRET_ATTU`).
+  This significantly enhances security by isolating session cookies for different platform components (Dagster,
+  SeaweedFS, Attu).
+
+### Changed
+
+- 🔄 **Refined OAuth Group Restrictions:** Renamed and segregated OAuth allowed group configurations to be
+  service-specific (e.g., `DAGSTER_OAUTH_ALLOWED_GROUPS` is now `OAUTH_ALLOWED_GROUPS_DAGSTER`). This provides more
+  granular control over user access for each component.
+- 📄 **Updated Environment Variable Configuration:** Adjusted `.env` templates and all Docker Compose configurations to
+  reflect the new, service-specific OAuth cookie secrets and allowed group variables, streamlining secure setup.
+- 📚 **Revised Documentation for OAuth Setup:** Updated quick start guides and secret generation instructions to provide
+  clear guidance on configuring the new, separate OAuth cookie secrets for each service.
+
+### Removed
+
+- 🗑️ **Deprecated Shared OAuth Cookie Secret:** The generic `OAUTH_COOKIE_SECRET` environment variable has been removed
+  in favor of service-specific secrets, reducing potential security exposure.
+
+---
+
+## [v0.259.0] - 2026-01-28 - Empowering Agents with Long-Term Memory and Knowledge Graphs
+
+### Added
+
+- ✨ **Introduced Agent Memory System:** Agents can now learn from past conversations and organizational facts, providing
+  long-term personalization and shared knowledge, powered by `mem0` and `Neo4j`.
+- 🧠 **User Memory Capabilities:** Agents can automatically learn and store private user preferences, working styles, and
+  individual context from conversations, enabling highly personalized interactions.
+- 🏢 **Organization Memory for Shared Knowledge:** Agents can now leverage explicit, shared organizational facts
+  (policies, tech stack, processes) accessible to all users within a tenant, fostering consistent and institutional
+  knowledge.
+- 📈 **New Memory Management API Endpoints:** Introduced comprehensive API endpoints for viewing, searching, updating,
+  and deleting both user and organization memories via the platform's API.
+- 📊 **Interactive Memory Knowledge Graphs:** The web interface now visualizes memory relationships as interactive
+  knowledge graphs, helping users understand how concepts are connected within their memories.
+- 📺 **Dedicated Memory Management UI:** New sections in the web interface provide dedicated pages for managing and
+  exploring personal user memories and shared organization memories.
+- ⚙️ **Integrated Neo4j Graph Database:** Incorporated Neo4j for powerful graph-based memory storage and retrieval,
+  enabling rich relational understanding between concepts.
+- 🧩 **Microsoft Teams Support for Expert Asking Agent:** The Expert Asking Agent can now escalate questions to human
+  experts via Microsoft Teams, expanding its capabilities beyond Slack integration.
+- ⏱️ **Run Duration and Cost Metrics in Event List:** The event list now displays the duration and total cost for each
+  agent run, enhancing observability and cost transparency.
+- 📄 **Comprehensive Agent Memory Documentation:** Added detailed guides on User Memory, Organization Memory, and how to
+  build memory-enhanced agents using the SDK.
+- ⚖️ **Automated Python Dependency License Scanning:** Python packages now have their licenses automatically scanned and
+  reported in `LICENSES.md`, significantly improving license transparency and compliance.
+
+### Changed
+
+- 🛠️ **Refactored AI Utility Modules:** Reorganized general AI utility functions into more logical and specialized
+  modules: `chat_history`, `rerank`, and `retrieval`, improving code structure and maintainability.
+- 📦 **Updated LiteLLM Proxy Configuration:** Improved model parameter handling in LiteLLM by adding `drop_params` for
+  better compatibility and efficiency across various models.
+- 📏 **Adjusted Milvus Embedding Dimension:** Updated the default Milvus embedding dimension to 1024 in development
+  environments, optimizing vector storage for newer embedding models.
+- 📄 **Renumbered Platform Documentation Chapters:** Reorganized the platform documentation structure to logically
+  integrate the new memory features and improve navigability.
+- 📄 **Renumbered Agent SDK Documentation:** Restructured the Agent SDK documentation to seamlessly integrate new memory
+  patterns and improve readability for developers.
+
+### Fixed
+
+- 🐛 **Corrected Redis Host in LiteLLM Configuration:** Ensured LiteLLM correctly references `valkey` (the
+  Redis-compatible service) within the Docker network instead of `localhost`, resolving connectivity issues.
+
+### Refactor
+
+- 🧹 **Standardized Enum Usage:** Converted several `enum.Enum` implementations to `enum.StrEnum` across the codebase for
+  improved type safety and consistency.
+
+### Removed
+
+- 🗑️ **Deprecated GDPR Documentation:** Removed previous GDPR documentation pages, as the content has been updated and
+  integrated into the new compliance and memory management sections.
+
+---
+
+## [v0.258.4] - 2026-01-19 - Enhanced Service Health, API Stability, and Richer Chat Interactions
+
+### Added
+
+- ✨ **Comprehensive Service Health Checks:** Introduced new liveness and readiness endpoints for the API, Agents, and
+  Processes, providing detailed dependency status for critical infrastructure like NATS, MongoDB, Redis, Milvus, and S3.
+- ⚙️ **Centralized Health Check Server:** Implemented a generic HTTP health check server running in a background thread
+  for Agents and Processes, ensuring consistent and robust monitoring across all services.
+- 🚀 **New Model Management API Endpoints:** Added dedicated API endpoints to retrieve lists of all available models
+  grouped by type, and to fetch detailed information for specific models.
+- 💬 **Expanded Chat Message Blocks:** Introduced support for new message content types, including **VideoBlock**,
+  **ThinkingBlock**, and **ToolCallBlock**, significantly enriching conversational capabilities and allowing for more
+  complex multimodal interactions.
+- 🗣️ **Chat-style Human-in-the-Loop (HITL):** Added a new `chat` type for Human-in-the-Loop requests, enabling users to
+  provide input and respond to prompts directly within the regular chat interface, improving user experience.
+- 🧩 **FastAPI Infrastructure Client Dependencies:** Introduced new FastAPI dependencies (`use_milvus`, `use_redis`,
+  `use_s3`, `use_s3_public`, `use_s3_service`, `use_vector_store_factory`) to standardize access to shared Milvus,
+  Redis, and S3 clients and vector store factories, promoting consistency and reusability.
+
+### Changed
+
+- ⬆️ **Agent and Process Runner Upgrades:** Integrated Agent and Process runners with the newly introduced health check
+  server, now providing detailed readiness statuses for their respective dependencies (NATS, Redis, Milvus).
+- ✅ **API Readiness Checks:** The API service now utilizes the `ApiHealthController` for comprehensive readiness checks,
+  moving beyond a simple liveness probe to verify all critical service dependencies.
+- 🔗 **Milvus Client Reusability:** Refactored Milvus vector store creation to reuse a shared `MilvusClient` instance
+  across the application, improving connection pooling efficiency and enabling centralized health monitoring.
+- 📍 **Bot Service Port Update:** Corrected the exposed port for the Bot service from 8000 to 8001 to align with standard
+  deployment configurations.
+- 🔒 **Milvus Authentication Variable:** Standardized Milvus client authentication across various services by updating
+  the `MILVUS_TOKEN` environment variable to `MILVUS_ROOT_PASSWORD` for consistency and clarity.
+- 🛡️ **Enhanced SDK Endpoint Security:** Applied security headers to all endpoints within the generated TypeScript SDK
+  client, improving overall API security.
+
+### Refactor
+
+- 🧹 **S3 File Access Service Modernization:** Refactored the `S3AnonymousFileAccessService` to accept injected S3 client
+  instances, significantly improving testability and streamlining resource management.
+- ♻️ **Knowledge Controller Dependency Injection:** Migrated direct instantiation of `VectorStoreFactory` and
+  `S3AnonymousFileAccessService` within the `KnowledgeController` to FastAPI's dependency injection system, enhancing
+  modularity and maintainability.
+
+---
+
+## [v0.258.3] - 2026-01-19 - Hardened Docker Integration with Socket Proxy
+
+### Security
+
+- 🔑 **Implemented Docker Socket Proxy:** Introduced a new `docker-socket-proxy` service that acts as a secure
+  intermediary between Traefik and the Docker daemon. This significantly enhances system security by limiting Traefik's
+  access to only the essential Docker API endpoints (container and network discovery) needed for service routing,
+  mitigating potential container escape vulnerabilities.
+
+### Added
+
+- ✨ **`docker-socket-proxy` Service:** A dedicated `tecnativa/docker-socket-proxy` service has been added to all Docker
+  Compose configurations, providing fine-grained control over Docker API access.
+- ⚙️ **Docker Socket Proxy Configuration:** Comprehensive configurations for the new proxy service are included,
+  explicitly disabling dangerous Docker API permissions (e.g., build, commit, exec, images) and ensuring read-only
+  access to the underlying Docker socket.
+
+### Changed
+
+- 🔄 **Traefik Docker Endpoint:** Traefik's Docker provider endpoint has been updated to connect to the new
+  `docker-socket-proxy` over TCP (`tcp://docker-socket-proxy:2375`) instead of directly accessing the Unix Docker
+  socket.
+- 🧹 **Removed Direct Docker Socket Mount:** The direct volume mount of `/var/run/docker.sock` from the Traefik service
+  has been removed across all deployment configurations, delegating Docker socket interaction to the new, more secure
+  proxy service.
+
+---
+
+## [v0.258.2] - 2026-01-13 - Deepening Knowledge: Insights Now Integral to Document & Node Retrieval
+
+### Added
+
+- ✨ **Enhanced Knowledge Base with Insight Integration:** Introduced the capability to retrieve **Insights** directly as
+  standard documents and nodes within the knowledge base, enabling their use in Retrieval-Augmented Generation (RAG)
+  flows.
+- 📚 **Direct Insight Retrieval by ID:** Added a new method (`InsightEntity.get_by_id`) to directly fetch insights using
+  their unique identifier, streamlining access to structured knowledge.
+- 🌍 **Localized Insight Representation:** Implemented support for localizing insight content when presented as nodes,
+  ensuring that questions, answers, and conversation parts are displayed in the user's preferred language.
+
+### Changed
+
+- 🔄 **Unified Document and Node Retrieval:** Modified the `KnowledgeService` to transparently handle both regular
+  documents and **Insights** when fetching documents by ID or retrieving specific nodes, providing a more consistent API
+  experience.
+- 🛠️ **Refined Insight-to-Document Conversion:** Updated `DocumentDTO` to include a dedicated method for converting an
+  `InsightEntity` into a document data transfer object, standardizing how insights are represented.
+- 🌐 **Improved Insight Source Handling in UI:** Adjusted the web interface to recognize insights as a distinct document
+  source, ensuring the "View Original" action is correctly hidden for insight-based knowledge.
+- 🗄️ **Virtual Bucket Assignment for Insights:** Updated the `extractBucket` utility in the UI to correctly assign a
+  virtual 'insights' bucket for documents originating from MongoDB-stored insights.
+
+### Refactor
+
+- 🧹 **Encapsulated Insight Node Conversion Logic:** Moved the logic for transforming an `InsightEntity` into an
+  `IngestedNode` directly into the `InsightEntity` class, improving modularity and reusability.
+- 📄 **Minor Logging Message Formatting:** Adjusted a logging message in the `DoclingLoader` for improved clarity.
+
+---
+
+## [v0.258.1] - 2026-01-13 - Knowledge Base Evolution: Advanced Document Management and Visibility
+
+### Added
+
+- ✨ **Introduced Document Search and Sorting**: Users can now easily find documents by title or filename and sort them
+  by creation date, update date, or title directly in the Knowledge Base UI.
+- 🚀 **Real-time Document Ingestion Tracking**: Documents uploaded to the data lake are now immediately visible in the UI
+  with a "pending" status, providing real-time feedback on ingestion progress.
+- 📄 **Placeholder Document Support**: The backend now creates `RefDoc` placeholders for newly uploaded files, enabling
+  immediate visibility and consistent tracking throughout the ingestion lifecycle.
+- 🔗 **Deterministic Document IDs**: Implemented a new utility for generating deterministic IDs for `RefDoc` entries
+  based on their source path, improving consistency and data management.
+- 🧩 **Dagster Pipeline Assets for Placeholders**: Integrated new Dagster assets and operations to automate the creation
+  of placeholder `RefDoc` entries for files entering the data lake via SharePoint and local filesystem pipelines.
+
+### Changed
+
+- 🔄 **Unified Document Retrieval Logic**: The Knowledge Base backend has been revamped to use a single, unified approach
+  for fetching documents from the `RefDoc` store, simplifying the architecture and improving consistency.
+- ⬆️ **Enhanced Document Upload Validation**: The document upload process now reliably creates a `RefDoc` placeholder
+  for pending files and includes improved error handling for event publishing, making uploads more robust.
+- 📝 **Clarified DocumentDTO fields**: The `DocumentDTO` fields `source` and `is_ingested` have clearer descriptions,
+  better reflecting the document's state and origin.
+- 🧹 **Refined Document List UI**: The document list now uses consistent field names (`document_title`, `created_at`,
+  `updated_at`) aligning with backend changes and supports the new sorting capabilities.
+- ⚡️ **Improved UI Loading States**: The document list now provides a clearer loading indicator, only showing a full
+  loading state on initial data fetch for a smoother user experience.
+- ⚠️ **Conditional Document Upload Button**: The document upload button is now only visible for knowledge bases that are
+  not configured for automatic synchronization, preventing manual uploads to auto-synced sources.
+- 🗑️ **Enhanced Data Lake File Deletion**: Deleting files from the data lake now automatically cleans up associated
+  `RefDoc` entries from the document store, ensuring data consistency.
+- ⚙️ **Human-in-the-Loop Event Structure**: `HumanInTheLoop` request and response events have been refined to include a
+  `hitl_type` and support more flexible response data types, making them more adaptable to various human interaction
+  patterns.
+
+### Refactor
+
+- 🧹 **Centralized MongoDB Connection Management**: MongoDB connection handling across `aihub_lib` and `aihub_pipeline`
+  has been refactored to use `switch_db` context managers and dedicated helper functions, improving multi-database
+  support and connection stability.
+
+### Removed
+
+- 🗑️ **Deprecated Document Caching Logic**: Custom caching mechanisms for distinguishing between processed and
+  unprocessed documents in the Knowledge Service have been removed, replaced by the new unified `RefDoc` retrieval
+  strategy.
+- 📚 **Streamlined Models API**: Several deprecated model-related DTOs and API endpoints have been removed or
+  consolidated, simplifying the API surface for model management.
+
+---
+
+## [v0.258.0] - 2026-01-12 - Fortified Core Services: Enhanced Security, Streamlined Configuration, and Improved Observability
+
+### Security
+
+- 🔑 **Introduced comprehensive token-based authentication** for key infrastructure components including Milvus, NATS,
+  Redis/Valkey, Etcd, and SeaweedFS, significantly enhancing the platform's security posture.
+- 🔑 **Enabled authentication for Docling API** access, allowing API key-based security for document processing services.
+- 🔐 **Added `etcd-init` service** to automatically set up root password authentication for Etcd on startup, ensuring
+  secure metadata storage from the outset.
+- 🔑 **Centralized management of API keys** for local Large Language Models (LLMs) (llama.cpp and vLLM) under the
+  `LOCAL_LLM_TOKEN` environment variable for easier and more secure configuration.
+
+### Added
+
+- 📦 **Enabled Docker secrets support for Pydantic settings**, allowing sensitive configuration data to be managed
+  securely as Docker secrets, with environment variables taking precedence for development flexibility.
+- ⚡️ **Integrated LiteLLM caching with Redis**, now supporting authentication to improve performance and secure cached
+  responses.
+- 📊 **Introduced debug exporters for OpenTelemetry** logs and metrics in development environments, providing immediate
+  visibility into service telemetry.
+
+### Changed
+
+- 🔄 **Standardized NATS and Redis client initialization** by centralizing their creation within dedicated `NatsSettings`
+  and `RedisSettings` classes, simplifying client setup across all services (agents, API, pipelines).
+- 📈 **Activated OpenTelemetry by default** in development environments to provide immediate observability into service
+  operations.
+- 🏷️ **Implemented dynamic service versioning** for OpenTelemetry resources, automatically deriving service versions
+  from Docker image tags for more accurate telemetry data.
+- ⚙️ **Standardized Docling API configuration variables** (`DOCLING_BASE_API_URL` to `DOCLING_API_BASE_URL` and
+  `DOCLING_HOSTED_VLM_API_ENDPOINT` to `DOCLING_HOSTED_VLM_API_BASE_URL`) for consistency.
+- 🌐 **Renamed Swiss LLM Cloud API URL** to `SWISS_LLM_CLOUD_API_BASE_URL` for improved clarity and consistency in
+  configuration.
+- 🚫 **Disabled OpenTelemetry for local Dagster runs** by default in the `Makefile` to prevent potential conflicts and
+  streamline local development workflows.
+- 🔗 **Updated OpenWebUI connections** to Redis and Milvus to properly utilize the newly introduced authentication
+  tokens.
+- 👷 **Adjusted CI workflow to always rebuild Docker images** for backend tests instead of relying on cached images,
+  ensuring tests run against the freshest code.
+
+### Refactor
+
+- 🧹 **Migrated SeaweedFS Filer configuration** entirely from static TOML files to environment variables, streamlining
+  deployment and configuration management.
+- ⚙️ **Simplified Agent and Process runners** by removing direct NATS server list and Redis URL parameters, now
+  leveraging `NatsSettings` and `RedisSettings` for configuration.
+
+---
+
+## [v0.257.2] - 2026-01-11 - Core Pipeline Refinements and Human-in-the-Loop Context
+
+### Changed
+
+- 🦾 **Human-in-the-Loop (HITL) Context**: Enhanced the Human-in-the-Loop response mechanism to explicitly pass agent
+  class and ID, providing more precise context for agent interactions.
+
+### Refactor
+
+- 🧹 **Code Readability**: Improved code readability and conciseness across various AI Hub pipeline components by
+  optimizing variable assignments and method signatures.
+
+---
+
+## [v0.257.1] - 2026-01-09 - Enhanced Knowledge Retriever Namespace Flexibility
+
+### Changed
+
+- 🔄 **Improved `KnowledgeRetrieverConfig` for Namespaces:** Relaxed the constraint on `index_namespaces`, allowing it to
+  be an empty list. An empty list now signifies the intention to retrieve information from *all* available namespaces,
+  offering greater flexibility.
+- 🦾 **Smarter Retriever Filtering:** Updated the `filter_retrievers_by_namespace` utility to correctly interpret an
+  empty `index_namespaces` list, ensuring that retrievers are considered for all relevant namespaces when no specific
+  namespace is provided.
+- ⚡️ **Dynamic Node Retrieval:** The `retrieve_nodes` function now intelligently constructs metadata filters. If
+  `index_namespaces` is empty, it will skip namespace-specific filtering, allowing retrieval of nodes across all
+  namespaces based solely on node type.
+
+---
+
+## [v0.257.0] - 2026-01-08 - Empowering RAG with Dynamic Namespace Selection and Enhanced Retrieval
+
+### Added
+
+- ✨ **Namespace Selection Agent:** Introduced a new agent dedicated to interactively guiding users through the selection
+  of relevant knowledge source namespaces for their queries. This agent uses an LLM to understand intent and
+  incorporates human-in-the-loop (HITL) steps for clarification and approval, ensuring accurate context for RAG.
+- 🦾 **Namespace-Aware User Message Event:** Implemented a new event type (`NamespaceAwareUserMessageEvent`) that extends
+  the standard user message to include pre-selected knowledge source namespaces, enabling RAG agents to receive and
+  process this crucial contextual information.
+- 📄 **Core Namespace Utilities:** Developed foundational data structures (`BucketNamespacePair`) and utility functions
+  (`filter_retrievers_by_namespace`) within `aihub_lib` to support dynamic filtering of RAG retrievers based on
+  user-selected namespaces.
+- ⚙️ **New Configuration Options:** Added `NamespaceSelectionAgentConfig` and `RAGDelegationConfig` to provide flexible
+  configuration for the namespace selection workflow, including LLM settings, available buckets, and how it delegates to
+  RAG agents.
+
+### Changed
+
+- 🔄 **RAG Agent Namespace Filtering:** Updated both the **RAG Agent** and **Expert RAG Agent** to leverage the new
+  `NamespaceAwareUserMessageEvent`. These agents can now dynamically filter their knowledge retrievers based on the
+  pre-selected namespaces, significantly improving the precision and relevance of information retrieval.
+
+### Fixed
+
+- 🐛 **OpenAI Service Header Injection:** Corrected an issue in the OpenAI service where additional headers were not
+  consistently injected into SDK calls, ensuring proper instrumentation and metadata propagation for requests.
+
+---
+
+## [v0.256.14] - 2026-01-08 - Robust Timeout Management and Enhanced Dagster Run Monitoring
+
+### Added
+
+- ✨ **Introduced Comprehensive Document Loading Timeout:** Added an `OPERATION_TIMEOUT` setting for the DoclingLoader,
+  allowing control over the overall duration of document loading operations to prevent indefinite hangs.
+- 🚀 **Granular HTTP Timeouts for Docling API:** Implemented explicit connect, read, write, and pool timeouts for HTTPX
+  clients used in Docling API interactions, providing more fine-grained control over network requests.
+- 🦾 **Explicit Filesystem Timeouts:** Configured explicit connection and read timeouts for Azure Data Lake and S3
+  filesystem resources, improving reliability for storage operations.
+- ⚡️ **Enabled Dagster Run Monitoring:** Activated Dagster's run monitoring across all environments, with configurable
+  settings for maximum runtime, start timeout, cancel timeout, and poll intervals to automatically manage and prevent
+  stuck runs.
+
+### Changed
+
+- 🔄 **Clarified Docling API Timeout Scope:** The `API_TIMEOUT` setting for Docling API calls is now explicitly defined
+  as the timeout for *individual* API calls, distinguishing it from the new overall operation timeout.
+
+### Fixed
+
+- 🐛 **Improved Docling Async Poll Error Handling:** Refined the error handling for asynchronous polling in the
+  DoclingLoader to catch more specific HTTP, OS, and asyncio cancellation errors, leading to more robust operation.
+
+### Refactor
+
+- 🧹 **Streamlined DoclingLoader Asynchronous Logic:** Refactored the asynchronous document loading method in
+  `DoclingLoader` by extracting core logic into an internal helper method, improving readability and maintainability.
+
+---
+
+## [v0.256.13] - 2026-01-08 - Enhanced Observability for Document Parsing
+
+### Changed
+
+- 📄 **Improved Document Parsing Logging:** Added comprehensive logging within the `parse_document_from_data_lake`
+  operation to provide greater visibility and easier debugging for document loading, parsing, and metadata application
+  steps.
+
+---
+
+## [v0.256.12] - 2026-01-07 - Improved Database Connectivity for Docker Environments
+
+### Added
+
+- 🔗 **Configured `MONGO_CONNECTION_STRING`:** Explicitly defined the MongoDB connection string across Docker Compose
+  configurations, leveraging `ferretdb` and existing environment variables (`MONGO_USERNAME`, `MONGO_PASSWORD`) for a
+  more robust and clearer database setup.
+
+---
+
+## [v0.256.11] - 2026-01-06 - Enhanced Document Processing and Interactive AI
+
+### Added
+
+- ✨ **Introduced Chat-style Human-in-the-Loop (HITL) interactions:** Agents can now prompt users with questions directly
+  within the chat interface, appearing as regular messages rather than pop-up dialogs, for more seamless conversational
+  workflows.
+- 🧹 **Automatic Docling Result Cleanup:** Implemented client-side and server-side mechanisms to automatically clear old
+  Docling conversion results after retrieval, improving storage management and preventing orphaned data.
+- ⚙️ **Configurable Docling Result Removal Delay:** Added a new `CLEAR_RESULTS_DELAY` setting to control how long
+  Docling results are retained before automatic cleanup.
+
+### Changed
+
+- 🛡️ **Improved Docling Conversion Resiliency:** Enhanced error handling for Docling document conversion to more
+  robustly manage network issues, connection resets, timeouts, and server restarts, reducing transient failures.
+- 📊 **Enhanced Docling Conversion Logging:** Significantly expanded debug and error logging within the Docling loader to
+  provide greater visibility into the document conversion process, aiding in troubleshooting.
+- 🚀 **Updated Docling Service Configurations:** Modified Docker Compose templates to enable `SINGLE_USE_RESULTS` and set
+  a `RESULT_REMOVAL_DELAY` for the Docling service, complementing client-side cleanup efforts.
+
+---
+
+## [v0.256.10] - 2026-01-05 - Improved PDF Handling and Development Workflow
+
+### Added
+
+- 🦾 **Enhanced PDF Document Processing:** Introduced a new pre-processing step to automatically fix malformed PDF files,
+  specifically those with missing or invalid page dimensions, using A4 as a standard fallback. This significantly
+  improves the robustness of document conversion through the Docling service.
+- 🧪 **Comprehensive PDF Pre-processing Tests:** Added a dedicated test suite for the new PDF pre-processing
+  functionality, ensuring its reliability and correctness across various PDF formats.
+- ⚡️ **Asynchronous Test Utility:** Implemented a new `run_with_event_loop` helper function to streamline the execution
+  of synchronous methods within an asyncio event loop, particularly for Milvus-related testing, enhancing test
+  reliability and developer experience.
+
+### Changed
+
+- 💬 **Improved Docling Task Error Reporting:** Updated error messages for failed or skipped Docling conversion tasks to
+  provide the full API response, offering more detailed context for debugging and troubleshooting.
+
+### Refactor
+
+- 🔄 **Streamlined Dependency Management:** Standardized `aihub_lib` dependency across all projects to use local path
+  references (`path = "../aihub_lib", develop = true`), simplifying local development and monorepo integration.
+- 🧹 **Centralized Asynchronous Test Setup:** Refactored Milvus-related test fixtures and helper functions to leverage
+  the new `run_with_event_loop` utility, centralizing and improving the management of asynchronous operations in tests.
+
+---
+
+## [v0.256.9] - 2026-01-05 - Introducing Chat-Style Human-in-the-Loop for Seamless Agent Collaboration
+
+### Added
+
+- ✨ **New Chat-Style Human-in-the-Loop (HITL) Interaction**: Agents can now ask questions that appear as regular chat
+  messages, allowing users to respond by typing a normal chat message, enabling more fluid conversational workflows.
+- 🦾 **`HitlDemoAgent`**: A new demo agent has been introduced to showcase all three Human-in-the-Loop types: input,
+  confirmation, and the newly introduced chat-style interaction, providing clear examples for developers.
+- 🚀 **API Endpoint for Open Chat HITL**: A new `/threads/{thread_id}/open-chat-hitl` API endpoint has been added,
+  allowing client applications to efficiently query for active chat-style HITL requests within a thread.
+- 📄 **Dedicated Chat HITL Event Types**: New event classes (`HumanInTheLoopChatRequestEvent`,
+  `HumanInTheLoopChatResponseEvent`) and a helper class (`HumanInTheLoopChat`) have been implemented to specifically
+  support and simplify the integration of chat-style Human-in-the-Loop interactions.
+- 🌐 **Internationalization Support for Chat HITL**: Translations have been added for the new chat-style HITL request and
+  response events across supported languages (DE, EN, FR, IT), ensuring a global user experience.
+- ⚙️ **IntelliJ Run Configuration for `HitlDemoAgent`**: A new IntelliJ IDEA run configuration has been included to
+  simplify the setup and execution of the `HitlDemoAgent` for local development and testing.
+
+### Changed
+
+- 🔄 **OpenWebUI Pipeline Intelligent HITL Handling**: The OpenWebUI pipeline now intelligently detects active chat-style
+  HITL requests at the start of a user message and routes the user's input as a chat HITL response, streamlining
+  conversational turns.
+- ⚡️ **Enhanced Base HITL Events**: The core `HumanInTheLoopRequestEvent` and `HumanInTheLoopResponseEvent` have been
+  updated to incorporate the new `chat` interaction type and now utilize type generics for improved type safety and
+  clarity.
+- 🔐 **Improved Thread API Access Control**: Thread-related API endpoints in the `ThreadController` now leverage
+  extracted helper methods for more robust, consistent access checking and error handling across operations.
+- 🔌 **Application and Playground Router Integration**: The new API endpoint for retrieving open chat HITL requests has
+  been seamlessly integrated into the main application and playground router configurations.
+
+### Refactor
+
+- 🧹 **Reorganized Human-in-the-Loop Modules**: The `HumanInTheLoopInput` and `HumanInTheLoopConfirmation` helper
+  classes, along with their respective request/response event classes, have been refactored and moved into dedicated,
+  separate modules for better organization and maintainability.
+- 🏗️ **Streamlined HITL Event Imports**: Imports for Human-in-the-Loop event types have been simplified and made
+  consistent across the agent codebase and playground examples, reducing verbosity and improving code readability.
+
+---
+
+## [v0.256.8] - 2025-12-30 - Enhanced Document Upload Security and Validation
+
+### Fixed
+
+- 🔒 **Strengthened Filename Validation:** Implemented more robust and secure filename validation to prevent the upload
+  of malformed or potentially malicious filenames, including those containing path traversal sequences or invalid
+  control characters. This significantly enhances the security and integrity of uploaded documents.
+- 🐛 **Improved File Extension Handling:** Revised the logic for parsing and validating file extensions, ensuring that
+  all uploaded filenames consistently include a valid, single extension and preventing issues arising from improperly
+  formatted document types.
+
+---
+
 ## [v0.256.7] - 2025-12-23 - Enhanced Agent Context Evaluation and Retrieval
 
 ### Added
