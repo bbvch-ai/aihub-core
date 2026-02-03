@@ -679,6 +679,39 @@ services:
         max-file: 2
     networks:
       - data  # Cache is part of data infrastructure
+
+  # ===================================================================
+  # Rclone (Universal Cloud Storage Sync)
+  # ===================================================================
+  # Provides RC API for syncing files from 70+ cloud providers
+  # (OneDrive, SharePoint, S3, Google Drive, Dropbox, etc.)
+  # ===================================================================
+
+  rclone:
+    container_name: rclone
+    image: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2
+    restart: unless-stopped
+    command:
+      - "rcd"
+      - "--rc-addr=0.0.0.0:5572"
+      - "--rc-serve"
+      - "--rc-user=${RCLONE_RC_USER}"
+      - "--rc-pass=${RCLONE_RC_PASS}"
+      - "--log-level=INFO"
+      - "--config=/dev/null"  # Disable config file, use environment variables only
+    networks:
+      - default
+    healthcheck:
+      test: ["CMD", "rclone", "rc", "--rc-addr=localhost:5572", "--rc-user=${RCLONE_RC_USER}", "--rc-pass=${RCLONE_RC_PASS}", "core/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
   # ===================================================================
   # AI Model Serving (Local Inference)
   # ===================================================================
