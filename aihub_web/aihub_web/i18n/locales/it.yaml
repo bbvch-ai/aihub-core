@@ -270,6 +270,7 @@ agent:
     threads: "Thread"
     configuration: "Configurazione"
     chat: "Chat"
+    memories: "Memorie"
   overview:
     startEvents: "Eventi di avvio"
     stopEvents: "Eventi di arresto"

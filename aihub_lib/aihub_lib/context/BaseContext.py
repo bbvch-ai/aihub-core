@@ -54,7 +54,7 @@ class BaseContext:
         """
         redis_key = self._build_key(key)
         serialized_value = json.dumps(value)
-        logger.debug(f"Storing key '{redis_key}' with value: {serialized_value}")
+        logger.debug(f"Storing key '{redis_key}'")
         await self.redis.set(redis_key, serialized_value, ex=self.default_ttl)
 
     async def get(self, key: str, default: Any | None = None) -> Any | None:
@@ -69,7 +69,7 @@ class BaseContext:
                 return default
 
             val = json.loads(value.decode())
-            logger.debug(f"Retrieved key '{redis_key}' with value: {val}")
+            logger.debug(f"Retrieved key '{redis_key}'")
             return val
         except Exception as e:
             logger.exception(f"Error getting key '{redis_key}': {e}")
