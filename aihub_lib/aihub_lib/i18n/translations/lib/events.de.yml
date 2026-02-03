@@ -126,6 +126,14 @@ hitl_confirmation_response_event:
   name: "Bestätigung erhalten"
   description: "Der Benutzer hat bestätigt oder abgelehnt, und der Agent kann mit der Aufgabe fortfahren."
 
+hitl_chat_request_event:
+  name: "Chat-Frage"
+  description: "Der Agent hat eine Frage gestellt, die durch eine Chat-Nachricht beantwortet werden kann."
+
+hitl_chat_response_event:
+  name: "Chat-Antwort erhalten"
+  description: "Der Benutzer hat per Chat-Nachricht geantwortet, und der Agent kann mit der Aufgabe fortfahren."
+
 router_event:
   name: "Optimaler Pfad gewählt"
   description: "Der Agent hat den optimalen Pfad für das weitere Vorgehen gewählt."
@@ -177,3 +185,35 @@ user_message_event:
 standalone_question_condenser_event:
   name: "Kondensierte Einzelanfrage"
   description: "Eine komplexe Anfrage wurde in eine klarere und prägnantere Einzelanfrage umgewandelt, um die Bearbeitung zu erleichtern."
+
+new_memory_event:
+  name: "Erinnerungen Aktualisiert"
+  description: "Agent hat Benutzer- oder Organisationsspeicher basierend auf der Konversation aktualisiert"
+
+retrieve_memory_event:
+  name: "Erinnerungen Abgerufen"
+  description: "Agent hat relevante Erinnerungen für den Kontext abgerufen"
+
+retrieve_user_memory_event:
+  name: "Benutzererinnerungen Abgerufen"
+  description: "Agent hat private Benutzererinnerungen für personalisierten Kontext abgerufen"
+
+retrieve_organization_memory_event:
+  name: "Organisationserinnerungen Abgerufen"
+  description: "Agent hat gemeinsame Organisationserinnerungen für den Kontext abgerufen"
+
+store_organization_memory_event:
+  name: "Organisationserinnerung Gespeichert"
+  description: "Agent hat explizite Organisationsfakten gespeichert, die für alle Benutzer geteilt werden"
+
+add_memory_to_chat_history_event:
+  name: "Erinnerungen zum Kontext Hinzugefügt"
+  description: "Agent hat Chat-Verlauf mit Erinnerungen erweitert"
+
+add_user_memory_to_chat_history_event:
+  name: "Benutzererinnerungen zum Kontext Hinzugefügt"
+  description: "Agent hat Chat-Verlauf mit privaten Benutzererinnerungen erweitert"
+
+add_organization_memory_to_chat_history_event:
+  name: "Organisationserinnerungen zum Kontext Hinzugefügt"
+  description: "Agent hat Chat-Verlauf mit gemeinsamen Organisationserinnerungen erweitert"

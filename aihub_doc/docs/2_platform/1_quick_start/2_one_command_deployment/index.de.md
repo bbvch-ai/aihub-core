@@ -1,32 +1,32 @@
 ---
-title: Deployment mit einem Befehl
-source_sha: 87723bd9334813821bc5e71cf1a1d19542f88507095369395762d1bda81d88fd
+title: Ein-Befehl-Deployment
+source_sha: b4681a3f51fb8fe8247664caec106a917fff27fc34f096a833d9364300a3fbed
 ---
 
-# Deployment mit einem Befehl: Starten Sie Ihre KI-Plattform
+# Ein-Befehl-Deployment: Starten Sie Ihre KI-Plattform
 
-Die Swiss AI Hub Plattform wird mit einem einzigen Docker Compose Befehl deployed. Dieser optimierte Prozess bringt Ihre
-komplette KI-Infrastruktur in Minuten, nicht Stunden, zum Laufen.
+Die Swiss AI Hub Plattform wird mit einem einzigen Docker Compose Befehl deployt. Dieser optimierte Prozess bringt Ihre
+gesamte KI-Infrastruktur in Minuten, nicht Stunden, zum Laufen.
 
 ## Deployment-Übersicht
 
 ::: tip Zwei Deployment-Optionen
-Der Swiss AI Hub unterstützt zwei Deployment-Modi. Befolgen Sie die gleichen Schritte für beide, indem Sie die
-entsprechenden Befehle für Ihren Deployment-Typ verwenden:
+Der Swiss AI Hub unterstützt zwei Deployment-Modi. Befolgen Sie für beide die gleichen Schritte und verwenden Sie die
+entsprechenden Befehle für Ihren Deployment-Typ:
 
-- **Produktions-Deployment**: Deployment auf einem Server mit einem echten Domainnamen (z.B. `aihub.yourcompany.com`)
+- **Produktions-Deployment**: Deployment auf einem Server mit einem realen Domainnamen (z.B. `aihub.yourcompany.com`)
 
   - Verwendet `docker-compose.latest.yml`
   - Verwendet Let's Encrypt für automatische SSL-Zertifikate
-  - Erfordert eine DNS-Konfiguration, die auf Ihren Server zeigt
+  - Erfordert eine DNS-Konfiguration, die auf Ihren Server verweist
 
-- **Lokales Deployment**: Ausführung auf Ihrer lokalen Maschine für Entwicklung/Tests
+- **Lokales Deployment**: Ausführung auf Ihrem lokalen Rechner für Entwicklung/Tests
 
   - Verwendet `docker-compose.local.yml`
   - Verwendet selbstsignierte SSL-Zertifikate (mkcert)
   - Verwendet die Domain `127.0.0.1.nip.io` (löst automatisch zu localhost auf)
 
-Jeder der folgenden Schritte zeigt Befehle für beide Deployment-Typen. Befolgen Sie einfach die Befehle, die Ihrem
+Jeder untenstehende Schritt zeigt Befehle für beide Deployment-Typen. Folgen Sie einfach den Befehlen, die Ihrem
 gewählten Deployment-Modus entsprechen.
 :::
 
@@ -69,8 +69,8 @@ mkcert -key-file configs/traefik/certs/dev-key.pem -cert-file configs/traefik/ce
 ```
 
 ::: tip Was ist nip.io?
-Die Domain `*.127.0.0.1.nip.io` löst automatisch zu Ihrem Localhost (127.0.0.1) auf und bietet eine
-Wildcard-DNS-Auflösung, ohne dass Sie Ihre Hosts-Datei ändern müssen. Dies ermöglicht subdomainbasiertes Routing in der
+Die Domain `*.127.0.0.1.nip.io` löst sich automatisch auf Ihr Localhost (127.0.0.1) auf und bietet eine
+Wildcard-DNS-Auflösung, ohne dass Sie Ihre Hosts-Datei ändern müssen. Dies ermöglicht Subdomain-basiertes Routing in der
 lokalen Entwicklung.
 :::
 
@@ -86,45 +86,71 @@ Erstellen Sie eine `.env`-Datei mit Ihren Konfigurationseinstellungen:
 touch .env
 ```
 
-### Essenzielle Konfigurationsvorlage
+### Vorlage für die essentielle Konfiguration
 
 Kopieren Sie diese Vorlage in Ihre `.env`-Datei und ersetzen Sie die Platzhalterwerte:
 
 ```env
 # =============================================================================
-# BASIC PLATFORM CONFIGURATION
+# AI-Hub Produktions-Umgebungskonfiguration
+# =============================================================================
+# Diese Datei enthält NUR die Umgebungsvariablen, die konfiguriert werden müssen.
+# Alle internen Docker-Netzwerk-Endpunkte sind in den Compose-Dateien hartcodiert.
 # =============================================================================
 
-LOG_LEVEL="WARNING"                    # Options: CRITICAL, ERROR, WARNING, INFO, DEBUG
-ENV="prod"                             # Options: dev, test, prod
+# -----------------------------------------------------------------------------
+# Allgemeine Einstellungen
+# -----------------------------------------------------------------------------
+LOG_LEVEL="INFO"
+ENV="prod"
 DOMAIN="REPLACE_WITH_YOUR_DOMAIN"
 
-# Traefik Configuration
+# Let's Encrypt / Traefik
 ACME_EMAIL="admin@your-company.com"
-ADMIN_PASSWORD_HASH=""                 # Generate with: htpasswd -nb admin yourpassword
+ADMIN_PASSWORD_HASH=""
 
-# =============================================================================
-# AUTHENTICATION CONFIGURATION
-# =============================================================================
+# -----------------------------------------------------------------------------
+# API-Schlüssel (Externe Dienste) - Mindestens einen LLM-Anbieter konfigurieren
+# -----------------------------------------------------------------------------
+AZURE_OPENAI_KEY="REPLACE_WITH_AZURE_OPENAI_KEY"
+AZURE_OPENAI_BASE_URL="REPLACE_WITH_AZURE_OPENAI_BASE_URL"
+GEMINI_API_KEY=""
+JINA_API_KEY=""
+HUGGINGFACE_API_KEY=""
 
-# General Authentication Settings
-AUTH_ENABLE_API_ACCESS="True"
-AUTH_OPEN_WEBUI_SIGNING_SECRET="REPLACE_WITH_RANDOM_STRING"
+# Optionale Anbieter
+SWISS_LLM_CLOUD_API_BASE_URL=""
+SWISS_LLM_CLOUD_API_KEY=""
+COHERE_API_BASE=""
+COHERE_API_KEY=""
+
+# -----------------------------------------------------------------------------
+# OAuth2 / OIDC Konfiguration (ERFORDERLICH)
+# -----------------------------------------------------------------------------
 AUTH_IDENTITY_PROVIDER="azure"
-
-# OAuth2 Configuration (from Prerequisites setup)
+OAUTH_PROVIDER_NAME="Azure AD"
 OAUTH_CLIENT_ID="REPLACE_WITH_YOUR_CLIENT_ID"
 OAUTH_CLIENT_SECRET="REPLACE_WITH_YOUR_CLIENT_SECRET"
 OAUTH_AUTHORITY_URL="https://login.microsoftonline.com/REPLACE_WITH_YOUR_TENANT_ID"
-OAUTH_PROVIDER_NAME="azure"
 OAUTH_TENANT_ID="REPLACE_WITH_YOUR_TENANT_ID"
-OAUTH_COOKIE_SECRET="REPLACE_WITH_16_HEX_CHARS"
+OAUTH_COOKIE_SECRET_DAGSTER="REPLACE_WITH_16_HEX_CHARS"
+OAUTH_COOKIE_SECRET_SEAWEEDFS="REPLACE_WITH_16_HEX_CHARS"
+OAUTH_COOKIE_SECRET_ATTU="REPLACE_WITH_16_HEX_CHARS"
 
-# =============================================================================
-# PLATFORM ACCESS CONFIGURATION
-# =============================================================================
+# Azure-spezifische OAuth (gleiche Werte wie oben)
+AZURE_CLIENT_ID="REPLACE_WITH_YOUR_CLIENT_ID"
+AZURE_TENANT_ID="REPLACE_WITH_YOUR_TENANT_ID"
+AZURE_CLIENT_SECRET="REPLACE_WITH_YOUR_CLIENT_SECRET"
 
-# Superuser Configuration
+# OAuth Custom Branding (optional)
+OAUTH_CUSTOM_SIGN_IN_LOGO=""
+
+# -----------------------------------------------------------------------------
+# Authentifizierung & Sicherheit (ERFORDERLICH - Neue Secrets generieren!)
+# -----------------------------------------------------------------------------
+AUTH_OPEN_WEBUI_SIGNING_SECRET="REPLACE_WITH_RANDOM_STRING"
+
+# Superuser-Konfiguration
 SUPERUSER_ENABLED="True"
 SUPERUSER_NAME="AI-Hub Superuser"
 SUPERUSER_EMAIL="admin@your-company.com"
@@ -132,162 +158,128 @@ SUPERUSER_OID="REPLACE_WITH_RANDOM_STRING"
 SUPERUSER_ROLE="AIHubSuperuser"
 SUPERUSER_TOKEN="REPLACE_WITH_RANDOM_STRING"
 
-# Platform Settings
-AIHUB_API_VERSION="dev"
-AIHUB_FRONTEND_ORIGIN="https://REPLACE_WITH_YOUR_DOMAIN"
-AIHUB_CREATE_DEFAULT_ROLES="True"
-
-# =============================================================================
-# AI MODEL ACCESS (Configure at least one)
-# =============================================================================
-
-# Azure OpenAI (Recommended)
-AZURE_OPENAI_BASE_URL="REPLACE_WITH_AZURE_OPENAI_BASE_URL"
-AZURE_OPENAI_KEY="REPLACE_WITH_AZURE_OPENAI_KEY"
-
-# Google Gemini (Alternative)
-GEMINI_API_KEY="REPLACE_WITH_GEMINI_KEY"
-
-# Swiss LLM Cloud (Optional)
-SWISS_LLM_CLOUD_API_URL=""                # Optional: Swiss LLM Cloud endpoint URL
-SWISS_LLM_CLOUD_API_KEY=""                # Optional: Swiss LLM Cloud API key
-
-# Cohere (Optional)
-COHERE_API_BASE=""                        # Optional: Cohere API base URL
-COHERE_API_KEY=""                         # Optional: Cohere API key
-
-# Hugging Face (Optional)
-HUGGINGFACE_API_KEY=""                    # Optional: For Hugging Face model access
-
-# =============================================================================
-# LITELLM PROXY CONFIGURATION
-# =============================================================================
-
-LITELLM_UI_USERNAME="admin"
-LITELLM_UI_PASSWORD="REPLACE_WITH_RANDOM_STRING"
-LITELLM_MASTER_KEY="REPLACE_WITH_RANDOM_STRING"
-LITE_LLM_PROXY_BASE_URL="http://litellm:4000"
-LITE_LLM_PROXY_API_KEY="REPLACE_WITH_RANDOM_STRING"
-
-# =============================================================================
-# DATABASE CONFIGURATION
-# =============================================================================
-
+# -----------------------------------------------------------------------------
+# Datenbank-Zugangsdaten (ERFORDERLICH - Starke Passwörter verwenden!)
+# -----------------------------------------------------------------------------
 # PostgreSQL
 POSTGRES_USER="admin"
 POSTGRES_PASSWORD="REPLACE_WITH_RANDOM_STRING"
 
-# FerretDB (MongoDB-compatible)
+# MongoDB (FerretDB)
 MONGO_USERNAME="admin"
 MONGO_PASSWORD="REPLACE_WITH_RANDOM_STRING"
-MONGO_CONNECTION_STRING="mongodb://admin:REPLACE_WITH_SAME_MONGO_PASSWORD@ferretdb:27017/"
 
-# Valkey (Redis-compatible)
-REDIS_URL="redis://localhost:6379"
+# S3 Storage (SeaweedFS)
+S3_STORAGE_ACCESS_KEY="admin"
+S3_STORAGE_SECRET_KEY="REPLACE_WITH_RANDOM_STRING"
+# Öffentlicher Endpunkt für presigned URLs (automatisch als https://s3.${DOMAIN} in docker-compose konfiguriert)
+# S3_STORAGE_PUBLIC_ENDPOINT wird automatisch gesetzt - nur überschreiben bei benutzerdefinierter S3-Domain
 
-# =============================================================================
-# STORAGE CONFIGURATION
-# =============================================================================
+# -----------------------------------------------------------------------------
+# LiteLLM Konfiguration (ERFORDERLICH)
+# -----------------------------------------------------------------------------
+LITELLM_UI_USERNAME="admin"
+LITELLM_UI_PASSWORD="REPLACE_WITH_RANDOM_STRING"
+LITELLM_MASTER_KEY="REPLACE_WITH_RANDOM_STRING"
 
-# SeaweedFS S3 Storage
-SEAWEEDFS_ROOT_USER="admin"
-SEAWEEDFS_ROOT_PASSWORD="REPLACE_WITH_RANDOM_STRING"
-S3_STORAGE_ENDPOINT="http://seaweedfs:8333"
-S3_STORAGE_ACCESS_KEY="admin"                         # Must match SEAWEEDFS_ROOT_USER
-S3_STORAGE_SECRET_KEY="REPLACE_WITH_SAME_SEAWEEDFS_PASSWORD"
-S3_STORAGE_URL_SIGNING_SECRET="REPLACE_WITH_RANDOM_STRING"
-
-# =============================================================================
-# SERVICE ENDPOINTS (Internal - Don't Change)
-# =============================================================================
-
-DOCLING_API_ENDPOINT="http://docling:5001"
-DOCLING_API_TIMEOUT="600"
-DOCLING_HTTP_RETRIES=3
-PHOENIX_SECRET="REPLACE_WITH_RANDOM_STRING"
-PHOENIX_ENDPOINT="http://phoenix:6006"
-NATS_ENDPOINT="nats://localhost:4222"
-DAGSTER_HOME="~/.dagster_home"
-DAGSTER_OAUTH_ALLOWED_GROUPS="AIHubDeveloper"
-SEAWEEDFS_OAUTH_ALLOWED_GROUPS="AIHubDeveloper"
+# -----------------------------------------------------------------------------
+# Service-Konfiguration
+# -----------------------------------------------------------------------------
 JUPYTER_TOKEN="REPLACE_WITH_RANDOM_STRING"
+PHOENIX_SECRET="REPLACE_WITH_RANDOM_STRING"
+
+# Docling-Konfiguration
+DOCLING_API_TIMEOUT="600"
+DOCLING_VLM_MODEL_NAME="text-generation/ocr"
+DOCLING_HTTP_RETRIES=3
+
+# Milvus-Konfiguration (muss mit den Dimensionen Ihres Embedding-Modells übereinstimmen)
 MILVUS_DIMENSION="3072"
 
-# =============================================================================
-# OBSERVABILITY CONFIGURATION
-# =============================================================================
+# -----------------------------------------------------------------------------
+# AI-Hub Anwendungseinstellungen
+# -----------------------------------------------------------------------------
+AIHUB_API_VERSION="latest"
+AIHUB_CREATE_DEFAULT_ROLES="True"
 
-# OpenTelemetry Cloud Exporter (Optional - for production monitoring)
-OTEL_ENABLED="true"                           # Enable/disable OTEL collection
-OTEL_EXPORTER_OTLP_PROTOCOL="grpc"           # Protocol for OTEL export
-OTEL_CLOUD_ENDPOINT="localhost:4317"         # Cloud OTEL endpoint (e.g., Grafana Cloud: "otlp.grafana.net:443")
-OTEL_CLOUD_HEADERS=""                         # Authentication headers (e.g., "Authorization=Bearer YOUR_TOKEN")
+# Admin-Einstellungen
+ADMIN_EMAIL="admin@your-company.com"
 
-# =============================================================================
-# BOT DEVELOPMENT CONFIGURATION
-# =============================================================================
+# OAuth Gruppenbeschränkungen (Azure AD Gruppennamen)
+OAUTH_ALLOWED_GROUPS_DAGSTER="AIHubAdmin"
+OAUTH_ALLOWED_GROUPS_SEAWEEDFS="AIHubAdmin"
+OAUTH_ALLOWED_GROUPS_ATTU="AIHubAdmin"
 
-BOT_AUTH_FAKE_NAME="Bot"
-BOT_AUTH_FAKE_EMAIL="bot@bot.com"
-BOT_AUTH_FAKE_OID="00000000-0000-0000-0000-000000000000"
-BOT_AUTH_FAKE_ROLES="AIHubBot"
+# -----------------------------------------------------------------------------
+# Expert Asking Agent Konfiguration (Optional - für Experten-Eskalation)
+# -----------------------------------------------------------------------------
+# Kanaltyp: "teams" oder "slack"
+EXPERT_ASKING_CHANNEL_TYPE="teams"
 
-# =============================================================================
-# OPTIONAL INTEGRATIONS
-# =============================================================================
+# Teams-Konfiguration (erforderlich wenn EXPERT_ASKING_CHANNEL_TYPE="teams")
+TEAMS_CHANNEL_ID="REPLACE_WITH_TEAMS_CHANNEL_ID"
+TEAMS_TENANT_ID="REPLACE_WITH_TEAMS_TENANT_ID"
+TEAMS_BOT_ID="REPLACE_WITH_TEAMS_BOT_ID"
 
-# Jina AI Search (Optional)
-JINA_API_KEY=""
+# Slack-Konfiguration (erforderlich wenn EXPERT_ASKING_CHANNEL_TYPE="slack")
+SLACK_CHANNEL_ID=""
+SLACK_SERVICE_URL="https://slack.botframework.com"
 
-# OpenTelemetry Configuration (Optional)
-OTEL_ENABLED="False"
+# -----------------------------------------------------------------------------
+# OpenTelemetry Konfiguration (Optional)
+# -----------------------------------------------------------------------------
+OTEL_ENABLED="true"
 OTEL_EXPORTER_OTLP_PROTOCOL="grpc"
-OTEL_CLOUD_ENDPOINT=""
+OTEL_RESOURCE_SERVICE_VERSION="1.0.0"
+OTEL_RESOURCE_SERVICE_NAMESPACE="swiss-ai-hub"
+
+# Cloud OTEL (optional - für externe Observability-Plattformen)
+OTEL_CLOUD_ENDPOINT="placeholder:1234"
 OTEL_CLOUD_HEADERS=""
-
-# Signoz Telemetry (Optional)
-SIGNOZ_INGESTION_CLOUD_ENDPOINT=""
-SIGNOZ_INGESTION_KEY=""
-
 ```
 
 ### Konfigurationsrichtlinien
 
-**Kritische Werte zum Ersetzen:**
+**Kritische Werte, die ersetzt werden müssen:**
 
-1. **Authentifizierungswerte** (aus den Voraussetzungen):
+1. **Domain** – Setzen Sie `DOMAIN` auf Ihre Produktionsdomain (z.B. `aihub.yourcompany.com`) oder `127.0.0.1.nip.io`
+   für lokale Tests.
+
+2. **Authentifizierungswerte** (aus den Voraussetzungen):
 
    - `REPLACE_WITH_YOUR_CLIENT_ID` → Ihre Azure App Registration Client ID
    - `REPLACE_WITH_YOUR_CLIENT_SECRET` → Ihr Azure App Registration Client Secret
-   - `REPLACE_WITH_YOUR_TENANT_ID` → Ihre Azure Tenant ID (erscheint zweimal)
+   - `REPLACE_WITH_YOUR_TENANT_ID` → Ihre Azure Tenant ID
 
-2. **KI-Modellzugriff** (mindestens einen konfigurieren):
+3. **KI-Modellzugriff** (konfigurieren Sie mindestens einen):
 
    - `REPLACE_WITH_AZURE_OPENAI_BASE_URL` → Ihre Azure OpenAI Endpunkt-URL
    - `REPLACE_WITH_AZURE_OPENAI_KEY` → Ihr Azure OpenAI API-Schlüssel
-   - `REPLACE_WITH_GEMINI_KEY` → Ihr Google Gemini API-Schlüssel
 
-3. **Zufällige Zeichenketten** (eindeutige Werte generieren):
+4. **Geheimnisse** (generieren Sie für jedes eindeutige Werte):
 
-   - Ersetzen Sie alle `REPLACE_WITH_RANDOM_STRING` durch eindeutige zufällige Zeichenketten (verwenden Sie
-     `openssl rand -hex 32`)
-   - Ersetzen Sie `REPLACE_WITH_16_HEX_CHARS` durch eine 16-Byte-Hex-Zeichenkette (verwenden Sie `openssl rand -hex 16`)
-   - Verwenden Sie unterschiedliche Werte für jeden Platzhalter
-   - Mindestens 32 Zeichen werden für die Sicherheit empfohlen
+   - Ersetzen Sie alle `REPLACE_WITH_RANDOM_STRING` mit: `openssl rand -hex 32`
+   - Ersetzen Sie `REPLACE_WITH_16_HEX_CHARS` mit: `openssl rand -hex 16`
 
-**Domain-Konfiguration:**
+5. **Experten-Eskalation** (optional – für Expert-in-the-Loop-Funktionen):
 
-- Für lokale Tests: Behalten Sie `AIHUB_FRONTEND_ORIGIN="https://127.0.0.1.nip.io"` bei
-- Für die Produktion: Ändern Sie dies zu Ihrer tatsächlichen Domain (z.B. `https://aihub.your-company.com`)
+   - `REPLACE_WITH_TEAMS_CHANNEL_ID` → Ihre Teams Kanal-ID (Format: `19:xxx@thread.tacv2`)
+   - `REPLACE_WITH_TEAMS_TENANT_ID` → Ihre Azure AD Tenant ID
+   - `REPLACE_WITH_TEAMS_BOT_ID` → Ihre Azure Bot Service Anwendungs-ID
+
+::: info Vereinfachte Konfiguration
+Interne Service-Endpunkte (wie Datenbank-URLs, Nachrichtenwarteschlangen usw.) sind jetzt in den Docker Compose Dateien
+fest codiert. Sie müssen nur noch Anmeldeinformationen und externe Service-Verbindungen konfigurieren.
+:::
 
 ::: tip Zufällige Zeichenketten generieren
-Verwenden Sie diese Befehle, um sichere zufällige Zeichenketten zu generieren:
+Verwenden Sie diese Befehle, um sichere Zufallszeichenketten zu generieren:
 
 ```bash
-# For most secrets (64 characters)
+# Für die meisten Geheimnisse (64 Zeichen)
 openssl rand -hex 32
 
-# For OAUTH_COOKIE_SECRET (32 characters)
+# Für OAUTH_COOKIE_SECRET (32 Zeichen)
 openssl rand -hex 16
 ```
 
@@ -299,7 +291,7 @@ Führen Sie den entsprechenden Befehl für jeden Platzhalter aus.
 Vor dem Deployment überprüfen Sie Ihre Konfiguration:
 
 ```bash
-# Check for placeholder values that need replacement
+# Auf Platzhalterwerte prüfen, die ersetzt werden müssen
 grep -n "REPLACE_WITH" .env
 ```
 
@@ -309,7 +301,7 @@ Dies sollte keine Ergebnisse liefern, wenn alle Platzhalter ersetzt wurden.
 
 ### Alle Services starten
 
-Deployen Sie die komplette Plattform mit einem Befehl:
+Deployen Sie die gesamte Plattform mit einem Befehl:
 
 ```bash
 docker compose -f docker-compose.latest.yml up -d
@@ -320,40 +312,40 @@ Dieser Befehl wird:
 - Alle notwendigen Docker-Images herunterladen
 - Erforderliche Netzwerke und Volumes erstellen
 - Alle Plattform-Services in der richtigen Reihenfolge starten
-- Service-Discovery und Kommunikation konfigurieren
+- Service Discovery und Kommunikation konfigurieren
 
 ### Deployment-Fortschritt überwachen
 
 Beobachten Sie den Deployment-Fortschritt:
 
 ```bash
-# See all services starting
+# Alle startenden Services anzeigen
 docker compose -f docker-compose.latest.yml logs -f
 
-# Check service health status
+# Service-Gesundheitsstatus prüfen
 docker compose -f docker-compose.latest.yml ps
 ```
 
 **Erwartete Services:** Die Plattform umfasst diese Kern-Services:
 
-- **Web-Interface** (aihub-web)
+- **Web-Oberfläche** (aihub-web)
 - **API** (aihub-api)
-- **Authentifizierung** (auth services)
+- **Authentifizierung** (Auth Services)
 - **Datenbanken** (FerretDB, PostgreSQL, Valkey)
-- **Vektor-Datenbank** (Milvus)
+- **Vektordatenbank** (Milvus)
 - **LLM-Proxy** (LiteLLM)
 - **Dokumentenverarbeitung** (Docling)
 - **Observability** (Phoenix)
-- **Message Queue** (NATS)
+- **Nachrichtenwarteschlange** (NATS)
 - **Speicher** (SeaweedFS)
 
-### Warten auf Service-Initialisierung
+### Auf Service-Initialisierung warten
 
-Der erste Start dauert 3-5 Minuten, während sich die Services initialisieren. Alle Services sollten den Status "healthy"
-anzeigen:
+Der initiale Start dauert 3-5 Minuten, während sich die Services initialisieren. Alle Services sollten den Status
+"healthy" anzeigen:
 
 ```bash
-# Wait for healthy status
+# Auf gesunden Status warten
 docker compose -f docker-compose.latest.yml ps --format "table {{.Name}}\t{{.Status}}"
 ```
 
@@ -362,29 +354,29 @@ docker compose -f docker-compose.latest.yml ps --format "table {{.Name}}\t{{.Sta
 ### Auf die Plattform zugreifen
 
 1. **Stellen Sie sicher, dass Ihrem Benutzer, mit dem Sie testen, die Rolle "AIHubAdmin" in der Azure Enterprise
-   Application zugewiesen ist**
+   Application zugewiesen ist.**
 
-2. **Web-Interface:**
+2. **Web-Oberfläche:**
 
    - Lokal: `https://127.0.0.1.nip.io`
    - Produktion: `https://your-domain.com`
 
-3. **Erwarteter Login-Flow:**
+3. **Erwarteter Anmeldeablauf:**
 
    - Leitet zur Azure-Authentifizierung weiter
-   - Nach dem Login kehrt die Oberfläche zum AI-Hub zurück
+   - Nach der Anmeldung kehrt die Oberfläche zum AI-Hub zurück
    - Das Haupt-Dashboard sollte sichtbar sein
 
-## Zusammenfassung: Wichtige Unterschiede zwischen Deployments
+## Zusammenfassung: Hauptunterschiede zwischen den Deployments
 
-| Merkmal                   | Produktion (`docker-compose.latest.yml`) | Lokal (`docker-compose.local.yml`) |
+| Funktion                  | Produktion (`docker-compose.latest.yml`) | Lokal (`docker-compose.local.yml`) |
 | :------------------------ | :--------------------------------------- | :--------------------------------- |
 | **SSL-Zertifikate**       | Let's Encrypt (automatisch)              | mkcert (manuelle Generierung)      |
-| **Domain**                | Ihre Produktions-Domain                  | `127.0.0.1.nip.io`                 |
-| **Konfigurationsdateien** | `*.latest.*` configs                     | `*.local.*` configs                |
+| **Domain**                | Ihre Produktionsdomain                   | `127.0.0.1.nip.io`                 |
+| **Konfigurationsdateien** | `*.latest.*` Konfigurationen             | `*.local.*` Konfigurationen        |
 | **Zweck**                 | Produktions-Deployments                  | Lokales Deployment und Entwicklung |
 
 ::: warning
 Verwenden Sie niemals selbstsignierte SSL-Zertifikate in der Produktion. Die Konfiguration für das lokale Deployment ist
-ausschließlich für die Entwicklung und Tests auf Ihrer lokalen Maschine konzipiert.
+ausschließlich für die Entwicklung und Tests auf Ihrem lokalen Rechner vorgesehen.
 :::

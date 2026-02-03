@@ -26,7 +26,7 @@ const handleMessage = (event: MessageEvent) => {
   if (event.origin === runtimeConfig.public.webui.url) {
     const data = event.data
 
-    if (!['show-traces', 'show-sources', 'set-context'].includes(data.type)) {
+    if (!['show-traces', 'show-sources', 'show-memories', 'set-context'].includes(data.type)) {
       console.log('Unknown message type:', data.type)
       return
     }
@@ -39,6 +39,9 @@ const handleMessage = (event: MessageEvent) => {
     }
     if (data.type === 'show-sources' || route.path.endsWith('/sources')) {
       router.push(localeRoute(`/service/openai/${thread_id}/${display_id}/sources`))
+    }
+    if (data.type === 'show-memories' || route.path.endsWith('/memories')) {
+      router.push(localeRoute(`/service/openai/${thread_id}/${display_id}/memories`))
     }
   }
 }

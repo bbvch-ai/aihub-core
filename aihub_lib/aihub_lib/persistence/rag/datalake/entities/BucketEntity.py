@@ -2,6 +2,7 @@ import re
 
 from bson import ObjectId
 from mongoengine import BooleanField, Document, EmbeddedDocumentField, StringField, ValidationError
+from mongoengine.context_managers import switch_db
 
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 
@@ -45,37 +46,43 @@ class BucketEntity(Document):
         description: LocaleStringEntity | None = None,
         auto_sync: bool = False,
         datalake_type: str = "s3",
+        db_alias: str = "default",
     ) -> "BucketEntity":
         cls._validate_name(bucket_name, "bucket_name")
         if db_name:
             cls._validate_name(db_name, "db_name")
-        bucket = cls(
-            id=ObjectId(),
-            bucket_name=bucket_name,
-            db_name=db_name or bucket_name,
-            name=name or LocaleStringEntity(en=bucket_name, de=bucket_name, fr=bucket_name, it=bucket_name),
-            description=description or LocaleStringEntity(),
-            auto_sync=auto_sync,
-            datalake_type=datalake_type,
-        )
-        bucket.save()
-        return bucket
+        with switch_db(cls, db_alias) as SwitchedBucket:
+            bucket = SwitchedBucket(
+                id=ObjectId(),
+                bucket_name=bucket_name,
+                db_name=db_name or bucket_name,
+                name=name or LocaleStringEntity(en=bucket_name, de=bucket_name, fr=bucket_name, it=bucket_name),
+                description=description or LocaleStringEntity(),
+                auto_sync=auto_sync,
+                datalake_type=datalake_type,
+            )
+            bucket.save()
+            return bucket
 
     @classmethod
-    def get_bucket_by_id(cls, bucket_id: str) -> "BucketEntity":
-        return cls.objects().get(id=ObjectId(bucket_id))
+    def get_bucket_by_id(cls, bucket_id: str, db_alias: str = "default") -> "BucketEntity":
+        with switch_db(cls, db_alias) as SwitchedBucket:
+            return SwitchedBucket.objects().get(id=ObjectId(bucket_id))
 
     @classmethod
-    def get_bucket_by_bucket_name(cls, bucket_name: str) -> "BucketEntity":
-        return cls.objects().get(bucket_name=bucket_name)
+    def get_bucket_by_bucket_name(cls, bucket_name: str, db_alias: str = "default") -> "BucketEntity":
+        with switch_db(cls, db_alias) as SwitchedBucket:
+            return SwitchedBucket.objects().get(bucket_name=bucket_name)
 
     @classmethod
-    def get_bucket_by_db_name(cls, db_name: str) -> "BucketEntity":
-        return cls.objects().get(db_name=db_name)
+    def get_bucket_by_db_name(cls, db_name: str, db_alias: str = "default") -> "BucketEntity":
+        with switch_db(cls, db_alias) as SwitchedBucket:
+            return SwitchedBucket.objects().get(db_name=db_name)
 
     @classmethod
-    def get_all_buckets(cls) -> list["BucketEntity"]:
-        return cls.objects().order_by("bucket_name")
+    def get_all_buckets(cls, db_alias: str = "default") -> list["BucketEntity"]:
+        with switch_db(cls, db_alias) as SwitchedBucket:
+            return SwitchedBucket.objects().order_by("bucket_name")
 
     @classmethod
     def update_bucket(
@@ -87,8 +94,9 @@ class BucketEntity(Document):
         description: LocaleStringEntity | None = None,
         auto_sync: bool | None = None,
         datalake_type: str | None = None,
+        db_alias: str = "default",
     ) -> "BucketEntity":
-        bucket = cls.get_bucket_by_id(bucket_id)
+        bucket = cls.get_bucket_by_id(bucket_id, db_alias=db_alias)
         if bucket_name is not None:
             bucket.bucket_name = bucket_name
         if db_name:
@@ -105,7 +113,7 @@ class BucketEntity(Document):
         return bucket
 
     @classmethod
-    def delete_bucket(cls, bucket_id: str) -> "BucketEntity":
-        bucket = cls.get_bucket_by_id(bucket_id)
+    def delete_bucket(cls, bucket_id: str, db_alias: str = "default") -> "BucketEntity":
+        bucket = cls.get_bucket_by_id(bucket_id, db_alias=db_alias)
         bucket.delete()
         return bucket

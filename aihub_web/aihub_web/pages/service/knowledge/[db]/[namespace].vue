@@ -4,11 +4,22 @@
     close-route="/service/knowledge"
     :loading="isLoading"
   >
-    <div
-      v-if="!currentDatabase?.auto_sync"
-      class="mb-4 flex justify-end"
-    >
+    <div class="mb-4 flex items-center gap-4">
+      <IconField class="flex-1">
+        <InputIcon :class="isFetching ? 'pi pi-spinner pi-spin' : 'pi pi-search'" />
+        <InputText
+          v-model="searchInput"
+          :placeholder="t('knowledge.documents.search.placeholder')"
+          class="w-full"
+        />
+        <InputIcon
+          v-if="searchInput && !isFetching"
+          class="pi pi-times cursor-pointer"
+          @click="searchInput = ''"
+        />
+      </IconField>
       <Button
+        v-if="!currentDatabase?.auto_sync"
         icon="pi pi-upload"
         :label="t('knowledge.documents.upload.title')"
         @click="openUploadModal"
@@ -17,7 +28,10 @@
 
     <KnowledgeDocumentList
       :documents="documents"
+      :sort-field="sortState.field"
+      :sort-order="sortState.order"
       @selected="toDocument"
+      @sort="handleSort"
     />
 
     <div class="mt-4">
@@ -43,6 +57,7 @@
 </template>
 
 <script setup lang="ts">
+import { useDebounceFn } from '@vueuse/core'
 import { useChangeCase } from '@vueuse/integrations/useChangeCase'
 
 import type { DocumentDto } from '@core/sdk/client'
@@ -59,15 +74,37 @@ const { databases } = useDatabases()
 const {
   documents,
   isLoading,
+  isFetching,
   pagination,
   currentPage,
   pageSize,
+  searchQuery,
+  sortState,
   setPage,
   setPageSize,
+  setSearch,
+  setSort,
   refetch,
 } = useDocuments()
 
 const uploadModalVisible = ref(false)
+const searchInput = ref(searchQuery.value ?? '')
+
+const debouncedSearch = useDebounceFn((value: string) => {
+  setSearch(value)
+}, 300)
+
+// Sync local input to composable (debounced)
+watch(searchInput, (newValue) => {
+  debouncedSearch(newValue)
+})
+
+// Sync composable state back to local input (e.g., on navigation)
+watch(searchQuery, (newValue) => {
+  if (searchInput.value !== (newValue ?? '')) {
+    searchInput.value = newValue ?? ''
+  }
+})
 
 const currentDatabase = computed(() => {
   return databases.value?.find(db => db.name === route.params.db)
@@ -93,6 +130,10 @@ const onPageChange = (event) => {
   setPageSize(event.rows)
   const newPage = Math.floor(event.first / event.rows) + 1
   setPage(newPage)
+}
+
+const handleSort = (field: string | null, order: 1 | -1) => {
+  setSort(field, order)
 }
 
 const openUploadModal = () => {

@@ -1,5 +1,4 @@
 # ruff: noqa: E402
-from aihub_lib.generative_ai.retrievers.InsightRetrieverConfig import InsightRetrieverConfig
 from aihub_lib.generative_ai.retrievers.KnowledgeRetrieverConfig import KnowledgeRetrieverConfig
 
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
@@ -20,17 +19,16 @@ from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import Em
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.generative_ai.resources.models.llm.RerankingModelConfig import RerankingModelConfig
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.logging.logger import enable_logging
-from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.nats.events import LLMEvent, UserMessageEvent
 from aihub_lib.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
 from aihub_lib.nats.events.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
 from aihub_lib.nats.events.guard.FewShotAcceptEvent import FewShotAcceptEvent
 from aihub_lib.nats.events.guard.FewShotRejectEvent import FewShotRejectEvent
+from aihub_lib.nats.events.memory.history.AddMemoryToChatHistoryEvent import AddMemoryToChatHistoryEvent
+from aihub_lib.nats.events.memory.retrieve.RetrieveOrganizationMemoryEvent import RetrieveOrganizationMemoryEvent
 from aihub_lib.nats.events.semantic.reranker import RerankerEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
-from aihub_lib.persistence.insight.InsightEntity import InsightCreator, InsightEntity, InsightMessage, InsightSource
 from aihub_lib.persistence.rag.documents.stores.docstore import create_mongo_document_store
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from aihub_lib.testing.asyncio_utils.bdd import async_test
@@ -38,8 +36,7 @@ from aihub_lib.testing.milvus_vector_store_content import drop_collection, fill_
 from dotenv import load_dotenv
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
-from mongoengine import connect, disconnect
-from pytest_bdd import given, parsers, scenarios, then, when
+from pytest_bdd import given, parsers, scenario, scenarios, then, when
 
 from aihub_agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
@@ -59,7 +56,41 @@ def event_loop():
     loop.close()
 
 
+# Load all scenarios
 scenarios("./features/rag_agent.feature")
+
+
+# Mark Azure-dependent scenarios
+@pytest.mark.azure
+@scenario("./features/rag_agent.feature", "Test RAGAgent with multi-language system prompt")
+def test_test_ragagent_with_multilanguage_system_prompt():
+    """Test RAGAgent with multi-language system prompts (requires Azure)."""
+    pass
+
+
+@pytest.mark.azure
+@scenario("./features/rag_agent.feature", "Test RAGAgent with valid self hosted configuration")
+def test_test_ragagent_with_valid_self_hosted_configuration():
+    """Test RAGAgent with valid self hosted configuration (requires Azure)."""
+    pass
+
+
+@pytest.mark.azure
+@scenario("./features/rag_agent.feature", "Test RAGAgent with reranking enabled")
+def test_test_ragagent_with_reranking_enabled():
+    """Test RAGAgent with reranking enabled (requires Azure)."""
+    pass
+
+
+@pytest.mark.azure
+@scenario(
+    "./features/rag_agent.feature", "Test RAGAgent retrieves organization memory alongside knowledge base documents"
+)
+def test_test_ragagent_retrieves_organization_memory_alongside_knowledge_base_documents():
+    """Test RAGAgent with organization memory (requires Azure Mem0 service)."""
+    pass
+
+
 load_dotenv(Path(__file__).parent / ".env")
 
 
@@ -101,22 +132,23 @@ def build_rag_agent_config(
     )
 
 
-def build_rag_agent_config_with_insights(
+def build_rag_agent_config_with_memory(
     llm_config,
     reranking_config,
     embedding_config,
     vector_store,
     query_mode: VectorStoreQueryMode,
-    insight_namespace: str,
-    insight_agent_class: str,
-    insight_agent_id: str,
+    tenant_id: str = "test_tenant",
+    tenant_namespace: str = "default",
 ) -> RAGAgentConfig:
-    """Build RAGAgentConfig with both knowledge AND insight retrievers."""
+    """
+    Build a RAGAgentConfig with both knowledge retrievers AND organization memory enabled.
+    """
     return RAGAgentConfig(
-        agent_id="rag_agent",
+        agent_id="rag_agent_with_memory",
         agent_class=RAGAgent.__name__,
-        name=LocaleString(en="RAG Agent with Insights"),
-        description=LocaleString(en="RAG agent with expert insights"),
+        name=LocaleString(en="RAG Agent with Memory"),
+        description=LocaleString(en="Agent with organization memory enabled for testing"),
         llm=llm_config,
         retrievers=[
             KnowledgeRetrieverConfig(
@@ -131,15 +163,13 @@ def build_rag_agent_config_with_insights(
                     mode=ModeOptions.BOTH,
                 ),
             ),
-            InsightRetrieverConfig(
-                namespace=insight_namespace,
-                agent_class=insight_agent_class,
-                agent_id=insight_agent_id,
-            ),
         ],
         number_of_input_tokens=8192,
         check_context_sufficiency=False,
         reranking_config=RerankingConfig(enabled=False, reranking_model=reranking_config),
+        enable_organization_memory=True,
+        tenant_id=tenant_id,
+        tenant_namespace=tenant_namespace,
     )
 
 
@@ -169,67 +199,32 @@ def test_collection(event_loop):
     drop_collection()
 
 
-# Insight test data helpers
-TEST_INSIGHT_NAMESPACE = "ai_knowledge"
-TEST_INSIGHT_AGENT_CLASS = "RAGAgent"
-TEST_INSIGHT_AGENT_ID = "rag_agent"
-
-
-def create_test_insights(namespace: str, agent_class: str, agent_id: str) -> list[InsightEntity]:
-    """Pre-seed MongoDB with test insights for retrieval tests."""
-    insights = []
-    insight1 = InsightEntity.create_insight(
-        question="What is machine learning?",
-        expert_answer="Machine learning is a subset of AI that enables systems to learn from data.",
-        conversation=[
-            InsightMessage(role=MessageRole.USER, content="What is machine learning?"),
-            InsightMessage(
-                role=MessageRole.ASSISTANT,
-                content="Machine learning is a subset of AI that enables systems to learn from data.",
-            ),
-        ],
-        namespace=namespace,
-        source=InsightSource(thread_id="test-thread-1", expert_user_id="expert-1", expert_name="Dr. AI Expert"),
-        creator=InsightCreator(agent_class=agent_class, agent_id=agent_id, user_id="test-user", user_name="Test User"),
-    )
-    insights.append(insight1)
-    return insights
-
-
-def delete_test_insights(namespace: str):
-    """Cleanup test insights after tests."""
-    InsightEntity.objects(namespace=namespace).delete()
-
-
 @pytest.fixture(scope="session")
-def mongo_connection(event_loop):
-    """Set up MongoEngine connection for InsightEntity tests."""
-    asyncio.set_event_loop(event_loop)
-    config = AIHubSettings()
-    connect(
-        db=config.MONGO_MAIN_DB_NAME,
-        host=MongoSettings().CONNECTION_STRING.get_secret_value(),
-        uuidRepresentation="standard",
-    )
-    yield
-    disconnect()
+def memory_enabled_agent_config(test_collection):
+    """
+    Return a RAGAgentConfig with organization memory enabled.
 
-
-@pytest.fixture(scope="session")
-def test_insights(event_loop, test_collection, mongo_connection):
-    """Setup/teardown test insights for expert workflow tests."""
-    asyncio.set_event_loop(event_loop)
-    insights = create_test_insights(
-        namespace=TEST_INSIGHT_NAMESPACE,
-        agent_class=TEST_INSIGHT_AGENT_CLASS,
-        agent_id=TEST_INSIGHT_AGENT_ID,
+    This configuration enables the agent to retrieve organization memories
+    in addition to knowledge base documents.
+    """
+    llm_config = LLMConfig(model_name="text-generation/mini")
+    reranking_config = RerankingModelConfig(model_name="reranker")
+    embedding_config = EmbeddingModelConfig(model_name="embedding/large")
+    vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
+        uri="http://localhost",
+        collection_name="development",
+        dimensions=1024,
     )
-    yield insights
-    # Cleanup insights - wrapped in try/except in case mongo disconnects first
-    try:
-        delete_test_insights(namespace=TEST_INSIGHT_NAMESPACE)
-    except Exception:
-        pass  # Connection may already be closed during teardown
+
+    return build_rag_agent_config_with_memory(
+        llm_config=llm_config,
+        reranking_config=reranking_config,
+        embedding_config=embedding_config,
+        vector_store=vector_store,
+        query_mode=VectorStoreQueryMode.HYBRID,
+        tenant_id="test_tenant",
+        tenant_namespace="default",
+    )
 
 
 @pytest.fixture(scope="session")
@@ -512,44 +507,51 @@ def _(agent_runner: AgentTestRunner, model_name: str):
     )
 
 
-# ====== Insight Retrieval Step Definitions ======
+# ====== Organization Memory Retrieval Step Definitions ======
 
 
-@pytest.fixture(scope="session")
-def insight_enabled_agent_config(test_collection, test_insights):
-    """Return a RAGAgentConfig with insight retriever enabled."""
-    llm_config = LLMConfig(model_name="text-generation/mini")
-    reranking_config = RerankingModelConfig(model_name="reranker")
-    embedding_config = EmbeddingModelConfig(model_name="embedding/large")
-    vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
-        uri="http://localhost",
-        collection_name="development",
-        dimensions=1024,
-    )
+@pytest.mark.azure
+@pytest.mark.usefixtures("memory_enabled_agent_config")
+@given("a RAGAgent runner with organization memory enabled", target_fixture="agent_runner")
+def _(memory_enabled_agent_config):
+    """
+    Given a RAGAgent runner with organization memory enabled.
 
-    return build_rag_agent_config_with_insights(
-        llm_config=llm_config,
-        reranking_config=reranking_config,
-        embedding_config=embedding_config,
-        vector_store=vector_store,
-        query_mode=VectorStoreQueryMode.HYBRID,
-        insight_namespace=TEST_INSIGHT_NAMESPACE,
-        insight_agent_class=TEST_INSIGHT_AGENT_CLASS,
-        insight_agent_id=TEST_INSIGHT_AGENT_ID,
-    )
-
-
-@pytest.mark.usefixtures("insight_enabled_agent_config")
-@given("a RAGAgent runner with insight retriever enabled", target_fixture="agent_runner")
-def _(insight_enabled_agent_config):
-    """Given a RAGAgent runner with insight retriever enabled."""
+    This agent will retrieve organization memories in addition to knowledge documents.
+    """
     return AgentTestRunner(
         agent_type=RAGAgent,
-        default_agent_config=insight_enabled_agent_config,
+        default_agent_config=memory_enabled_agent_config,
     )
 
 
-@given("test insights are pre-seeded in the database")
-def _(test_insights):
-    """Ensure test insights are pre-seeded in the database (handled by fixture)."""
-    assert len(test_insights) > 0, "Test insights were not pre-seeded"
+@given("organization memories are pre-seeded in the system")
+def _(agent_runner: AgentTestRunner):
+    """
+    Given organization memories are pre-seeded in the system.
+
+    NOTE: This step is a placeholder. In a real test environment, you would:
+    1. Use the Mem0Service to seed organization memories
+    2. Or mock the AgentMemory.search_organization_memory() response
+
+    For now, this step documents the requirement but doesn't perform seeding.
+    The agent's memory retrieval will be tested with whatever data exists in the environment.
+    """
+    # TODO: Add memory seeding when integration test infrastructure is available
+    # See aihub_lib/aihub_lib/generative_ai/memory/tests/test_agent_memory.py for examples
+    pass
+
+
+@then("a RetrieveOrganizationMemoryEvent is present")
+def _(agent_runner: AgentTestRunner):
+    """Assert that the agent emitted a RetrieveOrganizationMemoryEvent."""
+    event = agent_runner.get_event_of_class(RetrieveOrganizationMemoryEvent)
+    assert event is not None, "RetrieveOrganizationMemoryEvent was not emitted"
+
+
+@then("an AddOrganizationMemoryToChatHistoryEvent is present")
+def _(agent_runner: AgentTestRunner):
+    """Assert that organization memories were added to chat history."""
+    event = agent_runner.get_event_of_class(AddMemoryToChatHistoryEvent)
+    assert event is not None, "AddMemoryToChatHistoryEvent was not emitted"
+    assert event.extended_history, "Chat history was not extended with organization memory"

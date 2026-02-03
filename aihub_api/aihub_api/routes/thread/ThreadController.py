@@ -9,6 +9,7 @@ from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 from aihub_lib.persistence.user.UserEntity import UserEntity
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Path, Security
+from mongoengine import DoesNotExist
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.pagination.type.PageNumber import PageNumber
@@ -17,6 +18,7 @@ from aihub_api.routes.openai.dto.HistoryResponse import HistoryResponse
 from aihub_api.routes.thread.dto.AddAgentRequest import AddAgentRequest
 from aihub_api.routes.thread.dto.AddUserRequest import AddUserRequest
 from aihub_api.routes.thread.dto.CreateThreadRequest import CreateThreadRequest
+from aihub_api.routes.thread.dto.OpenChatHitlResponse import OpenChatHitlResponse
 from aihub_api.routes.thread.dto.PaginatedThreadsResponse import PaginatedThreadsResponse
 from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
@@ -48,6 +50,24 @@ class ThreadController(Controller):
 
     not_authorized_to_view_exception = HTTPException(status_code=403, detail="Not authorized to view this thread")
     not_authorized_to_modify_exception = HTTPException(status_code=403, detail="Not authorized to modify this thread")
+    thread_not_found_exception = HTTPException(status_code=404, detail="Thread not found")
+
+    @staticmethod
+    async def _get_thread_or_404(thread_id: str, t: LocaleHandler) -> ThreadDTO:
+        try:
+            return await ThreadService.get_thread_by_id(thread_id, t=t)
+        except DoesNotExist:
+            raise ThreadController.thread_not_found_exception
+
+    @staticmethod
+    def _check_view_access(thread: ThreadDTO, user: UserIdentity) -> None:
+        """Raise 403 if user is not a member of the thread and has no process access."""
+        user_in_thread = user.id in [u.id for u in thread.users]
+        has_process_access = AccessChecker.from_user(user).has_access_to_process(
+            thread.process_class, thread.process_id
+        )
+        if not (user_in_thread or has_process_access):
+            raise ThreadController.not_authorized_to_view_exception
 
     def __init__(
         self, *, auth: AuthHandler, route: str = "/threads", additionally_required_permission: str | None = None
@@ -126,15 +146,8 @@ class ThreadController(Controller):
             Retrieves details of a specific thread.
             Raises 403 if the user is not a member of that thread.
             """
-            thread = await ThreadService.get_thread_by_id(thread_id, t=t)
-
-            user_in_thread = user.id in [u.id for u in thread.users]
-            thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
-                thread.process_class, thread.process_id
-            )
-            if not (user_in_thread or thread_belongs_to_users_process):
-                raise self.not_authorized_to_view_exception
-
+            thread = await ThreadController._get_thread_or_404(thread_id, t)
+            ThreadController._check_view_access(thread, user)
             return thread
 
         return self
@@ -150,7 +163,7 @@ class ThreadController(Controller):
             """
             Adds an agent to a specified thread, if the user is a member of that thread.
             """
-            thread = await ThreadService.get_thread_by_id(thread_id, t=t)
+            thread = await ThreadController._get_thread_or_404(thread_id, t)
 
             if thread.process_class or thread.process_id:
                 raise HTTPException(status_code=403, detail="Cannot add agent to process thread")
@@ -184,15 +197,8 @@ class ThreadController(Controller):
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> HistoryResponse:
-            thread = await ThreadService.get_thread_by_id(thread_id, t=t)
-
-            user_in_thread = user.id in [u.id for u in thread.users]
-            thread_belongs_to_users_process = AccessChecker.from_user(user).has_access_to_process(
-                thread.process_class, thread.process_id
-            )
-            if not (user_in_thread or thread_belongs_to_users_process):
-                raise self.not_authorized_to_view_exception
-
+            thread = await ThreadController._get_thread_or_404(thread_id, t)
+            ThreadController._check_view_access(thread, user)
             return await ThreadService.thread_as_message_history(thread_id)
 
     def remove_agent_from_thread(
@@ -209,7 +215,7 @@ class ThreadController(Controller):
             """
             Removes an agent from the thread, if the user is part of that thread.
             """
-            thread = await ThreadService.get_thread_by_id(thread_id, t=t)
+            thread = await ThreadController._get_thread_or_404(thread_id, t)
 
             if thread.process_class or thread.process_id:
                 raise HTTPException(status_code=403, detail="Cannot remove agent from process thread")
@@ -232,7 +238,7 @@ class ThreadController(Controller):
             """
             Adds another user to the thread, provided the current user is a member of the thread.
             """
-            thread = await ThreadService.get_thread_by_id(thread_id, t=t)
+            thread = await ThreadController._get_thread_or_404(thread_id, t)
 
             if thread.process_class or thread.process_id:
                 raise HTTPException(status_code=403, detail="Cannot remove agent from process thread")
@@ -265,7 +271,7 @@ class ThreadController(Controller):
             """
             Removes a user from the thread if the authenticated user is a member of the thread.
             """
-            thread = await ThreadService.get_thread_by_id(thread_id, t=t)
+            thread = await ThreadController._get_thread_or_404(thread_id, t)
 
             if thread.process_class or thread.process_id:
                 raise HTTPException(status_code=403, detail="Cannot remove agent from process thread")
@@ -274,5 +280,24 @@ class ThreadController(Controller):
                 raise self.not_authorized_to_modify_exception
 
             return await ThreadService.remove_user_from_thread(thread_id, remove_user_id, t=t)
+
+        return self
+
+    def get_open_chat_hitl(self, route: str = "/{thread_id}/open-chat-hitl") -> "ThreadController":
+        @self.router.get(route, tags=self.tags)
+        async def get_open_chat_hitl(
+            thread_id: Annotated[str, Path(title="Thread ID", pattern=r"^[a-f0-9]{24}$")],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
+        ) -> OpenChatHitlResponse:
+            """
+            Returns the open chat HITL request for a thread, if any.
+
+            Chat HITLs are HITL requests where the question appears as a regular chat message
+            and the user responds by typing a normal chat message (not via popup dialog).
+            """
+            thread = await ThreadController._get_thread_or_404(thread_id, t)
+            ThreadController._check_view_access(thread, user)
+            return ThreadService.get_open_chat_hitl(thread_id)
 
         return self

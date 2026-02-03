@@ -128,6 +128,6 @@ pipelines, processes) during and after updates.
 ## Related documentation
 
 - [Deployment Options](../1_deployment_options/) - Per-instance architecture
-- [Multi-tenancy](../../15_multi_tenancy/) - Logical separation within instances
+- [Multi-tenancy](../../16_multi_tenancy/) - Logical separation within instances
 - [Backup and Recovery](../4_backup_and_recovery/) - Backup strategies
 - [Core Components](../../2_architecture/1_core_components/) - Component dependencies

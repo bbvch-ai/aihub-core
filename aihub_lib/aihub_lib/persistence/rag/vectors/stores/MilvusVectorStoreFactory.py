@@ -1,5 +1,4 @@
-from enum import Enum
-from functools import cache
+from enum import StrEnum
 from typing import Annotated
 
 from llama_index.vector_stores.milvus import MilvusVectorStore
@@ -19,25 +18,29 @@ from aihub_lib.persistence.rag.vectors.stores.MilvusPartitionManager import crea
 from aihub_lib.persistence.rag.vectors.stores.PartitionAwareMilvusVectorStore import PartitionAwareMilvusVectorStore
 
 
-class MilvusIndexType(str, Enum):
+class MilvusIndexType(StrEnum):
     HNSW = "HNSW"  # RAG optimal: 97-99% recall, fastest queries, highest memory (enable mmap to reduce)
     DISKANN = "DISKANN"  # Memory-constrained: 90-95% recall, 90% less RAM, requires NVMe SSD
     IVF_FLAT = "IVF_FLAT"  # Balanced: 95-98% recall, 50% less memory than HNSW
     FLAT = "FLAT"  # Dev/test only: 100% recall, no production scaling
 
 
-@cache
-@validate_call
+@validate_call(config={"arbitrary_types_allowed": True})
 def create_milvus_vector_store(
-    uri: Annotated[str, Field(description="Milvus connection URI")],
+    client: Annotated[MilvusClient, Field(description="Pre-configured Milvus client instance")],
     collection_name: Annotated[str, Field(description="Name of the collection to create or use")],
     embedding_vector_dimension: Annotated[int, Field(gt=0, description="Dimension of dense embedding vectors")],
     index_type: Annotated[MilvusIndexType, Field(description="Vector index type for the embedding field")] = (
         MilvusIndexType.HNSW
     ),
+    uri: Annotated[str, Field(description="Milvus server URI")] = "http://localhost:19530",
+    token: Annotated[str | None, Field(description="Authentication token (format: username:password)")] = None,
 ) -> MilvusVectorStore:
     """
     Factory for namespace-partitioned vector stores optimized for RAG workloads.
+
+    Accepts a pre-configured MilvusClient for dependency injection, enabling
+    connection reuse across the application and proper health checking.
 
     - Manual partition by namespace: Queries only load relevant namespaces
     - Hybrid search: Dense (semantic) + BM25 (keyword) for comprehensive retrieval
@@ -48,7 +51,6 @@ def create_milvus_vector_store(
     - DISKANN: Use when vectors exceed available RAM (requires NVMe SSD)
     - IVF_FLAT: Middle ground if HNSW too memory-intensive and DISKANN unavailable
     """
-    client = MilvusClient(uri=uri)
     if not client.has_collection(collection_name):
         fields = [
             FieldSchema(name="id", dtype=DataType.VARCHAR, is_primary=True, auto_id=False, max_length=255),
@@ -99,7 +101,9 @@ def create_milvus_vector_store(
         create_manual_partitions(client=client, collection_name=collection_name)
 
     return PartitionAwareMilvusVectorStore(
+        client=client,
         uri=uri,
+        token=token,
         collection_name=collection_name,
         dim=embedding_vector_dimension,
         overwrite=False,

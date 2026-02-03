@@ -154,12 +154,10 @@ class S3DataLakeIOManager(ConfigurableIOManager):
     def _load_data_lake_file_from_uri(self, context: InputContext, document_uri: str) -> DataLakeFile:
         context.log.info(f"Loading DataLakeFile from uri: {document_uri}")
 
-        # For S3, we need to parse the URI
+        # If not a full S3 URI, construct it using the client's container name
         if not document_uri.startswith("s3://"):
-            # If it's not an S3 URI, we need the bucket name
-            # This should be handled by the DataLakeFile.from_uri method or we need to get bucket from context
-            context.log.error(f"Document URI must be a full S3 URI starting with 's3://': {document_uri}")
-            raise ValueError(f"Document URI must be a full S3 URI: {document_uri}")
+            document_uri = self.data_lake_client.build_uri(document_uri)
+            context.log.info(f"Constructed full S3 URI: {document_uri}")
 
         data_lake_file = self.data_lake_client.create_data_lake_file_from_uri(document_uri)
 

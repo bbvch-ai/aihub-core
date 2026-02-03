@@ -3,7 +3,7 @@ from unittest.mock import Mock
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, ImageBlock, MessageRole, TextBlock
 
-from aihub_lib.generative_ai.utils.condense_standalone_question import condense_standalone_question
+from aihub_lib.generative_ai.retrieval.condense_standalone_question import condense_standalone_question
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 
 

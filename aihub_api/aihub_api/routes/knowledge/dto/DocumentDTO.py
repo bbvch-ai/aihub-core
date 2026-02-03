@@ -17,7 +17,7 @@ class DocumentDTO(BaseModel):
     inserted_at: Annotated[
         str | None, Field(description="Date source document was inserted into document store (ISO format string)")
     ]
-    is_ingested: Annotated[bool, Field(description="Indicates if the document has been ingested.")]
+    is_ingested: Annotated[bool, Field(description="Whether the document has been fully ingested.")]
     content: Annotated[str | None, Field(description="Content of the document.")] = None
     number_of_pages: Annotated[int | None, Field(description="Number of Pages in the Document.")] = None
     document_title: Annotated[str | None, Field(description="Document title.")] = None
@@ -39,19 +39,24 @@ class DocumentDTO(BaseModel):
 
     @classmethod
     def from_ref_doc(cls, entity: RefDoc) -> "DocumentDTO":
-        def to_iso(timestamp: int):
+        def to_iso(timestamp: int) -> str:
             dt_utc = datetime.fromtimestamp(timestamp, tz=UTC)
             return dt_utc.isoformat().replace("+00:00", "Z")
 
+        # Legacy docs without is_ingested field are treated as ingested
+        is_ingested = getattr(entity.data.metadata, "is_ingested", None)
+        if is_ingested is None:
+            is_ingested = True
+
         return cls(
             id=str(entity.id),
-            content=entity.data.text,
+            content=entity.data.text if entity.data.text else None,
             source=entity.data.metadata.source.removeprefix(S3_PROTOCOL_PREFIX),
             namespace=entity.data.metadata.namespace,
             number_of_pages=entity.data.metadata.number_of_pages,
             document_title=entity.data.metadata.document_title,
             created_at=to_iso(entity.data.metadata.created_at),
             updated_at=to_iso(entity.data.metadata.updated_at),
-            inserted_at=to_iso(entity.data.metadata.inserted_at),
-            is_ingested=True,
+            inserted_at=to_iso(entity.data.metadata.inserted_at) if entity.data.metadata.inserted_at else None,
+            is_ingested=is_ingested,
         )

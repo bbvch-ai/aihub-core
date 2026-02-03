@@ -24,7 +24,6 @@ async def main():
             agent_id="dev_agent",
             name=LocaleString(en="Dev Agent"),
             description=LocaleString(en="This is the default Dev Agent config"),
-            # when using nano temp needs to be 1.0 and nothing else
             llm=LLMConfig(model_name="text-generation/nano", default_parameter=LLMParameter(temperature=1.0)),
         ),
     )

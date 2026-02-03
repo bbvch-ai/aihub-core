@@ -126,6 +126,14 @@ hitl_confirmation_response_event:
   name: "Confirmation Reçue"
   description: "L'utilisateur a confirmé ou refusé, et l'agent peut poursuivre la tâche."
 
+hitl_chat_request_event:
+  name: "Question Chat"
+  description: "L'agent a posé une question qui peut être répondue par un message de chat."
+
+hitl_chat_response_event:
+  name: "Réponse Chat Reçue"
+  description: "L'utilisateur a répondu par message de chat, et l'agent peut poursuivre la tâche."
+
 router_event:
   name: "Chemin optimal choisi"
   description: "L'agent a choisi le chemin optimal pour la suite."
@@ -177,3 +185,35 @@ user_message_event:
 standalone_question_condenser_event:
   name: "Demande Indépendante Condensée"
   description: "Une demande complexe a été transformée en une demande indépendante plus claire et concise pour faciliter le traitement."
+
+new_memory_event:
+  name: "Mémoire Mise à Jour"
+  description: "L'agent a mis à jour les mémoires de l'utilisateur ou de l'organisation basées sur la conversation"
+
+retrieve_memory_event:
+  name: "Mémoire Récupérée"
+  description: "L'agent a récupéré les mémoires pertinentes pour le contexte"
+
+retrieve_user_memory_event:
+  name: "Mémoire Utilisateur Récupérée"
+  description: "L'agent a récupéré les mémoires utilisateur privées pour un contexte personnalisé"
+
+retrieve_organization_memory_event:
+  name: "Mémoire d'Organisation Récupérée"
+  description: "L'agent a récupéré les mémoires organisationnelles partagées pour le contexte"
+
+store_organization_memory_event:
+  name: "Mémoire d'Organisation Stockée"
+  description: "L'agent a stocké un fait organisationnel explicite partagé entre tous les utilisateurs"
+
+add_memory_to_chat_history_event:
+  name: "Mémoire Ajoutée au Contexte"
+  description: "L'agent a étendu l'historique de chat avec les mémoires"
+
+add_user_memory_to_chat_history_event:
+  name: "Mémoire Utilisateur Ajoutée au Contexte"
+  description: "L'agent a étendu l'historique de chat avec les mémoires utilisateur privées"
+
+add_organization_memory_to_chat_history_event:
+  name: "Mémoire d'Organisation Ajoutée au Contexte"
+  description: "L'agent a étendu l'historique de chat avec les mémoires organisationnelles partagées"
