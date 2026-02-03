@@ -36,7 +36,7 @@ class UserWithAccessDTO(UserDTO):
 
         if user_entity.dashboard:
             dashboard_data = user_entity.dashboard.to_mongo()
-            dashboard_dto = DashboardDTO(**dashboard_data)
+            dashboard_dto = DashboardDTO.model_validate(dashboard_data)
         else:
             dashboard_dto = None
 

@@ -7941,12 +7941,12 @@ export type LlmEventReadable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<MessageReadable> | null;
+    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<MessageReadable> | null;
+    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -8019,7 +8019,7 @@ export type LlmEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageReadable> | null) | (Array<MessageReadable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -8053,12 +8053,12 @@ export type LlmEventWritable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<MessageWritable> | null;
+    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<MessageWritable> | null;
+    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -8120,7 +8120,7 @@ export type LlmEventWritable = {
     tools?: Array<{
         [key: string]: unknown;
     }> | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageWritable> | null) | (Array<MessageWritable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -8154,12 +8154,12 @@ export type LlmStopEventReadable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<MessageReadable> | null;
+    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<MessageReadable> | null;
+    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -8232,7 +8232,7 @@ export type LlmStopEventReadable = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageReadable> | null) | (Array<MessageReadable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageReadable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -8266,12 +8266,12 @@ export type LlmStopEventWritable = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<MessageWritable> | null;
+    input_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<MessageWritable> | null;
+    output_messages?: Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null;
     /**
      * Invocation Parameters
      * Parameters used during the invocation of the LLM.
@@ -8333,7 +8333,7 @@ export type LlmStopEventWritable = {
     tools?: Array<{
         [key: string]: unknown;
     }> | null;
-    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<MessageWritable> | null) | (Array<MessageWritable> | null) | ({
+    [key: string]: unknown | string | number | (LocaleString | null) | (LocaleString | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | (Array<AihubLibNatsEventsSemanticLlmMessageMessageWritable> | null) | ({
         [key: string]: unknown;
     } | null) | (string | null) | (string | null) | (string | null) | (string | null) | ({
         [key: string]: string;
@@ -8358,12 +8358,12 @@ export type LlmStopEventOutput = {
      * Input Messages
      * List of messages sent to the LLM as input.
      */
-    input_messages?: Array<JamboParserObjectTypeParserMessage> | null;
+    input_messages?: Array<Message> | null;
     /**
      * Output Messages
      * List of messages received from the LLM as output.
      */
-    output_messages?: Array<JamboParserObjectTypeParserMessage> | null;
+    output_messages?: Array<Message> | null;
     /**
      * Parameters used during the invocation of the LLM.
      */
@@ -8991,7 +8991,7 @@ export const MemoryType = {
 /**
  * Message
  */
-export type MessageReadable = {
+export type Message = {
     /**
      * Role
      * The role of the message, such as 'user', 'assistant', or 'system'.
@@ -9006,70 +9006,16 @@ export type MessageReadable = {
      * Tool Calls
      * List of tool calls generated by the model, such as function calls.
      */
-    tool_calls?: Array<{
-        [key: string]: unknown;
-    }> | null;
+    tool_calls?: Array<ToolCalls> | null;
     /**
      * Function Call Name
      * The name of the function being called in the message.
      */
     function_call_name?: string | null;
     /**
-     * Function Call Arguments Json
      * JSON representing arguments passed to the function during a function call.
      */
-    function_call_arguments_json?: {
-        [key: string]: unknown;
-    } | null;
-    /**
-     * Tool Call Id
-     * The ID of the tool call, if applicable.
-     */
-    tool_call_id?: string | null;
-    /**
-     * Contents
-     * The message contents as an array of content blocks (text, image, audio).
-     */
-    contents?: Array<TextContent | ImageContent | AudioContent> | null;
-    /**
-     * Content
-     */
-    readonly content: string;
-};
-
-/**
- * Message
- */
-export type MessageWritable = {
-    /**
-     * Role
-     * The role of the message, such as 'user', 'assistant', or 'system'.
-     */
-    role: string;
-    /**
-     * Name
-     * The name of the function or agent generating the message.
-     */
-    name?: string | null;
-    /**
-     * Tool Calls
-     * List of tool calls generated by the model, such as function calls.
-     */
-    tool_calls?: Array<{
-        [key: string]: unknown;
-    }> | null;
-    /**
-     * Function Call Name
-     * The name of the function being called in the message.
-     */
-    function_call_name?: string | null;
-    /**
-     * Function Call Arguments Json
-     * JSON representing arguments passed to the function during a function call.
-     */
-    function_call_arguments_json?: {
-        [key: string]: unknown;
-    } | null;
+    function_call_arguments_json?: FunctionCallArgumentsJson | null;
     /**
      * Tool Call Id
      * The ID of the tool call, if applicable.
@@ -9781,7 +9727,7 @@ export type NamespaceAwareUserMessageEventInput = {
      * Messages
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessage>;
+    messages?: Array<JamboParserObjectTypeParserChatMessage2>;
     /**
      * Files
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
@@ -15003,7 +14949,7 @@ export type UserMessageEventInput = {
      * Messages
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<JamboParserObjectTypeParserChatMessage2>;
+    messages?: Array<ChatMessage>;
     /**
      * Files
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
@@ -15245,6 +15191,193 @@ export type AdditionalLocationInfo = {
 };
 
 /**
+ * LLMStopEventOutput
+ */
+export type AihubApiServicesModelCreationServiceLlmStopEventOutput2 = {
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Input Messages
+     * List of messages sent to the LLM as input.
+     */
+    input_messages?: Array<Message> | null;
+    /**
+     * Output Messages
+     * List of messages received from the LLM as output.
+     */
+    output_messages?: Array<Message> | null;
+    /**
+     * Parameters used during the invocation of the LLM.
+     */
+    invocation_parameters?: InvocationParameters | null;
+    /**
+     * Chat Model Name
+     * The name of the language model being utilized.
+     */
+    chat_model_name?: string | null;
+    /**
+     * Provider
+     * The hosting provider of the LLM, e.g., OpenAI, Azure.
+     */
+    provider?: string | null;
+    /**
+     * System
+     * The AI product as identified by the client or server.
+     */
+    system?: string | null;
+    /**
+     * Prompt Template
+     * The prompt template as a Python f-string.
+     */
+    prompt_template?: string | null;
+    /**
+     * A dictionary of input variables to the prompt template.
+     */
+    prompt_template_variables?: PromptTemplateVariables | null;
+    /**
+     * Prompt Template Version
+     * The version of the prompt template being used.
+     */
+    prompt_template_version?: string | null;
+    /**
+     * Token Count Prompt
+     * The number of tokens in the prompt.
+     */
+    token_count_prompt?: number | null;
+    /**
+     * Token Count Completion
+     * The number of tokens in the completion.
+     */
+    token_count_completion?: number | null;
+    /**
+     * Token Count Total
+     * The total number of tokens, including both prompt and completion.
+     */
+    token_count_total?: number | null;
+    /**
+     * Tools
+     * List of tools that are advertised to the LLM to be able to call.
+     */
+    tools?: Array<Tools> | null;
+};
+
+/**
+ * UserMessageEventInput
+ */
+export type AihubApiServicesModelCreationServiceUserMessageEventInput1 = {
+    /**
+     * Messages
+     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
+     */
+    messages?: Array<JamboParserObjectTypeParserChatMessage1>;
+    /**
+     * Files
+     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
+     */
+    files?: Array<UserUploadedFile> | null;
+};
+
+/**
+ * Message
+ */
+export type AihubLibNatsEventsSemanticLlmMessageMessageReadable = {
+    /**
+     * Role
+     * The role of the message, such as 'user', 'assistant', or 'system'.
+     */
+    role: string;
+    /**
+     * Name
+     * The name of the function or agent generating the message.
+     */
+    name?: string | null;
+    /**
+     * Tool Calls
+     * List of tool calls generated by the model, such as function calls.
+     */
+    tool_calls?: Array<{
+        [key: string]: unknown;
+    }> | null;
+    /**
+     * Function Call Name
+     * The name of the function being called in the message.
+     */
+    function_call_name?: string | null;
+    /**
+     * Function Call Arguments Json
+     * JSON representing arguments passed to the function during a function call.
+     */
+    function_call_arguments_json?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Tool Call Id
+     * The ID of the tool call, if applicable.
+     */
+    tool_call_id?: string | null;
+    /**
+     * Contents
+     * The message contents as an array of content blocks (text, image, audio).
+     */
+    contents?: Array<TextContent | ImageContent | AudioContent> | null;
+    /**
+     * Content
+     */
+    readonly content: string;
+};
+
+/**
+ * Message
+ */
+export type AihubLibNatsEventsSemanticLlmMessageMessageWritable = {
+    /**
+     * Role
+     * The role of the message, such as 'user', 'assistant', or 'system'.
+     */
+    role: string;
+    /**
+     * Name
+     * The name of the function or agent generating the message.
+     */
+    name?: string | null;
+    /**
+     * Tool Calls
+     * List of tool calls generated by the model, such as function calls.
+     */
+    tool_calls?: Array<{
+        [key: string]: unknown;
+    }> | null;
+    /**
+     * Function Call Name
+     * The name of the function being called in the message.
+     */
+    function_call_name?: string | null;
+    /**
+     * Function Call Arguments Json
+     * JSON representing arguments passed to the function during a function call.
+     */
+    function_call_arguments_json?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Tool Call Id
+     * The ID of the tool call, if applicable.
+     */
+    tool_call_id?: string | null;
+    /**
+     * Contents
+     * The message contents as an array of content blocks (text, image, audio).
+     */
+    contents?: Array<TextContent | ImageContent | AudioContent> | null;
+};
+
+/**
  * UserUploadedFile
  */
 export type AihubLibNatsEventsUserUserUploadedFileUserUploadedFile = {
@@ -15282,7 +15415,7 @@ export type InvocationParameters = {
 /**
  * ChatMessage
  */
-export type JamboParserObjectTypeParserChatMessage2 = {
+export type JamboParserObjectTypeParserChatMessage1 = {
     role?: MessageRoleInput;
     additional_kwargs: AdditionalKwargs;
     /**
@@ -15312,43 +15445,35 @@ export type JamboParserObjectTypeParserChatMessage2 = {
 };
 
 /**
- * Message
+ * ChatMessage
  */
-export type JamboParserObjectTypeParserMessage = {
+export type JamboParserObjectTypeParserChatMessage2 = {
+    role?: MessageRoleInput;
+    additional_kwargs: AdditionalKwargs;
     /**
-     * Role
-     * The role of the message, such as 'user', 'assistant', or 'system'.
+     * Blocks
      */
-    role: string;
-    /**
-     * Name
-     * The name of the function or agent generating the message.
-     */
-    name?: string | null;
-    /**
-     * Tool Calls
-     * List of tool calls generated by the model, such as function calls.
-     */
-    tool_calls?: Array<ToolCalls> | null;
-    /**
-     * Function Call Name
-     * The name of the function being called in the message.
-     */
-    function_call_name?: string | null;
-    /**
-     * JSON representing arguments passed to the function during a function call.
-     */
-    function_call_arguments_json?: FunctionCallArgumentsJson | null;
-    /**
-     * Tool Call Id
-     * The ID of the tool call, if applicable.
-     */
-    tool_call_id?: string | null;
-    /**
-     * Contents
-     * The message contents as an array of content blocks (text, image, audio).
-     */
-    contents?: Array<TextContent | ImageContent | AudioContent> | null;
+    blocks?: Array<({
+        block_type: 'text';
+    } & TextBlockInput) | ({
+        block_type: 'image';
+    } & ImageBlockInput) | ({
+        block_type: 'audio';
+    } & AudioBlockInput) | ({
+        block_type: 'video';
+    } & VideoBlockInput) | ({
+        block_type: 'document';
+    } & DocumentBlockInput) | ({
+        block_type: 'cache';
+    } & CachePointInput) | ({
+        block_type: 'citable';
+    } & CitableBlockInput) | ({
+        block_type: 'citation';
+    } & CitationBlockInput) | ({
+        block_type: 'thinking';
+    } & ThinkingBlockInput) | ({
+        block_type: 'tool_call';
+    } & ToolCallBlockInput)>;
 };
 
 /**
@@ -17923,6 +18048,72 @@ export type ProcessDocumentResponses = {
 
 export type ProcessDocumentResponse = ProcessDocumentResponses[keyof ProcessDocumentResponses];
 
+export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostData = {
+    body: AihubApiServicesModelCreationServiceUserMessageEventInput1;
+    path?: never;
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/LLMWrappingAgent/dev_agent/UserMessageEvent';
+};
+
+export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostError = SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostErrors[keyof SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostErrors];
+
+export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: LlmStopEventOutput;
+};
+
+export type SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponse = SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponses[keyof SendUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventPostResponses];
+
+export type StreamUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventStreamPostData = {
+    body: AihubApiServicesModelCreationServiceUserMessageEventInput1;
+    path?: never;
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/LLMWrappingAgent/dev_agent/UserMessageEvent/stream';
+};
+
+export type StreamUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventStreamPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type StreamUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventStreamPostError = StreamUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventStreamPostErrors[keyof StreamUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventStreamPostErrors];
+
+export type StreamUserMessageEventToLlmWrappingAgentDevAgentAgentsLlmWrappingAgentDevAgentUserMessageEventStreamPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
 export type SendNamespaceAwareUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentNamespaceAwareUserMessageEventPostData = {
     body: NamespaceAwareUserMessageEventInput;
     path?: never;
@@ -17952,7 +18143,7 @@ export type SendNamespaceAwareUserMessageEventToRagAgentRagDevAgentAgentsRagAgen
     /**
      * Successful Response
      */
-    200: LlmStopEventOutput;
+    200: AihubApiServicesModelCreationServiceLlmStopEventOutput2;
 };
 
 export type SendNamespaceAwareUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentNamespaceAwareUserMessageEventPostResponse = SendNamespaceAwareUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentNamespaceAwareUserMessageEventPostResponses[keyof SendNamespaceAwareUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentNamespaceAwareUserMessageEventPostResponses];
@@ -18018,7 +18209,7 @@ export type SendUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUs
     /**
      * Successful Response
      */
-    200: LlmStopEventOutput;
+    200: AihubApiServicesModelCreationServiceLlmStopEventOutput2;
 };
 
 export type SendUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventPostResponse = SendUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventPostResponses[keyof SendUserMessageEventToRagAgentRagDevAgentAgentsRagAgentRagDevAgentUserMessageEventPostResponses];
