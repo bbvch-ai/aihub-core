@@ -46,7 +46,7 @@ class MyAccountController(Controller):
         async def get_my_account(
             nc: Annotated[NATS, Depends(use_nats)],
             t: Annotated[LocaleHandler, Depends(use_locale)],
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> UserWithAccessDTO:
             """
             Returns the currently logged-in user's account information including access permissions.
@@ -62,7 +62,7 @@ class MyAccountController(Controller):
 
         @self.router.get(route, tags=self.tags)
         async def get_my_dashboard(
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> DashboardDTO | None:
             """
             Returns the user's dashboard settings, or null if none exist.
@@ -79,7 +79,7 @@ class MyAccountController(Controller):
         @self.router.put(route, tags=self.tags, status_code=204)
         async def update_my_dashboard(
             dashboard_dto: Annotated[DashboardDTO, Body],
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.?>"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> None:
             """
             Updates the user's dashboard settings.
