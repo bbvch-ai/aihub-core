@@ -211,3 +211,75 @@ Feature: User Access Control Checker
     And the access rule "aihub.user.agent.class-a.*"
     When the access checker checks for the permission "aihub.user.agent.class-a.id-1"
     Then the result should be ACCESS_USER
+
+  Scenario Outline: Tenant-Level Access Control - Tenant Restrictions Override User Permissions
+    Given the access rule "<user_access_rule>"
+    And the tenant access rule "<tenant_access_rule>"
+    When the access checker checks for the permission "<permission_template>"
+    Then the result should be <expected_level>
+
+    Examples:
+      | user_access_rule              | tenant_access_rule            | permission_template           | expected_level |
+      # Tenant has full access, user has specific access -> User access level applies
+      | aihub.user.agent.class-a.*   | aihub.admin.>                 | aihub.user.agent.class-a.id-1 | ACCESS_USER    |
+      | aihub.admin.agent.class-a.*  | aihub.admin.>                 | aihub.user.agent.class-a.id-1 | ACCESS_ADMIN   |
+
+      # Tenant has restricted access, user has broader access -> Tenant restriction applies
+      | aihub.user.agent.>           | aihub.user.agent.class-a.*    | aihub.user.agent.class-a.id-1 | ACCESS_USER    |
+      | aihub.user.agent.>           | aihub.user.agent.class-a.*    | aihub.user.agent.class-b.id-1 | ACCESS_DENIED  |
+      | aihub.admin.agent.>          | aihub.user.agent.class-a.*    | aihub.user.agent.class-a.id-1 | ACCESS_USER    |
+      | aihub.admin.agent.>          | aihub.user.agent.class-a.*    | aihub.user.agent.class-b.id-1 | ACCESS_DENIED  |
+
+      # Tenant has no access to resource, user has access -> Access denied by tenant
+      | aihub.user.agent.class-a.*   | aihub.user.process.>          | aihub.user.agent.class-a.id-1 | ACCESS_DENIED  |
+      | aihub.admin.agent.class-a.*  | aihub.user.process.>          | aihub.user.agent.class-a.id-1 | ACCESS_DENIED  |
+      | aihub.user.agent.>           | aihub.user.process.>          | aihub.user.agent.class-a.id-1 | ACCESS_DENIED  |
+
+      # Tenant has specific access, user has even more specific access -> Both must match
+      | aihub.user.agent.class-a.id-1| aihub.user.agent.class-a.*    | aihub.user.agent.class-a.id-1 | ACCESS_USER    |
+      | aihub.user.agent.class-a.id-1| aihub.user.agent.class-a.*    | aihub.user.agent.class-a.id-2 | ACCESS_DENIED  |
+
+      # Tenant has admin access, user has user access -> User level applies
+      | aihub.user.agent.class-a.*   | aihub.admin.agent.class-a.*   | aihub.user.agent.class-a.id-1 | ACCESS_USER    |
+      | aihub.admin.agent.class-a.*  | aihub.admin.agent.class-a.*   | aihub.user.agent.class-a.id-1 | ACCESS_ADMIN   |
+
+  Scenario Outline: Tenant-Level Access Control - Implicit Permission Matching
+    Given the access rule "<user_access_rule>"
+    And the tenant access rule "<tenant_access_rule>"
+    When the access checker checks for the permission "<permission_template>"
+    Then the result should be <expected_level>
+
+    Examples:
+      | user_access_rule              | tenant_access_rule            | permission_template      | expected_level |
+      # Tenant allows implicit access, user has access -> User access level applies
+      | aihub.user.agent.class-a.*   | aihub.admin.>                 | aihub.user.agent.class-a.?* | ACCESS_USER    |
+      | aihub.admin.agent.class-a.*  | aihub.admin.>                 | aihub.user.agent.class-a.?* | ACCESS_ADMIN   |
+
+      # Tenant restricts implicit access, but still satisfies implicit pattern -> User access granted
+      | aihub.user.agent.>           | aihub.user.agent.class-a.*    | aihub.user.agent.?>         | ACCESS_USER    |
+      | aihub.user.agent.class-a.*   | aihub.user.agent.class-a.*    | aihub.user.agent.class-a.?* | ACCESS_USER    |
+
+      # Tenant restricts to different resource, user has implicit access -> Tenant denies
+      | aihub.user.agent.>           | aihub.user.process.>          | aihub.user.agent.class-a.?* | ACCESS_DENIED  |
+
+      # Tenant has no implicit access to resource, user has access -> Denied
+      | aihub.user.agent.>           | aihub.user.process.>          | aihub.user.agent.?>         | ACCESS_DENIED  |
+      | aihub.admin.agent.>          | aihub.user.process.>          | aihub.user.agent.?>         | ACCESS_DENIED  |
+
+  Scenario Outline: Tenant-Level Access Control - Admin Role Inheritance with Tenant Restrictions
+    Given the access rule "<user_access_rule>"
+    And the tenant access rule "<tenant_access_rule>"
+    When the access checker checks for the permission "<permission_template>"
+    Then the result should be <expected_level>
+
+    Examples:
+      | user_access_rule              | tenant_access_rule            | permission_template           | expected_level |
+      # User admin role checks aihub.admin version of permission, tenant must allow it
+      | aihub.admin.agent.class-a.*  | aihub.admin.agent.class-a.*   | aihub.user.agent.class-a.id-1 | ACCESS_ADMIN   |
+      | aihub.admin.agent.class-a.*  | aihub.admin.agent.class-b.*   | aihub.user.agent.class-a.id-1 | ACCESS_DENIED  |
+      | aihub.admin.agent.>          | aihub.admin.agent.class-a.*   | aihub.user.agent.class-a.id-1 | ACCESS_ADMIN   |
+      | aihub.admin.agent.>          | aihub.admin.agent.class-a.*   | aihub.user.agent.class-b.id-1 | ACCESS_DENIED  |
+
+      # Tenant has user-level access but not admin access -> Admin user capped at user level
+      | aihub.admin.agent.class-a.*  | aihub.user.agent.class-a.*    | aihub.user.agent.class-a.id-1 | ACCESS_USER    |
+      | aihub.admin.agent.>          | aihub.user.agent.>            | aihub.user.agent.class-a.id-1 | ACCESS_USER    |

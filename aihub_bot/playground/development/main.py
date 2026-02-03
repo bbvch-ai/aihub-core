@@ -3,9 +3,6 @@ import asyncio
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.routes.health.HealthController import HealthController
 
@@ -19,7 +16,7 @@ enable_logging()
 
 async def main():
     runner = BotTestRunner(conversation_ttl_days=60)
-    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    auth = DangerousDevelopmentOnlyAuthHandler()
 
     runner.mount(
         HealthController(auth=auth).get_health(),

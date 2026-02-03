@@ -6,10 +6,6 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 )
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
-from aihub_lib.auth.identity.TokenIdentityProvider.TokenIdentityProvider import TokenIdentityProvider
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 
@@ -33,7 +29,7 @@ async def development_auth_api_client(controller_mount_func):
             response = await client.get("/api/v1/users/me")
     """
     runner = ApiTestRunner()
-    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    auth = DangerousDevelopmentOnlyAuthHandler()
     runner.mount(controller_mount_func(auth))
 
     app = runner.create_app()
@@ -44,11 +40,9 @@ async def development_auth_api_client(controller_mount_func):
 
 @pytest_asyncio.fixture
 async def token_auth_api_client(controller_mount_func):
-    """
-    Create an AsyncClient with TokenAuthHandler for testing.
-    """
+    """Create an AsyncClient with TokenAuthHandler for testing."""
     runner = ApiTestRunner()
-    auth = TokenAuthHandler(identity_provider=TokenIdentityProvider())
+    auth = TokenAuthHandler()
     runner.mount(controller_mount_func(auth))
 
     app = runner.create_app()
@@ -59,11 +53,9 @@ async def token_auth_api_client(controller_mount_func):
 
 @pytest_asyncio.fixture
 async def oauth2_auth_api_client(controller_mount_func):
-    """
-    Create an AsyncClient with OAuth2AuthHandler for testing.
-    """
+    """Create an AsyncClient with OAuth2AuthHandler for testing."""
     runner = ApiTestRunner()
-    auth = OAuth2AuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    auth = OAuth2AuthHandler()
     runner.mount(controller_mount_func(auth))
 
     app = runner.create_app()

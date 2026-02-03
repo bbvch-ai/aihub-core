@@ -125,7 +125,7 @@ COHERE_API_KEY=""
 # -----------------------------------------------------------------------------
 # OAuth2 / OIDC Configuration (REQUIRED)
 # -----------------------------------------------------------------------------
-AUTH_IDENTITY_PROVIDER="azure"
+AUTH_IDENTITY_PROVIDER="sso"
 OAUTH_PROVIDER_NAME="Azure AD"
 OAUTH_CLIENT_ID="REPLACE_WITH_YOUR_CLIENT_ID"
 OAUTH_CLIENT_SECRET="REPLACE_WITH_YOUR_CLIENT_SECRET"

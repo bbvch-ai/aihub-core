@@ -9,9 +9,6 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 )
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.testing.auth_utils.oauth2_utils.oauth2_test_utils import (
@@ -120,7 +117,7 @@ def expected_user_data():
 async def oauth2_api_client():
     """Return a TestClient with OAuth2AuthHandler and UserController mounted."""
     runner = ApiTestRunner()
-    auth = OAuth2AuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    auth = OAuth2AuthHandler()
     runner.mount(UserController(auth=auth).get_my_user())
     app = runner.create_app()
     async with LifespanManager(app) as lifespan:

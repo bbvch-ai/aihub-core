@@ -3,9 +3,6 @@ import pytest_asyncio
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
@@ -38,7 +35,7 @@ def mongo_db():
 async def api_client():
     """Create a test client for the API with UserController mounted."""
     runner = ApiTestRunner()
-    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    auth = DangerousDevelopmentOnlyAuthHandler()
     runner.mount(UserController(auth=auth).get_my_user())
     app = runner.create_app()
     async with LifespanManager(app) as lifespan:

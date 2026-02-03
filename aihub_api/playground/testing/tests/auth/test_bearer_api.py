@@ -7,25 +7,23 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
     DangerousDevelopmentOnlyAuthSettings,
 )
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
-from aihub_lib.auth.identity.TokenIdentityProvider.TokenIdentityProvider import TokenIdentityProvider
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
 from aihub_lib.persistence.user.UserEntity import UserEntity
-from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from mongoengine import connect, disconnect
 
 from aihub_api.routes.user.UserController import UserController
-from aihub_api.runners.ApiTestRunner import ApiTestRunner
+from aihub_api.testing.ApiTestRunner import ApiTestRunner
 
 BASE_URL = "http://test"
-USER_ENDPOINT = "/api/v1/users/me"
-EXPECTED_USER_FIELDS = ["id", "name", "email"]
+USER_ENDPOINT = "/user/me"
+EXPECTED_USER_FIELDS = ["id", "name", "email", "roles", "profile_image", "favorite_modules"]
 
 
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture
 def mongo_db():
     """Set up and tear down the MongoDB connection for tests."""
     connect(
@@ -44,7 +42,6 @@ def valid_token(mongo_db):
         oid=os.getenv("OID", DangerousDevelopmentOnlyAuthSettings().OID),
         name=os.getenv("NAME", DangerousDevelopmentOnlyAuthSettings().NAME),
         email=os.getenv("EMAIL", DangerousDevelopmentOnlyAuthSettings().EMAIL),
-        roles=DangerousDevelopmentOnlyAuthSettings().ROLES,
     )
     expiry = datetime.now(UTC) + timedelta(hours=1)
     token_obj = BearerToken.create_new_token(name="token-name", expiry_date=expiry, user_oid=user.id)
@@ -70,7 +67,7 @@ def expected_user_data():
 async def token_api_client():
     """Create a TestClient with UserController mounted using TokenAuthHandler."""
     runner = ApiTestRunner()
-    auth = TokenAuthHandler(identity_provider=TokenIdentityProvider())
+    auth = TokenAuthHandler()
     runner.mount(UserController(auth=auth).get_my_user())
     app = runner.create_app()
     async with LifespanManager(app) as lifespan:

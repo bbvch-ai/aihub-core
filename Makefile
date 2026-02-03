@@ -96,7 +96,3 @@ local-cert:
 up-dev:
 	@echo "Starting development environment with Docker Compose..."
 	docker compose -f docker-compose.dev.yml --env-file .env up -d --build
-
-generate-api-token:
-	@echo "Generating API token..."
-	cd aihub_api && poetry run python generate_api_token.py

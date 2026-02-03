@@ -148,13 +148,13 @@ Konfigurieren Sie das Standardverhalten über Umgebungsvariablen:
 
 ```bash
 # Default tenant created on first startup
-DEFAULT_TENANT_NAME="Default Organization"
-DEFAULT_TENANT_ACCESS_RULES="aihub.admin.>"
+AIHUB_DEFAULT_TENANT_NAME="Default Organization"
+AIHUB_DEFAULT_TENANT_ACCESS_RULES="aihub.admin.>"
 
 # Automatic user signup
-USER_SIGNUP_DEFAULT_TENANT="default"
-USER_SIGNUP_DEFAULT_ROLES="AIHubUser,AIHubAgentUser"
-FIRST_USER_SIGNUP_DEFAULT_ROLES="AIHubAdmin"
+AIHUB_USER_SIGNUP_DEFAULT_TENANT="default"
+AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubUser,AIHubAgentUser"
+FIRST_AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubAdmin"
 ```
 
 ## Superuser-Umgehung

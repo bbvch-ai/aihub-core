@@ -181,9 +181,9 @@ Wenn sich jemand zum ersten Mal anmeldet, tritt er automatisch dem Standard-Mand
 Konfigurieren Sie dieses Verhalten mit Umgebungsvariablen:
 
 ```bash
-USER_SIGNUP_DEFAULT_TENANT="default"
-USER_SIGNUP_DEFAULT_ROLES="AIHubUser"
-FIRST_USER_SIGNUP_DEFAULT_ROLES="AIHubAdmin"
+AIHUB_USER_SIGNUP_DEFAULT_TENANT="default"
+AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubUser"
+FIRST_AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubAdmin"
 ```
 
 Die erste Person, die sich anmeldet, erhält Administratorrollen, um sicherzustellen, dass jemand die Plattform sofort

@@ -103,7 +103,7 @@ target-version = 'py313'
 select = ["E", "F", "UP", "I"]
 
 [tool.mypy]
-python_version = "v0.13.0"
+python_version = "3.13"
 strict = true
 warn_redundant_casts = true
 warn_unused_ignores = true

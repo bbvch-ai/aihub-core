@@ -4,9 +4,6 @@ from os.path import abspath, dirname, join
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.routes.health.HealthController import HealthController
 
@@ -29,7 +26,7 @@ async def main():
 
     runner.mount_frontend(join(dirname(abspath(__file__)), "frontend"))
 
-    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    auth = DangerousDevelopmentOnlyAuthHandler()
 
     runner.mount(
         HealthController(auth=auth).get_health(),

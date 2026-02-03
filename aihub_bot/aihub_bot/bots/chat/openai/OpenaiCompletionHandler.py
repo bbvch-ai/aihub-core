@@ -7,10 +7,11 @@ from collections.abc import AsyncGenerator
 from typing import override
 
 import openai
+from aihub_lib.auth.identity.TenantIdentity import TenantIdentity
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
-from microsoft_agents.activity import Channels
+from aihub_lib.persistence.user.UserEntity import UserEntity
 from microsoft_agents.activity.teams import TeamsChannelAccount
 from microsoft_agents.hosting.core import TeamsConnectorClient, TurnContext
 from openai import APIStatusError, AsyncStream
@@ -111,9 +112,7 @@ class OpenaiCompletionHandler(CompletionHandler):
         ]
 
         user_id = turn_context.activity.from_property.id or "UNKNOWN"
-        user_name = turn_context.activity.from_property.name or "UNKNOWN"
-        user_email = f"{user_id}@unknown.bot"
-        user_roles = []
+        user_email = turn_context.activity.from_property.name or "UNKNOWN"
 
         connector_client = turn_context.turn_state.get("ConnectorClient")
 
@@ -123,18 +122,9 @@ class OpenaiCompletionHandler(CompletionHandler):
             )
             if teams_account.email is not None:
                 user_email = teams_account.email
-            if teams_account.user_role is not None:
-                user_roles = [teams_account.user_role]
 
-        if turn_context.activity.channel_id == Channels.ms_teams:
-            user_id = turn_context.activity.from_property.aad_object_id or user_id
-
-        user: UserIdentity = UserIdentity(
-            id=user_id,
-            name=user_name,
-            email=user_email,
-            roles=user_roles,
-        )
+        user_entity = UserEntity.by_email(user_email)
+        user = UserIdentity.from_user_entity(user_entity, TenantIdentity())  # TODO: How to determine tenant context?
 
         logger.debug(f"Using user identity: {user}")
 

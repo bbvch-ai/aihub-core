@@ -6300,8 +6300,8 @@ export type ImagesResponse = {
      * Size
      */
     size?: ('1024x1024' | '1024x1536' | '1536x1024') | null;
-    usage?: OpenaiTypesImagesResponseUsage | null;
-    [key: string]: unknown | number | (('transparent' | 'opaque') | null) | (Array<Image> | null) | (('png' | 'webp' | 'jpeg') | null) | (('low' | 'medium' | 'high') | null) | (('1024x1024' | '1024x1536' | '1536x1024') | null) | (OpenaiTypesImagesResponseUsage | null) | undefined;
+    usage?: Usage | null;
+    [key: string]: unknown | number | (('transparent' | 'opaque') | null) | (Array<Image> | null) | (('png' | 'webp' | 'jpeg') | null) | (('low' | 'medium' | 'high') | null) | (('1024x1024' | '1024x1536' | '1536x1024') | null) | (Usage | null) | undefined;
 };
 
 /**
@@ -13054,6 +13054,28 @@ export type SuiteDto = {
 };
 
 /**
+ * TenantIdentity
+ * Represents a tenant's identity in the multi-tenant system.
+ */
+export type TenantIdentity = {
+    /**
+     * Id
+     * Unique tenant identifier
+     */
+    id: string;
+    /**
+     * Name
+     * Tenant display name
+     */
+    name: string;
+    /**
+     * Access Rules
+     * Access rules granted to this tenant
+     */
+    access_rules: Array<string>;
+};
+
+/**
  * TextBlock
  * A representation of text data to directly pass to/from the LLM.
  */
@@ -14168,12 +14190,12 @@ export type TranscriptionVerbose = {
      * Segments
      */
     segments?: Array<TranscriptionSegment> | null;
-    usage?: Usage | null;
+    usage?: OpenaiTypesAudioTranscriptionVerboseUsage | null;
     /**
      * Words
      */
     words?: Array<TranscriptionWord> | null;
-    [key: string]: unknown | number | string | (Array<TranscriptionSegment> | null) | (Usage | null) | (Array<TranscriptionWord> | null) | undefined;
+    [key: string]: unknown | number | string | (Array<TranscriptionSegment> | null) | (OpenaiTypesAudioTranscriptionVerboseUsage | null) | (Array<TranscriptionWord> | null) | undefined;
 };
 
 /**
@@ -14284,14 +14306,19 @@ export type UpdateRoleRequest = {
  */
 export type Usage = {
     /**
-     * Seconds
+     * Input Tokens
      */
-    seconds: number;
+    input_tokens: number;
+    input_tokens_details: UsageInputTokensDetails;
     /**
-     * Type
+     * Output Tokens
      */
-    type: 'duration';
-    [key: string]: unknown | number | 'duration';
+    output_tokens: number;
+    /**
+     * Total Tokens
+     */
+    total_tokens: number;
+    [key: string]: unknown | number | UsageInputTokensDetails;
 };
 
 /**
@@ -14425,6 +14452,7 @@ export type UserDto = {
 
 /**
  * UserIdentity
+ * Lightweight identity object for authenticated users.
  */
 export type UserIdentity = {
     /**
@@ -14444,14 +14472,13 @@ export type UserIdentity = {
     email: string;
     /**
      * Roles
-     * The roles assigned to the user.
+     * The roles assigned to the user within the acting tenant.
      */
     roles: Array<string>;
     /**
-     * Profile Image
-     * Data URL (base64) representation of profile image
+     * The tenant context the user is operating within.
      */
-    profile_image?: string | null;
+    acting_within_tenant: TenantIdentity;
 };
 
 /**
@@ -14771,6 +14798,21 @@ export type WorkflowGraph = {
 };
 
 /**
+ * Usage
+ */
+export type OpenaiTypesAudioTranscriptionVerboseUsage = {
+    /**
+     * Seconds
+     */
+    seconds: number;
+    /**
+     * Type
+     */
+    type: 'duration';
+    [key: string]: unknown | number | 'duration';
+};
+
+/**
  * Custom
  */
 export type OpenaiTypesChatChatCompletionMessageCustomToolCallParamCustom = {
@@ -14843,26 +14885,6 @@ export type OpenaiTypesChatCompletionCreateParamsFunction = {
     [key: string]: unknown | string | {
         [key: string]: unknown;
     } | undefined;
-};
-
-/**
- * Usage
- */
-export type OpenaiTypesImagesResponseUsage = {
-    /**
-     * Input Tokens
-     */
-    input_tokens: number;
-    input_tokens_details: UsageInputTokensDetails;
-    /**
-     * Output Tokens
-     */
-    output_tokens: number;
-    /**
-     * Total Tokens
-     */
-    total_tokens: number;
-    [key: string]: unknown | number | UsageInputTokensDetails;
 };
 
 export type GetHealthData = {

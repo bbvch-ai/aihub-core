@@ -1,4 +1,6 @@
+import logging
 from datetime import UTC, datetime
+from typing import Self
 from uuid import uuid4
 
 from mongoengine import (
@@ -11,9 +13,16 @@ from mongoengine import (
     IntField,
     ListField,
     StringField,
+    ValidationError,
 )
 
+from aihub_lib.auth.dependencies.SuperuserAuthHandler.SuperuserSettings import SuperuserSettings
+from aihub_lib.infrastructure.api.UserSignupSettings import UserSignupSettings
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+from aihub_lib.persistence.access.entities.TenantEntity import TenantEntity
+from aihub_lib.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
+
+logger = logging.getLogger(__name__)
 
 
 class DashboardItem(EmbeddedDocument):
@@ -43,7 +52,6 @@ class UserEntity(Document):
         "strict": False,
         "indexes": [
             {"fields": ["email"], "unique": True},
-            {"fields": ["roles"]},
             {"fields": ["last_updated"]},
             {"fields": ["name"]},
         ],
@@ -53,9 +61,20 @@ class UserEntity(Document):
     email = StringField(required=True)
     profile_image = StringField(null=True)
     last_updated = DateTimeField(required=True)
-    roles = ListField(StringField(), default=list)
     favorite_modules = ListField(StringField(), default=list)
     dashboard = EmbeddedDocumentField(Dashboard)
+
+    def clean(self):
+        """
+        Validate document fields before saving.
+
+        Ensures profile_image is a valid URL (not a data URL or base64).
+        """
+        if self.profile_image and not self.profile_image.startswith(("http://", "https://")):
+            raise ValidationError(
+                "Profile image must be a valid http:// or https:// URL. "
+                "Data URLs and base64-encoded images are not allowed."
+            )
 
     @staticmethod
     @trace_fn
@@ -101,15 +120,12 @@ class UserEntity(Document):
 
     @classmethod
     @trace_fn
-    def create_user(
-        cls, oid: str, name: str, email: str, roles: list[str], profile_image: str | None = None
-    ) -> "UserEntity":
+    def create_user(cls, oid: str, name: str, email: str, profile_image: str | None = None) -> Self:
         default_dashboard = cls.create_default_dashboard()
         user = cls(
             id=oid,
             name=name,
             email=email,
-            roles=roles,
             profile_image=profile_image,
             favorite_modules=[],
             dashboard=default_dashboard,
@@ -118,33 +134,46 @@ class UserEntity(Document):
         user.save()
         return user
 
+    @trace_fn
+    def get_roles(self, tenant_id: str) -> list[str]:
+        """
+        Retrieves the user's roles from the authoritative UserTenantRoleEntity.
+
+        Returns an empty list if the user has no roles in the specified tenant.
+        """
+        return UserTenantRoleEntity.get_roles_for_user_in_tenant(self.id, tenant_id)
+
     @classmethod
     @trace_fn
-    def ensure_user_exists(
-        cls, oid: str, name: str, email: str, roles: list[str], profile_image: str | None = None
-    ) -> "UserEntity":
+    def ensure_user_exists(cls, oid: str, name: str, email: str, profile_image: str | None = None) -> Self:
         try:
             user = cls.objects.get(id=oid)
             user.name = name
             user.email = email
-            user.roles = roles
             user.profile_image = profile_image
-
             user.last_updated = datetime.now(UTC)
             user.save()
             return user
         except DoesNotExist:
-            return cls.create_user(oid=oid, name=name, email=email, roles=roles, profile_image=profile_image)
+            return cls.create_user(oid=oid, name=name, email=email, profile_image=profile_image)
 
     @classmethod
     @trace_fn
-    def by_oid(cls, user_oid: str) -> "UserEntity":
+    def by_oid(cls, user_oid: str) -> Self:
         return cls.objects.get(id=user_oid)
 
     @classmethod
     @trace_fn
-    def by_email(cls, email: str) -> "UserEntity":
+    def by_email(cls, email: str) -> Self:
         return cls.objects.get(email=email)
+
+    @classmethod
+    @trace_fn
+    def get_by_ids(cls, user_ids: list[str]) -> dict[str, Self]:
+        """
+        Retrieve multiple users by their IDs and return as a dict.
+        """
+        return {u.id: u for u in cls.objects(id__in=user_ids)}
 
     @classmethod
     @trace_fn
@@ -154,6 +183,74 @@ class UserEntity(Document):
 
     @classmethod
     @trace_fn
-    def get_paginated_users(cls, skip: int = 0, limit: int = 20) -> list["UserEntity"]:
+    def get_paginated_users(cls, skip: int = 0, limit: int = 20) -> list[Self]:
         """Get a paginated list of users, ordered by name."""
         return cls.objects.order_by("name").skip(skip).limit(limit)
+
+    @classmethod
+    @trace_fn
+    def ensure_user_exists_for_auth(
+        cls,
+        oid: str,
+        name: str,
+        email: str,
+        profile_image: str | None = None,
+    ) -> Self:
+        """
+        Ensures a user exists during authentication, with proper tenant assignment.
+
+        For existing users: Updates profile info (name, email, image).
+        For new users: Creates the user and assigns them to the default tenant with
+        appropriate roles (admin roles for first user, standard roles for others).
+
+        Roles are stored in UserTenantRoleEntity and retrieved via get_roles().
+        """
+        try:
+            user = cls.objects.get(id=oid)
+            user.name = name
+            user.email = email
+            user.profile_image = profile_image
+            user.last_updated = datetime.now(UTC)
+            user.save()
+            logger.info(f"Updated existing user: {email}")
+            return user
+        except DoesNotExist:
+            pass
+
+        settings = UserSignupSettings()
+        default_tenant = TenantEntity.get_default_tenant()
+
+        if not default_tenant:
+            logger.warning("Default tenant not found. User will be created without tenant assignment.")
+            return cls.create_user(oid=oid, name=name, email=email, profile_image=profile_image)
+
+        # Exclude superuser from count when determining first "real" user
+        superuser_settings = SuperuserSettings()
+        if superuser_settings.ENABLED and superuser_settings.OID:
+            real_user_count = cls.objects(id__ne=superuser_settings.OID).count()
+        else:
+            real_user_count = cls.count_users()
+
+        is_first_user = real_user_count == 0
+        if is_first_user:
+            roles_to_assign = settings.first_admin_user_roles_list
+            logger.info(f"First user signup, assigning admin roles: {roles_to_assign}")
+        else:
+            roles_to_assign = settings.regular_user_roles_list
+            logger.info(f"Regular user signup, assigning default roles: {roles_to_assign}")
+
+        user = cls.create_user(
+            oid=oid,
+            name=name,
+            email=email,
+            profile_image=profile_image,
+        )
+
+        UserTenantRoleEntity.create_or_update(
+            user_id=oid,
+            tenant_id=default_tenant.id,
+            roles=roles_to_assign,
+        )
+
+        logger.info(f"Created new user {email} in tenant {default_tenant.name} with roles: {roles_to_assign}")
+        return user

@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import Annotated
 
-from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 from aihub_lib.persistence.user.UserEntity import UserEntity
 from pydantic import Field
 
@@ -17,10 +16,13 @@ class UserDTO(MinimalUserDTO):
 
     @classmethod
     def from_user_entity(cls, user_entity: UserEntity):
+        """
+        Create a UserDTO from a UserEntity.
+        Note: roles are not populated here as they require tenant context.
+        Use UserWithAccessDTO for role-aware user information.
+        """
         dashboard_data = user_entity.dashboard.to_mongo()
         dashboard_dto = DashboardDTO(**dashboard_data)
-
-        valid_roles = RoleEntity.filter_existing_roles(user_entity.roles)
 
         return cls(
             id=user_entity.id,
@@ -29,6 +31,5 @@ class UserDTO(MinimalUserDTO):
             profile_image=user_entity.profile_image,
             dashboard=dashboard_dto,
             favorite_modules=user_entity.favorite_modules,
-            roles=valid_roles,
             last_accessed=user_entity.last_updated,
         )

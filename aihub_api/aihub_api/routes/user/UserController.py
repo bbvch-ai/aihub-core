@@ -92,12 +92,14 @@ class UserController(Controller):
             user_id: Annotated[str, Path(description="The user's unique identifier (OID).")],
             nc: Annotated[NATS, Depends(use_nats)],
             t: Annotated[LocaleHandler, Depends(use_locale)],
-            _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
+            user: Annotated[
+                UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))
+            ],
         ) -> UserWithAccessDTO:
             """
-            Retrieve user info by their OID.
+            Retrieve user info by their OID. Shows access within the admin's current tenant context.
             """
-            return await UserService.get_user_with_access_by_oid(user_id, runner=self._runner, nc=nc, t=t)
+            return await UserService.get_user_with_access_by_oid(user_id, user, runner=self._runner, nc=nc, t=t)
 
         return self
 

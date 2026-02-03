@@ -24,6 +24,12 @@ from openai.types.chat import (
 from openai.types.chat.chat_completion_content_part_image_param import ImageURL
 from openai.types.chat.chat_completion_content_part_input_audio_param import InputAudio
 
+from aihub_lib.auth.access.AccessChecker import AccessChecker
+from aihub_lib.auth.identity.TenantIdentity import TenantIdentity
+from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
+from aihub_lib.persistence.user.UserEntity import UserEntity
+from fastapi import HTTPException
+
 from aihub_api.routes.agent.dto.AgentIdentifier import AgentIdentifier
 from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
 from aihub_api.routes.event.EventService import EventService
@@ -47,6 +53,32 @@ class ThreadService:
     """
     A service layer that handles business logic for thread operations.
     """
+
+    @staticmethod
+    def validate_users_have_agent_access(
+        user_ids: list[str],
+        agents: list[tuple[str, str]],
+        tenant: TenantIdentity,
+    ) -> None:
+        """
+        Validates that all specified users have access to all specified agents.
+        """
+        users = UserEntity.get_by_ids(user_ids)
+        for user_id in user_ids:
+            user = users.get(user_id)
+            if not user:
+                raise HTTPException(status_code=404, detail=f"User {user_id} not found")
+
+            user_roles = user.get_roles(tenant.id)
+            access_rules = RoleEntity.get_access_rules_for_roles(user_roles, tenant.id)
+            access_checker = AccessChecker(list(access_rules), tenant_access_rules=tenant.access_rules)
+
+            for agent_class, agent_id in agents:
+                if not access_checker.has_access_to_agent(agent_class, agent_id):
+                    raise HTTPException(
+                        status_code=403,
+                        detail=f"User {user_id} does not have access to agent {agent_class}:{agent_id}",
+                    )
 
     @staticmethod
     @trace_fn

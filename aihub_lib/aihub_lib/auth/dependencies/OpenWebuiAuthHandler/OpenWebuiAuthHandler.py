@@ -4,21 +4,25 @@ import logging
 
 from fastapi import HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from mongoengine import DoesNotExist
 
 from aihub_lib.auth.dependencies.AuthSettings import AuthSettings
-from aihub_lib.auth.dependencies.BearerAuthHandler import BearerAuthHandler
-from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
-from aihub_lib.auth.identity.AzureIdentityProvider.AzureIdentityProvider import AzureIdentityProvider
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.persistence.user.UserEntity import UserEntity
 
 logger = logging.getLogger(__name__)
 
 
-class OpenWebuiAuthHandler(BearerAuthHandler):
-    def __init__(self, identity_provider: AzureIdentityProvider, base_auth_handler: BearerAuthHandler):
-        super().__init__(identity_provider)
-        self.config = OAuth2Settings()
-        self.app_client_id_for_roles: str | None = self.config.CLIENT_ID
+class OpenWebuiAuthHandler:
+    """
+    A FastAPI dependency for OpenWebUI authentication.
+
+    Validates HMAC signature from OpenWebUI headers and resolves user identity
+    from the local database.
+    """
+
+    def __init__(self, base_auth_handler):
+        """Initialize with a base auth handler to validate the bearer token."""
         self.base_auth_handler = base_auth_handler
 
         secret = AuthSettings().OPEN_WEBUI_SIGNING_SECRET.get_secret_value()
@@ -35,7 +39,6 @@ class OpenWebuiAuthHandler(BearerAuthHandler):
     ) -> UserIdentity:
         await self.base_auth_handler(request, bearer_token)
 
-        # Retrieve the user identification and the new signature header
         user_name = request.headers.get("X-OpenWebUI-User-Name")
         user_email = request.headers.get("X-OpenWebUI-User-Email")
         signature = request.headers.get("X-OpenWebUI-Signature")
@@ -54,7 +57,23 @@ class OpenWebuiAuthHandler(BearerAuthHandler):
             raise HTTPException(status_code=401, detail="Invalid OpenWebUI signature.")
 
         logger.info("Successfully authenticated OpenWebUI user via signature")
-        return await self._identity_provider.get_user_identity_by_email(user_email)
 
-    async def authenticate_token(self, token_str: str) -> UserIdentity:
+        # Lookup existing user by email
+        # OpenWebUI users must have previously logged in via OAuth2
+        try:
+            user_entity = UserEntity.by_email(user_email)
+        except DoesNotExist:
+            logger.error(f"OpenWebUI user with email {user_email} not found in database")
+            raise HTTPException(
+                status_code=401,
+                detail="User not found. Please login via OAuth2 before using OpenWebUI integration.",
+            )
+
+        # Resolve tenant context from request
+        tenant = self.resolve_tenant_for_user(request, user_entity.id)
+
+        return UserIdentity.from_user_entity(user_entity, tenant)
+
+    async def authenticate_token(self, token_str: str, request: Request | None = None) -> UserIdentity:
+        """OpenWebuiAuthHandler requires request context and cannot be used for token-only authentication."""
         raise NotImplementedError("OpenWebuiAuthHandler does not support token authentication without request context")

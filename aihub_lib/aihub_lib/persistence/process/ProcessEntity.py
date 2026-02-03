@@ -91,7 +91,10 @@ class ProcessEntity(Document):
     meta = {
         "collection": "processes",
         "strict": False,
-        "indexes": [{"fields": ["process_class", "process_id"], "unique": True}],
+        "indexes": [
+            {"fields": ["process_class", "process_id"], "unique": True},
+            {"fields": ["process_class"]},
+        ],
     }
     process_class = StringField(required=True)
     process_id = StringField(required=True)

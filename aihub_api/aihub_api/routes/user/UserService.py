@@ -18,18 +18,9 @@ class UserService:
     """
     A service layer that encapsulates user-related logic:
     - Converting an authenticated user object to a UserDTO.
-    - Retrieving user information from Azure AD or another identity provider.
+    - Retrieving user information from the local database.
 
-    ### Why UserService?
-    By separating user logic from controllers, the code remains organized and testable.
-    `UserService`:
-    - Uses `AzureIdentityProvider` to fetch user details by OID.
-    - Converts `UserIdentity` objects into `UserDTO`s for consistent responses.
-
-    ### Methods
-    - `get_logged_in_user`: Converts the currently authenticated user into a `UserDTO`.
-    - `get_user_by_oid`: Retrieves a user's info by their OID (Object ID), useful for
-    building responses that include user details.
+    Converts `UserIdentity` objects into `UserDTO`s for consistent responses.
     """
 
     @staticmethod
@@ -38,29 +29,25 @@ class UserService:
         Convert the `UserIdentity` (provided by the auth layer) into a UserDTO,
         including information from the UserEntity like dashboard settings, favorite modules, and roles.
         """
-        return await UserService.get_user_with_access_by_oid(user.id, runner, nc, t)
+        user_entity = UserEntity.by_oid(user.id)
+        return await UserWithAccessDTO.from_user_entity(user_entity, user.acting_within_tenant, runner, nc, t)
 
     @staticmethod
     async def get_user_by_oid(user_oid: str) -> UserDTO:
-        """
-        Retrieve user info by OID (id, name, email, profile_image) as a UserDTO.
-        It first checks a db (UserEntity). If recent and essential data is present,
-        it's returned from the db. Otherwise, it fetches from the identity provider,
-        ensures the UserEntity is created/updated (including roles and defaults for new users),
-        and then returns basic info as a UserDTO.
-        """
+        """Retrieve user info by OID (id, name, email, profile_image) as a UserDTO."""
         user_entity = UserEntity.by_oid(user_oid)
         return UserDTO.from_user_entity(user_entity)
 
     @staticmethod
     async def get_user_with_access_by_oid(
-        user_oid: str, runner: "Runner", nc: NATS, t: LocaleHandler
+        user_oid: str, requesting_user: UserIdentity, runner: "Runner", nc: NATS, t: LocaleHandler
     ) -> UserWithAccessDTO:
         """
-        Retrieve a user with their access rules (which services, agents, and processes they can access)
+        Retrieve a user with their access rules (which services, agents, and processes they can access).
+        Access is calculated within the requesting user's tenant context.
         """
         user_entity = UserEntity.by_oid(user_oid)
-        return await UserWithAccessDTO.from_user_entity(user_entity, runner, nc, t)
+        return await UserWithAccessDTO.from_user_entity(user_entity, requesting_user.acting_within_tenant, runner, nc, t)
 
     @staticmethod
     async def get_paginated_users(page: int = 1, page_size: int = 20) -> tuple[int, list[UserDTO]]:
