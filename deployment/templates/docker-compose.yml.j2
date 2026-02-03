@@ -1802,6 +1802,8 @@ services:
       # Security: Only enable required Docker API sections
       CONTAINERS: 1    # Required for Traefik to discover services
       NETWORKS: 1      # Required for Traefik network routing
+      EVENTS: 1        # Required for container event monitoring
+      INFO: 1          # Required for container monitoring
       # Explicitly disable dangerous permissions (defaults are already 0, but explicit is clearer)
       BUILD: 0
       COMMIT: 0
