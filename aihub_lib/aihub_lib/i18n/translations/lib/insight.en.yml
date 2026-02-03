@@ -1,7 +1,0 @@
-role:
-  assistant: "Assistant"
-  user: "Expert"
-label:
-  question: "Question"
-  answer: "Answer"
-  conversation: "Conversation"

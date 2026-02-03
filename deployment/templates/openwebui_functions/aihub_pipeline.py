@@ -894,6 +894,152 @@ class RetrieverEventHandler(EventHandler):
         return source_data
 
 
+class RetrieveUserMemoryEventHandler(EventHandler):
+    """Handler for user memory retrieval events"""
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if event contains RetrieveUserMemoryEvent"]:
+        return "RetrieveUserMemoryEvent" in event.get("_parent_event_names", [])
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "User memory retrieval event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        memories = event.get("memories", [])
+
+        if memories:
+            for memory in memories:
+                source_data = self._build_memory_source_data(memory, memory_type="user")
+                await context.emitter({"type": "source", "data": source_data})
+
+            description = event.get("display_description", {}).get("en", f"Retrieved {len(memories)} user memories")
+
+            await context.emitter(
+                {
+                    "type": "status",
+                    "data": {
+                        "action": "memory_search",
+                        "description": description,
+                        "done": True,
+                    },
+                }
+            )
+
+        return True
+
+    def _build_memory_source_data(
+        self, memory: Annotated[dict[str, Any], "Memory data"], memory_type: Annotated[str, "Memory type"]
+    ) -> Annotated[dict[str, Any], "Source data structure"]:
+        """Build source data structure from memory"""
+        metadata = memory.get("metadata", {})
+
+        memory_id = memory.get("id", "")
+        memory_text = memory.get("memory", "")
+        score = memory.get("score")
+        created_at = memory.get("created_at", "")
+
+        source_data = {
+            "source": {
+                "name": f"💭 Memory: {memory_text[:100]}{'...' if len(memory_text) > 100 else ''}",
+                "id": memory_id,
+            },
+            "document": [memory_text],
+            "metadata": [
+                {
+                    "type": memory_type,
+                    "memory_id": memory_id,
+                    "created_at": created_at,
+                    "user_id": metadata.get("user_id", ""),
+                    "thread_id": metadata.get("thread_id", ""),
+                    "agent_id": metadata.get("agent_id", ""),
+                }
+            ],
+        }
+
+        # Add relevance score if available
+        if score is not None:
+            source_data["distances"] = [score]
+
+        return source_data
+
+
+class RetrieveOrganizationMemoryEventHandler(EventHandler):
+    """Handler for organization memory retrieval events"""
+
+    async def can_handle(
+        self, event: Annotated[dict[str, Any], "Event to check"]
+    ) -> Annotated[bool, "True if event contains RetrieveOrganizationMemoryEvent"]:
+        return "RetrieveOrganizationMemoryEvent" in event.get("_parent_event_names", [])
+
+    async def handle(
+        self,
+        event: Annotated[dict[str, Any], "Organization memory retrieval event"],
+        context: Annotated[EventContext, "Processing context"],
+    ) -> Annotated[bool, "Always returns True"]:
+        memories = event.get("memories", [])
+
+        if memories:
+            for memory in memories:
+                source_data = self._build_memory_source_data(memory, memory_type="organization")
+                await context.emitter({"type": "source", "data": source_data})
+
+            description = event.get("display_description", {}).get(
+                "en", f"Retrieved {len(memories)} organization memories"
+            )
+
+            await context.emitter(
+                {
+                    "type": "status",
+                    "data": {
+                        "action": "memory_search",
+                        "description": description,
+                        "done": True,
+                    },
+                }
+            )
+
+        return True
+
+    def _build_memory_source_data(
+        self, memory: Annotated[dict[str, Any], "Memory data"], memory_type: Annotated[str, "Memory type"]
+    ) -> Annotated[dict[str, Any], "Source data structure"]:
+        """Build source data structure from memory"""
+        metadata = memory.get("metadata", {})
+
+        memory_id = memory.get("id", "")
+        memory_text = memory.get("memory", "")
+        score = memory.get("score")
+        created_at = memory.get("created_at", "")
+
+        source_data = {
+            "source": {
+                "name": f"🏢 Org Memory: {memory_id[:8]}...",
+                "id": memory_id,
+            },
+            "document": [memory_text],
+            "metadata": [
+                {
+                    "type": memory_type,
+                    "memory_id": memory_id,
+                    "created_at": created_at,
+                    "user_id": metadata.get("user_id", ""),
+                    "thread_id": metadata.get("thread_id", ""),
+                    "agent_id": metadata.get("agent_id", ""),
+                    "tenant_id": metadata.get("tenant_id", ""),
+                    "tenant_namespace": metadata.get("tenant_namespace", ""),
+                }
+            ],
+        }
+
+        # Add relevance score if available
+        if score is not None:
+            source_data["distances"] = [score]
+
+        return source_data
+
+
 class DefaultEventHandler(EventHandler):
     """Default handler for unrecognized display events"""
 
@@ -944,6 +1090,8 @@ class EventProcessorFactory:
             ExceptionEventHandler(),
             EmbeddingEventHandler(),
             RetrieverEventHandler(),
+            RetrieveUserMemoryEventHandler(),
+            RetrieveOrganizationMemoryEventHandler(),
             DefaultEventHandler(),
         ]
 

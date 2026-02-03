@@ -2,7 +2,6 @@ from datetime import UTC, datetime
 from typing import Annotated
 
 from aihub_lib.generative_ai.document.types.IngestedDocument import IngestedDocument
-from aihub_lib.persistence.insight import InsightEntity
 from aihub_lib.persistence.rag.documents.entities.RefDoc import RefDoc
 from pydantic import BaseModel, Field
 
@@ -60,23 +59,4 @@ class DocumentDTO(BaseModel):
             updated_at=to_iso(entity.data.metadata.updated_at),
             inserted_at=to_iso(entity.data.metadata.inserted_at) if entity.data.metadata.inserted_at else None,
             is_ingested=is_ingested,
-        )
-
-    @classmethod
-    def from_insight(cls, insight: InsightEntity) -> "DocumentDTO":
-        """Create a DocumentDTO from an InsightEntity."""
-        created_at = insight.created_at.isoformat().replace("+00:00", "Z")
-        updated_at = insight.updated_at.isoformat().replace("+00:00", "Z")
-
-        return cls(
-            id=str(insight.id),
-            content=f"{insight.question}\n\n{insight.expert_answer}",
-            source=f"insight:{insight.id}",
-            namespace=insight.namespace,
-            number_of_pages=None,
-            document_title=insight.question[:100],
-            created_at=created_at,
-            updated_at=updated_at,
-            inserted_at=created_at,
-            is_ingested=True,
         )

@@ -201,6 +201,7 @@ class KnowledgeController(Controller):
                 UserIdentity, Security(self.user_with_permission("aihub.user.knowledge.{database}.{namespace}"))
             ],
             vector_store_factory: Annotated[VectorStoreFactory, Depends(use_vector_store_factory)],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> list[NodeSummaryDTO]:
             """
             Returns nodes for a given document.
@@ -212,6 +213,7 @@ class KnowledgeController(Controller):
                 namespace=namespace,
                 document_id=document_id,
                 vector_store_factory=vector_store_factory,
+                t=t,
             )
 
         return self
