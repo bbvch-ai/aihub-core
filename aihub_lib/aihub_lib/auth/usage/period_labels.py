@@ -21,7 +21,7 @@ def _t(key: str, locale: str, **kwargs: str | int) -> str:
     return LocaleHandler(locale)(f"lib.usage.{key}", **kwargs)
 
 
-def get_period_label(period: UsageLimitPeriod | None, locale: str = "en") -> str:
+def get_period_label(period: UsageLimitPeriod | None, locale: str = LocaleHandler.DEFAULT_LOCALE) -> str:
     """Get the localized label for a usage period."""
     if period is None:
         return ""
@@ -32,7 +32,7 @@ def get_period_label(period: UsageLimitPeriod | None, locale: str = "en") -> str
     return result
 
 
-def describe_pattern(pattern: str, locale: str = "en") -> str:
+def describe_pattern(pattern: str, locale: str = LocaleHandler.DEFAULT_LOCALE) -> str:
     """Convert a dotted usage limit pattern to a human-readable scope label.
 
     Examples:
@@ -140,7 +140,7 @@ def _compute_reset_fields(reset_at: datetime, timezone: zoneinfo.ZoneInfo = _DEF
     return reset_at_local, reset_in_seconds
 
 
-def build_exceeded_detail(usage_status: UsageStatus, locale: str = "en") -> ExceededDetail:
+def build_exceeded_detail(usage_status: UsageStatus, locale: str = LocaleHandler.DEFAULT_LOCALE) -> ExceededDetail:
     """Build the 429 response detail from a UsageStatus.
 
     The ``message`` field contains a single pre-formatted, locale-aware string
@@ -196,7 +196,7 @@ def _build_display_message(usage_status: UsageStatus, locale: str, reset_label: 
     return message
 
 
-def build_warning_message(usage_status: UsageStatus, locale: str = "en") -> str:
+def build_warning_message(usage_status: UsageStatus, locale: str = LocaleHandler.DEFAULT_LOCALE) -> str:
     """Build a pre-formatted warning message for when usage is approaching the limit."""
     if not usage_status.limits:
         return _t("messages.limit_warning", locale, remaining=0)
@@ -228,7 +228,9 @@ def build_warning_message(usage_status: UsageStatus, locale: str = "en") -> str:
 _USAGE_WARNING_THRESHOLD_PERCENT = 80
 
 
-def build_usage_warning_headers(usage_status: UsageStatus, locale: str = "en") -> dict[str, str]:
+def build_usage_warning_headers(
+    usage_status: UsageStatus, locale: str = LocaleHandler.DEFAULT_LOCALE
+) -> dict[str, str]:
     """Build usage warning headers when usage reaches 80%+. Returns empty dict if below threshold."""
     if usage_status.limit is None or usage_status.current_count is None:
         return {}

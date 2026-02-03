@@ -23,9 +23,9 @@ class TestPeriodLabels:
 class TestGetPeriodLabel:
     """Tests for get_period_label function."""
 
-    def test_returns_english_label_by_default(self):
-        """Default locale is English."""
-        assert get_period_label(UsageLimitPeriod.ONE_DAY) == "day"
+    def test_returns_german_label_by_default(self):
+        """Default locale is German (project convention)."""
+        assert get_period_label(UsageLimitPeriod.ONE_DAY) == "Tag"
 
     def test_returns_german_label(self):
         """Returns German label when requested."""
@@ -127,13 +127,16 @@ class TestDescribePattern:
     """Tests for describe_pattern function."""
 
     def test_catch_all_greater_than(self):
-        assert describe_pattern("aihub.user.agent.>") == "all agents"
+        """Default locale is German (project convention)."""
+        assert describe_pattern("aihub.user.agent.>") == "alle Agenten"
 
     def test_catch_all_star(self):
-        assert describe_pattern("aihub.user.agent.*") == "all agents"
+        """Default locale is German (project convention)."""
+        assert describe_pattern("aihub.user.agent.*") == "alle Agenten"
 
     def test_double_wildcard(self):
-        assert describe_pattern("aihub.user.agent.*.*") == "all agents"
+        """Default locale is German (project convention)."""
+        assert describe_pattern("aihub.user.agent.*.*") == "alle Agenten"
 
     def test_class_wildcard(self):
         """Specific class with wildcard ID returns just the class name."""

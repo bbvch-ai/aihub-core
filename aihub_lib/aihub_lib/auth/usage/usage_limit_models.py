@@ -33,7 +33,7 @@ class RoleUsageLimit(BaseModel):
     """Typed representation of a single usage limit rule from a role."""
 
     pattern: Annotated[str, Field(description="Full dotted resource pattern with optional wildcards")]
-    limit: Annotated[int, Field(ge=0, description="Maximum number of allowed calls in the period")]
+    limit: Annotated[int, Field(ge=1, description="Maximum number of allowed calls in the period")]
     period: Annotated[UsageLimitPeriod, Field(description="Time window for the limit (1h, 1d, 7d, 1mo)")]
 
 

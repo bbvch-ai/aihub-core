@@ -8,7 +8,7 @@ from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.auth.usage import UsageLimitService, build_usage_warning_headers
-from aihub_lib.auth.usage.usage_limit_models import ResourceType, UsageStatus
+from aihub_lib.auth.usage.usage_limit_models import ResourceType
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.no_trace import no_trace
 from aihub_lib.infrastructure.redis.use_redis import use_redis
@@ -330,7 +330,9 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             t: LocaleHandler = Depends(use_locale),
         ) -> response_union_type:
             """Send a specific event type to a specific agent. Returns either a stop event or HITL request event."""
-            await UsageLimitService.check_and_raise(redis, user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale)
+            await UsageLimitService.check_and_raise(
+                redis, user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale
+            )
 
             if thread_id is not None:
                 try:
