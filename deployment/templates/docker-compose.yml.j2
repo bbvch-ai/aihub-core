@@ -825,6 +825,51 @@ services:
     networks:
       - data  # Cache is part of data infrastructure
 
+  # ===================================================================
+  # Rclone (Universal Cloud Storage Sync)
+  # ===================================================================
+  # Provides RC API for syncing files from 70+ cloud providers
+  # (OneDrive, SharePoint, S3, Google Drive, Dropbox, etc.)
+  # ===================================================================
+
+  rclone:
+    container_name: rclone
+    image: {{ image_tags.rclone }}
+    restart: unless-stopped
+    command:
+      - "rcd"
+      - "--rc-addr=0.0.0.0:5572"
+      - "--rc-serve"
+      {%- if stage == 'dev' %}
+      - "--rc-no-auth"  # Only in dev!
+      {%- else %}
+      - "--rc-user=${RCLONE_RC_USER}"
+      - "--rc-pass=${RCLONE_RC_PASS}"
+      {%- endif %}
+      - "--log-level=INFO"
+      - "--config=/dev/null"  # Disable config file, use environment variables only
+    {%- if stage == 'dev' %}
+    ports:
+      - "5572:5572"
+    {%- endif %}
+    networks:
+      - default
+    healthcheck:
+      {%- if stage == 'dev' %}
+      test: ["CMD", "rclone", "rc", "--rc-addr=localhost:5572", "core/version"]
+      {%- else %}
+      test: ["CMD", "rclone", "rc", "--rc-addr=localhost:5572", "--rc-user=${RCLONE_RC_USER}", "--rc-pass=${RCLONE_RC_PASS}", "core/version"]
+      {%- endif %}
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+
   {%- if (gpu_enabled and stage in ['nightly', 'latest']) or stage == 'dev' %}
   # ===================================================================
   # AI Model Serving (Local Inference)
