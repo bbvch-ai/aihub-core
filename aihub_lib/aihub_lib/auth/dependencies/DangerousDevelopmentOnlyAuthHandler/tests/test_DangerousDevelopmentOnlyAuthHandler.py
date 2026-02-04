@@ -26,7 +26,7 @@ def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
     """Mock all database operations required by the auth handler."""
     from aihub_lib.auth.identity.TenantIdentity import TenantIdentity
 
-    # Mock UserEntity.ensure_user_exists_for_auth
+    # Mock UserEntity.ensure_user_exists
     def mock_ensure_user_exists(oid: str, name: str, email: str, profile_image: str | None = None) -> MagicMock:
         """Return a mock UserEntity with get_roles method."""
         user = MagicMock(spec=UserEntity)
@@ -47,14 +47,32 @@ def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
         user.get_roles = mock_get_roles
         return user
 
+    # Mock TenantEntity.get_default_tenant
+    def mock_get_default_tenant() -> MagicMock:
+        """Return a mock default tenant."""
+        tenant = MagicMock()
+        tenant.id = "default-tenant-id"
+        tenant.name = "Default Tenant"
+        return tenant
+
+    # Mock UserTenantRoleEntity.create_or_update
+    def mock_create_or_update(**kwargs) -> MagicMock:
+        """Return a mock UserTenantRoleEntity."""
+        return MagicMock()
+
     # Mock resolve_tenant_for_user to return a mock tenant identity
     def mock_resolve_tenant(_self, _request, _user_id: str) -> TenantIdentity:
         """Return a mock tenant identity."""
         return TenantIdentity(id="default-tenant-id", name="Default Tenant", access_rules=[])
 
     # Apply monkeypatches
+    monkeypatch.setattr("aihub_lib.persistence.user.UserEntity.UserEntity.ensure_user_exists", mock_ensure_user_exists)
     monkeypatch.setattr(
-        "aihub_lib.persistence.user.UserEntity.UserEntity.ensure_user_exists_for_auth", mock_ensure_user_exists
+        "aihub_lib.persistence.access.entities.TenantEntity.TenantEntity.get_default_tenant", mock_get_default_tenant
+    )
+    monkeypatch.setattr(
+        "aihub_lib.persistence.access.entities.UserTenantRoleEntity.UserTenantRoleEntity.create_or_update",
+        mock_create_or_update,
     )
     monkeypatch.setattr(
         "aihub_lib.auth.dependencies.AuthHandler.AuthHandler.resolve_tenant_for_user", mock_resolve_tenant

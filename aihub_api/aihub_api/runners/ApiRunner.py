@@ -140,7 +140,10 @@ class ApiRunner(Runner):
     def mount(self, *controllers: Controller) -> "ApiRunner":
         """
         Mounts one or more controllers (each subclass of Controller) onto the API application.
-        This attaches the controller’s routes under the prefix defined in the controller itself.
+        This attaches the controller's routes under the prefix defined in the controller itself.
+
+        Also sets the controller references on _api_app.state so they're available for
+        discovery services before create_app() is called.
         """
         super().mount(*controllers)
 
@@ -151,6 +154,14 @@ class ApiRunner(Runner):
             }
             for controller in controllers
         ]
+
+        # Set controller references on state immediately so they're available
+        # before create_app() (e.g., for SimulatedProcessApiTestRunner.start_simulation())
+        for controller in controllers:
+            if isinstance(controller, AgentController):
+                self._api_app.state.agent_controller = controller
+            if isinstance(controller, ProcessController):
+                self._api_app.state.process_controller = controller
 
         return self
 

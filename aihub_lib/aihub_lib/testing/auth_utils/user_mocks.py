@@ -14,6 +14,9 @@ from aihub_lib.persistence.user.UserEntity import UserEntity
 def _create_mock_user_entity_function():
     """
     Create a mock function for UserEntity.by_oid that returns a dummy user.
+
+    Note: Roles are no longer stored on UserEntity. They are now managed via
+    UserTenantRoleEntity for multi-tenant support.
     """
     config = DangerousDevelopmentOnlyAuthSettings()
 
@@ -22,7 +25,6 @@ def _create_mock_user_entity_function():
             id=user_oid,
             name=config.NAME,
             email=config.EMAIL,
-            roles=config.ROLES,
             profile_image=None,
             favorite_modules=[],
             dashboard=UserEntity.create_default_dashboard(),

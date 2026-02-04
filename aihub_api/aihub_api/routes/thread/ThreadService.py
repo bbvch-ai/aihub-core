@@ -2,15 +2,20 @@ import asyncio
 import logging
 from datetime import UTC, datetime
 
+from aihub_lib.auth.access.AccessChecker import AccessChecker
+from aihub_lib.auth.identity.TenantIdentity import TenantIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import HumanInTheLoopRequestEvent
 from aihub_lib.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import HumanInTheLoopResponseEvent
+from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
+from aihub_lib.persistence.user.UserEntity import UserEntity
 from bson import ObjectId
 from cachetools import TTLCache, cached
+from fastapi import HTTPException
 from llama_index.core.base.llms.types import AudioBlock, ImageBlock, TextBlock
 from mongoengine import DoesNotExist
 from openai.types.chat import (
@@ -23,12 +28,6 @@ from openai.types.chat import (
 )
 from openai.types.chat.chat_completion_content_part_image_param import ImageURL
 from openai.types.chat.chat_completion_content_part_input_audio_param import InputAudio
-
-from aihub_lib.auth.access.AccessChecker import AccessChecker
-from aihub_lib.auth.identity.TenantIdentity import TenantIdentity
-from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
-from aihub_lib.persistence.user.UserEntity import UserEntity
-from fastapi import HTTPException
 
 from aihub_api.routes.agent.dto.AgentIdentifier import AgentIdentifier
 from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO

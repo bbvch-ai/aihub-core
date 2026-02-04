@@ -7,6 +7,8 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
     DangerousDevelopmentOnlyAuthSettings,
 )
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.persistence.access.entities.TenantEntity import TenantEntity
+from aihub_lib.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
 from aihub_lib.persistence.user.UserEntity import UserEntity
 
 logger = logging.getLogger(__name__)
@@ -31,15 +33,26 @@ class DangerousDevelopmentOnlyAuthHandler(AuthHandler):
         Returns fake dev user identity - no actual authentication.
 
         Creates/updates the dev user in the database to ensure it exists for other parts of the codebase.
+        The dev user is assigned roles from the DangerousDevelopmentOnlyAuthSettings config.
         """
         logger.warning("DangerousDevelopmentOnlyAuthHandler is active. This is not recommended for production use.")
 
         # Ensure the dev user exists in the database
-        user_entity = UserEntity.ensure_user_exists_for_auth(
+        user_entity = UserEntity.ensure_user_exists(
             oid=self.config.OID,
             name=self.config.NAME,
             email=self.config.EMAIL,
         )
+
+        # Ensure the dev user has the roles from config in the default tenant
+        default_tenant = TenantEntity.get_default_tenant()
+        if default_tenant:
+            UserTenantRoleEntity.create_or_update(
+                user_id=user_entity.id,
+                tenant_id=default_tenant.id,
+                roles=self.config.ROLES,
+                validate_roles=False,  # Dev roles may not exist in DB
+            )
 
         # Resolve tenant context from request or use default
         if request:

@@ -47,7 +47,9 @@ class UserService:
         Access is calculated within the requesting user's tenant context.
         """
         user_entity = UserEntity.by_oid(user_oid)
-        return await UserWithAccessDTO.from_user_entity(user_entity, requesting_user.acting_within_tenant, runner, nc, t)
+        return await UserWithAccessDTO.from_user_entity(
+            user_entity, requesting_user.acting_within_tenant, runner, nc, t
+        )
 
     @staticmethod
     async def get_paginated_users(page: int = 1, page_size: int = 20) -> tuple[int, list[UserDTO]]:

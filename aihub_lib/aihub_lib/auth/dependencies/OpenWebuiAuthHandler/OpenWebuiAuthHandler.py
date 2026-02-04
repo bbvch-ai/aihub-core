@@ -6,6 +6,7 @@ from fastapi import HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from mongoengine import DoesNotExist
 
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.dependencies.AuthSettings import AuthSettings
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.persistence.user.UserEntity import UserEntity
@@ -13,7 +14,7 @@ from aihub_lib.persistence.user.UserEntity import UserEntity
 logger = logging.getLogger(__name__)
 
 
-class OpenWebuiAuthHandler:
+class OpenWebuiAuthHandler(AuthHandler):
     """
     A FastAPI dependency for OpenWebUI authentication.
 
@@ -74,6 +75,6 @@ class OpenWebuiAuthHandler:
 
         return UserIdentity.from_user_entity(user_entity, tenant)
 
-    async def authenticate_token(self, token_str: str, request: Request | None = None) -> UserIdentity:
+    async def authenticate_token(self, token: str) -> UserIdentity:
         """OpenWebuiAuthHandler requires request context and cannot be used for token-only authentication."""
         raise NotImplementedError("OpenWebuiAuthHandler does not support token authentication without request context")
