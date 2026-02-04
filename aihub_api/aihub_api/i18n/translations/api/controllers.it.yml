@@ -65,3 +65,11 @@ translation:
 user:
   name: "Il mio account"
   description: "Gestisci le impostazioni del tuo account"
+
+user_memory:
+  name: "Memorie utente"
+  description: "Visualizza e gestisci le tue memorie personali da mem0"
+
+organization_memory:
+  name: "Memorie organizzative"
+  description: "Visualizza e gestisci le memorie a livello organizzativo da mem0"

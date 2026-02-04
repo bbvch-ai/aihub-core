@@ -2,6 +2,9 @@ metadata:
   name: Retrieval Agent
   description: Simplified RAG agent focused on retrieving relevant information from
     a knowledge base
+config:
+  context_prompt:
+    label: Context Prompt
 steps:
   retrieve_nodes:
     name: "Retrieve nodes"

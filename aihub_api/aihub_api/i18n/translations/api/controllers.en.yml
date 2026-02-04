@@ -65,3 +65,11 @@ translation:
 user:
   name: "My Account"
   description: "Manage your account settings"
+
+user_memory:
+  name: "User Memories"
+  description: "View and manage your personal memories from mem0"
+
+organization_memory:
+  name: "Organization Memories"
+  description: "View and manage organization-wide memories from mem0"

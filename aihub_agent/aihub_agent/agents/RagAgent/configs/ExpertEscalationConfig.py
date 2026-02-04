@@ -1,5 +1,6 @@
 from typing import Annotated, Self
 
+from aihub_agent.agents.ExpertAskingAgent.events.AskExpertStartEvent import AskExpertStartEvent
 from aihub_lib.agents.AgentRef import AgentRef
 from aihub_lib.nats.events.form.elements.AgentSelector import AgentSelector
 from aihub_lib.nats.events.form.Form import Form
@@ -33,6 +34,6 @@ class ExpertEscalationConfig(Form):
             agent=AgentSelector(
                 label=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.config.agent.label"),
                 help=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.config.agent.help"),
-                start_event="AskExpertStartEvent",
+                start_event=AskExpertStartEvent.event_name_from_class(),
             ),
         )

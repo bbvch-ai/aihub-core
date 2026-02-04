@@ -65,3 +65,11 @@ translation:
 user:
   name: "Mein Konto"
   description: "Kontoeinstellungen verwalten"
+
+user_memory:
+  name: "Benutzer-Erinnerungen"
+  description: "Persönliche Erinnerungen aus mem0 anzeigen und verwalten"
+
+organization_memory:
+  name: "Organisations-Erinnerungen"
+  description: "Organisationsweite Erinnerungen aus mem0 anzeigen und verwalten"

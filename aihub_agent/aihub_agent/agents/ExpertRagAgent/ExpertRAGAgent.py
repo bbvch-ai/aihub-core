@@ -187,8 +187,8 @@ class ExpertRAGAgent(Agent):
     icon: ClassVar[str] = "mage:building-a"
 
     @step(
-        name=AgentLocaleString(en="Retrieve User Memory"),
-        description=AgentLocaleString(en="Retrieves relevant user-specific memories for personalized context"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_user_memory.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_user_memory.description"),
         icon="mdi:account-circle",
         precondition=user_memory_retrieval_enabled,
     )
@@ -210,10 +210,8 @@ class ExpertRAGAgent(Agent):
         return RetrieveUserMemoryEvent.from_memory_search_result(memory_result)
 
     @step(
-        name=AgentLocaleString(en="Retrieve Organization Memory"),
-        description=AgentLocaleString(
-            en="Retrieves relevant organization memories (expert knowledge) based on user query"
-        ),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_organization_memory.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_organization_memory.description"),
         icon="mdi:brain",
         precondition=organization_memory_enabled,
     )
@@ -238,8 +236,8 @@ class ExpertRAGAgent(Agent):
         return RetrieveOrganizationMemoryEvent.from_memory_search_result(memory_result)
 
     @step(
-        name=AgentLocaleString(en="Add Memory to Context"),
-        description=AgentLocaleString(en="Injects user and organization memories into chat history as system messages"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.add_memory_to_context.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.add_memory_to_context.description"),
         icon="mdi:database-plus",
         precondition=memory_ready_for_chat_history,
     )
@@ -597,10 +595,8 @@ class ExpertRAGAgent(Agent):
         )
 
     @step(
-        name=AgentLocaleString(en="Store User Memory"),
-        description=AgentLocaleString(
-            en="Persists conversation learnings to long-term user memory for future interactions"
-        ),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.store_user_memory.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.store_user_memory.description"),
         icon="mdi:content-save",
         precondition=user_memory_storage_enabled,
     )
@@ -622,8 +618,8 @@ class ExpertRAGAgent(Agent):
         return StoreUserMemoryEvent.from_memory_added_object(memory_added)
 
     @step(
-        name=AgentLocaleString(en="Stop"),
-        description=AgentLocaleString(en="Completes the workflow after all required steps are done"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.stop.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.stop.description"),
         precondition=ready_for_stop,
     )
     async def stop_step(

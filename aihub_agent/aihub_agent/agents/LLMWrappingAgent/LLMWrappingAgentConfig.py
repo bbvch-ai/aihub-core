@@ -42,18 +42,8 @@ class LLMWrappingAgentConfig(AgentConfig):
             icon=base.icon,
             agent_class=base.agent_class,
             system_prompt=LocaleInput(
-                label=LocaleString(
-                    en="System Prompt",
-                    de="Systemaufforderung",
-                    fr="Invite système",
-                    it="Prompt di sistema",
-                ),
-                help=LocaleString(
-                    en="Instructions for the agent when using few-shot examples",
-                    de="Anweisungen für den Agenten bei der Verwendung von Few-Shot-Beispielen",
-                    fr="Instructions pour l'agent lors de l'utilisation d'exemples few-shot",
-                    it="Istruzioni per l'agente quando si utilizzano esempi few-shot",
-                ),
+                label=AgentLocaleString.from_i18n_path("agent.llm_wrapping_agent.config.system_prompt.label"),
+                help=AgentLocaleString.from_i18n_path("agent.llm_wrapping_agent.config.system_prompt.help"),
                 input_type="textarea",
                 rows=3,
             ),

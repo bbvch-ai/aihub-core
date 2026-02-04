@@ -6,6 +6,8 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.form.elements.LocaleInput import LocaleInput
 from pydantic import Field
 
+from aihub_agent.i18n.AgentLocaleString import AgentLocaleString
+
 
 class RetrievalAgentConfig(AgentConfig):
     retriever: Annotated[KnowledgeRetrieverConfig, Field(description="The configuration for knowledge retrieval.")]
@@ -25,12 +27,7 @@ class RetrievalAgentConfig(AgentConfig):
             agent_class=base.agent_class,
             retriever=KnowledgeRetrieverConfig.as_form(),
             context_prompt=LocaleString.as_form(
-                label=LocaleString(
-                    en="Context Prompt",
-                    de="Kontextprompt",
-                    fr="Prompt de contexte",
-                    it="Prompt di contesto",
-                ),
+                label=AgentLocaleString.from_i18n_path("agent.retrieval_agent.config.context_prompt.label"),
                 input_type="textarea",
             ),
         )

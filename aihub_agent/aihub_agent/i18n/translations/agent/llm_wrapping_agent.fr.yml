@@ -2,6 +2,10 @@ metadata:
   name: Assistant Instruit
   description: Assistant IA qui suit vos instructions en texte clair pour vous aider
     dans vos tâches et répondre aux questions
+config:
+  system_prompt:
+    label: Invite système
+    help: Instructions pour l'agent lors de l'utilisation d'exemples few-shot
 steps:
   limit_chat_history:
     name: "Limiter l'historique du chat"

@@ -1,6 +1,9 @@
 metadata:
   name: Agent de Retrieval
   description: Agent RAG simplifié axé sur la récupération d'informations pertinentes
+config:
+  context_prompt:
+    label: Prompt de contexte
 steps:
   retrieve_nodes:
     name: "Récupérer les nœuds"

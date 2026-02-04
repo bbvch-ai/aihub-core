@@ -112,6 +112,15 @@ config:
     help: Ob neue Erinnerungen aus Gesprächen für zukünftigen Abruf gespeichert werden
       sollen.
 steps:
+  retrieve_user_memory:
+    name: "Benutzergedächtnis abrufen"
+    description: "Ruft relevante benutzerspezifische Erinnerungen für personalisierten Kontext ab"
+  retrieve_organization_memory:
+    name: "Organisationsgedächtnis abrufen"
+    description: "Ruft relevante Organisationserinnerungen (Expertenwissen) basierend auf der Benutzeranfrage ab"
+  add_memory_to_context:
+    name: "Gedächtnis zum Kontext hinzufügen"
+    description: "Fügt Benutzer- und Organisationserinnerungen als Systemnachrichten zum Chat-Verlauf hinzu"
   limit_chat_history:
     name: "Chat-Verlauf begrenzen"
     description: "Kürzt eingehende Chat-Nachrichten auf das konfigurierte Token-Limit"
@@ -139,3 +148,9 @@ steps:
   respond_with_llm:
     name: "Mit LLM antworten"
     description: "Generiert eine Antwort mit dem konfigurierten LLM."
+  store_user_memory:
+    name: "Benutzergedächtnis speichern"
+    description: "Speichert Erkenntnisse aus dem Gespräch im Langzeit-Benutzergedächtnis für zukünftige Interaktionen"
+  stop:
+    name: "Stopp"
+    description: "Beendet den Workflow nach Abschluss aller erforderlichen Schritte"

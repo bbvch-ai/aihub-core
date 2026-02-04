@@ -108,6 +108,15 @@ config:
     label: Enable user memory storage
     help: Whether to store new memories from conversations for future retrieval.
 steps:
+  retrieve_user_memory:
+    name: "Retrieve User Memory"
+    description: "Retrieves relevant user-specific memories for personalized context"
+  retrieve_organization_memory:
+    name: "Retrieve Organization Memory"
+    description: "Retrieves relevant organization memories (expert knowledge) based on user query"
+  add_memory_to_context:
+    name: "Add Memory to Context"
+    description: "Injects user and organization memories into chat history as system messages"
   limit_chat_history:
     name: "Limit Chat History"
     description: "Truncates incoming chat messages to fit within the configured token limit"
@@ -135,3 +144,9 @@ steps:
   respond_with_llm:
     name: "Respond with LLM"
     description: "Generates a response using the configured LLM."
+  store_user_memory:
+    name: "Store User Memory"
+    description: "Persists conversation learnings to long-term user memory for future interactions"
+  stop:
+    name: "Stop"
+    description: "Completes the workflow after all required steps are done"

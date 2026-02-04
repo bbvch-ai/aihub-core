@@ -1,5 +1,6 @@
 from typing import Annotated, Self
 
+from aihub_agent.agents.RagAgent.events import NamespaceAwareUserMessageEvent
 from aihub_lib.agents.AgentRef import AgentRef
 from aihub_lib.nats.events.form.elements.AgentSelector import AgentSelector
 from aihub_lib.nats.events.form.Form import Form
@@ -31,7 +32,7 @@ class RAGDelegationConfig(Form):
                 help=AgentLocaleString.from_i18n_path(
                     "agent.namespace_selection_agent.delegation_config.rag_agent.help"
                 ),
-                start_event="NamespaceAwareUserMessageEvent",
+                start_event=NamespaceAwareUserMessageEvent.event_name_from_class(),
                 class_placeholder=AgentLocaleString.from_i18n_path(
                     "agent.namespace_selection_agent.delegation_config.rag_agent.class_placeholder"
                 ),

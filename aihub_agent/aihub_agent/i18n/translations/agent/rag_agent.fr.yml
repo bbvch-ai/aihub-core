@@ -112,6 +112,15 @@ config:
     label: Activer le stockage de mémoire utilisateur
     help: Stocker les nouvelles mémoires des conversations pour une récupération future.
 steps:
+  retrieve_user_memory:
+    name: "Récupérer la mémoire utilisateur"
+    description: "Récupère les mémoires spécifiques à l'utilisateur pour un contexte personnalisé"
+  retrieve_organization_memory:
+    name: "Récupérer la mémoire organisationnelle"
+    description: "Récupère les mémoires organisationnelles pertinentes (connaissances d'experts) basées sur la requête utilisateur"
+  add_memory_to_context:
+    name: "Ajouter la mémoire au contexte"
+    description: "Injecte les mémoires utilisateur et organisationnelles dans l'historique du chat comme messages système"
   limit_chat_history:
     name: "Limiter l'historique du chat"
     description: "Tronque les messages de chat entrants pour respecter la limite de tokens configurée"
@@ -139,3 +148,9 @@ steps:
   respond_with_llm:
     name: "Répondre avec LLM"
     description: "Génère une réponse en utilisant le LLM configuré."
+  store_user_memory:
+    name: "Stocker la mémoire utilisateur"
+    description: "Persiste les apprentissages de la conversation dans la mémoire utilisateur à long terme pour les interactions futures"
+  stop:
+    name: "Arrêt"
+    description: "Termine le workflow après l'achèvement de toutes les étapes requises"

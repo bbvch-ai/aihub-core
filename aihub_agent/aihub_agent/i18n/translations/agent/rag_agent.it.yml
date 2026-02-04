@@ -110,6 +110,15 @@ config:
     label: Abilita archiviazione memoria utente
     help: Se archiviare nuove memorie dalle conversazioni per il recupero futuro.
 steps:
+  retrieve_user_memory:
+    name: "Recupera memoria utente"
+    description: "Recupera le memorie specifiche dell'utente per un contesto personalizzato"
+  retrieve_organization_memory:
+    name: "Recupera memoria organizzativa"
+    description: "Recupera le memorie organizzative rilevanti (conoscenze esperte) basate sulla richiesta dell'utente"
+  add_memory_to_context:
+    name: "Aggiungi memoria al contesto"
+    description: "Inserisce le memorie utente e organizzative nella cronologia chat come messaggi di sistema"
   limit_chat_history:
     name: "Limita cronologia chat"
     description: "Tronca i messaggi di chat in arrivo per rispettare il limite di token configurato"
@@ -137,3 +146,9 @@ steps:
   respond_with_llm:
     name: "Rispondi con LLM"
     description: "Genera una risposta utilizzando il LLM configurato."
+  store_user_memory:
+    name: "Archivia memoria utente"
+    description: "Persiste gli apprendimenti della conversazione nella memoria utente a lungo termine per interazioni future"
+  stop:
+    name: "Stop"
+    description: "Completa il workflow dopo che tutti i passaggi richiesti sono stati completati"
