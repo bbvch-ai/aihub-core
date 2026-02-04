@@ -313,6 +313,12 @@
       "license": "GPL",
       "status": "✅",
       "notes": "Permissive license"
+    },
+    {
+      "service": "rclone",
+      "license": "MIT",
+      "status": "✅",
+      "notes": "Permissive license"
     }
   ]
 }
