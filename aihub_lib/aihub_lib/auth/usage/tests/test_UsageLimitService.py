@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from fastapi import HTTPException
 
+from aihub_lib.auth.usage.RateLimitStore import RateLimitStore
 from aihub_lib.auth.usage.usage_limit_models import ResourceType, RoleUsageLimit, UsageLimitPeriod
 from aihub_lib.auth.usage.UsageLimitService import UsageLimitService
 
@@ -12,6 +13,13 @@ AGENT_PREFIX = "aihub.user.agent."
 def rl(pattern: str, limit: int, period: str) -> RoleUsageLimit:
     """Shorthand factory for test readability."""
     return RoleUsageLimit(pattern=pattern, limit=limit, period=period)
+
+
+def create_service(store: RateLimitStore | None = None) -> UsageLimitService:
+    """Create a UsageLimitService with a mocked store."""
+    if store is None:
+        store = MagicMock(spec=RateLimitStore)
+    return UsageLimitService(store)
 
 
 class TestPatternMatching:
@@ -271,13 +279,14 @@ class TestGetUsageStatus:
     @patch("aihub_lib.persistence.access.entities.RoleEntity.RoleEntity")
     async def test_unlimited_user_returns_empty_limits(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[]]
-        redis = AsyncMock()
+        store = AsyncMock(spec=RateLimitStore)
+        service = create_service(store)
 
-        status = await UsageLimitService.get_usage_status(redis, "user123", ["admin"])
+        status = await service.get_usage_status("user123", ["admin"])
 
         assert status.limits == []
         assert status.is_exceeded is False
-        redis.mget.assert_not_called()
+        store.get_counts.assert_not_called()
 
     @pytest.mark.asyncio
     @patch("aihub_lib.persistence.access.entities.RoleEntity.RoleEntity")
@@ -285,12 +294,12 @@ class TestGetUsageStatus:
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 10, "1h")]
         ]
-        redis = AsyncMock()
-        redis.mget.return_value = [b"42", b"5"]
-        redis.ttl.side_effect = [3600, 1800]
+        store = AsyncMock(spec=RateLimitStore)
+        store.get_counts.return_value = [(42, None), (5, None)]
+        service = create_service(store)
 
-        status = await UsageLimitService.get_usage_status(
-            redis, "user123", ["user"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
+        status = await service.get_usage_status(
+            "user123", ["user"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
         )
 
         assert len(status.limits) == 2
@@ -302,13 +311,13 @@ class TestGetUsageStatus:
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 10, "1h")]
         ]
-        redis = AsyncMock()
+        store = AsyncMock(spec=RateLimitStore)
         # catchall: 42/100 (ok), class: 10/10 (exceeded)
-        redis.mget.return_value = [b"42", b"10"]
-        redis.ttl.side_effect = [3600, 1800]
+        store.get_counts.return_value = [(42, None), (10, None)]
+        service = create_service(store)
 
-        status = await UsageLimitService.get_usage_status(
-            redis, "user123", ["user"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
+        status = await service.get_usage_status(
+            "user123", ["user"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
         )
 
         assert status.is_exceeded is True
@@ -324,69 +333,64 @@ class TestCheckAndIncrement:
     @patch("aihub_lib.persistence.access.entities.RoleEntity.RoleEntity")
     async def test_unlimited_does_not_increment(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[]]
-        redis = AsyncMock()
+        store = AsyncMock(spec=RateLimitStore)
+        service = create_service(store)
 
-        status = await UsageLimitService.check_and_increment(redis, "user123", ["admin"])
+        status = await service.check_and_increment("user123", ["admin"])
 
         assert status.limits == []
         assert status.is_exceeded is False
-        redis.eval.assert_not_called()
+        store.check_and_increment.assert_not_called()
 
     @pytest.mark.asyncio
     @patch("aihub_lib.persistence.access.entities.RoleEntity.RoleEntity")
     async def test_increments_all_matching_counters(self, mock_role_entity: MagicMock):
-        """With catchall + class-level, a single atomic Lua call increments both counters."""
+        """With catchall + class-level, a single atomic call increments both counters."""
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 20, "1h")]
         ]
-        redis = AsyncMock()
-        # Lua returns: [exceeded_flag=0, count1=6, count2=4]
-        redis.eval.return_value = [0, 6, 4]
-        redis.ttl.return_value = 80000
+        store = AsyncMock(spec=RateLimitStore)
+        store.check_and_increment.return_value = (True, [(6, None), (4, None)])
+        service = create_service(store)
 
-        status = await UsageLimitService.check_and_increment(
-            redis, "user1", ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
+        status = await service.check_and_increment(
+            "user1", ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
         )
 
         assert len(status.limits) == 2
         assert status.is_exceeded is False
-        redis.eval.assert_called_once()
+        store.check_and_increment.assert_called_once()
 
     @pytest.mark.asyncio
     @patch("aihub_lib.persistence.access.entities.RoleEntity.RoleEntity")
     async def test_does_not_increment_any_when_one_exceeded(self, mock_role_entity: MagicMock):
-        """If any limit is exceeded, the Lua script returns pre-increment counts."""
+        """If any limit is exceeded, the store returns pre-increment counts."""
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 10, "1h")]
         ]
-        redis = AsyncMock()
-        # Lua returns: [exceeded_flag=1, count1=5, count2=10]
-        redis.eval.return_value = [1, 5, 10]
-        redis.ttl.return_value = 1800
+        store = AsyncMock(spec=RateLimitStore)
+        store.check_and_increment.return_value = (False, [(5, None), (10, None)])
+        service = create_service(store)
 
-        status = await UsageLimitService.check_and_increment(
-            redis, "user1", ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
+        status = await service.check_and_increment(
+            "user1", ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
         )
 
         assert status.is_exceeded is True
-        # Only one eval call (the atomic script), no separate increments
-        redis.eval.assert_called_once()
+        store.check_and_increment.assert_called_once()
 
     @pytest.mark.asyncio
     @patch("aihub_lib.persistence.access.entities.RoleEntity.RoleEntity")
     async def test_single_limit_increments_atomically(self, mock_role_entity: MagicMock):
-        """Single limit uses the same atomic Lua script."""
+        """Single limit uses the same atomic call."""
         mock_role_entity.get_usage_limits_for_roles.return_value = [[rl(f"{AGENT_PREFIX}>", 100, "1d")]]
-        redis = AsyncMock()
-        # Lua returns: [exceeded_flag=0, count=1]
-        redis.eval.return_value = [0, 1]
-        redis.ttl.return_value = UsageLimitPeriod.ONE_DAY.seconds
+        store = AsyncMock(spec=RateLimitStore)
+        store.check_and_increment.return_value = (True, [(1, None)])
+        service = create_service(store)
 
-        await UsageLimitService.check_and_increment(
-            redis, "user123", ["user"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
-        )
+        await service.check_and_increment("user123", ["user"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev")
 
-        redis.eval.assert_called_once()
+        store.check_and_increment.assert_called_once()
 
 
 class TestMultiRoleWithIndependentLimits:
@@ -464,17 +468,16 @@ class TestCheckAndIncrementIntegration:
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 20, "1h")],
         ]
-        redis = AsyncMock()
-        # Lua returns: [exceeded_flag=0, count1=4, count2=6]
-        redis.eval.return_value = [0, 4, 6]
-        redis.ttl.return_value = 80000
+        store = AsyncMock(spec=RateLimitStore)
+        store.check_and_increment.return_value = (True, [(4, None), (6, None)])
+        service = create_service(store)
 
-        status = await UsageLimitService.check_and_increment(
-            redis, "user1", ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
+        status = await service.check_and_increment(
+            "user1", ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
         assert status.is_exceeded is False
-        redis.eval.assert_called_once()
+        store.check_and_increment.assert_called_once()
 
     @pytest.mark.asyncio
     @patch("aihub_lib.persistence.access.entities.RoleEntity.RoleEntity")
@@ -483,17 +486,16 @@ class TestCheckAndIncrementIntegration:
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 10, "1h")],
         ]
-        redis = AsyncMock()
-        # Lua returns: [exceeded_flag=1, count1=5, count2=10] (not incremented)
-        redis.eval.return_value = [1, 5, 10]
-        redis.ttl.return_value = 1800
+        store = AsyncMock(spec=RateLimitStore)
+        store.check_and_increment.return_value = (False, [(5, None), (10, None)])
+        service = create_service(store)
 
-        status = await UsageLimitService.check_and_increment(
-            redis, "user1", ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
+        status = await service.check_and_increment(
+            "user1", ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
         assert status.is_exceeded is True
-        redis.eval.assert_called_once()
+        store.check_and_increment.assert_called_once()
 
     @pytest.mark.asyncio
     @patch("aihub_lib.persistence.access.entities.RoleEntity.RoleEntity")
@@ -503,13 +505,12 @@ class TestCheckAndIncrementIntegration:
             [rl(f"{AGENT_PREFIX}>", 50, "1d")],
             [rl(f"{AGENT_PREFIX}>", 200, "1d")],
         ]
-        redis = AsyncMock()
-        # Lua returns: [exceeded_flag=0, count=61]
-        redis.eval.return_value = [0, 61]
-        redis.ttl.return_value = 70000
+        store = AsyncMock(spec=RateLimitStore)
+        store.check_and_increment.return_value = (True, [(61, None)])
+        service = create_service(store)
 
-        status = await UsageLimitService.check_and_increment(
-            redis, "user1", ["roleA", "roleB"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
+        status = await service.check_and_increment(
+            "user1", ["roleA", "roleB"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
         assert status.is_exceeded is False
@@ -527,13 +528,11 @@ class TestBackwardCompatProperties:
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 10, "1h")]
         ]
-        redis = AsyncMock()
-        redis.mget.return_value = [b"42", b"9"]
-        redis.ttl.return_value = 3600
+        store = AsyncMock(spec=RateLimitStore)
+        store.get_counts.return_value = [(42, None), (9, None)]
+        service = create_service(store)
 
-        status = await UsageLimitService.get_usage_status(
-            redis, "user1", ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
-        )
+        status = await service.get_usage_status("user1", ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev")
 
         # 9/10 = 0.9 ratio vs 42/100 = 0.42 ratio → class-level is most restrictive
         assert status.limit == 10
@@ -544,9 +543,10 @@ class TestBackwardCompatProperties:
     @patch("aihub_lib.persistence.access.entities.RoleEntity.RoleEntity")
     async def test_properties_return_none_when_unlimited(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[]]
-        redis = AsyncMock()
+        store = AsyncMock(spec=RateLimitStore)
+        service = create_service(store)
 
-        status = await UsageLimitService.get_usage_status(redis, "user1", ["admin"])
+        status = await service.get_usage_status("user1", ["admin"])
 
         assert status.limit is None
         assert status.period is None
@@ -598,16 +598,16 @@ class TestCheckAndRaise:
     @patch("aihub_lib.persistence.access.entities.RoleEntity.RoleEntity")
     async def test_raises_429_when_exceeded(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[rl(f"{AGENT_PREFIX}>", 10, "1h")]]
-        redis = AsyncMock()
-        redis.eval.return_value = [1, 10]
-        redis.ttl.return_value = 1800
+        store = AsyncMock(spec=RateLimitStore)
+        store.check_and_increment.return_value = (False, [(10, None)])
+        service = create_service(store)
 
         user = MagicMock()
         user.id = "user123"
         user.roles = ["role1"]
 
         with pytest.raises(HTTPException) as exc_info:
-            await UsageLimitService.check_and_raise(redis, user, ResourceType.AGENT, "MyAgent", "v1", locale="en")
+            await service.check_and_raise(user, ResourceType.AGENT, "MyAgent", "v1", locale="en")
 
         assert exc_info.value.status_code == 429
         detail = exc_info.value.detail
@@ -619,15 +619,15 @@ class TestCheckAndRaise:
     @patch("aihub_lib.persistence.access.entities.RoleEntity.RoleEntity")
     async def test_does_not_raise_when_within_limit(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[rl(f"{AGENT_PREFIX}>", 100, "1d")]]
-        redis = AsyncMock()
-        redis.eval.return_value = [0, 5]
-        redis.ttl.return_value = 80000
+        store = AsyncMock(spec=RateLimitStore)
+        store.check_and_increment.return_value = (True, [(5, None)])
+        service = create_service(store)
 
         user = MagicMock()
         user.id = "user123"
         user.roles = ["role1"]
 
-        status = await UsageLimitService.check_and_raise(redis, user, ResourceType.AGENT, "MyAgent", "v1", locale="en")
+        status = await service.check_and_raise(user, ResourceType.AGENT, "MyAgent", "v1", locale="en")
 
         assert status.is_exceeded is False
 
@@ -635,13 +635,14 @@ class TestCheckAndRaise:
     @patch("aihub_lib.persistence.access.entities.RoleEntity.RoleEntity")
     async def test_unlimited_user_passes(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[]]
-        redis = AsyncMock()
+        store = AsyncMock(spec=RateLimitStore)
+        service = create_service(store)
 
         user = MagicMock()
         user.id = "user123"
         user.roles = ["admin"]
 
-        status = await UsageLimitService.check_and_raise(redis, user, ResourceType.AGENT, "MyAgent", "v1", locale="en")
+        status = await service.check_and_raise(user, ResourceType.AGENT, "MyAgent", "v1", locale="en")
 
         assert status.is_exceeded is False
         assert status.limits == []

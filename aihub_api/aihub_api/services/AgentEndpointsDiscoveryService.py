@@ -7,11 +7,14 @@ from typing import Annotated, override
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.auth.usage import UsageLimitService, build_usage_warning_headers
-from aihub_lib.auth.usage.usage_limit_models import ResourceType
+from aihub_lib.auth.usage import (
+    ResourceType,
+    UsageLimitService,
+    build_usage_warning_headers,
+    use_usage_limit_service,
+)
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.no_trace import no_trace
-from aihub_lib.infrastructure.redis.use_redis import use_redis
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributor import (
     use_external_agent_event_distributor,
@@ -39,7 +42,6 @@ from fastapi import Body, Depends, FastAPI, HTTPException, Query, Security
 from mongoengine import DoesNotExist
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
-from redis.asyncio import Redis
 from starlette.responses import StreamingResponse
 from stringcase import snakecase
 
@@ -316,7 +318,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
 
         async def send_event(
             nc: Annotated[NATS, Depends(use_nats)],
-            redis: Annotated[Redis, Depends(use_redis)],
+            usage_limit_service: Annotated[UsageLimitService, Depends(use_usage_limit_service)],
             start_event_input: Annotated[input_type, Body],
             external_agent_event_distributor: Annotated[
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
@@ -330,9 +332,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             t: LocaleHandler = Depends(use_locale),
         ) -> response_union_type:
             """Send a specific event type to a specific agent. Returns either a stop event or HITL request event."""
-            await UsageLimitService.check_and_raise(
-                redis, user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale
-            )
+            await usage_limit_service.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale)
 
             if thread_id is not None:
                 try:
@@ -393,7 +393,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
 
         async def stream_event(
             nc: Annotated[NATS, Depends(use_nats)],
-            redis: Annotated[Redis, Depends(use_redis)],
+            usage_limit_service: Annotated[UsageLimitService, Depends(use_usage_limit_service)],
             start_event_input: Annotated[input_type, Body],
             external_agent_event_distributor: Annotated[
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
@@ -407,8 +407,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             t: LocaleHandler = Depends(use_locale),
         ) -> StreamingResponse:
             """Send a specific event type to a specific agent and stream all events as SSE."""
-            usage_status = await UsageLimitService.check_and_raise(
-                redis, user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale
+            usage_status = await usage_limit_service.check_and_raise(
+                user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale
             )
 
             if thread_id is not None:

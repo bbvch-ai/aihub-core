@@ -5,9 +5,9 @@ from typing import Annotated, Literal
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.auth.usage import UsageLimitService, use_usage_limit_service
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.infrastructure.redis.use_redis import use_redis
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributor import (
     use_external_agent_event_distributor,
@@ -19,7 +19,6 @@ from nats.aio.client import Client as NATS
 from openai.types import ImagesResponse
 from openai.types.audio import Transcription, TranscriptionVerbose
 from openai.types.chat import ChatCompletion
-from redis.asyncio import Redis
 from starlette.responses import StreamingResponse
 
 from aihub_api.i18n.dependencies.use_locale import use_locale
@@ -224,7 +223,7 @@ class OpenaiController(Controller):
         async def chat_completion_with_assistants(
             completion_request: Annotated[ChatCompletionRequest, Body],
             nc: Annotated[NATS, Depends(use_nats)],
-            redis: Annotated[Redis, Depends(use_redis)],
+            usage_limit_service: Annotated[UsageLimitService, Depends(use_usage_limit_service)],
             external_agent_event_distributor: Annotated[
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
             ],
@@ -244,7 +243,7 @@ class OpenaiController(Controller):
                 chat_completion_request=completion_request,
                 user=user,
                 nc=nc,
-                redis=redis,
+                usage_limit_service=usage_limit_service,
                 external_agent_event_distributor=external_agent_event_distributor,
                 t=t,
             )

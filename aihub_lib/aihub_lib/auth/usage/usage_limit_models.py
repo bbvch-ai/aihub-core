@@ -6,6 +6,9 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
+USER_SCOPE = "aihub.user"
+"""Scope prefix for user-level resources, aligned with access rules patterns."""
+
 
 class UsageLimitPeriod(StrEnum):
     """Supported usage limit periods."""
