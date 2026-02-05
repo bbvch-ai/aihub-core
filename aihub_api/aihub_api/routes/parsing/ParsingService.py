@@ -92,7 +92,7 @@ class ParsingService:
             if generate_signed_urls and markdown_content:
                 markdown_content = replace_s3_paths_with_signed_urls(
                     markdown_content,
-                    lifetime_hours=1,  # 1 hour expiry for API responses
+                    lifetime_hours=24 * 30,  # 30 days expiry for uploaded files
                 )
 
             logger.info(f"Document converted: {filename}, {len(markdown_content)} chars")
