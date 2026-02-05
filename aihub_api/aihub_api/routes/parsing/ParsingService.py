@@ -11,6 +11,7 @@ from aihub_lib.generative_ai.document.loaders.MarkItDownLoader import MarkItDown
 from aihub_lib.generative_ai.document.loaders.MineruLoader import MineruLoader
 from aihub_lib.generative_ai.utils.image_processor import replace_s3_paths_with_signed_urls
 from aihub_lib.infrastructure.mineru.MineruSettings import MineruSettings
+from aihub_lib.infrastructure.s3.use_s3 import create_s3_filesystem
 from fastapi import HTTPException
 
 from aihub_api.routes.parsing.dto.DocumentConversionResponse import (
@@ -67,10 +68,14 @@ class ParsingService:
             )
 
         try:
+            # Create S3 filesystem for image storage
+            s3_fs = create_s3_filesystem()
+
             # Convert document
             documents = await loader.aload_data_from_bytes(
                 content=content,
                 filename=filename,
+                fs=s3_fs,
                 include_images=True,
             )
 

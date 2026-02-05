@@ -77,8 +77,10 @@ async def extract_and_upload_images(
             # Upload to S3 via fsspec
             await asyncio.to_thread(_write_file, fs, blob_path, image_bytes)
 
-            # Create markdown figure reference with <figure> tag
-            markdown_figure = f"![Figure {idx + 1}]({blob_path})"
+            # Create markdown figure reference with s3:// URI for signed URL generation
+            # The path format s3://bucket/key is used by replace_s3_paths_with_signed_urls
+            s3_uri = f"s3://{blob_path}"
+            markdown_figure = f"![Figure {idx + 1}]({s3_uri})"
             figure_tag = f"<{NODE_CONTENT_TYPE_FIGURE}>{markdown_figure}</{NODE_CONTENT_TYPE_FIGURE}>"
 
             # Replace original image reference in markdown
@@ -97,7 +99,7 @@ async def extract_and_upload_images(
                     markdown_content,
                 )
 
-            logger.debug(f"Uploaded image {idx + 1} to {blob_path}")
+            logger.debug(f"Uploaded image {idx + 1} to {s3_uri}")
 
         except Exception as e:
             logger.warning(f"Failed to process image {rel_path}: {e}")

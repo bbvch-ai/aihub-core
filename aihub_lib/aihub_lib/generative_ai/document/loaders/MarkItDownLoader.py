@@ -23,6 +23,7 @@ from aihub_lib.generative_ai.utils.image_processor import (
     extract_and_upload_images,
     extract_base64_images_from_markdown,
 )
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.rag.vectors.node_metadata import NUMBER_OF_PAGES
 
@@ -129,16 +130,35 @@ class MarkItDownLoader(BaseReader):
         Load and process document from raw bytes.
 
         Used by the API layer when documents are uploaded directly.
+
+        ### Arguments
+        - `content`: Raw bytes of the document
+        - `filename`: Name of the file (used for extension detection and output paths)
+        - `extra_info`: Additional metadata to include in the Document
+        - `fs`: Filesystem for storing extracted images (required for image extraction)
+        - `include_images`: Whether to extract and upload images
+
+        ### Raises
+        - `ValueError`: If `include_images` is True but no filesystem is provided
         """
-        fs = fs or get_default_fs()
+        if include_images and fs is None:
+            raise ValueError(
+                "Filesystem (fs) is required when include_images=True. "
+                "Provide an S3 filesystem to store extracted images."
+            )
+
+        # Use local filesystem only if images are not being extracted
+        if fs is None:
+            fs = get_default_fs()
 
         logger.debug(f"[MarkItDownLoader] Processing from bytes: {filename}, size: {len(content)} bytes")
 
         # Convert using MarkItDown
         md_content = await self._convert_to_markdown(content, filename)
 
-        # For API usage, use synthetic path for figure storage
-        synthetic_file = f"api_upload/{filename}"
+        # For API usage, use synthetic path with S3 bucket prefix for figure storage
+        bucket_name = AIHubSettings().SHARED_BUCKET_NAME
+        synthetic_file = f"{bucket_name}/api_uploads/{filename}"
 
         # Process images if included
         if include_images:

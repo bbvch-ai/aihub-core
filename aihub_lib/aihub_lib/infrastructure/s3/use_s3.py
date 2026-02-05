@@ -1,4 +1,5 @@
 import boto3
+import s3fs
 from botocore.config import Config
 from fastapi import Request
 from mypy_boto3_s3 import S3Client
@@ -54,4 +55,35 @@ def create_s3_service() -> S3AnonymousFileAccessService:
         s3_client=s3_client,
         s3_public_client=s3_public_client,
         s3_settings=settings,
+    )
+
+
+def create_s3_filesystem() -> s3fs.S3FileSystem:
+    """
+    Factory function to create an S3FileSystem for file operations.
+
+    Used by document loaders and API services that need to read/write files
+    to S3-compatible storage (MinIO, SeaweedFS, AWS S3).
+
+    ### Returns
+    Configured S3FileSystem instance
+    """
+    s3_config = S3StorageSettings()
+
+    client_kwargs = {
+        "region_name": s3_config.REGION,
+        "endpoint_url": s3_config.ENDPOINT,
+    }
+
+    config_kwargs = {
+        "signature_version": "s3v4",
+        "retries": {"max_attempts": 3},
+    }
+
+    return s3fs.S3FileSystem(
+        key=s3_config.ACCESS_KEY,
+        secret=s3_config.SECRET_KEY.get_secret_value(),
+        client_kwargs=client_kwargs,
+        config_kwargs=config_kwargs,
+        anon=False,
     )

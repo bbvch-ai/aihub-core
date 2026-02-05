@@ -30,6 +30,7 @@ from tenacity import (
 
 from aihub_lib.generative_ai.document.tables.markdown_table import wrap_tables_with_tags
 from aihub_lib.generative_ai.utils.image_processor import extract_and_upload_images
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.mineru.MineruSettings import MineruSettings
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.persistence.rag.vectors.node_metadata import (
@@ -150,8 +151,26 @@ class MineruLoader(BaseReader):
 
         Used by the API layer when documents are uploaded directly rather than
         read from a filesystem.
+
+        ### Arguments
+        - `content`: Raw bytes of the document
+        - `filename`: Name of the file (used for extension detection and output paths)
+        - `extra_info`: Additional metadata to include in the Document
+        - `fs`: Filesystem for storing extracted images (required for image extraction)
+        - `include_images`: Whether to extract and upload images
+
+        ### Raises
+        - `ValueError`: If `include_images` is True but no filesystem is provided
         """
-        fs = fs or get_default_fs()
+        if include_images and fs is None:
+            raise ValueError(
+                "Filesystem (fs) is required when include_images=True. "
+                "Provide an S3 filesystem to store extracted images."
+            )
+
+        # Use local filesystem only if images are not being extracted
+        if fs is None:
+            fs = get_default_fs()
 
         logger.debug(f"[MineruLoader] Processing from bytes: {filename}, size: {len(content)} bytes")
 
@@ -159,8 +178,9 @@ class MineruLoader(BaseReader):
         result = await self._convert_document(content, filename, include_images)
 
         # For API usage without a source file path, we need a synthetic path
-        # This is used for figure storage if needed
-        synthetic_file = f"api_upload/{filename}"
+        # with S3 bucket prefix for figure storage
+        bucket_name = AIHubSettings().SHARED_BUCKET_NAME
+        synthetic_file = f"{bucket_name}/api_uploads/{filename}"
 
         # Process response
         documents = await self._process_response(
