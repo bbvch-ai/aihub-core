@@ -1255,7 +1255,7 @@ services:
       # Processing configuration
       MINERU_API_MAX_CONCURRENT_REQUESTS: ${MINERU_API_MAX_CONCURRENT_REQUESTS:-10}
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/openapi.json" ]
       timeout: 10s
       interval: 30s
       retries: 3

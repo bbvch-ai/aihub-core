@@ -27,10 +27,10 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Install MinerU WITHOUT [core] extras - no local models
+# Install MinerU with [api] extras for uvicorn, WITHOUT [core] - no local models
 # This keeps the container lightweight (~500MB vs ~4GB with models)
 # Pin version for reproducible builds - update tag when changing version
-RUN pip install --no-cache-dir 'mineru==2.7.5'
+RUN pip install --no-cache-dir 'mineru[api]==2.7.5'
 
 # Create non-root user for security
 RUN useradd --create-home --shell /bin/bash mineru
@@ -39,9 +39,9 @@ WORKDIR /home/mineru
 
 EXPOSE 8000
 
-# Healthcheck to verify the API is responding
+# Healthcheck to verify the API is responding (MinerU uses /openapi.json)
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD curl -f http://localhost:8000/openapi.json || exit 1
 
 # Run the MinerU API server
 ENTRYPOINT ["mineru-api"]
