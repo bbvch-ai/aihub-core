@@ -847,8 +847,13 @@ services:
     ports:
       - "8001:8000"
     environment:
-      # VLM routing through LiteLLM
-      MINERU_VL_SERVER_URL: http://litellm:4000
+      # VLM routing through LiteLLM (OpenAI-compatible)
+      # Various API keys for OpenAI client compatibility
+      OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
+      OPENAI_BASE_URL: http://litellm:4000/v1
+      LITELLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+      # MinerU-specific configuration (used by mineru_vl_utils HttpVlmClient)
+      MINERU_VL_SERVER: http://litellm:4000/v1
       MINERU_VL_API_KEY: ${LITELLM_MASTER_KEY}
       MINERU_VL_MODEL_NAME: ${MINERU_VL_MODEL_NAME:-text-generation/ocr}
       # Processing configuration

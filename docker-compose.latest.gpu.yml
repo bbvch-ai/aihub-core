@@ -1027,8 +1027,13 @@ services:
     image: ghcr.io/bbvch-ai/aihub-core/mineru-api:v2.7.5
     restart: unless-stopped
     environment:
-      # VLM routing through LiteLLM
-      MINERU_VL_SERVER_URL: http://litellm:4000
+      # VLM routing through LiteLLM (OpenAI-compatible)
+      # Various API keys for OpenAI client compatibility
+      OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
+      OPENAI_BASE_URL: http://litellm:4000/v1
+      LITELLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+      # MinerU-specific configuration (used by mineru_vl_utils HttpVlmClient)
+      MINERU_VL_SERVER: http://litellm:4000/v1
       MINERU_VL_API_KEY: ${LITELLM_MASTER_KEY}
       MINERU_VL_MODEL_NAME: ${MINERU_VL_MODEL_NAME:-text-generation/ocr}
       # Processing configuration
@@ -1057,18 +1062,15 @@ services:
     platform: "linux/amd64"
     image: ghcr.io/bbvch-ai/aihub-core/mineru-vlm:v2.7.5
     restart: always
-    volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
+    # No volume mount - VLM models are baked into the image for faster startup
     environment:
       MINERU_MODEL_SOURCE: local
-      HF_HOME: /root/.cache/huggingface
-      HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:30000/health" ]
       timeout: 10s
       interval: 30s
       retries: 3
-      start_period: 300s
+      start_period: 300s  # 5 minutes for model loading
     logging:
       driver: json-file
       options:

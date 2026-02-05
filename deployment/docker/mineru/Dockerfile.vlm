@@ -1,15 +1,21 @@
 # MinerU VLM Container (GPU-enabled)
 #
-# This container runs the MinerU Vision-Language Model for document parsing.
-# It downloads and serves the MinerU2.5 model for OCR and document understanding.
+# This container serves the MinerU2.5 Vision-Language Model via vLLM.
+# Used by MinerU's vlm-http-client backend for document parsing.
+#
+# Based on official MinerU docker setup from:
+# https://github.com/opendatalab/MinerU/tree/master/projects/docker
 #
 # Requirements:
-# - NVIDIA GPU with CUDA support
+# - NVIDIA GPU with CUDA support (Compute Capability 8.0-9.0)
 # - Docker with NVIDIA runtime
 
+# Use vllm image for Ampere/Ada Lovelace/Hopper architecture (8.0 <= CC <= 9.0)
 FROM vllm/vllm-openai:v0.10.1.1
 
-# Install system dependencies for MinerU
+# Install system dependencies
+# - fonts: Chinese character support for document parsing
+# - libgl1: OpenCV dependency
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         fonts-noto-core \
@@ -20,24 +26,19 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Install MinerU with full capabilities including local model support
-RUN python3 -m pip install -U 'mineru[core]>=2.7.0' --break-system-packages && \
+# Install MinerU with core dependencies (includes vLLM backend support)
+# Pin version for reproducible builds
+RUN python3 -m pip install -U 'mineru[core]==2.7.5' --break-system-packages && \
     python3 -m pip cache purge
 
-# Download all MinerU models from HuggingFace
-# This is done at build time to avoid download delays at runtime
-RUN /bin/bash -c "mineru-models-download -s huggingface -m all"
-
-# Set environment to use local models
-ENV MINERU_MODEL_SOURCE=local
+# Download ONLY VLM model (not pipeline models which are for client-side)
+# This reduces image size by ~12GB
+RUN /bin/bash -c "mineru-models-download -s huggingface -m vlm"
 
 EXPOSE 30000
 
-# Run vLLM server with MinerU model
-# The entrypoint ensures MINERU_MODEL_SOURCE=local is set
+# Set entrypoint to ensure MINERU_MODEL_SOURCE=local is set
 ENTRYPOINT ["/bin/bash", "-c", "export MINERU_MODEL_SOURCE=local && exec \"$@\"", "--"]
-CMD ["python3", "-m", "vllm.entrypoints.openai.api_server", \
-     "--model", "opendatalab/MinerU2.5-2509-1.2B", \
-     "--host", "0.0.0.0", \
-     "--port", "30000", \
-     "--trust-remote-code"]
+
+# Run MinerU's vLLM server
+CMD ["mineru-vllm-server", "--host", "0.0.0.0", "--port", "30000"]
