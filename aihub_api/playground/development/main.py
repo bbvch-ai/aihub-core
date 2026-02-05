@@ -13,7 +13,7 @@ from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.infrastructure.logging.logger import enable_logging
 
 from aihub_api.routes.agent.AgentController import AgentController
-from aihub_api.routes.docling.DoclingController import DoclingController
+from aihub_api.routes.parsing.ParsingController import ParsingController
 from aihub_api.routes.evaluation.EvaluationController import EvaluationController
 from aihub_api.routes.event.EventController import EventController
 from aihub_api.routes.file.FileController import FileController
@@ -120,7 +120,7 @@ async def main():
         .delete_organization_memory()
         .delete_all_organization_memories()
         .update_organization_memory(),
-        DoclingController(auth=auth).parse_document(),
+        ParsingController(auth=auth).parse_document(),
     )
 
     await runner.run()
