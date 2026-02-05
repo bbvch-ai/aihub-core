@@ -756,7 +756,6 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: False
-      DOCLING_API_KEY: ${DOCLING_API_KEY}
     volumes:
       - ./configs/litellm/litellm-config.dev.yml:/app/config.yml
     command: --config /app/config.yml
@@ -836,27 +835,29 @@ services:
   # ===================================================================
   # Document Processing Stack
   # ===================================================================
-  # This stack, powered by Docling, handles OCR and parsing of
-  # uploaded documents for the RAG pipeline.
+  # This stack, powered by MinerU, handles OCR and parsing of
+  # uploaded documents for the RAG pipeline. VLM requests are routed
+  # through LiteLLM for unified model routing.
   # ===================================================================
 
-  docling:
-    container_name: docling
-    image: ghcr.io/bbvch-ai/aihub-core/docling-serve-cpu:v1.9.0
-    restart: always
+  mineru-api:
+    container_name: mineru-api
+    image: ghcr.io/bbvch-ai/aihub-core/mineru-api:latest
+    restart: unless-stopped
     ports:
-      - "5001:5001"
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
+      - "8001:8000"
     environment:
-      DOCLING_SERVE_ARTIFACTS_PATH: "/models"
-      DOCLING_SERVE_LOAD_MODELS_AT_BOOT: 0
-      DOCLING_SERVE_MAX_SYNC_WAIT: 600
-      DOCLING_SERVE_ENABLE_REMOTE_SERVICES: 1
-      DOCLING_SERVE_API_KEY: ${DOCLING_API_KEY}
-      DOCLING_SERVE_SINGLE_USE_RESULTS: 1
-      DOCLING_SERVE_RESULT_REMOVAL_DELAY: 30
-      DOCLING_SERVE_ENABLE_UI: 1
+      # VLM routing through LiteLLM
+      MINERU_VL_SERVER_URL: http://litellm:4000
+      MINERU_VL_API_KEY: ${LITELLM_MASTER_KEY}
+      MINERU_VL_MODEL_NAME: ${MINERU_VL_MODEL_NAME:-text-generation/ocr}
+      # Processing configuration
+      MINERU_API_MAX_CONCURRENT_REQUESTS: ${MINERU_API_MAX_CONCURRENT_REQUESTS:-10}
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
     depends_on:
       litellm:
         condition: service_healthy
@@ -865,10 +866,12 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    deploy:
+      resources:
+        limits:
+          memory: 4G
     networks:
       - backend
-
-  
 
   # ===================================================================
   # Observability Stack
@@ -930,7 +933,7 @@ services:
         condition: service_healthy
       playwright:
         condition: service_healthy
-      docling:
+      api:
         condition: service_healthy
     environment:
       # --- General Settings ---
@@ -1074,7 +1077,7 @@ services:
       PDF_EXTRACT_IMAGES: True
       RAG_FILE_MAX_COUNT: 4
       CONTENT_EXTRACTION_ENGINE: external
-      EXTERNAL_DOCUMENT_LOADER_URL: http://localhost:8000/api/v1/docling
+      EXTERNAL_DOCUMENT_LOADER_URL: http://localhost:8000/api/v1/parsing
       EXTERNAL_DOCUMENT_LOADER_API_KEY: ${SUPERUSER_TOKEN}
       RAG_EMBEDDING_ENGINE: openai
       RAG_EMBEDDING_MODEL: embedding/large

@@ -95,7 +95,7 @@ def default_definitions(
     remove_job_minute: Annotated[int, "Minute to run daily removed documents cleanup job"] = 0,
     vector_store_dimensions: Annotated[int | None, "Embedding vector dimensions must match model"] = None,
     max_partitions: Annotated[int, "Maximum number of partitions to create or delete at once"] = 1000,
-    document_parser_loader_type: Annotated[LoaderType, "Document parser loader type"] = LoaderType.DOCLING,
+    document_parser_loader_type: Annotated[LoaderType, "Document parser loader type"] = LoaderType.MINERU,
 ) -> Definitions:
     """
     Creates a complete DataLake to vector store pipeline using local resources.

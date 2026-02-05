@@ -50,8 +50,8 @@ model_list:
 
   - model_name: text-generation/ocr
     litellm_params:
-      model: openai/granite-docling
-      api_base: http://vllm-docling:8182/v1
+      model: openai/MinerU2.5-2509-1.2B
+      api_base: http://mineru-vlm:30000/v1
       api_key: os.environ/LOCAL_LLM_TOKEN
       drop_params: true
     model_info:

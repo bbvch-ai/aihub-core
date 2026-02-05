@@ -18,12 +18,12 @@
 {%- set has_llama_cpp = (gpu_enabled and stage in ['latest', 'nightly']) or stage == 'dev' -%}
 {%- set has_llama_cpp_embedding = (gpu_enabled and stage in ['latest', 'nightly']) or stage == 'dev' -%}
 {%- set has_llama_cpp_reranker = (gpu_enabled and stage in ['latest', 'nightly']) or stage == 'dev' -%}
-{%- set has_vllm_docling = gpu_enabled -%}
+{%- set has_mineru_vlm = gpu_enabled -%}
 {%- set has_speaches = (gpu_enabled and stage in ['latest', 'nightly']) or stage == 'dev' -%}
 
 {# Extract model aliases from service configs #}
 {%- set llama_cpp_alias = 'gemma-3-4b' -%}
-{%- set vllm_docling_alias = 'granite-docling' -%}
+{%- set mineru_vlm_alias = 'MinerU2.5-2509-1.2B' -%}
 {%- if stage in ['nightly', 'latest'] -%}
 {%- set llama_cpp_alias = 'gemma-3-12b' -%}
 {%- endif %}
@@ -88,12 +88,12 @@ model_list:
 
   - model_name: text-generation/ocr
     litellm_params:
-{%- if has_vllm_docling %}
-      model: openai/{{ vllm_docling_alias }}
-      api_base: http://vllm-docling:8182/v1
+{%- if has_mineru_vlm %}
+      model: openai/{{ mineru_vlm_alias }}
+      api_base: http://mineru-vlm:30000/v1
       api_key: os.environ/LOCAL_LLM_TOKEN
 {%- else %}
-      model: litellm_proxy/granite-docling
+      model: litellm_proxy/{{ mineru_vlm_alias }}
       api_base: os.environ/SWISS_LLM_CLOUD_API_BASE_URL
       api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
 {%- endif %}
