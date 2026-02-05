@@ -114,6 +114,73 @@ def _write_file(fs: "AbstractFileSystem", path: str, content: bytes) -> None:
         f.write(content)
 
 
+def embed_images_as_base64(
+    markdown_content: str,
+    images: dict[str, str],
+) -> str:
+    """
+    Embed images as base64 data URIs directly in markdown content.
+
+    Takes a dictionary of image paths to base64-encoded data and replaces
+    the image references in the markdown content with inline data URIs
+    wrapped in <figure> tags.
+
+    ### Arguments
+    - `markdown_content`: The markdown text containing image references
+    - `images`: Dictionary mapping relative image paths to base64 data URIs or raw base64
+
+    ### Returns
+    Updated markdown content with embedded base64 images and <figure> tags
+    """
+    if not images:
+        return markdown_content
+
+    for idx, (rel_path, data_uri) in enumerate(images.items()):
+        try:
+            # Ensure proper data URI format
+            if not data_uri.startswith("data:"):
+                # Determine mime type from path extension
+                _, ext = os.path.splitext(rel_path)
+                ext = ext.lower().lstrip(".")
+                mime_map = {
+                    "jpg": "image/jpeg",
+                    "jpeg": "image/jpeg",
+                    "png": "image/png",
+                    "gif": "image/gif",
+                    "webp": "image/webp",
+                    "bmp": "image/bmp",
+                    "tiff": "image/tiff",
+                }
+                mime_type = mime_map.get(ext, "image/png")
+                data_uri = f"data:{mime_type};base64,{data_uri}"
+
+            # Create markdown figure reference with <figure> tag
+            markdown_figure = f"![Figure {idx + 1}]({data_uri})"
+            figure_tag = f"<{NODE_CONTENT_TYPE_FIGURE}>{markdown_figure}</{NODE_CONTENT_TYPE_FIGURE}>"
+
+            # Replace original image reference in markdown
+            patterns_to_replace = [
+                f"images/{rel_path}",
+                f"./images/{rel_path}",
+                rel_path,
+            ]
+
+            for pattern in patterns_to_replace:
+                markdown_content = re.sub(
+                    rf"!\[[^\]]*\]\({re.escape(pattern)}\)",
+                    figure_tag,
+                    markdown_content,
+                )
+
+            logger.debug(f"Embedded image {idx + 1} as base64 data URI")
+
+        except Exception as e:
+            logger.warning(f"Failed to embed image {rel_path}: {e}")
+            continue
+
+    return markdown_content
+
+
 async def extract_base64_images_from_markdown(markdown_content: str) -> tuple[str, dict[str, str]]:
     """
     Extract base64-encoded images from markdown content.

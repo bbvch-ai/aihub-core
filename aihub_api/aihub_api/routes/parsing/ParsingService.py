@@ -5,7 +5,10 @@ Routes documents to the appropriate loader (MinerU or MarkItDown) based on
 file type and handles the conversion process.
 """
 
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 from aihub_lib.generative_ai.document.loaders.MarkItDownLoader import MarkItDownLoader
 from aihub_lib.generative_ai.document.loaders.MineruLoader import MineruLoader
@@ -20,6 +23,9 @@ from aihub_api.routes.parsing.dto.DocumentConversionResponse import (
 )
 from aihub_api.routes.parsing.ParsingMappings import get_extension
 
+if TYPE_CHECKING:
+    from aihub_api.routes.parsing.ParsingController import ImageMode
+
 logger = logging.getLogger(__name__)
 
 
@@ -31,7 +37,7 @@ class ParsingService:
         content: bytes,
         filename: str,
         content_type: str = "",
-        generate_signed_urls: bool = True,
+        image_mode: "ImageMode | None" = None,
     ) -> DocumentConversionResponse:
         """
         Convert a document from raw bytes to markdown.
@@ -40,10 +46,19 @@ class ParsingService:
         - MinerU: PDF, images (png, jpg, etc.)
         - MarkItDown: Office documents (docx, pptx, xlsx, etc.)
 
-        For API responses, S3 paths are replaced with short-lived signed URLs
-        so clients can access embedded images directly.
+        ### Arguments
+        - `content`: Raw bytes of the document
+        - `filename`: Original filename (used for extension detection)
+        - `content_type`: MIME type of the document
+        - `image_mode`: How to handle images - 's3' (default) or 'base64'
         """
-        logger.info(f"Converting document: {filename} ({len(content)} bytes)")
+        # Import here to avoid circular import
+        from aihub_api.routes.parsing.ParsingController import ImageMode
+
+        if image_mode is None:
+            image_mode = ImageMode.S3
+
+        logger.info(f"Converting document: {filename} ({len(content)} bytes), image_mode={image_mode}")
 
         # Determine file extension
         extension = get_extension(filename, content_type)
@@ -68,16 +83,24 @@ class ParsingService:
             )
 
         try:
-            # Create S3 filesystem for image storage
-            s3_fs = create_s3_filesystem()
-
-            # Convert document
-            documents = await loader.aload_data_from_bytes(
-                content=content,
-                filename=filename,
-                fs=s3_fs,
-                include_images=True,
-            )
+            if image_mode == ImageMode.S3:
+                # S3 mode: Upload images to S3 and return signed URLs
+                s3_fs = create_s3_filesystem()
+                documents = await loader.aload_data_from_bytes(
+                    content=content,
+                    filename=filename,
+                    fs=s3_fs,
+                    include_images=True,
+                    embed_base64=False,
+                )
+            else:
+                # Base64 mode: Embed images as data URIs in markdown
+                documents = await loader.aload_data_from_bytes(
+                    content=content,
+                    filename=filename,
+                    include_images=True,
+                    embed_base64=True,
+                )
 
             if not documents:
                 logger.error(f"No documents returned for {filename}")
@@ -88,8 +111,8 @@ class ParsingService:
 
             markdown_content = documents[0].text
 
-            # Replace S3 paths with signed URLs for API responses
-            if generate_signed_urls and markdown_content:
+            # Replace S3 paths with signed URLs for S3 mode
+            if image_mode == ImageMode.S3 and markdown_content:
                 markdown_content = replace_s3_paths_with_signed_urls(
                     markdown_content,
                     lifetime_hours=24 * 30,  # 30 days expiry for uploaded files

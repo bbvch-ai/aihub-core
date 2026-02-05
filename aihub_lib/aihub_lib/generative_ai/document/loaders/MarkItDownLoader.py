@@ -20,6 +20,7 @@ from llama_index.core.schema import Document
 
 from aihub_lib.generative_ai.document.tables.markdown_table import wrap_tables_with_tags
 from aihub_lib.generative_ai.utils.image_processor import (
+    embed_images_as_base64,
     extract_and_upload_images,
     extract_base64_images_from_markdown,
 )
@@ -125,6 +126,7 @@ class MarkItDownLoader(BaseReader):
         extra_info: dict | None = None,
         fs: "AbstractFileSystem | None" = None,
         include_images: bool = True,
+        embed_base64: bool = False,
     ) -> list[Document]:
         """
         Load and process document from raw bytes.
@@ -135,23 +137,24 @@ class MarkItDownLoader(BaseReader):
         - `content`: Raw bytes of the document
         - `filename`: Name of the file (used for extension detection and output paths)
         - `extra_info`: Additional metadata to include in the Document
-        - `fs`: Filesystem for storing extracted images (required for image extraction)
-        - `include_images`: Whether to extract and upload images
+        - `fs`: Filesystem for storing extracted images (required unless embed_base64=True)
+        - `include_images`: Whether to extract images from the document
+        - `embed_base64`: If True, embed images as base64 data URIs instead of uploading to S3
 
         ### Raises
-        - `ValueError`: If `include_images` is True but no filesystem is provided
+        - `ValueError`: If `include_images` is True, `embed_base64` is False, and no filesystem is provided
         """
-        if include_images and fs is None:
+        if include_images and not embed_base64 and fs is None:
             raise ValueError(
-                "Filesystem (fs) is required when include_images=True. "
-                "Provide an S3 filesystem to store extracted images."
+                "Filesystem (fs) is required when include_images=True and embed_base64=False. "
+                "Provide an S3 filesystem to store extracted images, or set embed_base64=True."
             )
 
-        # Use local filesystem only if images are not being extracted
+        # Use local filesystem only if images are not being extracted to S3
         if fs is None:
             fs = get_default_fs()
 
-        logger.debug(f"[MarkItDownLoader] Processing from bytes: {filename}, size: {len(content)} bytes")
+        logger.debug(f"[MarkItDownLoader] Processing from bytes: {filename}, {len(content)} bytes, embed_base64={embed_base64}")
 
         # Convert using MarkItDown
         md_content = await self._convert_to_markdown(content, filename)
@@ -162,7 +165,7 @@ class MarkItDownLoader(BaseReader):
 
         # Process images if included
         if include_images:
-            md_content = await self._process_images(md_content, synthetic_file, fs)
+            md_content = await self._process_images(md_content, synthetic_file, fs, embed_base64)
 
         # Wrap tables
         md_content = self._wrap_tables(md_content)
@@ -207,21 +210,29 @@ class MarkItDownLoader(BaseReader):
         md_content: str,
         source_file: str,
         fs: "AbstractFileSystem",
+        embed_base64: bool = False,
     ) -> str:
-        """Extract base64 images and upload to S3."""
+        """Extract base64 images and optionally upload to S3 or keep as data URIs."""
         # Extract inline base64 images from markdown
         cleaned_md, images = await extract_base64_images_from_markdown(md_content)
 
         if not images:
             return md_content
 
-        # Upload images to S3 and update references
-        return await extract_and_upload_images(
-            markdown_content=cleaned_md,
-            images=images,
-            fs=fs,
-            source_file=source_file,
-        )
+        if embed_base64:
+            # Keep images as base64 data URIs, just wrap in <figure> tags
+            return embed_images_as_base64(
+                markdown_content=cleaned_md,
+                images=images,
+            )
+        else:
+            # Upload images to S3 and update references
+            return await extract_and_upload_images(
+                markdown_content=cleaned_md,
+                images=images,
+                fs=fs,
+                source_file=source_file,
+            )
 
     def _wrap_tables(self, markdown_content: str) -> str:
         """

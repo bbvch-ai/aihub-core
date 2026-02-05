@@ -29,7 +29,7 @@ from tenacity import (
 )
 
 from aihub_lib.generative_ai.document.tables.markdown_table import wrap_tables_with_tags
-from aihub_lib.generative_ai.utils.image_processor import extract_and_upload_images
+from aihub_lib.generative_ai.utils.image_processor import embed_images_as_base64, extract_and_upload_images
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.mineru.MineruSettings import MineruSettings
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
@@ -145,6 +145,7 @@ class MineruLoader(BaseReader):
         extra_info: dict | None = None,
         fs: "AbstractFileSystem | None" = None,
         include_images: bool = True,
+        embed_base64: bool = False,
     ) -> list[Document]:
         """
         Load and process document from raw bytes.
@@ -156,26 +157,27 @@ class MineruLoader(BaseReader):
         - `content`: Raw bytes of the document
         - `filename`: Name of the file (used for extension detection and output paths)
         - `extra_info`: Additional metadata to include in the Document
-        - `fs`: Filesystem for storing extracted images (required for image extraction)
-        - `include_images`: Whether to extract and upload images
+        - `fs`: Filesystem for storing extracted images (required unless embed_base64=True)
+        - `include_images`: Whether to extract images from the document
+        - `embed_base64`: If True, embed images as base64 data URIs instead of uploading to S3
 
         ### Raises
-        - `ValueError`: If `include_images` is True but no filesystem is provided
+        - `ValueError`: If `include_images` is True, `embed_base64` is False, and no filesystem is provided
         """
-        if include_images and fs is None:
+        if include_images and not embed_base64 and fs is None:
             raise ValueError(
-                "Filesystem (fs) is required when include_images=True. "
-                "Provide an S3 filesystem to store extracted images."
+                "Filesystem (fs) is required when include_images=True and embed_base64=False. "
+                "Provide an S3 filesystem to store extracted images, or set embed_base64=True."
             )
 
-        # Use local filesystem only if images are not being extracted
+        # Use local filesystem only if images are not being extracted to S3
         if fs is None:
             fs = get_default_fs()
 
-        logger.debug(f"[MineruLoader] Processing from bytes: {filename}, size: {len(content)} bytes")
+        logger.debug(f"[MineruLoader] Processing from bytes: {filename}, {len(content)} bytes, embed_base64={embed_base64}")
 
-        # Call MinerU API
-        result = await self._convert_document(content, filename, include_images)
+        # Call MinerU API (always request images, we decide how to handle them)
+        result = await self._convert_document(content, filename, include_images=True)
 
         # For API usage without a source file path, we need a synthetic path
         # with S3 bucket prefix for figure storage
@@ -190,6 +192,7 @@ class MineruLoader(BaseReader):
             fs=fs,
             extra_info=extra_info,
             include_images=include_images,
+            embed_base64=embed_base64,
         )
 
         return documents
@@ -280,6 +283,7 @@ class MineruLoader(BaseReader):
         fs: "AbstractFileSystem",
         extra_info: dict | None,
         include_images: bool,
+        embed_base64: bool = False,
     ) -> list[Document]:
         """Process MinerU API response into Document objects."""
         # Get file stem (filename without extension) for result lookup
@@ -311,12 +315,20 @@ class MineruLoader(BaseReader):
 
         # Process images if included
         if include_images and images:
-            md_content = await extract_and_upload_images(
-                markdown_content=md_content,
-                images=images,
-                fs=fs,
-                source_file=file,
-            )
+            if embed_base64:
+                # Embed images as base64 data URIs directly in markdown
+                md_content = embed_images_as_base64(
+                    markdown_content=md_content,
+                    images=images,
+                )
+            else:
+                # Upload images to S3 and replace references with S3 paths
+                md_content = await extract_and_upload_images(
+                    markdown_content=md_content,
+                    images=images,
+                    fs=fs,
+                    source_file=file,
+                )
 
         # Wrap tables in <table> tags
         md_content = self._wrap_tables(md_content)
