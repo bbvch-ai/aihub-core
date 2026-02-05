@@ -842,7 +842,7 @@ services:
 
   mineru-api:
     container_name: mineru-api
-    image: ghcr.io/bbvch-ai/aihub-core/mineru-api:latest
+    image: ghcr.io/bbvch-ai/aihub-core/mineru-api:v2.7.5
     restart: unless-stopped
     ports:
       - "8001:8000"
@@ -875,7 +875,7 @@ services:
   mineru-vlm:
     container_name: mineru-vlm
     platform: "linux/amd64"
-    image: ghcr.io/bbvch-ai/aihub-core/mineru-vlm:latest
+    image: ghcr.io/bbvch-ai/aihub-core/mineru-vlm:v2.7.5
     restart: always
     ports:
       - "30000:30000"

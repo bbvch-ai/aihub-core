@@ -893,7 +893,7 @@ services:
 
   mineru-api:
     container_name: mineru-api
-    image: ghcr.io/bbvch-ai/aihub-core/mineru-api:latest
+    image: ghcr.io/bbvch-ai/aihub-core/mineru-api:v2.7.5
     restart: unless-stopped
     ports:
       - "8001:8000"

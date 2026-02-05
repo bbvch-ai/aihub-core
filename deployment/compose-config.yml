@@ -33,8 +33,8 @@ image_tags:
   ferretdb: ferretdb:2.5.0
   neo4j: neo4j:5.26.16-community
   litellm: litellm:v1.80.5-stable.1
-  mineru_api: mineru-api:latest
-  mineru_vlm: mineru-vlm:latest
+  mineru_api: mineru-api:v2.7.5
+  mineru_vlm: mineru-vlm:v2.7.5
   jupyter: minimal-notebook:notebook-7.0.6
   otel_collector: otel/opentelemetry-collector-contrib:latest
   traefik: traefik:v3.6.2

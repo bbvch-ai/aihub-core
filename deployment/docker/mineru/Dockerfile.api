@@ -29,7 +29,8 @@ RUN apt-get update && \
 
 # Install MinerU WITHOUT [core] extras - no local models
 # This keeps the container lightweight (~500MB vs ~4GB with models)
-RUN pip install --no-cache-dir 'mineru>=2.7.0'
+# Pin version for reproducible builds - update tag when changing version
+RUN pip install --no-cache-dir 'mineru==2.7.5'
 
 # Create non-root user for security
 RUN useradd --create-home --shell /bin/bash mineru

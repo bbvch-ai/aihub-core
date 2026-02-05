@@ -1024,7 +1024,7 @@ services:
 
   mineru-api:
     container_name: mineru-api
-    image: ghcr.io/bbvch-ai/aihub-core/mineru-api:latest
+    image: ghcr.io/bbvch-ai/aihub-core/mineru-api:v2.7.5
     restart: unless-stopped
     environment:
       # VLM routing through LiteLLM
@@ -1055,7 +1055,7 @@ services:
   mineru-vlm:
     container_name: mineru-vlm
     platform: "linux/amd64"
-    image: ghcr.io/bbvch-ai/aihub-core/mineru-vlm:latest
+    image: ghcr.io/bbvch-ai/aihub-core/mineru-vlm:v2.7.5
     restart: always
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
