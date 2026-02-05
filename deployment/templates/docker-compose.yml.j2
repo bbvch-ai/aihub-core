@@ -1376,8 +1376,10 @@ services:
         condition: service_healthy
       playwright:
         condition: service_healthy
+      {%- if stage != 'dev' %}
       api:
         condition: service_healthy
+      {%- endif %}
     environment:
       # --- General Settings ---
       WEBUI_NAME: Swiss AI-Hub
