@@ -16,6 +16,7 @@ from aihub_lib.nats.events import (
     StopEvent,
 )
 from aihub_lib.nats.events.discovery.agent.AgentConfigSpecs import AgentConfigSpecs
+from aihub_lib.nats.events.form.normalization import normalize_empty_locale_strings, normalize_empty_objects_to_none
 from aihub_lib.nats.events.human_in_the_loop.request import HumanInTheLoopRequestEvent
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
@@ -39,45 +40,6 @@ from aihub_api.routes.thread.ThreadService import ThreadService
 from aihub_api.services.ModelCreationService import ModelCreationService
 
 logger = logging.getLogger(__name__)
-
-
-def _normalize_empty_objects_to_none(value: Any) -> Any:
-    """
-    Recursively convert empty dicts {} to None.
-    Handles FormKit form submissions where disabled/unconfigured nested objects
-    are sent as empty dicts but should be validated as None.
-    """
-    if value is None:
-        return None
-
-    if isinstance(value, dict):
-        if not value:
-            return None
-        return {k: _normalize_empty_objects_to_none(v) for k, v in value.items()}
-
-    if isinstance(value, list):
-        return [_normalize_empty_objects_to_none(item) for item in value]
-
-    return value
-
-
-def _normalize_empty_locale_strings(value: Any) -> Any:
-    """Recursively normalize empty LocaleString data from FormKit to None."""
-    if value is None:
-        return None
-
-    if isinstance(value, dict):
-        locale_keys = {"de", "en", "fr", "it"}
-        if set(value.keys()).issubset(locale_keys):
-            if not value or all(not val for val in value.values()):
-                return None
-
-        return {k: _normalize_empty_locale_strings(v) for k, v in value.items()}
-
-    if isinstance(value, list):
-        return [_normalize_empty_locale_strings(item) for item in value]
-
-    return value
 
 
 class AgentService:
@@ -384,8 +346,8 @@ class AgentService:
         configuration = {k: v for k, v in configuration.items() if not k.startswith("_")}
 
         # Normalize configuration before validation
-        configuration = _normalize_empty_objects_to_none(configuration)
-        configuration = _normalize_empty_locale_strings(configuration)
+        configuration = normalize_empty_objects_to_none(configuration)
+        configuration = normalize_empty_locale_strings(configuration)
 
         config_model = ModelCreationService.create_agent_config_model(
             AgentConfigSpecs(
@@ -474,8 +436,8 @@ class AgentService:
             )
 
         # Normalize configuration before validation
-        config = _normalize_empty_objects_to_none(request.configuration)
-        config = _normalize_empty_locale_strings(config) or {}
+        config = normalize_empty_objects_to_none(request.configuration)
+        config = normalize_empty_locale_strings(config) or {}
 
         config_model = ModelCreationService.create_agent_config_model(
             AgentConfigSpecs(

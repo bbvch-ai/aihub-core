@@ -15,6 +15,7 @@ from aihub_lib.nats.events import (
     WorkEvent,
 )
 from aihub_lib.nats.events.form.Form import Form
+from aihub_lib.nats.events.form.normalization import transform_formkit_arrays
 from aihub_lib.nats.rpc.ProcessConfigClient import ProcessConfigClient
 from aihub_lib.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
@@ -34,31 +35,6 @@ from aihub_process.delegators.program.Program import Program
 from aihub_process.i18n.ProcessLocaleHandler import ProcessLocaleHandler
 
 logger = logging.getLogger(__name__)
-
-
-def _transform_formkit_arrays(data: Any) -> Any:
-    """
-    Recursively transforms FormKit-style dict arrays back to Python lists.
-
-    FormKit stores arrays as dicts with sequential numeric string keys:
-    {'0': {...}, '1': {...}} -> [{...}, {...}]
-
-    To avoid false positives with legitimate dicts that have numeric string keys,
-    we also verify that all values are dicts (FormKit arrays always contain objects).
-    """
-    if isinstance(data, dict):
-        keys = list(data.keys())
-        if keys and all(isinstance(k, str) and k.isdigit() for k in keys):
-            sorted_keys = sorted(keys, key=int)
-            if sorted_keys == [str(i) for i in range(len(keys))]:
-                values = [data[k] for k in sorted_keys]
-                if all(isinstance(v, dict) for v in values):
-                    return [_transform_formkit_arrays(data[k]) for k in sorted_keys]
-        return {k: _transform_formkit_arrays(v) for k, v in data.items()}
-    elif isinstance(data, list):
-        return [_transform_formkit_arrays(item) for item in data]
-    else:
-        return data
 
 
 class ProcessDispatcher(BaseDispatcher):
@@ -143,7 +119,7 @@ class ProcessDispatcher(BaseDispatcher):
                 raise ValueError(f"No process config found for event {event.event_name} and topic {topic}")
 
         # Transform FormKit-style arrays (dict with numeric keys) to Python lists
-        process_config_dict = _transform_formkit_arrays(process_config_dict)
+        process_config_dict = transform_formkit_arrays(process_config_dict)
         walkthrough_process_config = self.process_config_type.model_validate(process_config_dict)
         topic = ProcessInstanceTopic.from_process_class_topic(
             process_class_topic=topic,

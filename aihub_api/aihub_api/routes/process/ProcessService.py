@@ -8,6 +8,7 @@ from aihub_lib.nats.distributor.events.ExternalProcessEvent import ExternalProce
 from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
 from aihub_lib.nats.events import ProcessStartEvent, WorkEvent
 from aihub_lib.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs
+from aihub_lib.nats.events.form.normalization import normalize_empty_locale_strings, normalize_empty_objects_to_none
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 from aihub_lib.persistence.messaging.entities.PersistedProcessEventEntity import PersistedProcessEventEntity
 from aihub_lib.persistence.process.ProcessClassEntity import ProcessClassEntity
@@ -30,34 +31,6 @@ from aihub_api.routes.process.dto.ProcessClassDTO import ProcessClassDTO
 from aihub_api.routes.process.dto.ProcessWalkthroughDTO import ProcessWalkthroughDTO
 from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
 from aihub_api.services.ModelCreationService import ModelCreationService
-
-
-def _normalize_empty_objects_to_none(value: Any) -> Any:
-    """Recursively normalize empty dicts/objects from FormKit to None."""
-    if value is None:
-        return None
-    if isinstance(value, dict):
-        if not value:
-            return None
-        return {k: _normalize_empty_objects_to_none(v) for k, v in value.items()}
-    if isinstance(value, list):
-        return [_normalize_empty_objects_to_none(item) for item in value]
-    return value
-
-
-def _normalize_empty_locale_strings(value: Any) -> Any:
-    """Recursively normalize empty LocaleString data from FormKit to None."""
-    if value is None:
-        return None
-    if isinstance(value, dict):
-        locale_keys = {"de", "en", "fr", "it"}
-        if set(value.keys()).issubset(locale_keys):
-            if not value or all(not val for val in value.values()):
-                return None
-        return {k: _normalize_empty_locale_strings(v) for k, v in value.items()}
-    if isinstance(value, list):
-        return [_normalize_empty_locale_strings(item) for item in value]
-    return value
 
 
 class ProcessService:
@@ -360,8 +333,8 @@ class ProcessService:
             )
 
         # Normalize and validate configuration
-        config = _normalize_empty_objects_to_none(request.configuration)
-        config = _normalize_empty_locale_strings(config) or {}
+        config = normalize_empty_objects_to_none(request.configuration)
+        config = normalize_empty_locale_strings(config) or {}
 
         config_model = ModelCreationService.create_process_config_model(
             ProcessConfigSpecs(
@@ -446,8 +419,8 @@ class ProcessService:
         configuration = {k: v for k, v in configuration.items() if not k.startswith("_")}
 
         # Normalize configuration before validation
-        configuration = _normalize_empty_objects_to_none(configuration)
-        configuration = _normalize_empty_locale_strings(configuration)
+        configuration = normalize_empty_objects_to_none(configuration)
+        configuration = normalize_empty_locale_strings(configuration)
 
         config_model = ModelCreationService.create_process_config_model(
             ProcessConfigSpecs(

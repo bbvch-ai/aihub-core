@@ -12,6 +12,7 @@ from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher, EventsAndKw
 from aihub_lib.nats.events import BaseEvent, ControlEvent, ExceptionEvent, StartEvent
 from aihub_lib.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent import AgentInTheLoopRequestEvent
 from aihub_lib.nats.events.form.Form import Form
+from aihub_lib.nats.events.form.normalization import transform_formkit_arrays
 from aihub_lib.nats.rpc.AgentConfigClient import AgentConfigClient
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
@@ -31,37 +32,6 @@ from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
 from aihub_agent.tracing.AgentRunTracer import AgentRunTracer
 
 logger = logging.getLogger(__name__)
-
-
-def _transform_formkit_arrays(data: Any) -> Any:
-    """
-    Recursively transforms FormKit-style dict arrays back to Python lists.
-
-    FormKit stores arrays as dicts with sequential numeric string keys:
-    {'0': {...}, '1': {...}} -> [{...}, {...}]
-
-    This transformation is needed when loading config from the database.
-
-    To avoid false positives with legitimate dicts that have numeric string keys,
-    we also verify that all values are dicts (FormKit arrays always contain objects).
-    """
-    if isinstance(data, dict):
-        keys = list(data.keys())
-        if keys and all(isinstance(k, str) and k.isdigit() for k in keys):
-            sorted_keys = sorted(keys, key=int)
-            if sorted_keys == [str(i) for i in range(len(keys))]:
-                # Additional check: FormKit arrays contain objects, not primitives
-                # This prevents false positives with dicts like {"0": "value", "1": "other"}
-                values = [data[k] for k in sorted_keys]
-                if all(isinstance(v, dict) for v in values):
-                    return [_transform_formkit_arrays(data[k]) for k in sorted_keys]
-
-        # Regular dict - recursively transform values
-        return {k: _transform_formkit_arrays(v) for k, v in data.items()}
-    elif isinstance(data, list):
-        return [_transform_formkit_arrays(item) for item in data]
-    else:
-        return data
 
 
 class AgentDispatcher(BaseDispatcher):
@@ -162,7 +132,7 @@ class AgentDispatcher(BaseDispatcher):
                 raise ValueError(f"No agent config found for event {event.event_name} and topic {topic}")
 
         # Transform FormKit-style arrays (dict with numeric keys) to Python lists
-        agent_config_dict = _transform_formkit_arrays(agent_config_dict)
+        agent_config_dict = transform_formkit_arrays(agent_config_dict)
         run_agent_config = self.agent_config_type.model_validate(agent_config_dict)
         topic = AgentInstanceTopic.from_agent_class_topic(
             agent_class_topic=topic,

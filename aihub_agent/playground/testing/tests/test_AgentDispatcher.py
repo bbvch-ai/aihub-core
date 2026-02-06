@@ -7,6 +7,7 @@ from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.nats.events import BaseEvent, ControlEvent, ExceptionEvent, StartEvent, StopEvent
+from aihub_lib.nats.events.form.normalization import transform_formkit_arrays
 from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from bson import ObjectId
@@ -16,7 +17,7 @@ from redis.asyncio import Redis
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.context.thread.ThreadContext import ThreadContext
-from aihub_agent.dispatchers.AgentDispatcher import AgentDispatcher, _transform_formkit_arrays
+from aihub_agent.dispatchers.AgentDispatcher import AgentDispatcher
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
 from aihub_agent.tracing.AgentRunTracer import AgentRunTracer
 from aihub_agent.workflow.decorators.precondition import precondition
@@ -691,26 +692,26 @@ class TestAgentDispatcherIntegration:
 
 
 class TestTransformFormkitArrays:
-    """Tests for the _transform_formkit_arrays function."""
+    """Tests for the transform_formkit_arrays function."""
 
     def test_transforms_dict_with_numeric_keys_and_dict_values_to_list(self):
         """Test that dict with numeric string keys and dict values is converted to a list."""
         data = {"0": {"name": "item1"}, "1": {"name": "item2"}}
-        result = _transform_formkit_arrays(data)
+        result = transform_formkit_arrays(data)
         assert result == [{"name": "item1"}, {"name": "item2"}]
 
     def test_preserves_dict_with_numeric_keys_and_primitive_values(self):
         """Test that dict with numeric string keys but primitive values is NOT converted."""
         # This is the new conservative behavior - primitive values means it's not a FormKit array
         data = {"0": "value1", "1": "value2"}
-        result = _transform_formkit_arrays(data)
+        result = transform_formkit_arrays(data)
         # Should NOT be converted because values are primitives, not dicts
         assert result == {"0": "value1", "1": "value2"}
 
     def test_preserves_regular_dict(self):
         """Test that regular dicts with non-numeric keys are preserved."""
         data = {"name": "test", "value": 123}
-        result = _transform_formkit_arrays(data)
+        result = transform_formkit_arrays(data)
         assert result == {"name": "test", "value": 123}
 
     def test_transforms_nested_formkit_arrays(self):
@@ -721,7 +722,7 @@ class TestTransformFormkitArrays:
                 "1": {"subItems": {"0": {"name": "nested3"}}},
             }
         }
-        result = _transform_formkit_arrays(data)
+        result = transform_formkit_arrays(data)
         expected = {
             "items": [
                 {"subItems": [{"name": "nested1"}, {"name": "nested2"}]},
@@ -733,13 +734,13 @@ class TestTransformFormkitArrays:
     def test_preserves_lists(self):
         """Test that regular lists are preserved (items are recursively transformed)."""
         data = [{"0": {"a": 1}, "1": {"b": 2}}, {"name": "test"}]
-        result = _transform_formkit_arrays(data)
+        result = transform_formkit_arrays(data)
         expected = [[{"a": 1}, {"b": 2}], {"name": "test"}]
         assert result == expected
 
     def test_preserves_primitives(self):
         """Test that primitive values are returned as-is."""
-        assert _transform_formkit_arrays("string") == "string"
-        assert _transform_formkit_arrays(123) == 123
-        assert _transform_formkit_arrays(True) is True
-        assert _transform_formkit_arrays(None) is None
+        assert transform_formkit_arrays("string") == "string"
+        assert transform_formkit_arrays(123) == 123
+        assert transform_formkit_arrays(True) is True
+        assert transform_formkit_arrays(None) is None
