@@ -113,7 +113,6 @@ class JetStreamEventStore:
             logger.debug(f"Ensured stream {self.stream_name} exists")
 
             # Step 2: Subscribe to new events
-            # Generate a unique durable name for this instance
             self.subscription = await self.js.subscribe(
                 subject=self.control_subject,
                 durable=self.subscription_durable_name,
@@ -188,7 +187,6 @@ class JetStreamEventStore:
 
     def _add_event_to_store(self, store_execution_context_id: str, event: BaseEvent):
         """Add an event to the store and handle any pending synchronization"""
-        # Get the run store and add the event
         execution_context_store = self._get_execution_context_store(store_execution_context_id)
         execution_context_store.add_event(event)
 
@@ -216,14 +214,13 @@ class JetStreamEventStore:
         Callback for handling new events from the JetStream subscription.
         """
         try:
-            logger.debug(f"Received message: {msg.subject} with event data: {msg.data}")
+            logger.debug(f"Received message: {msg.subject}")
             topic = self.topic.from_subject(msg.subject)
             store_execution_context_id = topic.execution_context_id
             event = BaseEvent.deserialize_event(msg.data)
             event._jetstream_sequence = msg.metadata.sequence.stream
-            logger.debug(f"Deserialized event: {event}")
+            logger.debug(f"Deserialized event: {event.event_name}")
 
-            # Add the event to the store
             self._add_event_to_store(store_execution_context_id, event)
 
             # Acknowledge the message
@@ -252,7 +249,6 @@ class JetStreamEventStore:
         event_name = event.event_name
         event_id = event.event_id
 
-        # Check if the event is already stored
         execution_context_store = self._get_execution_context_store(store_execution_context_id)
         if event_id in execution_context_store.events.get(event_name, {}):
             return True
@@ -269,7 +265,6 @@ class JetStreamEventStore:
         # Wait for the event to be stored or timeout
         try:
             async with condition:
-                # Check again in case it arrived while we were setting up
                 if event_id in execution_context_store.events.get(event_name, {}):
                     return True
 
@@ -285,7 +280,6 @@ class JetStreamEventStore:
             if event_key in self.pending_events:
                 self.pending_events.remove(event_key)
 
-            # Remove the condition if there are no more waiters
             async with condition:
                 if not condition._waiters:  # pylint: disable=protected-access
                     del self.event_sync_conditions[event_key]

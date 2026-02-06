@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from pydantic import Field
 
@@ -30,7 +30,7 @@ class PartialProcessTopic(Topic):
         return self.process_walkthrough_id
 
     @classmethod
-    def from_subject(cls, subject: str) -> "PartialProcessTopic":
+    def from_subject(cls, subject: str) -> Self:
         """
         Constructs a PartialProcessTopic from a subject string that may contain wildcards.
 

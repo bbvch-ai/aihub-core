@@ -21,11 +21,11 @@ class I18nMiddleware(BaseHTTPMiddleware):
     @staticmethod
     def extract_locale(headers: Headers, path_params: dict[str, str], query_params: QueryParams) -> str:
         locale = I18nMiddleware.get_preferred_locale(
-            headers.get("lang", None)
-            or headers.get("locale", None)
-            or headers.get("Accept-Language", None)
-            or path_params.get("locale", None)
-            or query_params.get("locale", None)
+            headers.get("lang")
+            or headers.get("locale")
+            or headers.get("Accept-Language")
+            or path_params.get("locale")
+            or query_params.get("locale")
             or LocaleHandler.DEFAULT_LOCALE
         )
 

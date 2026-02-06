@@ -4,8 +4,8 @@
       v-for="(humanInput, index) in humanInputs"
       :key="index"
       class="w-1/2"
-      :title="humanInput.name"
-      :description="humanInput.description"
+      :title="resolveLocale(humanInput.name)"
+      :description="resolveLocale(humanInput.description)"
       :form="humanInput.form"
       @submit="submitForm($event, humanInput)"
     />
@@ -15,17 +15,22 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 
-import type { HumanInDtoReadable } from '@core/sdk/client'
+import type { HumanInSpecsReadable, LocaleString } from '@core/sdk/client'
 
 defineProps<{
-  humanInputs: HumanInDtoReadable[]
+  humanInputs: HumanInSpecsReadable[]
 }>()
 
 const route = useRoute()
+const { locale } = useI18n()
 const { sendProcessStartForm } = useSendProcessStartForm()
 
-const submitForm = async (form: Record<string, unknown>, humanInput: HumanInDtoReadable) => {
-  console.log(form)
+const resolveLocale = (localeString: LocaleString): string => {
+  const key = locale.value as keyof LocaleString
+  return localeString?.[key] ?? localeString?.en ?? localeString?.de ?? ''
+}
+
+const submitForm = async (form: Record<string, unknown>, humanInput: HumanInSpecsReadable) => {
   await sendProcessStartForm({
     processClass: route.params.process_class as string,
     processId: route.params.process_id as string,
@@ -35,7 +40,3 @@ const submitForm = async (form: Record<string, unknown>, humanInput: HumanInDtoR
   })
 }
 </script>
-
-<style scoped>
-
-</style>

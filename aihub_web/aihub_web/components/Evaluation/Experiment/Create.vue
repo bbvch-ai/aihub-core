@@ -60,7 +60,7 @@
           :options="validAgents"
           option-label="agent_config.name"
           :placeholder="t('evaluation.experiment.select_assistant')"
-          :loading="agentsAreLoading"
+          :loading="agentInstancesAreLoading"
         />
       </div>
       <div class="flex justify-end gap-2">
@@ -84,7 +84,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 
-import type { AgentDto, ExperimentCreate } from '@core/sdk/client'
+import type { ExperimentCreate, FullAgentInstanceDto } from '@core/sdk/client'
 
 const { t } = useI18n()
 
@@ -95,14 +95,14 @@ const experiment = ref<ExperimentCreate>({
   experiment_name: '',
   experiment_description: '',
 })
-const agent = ref<AgentDto | null>(null)
+const agent = ref<FullAgentInstanceDto | null>(null)
 
 const { datasets, datasetsAreLoading } = useDatasets()
-const { agents, agentsAreLoading } = useAgents()
+const { agentInstances, agentInstancesAreLoading } = useAgentInstances()
 const { createExperiment } = useCreateExperiment()
 
-const validAgents = computed<AgentDto[]>(() => {
-  return agents.value?.filter((agent: AgentDto) => {
+const validAgents = computed<FullAgentInstanceDto[]>(() => {
+  return agentInstances.value?.filter((agent: FullAgentInstanceDto) => {
     return agent.is_online && agent.is_conversational
   })
 })

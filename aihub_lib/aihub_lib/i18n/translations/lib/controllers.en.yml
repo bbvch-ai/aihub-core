@@ -1,0 +1,7 @@
+base:
+  name: "Unnamed Controller"
+  description: "This controller has no description."
+
+health:
+  name: "Health"
+  description: "Health check endpoint for monitoring system availability."

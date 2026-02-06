@@ -2,7 +2,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
-from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
+from aihub_api.routes.agent.dto.MinimalAgentInstanceDTO import MinimalAgentInstanceDTO
 from aihub_api.routes.process.dto.AgentProcessStepDTO import AgentProcessStepDTO
 from aihub_api.routes.process.dto.HumanProcessStepDTO import HumanProcessStepDTO
 from aihub_api.routes.process.dto.ProgramProcessStepDTO import ProgramProcessStepDTO
@@ -27,7 +27,7 @@ class ProcessWalkthroughDTO(BaseModel):
     completed_steps: Annotated[int, Field(description="Number of completed steps in this walkthrough.")]
     is_active: Annotated[bool, Field(description="Whether this walkthrough is active (no ProcessStopEvent).")]
     involved_agents: Annotated[
-        list[MinimalAgentDTO], Field(description="List of agents that submitted work in this walkthrough.")
+        list[MinimalAgentInstanceDTO], Field(description="List of agents that submitted work in this walkthrough.")
     ] = []
     involved_humans: Annotated[
         list[MinimalUserDTO], Field(description="List of humans that submitted work in this walkthrough.")

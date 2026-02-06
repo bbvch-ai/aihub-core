@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from pydantic import Field
 
@@ -40,7 +40,7 @@ class PartialAgentTopic(Topic):
         return self.run_id
 
     @classmethod
-    def from_subject(cls, subject: str) -> "PartialAgentTopic":
+    def from_subject(cls, subject: str) -> Self:
         """
         Constructs a PartialAgentTopic from a subject string that may contain wildcards.
 

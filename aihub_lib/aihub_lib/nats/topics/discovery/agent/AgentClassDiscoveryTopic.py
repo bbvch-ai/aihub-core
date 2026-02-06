@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from pydantic import Field
 
@@ -19,7 +19,7 @@ class AgentClassDiscoveryTopic(DiscoveryTopic):
     agent_class: Annotated[str, Field(description="Agent class targeted by the discovery.")]
 
     @classmethod
-    def from_subject(cls, subject: str) -> "AgentClassDiscoveryTopic":
+    def from_subject(cls, subject: str) -> Self:
         """
         Use this when dealing with agent-specific discovery subjects to extract agent_class and agent_id.
         """

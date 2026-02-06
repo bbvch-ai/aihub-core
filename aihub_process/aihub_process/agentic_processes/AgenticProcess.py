@@ -1,4 +1,5 @@
 import functools
+from typing import ClassVar
 
 from aihub_lib.nats.events import (
     AgentWorkEvent,
@@ -18,6 +19,7 @@ from aihub_process.delegators.agent.Agent import Agent
 from aihub_process.delegators.human.Human import Human
 from aihub_process.delegators.process.Process import Process
 from aihub_process.delegators.program.Program import Program
+from aihub_process.i18n.ProcessLocaleString import ProcessLocaleString
 
 
 class AgenticProcess(DispatchableWorkflow):
@@ -38,7 +40,18 @@ class AgenticProcess(DispatchableWorkflow):
     The process itself should never do work on its own. As soon as you start implementing logic within a process step,
     you are off-track. Everything you do within a process step should be delegated to an entity, and the
     process should at most transform the outputs of one (or more) entities to be a valid input for the next entity.
+
+    To define class-level metadata, override these class variables in your subclass:
+    - name: Display name for the process class (LocaleString)
+    - description: Description of the process's purpose (LocaleString)
+    - icon: Icon identifier for the process (str)
     """
+
+    name: ClassVar[ProcessLocaleString] = ProcessLocaleString.from_i18n_path("process.processes.base.name")
+    description: ClassVar[ProcessLocaleString] = ProcessLocaleString.from_i18n_path(
+        "process.processes.base.description"
+    )
+    icon: ClassVar[str] = "mage:broadcast"
 
     STEP_ANNOTATION = "_is_process_step"
 

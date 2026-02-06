@@ -1,0 +1,16 @@
+config:
+  placeholder:
+    name: "Mein KI-Assistent"
+    description: "Beschreiben Sie, was dieser Agent tut und wie er Benutzern helfen kann..."
+    icon: "Symbol auswählen oder eingeben..."
+  agent_id:
+    label: "Agent-ID"
+    help: "Eindeutige Kennung (Kleinbuchstaben, Zahlen, Bindestriche, Unterstriche)"
+    placeholder: "meine_eindeutige_agent_id"
+  name:
+    label: "Agent-Name"
+  description:
+    label: "Beschreibung"
+  icon:
+    label: "Symbol"
+    help: "Wählen Sie ein voreingestelltes Symbol oder geben Sie einen Iconify-Symbolnamen ein"

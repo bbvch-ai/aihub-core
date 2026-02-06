@@ -17,7 +17,7 @@ Architecture:
 - EventHandler chain processes different AI-Hub event types
 - StreamingStateManager maintains content block state
 - ContentBlock hierarchy (TextBlock, ThinkingBlock, ToolBlock)
-- SSE streaming to /api/v1/agents/{class}/{id}/{event}/stream endpoints
+- SSE streaming to /api/v1/agents/classes/{class}/instances/{id}/{event}/stream endpoints
 """
 
 import base64
@@ -1128,7 +1128,7 @@ class StreamingService:
         display_id: Annotated[str, "Display identifier"],
     ) -> Annotated[str, "Complete streaming endpoint URL"]:
         """Build streaming endpoint URL"""
-        url = f"{self._base_url}/api/v1/agents/{agent_class}/{agent_id}/{event_name}/stream"
+        url = f"{self._base_url}/api/v1/agents/classes/{agent_class}/instances/{agent_id}/{event_name}/stream"
         url += f"?thread_id={thread_id}&display_id={display_id}"
         return url
 
@@ -1355,7 +1355,7 @@ class AgentDiscoveryService:
             }
 
             async with httpx.AsyncClient(timeout=self._timeout, follow_redirects=True) as client:
-                response = await client.get(f"{self._base_url}/api/v1/agents", headers=headers)
+                response = await client.get(f"{self._base_url}/api/v1/agents/instances", headers=headers)
                 response.raise_for_status()
                 agents = response.json()
 
@@ -1372,11 +1372,14 @@ class AgentDiscoveryService:
         conversational_agents: list[dict[str, str]] = []
 
         for agent in agents:
-            if agent["is_conversational"] and agent["is_online"]:
+            if agent.get("is_conversational") and agent.get("is_online"):
+                # Use name from config, fallback to agent_id if empty
+                agent_config = agent.get("agent_config", {})
+                display_name = agent_config.get("name", "No name Agent")
                 conversational_agents.append(
                     {
                         "id": f"{agent['agent_class']}.{agent['agent_id']}",
-                        "name": f"{self._prefix}{agent['agent_config']['name']}",
+                        "name": display_name,
                     }
                 )
 
@@ -1482,7 +1485,7 @@ class Pipe:
             description="Secret key for signing user headers",
         )
         AIHUB_PIPELINE_PREFIX: str = Field(
-            default=os.getenv("AIHUB_PIPELINE_PREFIX", "aihub/"),
+            default=os.getenv("AIHUB_PIPELINE_PREFIX", "agent/"),
             description="Prefix added to agent names in the UI",
         )
         AIHUB_REQUEST_TIMEOUT: int = Field(
@@ -1700,7 +1703,6 @@ class Pipe:
                     }
                 )
 
-                # Create state manager for this stream
                 state_manager = StreamingStateManager()
 
                 async def stream_start_callback():

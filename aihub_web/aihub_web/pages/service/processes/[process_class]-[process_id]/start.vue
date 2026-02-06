@@ -1,8 +1,8 @@
 <template>
   <StructuralColumn
-    :title="process?.process_config.name"
+    :title="processInstance?.process_config.name"
     close-route="/service/processes"
-    :loading="processIsLoading"
+    :loading="processInstanceIsLoading"
     size="large"
   >
     <div class="flex flex-col gap-12">
@@ -14,12 +14,12 @@
 </template>
 
 <script setup lang="ts">
-import type { HumanInDtoReadable } from '@core/sdk/client'
+import type { HumanInSpecsReadable } from '@core/sdk/client'
 
-const { process, processIsLoading } = useProcess()
+const { processInstance, processInstanceIsLoading } = useProcessInstance()
 
-const startInputs = computed<HumanInDtoReadable[]>(() => {
-  return process.value?.human_inputs?.filter((input: HumanInDtoReadable) => {
+const startInputs = computed<HumanInSpecsReadable[]>(() => {
+  return processInstance.value?.human_inputs?.filter((input: HumanInSpecsReadable) => {
     return input.is_process_start
   })
 })

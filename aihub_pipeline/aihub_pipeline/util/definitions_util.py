@@ -267,7 +267,6 @@ def default_sharepoint_to_datalake_definitions(
 
     sharepoint_io_manager = SharePointIoManager(share_point_client=sharepoint_client)
 
-    # Get the store name for MongoDB (auto_sync=False for SharePoint pipelines)
     store_name = get_db_name_from_bucket_name(bucket_name=datalake_container_name, auto_sync=False)
 
     return Definitions(
@@ -373,7 +372,6 @@ def default_local_filesystem_to_datalake_definitions(
 
     filesystem_io_manager = LocalFileSystemIOManager(local_file_system_client=filesystem_client)
 
-    # Get the store name for MongoDB (auto_sync=True for local filesystem pipelines)
     store_name = get_db_name_from_bucket_name(bucket_name=datalake_container_name, auto_sync=True)
 
     return Definitions(

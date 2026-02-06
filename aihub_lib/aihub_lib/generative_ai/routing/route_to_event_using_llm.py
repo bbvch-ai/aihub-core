@@ -20,14 +20,10 @@ async def route_to_event_using_llm(
         ]
         reason: Annotated[str, Field(description=t("lib.prompt.router.reason"))]
 
-    # Load the prompt template from the YAML file
     prompt_text = t("lib.prompt.router.routing_prompt")
 
-    # Create the RichPromptTemplate
     prompt = RichPromptTemplate(prompt_text)
 
-    # Get the LLM's decision
     result = await llm.astructured_predict(RouteSelectionModel, prompt, instructions=instructions, routes=routes)
 
-    # Create and return the RouterEvent
     return RouterEvent(routes=routes, selected_option=routes[result.selected_option_index], reason=result.reason)

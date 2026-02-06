@@ -75,7 +75,6 @@ class BaseChatBot(ActivityHandler):
         conversation_id = turn_context.activity.conversation.id
         bot_id = turn_context.activity.recipient.id
 
-        # Check if we should show an expiration message
         if (
             ConversationTracker.should_show_expiration_message(conversation_id, bot_id)
             and turn_context.activity.type == "message"
@@ -91,19 +90,16 @@ class BaseChatBot(ActivityHandler):
         # Always track this conversation ID
         ConversationTracker.track_conversation(conversation_id, bot_id)
 
-        # Persist user message
         self.completion_handler.add_user_message_to_conversation(
             path=self.path,
             turn_context=turn_context,
         )
 
-        # Handle Slack-specific message formatting
         if turn_context.activity.channel_id == Channels.slack:
             turn_context = self.completion_handler.handle_slack_message(turn_context)
             if turn_context is None:
                 return
 
-        # Handle Teams-specific message formatting
         if turn_context.activity.channel_id == Channels.ms_teams:
             turn_context = self.completion_handler.handle_teams_message(turn_context)
             if turn_context is None:
@@ -119,7 +115,6 @@ class BaseChatBot(ActivityHandler):
             )
         )
 
-        # Get response from completion handler
         try:
             response = await self._respond(
                 turn_context=turn_context,
@@ -129,7 +124,6 @@ class BaseChatBot(ActivityHandler):
             )
 
         except Exception as e:
-            # Handle exceptions
             response = await self.completion_handler.handle_exception(
                 turn_context=turn_context,
                 exception=e,
@@ -138,7 +132,6 @@ class BaseChatBot(ActivityHandler):
                 t=locale_handler,
             )
 
-        # Persist bot response
         self.completion_handler.add_bot_message_to_conversation(
             path=self.path,
             turn_context=turn_context,
@@ -153,7 +146,6 @@ class BaseChatBot(ActivityHandler):
         is_streaming: bool = False,
     ) -> str:
         if is_streaming:
-            # Get streaming response
             response_generator = await self.completion_handler.get_stream_completion(
                 turn_context=turn_context,
                 path=self.path,
@@ -162,17 +154,14 @@ class BaseChatBot(ActivityHandler):
                 **self.handler_kwargs,
             )
 
-            # Stop typing indicator
             typing_stop_signal.set()
             await typing_task
 
-            # Send streaming response
             return await self.completion_handler.send_response_stream(
                 turn_context=turn_context,
                 response_generator=response_generator,
             )
         else:
-            # Get json response
             response = await self.completion_handler.get_completion(
                 turn_context=turn_context,
                 path=self.path,
@@ -181,10 +170,8 @@ class BaseChatBot(ActivityHandler):
                 **self.handler_kwargs,
             )
 
-            # Stop typing indicator
             typing_stop_signal.set()
             await typing_task
 
-            # Send json response
             await turn_context.send_activity(response)
             return response

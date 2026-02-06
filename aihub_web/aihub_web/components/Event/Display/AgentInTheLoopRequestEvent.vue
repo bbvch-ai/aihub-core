@@ -2,7 +2,7 @@
   <EventDisplayBase
     :event="event"
     :thread="thread"
-    icon="mdi:robot-confused"
+    icon="mage:robot-sad"
   >
     <div class="flex flex-col gap-2">
       <div class="flex gap-2">
@@ -31,10 +31,10 @@
 </template>
 
 <script setup lang="ts">
-import type { AgentInTheLoopRequestEventReadable, ThreadDto, AgentEventReadable } from '@core/sdk/client'
+import type { AgentInTheLoopRequestEvent, ThreadDto, ContextualizedAgentEvent } from '@core/sdk/client'
 
 const props = defineProps<{
-  event: AgentEventReadable & { event: AgentInTheLoopRequestEventReadable }
+  event: ContextualizedAgentEvent & { event: AgentInTheLoopRequestEvent }
   thread: ThreadDto
 }>()
 
@@ -44,7 +44,7 @@ const vueComponent = computed(() => {
   return resolveComponentForEvent(wrappedStartEvent.value)
 })
 
-const wrappedStartEvent = computed<AgentEventReadable>(() => {
+const wrappedStartEvent = computed<ContextualizedAgentEvent>(() => {
   return {
     ...props.event,
     ...props.event.event.start_event,

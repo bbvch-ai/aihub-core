@@ -117,7 +117,7 @@ class JSSubscriber(AbstractSubscriber[TEvent]):
                     span.set_attribute("jetstream.delivery_count", msg.metadata.num_delivered)
 
             try:
-                logger.debug(f"{self.name} received message: {msg.subject} with event data: {msg.data}")
+                logger.debug(f"{self.name} received message: {msg.subject}")
                 topic = Topic.from_subject(msg.subject)
                 event_data = msg.data
                 event = self.event_cls.deserialize_event(event_data)
@@ -127,7 +127,7 @@ class JSSubscriber(AbstractSubscriber[TEvent]):
                 span.set_attribute("event.type", event.event_name)
                 span.set_attribute("event.class", event.__class__.__name__)
 
-                logger.debug(f"{self.name} deserialized event: {event}")
+                logger.debug(f"{self.name} deserialized event: {event.event_name}")
 
                 await msg.ack()
                 span.set_attribute("jetstream.acked", True)

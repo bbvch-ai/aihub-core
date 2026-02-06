@@ -1,4 +1,4 @@
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from pydantic import Field
@@ -6,32 +6,91 @@ from pydantic import Field
 from aihub_lib.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from aihub_lib.generative_ai.processors.models.RetrieveSummariesConfig import RetrieveSummariesConfig
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
-from aihub_lib.generative_ai.retrievers.BaseRetrieverConfig import BaseRetrieverConfig, RetrieverType
+from aihub_lib.generative_ai.retrievers.BaseRetrieverConfig import BaseRetrieverConfig
+from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.events.form.constraints import Ge, MinLen
+from aihub_lib.nats.events.form.elements.InputNumber import InputNumber
+from aihub_lib.nats.events.form.elements.MultiSelect import MultiSelect
+from aihub_lib.nats.events.form.elements.Select import Select
+from aihub_lib.nats.events.form.elements.VectorStoreInput import VectorStoreInput
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 
 
 class KnowledgeRetrieverConfig(BaseRetrieverConfig):
-    """Configuration for retrieving knowledge from a vector store (Milvus)."""
+    """
+    Configuration for retrieving knowledge from a vector store (Milvus).
 
-    retriever_type: Literal[RetrieverType.KNOWLEDGE] = RetrieverType.KNOWLEDGE
+    Supports duality pattern for form rendering and data validation.
+    """
 
-    embed_model: Annotated[EmbeddingModelConfig, Field(description="The embedding model configuration.")]
-    vector_store: Annotated[MilvusVectorStoreConfig, Field(description="The vector store configuration.")]
-    index_namespaces: Annotated[list[str], Field(description="The namespaces to retrieve from. Empty means all.")]
-    retrieve_k: Annotated[int, Field(description="The number of documents to retrieve.", ge=1)]
+    embed_model: Annotated[
+        EmbeddingModelConfig,
+        Field(description="The embedding model configuration."),
+    ]
+    vector_store: Annotated[
+        MilvusVectorStoreConfig | VectorStoreInput,
+        Field(description="The vector store configuration."),
+    ]
+    retrieve_k: Annotated[
+        int | InputNumber,
+        Field(description="The number of documents to retrieve."),
+        Ge(1),
+    ] = 5
     query_mode: Annotated[
-        VectorStoreQueryMode,
+        VectorStoreQueryMode | Select,
         Field(description="Specifies how the vector store should be queried (e.g., 'default', 'hybrid')."),
     ] = VectorStoreQueryMode.DEFAULT
     node_types: Annotated[
-        list[Literal["summary", "content"]],
-        Field(description="The types of nodes to retrieve (options: 'summary' or 'content').", min_length=1),
+        list[Literal["summary", "content"]] | MultiSelect,
+        Field(description="The types of nodes to retrieve (options: 'summary' or 'content')."),
+        MinLen(1),
     ] = ["content"]
     retrieve_prev_next: Annotated[
         RetrievePrevNextConfig | None,
-        Field(description="Configuration for retrieving previous and next nodes."),
+        Field(description="Configuration for retrieving previous and next nodes.", title="Retrieve Previous/Next"),
     ] = None
     retrieve_summaries: Annotated[
         RetrieveSummariesConfig | None,
-        Field(description="Configuration for retrieving parent summary nodes."),
+        Field(description="Configuration for retrieving parent summary nodes.", title="Retrieve Summaries"),
     ] = None
+
+    @classmethod
+    def as_form(cls) -> Self:
+        """Factory method to create a form-mode KnowledgeRetrieverConfig."""
+        return cls(
+            embed_model=EmbeddingModelConfig.as_form(),
+            vector_store=VectorStoreInput(
+                label=LocaleString.from_i18n_path("lib.vectorStore.label"),
+                help=LocaleString.from_i18n_path("lib.vectorStore.help"),
+            ),
+            retrieve_k=InputNumber(
+                label=LocaleString.from_i18n_path("lib.retriever.config.retrieve_k.label"),
+                help=LocaleString.from_i18n_path("lib.retriever.config.retrieve_k.help"),
+                min=1,
+                max=100,
+                step=1,
+            ),
+            query_mode=Select(
+                label=LocaleString.from_i18n_path("lib.retriever.config.query_mode.label"),
+                help=LocaleString.from_i18n_path("lib.retriever.config.query_mode.help"),
+                options=[
+                    {"label": "Default", "value": VectorStoreQueryMode.DEFAULT.value},
+                    {"label": "Hybrid", "value": VectorStoreQueryMode.HYBRID.value},
+                    {"label": "Sparse", "value": VectorStoreQueryMode.SPARSE.value},
+                ],
+                option_label="label",
+                option_value="value",
+            ),
+            node_types=MultiSelect(
+                label=LocaleString.from_i18n_path("lib.retriever.config.node_types.label"),
+                help=LocaleString.from_i18n_path("lib.retriever.config.node_types.help"),
+                options=[
+                    {"label": "Content", "value": "content"},
+                    {"label": "Summary", "value": "summary"},
+                ],
+                option_label="label",
+                option_value="value",
+            ),
+            retrieve_prev_next=RetrievePrevNextConfig.as_form(),
+            retrieve_summaries=RetrieveSummariesConfig.as_form(),
+        )

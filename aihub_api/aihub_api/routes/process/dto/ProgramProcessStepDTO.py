@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Literal, Self
 
 from pydantic import Field
 
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 class ProgramProcessStepDTO(BaseProcessStepDTO):
     """DTO representing a program process step with program-specific work request and response information."""
 
-    step_type: Annotated[str, Field(description="Type of entity involved in this step.")] = "program"
+    step_type: Annotated[Literal["program"], Field(description="Type of entity involved in this step.")] = "program"
     work_request: Annotated[
         ProgramWorkRequestDTO | None, Field(description="The program work request for this step.")
     ] = None
@@ -29,11 +29,10 @@ class ProgramProcessStepDTO(BaseProcessStepDTO):
         response_event,
         step_index: int,
         t: "LocaleHandler",
-    ) -> "ProgramProcessStepDTO":
+    ) -> Self:
         """Creates a ProgramProcessStepDTO from optional request and response events."""
         from .PersistedEventDTO import PersistedEventDTO
 
-        # Create work request if request_event exists
         work_request: ProgramWorkRequestDTO | None = None
         if request_event:
             if isinstance(request_event, dict):
@@ -46,7 +45,6 @@ class ProgramProcessStepDTO(BaseProcessStepDTO):
                 t,
             )
 
-        # Create work response if exists
         work_response: ProgramWorkResponseDTO | None = None
         created_at = 0
         if response_event:

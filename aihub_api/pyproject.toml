@@ -37,6 +37,7 @@ arize-phoenix = "^10.0.0"
 audioop-lts = "^0.2.1"
 fastmcp = "^2.11.2"
 opentelemetry-instrumentation-fastapi = "^0.60b1"
+jambo = {git = "https://github.com/bbvch-ai/jambo.git"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
@@ -50,14 +51,9 @@ pytest-cov = "^6.0.0"
 asgi-lifespan = "^2.1.0"
 pip-licenses = "^5.0.0"
 
-[tool.poetry.dependencies.jambo]
-git = "https://github.com/bbvch-ai/jambo.git"
-tag = "v0.4.0"
-
 [tool.poetry.dependencies.aihub_lib]
-git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.260.1"
-subdirectory = "aihub_lib"
+path = "../aihub_lib"
+develop = true
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

@@ -1,5 +1,5 @@
 import json
-from typing import Annotated, Any, override
+from typing import Annotated, Any, Self, override
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import (
@@ -105,7 +105,6 @@ DisplayEvents = (
 
 
 def event_discriminator(event: DisplayEvent) -> str:
-    # Get all tags from DisplayEvents union
     valid_tags = [arg.__metadata__[0].tag for arg in DisplayEvents.__args__]
 
     # Return "DisplayEvent" if _event_name is missing or not in valid_tags
@@ -159,9 +158,7 @@ class ContextualizedAgentEvent(BaseModel):
     ]
 
     @classmethod
-    def from_persisted_event(
-        cls, persisted_event: PersistedAgentEventEntity, locale: str | None = None
-    ) -> "ContextualizedAgentEvent":
+    def from_persisted_event(cls, persisted_event: PersistedAgentEventEntity, locale: str | None = None) -> Self:
         """
         Construct a ContextualizedAgentEvent from a PersistedAgentEventEntity, converting persisted event data
         into a client-ready format.

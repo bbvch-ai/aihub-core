@@ -1,3 +1,5 @@
+from typing import Self
+
 from mongoengine import DictField, EmbeddedDocumentField, StringField
 from mongoengine.base import BaseDocument
 
@@ -27,7 +29,7 @@ class AgentConfigEntity(BaseDocument):
 
     @classmethod
     @trace_fn
-    def from_agent_config(cls, agent_config: AgentConfig) -> "AgentConfigEntity":
+    def from_agent_config(cls, agent_config: AgentConfig) -> Self:
         """Create an instance entity from an AgentConfig."""
         return cls(
             agent_class=agent_config.agent_class,
@@ -39,7 +41,7 @@ class AgentConfigEntity(BaseDocument):
         )
 
     @trace_fn
-    def update_from_agent_config(self, agent_config: AgentConfig) -> "AgentConfigEntity":
+    def update_from_agent_config(self, agent_config: AgentConfig) -> Self:
         """Update an existing instance entity from an AgentConfig."""
         self.agent_class = agent_config.agent_class
         self.agent_id = agent_config.agent_id

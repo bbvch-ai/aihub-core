@@ -8,10 +8,10 @@
 </template>
 
 <script setup lang="ts">
-import type { GuardEventReadable, ThreadDto, AgentEventReadable } from '@core/sdk/client'
+import type { GuardEvent, ThreadDto, ContextualizedAgentEvent } from '@core/sdk/client'
 
 defineProps<{
-  event: AgentEventReadable & { event: GuardEventReadable }
+  event: ContextualizedAgentEvent & { event: GuardEvent }
   thread: ThreadDto
 }>()
 </script>

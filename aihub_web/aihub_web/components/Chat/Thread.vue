@@ -21,15 +21,15 @@
 
 <script setup lang="ts">
 import type {
-  ChatMessageInput,
-  MinimalAgentDto,
+  ChatMessage,
+  MinimalAgentInstanceDto,
   ThreadDto,
   MinimalUserDto,
-  AgentEventReadable,
+  ContextualizedAgentEvent,
 } from '@core/sdk/client'
 
 const props = defineProps<{
-  events: AgentEventReadable[]
+  events: ContextualizedAgentEvent[]
   thread: ThreadDto
 }>()
 
@@ -37,7 +37,7 @@ const router = useRouter()
 const localeRoute = useLocaleRoute()
 const { t } = useI18n()
 
-type ExtendedChatMessage = ChatMessageInput & {
+type ExtendedChatMessage = ChatMessage & {
   name: string
   email: string
   date: Date
@@ -49,8 +49,8 @@ type ExtendedChatMessage = ChatMessageInput & {
 const user = computed<MinimalUserDto>(() => props.thread.users.at(-1)!)
 
 const getAgentDto = (agent_class: string, agent_id: string) =>
-  props.thread.participating_agents.find(
-    (agent: MinimalAgentDto) =>
+  props.thread.participating_agents?.find(
+    (agent: MinimalAgentInstanceDto) =>
       agent.agent_id === agent_id && agent.agent_class === agent_class,
   )
 
@@ -59,9 +59,9 @@ const toDisplay = (msg: ExtendedChatMessage) => {
 }
 
 const createUserMessage = (
-  blocks: ChatMessageInput['blocks'],
+  blocks: ChatMessage['blocks'],
   timestamp: number,
-  event: AgentEventReadable,
+  event: ContextualizedAgentEvent,
 ): ExtendedChatMessage => ({
   role: 'user',
   blocks,
@@ -74,7 +74,7 @@ const createUserMessage = (
 
 const createAssistantMessage = (
   text: string,
-  event: AgentEventReadable,
+  event: ContextualizedAgentEvent,
   timestamp: number,
 ): ExtendedChatMessage => {
   const agentDto = getAgentDto(event.agent_class, event.agent_id)

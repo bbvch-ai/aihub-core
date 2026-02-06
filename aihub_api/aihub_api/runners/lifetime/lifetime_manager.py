@@ -22,6 +22,8 @@ from pymilvus import MilvusClient
 
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.persistance.events.EventPersister import EventPersister
+from aihub_api.rpc.AgentConfigResponder import AgentConfigResponder
+from aihub_api.rpc.ProcessConfigResponder import ProcessConfigResponder
 from aihub_api.runners.lifetime.initialize_db import initialize_knowledge_buckets, initialize_roles
 from aihub_api.services.AgentEndpointsDiscoveryService import AgentEndpointsDiscoveryService
 from aihub_api.services.ProcessEndpointsDiscoveryService import ProcessEndpointsDiscoveryService
@@ -146,6 +148,13 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         )
         external_process_event_distributor = ExternalProcessEventDistributor(nc=nc, js=js)
 
+        # Setup RPC responders for config fetching
+        agent_config_responder = AgentConfigResponder(nc=nc)
+        await agent_config_responder.start()
+
+        process_config_responder = ProcessConfigResponder(nc=nc)
+        await process_config_responder.start()
+
         # Store resources in app state
         app.state.nc = nc
         app.state.js = js
@@ -158,10 +167,11 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         app.state.ws_sender = ws_sender
         app.state.external_agent_event_distributor = external_agent_event_distributor
         app.state.external_process_event_distributor = external_process_event_distributor
+        app.state.agent_config_responder = agent_config_responder
+        app.state.process_config_responder = process_config_responder
 
         api_app = app.state.api_app
 
-        # Create and start the agent discovery service
         if hasattr(api_app.state, "agent_controller"):
             agent_discovery_service = AgentEndpointsDiscoveryService(
                 nc=nc,
@@ -175,7 +185,6 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         else:
             logger.warning("Unable to start AgentEndpointsDiscoveryService due to missing state.agent_controller")
 
-        # Create and start the process discovery service
         if hasattr(api_app.state, "process_controller"):
             process_discovery_service = ProcessEndpointsDiscoveryService(
                 nc=nc,
@@ -199,6 +208,12 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         await agent_event_persist_subscriber.stop()
         await process_event_persist_subscriber.stop()
         await ws_subscriber.stop()
+
+        # Stop RPC responders
+        if hasattr(app.state, "agent_config_responder"):
+            await app.state.agent_config_responder.stop()
+        if hasattr(app.state, "process_config_responder"):
+            await app.state.process_config_responder.stop()
 
         # Stop the discovery services
         if hasattr(app.state, "agent_discovery_service"):

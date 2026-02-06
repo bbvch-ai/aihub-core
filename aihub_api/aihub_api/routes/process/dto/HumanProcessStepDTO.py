@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Literal, Self
 
 from pydantic import Field
 
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 class HumanProcessStepDTO(BaseProcessStepDTO):
     """DTO representing a human process step with human-specific work request and response information."""
 
-    step_type: Annotated[str, Field(description="Type of entity involved in this step.")] = "human"
+    step_type: Annotated[Literal["human"], Field(description="Type of entity involved in this step.")] = "human"
     work_request: Annotated[HumanWorkRequestDTO | None, Field(description="The human work request for this step.")] = (
         None
     )
@@ -29,11 +29,10 @@ class HumanProcessStepDTO(BaseProcessStepDTO):
         response_event,
         step_index: int,
         t: "LocaleHandler",
-    ) -> "HumanProcessStepDTO":
+    ) -> Self:
         """Creates a HumanProcessStepDTO from optional request and response events."""
         from .PersistedEventDTO import PersistedEventDTO
 
-        # Create work request if request_event exists
         work_request: HumanWorkRequestDTO | None = None
         if request_event:
             if isinstance(request_event, dict):
@@ -46,7 +45,6 @@ class HumanProcessStepDTO(BaseProcessStepDTO):
                 t,
             )
 
-        # Create work response if exists
         work_response: HumanWorkResponseDTO | None = None
         created_at = 0
         if response_event:

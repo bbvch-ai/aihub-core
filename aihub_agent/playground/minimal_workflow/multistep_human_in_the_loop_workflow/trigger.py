@@ -26,7 +26,7 @@ from playground.minimal_workflow.multistep_human_in_the_loop_workflow.MultistepH
 async def main():
     runner = AgentTestRunner(
         agent_type=MultistepHumanInTheLoopAgent,
-        default_agent_config=MultistepHumanInTheLoopAgentConfig(
+        agent_config=MultistepHumanInTheLoopAgentConfig(
             agent_id="multistep_human_in_the_loop_agent",
             agent_class=MultistepHumanInTheLoopAgent.__name__,
             name=LocaleString(en="Multistep Human in the Loop Agent"),

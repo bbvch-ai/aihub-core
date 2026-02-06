@@ -101,7 +101,6 @@ class DocumentParserResource(ConfigurableResource):
     def get_document_parser_for_filetype(self, filetype: str) -> BaseReader:
         filetype = filetype.lower()
 
-        # Build the extension to reader mapping based on the current configuration
         readers_map = self._get_readers_map()
         extension_to_reader = {ext: reader_cls for reader_cls, extensions in readers_map.items() for ext in extensions}
 

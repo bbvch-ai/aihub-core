@@ -87,7 +87,7 @@
           >
             <Icon
               class="text-green-700"
-              name="material-symbols:check"
+              name="mage:check"
               size="xs"
             />
           </span>
@@ -107,11 +107,11 @@ import { itCH } from 'date-fns/locale/it-CH'
 import type {
   DisplayStatistics, RunStatistics,
   ThreadDto,
-  AgentEventReadable,
+  ContextualizedAgentEvent,
 } from '@core/sdk/client'
 
 const props = withDefaults(defineProps<{
-  events: AgentEventReadable[]
+  events: ContextualizedAgentEvent[]
   thread: ThreadDto
   displayId?: string
   showChat?: boolean
@@ -135,9 +135,9 @@ watch(display, () => {
   activeRuns.value = display.value?.runs ?? []
 }, { immediate: true })
 
-const eventsInRuns = computed<AgentEventReadable[]>(() => {
+const eventsInRuns = computed<ContextualizedAgentEvent[]>(() => {
   const runIds = activeRuns.value.map((run: RunStatistics) => run.run_id)
-  return props.events.filter((event: AgentEventReadable) => runIds.includes(event.run_id))
+  return props.events.filter((event: ContextualizedAgentEvent) => runIds.includes(event.run_id))
 })
 
 const { resolveComponentForEvent } = useEventComponent()

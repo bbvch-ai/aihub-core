@@ -7,16 +7,7 @@ from aihub_lib.persistence.process.ProcessConfigEntityDocument import ProcessCon
 from aihub_lib.processes.ProcessConfig import ProcessConfig
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 
-from aihub_api.routes.process.ProcessService import ProcessService
-
 enable_logging()
-
-
-@pytest.fixture(autouse=True)
-def cleanup_db_and_cache(sample_process_config):
-    ProcessService._clear_cache()
-    yield
-    ProcessService._clear_cache()
 
 
 @pytest.fixture
