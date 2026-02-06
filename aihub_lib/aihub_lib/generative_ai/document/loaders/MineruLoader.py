@@ -1,14 +1,3 @@
-"""
-MinerU Document Loader - AGPL-Free Implementation.
-
-Communicates with MinerU exclusively via HTTP API, ensuring complete
-license isolation. MinerU handles PDF and image parsing with high-quality
-OCR and document structure extraction.
-
-The VLM (Vision Language Model) inference is routed through LiteLLM for
-unified model routing and fallback support.
-"""
-
 import asyncio
 import json
 import logging

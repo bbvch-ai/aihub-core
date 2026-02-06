@@ -1,13 +1,3 @@
-"""
-MarkItDown Document Loader.
-
-Uses the MarkItDown library to convert Office documents (DOCX, PPTX, XLSX, etc.)
-to markdown format. Handles embedded images by extracting them and uploading
-to S3 storage.
-
-This loader is used as a fallback for file types not supported by MinerU.
-"""
-
 import asyncio
 import logging
 import os
