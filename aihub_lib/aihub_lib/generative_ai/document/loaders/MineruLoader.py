@@ -22,6 +22,7 @@ from llama_index.core.schema import Document
 from pydantic import BaseModel
 from tenacity import (
     AsyncRetrying,
+    RetryCallState,
     retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
@@ -63,6 +64,18 @@ class MineruLoader(BaseReader):
     and formula extraction.
     """
 
+    CONTENT_TYPE_MAP: dict[str, str] = {
+        ".pdf": "application/pdf",
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".gif": "image/gif",
+        ".bmp": "image/bmp",
+        ".webp": "image/webp",
+        ".tiff": "image/tiff",
+        ".jp2": "image/jp2",
+    }
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.config = MineruSettings()
@@ -75,7 +88,19 @@ class MineruLoader(BaseReader):
         fs: "AbstractFileSystem | None" = None,
         include_images: bool = True,
     ) -> list[Document]:
-        """Load and process document synchronously using MinerU API."""
+        """Load and process document synchronously using MinerU API.
+
+        Not supported in async contexts — use aload_data() instead.
+        """
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            pass
+        else:
+            raise RuntimeError(
+                "MineruLoader.load_data() cannot be called from within an existing async event loop. "
+                "Use aload_data() instead."
+            )
         return asyncio.run(self.aload_data(file, extra_info, fs, include_images))
 
     async def aload_data(
@@ -190,18 +215,7 @@ class MineruLoader(BaseReader):
     ) -> MineruParseResponse:
         """Execute the conversion request to MinerU API."""
         ext = os.path.splitext(filename)[1].lower()
-        content_type_map = {
-            ".pdf": "application/pdf",
-            ".png": "image/png",
-            ".jpg": "image/jpeg",
-            ".jpeg": "image/jpeg",
-            ".gif": "image/gif",
-            ".bmp": "image/bmp",
-            ".webp": "image/webp",
-            ".tiff": "image/tiff",
-            ".jp2": "image/jp2",
-        }
-        content_type = content_type_map.get(ext, "application/octet-stream")
+        content_type = self.CONTENT_TYPE_MAP.get(ext, "application/octet-stream")
 
         vlm_server_url = self.config.VL_SERVER_URL.rstrip("/")
         vlm_headers = {}
@@ -306,10 +320,10 @@ class MineruLoader(BaseReader):
 
         return [Document(text=md_content, extra_info=metadata)]
 
-    def _retry_kwargs(self) -> dict:
+    def _retry_kwargs(self) -> dict[str, Any]:
         """Return retry configuration for tenacity."""
 
-        def log_retry(retry_state) -> None:
+        def log_retry(retry_state: RetryCallState) -> None:
             logger.warning(
                 f"MinerU conversion failed (attempt {retry_state.attempt_number}), "
                 f"retrying in {retry_state.next_action.sleep}s: {retry_state.outcome.exception()}"

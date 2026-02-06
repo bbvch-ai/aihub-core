@@ -60,7 +60,7 @@ Das externe System wird zur Quelle der Wahrheit. Ihr Team arbeitet weiterhin in 
 
 Das System verarbeitet jedes hochgeladene Dokument in mehreren Phasen:
 
-Parsing: Docling extrahiert Text, Tabellen, Abbildungen und Strukturen aus PDFs und Office-Dokumenten. Es verarbeitet
+Parsing: MinerU extrahiert Text, Tabellen, Abbildungen und Strukturen aus PDFs und Office-Dokumenten. Es verarbeitet
 komplexe Layouts, mehrspaltige Seiten und eingebettete Inhalte, während die logische Struktur erhalten bleibt.
 
 Chunking: Große Dokumente werden in kleinere Abschnitte (Chunks) aufgeteilt, die den Kontext bewahren. Ein 50-seitiges
@@ -115,7 +115,7 @@ Die Architektur verwendet:
 
 - FerretDB für Dokumentenmetadaten und Verarbeitungsstatus
 - Milvus für Vektorspeicherung und semantische Suche
-- Docling für Dokumenten-Parsing und Strukturextraktion
+- MinerU für Dokumenten-Parsing und Strukturextraktion
 - SeaweedFS für S3-kompatiblen Dateispeicher
 - LlamaIndex für Chunking- und Embedding-Orchestrierung
 

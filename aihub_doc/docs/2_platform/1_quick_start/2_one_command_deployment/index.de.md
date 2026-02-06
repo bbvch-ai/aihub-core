@@ -188,10 +188,9 @@ LITELLM_MASTER_KEY="REPLACE_WITH_RANDOM_STRING"
 JUPYTER_TOKEN="REPLACE_WITH_RANDOM_STRING"
 PHOENIX_SECRET="REPLACE_WITH_RANDOM_STRING"
 
-# Docling-Konfiguration
-DOCLING_API_TIMEOUT="600"
-DOCLING_VLM_MODEL_NAME="text-generation/ocr"
-DOCLING_HTTP_RETRIES=3
+# MinerU-Konfiguration
+MINERU_API_TIMEOUT="600"
+MINERU_VL_MODEL_NAME="text-generation/ocr"
 
 # Milvus-Konfiguration (muss mit den Dimensionen Ihres Embedding-Modells übereinstimmen)
 MILVUS_DIMENSION="3072"
@@ -334,7 +333,7 @@ docker compose -f docker-compose.latest.yml ps
 - **Datenbanken** (FerretDB, PostgreSQL, Valkey)
 - **Vektordatenbank** (Milvus)
 - **LLM-Proxy** (LiteLLM)
-- **Dokumentenverarbeitung** (Docling)
+- **Dokumentenverarbeitung** (MinerU)
 - **Observability** (Phoenix)
 - **Nachrichtenwarteschlange** (NATS)
 - **Speicher** (SeaweedFS)

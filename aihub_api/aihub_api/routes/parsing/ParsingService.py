@@ -5,10 +5,12 @@ Routes documents to the appropriate loader (MinerU or MarkItDown) based on
 file type and handles the conversion process.
 """
 
+import asyncio
 import logging
 import mimetypes
 import urllib.parse
 
+from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
 from aihub_lib.generative_ai.document.loaders.MarkItDownLoader import MarkItDownLoader
 from aihub_lib.generative_ai.document.loaders.MineruLoader import MineruLoader
 from aihub_lib.generative_ai.utils.image_processor import replace_s3_paths_with_signed_urls
@@ -37,7 +39,10 @@ def _get_extension(filename: str, content_type: str = "") -> str:
         if guessed:
             return guessed.lstrip(".")
 
-    raise ValueError(f"Cannot determine file extension for '{filename}' (content_type='{content_type}')")
+    raise HTTPException(
+        status_code=400,
+        detail=f"Cannot determine file extension for '{filename}' (content_type='{content_type}')",
+    )
 
 
 class ParsingService:
@@ -49,6 +54,7 @@ class ParsingService:
         filename: str,
         content_type: str = "",
         image_mode: ImageMode | None = None,
+        s3_service: S3AnonymousFileAccessService | None = None,
     ) -> DocumentConversionResponse:
         """
         Convert a document from raw bytes to markdown.
@@ -59,6 +65,9 @@ class ParsingService:
         """
         if image_mode is None:
             image_mode = ImageMode.S3
+
+        if not content:
+            raise HTTPException(status_code=400, detail="Request body is empty")
 
         filename = urllib.parse.unquote(filename)
         content_type = content_type.split(";")[0].strip()
@@ -87,7 +96,7 @@ class ParsingService:
             )
 
         if image_mode == ImageMode.S3:
-            s3_fs = create_s3_filesystem()
+            s3_fs = await asyncio.to_thread(create_s3_filesystem)
             documents = await loader.aload_data_from_bytes(
                 content=content,
                 filename=filename,
@@ -111,9 +120,10 @@ class ParsingService:
 
         markdown_content = documents[0].text
 
-        if image_mode == ImageMode.S3 and markdown_content:
+        if image_mode == ImageMode.S3 and markdown_content and s3_service:
             markdown_content = await replace_s3_paths_with_signed_urls(
                 markdown_content,
+                s3_service=s3_service,
                 lifetime_hours=168,
             )
 
@@ -122,7 +132,6 @@ class ParsingService:
         return DocumentConversionResponse(
             page_content=markdown_content,
             metadata=DocumentConversionMetadata(
-                source=filename,
                 filename=filename,
             ),
         )

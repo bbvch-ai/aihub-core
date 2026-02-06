@@ -238,7 +238,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | botocore-stubs                               | 1.42.35           | MIT                                               |       |
 | ✅     | cffi                                         | 2.0.0             | MIT                                               |       |
 | ✅     | charset-normalizer                           | 3.4.4             | MIT                                               |       |
-| ✅     | docling-core                                 | 2.57.0            | MIT (override)                                    |       |
+| ✅     | markitdown                                   | 0.1.1             | MIT                                               |       |
 | ✅     | fastapi                                      | 0.128.0           | MIT                                               |       |
 | ✅     | fastavro                                     | 1.12.1            | MIT                                               |       |
 | ✅     | fonttools                                    | 4.61.1            | MIT                                               |       |
@@ -524,7 +524,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | minimal-notebook                | `ghcr.io/bbvch-ai/aihub-core/minimal-notebook:notebook-7.0.6`               | BSD-3-Clause       | Jupyter base image                                                |
 | ✅     | neo4j                           | `ghcr.io/bbvch-ai/aihub-core/neo4j:5.26.16-community`                       | GPL                | Permissive license                                                |
 | ✅     | docker-socket-proxy             | `tecnativa/docker-socket-proxy:0.3`                                         | Apache-2.0         | Permissive license                                                |
-| ✅     | docling-serve-cpu               | `ghcr.io/bbvch-ai/aihub-core/docling-serve-cpu:v1.9.0`                      | MIT                | Permissive license                                                |
+| ✅     | mineru                          | `ghcr.io/bbvch-ai/aihub-core/mineru-api:latest`                             | AGPL-3.0           | AGPL-isolated via HTTP API (no code linking)                      |
 | ✅     | pgvector                        | `ghcr.io/bbvch-ai/aihub-core/pgvector:pg17`                                 | PostgreSQL License | BSD-style permissive license                                      |
 | ✅     | etcd                            | `ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.25`                                  | Apache-2.0         | Permissive license                                                |
 | ✅     | presidio-analyzer               | `ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359`                     | MIT                | Permissive license                                                |

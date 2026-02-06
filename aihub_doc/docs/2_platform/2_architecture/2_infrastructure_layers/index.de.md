@@ -69,7 +69,7 @@ Das LLM kann Python-Code schreiben, der sicher in einer isolierten Jupyter-Umgeb
 direkt in der Konversation zurückgibt. **SearXNG** bietet Web-Suchfunktionen, wenn Benutzer aktuelle Informationen
 benötigen, indem es Ergebnisse von mehreren Suchmaschinen aggregiert und gleichzeitig die Privatsphäre wahrt.
 **Playwright** extrahiert Inhalte von Websites, die durch die Suche entdeckt wurden, und extrahiert den vollständigen
-Text, wenn Suchausschnitte nicht ausreichen. **Docling** parst Dokumente, die Benutzer in den Chat hochladen, und
+Text, wenn Suchausschnitte nicht ausreichen. **MinerU** parst Dokumente, die Benutzer in den Chat hochladen, und
 extrahiert Text und Struktur aus PDFs, Word-Dokumenten und Präsentationen, wobei Tabellen und Formatierungen für eine
 genaue Beantwortung von Fragen erhalten bleiben.
 
@@ -121,7 +121,7 @@ Asset mit Lineage, Versionierung und Qualitätsprüfungen. Die Wahl von Dagster 
 sich aus seiner überragenden lokalen Entwicklungserfahrung und der nativen Python-Integration.
 
 Pipeline-Worker implementieren die eigentliche Dokumentenverarbeitung. Sie verbinden sich mit der Quelle, laden
-Dokumente zur Verarbeitung nach SeaweedFS herunter, parsen Inhalte mit Docling, generieren Embeddings mit konfigurierten
+Dokumente zur Verarbeitung nach SeaweedFS herunter, parsen Inhalte mit MinerU, generieren Embeddings mit konfigurierten
 Modellen und speichern die Ergebnisse in der Vektordatenbank. Worker skalieren horizontal, wobei Dagster die Arbeit auf
 die verfügbaren Instanzen verteilt.
 

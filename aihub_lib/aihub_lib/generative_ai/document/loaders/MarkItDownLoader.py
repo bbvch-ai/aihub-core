@@ -47,7 +47,7 @@ class MarkItDownLoader(BaseReader):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self._converter = None
+        self._converter: "MarkItDown | None" = None
 
     def _get_converter(self) -> "MarkItDown":
         """Lazy-load the MarkItDown converter."""
@@ -65,7 +65,19 @@ class MarkItDownLoader(BaseReader):
         fs: "AbstractFileSystem | None" = None,
         include_images: bool = True,
     ) -> list[Document]:
-        """Load and process document synchronously using MarkItDown."""
+        """Load and process document synchronously using MarkItDown.
+
+        Not supported in async contexts — use aload_data() instead.
+        """
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            pass
+        else:
+            raise RuntimeError(
+                "MarkItDownLoader.load_data() cannot be called from within an existing async event loop. "
+                "Use aload_data() instead."
+            )
         return asyncio.run(self.aload_data(file, extra_info, fs, include_images))
 
     async def aload_data(
@@ -76,6 +88,22 @@ class MarkItDownLoader(BaseReader):
         include_images: bool = True,
     ) -> list[Document]:
         """Load and process document asynchronously using MarkItDown."""
+        try:
+            return await asyncio.wait_for(
+                self._aload_data_impl(file, extra_info, fs, include_images),
+                timeout=300,
+            )
+        except TimeoutError:
+            raise TimeoutError(f"Document loading timed out after 300s for: {file}")
+
+    async def _aload_data_impl(
+        self,
+        file: str,
+        extra_info: dict | None = None,
+        fs: "AbstractFileSystem | None" = None,
+        include_images: bool = True,
+    ) -> list[Document]:
+        """Internal implementation of aload_data."""
         fs = fs or get_default_fs()
         filename = os.path.basename(file)
 
@@ -153,6 +181,10 @@ class MarkItDownLoader(BaseReader):
 
     async def _convert_to_markdown(self, file_bytes: bytes, filename: str) -> str:
         """Convert document to markdown using MarkItDown."""
+        return await asyncio.to_thread(self._convert_to_markdown_sync, file_bytes, filename)
+
+    def _convert_to_markdown_sync(self, file_bytes: bytes, filename: str) -> str:
+        """Synchronous helper for MarkItDown conversion (runs in thread pool)."""
         ext = os.path.splitext(filename)[1].lower()
 
         with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp_file:
@@ -160,17 +192,13 @@ class MarkItDownLoader(BaseReader):
             tmp_path = tmp_file.name
 
         try:
-            result = await asyncio.to_thread(
-                self._get_converter().convert,
-                tmp_path,
-                keep_data_uris=True,
-            )
+            result = self._get_converter().convert(tmp_path, keep_data_uris=True)
             return result.text_content
         finally:
             try:
                 os.unlink(tmp_path)
             except OSError:
-                pass
+                logger.debug(f"[MarkItDownLoader] Failed to clean up temp file: {tmp_path}")
 
     async def _process_images(
         self,

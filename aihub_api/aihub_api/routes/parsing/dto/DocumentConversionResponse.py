@@ -6,9 +6,7 @@ from pydantic import BaseModel, Field
 class DocumentConversionMetadata(BaseModel):
     """Metadata about the converted document."""
 
-    source: Annotated[str, Field(description="Source filename")]
-    filename: Annotated[str | None, Field(default=None, description="Original filename")]
-    page: Annotated[int | None, Field(default=None, description="Page number if applicable")]
+    filename: Annotated[str, Field(description="Original filename")]
 
 
 class DocumentConversionResponse(BaseModel):

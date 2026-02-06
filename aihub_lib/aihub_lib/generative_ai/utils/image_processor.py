@@ -13,8 +13,8 @@ import os
 import re
 from typing import TYPE_CHECKING
 
+from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
 from aihub_lib.generative_ai.utils.path_utils import create_figures_folder_name
-from aihub_lib.infrastructure.s3.use_s3 import create_s3_service
 from aihub_lib.persistence.rag.vectors.node_metadata import NODE_CONTENT_TYPE_FIGURE
 
 if TYPE_CHECKING:
@@ -56,7 +56,7 @@ async def extract_and_upload_images(
             ext = ".png"
 
         figure_filename = f"figure_{idx + 1}{ext}"
-        blob_path = os.path.join(figures_dir, figure_filename)
+        blob_path = f"{figures_dir}/{figure_filename}"
 
         await asyncio.to_thread(_write_file, fs, blob_path, image_bytes)
 
@@ -166,7 +166,11 @@ def extract_base64_images_from_markdown(markdown_content: str) -> tuple[str, dic
     return cleaned_markdown, images
 
 
-async def replace_s3_paths_with_signed_urls(markdown_content: str, lifetime_hours: int = 1) -> str:
+async def replace_s3_paths_with_signed_urls(
+    markdown_content: str,
+    s3_service: S3AnonymousFileAccessService,
+    lifetime_hours: int = 1,
+) -> str:
     """
     Replace S3 paths in markdown with short-lived signed URLs.
 
@@ -174,8 +178,6 @@ async def replace_s3_paths_with_signed_urls(markdown_content: str, lifetime_hour
     without S3 credentials. The signed URLs expire after the specified lifetime.
     """
     pattern = r"!\[([^\]]*)\]\((s3://([^/]+)/([^)]+))\)"
-
-    s3_service = await asyncio.to_thread(create_s3_service)
 
     def replace_with_signed_url(match: re.Match) -> str:
         alt_text = match.group(1)
@@ -186,20 +188,3 @@ async def replace_s3_paths_with_signed_urls(markdown_content: str, lifetime_hour
         return f"![{alt_text}]({signed_url})"
 
     return await asyncio.to_thread(re.sub, pattern, replace_with_signed_url, markdown_content)
-
-
-def wrap_images_in_figure_tags(markdown_content: str) -> str:
-    """
-    Wrap standalone markdown images in <figure> tags.
-
-    Finds images that are not already wrapped in <figure> tags and wraps them.
-    This ensures consistent handling by downstream processors like
-    MarkdownStructuralNodeParser.
-    """
-    pattern = r"(?<!<figure>)(!\[[^\]]*\]\([^)]+\))(?!</figure>)"
-
-    def wrap_in_figure(match: re.Match) -> str:
-        image_markdown = match.group(1)
-        return f"<{NODE_CONTENT_TYPE_FIGURE}>{image_markdown}</{NODE_CONTENT_TYPE_FIGURE}>"
-
-    return re.sub(pattern, wrap_in_figure, markdown_content)

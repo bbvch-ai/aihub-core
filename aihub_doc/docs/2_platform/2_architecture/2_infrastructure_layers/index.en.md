@@ -61,7 +61,7 @@ and execution when users ask the LLM to analyze data or run calculations. The LL
 securely in an isolated Jupyter environment, returning results directly in the conversation. **SearXNG** provides web
 search capabilities when users need current information, aggregating results from multiple search engines while
 preserving privacy. **Playwright** scrapes content from websites discovered through search, extracting full text when
-search snippets aren't sufficient. **Docling** parses documents users upload to the chat, extracting text and structure
+search snippets aren't sufficient. **MinerU** parses documents users upload to the chat, extracting text and structure
 from PDFs, Word documents, and presentations while preserving tables and formatting needed for accurate
 question-answering.
 
@@ -110,7 +110,7 @@ checks. The choice of Dagster over alternatives like Airflow comes from its supe
 native Python integration.
 
 Pipeline workers implement the actual document processing. They connect to the source, download documents to SeaweedFS
-for processing, parse content using Docling, generate embeddings using configured models, and store results in the
+for processing, parse content using MinerU, generate embeddings using configured models, and store results in the
 vector database. Workers scale horizontally, with Dagster distributing work across available instances.
 
 **Milvus** provides vector storage for semantic search. It indexes high-dimensional embeddings, performs approximate

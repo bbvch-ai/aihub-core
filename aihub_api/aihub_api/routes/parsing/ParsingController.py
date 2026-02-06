@@ -9,9 +9,11 @@ from typing import Annotated
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.infrastructure.s3.use_s3 import use_s3_service
 from aihub_lib.routes.Controller import Controller
-from fastapi import Body, Header, Query, Security
+from fastapi import Body, Depends, Header, Query, Security
 
 from aihub_api.routes.parsing.dto.DocumentConversionResponse import DocumentConversionResponse
 from aihub_api.routes.parsing.dto.ImageMode import ImageMode
@@ -66,6 +68,7 @@ class ParsingController(Controller):
         async def process_document(
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             body: Annotated[bytes, Body()],
+            s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
             content_type: Annotated[str, Header(include_in_schema=False)] = "",
             x_filename: Annotated[str, Header()] = "document",
             x_file_name: Annotated[str | None, Header()] = None,
@@ -79,6 +82,7 @@ class ParsingController(Controller):
                 filename=x_file_name or x_filename,
                 content_type=content_type,
                 image_mode=image_mode,
+                s3_service=s3_service,
             )
 
         return self
