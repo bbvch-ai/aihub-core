@@ -28,6 +28,7 @@ from dagster import MetadataValue, TableColumn, TableRecord, TableSchema
 from llama_index.core.schema import TextNode
 
 from aihub_pipeline.types.DataLakeFile import DataLakeFile
+from aihub_pipeline.types.RcloneFile import MinimalRcloneFile
 from aihub_pipeline.types.RefDocDocument import RefDocDocument
 from aihub_pipeline.types.SharePointFile import MinimalSharePointFile
 from aihub_pipeline.types.SourceFile import MinimalSourceFile
@@ -249,6 +250,60 @@ def local_file_metadata_table(files: list[MinimalSourceFile]) -> MetadataValue:
                     "modified": "...",
                     "size": "...",
                     "path": "...",
+                }
+            )
+        )
+
+    table_schema = TableSchema(columns=columns)
+    return MetadataValue.table(records=records, schema=table_schema)
+
+
+def rclone_file_table_row(file: MinimalRcloneFile) -> dict:
+    """Convert MinimalRcloneFile to table row dict."""
+    modified_dt = datetime.fromtimestamp(file.modified) if file.modified else None
+    return {
+        "remote": file.remote,
+        "name": file.name,
+        "modified": modified_dt.strftime("%Y-%m-%d %H:%M:%S") if modified_dt else "N/A",
+        "size": readable_size(file.size),
+        "path": file.path,
+        "mime_type": file.mime_type or "",
+    }
+
+
+def rclone_file_metadata_table(files: list[MinimalRcloneFile]) -> MetadataValue:
+    """
+    Create a Dagster metadata table from rclone file metadata.
+
+    Displays files from rclone remotes (OneDrive, SharePoint, S3, etc.) in a structured
+    table format for monitoring and debugging.
+    Limits display to first 100 files to avoid overwhelming the UI.
+    """
+    columns = [
+        TableColumn("remote", "string"),
+        TableColumn("name", "string"),
+        TableColumn("modified", "string"),
+        TableColumn("size", "string"),
+        TableColumn("path", "string"),
+        TableColumn("mime_type", "string"),
+    ]
+
+    sorted_files = sorted(files, key=lambda f: f.path)
+
+    display_files = sorted_files[:100]
+
+    records = [TableRecord(rclone_file_table_row(file)) for file in display_files]
+
+    if len(sorted_files) > 100:
+        records.append(
+            TableRecord(
+                {
+                    "remote": "...",
+                    "name": f"({len(sorted_files) - 100} more files)",
+                    "modified": "...",
+                    "size": "...",
+                    "path": "...",
+                    "mime_type": "...",
                 }
             )
         )

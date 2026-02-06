@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_agent"
-version = "v0.260.0"
+version = "v0.260.1"
 description = "agents core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -35,7 +35,7 @@ stringcase = "^1.2.0"
 
 [tool.poetry.dependencies.aihub_lib]
 git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.260.0"
+tag = "v0.260.1"
 subdirectory = "aihub_lib"
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
