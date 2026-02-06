@@ -262,13 +262,13 @@ services:
       OAUTH2_PROXY_UPSTREAMS: http://seaweedfs-filer:8888
       OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_SEAWEEDFS}
       OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
-      OAUTH2_PROXY_SCOPE: openid email profile
-      OAUTH2_PROXY_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH2_PROXY_SCOPE: openid email profile roles
+      OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-datalake
       OAUTH2_PROXY_PROVIDER: oidc
       OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
-      OAUTH2_PROXY_OIDC_ISSUER_URL: ${OAUTH_AUTHORITY_URL}/v2.0
+      OAUTH2_PROXY_OIDC_ISSUER_URL: https://auth.${DOMAIN}/realms/aihub
       OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET_SEAWEEDFS}
-      OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OAUTH2_PROXY_CLIENT_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET}
       OAUTH2_PROXY_EMAIL_DOMAINS: "*"
       OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: ${OAUTH_CUSTOM_SIGN_IN_LOGO}
       OAUTH2_PROXY_REVERSE_PROXY: True
@@ -438,15 +438,15 @@ services:
       OAUTH2_PROXY_UPSTREAMS: http://attu:3000
       OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_ATTU}
       OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
-      OAUTH2_PROXY_SCOPE: openid email profile
-      OAUTH2_PROXY_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH2_PROXY_SCOPE: openid email profile roles
+      OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-attu
       OAUTH2_PROXY_PROVIDER: oidc
       OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
-      OAUTH2_PROXY_OIDC_ISSUER_URL: ${OAUTH_AUTHORITY_URL}/v2.0
+      OAUTH2_PROXY_OIDC_ISSUER_URL: https://auth.${DOMAIN}/realms/aihub
       OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET_ATTU}
-      OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OAUTH2_PROXY_CLIENT_SECRET: ${KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET}
       OAUTH2_PROXY_EMAIL_DOMAINS: "*"
-      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: https://aiagentsstpublicblobs.blob.core.windows.net/logos/Bbv-Logo_farbig.png
+      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: ${OAUTH_CUSTOM_SIGN_IN_LOGO}
       OAUTH2_PROXY_REVERSE_PROXY: True
       OAUTH2_PROXY_REDIRECT_URL: https://attu.${DOMAIN}
     depends_on:
@@ -665,12 +665,18 @@ services:
     container_name: keycloak
     image: quay.io/keycloak/keycloak:26.0
     restart: unless-stopped
+    # Shell wrapper to substitute ${DOMAIN} in realm JSON before import.
+    # Keycloak's --import-realm does not support env var substitution natively,
+    # so we pre-process the template files with sed before starting.
+    entrypoint: /bin/bash
     command:
-      - start
-      - --import-realm
-      - --hostname=auth.${DOMAIN}
-      - --proxy-headers=xforwarded
-      - --http-enabled=true
+      - -c
+      - |
+        mkdir -p /opt/keycloak/data/import
+        for f in /opt/keycloak/data/import-templates/*.json; do
+          sed "s|\$${DOMAIN}|$$DOMAIN|g" "$$f" > "/opt/keycloak/data/import/$$(basename $$f)"
+        done
+        exec /opt/keycloak/bin/kc.sh start --import-realm --hostname=auth.$$DOMAIN --proxy-headers=xforwarded --http-enabled=true
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
@@ -681,6 +687,7 @@ services:
       KC_FEATURES: token-exchange,admin-fine-grained-authz
       KC_HEALTH_ENABLED: "true"
       KC_METRICS_ENABLED: "true"
+      DOMAIN: ${DOMAIN}
       # Dev user configuration (passed to realm template)
       KEYCLOAK_DEV_USER_USERNAME: ${KEYCLOAK_DEV_USER_USERNAME}
       KEYCLOAK_DEV_USER_PASSWORD: ${KEYCLOAK_DEV_USER_PASSWORD}
@@ -688,10 +695,16 @@ services:
       KEYCLOAK_DEV_USER_FIRSTNAME: ${KEYCLOAK_DEV_USER_FIRSTNAME}
       KEYCLOAK_DEV_USER_LASTNAME: ${KEYCLOAK_DEV_USER_LASTNAME}
       KEYCLOAK_DEV_USER_ROLES_JSON: ${KEYCLOAK_DEV_USER_ROLES_JSON}
+      # Azure Entra ID configuration (for identity provider federation)
+      KEYCLOAK_AZURE_CLIENT_ID: ${KEYCLOAK_AZURE_CLIENT_ID}
+      KEYCLOAK_AZURE_CLIENT_SECRET: ${KEYCLOAK_AZURE_CLIENT_SECRET}
+      KEYCLOAK_AZURE_TENANT_ID: ${KEYCLOAK_AZURE_TENANT_ID}
     volumes:
-      - ./configs/keycloak/aihub-realm.build.gpu.json:/opt/keycloak/data/import/aihub-realm.json:ro
+      # Non-dev stages: mount as templates, sed-processed before import
+      - ./configs/keycloak/aihub-realm.build.gpu.json:/opt/keycloak/data/import-templates/aihub-realm.json:ro
+      - ./configs/keycloak/identity-providers.build.gpu.json:/opt/keycloak/data/import-templates/identity-providers.json:ro
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080;echo -e 'GET /health/ready HTTP/1.1\r\nhost: localhost\r\nConnection: close\r\n\r\n' >&3;grep -q '200 OK' <&3"]
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000;echo -e 'GET /health/ready HTTP/1.1\r\nhost: localhost\r\nConnection: close\r\n\r\n' >&3;grep -q '200 OK' <&3"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -711,6 +724,9 @@ services:
       - "traefik.http.routers.keycloak.tls.certresolver=local"
       - "traefik.http.routers.keycloak.priority=7000"
       - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
+    networks:
+      - data   # PostgreSQL access for Keycloak database
+      - proxy  # Traefik routing for auth.${DOMAIN}
 
   # ===================================================================
   # Nats & Valkey Stack (Messaging and Caching)
@@ -1376,16 +1392,16 @@ services:
       OAUTH2_PROXY_COOKIE_SECURE: False
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
       OAUTH2_PROXY_UPSTREAMS: http://dagster-webserver:3000
-      OAUTH2_PROXY_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-dagster
       OAUTH2_PROXY_PROVIDER: oidc
       OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
-      OAUTH2_PROXY_OIDC_ISSUER_URL: ${OAUTH_AUTHORITY_URL}/v2.0
+      OAUTH2_PROXY_OIDC_ISSUER_URL: https://auth.${DOMAIN}/realms/aihub
       OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET_DAGSTER}
-      OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OAUTH2_PROXY_CLIENT_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET}
       OAUTH2_PROXY_EMAIL_DOMAINS: "*"
       OAUTH2_PROXY_REVERSE_PROXY: True
       OAUTH2_PROXY_REDIRECT_URL: https://dagster.${DOMAIN}
-      OAUTH2_PROXY_SCOPE: openid email profile
+      OAUTH2_PROXY_SCOPE: openid email profile roles
       OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_DAGSTER}
       OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
       OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: ${OAUTH_CUSTOM_SIGN_IN_LOGO}

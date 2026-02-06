@@ -502,10 +502,16 @@ services:
       KEYCLOAK_DEV_USER_FIRSTNAME: ${KEYCLOAK_DEV_USER_FIRSTNAME}
       KEYCLOAK_DEV_USER_LASTNAME: ${KEYCLOAK_DEV_USER_LASTNAME}
       KEYCLOAK_DEV_USER_ROLES_JSON: ${KEYCLOAK_DEV_USER_ROLES_JSON}
+      # Azure Entra ID configuration (for identity provider federation)
+      KEYCLOAK_AZURE_CLIENT_ID: ${KEYCLOAK_AZURE_CLIENT_ID}
+      KEYCLOAK_AZURE_CLIENT_SECRET: ${KEYCLOAK_AZURE_CLIENT_SECRET}
+      KEYCLOAK_AZURE_TENANT_ID: ${KEYCLOAK_AZURE_TENANT_ID}
     volumes:
+      # Dev stage: mount directly (no ${DOMAIN} substitution needed)
       - ./configs/keycloak/aihub-realm.dev.gpu.json:/opt/keycloak/data/import/aihub-realm.json:ro
+      - ./configs/keycloak/identity-providers.dev.gpu.json:/opt/keycloak/data/import/identity-providers.json:ro
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080;echo -e 'GET /health/ready HTTP/1.1\r\nhost: localhost\r\nConnection: close\r\n\r\n' >&3;grep -q '200 OK' <&3"]
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000;echo -e 'GET /health/ready HTTP/1.1\r\nhost: localhost\r\nConnection: close\r\n\r\n' >&3;grep -q '200 OK' <&3"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -518,6 +524,8 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    networks:
+      - data   # PostgreSQL access for Keycloak database
 
   # ===================================================================
   # Nats & Valkey Stack (Messaging and Caching)
