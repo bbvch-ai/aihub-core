@@ -191,7 +191,7 @@ class NodeCreatorFromSplits:
         Detects if a table needs to be chunked and splits it into separate chunks.
 
         Tables are expected to be markdown format with headers already correctly set
-        by DoclingLoader. This method only handles chunking for large tables.
+        by the document loader. This method only handles chunking for large tables.
 
         Uses shared table utilities from aihub_lib.generative_ai.document.tables.
         """

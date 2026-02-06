@@ -37,8 +37,6 @@ arize-phoenix = "^10.0.0"
 audioop-lts = "^0.2.1"
 fastmcp = "^2.11.2"
 opentelemetry-instrumentation-fastapi = "^0.60b1"
-s3fs = ">=2024.10.0,<2025.0.0"
-markitdown = {extras = ["docx", "outlook", "pptx", "xlsx"], version = "^0.1.4"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"

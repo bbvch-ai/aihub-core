@@ -1,4 +1,4 @@
-from typing import Annotated, Any
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -9,8 +9,6 @@ class DocumentConversionMetadata(BaseModel):
     source: Annotated[str, Field(description="Source filename")]
     filename: Annotated[str | None, Field(default=None, description="Original filename")]
     page: Annotated[int | None, Field(default=None, description="Page number if applicable")]
-    # Allow additional custom fields
-    model_config = {"extra": "allow"}
 
 
 class DocumentConversionResponse(BaseModel):
@@ -23,6 +21,6 @@ class DocumentConversionResponse(BaseModel):
 
     page_content: Annotated[str, Field(description="Extracted text content (markdown)")]
     metadata: Annotated[
-        DocumentConversionMetadata | dict[str, Any] | None,
+        DocumentConversionMetadata | None,
         Field(default=None, description="Document metadata"),
     ]

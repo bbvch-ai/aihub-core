@@ -13,7 +13,6 @@ import asyncio
 import json
 import logging
 import os
-import re
 from typing import TYPE_CHECKING, Any
 
 import httpx
@@ -28,7 +27,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from aihub_lib.generative_ai.document.tables.markdown_table import wrap_tables_with_tags
+from aihub_lib.generative_ai.document.tables.markdown_table import wrap_markdown_tables
 from aihub_lib.generative_ai.utils.image_processor import embed_images_as_base64, extract_and_upload_images
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.mineru.MineruSettings import MineruSettings
@@ -46,8 +45,6 @@ logger = logging.getLogger(__name__)
 class MineruTransientError(Exception):
     """Raised when MinerU API returns an error that can be retried."""
 
-    pass
-
 
 class MineruParseResponse(BaseModel):
     """Response schema from MinerU /file_parse endpoint."""
@@ -64,13 +61,6 @@ class MineruLoader(BaseReader):
     Communicates with MinerU exclusively via HTTP, ensuring complete AGPL
     license isolation. Supports PDF and image files with OCR, table detection,
     and formula extraction.
-
-    ### Output Format
-    Returns LlamaIndex Documents with:
-    - Markdown text content
-    - Images wrapped in `<figure>` tags with S3 paths
-    - Tables wrapped in `<table>` tags
-    - Metadata including page count
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -117,15 +107,12 @@ class MineruLoader(BaseReader):
 
         logger.debug(f"[MineruLoader] Starting async load for file: {filename}")
 
-        # Read file content
         file_bytes = await asyncio.to_thread(fs.cat_file, file)
         logger.debug(f"[MineruLoader] File read complete: {filename}, size: {len(file_bytes)} bytes")
 
-        # Call MinerU API
         result = await self._convert_document(file_bytes, filename, include_images)
         logger.debug(f"[MineruLoader] Conversion complete for: {filename}")
 
-        # Process response
         documents = await self._process_response(
             result=result,
             file=file,
@@ -152,17 +139,6 @@ class MineruLoader(BaseReader):
 
         Used by the API layer when documents are uploaded directly rather than
         read from a filesystem.
-
-        ### Arguments
-        - `content`: Raw bytes of the document
-        - `filename`: Name of the file (used for extension detection and output paths)
-        - `extra_info`: Additional metadata to include in the Document
-        - `fs`: Filesystem for storing extracted images (required unless embed_base64=True)
-        - `include_images`: Whether to extract images from the document
-        - `embed_base64`: If True, embed images as base64 data URIs instead of uploading to S3
-
-        ### Raises
-        - `ValueError`: If `include_images` is True, `embed_base64` is False, and no filesystem is provided
         """
         if include_images and not embed_base64 and fs is None:
             raise ValueError(
@@ -170,7 +146,6 @@ class MineruLoader(BaseReader):
                 "Provide an S3 filesystem to store extracted images, or set embed_base64=True."
             )
 
-        # Use local filesystem only if images are not being extracted to S3
         if fs is None:
             fs = get_default_fs()
 
@@ -178,15 +153,11 @@ class MineruLoader(BaseReader):
             f"[MineruLoader] Processing from bytes: {filename}, {len(content)} bytes, embed_base64={embed_base64}"
         )
 
-        # Call MinerU API (always request images, we decide how to handle them)
         result = await self._convert_document(content, filename, include_images=True)
 
-        # For API usage without a source file path, we need a synthetic path
-        # with S3 bucket prefix for figure storage
         bucket_name = AIHubSettings().SHARED_BUCKET_NAME
         synthetic_file = f"{bucket_name}/api_uploads/{filename}"
 
-        # Process response
         documents = await self._process_response(
             result=result,
             file=synthetic_file,
@@ -218,7 +189,6 @@ class MineruLoader(BaseReader):
         include_images: bool,
     ) -> MineruParseResponse:
         """Execute the conversion request to MinerU API."""
-        # Determine content type based on extension
         ext = os.path.splitext(filename)[1].lower()
         content_type_map = {
             ".pdf": "application/pdf",
@@ -233,7 +203,6 @@ class MineruLoader(BaseReader):
         }
         content_type = content_type_map.get(ext, "application/octet-stream")
 
-        # Build VLM server URL with authentication
         vlm_server_url = self.config.VL_SERVER_URL.rstrip("/")
         vlm_headers = {}
         if self.config.VL_API_KEY.get_secret_value():
@@ -288,12 +257,10 @@ class MineruLoader(BaseReader):
         embed_base64: bool = False,
     ) -> list[Document]:
         """Process MinerU API response into Document objects."""
-        # Get file stem (filename without extension) for result lookup
         file_stem = os.path.splitext(filename)[0]
 
         file_result = result.results.get(file_stem, {})
         if not file_result:
-            # Try with full filename as fallback
             file_result = result.results.get(filename, {})
 
         if not file_result:
@@ -307,24 +274,16 @@ class MineruLoader(BaseReader):
         if not md_content:
             logger.warning(f"[MineruLoader] Empty markdown content for {filename}")
 
-        # Parse middle_json for page count
-        try:
-            middle_json = json.loads(middle_json_str) if middle_json_str else {}
-        except json.JSONDecodeError:
-            middle_json = {}
-
+        middle_json = json.loads(middle_json_str) if middle_json_str else {}
         num_pages = len(middle_json.get("pdf_info", []))
 
-        # Process images if included
         if include_images and images:
             if embed_base64:
-                # Embed images as base64 data URIs directly in markdown
                 md_content = embed_images_as_base64(
                     markdown_content=md_content,
                     images=images,
                 )
             else:
-                # Upload images to S3 and replace references with S3 paths
                 md_content = await extract_and_upload_images(
                     markdown_content=md_content,
                     images=images,
@@ -332,10 +291,8 @@ class MineruLoader(BaseReader):
                     source_file=file,
                 )
 
-        # Wrap tables in <table> tags
-        md_content = self._wrap_tables(md_content)
+        md_content = wrap_markdown_tables(md_content)
 
-        # Build metadata
         metadata = {
             NUMBER_OF_PAGES: num_pages,
             "backend": result.backend,
@@ -348,25 +305,6 @@ class MineruLoader(BaseReader):
         logger.debug(f"[MineruLoader] Processed {filename}: {num_pages} pages, {len(images)} images")
 
         return [Document(text=md_content, extra_info=metadata)]
-
-    def _wrap_tables(self, markdown_content: str) -> str:
-        """
-        Wrap markdown tables in <table> tags for downstream processing.
-
-        Uses pattern matching to find markdown tables and wraps them with
-        <table> tags so MarkdownStructuralNodeParser can identify them.
-        """
-        # Pattern to match markdown tables
-        # Matches: |header|...\n|---|---|\n|row|...
-        pattern = r"(\|[^\n]+\|\r?\n\|[:\-| ]+\|\r?(?:\n\|[^\n]+\|\r?)*)"
-
-        tables = re.findall(pattern, markdown_content)
-
-        for table in tables:
-            wrapped = wrap_tables_with_tags([table])
-            markdown_content = markdown_content.replace(table, wrapped, 1)
-
-        return markdown_content
 
     def _retry_kwargs(self) -> dict:
         """Return retry configuration for tenacity."""

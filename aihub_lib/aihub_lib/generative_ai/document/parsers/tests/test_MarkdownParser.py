@@ -739,7 +739,6 @@ def test_page_numbers_are_set_correctly(node_parser):
 
 
 def test_table_extraction(node_parser):
-    # Tables should be in markdown format wrapped in <table> tags (as produced by DoclingLoader)
     text = """# Section
     Some intro text.
     <table>| Cell 1 | Cell 2 |
@@ -790,7 +789,6 @@ def test_large_table_splitting():
     node_parser = MarkdownStructuralNodeParser(metadata=metadata, chunk_size=50, chunk_overlap=0)
 
     # Create a markdown table with header and many rows to exceed chunk size
-    # Tables should be in markdown format wrapped in <table> tags (as produced by DoclingLoader)
     table_rows = ["| Column 1 | Column 2 | Column 3 |", "|----------|----------|----------|"]
     for i in range(20):
         table_rows.append(f"| Data {i}A | Data {i}B | Data {i}C |")

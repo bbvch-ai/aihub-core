@@ -5,9 +5,9 @@ Routes documents to the appropriate loader (MinerU or MarkItDown) based on
 file type and handles the conversion process.
 """
 
-from __future__ import annotations
-
 import logging
+import mimetypes
+import urllib.parse
 
 from aihub_lib.generative_ai.document.loaders.MarkItDownLoader import MarkItDownLoader
 from aihub_lib.generative_ai.document.loaders.MineruLoader import MineruLoader
@@ -21,9 +21,23 @@ from aihub_api.routes.parsing.dto.DocumentConversionResponse import (
     DocumentConversionResponse,
 )
 from aihub_api.routes.parsing.dto.ImageMode import ImageMode
-from aihub_api.routes.parsing.ParsingMappings import get_extension
 
 logger = logging.getLogger(__name__)
+
+
+def _get_extension(filename: str, content_type: str = "") -> str:
+    """Extract file extension from filename or infer from content type via mimetypes."""
+    if "." in filename:
+        ext = filename.rsplit(".", 1)[-1].lower()
+        if ext:
+            return ext
+
+    if content_type:
+        guessed = mimetypes.guess_extension(content_type, strict=False)
+        if guessed:
+            return guessed.lstrip(".")
+
+    raise ValueError(f"Cannot determine file extension for '{filename}' (content_type='{content_type}')")
 
 
 class ParsingService:
@@ -42,23 +56,20 @@ class ParsingService:
         Routes to the appropriate loader based on file extension:
         - MinerU: PDF, images (png, jpg, etc.)
         - MarkItDown: Office documents (docx, pptx, xlsx, etc.)
-
-        ### Arguments
-        - `content`: Raw bytes of the document
-        - `filename`: Original filename (used for extension detection)
-        - `content_type`: MIME type of the document
-        - `image_mode`: How to handle images - 's3' (default) or 'base64'
         """
         if image_mode is None:
             image_mode = ImageMode.S3
 
+        filename = urllib.parse.unquote(filename)
+        content_type = content_type.split(";")[0].strip()
+
         logger.info(f"Converting document: {filename} ({len(content)} bytes), image_mode={image_mode}")
 
-        # Determine file extension
-        extension = get_extension(filename, content_type)
+        extension = _get_extension(filename, content_type)
+        if "." not in filename:
+            filename = f"{filename}.{extension}"
         logger.debug(f"Detected extension: {extension} for {filename}")
 
-        # Route to appropriate loader
         mineru_extensions = MineruSettings().EXTENSIONS
         markitdown_extensions = MarkItDownLoader.SUPPORTED_EXTENSIONS
 
@@ -69,65 +80,49 @@ class ParsingService:
             loader = MarkItDownLoader()
             logger.debug(f"Using MarkItDownLoader for {filename}")
         else:
-            logger.error(f"Unsupported file type: {extension} for {filename}")
             raise HTTPException(
                 status_code=400,
                 detail=f"Unsupported file type: {extension}. "
                 f"Supported types: {', '.join(mineru_extensions + markitdown_extensions)}",
             )
 
-        try:
-            if image_mode == ImageMode.S3:
-                # S3 mode: Upload images to S3 and return signed URLs
-                s3_fs = create_s3_filesystem()
-                documents = await loader.aload_data_from_bytes(
-                    content=content,
-                    filename=filename,
-                    fs=s3_fs,
-                    include_images=True,
-                    embed_base64=False,
-                )
-            else:
-                # Base64 mode: Embed images as data URIs in markdown
-                documents = await loader.aload_data_from_bytes(
-                    content=content,
-                    filename=filename,
-                    include_images=True,
-                    embed_base64=True,
-                )
-
-            if not documents:
-                logger.error(f"No documents returned for {filename}")
-                raise HTTPException(
-                    status_code=500,
-                    detail="Document conversion returned no content",
-                )
-
-            markdown_content = documents[0].text
-
-            # Replace S3 paths with signed URLs for S3 mode
-            # Max lifetime is 7 days (168 hours) per S3 presigned URL limitations
-            if image_mode == ImageMode.S3 and markdown_content:
-                markdown_content = replace_s3_paths_with_signed_urls(
-                    markdown_content,
-                    lifetime_hours=168,  # 7 days (maximum allowed for presigned URLs)
-                )
-
-            logger.info(f"Document converted: {filename}, {len(markdown_content)} chars")
-
-            return DocumentConversionResponse(
-                page_content=markdown_content,
-                metadata=DocumentConversionMetadata(
-                    source=filename,
-                    filename=filename,
-                ),
+        if image_mode == ImageMode.S3:
+            s3_fs = create_s3_filesystem()
+            documents = await loader.aload_data_from_bytes(
+                content=content,
+                filename=filename,
+                fs=s3_fs,
+                include_images=True,
+                embed_base64=False,
+            )
+        else:
+            documents = await loader.aload_data_from_bytes(
+                content=content,
+                filename=filename,
+                include_images=True,
+                embed_base64=True,
             )
 
-        except HTTPException:
-            raise
-        except Exception as e:
-            logger.error(f"Error converting document {filename}: {e}", exc_info=True)
+        if not documents:
             raise HTTPException(
                 status_code=500,
-                detail=f"Error processing document: {type(e).__name__}",
+                detail="Document conversion returned no content",
             )
+
+        markdown_content = documents[0].text
+
+        if image_mode == ImageMode.S3 and markdown_content:
+            markdown_content = await replace_s3_paths_with_signed_urls(
+                markdown_content,
+                lifetime_hours=168,
+            )
+
+        logger.info(f"Document converted: {filename}, {len(markdown_content)} chars")
+
+        return DocumentConversionResponse(
+            page_content=markdown_content,
+            metadata=DocumentConversionMetadata(
+                source=filename,
+                filename=filename,
+            ),
+        )
