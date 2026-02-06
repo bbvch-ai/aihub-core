@@ -1,9 +1,10 @@
 from typing import Annotated
 
 from aihub_lib.agents.AgentConfig import AgentConfig
+from aihub_lib.generative_ai.memory.MemorySettings import MemorySettings
 from aihub_lib.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.generative_ai.retrievers.RetrieverConfig import RetrieverConfig
+from aihub_lib.generative_ai.retrievers.KnowledgeRetrieverConfig import KnowledgeRetrieverConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from pydantic import Field
 
@@ -15,7 +16,9 @@ class RAGAgentConfig(AgentConfig):
     Configuration for a RAGAgent with multiple retrieval sources.
 
     Supports:
-    - Multiple retrievers (knowledge base + insights)
+    - Multiple retrievers (knowledge base)
+    - Organization memory (expert knowledge shared across users)
+    - User memory (personalized context for individual users)
 
     Note: For expert escalation functionality, use ExpertRAGAgentConfig instead.
     """
@@ -26,8 +29,8 @@ class RAGAgentConfig(AgentConfig):
     ]
 
     retrievers: Annotated[
-        list[RetrieverConfig],
-        Field(description="List of retriever configurations (knowledge, insight)."),
+        list[KnowledgeRetrieverConfig],
+        Field(description="List of knowledge retriever configurations."),
     ]
 
     number_of_input_tokens: Annotated[
@@ -71,3 +74,27 @@ class RAGAgentConfig(AgentConfig):
         RerankingConfig,
         Field(description="Configuration for reranking retrieved documents to improve relevance."),
     ] = RerankingConfig()
+
+    # Organization memory configuration
+    enable_organization_memory: Annotated[
+        bool,
+        Field(description="Whether to retrieve organization memories (expert knowledge) for context."),
+    ] = True
+    tenant_id: Annotated[
+        str,
+        Field(description="Tenant ID for organization memory scoping."),
+    ] = Field(default_factory=lambda: MemorySettings().DEFAULT_TENANT_ID)
+    tenant_namespace: Annotated[
+        str | None,
+        Field(description="Tenant namespace for department-level memory isolation. Uses default if None."),
+    ] = None
+
+    # User memory configuration
+    enable_user_memory_retrieval: Annotated[
+        bool,
+        Field(description="Whether to retrieve user-specific memories for personalized context."),
+    ] = True
+    enable_user_memory_storage: Annotated[
+        bool,
+        Field(description="Whether to store new memories from conversations for future retrieval."),
+    ] = True
