@@ -148,3 +148,13 @@ sensitive_info_guard:
     The revised response with sensitive information removed or redacted, if applicable.
   docstring: |
     Result from analyzing a response for sensitive information that should not be shared externally.
+few_shot_example:
+  user:
+    label: "User message"
+    help: "An example user request or message that will be evaluated."
+  success:
+    label: "Accept request"
+    help: "Check if this example should be accepted, uncheck if rejected."
+  reason:
+    label: "Reason"
+    help: "Explanation of why the request is accepted or rejected."

@@ -90,10 +90,10 @@ class EventService:
         )
 
         return EventTimeseries(
-            agent_id=agent_id,
+            agent_id=str(agent_id) if agent_id else None,
             agent_class=agent_class,
             event_name=event_name,
-            thread_id=thread_id,
+            thread_id=str(thread_id) if thread_id else None,
             time_range=time_range,
             resolution=resolution,
             start_time=start_time,

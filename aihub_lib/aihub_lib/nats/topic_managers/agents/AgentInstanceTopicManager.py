@@ -33,6 +33,14 @@ class AgentInstanceTopicManager(AgentClassTopicManager):
 
     agent_id: Annotated[str, Field(description="Unique agent instance ID")]
 
+    def get_agent_config_rpc_subject_for_instance(self) -> str:
+        """
+        Returns the RPC subject for fetching this agent instance's configuration.
+
+        Uses the instance's own agent_class and agent_id to build the subject.
+        """
+        return self.get_agent_config_rpc_subject(self.agent_class, self.agent_id)
+
     def get_agent_instance_discovery_subject_request(
         self,
         call_id: Annotated[str, "Identifier linking request and response"],

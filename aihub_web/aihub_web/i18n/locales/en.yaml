@@ -1,6 +1,17 @@
 test: "This is test"
 welcome: "Welcome to bbv ai-hub"
 
+common:
+  actions:
+    save: "Save"
+    cancel: "Cancel"
+    create: "Create"
+    delete: "Delete"
+    edit: "Edit"
+  loading: "Loading..."
+  selectModel: "Select a model"
+  selectDatabase: "Select a database"
+
 models:
   title: "Models"
   error: "Error loading models"
@@ -254,6 +265,13 @@ service:
 agent:
   title: "Agents"
   can_chat: "Can Chat"
+  navigation:
+    basic: "Overview"
+    workflow: "Workflow"
+    threads: "Threads"
+    configuration: "Configuration"
+    chat: "Chat"
+    memories: "Memories"
   overview:
     startEvents: "Start Events"
     stopEvents: "Stop Events"
@@ -264,17 +282,18 @@ agent:
     status: "Status:"
     online: "Online"
     offline: "Offline"
+  configuration:
+    title: "Agent Configuration"
+    description: "Configure the runtime behavior and settings for this agent"
+    runtimeSettings: "Runtime Settings"
+    noConfiguration: "No configuration available for this agent"
+    saveSuccess: "Configuration saved successfully"
+    saveError: "Failed to save configuration"
   chat:
     title: "Start new Chat"
     placeholder: "Type the message you want to send to the Agent"
     createThreadAndSend: "Create Thread and Send"
     manuallyCreatedThread: "Manually created thread"
-  navigation:
-    basic: "Basic"
-    workflow: "Workflow"
-    threads: "Threads"
-    memories: "Memories"
-    chat: "Chat"
   availableAgents: "Available Agents"
   list:
     name: "Name"
@@ -290,6 +309,43 @@ agent:
     title: "Agentic Workflow"
   threads:
     title: "Agent Threads"
+  create:
+    button: "Create New Agent"
+    title: "Create New Agent"
+    cancel: "Cancel"
+    selectClass: "Agent Type"
+    selectClassPlaceholder: "Select an agent type..."
+    agentId: "Agent ID"
+    agentIdPlaceholder: "my-new-agent"
+    agentIdHelp: "Unique identifier (lowercase letters, numbers, hyphens, underscores)"
+    agentIdInvalid: "Only lowercase letters, numbers, hyphens, and underscores are allowed"
+    agentIdTooLong: "Agent ID must be 100 characters or less"
+    configuration: "Configuration"
+    noAgentClasses: "No agent types available. Make sure at least one agent is running."
+    submit: "Create Agent"
+    success: "Agent created successfully"
+    error: "Failed to create agent"
+    steps:
+      basicInfo: "Basic Info"
+  delete:
+    button: "Delete"
+    title: "Delete Agent"
+    confirm: "Are you sure you want to delete this agent?"
+    confirmMessage: "This action cannot be undone. The agent configuration will be permanently removed."
+    success: "Agent deleted successfully"
+    error: "Failed to delete agent"
+    cannotDeleteDefault: "Default agent configurations cannot be deleted"
+  add_instance:
+    title: "Add Agent"
+    description: "Create a new agent instance"
+  selector:
+    class:
+      label: "Agent Type"
+      placeholder: "Select an agent type..."
+    id:
+      label: "Agent Profile"
+      placeholder: "Select an agent profile..."
+      help: "Choose the specific agent profile to use"
   memories:
     title: "Agent Memories"
     description: "Memories collected by {agentName} about you"
@@ -575,6 +631,37 @@ process:
     overview: "Overview"
     walkthroughs: "Runs"
     start: "Start Run"
+    configuration: "Configuration"
+  list:
+    online: "Online"
+    offline: "Offline"
+  configuration:
+    title: "Process Configuration"
+    description: "Configure the runtime behavior of this process instance."
+    runtimeSettings: "Runtime Settings"
+    saveSuccess: "Configuration saved successfully"
+    saveError: "Failed to save configuration"
+    noConfiguration: "No configuration available for this process."
+  create:
+    title: "Create New Process"
+    selectClass: "Process Type"
+    selectClassPlaceholder: "Select a process type..."
+    noProcessClasses: "No process types available."
+    steps:
+      basicInfo: "Basic Info"
+    submit: "Create Process"
+    cancel: "Cancel"
+    success: "Process created successfully"
+    error: "Failed to create process"
+  delete:
+    button: "Delete"
+    title: "Delete Process"
+    confirmMessage: "Are you sure you want to delete this process instance? This action cannot be undone."
+    success: "Process deleted successfully"
+    error: "Failed to delete process"
+  add_instance:
+    title: "Add Process"
+    description: "Create a new process instance"
   walkthrough:
     list:
       created: "Created"
@@ -584,7 +671,22 @@ process:
       state: "State"
       in_progress: "In Progress"
       done: "Done"
-      steps: "Fortschritt"
+      steps: "Progress"
+
+form:
+  locale_input:
+    translate_tooltip: "Translate to all languages"
+
+lib:
+  vectorStore:
+    label: "Vector Store"
+    help: "Select the knowledge database and namespaces to search"
+    database:
+      label: "Database"
+    namespaces:
+      label: "Namespaces"
+      placeholder: "Select namespaces (empty = all)"
+      help: "Leave empty to search all namespaces"
 
 memory:
   title: "Memories"

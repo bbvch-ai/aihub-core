@@ -1,13 +1,13 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Query, Security
 from mongoengine import DoesNotExist
 
+from aihub_api.i18n.ApiLocaleString import ApiLocaleString
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.notification.dto.NotificationDTO import (
     NotificationDTO,
@@ -23,19 +23,14 @@ from aihub_api.routes.notification.NotificationService import NotificationServic
 class NotificationController(Controller):
     """Controller for managing user notifications."""
 
-    name = LocaleString(en="Notifications", de="Benachrichtigungen", fr="Notifications", it="Notifiche")
-    description = LocaleString(
-        en="View and manage your notifications",
-        de="Benachrichtigungen anzeigen und verwalten",
-        fr="Consultez et gérez vos notifications",
-        it="Visualizza e gestisci le tue notifiche",
-    )
-    icon = "mdi:bell-outline"
+    name = ApiLocaleString.from_i18n_path("api.controllers.notification.name")
+    description = ApiLocaleString.from_i18n_path("api.controllers.notification.description")
+    icon = "mage:notification-bell"
 
     def __init__(self, *, auth: AuthHandler, route: str = "/notifications", **kwargs):
         super().__init__(auth=auth, route=route, **kwargs)
 
-    def get_notifications(self, route: str = "") -> "NotificationController":
+    def get_notifications(self, route: str = "") -> Self:
         @self.router.get(route, tags=self.tags, response_model=PaginatedNotificationsResponse)
         async def get_notifications(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
@@ -53,7 +48,7 @@ class NotificationController(Controller):
 
         return self
 
-    def update_notification(self, route: str = "/{notification_id}") -> "NotificationController":
+    def update_notification(self, route: str = "/{notification_id}") -> Self:
         @self.router.patch(route, tags=self.tags, response_model=NotificationDTO)
         async def update_notification(
             notification_id: str,
@@ -71,7 +66,7 @@ class NotificationController(Controller):
 
         return self
 
-    def update_notifications(self, route: str = "/") -> "NotificationController":
+    def update_notifications(self, route: str = "/") -> Self:
         @self.router.patch(route, tags=self.tags, response_model=list[NotificationDTO])
         async def update_notifications_bulk(
             bulk_updates: BulkUpdateNotificationRequest,

@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import type { AgentDto, ThreadDto, UserDto } from '@core/sdk/client'
+import type { MinimalAgentInstanceDto, ThreadDto, MinimalUserDto } from '@core/sdk/client'
 
 const { t } = useI18n()
 
@@ -36,6 +36,6 @@ const props = defineProps<{
   thread: ThreadDto
 }>()
 
-const users = computed<UserDto[]>(() => props.thread.users ?? [])
-const agents = computed<AgentDto[]>(() => props.thread.agents ?? [])
+const users = computed<MinimalUserDto[]>(() => props.thread.users ?? [])
+const agents = computed<MinimalAgentInstanceDto[]>(() => props.thread.agents ?? [])
 </script>

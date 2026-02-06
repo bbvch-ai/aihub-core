@@ -1,5 +1,5 @@
 import json
-from typing import Annotated
+from typing import Annotated, Self
 
 from pydantic import BaseModel, Field
 
@@ -24,7 +24,7 @@ class ExternalProcessEvent(BaseModel):
     event: Annotated[WorkEvent, Field(description="The user-originated event.")]
 
     @classmethod
-    def deserialize_event(cls, data: bytes | str | dict) -> "ExternalProcessEvent":
+    def deserialize_event(cls, data: bytes | str | dict) -> Self:
         """Deserialize incoming raw data (JSON string, bytes, or dict) into a ExternalProcessEvent."""
         if isinstance(data, dict):
             json_data = data

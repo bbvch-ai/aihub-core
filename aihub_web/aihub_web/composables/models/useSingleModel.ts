@@ -1,4 +1,4 @@
-import { getModel, type ModelDto } from '@core/sdk/client'
+import { getLitellmModel, type ModelDto } from '@core/sdk/client'
 import { useQuery } from '@pinia/colada'
 import { minutesToMilliseconds } from 'date-fns'
 
@@ -12,7 +12,7 @@ export const useSingleModel = () => {
     staleTime: minutesToMilliseconds(5),
     enabled: () => !!modelName.value,
     query: async () => {
-      return await getModel({
+      return await getLitellmModel({
         composable: '$fetch',
         path: {
           model_name: modelName.value,

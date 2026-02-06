@@ -111,13 +111,11 @@ class S3DataLakeClient(AbstractDataLakeClient):
         if bucket != self.container_name:
             raise ValueError(f"URI bucket '{bucket}' doesn't match client bucket '{self.container_name}'")
 
-        # Get object metadata
         try:
             head_response = self._client.head_object(Bucket=self.container_name, Key=key)
         except Exception as e:
             raise ValueError(f"Failed to get object metadata for {document_uri}: {e}")
 
-        # Create a mock s3_object dict to reuse existing logic
         s3_object = {
             "Key": key,
             "Size": head_response.get("ContentLength", 0),
@@ -142,7 +140,6 @@ class S3DataLakeClient(AbstractDataLakeClient):
         _, extension = os.path.splitext(filename)
         file_type = extension.lower()[1:] if extension else "unknown"
 
-        # Get additional metadata from S3 if needed
         try:
             head_response = self._client.head_object(Bucket=self.container_name, Key=key)
             content_type = head_response.get("ContentType", "application/octet-stream")
@@ -157,7 +154,6 @@ class S3DataLakeClient(AbstractDataLakeClient):
             metadata = {}
             last_modified = s3_object.get("LastModified")
 
-        # Convert ETag to MD5 hash format (base64)
         md5_hash_str: str | None = None
         if etag:
             try:
@@ -173,7 +169,6 @@ class S3DataLakeClient(AbstractDataLakeClient):
 
         last_modified_timestamp = int(last_modified.timestamp()) if last_modified else int(datetime.now().timestamp())
 
-        # Add custom MIME type for markdown files
         mimetypes.add_type("text/markdown", ".md")
 
         return DataLakeFile(
@@ -216,10 +211,8 @@ class S3DataLakeClient(AbstractDataLakeClient):
             )
 
             contents = []
-            # Add files
             if "Contents" in response:
                 contents.extend([obj["Key"] for obj in response["Contents"]])
-            # Add subdirectories (common prefixes)
             if "CommonPrefixes" in response:
                 contents.extend([prefix["Prefix"].rstrip("/") for prefix in response["CommonPrefixes"]])
 
@@ -242,7 +235,6 @@ class S3DataLakeClient(AbstractDataLakeClient):
         paginator = self._client.get_paginator("list_objects_v2")
         pages = paginator.paginate(Bucket=self.container_name, Prefix=f"{directory_path}/")
 
-        # Collect all objects to delete
         objects_to_delete = []
         for page in pages:
             if "Contents" in page:
@@ -252,7 +244,6 @@ class S3DataLakeClient(AbstractDataLakeClient):
         if objects_to_delete:
             objects_to_delete.append({"Key": f"{directory_path}/"})
 
-            # Delete objects in batches (S3 allows max 1000 per request)
             for i in range(0, len(objects_to_delete), 1000):
                 batch = objects_to_delete[i : i + 1000]
                 self._client.delete_objects(Bucket=self.container_name, Delete={"Objects": batch})

@@ -1,4 +1,7 @@
+from typing import ClassVar
+
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import LLMEvent, StopEvent, UserMessageEvent
 
 from aihub_agent.agents.Agent import Agent
@@ -9,6 +12,19 @@ from playground.minimal_workflow.llama_index_workflow.LlamaIndexAgentConfig impo
 
 
 class LlamaIndexAgent(Agent):
+    """Agent demonstrating LlamaIndex integration patterns."""
+
+    name: ClassVar[LocaleString] = LocaleString(
+        en="LlamaIndex Agent", de="LlamaIndex Agent", fr="Agent LlamaIndex", it="Agente LlamaIndex"
+    )
+    description: ClassVar[LocaleString] = LocaleString(
+        en="Agent for LlamaIndex demo",
+        de="Agent für LlamaIndex Demo",
+        fr="Agent pour démo LlamaIndex",
+        it="Agente per demo LlamaIndex",
+    )
+    icon: ClassVar[str] = "mage:light-bulb"
+
     @step()
     async def start_step(
         self,

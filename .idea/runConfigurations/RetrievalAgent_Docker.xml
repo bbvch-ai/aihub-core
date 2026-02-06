@@ -1,0 +1,13 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="RetrievalAgent" type="docker-deploy" factoryName="dockerfile" folderName="Docker Build Image" server-name="Docker">
+    <deployment type="dockerfile">
+      <settings>
+        <option name="buildOnly" value="true" />
+        <option name="containerName" value="" />
+        <option name="contextFolderPath" value="." />
+        <option name="sourceFilePath" value="aihub_agent/app/retrieval_agent/Dockerfile" />
+      </settings>
+    </deployment>
+    <method v="2" />
+  </configuration>
+</component>

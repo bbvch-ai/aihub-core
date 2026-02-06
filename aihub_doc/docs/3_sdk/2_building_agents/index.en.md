@@ -33,6 +33,8 @@ This guide is structured to build your knowledge progressively:
 7. [**Production Deployment**](./7_production_deployment/) - Guidelines for packaging and deploying your agent.
 8. [**Agent Observation**](./8_agent_observation/) - Monitoring your agent's behavior and performance with integrated
    tracing.
+9. [**Configurable Agent Forms**](./8_configurable_agents/) - Making agent configuration editable through the Admin UI
+   using the Form Duality Pattern.
 
 ## Key Principles of the SDK
 

@@ -36,7 +36,6 @@ class MultiprocessAgentRunner:
         process_count=5
     )
 
-    # Run all agents until stopped
     runner.run_forever()
     ```
     """
@@ -55,7 +54,6 @@ class MultiprocessAgentRunner:
 
         self.processes: list[Process] = []
 
-        # Set the multiprocessing start method
         if not multiprocessing.get_start_method(allow_none=True):
             multiprocessing.set_start_method("fork")
 
@@ -74,7 +72,6 @@ class MultiprocessAgentRunner:
 
         def signal_handler(sig, frame):
             nonlocal shutdown_task
-            # Create an asyncio task to stop the runner when SIGTERM is received
             if asyncio.get_event_loop().is_running():
                 shutdown_task = asyncio.create_task(shutdown_runner())
             else:
@@ -88,7 +85,6 @@ class MultiprocessAgentRunner:
                 await runner.stop()
             stop_loop.set()
 
-        # Register signal handlers
         signal.signal(signal.SIGTERM, signal_handler)
         signal.signal(signal.SIGINT, signal_handler)
 
@@ -97,10 +93,9 @@ class MultiprocessAgentRunner:
             process_id = os.getpid()
             logger.info(f"Agent process {process_index} running with PID: {process_id}")
 
-            # Create a unique agent ID for this process
             runner = AgentRunner(
                 agent_type=agent_type,
-                default_agent_config=agent_config.model_copy(deep=True),
+                agent_config=agent_config.model_copy(deep=True),
                 locale_paths=locale_paths,
             )
 
@@ -123,7 +118,6 @@ class MultiprocessAgentRunner:
                     logger.info(f"Process {process_index}: Stopping runner in finally block")
                     await runner.stop()
 
-        # Run the async function
         try:
             asyncio.run(_run_agent())
         except Exception as e:
@@ -136,7 +130,6 @@ class MultiprocessAgentRunner:
         logger.info(f"Starting {self.process_count} agent processes")
         self.processes = []
 
-        # Create and start processes
         for i in range(self.process_count):
             process = Process(
                 target=self._process_runner,

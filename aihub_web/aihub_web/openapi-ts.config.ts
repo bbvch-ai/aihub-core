@@ -5,8 +5,7 @@ export default defineConfig({
   input: 'http://localhost:8000/api/v1/openapi.json',
   output: {
     path: 'sdk/client',
-    format: 'prettier',
-    lint: 'eslint',
+    postProcess: ['prettier', 'eslint'],
   },
   plugins: [
     '@hey-api/client-nuxt',
@@ -22,6 +21,7 @@ export default defineConfig({
     {
       name: '@hey-api/sdk',
       transformer: true,
+      auth: true,
     },
   ],
 })

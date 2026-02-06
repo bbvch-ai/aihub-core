@@ -1,0 +1,12 @@
+retrieve_prev_next:
+  num_nodes:
+    label: "Anzahl der Knoten"
+    help: "Anzahl der vorherigen und nächsten Knoten, die für zusätzlichen Kontext abgerufen werden."
+  mode:
+    label: "Abrufmodus"
+    help: "Ob vorherige Knoten, nächste Knoten oder beide abgerufen werden sollen."
+
+retrieve_summaries:
+  max_parent_levels:
+    label: "Max. übergeordnete Ebenen"
+    help: "Maximale Anzahl der übergeordneten Ebenen beim Abrufen von Zusammenfassungsknoten."

@@ -1,13 +1,13 @@
 <template>
   <StructuralColumn
-    :title="process?.process_config.name"
+    :title="processInstance?.process_config.name"
     close-route="/service/processes"
-    :loading="processIsLoading"
+    :loading="processInstanceIsLoading"
     size="large"
   >
     <div class="flex flex-col gap-12">
       <span class="mb-4 block text-sm text-surface-500 dark:text-surface-400">
-        {{ process.process_config.description }}
+        {{ processInstance.process_config.description }}
       </span>
       <Panel
         class="panel pt-5"
@@ -18,7 +18,7 @@
               {{ t('process.overview.name') }}
             </span>
             <Tag
-              :value="process.process_config.name"
+              :value="processInstance.process_config.name"
               severity="secondary"
             />
           </div>
@@ -27,7 +27,7 @@
               {{ t('process.overview.class') }}
             </span>
             <Tag
-              :value="process.process_class"
+              :value="processInstance.process_class"
               severity="secondary"
             />
           </div>
@@ -36,7 +36,7 @@
               {{ t('process.overview.processId') }}
             </span>
             <Tag
-              :value="process.process_id"
+              :value="processInstance.process_id"
               severity="secondary"
             />
           </div>
@@ -45,8 +45,8 @@
               {{ t('process.overview.status') }}
             </span>
             <Tag
-              :value="process.is_online ? t('process.overview.online') : t('process.overview.offline')"
-              :severity="process.is_online ? 'success' : 'error' "
+              :value="processInstance.is_online ? t('process.overview.online') : t('process.overview.offline')"
+              :severity="processInstance.is_online ? 'success' : 'error' "
             />
           </div>
         </div>
@@ -56,7 +56,7 @@
 </template>
 
 <script setup lang="ts">
-const { process, processIsLoading } = useProcess()
+const { processInstance, processInstanceIsLoading } = useProcessInstance()
 const { t } = useI18n()
 </script>
 

@@ -2,6 +2,7 @@
   <div
     class="flex cursor-pointer flex-col gap-3 rounded-xl border border-surface-200 p-4 hover:bg-surface-100 dark:border-surface-800 hover:dark:bg-surface-800"
     :class="{ 'bg-surface-100 dark:bg-surface-800': isActive }"
+    @click="emit('click', agent)"
   >
     <div class="flex items-center justify-between gap-4">
       <div class="flex items-center justify-start gap-2">
@@ -22,7 +23,7 @@
           </p>
         </div>
       </div>
-      <div>
+      <div class="flex items-center gap-2">
         <Tag
           v-if="agent.is_online"
           severity="success"
@@ -32,6 +33,16 @@
           v-else
           severity="danger"
           :value="t('agent.list.offline')"
+        />
+        <Button
+          v-if="showDelete"
+          icon="pi pi-trash"
+          severity="secondary"
+          text
+          rounded
+          size="small"
+          :loading="isDeleting"
+          @click.stop="confirmDelete"
         />
       </div>
     </div>
@@ -52,16 +63,65 @@
 </template>
 
 <script setup lang="ts">
-import type { AgentDto } from '@core/sdk/client'
+import type { FullAgentInstanceDto } from '@core/sdk/client'
 
-const props = defineProps<{
-  agent: AgentDto
+const props = withDefaults(defineProps<{
+  agent: FullAgentInstanceDto
+  showDelete?: boolean
+}>(), {
+  showDelete: true,
+})
+
+const emit = defineEmits<{
+  deleted: [agentClass: string, agentId: string]
+  click: [agent: FullAgentInstanceDto]
 }>()
 
 const route = useRoute()
 const { t } = useI18n()
+const toast = useToast()
+const confirm = useConfirm()
+const { deleteAgentInstance, isDeleting } = useDeleteAgentInstance()
 
 const isActive = computed(() => {
   return route.params.agent_id === props.agent.agent_id && route.params.agent_class === props.agent.agent_class
 })
+
+function confirmDelete() {
+  confirm.require({
+    message: t('agent.delete.confirmMessage'),
+    header: t('agent.delete.title'),
+    icon: 'pi pi-exclamation-triangle',
+    rejectLabel: t('agent.create.cancel'),
+    acceptLabel: t('agent.delete.button'),
+    acceptClass: 'p-button-danger',
+    accept: handleDelete,
+  })
+}
+
+async function handleDelete() {
+  try {
+    await deleteAgentInstance({
+      agentClass: props.agent.agent_class,
+      agentId: props.agent.agent_id,
+    })
+
+    toast.add({
+      severity: 'success',
+      summary: t('agent.delete.success'),
+      life: 3000,
+    })
+
+    emit('deleted', props.agent.agent_class, props.agent.agent_id)
+  }
+  catch (error) {
+    console.error('Failed to delete agent:', error)
+    toast.add({
+      severity: 'error',
+      summary: t('agent.delete.error'),
+      detail: error instanceof Error ? error.message : String(error),
+      life: 5000,
+    })
+  }
+}
 </script>

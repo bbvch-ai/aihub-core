@@ -1,5 +1,7 @@
 import random
+from typing import ClassVar
 
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent, StopEvent
 
 from aihub_agent.agents.Agent import Agent
@@ -11,6 +13,19 @@ from playground.minimal_workflow.optional_workflow.events.EventOptionalD import 
 
 
 class OptionalAgent(Agent):
+    """Agent demonstrating optional event patterns."""
+
+    name: ClassVar[LocaleString] = LocaleString(
+        en="Optional Agent", de="Optionaler Agent", fr="Agent Optionnel", it="Agente Opzionale"
+    )
+    description: ClassVar[LocaleString] = LocaleString(
+        en="Agent for optional event demo",
+        de="Agent für optionales Event Demo",
+        fr="Agent pour démo événement optionnel",
+        it="Agente per demo evento opzionale",
+    )
+    icon: ClassVar[str] = "mage:question-mark-circle"
+
     @step()
     async def start_step(self, event: StartEvent) -> list[EventOptionalA | EventOptionalB]:
         if random.random() > 0.5:

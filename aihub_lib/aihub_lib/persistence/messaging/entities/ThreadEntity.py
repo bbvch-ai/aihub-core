@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Self
 
 from bson import ObjectId
 from mongoengine import DateTimeField, Document, EmbeddedDocument, EmbeddedDocumentField, ListField, StringField
@@ -10,7 +11,9 @@ class User(EmbeddedDocument):
     user_id = StringField(required=True)
 
 
-class Agent(EmbeddedDocument):
+class AgentInstanceRef(EmbeddedDocument):
+    """Reference to an agent instance participating in a thread."""
+
     agent_id = StringField(required=True)
     agent_class = StringField(required=True)
 
@@ -32,13 +35,13 @@ class ThreadEntity(Document):
     process_id = StringField(required=False)
     process_walkthrough_id = StringField(required=False)
     users = ListField(EmbeddedDocumentField(User))
-    agents = ListField(EmbeddedDocumentField(Agent))
+    agents = ListField(EmbeddedDocumentField(AgentInstanceRef))
 
     @classmethod
     @trace_fn
     def create_thread(
-        cls, name: str, users: list[User], agents: list[Agent], thread_id: ObjectId | None = None
-    ) -> "ThreadEntity":
+        cls, name: str, users: list[User], agents: list[AgentInstanceRef], thread_id: ObjectId | None = None
+    ) -> Self:
         thread = cls(id=thread_id or ObjectId(), name=name, users=users, agents=agents, created_at=datetime.now())
         thread.save()
         return thread
@@ -48,12 +51,12 @@ class ThreadEntity(Document):
     def create_process_thread(
         cls,
         name: str,
-        agent: Agent,
+        agent: AgentInstanceRef,
         thread_id: ObjectId,
         process_class: str,
         process_id: str,
         process_walkthrough_id: str,
-    ) -> "ThreadEntity":
+    ) -> Self:
         thread = cls(
             id=thread_id,
             name=name,
@@ -69,7 +72,7 @@ class ThreadEntity(Document):
 
     @classmethod
     @trace_fn
-    def get_thread_by_id(cls, thread_id: str) -> "ThreadEntity":
+    def get_thread_by_id(cls, thread_id: str) -> Self:
         return cls.objects().get(id=ObjectId(thread_id))
 
     @classmethod
@@ -121,7 +124,7 @@ class ThreadEntity(Document):
 
     @classmethod
     @trace_fn
-    def add_user_to_thread(cls, thread_id: str, user: User) -> "ThreadEntity":
+    def add_user_to_thread(cls, thread_id: str, user: User) -> Self:
         thread = cls.get_thread_by_id(thread_id)
         thread.users.append(user)
         thread.save()
@@ -129,7 +132,7 @@ class ThreadEntity(Document):
 
     @classmethod
     @trace_fn
-    def add_agent_to_thread(cls, thread_id: str, agent: Agent) -> "ThreadEntity":
+    def add_agent_to_thread(cls, thread_id: str, agent: AgentInstanceRef) -> Self:
         thread = cls.get_thread_by_id(thread_id)
         thread.agents.append(agent)
         thread.save()
@@ -137,7 +140,7 @@ class ThreadEntity(Document):
 
     @classmethod
     @trace_fn
-    def remove_user_from_thread(cls, thread_id: str, user_id: str) -> "ThreadEntity":
+    def remove_user_from_thread(cls, thread_id: str, user_id: str) -> Self:
         thread = cls.get_thread_by_id(thread_id)
         thread.users = [user for user in thread.users if user.user_id != user_id]
         thread.save()
@@ -145,7 +148,7 @@ class ThreadEntity(Document):
 
     @classmethod
     @trace_fn
-    def remove_agent_from_thread(cls, thread_id: str, agent_class: str, agent_id: str) -> "ThreadEntity":
+    def remove_agent_from_thread(cls, thread_id: str, agent_class: str, agent_id: str) -> Self:
         thread = cls.get_thread_by_id(thread_id)
         thread.agents = [
             agent for agent in thread.agents if agent.agent_id != agent_id and agent.agent_class != agent_class
@@ -154,7 +157,7 @@ class ThreadEntity(Document):
         return thread
 
     @trace_fn
-    def claim_for_process(self, process_class: str, process_id: str, process_walkthrough_id: str) -> "ThreadEntity":
+    def claim_for_process(self, process_class: str, process_id: str, process_walkthrough_id: str) -> Self:
         self.process_class = process_class
         self.process_id = process_id
         self.process_walkthrough_id = process_walkthrough_id
@@ -163,7 +166,7 @@ class ThreadEntity(Document):
 
     @classmethod
     @trace_fn
-    def delete_thread(cls, thread_id: str) -> "ThreadEntity":
+    def delete_thread(cls, thread_id: str) -> Self:
         thread = cls.get_thread_by_id(thread_id)
         thread.delete()
         return thread

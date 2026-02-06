@@ -1,5 +1,5 @@
 from datetime import UTC, datetime
-from typing import Annotated
+from typing import Annotated, Self
 
 from llama_index.core import Document
 from pydantic import Field
@@ -34,7 +34,7 @@ class IngestedDocument(IngestedBase):
     def from_ref_doc(
         cls,
         ref_doc: Document,
-    ) -> "IngestedDocument":
+    ) -> Self:
         def to_iso(timestamp: int):
             dt_utc = datetime.fromtimestamp(timestamp, tz=UTC)
             return dt_utc.isoformat().replace("+00:00", "Z")
@@ -59,7 +59,7 @@ class IngestedDocument(IngestedBase):
         node: IngestedNode,
         document_id: str | None = None,
         content: str | None = None,
-    ) -> "IngestedDocument":
+    ) -> Self:
         return cls(
             id=document_id or node.document_id,
             content=content or node.content,
@@ -76,7 +76,7 @@ class IngestedDocument(IngestedBase):
         )
 
     @classmethod
-    def from_entity(cls, entity: RefDoc) -> "IngestedDocument":
+    def from_entity(cls, entity: RefDoc) -> Self:
         def to_iso(timestamp: int):
             dt_utc = datetime.fromtimestamp(timestamp, tz=UTC)
             return dt_utc.isoformat().replace("+00:00", "Z")

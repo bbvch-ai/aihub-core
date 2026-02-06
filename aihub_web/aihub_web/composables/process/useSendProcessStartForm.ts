@@ -30,7 +30,8 @@ export const useSendProcessStartForm = defineMutation(() => {
         },
         body: JSON.parse(JSON.stringify(data)),
       })
-      queryCache.invalidateQueries({ key: ['processes'] })
+      queryCache.invalidateQueries({ key: ['process-instances'] })
+      queryCache.invalidateQueries({ key: ['process-walkthroughs'] })
     },
   })
   return {

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from aihub_lib.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
@@ -47,7 +47,7 @@ class RefDocDocument(Document):
     def updated(self) -> int:
         return self.metadata.get(UPDATED_AT, int(datetime.now().timestamp()))
 
-    def add_metadata_from_data_lake_file(self, data_lake_file: "DataLakeFile") -> "RefDocDocument":
+    def add_metadata_from_data_lake_file(self, data_lake_file: "DataLakeFile") -> Self:
         """Enrich the document's metadata with information from a `DataLakeFile`."""
         self.id_ = data_lake_file.id_
         uri_parts = data_lake_file.uri.split("/")

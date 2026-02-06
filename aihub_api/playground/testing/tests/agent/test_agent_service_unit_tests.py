@@ -7,34 +7,19 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.nats.events import UserMessageEvent
-from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentClassDiscoveryResponseEvent
+from aihub_lib.persistence.agents.AgentClassEntity import AgentClassEntity
 from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
-from aihub_lib.persistence.agents.AgentEntity import AgentEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 from bson import ObjectId
 from fastapi import HTTPException
 
-from aihub_api.routes.agent.AgentService import (
-    DISCOVER_AGENTS_CACHE,
-    GET_AGENT_CLASS_CACHE,
-    GET_AGENT_INSTANCE_CACHE,
-    AgentService,
-)
-from aihub_api.routes.agent.dto.AgentClassDTO import AgentClassDTO
-from aihub_api.routes.agent.dto.AgentDTO import AgentDTO
-from aihub_api.routes.agent.dto.AgentInstanceDTO import AgentInstanceDTO
-from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
+from aihub_api.routes.agent.AgentService import AgentService
+from aihub_api.routes.agent.dto.FullAgentInstanceDTO import FullAgentInstanceDTO
+from aihub_api.routes.agent.dto.MinimalAgentInstanceDTO import MinimalAgentInstanceDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
 
 enable_logging()
-
-
-@pytest.fixture(autouse=True)
-def cleanup_db_and_cache(sample_agent_config):
-    AgentService._clear_cache()
-    yield
-    AgentService._clear_cache()
 
 
 @pytest.fixture
@@ -50,38 +35,34 @@ def sample_agent_config():
 
 
 @pytest.fixture
-def sample_agent_class(sample_agent_config):
-    """Create a sample AgentClass for testing."""
-    mock_agent_class = Mock(spec=AgentClassDTO)
-    mock_agent_class.agent_class = "TestAgent"
-    mock_agent_class.default_agent_config = sample_agent_config
-    mock_agent_class.agent_config_specs = []
-    mock_agent_class.is_conversational = True
-    mock_agent_class.start_events = []
-    mock_agent_class.stop_events = []
-    mock_agent_class.is_online = True
-    return mock_agent_class
+def sample_agent_class_entity():
+    """Create a sample AgentClassEntity for testing (class-level data only, no agent_id)."""
+    mock_entity = Mock()
+    mock_entity.agent_class = "TestAgent"
+    mock_entity.name = LocaleString(en="Test Agent 1")
+    mock_entity.description = LocaleString(en="A test agent")
+    mock_entity.icon = "test-icon"
+    mock_entity.is_conversational = True
+    mock_entity.start_events = []
+    mock_entity.stop_events = []
+    mock_entity.hitl_request_events = []
+    mock_entity.hitl_response_events = []
+    mock_entity.network_graph = {}
+    mock_entity.form = []
+    mock_entity.is_online = True
+    return mock_entity
 
 
 @pytest.fixture
-def sample_agent_instance(sample_agent_class, sample_agent_config):
-    """Create a sample AgentInstance for testing."""
-    mock_instance = Mock(spec=AgentInstanceDTO)
-    mock_instance.agent_class = "TestAgent"
-    mock_instance.agent_id = "test_agent_1"
-    mock_instance.agent_config = sample_agent_config
-    return mock_instance
-
-
-@pytest.fixture
-def sample_agent_entity():
-    """Create a sample AgentEntity for testing."""
+def sample_config_entity():
+    """Create a sample AgentConfigEntityDocument for testing (instance-level data with agent_id)."""
     mock_entity = Mock()
     mock_entity.agent_class = "TestAgent"
     mock_entity.agent_id = "test_agent_1"
     mock_entity.name = LocaleString(en="Test Agent 1")
-    mock_entity.description = LocaleString(en="A test agent")
+    mock_entity.description = LocaleString(en="A test agent instance")
     mock_entity.icon = "test-icon"
+    mock_entity.configuration = {}
     return mock_entity
 
 
@@ -105,351 +86,163 @@ def mock_user_identity():
     return mock_user
 
 
-@pytest.fixture(autouse=True)
-def clear_caches():
-    """Clear all caches before each test."""
-    DISCOVER_AGENTS_CACHE.clear()
-    GET_AGENT_INSTANCE_CACHE.clear()
-    GET_AGENT_CLASS_CACHE.clear()
-
-
 class TestAgentServiceUnit:
     """Unit tests for AgentService methods."""
 
-    def test_get_minimal_agent_success(self, sample_agent_entity, mock_locale_handler):
-        """Test get_minimal_agent returns correct MinimalAgentDTO."""
-        with patch.object(AgentEntity, "get_agent") as mock_get_agent:
-            mock_get_agent.return_value = sample_agent_entity
+    def test_get_minimal_agent_instance_success(
+        self, sample_agent_class_entity, sample_config_entity, mock_locale_handler
+    ):
+        """Test get_minimal_agent_instance returns correct MinimalAgentInstanceDTO."""
+        with patch.object(AgentClassEntity, "get_by_agent_class") as mock_get_class:
+            mock_get_class.return_value = sample_agent_class_entity
 
-            with patch.object(MinimalAgentDTO, "from_entity") as mock_from_entity:
-                expected_dto = Mock(spec=MinimalAgentDTO)
-                mock_from_entity.return_value = expected_dto
+            with patch.object(AgentConfigEntityDocument, "find_for_class_and_id") as mock_get_config:
+                mock_get_config.return_value = sample_config_entity
 
-                result = AgentService.get_minimal_agent("TestAgent", "test_agent_1", mock_locale_handler)
+                with patch.object(MinimalAgentInstanceDTO, "from_class_and_config") as mock_from:
+                    expected_dto = Mock(spec=MinimalAgentInstanceDTO)
+                    mock_from.return_value = expected_dto
 
-                mock_get_agent.assert_called_once_with(agent_class="TestAgent", agent_id="test_agent_1")
-                mock_from_entity.assert_called_once_with(sample_agent_entity, mock_locale_handler)
-                assert result == expected_dto
+                    result = AgentService.get_minimal_agent_instance("TestAgent", "test_agent_1", mock_locale_handler)
 
-    def test_get_minimal_agent_not_found(self, mock_locale_handler):
-        """Test get_minimal_agent when agent not found."""
-        with patch.object(AgentEntity, "get_agent") as mock_get_agent:
-            mock_get_agent.return_value = None
+                    mock_get_class.assert_called_once()
+                    mock_get_config.assert_called_once()
+                    mock_from.assert_called_once_with(
+                        sample_agent_class_entity, sample_config_entity, mock_locale_handler
+                    )
+                    assert result == expected_dto
 
-            with patch.object(MinimalAgentDTO, "from_entity") as mock_from_entity:
-                mock_from_entity.return_value = None
-
-                result = AgentService.get_minimal_agent("TestAgent", "nonexistent", mock_locale_handler)
-
-                mock_get_agent.assert_called_once_with(agent_class="TestAgent", agent_id="nonexistent")
-                mock_from_entity.assert_called_once_with(None, mock_locale_handler)
-                assert result is None
-
-    @pytest.mark.asyncio
-    async def test_get_agent_success(self, mock_nats, sample_agent_entity, mock_locale_handler):
-        """Test get_agent returns agent from database."""
-        with patch.object(AgentEntity, "get_agent") as mock_get_agent:
-            mock_get_agent.return_value = sample_agent_entity
-
-            with patch.object(AgentDTO, "from_entity") as mock_from_entity:
-                expected_dto = Mock(spec=AgentDTO)
-                mock_from_entity.return_value = expected_dto
-
-                result = await AgentService.get_agent(mock_nats, "TestAgent", "test_agent_1", mock_locale_handler)
-
-                mock_get_agent.assert_called_once_with("TestAgent", "test_agent_1")
-                mock_from_entity.assert_called_once_with(sample_agent_entity, mock_locale_handler)
-                assert result == expected_dto
-
-    @pytest.mark.asyncio
-    async def test_get_agent_not_found(self, mock_nats, mock_locale_handler):
-        """Test get_agent raises 404 when agent not found in database."""
-        with patch.object(AgentEntity, "get_agent") as mock_get_agent:
-            mock_get_agent.return_value = None
+    def test_get_minimal_agent_instance_class_not_found(self, mock_locale_handler):
+        """Test get_minimal_agent_instance when agent class not found."""
+        with patch.object(AgentClassEntity, "get_by_agent_class") as mock_get_class:
+            mock_get_class.return_value = None
 
             with pytest.raises(HTTPException) as exc_info:
-                await AgentService.get_agent(mock_nats, "TestAgent", "nonexistent", mock_locale_handler)
+                AgentService.get_minimal_agent_instance("TestAgent", "nonexistent", mock_locale_handler)
 
             assert exc_info.value.status_code == 404
-            assert "Agent TestAgent.nonexistent not found" in str(exc_info.value.detail)
+            assert "Agent class TestAgent not found" in str(exc_info.value.detail)
+
+    def test_get_minimal_agent_instance_config_not_found(self, sample_agent_class_entity, mock_locale_handler):
+        """Test get_minimal_agent_instance when agent config not found."""
+        with patch.object(AgentClassEntity, "get_by_agent_class") as mock_get_class:
+            mock_get_class.return_value = sample_agent_class_entity
+
+            with patch.object(AgentConfigEntityDocument, "find_for_class_and_id") as mock_get_config:
+                mock_get_config.return_value = None
+
+                with pytest.raises(HTTPException) as exc_info:
+                    AgentService.get_minimal_agent_instance("TestAgent", "nonexistent", mock_locale_handler)
+
+                assert exc_info.value.status_code == 404
+                assert "Agent config TestAgent/nonexistent not found" in str(exc_info.value.detail)
 
     @pytest.mark.asyncio
-    async def test_get_agents_success(self, mock_nats, sample_agent_entity, mock_locale_handler):
-        """Test get_agents returns all agents from database."""
-        with patch.object(AgentEntity, "get_agents") as mock_get_agents:
-            mock_get_agents.return_value = [sample_agent_entity]
+    async def test_get_agent_instance_success(
+        self, sample_agent_class_entity, sample_config_entity, mock_locale_handler
+    ):
+        """Test get_agent_instance returns agent from database."""
+        with patch.object(AgentClassEntity, "get_by_agent_class") as mock_get_class:
+            mock_get_class.return_value = sample_agent_class_entity
 
-            with patch.object(AgentDTO, "from_entity") as mock_from_entity:
-                agent_dto = Mock(spec=AgentDTO)
-                agent_dto.agent_id = "test_agent_1"
-                agent_dto.agent_class = "TestAgent"
-                mock_from_entity.return_value = agent_dto
+            with patch.object(AgentConfigEntityDocument, "find_for_class_and_id") as mock_get_config:
+                mock_get_config.return_value = sample_config_entity
 
-                result = await AgentService.get_agents(mock_nats, mock_locale_handler)
+                with patch.object(FullAgentInstanceDTO, "from_class_and_config") as mock_from:
+                    expected_dto = Mock(spec=FullAgentInstanceDTO)
+                    mock_from.return_value = expected_dto
 
-                mock_get_agents.assert_called_once()
-                mock_from_entity.assert_called_once_with(sample_agent_entity, mock_locale_handler)
+                    result = await AgentService.get_agent_instance("TestAgent", "test_agent_1", mock_locale_handler)
 
-                assert len(result) == 1
-                assert agent_dto in result
-
-    @pytest.mark.asyncio
-    async def test_get_agents_multiple(self, mock_nats, sample_agent_entity, mock_locale_handler):
-        """Test get_agents returns multiple agents from database."""
-        second_entity = Mock()
-        second_entity.agent_class = "TestAgent"
-        second_entity.agent_id = "test_agent_2"
-
-        with patch.object(AgentEntity, "get_agents") as mock_get_agents:
-            mock_get_agents.return_value = [sample_agent_entity, second_entity]
-
-            with patch.object(AgentDTO, "from_entity") as mock_from_entity:
-                first_dto = Mock(spec=AgentDTO)
-                first_dto.agent_id = "test_agent_1"
-                first_dto.agent_class = "TestAgent"
-                second_dto = Mock(spec=AgentDTO)
-                second_dto.agent_id = "test_agent_2"
-                second_dto.agent_class = "TestAgent"
-                mock_from_entity.side_effect = [first_dto, second_dto]
-
-                result = await AgentService.get_agents(mock_nats, mock_locale_handler)
-
-                mock_get_agents.assert_called_once()
-                assert mock_from_entity.call_count == 2
-
-                assert len(result) == 2
-                assert first_dto in result
-                assert second_dto in result
+                    mock_get_class.assert_called_once_with("TestAgent")
+                    mock_get_config.assert_called_once_with("TestAgent", "test_agent_1")
+                    mock_from.assert_called_once_with(
+                        sample_agent_class_entity, sample_config_entity, mock_locale_handler
+                    )
+                    assert result == expected_dto
 
     @pytest.mark.asyncio
-    async def test_discover_agent_instances_success(self, mock_nats, sample_agent_class, sample_agent_config):
-        """Test discover_agent_instances returns configured agents."""
-        with patch.object(AgentService, "_discover_agent_classes") as mock_discover_classes:
-            mock_discover_classes.return_value = [sample_agent_class]
+    async def test_get_agent_instance_class_not_found(self, mock_locale_handler):
+        """Test get_agent_instance raises 404 when agent class not found in database."""
+        with patch.object(AgentClassEntity, "get_by_agent_class") as mock_get_class:
+            mock_get_class.return_value = None
 
-            with patch.object(AgentConfigEntityDocument, "find_for_class") as mock_find_configs:
-                mock_config_doc = Mock()
-                mock_config_doc.agent_id = "custom_agent"
-                mock_find_configs.return_value = [mock_config_doc]
+            with pytest.raises(HTTPException) as exc_info:
+                await AgentService.get_agent_instance("TestAgent", "nonexistent", mock_locale_handler)
 
-                with patch.object(AgentConfig, "from_entity") as mock_from_entity:
-                    custom_config = Mock(spec=AgentConfig)
-                    custom_config.agent_id = "custom_agent"
-                    mock_from_entity.return_value = custom_config
-
-                    with patch.object(AgentInstanceDTO, "from_class_and_config") as mock_from_class_config:
-                        mock_instance1 = Mock(spec=AgentInstanceDTO)
-                        mock_instance1.agent_id = "custom_agent"
-                        mock_instance2 = Mock(spec=AgentInstanceDTO)
-                        mock_instance2.agent_id = "test_agent_1"
-                        mock_from_class_config.side_effect = [mock_instance1, mock_instance2]
-
-                        with patch.object(mock_instance1, "create_or_update_agent_entity") as mock_1_create_update:
-                            with patch.object(mock_instance2, "create_or_update_agent_entity") as mock_2_create_update:
-                                result = await AgentService.discover_agent_instances(mock_nats)
-
-                                mock_discover_classes.assert_called_once_with(mock_nats)
-                                mock_find_configs.assert_called_once_with("TestAgent")
-                                mock_from_entity.assert_called_once_with(mock_config_doc)
-                                assert mock_from_class_config.call_count == 2
-                                assert mock_1_create_update.call_count == 1
-                                assert mock_2_create_update.call_count == 1
-
-                                assert len(result) == 2
-                                assert mock_instance1 in result
-                                assert mock_instance2 in result
+            assert exc_info.value.status_code == 404
+            assert "Agent class TestAgent not found" in str(exc_info.value.detail)
 
     @pytest.mark.asyncio
-    async def test_discover_agent_instances_cached(self, mock_nats):
-        """Test discover_agent_instances returns cached result."""
-        cached_result = [Mock(spec=AgentInstanceDTO)]
-        DISCOVER_AGENTS_CACHE["all_agent_instances"] = cached_result
+    async def test_get_agent_instance_config_not_found(self, sample_agent_class_entity, mock_locale_handler):
+        """Test get_agent_instance raises 404 when agent config not found in database."""
+        with patch.object(AgentClassEntity, "get_by_agent_class") as mock_get_class:
+            mock_get_class.return_value = sample_agent_class_entity
 
-        result = await AgentService.discover_agent_instances(mock_nats)
+            with patch.object(AgentConfigEntityDocument, "find_for_class_and_id") as mock_get_config:
+                mock_get_config.return_value = None
 
-        assert result == cached_result
+                with pytest.raises(HTTPException) as exc_info:
+                    await AgentService.get_agent_instance("TestAgent", "nonexistent", mock_locale_handler)
 
-    @pytest.mark.asyncio
-    async def test_discover_agent_classes_success(self, mock_nats):
-        """Test _discover_agent_classes broadcasts discovery and returns results."""
-        mock_response = Mock(spec=AgentClassDiscoveryResponseEvent)
-        mock_response.agent_class = "TestAgent"
-        mock_response.agent_config_specs = []
-        mock_response.is_conversational = True
-        mock_response.start_events = []
-        mock_response.stop_events = []
-        mock_response.default_agent_config = Mock()
-
-        with patch("aihub_api.routes.agent.AgentService.AgentNCSubscriber") as mock_subscriber_class:
-            mock_subscriber = Mock()
-            mock_subscriber.start = AsyncMock()
-            mock_subscriber.stop = AsyncMock()
-            mock_subscriber_class.for_agent_class_discovery_response_events.return_value = mock_subscriber
-
-            with patch("aihub_api.routes.agent.AgentService.NCPublisher") as mock_publisher_class:
-                mock_publisher = Mock()
-                mock_publisher.publish_event = AsyncMock()
-                mock_publisher_class.return_value = mock_publisher
-
-                with patch("aihub_api.routes.agent.AgentService.AgentTopicManager") as mock_topic_manager_class:
-                    mock_topic_manager = Mock()
-                    mock_topic_manager.get_agent_class_discovery_subject_request.return_value = "test.subject"
-                    mock_topic_manager_class.return_value = mock_topic_manager
-
-                    with patch("aihub_api.routes.agent.AgentService.sleep") as mock_sleep:
-                        mock_sleep.return_value = None
-
-                        with patch.object(AgentClassDTO, "from_discovery_event") as mock_from_event:
-                            mock_agent_class = Mock(spec=AgentClassDTO)
-                            mock_from_event.return_value = mock_agent_class
-
-                            # Simulate receiving discovery response
-                            original_start = mock_subscriber.start
-
-                            async def mock_start_with_response():
-                                await original_start()
-                                # Simulate discovery handler being called
-                                discovery_responses = [mock_response]
-                                # Patch the discovery_responses list in the method
-                                with patch(
-                                    "aihub_api.routes.agent.AgentService.discovery_responses", discovery_responses
-                                ):
-                                    pass
-
-                            # We need to patch the method's local discovery_responses
-                            with patch("aihub_api.routes.agent.AgentService.ObjectId") as mock_objectid:
-                                mock_objectid.return_value = "test_call_id"
-
-                                # Mock the discovery_responses list within the method
-
-                                async def patched_method(nc):
-                                    # Simulate the original method logic but with our mock response
-                                    discovery_responses = [mock_response]
-                                    unique_agents_dict = {}
-
-                                    for response in discovery_responses:
-                                        unique_key = response.agent_class
-                                        if unique_key not in unique_agents_dict:
-                                            agent_class_dto = AgentClassDTO.from_discovery_event(response)
-                                            unique_agents_dict[unique_key] = agent_class_dto
-
-                                    agents = list(unique_agents_dict.values())
-                                    if len(agents) > 0:
-                                        DISCOVER_AGENTS_CACHE["all_agent_classes"] = agents
-                                    return agents
-
-                                with patch.object(AgentService, "_discover_agent_classes", patched_method):
-                                    result = await AgentService._discover_agent_classes(mock_nats)
-
-                                    assert len(result) == 1
-                                    assert result[0] == mock_agent_class
+                assert exc_info.value.status_code == 404
+                assert "Agent instance TestAgent/nonexistent not found" in str(exc_info.value.detail)
 
     @pytest.mark.asyncio
-    async def test_discover_agent_classes_cached(self, mock_nats):
-        """Test _discover_agent_classes returns cached result."""
-        cached_result = [Mock(spec=AgentClassDTO)]
-        DISCOVER_AGENTS_CACHE["all_agent_classes"] = cached_result
+    async def test_get_all_agent_instances_success(
+        self, sample_agent_class_entity, sample_config_entity, mock_locale_handler
+    ):
+        """Test get_all_agent_instances returns all agents from database."""
+        with patch.object(AgentClassEntity, "get_all") as mock_get_all:
+            mock_get_all.return_value = [sample_agent_class_entity]
 
-        result = await AgentService._discover_agent_classes(mock_nats)
+            with patch.object(AgentConfigEntityDocument, "find_for_class") as mock_get_configs:
+                mock_get_configs.return_value = [sample_config_entity]
 
-        assert result == cached_result
+                with patch.object(FullAgentInstanceDTO, "from_class_and_config") as mock_from:
+                    agent_dto = Mock(spec=FullAgentInstanceDTO)
+                    agent_dto.agent_id = "test_agent_1"
+                    agent_dto.agent_class = "TestAgent"
+                    mock_from.return_value = agent_dto
 
-    @pytest.mark.asyncio
-    async def test_discover_agent_class_success(self, mock_nats, sample_agent_config):
-        """Test discover_agent_class returns specific agent class."""
-        mock_response = Mock(spec=AgentClassDiscoveryResponseEvent)
-        mock_response.agent_class = "TestAgent"
-        mock_response.agent_config_specs = []
-        mock_response.is_conversational = True
-        mock_response.start_events = []
-        mock_response.stop_events = []
-        mock_response.default_agent_config = sample_agent_config
+                    result = await AgentService.get_all_agent_instances(mock_locale_handler)
 
-        with patch("aihub_api.routes.agent.AgentService.AgentNCSubscriber") as mock_subscriber_class:
-            mock_subscriber = Mock()
-            mock_subscriber.start = AsyncMock()
-            mock_subscriber.stop = AsyncMock()
-            mock_subscriber_class.for_agent_class_discovery_response_events.return_value = mock_subscriber
-
-            with patch("aihub_api.routes.agent.AgentService.NCPublisher") as mock_publisher_class:
-                mock_publisher = Mock()
-                mock_publisher.publish_event = AsyncMock()
-                mock_publisher_class.return_value = mock_publisher
-
-                with patch("aihub_api.routes.agent.AgentService.AgentClassTopicManager") as mock_topic_manager_class:
-                    mock_topic_manager = Mock()
-                    mock_topic_manager.get_agent_class_discovery_subject_request.return_value = "test.subject"
-                    mock_topic_manager_class.return_value = mock_topic_manager
-
-                    with patch("aihub_api.routes.agent.AgentService.ObjectId") as mock_objectid:
-                        mock_objectid.return_value = "test_call_id"
-
-                        with patch("asyncio.wait_for") as mock_wait_for:
-                            # Mock successful discovery
-                            mock_event = Mock()
-                            mock_event.wait = AsyncMock()
-                            mock_event.set = Mock()
-
-                            async def mock_wait_for_func(coro, timeout):
-                                await coro
-                                return True
-
-                            mock_wait_for.side_effect = mock_wait_for_func
-
-                            # Patch the discovery handler to simulate response
-
-                            async def patched_method(nc, agent_class):
-                                mock_agent_class = Mock()
-                                mock_agent_class.agent_class = mock_response.agent_class
-                                mock_agent_class.is_online = True
-                                GET_AGENT_CLASS_CACHE[agent_class] = mock_agent_class
-                                return mock_agent_class
-
-                            with patch.object(AgentService, "_discover_agent_class", patched_method):
-                                result = await AgentService._discover_agent_class(mock_nats, "TestAgent")
-
-                                assert result.agent_class == "TestAgent"
-                                assert result.is_online
+                    mock_get_all.assert_called_once()
+                    assert len(result) == 1
+                    assert agent_dto in result
 
     @pytest.mark.asyncio
-    async def test_discover_agent_class_timeout(self, mock_nats):
-        """Test discover_agent_class raises 404 on timeout."""
-        with patch("aihub_api.routes.agent.AgentService.AgentNCSubscriber") as mock_subscriber_class:
-            mock_subscriber = Mock()
-            mock_subscriber.start = AsyncMock()
-            mock_subscriber.stop = AsyncMock()
-            mock_subscriber_class.for_agent_class_discovery_response_events.return_value = mock_subscriber
+    async def test_get_all_agent_instances_multiple(
+        self, sample_agent_class_entity, sample_config_entity, mock_locale_handler
+    ):
+        """Test get_all_agent_instances returns multiple agents from database."""
+        second_config = Mock()
+        second_config.agent_class = "TestAgent"
+        second_config.agent_id = "test_agent_2"
 
-            with patch("aihub_api.routes.agent.AgentService.NCPublisher") as mock_publisher_class:
-                mock_publisher = Mock()
-                mock_publisher.publish_event = AsyncMock()
-                mock_publisher_class.return_value = mock_publisher
+        with patch.object(AgentClassEntity, "get_all") as mock_get_all:
+            mock_get_all.return_value = [sample_agent_class_entity]
 
-                with patch("aihub_api.routes.agent.AgentService.AgentClassTopicManager") as mock_topic_manager_class:
-                    mock_topic_manager = Mock()
-                    mock_topic_manager_class.return_value = mock_topic_manager
+            with patch.object(AgentConfigEntityDocument, "find_for_class") as mock_get_configs:
+                mock_get_configs.return_value = [sample_config_entity, second_config]
 
-                    with patch("aihub_api.routes.agent.AgentService.ObjectId") as mock_objectid:
-                        mock_objectid.return_value = "test_call_id"
+                with patch.object(FullAgentInstanceDTO, "from_class_and_config") as mock_from:
+                    first_dto = Mock(spec=FullAgentInstanceDTO)
+                    first_dto.agent_id = "test_agent_1"
+                    first_dto.agent_class = "TestAgent"
+                    second_dto = Mock(spec=FullAgentInstanceDTO)
+                    second_dto.agent_id = "test_agent_2"
+                    second_dto.agent_class = "TestAgent"
+                    mock_from.side_effect = [first_dto, second_dto]
 
-                        with patch("asyncio.wait_for") as mock_wait_for:
-                            mock_wait_for.side_effect = TimeoutError()
+                    result = await AgentService.get_all_agent_instances(mock_locale_handler)
 
-                            with pytest.raises(HTTPException) as exc_info:
-                                await AgentService._discover_agent_class(mock_nats, "TestAgent")
+                    mock_get_all.assert_called_once()
+                    assert mock_from.call_count == 2
 
-                            assert exc_info.value.status_code == 404
-                            assert "Agent TestAgent not found" in str(exc_info.value.detail)
-
-    @pytest.mark.asyncio
-    async def test_discover_agent_class_cached(self, mock_nats):
-        """Test discover_agent_class returns cached result."""
-        cached_result = Mock(spec=AgentClassDTO)
-        GET_AGENT_CLASS_CACHE["TestAgent"] = cached_result
-
-        result = await AgentService._discover_agent_class(mock_nats, "TestAgent")
-
-        assert result == cached_result
+                    assert len(result) == 2
+                    assert first_dto in result
+                    assert second_dto in result
 
     @pytest.mark.asyncio
     async def test_send_event_success(self, mock_nats, mock_user_identity):
@@ -527,15 +320,15 @@ class TestAgentServiceUnit:
                 assert result == mock_stop_event
 
     @pytest.mark.asyncio
-    async def test_get_paginated_agent_threads_success(self, mock_locale_handler):
-        """Test get_paginated_agent_threads delegates to ThreadService."""
+    async def test_get_agent_instance_threads_success(self, mock_locale_handler):
+        """Test get_agent_instance_threads delegates to ThreadService."""
         mock_threads = [Mock(), Mock()]
         expected_total = 25
 
         with patch.object(ThreadService, "get_paginated_threads_for_agent") as mock_get_threads:
             mock_get_threads.return_value = (expected_total, mock_threads)
 
-            total, threads = await AgentService.get_paginated_agent_threads(
+            total, threads = await AgentService.get_agent_instance_threads(
                 agent_class="TestAgent",
                 agent_id="test_agent_1",
                 t=mock_locale_handler,
@@ -551,95 +344,13 @@ class TestAgentServiceUnit:
             assert total == expected_total
             assert threads == mock_threads
 
-    def test_clear_cache_success(self):
-        """Test clear_cache clears all caches."""
-        # Clear caches first to ensure clean state
-        AgentService._clear_cache()
-
-        # Add some items to caches
-        DISCOVER_AGENTS_CACHE["test"] = "value"
-        GET_AGENT_INSTANCE_CACHE["test"] = "value"
-        GET_AGENT_CLASS_CACHE["test"] = "value"
-
-        # Verify caches have items
-        assert len(DISCOVER_AGENTS_CACHE) > 0
-        assert len(GET_AGENT_INSTANCE_CACHE) > 0
-        assert len(GET_AGENT_CLASS_CACHE) > 0
-
-        # Clear caches
-        AgentService._clear_cache()
-
-        # Verify caches are empty
-        assert len(DISCOVER_AGENTS_CACHE) == 0
-        assert len(GET_AGENT_INSTANCE_CACHE) == 0
-        assert len(GET_AGENT_CLASS_CACHE) == 0
-
     @pytest.mark.asyncio
-    async def test_get_agent_database_exception(self, mock_nats, mock_locale_handler):
-        """Test get_agent handles database exceptions properly."""
-        with patch.object(AgentEntity, "get_agent") as mock_get_agent:
-            mock_get_agent.side_effect = Exception("Database error")
+    async def test_get_agent_instance_database_exception(self, mock_locale_handler):
+        """Test get_agent_instance handles database exceptions properly."""
+        with patch.object(AgentClassEntity, "get_by_agent_class") as mock_get_class:
+            mock_get_class.side_effect = Exception("Database error")
 
             with pytest.raises(Exception) as exc_info:
-                await AgentService.get_agent(mock_nats, "TestAgent", "test_agent_1", mock_locale_handler)
+                await AgentService.get_agent_instance("TestAgent", "test_agent_1", mock_locale_handler)
 
             assert str(exc_info.value) == "Database error"
-
-    @pytest.mark.asyncio
-    async def test_discover_agent_instances_no_results(self, mock_nats):
-        """Test discover_agent_instances returns empty list when no agents found."""
-        with patch.object(AgentService, "_discover_agent_classes") as mock_discover_classes:
-            mock_discover_classes.return_value = []
-
-            result = await AgentService.discover_agent_instances(mock_nats)
-
-            assert result == []
-            # Should not cache empty results
-            assert "all_agent_instances" not in DISCOVER_AGENTS_CACHE
-
-    @pytest.mark.asyncio
-    async def test_discover_agent_classes_no_results(self, mock_nats):
-        """Test _discover_agent_classes returns empty list when no agents respond."""
-        with patch("aihub_api.routes.agent.AgentService.AgentNCSubscriber") as mock_subscriber_class:
-            mock_subscriber = Mock()
-            mock_subscriber.start = AsyncMock()
-            mock_subscriber.stop = AsyncMock()
-            mock_subscriber_class.for_agent_class_discovery_response_events.return_value = mock_subscriber
-
-            with patch("aihub_api.routes.agent.AgentService.NCPublisher") as mock_publisher_class:
-                mock_publisher = Mock()
-                mock_publisher.publish_event = AsyncMock()
-                mock_publisher_class.return_value = mock_publisher
-
-                with patch("aihub_api.routes.agent.AgentService.AgentTopicManager") as mock_topic_manager_class:
-                    mock_topic_manager = Mock()
-                    mock_topic_manager_class.return_value = mock_topic_manager
-
-                    with patch("aihub_api.routes.agent.AgentService.sleep") as mock_sleep:
-                        mock_sleep.return_value = None
-
-                        with patch("aihub_api.routes.agent.AgentService.ObjectId") as mock_objectid:
-                            mock_objectid.return_value = "test_call_id"
-
-                            # Mock empty discovery responses
-
-                            async def patched_method(nc):
-                                discovery_responses = []  # No responses
-                                unique_agents_dict = {}
-
-                                for response in discovery_responses:
-                                    unique_key = response.agent_class
-                                    if unique_key not in unique_agents_dict:
-                                        agent_class_dto = AgentClassDTO.from_discovery_event(response)
-                                        unique_agents_dict[unique_key] = agent_class_dto
-
-                                agents = list(unique_agents_dict.values())
-                                # Should not cache empty results
-                                return agents
-
-                            with patch.object(AgentService, "_discover_agent_classes", patched_method):
-                                result = await AgentService._discover_agent_classes(mock_nats)
-
-                                assert result == []
-                                # Should not cache empty results
-                                assert "all_agent_classes" not in DISCOVER_AGENTS_CACHE

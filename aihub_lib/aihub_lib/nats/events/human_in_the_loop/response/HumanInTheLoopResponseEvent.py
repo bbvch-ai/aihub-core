@@ -1,5 +1,5 @@
 import time
-from typing import Annotated, Any, ClassVar
+from typing import Annotated, Any, ClassVar, Self
 
 from bson import ObjectId
 from pydantic import Field
@@ -40,7 +40,7 @@ class HumanInTheLoopResponseEvent[THitlRequestEvent: HumanInTheLoopRequestEvent]
         start_event_name: str,
         start_event_parents: list[str],
         **args,
-    ) -> "HumanInTheLoopResponseEvent":
+    ) -> Self:
         json_data: dict[str, Any] = {
             "event_id": str(ObjectId()),
             "created_at": time.time_ns(),

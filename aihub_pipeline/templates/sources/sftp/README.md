@@ -7,6 +7,7 @@ Simple pipeline to sync SFTP server documents to AI-Hub data lake.
 **1. Get SFTP Credentials**
 
 You need:
+
 - **Host**: SFTP server address
 - **Username**: Your account username
 - **Password**: Your account password (OR SSH key file)
@@ -35,13 +36,11 @@ source_remote=f"{sftp.name}:/path/to/documents"
 
 **4. Run Pipeline**
 
-
 ```bash
 poetry run dagster dev -f pipeline.py
 ```
 
 Open http://localhost:3000
-
 
 ## Using SSH Key
 
@@ -64,11 +63,13 @@ rclone:
 ## Advanced Options
 
 **Known hosts file:**
+
 ```bash
 RCLONE_SFTP_KNOWN_HOSTS_FILE=/secrets/known_hosts
 ```
 
 **Skip symbolic links during transfer:**
+
 ```bash
 RCLONE_SFTP_SKIP_LINKS=true
 ```

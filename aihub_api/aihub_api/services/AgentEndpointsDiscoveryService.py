@@ -1,14 +1,13 @@
 import asyncio
 import logging
+from asyncio import sleep
 from functools import reduce
 from operator import or_
 from typing import Annotated, override
 
-from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.infrastructure.opentelemetry.tracing.decorators.no_trace import no_trace
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributor import (
     use_external_agent_event_distributor,
@@ -17,32 +16,30 @@ from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAge
 from aihub_lib.nats.events import (
     ExceptionEvent,
     HumanInTheLoopResponseEvent,
-    InstanceDiscoveryRequestEvent,
     StartEvent,
 )
-from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent import (
-    AgentInstanceDiscoveryResponseEvent,
-)
+from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentClassDiscoveryResponseEvent
+from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
-from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
-from aihub_lib.nats.topics import AgentInstanceDiscoveryTopic
-from aihub_lib.persistence.agents.AgentEntity import AgentEntity
-from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
+from aihub_lib.persistence.agents.AgentClassEntity import AgentClassEntity
+from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
+from aihub_lib.persistence.messaging.entities.ThreadEntity import AgentInstanceRef, ThreadEntity, User
 from bson import ObjectId
-from fastapi import Body, Depends, FastAPI, HTTPException, Query, Security
+from fastapi import Body, Depends, FastAPI, HTTPException, Path, Query, Security
 from mongoengine import DoesNotExist
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
 from starlette.responses import StreamingResponse
 from stringcase import snakecase
 
+from aihub_api.i18n.ApiLocaleString import ApiLocaleString
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.agent.AgentService import AgentService
-from aihub_api.routes.agent.dto.AgentInstanceDTO import AgentInstanceDTO
+from aihub_api.routes.agent.dto.AgentClassDTO import AgentClassDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
 from aihub_api.services.EndpointsDiscoveryService import EndpointsDiscoveryService
 from aihub_api.services.ModelCreationService import ModelCreationService
@@ -54,6 +51,10 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
     """
     This service ensures that new agents in the system are automatically registered.
     This ensures that the API and the Agents are decoupled.
+
+    It broadcasts NATS discovery requests to find online agents and:
+    1. Updates their last_discovered timestamp (which determines online status)
+    2. Registers/deregisters dynamic API endpoints for agent events
     """
 
     def __init__(
@@ -68,124 +69,119 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         self.controller: AgentController = controller
         self.topic_manager: AgentTopicManager = AgentTopicManager()
 
-        self.nc_publisher: NCPublisher[AgentInstanceDiscoveryResponseEvent] | None = None
-        self.discovery_event_subscriber: NCSubscriber[InstanceDiscoveryRequestEvent] | None = None
-
-    @no_trace
-    async def _discovery_handler(self, event: InstanceDiscoveryRequestEvent, topic: AgentInstanceDiscoveryTopic):
-        """
-        Responds to discovery requests by publishing an AgentDiscoveryResponseEvent that includes the basic
-        agent configuration as well as some carefully crafted event specifications.
-        """
-        logger.debug(f"Received discovery request for {topic.agent_class} with id {topic.agent_id}.")
-
-        subject = self.topic_manager.get_agent_instance_discovery_subject_response(
-            topic.call_id, topic.agent_class, topic.agent_id
-        )
-
-        agent_instances: list[AgentInstanceDTO] = []
-        if topic.agent_class == "*":
-            agent_instances = await AgentService.discover_agent_instances(self.nc)
-
-            if topic.agent_id != "*":
-                agent_instances = [agent for agent in agent_instances if agent.agent_id == topic.agent_id]
-
-        elif topic.agent_id == "*":
-            agent_instances = await AgentService.discover_agent_instances_by_class(
-                nc=self.nc, agent_class=topic.agent_class
-            )
-
-        else:
-            agent_instances.append(
-                await AgentService.discover_agent_instance(self.nc, topic.agent_class, topic.agent_id)
-            )
-
-        for agent_instance in agent_instances:
-            agent_discovery_response_event = agent_instance.to_discovery_response_event()
-            await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
-
-    @override
-    @no_trace
-    async def start(self):
-        started = await super().start()
-        if not started:
-            logger.debug("Agent discovery service already running")
-            return
-
-        self.discovery_event_subscriber = AgentNCSubscriber.for_agent_instance_discovery_request_events(
-            nc=self.nc,
-            topic_manager=AgentTopicManager(),
-            handler=self._discovery_handler,
-            subscriber_name="AgentEndpointDiscoveryServiceDiscoveryRequest",
-        )
-        await self.discovery_event_subscriber.start()
-        logger.info("Agent discovery service started")
-
-    @override
-    async def stop(self):
-        stopped = await super().stop()
-        if not stopped:
-            logger.debug("Agent discovery service already stopped")
-            return
-
-        await self.discovery_event_subscriber.stop()
-        logger.info("Agent discovery service stopped")
-
     @override
     async def _discover_and_register(self):
-        """Discovers agents and registers endpoints that accept their starting events"""
-        # Step 1: Discover agents via NATS - updates last_discovered in DB for responding agents
-        discovered_agents: list[AgentInstanceDTO] = await AgentService.discover_agent_instances(self.nc)
+        """
+        Discovers agent classes via NATS broadcast and registers class-level endpoints.
 
-        # Step 2: Get what SHOULD be registered (online agents from database)
-        agents_list = await asyncio.to_thread(AgentEntity.get_agents)
-        online_agent_keys = {(agent.agent_class, agent.agent_id) for agent in agents_list if agent.is_online}
+        This method:
+        1. Broadcasts a NATS discovery request to all running agents
+        2. Collects responses and updates last_discovered timestamps in database
+        3. Registers/deregisters dynamic API endpoints at the CLASS level (not instance level)
 
-        # Step 3: Deregister endpoints for agents no longer online (5-min threshold)
-        for agent_class, agent_id in list(self.registered_entities):
-            if (agent_class, agent_id) not in online_agent_keys:
-                self._deregister_endpoints(agent_class, agent_id)
+        Endpoints use {agent_id} as a FastAPI path parameter, with instance validation at request time.
+        """
+        # Step 1: Discover which agent classes are online via NATS broadcast
+        discovered_classes: list[AgentClassDTO] = await self._broadcast_discovery()
+
+        online_class_names = {dto.agent_class for dto in discovered_classes}
+
+        # Step 2: Deregister endpoints for classes no longer online
+        for agent_class in list(self.registered_classes):
+            if agent_class not in online_class_names:
+                self._deregister_endpoints_for_class(agent_class)
 
         self.app.openapi_schema = None
 
-        # Step 4: Register endpoints for newly discovered online agents
-        for agent in discovered_agents:
-            agent_key = (agent.agent_class, agent.agent_id)
-            if agent_key in online_agent_keys and agent_key not in self.registered_entities:
-                self._register_agent_endpoints(
-                    agent_class=agent.agent_class,
-                    agent_id=agent.agent_id,
-                    start_events=agent.start_events,
-                    stop_events=agent.stop_events,
-                    hitl_request_events=agent.hitl_request_events,
-                    hitl_response_events=agent.hitl_response_events,
-                    config=agent.agent_config,
+        # Step 3: Register endpoints for newly discovered classes
+        for agent_class_dto in discovered_classes:
+            if agent_class_dto.agent_class not in self.registered_classes:
+                self._register_class_endpoints(
+                    agent_class=agent_class_dto.agent_class,
+                    start_events=agent_class_dto.start_events,
+                    stop_events=agent_class_dto.stop_events,
+                    hitl_request_events=agent_class_dto.hitl_request_events,
+                    hitl_response_events=agent_class_dto.hitl_response_events,
                 )
-                self.registered_entities.add(agent_key)
-                logger.info(f"Registered endpoints for agent: {agent.agent_class}.{agent.agent_id}")
+                self.registered_classes.add(agent_class_dto.agent_class)
+                logger.info(f"Registered class-level endpoints for agent class: {agent_class_dto.agent_class}")
 
-    def _register_agent_endpoints(
+    async def _broadcast_discovery(self) -> list[AgentClassDTO]:
+        """
+        Broadcasts a NATS discovery request to all agents and collects responses.
+        Updates the last_discovered timestamp for responding agent classes.
+
+        Returns a list of AgentClassDTO for all online agent classes.
+        """
+        call_id = str(ObjectId())
+        discovery_responses: list[AgentClassDiscoveryResponseEvent] = []
+
+        async def discovery_handler(event: AgentClassDiscoveryResponseEvent, topic):
+            discovery_responses.append(event)
+
+        nc_publisher = NCPublisher("AgentEndpointsDiscoveryServiceClassDiscoverRequest", self.nc)
+        nc_subscriber = AgentNCSubscriber.for_agent_class_discovery_response_events(
+            self.nc,
+            self.topic_manager,
+            discovery_handler,
+            call_id=call_id,
+            subscriber_name="AgentEndpointsDiscoveryServiceClassDiscoveryResponse",
+        )
+        await nc_subscriber.start()
+
+        # Broadcast the discovery request
+        await nc_publisher.publish_event(
+            event=ClassDiscoveryRequestEvent(),
+            subject=self.topic_manager.get_agent_class_discovery_subject_request(call_id=call_id),
+        )
+
+        # Wait briefly for responses
+        await sleep(10)
+        await nc_subscriber.stop()
+
+        unique_agents_dict: dict[str, AgentClassDTO] = {}
+
+        for response in discovery_responses:
+            unique_key = response.agent_class
+
+            if unique_key not in unique_agents_dict:
+                agent_class_dto = AgentClassDTO.from_discovery_event(response)
+                unique_agents_dict[unique_key] = agent_class_dto
+
+                AgentClassEntity.create_or_update(
+                    agent_class=agent_class_dto.agent_class,
+                    name=agent_class_dto.name,
+                    description=agent_class_dto.description,
+                    icon=agent_class_dto.icon,
+                    form=agent_class_dto.form,
+                    agent_config_specs=agent_class_dto.agent_config_specs,
+                    is_conversational=agent_class_dto.is_conversational,
+                    start_events=agent_class_dto.start_events,
+                    stop_events=agent_class_dto.stop_events,
+                    hitl_request_events=agent_class_dto.hitl_request_events,
+                    hitl_response_events=agent_class_dto.hitl_response_events,
+                    network_graph=agent_class_dto.network_graph,
+                )
+
+        return list(unique_agents_dict.values())
+
+    def _register_class_endpoints(
         self,
         *,
         agent_class: str,
-        agent_id: str,
         start_events: list[EventSpecs],
         stop_events: list[EventSpecs],
         hitl_request_events: list[EventSpecs],
         hitl_response_events: list[EventSpecs],
-        config: AgentConfig,
     ):
-        """Registers endpoints for sending events to an agent"""
-        base_path = self._get_endpoint_base_path(agent_class, agent_id)
+        """Registers class-level endpoints with dynamic {agent_id} path parameter."""
+        base_path = self._get_endpoint_base_path_for_class(agent_class)
         agent_class_snake = snakecase(agent_class)
-        agent_id_snake = snakecase(agent_id)
 
-        # Create output types for stop events
         stop_event_output_types = [
             ModelCreationService.create_output_model_from_event_specs(stop_event) for stop_event in stop_events
         ]
 
-        # Create output types for HITL request events
         hitl_request_output_types = [
             ModelCreationService.create_output_model_from_event_specs(hitl_event) for hitl_event in hitl_request_events
         ]
@@ -198,32 +194,24 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         else:
             response_union_type = reduce(or_, all_output_types)
 
-        # Register start events
         for start_event_specs in start_events:
             self._register_single_event_endpoints(
                 event_specs=start_event_specs,
                 base_path=base_path,
                 agent_class_snake=agent_class_snake,
-                agent_id_snake=agent_id_snake,
                 response_union_type=response_union_type,
                 agent_class=agent_class,
-                agent_id=agent_id,
-                config=config,
                 expected_type=StartEvent,
                 event_type_prefix="send",
             )
 
-        # Register HITL response events
         for hitl_response_event_specs in hitl_response_events:
             self._register_single_event_endpoints(
                 event_specs=hitl_response_event_specs,
                 base_path=base_path,
                 agent_class_snake=agent_class_snake,
-                agent_id_snake=agent_id_snake,
                 response_union_type=response_union_type,
                 agent_class=agent_class,
-                agent_id=agent_id,
-                config=config,
                 expected_type=HumanInTheLoopResponseEvent,
                 event_type_prefix="send",
             )
@@ -234,25 +222,26 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         event_specs: EventSpecs,
         base_path: str,
         agent_class_snake: str,
-        agent_id_snake: str,
         response_union_type: type[BaseModel],
         agent_class: str,
-        agent_id: str,
-        config: AgentConfig,
         expected_type: type[StartEvent] | type[HumanInTheLoopResponseEvent],
         event_type_prefix: str,
     ):
-        """Helper method to register both regular and streaming endpoints for a single event"""
+        """Helper method to register both regular and streaming endpoints for a single event.
+
+        Creates class-level endpoints with {agent_id} as a dynamic path parameter.
+        Instance validation occurs at request time.
+        """
         event_name = event_specs.event_name
         event_name_snake = snakecase(event_name)
-        endpoint_name = f"{event_type_prefix}_{event_name_snake}_to_{agent_class_snake}_{agent_id_snake}"
+        # Endpoint names no longer include agent_id since it's a path parameter
+        endpoint_name = f"{event_type_prefix}_{event_name_snake}_to_{agent_class_snake}"
         path = f"{base_path}/{event_name}"
-        stream_endpoint_name = f"stream_{event_name_snake}_to_{agent_class_snake}_{agent_id_snake}"
+        stream_endpoint_name = f"stream_{event_name_snake}_to_{agent_class_snake}"
         stream_path = f"{base_path}/{event_name}/stream"
 
         input_type = ModelCreationService.create_input_model_from_event_specs(event_specs)
 
-        # Register regular endpoint
         self.app.add_api_route(
             path=path,
             endpoint=self._create_endpoint(
@@ -261,21 +250,18 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 start_event_parents=event_specs.event_parents,
                 start_event_name=event_specs.event_name,
                 agent_class=agent_class,
-                agent_id=agent_id,
                 agent_controller=self.controller,
-                agent_config=config,
                 expected_type=expected_type,
             ),
             methods=["POST"],
             name=endpoint_name,
-            tags=["Agents"],
+            tags=[ApiLocaleString.from_i18n_path("api.controllers.agent.name").en],
             response_model=response_union_type if expected_type == StartEvent else None,
         )
 
         endpoint_type = "HITL response" if expected_type == HumanInTheLoopResponseEvent else ""
         logger.info(f"Registered {endpoint_type} endpoint: {path}".strip())
 
-        # Register streaming endpoint
         self.app.add_api_route(
             path=stream_path,
             endpoint=self._create_streaming_endpoint(
@@ -283,14 +269,12 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 start_event_parents=event_specs.event_parents,
                 start_event_name=event_specs.event_name,
                 agent_class=agent_class,
-                agent_id=agent_id,
                 agent_controller=self.controller,
-                agent_config=config,
                 expected_type=expected_type,
             ),
             methods=["POST"],
             name=stream_endpoint_name,
-            tags=["Agents"],
+            tags=[ApiLocaleString.from_i18n_path("api.controllers.agent.name").en],
             response_class=StreamingResponse,
         )
         logger.info(f"Registered {endpoint_type} streaming endpoint: {stream_path}".strip())
@@ -303,14 +287,17 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         start_event_parents: list[str],
         start_event_name: str,
         agent_class: str,
-        agent_id: str,
         agent_controller: AgentController,
-        agent_config: AgentConfig,
         expected_type: type[StartEvent] | type[HumanInTheLoopResponseEvent],
     ):
-        """Creates a FastAPI endpoint that sends a StartEvent to an agent"""
+        """Creates a FastAPI endpoint that sends a StartEvent to an agent.
+
+        The agent_id is resolved from the path parameter at request time.
+        Instance validation is performed before processing the event.
+        """
 
         async def send_event(
+            agent_id: Annotated[str, Path(title="Agent ID", description="The specific agent instance ID")],
             nc: Annotated[NATS, Depends(use_nats)],
             start_event_input: Annotated[input_type, Body],
             external_agent_event_distributor: Annotated[
@@ -318,13 +305,17 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             ],
             user: Annotated[
                 UserIdentity,
-                Security(agent_controller.user_with_permission(f"aihub.user.agent.{agent_class}.{agent_id}")),
+                Security(agent_controller.user_with_permission(f"aihub.user.agent.{agent_class}.{{agent_id}}")),
             ],
             thread_id: Annotated[str, Query(pattern=r"^[a-f0-9]{24}$")] = None,
             display_id: Annotated[str, Query(pattern=r"^[a-f0-9]{24}$")] = None,
             t: LocaleHandler = Depends(use_locale),
         ) -> response_union_type:
             """Send a specific event type to a specific agent. Returns either a stop event or HITL request event."""
+            config = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+            if not config:
+                raise HTTPException(status_code=404, detail=f"Agent instance '{agent_class}/{agent_id}' not found")
+
             if thread_id is not None:
                 try:
                     thread = await ThreadService.get_thread_by_id(thread_id, t=t)
@@ -332,7 +323,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                     ThreadEntity.create_thread(
                         "chat",
                         users=[User(user_id=user.id)],
-                        agents=[Agent(agent_class=agent_class, agent_id=agent_id)],
+                        agents=[AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)],
                         thread_id=ObjectId(thread_id),
                     )
                     thread = await ThreadService.get_thread_by_id(thread_id, t=t)
@@ -356,7 +347,6 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 display_id=display_id,
                 user=user,
                 t=t,
-                agent_config=agent_config,
                 expected_type=expected_type,
                 subscribe_to_thread=True,
             )
@@ -375,14 +365,17 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         start_event_parents: list[str],
         start_event_name: str,
         agent_class: str,
-        agent_id: str,
         agent_controller: AgentController,
-        agent_config: AgentConfig,
         expected_type: type[StartEvent] | type[HumanInTheLoopResponseEvent],
     ):
-        """Creates a FastAPI streaming endpoint that sends a StartEvent to an agent and streams all events"""
+        """Creates a FastAPI streaming endpoint that sends a StartEvent to an agent and streams all events.
+
+        The agent_id is resolved from the path parameter at request time.
+        Instance validation is performed before processing the event.
+        """
 
         async def stream_event(
+            agent_id: Annotated[str, Path(title="Agent ID", description="The specific agent instance ID")],
             nc: Annotated[NATS, Depends(use_nats)],
             start_event_input: Annotated[input_type, Body],
             external_agent_event_distributor: Annotated[
@@ -390,13 +383,17 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             ],
             user: Annotated[
                 UserIdentity,
-                Security(agent_controller.user_with_permission(f"aihub.user.agent.{agent_class}.{agent_id}")),
+                Security(agent_controller.user_with_permission(f"aihub.user.agent.{agent_class}.{{agent_id}}")),
             ],
             thread_id: Annotated[str, Query(pattern=r"^[a-f0-9]{24}$")] = None,
             display_id: Annotated[str, Query(pattern=r"^[a-f0-9]{24}$")] = None,
             t: LocaleHandler = Depends(use_locale),
         ) -> StreamingResponse:
             """Send a specific event type to a specific agent and stream all events as SSE."""
+            config = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+            if not config:
+                raise HTTPException(status_code=404, detail=f"Agent instance '{agent_class}/{agent_id}' not found")
+
             if thread_id is not None:
                 try:
                     thread = await ThreadService.get_thread_by_id(thread_id, t=t)
@@ -404,7 +401,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                     ThreadEntity.create_thread(
                         "chat",
                         users=[User(user_id=user.id)],
-                        agents=[Agent(agent_class=agent_class, agent_id=agent_id)],
+                        agents=[AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)],
                         thread_id=ObjectId(thread_id),
                     )
                     thread = await ThreadService.get_thread_by_id(thread_id, t=t)
@@ -428,7 +425,6 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 display_id=display_id,
                 user=user,
                 t=t,
-                agent_config=agent_config,
                 expected_type=expected_type,
                 subscribe_to_thread=True,
             )
@@ -440,7 +436,6 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                         logger.debug("Stop streaming due to stop_event and empty queue")
                         break
                     try:
-                        # Get the next event from the queue
                         event = await asyncio.wait_for(resources.chunk_queue.get(), timeout=0.5)
 
                         # Dump the raw event as JSON for SSE

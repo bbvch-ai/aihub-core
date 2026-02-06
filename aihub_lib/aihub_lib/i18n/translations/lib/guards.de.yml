@@ -149,3 +149,13 @@ sensitive_info_guard:
     Die überarbeitete Antwort mit entfernten oder geschwärzten sensiblen Informationen, falls zutreffend.
   docstring: |
     Ergebnis der Analyse einer Antwort auf sensible Informationen, die nicht extern geteilt werden sollten.
+few_shot_example:
+  user:
+    label: "Benutzernachricht"
+    help: "Eine beispielhafte Benutzeranfrage oder Nachricht, die ausgewertet wird."
+  success:
+    label: "Anfrage akzeptieren"
+    help: "Aktivieren, wenn dieses Beispiel akzeptiert werden soll, deaktivieren wenn abgelehnt."
+  reason:
+    label: "Grund"
+    help: "Erklärung, warum die Anfrage akzeptiert oder abgelehnt wird."

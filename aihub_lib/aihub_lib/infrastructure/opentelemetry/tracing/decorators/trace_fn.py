@@ -84,10 +84,8 @@ def trace_fn[**P, T](func: Callable[P, T]) -> Callable[P, T]:
 
     def _trace_execution(span, args, kwargs, is_async_execution=False):
         """Common tracing logic for both sync and async execution"""
-        # Trace inputs
         _trace_inputs(span, args, kwargs, func_signature)
 
-        # Set common attributes
         span.set_attribute("function.name", func_qualname)
         span.set_attribute("function.module", func_module)
         span.set_attribute("function.is_async", is_async_execution)
@@ -182,12 +180,10 @@ def _safe_set_attribute(span, key: str, value: Any) -> None:
             span.set_attribute(key, value)
         return
 
-    # Check for dangerous types
     if _is_dangerous_type(value):
         _set_type_name_attribute(span, key, value)
         return
 
-    # Handle collections
     if isinstance(value, list | tuple):
         _handle_sequence_attribute(span, key, value)
         return
@@ -196,7 +192,6 @@ def _safe_set_attribute(span, key: str, value: Any) -> None:
         _handle_dict_attribute(span, key, value)
         return
 
-    # Handle other objects
     _handle_object_attribute(span, key, value)
 
 
@@ -263,7 +258,6 @@ def _set_type_name_attribute(span, key: str, value: Any) -> None:
     """Set attribute with type name for dangerous types"""
     try:
         type_name = type(value).__name__
-        # Add size info if available
         if hasattr(value, "__len__"):
             try:
                 size = len(value)

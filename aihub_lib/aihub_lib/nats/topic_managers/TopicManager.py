@@ -45,3 +45,5 @@ class TopicManager(BaseModel):
 
     INSTANCE_DISCOVERY_TOPIC: ClassVar[str] = "instance_discovery"
     CLASS_DISCOVERY_TOPIC: ClassVar[str] = "class_discovery"
+    RPC_TOPIC: ClassVar[str] = "aihub.rpc"
+    CONFIG_RPC_SERVICE: ClassVar[str] = "config"

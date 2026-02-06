@@ -23,14 +23,16 @@ def enable_logging(level: int | None = None) -> logging.Logger:
         "httpx",
         "neo4j",
         "openai",
+        "botocore",
         "mem0",
         "opentelemetry",
         "asyncio",
         "httpcore",
+        "opentelemetry",
     ]
 
     for logger_name in lib_loggers:
-        logging.getLogger(logger_name).setLevel(logging.WARNING)
+        logging.getLogger(logger_name).setLevel(logging.ERROR)
 
     handler = logging.StreamHandler()
     handler.setFormatter(

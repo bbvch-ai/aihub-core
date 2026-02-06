@@ -44,7 +44,7 @@ from aihub_api.routes.knowledge.dto.NamespaceDTO import NamespaceDTO
 from aihub_api.routes.knowledge.dto.NamespaceResponse import NamespaceResponse
 from aihub_api.routes.knowledge.dto.NodeSummaryDTO import NodeSummaryDTO
 from aihub_api.routes.knowledge.dto.UpdateNamespaceRequest import UpdateNamespaceRequest
-from aihub_api.services.TranslationService import TranslationService
+from aihub_api.routes.translation.TranslationService import TranslationService
 
 logger = logging.getLogger(__name__)
 
@@ -403,7 +403,6 @@ class KnowledgeService:
             source = f"s3://{container}/{object_key}"
             document_title = object_key.split("/")[-1]
 
-            # Create placeholder - log warning if fails but continue to publish event
             try:
                 RefDoc.get_or_create_placeholder(
                     db_alias=database,

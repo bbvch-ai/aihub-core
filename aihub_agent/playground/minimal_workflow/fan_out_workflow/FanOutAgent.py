@@ -1,3 +1,6 @@
+from typing import ClassVar
+
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent, StopEvent
 from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import FixedList
 
@@ -10,6 +13,19 @@ N = 5
 
 
 class FanOutAgent(Agent):
+    """Agent demonstrating fan-out parallel processing patterns."""
+
+    name: ClassVar[LocaleString] = LocaleString(
+        en="Fan Out Agent", de="Fan-Out Agent", fr="Agent Fan-Out", it="Agente Fan-Out"
+    )
+    description: ClassVar[LocaleString] = LocaleString(
+        en="Agent for fan-out parallel processing",
+        de="Agent für Fan-Out-Parallelverarbeitung",
+        fr="Agent pour traitement parallèle fan-out",
+        it="Agente per elaborazione parallela fan-out",
+    )
+    icon: ClassVar[str] = "mage:share"
+
     @step()
     async def start_step(self, _: StartEvent) -> list[FanOutA]:
         print("[start_step]")

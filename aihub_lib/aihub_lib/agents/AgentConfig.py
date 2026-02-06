@@ -1,9 +1,14 @@
 import logging
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Self
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field, model_validator
 
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.events.form.constraints import Pattern
+from aihub_lib.nats.events.form.elements.IconSelector import IconSelector
+from aihub_lib.nats.events.form.elements.InputText import InputText
+from aihub_lib.nats.events.form.elements.LocaleInput import LocaleInput
+from aihub_lib.nats.events.form.Form import Form
 
 if TYPE_CHECKING:
     from aihub_lib.persistence.agents import AgentConfigEntity
@@ -11,7 +16,12 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class StepConfig(BaseModel):
+def _locale_string_has_content(value: LocaleString) -> bool:
+    """Check if a LocaleString has at least one non-empty locale value."""
+    return any(getattr(value, locale, None) not in (None, "") for locale in ("de", "en", "fr", "it"))
+
+
+class StepConfig(Form):
     """
     A base configuration class for workflow steps, allowing future extensions
     to store custom configuration fields relevant to particular steps.
@@ -23,23 +33,29 @@ class StepConfig(BaseModel):
 
     The `AgentConfig` can then hold instances of these step configurations,
     keyed by step type, allowing easy retrieval and management of step-specific settings.
+
+    Supports duality pattern for form rendering and data validation.
     """
 
     pass
 
 
-class AgentConfig(BaseModel):
+class AgentConfig(Form):
     """
-    The agent config is a flexible way to configure the runtime behavior of an agent. It can ensure that two agents
-    that follow the same workflow can still be configured to achieve different outcomes through a different
-    set of configurations.
+    The agent config is a flexible way to configure the runtime behavior of an agent.
+
+    It can ensure that two agents that follow the same workflow can still be configured
+    to achieve different outcomes through a different set of configurations.
 
     Usually, you will want to inherit from this AgentConfig and pass it to your runner.
     The dispatcher will then flexibly inject the config into each step,
     giving you full control over the agent's runtime behavior.
 
-    Note that you can also define configs for individual workflow steps! Simply by naming the attribute the same
-    way as your step, and assigning it a value of type `StepConfig`, you can configure the step's behavior.
+    Note that you can also define configs for individual workflow steps! Simply by naming
+    the attribute the same way as your step, and assigning it a value of type `StepConfig`,
+    you can configure the step's behavior.
+
+    Supports duality pattern for form rendering and data validation.
 
     ```python
     class StepXConfig(StepConfig):
@@ -55,17 +71,72 @@ class AgentConfig(BaseModel):
     ```
     """
 
-    name: Annotated[LocaleString, Field(description="The name of the process or agent.")]
-    description: Annotated[LocaleString, Field(description="The description of the process or agent.")]
-    icon: Annotated[str, Field(description="The icon representing the process or agent.")] = "meteor-icons:robot"
-
-    agent_class: Annotated[str, Field(description="The class name of the agent, used for identification.")]
-    agent_id: Annotated[str, Field(description="Uniquely identifies the agent instance.", pattern=r"^[a-z0-9_-]+$")]
-
+    agent_class: Annotated[
+        str | InputText,
+        Field(description="The class name of the agent, used for identification."),
+    ]
+    agent_id: Annotated[
+        str | InputText,
+        Field(description="Uniquely identifies the agent instance."),
+        Pattern(r"^[a-z0-9_-]+$"),
+    ]
+    name: Annotated[LocaleString | LocaleInput, Field(description="The name of the process or agent.")]
+    description: Annotated[
+        LocaleString | LocaleInput,
+        Field(description="The description of the process or agent."),
+    ]
+    icon: Annotated[
+        str | IconSelector,
+        Field(description="The icon representing the process or agent."),
+    ] = "mage:robot"
     model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True, extra="allow")
 
+    @model_validator(mode="after")
+    def validate_locale_strings_have_content(self) -> Self:
+        """Validate that name and description LocaleStrings have at least one non-empty value."""
+        # Skip validation for form mode (when fields are LocaleInput elements)
+        if isinstance(self.name, LocaleString) and not _locale_string_has_content(self.name):
+            raise ValueError("name must have at least one language with content")
+        if isinstance(self.description, LocaleString) and not _locale_string_has_content(self.description):
+            raise ValueError("description must have at least one language with content")
+        return self
+
     @classmethod
-    def from_entity(cls, entity: "AgentConfigEntity") -> "AgentConfig":
+    def as_form(cls) -> Self:
+        """
+        Creates a form-mode AgentConfig with FormKit input elements.
+
+        Subclasses should override this method and call super().as_form() to get
+        the base identity fields, then extend with their own fields.
+        """
+        return cls(
+            agent_id=InputText(
+                label=LocaleString.from_i18n_path("lib.agents.config.agent_id.label"),
+                help=LocaleString.from_i18n_path("lib.agents.config.agent_id.help"),
+                placeholder=LocaleString.from_i18n_path("lib.agents.config.agent_id.placeholder"),
+                required=True,
+            ),
+            name=LocaleInput(
+                label=LocaleString.from_i18n_path("lib.agents.config.name.label"),
+                placeholder=LocaleString.from_i18n_path("lib.agents.config.placeholder.name"),
+                input_type="text",
+            ),
+            description=LocaleInput(
+                label=LocaleString.from_i18n_path("lib.agents.config.description.label"),
+                placeholder=LocaleString.from_i18n_path("lib.agents.config.placeholder.description"),
+                input_type="textarea",
+            ),
+            icon=IconSelector(
+                label=LocaleString.from_i18n_path("lib.agents.config.icon.label"),
+                help=LocaleString.from_i18n_path("lib.agents.config.icon.help"),
+                placeholder=LocaleString.from_i18n_path("lib.agents.config.placeholder.icon"),
+            ),
+            # agent_class is not user-configurable - it's determined by which class is selected
+            agent_class="",
+        )
+
+    @classmethod
+    def from_entity(cls, entity: "AgentConfigEntity") -> Self:
         data = {
             "agent_class": entity.agent_class,
             "agent_id": entity.agent_id,
@@ -82,7 +153,7 @@ class AgentConfig(BaseModel):
         Scans all fields in this AgentConfig and collects any that are `StepConfig` instances.
         """
         step_configs = {}
-        for field_name in self.model_fields.keys():
+        for field_name in self.__class__.model_fields.keys():
             field_value = getattr(self, field_name, None)
             if isinstance(field_value, StepConfig):
                 step_configs[type(field_value)] = field_value

@@ -2,7 +2,7 @@
   <EventDisplayBase
     :event="event"
     :thread="thread"
-    icon="line-md:text-box"
+    icon="mage:note"
   >
     <div class="py-5">
       <ChatMessage
@@ -17,16 +17,16 @@
 </template>
 
 <script setup lang="ts">
-import type { ChatMessageOutput, ChunkEventReadable, ThreadDto, AgentEventReadable } from '@core/sdk/client'
+import type { ChatMessage, ChunkEvent, ThreadDto, ContextualizedAgentEvent } from '@core/sdk/client'
 
 const props = defineProps<{
-  event: AgentEventReadable & { event: ChunkEventReadable }
+  event: ContextualizedAgentEvent & { event: ChunkEvent }
   thread: ThreadDto
 }>()
 
 const agentIcon = useAgentIconFromThread(props.event, props.thread)
 
-const message = computed<ChatMessageOutput>(() => {
+const message = computed<ChatMessage>(() => {
   return {
     role: 'assistant',
     blocks: [

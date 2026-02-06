@@ -32,7 +32,6 @@ def resolve_message_content(message: dict[str, Any]) -> dict[str, Any]:
     if isinstance(content, str):
         return message
 
-    # Handle ValidatorIterator (check by looking for schema attribute)
     if hasattr(content, "schema"):
         resolved_content = []
         # Iterate through the validator iterator to extract content parts
@@ -43,7 +42,6 @@ def resolve_message_content(message: dict[str, Any]) -> dict[str, Any]:
                     resolved_content.append({"type": "text", "text": part.get("text", "")})
                 elif part_type == "image_url":
                     resolved_content.append({"type": "image_url", "image_url": part.get("image_url", {})})
-                # Add other content types as needed
             elif hasattr(part, "dict"):
                 # If it's a Pydantic model
                 resolved_content.append(part.dict())
@@ -54,7 +52,6 @@ def resolve_message_content(message: dict[str, Any]) -> dict[str, Any]:
                 except Exception:
                     pass
 
-        # Create a new message with resolved content
         new_message = message.copy()
         new_message["content"] = resolved_content
         return new_message
@@ -75,7 +72,6 @@ def openai_message_to_llama_index(message: dict[str, Any]) -> ChatMessage:
     content = message.get("content")
     blocks: list[ContentBlock] = []
 
-    # Process content based on its type
     if isinstance(content, str):
         blocks.append(TextBlock(text=content))
     elif isinstance(content, Iterable) and not isinstance(content, str | bytes):
@@ -89,7 +85,6 @@ def openai_message_to_llama_index(message: dict[str, Any]) -> ChatMessage:
                     if isinstance(image_url, dict) and "url" in image_url:
                         blocks.append(ImageBlock(url=image_url.get("url"), detail=image_url.get("detail", "auto")))
 
-    # Create ChatMessage with the processed blocks and additional kwargs
     additional_kwargs = {k: v for k, v in message.items() if k not in ["role", "content"]}
 
     return ChatMessage(role=MessageRole(role), blocks=blocks, additional_kwargs=additional_kwargs)
@@ -159,7 +154,6 @@ class ChatCompletionRequest(BaseModel):
         result = []
 
         for msg in self.messages:
-            # Convert message to dict if it's a model
             if hasattr(msg, "model_dump"):
                 msg_dict = msg.model_dump(exclude_unset=False)
             elif hasattr(msg, "dict"):
@@ -167,7 +161,6 @@ class ChatCompletionRequest(BaseModel):
             else:
                 msg_dict = dict(msg)
 
-            # Convert to llama-index ChatMessage
             result.append(openai_message_to_llama_index(msg_dict))
 
         return result

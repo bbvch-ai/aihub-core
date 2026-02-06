@@ -21,7 +21,7 @@ const route = useRoute()
 const localePath = useLocalePath()
 const { t } = useI18n()
 
-// We could get the process like this: const { process } = useProcess()
+const { processInstance } = useProcessInstance()
 
 const subPath = (path: string) => {
   return `/service/processes/${route.params.process_class}-${route.params.process_id}/${path}`
@@ -34,12 +34,19 @@ const isActive = (path: string) => {
   }
 }
 
+const hasConfigForm = computed(() => {
+  return processInstance.value?.form && processInstance.value.form.length > 0
+})
+
 const navItems = computed<NavItem[]>(() => {
   const items: NavItem[] = [
     { name: t('process.navigation.overview'), key: 'overview', path: subPath('overview'), isActive: isActive('overview') },
     { name: t('process.navigation.walkthroughs'), key: 'walkthroughs', path: subPath('walkthroughs'), isActive: isActive('walkthroughs') },
     { name: t('process.navigation.start'), key: 'start', path: subPath('start'), isActive: isActive('start') },
   ]
+  if (hasConfigForm.value) {
+    items.push({ name: t('process.navigation.configuration'), key: 'configuration', path: subPath('configuration'), isActive: isActive('configuration') })
+  }
   return items
 })
 
@@ -51,7 +58,3 @@ const activeNavItem = computed<NavItem | undefined>(() => {
   return navItems.value?.filter(navItem => navItem.isActive())[0]
 })
 </script>
-
-<style scoped>
-
-</style>
