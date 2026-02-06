@@ -5279,12 +5279,13 @@ export const DocumentConversionMetadataSchema = {
         filename: {
             type: 'string',
             title: 'Filename',
-            description: 'Original filename of the converted document'
+            description: 'Original filename'
         }
     },
     type: 'object',
     required: ['filename'],
-    title: 'DocumentConversionMetadata'
+    title: 'DocumentConversionMetadata',
+    description: 'Metadata about the converted document.'
 } as const;
 
 export const DocumentConversionResponseSchema = {
@@ -5292,16 +5293,27 @@ export const DocumentConversionResponseSchema = {
         page_content: {
             type: 'string',
             title: 'Page Content',
-            description: 'Markdown content extracted from the document'
+            description: 'Extracted text content (markdown)'
         },
         metadata: {
-            '$ref': '#/components/schemas/DocumentConversionMetadata',
-            description: 'Metadata about the converted document'
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/DocumentConversionMetadata'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Document metadata'
         }
     },
     type: 'object',
-    required: ['page_content', 'metadata'],
-    title: 'DocumentConversionResponse'
+    required: ['page_content'],
+    title: 'DocumentConversionResponse',
+    description: `Response schema for document conversion.
+
+Follows the OpenWebUI External Document Loader specification.
+Can return either a single document or a list of documents (one per page).`
 } as const;
 
 export const DocumentDTOSchema = {
@@ -7783,6 +7795,13 @@ export const ImageGenerationRequestSchema = {
     type: 'object',
     required: ['prompt'],
     title: 'ImageGenerationRequest'
+} as const;
+
+export const ImageModeSchema = {
+    type: 'string',
+    enum: ['s3', 'base64'],
+    title: 'ImageMode',
+    description: 'Image handling mode for parsed documents.'
 } as const;
 
 export const ImageURLSchema = {
@@ -10955,7 +10974,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1770020744
+            default: 1770389695
         },
         owned_by: {
             type: 'string',

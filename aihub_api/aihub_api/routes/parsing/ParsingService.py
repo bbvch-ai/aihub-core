@@ -1,10 +1,3 @@
-"""
-Document parsing service.
-
-Routes documents to the appropriate loader (MinerU or MarkItDown) based on
-file type and handles the conversion process.
-"""
-
 import asyncio
 import logging
 import mimetypes

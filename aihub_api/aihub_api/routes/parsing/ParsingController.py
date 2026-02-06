@@ -1,10 +1,3 @@
-"""
-Document parsing controller.
-
-Exposes REST endpoints for document conversion following the OpenWebUI
-External Document Loader specification.
-"""
-
 from typing import Annotated
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
