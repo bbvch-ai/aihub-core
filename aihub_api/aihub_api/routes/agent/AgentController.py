@@ -46,7 +46,7 @@ class AgentController(Controller):
     def get_agent_classes(self, route: str = "/classes") -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_agent_classes(
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.?>"))],
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
             online: Annotated[bool | None, Query(description="Filter by online status")] = None,
         ) -> list[AgentClassDTO]:
@@ -62,7 +62,7 @@ class AgentController(Controller):
         @self.router.get(route, tags=self.tags)
         async def get_agent_class(
             agent_class: str,
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.{agent_class}.?>"))],
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.agent.{agent_class}.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> AgentClassDTO:
             """
@@ -98,7 +98,7 @@ class AgentController(Controller):
         async def create_agent_instance(
             agent_class: str,
             request: CreateAgentInstanceRequest,
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.{agent_class}.?>"))],
+            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.{agent_class}"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> FullAgentInstanceDTO:
             """
