@@ -61,7 +61,7 @@ async def extract_and_upload_images(
         await asyncio.to_thread(_write_file, fs, blob_path, image_bytes)
 
         # s3://bucket/key format is consumed by replace_s3_paths_with_signed_urls
-        s3_uri = f"s3://{blob_path}"
+        s3_uri = blob_path if blob_path.startswith("s3://") else f"s3://{blob_path}"
         markdown_figure = f"![Figure {idx + 1}]({s3_uri})"
         figure_tag = f"<{NODE_CONTENT_TYPE_FIGURE}>{markdown_figure}</{NODE_CONTENT_TYPE_FIGURE}>"
 
