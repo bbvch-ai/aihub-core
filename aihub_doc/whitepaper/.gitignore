@@ -1,5 +1,2 @@
 # Generated chapter outputs
-output/*.md
-
-# Keep the output directory structure
-!output/.gitkeep
+chapters/*/output.md

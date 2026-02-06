@@ -8,6 +8,7 @@
 #   make all          - Full pipeline: sources -> chapters -> pdf
 
 SHELL := /bin/bash
+PYTHON := python3
 
 # Directories
 SCRIPTS_DIR := scripts

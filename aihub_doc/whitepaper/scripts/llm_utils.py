@@ -60,12 +60,14 @@ def call_llm(prompt: str, model: str) -> tuple[bool, str]:
         tmp_path = tmp.name
 
     try:
-        result = subprocess.run(
-            ["llm", "--no-stream", "-m", model],
-            stdin=open(tmp_path, "r"),
-            capture_output=True,
-            text=True,
-        )
+        with open(tmp_path, "r") as f:
+            result = subprocess.run(
+                ["llm", "--no-stream", "-m", model],
+                stdin=f,
+                capture_output=True,
+                text=True,
+                timeout=300,
+            )
         return (result.returncode == 0, result.stdout if result.returncode == 0 else result.stderr)
     finally:
         Path(tmp_path).unlink(missing_ok=True)
@@ -103,7 +105,7 @@ def get_last_llm_usage() -> tuple[int, int]:
                     entry.get("output_tokens", 0) or 0,
                 )
     except Exception:
-        pass
+        pass  # Best effort - return zeros if llm CLI unavailable or output unparseable
     return (0, 0)
 
 

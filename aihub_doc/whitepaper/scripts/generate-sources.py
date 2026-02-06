@@ -259,14 +259,12 @@ def resolve_chapter_name(chapter_input: str, chapters_dir: Path) -> str | None:
         return prefix_matches[0]
 
     # Numeric prefix match (e.g., "1" matches "01-...")
-    try:
+    if chapter_input.isdigit():
         num = int(chapter_input)
         num_prefix = f"{num:02d}-"
         num_matches = [c for c in all_chapters if c.startswith(num_prefix)]
         if len(num_matches) == 1:
             return num_matches[0]
-    except ValueError:
-        pass
 
     # Substring match (if unique)
     substring_matches = [c for c in all_chapters if chapter_input in c]
