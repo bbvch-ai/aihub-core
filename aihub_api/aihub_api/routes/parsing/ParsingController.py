@@ -7,7 +7,6 @@ External Document Loader specification.
 
 import logging
 import urllib.parse
-from enum import StrEnum
 from typing import Annotated
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -17,15 +16,9 @@ from aihub_lib.routes.Controller import Controller
 from fastapi import HTTPException, Query, Request, Security
 
 from aihub_api.routes.parsing.dto.DocumentConversionResponse import DocumentConversionResponse
+from aihub_api.routes.parsing.dto.ImageMode import ImageMode
 from aihub_api.routes.parsing.ParsingMappings import FormatToExtensions, MimeTypeToFormat
 from aihub_api.routes.parsing.ParsingService import ParsingService
-
-
-class ImageMode(StrEnum):
-    """Image handling mode for parsed documents."""
-
-    S3 = "s3"  # Upload to S3, return signed URLs (default)
-    BASE64 = "base64"  # Embed images as base64 data URIs in markdown
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +89,7 @@ class ParsingController(Controller):
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             image_mode: Annotated[
                 ImageMode,
-                Query(description="How to handle images: 's3' uploads to S3 and returns signed URLs, 'base64' embeds images as data URIs"),
+                Query(description="Image handling: 's3' (signed URLs) or 'base64' (embedded data URIs)"),
             ] = ImageMode.S3,
         ) -> DocumentConversionResponse:
             content_type = request.headers.get("content-type", "")

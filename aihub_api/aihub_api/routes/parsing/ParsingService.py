@@ -8,7 +8,6 @@ file type and handles the conversion process.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
 
 from aihub_lib.generative_ai.document.loaders.MarkItDownLoader import MarkItDownLoader
 from aihub_lib.generative_ai.document.loaders.MineruLoader import MineruLoader
@@ -21,10 +20,8 @@ from aihub_api.routes.parsing.dto.DocumentConversionResponse import (
     DocumentConversionMetadata,
     DocumentConversionResponse,
 )
+from aihub_api.routes.parsing.dto.ImageMode import ImageMode
 from aihub_api.routes.parsing.ParsingMappings import get_extension
-
-if TYPE_CHECKING:
-    from aihub_api.routes.parsing.ParsingController import ImageMode
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +34,7 @@ class ParsingService:
         content: bytes,
         filename: str,
         content_type: str = "",
-        image_mode: "ImageMode | None" = None,
+        image_mode: ImageMode | None = None,
     ) -> DocumentConversionResponse:
         """
         Convert a document from raw bytes to markdown.
@@ -52,9 +49,6 @@ class ParsingService:
         - `content_type`: MIME type of the document
         - `image_mode`: How to handle images - 's3' (default) or 'base64'
         """
-        # Import here to avoid circular import
-        from aihub_api.routes.parsing.ParsingController import ImageMode
-
         if image_mode is None:
             image_mode = ImageMode.S3
 
@@ -112,10 +106,11 @@ class ParsingService:
             markdown_content = documents[0].text
 
             # Replace S3 paths with signed URLs for S3 mode
+            # Max lifetime is 7 days (168 hours) per S3 presigned URL limitations
             if image_mode == ImageMode.S3 and markdown_content:
                 markdown_content = replace_s3_paths_with_signed_urls(
                     markdown_content,
-                    lifetime_hours=24 * 30,  # 30 days expiry for uploaded files
+                    lifetime_hours=168,  # 7 days (maximum allowed for presigned URLs)
                 )
 
             logger.info(f"Document converted: {filename}, {len(markdown_content)} chars")

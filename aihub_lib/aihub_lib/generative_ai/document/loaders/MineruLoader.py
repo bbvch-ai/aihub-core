@@ -174,7 +174,9 @@ class MineruLoader(BaseReader):
         if fs is None:
             fs = get_default_fs()
 
-        logger.debug(f"[MineruLoader] Processing from bytes: {filename}, {len(content)} bytes, embed_base64={embed_base64}")
+        logger.debug(
+            f"[MineruLoader] Processing from bytes: {filename}, {len(content)} bytes, embed_base64={embed_base64}"
+        )
 
         # Call MinerU API (always request images, we decide how to handle them)
         result = await self._convert_document(content, filename, include_images=True)

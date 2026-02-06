@@ -154,7 +154,9 @@ class MarkItDownLoader(BaseReader):
         if fs is None:
             fs = get_default_fs()
 
-        logger.debug(f"[MarkItDownLoader] Processing from bytes: {filename}, {len(content)} bytes, embed_base64={embed_base64}")
+        logger.debug(
+            f"[MarkItDownLoader] Processing from bytes: {filename}, {len(content)} bytes, embed_base64={embed_base64}"
+        )
 
         # Convert using MarkItDown
         md_content = await self._convert_to_markdown(content, filename)

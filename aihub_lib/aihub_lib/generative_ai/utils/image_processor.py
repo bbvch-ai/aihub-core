@@ -102,8 +102,8 @@ async def extract_and_upload_images(
             logger.debug(f"Uploaded image {idx + 1} to {s3_uri}")
 
         except Exception as e:
-            logger.warning(f"Failed to process image {rel_path}: {e}")
-            continue
+            # Fail fast - don't silently skip images
+            raise RuntimeError(f"Failed to process image {rel_path}: {e}") from e
 
     return markdown_content
 
@@ -175,8 +175,8 @@ def embed_images_as_base64(
             logger.debug(f"Embedded image {idx + 1} as base64 data URI")
 
         except Exception as e:
-            logger.warning(f"Failed to embed image {rel_path}: {e}")
-            continue
+            # Fail fast - don't silently skip images
+            raise RuntimeError(f"Failed to embed image {rel_path}: {e}") from e
 
     return markdown_content
 
@@ -242,13 +242,9 @@ def replace_s3_paths_with_signed_urls(markdown_content: str, lifetime_hours: int
         bucket = match.group(3)
         key = match.group(4)
 
-        try:
-            signed_url = s3_service.generate_sas_url(bucket, key, lifetime_hours=lifetime_hours)
-            return f"![{alt_text}]({signed_url})"
-        except Exception as e:
-            logger.warning(f"Failed to generate signed URL for s3://{bucket}/{key}: {e}")
-            # Return original if signing fails
-            return match.group(0)
+        # Let errors propagate - fail fast instead of silently returning original paths
+        signed_url = s3_service.generate_sas_url(bucket, key, lifetime_hours=lifetime_hours)
+        return f"![{alt_text}]({signed_url})"
 
     return re.sub(pattern, replace_with_signed_url, markdown_content)
 
