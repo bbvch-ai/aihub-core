@@ -1,13 +1,13 @@
 <template>
   <StructuralColumn
-    :title="agent?.agent_config.name"
+    :title="agentInstance?.agent_config.name"
     close-route="/service/agents"
-    :loading="agentIsLoading"
+    :loading="agentInstanceIsLoading"
     size="large"
   >
     <div class="flex flex-col gap-12">
       <span class="mb-4 block text-sm text-surface-500 dark:text-surface-400">
-        {{ agent.agent_config.description }}
+        {{ agentInstance.agent_config.description }}
       </span>
       <Panel
         class="panel pt-5"
@@ -18,7 +18,7 @@
               {{ t('agent.overview.name') }}
             </span>
             <Tag
-              :value="agent.agent_config.name"
+              :value="agentInstance.agent_config.name"
               severity="secondary"
             />
           </div>
@@ -27,7 +27,7 @@
               {{ t('agent.overview.class') }}
             </span>
             <Tag
-              :value="agent.agent_class"
+              :value="agentInstance.agent_class"
               severity="secondary"
             />
           </div>
@@ -36,7 +36,7 @@
               {{ t('agent.overview.agentId') }}
             </span>
             <Tag
-              :value="agent.agent_id"
+              :value="agentInstance.agent_id"
               severity="secondary"
             />
           </div>
@@ -45,8 +45,8 @@
               {{ t('agent.overview.status') }}
             </span>
             <Tag
-              :value="agent.is_online ? t('agent.overview.online') : t('agent.overview.offline')"
-              :severity="agent.is_online ? 'success' : 'error' "
+              :value="agentInstance.is_online ? t('agent.overview.online') : t('agent.overview.offline')"
+              :severity="agentInstance.is_online ? 'success' : 'error' "
             />
           </div>
         </div>
@@ -60,7 +60,7 @@
 </template>
 
 <script setup lang="ts">
-const { agent, agentIsLoading } = useAgent()
+const { agentInstance, agentInstanceIsLoading } = useAgentInstance()
 const { t } = useI18n()
 const { timeRange, charts } = useBasicEventStatistics()
 </script>

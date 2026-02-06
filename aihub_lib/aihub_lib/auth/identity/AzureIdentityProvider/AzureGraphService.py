@@ -80,7 +80,6 @@ class AzureGraphService:
         async with httpx.AsyncClient(timeout=timeout) as client:
             response = await client.request(method, url, headers=headers, **kwargs)
 
-        # Handle binary content (e.g., images) separately
         if "application/json" not in response.headers.get("Content-Type", ""):
             if response.status_code == 200:
                 return {"content": response.content, "headers": response.headers}

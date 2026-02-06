@@ -38,6 +38,10 @@ install-ffmpeg:
 	@echo "Installing ffmpeg..."
 	sudo apt-get update; sudo apt-get install -y ffmpeg
 
+run-dev:
+	@echo "Starting development server with hot reload..."
+	poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
 run-prod:
 	@echo "Starting server with Gunicorn using ${NUM_WORKERS} workers..."
 	poetry run gunicorn -w ${NUM_WORKERS} \

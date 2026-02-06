@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from pydantic import Field
 
@@ -44,7 +44,7 @@ class ProcessWalkthroughTopicManager(ProcessClassTopicManager):
         cls,
         topic_manager: ProcessInstanceTopicManager,
         process_walkthrough_id: Annotated[str, "walkthrough ID"],
-    ) -> "ProcessWalkthroughTopicManager":
+    ) -> Self:
         """
         Creates a ProcessWalkthroughTopicManager from an existing
         processInstanceTopicManager and additional walkthrough details.
@@ -61,7 +61,7 @@ class ProcessWalkthroughTopicManager(ProcessClassTopicManager):
         topic_manager: ProcessClassTopicManager,
         process_walkthrough_id: Annotated[str, "walkthrough ID"],
         process_id: Annotated[str | None, "Optional process ID"] = None,
-    ) -> "ProcessWalkthroughTopicManager":
+    ) -> Self:
         """
         Creates a ProcessWalkthroughTopicManager from an existing
         processClassTopicManager and additional walkthrough details.
@@ -73,7 +73,7 @@ class ProcessWalkthroughTopicManager(ProcessClassTopicManager):
         )
 
     @classmethod
-    def from_process_topic(cls, topic: ProcessInstanceTopic) -> "ProcessWalkthroughTopicManager":
+    def from_process_topic(cls, topic: ProcessInstanceTopic) -> Self:
         """Constructs an ProcessWalkthroughTopicManager directly from an processTopic object."""
         return cls(
             process_class=topic.process_class,

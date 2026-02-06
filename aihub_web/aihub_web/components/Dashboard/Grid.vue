@@ -35,10 +35,10 @@
               />
               <Select
                 v-model="agent"
-                :options="agents"
+                :options="agentInstances"
                 option-label="agent_config.name"
                 :placeholder="t('dashboard.select_agent')"
-                :loading="agentsAreLoading"
+                :loading="agentInstancesAreLoading"
                 show-clear
               />
               <Button
@@ -66,11 +66,11 @@ import { h, render } from 'vue'
 import 'gridstack/dist/gridstack.min.css'
 import GridItemVue from './Item.vue'
 
-import type { AgentDto, TimeRange } from '@core/sdk/client'
+import type { FullAgentInstanceDto, TimeRange } from '@core/sdk/client'
 import type { DashboardWidget } from '@core/types/DashboardWidget'
 import type { GridStackElement } from 'gridstack'
 
-const { agents, agentsAreLoading } = useAgents()
+const { agentInstances, agentInstancesAreLoading } = useAgentInstances()
 const { t } = useI18n()
 const { myUser, myUserIsLoading } = useMyUser()
 const { saveDashboard } = useSaveDashboard()
@@ -178,7 +178,7 @@ const component = ref<componentSelection>(componentOptions.value[0])
 const timeRange = ref<TimeRange>('24h')
 const timeRanges = ref<string[]>(['1h', '24h', '30d', '365d'])
 
-const agent = ref<AgentDto | null>(null)
+const agent = ref<FullAgentInstanceDto | null>(null)
 
 type eventType = { label: string, event: string }
 const eventOptions = computed<eventType[]>(() => {

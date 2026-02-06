@@ -85,7 +85,6 @@ class S3DataLakeIOManager(ConfigurableIOManager):
     data_lake_file_system: ResourceDependency[s3fs.S3FileSystem]
 
     def handle_output(self, context: OutputContext, obj: DataLakeFile | list[DataLakeFile]) -> None:
-        # Check if obj is a single DataLakeFile or a list of DataLakeFiles
         if isinstance(obj, DataLakeFile):
             data_lake_files = [obj]
         elif isinstance(obj, list) and all(isinstance(item, DataLakeFile) for item in obj):

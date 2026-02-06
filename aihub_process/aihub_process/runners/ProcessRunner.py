@@ -45,14 +45,24 @@ logger = logging.getLogger(__name__)
 class ProcessRunner(HealthCheckProvider):
     """
     The process runner is responsible for connecting with external services like NATs, JetStream, and Redis, as well
-    as running the process through an process dispatcher.
+    as running the process through a process dispatcher.
     The runner is also responsible for making the process discoverable by responding to discovery requests.
+
+    The process_config parameter should be a form-mode ProcessConfig instance (created via as_form()).
+    It contains:
+    - Configurable fields: FormKit elements that define the form for UI configuration
+    - Non-configurable fields: Actual values that are deployment-specific and not user-editable
+
+    The form is automatically extracted from process_config.to_formkit_form().
+    Non-configurable values are merged with incoming config by the dispatcher.
+
+    Class-level metadata (name, description, icon) is extracted from the process_type class variables.
     """
 
     def __init__(
         self,
         process_type: type[AgenticProcess],
-        default_process_config: ProcessConfig,
+        process_config: ProcessConfig,
         locale_paths: list[str] | None = None,
         health_port: int = 8080,
     ):
@@ -62,8 +72,14 @@ class ProcessRunner(HealthCheckProvider):
             raise ValueError("process_type must be a subclass of AgenticProcess.")
 
         self.process_type = process_type
-        self.default_process_config = default_process_config
-        self.process_config_type = default_process_config.__class__
+        self.process_config = process_config
+        self.process_config_type = process_config.__class__
+
+        self.name = process_type.name
+        self.description = process_type.description
+        self.icon = process_type.icon
+
+        self.form = process_config.to_formkit_form()
 
         self.running = False
         self._stop_signal = asyncio.Event()
@@ -158,15 +174,19 @@ class ProcessRunner(HealthCheckProvider):
             for agent_work_event, agent_in in self.process_type.get_events_with_agent_in()
         ]
 
-        process_config_specs = ProcessConfigSpecs.from_process_config_class(self.process_config_type)
+        process_config_specs = ProcessConfigSpecs.from_process_config(self.process_config, self.process_class)
 
         process_discovery_response_event = ProcessClassDiscoveryResponseEvent(
             process_class=self.process_class,
+            name=self.name,
+            description=self.description,
+            icon=self.icon,
+            form=self.form,
             process_config_specs=process_config_specs,
             human_inputs=human_inputs,
             program_inputs=program_inputs,
             agent_inputs=agent_inputs,
-            default_process_config=self.default_process_config,
+            default_process_config=self.process_config,
         )
         await self.nc_publisher.publish_event(process_discovery_response_event, subject)
 
@@ -196,10 +216,9 @@ class ProcessRunner(HealthCheckProvider):
         self.js = self.nc.jetstream(timeout=60, publish_async_max_pending=10_000)
         self.redis = RedisSettings.create_client()
 
-        # Initialize dispatcher
         self.dispatcher = ProcessDispatcher(
             self.process_type,
-            self.default_process_config,
+            self.process_config,
             self.nc,
             self.js,
             self.redis,
@@ -302,7 +321,7 @@ class ProcessRunner(HealthCheckProvider):
         Starts the process and waits indefinitely (or until a stop event is triggered).
         Useful for production usage where the process should run until manually stopped.
         """
-        logger.debug(f"Starting {self.process_class}.{self.default_process_config.process_id}")
+        logger.debug(f"Starting {self.process_class}")
         await self.start()
         try:
             await self._stop_signal.wait()

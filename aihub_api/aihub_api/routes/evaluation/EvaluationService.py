@@ -225,7 +225,6 @@ class EvaluationService:
         """Retrieves detailed information for a specific dataset from Arize Phoenix."""
         client = EvaluationService._get_phoenix_client()
         metadata = await EvaluationService._fetch_dataset_metadata_from_phoenix(dataset_id)
-        # Fetch examples separately, as metadata doesn't include them.
         phoenix_examples_set: PhoenixInternalDataset = client.get_dataset(id=dataset_id)
 
         items_dto = [
@@ -277,7 +276,7 @@ class EvaluationService:
                 agent_class = experiment.metadata.get("agent_class")
                 agent_id = experiment.metadata.get("agent_id")
                 locale = experiment.metadata.get("locale")
-                agent_dto = AgentService.get_minimal_agent(agent_class, agent_id, t)
+                agent_dto = AgentService.get_minimal_agent_instance(agent_class, agent_id, t)
                 experiments_list.append(
                     MinimalExperiment(
                         id=experiment.id,
@@ -347,7 +346,7 @@ class EvaluationService:
         agent_class = experiment_meta.metadata.get("agent_class")
         agent_id = experiment_meta.metadata.get("agent_id")
         locale = experiment_meta.metadata.get("locale")
-        agent_dto = AgentService.get_minimal_agent(agent_class, agent_id, t)
+        agent_dto = AgentService.get_minimal_agent_instance(agent_class, agent_id, t)
 
         return Experiment(
             id=experiment_id,

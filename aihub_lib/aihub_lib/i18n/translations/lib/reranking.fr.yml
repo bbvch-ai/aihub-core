@@ -1,0 +1,7 @@
+config:
+  model:
+    label: "Modèle de reclassement"
+    help: "Sélectionnez le modèle utilisé pour reclasser les documents récupérés par pertinence sémantique à la requête."
+  top_n:
+    label: "Top N résultats"
+    help: "Nombre de documents à conserver après reclassement. Des valeurs plus basses se concentrent sur le contenu le plus pertinent."

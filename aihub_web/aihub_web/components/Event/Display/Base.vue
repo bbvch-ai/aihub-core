@@ -72,10 +72,10 @@
 </template>
 
 <script setup lang="ts">
-import type { AgentDto, ThreadDto, AgentEventReadable } from '@core/sdk/client'
+import type { MinimalAgentInstanceDto, ThreadDto, ContextualizedAgentEvent } from '@core/sdk/client'
 
 const props = withDefaults(defineProps<{
-  event: AgentEventReadable
+  event: ContextualizedAgentEvent
   thread: ThreadDto
   icon: string
   isExternal?: boolean
@@ -95,7 +95,7 @@ const showRawData = ref(false)
 
 const agentIds = computed<string[]>(() => {
   const agents = props.thread.agents ?? []
-  return agents.map((agent: AgentDto) => `${agent.agent_class}/${agent.agent_id}`)
+  return agents.map((agent: MinimalAgentInstanceDto) => `${agent.agent_class}/${agent.agent_id}`)
 })
 
 const isFromAgentInThread = computed<boolean>(() => {

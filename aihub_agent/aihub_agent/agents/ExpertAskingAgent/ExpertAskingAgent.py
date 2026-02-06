@@ -1,7 +1,8 @@
+from typing import ClassVar
+
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
 from aihub_lib.generative_ai.routing.route_to_event_using_llm import route_to_event_using_llm
-from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoop
 from aihub_lib.nats.events.memory.store.StoreOrganizationMemoryEvent import StoreOrganizationMemoryEvent
 from aihub_lib.nats.events.router.RouteOptions import RouteOptions
@@ -21,6 +22,7 @@ from aihub_agent.agents.ExpertAskingAgent.ExpertAskingAgentConfig import ExpertA
 from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.context.thread.ThreadContext import ThreadContext
 from aihub_agent.i18n.AgentLocaleHandler import AgentLocaleHandler
+from aihub_agent.i18n.AgentLocaleString import AgentLocaleString
 from aihub_agent.workflow.decorators.step import step
 
 
@@ -31,10 +33,16 @@ class ExpertAskingAgent(Agent):
     The agent validates the answer and poses follow-up questions until the answer is sufficient.
     """
 
+    name: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.expert_asking_agent.metadata.name")
+    description: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path(
+        "agent.expert_asking_agent.metadata.description"
+    )
+    icon: ClassVar[str] = "mage:building-a"
+
     @step(
-        name=LocaleString(en="Invoke Expert Step"),
-        description=LocaleString(en="Poses question to a group of experts."),
-        icon="material-symbols:group-rounded",
+        name=AgentLocaleString.from_i18n_path("agent.expert_asking_agent.steps.invoke_expert.name"),
+        description=AgentLocaleString.from_i18n_path("agent.expert_asking_agent.steps.invoke_expert.description"),
+        icon="mage:users",
     )
     async def start_step(
         self,
@@ -56,13 +64,13 @@ class ExpertAskingAgent(Agent):
         return BotInTheLoop.invoke(
             question=question_event.question_to_expert,
             user=question_event.user,
-            channel_config=agent_config.channel_config,
+            channel_config=agent_config.get_active_channel_config(),
         )
 
     @step(
-        name=LocaleString(en="Expert Response"),
-        description=LocaleString(en="Processes the expert response."),
-        icon="carbon:question-answering",
+        name=AgentLocaleString.from_i18n_path("agent.expert_asking_agent.steps.expert_response.name"),
+        description=AgentLocaleString.from_i18n_path("agent.expert_asking_agent.steps.expert_response.description"),
+        icon="mage:message-question-mark",
     )
     async def expert_response_step(
         self,
@@ -118,9 +126,11 @@ class ExpertAskingAgent(Agent):
             )
 
     @step(
-        name=LocaleString(en="Response Sufficient Router"),
-        description=LocaleString(en="Checks whether the expert has sufficiently answered the question yet."),
-        icon="line-md:chat",
+        name=AgentLocaleString.from_i18n_path("agent.expert_asking_agent.steps.response_sufficient_router.name"),
+        description=AgentLocaleString.from_i18n_path(
+            "agent.expert_asking_agent.steps.response_sufficient_router.description"
+        ),
+        icon="mage:message",
     )
     async def router_step(
         self,
@@ -162,9 +172,9 @@ class ExpertAskingAgent(Agent):
         return event
 
     @step(
-        name=LocaleString(en="Follow up question"),
-        description=LocaleString(en="Poses follow up question to expert as answer is not sufficient yet."),
-        icon="ix:user-fail-filled",
+        name=AgentLocaleString.from_i18n_path("agent.expert_asking_agent.steps.follow_up_question.name"),
+        description=AgentLocaleString.from_i18n_path("agent.expert_asking_agent.steps.follow_up_question.description"),
+        icon="mage:user-cross",
     )
     async def follow_up_question(
         self,

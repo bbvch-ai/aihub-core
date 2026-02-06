@@ -1,19 +1,38 @@
 from types import UnionType
-from typing import get_args, get_origin
+from typing import Union, get_args, get_origin
 
 import pytest
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.BaseEvent import BaseEvent
-from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentConfigSpecs, EventSpecs
-from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent import (
-    AgentInstanceDiscoveryResponseEvent,
+from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
+    AgentClassDiscoveryResponseEvent,
+    AgentConfigSpecs,
+    EventSpecs,
 )
 from pydantic import BaseModel
 
 from aihub_api.services.ModelCreationService import ModelCreationService
 from playground.testing.tests.services.TestEvent import Level2Model, Level3Model, NestedTestModel, TestEvent
+
+
+def is_union_type(origin) -> bool:
+    """Check if the origin is a union type (either UnionType or typing.Union)"""
+    return origin is UnionType or origin is Union
+
+
+def unwrap_annotated(type_annotation):
+    """Unwrap Annotated types to get the inner type"""
+    from typing import Annotated
+    from typing import get_args as typing_get_args
+    from typing import get_origin as typing_get_origin
+
+    origin = typing_get_origin(type_annotation)
+    if origin is Annotated:
+        # Return the first arg which is the actual type
+        return typing_get_args(type_annotation)[0]
+    return type_annotation
 
 
 class TestDataProvider:
@@ -199,12 +218,14 @@ class TestFieldTyping:
 
             # Check union structure for optional field
             origin = get_origin(optional_nested_field.annotation)
-            if origin is UnionType:
+            if is_union_type(origin):
                 args = get_args(optional_nested_field.annotation)
-                assert len(args) == 2
-                assert type(None) in args
+                # Unwrap Annotated types from Pydantic schema reconstruction
+                unwrapped_args = [unwrap_annotated(arg) for arg in args]
+                assert len(unwrapped_args) == 2
+                assert type(None) in unwrapped_args
                 # Other arg should be a BaseModel subclass
-                non_none_args = [arg for arg in args if arg is not type(None)]
+                non_none_args = [arg for arg in unwrapped_args if arg is not type(None)]
                 assert len(non_none_args) == 1
                 assert isinstance(non_none_args[0], type)
                 assert issubclass(non_none_args[0], BaseModel)
@@ -216,9 +237,11 @@ class TestFieldTyping:
             union_field = model.model_fields["union_field"]
             origin = get_origin(union_field.annotation)
             args = get_args(union_field.annotation)
-            assert origin is UnionType
-            assert str in args
-            assert int in args
+            assert is_union_type(origin)
+            # Unwrap Annotated types from Pydantic schema reconstruction
+            unwrapped_args = [unwrap_annotated(arg) for arg in args]
+            assert str in unwrapped_args
+            assert int in unwrapped_args
             assert union_field.is_required()
 
             # Optional union: Optional[str | int]
@@ -227,10 +250,11 @@ class TestFieldTyping:
             assert optional_union_field.default is None
 
             # Check the inner union type
-            if get_origin(optional_union_field.annotation) is UnionType:
+            if is_union_type(get_origin(optional_union_field.annotation)):
                 args = get_args(optional_union_field.annotation)
-                # Should be str | int | None or similar
-                assert type(None) in args
+                # Should be str | int | None or similar (unwrap Annotated)
+                unwrapped_args = [unwrap_annotated(arg) for arg in args]
+                assert type(None) in unwrapped_args
 
     def test_complex_union_types(self, input_model, output_model, input_model_factory):
         """Test union types with nested models"""
@@ -241,10 +265,12 @@ class TestFieldTyping:
             origin = get_origin(complex_union_field.annotation)
             args = get_args(complex_union_field.annotation)
 
-            assert origin is UnionType
-            assert str in args
+            assert is_union_type(origin)
+            # Unwrap Annotated types from Pydantic schema reconstruction
+            unwrapped_args = [unwrap_annotated(arg) for arg in args]
+            assert str in unwrapped_args
             # One of the args should be a BaseModel subclass (dynamically created)
-            nested_types = [arg for arg in args if isinstance(arg, type) and issubclass(arg, BaseModel)]
+            nested_types = [arg for arg in unwrapped_args if isinstance(arg, type) and issubclass(arg, BaseModel)]
             assert len(nested_types) >= 1
             # For class-based, verify the nested type name
             if creation_method == "class":
@@ -283,7 +309,7 @@ class TestFieldTyping:
             nested_optional = NestedTestModel.model_fields["nested_optional"]
             origin = get_origin(nested_optional.annotation)
             args = get_args(nested_optional.annotation)
-            assert origin is UnionType
+            assert is_union_type(origin)
             assert int in args
             assert type(None) in args
             assert not nested_optional.is_required()
@@ -356,7 +382,11 @@ class TestFieldTyping:
 
                 if input_origin is not None or output_origin is not None:
                     # Both should have the same origin (UnionType, list, etc.)
-                    assert input_origin == output_origin, f"Field {field_name} has different generic origins"
+                    # Special case: UnionType and Union are equivalent
+                    if is_union_type(input_origin) and is_union_type(output_origin):
+                        pass  # Both are union types, this is fine
+                    else:
+                        assert input_origin == output_origin, f"Field {field_name} has different generic origins"
 
                     # For nested models and complex types, verify structural compatibility
                     input_args = get_args(input_field.annotation)
@@ -412,10 +442,10 @@ class TestFieldTyping:
 
             # Test Union types
             union_field = model.model_fields["union_field"]
-            assert get_origin(union_field.annotation) is UnionType
+            assert is_union_type(get_origin(union_field.annotation))
 
             complex_union_field = model.model_fields["complex_union"]
-            assert get_origin(complex_union_field.annotation) is UnionType
+            assert is_union_type(get_origin(complex_union_field.annotation))
 
 
 class TestInstanceCreation:
@@ -581,16 +611,17 @@ class TestSchemaValidation:
             name=LocaleString(en="Test Agent"),
             description=LocaleString(en="Test agent description"),
         )
-        discovery_event = AgentInstanceDiscoveryResponseEvent(
+        discovery_event = AgentClassDiscoveryResponseEvent(
             agent_class="TestAgent",
-            agent_id="test_agent",
-            agent_config=agent_config,
+            name=agent_config.name,
+            description=agent_config.description,
+            icon=agent_config.icon,
             is_conversational=False,
             start_events=[event_specs],
             stop_events=[],
             network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
-            agent_config_specs=AgentConfigSpecs.from_agent_config_class(AgentConfig),
-            default_agent_config=agent_config,
+            form=agent_config.to_formkit_form(),
+            agent_config_specs=AgentConfigSpecs.from_agent_config(agent_config, agent_class="TestAgent"),
             hitl_request_events=[],
             hitl_response_events=[],
         )

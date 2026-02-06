@@ -36,7 +36,6 @@ class TagParser:
                 break
 
             else:
-                # Process regular character
                 char = self.pending[0]
                 self.pending = self.pending[1:]
                 content_type = ContentType.THINKING if self.in_thinking else ContentType.REGULAR

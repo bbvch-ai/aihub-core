@@ -1,0 +1,16 @@
+config:
+  model:
+    label: "Modèle d'embedding"
+    help: "Sélectionnez le modèle d'embedding pour générer des représentations vectorielles du texte."
+  max_retries:
+    label: "Tentatives maximales"
+    help: "Nombre maximum de tentatives pour les requêtes d'embedding échouées."
+  timeout:
+    label: "Délai d'expiration (secondes)"
+    help: "Temps maximum d'attente pour une réponse d'embedding."
+  encoding_format:
+    label: "Format d'encodage"
+    help: "Format des embeddings retournés. Float est standard, Base64 est plus compact."
+  dimensions:
+    label: "Dimensions"
+    help: "Nombre de dimensions pour les embeddings de sortie. Supporté uniquement par certains modèles."

@@ -19,7 +19,7 @@ scenarios("./features/process_sequence.feature")
 def agent_a_runner_fixture():
     return AgentTestRunner(
         agent_type=AgentA,
-        default_agent_config=AgentConfig(
+        agent_config=AgentConfig(
             agent_id="agent_a",
             agent_class=AgentA.__name__,
             name=LocaleString(en="Agent A for Sequence"),
@@ -32,7 +32,7 @@ def agent_a_runner_fixture():
 def initial_process_runner_fixture():
     return ProcessTestRunner(
         process_type=InitialProcess,
-        default_process_config=ProcessConfig(
+        process_config=ProcessConfig(
             process_id="initial_process",
             process_class=InitialProcess.__name__,
             name=LocaleString(en="Initial Process"),
@@ -45,7 +45,7 @@ def initial_process_runner_fixture():
 def subsequent_process_runner_fixture():
     return ProcessTestRunner(
         process_type=SubsequentProcess,
-        default_process_config=ProcessConfig(
+        process_config=ProcessConfig(
             process_id="subsequent_process",
             process_class=SubsequentProcess.__name__,
             name=LocaleString(en="Subsequent Process"),

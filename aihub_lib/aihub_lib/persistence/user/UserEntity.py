@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from typing import Self
 from uuid import uuid4
 
 from mongoengine import (
@@ -101,9 +102,7 @@ class UserEntity(Document):
 
     @classmethod
     @trace_fn
-    def create_user(
-        cls, oid: str, name: str, email: str, roles: list[str], profile_image: str | None = None
-    ) -> "UserEntity":
+    def create_user(cls, oid: str, name: str, email: str, roles: list[str], profile_image: str | None = None) -> Self:
         default_dashboard = cls.create_default_dashboard()
         user = cls(
             id=oid,
@@ -122,7 +121,7 @@ class UserEntity(Document):
     @trace_fn
     def ensure_user_exists(
         cls, oid: str, name: str, email: str, roles: list[str], profile_image: str | None = None
-    ) -> "UserEntity":
+    ) -> Self:
         try:
             user = cls.objects.get(id=oid)
             user.name = name
@@ -138,12 +137,12 @@ class UserEntity(Document):
 
     @classmethod
     @trace_fn
-    def by_oid(cls, user_oid: str) -> "UserEntity":
+    def by_oid(cls, user_oid: str) -> Self:
         return cls.objects.get(id=user_oid)
 
     @classmethod
     @trace_fn
-    def by_email(cls, email: str) -> "UserEntity":
+    def by_email(cls, email: str) -> Self:
         return cls.objects.get(email=email)
 
     @classmethod

@@ -45,12 +45,22 @@ class AgentRunner(HealthCheckProvider):
     An agent runner is responsible for connecting with external services like NATs, JetStream, and Redis, as well
     as running the agent through an agent dispatcher.
     The runner is also responsible for making the agent discoverable by responding to discovery requests.
+
+    The agent_config parameter should be a form-mode AgentConfig instance (created via as_form()).
+    It contains:
+    - Configurable fields: FormKit elements that define the form for UI configuration
+    - Non-configurable fields: Actual values that are deployment-specific and not user-editable
+
+    The form is automatically extracted from agent_config.to_formkit_form().
+    Non-configurable values are merged with incoming StartEvent configs by the dispatcher.
+
+    Class-level metadata (name, description, icon) is extracted from the agent_type class variables.
     """
 
     def __init__(
         self,
         agent_type: type[Agent],
-        default_agent_config: AgentConfig,
+        agent_config: AgentConfig,
         locale_paths: list[str] | None = None,
         health_port: int = 8080,
     ):
@@ -60,8 +70,14 @@ class AgentRunner(HealthCheckProvider):
             raise ValueError("agent_type must be a subclass of Agent.")
 
         self.agent_type = agent_type
-        self.default_agent_config = default_agent_config
-        self.agent_config_type = default_agent_config.__class__
+        self.agent_config = agent_config
+        self.agent_config_type = agent_config.__class__
+
+        self.name = agent_type.name
+        self.description = agent_type.description
+        self.icon = agent_type.icon
+
+        self.form = agent_config.to_formkit_form()
 
         self.running = False
         self._stop_signal = asyncio.Event()
@@ -135,10 +151,14 @@ class AgentRunner(HealthCheckProvider):
         network_graph = WorkflowVisualizer(agent=self.agent_type)
         network_graph.build_workflow_graph()
 
-        agent_config_specs = AgentConfigSpecs.from_agent_config_class(self.agent_config_type)
+        agent_config_specs = AgentConfigSpecs.from_agent_config(self.agent_config, self.agent_class)
 
         agent_discovery_response_event = AgentClassDiscoveryResponseEvent(
             agent_class=self.agent_class,
+            name=self.name,
+            description=self.description,
+            icon=self.icon,
+            form=self.form,
             agent_config_specs=agent_config_specs,
             is_conversational=any([issubclass(event, UserMessageEvent) for event in start_events]),
             start_events=start_event_specs,
@@ -146,7 +166,6 @@ class AgentRunner(HealthCheckProvider):
             hitl_request_events=hitl_request_event_specs,
             hitl_response_events=hitl_response_event_specs,
             network_graph=network_graph.to_pydantic(),
-            default_agent_config=self.default_agent_config,
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
@@ -181,10 +200,9 @@ class AgentRunner(HealthCheckProvider):
                 uuidRepresentation="standard",
             )
 
-        # Initialize dispatcher
         self.dispatcher = AgentDispatcher(
             self.agent_type,
-            self.default_agent_config,
+            self.agent_config,
             self.nc,
             self.js,
             self.redis,

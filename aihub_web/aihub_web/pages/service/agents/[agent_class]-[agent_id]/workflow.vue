@@ -2,18 +2,18 @@
   <StructuralColumn
     :title="t('agent.workflow.title')"
     close-route="/service/agents"
-    :loading="agentIsLoading"
+    :loading="agentInstanceIsLoading"
   >
     <div class="h-[900px] w-full">
       <WorkflowVisualization
-        v-if="agent && agent.network_graph"
-        :graph-data="agent.network_graph"
+        v-if="agentInstance && agentInstance.network_graph"
+        :graph-data="agentInstance.network_graph"
       />
     </div>
   </StructuralColumn>
 </template>
 
 <script setup lang="ts">
-const { agent, agentIsLoading } = useAgent()
+const { agentInstance, agentInstanceIsLoading } = useAgentInstance()
 const { t } = useI18n()
 </script>

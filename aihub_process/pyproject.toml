@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_process"
-version = "v0.260.1"
+version = "v0.261.0"
 description = "agentic process automation"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",

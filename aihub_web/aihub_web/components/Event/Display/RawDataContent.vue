@@ -11,32 +11,32 @@
           <div class="flex items-center gap-2">
             <Icon
               v-if="node.type === 'string'"
-              name="mdi:format-quote-close"
+              name="mage:message"
               class="size-3 text-surface-600 dark:text-surface-400"
             />
             <Icon
               v-else-if="node.type === 'number'"
-              name="mdi:numeric"
+              name="mage:hash"
               class="size-3 text-surface-600 dark:text-surface-400"
             />
             <Icon
               v-else-if="node.type === 'boolean'"
-              name="mdi:checkbox-marked-circle"
+              name="mage:check-circle"
               class="size-3 text-surface-600 dark:text-surface-400"
             />
             <Icon
               v-else-if="node.type === 'null'"
-              name="mdi:null"
+              name="mage:cancel"
               class="size-3 text-surface-500 dark:text-surface-500"
             />
             <Icon
               v-else-if="node.type === 'array'"
-              name="mdi:code-brackets"
+              name="mage:arrowlist"
               class="size-3 text-surface-600 dark:text-surface-400"
             />
             <Icon
               v-else-if="node.type === 'object'"
-              name="mdi:code-braces"
+              name="mage:box"
               class="size-3 text-surface-600 dark:text-surface-400"
             />
             <span class="font-mono text-sm">{{ node.label }}</span>
@@ -48,11 +48,11 @@
 </template>
 
 <script setup lang="ts">
-import type { AgentEventReadable } from '@core/sdk/client'
+import type { ContextualizedAgentEvent } from '@core/sdk/client'
 import type { TreeNode } from 'primevue/treenode'
 
 interface Props {
-  event: AgentEventReadable
+  event: ContextualizedAgentEvent
 }
 
 const props = defineProps<Props>()

@@ -262,7 +262,6 @@ class CompletionHandler:
                 await _turn_context.update_activity(_activity)
                 return _activity, ""
             except Exception as e:
-                # Handle message too long error (e.g., Slack's msg_too_long error)
                 if "msg_too_long" in str(e):
                     new_text = _buffer.replace(_sent_text, "", 1)
                     _response = await _turn_context.send_activity(new_text)

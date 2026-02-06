@@ -46,7 +46,7 @@ class WebSocketSender:
         - Convert the event into a ContextualizedAgentEvent.
         - Send the event to each user via WebSocketManager.
         """
-        logger.debug(f"Sending event {event} to thread {topic.thread_id}")
+        logger.debug(f"Sending event {event.event_name} to thread {topic.thread_id}")
         users = self.get_users_in_thread(topic.thread_id)
         for user in users:
             await self.ws_manager.send_agent_event(event, topic, user)

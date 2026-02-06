@@ -88,7 +88,7 @@ class LocaleHandler:
         fallback_value = getattr(locale_data, self.DEFAULT_LOCALE, None)
         if fallback_value:
             return fallback_value
-        available_locales = [field for field in self.LOCALE_WHITE_LIST if getattr(locale_data, field, None) is not None]
+        available_locales = [field for field in self.LOCALE_WHITE_LIST if getattr(locale_data, field, None)]
         if available_locales:
             return getattr(locale_data, available_locales[0])
         raise ValueError("No language keys available")

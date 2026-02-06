@@ -71,15 +71,15 @@
 </template>
 
 <script setup lang="ts">
-import type { AgentDto } from '@core/sdk/client'
+import type { FullAgentInstanceDto } from '@core/sdk/client'
 
 defineProps<{
-  agents: AgentDto[]
+  agents: FullAgentInstanceDto[]
 }>()
 
 const { t } = useI18n()
 
 const emit = defineEmits<{
-  selected: [AGENT: AgentDto]
+  selected: [AGENT: FullAgentInstanceDto]
 }>()
 </script>

@@ -1,5 +1,5 @@
 import json
-from typing import Annotated, Any, ClassVar
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Self
 
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.callbacks import TokenCountingHandler
@@ -7,10 +7,12 @@ from llama_index.core.llms import LLM
 from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
 from pydantic import Field
 
-from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.semantic.llm.Message import Message
 from aihub_lib.nats.events.semantic.SemanticEvent import SemanticEvent
+
+if TYPE_CHECKING:
+    from aihub_lib.agents.AgentConfig import AgentConfig
 
 
 class LLMEvent(SemanticEvent):
@@ -94,8 +96,8 @@ class LLMEvent(SemanticEvent):
 
     @classmethod
     def from_chat_response(
-        cls, input_messages: list[ChatMessage], output_message: ChatMessage, llm: LLM, agent_config: AgentConfig
-    ) -> "LLMEvent":
+        cls, input_messages: list[ChatMessage], output_message: ChatMessage, llm: LLM, agent_config: "AgentConfig"
+    ) -> Self:
         handlers = llm.callback_manager.handlers
         token_count_handler = next((h for h in handlers if isinstance(h, TokenCountingHandler)), None)
         if token_count_handler:

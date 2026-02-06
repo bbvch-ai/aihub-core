@@ -1,29 +1,72 @@
-follow_up_question: |
-  The expert was asked: "{{ question }}"
+metadata:
+  name: Expert Coordinator Agent
+  description: Autonomous agent that coordinates with human experts to gather and
+    extract specialized knowledge
+config:
+  channel_type:
+    label: Channel Type
+    help: Select the communication channel for expert escalation
+    teams_label: Microsoft Teams
+    slack_label: Slack
+  loop_max:
+    label: Max loops
+  insight_namespace:
+    label: Insight namespace
+routes:
+  answer_sufficient: The expert answered the question. Choose this if the expert provided
+    ANY direct answer.
+  answer_insufficient: The expert did NOT answer. Choose ONLY if the expert said 'I
+    don't know' or refused to answer.
+thoughts:
+  asking_question: 'Asking question to expert: ''%{question}''.'
+  expert_responded: 'Expert has responded: ''%{response}''.'
+  determine_sufficient: Verify if the expert's answer is sufficient.
+  answer_sufficient: The expert's answer is sufficient.
+  max_questions_reached: Maximum number of follow-up questions reached.
+  returning_insufficient: Returning to the user with an insufficient answer.
+  answer_not_sufficient: Answer is not sufficient, formulating a follow-up question.
+follow_up_question: 'The expert was asked: "{{ question }}"
+
 
   Their response:
+
   {% for message in chat_history %}
-  {% if message.role.value == 'user' %}
+
+  {% if message.role.value == ''user'' %}
+
   {% for block in message.blocks %}
-  {% if block.block_type == 'text' %}
+
+  {% if block.block_type == ''text'' %}
+
   {{ block.text }}
+
   {% endif %}
+
   {% endfor %}
+
   {% endif %}
+
   {% endfor %}
 
-  The expert either said they don't know, didn't answer, or only answered part of the question.
-  Ask for the specific missing information. Keep it short and polite. Only ask for what was originally requested but not yet answered.
 
-routes:
-  answer_sufficient: "The expert answered the question. Choose this if the expert provided ANY direct answer."
-  answer_insufficient: "The expert did NOT answer. Choose ONLY if the expert said 'I don't know' or refused to answer."
+  The expert either said they don''t know, didn''t answer, or only answered part of
+  the question.
 
-thoughts:
-  asking_question: "Asking question to expert: '%{question}'."
-  expert_responded: "Expert has responded: '%{response}'."
-  determine_sufficient: "Verify if the expert's answer is sufficient."
-  answer_sufficient: "The expert's answer is sufficient."
-  max_questions_reached: "Maximum number of follow-up questions reached."
-  returning_insufficient: "Returning to the user with an insufficient answer."
-  answer_not_sufficient: "Answer is not sufficient, formulating a follow-up question."
+  Ask for the specific missing information. Keep it short and polite. Only ask for
+  what was originally requested but not yet answered.
+
+  '
+steps:
+  invoke_expert:
+    name: "Invoke Expert Step"
+    description: "Poses question to a group of experts."
+  expert_response:
+    name: "Expert Response"
+    description: "Processes the expert response."
+  response_sufficient_router:
+    name: "Response Sufficient Router"
+    description: "Checks whether the expert has sufficiently answered the question yet."
+  follow_up_question:
+    name: "Follow up question"
+    description: "Poses follow up question to expert as answer is not sufficient yet."
+

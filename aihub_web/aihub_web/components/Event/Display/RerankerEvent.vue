@@ -2,7 +2,7 @@
   <EventDisplayBase
     :event="event"
     :thread="thread"
-    icon="iconoir:sort"
+    icon="mage:arrowlist"
   >
     <div class="flex flex-col gap-4">
       <IconField class="w-full">
@@ -15,7 +15,7 @@
       </IconField>
       <div class="flex items-center gap-2 pt-5 text-sm font-medium text-surface-600 dark:text-surface-400">
         <Icon
-          name="material-symbols:filter-list"
+          name="mage:filter"
           class="size-4"
         />
         <span>{{ t('event.reranker.topDocuments', { count: event.event.top_k }) }}</span>
@@ -28,10 +28,10 @@
 </template>
 
 <script setup lang="ts">
-import type { RerankerEventReadable, ThreadDto, AgentEventReadable } from '@core/sdk/client'
+import type { RerankerEvent, ThreadDto, ContextualizedAgentEvent } from '@core/sdk/client'
 
 defineProps<{
-  event: AgentEventReadable & { event: RerankerEventReadable }
+  event: ContextualizedAgentEvent & { event: RerankerEvent }
   thread: ThreadDto
 }>()
 

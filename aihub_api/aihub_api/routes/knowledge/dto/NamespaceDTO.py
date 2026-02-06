@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
@@ -36,7 +36,7 @@ class NamespaceDTO(BaseModel):
             return None
 
     @classmethod
-    def from_entity(cls, entity: NamespaceEntity, t: LocaleHandler, number_of_documents: int) -> "NamespaceDTO":
+    def from_entity(cls, entity: NamespaceEntity, t: LocaleHandler, number_of_documents: int) -> Self:
         return cls(
             id=str(entity.id),
             name=entity.namespace_name,

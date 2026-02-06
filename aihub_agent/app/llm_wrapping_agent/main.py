@@ -5,8 +5,6 @@ AihubInstrumentor().instrument()
 
 import asyncio
 
-from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
 
 from aihub_agent.agents.LLMWrappingAgent.LLMWrappingAgent import LLMWrappingAgent
@@ -19,13 +17,7 @@ enable_logging()
 async def main():
     runner = AgentRunner(
         agent_type=LLMWrappingAgent,
-        default_agent_config=LLMWrappingAgentConfig(
-            agent_class=LLMWrappingAgent.__name__,
-            agent_id="dev_agent",
-            name=LocaleString(en="Dev Agent"),
-            description=LocaleString(en="This is the default Dev Agent config"),
-            llm=LLMConfig(model_name="text-generation/mini"),
-        ),
+        agent_config=LLMWrappingAgentConfig.as_form(),
     )
 
     await runner.run_forever()

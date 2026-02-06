@@ -1,6 +1,6 @@
 import logging
 from datetime import UTC, datetime
-from typing import Annotated
+from typing import Annotated, Self
 
 from pydantic import Field
 
@@ -21,7 +21,7 @@ class DisplayStatistics(BaseEventStatistics):
     def from_intermediate(
         cls,
         intermediate: Annotated[IntermediateDisplayStats, "Input is the accumulated intermediate stats"],
-    ) -> "DisplayStatistics":
+    ) -> Self:
         """Creates a DisplayStatistics DTO from an IntermediateDisplayStats object."""
 
         # Calculate derived boolean flags for the display from intermediate counts
@@ -45,7 +45,6 @@ class DisplayStatistics(BaseEventStatistics):
             started_at_str = run.started_at
             if started_at_str:
                 try:
-                    # Convert string back to datetime for sorting comparison
                     return datetime.fromisoformat(started_at_str.replace("Z", "+00:00"))
                 except ValueError:
                     logger.exception(f"Could not parse run start time for sorting: {started_at_str}")
@@ -75,7 +74,7 @@ class DisplayStatistics(BaseEventStatistics):
             open_bitl=open_bitl,
             is_aitl=is_aitl,
             open_aitl=open_aitl,
-            started_at=started_at.isoformat().replace("+00:00", "Z") if started_at_dt else None,
-            ended_at=ended_at.isoformat().replace("+00:00", "Z") if ended_at_dt else None,
+            started_at=started_at.isoformat().replace("+00:00", "Z") if started_at else None,
+            ended_at=ended_at.isoformat().replace("+00:00", "Z") if ended_at else None,
             duration=duration,
         )

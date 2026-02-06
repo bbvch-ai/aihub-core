@@ -1,5 +1,5 @@
 import re
-from typing import Annotated
+from typing import Annotated, Self
 
 from aihub_lib.generative_ai.document.types.FileTypeConfig import FileTypeConfig
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -35,7 +35,7 @@ class DocumentUploadRequest(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def validate_file_type_and_consistency(self) -> "DocumentUploadRequest":
+    def validate_file_type_and_consistency(self) -> Self:
         """
         Performs file type validation using our extension-based allowlist and mimetypes.
         """

@@ -22,7 +22,6 @@ def fetch_data_lake_files_to_remove(
     and should be removed from the data lake.
 
     """
-    # Build URIs using the client's build_uri method combined with data_lake_resource.build_path
     # to ensure the path matches how files were originally stored
     uris_to_exclude = [
         data_lake_client.build_uri(file_path=data_lake_resource.build_path(file.path)) for file in source_files

@@ -71,7 +71,6 @@ def parse_markdown_table(
         if not headers:
             return None
 
-        # Parse data rows
         data_rows: list[list[str]] = []
         for line in data_lines:
             row = [cell.strip() for cell in line.split("|")[1:-1]]

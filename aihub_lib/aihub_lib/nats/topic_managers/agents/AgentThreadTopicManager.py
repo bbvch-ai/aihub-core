@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from pydantic import Field
 
@@ -92,7 +92,7 @@ class AgentThreadTopicManager(AgentInstanceTopicManager):
         thread_id: Annotated[str, "Thread ID"],
         display_id: Annotated[str, "Display ID for UI grouping"],
         run_id: Annotated[str, "Run ID within the thread"],
-    ) -> "AgentThreadTopicManager":
+    ) -> Self:
         """
         Creates an AgentThreadTopicManager from an existing AgentInstanceTopicManager and additional thread details.
         """
@@ -112,7 +112,7 @@ class AgentThreadTopicManager(AgentInstanceTopicManager):
         thread_id: Annotated[str, "Thread ID"],
         display_id: Annotated[str, "Display ID for UI grouping"],
         run_id: Annotated[str, "Run ID within the thread"],
-    ) -> "AgentThreadTopicManager":
+    ) -> Self:
         """
         Creates an AgentThreadTopicManager from an existing AgentClassTopicManager and additional thread details.
         """
@@ -125,7 +125,7 @@ class AgentThreadTopicManager(AgentInstanceTopicManager):
         )
 
     @classmethod
-    def from_agent_topic(cls, topic: AgentInstanceTopic) -> "AgentThreadTopicManager":
+    def from_agent_topic(cls, topic: AgentInstanceTopic) -> Self:
         """Constructs an AgentThreadTopicManager directly from an AgentTopic object."""
         return cls(
             agent_class=topic.agent_class,

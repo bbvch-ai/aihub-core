@@ -1,0 +1,8 @@
+label: "Vector Store"
+help: "Select the knowledge database and namespaces to search"
+database:
+  label: "Database"
+namespaces:
+  label: "Namespaces"
+  placeholder: "Select namespaces (empty = all)"
+  help: "Leave empty to search all namespaces"

@@ -16,7 +16,7 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=FanOutAgent,
-        default_agent_config=FanOutAgentConfig(
+        agent_config=FanOutAgentConfig(
             agent_id="fan_out_agent",
             agent_class=FanOutAgent.__name__,
             name=LocaleString(en="Fan Out Agent"),

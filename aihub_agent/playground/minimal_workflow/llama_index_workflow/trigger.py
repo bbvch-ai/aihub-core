@@ -23,7 +23,7 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=LlamaIndexAgent,
-        default_agent_config=LlamaIndexAgentConfig(
+        agent_config=LlamaIndexAgentConfig(
             agent_id="llama_index_agent",
             agent_class=LlamaIndexAgent.__name__,
             name=LocaleString(en="Llama Index Agent"),

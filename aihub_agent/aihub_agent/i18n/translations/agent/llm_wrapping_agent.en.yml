@@ -1,0 +1,15 @@
+metadata:
+  name: Instructed Assistant
+  description: AI assistant that follows your plain-text instructions to help with
+    tasks and answer questions
+config:
+  system_prompt:
+    label: System Prompt
+    help: Instructions for the agent when using few-shot examples
+steps:
+  limit_chat_history:
+    name: "Limit Chat History"
+    description: "Truncates incoming chat messages to fit within the configured token limit."
+  start:
+    name: "Process User Message"
+    description: "Forwards the user message to the LLM and streams the response."

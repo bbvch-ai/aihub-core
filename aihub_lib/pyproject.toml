@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_lib"
-version = "v0.260.1"
+version = "v0.261.0"
 description = ""
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -104,7 +104,7 @@ target-version = 'py313'
 select = ["E", "F", "UP", "I"]
 
 [tool.mypy]
-python_version = "v0.13.0"
+python_version = "v13.0"
 strict = true
 warn_redundant_casts = true
 warn_unused_ignores = true
