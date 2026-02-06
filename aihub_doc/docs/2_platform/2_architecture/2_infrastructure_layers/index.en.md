@@ -110,8 +110,8 @@ checks. The choice of Dagster over alternatives like Airflow comes from its supe
 native Python integration.
 
 Pipeline workers implement the actual document processing. They connect to the source, download documents to SeaweedFS
-for processing, parse content using MinerU, generate embeddings using configured models, and store results in the
-vector database. Workers scale horizontally, with Dagster distributing work across available instances.
+for processing, parse content using MinerU, generate embeddings using configured models, and store results in the vector
+database. Workers scale horizontally, with Dagster distributing work across available instances.
 
 **Milvus** provides vector storage for semantic search. It indexes high-dimensional embeddings, performs approximate
 nearest neighbor searches, supports filtered searches combining vector and metadata queries, and scales to billions of

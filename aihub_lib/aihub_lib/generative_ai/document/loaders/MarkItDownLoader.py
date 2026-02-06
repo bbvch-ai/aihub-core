@@ -47,7 +47,7 @@ class MarkItDownLoader(BaseReader):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self._converter: "MarkItDown | None" = None
+        self._converter: MarkItDown | None = None
 
     def _get_converter(self) -> "MarkItDown":
         """Lazy-load the MarkItDown converter."""
