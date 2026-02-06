@@ -6257,14 +6257,15 @@ export const DocumentConversionMetadataSchema = {
         filename: {
             type: 'string',
             title: 'Filename',
-            description: 'Original filename of the converted document'
+            description: 'Original filename'
         }
     },
     type: 'object',
     required: [
         'filename'
     ],
-    title: 'DocumentConversionMetadata'
+    title: 'DocumentConversionMetadata',
+    description: 'Metadata about the converted document.'
 } as const;
 
 export const DocumentConversionResponseSchema = {
@@ -6272,19 +6273,26 @@ export const DocumentConversionResponseSchema = {
         page_content: {
             type: 'string',
             title: 'Page Content',
-            description: 'Markdown content extracted from the document'
+            description: 'Extracted text content (markdown)'
         },
         metadata: {
-            $ref: '#/components/schemas/DocumentConversionMetadata',
-            description: 'Metadata about the converted document'
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/DocumentConversionMetadata'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Document metadata'
         }
     },
     type: 'object',
     required: [
-        'page_content',
-        'metadata'
+        'page_content'
     ],
-    title: 'DocumentConversionResponse'
+    title: 'DocumentConversionResponse',
+    description: 'Response schema for document conversion.\n\nFollows the OpenWebUI External Document Loader specification.\nCan return either a single document or a list of documents (one per page).'
 } as const;
 
 export const DocumentDTOSchema = {
@@ -9715,6 +9723,16 @@ export const ImageGenerationRequestSchema = {
     title: 'ImageGenerationRequest'
 } as const;
 
+export const ImageModeSchema = {
+    type: 'string',
+    enum: [
+        's3',
+        'base64'
+    ],
+    title: 'ImageMode',
+    description: 'Image handling mode for parsed documents.'
+} as const;
+
 export const ImageURLSchema = {
     properties: {
         url: {
@@ -9825,7 +9843,7 @@ export const ImagesResponseSchema = {
         usage: {
             anyOf: [
                 {
-                    $ref: '#/components/schemas/openai__types__images_response__Usage'
+                    $ref: '#/components/schemas/Usage'
                 },
                 {
                     type: 'null'
@@ -13591,7 +13609,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1770105688
+            default: 1770393923
         },
         owned_by: {
             type: 'string',
@@ -15802,8 +15820,8 @@ export const ProcessConfigDTOSchema = {
         icon: {
             type: 'string',
             title: 'Icon',
-            description: 'The icon representing the agent.',
-            default: 'mage:robot'
+            description: 'The icon representing the process.',
+            default: 'mage:arrowlist'
         }
     },
     type: 'object',
@@ -20584,7 +20602,7 @@ export const TranscriptionVerboseSchema = {
         usage: {
             anyOf: [
                 {
-                    $ref: '#/components/schemas/Usage'
+                    $ref: '#/components/schemas/openai__types__audio__transcription_verbose__Usage'
                 },
                 {
                     type: 'null'
@@ -20879,21 +20897,29 @@ export const UpdateRoleRequestSchema = {
 
 export const UsageSchema = {
     properties: {
-        seconds: {
-            type: 'number',
-            title: 'Seconds'
+        input_tokens: {
+            type: 'integer',
+            title: 'Input Tokens'
         },
-        type: {
-            type: 'string',
-            const: 'duration',
-            title: 'Type'
+        input_tokens_details: {
+            $ref: '#/components/schemas/UsageInputTokensDetails'
+        },
+        output_tokens: {
+            type: 'integer',
+            title: 'Output Tokens'
+        },
+        total_tokens: {
+            type: 'integer',
+            title: 'Total Tokens'
         }
     },
     additionalProperties: true,
     type: 'object',
     required: [
-        'seconds',
-        'type'
+        'input_tokens',
+        'input_tokens_details',
+        'output_tokens',
+        'total_tokens'
     ],
     title: 'Usage'
 } as const;
@@ -21709,6 +21735,27 @@ export const WorkflowGraphSchema = {
     description: 'Complete workflow graph representation.'
 } as const;
 
+export const openai__types__audio__transcription_verbose__UsageSchema = {
+    properties: {
+        seconds: {
+            type: 'number',
+            title: 'Seconds'
+        },
+        type: {
+            type: 'string',
+            const: 'duration',
+            title: 'Type'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'seconds',
+        'type'
+    ],
+    title: 'Usage'
+} as const;
+
 export const openai__types__chat__chat_completion_message_custom_tool_call_param__CustomSchema = {
     properties: {
         input: {
@@ -21801,35 +21848,6 @@ export const openai__types__chat__completion_create_params__FunctionSchema = {
         'name'
     ],
     title: 'Function'
-} as const;
-
-export const openai__types__images_response__UsageSchema = {
-    properties: {
-        input_tokens: {
-            type: 'integer',
-            title: 'Input Tokens'
-        },
-        input_tokens_details: {
-            $ref: '#/components/schemas/UsageInputTokensDetails'
-        },
-        output_tokens: {
-            type: 'integer',
-            title: 'Output Tokens'
-        },
-        total_tokens: {
-            type: 'integer',
-            title: 'Total Tokens'
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: [
-        'input_tokens',
-        'input_tokens_details',
-        'output_tokens',
-        'total_tokens'
-    ],
-    title: 'Usage'
 } as const;
 
 export const AddMemoryToChatHistoryEventWritableSchema = {

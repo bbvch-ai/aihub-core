@@ -3801,30 +3801,37 @@ export type DocumentBlock = {
 
 /**
  * DocumentConversionMetadata
+ *
+ * Metadata about the converted document.
  */
 export type DocumentConversionMetadata = {
     /**
      * Filename
      *
-     * Original filename of the converted document
+     * Original filename
      */
     filename: string;
 };
 
 /**
  * DocumentConversionResponse
+ *
+ * Response schema for document conversion.
+ *
+ * Follows the OpenWebUI External Document Loader specification.
+ * Can return either a single document or a list of documents (one per page).
  */
 export type DocumentConversionResponse = {
     /**
      * Page Content
      *
-     * Markdown content extracted from the document
+     * Extracted text content (markdown)
      */
     page_content: string;
     /**
-     * Metadata about the converted document
+     * Document metadata
      */
-    metadata: DocumentConversionMetadata;
+    metadata?: DocumentConversionMetadata | null;
 };
 
 /**
@@ -6003,6 +6010,20 @@ export type ImageGenerationRequest = {
 };
 
 /**
+ * ImageMode
+ *
+ * Image handling mode for parsed documents.
+ */
+export const ImageMode = { S3: 's3', BASE64: 'base64' } as const;
+
+/**
+ * ImageMode
+ *
+ * Image handling mode for parsed documents.
+ */
+export type ImageMode = typeof ImageMode[keyof typeof ImageMode];
+
+/**
  * ImageURL
  */
 export type ImageUrl = {
@@ -6045,8 +6066,8 @@ export type ImagesResponse = {
      * Size
      */
     size?: '1024x1024' | '1024x1536' | '1536x1024' | null;
-    usage?: OpenaiTypesImagesResponseUsage | null;
-    [key: string]: unknown | number | 'transparent' | 'opaque' | null | Array<Image> | null | 'png' | 'webp' | 'jpeg' | null | 'low' | 'medium' | 'high' | null | '1024x1024' | '1024x1536' | '1536x1024' | null | OpenaiTypesImagesResponseUsage | null | undefined;
+    usage?: Usage | null;
+    [key: string]: unknown | number | 'transparent' | 'opaque' | null | Array<Image> | null | 'png' | 'webp' | 'jpeg' | null | 'low' | 'medium' | 'high' | null | '1024x1024' | '1024x1536' | '1536x1024' | null | Usage | null | undefined;
 };
 
 /**
@@ -9798,7 +9819,7 @@ export type ProcessConfigDto = {
     /**
      * Icon
      *
-     * The icon representing the agent.
+     * The icon representing the process.
      */
     icon?: string;
 };
@@ -12876,12 +12897,12 @@ export type TranscriptionVerbose = {
      * Segments
      */
     segments?: Array<TranscriptionSegment> | null;
-    usage?: Usage | null;
+    usage?: OpenaiTypesAudioTranscriptionVerboseUsage | null;
     /**
      * Words
      */
     words?: Array<TranscriptionWord> | null;
-    [key: string]: unknown | number | string | Array<TranscriptionSegment> | null | Usage | null | Array<TranscriptionWord> | null | undefined;
+    [key: string]: unknown | number | string | Array<TranscriptionSegment> | null | OpenaiTypesAudioTranscriptionVerboseUsage | null | Array<TranscriptionWord> | null | undefined;
 };
 
 /**
@@ -13074,14 +13095,19 @@ export type UpdateRoleRequest = {
  */
 export type Usage = {
     /**
-     * Seconds
+     * Input Tokens
      */
-    seconds: number;
+    input_tokens: number;
+    input_tokens_details: UsageInputTokensDetails;
     /**
-     * Type
+     * Output Tokens
      */
-    type: 'duration';
-    [key: string]: unknown | number | 'duration';
+    output_tokens: number;
+    /**
+     * Total Tokens
+     */
+    total_tokens: number;
+    [key: string]: unknown | number | UsageInputTokensDetails;
 };
 
 /**
@@ -13650,6 +13676,21 @@ export type WorkflowGraph = {
 };
 
 /**
+ * Usage
+ */
+export type OpenaiTypesAudioTranscriptionVerboseUsage = {
+    /**
+     * Seconds
+     */
+    seconds: number;
+    /**
+     * Type
+     */
+    type: 'duration';
+    [key: string]: unknown | number | 'duration';
+};
+
+/**
  * Custom
  */
 export type OpenaiTypesChatChatCompletionMessageCustomToolCallParamCustom = {
@@ -13722,26 +13763,6 @@ export type OpenaiTypesChatCompletionCreateParamsFunction = {
     [key: string]: unknown | string | {
         [key: string]: unknown;
     } | undefined;
-};
-
-/**
- * Usage
- */
-export type OpenaiTypesImagesResponseUsage = {
-    /**
-     * Input Tokens
-     */
-    input_tokens: number;
-    input_tokens_details: UsageInputTokensDetails;
-    /**
-     * Output Tokens
-     */
-    output_tokens: number;
-    /**
-     * Total Tokens
-     */
-    total_tokens: number;
-    [key: string]: unknown | number | UsageInputTokensDetails;
 };
 
 /**
@@ -21117,6 +21138,86 @@ export type GetAgentEventTimeseriesResponses = {
 
 export type GetAgentEventTimeseriesResponse = GetAgentEventTimeseriesResponses[keyof GetAgentEventTimeseriesResponses];
 
+export type GetLitellmModelsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/models';
+};
+
+export type GetLitellmModelsResponses = {
+    /**
+     * Response Get Litellm Models Models Get
+     *
+     * Successful Response
+     */
+    200: Array<ModelTypeGroupDto>;
+};
+
+export type GetLitellmModelsResponse = GetLitellmModelsResponses[keyof GetLitellmModelsResponses];
+
+export type GetLitellmModelsByModeData = {
+    body?: never;
+    path: {
+        /**
+         * Mode
+         */
+        mode: string;
+    };
+    query?: never;
+    url: '/models/mode/{mode}';
+};
+
+export type GetLitellmModelsByModeErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetLitellmModelsByModeError = GetLitellmModelsByModeErrors[keyof GetLitellmModelsByModeErrors];
+
+export type GetLitellmModelsByModeResponses = {
+    /**
+     * Response Get Litellm Models By Mode Models Mode  Mode  Get
+     *
+     * Successful Response
+     */
+    200: Array<ModelDto>;
+};
+
+export type GetLitellmModelsByModeResponse = GetLitellmModelsByModeResponses[keyof GetLitellmModelsByModeResponses];
+
+export type GetLitellmModelData = {
+    body?: never;
+    path: {
+        /**
+         * Model Name
+         */
+        model_name: string;
+    };
+    query?: never;
+    url: '/models/{model_name}';
+};
+
+export type GetLitellmModelErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetLitellmModelError = GetLitellmModelErrors[keyof GetLitellmModelErrors];
+
+export type GetLitellmModelResponses = {
+    /**
+     * Successful Response
+     */
+    200: ModelDto;
+};
+
+export type GetLitellmModelResponse = GetLitellmModelResponses[keyof GetLitellmModelResponses];
+
 export type GetUserThreadsData = {
     body?: never;
     path?: never;
@@ -21371,86 +21472,6 @@ export type GetOpenChatHitlResponses = {
 };
 
 export type GetOpenChatHitlResponse = GetOpenChatHitlResponses[keyof GetOpenChatHitlResponses];
-
-export type GetLitellmModelsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/models';
-};
-
-export type GetLitellmModelsResponses = {
-    /**
-     * Response Get Litellm Models Models Get
-     *
-     * Successful Response
-     */
-    200: Array<ModelTypeGroupDto>;
-};
-
-export type GetLitellmModelsResponse = GetLitellmModelsResponses[keyof GetLitellmModelsResponses];
-
-export type GetLitellmModelsByModeData = {
-    body?: never;
-    path: {
-        /**
-         * Mode
-         */
-        mode: string;
-    };
-    query?: never;
-    url: '/models/mode/{mode}';
-};
-
-export type GetLitellmModelsByModeErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetLitellmModelsByModeError = GetLitellmModelsByModeErrors[keyof GetLitellmModelsByModeErrors];
-
-export type GetLitellmModelsByModeResponses = {
-    /**
-     * Response Get Litellm Models By Mode Models Mode  Mode  Get
-     *
-     * Successful Response
-     */
-    200: Array<ModelDto>;
-};
-
-export type GetLitellmModelsByModeResponse = GetLitellmModelsByModeResponses[keyof GetLitellmModelsByModeResponses];
-
-export type GetLitellmModelData = {
-    body?: never;
-    path: {
-        /**
-         * Model Name
-         */
-        model_name: string;
-    };
-    query?: never;
-    url: '/models/{model_name}';
-};
-
-export type GetLitellmModelErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetLitellmModelError = GetLitellmModelErrors[keyof GetLitellmModelErrors];
-
-export type GetLitellmModelResponses = {
-    /**
-     * Successful Response
-     */
-    200: ModelDto;
-};
-
-export type GetLitellmModelResponse = GetLitellmModelResponses[keyof GetLitellmModelResponses];
 
 export type GetAgentClassesData = {
     body?: never;
@@ -23760,11 +23781,38 @@ export type UpdateOrganizationMemoryResponses = {
 export type UpdateOrganizationMemoryResponse = UpdateOrganizationMemoryResponses[keyof UpdateOrganizationMemoryResponses];
 
 export type ProcessDocumentData = {
-    body?: never;
+    /**
+     * Body
+     */
+    body: Blob | File;
+    headers?: {
+        /**
+         * X-Filename
+         */
+        'x-filename'?: string;
+        /**
+         * X-File-Name
+         */
+        'x-file-name'?: string | null;
+    };
     path?: never;
-    query?: never;
-    url: '/docling/process';
+    query?: {
+        /**
+         * Image handling: 's3' (signed URLs) or 'base64' (embedded data URIs)
+         */
+        image_mode?: ImageMode;
+    };
+    url: '/parsing/process';
 };
+
+export type ProcessDocumentErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ProcessDocumentError = ProcessDocumentErrors[keyof ProcessDocumentErrors];
 
 export type ProcessDocumentResponses = {
     /**

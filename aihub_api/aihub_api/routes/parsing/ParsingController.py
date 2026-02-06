@@ -3,11 +3,11 @@ from typing import Annotated
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
-from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.s3.use_s3 import use_s3_service
 from aihub_lib.routes.Controller import Controller
 from fastapi import Body, Depends, Header, Query, Security
 
+from aihub_api.i18n.ApiLocaleString import ApiLocaleString
 from aihub_api.routes.parsing.dto.DocumentConversionResponse import DocumentConversionResponse
 from aihub_api.routes.parsing.dto.ImageMode import ImageMode
 from aihub_api.routes.parsing.ParsingService import ParsingService
@@ -21,19 +21,9 @@ class ParsingController(Controller):
     - PUT /process: Convert document to markdown
     """
 
-    name = LocaleString(
-        en="Document Parser",
-        de="Dokumenten-Parser",
-        fr="Analyseur de documents",
-        it="Analizzatore di documenti",
-    )
-    description = LocaleString(
-        en="Parse and convert documents to markdown format",
-        de="Dokumente in Markdown-Format parsen und konvertieren",
-        fr="Analyser et convertir des documents au format Markdown",
-        it="Analizzare e convertire documenti in formato Markdown",
-    )
-    icon = "line-md:document"
+    name = ApiLocaleString.from_i18n_path("api.controllers.docling.name")
+    description = ApiLocaleString.from_i18n_path("api.controllers.docling.description")
+    icon = "mage:file"
 
     def __init__(
         self,
@@ -56,7 +46,6 @@ class ParsingController(Controller):
             tags=self.tags,
             summary="Process document (OpenWebUI)",
             description="Convert a document to markdown format. Supports PDF, images, and Office documents.",
-            response_model=DocumentConversionResponse,
         )
         async def process_document(
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
