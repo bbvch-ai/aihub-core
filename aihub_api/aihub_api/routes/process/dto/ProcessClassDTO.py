@@ -1,21 +1,31 @@
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated, Self
 
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.discovery import ProcessClassDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
 from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
 from aihub_lib.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs
 from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
+from aihub_lib.nats.events.form import ALL_FORM_OPTIONS
 from aihub_lib.processes.ProcessConfig import ProcessConfig
 from pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    from aihub_lib.i18n.LocaleHandler import LocaleHandler
+    from aihub_lib.persistence.process.ProcessClassEntity import ProcessClassEntity
 
 
 class ProcessClassDTO(BaseModel):
     """
     Encapsulates the data transfer object (DTO) for a process class.
-    Contains information about the process class, including its name and configuration specifications.
+    Contains class-level metadata (name, description, icon, form) and configuration specifications.
     """
 
     process_class: Annotated[str, Field(description="The process's class identifier (e.g., 'my_process_class').")]
+    name: Annotated[LocaleString, Field(description="Display name for this process class.")]
+    description: Annotated[LocaleString, Field(description="Description of this process class.")]
+    icon: Annotated[str, Field(description="Icon for this process class.")] = "mage:broadcast"
+    form: Annotated[list[ALL_FORM_OPTIONS], Field(description="FormKit elements defining the configuration form.")]
     process_config_specs: Annotated[
         ProcessConfigSpecs,
         Field(description="Configuration specifications of the process class, including schema and parameters."),
@@ -48,14 +58,47 @@ class ProcessClassDTO(BaseModel):
     def from_discovery_event(
         cls,
         event: ProcessClassDiscoveryResponseEvent,
-    ) -> "ProcessClassDTO":
+    ) -> Self:
         """Converts a ProcessClassDiscoveryResponseEvent to a ProcessClassDTO."""
         return cls(
             process_class=event.process_class,
+            name=event.name,
+            description=event.description,
+            icon=event.icon,
+            form=event.form,
             process_config_specs=event.process_config_specs,
             human_inputs=event.human_inputs,
             program_inputs=event.program_inputs,
             agent_inputs=event.agent_inputs,
             is_online=True,
             default_process_config=event.default_process_config,
+        )
+
+    @classmethod
+    def from_entity(
+        cls,
+        entity: "ProcessClassEntity",
+        t: "LocaleHandler",
+    ) -> Self:
+        """Converts a ProcessClassEntity to a ProcessClassDTO."""
+        return cls(
+            process_class=entity.process_class,
+            name=entity.name.to_locale_string() if entity.name else LocaleString(en=entity.process_class),
+            description=entity.description.to_locale_string() if entity.description else LocaleString(en=""),
+            icon=entity.icon or "mage:broadcast",
+            form=entity.form_elements,
+            process_config_specs=entity.process_config_specs.to_specs()
+            if entity.process_config_specs
+            else ProcessConfigSpecs(),
+            human_inputs=[],
+            program_inputs=[],
+            agent_inputs=[],
+            is_online=entity.is_online,
+            default_process_config=ProcessConfig(
+                process_class=entity.process_class,
+                process_id="",
+                name=entity.name.to_locale_string() if entity.name else LocaleString(en=entity.process_class),
+                description=entity.description.to_locale_string() if entity.description else LocaleString(en=""),
+                icon=entity.icon or "mage:broadcast",
+            ),
         )

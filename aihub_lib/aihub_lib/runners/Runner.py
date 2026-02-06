@@ -2,6 +2,7 @@ import abc
 from abc import abstractmethod
 from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager
+from typing import Self
 
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
@@ -59,7 +60,6 @@ class Runner(abc.ABC):
         self.description = description
         self.origins = origins
 
-        # Create the base and API apps
         self._api_app = self._get_api_app()
 
         # Mount the API under the specified path
@@ -98,7 +98,7 @@ class Runner(abc.ABC):
 
         return app
 
-    def mount(self, *controllers: Controller) -> "Runner":
+    def mount(self, *controllers: Controller) -> Self:
         """
         Mounts one or more controllers (each subclass of Controller) onto the API application.
         This attaches the controller’s routes under the prefix defined in the controller itself.

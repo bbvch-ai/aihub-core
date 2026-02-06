@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, Self
 
 from pydantic import Field
 
@@ -25,7 +25,7 @@ class MultiSelect(PrimeVueElement):
     ] = None
     filter: Annotated[bool, Field(description="Whether to enable filtering")] = False
 
-    def in_locale(self, t: LocaleHandler) -> "MultiSelect":
+    def in_locale(self, t: LocaleHandler) -> Self:
         self_copy = super().in_locale(t)
         if isinstance(self_copy.placeholder, LocaleString):
             self_copy.placeholder = t.extract(self_copy.placeholder)

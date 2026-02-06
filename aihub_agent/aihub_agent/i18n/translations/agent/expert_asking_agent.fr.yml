@@ -1,29 +1,73 @@
-follow_up_question: |
-  L'expert a été interrogé : "{{ question }}"
+metadata:
+  name: Agent Coordinateur d'Experts
+  description: Agent autonome qui coordonne avec des experts humains pour collecter
+    et extraire des connaissances spécialisées
+config:
+  channel_type:
+    label: Type de canal
+    help: Sélectionnez le canal de communication pour l'escalade vers les experts
+    teams_label: Microsoft Teams
+    slack_label: Slack
+  loop_max:
+    label: Boucles max
+  insight_namespace:
+    label: Namespace d'insights
+routes:
+  answer_sufficient: L'expert a répondu à la question. Choisissez ceci si l'expert
+    a fourni UNE réponse directe.
+  answer_insufficient: L'expert n'a PAS répondu. Choisissez ceci UNIQUEMENT si l'expert
+    a dit 'Je ne sais pas' ou a refusé de répondre.
+thoughts:
+  asking_question: 'Poser une question à l''expert: ''%{question}''.'
+  expert_responded: 'L''expert a répondu: ''%{response}''.'
+  determine_sufficient: Vérifier si la réponse de l'expert est suffisante.
+  answer_sufficient: La réponse de l'expert est suffisante.
+  max_questions_reached: Nombre maximum de questions de suivi atteint.
+  returning_insufficient: Retour à l'utilisateur avec une réponse insuffisante.
+  answer_not_sufficient: La réponse n'est pas suffisante, formulation d'une question
+    de suivi.
+follow_up_question: 'L''expert a été interrogé : "{{ question }}"
+
 
   Sa réponse :
+
   {% for message in chat_history %}
-  {% if message.role.value == 'user' %}
+
+  {% if message.role.value == ''user'' %}
+
   {% for block in message.blocks %}
-  {% if block.block_type == 'text' %}
+
+  {% if block.block_type == ''text'' %}
+
   {{ block.text }}
+
   {% endif %}
+
   {% endfor %}
+
   {% endif %}
+
   {% endfor %}
 
-  L'expert a dit qu'il ne sait pas, n'a pas répondu, ou n'a répondu qu'à une partie de la question.
-  Demandez les informations spécifiques manquantes. Restez bref et poli. Ne demandez que ce qui a été initialement demandé mais pas encore répondu.
 
-routes:
-  answer_sufficient: "L'expert a répondu à la question. Choisissez ceci si l'expert a fourni UNE réponse directe."
-  answer_insufficient: "L'expert n'a PAS répondu. Choisissez ceci UNIQUEMENT si l'expert a dit 'Je ne sais pas' ou a refusé de répondre."
+  L''expert a dit qu''il ne sait pas, n''a pas répondu, ou n''a répondu qu''à une
+  partie de la question.
 
-thoughts:
-  asking_question: "Poser une question à l'expert: '%{question}'."
-  expert_responded: "L'expert a répondu: '%{response}'."
-  determine_sufficient: "Vérifier si la réponse de l'expert est suffisante."
-  answer_sufficient: "La réponse de l'expert est suffisante."
-  max_questions_reached: "Nombre maximum de questions de suivi atteint."
-  returning_insufficient: "Retour à l'utilisateur avec une réponse insuffisante."
-  answer_not_sufficient: "La réponse n'est pas suffisante, formulation d'une question de suivi."
+  Demandez les informations spécifiques manquantes. Restez bref et poli. Ne demandez
+  que ce qui a été initialement demandé mais pas encore répondu.
+
+  '
+steps:
+  invoke_expert:
+    name: "Invoquer l'expert"
+    description: "Pose une question à un groupe d'experts."
+  expert_response:
+    name: "Réponse de l'expert"
+    description: "Traite la réponse de l'expert."
+  response_sufficient_router:
+    name: "Routeur de réponse suffisante"
+    description: "Vérifie si l'expert a suffisamment répondu à la question."
+  follow_up_question:
+    name: "Question de suivi"
+    description: "Pose une question de suivi à l'expert car la réponse n'est pas encore suffisante."
+

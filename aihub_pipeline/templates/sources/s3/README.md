@@ -25,16 +25,19 @@ RCLONE_S3_REGION=us-east-1
 ### Advanced Options
 
 **Custom endpoint (MinIO, SeaweedFS, etc.):**
+
 ```bash
 RCLONE_S3_ENDPOINT=https://minio.example.com:9000
 ```
 
 **Access Control:**
+
 ```bash
 RCLONE_S3_ACL=private
 ```
 
 **Storage Class:**
+
 ```bash
 RCLONE_S3_STORAGE_CLASS=STANDARD_IA
 ```

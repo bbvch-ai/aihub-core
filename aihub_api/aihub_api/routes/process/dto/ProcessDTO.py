@@ -1,8 +1,6 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.persistence.process.ProcessEntity import ProcessEntity
-from aihub_lib.processes.ProcessConfig import ProcessConfig
 from pydantic import Field
 
 from aihub_api.routes.process.dto.in_specs.AgentInDTO import AgentInDTO
@@ -40,7 +38,7 @@ class ProcessDTO(MinimalProcessDTO):
     )
 
     @classmethod
-    def from_instance(cls, instance: ProcessInstanceDTO, t: LocaleHandler, is_online: bool) -> "ProcessDTO":
+    def from_instance(cls, instance: ProcessInstanceDTO, t: LocaleHandler, is_online: bool) -> Self:
         """Creates a ProcessDTO from a ProcessInstanceDTO."""
         return cls(
             process_class=instance.process_class,
@@ -49,27 +47,5 @@ class ProcessDTO(MinimalProcessDTO):
             human_inputs=[HumanInDTO.from_human_in_specs(human_in, t=t) for human_in in instance.human_inputs],
             program_inputs=[ProgramInDTO.from_program_in_specs(program_in) for program_in in instance.program_inputs],
             agent_inputs=[AgentInDTO.from_agent_in_specs(agent_in, t=t) for agent_in in instance.agent_inputs],
-            is_online=is_online,
-        )
-
-    @classmethod
-    def from_entity(cls, entity: ProcessEntity, t: LocaleHandler, is_online: bool | None = None) -> "ProcessDTO":
-        """Converts a ProcessEntity to a ProcessDTO."""
-        process_config = ProcessConfig.from_entity(entity.process_config or entity.default_process_config)
-        process_config_dto = ProcessConfigDTO.from_process_config(process_config, t)
-
-        human_inputs = [HumanInDTO.from_entity_specs(specs, t) for specs in entity.human_inputs]
-
-        program_inputs = [ProgramInDTO.from_entity_specs(specs) for specs in entity.program_inputs]
-
-        agent_inputs = [AgentInDTO.from_entity_specs(specs, t) for specs in entity.agent_inputs]
-
-        return cls(
-            process_class=entity.process_class,
-            process_id=entity.process_id,
-            process_config=process_config_dto,
-            human_inputs=human_inputs,
-            program_inputs=program_inputs,
-            agent_inputs=agent_inputs,
             is_online=is_online,
         )

@@ -20,7 +20,7 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=SimpleAgent,
-        default_agent_config=SimpleAgentConfig(
+        agent_config=SimpleAgentConfig(
             agent_id="simple_agent",
             agent_class=SimpleAgent.__name__,
             name=LocaleString(en="Simple Agent"),

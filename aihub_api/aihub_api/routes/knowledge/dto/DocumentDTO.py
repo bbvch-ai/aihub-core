@@ -1,5 +1,5 @@
 from datetime import UTC, datetime
-from typing import Annotated
+from typing import Annotated, Self
 
 from aihub_lib.generative_ai.document.types.IngestedDocument import IngestedDocument
 from aihub_lib.persistence.rag.documents.entities.RefDoc import RefDoc
@@ -23,7 +23,7 @@ class DocumentDTO(BaseModel):
     document_title: Annotated[str | None, Field(description="Document title.")] = None
 
     @classmethod
-    def from_ingested_document(cls, ingested_document: IngestedDocument) -> "DocumentDTO":
+    def from_ingested_document(cls, ingested_document: IngestedDocument) -> Self:
         return cls(
             id=ingested_document.id,
             content=ingested_document.content,
@@ -38,7 +38,7 @@ class DocumentDTO(BaseModel):
         )
 
     @classmethod
-    def from_ref_doc(cls, entity: RefDoc) -> "DocumentDTO":
+    def from_ref_doc(cls, entity: RefDoc) -> Self:
         def to_iso(timestamp: int) -> str:
             dt_utc = datetime.fromtimestamp(timestamp, tz=UTC)
             return dt_utc.isoformat().replace("+00:00", "Z")

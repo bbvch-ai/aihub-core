@@ -16,7 +16,7 @@
       >
         <Icon
           v-if="icon"
-          :name="message.role == 'user' ? 'lucide:user-round' : icon"
+          :name="message.role == 'user' ? 'mage:user' : icon"
           size="xl"
         />
       </Avatar>

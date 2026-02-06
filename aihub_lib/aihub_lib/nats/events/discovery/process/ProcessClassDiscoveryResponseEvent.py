@@ -2,37 +2,47 @@ from typing import Annotated
 
 from pydantic import Field
 
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
 from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
 from aihub_lib.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs
 from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
+from aihub_lib.nats.events.form import ALL_FORM_OPTIONS
 from aihub_lib.processes.ProcessConfig import ProcessConfig
 
 
 class ProcessClassDiscoveryResponseEvent(BaseEvent):
     """
-    A response event sent after a process discovery request, detailing a process's class, ID, configuration,
-    and work events that it expects to receive through API calls.
+    A response event sent after a process discovery request, providing the form schema
+    and validation specs needed to configure new process instances.
 
-    ### Why ProcessDiscoveryResponseEvent?
-    After a discovery request, consumers need to know:
-    - Which process instance is available (identified by `process_class` and `process_id`).
-    - What configuration that process operates under.
-    - Which human / program & agent work events the process can receive via API
+    Contains:
+    - Class-level metadata: name, description, icon (from the Process class definition)
+    - `form`: FormKit elements defining the configuration UI
+    - `process_config_specs`: Validation schema for form submissions
+    - Entity specifications (human, program, agent inputs)
 
-    By providing this structured information, the discovery response helps orchestrators and clients
-    dynamically integrate with newly discovered processes without manual configuration or guesswork.
+    Default values for form fields are defined within the FormKit elements themselves.
     """
 
-    process_class: Annotated[
-        str, Field(description="The class or category of the process (e.g., a specific type of process).")
+    process_class: Annotated[str, Field(description="The class name of the process (e.g., 'OnboardingProcess').")]
+    # Class-level metadata (describes the process class itself, not instances)
+    name: Annotated[LocaleString, Field(description="Display name for this process class.")]
+    description: Annotated[LocaleString, Field(description="Description of this process class.")]
+    icon: Annotated[str, Field(description="Icon for this process class.")] = "mage:broadcast"
+    form: Annotated[
+        list[ALL_FORM_OPTIONS],
+        Field(
+            description="FormKit elements defining the process configuration form. "
+            "Default values are embedded in the elements themselves.",
+        ),
     ]
     process_config_specs: Annotated[
         ProcessConfigSpecs,
         Field(
-            description="A specification of the process's configuration, including its name and schema. "
-            "This helps consumers understand how to configure the process.",
+            description="Validation specification including the JSON schema for form submissions. "
+            "Used to create Pydantic models for validation.",
         ),
     ]
     human_inputs: Annotated[
@@ -44,4 +54,4 @@ class ProcessClassDiscoveryResponseEvent(BaseEvent):
     agent_inputs: Annotated[
         list[AgentInSpecs], Field(description="List of agent work events that the process can receive.")
     ]
-    default_process_config: Annotated[ProcessConfig, Field(description="Configuration for the process instance.")]
+    default_process_config: Annotated[ProcessConfig, Field(description="Default configuration for the process class.")]

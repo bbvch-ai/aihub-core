@@ -58,9 +58,9 @@ class Controller(abc.ABC):
     This sets up all routes defined in `MyController` under `/my-endpoints`.
     """
 
-    name = LocaleString(en="Unnamed Controller")
-    description = LocaleString(en="This controller has no description.")
-    icon = "lsicon:service-filled"  # https://icon-sets.iconify.design/
+    name = LocaleString.from_i18n_path("lib.controllers.base.name")
+    description = LocaleString.from_i18n_path("lib.controllers.base.description")
+    icon = "mage:server"  # https://icon-sets.iconify.design/
 
     def __init__(self, *, auth: AuthHandler, route: str, additionally_required_permission: str | None = None):
         self.base_route: str = route
@@ -155,7 +155,7 @@ class Controller(abc.ABC):
 
     @property
     def tags(self):
-        return [LocaleHandler().extract(self.name)]
+        return [LocaleHandler().extract(self.name, locale="en")]
 
     def mount(self, app: FastAPI, runner: "Runner"):
         """

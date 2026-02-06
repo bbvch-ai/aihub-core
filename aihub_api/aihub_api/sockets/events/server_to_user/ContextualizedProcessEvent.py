@@ -1,5 +1,5 @@
 import json
-from typing import Annotated, Any, override
+from typing import Annotated, Any, Self, override
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events import (
@@ -19,7 +19,6 @@ ProcessEvents = (
 
 
 def event_discriminator(event: ProcessEvent) -> str:
-    # Get all tags from DisplayEvents union
     valid_tags = [arg.__metadata__[0].tag for arg in ProcessEvents.__args__]
 
     # Return "DisplayEvent" if _event_name is missing or not in valid_tags
@@ -69,9 +68,7 @@ class ContextualizedProcessEvent(BaseModel):
     ]
 
     @classmethod
-    def from_persisted_event(
-        cls, persisted_event: PersistedProcessEventEntity, locale: str | None = None
-    ) -> "ContextualizedProcessEvent":
+    def from_persisted_event(cls, persisted_event: PersistedProcessEventEntity, locale: str | None = None) -> Self:
         """
         Construct a ContextualizedProcessEvent from a PersistedProcessEventEntity, converting persisted event data
         into a client-ready format.

@@ -1,3 +1,6 @@
+from typing import ClassVar
+
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent, StopEvent
 
 from aihub_agent.agents.Agent import Agent
@@ -13,6 +16,22 @@ async def ensure_enough_events(parallel_events: list[ParallelEvent], config: Per
 
 
 class PerformanceTestingAgent(Agent):
+    """Agent for performance testing."""
+
+    name: ClassVar[LocaleString] = LocaleString(
+        en="Performance Testing Agent",
+        de="Performance Test Agent",
+        fr="Agent Test Performance",
+        it="Agente Test Performance",
+    )
+    description: ClassVar[LocaleString] = LocaleString(
+        en="Agent for performance testing",
+        de="Agent für Performance Tests",
+        fr="Agent pour tests de performance",
+        it="Agente per test di performance",
+    )
+    icon: ClassVar[str] = "mage:dashboard"
+
     @step()
     async def start_step(self, _: StartEvent, config: PerformanceTestingAgentConfig) -> list[ParallelEvent]:
         payload = "0" * config.payload_kb * 1024

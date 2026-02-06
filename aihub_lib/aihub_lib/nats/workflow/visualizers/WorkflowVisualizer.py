@@ -50,34 +50,29 @@ class WorkflowVisualizer:
         """
         G = nx.DiGraph()
 
-        # Special nodes
         START_NODE = "Start"
         END_NODE = "End"
 
-        # Add special nodes
         G.add_node(
             START_NODE,
             type="start",
             node_id="start",
-            label=LocaleString(de="Start", en="Start", fr="Début", it="Inizio").in_locale(self.locale),
+            label=LocaleString.from_i18n_path("lib.workflow.nodes.start").in_locale(self.locale),
         )
 
         G.add_node(
             END_NODE,
             type="stop",
             node_id="end",
-            label=LocaleString(de="Ende", en="End", fr="Fin", it="Fine").in_locale(self.locale),
+            label=LocaleString.from_i18n_path("lib.workflow.nodes.end").in_locale(self.locale),
         )
 
-        # Get all steps using the Agent's helper method
         steps = self.agent.get_steps()
         step_names = {step.__name__: step for step in steps}
 
-        # Add step nodes
         for step_name, step_method in step_names.items():
             self._add_step_node(G, step_name, step_method)
 
-        # Map events to their producers and consumers
         self._create_event_mappings(G, step_names, START_NODE, END_NODE)
 
         self.graph = G
@@ -89,7 +84,6 @@ class WorkflowVisualizer:
         step_description = self._get_localized_step_description(step_method)
         step_icon = getattr(step_method, "_step_icon", None)
 
-        # Extract input and output event info
         input_events = self._get_step_input_events(step_method)
         output_events = self._get_step_output_events(step_method)
 
@@ -127,10 +121,8 @@ class WorkflowVisualizer:
         for param_name, event_classes in input_event_mapping.items():
             is_optional = optional_map.get(param_name, False)
 
-            # Create EventInfo models for each event type
             event_info_list = [self._get_event_info(et) for et in event_classes]
 
-            # Create InputEventInfo model
             input_event_info = InputEventInfo(event_names=event_info_list, optional=is_optional)
 
             result[param_name] = input_event_info
@@ -144,14 +136,12 @@ class WorkflowVisualizer:
 
     def _get_event_info(self, event_class: EventType) -> EventInfo:
         """Get basic information about an event class."""
-        # Extract payload information
         try:
             payload_info = self._extract_event_payload_info(event_class)
         except Exception as e:
             logger.warning(f"Failed to extract payload info for {event_class.event_name_from_class()}: {str(e)}")
             payload_info = {}
 
-        # Create the EventInfo model
         event_info = EventInfo(
             name=event_class.event_name_from_class(),
             full_name=f"{event_class.__module__}.{event_class.event_name_from_class()}",
@@ -235,14 +225,12 @@ class WorkflowVisualizer:
     ) -> None:
         """Build mappings between events and their producers/consumers."""
         for step_name, step_method in step_names.items():
-            # Map events consumed by this step - use the input_event_mapping
             input_event_mapping = getattr(step_method, "_input_event_mapping", {})
             for param_name, event_classes in input_event_mapping.items():
                 for event_class in event_classes:
                     if issubclass(event_class, ControlEvent):
                         event_consumers[event_class].add(step_name)
 
-            # Map events produced by this step
             output_events = extract_return_events(step_method)
             for event_class in output_events:
                 if issubclass(event_class, ControlEvent):
@@ -263,14 +251,12 @@ class WorkflowVisualizer:
             producers = event_producers[event_class]
             consumers = event_consumers.get(event_class, set())
 
-            # Extract payload info
             try:
                 payload_fields = self._extract_event_payload_info(event_class)
             except Exception as e:
                 logger.warning(f"Failed to extract payload info for {event_class.event_name_from_class()}: {str(e)}")
                 payload_fields = {}
 
-            # Create a base edge model for this event type
             edge_attrs = {
                 "event_name": event_class.event_name_from_class(),
                 "event_full_name": f"{event_class.__module__}.{event_class.event_name_from_class()}",
@@ -292,7 +278,6 @@ class WorkflowVisualizer:
                     for consumer in consumers:
                         self._add_edge(G, producer, consumer, **edge_attrs)
 
-        # Add special connections for "in the loop" patterns
         self._add_in_the_loop_edges(G, event_producers, event_consumers)
 
     def _add_in_the_loop_edges(
@@ -304,11 +289,9 @@ class WorkflowVisualizer:
         """
         Add special edges for request-response pairs in "in the loop" patterns.
         """
-        # Find all request event producers and response event consumers
         request_events = {}
         response_events = {}
 
-        # Collect all events by name
         for event_class, producers in event_producers.items():
             name = event_class.__name__
             if "Request" in name and "Response" not in name:
@@ -321,14 +304,11 @@ class WorkflowVisualizer:
 
         # Match request-response pairs using direct name transformation
         for req_name, (req_class, producers) in request_events.items():
-            # Get expected response name by replacing "Request" with "Response"
             expected_resp_name = req_name.replace("Request", "Response")
 
-            # If we have a matching response event, create edges
             if expected_resp_name in response_events:
                 resp_class, consumers = response_events[expected_resp_name]
 
-                # Connect all producers to all consumers
                 for producer in producers:
                     for consumer in consumers:
                         edge_attrs = {
@@ -348,14 +328,11 @@ class WorkflowVisualizer:
         """
         # If there's already an edge between these nodes, make this a multi-edge
         if G.has_edge(source, target):
-            # Get existing edges between these nodes
             existing_edges = [data for _, _, data in G.edges(data=True) if _ == source]
 
-            # Add counter to edge ID to make it unique
             edge_id = len(existing_edges)
             G.add_edge(source, target, edge_id=edge_id, **attributes)
         else:
-            # First edge between these nodes
             G.add_edge(source, target, edge_id=0, **attributes)
 
     def to_pydantic(self) -> WorkflowGraph:
@@ -367,63 +344,48 @@ class WorkflowVisualizer:
 
         graph = cast(nx.DiGraph, self.graph)  # We know it's not None at this point
 
-        # Prepare node data models
         nodes = []
         for node, attrs in graph.nodes(data=True):
-            # Create a copy of attributes and add the id
             node_attrs = dict(attrs)
             node_attrs["id"] = node
 
-            # Convert any nested dicts to appropriate Pydantic models
             if "input_events" in node_attrs and node_attrs["input_events"]:
                 input_events = {}
                 for param, event_data in node_attrs["input_events"].items():
-                    # If it's already a Pydantic model, use it directly
                     if isinstance(event_data, InputEventInfo):
                         input_events[param] = event_data
                     else:
-                        # Otherwise, construct the model
                         input_events[param] = InputEventInfo.model_validate(event_data)
                 node_attrs["input_events"] = input_events
 
             if "output_events" in node_attrs and node_attrs["output_events"]:
                 output_events = []
                 for event_data in node_attrs["output_events"]:
-                    # If it's already a Pydantic model, use it directly
                     if isinstance(event_data, EventInfo):
                         output_events.append(event_data)
                     else:
-                        # Otherwise, construct the model
                         output_events.append(EventInfo.model_validate(event_data))
                 node_attrs["output_events"] = output_events
 
-            # Create the node model
             node_model = NodeData.model_validate(node_attrs)
             nodes.append(node_model)
 
-        # Prepare edge data models
         links = []
         for source, target, attrs in graph.edges(data=True):
-            # Create a copy of attributes and add source/target
             edge_attrs = dict(attrs)
             edge_attrs["source"] = source
             edge_attrs["target"] = target
 
-            # Convert payload to Pydantic models if needed
             if "payload" in edge_attrs and edge_attrs["payload"]:
                 payload = {}
                 for field_name, field_data in edge_attrs["payload"].items():
-                    # If it's already a Pydantic model, use it directly
                     if isinstance(field_data, EventPayloadField):
                         payload[field_name] = field_data
                     else:
-                        # Otherwise, construct the model
                         payload[field_name] = EventPayloadField.model_validate(field_data)
                 edge_attrs["payload"] = payload
 
-            # Create the edge model
             edge_model = EdgeData.model_validate(edge_attrs)
             links.append(edge_model)
 
-        # Create and return the workflow graph model
         return WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=nodes, links=links)

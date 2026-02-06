@@ -1,6 +1,17 @@
 test: "Dies ist ein Test"
 welcome: "Willkommen im bbv ai-hub"
 
+common:
+  actions:
+    save: "Speichern"
+    cancel: "Abbrechen"
+    create: "Erstellen"
+    delete: "Löschen"
+    edit: "Bearbeiten"
+  loading: "Laden..."
+  selectModel: "Modell auswählen"
+  selectDatabase: "Datenbank auswählen"
+
 models:
   title: "Modelle"
   error: "Fehler beim Laden der Modelle"
@@ -254,6 +265,13 @@ service:
 agent:
   title: "Agenten"
   can_chat: "Kann chatten"
+  navigation:
+    basic: "Übersicht"
+    workflow: "Workflow"
+    threads: "Threads"
+    configuration: "Konfiguration"
+    chat: "Chat"
+    memories: "Erinnerungen"
   overview:
     startEvents: "Startereignisse"
     stopEvents: "Stoppereignisse"
@@ -264,17 +282,18 @@ agent:
     status: "Status:"
     online: "Online"
     offline: "Offline"
+  configuration:
+    title: "Agentenkonfiguration"
+    description: "Konfigurieren Sie das Laufzeitverhalten und die Einstellungen für diesen Agenten"
+    runtimeSettings: "Laufzeiteinstellungen"
+    noConfiguration: "Keine Konfiguration für diesen Agenten verfügbar"
+    saveSuccess: "Konfiguration erfolgreich gespeichert"
+    saveError: "Konfiguration konnte nicht gespeichert werden"
   chat:
     title: "Neuen Chat starten"
     placeholder: "Geben Sie die Nachricht ein, die Sie an den Agenten senden möchten"
     createThreadAndSend: "Thread erstellen und senden"
     manuallyCreatedThread: "Manuell erstellter Thread"
-  navigation:
-    basic: "Grundlegend"
-    workflow: "Workflow"
-    threads: "Threads"
-    memories: "Erinnerungen"
-    chat: "Chat"
   availableAgents: "Verfügbare Agenten"
   list:
     name: "Name"
@@ -290,6 +309,43 @@ agent:
     title: "Agenten-Workflow"
   threads:
     title: "Agenten-Threads"
+  create:
+    button: "Neuen Agenten erstellen"
+    title: "Neuen Agenten erstellen"
+    cancel: "Abbrechen"
+    selectClass: "Agententyp"
+    selectClassPlaceholder: "Agententyp auswählen..."
+    agentId: "Agenten-ID"
+    agentIdPlaceholder: "mein-neuer-agent"
+    agentIdHelp: "Eindeutige Kennung (Kleinbuchstaben, Zahlen, Bindestriche, Unterstriche)"
+    agentIdInvalid: "Nur Kleinbuchstaben, Zahlen, Bindestriche und Unterstriche erlaubt"
+    agentIdTooLong: "Agenten-ID darf maximal 100 Zeichen lang sein"
+    configuration: "Konfiguration"
+    noAgentClasses: "Keine Agententypen verfügbar. Stellen Sie sicher, dass mindestens ein Agent läuft."
+    submit: "Agent erstellen"
+    success: "Agent erfolgreich erstellt"
+    error: "Agent konnte nicht erstellt werden"
+    steps:
+      basicInfo: "Grundlagen"
+  delete:
+    button: "Löschen"
+    title: "Agent löschen"
+    confirm: "Möchten Sie diesen Agenten wirklich löschen?"
+    confirmMessage: "Diese Aktion kann nicht rückgängig gemacht werden. Die Agentenkonfiguration wird dauerhaft entfernt."
+    success: "Agent erfolgreich gelöscht"
+    error: "Agent konnte nicht gelöscht werden"
+    cannotDeleteDefault: "Standardkonfigurationen von Agenten können nicht gelöscht werden"
+  add_instance:
+    title: "Agent hinzufügen"
+    description: "Neue Agenteninstanz erstellen"
+  selector:
+    class:
+      label: "Agententyp"
+      placeholder: "Agententyp auswählen..."
+    id:
+      label: "Agentenprofil"
+      placeholder: "Agentenprofil auswählen..."
+      help: "Wählen Sie das spezifische Agentenprofil aus"
   memories:
     title: "Agenten-Erinnerungen"
     description: "Von {agentName} gesammelte Erinnerungen über Sie"
@@ -563,6 +619,73 @@ bar:
 
 process:
   title: "Prozesse"
+  overview:
+    name: "Name"
+    class: "Klasse"
+    processId: "Prozess-ID"
+    status: "Status"
+    online: "Online"
+    offline: "Offline"
+  navigation:
+    overview: "Übersicht"
+    walkthroughs: "Durchläufe"
+    start: "Durchlauf starten"
+    configuration: "Konfiguration"
+  list:
+    online: "Online"
+    offline: "Offline"
+  configuration:
+    title: "Prozesskonfiguration"
+    description: "Konfigurieren Sie das Laufzeitverhalten dieser Prozessinstanz."
+    runtimeSettings: "Laufzeiteinstellungen"
+    saveSuccess: "Konfiguration erfolgreich gespeichert"
+    saveError: "Fehler beim Speichern der Konfiguration"
+    noConfiguration: "Keine Konfiguration für diesen Prozess verfügbar."
+  create:
+    title: "Neuen Prozess erstellen"
+    selectClass: "Prozesstyp"
+    selectClassPlaceholder: "Prozesstyp auswählen..."
+    noProcessClasses: "Keine Prozesstypen verfügbar."
+    steps:
+      basicInfo: "Grundinformationen"
+    submit: "Prozess erstellen"
+    cancel: "Abbrechen"
+    success: "Prozess erfolgreich erstellt"
+    error: "Fehler beim Erstellen des Prozesses"
+  delete:
+    button: "Löschen"
+    title: "Prozess löschen"
+    confirmMessage: "Sind Sie sicher, dass Sie diese Prozessinstanz löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
+    success: "Prozess erfolgreich gelöscht"
+    error: "Fehler beim Löschen des Prozesses"
+  add_instance:
+    title: "Prozess hinzufügen"
+    description: "Neue Prozessinstanz erstellen"
+  walkthrough:
+    list:
+      created: "Erstellt"
+      updated: "Letzte Interaktion"
+      agents: "Agenten"
+      users: "Benutzer"
+      state: "Status"
+      in_progress: "In Bearbeitung"
+      done: "Abgeschlossen"
+      steps: "Fortschritt"
+
+form:
+  locale_input:
+    translate_tooltip: "In alle Sprachen übersetzen"
+
+lib:
+  vectorStore:
+    label: "Vektorspeicher"
+    help: "Wissensdatenbank und Namensräume für die Suche auswählen"
+    database:
+      label: "Datenbank"
+    namespaces:
+      label: "Namensräume"
+      placeholder: "Namensräume auswählen (leer = alle)"
+      help: "Leer lassen, um alle Namensräume zu durchsuchen"
 
 memory:
   title: "Erinnerungen"

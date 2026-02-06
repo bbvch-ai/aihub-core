@@ -13,7 +13,7 @@ enable_logging()
 async def main():
     process_runner = ProcessTestRunner(
         process_type=HumanOnlyProcess,
-        default_process_config=ProcessConfig(
+        process_config=ProcessConfig(
             process_id="human_only_process",
             process_class=HumanOnlyProcess.__name__,
             name=LocaleString(en="..."),

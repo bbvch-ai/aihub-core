@@ -146,7 +146,6 @@ class AihubInstrumentor(BaseInstrumentor):
         """
         logger.info("🔍 Starting application instrumentation...")
 
-        # Get OpenTelemetry settings
         from aihub_lib.infrastructure.opentelemetry.OpenTelemetrySettings import OpenTelemetrySettings
 
         otel_settings = OpenTelemetrySettings()

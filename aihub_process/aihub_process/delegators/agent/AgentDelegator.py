@@ -17,8 +17,7 @@ from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import Agent
 from aihub_lib.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
 from aihub_lib.nats.topics import AgentInstanceTopic
 from aihub_lib.nats.topics.process.ProcessClassTopic import ProcessClassTopic
-from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent as AgentInThread
-from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
+from aihub_lib.persistence.messaging.entities.ThreadEntity import AgentInstanceRef, ThreadEntity
 from bson import ObjectId
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
@@ -172,7 +171,7 @@ class AgentDelegator(AbstractEntityDelegator):
 
         ThreadEntity.create_process_thread(
             name=self.process_class.__name__,
-            agent=AgentInThread(agent_class=event.agent_class, agent_id=event.agent_id),
+            agent=AgentInstanceRef(agent_class=event.agent_class, agent_id=event.agent_id),
             thread_id=thread_id,
             process_class=self.process_class.__name__,
             process_id=event.process_id,

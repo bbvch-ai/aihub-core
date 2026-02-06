@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
-from typing import override
+from typing import Self, override
 
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.routes.Controller import Controller
@@ -123,7 +123,6 @@ class ApiRunner(Runner):
         if AIHubSettings().FRONTEND_ORIGIN:
             origins += [item.strip() for item in AIHubSettings().FRONTEND_ORIGIN.split(",")]
 
-        # Add CORS middleware
         app.add_middleware(
             CORSMiddleware,
             allow_origins=origins,
@@ -137,10 +136,10 @@ class ApiRunner(Runner):
         app.add_middleware(I18nMiddleware)
         return app
 
-    def mount(self, *controllers: Controller) -> "ApiRunner":
+    def mount(self, *controllers: Controller) -> Self:
         """
         Mounts one or more controllers (each subclass of Controller) onto the API application.
-        This attaches the controller’s routes under the prefix defined in the controller itself.
+        This attaches the controller's routes under the prefix defined in the controller itself.
         """
         super().mount(*controllers)
 
@@ -151,6 +150,14 @@ class ApiRunner(Runner):
             }
             for controller in controllers
         ]
+
+        # Pre-populate state with controller references so they're available
+        # before create_app() is called (needed for SimulatedAgentApiTestRunner)
+        for controller in controllers:
+            if isinstance(controller, AgentController):
+                self._api_app.state.agent_controller = controller
+            if isinstance(controller, ProcessController):
+                self._api_app.state.process_controller = controller
 
         return self
 

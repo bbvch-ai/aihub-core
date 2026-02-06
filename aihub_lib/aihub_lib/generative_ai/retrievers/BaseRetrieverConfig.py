@@ -1,17 +1,11 @@
-from enum import Enum
-from typing import Annotated
-
-from pydantic import BaseModel, Field
+from aihub_lib.nats.events.form.Form import Form
 
 
-class RetrieverType(str, Enum):
-    """Type of retriever."""
+class BaseRetrieverConfig(Form):
+    """
+    Base configuration for all retrievers.
 
-    KNOWLEDGE = "knowledge"
-    INSIGHT = "insight"
+    Supports duality pattern for form rendering and data validation.
+    """
 
-
-class BaseRetrieverConfig(BaseModel):
-    """Base configuration for all retrievers."""
-
-    retriever_type: Annotated[RetrieverType, Field(description="Type of retriever")]
+    pass

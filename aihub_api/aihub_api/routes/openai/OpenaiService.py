@@ -72,22 +72,15 @@ class OpenaiService:
     @trace_fn
     async def get_models_with_assistants(
         *,
-        nc: NATS,
-        exclude_webui_agents: bool,
+        t: LocaleHandler,
     ) -> ModelResponse:
         """
-        Retrieve the list of available chat models and assistants available through NATs
+        Retrieve the list of available chat models and assistants.
         Returns a ModelResponse containing details of every configured chat model or assistant.
         """
         model_response = await OpenaiService.get_models()
         chat_models = model_response.data
-        agent_instance_dtos = await AgentService.discover_agent_instances(nc)
-
-        # Ensures we have no recursive webui agent discovery
-        if exclude_webui_agents:
-            agent_instance_dtos = [
-                agent_instance for agent_instance in agent_instance_dtos if agent_instance.agent_class != "WebuiAgent"
-            ]
+        agent_instance_dtos = await AgentService.get_all_agent_instances(t, online=True)
 
         assistants = [
             ModelDetails(
@@ -118,7 +111,6 @@ class OpenaiService:
     async def get_model_with_assistants(
         *,
         model_name: str,
-        nc: NATS,
         t: LocaleHandler,
     ) -> ModelDetails:
         """
@@ -130,7 +122,7 @@ class OpenaiService:
         except HTTPException:
             pass
         agent_class, agent_id = model_name.split("/")
-        agent_dto = await AgentService.get_agent(nc, agent_class, agent_id, t)
+        agent_dto = await AgentService.get_agent_instance(agent_class, agent_id, t)
 
         if not agent_dto.is_conversational:
             raise HTTPException(status_code=400, detail="Agent is not a conversational agent.")
@@ -258,7 +250,7 @@ class OpenaiService:
             pass
 
         agent_class, agent_id = model_name.split("/")
-        agent_dto = await AgentService.get_agent(nc, agent_class, agent_id, t)
+        agent_dto = await AgentService.get_agent_instance(agent_class, agent_id, t)
 
         if not agent_dto.is_conversational:
             raise HTTPException(status_code=400, detail="Agent is not a conversational agent.")
@@ -409,7 +401,6 @@ class OpenaiService:
                 except asyncio.CancelledError:
                     break
 
-            # Send a final "stop" chunk at the end
             if resources.stop_event.is_hitl_request_event:
                 content = resources.stop_event.question
             elif resources.stop_event.is_exception_event:
@@ -583,8 +574,6 @@ class OpenaiService:
         sdk_method_signature = inspect.signature(sdk_fn)
         sdk_known_param_names = set(sdk_method_signature.parameters.keys())
         payload_dict = fn_kwargs_model.model_dump(exclude_unset=True)
-
-        # Logged-in user is always identified towards open-webui
         payload_dict["user"] = user.id
 
         sdk_call_kwargs: dict[str, Any] = {}

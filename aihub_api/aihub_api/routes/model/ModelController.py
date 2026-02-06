@@ -1,11 +1,11 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
 from fastapi import Security
 
+from aihub_api.i18n.ApiLocaleString import ApiLocaleString
 from aihub_api.routes.model.dto.ModelDTO import ModelDTO, ModelTypeGroupDTO
 from aihub_api.routes.model.ModelService import ModelService
 
@@ -20,23 +20,18 @@ class ModelController(Controller):
     - Retrieving information about a specific model.
     """
 
-    name = LocaleString(en="AI Models", de="KI-Modelle", fr="Modèles IA", it="Modelli IA")
-    description = LocaleString(
-        en="View available AI models",
-        de="Verfügbare KI-Modelle anzeigen",
-        fr="Consultez les modèles IA disponibles",
-        it="Visualizza i modelli IA disponibili",
-    )
-    icon = "meteor-icons:key"
+    name = ApiLocaleString.from_i18n_path("api.controllers.model.name")
+    description = ApiLocaleString.from_i18n_path("api.controllers.model.description")
+    icon = "mage:key"
 
     def __init__(
         self, *, auth: AuthHandler, route: str = "/models", additionally_required_permission: str | None = None
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
-    def get_models(self, route: str = "") -> "ModelController":
+    def get_litellm_models(self, route: str = "") -> Self:
         @self.router.get(route, tags=self.tags)
-        async def get_models(
+        async def get_litellm_models(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> list[ModelTypeGroupDTO]:
             """Retrieve a list of all available models grouped by type."""
@@ -44,13 +39,24 @@ class ModelController(Controller):
 
         return self
 
-    def get_model(self, route: str = "/{model_name:path}") -> "ModelController":
+    def get_litellm_model(self, route: str = "/{model_name:path}") -> Self:
         @self.router.get(route, tags=self.tags)
-        async def get_model(
+        async def get_litellm_model(
             model_name: str,
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
         ) -> ModelDTO:
             """Retrieve a specific model by name."""
             return await ModelService.get_model_by_name(user, model_name)
+
+        return self
+
+    def get_litellm_models_by_mode(self, route: str = "/mode/{mode}") -> Self:
+        @self.router.get(route, tags=self.tags)
+        async def get_litellm_models_by_mode(
+            mode: str,
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+        ) -> list[ModelDTO]:
+            """Retrieve all models filtered by their mode (chat, embedding, rerank, etc.)."""
+            return await ModelService.get_models_by_mode(user, mode)
 
         return self

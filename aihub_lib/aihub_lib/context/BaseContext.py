@@ -54,7 +54,7 @@ class BaseContext:
         """
         redis_key = self._build_key(key)
         serialized_value = json.dumps(value)
-        logger.debug(f"Storing key '{redis_key}' with value: {serialized_value}")
+        logger.debug(f"Storing key '{redis_key}'")
         await self.redis.set(redis_key, serialized_value, ex=self.default_ttl)
 
     async def get(self, key: str, default: Any | None = None) -> Any | None:
@@ -69,7 +69,7 @@ class BaseContext:
                 return default
 
             val = json.loads(value.decode())
-            logger.debug(f"Retrieved key '{redis_key}' with value: {val}")
+            logger.debug(f"Retrieved key '{redis_key}'")
             return val
         except Exception as e:
             logger.exception(f"Error getting key '{redis_key}': {e}")
@@ -90,7 +90,6 @@ class BaseContext:
         """
         try:
             pattern = f"{self.store_name}:*"
-            # Get all keys with the prefix
             cursor = b"0"
             keys_to_delete = []
 
@@ -136,7 +135,6 @@ class BaseContext:
                 try:
                     value = await self.redis.get(key)
                     if value:
-                        # Extract the original key (remove the store_name prefix)
                         original_key = key.decode().split(":", 1)[1]
                         all_data[original_key] = json.loads(value.decode())
                 except Exception as e:

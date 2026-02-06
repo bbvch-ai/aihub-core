@@ -71,7 +71,6 @@ def create_app_registration(bot_name: str, tenant_id: str | None) -> str:
         sys.exit(1)
     print(f"Created Azure AD app with appId: {app_id}")
 
-    # Create a service principal for the app
     # fmt: off
     cmd = [
         "az", "ad", "sp", "create",
@@ -217,7 +216,6 @@ def main():
 
     args = parser.parse_args()
 
-    # Create the Azure AD app registration and reset its credentials.
     app_id = create_app_registration(bot_name=args.bot_name, tenant_id=args.tenant_id)
     app_password = reset_app_credentials(app_id=app_id)
     print(f"Using app registration credentials:\n  App ID: {app_id}\n  Password: {app_password}")
@@ -229,7 +227,6 @@ def main():
         with open(args.system_message_file) as f:
             system_message = f.read()
 
-    # Save the credentials in MongoDB (FerretDB compatible)
     save_credentials_in_mongo(
         connection_string=args.mongo_connection_string,
         api_path=args.token_path,
@@ -240,7 +237,6 @@ def main():
         slack_token=args.slack_token,
     )
 
-    # Create the Azure Bot resource using a direct az command.
     create_bot_resource(
         resource_group=args.resource_group,
         bot_name=args.bot_name,

@@ -1,10 +1,10 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
 from aihub_lib.nats.events.form import ALL_FORM_OPTIONS
-from aihub_lib.persistence.process.ProcessEntity import HumanInSpecsEntity
+from aihub_lib.persistence.process.ProcessClassEntity import HumanInSpecsEntity
 from pydantic import BaseModel, Field
 
 
@@ -20,7 +20,7 @@ class HumanInDTO(BaseModel):
     form: Annotated[list[ALL_FORM_OPTIONS], Field(description="Formkit elements of the work event.")] = []
 
     @classmethod
-    def from_human_in_specs(cls, human_in_specs: HumanInSpecs, t: LocaleHandler) -> "HumanInDTO":
+    def from_human_in_specs(cls, human_in_specs: HumanInSpecs, t: LocaleHandler) -> Self:
         human_in_dto = cls(
             name=t.extract(human_in_specs.name),
             description=t.extract(human_in_specs.description),
@@ -34,7 +34,7 @@ class HumanInDTO(BaseModel):
         return human_in_dto
 
     @classmethod
-    def from_entity_specs(cls, human_in_specs_entity: HumanInSpecsEntity, t: LocaleHandler) -> "HumanInDTO":
+    def from_entity_specs(cls, human_in_specs_entity: HumanInSpecsEntity, t: LocaleHandler) -> Self:
         human_in_dto = cls(
             name=t.extract(human_in_specs_entity.name.to_locale_string()),
             description=t.extract(human_in_specs_entity.description.to_locale_string()),

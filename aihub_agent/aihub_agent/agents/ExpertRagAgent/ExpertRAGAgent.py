@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.chat_history.extend_chat_history_with_organization_memory import (
     extend_chat_history_with_organization_memory,
@@ -9,7 +11,6 @@ from aihub_lib.generative_ai.chat_history.format_expert_conversation import form
 from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
 from aihub_lib.generative_ai.utils.filter_retrievers_by_namespace import filter_retrievers_by_namespace
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import (
     AgentInTheLoop,
     HumanInTheLoop,
@@ -45,6 +46,7 @@ from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import 
 from aihub_agent.agents.RagAgent.events.NamespaceAwareUserMessageEvent import NamespaceAwareUserMessageEvent
 from aihub_agent.agents.RagAgent.events.UserRequestsExpertEvent import UserRequestsExpertEvent
 from aihub_agent.context.run.RunContext import RunContext
+from aihub_agent.i18n.AgentLocaleString import AgentLocaleString
 from aihub_agent.rag.preconditions import (
     check_context_ready_for_history_limit_with_expert,
     check_is_answer_response,
@@ -178,9 +180,15 @@ class ExpertRAGAgent(Agent):
     Note: For basic RAG functionality without expert escalation, use RAGAgent instead.
     """
 
+    name: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.expert_rag_agent.metadata.name")
+    description: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path(
+        "agent.expert_rag_agent.metadata.description"
+    )
+    icon: ClassVar[str] = "mage:building-a"
+
     @step(
-        name=LocaleString(en="Retrieve User Memory"),
-        description=LocaleString(en="Retrieves relevant user-specific memories for personalized context"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_user_memory.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_user_memory.description"),
         icon="mdi:account-circle",
         precondition=user_memory_retrieval_enabled,
     )
@@ -202,8 +210,8 @@ class ExpertRAGAgent(Agent):
         return RetrieveUserMemoryEvent.from_memory_search_result(memory_result)
 
     @step(
-        name=LocaleString(en="Retrieve Organization Memory"),
-        description=LocaleString(en="Retrieves relevant organization memories (expert knowledge) based on user query"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_organization_memory.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_organization_memory.description"),
         icon="mdi:brain",
         precondition=organization_memory_enabled,
     )
@@ -228,8 +236,8 @@ class ExpertRAGAgent(Agent):
         return RetrieveOrganizationMemoryEvent.from_memory_search_result(memory_result)
 
     @step(
-        name=LocaleString(en="Add Memory to Context"),
-        description=LocaleString(en="Injects user and organization memories into chat history as system messages"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.add_memory_to_context.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.add_memory_to_context.description"),
         icon="mdi:database-plus",
         precondition=memory_ready_for_chat_history,
     )
@@ -266,9 +274,9 @@ class ExpertRAGAgent(Agent):
         return AddMemoryToChatHistoryEvent(extended_history=chat_history)
 
     @step(
-        name=LocaleString(en="Limit Chat History"),
-        description=LocaleString(en="Truncates incoming chat messages to fit within the configured token limit"),
-        icon="iconoir:cut",
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.limit_chat_history.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.limit_chat_history.description"),
+        icon="mage:edit",
         precondition=memory_added_to_chat_history,
     )
     async def limit_chat_history_step(
@@ -282,8 +290,9 @@ class ExpertRAGAgent(Agent):
         return do_limit_chat_history(messages, agent_config.number_of_input_tokens)
 
     @step(
-        name=LocaleString(en="Condense Standalone Question"),
-        description=LocaleString(en="Condenses the chat history and user query into a standalone question."),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.condense_standalone_question.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.condense_standalone_question.description"),
+        icon="mage:archive",
     )
     async def condense_standalone_question_step(
         self,
@@ -298,8 +307,9 @@ class ExpertRAGAgent(Agent):
         )
 
     @step(
-        name=LocaleString(en="Few Shot Guard"),
-        description=LocaleString(en="Guards the question to ensure it is appropriate for the agent to answer."),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.few_shot_guard.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.few_shot_guard.description"),
+        icon="mage:shield-check",
     )
     async def few_shot_guard_step(
         self,
@@ -313,8 +323,9 @@ class ExpertRAGAgent(Agent):
         )
 
     @step(
-        name=LocaleString(en="Retrieve Nodes"),
-        description=LocaleString(en="Retrieves relevant nodes from knowledge sources."),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_nodes.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_nodes.description"),
+        icon="mage:search",
     )
     async def retrieve_step(
         self,
@@ -332,11 +343,9 @@ class ExpertRAGAgent(Agent):
         return await do_retrieve(event, retrievers, t)
 
     @step(
-        name=LocaleString(en="Rerank Retrieved Nodes"),
-        description=LocaleString(
-            en="Reranks retrieved documents using a dedicated reranking model for improved relevance"
-        ),
-        icon="iconoir:sort-desc",
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.rerank_nodes.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.rerank_nodes.description"),
+        icon="mage:arrow-down",
         precondition=reranking_enabled,
     )
     async def rerank_nodes_step(
@@ -352,8 +361,9 @@ class ExpertRAGAgent(Agent):
         )
 
     @step(
-        name=LocaleString(en="Order Nodes by Documents"),
-        description=LocaleString(en="Orders the retrieved nodes by their source documents."),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.order_nodes.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.order_nodes.description"),
+        icon="mage:arrowlist",
         precondition=reranking_complete_or_disabled,
     )
     async def order_nodes_by_documents_step(
@@ -366,8 +376,9 @@ class ExpertRAGAgent(Agent):
         return await do_order_nodes_by_documents(event, t, agent_config.context_prompt, displayer)
 
     @step(
-        name=LocaleString(en="Context Sufficient Guard"),
-        description=LocaleString(en="Guards the context to ensure it is sufficient for generating a response."),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.context_sufficient_guard.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.context_sufficient_guard.description"),
+        icon="mage:check-circle",
     )
     async def context_sufficient_guard_step(
         self,
@@ -390,8 +401,11 @@ class ExpertRAGAgent(Agent):
         )
 
     @step(
-        name=LocaleString(en="Limit Chat History with Context"),
-        description=LocaleString(en="Includes the combined context and truncates chat history again."),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.limit_chat_history_with_context.name"),
+        description=AgentLocaleString.from_i18n_path(
+            "agent.rag_agent.steps.limit_chat_history_with_context.description"
+        ),
+        icon="mage:edit",
         precondition=context_ready_for_history_limit,
     )
     async def limit_chat_history_with_context_step(
@@ -413,9 +427,11 @@ class ExpertRAGAgent(Agent):
     # --- Expert Escalation Steps ---
 
     @step(
-        name=LocaleString(en="Handle Insufficient Context"),
-        description=LocaleString(en="Handle insufficient context by asking for expert consent."),
-        icon="akar-icons:chat-approve",
+        name=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.handle_insufficient_context.name"),
+        description=AgentLocaleString.from_i18n_path(
+            "agent.expert_rag_agent.steps.handle_insufficient_context.description"
+        ),
+        icon="mage:message-check",
     )
     async def insufficient_context_ask_expert_step(
         self,
@@ -423,14 +439,14 @@ class ExpertRAGAgent(Agent):
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> HumanInTheLoop.confirmation.request:
-        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.context_not_sufficient"))
-        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.asking_for_consent"))
-        return HumanInTheLoop.confirmation.invoke(question=t("agent.expert_grounded_agent.messages.consent_question"))
+        await displayer.display_thought(t("agent.expert_rag_agent.thoughts.context_not_sufficient"))
+        await displayer.display_thought(t("agent.expert_rag_agent.thoughts.asking_for_consent"))
+        return HumanInTheLoop.confirmation.invoke(question=t("agent.expert_rag_agent.messages.consent_question"))
 
     @step(
-        name=LocaleString(en="Consent Answer"),
-        description=LocaleString(en="User answered the question for consent."),
-        icon="carbon:question-answering",
+        name=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.consent_answer.name"),
+        description=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.consent_answer.description"),
+        icon="mage:message-question-mark",
     )
     async def user_expert_inquiry_response(
         self,
@@ -439,16 +455,16 @@ class ExpertRAGAgent(Agent):
         t: LocaleHandler,
     ) -> UserRequestsExpertEvent | ExpertRejectEvent:
         if event.response is True:
-            await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.user_consented"))
+            await displayer.display_thought(t("agent.expert_rag_agent.thoughts.user_consented"))
             return UserRequestsExpertEvent()
-        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.user_declined"))
-        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.waiting_for_instructions"))
+        await displayer.display_thought(t("agent.expert_rag_agent.thoughts.user_declined"))
+        await displayer.display_thought(t("agent.expert_rag_agent.thoughts.waiting_for_instructions"))
         return ExpertRejectEvent(reason="User declined expert escalation")
 
     @step(
-        name=LocaleString(en="Invoke ExpertAskingAgent"),
-        description=LocaleString(en="Forwarding request to ExpertAskingAgent that will prompt experts."),
-        icon="hugeicons:robot-02",
+        name=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.invoke_expert_agent.name"),
+        description=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.invoke_expert_agent.description"),
+        icon="mage:robot",
     )
     async def forward_to_expert_asking_agent_step(
         self,
@@ -458,9 +474,9 @@ class ExpertRAGAgent(Agent):
         agent_config: ExpertRAGAgentConfig,
         t: LocaleHandler,
     ) -> AgentInTheLoop.request:
-        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.forwarding_to_expert"))
+        await displayer.display_thought(t("agent.expert_rag_agent.thoughts.forwarding_to_expert"))
         await displayer.display_chunk(
-            t("agent.expert_grounded_agent.messages.expert_forwarding_confirmation"),
+            t("agent.expert_rag_agent.messages.expert_forwarding_confirmation"),
             model_name=ExpertRAGAgent.__name__,
         )
         await displayer.display_chunk(
@@ -468,12 +484,12 @@ class ExpertRAGAgent(Agent):
             model_name=ExpertRAGAgent.__name__,
         )
         await displayer.display_chunk(
-            t("agent.expert_grounded_agent.messages.expert_answer_coming_soon"),
+            t("agent.expert_rag_agent.messages.expert_answer_coming_soon"),
             model_name=ExpertRAGAgent.__name__,
         )
         return AgentInTheLoop.invoke(
-            agent_class=agent_config.expert_escalation.expert_asking_agent_class,
-            agent_id=agent_config.expert_escalation.expert_asking_agent_id,
+            agent_class=agent_config.expert_escalation.agent.agent_class,
+            agent_id=agent_config.expert_escalation.agent.agent_id,
             start_event=AskExpertStartEvent(
                 question_to_expert=user_message_event.user_query,
                 locale=user_message_event.locale,
@@ -483,9 +499,9 @@ class ExpertRAGAgent(Agent):
 
     @step(
         precondition=is_answer_response,
-        name=LocaleString(en="Expert Answer Positive"),
-        description=LocaleString(en="ExpertAskingAgent was able to extract information from expert."),
-        icon="ix:user-success-filled",
+        name=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.expert_answer_positive.name"),
+        description=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.expert_answer_positive.description"),
+        icon="mage:user-check",
     )
     async def expert_answered_step(
         self,
@@ -493,8 +509,8 @@ class ExpertRAGAgent(Agent):
         event: AgentInTheLoop.response,
         t: LocaleHandler,
     ) -> ExpertAnswerContextEvent:
-        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.expert_answered"))
-        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.can_answer_question"))
+        await displayer.display_thought(t("agent.expert_rag_agent.thoughts.expert_answered"))
+        await displayer.display_thought(t("agent.expert_rag_agent.thoughts.can_answer_question"))
 
         # Format the expert conversation as context
         expert_conversation = event.stop_event.expert_conversation
@@ -511,9 +527,9 @@ class ExpertRAGAgent(Agent):
 
     @step(
         precondition=is_no_answer_response,
-        name=LocaleString(en="Expert Answer Negative"),
-        description=LocaleString(en="ExpertAskingAgent was NOT able to extract information from expert."),
-        icon="ix:user-fail-filled",
+        name=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.expert_answer_negative.name"),
+        description=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.expert_answer_negative.description"),
+        icon="mage:user-cross",
     )
     async def expert_not_answered_step(
         self,
@@ -521,17 +537,17 @@ class ExpertRAGAgent(Agent):
         _: AgentInTheLoop.response,
         t: LocaleHandler,
     ) -> StopEvent:
-        await displayer.display_thought(t("agent.expert_grounded_agent.thoughts.expert_unable_to_answer"))
+        await displayer.display_thought(t("agent.expert_rag_agent.thoughts.expert_unable_to_answer"))
         await displayer.display_chunk(
-            t("agent.expert_grounded_agent.messages.expert_unable_to_answer"),
+            t("agent.expert_rag_agent.messages.expert_unable_to_answer"),
             model_name=ExpertRAGAgent.__name__,
         )
         return StopEvent()
 
     @step(
-        name=LocaleString(en="Expert Answer Error"),
-        description=LocaleString(en="ExpertAskingAgent encountered an error."),
-        icon="ix:error",
+        name=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.expert_answer_error.name"),
+        description=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.expert_answer_error.description"),
+        icon="mage:exclamation-circle",
     )
     async def expert_exception_step(
         self,
@@ -541,20 +557,21 @@ class ExpertRAGAgent(Agent):
     ) -> StopEvent:
         await displayer.display_thought(
             t(
-                "agent.expert_grounded_agent.thoughts.expert_error",
+                "agent.expert_rag_agent.thoughts.expert_error",
                 error_code=exception_event.exception_event.http_status_code,
                 error_message=exception_event.exception_event.message,
             )
         )
         await displayer.display_chunk(
-            t("agent.expert_grounded_agent.messages.expert_error_occurred"),
+            t("agent.expert_rag_agent.messages.expert_error_occurred"),
             model_name=ExpertRAGAgent.__name__,
         )
         return StopEvent()
 
     @step(
-        name=LocaleString(en="Respond with LLM"),
-        description=LocaleString(en="Generates a response using the configured LLM."),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.respond_with_llm.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.respond_with_llm.description"),
+        icon="mage:message",
     )
     async def respond_with_llm_step(
         self,
@@ -578,8 +595,8 @@ class ExpertRAGAgent(Agent):
         )
 
     @step(
-        name=LocaleString(en="Store User Memory"),
-        description=LocaleString(en="Persists conversation learnings to long-term user memory for future interactions"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.store_user_memory.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.store_user_memory.description"),
         icon="mdi:content-save",
         precondition=user_memory_storage_enabled,
     )
@@ -601,8 +618,8 @@ class ExpertRAGAgent(Agent):
         return StoreUserMemoryEvent.from_memory_added_object(memory_added)
 
     @step(
-        name=LocaleString(en="Stop"),
-        description=LocaleString(en="Completes the workflow after all required steps are done"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.stop.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.stop.description"),
         precondition=ready_for_stop,
     )
     async def stop_step(

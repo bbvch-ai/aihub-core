@@ -4,7 +4,7 @@ import os
 import threading
 import time
 from datetime import datetime
-from typing import Any, ClassVar, override
+from typing import Any, ClassVar, Self, override
 
 from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage
@@ -237,7 +237,7 @@ class BaseEvent(BaseModel):
     def deserialize_event(
         cls,
         data: bytes | str | dict[str, Any],
-    ) -> "BaseEvent":
+    ) -> Self:
         """
         Given raw event data, deserializes it into the most specific event class possible
         based on inheritance hierarchy, while preserving original type information.
@@ -255,14 +255,12 @@ class BaseEvent(BaseModel):
         for key, value in list(json_data.items()):
             if isinstance(value, dict) and "_event_name" in value:
                 json_data[key] = cls.deserialize_event(value)
-            # Handle lists containing events
             elif isinstance(value, list):
                 json_data[key] = [
                     cls.deserialize_event(item) if isinstance(item, dict) and "_event_name" in item else item
                     for item in value
                 ]
 
-        # Get event type and parent classes
         event_name: str = json_data.get("_event_name")
         parent_classes: list[str] = json_data.get("_parent_event_names", [])
 
@@ -289,10 +287,8 @@ class BaseEvent(BaseModel):
                         if event_class.__name__ == "DisplayEvent" and "ControlEvent" in parent_classes:
                             event_class = cls._event_registry.get("ControlAndDisplayEvent")
 
-                        # Create the instance with the parent class
                         event = event_class.model_validate(json_data)
 
-                        # Set the private attributes since this isn't the exact original class
                         event._unknown_event_name = event_name
                         event._unknown_data = json_data
                         event._unknown_parent_classes = parent_classes
@@ -310,7 +306,6 @@ class BaseEvent(BaseModel):
 
         event = cls.model_validate(json_data)
 
-        # Set private attributes for BaseEvent fallback
         event._unknown_event_name = event_name
         event._unknown_data = json_data
         event._unknown_parent_classes = parent_classes
@@ -331,7 +326,6 @@ class BaseEvent(BaseModel):
         }
         created_at = event_dict["created_at"]
 
-        # Convert ns timestamp to a readable datetime
         created_datetime = datetime.fromtimestamp(created_at / 1e9)
         event_dict["created_at"] = created_datetime.strftime("%Y-%m-%d %H:%M:%S.%f") + f"{created_at % 1_000:03d}"
         return event_dict

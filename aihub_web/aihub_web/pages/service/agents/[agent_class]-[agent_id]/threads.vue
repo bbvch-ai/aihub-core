@@ -40,7 +40,7 @@ const {
   pageSize,
   setPage,
   setPageSize,
-} = useAgentThreads()
+} = useAgentInstanceThreads()
 
 const toThread = (thread: ThreadDto) => {
   router.push(localePath(`/service/threads/${thread.id}/overview`))

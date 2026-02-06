@@ -1,8 +1,8 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
-from aihub_lib.persistence.process.ProcessEntity import ProgramInSpecsEntity
+from aihub_lib.persistence.process.ProcessClassEntity import ProgramInSpecsEntity
 from pydantic import BaseModel, Field
 
 
@@ -13,7 +13,7 @@ class ProgramInDTO(BaseModel):
     event_specs: Annotated[EventSpecs, Field(description="The event specs of the work event.")]
 
     @classmethod
-    def from_program_in_specs(cls, program_in_specs: ProgramInSpecs) -> "ProgramInDTO":
+    def from_program_in_specs(cls, program_in_specs: ProgramInSpecs) -> Self:
         return cls(
             route=program_in_specs.route,
             method=program_in_specs.method,
@@ -22,7 +22,7 @@ class ProgramInDTO(BaseModel):
         )
 
     @classmethod
-    def from_entity_specs(cls, program_in_specs_entity: ProgramInSpecsEntity) -> "ProgramInDTO":
+    def from_entity_specs(cls, program_in_specs_entity: ProgramInSpecsEntity) -> Self:
         return cls(
             route=program_in_specs_entity.route,
             method=program_in_specs_entity.method,

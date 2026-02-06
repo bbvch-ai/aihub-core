@@ -72,7 +72,7 @@ class JSPublisher(AbstractPublisher[TEvent]):
 
                 logger.debug(f"{self.name} publishing event {event.event_name} to {subject}")
                 serialized_event = event.model_dump_json(serialize_as_any=True)
-                logger.debug(f"{self.name} serialized event: {event.event_name}({serialized_event})")
+                logger.debug(f"{self.name} serialized event: {event.event_name}")
 
                 message_id = str(uuid.uuid4())
                 headers = NATSMessageHeaders().with_trace_context().with_header("Nats-Msg-Id", message_id).to_dict()

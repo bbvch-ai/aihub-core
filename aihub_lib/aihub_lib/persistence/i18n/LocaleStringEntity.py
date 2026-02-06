@@ -1,3 +1,5 @@
+from typing import Self
+
 from mongoengine import EmbeddedDocument, StringField
 
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -15,7 +17,7 @@ class LocaleStringEntity(EmbeddedDocument):
     it = StringField(required=False, null=True, description="Italian translation")
 
     @classmethod
-    def from_locale_string(cls, locale_string: LocaleString) -> "LocaleStringEntity":
+    def from_locale_string(cls, locale_string: LocaleString) -> Self:
         """Create a LocaleStringEntity from a LocaleString."""
         if locale_string is None:
             return cls()

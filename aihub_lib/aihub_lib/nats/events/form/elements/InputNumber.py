@@ -1,4 +1,4 @@
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
 from pydantic import Field, computed_field
 
@@ -57,7 +57,7 @@ class InputNumber(PrimeVueElement):
 
         return "|".join(validation_rules)
 
-    def in_locale(self, t: LocaleHandler) -> "InputNumber":
+    def in_locale(self, t: LocaleHandler) -> Self:
         self_copy = super().in_locale(t)
         if isinstance(self_copy.placeholder, LocaleString):
             self_copy.placeholder = t.extract(self_copy.placeholder)

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Self
 
 from pydantic import Field
 
@@ -17,9 +17,8 @@ class ProgramWorkRequestDTO(WorkRequestDTO):
     @classmethod
     def from_event_data(
         cls, event_data: dict, event_id: str, event_name: str, created_at: int, t: "LocaleHandler"
-    ) -> "ProgramWorkRequestDTO":
+    ) -> Self:
         """Creates a ProgramWorkRequestDTO from raw event data."""
-        # Extract localized display fields
         display_name: str | None = None
         display_description: str | None = None
         if event_data.get("display_name"):
