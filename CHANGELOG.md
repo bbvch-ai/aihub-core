@@ -108,78 +108,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
-## [v0.254.6] - 2025-11-24 - Documentation Experience Refresh and Strategic Messaging Update
-
-### Added
-
-- 🖼️ **Enhanced Image Viewing:** Integrated a new lightbox plugin and `medium-zoom` functionality into the
-  documentation, providing an improved and interactive experience when viewing images.
-- ⚡️ **Custom Documentation Layout:** Introduced a dedicated `Layout.vue` component to streamline and centralize
-  documentation theme customizations, including a `GradientBackground` component.
-
-### Changed
-
-- 📄 **Updated Homepage Features:** The homepage (`index.en.md`) feature descriptions have been entirely rewritten to
-  better articulate the platform's value proposition, emphasizing open-source, ownership, rapid deployment, strategic
-  independence, transparency, and collaborative strength.
-- 📐 **Refreshed Architecture Diagrams:** Updated various high-level and low-level architecture diagrams to reflect the
-  latest system design and clarity.
-
-### Refactor
-
-- 🧹 **Documentation Theme Structure:** Refactored the documentation theme's `index.js` to leverage a dedicated
-  `Layout.vue` component, simplifying the theme configuration and improving maintainability.
-- 🔄 **Dependency Import Path:** Adjusted the import path for `CopyOrDownloadAsMarkdownButtons` in the documentation
-  theme for consistency and clarity.
-
----
-
-## [v0.243.3] - 2025-09-09 - Next-Gen AI Development: Comprehensive Docs, Core Platform & SDK Refinements
-
-### Added
-
-- ✨ **New Documentation Structure & Content:** Introduced a completely reorganized documentation site, moving from a
-  previous three-part structure to a comprehensive five-part journey: `Vision & Positioning`, `Platform Journey`,
-  `SDK Journey`, `Ecosystem Journey`, and `Reference & Resources`. This includes entirely new sections on the problem
-  solved, our solution, the Swiss approach, and detailed architecture.
-- 🎨 **Interactive Documentation UI:** Enhanced the documentation site with new Vue components for interactive navigation
-  boxes and dynamic gradient backgrounds, significantly improving user experience and visual appeal.
-- 🚀 **Refined Core Platform Deployment:** Introduced `docker-compose-core.dev.yml`, a comprehensive Docker Compose
-  configuration that integrates all core infrastructure services for robust local development and streamlined production
-  deployments.
-- 📦 **SDK Quickstart Examples:** Added new Python files (`my_document_pipeline.py`, `simple_pipeline.py`) to the
-  `aihub_pipeline/playground/quick_start/` directory, providing runnable examples for building data ingestion pipelines.
-- ⚡ **Pipeline Quickstart Tooling:** Added a `quickstart` target to the `aihub_pipeline` Makefile for easily running
-  quickstart pipeline examples.
-- 🌐 **Frontend Development Variables:** Added `WEBUI_URL` and `WS_ENDPOINT` to `.env.dev` to streamline local frontend
-  development.
-- 🧹 **Temporary File Exclusion:** Added `.tmp*` to `.gitignore` in `aihub_pipeline` to ignore temporary build files.
-
-### Changed
-
-- ⚙️ **Deep OpenWebUI Integration & Configuration:** Expanded the `open-webui` service configuration with extensive
-  environment variables, enabling granular control over authentication, storage, model access, PII handling, web search,
-  image generation, code interpretation, audio features, and user permissions.
-- 📖 **Documentation Navigation & Styling:** Updated documentation front matter indices and integrated new custom CSS for
-  enhanced theming, fonts, scrollbars, and improved Mermaid diagram rendering across the site.
-- 🔗 **Documentation Internal Linking:** Updated internal links within `aihub_bot/README.md`, `aihub_lib/README.md`,
-  `aihub_agent/README.md`, `aihub_api/README.md`, and `aihub_process/README.md` to align with the new documentation
-  structure.
-- 📄 **Unified Root README Location:** Modified the `sync-docs.sh` script to correctly place the root `README.md` within
-  the new documentation structure at `docs/6_code_deep_dive/1_introduction/index.md`.
-- 🚀 **Docling UI Enabled by Default:** Enabled the Docling service UI in `docker-compose.dev.yml` for improved
-  visibility during development.
-- 🦶 **Updated Footer Copyright:** Changed the footer message in the documentation site.
-
-### Removed
-
-- 🗑️ **Obsolete Documentation Content:** Deleted outdated documentation sections related to `1_business`,
-  `2_developers`, and `3_features`, which have been superseded by the new, comprehensive documentation structure.
-- 🖼️ **Deprecated Architecture Diagrams:** Removed old architecture diagrams (`tier1.png`, `tier2.png`, etc.) as they
-  have been replaced by new, detailed diagrams reflecting the updated platform vision.
-
----
-
 ## [v0.260.2] - 2026-02-03 - Universal Data Ingestion with Rclone and Smarter Memory Retrieval
 
 ### Added
@@ -1563,6 +1491,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   redirect URIs and platform type configurations for the new Attu service.
 - ⚙️ **Deployment Configurations for Attu:** Modified various Docker Compose files and templates to incorporate the Attu
   service and its OAuth2 Proxy into the deployment stack.
+
+---
+
+## [v0.254.6] - 2025-11-24 - Documentation Experience Refresh and Strategic Messaging Update
+
+### Added
+
+- 🖼️ **Enhanced Image Viewing:** Integrated a new lightbox plugin and `medium-zoom` functionality into the
+  documentation, providing an improved and interactive experience when viewing images.
+- ⚡️ **Custom Documentation Layout:** Introduced a dedicated `Layout.vue` component to streamline and centralize
+  documentation theme customizations, including a `GradientBackground` component.
+
+### Changed
+
+- 📄 **Updated Homepage Features:** The homepage (`index.en.md`) feature descriptions have been entirely rewritten to
+  better articulate the platform's value proposition, emphasizing open-source, ownership, rapid deployment, strategic
+  independence, transparency, and collaborative strength.
+- 📐 **Refreshed Architecture Diagrams:** Updated various high-level and low-level architecture diagrams to reflect the
+  latest system design and clarity.
+
+### Refactor
+
+- 🧹 **Documentation Theme Structure:** Refactored the documentation theme's `index.js` to leverage a dedicated
+  `Layout.vue` component, simplifying the theme configuration and improving maintainability.
+- 🔄 **Dependency Import Path:** Adjusted the import path for `CopyOrDownloadAsMarkdownButtons` in the documentation
+  theme for consistency and clarity.
 
 ---
 
@@ -3617,6 +3571,52 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - 🌐 **Documentation Navigation Improvements:** Updated numerous internal links throughout the SDK documentation from
   absolute to relative paths, enhancing navigation robustness and portability.
+
+---
+
+## [v0.243.3] - 2025-09-09 - Next-Gen AI Development: Comprehensive Docs, Core Platform & SDK Refinements
+
+### Added
+
+- ✨ **New Documentation Structure & Content:** Introduced a completely reorganized documentation site, moving from a
+  previous three-part structure to a comprehensive five-part journey: `Vision & Positioning`, `Platform Journey`,
+  `SDK Journey`, `Ecosystem Journey`, and `Reference & Resources`. This includes entirely new sections on the problem
+  solved, our solution, the Swiss approach, and detailed architecture.
+- 🎨 **Interactive Documentation UI:** Enhanced the documentation site with new Vue components for interactive navigation
+  boxes and dynamic gradient backgrounds, significantly improving user experience and visual appeal.
+- 🚀 **Refined Core Platform Deployment:** Introduced `docker-compose-core.dev.yml`, a comprehensive Docker Compose
+  configuration that integrates all core infrastructure services for robust local development and streamlined production
+  deployments.
+- 📦 **SDK Quickstart Examples:** Added new Python files (`my_document_pipeline.py`, `simple_pipeline.py`) to the
+  `aihub_pipeline/playground/quick_start/` directory, providing runnable examples for building data ingestion pipelines.
+- ⚡ **Pipeline Quickstart Tooling:** Added a `quickstart` target to the `aihub_pipeline` Makefile for easily running
+  quickstart pipeline examples.
+- 🌐 **Frontend Development Variables:** Added `WEBUI_URL` and `WS_ENDPOINT` to `.env.dev` to streamline local frontend
+  development.
+- 🧹 **Temporary File Exclusion:** Added `.tmp*` to `.gitignore` in `aihub_pipeline` to ignore temporary build files.
+
+### Changed
+
+- ⚙️ **Deep OpenWebUI Integration & Configuration:** Expanded the `open-webui` service configuration with extensive
+  environment variables, enabling granular control over authentication, storage, model access, PII handling, web search,
+  image generation, code interpretation, audio features, and user permissions.
+- 📖 **Documentation Navigation & Styling:** Updated documentation front matter indices and integrated new custom CSS for
+  enhanced theming, fonts, scrollbars, and improved Mermaid diagram rendering across the site.
+- 🔗 **Documentation Internal Linking:** Updated internal links within `aihub_bot/README.md`, `aihub_lib/README.md`,
+  `aihub_agent/README.md`, `aihub_api/README.md`, and `aihub_process/README.md` to align with the new documentation
+  structure.
+- 📄 **Unified Root README Location:** Modified the `sync-docs.sh` script to correctly place the root `README.md` within
+  the new documentation structure at `docs/6_code_deep_dive/1_introduction/index.md`.
+- 🚀 **Docling UI Enabled by Default:** Enabled the Docling service UI in `docker-compose.dev.yml` for improved
+  visibility during development.
+- 🦶 **Updated Footer Copyright:** Changed the footer message in the documentation site.
+
+### Removed
+
+- 🗑️ **Obsolete Documentation Content:** Deleted outdated documentation sections related to `1_business`,
+  `2_developers`, and `3_features`, which have been superseded by the new, comprehensive documentation structure.
+- 🖼️ **Deprecated Architecture Diagrams:** Removed old architecture diagrams (`tier1.png`, `tier2.png`, etc.) as they
+  have been replaced by new, detailed diagrams reflecting the updated platform vision.
 
 ---
 
@@ -9731,3 +9731,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   direct Git repository reference, streamlining module integration and future releases.
 
 ---
+
