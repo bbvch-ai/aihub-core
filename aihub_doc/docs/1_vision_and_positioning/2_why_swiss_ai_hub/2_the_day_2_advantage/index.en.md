@@ -48,7 +48,7 @@ format regardless of provider. Rate limiting and retry logic handled automatical
 updating daily. You need document parsing, chunking strategies, embedding generation, and vector storage. Plus handling
 updates when documents change.
 
-**Already solved:** Dagster pipelines automatically process documents from configured sources. Docling handles PDFs,
+**Already solved:** Dagster pipelines automatically process documents from configured sources. MinerU handles PDFs,
 Office files, and complex formats. Smart chunking preserves document structure. Embeddings generated with configurable
 models. Milvus provides production-grade vector storage. Changed documents trigger automatic reprocessing.
 

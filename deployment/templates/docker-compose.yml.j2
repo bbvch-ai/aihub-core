@@ -1242,10 +1242,10 @@ services:
   mineru-api:
     container_name: mineru-api
     image: {{ global.registry_prefix }}{{ image_tags.mineru_api }}
-    restart: unless-stopped
+    restart: always
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
-      - "8001:8000"
+      - "8002:8000"
     {%- endif %}
     environment:
       # VLM routing through LiteLLM (OpenAI-compatible)

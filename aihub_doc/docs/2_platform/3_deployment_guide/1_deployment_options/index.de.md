@@ -177,7 +177,7 @@ AI-Hub Instance
 │
 └── Infrastructure Layer
     ├── NATS (message bus)
-    ├── Docling (document processing)
+    ├── MinerU (document processing)
     └── Traefik (reverse proxy + SSL termination)
 ```
 

@@ -53,7 +53,7 @@ automatisch gehandhabt.
 in verschiedenen Formaten, die täglich aktualisiert werden. Sie benötigen Dokumenten-Parsing, Chunking-Strategien,
 Einbettungsgenerierung und Vektorspeicherung. Plus die Handhabung von Updates, wenn sich Dokumente ändern.
 
-**Bereits gelöst:** Dagster-Pipelines verarbeiten Dokumente aus konfigurierten Quellen automatisch. Docling verarbeitet
+**Bereits gelöst:** Dagster-Pipelines verarbeiten Dokumente aus konfigurierten Quellen automatisch. MinerU verarbeitet
 PDFs, Office-Dateien und komplexe Formate. Smartes Chunking bewahrt die Dokumentenstruktur. Einbettungen werden mit
 konfigurierbaren Modellen generiert. Milvus bietet Vektorspeicherung auf Produktionsniveau. Geänderte Dokumente lösen
 eine automatische Neuverarbeitung aus.

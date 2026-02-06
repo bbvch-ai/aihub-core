@@ -1,5 +1,3 @@
-"""Image handling mode for parsed documents."""
-
 from enum import StrEnum
 
 

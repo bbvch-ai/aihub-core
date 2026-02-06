@@ -72,7 +72,7 @@ defs = Definitions(
         # Data lake I/O managers for S3-compatible storage
         **default_io_manager_s3_datalake_resources(container_name=CONTAINER_NAME),
         # Document processing resources
-        "document_parser": DocumentParserResource(loader_type=LoaderType.DOCLING, llm_config=llm_config),
+        "document_parser": DocumentParserResource(loader_type=LoaderType.MINERU),
         "node_parser": MarkdownStructuralNodeParserResource(llm_config=llm_config),
         "summary_parser": RecursiveSummaryParserResource(),
         # Vector store and document store (MongoDB + Milvus)

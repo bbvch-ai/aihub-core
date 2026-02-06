@@ -843,9 +843,9 @@ services:
   mineru-api:
     container_name: mineru-api
     image: ghcr.io/bbvch-ai/aihub-core/mineru-api:v2.7.5
-    restart: unless-stopped
+    restart: always
     ports:
-      - "8001:8000"
+      - "8002:8000"
     environment:
       # VLM routing through LiteLLM (OpenAI-compatible)
       # Various API keys for OpenAI client compatibility
@@ -855,14 +855,15 @@ services:
       # MinerU-specific configuration (used by mineru_vl_utils HttpVlmClient)
       MINERU_VL_SERVER: http://litellm:4000/v1
       MINERU_VL_API_KEY: ${LITELLM_MASTER_KEY}
-      MINERU_VL_MODEL_NAME: ${MINERU_VL_MODEL_NAME:-text-generation/ocr}
+      MINERU_VL_MODEL_NAME: ${MINERU_VL_MODEL_NAME}
       # Processing configuration
-      MINERU_API_MAX_CONCURRENT_REQUESTS: ${MINERU_API_MAX_CONCURRENT_REQUESTS:-10}
+      MINERU_API_MAX_CONCURRENT_REQUESTS: ${MINERU_API_MAX_CONCURRENT_REQUESTS}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/openapi.json" ]
       timeout: 10s
       interval: 30s
       retries: 3
+      start_period: 60s
     depends_on:
       litellm:
         condition: service_healthy

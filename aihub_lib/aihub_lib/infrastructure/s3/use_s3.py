@@ -65,8 +65,6 @@ def create_s3_filesystem() -> s3fs.S3FileSystem:
     Used by document loaders and API services that need to read/write files
     to S3-compatible storage (MinIO, SeaweedFS, AWS S3).
 
-    ### Returns
-    Configured S3FileSystem instance
     """
     s3_config = S3StorageSettings()
 

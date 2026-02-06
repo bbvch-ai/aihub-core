@@ -29,7 +29,7 @@ Wenn Sie den Swiss AI Hub deployen, haben Sie sofort:
 ::: details Infrastrukturschicht
 - **Vereinheitlichtes LLM-Gateway** durch LiteLLM, das sich mit jedem Modell-Provider verbindet
 - **Vektordatenbanken** (Milvus) für semantische Suche und RAG
-- **Dokumentenverarbeitung** mit Docling für PDFs, Office-Dateien und mehr
+- **Dokumentenverarbeitung** mit MinerU für PDFs, Office-Dateien und mehr
 - **Datenpipelines** mittels Dagster für Ingestion und Verarbeitung
 - **Nachrichtenwarteschlange** mit NATS für ereignisgesteuerte Architektur
 - **Objektspeicher** über die S3-kompatible Schicht von SeaweedFS
