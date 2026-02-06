@@ -76,15 +76,15 @@ unified implementation.
 AI-Hub provides pre-configured templates for common enterprise sources. Each template includes environment variables,
 pipeline code, and setup instructions.
 
-| Template | Use Case | Environment Prefix |
-|----------|----------|-------------------|
-| **SharePoint** | Microsoft 365 document libraries | `RCLONE_SHAREPOINT_*` |
-| **OneDrive** | Microsoft 365 personal/business storage | `RCLONE_ONEDRIVE_*` |
-| **Google Drive** | Google Workspace organizations | `RCLONE_GDRIVE_*` |
-| **S3** | AWS S3, MinIO, S3-compatible storage | `RCLONE_S3_*` |
-| **Azure Blob** | Azure Blob Storage | `RCLONE_AZUREBLOB_*` |
-| **SFTP** | Legacy systems, secure file transfers | `RCLONE_SFTP_*` |
-| **Local FS** | Mounted network shares (NFS, SMB) | Direct path |
+| Template         | Use Case                                | Environment Prefix    |
+| ---------------- | --------------------------------------- | --------------------- |
+| **SharePoint**   | Microsoft 365 document libraries        | `RCLONE_SHAREPOINT_*` |
+| **OneDrive**     | Microsoft 365 personal/business storage | `RCLONE_ONEDRIVE_*`   |
+| **Google Drive** | Google Workspace organizations          | `RCLONE_GDRIVE_*`     |
+| **S3**           | AWS S3, MinIO, S3-compatible storage    | `RCLONE_S3_*`         |
+| **Azure Blob**   | Azure Blob Storage                      | `RCLONE_AZUREBLOB_*`  |
+| **SFTP**         | Legacy systems, secure file transfers   | `RCLONE_SFTP_*`       |
+| **Local FS**     | Mounted network shares (NFS, SMB)       | Direct path           |
 
 Templates are located in `aihub_pipeline/templates/sources/`.
 
@@ -192,8 +192,8 @@ RCLONE_SFTP_PORT=22
 In production environments, the rclone service requires authentication via `RCLONE_RC_USER` and `RCLONE_RC_PASS`
 environment variables.
 
-> **Security Warning**: The default credentials (`admin`/`changeme`) are intended for development only.
-> **Always change these credentials in production deployments** to prevent unauthorized access to your data sources.
+> **Security Warning**: The default credentials (`admin`/`changeme`) are intended for development only. **Always change
+> these credentials in production deployments** to prevent unauthorized access to your data sources.
 
 ```bash
 # Production environment - set strong, unique credentials

@@ -37,14 +37,12 @@ export function getNestedValue(
 
   for (let i = 0; i < parts.length - 1; i++) {
     const key = parts[i]
-    if (!(key in current) || current[key] === null || current[key] === undefined) {
-      current[key] = {}
-    }
+    current[key] ??= {}
     current = current[key] as Record<string, unknown>
   }
 
   const lastKey = parts[parts.length - 1]
-  if (!(lastKey in current) || !Array.isArray(current[lastKey])) {
+  if (!Array.isArray(current[lastKey])) {
     current[lastKey] = []
   }
 
@@ -65,9 +63,7 @@ export function setNestedValue(
 
   for (let i = 0; i < parts.length - 1; i++) {
     const key = parts[i]
-    if (!(key in current) || current[key] === null || current[key] === undefined) {
-      current[key] = {}
-    }
+    current[key] ??= {}
     current = current[key] as Record<string, unknown>
   }
 
