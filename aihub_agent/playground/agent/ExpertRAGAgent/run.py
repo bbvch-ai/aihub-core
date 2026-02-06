@@ -10,7 +10,6 @@ from aihub_lib.generative_ai.processors.models.RetrieveSummariesConfig import Re
 from aihub_lib.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.generative_ai.retrievers.InsightRetrieverConfig import InsightRetrieverConfig
 from aihub_lib.generative_ai.retrievers.KnowledgeRetrieverConfig import KnowledgeRetrieverConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
@@ -195,12 +194,11 @@ async def main():
                         max_parent_levels=2,
                     ),
                 ),
-                InsightRetrieverConfig(
-                    namespace="default",
-                    agent_class="ExpertAskingAgent",
-                    agent_id="expert_agent",
-                ),
             ],
+            # Organization memory configuration (replaces InsightRetrieverConfig)
+            enable_organization_memory=True,
+            tenant_id="AIHub",
+            tenant_namespace="default",
             expert_escalation=ExpertEscalationConfig(
                 expert_asking_agent_class=ExpertAskingAgent.__name__,
                 expert_asking_agent_id="expert_agent",
