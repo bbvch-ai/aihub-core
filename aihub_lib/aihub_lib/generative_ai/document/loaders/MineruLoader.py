@@ -264,6 +264,7 @@ class MineruLoader(BaseReader):
 
         file_result = result.results.get(file_stem, {})
         if not file_result:
+            logger.warning(f"[MineruLoader] No result for stem '{file_stem}', falling back to filename '{filename}'")
             file_result = result.results.get(filename, {})
 
         if not file_result:

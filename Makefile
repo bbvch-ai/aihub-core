@@ -46,6 +46,8 @@ pr-ready:
 	@(cd aihub_bot &&  make pr-ready)
 	@(cd aihub_web && make pr-ready)
 	@poetry run mdformat --number $$(git ls-files '*.md')
+	@$(MAKE) generate-compose
+	@$(MAKE) license-check
 
 # Use local cores for development (with poetry install)
 use-local-core:

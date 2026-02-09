@@ -24,7 +24,9 @@
     "rag_agent",
     "expert_rag_agent",
     "expert_asking_agent",
-    "namespace_selection_agent"
+    "namespace_selection_agent",
+    "mineru-api",
+    "mineru-vlm"
   ],
   "license_categories": {
     "restrictive": [

@@ -5,9 +5,10 @@ from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
 from aihub_lib.infrastructure.s3.use_s3 import use_s3_service
 from aihub_lib.routes.Controller import Controller
-from fastapi import Body, Depends, Header, Query, Security
+from fastapi import Depends, Header, Query, Security
 
 from aihub_api.i18n.ApiLocaleString import ApiLocaleString
+from aihub_api.routes.parsing.dependencies.use_limited_body import use_limited_body
 from aihub_api.routes.parsing.dto.DocumentConversionResponse import DocumentConversionResponse
 from aihub_api.routes.parsing.dto.ImageMode import ImageMode
 from aihub_api.routes.parsing.ParsingService import ParsingService
@@ -24,6 +25,8 @@ class ParsingController(Controller):
     name = ApiLocaleString.from_i18n_path("api.controllers.docling.name")
     description = ApiLocaleString.from_i18n_path("api.controllers.docling.description")
     icon = "mage:file"
+
+    MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024  # 100 MB
 
     def __init__(
         self,
@@ -49,7 +52,7 @@ class ParsingController(Controller):
         )
         async def process_document(
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
-            body: Annotated[bytes, Body()],
+            body: Annotated[bytes, Depends(use_limited_body(max_bytes=ParsingController.MAX_FILE_SIZE_BYTES))],
             s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
             content_type: Annotated[str, Header(include_in_schema=False)] = "",
             x_filename: Annotated[str, Header()] = "document",
