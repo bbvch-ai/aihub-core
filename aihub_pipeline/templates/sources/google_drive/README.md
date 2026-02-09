@@ -76,4 +76,3 @@ rclone:
 make playground
 ```
 
-Open http://localhost:3000
