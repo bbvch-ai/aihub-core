@@ -23,14 +23,40 @@ permissions:
   packages: write
 
 jobs:
-  build:
+  # ---------------------------------------------------------------------------
+  # Discover which agents to build by parsing compose-config.yml
+  # ---------------------------------------------------------------------------
+  discover-agents:
     runs-on: ubuntu-latest
     if: >
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'repository_dispatch'
+    outputs:
+      matrix: ${{ steps.parse.outputs.matrix }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Parse agent images from compose-config.yml
+        id: parse
+        run: |
+          # Extract image names where build == "localbuild" and name ends with "_agent"
+          images=$(python3 -c "
+          import yaml, json
+          with open('deployment/compose-config.yml') as f:
+              config = yaml.safe_load(f)
+          images = [k for k, v in config['image_tags'].items() if isinstance(v, dict) and v.get('build') == 'localbuild' and k.endswith('_agent')]
+          print(json.dumps(images))
+          ")
+
+          echo "Discovered agents: $images"
+          echo "matrix={\"image\":$images}" >> $GITHUB_OUTPUT
+
+  build:
+    runs-on: ubuntu-latest
+    needs: discover-agents
     strategy:
-      matrix:
-        image: [llm_wrapping_agent, rag_agent, expert_rag_agent, expert_asking_agent]
+      matrix: ${{ fromJson(needs.discover-agents.outputs.matrix) }}
     continue-on-error: true
     steps:
       - name: Checkout code
