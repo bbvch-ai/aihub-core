@@ -7,6 +7,7 @@ from typing import Annotated, Any
 
 from aihub_lib.context.BaseContext import BaseContext
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.infrastructure.opentelemetry.tracing.openinference_context import openinference_trace_context
 from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
 from aihub_lib.nats.events import BaseEvent, ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
@@ -172,10 +173,11 @@ class AgentRunTracer:
             context=parent_context,
             attributes=attributes,
         ) as span:
-            try:
-                yield span
-            finally:
-                logger.debug(f"Finished tracing step: {span_name}")
+            with openinference_trace_context():
+                try:
+                    yield span
+                finally:
+                    logger.debug(f"Finished tracing step: {span_name}")
 
     def trace_step_stop(self, span: Span, output_events: list[BaseEvent] | None):
         """

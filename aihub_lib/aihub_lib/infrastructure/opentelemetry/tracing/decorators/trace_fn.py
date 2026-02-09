@@ -7,6 +7,9 @@ from collections.abc import AsyncGenerator, AsyncIterator, Callable, Generator, 
 from functools import lru_cache
 from typing import Any, ParamSpec, TypeVar
 
+from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
+
+from aihub_lib.infrastructure.opentelemetry.tracing.openinference_context import is_openinference_trace_active
 from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
 
 P = ParamSpec("P")
@@ -89,6 +92,9 @@ def trace_fn[**P, T](func: Callable[P, T]) -> Callable[P, T]:
         span.set_attribute("function.name", func_qualname)
         span.set_attribute("function.module", func_module)
         span.set_attribute("function.is_async", is_async_execution)
+
+        if is_openinference_trace_active():
+            span.set_attribute(SpanAttributes.OPENINFERENCE_SPAN_KIND, OpenInferenceSpanKindValues.CHAIN.value)
 
     def _handle_result(span, result):
         """Common result handling logic"""
