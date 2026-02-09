@@ -64,6 +64,7 @@ jobs:
           python -m pip install --user pipx
           python -m pipx ensurepath
           pipx install poetry
+          pip install setuptools
 
       - name: Install Poetry dev dependencies
         run: poetry install --only dev
