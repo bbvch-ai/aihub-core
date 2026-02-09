@@ -20,32 +20,6 @@ automatically like technical docs). Traditional manual creation is time-consumin
 
 **Iterative, Python-based LLM whitepaper generator** with chapter-centric organization:
 
-### Directory Structure
-
-```
-whitepaper/
-├── chapters/                          # Self-contained chapter folders
-│   ├── 00-executive-summary/
-│   │   ├── prompt.md                  # Writing instructions
-│   │   ├── sources.txt                # Source doc mappings
-│   │   └── output.md                  # Generated output
-│   ├── 01-business-challenge/
-│   └── ...
-├── config/                            # Configuration
-│   ├── glossary.md                    # Terminology definitions
-│   ├── general_prompt.md              # Writing style guidelines
-│   └── metadata.yaml                  # PDF metadata
-├── scripts/                           # Generation scripts
-│   ├── generate-whitepaper.py
-│   ├── generate-sources.py
-│   └── llm_utils.py
-├── templates/                         # Jinja2 templates
-├── graphics/                          # Images
-├── build/                             # Build artifacts
-│   ├── whitepaper.tex
-│   └── whitepaper.pdf
-└── Makefile
-```
 
 ### Key Components
 
