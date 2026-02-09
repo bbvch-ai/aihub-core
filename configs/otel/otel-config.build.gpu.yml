@@ -91,7 +91,7 @@ service:
     # Always send OpenInference traces to local Phoenix for development
     traces/phoenix:
       receivers: [ otlp ]
-      processors: [ filter/phoenix, transform/phoenix, batch ]
+      processors: [ filter/noise, filter/phoenix, transform/phoenix, batch ]
       exporters: [ otlp/phoenix ]
     # Send traces to cloud backend
     traces/cloud:
