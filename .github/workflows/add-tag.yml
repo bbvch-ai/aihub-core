@@ -372,8 +372,9 @@ jobs:
           # Use pip to install pipx as it's not on the runner by default
           python -m pip install --user pipx
           python -m pipx ensurepath
-          pipx install poetry
+          pipx install poetry==2.2.1
           poetry config virtualenvs.in-project true
+          pip install setuptools
           poetry install --no-interaction --no-root
 
       - name: Set up SSH for GitHub bypass
