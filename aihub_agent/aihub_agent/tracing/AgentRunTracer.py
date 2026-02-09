@@ -7,7 +7,10 @@ from typing import Annotated, Any
 
 from aihub_lib.context.BaseContext import BaseContext
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.infrastructure.opentelemetry.tracing.openinference_context import openinference_trace_context
+from aihub_lib.infrastructure.opentelemetry.tracing.openinference_context import (
+    is_openinference_trace_active,
+    openinference_trace_context,
+)
 from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
 from aihub_lib.nats.events import BaseEvent, ExceptionEvent, StartEvent, StopEvent
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
@@ -62,15 +65,15 @@ class AgentRunTracer:
             name=f"🤖 {topic.agent_class}",
             kind=trace.SpanKind.INTERNAL,
         ) as span:
-            span.set_attributes(
-                {
-                    "phoenix.is_root": True,
-                    SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.AGENT.value,
-                    SpanAttributes.INPUT_VALUE: user_input,
-                    SpanAttributes.INPUT_MIME_TYPE: OpenInferenceMimeTypeValues.TEXT.value,
-                    SpanAttributes.TAG_TAGS: [topic.thread_id, topic.display_id, topic.run_id],
-                }
-            )
+            attributes: dict = {
+                SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.AGENT.value,
+                SpanAttributes.INPUT_VALUE: user_input,
+                SpanAttributes.INPUT_MIME_TYPE: OpenInferenceMimeTypeValues.TEXT.value,
+                SpanAttributes.TAG_TAGS: [topic.thread_id, topic.display_id, topic.run_id],
+            }
+            if not is_openinference_trace_active():
+                attributes["phoenix.is_root"] = True
+            span.set_attributes(attributes)
             span.set_status(StatusCode.OK)
             inject(telemetry_headers, context=context.get_current())
 

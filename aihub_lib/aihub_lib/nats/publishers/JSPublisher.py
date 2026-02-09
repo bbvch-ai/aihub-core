@@ -4,7 +4,9 @@ import uuid
 from typing import Annotated
 
 from nats.js import JetStreamContext
+from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
 
+from aihub_lib.infrastructure.opentelemetry.tracing.openinference_context import is_openinference_trace_active
 from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
 from aihub_lib.nats.publishers.AbstractPublisher import AbstractPublisher, TEvent
 from aihub_lib.nats.streams.StreamManager import StreamManager
@@ -67,6 +69,9 @@ class JSPublisher(AbstractPublisher[TEvent]):
                 "jetstream.retries": retries,
             },
         ) as span:
+            if is_openinference_trace_active():
+                span.set_attribute(SpanAttributes.OPENINFERENCE_SPAN_KIND, OpenInferenceSpanKindValues.CHAIN.value)
+
             try:
                 self._detect_and_log_subject_mismatch(event, subject)
 

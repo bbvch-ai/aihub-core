@@ -2,6 +2,10 @@ import logging
 
 from opentelemetry import context, propagate, trace
 
+from aihub_lib.infrastructure.opentelemetry.tracing.openinference_context import (
+    OPENINFERENCE_ACTIVE_HEADER,
+    set_openinference_active_in_context,
+)
 from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
 
 logger = logging.getLogger(__name__)
@@ -44,6 +48,9 @@ class NATSTraceContextPropagator:
         if extracted_context == context.get_current():
             logger.debug("No trace context found in headers")
             return extracted_context
+
+        if headers.get(OPENINFERENCE_ACTIVE_HEADER) == "true":
+            extracted_context = set_openinference_active_in_context(extracted_context)
 
         context.attach(extracted_context)
         logger.debug(f"Activated trace context from headers: {headers}")

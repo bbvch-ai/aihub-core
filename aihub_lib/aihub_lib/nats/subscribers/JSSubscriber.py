@@ -6,8 +6,10 @@ from typing import Annotated
 from nats.aio.client import Client as NATS
 from nats.errors import MsgAlreadyAckdError
 from nats.js import JetStreamContext
+from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
 from opentelemetry import context, trace
 
+from aihub_lib.infrastructure.opentelemetry.tracing.openinference_context import is_openinference_trace_active
 from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
 from aihub_lib.nats.streams.StreamManager import StreamManager
 from aihub_lib.nats.subscribers.AbstractSubscriber import AbstractSubscriber, TEvent
@@ -111,6 +113,9 @@ class JSSubscriber(AbstractSubscriber[TEvent]):
                 "jetstream.queue_group": self.queue_group,
             },
         ) as span:
+            if is_openinference_trace_active():
+                span.set_attribute(SpanAttributes.OPENINFERENCE_SPAN_KIND, OpenInferenceSpanKindValues.CHAIN.value)
+
             if hasattr(msg, "metadata") and msg.metadata:
                 span.set_attribute("jetstream.sequence", msg.metadata.sequence.stream)
                 if hasattr(msg.metadata, "num_delivered"):
@@ -163,6 +168,9 @@ class JSSubscriber(AbstractSubscriber[TEvent]):
                     "jetstream.processing": True,
                 },
             ) as span:
+                if is_openinference_trace_active():
+                    span.set_attribute(SpanAttributes.OPENINFERENCE_SPAN_KIND, OpenInferenceSpanKindValues.CHAIN.value)
+
                 try:
                     await self.handler(event, topic)
                     span.set_attribute("handler.success", True)
