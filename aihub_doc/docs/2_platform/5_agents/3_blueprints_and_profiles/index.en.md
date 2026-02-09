@@ -126,7 +126,7 @@ Access to profiles follows the platform's permission system:
 - **Profile access** (`aihub.user.agent.{blueprint}.{profile_id}`): Use a specific profile
 - **Wildcard access** (`aihub.user.agent.*.>`): Access all agents (typically for administrators)
 
-See the [Access Management](/platform/access_management) section for details on configuring permissions.
+See the [Access Management](../../11_access_management/) section for details on configuring permissions.
 
 ## Best Practices
 
