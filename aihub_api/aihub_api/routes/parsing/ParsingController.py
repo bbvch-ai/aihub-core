@@ -22,8 +22,8 @@ class ParsingController(Controller):
     - PUT /process: Convert document to markdown
     """
 
-    name = ApiLocaleString.from_i18n_path("api.controllers.docling.name")
-    description = ApiLocaleString.from_i18n_path("api.controllers.docling.description")
+    name = ApiLocaleString.from_i18n_path("api.controllers.parsing.name")
+    description = ApiLocaleString.from_i18n_path("api.controllers.parsing.description")
     icon = "mage:file"
 
     MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024  # 100 MB

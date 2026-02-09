@@ -71,7 +71,6 @@
     "anyio": "MIT",
     "attrs": "MIT",
     "banks": "BSD-3-Clause",
-    "docling-core": "MIT",
     "griffe": "ISC",
     "jsonschema": "MIT",
     "llama-index-core": "MIT",
@@ -241,18 +240,6 @@
     {
       "service": "playwright",
       "license": "Apache-2.0",
-      "status": "✅",
-      "notes": "Permissive license"
-    },
-    {
-      "service": "docling",
-      "license": "MIT",
-      "status": "✅",
-      "notes": "Permissive license"
-    },
-    {
-      "service": "docling-serve",
-      "license": "MIT",
       "status": "✅",
       "notes": "Permissive license"
     },
