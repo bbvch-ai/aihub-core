@@ -1,5 +1,5 @@
 import json
-from typing import Annotated
+from typing import Annotated, Self
 
 from bson import ObjectId
 from pydantic import BaseModel, Field
@@ -46,7 +46,7 @@ class ExternalAgentEvent(BaseModel):
     event: Annotated[ControlEvent, Field(description="The user-originated event.")]
 
     @classmethod
-    def deserialize_event(cls, data: bytes | str | dict) -> "ExternalAgentEvent":
+    def deserialize_event(cls, data: bytes | str | dict) -> Self:
         """Deserialize incoming raw data (JSON string, bytes, or dict) into a ExternalAgentEvent."""
         if isinstance(data, dict):
             json_data = data

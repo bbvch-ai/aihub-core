@@ -8,7 +8,7 @@ from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import HumanInTheLoopRequestEvent
 from aihub_lib.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import HumanInTheLoopResponseEvent
 from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity
-from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
+from aihub_lib.persistence.messaging.entities.ThreadEntity import AgentInstanceRef, ThreadEntity, User
 from bson import ObjectId
 from cachetools import TTLCache, cached
 from llama_index.core.base.llms.types import AudioBlock, ImageBlock, TextBlock
@@ -25,7 +25,7 @@ from openai.types.chat.chat_completion_content_part_image_param import ImageURL
 from openai.types.chat.chat_completion_content_part_input_audio_param import InputAudio
 
 from aihub_api.routes.agent.dto.AgentIdentifier import AgentIdentifier
-from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
+from aihub_api.routes.agent.dto.MinimalAgentInstanceDTO import MinimalAgentInstanceDTO
 from aihub_api.routes.event.EventService import EventService
 from aihub_api.routes.openai.dto.HistoryResponse import HistoryResponse
 from aihub_api.routes.thread.dto.OpenChatHitlResponse import OpenChatHitlResponse
@@ -57,7 +57,9 @@ class ThreadService:
         agent_dtos: list[ThreadAgentDTO] | None = None,
     ) -> ThreadDTO:
         users = [User(user_id=user_id) for user_id in user_ids]
-        agents = [Agent(agent_id=agent.agent_id, agent_class=agent.agent_class) for agent in (agent_dtos or [])]
+        agents = [
+            AgentInstanceRef(agent_id=agent.agent_id, agent_class=agent.agent_class) for agent in (agent_dtos or [])
+        ]
         created_thread = ThreadEntity.create_thread(name=name, users=users, agents=agents)
         return await ThreadService.thread_response_from_entity(created_thread, t)
 
@@ -120,7 +122,7 @@ class ThreadService:
         agent_class: str,
         t: LocaleHandler,
     ) -> ThreadDTO:
-        agent = Agent(agent_id=agent_id, agent_class=agent_class)
+        agent = AgentInstanceRef(agent_id=agent_id, agent_class=agent_class)
         thread = ThreadEntity.add_agent_to_thread(thread_id, agent)
         return await ThreadService.thread_response_from_entity(thread, t)
 
@@ -256,15 +258,15 @@ class ThreadService:
     @staticmethod
     @cached(TTLCache(maxsize=128, ttl=60))
     @trace_fn
-    def _fetch_minimal_agent_dto(agent_class: str, agent_id: str, t: LocaleHandler) -> MinimalAgentDTO | None:
+    def _fetch_minimal_agent_dto(agent_class: str, agent_id: str, t: LocaleHandler) -> MinimalAgentInstanceDTO | None:
         """
-        Fetches agent details and converts to MinimalAgentDTO.
+        Fetches agent details and converts to MinimalAgentInstanceDTO.
         Returns None if the agent cannot be found or fetching fails.
         """
         try:
             from aihub_api.routes.agent.AgentService import AgentService
 
-            return AgentService.get_minimal_agent(agent_class, agent_id, t)
+            return AgentService.get_minimal_agent_instance(agent_class, agent_id, t)
         except DoesNotExist:
             logger.warning(f"Agent not found: {agent_class}/{agent_id}")
             return None
@@ -287,12 +289,10 @@ class ThreadService:
                 logger.warning(f"Skipping run with missing display_id: {run_data.get('run_id')}")
                 continue
 
-            # Get or create the intermediate aggregator for the display
             if display_id not in results.display_aggregates:
                 results.display_aggregates[display_id] = IntermediateDisplayStats(display_id=display_id)
             display_agg = results.display_aggregates[display_id]
 
-            # Update counts, times, and cost in the intermediate aggregator
             display_agg.update_from_run_data(run_data)
 
             # Attempt to fetch the agent that started the run using the cached method
@@ -300,7 +300,6 @@ class ThreadService:
             start_agent_id = run_data.get("start_agent_id")
             run_agent_dto = ThreadService._fetch_minimal_agent_dto(start_agent_class, start_agent_id, t)
 
-            # Create and add the RunStatistics DTO if the agent was found
             if run_agent_dto:
                 try:
                     run_stat_dto = RunStatistics.from_run_data(run_data, run_agent_dto)
@@ -314,7 +313,6 @@ class ThreadService:
                     f"{start_agent_class}/{start_agent_id} could not be fetched."
                 )
 
-            # Collect unique identifiers of all agents participating in the run
             for agent_info in run_data.get("participating_agents_in_run", []):
                 pa_class = agent_info.get("agent_class")
                 pa_id = agent_info.get("agent_id")
@@ -376,7 +374,7 @@ class ThreadService:
         """
         # 1. Fetch initial users and agents associated directly with the thread
         #    Leverages the cached agent fetcher.
-        initial_agent_dtos: list[MinimalAgentDTO] = []
+        initial_agent_dtos: list[MinimalAgentInstanceDTO] = []
         for agent_ref in entity.agents:
             dto = ThreadService._fetch_minimal_agent_dto(agent_ref.agent_class, agent_ref.agent_id, t)
             if dto:
@@ -441,7 +439,7 @@ class ThreadService:
         response.displays = sorted(final_display_dtos, key=display_sort_key)
 
         # 5. Fetch DTOs for all unique participating agents
-        final_participating_agents: list[MinimalAgentDTO] = []
+        final_participating_agents: list[MinimalAgentInstanceDTO] = []
         for agent_id in processed_results.participating_agent_ids:
             dto = ThreadService._fetch_minimal_agent_dto(agent_id.agent_class, agent_id.agent_id, t)
             if dto:

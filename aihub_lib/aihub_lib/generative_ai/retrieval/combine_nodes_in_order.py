@@ -40,8 +40,10 @@ def sanitize_metadata_value(value: str) -> str:
 def combine_nodes_in_order(
     context_nodes: list[IngestedNode],
     t: LocaleHandler,
-    context_prompt: LocaleString = None,
+    context_prompt: LocaleString | None = None,
 ) -> ChatMessage:
+    if context_prompt is None:
+        context_prompt = LocaleString.from_i18n_path("lib.prompt.rag.context_prompt")
     nodes_per_document: dict[str, list[IngestedNode]] = defaultdict(list)
 
     for context_node in context_nodes:
@@ -113,10 +115,7 @@ def combine_nodes_in_order(
 
         context_blocks.append(TextBlock(text="</REFERENCE_DOCUMENT>\n\n---\n"))
 
-    if context_prompt:
-        context_prompt_locale = t.extract(context_prompt, t.locale)
-    else:
-        context_prompt_locale = t("lib.prompt.rag.context_prompt")
+    context_prompt_locale = t.extract(context_prompt, t.locale)
 
     messages = RichPromptTemplate(
         template_str=context_prompt_locale,

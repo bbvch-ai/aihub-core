@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Self
 
 from pydantic import Field
 
@@ -20,13 +20,12 @@ class HumanWorkResponseDTO(WorkResponseDTO):
     @classmethod
     def from_event_data(
         cls, event_data: dict, event_id: str, event_name: str, created_at: int, t: "LocaleHandler"
-    ) -> "HumanWorkResponseDTO":
+    ) -> Self:
         """Creates a HumanWorkResponseDTO from raw event data."""
         from aihub_lib.persistence.user.UserEntity import UserEntity
 
         from aihub_api.routes.user.dto.MinimalUserDTO import MinimalUserDTO
 
-        # Extract localized display fields
         display_name: str | None = None
         display_description: str | None = None
         if event_data.get("display_name"):
@@ -34,7 +33,6 @@ class HumanWorkResponseDTO(WorkResponseDTO):
         if event_data.get("display_description"):
             display_description = t.extract(event_data["display_description"])
 
-        # Handle submitted_by user
         submitted_by_data = event_data.get("submitted_by")
         submitted_by: MinimalUserDTO | None = None
 

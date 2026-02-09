@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from pydantic import Field
 
@@ -19,7 +19,7 @@ class ProcessClassDiscoveryTopic(DiscoveryTopic):
     process_class: Annotated[str, Field(description="Process class targeted by the discovery.")]
 
     @classmethod
-    def from_subject(cls, subject: str) -> "ProcessClassDiscoveryTopic":
+    def from_subject(cls, subject: str) -> Self:
         """
         Use this when dealing with process-specific discovery subjects to extract process_class and process_id.
         """

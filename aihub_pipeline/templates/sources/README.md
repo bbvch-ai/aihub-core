@@ -10,15 +10,18 @@ Each template provides:
 ## Available Sources
 
 ### Microsoft 365
+
 - **SharePoint** - SharePoint Online document libraries
 - **OneDrive** - Personal and Business OneDrive
 
 ### Cloud Storage
+
 - **S3** - AWS S3, MinIO, or any S3-compatible storage
 - **Azure Blob** - Azure Blob Storage
 - **Google Drive** - Google Workspace and personal Drive
 
 ### Infrastructure
+
 - **SFTP** - Secure file transfer (legacy systems, on-prem)
 - **Local FS** - Mounted network shares (NFS, SMB, Azure Files)
 
@@ -39,6 +42,7 @@ RCLONE_{SOURCE}_{OPTION}=value
 ```
 
 Examples:
+
 ```bash
 # Azure Blob
 RCLONE_AZUREBLOB_NAME=azureblob
@@ -54,6 +58,7 @@ RCLONE_S3_SECRET_ACCESS_KEY=your-secret
 ```
 
 Required variables for all sources:
+
 - `RCLONE_{SOURCE}_NAME` - Remote name used in rclone
 - `RCLONE_{SOURCE}_TYPE` - Backend type (onedrive, drive, s3, azureblob, sftp, local)
 
@@ -61,7 +66,7 @@ All other variables are passed directly to rclone as backend-specific options.
 
 ## Understanding Namespaces and Directory Structure
 
-**Important**: The `datalake_directory_name` parameter determines the **namespace** used in the downstream RAG pipeline 
+**Important**: The `datalake_directory_name` parameter determines the **namespace** used in the downstream RAG pipeline
 (vector store). This affects how your data is organized and searchable.
 
 ### How it works
@@ -76,12 +81,14 @@ Source (SharePoint/S3/etc.) → Data Lake (container/directory/) → Vector Stor
 ### Namespace implications for RAG
 
 The data-lake-to-vector-store pipeline creates **one namespace per directory**. When querying, you can:
+
 - Search within a specific namespace (scoped results)
 - Search across multiple namespaces (broader results)
 
 ### Decision: Single vs. Multiple Namespaces
 
 **Option 1: Single namespace** (specify `datalake_directory_name`):
+
 ```python
 defs = default_rclone_to_datalake_definitions(
     datalake_container_name="myproject",
@@ -89,10 +96,12 @@ defs = default_rclone_to_datalake_definitions(
     ...
 )
 ```
+
 All synced files end up in `myproject/all-docs/...` → namespace `"all-docs"`.
 Use when: All documents should be searchable as one knowledge base.
 
 **Option 2: Preserve source structure** (omit `datalake_directory_name`):
+
 ```python
 defs = default_rclone_to_datalake_definitions(
     datalake_container_name="myproject",
@@ -100,25 +109,31 @@ defs = default_rclone_to_datalake_definitions(
     ...
 )
 ```
+
 Source folder structure is mirrored in the data lake. Each top-level source folder becomes its own namespace.
 
 Example: If SharePoint has:
+
 ```
 /HR/policies.pdf
 /HR/handbook.pdf
 /Engineering/specs.pdf
 /Engineering/docs/guide.pdf
 ```
+
 Result in data lake:
+
 ```
 myproject/HR/policies.pdf         → namespace "HR"
 myproject/HR/handbook.pdf         → namespace "HR"
 myproject/Engineering/specs.pdf   → namespace "Engineering"
 myproject/Engineering/docs/guide.pdf → namespace "Engineering"
 ```
+
 Use when: Your source is already organized into logical groupings that should be separate namespaces.
 
 **Option 3: Multiple pipelines** (explicit control):
+
 ```python
 # Pipeline 1: HR documents
 defs_hr = default_rclone_to_datalake_definitions(
@@ -136,14 +151,15 @@ defs_eng = default_rclone_to_datalake_definitions(
     ...
 )
 ```
+
 Use when: You need fine-grained control, different sync schedules, or want to rename namespaces.
 
 ### Important: Root-level files
 
-When `datalake_directory_name` is not set and your source has files at the root level (not in any folder), those files 
+When `datalake_directory_name` is not set and your source has files at the root level (not in any folder), those files
 will **not be processed** by the RAG pipeline. Only files within directories get a namespace and are indexed.
 
-Ensure your source structure places all files within folders, or specify a `datalake_directory_name` to wrap everything 
+Ensure your source structure places all files within folders, or specify a `datalake_directory_name` to wrap everything
 in a single namespace.
 
 ## Creating Custom Sources

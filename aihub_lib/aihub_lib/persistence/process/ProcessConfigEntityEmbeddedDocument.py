@@ -1,6 +1,6 @@
 from mongoengine import EmbeddedDocument
 
-from aihub_lib.persistence.process import ProcessConfigEntity
+from aihub_lib.persistence.process.ProcessConfigEntity import ProcessConfigEntity
 
 
 class ProcessConfigEntityEmbeddedDocument(ProcessConfigEntity, EmbeddedDocument):

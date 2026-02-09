@@ -215,7 +215,6 @@ class Pipe:
             },
         }
 
-        # Create a streaming client with infinite timeout
         client = httpx.AsyncClient(timeout=None, follow_redirects=True)
 
         try:

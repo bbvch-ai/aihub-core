@@ -124,7 +124,7 @@ const { getTimeAgo } = useTimeAgo()
 
 const iconForStep = (process_step: ProcessStepDto) => {
   if (process_step.step_type === 'human') {
-    return 'mdi:user'
+    return 'mage:user'
   }
   if (process_step.step_type === 'program') {
     return 'tdesign:code'

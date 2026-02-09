@@ -3,10 +3,10 @@ from typing import Annotated, Self
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, Path, Query, Security
 
+from aihub_api.i18n.ApiLocaleString import ApiLocaleString
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.memory.dto.DeleteMemoryResponse import DeleteAllMemoriesResponse, DeleteMemoryResponse
 from aihub_api.routes.memory.dto.MemoriesResponse import MemoriesResponse
@@ -19,8 +19,8 @@ from aihub_api.routes.memory.OrganizationMemoryService import OrganizationMemory
 class OrganizationMemoryController(Controller):
     """Controller for managing organization/tenant memories."""
 
-    name = LocaleString(en="Organization Memories")
-    description = LocaleString(en="View and manage organization-wide memories from mem0")
+    name = ApiLocaleString.from_i18n_path("api.controllers.organization_memory.name")
+    description = ApiLocaleString.from_i18n_path("api.controllers.organization_memory.description")
     icon = "mdi:domain"
 
     def __init__(self, *, auth: AuthHandler, route: str = "/organization-memories", **kwargs):

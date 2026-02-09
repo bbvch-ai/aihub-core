@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from pydantic import BaseModel, Field
 
@@ -27,7 +27,7 @@ class User(BaseModel):
     ]
 
     @staticmethod
-    def anonymous(locale: str) -> "User":
+    def anonymous(locale: str) -> Self:
         return User(
             name="Anonymous",
             email="anonymous@anonymous.ch",

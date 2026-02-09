@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated
+from typing import Annotated, Self
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
@@ -58,7 +58,7 @@ class OpenaiChatController(Controller):
         self,
         route: str = "/completions/json",
         typing_timeout_seconds: int = 60,
-    ) -> "OpenaiChatController":
+    ) -> Self:
         @self.router.post(route, tags=self.tags)
         async def json_chat_completion(
             request: Request,
@@ -78,7 +78,7 @@ class OpenaiChatController(Controller):
         self,
         route: str = "/completions/stream",
         typing_timeout_seconds: int = 60,
-    ) -> "OpenaiChatController":
+    ) -> Self:
         @self.router.post(route, tags=self.tags)
         async def stream_chat_completion(
             request: Request,

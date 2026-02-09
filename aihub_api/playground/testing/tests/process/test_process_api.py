@@ -1,4 +1,5 @@
 import asyncio
+from unittest.mock import Mock, patch
 
 import pytest
 import pytest_asyncio
@@ -8,26 +9,51 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
     DangerousDevelopmentOnlyIdentityProvider,
 )
+from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.persistence.process.ProcessClassEntity import HumanInSpecsEntity, ProcessClassEntity
+from aihub_lib.persistence.process.ProcessConfigEntityDocument import ProcessConfigEntityDocument
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 
 from aihub_api.routes.process.ProcessController import ProcessController
-from aihub_api.routes.process.ProcessService import ProcessService
 from aihub_api.runners.simulation.process.SimulatedProcessApiTestRunner import SimulatedProcessApiTestRunner
 
 PROCESS_CLASS = "test_process"
 PROCESS_ID = "test_process_1"
 
 
+@pytest.fixture(scope="module", autouse=True)
+def setup_process_config_mock():
+    """Set up mock for ProcessConfigEntityDocument.find_for_class_and_id."""
+    mock_entity = Mock(spec=ProcessConfigEntityDocument)
+    mock_entity.process_class = PROCESS_CLASS
+    mock_entity.process_id = PROCESS_ID
+    mock_entity.name = LocaleString(en="Test Process")
+    mock_entity.description = LocaleString(en="Test Process Description")
+
+    patcher = patch.object(ProcessConfigEntityDocument, "find_for_class_and_id")
+    mock_find = patcher.start()
+
+    def find_impl(process_class, process_id):
+        if process_class == PROCESS_CLASS and process_id == PROCESS_ID:
+            return mock_entity
+        return None
+
+    mock_find.side_effect = find_impl
+    yield mock_find
+    patcher.stop()
+
+
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
-async def process_api_client():
+async def process_api_client(setup_process_config_mock):
     auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
     controller = (
         ProcessController(auth=auth)
-        .get_process()
-        .get_processes()
-        .discover_processes()
+        .get_process_classes()
+        .get_process_class()
+        .get_process_class_instances()
+        .get_process_instance()
         .get_process_start_forms()
         .send_process_start_form()
         .send_process_open_form()
@@ -38,133 +64,36 @@ async def process_api_client():
     ).with_simple_human_only_process_events()
     runner.mount(controller)
     await runner.start_simulation()
+
+    # Mock ProcessClassEntity.get_by_process_class to return an entity
+    # with the human_inputs that the simulated runner created.
+    human_input_entities = [HumanInSpecsEntity.from_specs(specs) for specs in runner.human_inputs]
+    mock_class_entity = Mock(spec=ProcessClassEntity)
+    mock_class_entity.process_class = PROCESS_CLASS
+    mock_class_entity.human_inputs = human_input_entities
+    mock_class_entity.is_online = True
+
+    class_patcher = patch.object(ProcessClassEntity, "get_by_process_class", return_value=mock_class_entity)
+    class_patcher.start()
+
     app = runner.create_app()
 
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url="http://test/api/v1") as client:
             yield client
 
-
-@pytest.fixture(autouse=True)
-def cleanup_db_and_cache():
-    ProcessService._clear_cache()
-    yield
-    ProcessService._clear_cache()
-
-
-@pytest.mark.asyncio(loop_scope="module")
-async def test_discover_processes(process_api_client):
-    """Test GET /process/discover returns a list containing the simulated process."""
-    response = await process_api_client.get("/processes/discover")
-    assert response.status_code == 200, f"Response: {response.text}"
-
-    data = response.json()
-    assert isinstance(data, list), "Response data should be a list"
-    found = any(
-        process.get("process_class") == PROCESS_CLASS and process.get("process_id") == PROCESS_ID for process in data
-    )
-    assert found, "Simulated process not found in discovered processes"
-
-
-@pytest.mark.asyncio(loop_scope="module")
-async def test_get_process(process_api_client):
-    """Test GET /process/{process_class}/{process_id} returns correct process details."""
-    response = await process_api_client.get(f"/processes/{PROCESS_CLASS}/{PROCESS_ID}")
-    assert response.status_code == 200, f"Response: {response.text}"
-
-    data = response.json()
-    assert data.get("process_class") == PROCESS_CLASS
-    assert data.get("process_id") == PROCESS_ID
-    for key in ("process_config", "human_inputs", "program_inputs", "agent_inputs"):
-        assert key in data
-
-
-# TODO: This test currently FAILS due to flawed logic, the test itself is valid. It should be commented back in
-# @pytest.mark.asyncio(loop_scope="module")
-# async def test_walk_through_process_std_methods(process_api_client):
-#     """Play through simple human-only process using standard endpoints"""
-#     # Step 1: Get initial form
-#     response = await process_api_client.get(f"/processes/{PROCESS_CLASS}/{PROCESS_ID}/start_forms")
-#     assert response.status_code == 200, f"Response: {response.text}"
-#
-#     data = response.json()
-#     print(data)
-#     assert len(data) == 1
-#     assert data[0].get("name") == "HumanStartEvent"
-#     assert data[0].get("description") == "HumanStartEvent description"
-#     assert data[0].get("route") == "/human_input_0"
-#     assert data[0].get("method") == "POST"
-#     assert len(data[0].get("form")) == 1
-#     assert data[0].get("form")[0].get("formkit") == "primeInputText"
-#     assert data[0].get("form")[0].get("name") == "payload"
-#     assert not data[0].get("form")[0].get("disabled")
-#     assert data[0].get("form")[0].get("label") == "This is some label for HumanStartEvent"
-#
-#     # Step 2: Send initial form
-#     response = await process_api_client.post(
-#         f"/processes/{PROCESS_CLASS}/{PROCESS_ID}/submit_start_form",
-#         json={"payload": "Initial Payload"},
-#         params={"submission_route": "/human_input_0", "submission_method": "POST"},
-#     )
-#     assert response.status_code == 200, f"Response: {response.text}"
-#
-#     data = response.json()
-#     assert data.get("process_class") == PROCESS_CLASS
-#     assert data.get("process_id") == PROCESS_ID
-#
-#     assert data.get("process_walkthrough_id")
-#     process_walkthrough_id = data.get("process_walkthrough_id")
-#     await asyncio.sleep(1)
-#
-#     # Step 3: Check for open forms
-#     response = await process_api_client.get(
-#         f"/processes/{PROCESS_CLASS}/{PROCESS_ID}/{process_walkthrough_id}/open_forms"
-#     )
-#     assert response.status_code == 200, f"Response: {response.text}"
-#
-#     data = response.json()
-#     assert len(data) == 1
-#     assert data[0].get("name") == "HumanBWork"
-#     assert data[0].get("description") == "HumanBWork description"
-#     assert data[0].get("route") == "/human_input_1"
-#     assert data[0].get("method") == "POST"
-#     assert len(data[0].get("form")) == 1
-#     assert data[0].get("form")[0].get("formkit") == "primeInputText"
-#     assert data[0].get("form")[0].get("name") == "payload"
-#     assert not data[0].get("form")[0].get("disabled")
-#     assert data[0].get("form")[0].get("label") == "This is some label for HumanBWork"
-#     await asyncio.sleep(1)
-#
-#     # Step 4: Post open form
-#     response = await process_api_client.post(
-#         f"/processes/{PROCESS_CLASS}/{PROCESS_ID}/{process_walkthrough_id}/submit_open_form",
-#         json={"payload": "Second Payload"},
-#         params={"submission_route": "/human_input_1", "submission_method": "POST"},
-#     )
-#     assert response.status_code == 200, f"Response: {response.text}"
-#
-#     data = response.json()
-#     assert data.get("process_class") == PROCESS_CLASS
-#     assert data.get("process_id") == PROCESS_ID
-#
-#     assert data.get("process_walkthrough_id") == process_walkthrough_id
-#     await asyncio.sleep(1)
-#
-#     # Step 5: Assert there a no open forms left
-#     response = await process_api_client.get(
-#         f"/processes/{PROCESS_CLASS}/{PROCESS_ID}/{process_walkthrough_id}/open_forms"
-#     )
-#     assert response.status_code == 200, f"Response: {response.text}"
-#
-#     data = response.json()
-#     assert len(data) == 0
+    class_patcher.stop()
 
 
 @pytest.mark.asyncio(loop_scope="module")
 async def test_walk_through_process_dynamic_methods(process_api_client):
-    """Play through simple human-only process using dynamically mounted endponts"""
-    # Step 1: Get initial form
-    response = await process_api_client.get(f"/processes/{PROCESS_CLASS}/{PROCESS_ID}/human_input_0")
+    """Play through simple human-only process using dynamically mounted endpoints.
+
+    The dynamically registered endpoints now use the class-based URL pattern:
+    /processes/classes/{process_class}/instances/{process_id}/...
+    """
+    # Step 1: Get initial form (class-based URL pattern with {process_id} path param)
+    response = await process_api_client.get(f"/processes/classes/{PROCESS_CLASS}/instances/{PROCESS_ID}/human_input_0")
     assert response.status_code == 200, f"Response: {response.text}"
 
     data = response.json()
@@ -180,7 +109,7 @@ async def test_walk_through_process_dynamic_methods(process_api_client):
 
     # Step 2: Send initial form
     response = await process_api_client.post(
-        f"/processes/{PROCESS_CLASS}/{PROCESS_ID}/human_input_0",
+        f"/processes/classes/{PROCESS_CLASS}/instances/{PROCESS_ID}/human_input_0",
         json={"payload": "Initial Payload"},
     )
     assert response.status_code == 200, f"Response: {response.text}"
@@ -195,7 +124,7 @@ async def test_walk_through_process_dynamic_methods(process_api_client):
 
     # Step 3: Check for open forms
     response = await process_api_client.get(
-        f"/processes/{PROCESS_CLASS}/{PROCESS_ID}/{process_walkthrough_id}/human_input_1"
+        f"/processes/classes/{PROCESS_CLASS}/instances/{PROCESS_ID}/{process_walkthrough_id}/human_input_1"
     )
     assert response.status_code == 200, f"Response: {response.text}"
 
@@ -213,7 +142,7 @@ async def test_walk_through_process_dynamic_methods(process_api_client):
 
     # Step 4: Post open form
     response = await process_api_client.post(
-        f"/processes/{PROCESS_CLASS}/{PROCESS_ID}/{process_walkthrough_id}/human_input_1",
+        f"/processes/classes/{PROCESS_CLASS}/instances/{PROCESS_ID}/{process_walkthrough_id}/human_input_1",
         json={"payload": "Second Payload"},
     )
     assert response.status_code == 200, f"Response: {response.text}"

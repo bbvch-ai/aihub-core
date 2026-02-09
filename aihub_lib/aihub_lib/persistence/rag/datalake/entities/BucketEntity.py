@@ -1,4 +1,5 @@
 import re
+from typing import Self
 
 from bson import ObjectId
 from mongoengine import BooleanField, Document, EmbeddedDocumentField, StringField, ValidationError
@@ -47,7 +48,7 @@ class BucketEntity(Document):
         auto_sync: bool = False,
         datalake_type: str = "s3",
         db_alias: str = "default",
-    ) -> "BucketEntity":
+    ) -> Self:
         cls._validate_name(bucket_name, "bucket_name")
         if db_name:
             cls._validate_name(db_name, "db_name")
@@ -65,17 +66,17 @@ class BucketEntity(Document):
             return bucket
 
     @classmethod
-    def get_bucket_by_id(cls, bucket_id: str, db_alias: str = "default") -> "BucketEntity":
+    def get_bucket_by_id(cls, bucket_id: str, db_alias: str = "default") -> Self:
         with switch_db(cls, db_alias) as SwitchedBucket:
             return SwitchedBucket.objects().get(id=ObjectId(bucket_id))
 
     @classmethod
-    def get_bucket_by_bucket_name(cls, bucket_name: str, db_alias: str = "default") -> "BucketEntity":
+    def get_bucket_by_bucket_name(cls, bucket_name: str, db_alias: str = "default") -> Self:
         with switch_db(cls, db_alias) as SwitchedBucket:
             return SwitchedBucket.objects().get(bucket_name=bucket_name)
 
     @classmethod
-    def get_bucket_by_db_name(cls, db_name: str, db_alias: str = "default") -> "BucketEntity":
+    def get_bucket_by_db_name(cls, db_name: str, db_alias: str = "default") -> Self:
         with switch_db(cls, db_alias) as SwitchedBucket:
             return SwitchedBucket.objects().get(db_name=db_name)
 
@@ -95,7 +96,7 @@ class BucketEntity(Document):
         auto_sync: bool | None = None,
         datalake_type: str | None = None,
         db_alias: str = "default",
-    ) -> "BucketEntity":
+    ) -> Self:
         bucket = cls.get_bucket_by_id(bucket_id, db_alias=db_alias)
         if bucket_name is not None:
             bucket.bucket_name = bucket_name
@@ -113,7 +114,7 @@ class BucketEntity(Document):
         return bucket
 
     @classmethod
-    def delete_bucket(cls, bucket_id: str, db_alias: str = "default") -> "BucketEntity":
+    def delete_bucket(cls, bucket_id: str, db_alias: str = "default") -> Self:
         bucket = cls.get_bucket_by_id(bucket_id, db_alias=db_alias)
         bucket.delete()
         return bucket

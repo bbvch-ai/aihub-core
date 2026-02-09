@@ -163,7 +163,6 @@ class BaseDispatcher(abc.ABC):
             if self._initialized:
                 return
 
-            # Initialize the event store
             await self.event_store.start()
             self._initialized = True
             logger.info("Dispatcher initialized and ready to process events")
@@ -312,17 +311,14 @@ class BaseDispatcher(abc.ABC):
         # Sort events by creation time for deterministic ordering
         all_matching_events.sort(key=lambda x: x.created_at)
 
-        # Handle fixed-size requirements
         if required_size is not None:
             if len(all_matching_events) == required_size:
                 return ListOfSize(all_matching_events[-required_size:], required_size)
             return None
 
-        # Handle lists
         elif get_origin(param.annotation) in (list, list):
             return all_matching_events
 
-        # Handle single event
         else:
             # If the trigger event is among them, prefer it
             if trigger_event.event_id in [evt.event_id for evt in all_matching_events]:

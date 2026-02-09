@@ -14,6 +14,9 @@ from aihub_lib.nats.events import (
     ProgramWorkRequestEvent,
     WorkEvent,
 )
+from aihub_lib.nats.events.form.Form import Form
+from aihub_lib.nats.events.form.normalization import transform_formkit_arrays
+from aihub_lib.nats.rpc.ProcessConfigClient import ProcessConfigClient
 from aihub_lib.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
 from aihub_lib.nats.topics.process.ProcessClassTopic import ProcessClassTopic
@@ -38,7 +41,9 @@ class ProcessDispatcher(BaseDispatcher):
     def __init__(
         self,
         process: Annotated[type[AgenticProcess], "The agentic process defining steps and logic."],
-        default_process_config: Annotated[ProcessConfig, "Default configuration for the process."],
+        process_config: Annotated[
+            ProcessConfig, "Form-mode configuration with FormKit elements and non-configurable values."
+        ],
         nc: Annotated[NATS, "NATS client for messaging."],
         js: Annotated[
             JetStreamContext,
@@ -50,10 +55,45 @@ class ProcessDispatcher(BaseDispatcher):
     ):
         super().__init__(nc, js, redis, topic_manager, ProcessClassTopic, dispatch_entity_name=process.__name__)
         self.process = process
-        self.default_process_config = default_process_config
+        self.process_config = process_config
         self.locale_handler = locale_handler
 
-        self.process_config_type: type[ProcessConfig] = self.default_process_config.__class__
+        self.process_config_type: type[ProcessConfig] = self.process_config.__class__
+
+        # Pre-compute non-configurable values for merging with incoming configs
+        self._non_configurable_values = process_config.get_non_configurable_values()
+
+        # Client for fetching process configuration via NATS RPC
+        self._config_client = ProcessConfigClient(nc=nc)
+
+    async def _fetch_config_from_event(self, event: WorkEvent) -> dict[str, Any]:
+        """
+        Fetch the process config for a start event via NATS RPC.
+
+        Extracts the process_id from the event's process_config dict, then fetches
+        the full config from the API. Falls back to the event's process_config
+        if the RPC call fails.
+        """
+        process_class = self.process.__name__
+
+        event_config: dict[str, Any] = getattr(event, "process_config", None) or {}
+        process_id = event_config.get("process_id", "")
+
+        if not process_id:
+            logger.warning(f"No process_id in start event for {process_class}, using event config as fallback")
+            return event_config
+
+        try:
+            return await self._config_client.fetch_config(
+                process_class=process_class,
+                process_id=process_id,
+            )
+        except Exception as e:
+            logger.warning(
+                f"Failed to fetch config via RPC for {process_class}/{process_id}: {e}. "
+                f"Falling back to event config."
+            )
+            return event_config
 
     @override
     async def handle_event(
@@ -67,7 +107,10 @@ class ProcessDispatcher(BaseDispatcher):
 
         process_config_dict: dict[str, Any] | None = None
         if event.is_process_start_event:
-            process_config_dict: dict[str, Any] = event.process_config or self.default_process_config.model_dump()
+            submitted_config = await self._fetch_config_from_event(event)
+
+            # Deep merge: non-configurable values (from form-mode config) + configurable values (from submission)
+            process_config_dict = Form.deep_merge(self._non_configurable_values, submitted_config)
             await walkthrough_context.set("_process_config", process_config_dict)
 
         if process_config_dict is None:
@@ -75,6 +118,8 @@ class ProcessDispatcher(BaseDispatcher):
             if process_config_dict is None:
                 raise ValueError(f"No process config found for event {event.event_name} and topic {topic}")
 
+        # Transform FormKit-style arrays (dict with numeric keys) to Python lists
+        process_config_dict = transform_formkit_arrays(process_config_dict)
         walkthrough_process_config = self.process_config_type.model_validate(process_config_dict)
         topic = ProcessInstanceTopic.from_process_class_topic(
             process_class_topic=topic,

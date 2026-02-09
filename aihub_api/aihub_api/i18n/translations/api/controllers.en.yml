@@ -1,0 +1,75 @@
+agent:
+  name: "AI Assistants"
+  description: "Browse and interact with AI assistants"
+
+docling:
+  name: "Document Converter"
+  description: "Convert documents to different formats"
+
+evaluation:
+  name: "Quality Testing"
+  description: "Test and evaluate AI assistant quality"
+
+event:
+  name: "Activity Log"
+  description: "View system activity and events"
+
+file:
+  name: "File Access"
+  description: "Access and share your files"
+
+i18n:
+  name: "Language Settings"
+  description: "Manage your language preferences"
+
+knowledge:
+  name: "Knowledge Base"
+  description: "Manage your knowledge base and documents"
+
+model:
+  name: "AI Models"
+  description: "View available AI models"
+
+notification:
+  name: "Notifications"
+  description: "View and manage your notifications"
+
+openai:
+  name: "Chat"
+  description: "Have conversations with AI assistants"
+
+process:
+  name: "Workflows"
+  description: "Manage automated business processes"
+
+role:
+  name: "User Roles"
+  description: "Configure access permissions and roles"
+
+suite:
+  name: "Platform Overview"
+  description: "View platform features and settings"
+
+thread:
+  name: "Conversations"
+  description: "Manage your conversation history"
+
+token:
+  name: "API Keys"
+  description: "Create and manage API access keys"
+
+translation:
+  name: "Translation"
+  description: "Translate text to all supported languages"
+
+user:
+  name: "My Account"
+  description: "Manage your account settings"
+
+user_memory:
+  name: "User Memories"
+  description: "View and manage your personal memories from mem0"
+
+organization_memory:
+  name: "Organization Memories"
+  description: "View and manage organization-wide memories from mem0"

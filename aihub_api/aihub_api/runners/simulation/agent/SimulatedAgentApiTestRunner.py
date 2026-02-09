@@ -1,4 +1,5 @@
 import logging
+from typing import Self
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
@@ -19,11 +20,7 @@ from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent impo
     AgentConfigSpecs,
     EventSpecs,
 )
-from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent import (
-    AgentInstanceDiscoveryResponseEvent,
-)
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
-from aihub_lib.nats.events.discovery.InstanceDiscoveryRequestEvent import InstanceDiscoveryRequestEvent
 from aihub_lib.nats.events.semantic import Message
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
@@ -36,6 +33,8 @@ from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentTh
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
+from aihub_lib.persistence.agents.AgentClassEntity import AgentClassEntity
+from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
@@ -103,8 +102,8 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         self.agent_control_event_subscriber: JSSubscriber[ControlEvent] | None = None
         self.js_publisher: JSPublisher | None = None
 
-        self.nc_publisher: NCPublisher[AgentInstanceDiscoveryResponseEvent] | None = None
-        self.discovery_subscriber: NCSubscriber[InstanceDiscoveryRequestEvent] | None = None
+        self.nc_publisher: NCPublisher[AgentClassDiscoveryResponseEvent] | None = None
+        self.discovery_subscriber: NCSubscriber[ClassDiscoveryRequestEvent] | None = None
 
         self.simulated_events: list[BaseEvent] = simulated_events or []
 
@@ -113,7 +112,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         self.hitl_request_events: list[EventSpecs] | None = hitl_request_events
         self.hitl_response_events: list[EventSpecs] | None = hitl_response_events
 
-        self.default_agent_config: AgentConfig = AgentConfig(
+        self.agent_config: AgentConfig = AgentConfig(
             agent_class=self.agent_class,
             agent_id=self.agent_id,
             name=LocaleString(de="Test Agent"),
@@ -143,14 +142,17 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         subject = self.topic_manager.get_agent_class_discovery_subject_response(topic.call_id)
         agent_discovery_response_event = AgentClassDiscoveryResponseEvent(
             agent_class=self.agent_class,
+            name=self.agent_config.name,
+            description=self.agent_config.description,
+            icon=self.agent_config.icon,
             is_conversational=True,
             start_events=self.start_events,
             stop_events=self.stop_events,
             hitl_request_events=self.hitl_request_events or [],
             hitl_response_events=self.hitl_response_events or [],
             network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
-            agent_config_specs=AgentConfigSpecs.from_agent_config_class(AgentConfig),
-            default_agent_config=self.default_agent_config,
+            form=self.agent_config.to_formkit_form(),
+            agent_config_specs=AgentConfigSpecs.from_agent_config(self.agent_config, self.agent_class),
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
@@ -183,8 +185,9 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         """
         Orchestrates the simulation:
         1. Connect to NATS.
-        2. Set up publishers and subscribers (discovery requests, agent control events).
-        3. Start the parent ApiTestRunner's run method to launch the server.
+        2. Create agent config in database (so discover_agent_instances can find it).
+        3. Set up publishers and subscribers (discovery requests, agent control events).
+        4. Start the parent ApiTestRunner's run method to launch the server.
 
         Requires that at least one simulated event is provided; otherwise, it's a no-op.
         """
@@ -236,14 +239,12 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
                 controller=self._api_app.state.agent_controller,
                 locale_handler=ApiLocaleHandler(),
                 discovery_interval=60,
-            )._register_agent_endpoints(
+            )._register_class_endpoints(
                 agent_class=self.agent_class,
-                agent_id=self.agent_id,
                 start_events=self.start_events,
                 stop_events=self.stop_events,
                 hitl_request_events=self.hitl_request_events,
                 hitl_response_events=self.hitl_response_events,
-                config=self.default_agent_config,
             )
         else:
             logger.warning("Unable to start AgentEndpointsDiscoveryService due to missing state.agent_controller")
@@ -252,7 +253,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         await self.start_simulation()
         await super().run()
 
-    def with_simple_chunk_events(self) -> "SimulatedAgentApiTestRunner":
+    def with_simple_chunk_events(self) -> Self:
         """
         A convenience method to populate a standard sequence of chunk and cost events, simulating
         a typical LLM-based agent responding with textual chunks and cost metrics.
@@ -293,3 +294,38 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             ),
         ]
         return self
+
+    def create_agent_config_in_db(self) -> None:
+        """
+        Create the agent class and config in the database.
+
+        This method should be called AFTER the app's lifespan has started (i.e., database is connected)
+        AND after start_simulation() has been called (to populate event specs).
+
+        Creates both:
+        - AgentClassEntity: Class-level metadata (events, form schema, online status)
+        - AgentConfigEntityDocument: Instance-level configuration
+        """
+        AgentClassEntity.create_or_update(
+            agent_class=self.agent_class,
+            name=self.agent_config.name,
+            description=self.agent_config.description,
+            icon=self.agent_config.icon,
+            form=self.agent_config.to_formkit_form(),
+            agent_config_specs=AgentConfigSpecs.from_agent_config(self.agent_config, self.agent_class),
+            is_conversational=True,
+            start_events=self.start_events or [],
+            stop_events=self.stop_events or [],
+            hitl_request_events=self.hitl_request_events or [],
+            hitl_response_events=self.hitl_response_events or [],
+            network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
+        )
+
+        existing = AgentConfigEntityDocument.find_for_class_and_id(self.agent_class, self.agent_id)
+        if existing:
+            existing.update_from_agent_config(self.agent_config)
+            existing.save()
+        else:
+            config_entity = AgentConfigEntityDocument.from_agent_config(self.agent_config)
+            config_entity.save()
+        logger.info(f"Created agent class and config in database: {self.agent_class}/{self.agent_id}")

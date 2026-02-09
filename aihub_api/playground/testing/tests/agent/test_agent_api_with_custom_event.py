@@ -13,7 +13,6 @@ from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 
 from aihub_api.routes.agent.AgentController import AgentController
-from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.runners.simulation.agent.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
 from aihub_api.services.ModelCreationService import ModelCreationService
 from playground.testing.tests.agent.events.TestStartEvent import TestStartEvent
@@ -32,7 +31,7 @@ enable_logging()
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def agent_api_client():
     auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
-    controller = AgentController(auth=auth).discover_agents().get_agents().get_agent()
+    controller = AgentController(auth=auth).get_all_agent_instances().get_agent_instance()
     runner = SimulatedAgentApiTestRunner(
         agent_class=AGENT_CLASS,
         agent_id=AGENT_ID,
@@ -47,33 +46,33 @@ async def agent_api_client():
     app = runner.create_app()
 
     async with LifespanManager(app) as lifespan:
+        # Create agent config in database after lifespan starts (database is now connected)
+        runner.create_agent_config_in_db()
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url="http://test/api/v1") as client:
             yield client
 
 
 @pytest.fixture(autouse=True)
 def cleanup_db_and_cache():
-    AgentService._clear_cache()
     yield
-    AgentService._clear_cache()
 
 
 @pytest.mark.asyncio(loop_scope="module")
-async def test_discover_agents(agent_api_client):
-    """Test GET /agent/discover returns a list containing the simulated agent."""
-    response = await agent_api_client.get("/agents/discover")
+async def test_get_all_agent_instances(agent_api_client):
+    """Test GET /agents/instances returns a list containing the simulated agent."""
+    response = await agent_api_client.get("/agents/instances")
     assert response.status_code == 200, f"Response: {response.text}"
 
     data = response.json()
     assert isinstance(data, list), "Response data should be a list"
     found = any(agent.get("agent_class") == AGENT_CLASS and agent.get("agent_id") == AGENT_ID for agent in data)
-    assert found, "Simulated agent not found in discovered agents"
+    assert found, "Simulated agent not found in agent instances"
 
 
 @pytest.mark.asyncio(loop_scope="module")
-async def test_get_agent(agent_api_client):
-    """Test GET /agent/{agent_class}/{agent_id} returns correct agent details."""
-    response = await agent_api_client.get(f"/agents/{AGENT_CLASS}/{AGENT_ID}")
+async def test_get_agent_instance(agent_api_client):
+    """Test GET /agents/classes/{agent_class}/instances/{agent_id} returns correct agent details."""
+    response = await agent_api_client.get(f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}")
     assert response.status_code == 200, f"Response: {response.text}"
 
     data = response.json()
@@ -94,11 +93,12 @@ async def test_get_agent(agent_api_client):
 
 @pytest.mark.asyncio(loop_scope="module")
 async def test_send_event_to_agent(agent_api_client):
-    """Test POST /agent/{agent_class}/{agent_id}/{event_name} returns correct agent details."""
+    """Test POST /agents/classes/{agent_class}/instances/{agent_id}/{event_name} returns correct agent details."""
     start_event_input = ModelCreationService.create_input_model_from_event_class(TestStartEvent)(
+        agent_id=AGENT_ID,
         payload="Das ist ein test.",
     )
-    path = f"/agents/{AGENT_CLASS}/{AGENT_ID}/{TEST_START_EVENT}"
+    path = f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/{TEST_START_EVENT}"
     response = await agent_api_client.post(
         url=path,
         content=start_event_input.model_dump_json(),

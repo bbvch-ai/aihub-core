@@ -1,5 +1,5 @@
 import json
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, Self
 
 from llama_index.core.base.llms.types import (
     AudioBlock,
@@ -78,7 +78,7 @@ class Message(BaseModel):
         return content
 
     @classmethod
-    def from_string(cls, role: str, content: str, name: str | None = None) -> "Message":
+    def from_string(cls, role: str, content: str, name: str | None = None) -> Self:
         return cls(role=role, contents=[TextContent(text=content)], name=name)
 
     def to_semantic_convention(self, key: str, i: int) -> dict[str, Any]:
@@ -122,7 +122,7 @@ class Message(BaseModel):
         return result
 
     @classmethod
-    def from_llama_index(cls, msg: ChatMessage) -> "Message":
+    def from_llama_index(cls, msg: ChatMessage) -> Self:
         function_call: dict[str, Any] = msg.additional_kwargs.get("function_call", {}) or {}
         message_dict: dict[str, Any] = {
             "role": msg.role.value,

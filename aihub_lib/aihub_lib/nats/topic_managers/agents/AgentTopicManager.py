@@ -9,13 +9,21 @@ class AgentTopicManager(TopicManager):
     DISPLAY_EVENT: ClassVar[str] = "display_event"
     CONTROL_EVENT: ClassVar[str] = "control_event"
 
-    def get_agent_instance_discovery_subject_request(
+    def get_agent_config_rpc_subject(
         self,
-        call_id: Annotated[str, "Unique identifier linking request and response"],
-        agent_class: Annotated[str, "Agent class filter or '*'"] = "*",
-        agent_id: Annotated[str, "Agent ID filter or '*'"] = "*",
+        agent_class: Annotated[str, "Agent class identifier or '*' for wildcard"] = "*",
+        agent_id: Annotated[str, "Agent instance ID or '*' for wildcard"] = "*",
     ) -> str:
-        return f"{self.INSTANCE_DISCOVERY_TOPIC}.{self.AGENT_TOPIC}.{agent_class}.{agent_id}.request.{call_id}"
+        """
+        Returns the subject for agent configuration RPC requests/responses.
+
+        Pattern: aihub.rpc.config.agent.{agent_class}.{agent_id}
+
+        ### Use Cases
+        - **Requester**: Use specific agent_class and agent_id to fetch config for that instance
+        - **Responder**: Use wildcards to listen for all config requests: `get_agent_config_rpc_subject('*', '*')`
+        """
+        return f"{self.RPC_TOPIC}.{self.CONFIG_RPC_SERVICE}.{self.AGENT_TOPIC}.{agent_class}.{agent_id}"
 
     def get_agent_class_discovery_subject_request(
         self,
@@ -24,15 +32,6 @@ class AgentTopicManager(TopicManager):
     ) -> str:
         """Returns a subject for requesting agent discovery information for a specific agent class."""
         return f"{self.CLASS_DISCOVERY_TOPIC}.{self.AGENT_TOPIC}.{agent_class}.*.request.{call_id}"
-
-    def get_agent_instance_discovery_subject_response(
-        self,
-        call_id: str,
-        agent_class: Annotated[str, "Agent class filter or '*'"] = "*",
-        agent_id: Annotated[str, "Agent ID filter or '*'"] = "*",
-    ) -> str:
-        """Returns a subject for receiving agent discovery responses."""
-        return f"{self.INSTANCE_DISCOVERY_TOPIC}.{self.AGENT_TOPIC}.{agent_class}.{agent_id}.response.{call_id}"
 
     def get_agent_class_discovery_subject_response(
         self,

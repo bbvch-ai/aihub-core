@@ -1,5 +1,5 @@
 import time
-from typing import Any
+from typing import Any, Self
 
 from mongoengine import (
     BooleanField,
@@ -16,6 +16,7 @@ from mongoengine import (
 from mongoengine.context_managers import switch_db
 
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+from aihub_lib.persistence.rag.documents.utils.id_utils import source_to_doc_id
 
 # Index field paths (MongoEngine uses db_field names)
 _IDX_NAMESPACE = "data.metadata.namespace"
@@ -84,7 +85,7 @@ class RefDoc(Document):
 
     @classmethod
     @trace_fn
-    def by_id(cls, db_alias: str, doc_id: str) -> "RefDoc":
+    def by_id(cls, db_alias: str, doc_id: str) -> Self:
         with switch_db(cls, db_alias) as SwitchedRefDoc:
             return SwitchedRefDoc.objects.get(id=doc_id)
 
@@ -290,13 +291,11 @@ class RefDoc(Document):
         source: str,
         namespace: str,
         document_title: str | None = None,
-    ) -> "RefDoc":
+    ) -> Self:
         """Create a placeholder RefDoc for a file that is being uploaded/processed.
 
         Uses deterministic ID based on source path to enable upsert on processing completion.
         """
-        from aihub_lib.persistence.rag.documents.utils.id_utils import source_to_doc_id
-
         doc_id = source_to_doc_id(source)
         current_time = int(time.time())
 
@@ -351,8 +350,6 @@ class RefDoc(Document):
 
         Returns (ref_doc, created) where created is True if new placeholder was created.
         """
-        from aihub_lib.persistence.rag.documents.utils.id_utils import source_to_doc_id
-
         doc_id = source_to_doc_id(source)
 
         with switch_db(cls, db_alias) as SwitchedRefDoc:
@@ -364,7 +361,6 @@ class RefDoc(Document):
             if updated:
                 return SwitchedRefDoc.objects.get(id=doc_id), False
 
-            # Check if doc exists (already pending or legacy)
             try:
                 existing = SwitchedRefDoc.objects.get(id=doc_id)
                 return existing, False
@@ -384,8 +380,6 @@ class RefDoc(Document):
     @trace_fn
     def delete_by_source(cls, db_alias: str, source: str) -> bool:
         """Delete a RefDoc by its source path."""
-        from aihub_lib.persistence.rag.documents.utils.id_utils import source_to_doc_id
-
         doc_id = source_to_doc_id(source)
         with switch_db(cls, db_alias) as SwitchedRefDoc:
             try:

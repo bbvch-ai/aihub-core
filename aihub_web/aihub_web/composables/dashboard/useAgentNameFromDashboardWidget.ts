@@ -1,8 +1,8 @@
-import type { AgentDto } from '@core/sdk/client'
+import type { FullAgentInstanceDto } from '@core/sdk/client'
 import type { DashboardWidget } from '@core/types/DashboardWidget'
 
 export const useAgentNameFromDashboardWidget = (widgetData: DashboardWidget) => {
-  const { agents } = useAgents()
+  const { agentInstances } = useAgentInstances()
   const { t } = useI18n()
   const agentName = computed<string>(() => {
     const agentId = widgetData.agent?.agentId
@@ -13,8 +13,8 @@ export const useAgentNameFromDashboardWidget = (widgetData: DashboardWidget) => 
     if (agentClass === 'UserAgent') {
       return t('dashboard.users')
     }
-    const agent = agents.value?.find((agent: AgentDto) => {
-      return agent.agent_id === agentId && agent.agent_class === agentClass
+    const agent = agentInstances.value?.find((instance: FullAgentInstanceDto) => {
+      return instance.agent_id === agentId && instance.agent_class === agentClass
     })
     if (!agent) {
       return t('dashboard.unknown_agent')

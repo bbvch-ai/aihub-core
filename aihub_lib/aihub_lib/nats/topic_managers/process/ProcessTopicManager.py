@@ -9,14 +9,21 @@ class ProcessTopicManager(TopicManager):
     WORK_REQUEST_EVENT: ClassVar[str] = "work_request"
     WORK_EVENT: ClassVar[str] = "work"
 
-    def get_process_instance_discovery_subject_request(
+    def get_process_config_rpc_subject(
         self,
-        call_id: Annotated[str, "Unique identifier linking request and response"],
-        process_class: Annotated[str, "Process class filter or '*'"] = "*",
-        process_id: Annotated[str, "Process ID filter or or '*'"] = "*",
+        process_class: Annotated[str, "Process class identifier or '*' for wildcard"] = "*",
+        process_id: Annotated[str, "Process instance ID or '*' for wildcard"] = "*",
     ) -> str:
-        """Returns a subject for requesting process discovery information."""
-        return f"{self.INSTANCE_DISCOVERY_TOPIC}.{self.PROCESS_TOPIC}.{process_class}.{process_id}.request.{call_id}"
+        """
+        Returns the subject for process configuration RPC requests/responses.
+
+        Pattern: aihub.rpc.config.process.{process_class}.{process_id}
+
+        ### Use Cases
+        - **Requester**: Use specific process_class and process_id to fetch config for that instance
+        - **Responder**: Use wildcards to listen for all config requests: `get_process_config_rpc_subject('*', '*')`
+        """
+        return f"{self.RPC_TOPIC}.{self.CONFIG_RPC_SERVICE}.{self.PROCESS_TOPIC}.{process_class}.{process_id}"
 
     def get_process_class_discovery_subject_request(
         self,
@@ -25,15 +32,6 @@ class ProcessTopicManager(TopicManager):
     ) -> str:
         """Returns a subject for requesting process discovery information for a specific process class."""
         return f"{self.CLASS_DISCOVERY_TOPIC}.{self.PROCESS_TOPIC}.{process_class}.*.request.{call_id}"
-
-    def get_process_instance_discovery_subject_response(
-        self,
-        call_id: Annotated[str, "Unique identifier linking request and response"],
-        process_class: Annotated[str, "Process class filter or '*'"] = "*",
-        process_id: Annotated[str, "Process ID filter or or '*'"] = "*",
-    ) -> str:
-        """Returns a subject for receiving process discovery information."""
-        return f"{self.INSTANCE_DISCOVERY_TOPIC}.{self.PROCESS_TOPIC}.{process_class}.{process_id}.response.{call_id}"
 
     def get_process_class_discovery_subject_response(
         self,

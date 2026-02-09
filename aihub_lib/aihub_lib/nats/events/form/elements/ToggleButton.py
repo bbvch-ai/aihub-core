@@ -1,4 +1,4 @@
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
 from pydantic import Field
 
@@ -29,7 +29,7 @@ class ToggleButton(PrimeVueElement):
         None
     )
 
-    def in_locale(self, t: LocaleHandler) -> "ToggleButton":
+    def in_locale(self, t: LocaleHandler) -> Self:
         self_copy = super().in_locale(t)
         if isinstance(self_copy.on_label, LocaleString):
             self_copy.on_label = t.extract(self_copy.on_label)

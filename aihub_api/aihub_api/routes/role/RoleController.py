@@ -1,12 +1,13 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
 from fastapi import HTTPException, Security, status
 from mongoengine.errors import DoesNotExist, NotUniqueError
+
+from aihub_api.i18n.ApiLocaleString import ApiLocaleString
 
 from .dto.CreateRoleRequest import CreateRoleRequest
 from .dto.DeleteRoleResponse import DeleteRoleResponse
@@ -16,14 +17,9 @@ from .RoleService import RoleService
 
 
 class RoleController(Controller):
-    name = LocaleString(en="User Roles", de="Benutzerrollen", fr="Rôles d'utilisateur", it="Ruoli utente")
-    description = LocaleString(
-        en="Configure access permissions and roles",
-        de="Zugriffsrechte und Rollen konfigurieren",
-        fr="Configurez les autorisations d'accès et les rôles",
-        it="Configura permessi di accesso e ruoli",
-    )
-    icon = "solar:users-group-rounded-bold"
+    name = ApiLocaleString.from_i18n_path("api.controllers.role.name")
+    description = ApiLocaleString.from_i18n_path("api.controllers.role.description")
+    icon = "mage:users"
 
     def __init__(
         self, *, auth: AuthHandler, route: str = "/roles", additionally_required_permission: str | None = None
@@ -34,7 +30,7 @@ class RoleController(Controller):
             additionally_required_permission=additionally_required_permission,
         )
 
-    def create_role(self, route: str = "/") -> "RoleController":
+    def create_role(self, route: str = "/") -> Self:
         @self.router.post(
             route,
             summary="Create Role",
@@ -62,7 +58,7 @@ class RoleController(Controller):
 
         return self
 
-    def get_roles(self, route: str = "/") -> "RoleController":
+    def get_roles(self, route: str = "/") -> Self:
         @self.router.get(
             route,
             summary="List Roles",
@@ -76,7 +72,7 @@ class RoleController(Controller):
 
         return self
 
-    def get_role(self, route: str = "/{role_id}") -> "RoleController":
+    def get_role(self, route: str = "/{role_id}") -> Self:
         @self.router.get(
             route,
             summary="Get Role",
@@ -94,7 +90,7 @@ class RoleController(Controller):
 
         return self
 
-    def update_role(self, route: str = "/{role_id}") -> "RoleController":
+    def update_role(self, route: str = "/{role_id}") -> Self:
         @self.router.patch(
             route,
             summary="Update Role",
@@ -107,12 +103,13 @@ class RoleController(Controller):
             _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
         ) -> RoleResponse:
             try:
-                for rule in role_data.access_rules:
-                    if not AccessChecker.validate_user_access_rule(rule):
-                        raise HTTPException(
-                            status_code=400,
-                            detail=f"Invalid access rule: {rule}.",
-                        )
+                if role_data.access_rules:
+                    for rule in role_data.access_rules:
+                        if not AccessChecker.validate_user_access_rule(rule):
+                            raise HTTPException(
+                                status_code=400,
+                                detail=f"Invalid access rule: {rule}.",
+                            )
                 return RoleService.update_role(role_id, role_data)
             except DoesNotExist:
                 raise HTTPException(status_code=404, detail="Role not found.")
@@ -123,7 +120,7 @@ class RoleController(Controller):
 
         return self
 
-    def delete_role(self, route: str = "/{role_id}") -> "RoleController":
+    def delete_role(self, route: str = "/{role_id}") -> Self:
         @self.router.delete(
             route,
             summary="Delete Role",

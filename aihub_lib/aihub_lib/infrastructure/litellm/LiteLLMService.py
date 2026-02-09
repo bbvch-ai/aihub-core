@@ -37,7 +37,6 @@ class LiteLLMService:
         if user_exists:
             return LiteLLMService.generate_key_for_user(user)
 
-        # Create new user
         new_user_response = await client.post(
             "/user/new",
             json={

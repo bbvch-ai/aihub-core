@@ -26,7 +26,7 @@ tests = ["arrow", "dask[dataframe]", "docker", "pytest", "pytest-mock"]
 
 [[package]]
 name = "aihub-lib"
-version = "v0.260.1"
+version = "v0.261.0"
 description = ""
 optional = false
 python-versions = ">=3.13, <3.14"
@@ -92,8 +92,8 @@ transformers = "^4.57.3"
 [package.source]
 type = "git"
 url = "https://github.com/bbvch-ai/aihub-core.git"
-reference = "v0.260.1"
-resolved_reference = "61c93265015718deb2e5bf7fe78a0e300913ed11"
+reference = "v0.261.0"
+resolved_reference = "2708e9a4e53432e4210fb5ce3bb7f65800e5171d"
 subdirectory = "aihub_lib"
 
 [[package]]
@@ -3070,7 +3070,7 @@ files = [
 
 [[package]]
 name = "jambo"
-version = "0.4.0"
+version = "0.1.dev234+g1da93a4d2"
 description = "Jambo - JSON Schema to Pydantic Converter"
 optional = false
 python-versions = "<4.0,>=3.10"
@@ -3081,13 +3081,13 @@ develop = false
 [package.dependencies]
 email-validator = ">=2.2.0"
 jsonschema = ">=4.23.0"
-pydantic = ">=2.10.6"
+pydantic = ">=2.12.4"
 
 [package.source]
 type = "git"
 url = "https://github.com/bbvch-ai/jambo.git"
-reference = "v0.4.0"
-resolved_reference = "294d6dc7465edb399fc3ece44301f55d6d082112"
+reference = "HEAD"
+resolved_reference = "1da93a4d25fd4d2a88838ef77a90d4557ad021fa"
 
 [[package]]
 name = "jedi"
@@ -9481,4 +9481,4 @@ cffi = ["cffi (>=1.17,<2.0) ; platform_python_implementation != \"PyPy\" and pyt
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13, <3.14"
-content-hash = "d90d96103c850d16b5ed157d5baa3aefc2dbc233925993f94d611e7c3bcf04f8"
+content-hash = "1444da02afc6e95c6bea6ad1dfd7615f0ef1c01e52e665091adf18bb2e0c97b5"

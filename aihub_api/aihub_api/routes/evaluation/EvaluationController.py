@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.access.AccessLevel import AccessLevel
@@ -6,7 +6,6 @@ from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributor import (
     use_external_agent_event_distributor,
@@ -16,6 +15,7 @@ from aihub_lib.routes.Controller import Controller
 from fastapi import Body, Depends, HTTPException, Path, Security
 from nats.aio.client import Client as NATS
 
+from aihub_api.i18n.ApiLocaleString import ApiLocaleString
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.evaluation.dto.dataset.Dataset import Dataset
 from aihub_api.routes.evaluation.dto.dataset.DatasetCreate import DatasetCreate
@@ -38,14 +38,9 @@ class EvaluationController(Controller):
     to interact with the underlying evaluation framework (Arize Phoenix).
     """
 
-    name = LocaleString(en="Quality Testing", de="Qualitätsprüfung", fr="Tests de qualité", it="Test di qualità")
-    description = LocaleString(
-        en="Test and evaluate AI assistant quality",
-        de="KI-Assistenten testen und bewerten",
-        fr="Testez et évaluez la qualité des assistants IA",
-        it="Testa e valuta la qualità degli assistenti IA",
-    )
-    icon = "material-symbols:science-outline"
+    name = ApiLocaleString.from_i18n_path("api.controllers.evaluation.name")
+    description = ApiLocaleString.from_i18n_path("api.controllers.evaluation.description")
+    icon = "mage:tube"
 
     def __init__(
         self,
@@ -58,7 +53,7 @@ class EvaluationController(Controller):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
         self.judge = judge
 
-    def create_dataset(self, route: str = "/datasets") -> "EvaluationController":
+    def create_dataset(self, route: str = "/datasets") -> Self:
         @self.router.post(
             route,
             tags=self.tags,
@@ -73,7 +68,7 @@ class EvaluationController(Controller):
 
         return self
 
-    def get_datasets(self, route: str = "/datasets") -> "EvaluationController":
+    def get_datasets(self, route: str = "/datasets") -> Self:
         @self.router.get(
             route,
             tags=self.tags,
@@ -87,7 +82,7 @@ class EvaluationController(Controller):
 
         return self
 
-    def get_dataset(self, route: str = "/datasets/{dataset_id}") -> "EvaluationController":
+    def get_dataset(self, route: str = "/datasets/{dataset_id}") -> Self:
         @self.router.get(
             route,
             tags=self.tags,
@@ -102,7 +97,7 @@ class EvaluationController(Controller):
 
         return self
 
-    def update_dataset(self, route: str = "/datasets/{dataset_id}") -> "EvaluationController":
+    def update_dataset(self, route: str = "/datasets/{dataset_id}") -> Self:
         @self.router.put(
             route,
             tags=self.tags,
@@ -118,7 +113,7 @@ class EvaluationController(Controller):
 
         return self
 
-    def get_experiments(self, route: str = "/experiments") -> "EvaluationController":
+    def get_experiments(self, route: str = "/experiments") -> Self:
         @self.router.get(
             route,
             tags=self.tags,
@@ -141,7 +136,7 @@ class EvaluationController(Controller):
 
         return self
 
-    def get_experiment(self, route: str = "/experiments/{experiment_id}") -> "EvaluationController":
+    def get_experiment(self, route: str = "/experiments/{experiment_id}") -> Self:
         @self.router.get(
             route,
             tags=self.tags,
@@ -165,7 +160,7 @@ class EvaluationController(Controller):
 
         return self
 
-    def run_experiment(self, route: str = "/experiments") -> "EvaluationController":
+    def run_experiment(self, route: str = "/experiments") -> Self:
         @self.router.post(
             route,
             tags=self.tags,

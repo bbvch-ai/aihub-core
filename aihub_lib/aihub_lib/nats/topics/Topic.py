@@ -1,6 +1,6 @@
 import abc
 import logging
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Self
 
 from pydantic import BaseModel
 
@@ -58,7 +58,7 @@ class Topic(BaseModel, abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def from_subject(cls, subject: str) -> "Topic":
+    def from_subject(cls, subject: str) -> Self:
         """
         Attempts to parse a subject string using all known `Topic` subclasses in the registry.
 

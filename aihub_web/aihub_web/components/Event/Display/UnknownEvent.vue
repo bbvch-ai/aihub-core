@@ -3,15 +3,15 @@
     is-empty
     :event="event"
     :thread="thread"
-    icon="line-md:question"
+    icon="mage:question-mark-circle"
   />
 </template>
 
 <script setup lang="ts">
-import type { ThreadDto, AgentEventReadable } from '@core/sdk/client'
+import type { ThreadDto, ContextualizedAgentEvent } from '@core/sdk/client'
 
 defineProps<{
-  event: AgentEventReadable
+  event: ContextualizedAgentEvent
   thread: ThreadDto
 }>()
 </script>

@@ -99,11 +99,11 @@ import { format } from 'date-fns'
 import type {
   DisplayStatistics,
   ThreadDto,
-  AgentEventReadable,
+  ContextualizedAgentEvent,
 } from '@core/sdk/client'
 
 const props = withDefaults(defineProps<{
-  events: AgentEventReadable[]
+  events: ContextualizedAgentEvent[]
   thread: ThreadDto
   displayId?: string
   showChat?: boolean

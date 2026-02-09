@@ -1,48 +1,134 @@
-from typing import TYPE_CHECKING, Annotated
+import logging
+from typing import TYPE_CHECKING, Annotated, Self
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field, model_validator
 
 from aihub_lib.i18n.LocaleString import LocaleString
+from aihub_lib.nats.events.form.constraints import Pattern
+from aihub_lib.nats.events.form.elements.IconSelector import IconSelector
+from aihub_lib.nats.events.form.elements.InputText import InputText
+from aihub_lib.nats.events.form.elements.LocaleInput import LocaleInput
+from aihub_lib.nats.events.form.Form import Form
 
 if TYPE_CHECKING:
     from aihub_lib.persistence.process import ProcessConfigEntity
 
+logger = logging.getLogger(__name__)
 
-class ProcessConfig(BaseModel):
+
+def _locale_string_has_content(value: LocaleString) -> bool:
+    """Check if a LocaleString has at least one non-empty locale value."""
+    return any(getattr(value, locale, None) not in (None, "") for locale in ("de", "en", "fr", "it"))
+
+
+class ProcessConfig(Form):
     """
     Each process instance can be configured with its own parameters.
-    Note that the process config is much less flexible than the agent config.
-    Why?
 
-    Well, the agent config is mostly used for runtime configuration, hence, to configure how the
-    agent completes its steps. Or, in other words, how it does its work.
-    In contrast, processes don't do work. At all. They just connect process entities and do the minimal amount
-    of transformation between the work output of one entity and the input of another. Hence, there is little to no
-    need for runtime configuration.
+    The process config follows the same duality pattern as AgentConfig:
+    - **Form mode** (via `as_form()`): Fields contain FormKit elements for UI rendering.
+    - **Data mode**: Fields contain actual primitive values for runtime use.
 
-    Begs the question: Why can't we use the config to configure stuff like Agent.In or Agent.Out? Would it not be
-    cool to have a flexible process with Agent.in(agent_class=config.agent_class, agent_id=config.agent_id)?
-    Yes! It would be cool, but it is not possible. The Agent.In and Agent.Out must be statically defined such that
-    the process dispatcher and the process entity delegators know a-priori to which agents they must subscribe.
-    Hence, you can do funny things like Agent.In(agent_class=config.agent_class, agent_id=config.agent_id),
-    but then you must import the process config class into the process entity.
-    That is possible and also allowed. It's just not the same flexibility as the agent config, which is dynamically
-    injected into each agent step at-runtime.
+    This ensures the form schema and the data model can never de-sync.
+
+    Subclasses can add domain-specific config fields for process-level settings.
     """
 
-    name: Annotated[LocaleString, Field(description="The name of the process.")]
-    description: Annotated[LocaleString, Field(description="The description of the process.")]
-    icon: Annotated[str, Field(description="The icon representing the process.")] = "carbon:ibm-event-processing"
-
-    process_class: Annotated[str, Field(description="The class name of the process, used for identification.")]
-    process_id: Annotated[
-        str, Field(description="Used to uniquely identify this process instance.", pattern=r"^[a-z0-9_-]+$")
+    process_class: Annotated[
+        str | InputText,
+        Field(description="The class name of the process, used for identification."),
     ]
+    process_id: Annotated[
+        str | InputText,
+        Field(description="Used to uniquely identify this process instance."),
+        Pattern(r"^[a-z0-9_-]+$"),
+    ]
+    name: Annotated[LocaleString | LocaleInput, Field(description="The name of the process.")]
+    description: Annotated[
+        LocaleString | LocaleInput,
+        Field(description="The description of the process."),
+    ]
+    icon: Annotated[
+        str | IconSelector,
+        Field(description="The icon representing the process."),
+    ] = "mage:broadcast"
 
     model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True, use_enum_values=True, extra="allow")
 
+    @model_validator(mode="after")
+    def validate_locale_strings_have_content(self) -> Self:
+        """Validate that name and description LocaleStrings have at least one non-empty value."""
+        if isinstance(self.name, LocaleString) and not _locale_string_has_content(self.name):
+            raise ValueError("name must have at least one language with content")
+        if isinstance(self.description, LocaleString) and not _locale_string_has_content(self.description):
+            raise ValueError("description must have at least one language with content")
+        return self
+
     @classmethod
-    def from_entity(cls, entity: "ProcessConfigEntity") -> "ProcessConfig":
+    def as_form(cls) -> Self:
+        """
+        Creates a form-mode ProcessConfig with FormKit input elements.
+
+        Subclasses should override this method and call super().as_form() to get
+        the base identity fields, then extend with their own fields.
+        """
+        return cls(
+            process_id=InputText(
+                label=LocaleString.from_i18n_path("lib.process_steps.config.process_id.label"),
+                help=LocaleString.from_i18n_path("lib.process_steps.config.process_id.help"),
+                placeholder=LocaleString.from_i18n_path("lib.process_steps.config.process_id.placeholder"),
+                required=True,
+            ),
+            name=LocaleInput(
+                label=LocaleString.from_i18n_path("lib.process_steps.config.name.label"),
+                placeholder=LocaleString.from_i18n_path("lib.process_steps.config.name.placeholder"),
+                input_type="text",
+            ),
+            description=LocaleInput(
+                label=LocaleString.from_i18n_path("lib.process_steps.config.description.label"),
+                placeholder=LocaleString.from_i18n_path("lib.process_steps.config.description.placeholder"),
+                input_type="textarea",
+            ),
+            icon=IconSelector(
+                label=LocaleString.from_i18n_path("lib.process_steps.config.icon.label"),
+                help=LocaleString.from_i18n_path("lib.process_steps.config.icon.help"),
+                placeholder=LocaleString.from_i18n_path("lib.process_steps.config.icon.placeholder"),
+            ),
+            # process_class is not user-configurable - it's determined by which class is selected
+            process_class="",
+        )
+
+    @classmethod
+    def _process_identity_inputs(cls) -> dict[str, InputText | LocaleInput | IconSelector]:
+        """
+        Shared input elements for process identity fields used by subclasses.
+
+        Returns a dict of field names to FormkitElements for form rendering.
+        """
+        return {
+            "name": LocaleInput(
+                label=LocaleString.from_i18n_path("lib.process_steps.config.name.label"),
+                input_type="text",
+            ),
+            "description": LocaleInput(
+                label=LocaleString.from_i18n_path("lib.process_steps.config.description.label"),
+                input_type="textarea",
+            ),
+            "icon": IconSelector(
+                label=LocaleString.from_i18n_path("lib.process_steps.config.icon.label"),
+                help=LocaleString.from_i18n_path("lib.process_steps.config.icon.help"),
+            ),
+            "process_class": InputText(
+                label=LocaleString.from_i18n_path("lib.process_steps.config.process_class.label"),
+            ),
+            "process_id": InputText(
+                label=LocaleString.from_i18n_path("lib.process_steps.config.process_id.label"),
+                help=LocaleString.from_i18n_path("lib.process_steps.config.process_id.help"),
+            ),
+        }
+
+    @classmethod
+    def from_entity(cls, entity: "ProcessConfigEntity") -> Self:
         data = {
             "process_class": entity.process_class,
             "process_id": entity.process_id,

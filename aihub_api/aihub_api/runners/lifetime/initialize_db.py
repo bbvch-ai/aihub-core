@@ -73,7 +73,6 @@ async def initialize_roles() -> None:
 
     logger.info("Role initialization completed successfully")
 
-    # Initialize superuser if enabled
     await initialize_superuser()
 
 
@@ -84,14 +83,12 @@ async def initialize_role(name: str, description: str, access_rules: list[str]) 
     This is a generic function that can be used to create any role with
     the specified permissions. It is idempotent and safe to call multiple times.
     """
-    # Check if the role already exists
     existing_role = RoleEntity.get_role_by_name(name)
 
     if existing_role:
         logger.info(f"Role '{name}' already exists, skipping creation")
         return
 
-    # Create the new role
     role = RoleEntity(name=name, description=description, access_rules=access_rules)
 
     try:

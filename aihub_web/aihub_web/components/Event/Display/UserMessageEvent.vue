@@ -2,7 +2,7 @@
   <EventDisplayBase
     :event="event"
     :thread="thread"
-    icon="line-md:chat-filled"
+    icon="mage:message"
     is-external
   >
     <div class="flex flex-col gap-8">
@@ -24,10 +24,10 @@
 </template>
 
 <script setup lang="ts">
-import type { ThreadDto, UserMessageEventReadable, AgentEventReadable } from '@core/sdk/client'
+import type { ThreadDto, UserMessageEvent, ContextualizedAgentEvent } from '@core/sdk/client'
 
 const props = defineProps<{
-  event: AgentEventReadable & { event: UserMessageEventReadable }
+  event: ContextualizedAgentEvent & { event: UserMessageEvent }
   thread: ThreadDto
 }>()
 

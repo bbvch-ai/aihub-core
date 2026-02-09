@@ -1,4 +1,4 @@
-from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent
+from aihub_lib.persistence.messaging.entities.ThreadEntity import AgentInstanceRef
 from pydantic import BaseModel
 
 
@@ -7,8 +7,8 @@ class ThreadAgentDTO(BaseModel):
     agent_class: str
 
     @classmethod
-    def from_agent_entity(cls, agent: Agent):
+    def from_agent_ref(cls, agent_ref: AgentInstanceRef):
         return cls(
-            agent_id=agent.agent_id,
-            agent_class=agent.agent_id,
+            agent_id=agent_ref.agent_id,
+            agent_class=agent_ref.agent_class,
         )

@@ -85,7 +85,6 @@ class DocStoreIOManager(ConfigurableIOManager):
         return RefDocDocument(**document.to_dict())
 
     def load_input(self, context: InputContext) -> RefDocDocument | list[RefDocDocument]:
-        # Check if a partition key is available
         if context.has_partition_key:
             # If partition key is present, use it to load the document
             return self.get_ref_doc(context.partition_key, context)
@@ -96,7 +95,6 @@ class DocStoreIOManager(ConfigurableIOManager):
             partitions_def = upstream_output.asset_partitions_def
 
             if partitions_def is not None:
-                # Get all partition keys from the upstream asset
                 all_partition_keys = partitions_def.get_partition_keys(dynamic_partitions_store=context.instance)
                 ref_docs = []
                 for partition_key in all_partition_keys:

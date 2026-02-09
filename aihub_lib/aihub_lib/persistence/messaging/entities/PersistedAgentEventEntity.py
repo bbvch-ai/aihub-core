@@ -402,7 +402,6 @@ class PersistedAgentEventEntity(Document):
                     current_agent_id = None
                     current_agent_class = None
 
-                # Create and append user message
                 content = event.event_data.get("content", "") or event.event_data.get("response", "")
                 message_history.append(
                     ChatMessage(
@@ -412,7 +411,6 @@ class PersistedAgentEventEntity(Document):
                 )
 
             elif event.event_name in ["ChunkEvent", "HumanInTheLoopRequestEvent"]:
-                # Check if we are continuing the same assistant message
                 if current_run_id == event.run_id and current_agent_id == event.agent_id:
                     assistant_content_buffer = event.event_data.get("content", "") or event.event_data.get(
                         "question", ""

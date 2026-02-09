@@ -42,6 +42,7 @@ rclone:
 **Steps:**
 
 1. **One-time authorization** (run on your machine):
+
    ```bash
    docker exec -it rclone rclone config
    # Choose: n (new remote)
@@ -53,11 +54,13 @@ rclone:
    ```
 
 2. **Export the token**:
+
    ```bash
    docker exec rclone rclone config show gdrive
    ```
 
 3. **Save to environment** (copy the `token` field):
+
    ```bash
    # .env
    RCLONE_GDRIVE_NAME=gdrive
