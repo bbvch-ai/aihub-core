@@ -23,14 +23,40 @@ permissions:
   packages: write
 
 jobs:
-  build:
+  # ---------------------------------------------------------------------------
+  # Discover which pipelines to build by parsing compose-config.yml
+  # ---------------------------------------------------------------------------
+  discover-pipelines:
     runs-on: ubuntu-latest
     if: >
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'repository_dispatch'
+    outputs:
+      matrix: ${{ steps.parse.outputs.matrix }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Parse pipeline images from compose-config.yml
+        id: parse
+        run: |
+          # Extract image names where build == "localbuild" and name ends with "_pipeline"
+          images=$(python3 -c "
+          import yaml, json
+          with open('deployment/compose-config.yml') as f:
+              config = yaml.safe_load(f)
+          images = [k for k, v in config['image_tags'].items() if isinstance(v, dict) and v.get('build') == 'localbuild' and k.endswith('_pipeline')]
+          print(json.dumps(images))
+          ")
+
+          echo "Discovered pipelines: $images"
+          echo "matrix={\"image\":$images}" >> $GITHUB_OUTPUT
+
+  build:
+    runs-on: ubuntu-latest
+    needs: discover-pipelines
     strategy:
-      matrix:
-        image: [default_rag_pipeline, shared_rag_pipeline]
+      matrix: ${{ fromJson(needs.discover-pipelines.outputs.matrix) }}
     continue-on-error: true
     steps:
       - name: Checkout code
