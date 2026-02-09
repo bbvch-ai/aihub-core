@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.260.2] - 2026-02-03 - Universal Data Ingestion with Rclone and Smarter Memory Retrieval
+
+### Added
+
+- 🚀 **Introduced Rclone Integration for Universal Data Ingestion:** A new, unified pipeline now supports syncing
+  documents from over 70 cloud storage providers (including SharePoint, OneDrive, Google Drive, AWS S3, Azure Blob,
+  SFTP, and local filesystems) to your S3 data lake. This replaces previous provider-specific implementations, offering
+  a single, flexible solution.
+- ⚙️ **New `Rclone` Docker Service:** A dedicated `rclone` service has been added to the Docker Compose setup, providing
+  the Rclone Remote Control (RC) API for seamless integration with ingestion pipelines.
+- 📄 **Comprehensive Source Templates:** Pre-configured templates and detailed setup guides have been added for common
+  Rclone sources, simplifying configuration for Azure Blob, Google Drive, Local Filesystem, OneDrive, S3, SFTP, and
+  SharePoint.
+- ✨ **Enhanced Memory Retrieval Display:** New event handlers (`RetrieveUserMemoryEventHandler`,
+  `RetrieveOrganizationMemoryEventHandler`) improve the display of retrieved user and organization memories, providing
+  more detailed source information in the UI.
+- 🔑 **Rclone RC API Environment Variables:** Added `RCLONE_URL`, `RCLONE_RC_USER`, and `RCLONE_RC_PASS` environment
+  variables for configuring the Rclone RC API connection, including secure authentication for production.
+
+### Changed
+
+- 🔄 **Migrated Data Ingestion Documentation:** The data ingestion pipeline documentation has been comprehensively
+  updated to reflect the new Rclone-based universal approach, deprecating the previous SharePoint-specific guide.
+- 🛠️ **Updated Data Lake Definitions Utility:** The `default_sharepoint_to_datalake_definitions` factory has been
+  replaced by `default_rclone_to_datalake_definitions`, streamlining the creation of data ingestion pipelines.
+
+### Removed
+
+- 🗑️ **Deprecated SharePoint-specific Data Lake Definition:** The `default_sharepoint_to_datalake_definitions` factory
+  has been removed, superseded by the more versatile Rclone integration.
+
+### Security
+
+- 🔒 **Rclone RC API Authentication Enforced:** The Rclone service now requires authentication via `RCLONE_RC_USER` and
+  `RCLONE_RC_PASS` in production environments, significantly improving security. Users are explicitly warned to change
+  default credentials in production.
+
+### Refactor
+
+- 🧹 **Flexible Environment Settings Configuration:** The `create_settings_config` method in `EnvironmentSettings` now
+  supports an `extra` argument, allowing for more flexible loading of dynamic, backend-specific Rclone options from
+  environment variables.
+
+---
+
 ## [v0.260.1] - 2026-02-03 - API Configuration Standardization for Docling Loader
 
 ### Refactor
