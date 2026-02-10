@@ -830,6 +830,7 @@ services:
     networks:
       - backend
       - data  # For PostgreSQL access
+      - storage  # For SeaweedFS S3 access
 
   langfuse-web:
     container_name: langfuse-web
@@ -846,7 +847,7 @@ services:
         condition: service_started
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
-      - "6006:3000"
+      - "127.0.0.1:6006:3000"
     {%- endif %}
     environment:
       NEXTAUTH_URL: ${LANGFUSE_NEXTAUTH_URL}

@@ -709,6 +709,7 @@ services:
     networks:
       - backend
       - data  # For PostgreSQL access
+      - storage  # For SeaweedFS S3 access
 
   langfuse-web:
     container_name: langfuse-web
@@ -724,7 +725,7 @@ services:
       langfuse-worker:
         condition: service_started
     ports:
-      - "6006:3000"
+      - "127.0.0.1:6006:3000"
     environment:
       NEXTAUTH_URL: ${LANGFUSE_NEXTAUTH_URL}
       NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET}

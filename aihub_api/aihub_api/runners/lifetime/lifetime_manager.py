@@ -34,6 +34,18 @@ from aihub_api.sockets.sender.WebSocketSender import WebSocketSender
 logger = logging.getLogger(__name__)
 
 
+def _create_langfuse_bootstrap() -> LangfuseBootstrap | None:
+    """
+    Create a LangfuseBootstrap instance, returning None if Langfuse is not configured.
+    This prevents missing environment variables from crashing API startup.
+    """
+    try:
+        return LangfuseBootstrap()
+    except Exception as e:
+        logger.warning(f"Langfuse not configured (non-fatal): {e}")
+        return None
+
+
 async def _bootstrap_langfuse(langfuse_bootstrap: LangfuseBootstrap) -> None:
     """
     Bootstrap Langfuse with AI-Hub LLM connections and evaluators.
@@ -187,7 +199,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
         api_app = app.state.api_app
 
-        langfuse_bootstrap = LangfuseBootstrap()
+        langfuse_bootstrap = _create_langfuse_bootstrap()
 
         if hasattr(api_app.state, "agent_controller"):
             agent_discovery_service = AgentEndpointsDiscoveryService(
@@ -220,7 +232,8 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         await initialize_knowledge_buckets()
 
         # Bootstrap Langfuse with AI-Hub LLM connections
-        await _bootstrap_langfuse(langfuse_bootstrap)
+        if langfuse_bootstrap:
+            await _bootstrap_langfuse(langfuse_bootstrap)
 
         # Yield control back to FastAPI to start serving requests
         yield

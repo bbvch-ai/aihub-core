@@ -20,13 +20,12 @@ logger = logging.getLogger(__name__)
 
 class AgentRunTracer:
     """
-    Coordinates the tracing of runs and steps using OpenTelemetry.
+    Coordinates the tracing of runs and steps using OpenTelemetry and Langfuse.
 
-    This implementation uses a two-span approach for the agent run:
-    1.  An initial, short-lived 'AGENT' span is created to act as the parent
-        for all nested step spans.
-    2.  A final, long-running 'CHAIN' span is created at the end of the run
-        to capture the total duration and final input/output.
+    Each workflow step gets its own span with Langfuse trace-level attributes
+    (name, session, user, input/output) set via span attributes. Langfuse
+    groups these spans into traces automatically. Run metadata (user input,
+    user ID) is cached in-memory per run_id and cleaned up on run completion.
     """
 
     def __init__(self):
@@ -118,7 +117,9 @@ class AgentRunTracer:
         user_id = self._run_user_ids.get(topic.run_id, "")
         output_text = ""
 
+        is_final_step = False
         if output_events:
+            is_final_step = any(ev.is_stop_event for ev in output_events)
             span.set_attributes(
                 {
                     SpanAttributes.OUTPUT_VALUE: json.dumps([ev.to_trace_dict() for ev in output_events], default=str),
@@ -130,7 +131,7 @@ class AgentRunTracer:
                 semantic_attrs = semantic_event.to_semantic_convention()
                 span.set_attributes(semantic_attrs)
 
-                # Extract LLM output for trace-level display
+                # Extract LLM output for trace-level display (only used on final step)
                 if hasattr(semantic_event, "output_messages") and semantic_event.output_messages:
                     output_text = semantic_event.output_messages[-1].content or ""
 
@@ -148,21 +149,22 @@ class AgentRunTracer:
                         span.set_attribute("langfuse.observation.model", semantic_event.chat_model_name)
 
         # Set Langfuse trace-level display attributes
-        span.set_attributes(
-            {
-                "langfuse.trace.name": f"🤖 {topic.agent_class}",
-                "langfuse.trace.input": user_input,
-                "langfuse.trace.output": output_text,
-                "langfuse.trace.tags": [topic.agent_class, topic.agent_id],
-                "langfuse.trace.metadata.agent_class": topic.agent_class,
-                "langfuse.trace.metadata.agent_id": topic.agent_id,
-                "langfuse.trace.metadata.run_id": topic.run_id,
-                "langfuse.trace.metadata.display_id": topic.display_id,
-                "langfuse.user.id": user_id,
-                "langfuse.session.id": topic.thread_id,
-                "deployment.environment.name": "agent",
-            }
-        )
+        trace_attrs: dict[str, Any] = {
+            "langfuse.trace.name": f"🤖 {topic.agent_class}",
+            "langfuse.trace.input": user_input,
+            "langfuse.trace.tags": [topic.agent_class, topic.agent_id],
+            "langfuse.trace.metadata.agent_class": topic.agent_class,
+            "langfuse.trace.metadata.agent_id": topic.agent_id,
+            "langfuse.trace.metadata.run_id": topic.run_id,
+            "langfuse.trace.metadata.display_id": topic.display_id,
+            "langfuse.user.id": user_id,
+            "langfuse.session.id": topic.thread_id,
+            "deployment.environment.name": "agent",
+        }
+        # Only set trace output on the final step to avoid intermediate steps overwriting it
+        if is_final_step:
+            trace_attrs["langfuse.trace.output"] = output_text
+        span.set_attributes(trace_attrs)
 
         span.set_status(StatusCode.OK)
 

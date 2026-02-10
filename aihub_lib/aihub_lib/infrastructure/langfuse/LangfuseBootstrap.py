@@ -117,7 +117,11 @@ class LangfuseBootstrap:
             return []
 
         data = response.json().get("data", [])
-        models = [entry["model_name"] for entry in data if entry.get("model_info", {}).get("mode") == "chat"]
+        models = [
+            entry["model_name"]
+            for entry in data
+            if "model_name" in entry and entry.get("model_info", {}).get("mode") == "chat"
+        ]
 
         logger.info(f"Langfuse bootstrap: Discovered {len(models)} chat models from LiteLLM: {models}")
         return models

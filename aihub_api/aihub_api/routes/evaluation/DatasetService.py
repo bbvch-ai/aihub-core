@@ -1,3 +1,4 @@
+import asyncio
 from datetime import UTC, datetime
 from typing import Any
 
@@ -14,16 +15,22 @@ from aihub_api.routes.evaluation.dto.dataset.MinimalDataset import MinimalDatase
 INPUT_KEY_QUESTION = "question"
 OUTPUT_KEY_ANSWER = "answer"
 
+_langfuse_client: Langfuse | None = None
+
+
+def _get_langfuse_client() -> Langfuse:
+    """Return a shared Langfuse client singleton."""
+    global _langfuse_client  # noqa: PLW0603
+    if _langfuse_client is None:
+        _langfuse_client = LangfuseSettings().create_client()
+    return _langfuse_client
+
 
 class DatasetService:
     """Handles business logic for Langfuse evaluation datasets.
 
     Experiments are now managed directly in the Langfuse UI.
     """
-
-    @staticmethod
-    def _get_langfuse_client() -> Langfuse:
-        return LangfuseSettings().create_client()
 
     @staticmethod
     def _fetch_datasets(client: Langfuse) -> list[Any]:
@@ -52,23 +59,25 @@ class DatasetService:
     @staticmethod
     @trace_fn
     async def create_dataset(create_dto: DatasetCreate) -> Dataset:
-        client = DatasetService._get_langfuse_client()
+        client = _get_langfuse_client()
 
-        langfuse_dataset = client.create_dataset(
+        langfuse_dataset = await asyncio.to_thread(
+            client.create_dataset,
             name=create_dto.dataset_name,
             description=create_dto.description,
         )
 
         items_dto: list[DatasetItem] = []
         for item in create_dto.items:
-            dataset_item = client.create_dataset_item(
+            dataset_item = await asyncio.to_thread(
+                client.create_dataset_item,
                 dataset_name=create_dto.dataset_name,
                 input={INPUT_KEY_QUESTION: item.question},
                 expected_output={OUTPUT_KEY_ANSWER: item.answer},
             )
             items_dto.append(DatasetItem(id=dataset_item.id, question=item.question, answer=item.answer))
 
-        client.flush()
+        await asyncio.to_thread(client.flush)
 
         return Dataset(
             id=langfuse_dataset.id,
@@ -81,19 +90,20 @@ class DatasetService:
     @staticmethod
     @trace_fn
     async def update_dataset(dataset_id: str, append_dto: DatasetUpdate) -> Dataset:
-        client = DatasetService._get_langfuse_client()
-        dataset = DatasetService._fetch_dataset_by_id(client, dataset_id)
+        client = _get_langfuse_client()
+        dataset = await asyncio.to_thread(DatasetService._fetch_dataset_by_id, client, dataset_id)
 
         new_items: list[DatasetItem] = []
         for item in append_dto.items:
-            dataset_item = client.create_dataset_item(
+            dataset_item = await asyncio.to_thread(
+                client.create_dataset_item,
                 dataset_name=dataset.name,
                 input={INPUT_KEY_QUESTION: item.question},
                 expected_output={OUTPUT_KEY_ANSWER: item.answer},
             )
             new_items.append(DatasetItem(id=dataset_item.id, question=item.question, answer=item.answer))
 
-        client.flush()
+        await asyncio.to_thread(client.flush)
 
         all_items = [DatasetService._langfuse_item_to_dto(item) for item in dataset.items]
         all_items.extend(new_items)
@@ -110,8 +120,8 @@ class DatasetService:
     @staticmethod
     @trace_fn
     async def get_dataset(dataset_id: str) -> Dataset:
-        client = DatasetService._get_langfuse_client()
-        dataset = DatasetService._fetch_dataset_by_id(client, dataset_id)
+        client = _get_langfuse_client()
+        dataset = await asyncio.to_thread(DatasetService._fetch_dataset_by_id, client, dataset_id)
 
         return Dataset(
             id=dataset.id,
@@ -125,8 +135,8 @@ class DatasetService:
     @staticmethod
     @trace_fn
     async def get_datasets() -> list[MinimalDataset]:
-        client = DatasetService._get_langfuse_client()
-        datasets = DatasetService._fetch_datasets(client)
+        client = _get_langfuse_client()
+        datasets = await asyncio.to_thread(DatasetService._fetch_datasets, client)
 
         return [
             MinimalDataset(

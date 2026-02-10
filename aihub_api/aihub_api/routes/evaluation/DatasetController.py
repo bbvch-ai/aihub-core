@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -35,7 +35,7 @@ class DatasetController(Controller):
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
-    def create_dataset(self, route: str = "/") -> "DatasetController":
+    def create_dataset(self, route: str = "/") -> Self:
         @self.router.post(
             route,
             tags=self.tags,
@@ -50,7 +50,7 @@ class DatasetController(Controller):
 
         return self
 
-    def get_datasets(self, route: str = "/") -> "DatasetController":
+    def get_datasets(self, route: str = "/") -> Self:
         @self.router.get(
             route,
             tags=self.tags,
@@ -64,7 +64,7 @@ class DatasetController(Controller):
 
         return self
 
-    def get_dataset(self, route: str = "/{dataset_id}") -> "DatasetController":
+    def get_dataset(self, route: str = "/{dataset_id}") -> Self:
         @self.router.get(
             route,
             tags=self.tags,
@@ -82,7 +82,7 @@ class DatasetController(Controller):
 
         return self
 
-    def update_dataset(self, route: str = "/{dataset_id}") -> "DatasetController":
+    def update_dataset(self, route: str = "/{dataset_id}") -> Self:
         @self.router.put(
             route,
             tags=self.tags,
