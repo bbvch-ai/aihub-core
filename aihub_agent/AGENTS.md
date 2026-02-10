@@ -2,7 +2,7 @@
 
 **Purpose**: Agent logic and workflow definitions. Autonomous AI components designed for proactive process automation.
 
-Tech Stack & Paradigms: LlamaIndex Core workflow engine with custom @step decorator. LlamaIndex LLMs (OpenAI, Azure OpenAI). NATS pub-sub for event-driven architecture. Redis v5 client for Valkey state (RunContext ephemeral, ThreadContext persistent). MongoEngine for persistence. OpenTelemetry SDK + API + OTLP exporter. OpenInference LlamaIndex instrumentation. Pydantic v2 + pydantic-settings. python-i18n for translations. colorlog for logging. cachetools for TTL caching. stringcase for string manipulation. flatdict for nested dict flattening. DispatchableWorkflow base class. Transparent, auditable workflows (not black-box). pytest-bdd for Gherkin BDD tests. AgentRunner and AgentTestRunner. pytest-mock + pytest-asyncio. Development tools: matplotlib, seaborn, tabulate for analysis.
+Tech Stack & Paradigms: LlamaIndex Core workflow engine with custom @step decorator. LlamaIndex LLMs (OpenAI, Azure OpenAI). NATS pub-sub for event-driven architecture. Redis v5 client for Valkey state (RunContext ephemeral, ThreadContext persistent). MongoEngine for persistence. OpenTelemetry SDK + API + OTLP exporter. OpenInference LlamaIndex instrumentation. Pydantic v2 + pydantic-settings. python-i18n for translations. colorlog for logging. cachetools for TTL caching. stringcase for string manipulation. DispatchableWorkflow base class. Transparent, auditable workflows (not black-box). pytest-bdd for Gherkin BDD tests. AgentRunner and AgentTestRunner. pytest-mock + pytest-asyncio. Development tools: matplotlib, seaborn, tabulate for analysis.
 
 ## Scope Responsibility
 
