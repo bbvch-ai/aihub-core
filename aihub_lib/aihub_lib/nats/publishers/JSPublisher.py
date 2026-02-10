@@ -94,7 +94,10 @@ class JSPublisher(AbstractPublisher[TEvent]):
                         return  # Success, no retry needed
 
                     except TimeoutError:
-                        logger.warning(f"{self.name} publish timeout ({attempt + 1}/{retries}) for {event.event_name} ")
+                        logger.warning(
+                            f"{self.name} publish timeout ({attempt + 1}/{retries}) for {event.event_name} "
+                            f"to subject {subject}"
+                        )
                     except Exception as e:
                         logger.exception(
                             f"{self.name} NATS error while publishing event {event.event_name} "
