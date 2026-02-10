@@ -8,7 +8,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   ]
 
   // No auth check for public paths (normalize trailing slash for comparison)
-  const normalizedPath = to.path.replace(/\/+$/, '')
+  const normalizedPath = to.path.endsWith('/') ? to.path.slice(0, -1) : to.path
   if (noAuthPaths.includes(normalizedPath)) {
     return
   }
