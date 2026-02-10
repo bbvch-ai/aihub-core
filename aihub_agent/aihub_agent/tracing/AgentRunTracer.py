@@ -150,7 +150,7 @@ class AgentRunTracer:
 
         # Set Langfuse trace-level display attributes
         trace_attrs: dict[str, Any] = {
-            "langfuse.trace.name": f"🤖 {topic.agent_class}",
+            "langfuse.trace.name": f"🤖 {topic.agent_class}/{topic.agent_id}",
             "langfuse.trace.input": user_input,
             "langfuse.trace.tags": [topic.agent_class, topic.agent_id],
             "langfuse.trace.metadata.agent_class": topic.agent_class,
