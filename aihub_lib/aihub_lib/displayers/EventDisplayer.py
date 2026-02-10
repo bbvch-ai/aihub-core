@@ -2,8 +2,6 @@ import json
 import logging
 from typing import Annotated, Any
 
-from flatdict import FlatterDict
-
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.callbacks import TokenCountingHandler
 from llama_index.core.llms import LLM
