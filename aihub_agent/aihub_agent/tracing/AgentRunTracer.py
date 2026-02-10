@@ -32,6 +32,7 @@ class AgentRunTracer:
         self.tracer = get_tracer(__name__)
         self._run_inputs: dict[str, str] = {}
         self._run_user_ids: dict[str, str] = {}
+        self._run_outputs: dict[str, str] = {}
 
     async def trace_run_start(self, topic: AgentInstanceTopic, event: StartEvent):
         """
@@ -115,7 +116,6 @@ class AgentRunTracer:
         """
         user_input = self._run_inputs.get(topic.run_id, "")
         user_id = self._run_user_ids.get(topic.run_id, "")
-        output_text = ""
 
         is_final_step = False
         if output_events:
@@ -128,25 +128,7 @@ class AgentRunTracer:
             )
             semantic_event = next((ev for ev in output_events if ev.is_semantic_event), None)
             if semantic_event:
-                semantic_attrs = semantic_event.to_semantic_convention()
-                span.set_attributes(semantic_attrs)
-
-                # Extract LLM output for trace-level display (only used on final step)
-                if hasattr(semantic_event, "output_messages") and semantic_event.output_messages:
-                    output_text = semantic_event.output_messages[-1].content or ""
-
-                # Set Langfuse usage details for cost tracking
-                if hasattr(semantic_event, "token_count_prompt") and hasattr(semantic_event, "token_count_completion"):
-                    usage_details = {
-                        "input": semantic_event.token_count_prompt or 0,
-                        "output": semantic_event.token_count_completion or 0,
-                        "total": semantic_event.token_count_total or 0,
-                    }
-                    span.set_attribute("langfuse.observation.usage_details", json.dumps(usage_details))
-
-                    # Set model for Langfuse to recognize as generation
-                    if hasattr(semantic_event, "chat_model_name") and semantic_event.chat_model_name:
-                        span.set_attribute("langfuse.observation.model", semantic_event.chat_model_name)
+                self._set_semantic_attributes(span, semantic_event, topic.run_id)
 
         # Set Langfuse trace-level display attributes
         trace_attrs: dict[str, Any] = {
@@ -161,12 +143,29 @@ class AgentRunTracer:
             "langfuse.session.id": topic.thread_id,
             "deployment.environment.name": "agent",
         }
-        # Only set trace output on the final step to avoid intermediate steps overwriting it
         if is_final_step:
-            trace_attrs["langfuse.trace.output"] = output_text
+            trace_attrs["langfuse.trace.output"] = self._run_outputs.get(topic.run_id, "")
         span.set_attributes(trace_attrs)
 
         span.set_status(StatusCode.OK)
+
+    def _set_semantic_attributes(self, span: Span, semantic_event: BaseEvent, run_id: str):
+        """Extracts semantic conventions, usage details, and caches LLM output for the trace."""
+        span.set_attributes(semantic_event.to_semantic_convention())
+
+        if hasattr(semantic_event, "output_messages") and semantic_event.output_messages:
+            self._run_outputs[run_id] = semantic_event.output_messages[-1].content or ""
+
+        if hasattr(semantic_event, "token_count_prompt") and hasattr(semantic_event, "token_count_completion"):
+            usage_details = {
+                "input": semantic_event.token_count_prompt or 0,
+                "output": semantic_event.token_count_completion or 0,
+                "total": semantic_event.token_count_total or 0,
+            }
+            span.set_attribute("langfuse.observation.usage_details", json.dumps(usage_details))
+
+            if hasattr(semantic_event, "chat_model_name") and semantic_event.chat_model_name:
+                span.set_attribute("langfuse.observation.model", semantic_event.chat_model_name)
 
     def trace_step_error(self, span: Span, error: Exception):
         """
@@ -181,3 +180,4 @@ class AgentRunTracer:
         """
         self._run_inputs.pop(run_id, None)
         self._run_user_ids.pop(run_id, None)
+        self._run_outputs.pop(run_id, None)
