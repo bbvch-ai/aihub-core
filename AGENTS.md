@@ -103,7 +103,15 @@ packages.
 
 - **OpenTelemetry**: End-to-end distributed tracing
 - **OpenInference**: LLM-specific instrumentation
-- **Langfuse**: AI observability, trace visualization, and evaluation (http://localhost:6006)
+- **Langfuse**: AI observability platform providing:
+  - Real-time trace visualization for agent execution flows
+  - Cost tracking per trace, user, and agent (integrated with LiteLLM)
+  - Dataset management for evaluation (question-answer pairs)
+  - UI-driven experiment workflows (run agents against test datasets)
+  - Production-grade with Azure AD SSO integration
+  - Access: http://localhost:6006 (dev) or configured production URL
+  - Auto-provisioned on startup with AI-Hub agent registry sync
+  - For migration details from Phoenix, see ADR: `/aihub_doc/arc42/decisions/2026_02_10_replace_phoenix_with_langfuse.md`
 
 **Messaging**:
 
