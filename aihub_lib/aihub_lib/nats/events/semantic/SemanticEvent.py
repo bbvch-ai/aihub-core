@@ -6,7 +6,7 @@ from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
 class SemanticEvent(ControlAndDisplayEvent):
     """
     A base class for events that must report their data to an OpenInference-compatible tracing system,
-    such as Arize Phoenix. By inheriting from both `ControlEvent` and `DisplayEvent`, `SemanticEvent`:
+    such as Langfuse. By inheriting from both `ControlEvent` and `DisplayEvent`, `SemanticEvent`:
     - Influences workflow execution and can control the system flow (like any `ControlEvent`).
     - Remains visible to the end-user or UI (like any `DisplayEvent`).
     - Introduces the requirement to define a `to_semantic_convention()` method,
@@ -20,7 +20,7 @@ class SemanticEvent(ControlAndDisplayEvent):
 
     ### Integrating with OpenInference
     OpenInference mandates a set of semantic conventions for attributes, ensuring that tooling
-    (like Arize Phoenix) can interpret and visualize LLM application behavior. Subclasses of
+    (like Langfuse) can interpret and visualize LLM application behavior. Subclasses of
     `SemanticEvent` should implement `to_semantic_convention()` to:
     - Flatten nested structures into simple key-value pairs following the OpenInference attribute schema.
     - Use reserved attribute names (e.g. `llm.model_name`, `document.id`) as defined in the specification.

@@ -13,6 +13,10 @@ export default defineNuxtConfig({
       webui: {
         url: process.env.ENV == 'dev' ? process.env.WEBUI_URL : '',
       },
+      langfuse: {
+        url: process.env.ENV == 'dev' ? process.env.LANGFUSE_BASEURL : '',
+        projectId: process.env.ENV == 'dev' ? process.env.LANGFUSE_INIT_PROJECT_ID : '',
+      },
       ws: {
         endpoint: process.env.ENV == 'dev' ? process.env.WS_ENDPOINT : '',
       },

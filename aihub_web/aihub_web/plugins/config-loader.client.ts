@@ -18,6 +18,8 @@ export default defineNuxtPlugin(async () => {
     publicConfig.oidc.clientId = appConfig.OAUTH_CLIENT_ID
     publicConfig.oidc.authorityUrl = appConfig.OAUTH_AUTHORITY_URL
     publicConfig.webui.url = appConfig.WEBUI_URL
+    publicConfig.langfuse.url = appConfig.LANGFUSE_BASEURL
+    publicConfig.langfuse.projectId = appConfig.LANGFUSE_INIT_PROJECT_ID
     publicConfig.ws.endpoint = appConfig.WS_ENDPOINT
   }
   catch (error) {

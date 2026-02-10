@@ -321,7 +321,7 @@ class TestAgentDispatcherHandleEvent:
 
         # Mock tracer for stop event processing
         mock_tracer = Mock(spec=AgentRunTracer)
-        mock_tracer.trace_run_completion = AsyncMock(return_value=None)
+        mock_tracer.trace_run_stop = Mock(return_value=None)
         agent_dispatcher.agent_run_tracer = mock_tracer
 
         with (
@@ -351,7 +351,7 @@ class TestAgentDispatcherHandleEvent:
 
         # Mock tracer for exception event processing
         mock_tracer = Mock(spec=AgentRunTracer)
-        mock_tracer.trace_run_completion = AsyncMock(return_value=None)
+        mock_tracer.trace_run_stop = Mock(return_value=None)
         agent_dispatcher.agent_run_tracer = mock_tracer
 
         with (

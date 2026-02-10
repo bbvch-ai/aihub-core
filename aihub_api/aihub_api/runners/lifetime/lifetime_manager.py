@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 
 import boto3
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.langfuse.LangfuseBootstrap import LangfuseBootstrap
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
@@ -31,6 +32,20 @@ from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
 from aihub_api.sockets.sender.WebSocketSender import WebSocketSender
 
 logger = logging.getLogger(__name__)
+
+
+async def _bootstrap_langfuse(langfuse_bootstrap: LangfuseBootstrap) -> None:
+    """
+    Bootstrap Langfuse with AI-Hub LLM connections and evaluators.
+
+    This runs after all core services are initialized so that Langfuse
+    can call back to AI-Hub's OpenAI-compatible endpoint during experiments.
+    Errors are logged but don't block API startup.
+    """
+    try:
+        await langfuse_bootstrap.bootstrap()
+    except Exception as e:
+        logger.warning(f"Langfuse bootstrap failed (non-fatal): {e}")
 
 
 @asynccontextmanager
@@ -172,12 +187,15 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
         api_app = app.state.api_app
 
+        langfuse_bootstrap = LangfuseBootstrap()
+
         if hasattr(api_app.state, "agent_controller"):
             agent_discovery_service = AgentEndpointsDiscoveryService(
                 nc=nc,
                 api_app=api_app,
                 controller=api_app.state.agent_controller,
                 locale_handler=ApiLocaleHandler(),
+                langfuse_bootstrap=langfuse_bootstrap,
                 discovery_interval=60,  # Check for new agents every 60 seconds
             )
             await agent_discovery_service.start()
@@ -200,6 +218,9 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
         await initialize_roles()
         await initialize_knowledge_buckets()
+
+        # Bootstrap Langfuse with AI-Hub LLM connections
+        await _bootstrap_langfuse(langfuse_bootstrap)
 
         # Yield control back to FastAPI to start serving requests
         yield
