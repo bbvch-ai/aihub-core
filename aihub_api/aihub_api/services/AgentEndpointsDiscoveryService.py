@@ -8,7 +8,7 @@ from typing import Annotated, override
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.infrastructure.langfuse.LangfuseBootstrap import LangfuseBootstrap
+from aihub_lib.infrastructure.langfuse.LangfuseProvisioner import LangfuseProvisioner
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributor import (
     use_external_agent_event_distributor,
@@ -64,13 +64,13 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         api_app: FastAPI,
         controller: AgentController,
         locale_handler: LocaleHandler,
-        langfuse_bootstrap: LangfuseBootstrap | None = None,
+        langfuse_provisioner: LangfuseProvisioner | None = None,
         discovery_interval: int = 60,
     ):
         super().__init__(nc, api_app, controller, locale_handler, discovery_interval)
         self.controller: AgentController = controller
         self.topic_manager: AgentTopicManager = AgentTopicManager()
-        self._langfuse_bootstrap = langfuse_bootstrap
+        self._langfuse_provisioner = langfuse_provisioner
         self._last_synced_agents: set[str] = set()
 
     @override
@@ -178,7 +178,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         Uses the same AgentService.get_all_agent_instances() mechanism that OpenWebUI and the
         frontend use to discover available agents. Only syncs when the instance set has changed.
         """
-        if not self._langfuse_bootstrap:
+        if not self._langfuse_provisioner:
             return
 
         instances = await AgentService.get_all_agent_instances(t=self.locale_handler, online=True)
@@ -186,7 +186,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
 
         if agent_models != self._last_synced_agents:
             try:
-                await self._langfuse_bootstrap.sync_agents(sorted(agent_models))
+                await self._langfuse_provisioner.sync_agents(sorted(agent_models))
                 self._last_synced_agents = agent_models
             except Exception as e:
                 logger.warning(f"Langfuse agent sync failed (non-fatal): {e}")
