@@ -110,8 +110,12 @@ def process_file(pyproject_path: Path, mode: str, remote_tag: str, run_install: 
     if run_install:
         print(f"📦 Running poetry lock for {pyproject_path.parent.name}...")
         result = subprocess.run(["poetry", "lock"], cwd=pyproject_path.parent, capture_output=True, text=True)
+        if result.stdout:
+            print(result.stdout)
         if result.returncode != 0:
-            print(f"❌ Failed to lock dependencies in {pyproject_path.parent}: {result.stderr}")
+            print(f"❌ Failed to lock dependencies in {pyproject_path.parent}")
+            if result.stderr:
+                print(f"stderr: {result.stderr}")
             sys.exit(1)
 
         print(f"📦 Running poetry install for {pyproject_path.parent.name}...")
@@ -122,8 +126,12 @@ def process_file(pyproject_path: Path, mode: str, remote_tag: str, run_install: 
         else:
             result = subprocess.run(["poetry", "install"], cwd=pyproject_path.parent, capture_output=True, text=True)
 
+        if result.stdout:
+            print(result.stdout)
         if result.returncode != 0:
-            print(f"❌ Failed to install dependencies in {pyproject_path.parent}: {result.stderr}")
+            print(f"❌ Failed to install dependencies in {pyproject_path.parent}")
+            if result.stderr:
+                print(f"stderr: {result.stderr}")
             sys.exit(1)
         print(f"✅ Successfully installed dependencies for {pyproject_path.parent.name}")
     else:

@@ -26,7 +26,7 @@ tests = ["arrow", "dask[dataframe]", "docker", "pytest", "pytest-mock"]
 
 [[package]]
 name = "aihub-lib"
-version = "v0.261.0"
+version = "v0.261.5"
 description = ""
 optional = false
 python-versions = ">=3.13, <3.14"
@@ -45,7 +45,6 @@ cachetools = "^5.5.2"
 colorlog = "^6.9.0"
 docling-core = "^2.54.1"
 fastapi = "^0.128.0"
-flatdict = "^4.0.1"
 fsspec = "^2024.10.0"
 html5lib = "^1.1"
 llama-index-core = "0.14.12"
@@ -92,8 +91,8 @@ transformers = "^4.57.3"
 [package.source]
 type = "git"
 url = "https://github.com/bbvch-ai/aihub-core.git"
-reference = "v0.261.0"
-resolved_reference = "2708e9a4e53432e4210fb5ce3bb7f65800e5171d"
+reference = "v0.261.5"
+resolved_reference = "0eaba06e45def05c94924434749627febfbb5bfd"
 subdirectory = "aihub_lib"
 
 [[package]]
@@ -2296,17 +2295,6 @@ groups = ["main"]
 files = [
     {file = "filetype-1.2.0-py2.py3-none-any.whl", hash = "sha256:7ce71b6880181241cf7ac8697a2f1eb6a8bd9b429f7ad6d27b8db9ba5f1c2d25"},
     {file = "filetype-1.2.0.tar.gz", hash = "sha256:66b56cd6474bf41d8c54660347d37afcc3f7d1970648de365c102ef77548aadb"},
-]
-
-[[package]]
-name = "flatdict"
-version = "4.0.1"
-description = "Python module for interacting with nested dicts as a single level dict with delimited keys."
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "flatdict-4.0.1.tar.gz", hash = "sha256:cd32f08fd31ed21eb09ebc76f06b6bd12046a24f77beb1fd0281917e47f26742"},
 ]
 
 [[package]]
@@ -9440,4 +9428,4 @@ cffi = ["cffi (>=1.17,<2.0) ; platform_python_implementation != \"PyPy\" and pyt
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13, <3.14"
-content-hash = "1fc699b613b15b659c3e4c6559e37e9b3c188e7ae98d1cf191463f19e79df9b3"
+content-hash = "749ebf127179ebdb1e098174cb76adf226ffb8d415a8f8ef44e2cd11113e9127"

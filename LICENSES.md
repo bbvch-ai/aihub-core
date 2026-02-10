@@ -1,10 +1,10 @@
 # License Report
 
-Generated on: 06.02.2026
+Generated on: 10.02.2026
 
 This document contains license information for all dependencies across the monorepo:
 
-- Python packages (Poetry): **1695 packages**
+- Python packages (Poetry): **1689 packages**
 - Node.js packages (pnpm): **694 packages**
 - External Docker images: **32 images**
 
@@ -113,7 +113,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | contourpy                                    | 1.3.3             | BSD License                                       |       |
 | ✅     | cycler                                       | 0.12.1            | BSD License                                       |       |
 | ✅     | decorator                                    | 5.2.1             | BSD License                                       |       |
-| ✅     | flatdict                                     | 4.0.1             | BSD License                                       |       |
 | ✅     | fsspec                                       | 2024.12.0         | BSD License                                       |       |
 | ✅     | httpx                                        | 0.28.1            | BSD License                                       |       |
 | ✅     | ipython_pygments_lexers                      | 1.1.1             | BSD License                                       |       |
@@ -397,7 +396,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | asgiref                                          | 3.10.0                | BSD License                                                  |       |
 | ✅     | colorama                                         | 0.4.6                 | BSD License                                                  |       |
 | ✅     | decorator                                        | 5.2.1                 | BSD License                                                  |       |
-| ✅     | flatdict                                         | 4.0.1                 | BSD License                                                  |       |
 | ✅     | fsspec                                           | 2024.12.0             | BSD License                                                  |       |
 | ✅     | httpx                                            | 0.28.1                | BSD License                                                  |       |
 | ✅     | ipython_pygments_lexers                          | 1.1.1                 | BSD License                                                  |       |
@@ -696,7 +694,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | adlfs                                        | 2025.8.0        | BSD License                                       |       |
 | ✅     | colorama                                     | 0.4.6           | BSD License                                       |       |
 | ✅     | decorator                                    | 5.2.1           | BSD License                                       |       |
-| ✅     | flatdict                                     | 4.0.1           | BSD License                                       |       |
 | ✅     | fsspec                                       | 2024.12.0       | BSD License                                       |       |
 | ✅     | httpx                                        | 0.28.1          | BSD License                                       |       |
 | ✅     | ipython_pygments_lexers                      | 1.1.1           | BSD License                                       |       |
@@ -982,7 +979,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | contourpy                                    | 1.3.3           | BSD License                                       |       |
 | ✅     | cycler                                       | 0.12.1          | BSD License                                       |       |
 | ✅     | decorator                                    | 5.2.1           | BSD License                                       |       |
-| ✅     | flatdict                                     | 4.0.1           | BSD License                                       |       |
 | ✅     | fsspec                                       | 2024.12.0       | BSD License                                       |       |
 | ✅     | httpx                                        | 0.28.1          | BSD License                                       |       |
 | ✅     | ipython_pygments_lexers                      | 1.1.1           | BSD License                                       |       |
@@ -1261,7 +1257,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | adlfs                                        | 2025.8.0        | BSD License                                       |       |
 | ✅     | colorama                                     | 0.4.6           | BSD License                                       |       |
 | ✅     | decorator                                    | 5.2.1           | BSD License                                       |       |
-| ✅     | flatdict                                     | 4.0.1           | BSD License                                       |       |
 | ✅     | fsspec                                       | 2024.12.0       | BSD License                                       |       |
 | ✅     | httpx                                        | 0.28.1          | BSD License                                       |       |
 | ✅     | ipython_pygments_lexers                      | 1.1.1           | BSD License                                       |       |
@@ -1551,7 +1546,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | colorama                                     | 0.4.6           | BSD License                                         |       |
 | ✅     | contourpy                                    | 1.3.3           | BSD License                                         |       |
 | ✅     | cycler                                       | 0.12.1          | BSD License                                         |       |
-| ✅     | flatdict                                     | 4.0.1           | BSD License                                         |       |
 | ✅     | fsspec                                       | 2024.12.0       | BSD License                                         |       |
 | ✅     | httpx                                        | 0.28.1          | BSD License                                         |       |
 | ✅     | isodate                                      | 0.7.2           | BSD License                                         |       |
