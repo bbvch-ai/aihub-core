@@ -15,11 +15,11 @@
 {%- set hardware = 'gpu' if gpu_enabled else 'cpu' -%}
 
 {# Check if we have local GPU services for this stage/hardware combo #}
-{%- set has_llama_cpp = (gpu_enabled and stage in ['latest', 'nightly']) or stage == 'dev' -%}
-{%- set has_llama_cpp_embedding = (gpu_enabled and stage in ['latest', 'nightly']) or stage == 'dev' -%}
-{%- set has_llama_cpp_reranker = (gpu_enabled and stage in ['latest', 'nightly']) or stage == 'dev' -%}
+{%- set has_llama_cpp = gpu_enabled -%}
+{%- set has_llama_cpp_embedding = gpu_enabled -%}
+{%- set has_llama_cpp_reranker = gpu_enabled -%}
 {%- set has_vllm_docling = gpu_enabled -%}
-{%- set has_speaches = (gpu_enabled and stage in ['latest', 'nightly']) or stage == 'dev' -%}
+{%- set has_speaches = gpu_enabled -%}
 
 {# Extract model aliases from service configs #}
 {%- set llama_cpp_alias = 'gemma-3-4b' -%}
@@ -62,7 +62,7 @@ model_list:
       api_key: os.environ/LOCAL_LLM_TOKEN
 {%- else %}
       # api has changed for gpt-5 models needs to be 4o for ingestion to work currently
-      model: azure/gpt-4o-mini
+      model: azure/gpt-5-mini
       api_base: os.environ/AZURE_OPENAI_BASE_URL
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2025-01-01-preview"

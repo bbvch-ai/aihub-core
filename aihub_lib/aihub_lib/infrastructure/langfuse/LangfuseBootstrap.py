@@ -7,6 +7,7 @@ without writing Python code.
 """
 
 import logging
+import re
 from typing import Any
 
 import httpx
@@ -46,6 +47,7 @@ class LangfuseBootstrap:
         async with httpx.AsyncClient(timeout=30.0) as client:
             await self._register_aihub_connection(client)
             await self._register_litellm_connection(client)
+            await self._register_model_definitions(client)
             await self._create_default_prompts(client)
 
         logger.info("Langfuse bootstrap completed")
@@ -96,6 +98,82 @@ class LangfuseBootstrap:
         }
 
         await self._upsert_llm_connection(client, connection_data, settings.LITELLM_CONNECTION_NAME)
+
+    async def _register_model_definitions(self, client: httpx.AsyncClient) -> None:
+        """Register model definitions with pricing in Langfuse for automatic cost calculation.
+
+        Langfuse cannot auto-calculate costs for custom model names (e.g. 'text-generation/nano')
+        because they don't match its built-in pricing database. By registering model definitions
+        with per-token prices from LiteLLM, Langfuse uses existing usage_details on spans to
+        calculate costs automatically.
+        """
+        try:
+            litellm_settings = LiteLLMProxySettings()
+        except Exception:
+            logger.warning("Langfuse bootstrap: LiteLLM proxy not configured, skipping model definitions")
+            return
+
+        url = f"{litellm_settings.BASE_URL}/v1/model/info"
+        api_key = litellm_settings.API_KEY.get_secret_value() if litellm_settings.API_KEY else ""
+        headers = {"Authorization": f"Bearer {api_key}"}
+
+        try:
+            response = await client.get(url, headers=headers)
+            response.raise_for_status()
+        except httpx.HTTPError:
+            logger.warning("Langfuse bootstrap: Failed to fetch models from LiteLLM, skipping model definitions")
+            return
+
+        data = response.json().get("data", [])
+        registered = 0
+
+        for entry in data:
+            model_name = entry.get("model_name")
+            model_info = entry.get("model_info", {})
+            input_cost = model_info.get("input_cost_per_token")
+            output_cost = model_info.get("output_cost_per_token")
+
+            if not model_name or input_cost is None or output_cost is None:
+                continue
+
+            if await self._create_model_definition(client, model_name, input_cost, output_cost):
+                registered += 1
+
+        logger.info(f"Langfuse bootstrap: Registered {registered} model definitions with pricing")
+
+    async def _create_model_definition(
+        self,
+        client: httpx.AsyncClient,
+        model_name: str,
+        input_cost_per_token: float,
+        output_cost_per_token: float,
+    ) -> bool:
+        """Create a single model definition with per-token pricing in Langfuse."""
+        url = f"{self._base_url}/api/public/models"
+        match_pattern = f"(?i)^({re.escape(model_name)})$"
+
+        model_data = {
+            "modelName": model_name,
+            "matchPattern": match_pattern,
+            "unit": "TOKENS",
+            "inputPrice": input_cost_per_token,
+            "outputPrice": output_cost_per_token,
+        }
+
+        response = await client.post(url, json=model_data, auth=self._auth)
+
+        if response.status_code in (200, 201):
+            logger.info(f"Langfuse model definition created: {model_name}")
+            return True
+        elif response.status_code == 409:
+            logger.debug(f"Langfuse model definition already exists: {model_name}")
+            return False
+        else:
+            logger.warning(
+                f"Langfuse bootstrap: Status {response.status_code} "
+                f"when creating model definition '{model_name}': {response.text}"
+            )
+            return False
 
     async def _fetch_litellm_chat_models(self, client: httpx.AsyncClient) -> list[str]:
         """Fetch available chat models from LiteLLM's model info endpoint."""
@@ -204,5 +282,5 @@ class LangfuseBootstrap:
             logger.debug(f"Langfuse prompt already exists: {name}")
         else:
             logger.warning(
-                f"Langfuse bootstrap: Status {response.status_code} " f"when creating prompt '{name}': {response.text}"
+                f"Langfuse bootstrap: Status {response.status_code} when creating prompt '{name}': {response.text}"
             )
