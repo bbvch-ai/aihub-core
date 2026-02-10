@@ -33,13 +33,14 @@ COPY aihub_api ./aihub_api
 COPY aihub_lib ./aihub_lib
 
 RUN poetry install --without dev && \
-    make use-local-core && \
+    make use-local-core-without-install && \
     rm Makefile switch_dependencies.py pyproject.toml
 
 # Set the working directory
 WORKDIR /app/aihub_api
 
-RUN poetry install && \
+RUN poetry lock && \
+    poetry install && \
     rm -rf ~/.cache/pypoetry ~/.cache/pip /tmp/poetry_cache
 
 

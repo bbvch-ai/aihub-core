@@ -83,24 +83,23 @@ class KeycloakAuthHandler:
                 logger.warning("No matching key found for kid: %s", kid)
                 raise HTTPException(status_code=401, detail="Token verification failed")
 
-            # Keycloak tokens use 'sub' as unique user identifier
-            # The audience is typically 'account' for Keycloak tokens
             decoded_token = jwt.decode(
                 oauth_token,
                 rsa_key,
                 algorithms=["RS256"],
                 audience="account",
                 issuer=self.config.ISSUER_URL,
-                options={"verify_aud": False},  # Keycloak audience can vary by client
+                options={"verify_aud": False},
             )
 
-            # Extract user info from Keycloak token claims
+            logger.debug("Decoded token claims: %s", list(decoded_token.keys()))
+
             sub = decoded_token.get("sub")
             name = decoded_token.get("name", decoded_token.get("preferred_username", ""))
             email = decoded_token.get("email", "")
 
             if not sub:
-                logger.warning("Token missing sub claim")
+                logger.warning("Token missing sub claim. Available claims: %s", list(decoded_token.keys()))
                 raise HTTPException(status_code=401, detail="Invalid token claims")
 
             user_entity = UserEntity.ensure_user_exists_for_auth(
@@ -111,6 +110,8 @@ class KeycloakAuthHandler:
 
             return UserIdentity.from_user_entity(user_entity)
 
+        except HTTPException:
+            raise
         except jwt.ExpiredSignatureError:
             logger.info("Token expired")
             raise HTTPException(status_code=401, detail="Token expired")

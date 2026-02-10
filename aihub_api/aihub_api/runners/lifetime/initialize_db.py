@@ -156,7 +156,6 @@ async def initialize_superuser() -> None:
             oid=user_identity.id,
             name=user_identity.name,
             email=user_identity.email,
-            roles=user_identity.roles,
             profile_image=user_identity.profile_image,
         )
 

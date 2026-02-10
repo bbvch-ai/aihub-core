@@ -668,14 +668,45 @@ services:
     # Shell wrapper to substitute ${DOMAIN} in realm JSON before import.
     # Keycloak's --import-realm does not support env var substitution natively,
     # so we pre-process the template files with sed before starting.
+    #
+    # Import strategy:
+    # - aihub-realm.json: Imported via --import-realm (creates realm on first start only)
+    # - identity-providers.json: Applied via partialImport API after startup (every start,
+    #   with OVERWRITE so config changes are picked up). This keeps the files separate
+    #   and avoids --import-realm's OVERWRITE_EXISTING destroying the realm.
     entrypoint: /bin/bash
     command:
       - -c
       - |
         mkdir -p /opt/keycloak/data/import
+        # Substitute all environment variables in template files.
+        # Keycloak's --import-realm does not support env var substitution, so we
+        # use a pure-bash envsubst (the Keycloak image has no envsubst/perl/awk).
+        bash_envsubst() {
+          local content
+          content=$$(cat "$$1")
+          while IFS= read -r var; do
+            content=$${content//"\$${$$var}"/"$${!var}"}
+          done < <(compgen -v)
+          echo "$$content"
+        }
         for f in /opt/keycloak/data/import-templates/*.json; do
-          sed "s|\$${DOMAIN}|$$DOMAIN|g" "$$f" > "/opt/keycloak/data/import/$$(basename $$f)"
+          bash_envsubst "$$f" > "/tmp/$$(basename $$f)"
         done
+        # Only the realm file goes to --import-realm (first-start creation)
+        cp /tmp/aihub-realm.json /opt/keycloak/data/import/
+        # Apply identity providers via partialImport after Keycloak is ready
+        if [ -f /tmp/identity-providers.json ]; then
+          (
+            echo "Waiting for Keycloak to be ready before applying identity providers..."
+            until /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user "$$KEYCLOAK_ADMIN" --password "$$KEYCLOAK_ADMIN_PASSWORD" > /dev/null 2>&1; do sleep 3; done
+            /opt/keycloak/bin/kcadm.sh create partialImport -r aihub \
+              -s ifResourceExists=OVERWRITE \
+              -f /tmp/identity-providers.json \
+              && echo "Identity providers applied successfully." \
+              || echo "ERROR: Failed to apply identity providers."
+          ) &
+        fi
         exec /opt/keycloak/bin/kc.sh start --import-realm --hostname=auth.$$DOMAIN --proxy-headers=xforwarded --http-enabled=true
     environment:
       KC_DB: postgres
@@ -719,9 +750,9 @@ services:
         max-file: 2
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.keycloak.rule=Host(`auth.${DOMAIN}`)"
       - "traefik.http.routers.keycloak.entrypoints=websecure"
-      - "traefik.http.routers.keycloak.tls.certresolver=local"
       - "traefik.http.routers.keycloak.priority=7000"
       - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
     networks:
@@ -1626,6 +1657,11 @@ services:
       AUTH_ENABLE_API_ACCESS: True
       AUTH_OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
       AUTH_IDENTITY_PROVIDER: ${AUTH_IDENTITY_PROVIDER}
+
+      # Keycloak OIDC config
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_EXTERNAL_URL: https://auth.${DOMAIN}
+      KEYCLOAK_REALM: aihub
 
       # Oauth2 config
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
