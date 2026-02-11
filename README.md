@@ -432,58 +432,24 @@ MCP integration provides AI coding assistants with:
 
 #### :gear: MCP Configuration
 
-The MCP integration is configured through the `.mcp.json` file in the project root. This file defines three key MCP
-servers:
+The MCP integration is configured through the `.mcp.json` file in the project root. It defines 7 MCP servers (6 enabled
+by default), each with a wrapper script in `.claude/mcp/`:
 
-1. **Phoenix MCP Server**: Provides access to AI observability and tracing data
-2. **MongoDB MCP Server**: Enables database queries and monitoring (read-only)
-3. **AI-Hub API MCP Server**: Exposes AI-Hub API functionality to AI assistants
+**Platform Servers** (require running Docker dev stack):
 
-::: details :wrench: MCP Server Configuration
-The `.mcp.json` file contains the following configuration:
+1. **Phoenix MCP**: AI observability and tracing data — query agent traces, view LLM call details
+2. **MongoDB MCP**: Read-only database access to the FerretDB/MongoDB data layer
+3. **AI-Hub API MCP**: Test API endpoints directly through MCP
+4. **PostgreSQL MCP**: Read-only access to infrastructure databases (Phoenix, Dagster, LiteLLM, OpenWebUI)
 
-```json
-{
-  "mcpServers": {
-    "phoenix": {
-      "command": "docker",
-      "args": [
-        "run",
-        "--rm",
-        "-i",
-        "--network=host",
-        "node:22-alpine",
-        "npx",
-        "-y",
-        "@arizeai/phoenix-mcp@latest",
-        "--baseUrl",
-        "http://localhost:6006"
-      ]
-    },
-    "mongodb": {
-      "command": "docker",
-      "args": [
-        "run",
-        "--rm",
-        "-i",
-        "--network=host",
-        "-e",
-        "MDB_MCP_CONNECTION_STRING=mongodb://admin:admin@localhost:27017/aihub",
-        "-e",
-        "MDB_MCP_READ_ONLY=true",
-        "mongodb/mongodb-mcp-server:latest"
-      ]
-    },
-    "aihub_api": {
-      "type": "http",
-      "url": "http://localhost:8000/mcp",
-      "disabled": false,
-      "autoApprove": []
-    }
-  }
-}
-```
-:::
+**Development Servers** (work independently):
+
+5. **Context7 MCP**: Up-to-date library documentation — injects current docs for LlamaIndex, FastAPI, Pydantic, Dagster,
+   PrimeVue, Nuxt, and other project dependencies directly into context
+6. **Playwright MCP**: Browser automation and UI debugging — visual inspection, screenshots, DOM/CSS analysis, and
+   automated interaction with the Nuxt 3 admin interface (headless Chromium)
+7. **GitHub MCP**: Issues, PRs, code search, CI status — disabled by default, requires `GITHUB_PERSONAL_ACCESS_TOKEN`
+   in `.env` (create at https://github.com/settings/tokens with `repo, read:org, read:project` scopes)
 
 #### :rocket: Using MCP Integration
 

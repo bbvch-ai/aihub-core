@@ -46,9 +46,14 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 │   ├── stop-hook-git-check.sh   # Stop: Check uncommitted changes
 │   └── session-start.sh         # SessionStart: Install deps, check env
 └── mcp/                   # Model Context Protocol server scripts
-    ├── mcp-mongodb.sh     # Read-only database access
+    ├── mcp-mongodb.sh     # Read-only database access (FerretDB/MongoDB)
     ├── mcp-aihub-api.sh   # API endpoint testing
-    └── mcp-phoenix.sh     # AI observability and tracing
+    ├── mcp-phoenix.sh     # AI observability and tracing
+    ├── mcp-context7.sh    # Up-to-date library documentation lookup
+    ├── mcp-playwright.sh  # Browser automation and UI debugging
+    ├── mcp-github.sh      # GitHub issues, PRs, code search (needs PAT)
+    ├── mcp-postgres.sh    # Read-only PostgreSQL access (infrastructure DBs)
+    └── mcp-nats.sh        # NATS messaging monitoring
 ```
 
 ## Quick Reference

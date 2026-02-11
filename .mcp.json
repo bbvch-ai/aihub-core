@@ -8,6 +8,19 @@
     },
     "phoenix": {
       "command": "./.claude/mcp/mcp-phoenix.sh"
+    },
+    "context7": {
+      "command": "./.claude/mcp/mcp-context7.sh"
+    },
+    "playwright": {
+      "command": "./.claude/mcp/mcp-playwright.sh"
+    },
+    "github": {
+      "command": "./.claude/mcp/mcp-github.sh",
+      "disabled": true
+    },
+    "postgres": {
+      "command": "./.claude/mcp/mcp-postgres.sh"
     }
   }
 }
