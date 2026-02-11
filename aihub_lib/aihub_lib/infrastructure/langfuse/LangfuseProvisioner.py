@@ -19,7 +19,6 @@ LITELLM_CONNECTION_NAME = "AI-Hub LLM (Evaluators)"
 
 
 class LangfuseProvisioner:
-
     def __init__(self, langfuse_settings: LangfuseSettings | None = None) -> None:
         self.langfuse_settings = langfuse_settings or LangfuseSettings()
         self._base_url = self.langfuse_settings.BASEURL.rstrip("/")

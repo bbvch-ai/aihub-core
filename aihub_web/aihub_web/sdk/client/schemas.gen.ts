@@ -5602,6 +5602,18 @@ export const DatasetSchema = {
             title: 'Updated At',
             description: 'The timestamp when the dataset was last updated.'
         },
+        langfuse_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Langfuse Url',
+            description: 'Direct URL to this dataset in the Langfuse UI.'
+        },
         items: {
             items: {
                 $ref: '#/components/schemas/DatasetItem'
@@ -5719,7 +5731,7 @@ export const DatasetUpdateSchema = {
             },
             type: 'array',
             title: 'Items',
-            description: 'The complete list of new question-answer items. This will replace all existing items for the dataset version being created/updated.'
+            description: 'New question-answer items to append to the dataset.'
         }
     },
     type: 'object',
@@ -13073,6 +13085,18 @@ export const MinimalDatasetSchema = {
             ],
             title: 'Updated At',
             description: 'The timestamp when the dataset was last updated.'
+        },
+        langfuse_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Langfuse Url',
+            description: 'Direct URL to this dataset in the Langfuse UI.'
         }
     },
     type: 'object',
@@ -13165,7 +13189,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1770629051
+            default: 1770803193
         },
         owned_by: {
             type: 'string',

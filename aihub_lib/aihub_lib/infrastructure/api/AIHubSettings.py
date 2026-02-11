@@ -31,7 +31,7 @@ class AIHubSettings(EnvironmentSettings):
         str,
         Field(
             pattern=r"^https?://.*$",
-            description="Base URL of AI-Hub's OpenAI-compatible endpoint, used for Langfuse LLM connection registration",
+            description="Base URL of AI-Hub's OpenAI-compatible endpoint, used for Langfuse LLM connection",
         ),
     ] = "http://api:8000/api/v1/openai"
 

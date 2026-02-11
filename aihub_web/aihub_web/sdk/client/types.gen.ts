@@ -3365,6 +3365,12 @@ export type Dataset = {
      */
     updated_at?: Date | null;
     /**
+     * Langfuse Url
+     *
+     * Direct URL to this dataset in the Langfuse UI.
+     */
+    langfuse_url?: string | null;
+    /**
      * Items
      *
      * The list of question-answer items in the dataset.
@@ -3445,7 +3451,7 @@ export type DatasetUpdate = {
     /**
      * Items
      *
-     * The complete list of new question-answer items. This will replace all existing items for the dataset version being created/updated.
+     * New question-answer items to append to the dataset.
      */
     items: Array<DatasetItemCreate>;
 };
@@ -8063,6 +8069,12 @@ export type MinimalDataset = {
      * The timestamp when the dataset was last updated.
      */
     updated_at?: Date | null;
+    /**
+     * Langfuse Url
+     *
+     * Direct URL to this dataset in the Langfuse UI.
+     */
+    langfuse_url?: string | null;
 };
 
 /**
