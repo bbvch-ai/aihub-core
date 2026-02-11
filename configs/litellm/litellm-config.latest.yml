@@ -30,7 +30,7 @@ model_list:
   - model_name: text-generation/mini
     litellm_params:
       # api has changed for gpt-5 models needs to be 4o for ingestion to work currently
-      model: azure/gpt-5-mini
+      model: azure/gpt-4o-mini
       api_base: os.environ/AZURE_OPENAI_BASE_URL
       api_key: os.environ/AZURE_OPENAI_KEY
       api_version: "2025-01-01-preview"
