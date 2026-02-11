@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.261.7] - 2026-02-11 - Enhanced Docling Configuration with API Key Support
+
+### Added
+
+- 🔑 **Docling API Key Support:** Introduced a new configuration option (`DOCLING_API_KEY`) to allow specifying an API
+  key for the Docling service, improving secure access and authentication.
+
+---
+
 ## [v0.261.6] - 2026-02-11 - Enhanced Deployment Flexibility and Routing Accuracy
 
 ### Added
