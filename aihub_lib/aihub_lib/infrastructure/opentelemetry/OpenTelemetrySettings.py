@@ -61,8 +61,7 @@ class OpenTelemetrySettings(EnvironmentSettings):
             }
         )
 
-        # Increase attribute limits to accommodate large semantic events (e.g., RetrieverEvent with many documents)
-        # Default is 128 attributes, but OpenInference semantic conventions can generate 100+ attributes
+        # RetrieverEvent spans can exceed the default 128-attribute limit
         span_limits = SpanLimits(max_attributes=512)
         tracer_provider = TracerProvider(resource=resource, span_limits=span_limits)
 

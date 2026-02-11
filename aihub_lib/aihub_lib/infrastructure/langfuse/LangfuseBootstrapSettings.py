@@ -20,7 +20,7 @@ class LangfuseBootstrapSettings(EnvironmentSettings):
             pattern=r"^https?://.*$",
             description="Base URL for AI-Hub's OpenAI-compatible endpoint (internal Docker URL)",
         ),
-    ] = "http://aihub-api:8000/api/v1/openai"
+    ] = "http://api:8000/api/v1/openai"
 
     AIHUB_API_KEY: Annotated[
         SecretStr | None,

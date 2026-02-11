@@ -15,7 +15,7 @@ export default defineNuxtConfig({
       },
       langfuse: {
         url: process.env.ENV == 'dev' ? process.env.LANGFUSE_BASEURL : '',
-        projectId: process.env.ENV == 'dev' ? process.env.LANGFUSE_INIT_PROJECT_ID : '',
+        projectId: process.env.ENV == 'dev' ? 'aihub-project' : '',
       },
       ws: {
         endpoint: process.env.ENV == 'dev' ? process.env.WS_ENDPOINT : '',
