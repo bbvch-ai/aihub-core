@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_lib"
-version = "v0.261.0"
+version = "v0.261.6"
 description = ""
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -17,7 +17,6 @@ python = ">=3.13, <3.14"
 mongoengine = "^0.29.1"
 llama-index-core = "0.14.12"
 networkx = "^3.4.2"
-flatdict = "^4.0.1"
 azure-ai-documentintelligence = "^1.0.2"
 pydantic-settings = "^2.6.1"
 python-i18n = "^0.3.9"
