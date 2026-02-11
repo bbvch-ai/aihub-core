@@ -1,3 +1,60 @@
 {
-  "includeCoAuthoredBy": false
+  "includeCoAuthoredBy": false,
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          { "type": "command", "command": ".claude/hooks/auto-format-python.sh" },
+          { "type": "command", "command": ".claude/hooks/auto-format-frontend.sh" }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|Read",
+        "hooks": [
+          { "type": "command", "command": ".claude/hooks/protect-sensitive-files.sh" }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          { "type": "command", "command": ".claude/hooks/scope-boundary-check.sh" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": ".claude/hooks/stop-hook-git-check.sh" }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": ".claude/hooks/session-start.sh" }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(make *)",
+      "Bash(poetry run *)",
+      "Bash(poetry install)",
+      "Bash(pnpm *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(gh pr *)",
+      "Bash(gh issue *)",
+      "Bash(docker compose *)",
+      "Bash(docker logs *)",
+      "Skill"
+    ]
+  }
 }

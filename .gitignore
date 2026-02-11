@@ -15,3 +15,8 @@ aihub_doc/aihub
 .idea/copilot*
 *.log
 .mypy_cache/
+
+# Claude Code local overrides (personal preferences, not shared)
+CLAUDE.local.md
+.claude/settings.local.json
+.claude/mcp.local.json

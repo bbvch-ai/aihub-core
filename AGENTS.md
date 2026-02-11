@@ -260,6 +260,35 @@ Before marking task complete:
 
 **Philosophy**: Pragmatic, not TDD. Write tests when straightforward. MUST run all tests before commit.
 
+## Claude Code Integration
+
+**Full documentation**: `/home/user/aihub-core/.claude/README.md`
+
+**Skills** (21 total — invoke via `/skill-name`):
+
+- **Documentation**: `/create-pr`, `/update-doc`, `/explain`, `/document-decision`, `/document-feature`,
+  `/document-solution`, `/implement-feedback-from-pr`
+- **Scaffolding**: `/scaffold-agent`, `/scaffold-pipeline`, `/scaffold-process`, `/scaffold-api-endpoint`,
+  `/scaffold-frontend-page`, `/scaffold-bot-handler`
+- **Developer Experience**: `/test-scope`, `/docker-dev`, `/check-i18n`, `/generate-sdk`, `/dependency-audit`,
+  `/validate-events`, `/debug-agent`, `/release-prep`
+
+**Custom Subagents** (7 — Claude Code uses these automatically for specialized tasks):
+
+- `codebase-expert` (with memory), `code-reviewer`, `event-flow-analyzer` (with memory), `docker-ops`,
+  `test-analyzer`, `frontend-analyzer`, `documentation-keeper` (with memory)
+
+**Hooks** (6 — run automatically, no invocation needed):
+
+- `auto-format-python.sh` (PostToolUse): Ruff format + check on Python file edits
+- `auto-format-frontend.sh` (PostToolUse): ESLint fix on TS/Vue file edits
+- `protect-sensitive-files.sh` (PreToolUse): Blocks access to .env, .pem, .key, credentials
+- `scope-boundary-check.sh` (PreToolUse): Warns about cross-scope import violations
+- `stop-hook-git-check.sh` (Stop): Checks uncommitted changes at session end
+- `session-start.sh` (SessionStart): Installs dependencies, checks environment
+
+**Local overrides** (gitignored): `CLAUDE.local.md`, `.claude/settings.local.json`, `.claude/mcp.local.json`
+
 ## MCP Integration (AI Assistant Context)
 
 **Model Context Protocol**: Provides AI assistants (Claude Code, Gemini CLI) with development environment access.
