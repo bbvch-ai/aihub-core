@@ -101,7 +101,7 @@ Aktualisieren Sie die Wissensdatenbank, System-Prompts oder Abrufeinstellungen I
 Ergebnissen. Führen Sie das Experiment erneut aus, um Verbesserungen zu überprüfen.
 
 ::: tip
-Phoenix kann für tiefere Untersuchungen, einschließlich Konversationsverläufen und Roh-Telemetriedaten, aufgerufen
+Langfuse kann für tiefere Untersuchungen, einschließlich Konversationsverläufen und Roh-Telemetriedaten, aufgerufen
 werden.
 :::
 

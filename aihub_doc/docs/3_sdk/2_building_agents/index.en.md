@@ -62,7 +62,7 @@ multiple specialized agents.
    take to achieve its goal.
 2. **Implement the Core Logic**: Write your `Agent` class, define its strongly-typed `AgentConfig`, and implement the
    `@step` methods that transform events.
-3. **Test and Debug**: Use the `AgentTestRunner` for unit testing and a tracing tool like Phoenix to visually debug the
+3. **Test and Debug**: Use the `AgentTestRunner` for unit testing and a tracing tool like Langfuse to visually debug the
    flow of events through your agent.
 4. **Deploy and Monitor**: Package your agent and deploy it to the AI-Hub, where its performance and behavior can be
    monitored in real-time.

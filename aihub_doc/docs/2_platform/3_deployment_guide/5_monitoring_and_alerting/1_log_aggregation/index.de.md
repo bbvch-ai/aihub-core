@@ -19,12 +19,12 @@ fungiert:
 graph TB
     Services["AI-Hub Services<br/>(API, Agents, Web)"]
     Collector["OTel Collector<br/>(Processor & Router)"]
-    Phoenix["Phoenix<br/>(LLM Observability)"]
+    Langfuse["Langfuse<br/>(LLM Observability)"]
     SigNoz["SigNoz<br/>(Official Backend)"]
     External["External Systems<br/>(Grafana, Datadog, Splunk)"]
 
     Services -->|"OTLP Protocol"| Collector
-    Collector -->|"OpenInference Spans"| Phoenix
+    Collector -->|"OpenInference Spans"| Langfuse
     Collector -->|"Logs, Metrics, Traces"| SigNoz
     Collector -.->|"Optional"| External
 
@@ -118,7 +118,7 @@ Die Plattform sammelt und exportiert automatisch:
 - **OpenInference Traces**: LLM-spezifische Spans mit Prompt-/Antwortinhalten, Token-Nutzung und Kosten
 
 ::: info Dual Tracing Strategy
-OpenInference Traces werden an **sowohl** Phoenix (lokales, spezialisiertes LLM-Debugging) als auch SigNoz (Cloud,
+OpenInference Traces werden an **sowohl** Langfuse (lokales, spezialisiertes LLM-Debugging) als auch SigNoz (Cloud,
 Langzeitarchivierung und Korrelation) gesendet. Dieser duale Ansatz bietet sofortige Debugging-Fähigkeiten bei
 gleichzeitiger umfassender Beobachtbarkeit.
 :::
@@ -157,5 +157,5 @@ Exporter-Konfigurationen in der OTel Collector Konfigurationsdatei.
 - Erkunden Sie die [SigNoz-Dokumentation](https://signoz.io/docs/) für Abfrage-Builder und Alarmkonfiguration
 - Überprüfen Sie die [OpenTelemetry Collector Dokumentation](https://opentelemetry.io/docs/collector/) für erweiterte
   Konfiguration
-- Konfigurieren Sie [Phoenix LLM Observability](../../../10_chat_ui/10_observability/) für AI-spezifisches Debugging
+- Konfigurieren Sie [Langfuse LLM Observability](../../../10_chat_ui/10_observability/) für AI-spezifisches Debugging
 - Richten Sie [Kostenverfolgung](../../../14_cost_control/) für die Überwachung der LLM-Nutzung ein

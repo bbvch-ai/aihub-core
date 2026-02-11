@@ -36,7 +36,7 @@ Article 5 GDPR establishes six core principles for processing personal data, plu
 
 ### Lawfulness, fairness and transparency
 
-The platform provides audit trails, source attribution, and Phoenix tracing for transparency. Organizations must
+The platform provides audit trails, source attribution, and Langfuse tracing for transparency. Organizations must
 document their legal basis for processing, provide privacy notices, maintain records of processing activities, and
 conduct data protection impact assessments. Processing must be lawful, fair, and transparent to data subjects.
 
