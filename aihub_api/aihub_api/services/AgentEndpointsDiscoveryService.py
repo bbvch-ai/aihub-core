@@ -64,7 +64,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         api_app: FastAPI,
         controller: AgentController,
         locale_handler: LocaleHandler,
-        langfuse_provisioner: LangfuseProvisioner | None = None,
+        langfuse_provisioner: LangfuseProvisioner,
         discovery_interval: int = 60,
     ):
         super().__init__(nc, api_app, controller, locale_handler, discovery_interval)
@@ -178,9 +178,6 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         Uses the same AgentService.get_all_agent_instances() mechanism that OpenWebUI and the
         frontend use to discover available agents. Only syncs when the instance set has changed.
         """
-        if not self._langfuse_provisioner:
-            return
-
         instances = await AgentService.get_all_agent_instances(t=self.locale_handler, online=True)
         agent_models = {f"{inst.agent_class}/{inst.agent_id}" for inst in instances}
 

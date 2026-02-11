@@ -10,3 +10,4 @@ class MinimalDataset(BaseModel):
     description: Annotated[str | None, Field(description="An optional description for the dataset.")] = None
     created_at: Annotated[datetime | None, Field(description="The timestamp when the dataset was created.")] = None
     updated_at: Annotated[datetime | None, Field(description="The timestamp when the dataset was last updated.")] = None
+    langfuse_url: Annotated[str | None, Field(description="Direct URL to this dataset in the Langfuse UI.")] = None

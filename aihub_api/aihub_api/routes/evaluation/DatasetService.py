@@ -33,9 +33,18 @@ class DatasetService:
     Experiments are now managed directly in the Langfuse UI.
     """
 
-    def __init__(self, client: Langfuse) -> None:
-        """Initialize service with Langfuse client dependency."""
+    def __init__(self, client: Langfuse, settings: LangfuseSettings) -> None:
+        """Initialize service with Langfuse client and settings dependencies."""
         self.client = client
+        self._settings = settings
+
+    def _build_dataset_url(self, dataset_id: str) -> str | None:
+        """Build the public Langfuse URL for a dataset, or None if not configured."""
+        public_url = self._settings.PUBLIC_URL
+        project_id = self._settings.PROJECT_ID
+        if not public_url or not project_id:
+            return None
+        return f"{public_url.rstrip('/')}/project/{project_id}/datasets/{dataset_id}"
 
     def _fetch_datasets(self) -> list[Any]:
         response = self.client.api.datasets.list()
@@ -139,6 +148,7 @@ class DatasetService:
                 description=dataset.description,
                 created_at=dataset.created_at,
                 updated_at=dataset.updated_at,
+                langfuse_url=self._build_dataset_url(dataset.id),
             )
             for dataset in datasets
         ]
