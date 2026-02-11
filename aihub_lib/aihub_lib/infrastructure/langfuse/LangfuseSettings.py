@@ -11,7 +11,7 @@ class LangfuseSettings(EnvironmentSettings):
 
     model_config = EnvironmentSettings.create_settings_config("LANGFUSE_")
 
-    BASEURL: Annotated[str, Field(pattern=r"^https?://.*$", description="Langfuse server base URL")]
+    BASE_URL: Annotated[str, Field(pattern=r"^https?://.*$", description="Langfuse server base URL")]
     PUBLIC_KEY: Annotated[str, Field(description="Langfuse public API key")]
     SECRET_KEY: Annotated[SecretStr, Field(description="Langfuse secret API key")]
     TIMEOUT: Annotated[int, Field(description="Timeout in seconds for Langfuse API requests")] = 60
@@ -29,7 +29,7 @@ class LangfuseSettings(EnvironmentSettings):
         return Langfuse(
             public_key=self.PUBLIC_KEY,
             secret_key=self.SECRET_KEY.get_secret_value(),
-            host=self.BASEURL,
+            host=self.BASE_URL,
             timeout=self.TIMEOUT,
             tracing_enabled=False,
         )

@@ -21,7 +21,7 @@ LITELLM_CONNECTION_NAME = "AI-Hub LLM (Evaluators)"
 class LangfuseProvisioner:
     def __init__(self, langfuse_settings: LangfuseSettings | None = None) -> None:
         self.langfuse_settings = langfuse_settings or LangfuseSettings()
-        self._base_url = self.langfuse_settings.BASEURL.rstrip("/")
+        self._base_url = self.langfuse_settings.BASE_URL.rstrip("/")
 
     @property
     def _auth(self) -> tuple[str, str]:
@@ -211,7 +211,7 @@ class LangfuseProvisioner:
             logger.debug(f"Langfuse model definition already exists: {model_name}")
             return False
         else:
-            response.raise_for_status()
+            logger.warning(f"Langfuse model definition failed for '{model_name}': {response.status_code}")
             return False
 
     async def _create_prompt(
