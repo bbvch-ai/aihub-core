@@ -27,6 +27,7 @@
         as="a"
         :href="langfuseDatasetUrl"
         target="_blank"
+        rel="noopener noreferrer"
         @click.stop
       />
     </div>

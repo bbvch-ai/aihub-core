@@ -93,7 +93,8 @@ class DatasetService:
             dataset_name=create_dto.dataset_name,
             description=create_dto.description,
             items=items_dto,
-            updated_at=datetime.now(UTC),
+            created_at=langfuse_dataset.created_at,
+            updated_at=langfuse_dataset.updated_at,
         )
 
     @trace_fn
