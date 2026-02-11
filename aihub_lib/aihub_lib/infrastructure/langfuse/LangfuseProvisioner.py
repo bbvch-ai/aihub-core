@@ -1,11 +1,4 @@
-"""
-Langfuse Provisioner.
-
-Pre-configures Langfuse with AI-Hub LLM connections, model pricing definitions,
-and a default prompt template on API startup so users can run agent experiments
-from the Langfuse UI without writing Python code. Also syncs discovered agents
-periodically so they appear in the experiment model dropdown.
-"""
+"""Provisions Langfuse with LLM connections, model pricing, and a default prompt on API startup."""
 
 import logging
 import re
@@ -26,7 +19,6 @@ LITELLM_CONNECTION_NAME = "AI-Hub LLM (Evaluators)"
 
 
 class LangfuseProvisioner:
-    """Provisions Langfuse with AI-Hub LLM connections, model pricing, and a prompt template."""
 
     def __init__(self, langfuse_settings: LangfuseSettings | None = None) -> None:
         self.langfuse_settings = langfuse_settings or LangfuseSettings()
@@ -40,11 +32,7 @@ class LangfuseProvisioner:
         )
 
     async def provision(self) -> None:
-        """Run full provisioning sequence on API startup.
-
-        Each step is independent — a failure in one step does not prevent subsequent steps.
-        This method never raises; all errors are logged as warnings.
-        """
+        """Each step is independent — a failure in one does not prevent subsequent steps."""
         logger.info("Starting Langfuse provisioning...")
 
         async with httpx.AsyncClient(timeout=30.0) as client:
@@ -57,9 +45,8 @@ class LangfuseProvisioner:
         logger.info("Langfuse provisioning completed")
 
     async def sync_agents(self, agent_models: list[str]) -> None:
-        """Sync discovered agents to Langfuse so they appear in the experiment UI model dropdown."""
+        """Update the AI-Hub LLM connection with current agent models for the experiment UI."""
         if not agent_models:
-            logger.debug("Langfuse sync: No agents to sync")
             return
 
         connection_data = self._build_aihub_connection_data(custom_models=agent_models)
@@ -75,7 +62,6 @@ class LangfuseProvisioner:
 
     @staticmethod
     async def _run_step(name: str, coro: Coroutine[Any, Any, Any]) -> Any:
-        """Run a provisioning step, logging and swallowing errors so subsequent steps still execute."""
         try:
             return await coro
         except Exception as e:
@@ -83,22 +69,20 @@ class LangfuseProvisioner:
             return None
 
     async def _register_aihub_connection(self, client: httpx.AsyncClient) -> None:
-        """Register AI-Hub's OpenAI-compatible endpoint as an LLM connection."""
         connection_data = self._build_aihub_connection_data(custom_models=[])
         await self._upsert_llm_connection(client, connection_data, AIHUB_CONNECTION_NAME)
 
     async def _register_litellm_connection(
         self, client: httpx.AsyncClient, litellm_models: list[dict[str, Any]]
     ) -> None:
-        """Register LiteLLM proxy as an LLM connection for evaluators."""
         try:
             litellm_settings = LiteLLMProxySettings()
         except Exception:
-            logger.info("Langfuse provisioning: Skipping LiteLLM connection (LiteLLM not configured)")
+            logger.info("Langfuse provisioning: Skipping LiteLLM connection (not configured)")
             return
 
         if not litellm_settings.API_KEY:
-            logger.info("Langfuse provisioning: Skipping LiteLLM connection (no LITE_LLM_PROXY_API_KEY)")
+            logger.info("Langfuse provisioning: Skipping LiteLLM connection (no API key)")
             return
 
         chat_models = [
@@ -123,12 +107,8 @@ class LangfuseProvisioner:
     async def _register_model_definitions(
         self, client: httpx.AsyncClient, litellm_models: list[dict[str, Any]]
     ) -> None:
-        """Register model definitions with pricing in Langfuse for automatic cost calculation.
-
-        Langfuse cannot auto-calculate costs for custom model names (e.g. 'text-generation/nano')
-        because they don't match its built-in pricing database. By registering model definitions
-        with per-token prices from LiteLLM, Langfuse uses existing usage_details on spans to
-        calculate costs automatically.
+        """Langfuse can't auto-calculate costs for custom model names (e.g. 'text-generation/nano')
+        since they don't match its built-in pricing database. We register per-token prices from LiteLLM.
         """
         registered = 0
 
@@ -147,12 +127,7 @@ class LangfuseProvisioner:
         logger.info(f"Langfuse provisioning: Registered {registered} model definitions with pricing")
 
     async def _create_default_prompt(self, client: httpx.AsyncClient) -> None:
-        """Create the default prompt template for running experiments against AI-Hub agents.
-
-        The prompt maps the dataset's ``question`` field to a user message, which is
-        how AI-Hub agents expect input via the OpenAI-compatible endpoint.
-        Select this prompt when configuring an experiment run in the Langfuse UI.
-        """
+        """Maps dataset ``question`` field to a user message for the OpenAI-compatible agent endpoint."""
         await self._create_prompt(
             client,
             name="ai-hub-agent",
@@ -167,15 +142,10 @@ class LangfuseProvisioner:
 
     @staticmethod
     async def _fetch_litellm_models(client: httpx.AsyncClient) -> list[dict[str, Any]]:
-        """Fetch all model entries from LiteLLM's model info endpoint.
-
-        Returns raw model dicts so callers can extract what they need
-        (chat model names, pricing, etc.) without a second HTTP call.
-        """
         try:
             litellm_settings = LiteLLMProxySettings()
         except Exception:
-            logger.info("Langfuse provisioning: LiteLLM proxy not configured, skipping model discovery")
+            logger.info("Langfuse provisioning: LiteLLM not configured, skipping model discovery")
             return []
 
         url = f"{litellm_settings.BASE_URL}/v1/model/info"
@@ -196,7 +166,6 @@ class LangfuseProvisioner:
     # ------------------------------------------------------------------
 
     def _build_aihub_connection_data(self, *, custom_models: list[str]) -> dict[str, Any]:
-        """Build the connection payload for the AI-Hub agents LLM connection."""
         return {
             "provider": "ai-hub-agents",
             "adapter": "openai",
@@ -208,7 +177,6 @@ class LangfuseProvisioner:
         }
 
     async def _upsert_llm_connection(self, client: httpx.AsyncClient, data: dict[str, Any], display_name: str) -> None:
-        """Create or update an LLM connection in Langfuse. Raises on non-2xx responses."""
         url = f"{self._base_url}/api/public/llm-connections"
         response = await client.put(url, json=data, auth=self._auth)
 
@@ -224,7 +192,6 @@ class LangfuseProvisioner:
         input_cost_per_token: float,
         output_cost_per_token: float,
     ) -> bool:
-        """Create a single model definition with per-token pricing in Langfuse."""
         url = f"{self._base_url}/api/public/models"
         match_pattern = f"(?i)^({re.escape(model_name)})$"
 
@@ -246,7 +213,7 @@ class LangfuseProvisioner:
             return False
         else:
             response.raise_for_status()
-            return False  # unreachable, but keeps the return type explicit
+            return False
 
     async def _create_prompt(
         self,
@@ -256,7 +223,6 @@ class LangfuseProvisioner:
         labels: list[str],
         tags: list[str],
     ) -> None:
-        """Create a chat prompt template in Langfuse. Skips if it already exists (409)."""
         url = f"{self._base_url}/api/public/v2/prompts"
 
         prompt_data = {
