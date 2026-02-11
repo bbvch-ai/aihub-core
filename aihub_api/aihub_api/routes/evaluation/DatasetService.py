@@ -4,7 +4,7 @@ from typing import Annotated, Any
 
 from aihub_lib.infrastructure.langfuse.LangfuseSettings import LangfuseSettings
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 from langfuse import Langfuse
 
 from aihub_api.routes.evaluation.dto.dataset.Dataset import Dataset
@@ -55,7 +55,7 @@ class DatasetService:
         datasets = self._fetch_datasets()
         dataset_meta = next((d for d in datasets if d.id == dataset_id), None)
         if not dataset_meta:
-            raise ValueError(f"Dataset with ID {dataset_id} not found")
+            raise HTTPException(status_code=404, detail=f"Dataset with ID {dataset_id} not found")
         return self.client.get_dataset(dataset_meta.name)
 
     @staticmethod
@@ -86,7 +86,7 @@ class DatasetService:
             )
             items_dto.append(DatasetItem(id=dataset_item.id, question=item.question, answer=item.answer))
 
-        await asyncio.to_thread(self.client.flush)
+        await asyncio.wait_for(asyncio.to_thread(self.client.flush), timeout=30.0)
 
         return Dataset(
             id=langfuse_dataset.id,
@@ -111,7 +111,7 @@ class DatasetService:
             )
             new_items.append(DatasetItem(id=dataset_item.id, question=item.question, answer=item.answer))
 
-        await asyncio.to_thread(self.client.flush)
+        await asyncio.wait_for(asyncio.to_thread(self.client.flush), timeout=30.0)
 
         all_items = [self._langfuse_item_to_dto(item) for item in dataset.items]
         all_items.extend(new_items)

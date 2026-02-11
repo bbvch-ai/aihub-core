@@ -5,7 +5,7 @@ from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.langfuse.LangfuseSettings import LangfuseSettings
 from aihub_lib.routes.Controller import Controller
-from fastapi import Body, Depends, HTTPException, Path, Security
+from fastapi import Body, Depends, Path, Security
 from langfuse import Langfuse
 
 from aihub_api.routes.evaluation.dto.dataset.Dataset import Dataset
@@ -86,10 +86,7 @@ class DatasetController(Controller):
             settings: Annotated[LangfuseSettings, Depends(get_langfuse_settings)],
         ) -> Dataset:
             service = DatasetService(client, settings)
-            try:
-                return await service.get_dataset(dataset_id)
-            except ValueError as e:
-                raise HTTPException(status_code=404, detail=str(e))
+            return await service.get_dataset(dataset_id)
 
         return self
 
@@ -108,9 +105,6 @@ class DatasetController(Controller):
             settings: Annotated[LangfuseSettings, Depends(get_langfuse_settings)],
         ) -> Dataset:
             service = DatasetService(client, settings)
-            try:
-                return await service.update_dataset(dataset_id, update_dto)
-            except ValueError as e:
-                raise HTTPException(status_code=404, detail=str(e))
+            return await service.update_dataset(dataset_id, update_dto)
 
         return self

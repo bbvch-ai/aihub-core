@@ -298,7 +298,8 @@ class AgentDispatcher(BaseDispatcher):
                 logger.exception(f"Error executing step '{step_method.__name__}': {e}")
                 return
 
-            # Finalize the span with Langfuse trace metadata regardless of output
+            # Always finalize the span so Langfuse receives trace metadata (name, session,
+            # user) even for steps that return None (e.g. side-effect-only steps).
             result_events = None
             if result:
                 if not isinstance(result, list):

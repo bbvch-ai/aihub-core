@@ -4,6 +4,7 @@ from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from typing import Any
 
+from cachetools import TTLCache
 from aihub_lib.context.BaseContext import BaseContext
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
@@ -17,6 +18,9 @@ from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
+_CACHE_MAX_SIZE = 10_000
+_CACHE_TTL_SECONDS = 300
+
 
 class AgentRunTracer:
     """
@@ -26,13 +30,20 @@ class AgentRunTracer:
     (name, session, user, input/output) set via span attributes. Langfuse
     groups these spans into traces automatically. Run metadata (user input,
     user ID) is cached in-memory per run_id and cleaned up on run completion.
+
+    The ``langfuse.*`` span attributes used throughout this class are the
+    documented way to enrich standard OTEL spans for Langfuse's OTEL ingestion
+    endpoint (see https://langfuse.com/docs/integrations/opentelemetry).
+    Regular OTEL tracing still works alongside them — any consumer that does
+    not understand these attributes simply ignores them.
     """
 
     def __init__(self):
         self.tracer = get_tracer(__name__)
-        self._run_inputs: dict[str, str] = {}
-        self._run_user_ids: dict[str, str] = {}
-        self._run_outputs: dict[str, str] = {}
+        # TTLCache prevents memory leaks when clear_run() is missed (e.g. agent crash)
+        self._run_inputs: TTLCache[str, str] = TTLCache(maxsize=_CACHE_MAX_SIZE, ttl=_CACHE_TTL_SECONDS)
+        self._run_user_ids: TTLCache[str, str] = TTLCache(maxsize=_CACHE_MAX_SIZE, ttl=_CACHE_TTL_SECONDS)
+        self._run_outputs: TTLCache[str, str] = TTLCache(maxsize=_CACHE_MAX_SIZE, ttl=_CACHE_TTL_SECONDS)
 
     async def trace_run_start(self, topic: AgentInstanceTopic, event: StartEvent):
         """
