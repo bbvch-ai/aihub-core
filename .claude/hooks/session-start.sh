@@ -31,6 +31,28 @@ if [[ -n "$CLAUDE_CODE_REMOTE" ]]; then
     cp "$REPO_ROOT/.env.dev" "$REPO_ROOT/.env"
     echo "Copied .env.dev to .env" >&2
   fi
+
+  # Install Poetry if missing
+  if ! command -v poetry &>/dev/null; then
+    echo "Installing Poetry..." >&2
+    pip install poetry 2>&1 | tail -1 >&2
+  fi
+
+  # Install Python dependencies in all scopes (background, best-effort)
+  for scope in aihub_pipeline aihub_lib aihub_agent aihub_process aihub_api aihub_bot; do
+    if [[ -d "$REPO_ROOT/$scope" && -f "$REPO_ROOT/$scope/pyproject.toml" ]]; then
+      (cd "$REPO_ROOT/$scope" && poetry install --no-interaction 2>&1 | tail -1) &
+    fi
+  done
+
+  # Install frontend dependencies (background, best-effort)
+  if [[ -d "$REPO_ROOT/aihub_web/aihub_web" && -f "$REPO_ROOT/aihub_web/aihub_web/package.json" ]]; then
+    (cd "$REPO_ROOT/aihub_web/aihub_web" && pnpm install --frozen-lockfile 2>&1 | tail -1) &
+  fi
+
+  # Wait for all background installs (don't block session if they fail)
+  wait 2>/dev/null
+  echo "Dependency installation complete." >&2
 fi
 
 exit 0

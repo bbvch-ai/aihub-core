@@ -19,6 +19,14 @@ case "$file_path" in
     echo "BLOCKED: Access to credential/secret files is not allowed." >&2
     exit 2
     ;;
+  */certs/*)
+    echo "BLOCKED: Access to certificate directories is not allowed." >&2
+    exit 2
+    ;;
+  *_TOKEN*|*_token*)
+    echo "BLOCKED: Access to token files is not allowed." >&2
+    exit 2
+    ;;
   */poetry.lock)
     echo "BLOCKED: Manual edits to poetry.lock are not allowed. Use 'poetry add/remove/update' instead." >&2
     exit 2

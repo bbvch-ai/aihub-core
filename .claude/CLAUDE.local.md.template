@@ -1,0 +1,14 @@
+# Personal Claude Code Overrides
+
+# Copy this to CLAUDE.local.md (gitignored) for local preferences.
+#
+# Example overrides:
+# - Preferred model for subagents
+# - Personal coding style preferences
+# - Additional context about your local environment
+#
+# ## My Preferences
+#
+# - I prefer verbose commit messages
+# - My local Docker stack runs on port 9000 instead of 8000
+# - Use Sonnet for all subagents to save cost
