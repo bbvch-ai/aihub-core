@@ -432,8 +432,8 @@ MCP integration provides AI coding assistants with:
 
 #### :gear: MCP Configuration
 
-The MCP integration is configured through the `.mcp.json` file in the project root. It defines 7 MCP servers (6 enabled
-by default), each with a wrapper script in `.claude/mcp/`:
+The MCP integration is configured through the `.mcp.json` file in the project root. It defines 12 MCP servers (11
+enabled by default), each with a wrapper script in `.claude/mcp/`:
 
 **Platform Servers** (require running Docker dev stack):
 
@@ -441,15 +441,18 @@ by default), each with a wrapper script in `.claude/mcp/`:
 2. **MongoDB MCP**: Read-only database access to the FerretDB/MongoDB data layer
 3. **AI-Hub API MCP**: Test API endpoints directly through MCP
 4. **PostgreSQL MCP**: Read-only access to infrastructure databases (Phoenix, Dagster, LiteLLM, OpenWebUI)
+5. **Milvus MCP**: Vector database operations — manage collections, run similarity searches, inspect indexes
+6. **NATS MCP**: Messaging system integration — inspect subjects, view messages, monitor JetStream streams
+7. **Dagster MCP**: Pipeline orchestration — explore pipelines, monitor runs, manage data assets
 
 **Development Servers** (work independently):
 
-5. **Context7 MCP**: Up-to-date library documentation — injects current docs for LlamaIndex, FastAPI, Pydantic, Dagster,
-   PrimeVue, Nuxt, and other project dependencies directly into context
-6. **Playwright MCP**: Browser automation and UI debugging — visual inspection, screenshots, DOM/CSS analysis, and
-   automated interaction with the Nuxt 3 admin interface (headless Chromium)
-7. **GitHub MCP**: Issues, PRs, code search, CI status — disabled by default, requires `GITHUB_PERSONAL_ACCESS_TOKEN`
-   in `.env` (create at https://github.com/settings/tokens with `repo, read:org, read:project` scopes)
+8. **Context7 MCP**: Up-to-date library documentation for LlamaIndex, FastAPI, Pydantic, and other dependencies
+9. **PrimeVue MCP**: Official component library — props, events, slots, theming, Pass Through, design tokens
+10. **Nuxt MCP**: Official framework docs, API references, and deployment guides (remote at nuxt.com/mcp)
+11. **Playwright MCP**: Browser automation and UI debugging — visual inspection, screenshots, DOM/CSS analysis
+12. **GitHub MCP**: Issues, PRs, code search, CI status — disabled by default, requires `GITHUB_PERSONAL_ACCESS_TOKEN`
+    in `.env` (create at https://github.com/settings/tokens with `repo, read:org, read:project` scopes)
 
 #### :rocket: Using MCP Integration
 

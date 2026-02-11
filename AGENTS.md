@@ -295,16 +295,25 @@ Before marking task complete:
 
 **Config**: `/home/user/aihub-core/.mcp.json`
 
-**MCP Servers** (7 total, 6 enabled by default):
+**MCP Servers** (12 total, 11 enabled by default):
+
+Platform servers (require running Docker dev stack):
 
 - **Phoenix MCP**: AI observability/tracing data (http://localhost:6006)
 - **MongoDB MCP**: Read-only database access (FerretDB/MongoDB layer)
 - **AI-Hub API MCP**: API endpoint testing (http://localhost:8000/mcp)
-- **Context7 MCP**: Up-to-date library documentation for LlamaIndex, FastAPI, Pydantic, Dagster, PrimeVue, Nuxt, etc.
-- **Playwright MCP**: Browser automation and UI debugging for the Nuxt 3 admin interface (headless Chromium)
-- **GitHub MCP**: Issues, PRs, code search, CI status (disabled by default — requires `GITHUB_PERSONAL_ACCESS_TOKEN` in
-  `.env`)
 - **PostgreSQL MCP**: Read-only access to infrastructure databases (Phoenix, Dagster, LiteLLM, OpenWebUI)
+- **Milvus MCP**: Vector database operations — manage collections, run similarity searches, inspect indexes
+- **NATS MCP**: Messaging system — inspect subjects, view messages, monitor JetStream streams
+- **Dagster MCP**: Pipeline orchestration — explore pipelines, monitor runs, manage assets
+
+Development servers (work independently):
+
+- **Context7 MCP**: Up-to-date library documentation for LlamaIndex, FastAPI, Pydantic, and other dependencies
+- **PrimeVue MCP**: Official component library docs — props, events, slots, theming, Pass Through, design tokens
+- **Nuxt MCP**: Official framework docs, API references, deployment guides (remote at nuxt.com/mcp)
+- **Playwright MCP**: Browser automation and UI debugging for the Nuxt 3 admin interface (headless Chromium)
+- **GitHub MCP**: Issues, PRs, code search, CI status (disabled — requires `GITHUB_PERSONAL_ACCESS_TOKEN` in `.env`)
 
 ## Quick Reference
 
