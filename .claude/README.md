@@ -29,7 +29,13 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 │   ├── dependency-audit/  # Dependency health check
 │   ├── validate-events/   # Event system validation
 │   ├── debug-agent/       # Agent debugging assistant
-│   └── release-prep/      # Pre-release validation
+│   ├── release-prep/      # Pre-release validation
+│   ├── scaffold-composable/ # Generate Pinia-Colada composable
+│   ├── scaffold-event-display/ # Generate event display component
+│   ├── scaffold-dashboard-widget/ # Generate dashboard widget
+│   ├── debug-frontend/    # Visual frontend debugging (Playwright)
+│   ├── audit-frontend/    # Frontend code audit
+│   └── primevue-lookup/   # PrimeVue component docs lookup
 ├── agents/                # Custom subagents with specialized roles
 │   ├── codebase-expert.md # Deep knowledge builder (with memory)
 │   ├── code-reviewer.md   # Quality and security reviewer
@@ -62,7 +68,7 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 
 ## Quick Reference
 
-### Skills (21 total)
+### Skills (27 total)
 
 | Category | Skill | Description |
 |----------|-------|-------------|
@@ -87,6 +93,12 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 | | `/validate-events` | Event system validation |
 | | `/debug-agent` | Agent debugging |
 | | `/release-prep` | Pre-release validation |
+| Frontend | `/scaffold-composable` | New Pinia-Colada composable |
+| | `/scaffold-event-display` | New event display component |
+| | `/scaffold-dashboard-widget` | New dashboard widget |
+| | `/debug-frontend` | Visual UI debugging (Playwright) |
+| | `/audit-frontend` | Frontend code audit |
+| | `/primevue-lookup` | PrimeVue component docs |
 
 ### Local Overrides (gitignored)
 
