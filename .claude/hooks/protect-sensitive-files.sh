@@ -7,8 +7,9 @@ file_path=$(echo "$input" | jq -r '.tool_input.file_path // .tool_input.command 
 
 # Check against sensitive file patterns
 case "$file_path" in
-  *.env|*.env.*|*/.env)
-    echo "BLOCKED: Access to .env files is not allowed. These contain secrets." >&2
+  *.env|*/.env)
+    # Block .env (live secrets) but allow .env.dev and .env.prod (checked-in templates)
+    echo "BLOCKED: Access to .env is not allowed. It contains secrets. Use .env.dev or .env.prod instead." >&2
     exit 2
     ;;
   *.pem|*.key)

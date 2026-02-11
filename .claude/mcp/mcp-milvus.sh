@@ -12,9 +12,11 @@ if [[ -f .env ]]; then
   source .env 2>/dev/null
 fi
 
-MILVUS_URI="${MILVUS_URI:-http://localhost:19530}"
-MILVUS_TOKEN="${MILVUS_TOKEN:-root:${MILVUS_ROOT_PASSWORD:-Milvus}}"
+# .env.dev uses MILVUS_URL for the endpoint and MILVUS_ROOT_PASSWORD for auth.
+# The compose constructs MILVUS_TOKEN as "root:<password>" for services running inside Docker.
+MILVUS_HOST="${MILVUS_URL:-http://localhost:19530}"
+MILVUS_AUTH="${MILVUS_TOKEN:-root:${MILVUS_ROOT_PASSWORD:-Milvus}}"
 
 exec uvx mcp-server-milvus \
-  --uri "$MILVUS_URI" \
-  --token "$MILVUS_TOKEN"
+  --uri "$MILVUS_HOST" \
+  --token "$MILVUS_AUTH"
