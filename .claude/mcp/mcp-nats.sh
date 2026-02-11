@@ -12,12 +12,13 @@ if [[ -f .env ]]; then
   source .env 2>/dev/null
 fi
 
-NATS_URL="${NATS_URL:-nats://localhost:4222}"
+# .env.dev uses NATS_ENDPOINT for the connection URL and NATS_TOKEN for auth.
+NATS_HOST="${NATS_ENDPOINT:-${NATS_URL:-nats://localhost:4222}}"
 
 docker_args=(
   run -i --rm --init
   --network=host
-  -e "NATS_URL=$NATS_URL"
+  -e "NATS_URL=$NATS_HOST"
 )
 
 if [[ -n "$NATS_TOKEN" ]]; then
