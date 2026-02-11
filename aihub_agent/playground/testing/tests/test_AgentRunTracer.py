@@ -105,9 +105,10 @@ class TestTraceStepStart:
         async def dummy_step():
             pass
 
-        with patch("aihub_agent.tracing.AgentRunTracer.set_span_in_context"), patch(
-            "aihub_agent.tracing.AgentRunTracer.context"
-        ) as mock_ctx:
+        with (
+            patch("aihub_agent.tracing.AgentRunTracer.set_span_in_context"),
+            patch("aihub_agent.tracing.AgentRunTracer.context") as mock_ctx,
+        ):
             mock_ctx.attach.return_value = "token"
 
             async with tracer.trace_step_start(topic, dummy_step, {"arg": "val"}) as span:
@@ -126,9 +127,10 @@ class TestTraceStepStart:
         async def dummy_step():
             pass
 
-        with patch("aihub_agent.tracing.AgentRunTracer.set_span_in_context"), patch(
-            "aihub_agent.tracing.AgentRunTracer.context"
-        ) as mock_ctx:
+        with (
+            patch("aihub_agent.tracing.AgentRunTracer.set_span_in_context"),
+            patch("aihub_agent.tracing.AgentRunTracer.context") as mock_ctx,
+        ):
             mock_ctx.attach.return_value = "token"
 
             with pytest.raises(ValueError):
