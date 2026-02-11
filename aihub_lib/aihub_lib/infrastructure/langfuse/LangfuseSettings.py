@@ -15,6 +15,14 @@ class LangfuseSettings(EnvironmentSettings):
     PUBLIC_KEY: Annotated[str, Field(description="Langfuse public API key")]
     SECRET_KEY: Annotated[SecretStr, Field(description="Langfuse secret API key")]
     TIMEOUT: Annotated[int, Field(description="Timeout in seconds for Langfuse API requests")] = 60
+    PUBLIC_URL: Annotated[
+        str | None,
+        Field(description="Public-facing Langfuse URL for browser links (e.g. https://langfuse.example.com)"),
+    ] = None
+    PROJECT_ID: Annotated[
+        str | None,
+        Field(description="Langfuse project ID for constructing dataset URLs"),
+    ] = None
 
     def create_client(self) -> Langfuse:
         """Create a Langfuse client with SDK tracing disabled since we use OTEL instead."""

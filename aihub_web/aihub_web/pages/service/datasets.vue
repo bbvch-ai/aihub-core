@@ -28,7 +28,7 @@
             v-for="dataset in datasets"
             :key="dataset.id"
             :dataset="dataset"
-            :langfuse-dataset-url="langfuseDatasetUrl(dataset)"
+            :langfuse-dataset-url="dataset.langfuse_url"
             @click="() => toDataset(dataset)"
           />
         </div>
@@ -40,23 +40,16 @@
 </template>
 
 <script setup lang="ts">
-import type { MinimalDataset } from '@core/sdk/client'
-
 import { useLocalePath } from '#i18n'
 
 const router = useRouter()
 const localePath = useLocalePath()
 const { t } = useI18n()
 
-const langfuseConfig = useRuntimeConfig().public.langfuse
-
 const { datasets, datasetsAreLoading } = useDatasets()
 const createModalOpen = ref(false)
 
-const langfuseDatasetUrl = (dataset: MinimalDataset) =>
-  `${langfuseConfig.url}/project/${langfuseConfig.projectId}/datasets/${dataset.id}`
-
-const toDataset = (dataset: MinimalDataset) => {
+const toDataset = (dataset: { id: string }) => {
   router.push(localePath(`/service/datasets/${dataset.id}`))
 }
 </script>

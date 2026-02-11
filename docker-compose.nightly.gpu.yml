@@ -1876,6 +1876,8 @@ services:
       LANGFUSE_BASEURL: http://langfuse-web:3000
       LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY}
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY}
+      LANGFUSE_PUBLIC_URL: https://langfuse.${DOMAIN}
+      LANGFUSE_PROJECT_ID: "aihub-project"
       AIHUB_OPENAI_API_BASE_URL: http://api:8000/api/v1/openai
 
 
@@ -1959,8 +1961,6 @@ services:
       OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
       WEBUI_URL: https://openwebui.${DOMAIN}
       WS_ENDPOINT: wss://${DOMAIN}/api/v1/events/ws
-      LANGFUSE_BASEURL: https://langfuse.${DOMAIN}
-      LANGFUSE_INIT_PROJECT_ID: "aihub-project"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1/"]
       interval: 30s
