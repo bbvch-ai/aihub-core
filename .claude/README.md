@@ -45,15 +45,19 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 │   ├── scope-boundary-check.sh  # PreToolUse: Warn cross-scope imports
 │   ├── stop-hook-git-check.sh   # Stop: Check uncommitted changes
 │   └── session-start.sh         # SessionStart: Install deps, check env
-└── mcp/                   # Model Context Protocol server scripts
+└── mcp/                   # Model Context Protocol server scripts (12 total)
     ├── mcp-mongodb.sh     # Read-only database access (FerretDB/MongoDB)
     ├── mcp-aihub-api.sh   # API endpoint testing
     ├── mcp-phoenix.sh     # AI observability and tracing
     ├── mcp-context7.sh    # Up-to-date library documentation lookup
     ├── mcp-playwright.sh  # Browser automation and UI debugging
-    ├── mcp-github.sh      # GitHub issues, PRs, code search (needs PAT)
+    ├── mcp-github.sh      # GitHub issues, PRs, code search (needs PAT, disabled)
     ├── mcp-postgres.sh    # Read-only PostgreSQL access (infrastructure DBs)
-    └── mcp-nats.sh        # NATS messaging monitoring
+    ├── mcp-primevue.sh    # PrimeVue component library (props, events, slots, theming)
+    ├── mcp-nuxt.sh        # Nuxt framework docs and guides (official remote)
+    ├── mcp-milvus.sh      # Milvus vector DB (collections, search, indexes)
+    ├── mcp-nats.sh        # NATS messaging (subjects, streams, monitoring)
+    └── mcp-dagster.sh     # Dagster pipelines (runs, assets, jobs)
 ```
 
 ## Quick Reference

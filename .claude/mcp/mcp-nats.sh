@@ -1,8 +1,29 @@
 #!/bin/bash
 set -e
+# NATS MCP — proper MCP server for NATS messaging system integration.
+# Provides message viewing, subject inspection, JetStream stream management,
+# and monitoring. NATS is the event-driven backbone for the Swiss AI Agent Protocol.
+#
+# Uses the certified mcp-nats server (sinadarbouy/mcp-nats) via Docker.
+# Connection uses NATS_TOKEN from .env for authentication.
 cd "$(dirname "$0")/../.."
-# NATS monitoring API for message bus observability.
-# NATS exposes monitoring endpoints at http://localhost:8222 (/connz, /routez, /subsz, /varz).
-# Falls back to a hint if native MCP is not available.
-exec npx -y mcp-remote@latest http://localhost:8222/mcp 2>/dev/null || \
-  echo "NATS monitoring not available as MCP. Use HTTP directly: http://localhost:8222"
+if [[ -f .env ]]; then
+  # shellcheck disable=SC1091
+  source .env 2>/dev/null
+fi
+
+NATS_URL="${NATS_URL:-nats://localhost:4222}"
+
+docker_args=(
+  run -i --rm --init
+  --network=host
+  -e "NATS_URL=$NATS_URL"
+)
+
+if [[ -n "$NATS_TOKEN" ]]; then
+  docker_args+=(-e "NATS_TOKEN=$NATS_TOKEN")
+else
+  docker_args+=(-e "NATS_NO_AUTHENTICATION=true")
+fi
+
+exec docker "${docker_args[@]}" cnadb/mcp-nats --transport stdio
