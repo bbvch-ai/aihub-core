@@ -14,23 +14,22 @@ from typing import Any
 
 import httpx
 
-from aihub_lib.infrastructure.langfuse.LangfuseBootstrapSettings import LangfuseBootstrapSettings
+from aihub_lib.auth.dependencies.SuperuserAuthHandler.SuperuserSettings import SuperuserSettings
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.langfuse.LangfuseSettings import LangfuseSettings
 from aihub_lib.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
 
 logger = logging.getLogger(__name__)
 
+AIHUB_CONNECTION_NAME = "AI-Hub Agents"
+LITELLM_CONNECTION_NAME = "AI-Hub LLM (Evaluators)"
+
 
 class LangfuseProvisioner:
     """Provisions Langfuse with AI-Hub LLM connections, model pricing, and a prompt template."""
 
-    def __init__(
-        self,
-        langfuse_settings: LangfuseSettings | None = None,
-        bootstrap_settings: LangfuseBootstrapSettings | None = None,
-    ) -> None:
+    def __init__(self, langfuse_settings: LangfuseSettings | None = None) -> None:
         self.langfuse_settings = langfuse_settings or LangfuseSettings()
-        self.bootstrap_settings = bootstrap_settings or LangfuseBootstrapSettings()
         self._base_url = self.langfuse_settings.BASEURL.rstrip("/")
 
     @property
@@ -46,10 +45,6 @@ class LangfuseProvisioner:
         Each step is independent — a failure in one step does not prevent subsequent steps.
         This method never raises; all errors are logged as warnings.
         """
-        if not self.bootstrap_settings.ENABLED:
-            logger.info("Langfuse provisioning disabled via LANGFUSE_BOOTSTRAP_ENABLED=false")
-            return
-
         logger.info("Starting Langfuse provisioning...")
 
         async with httpx.AsyncClient(timeout=30.0) as client:
@@ -63,9 +58,6 @@ class LangfuseProvisioner:
 
     async def sync_agents(self, agent_models: list[str]) -> None:
         """Sync discovered agents to Langfuse so they appear in the experiment UI model dropdown."""
-        if not self.bootstrap_settings.ENABLED:
-            return
-
         if not agent_models:
             logger.debug("Langfuse sync: No agents to sync")
             return
@@ -73,7 +65,7 @@ class LangfuseProvisioner:
         connection_data = self._build_aihub_connection_data(custom_models=agent_models)
 
         async with httpx.AsyncClient(timeout=30.0) as client:
-            await self._upsert_llm_connection(client, connection_data, self.bootstrap_settings.AIHUB_CONNECTION_NAME)
+            await self._upsert_llm_connection(client, connection_data, AIHUB_CONNECTION_NAME)
 
         logger.info(f"Langfuse sync: Updated AI-Hub connection with {len(agent_models)} agents")
 
@@ -93,16 +85,20 @@ class LangfuseProvisioner:
     async def _register_aihub_connection(self, client: httpx.AsyncClient) -> None:
         """Register AI-Hub's OpenAI-compatible endpoint as an LLM connection."""
         connection_data = self._build_aihub_connection_data(custom_models=[])
-        await self._upsert_llm_connection(client, connection_data, self.bootstrap_settings.AIHUB_CONNECTION_NAME)
+        await self._upsert_llm_connection(client, connection_data, AIHUB_CONNECTION_NAME)
 
     async def _register_litellm_connection(
         self, client: httpx.AsyncClient, litellm_models: list[dict[str, Any]]
     ) -> None:
         """Register LiteLLM proxy as an LLM connection for evaluators."""
-        settings = self.bootstrap_settings
+        try:
+            litellm_settings = LiteLLMProxySettings()
+        except Exception:
+            logger.info("Langfuse provisioning: Skipping LiteLLM connection (LiteLLM not configured)")
+            return
 
-        if not settings.LITELLM_API_KEY:
-            logger.info("Langfuse provisioning: Skipping LiteLLM connection (no LANGFUSE_BOOTSTRAP_LITELLM_API_KEY)")
+        if not litellm_settings.API_KEY:
+            logger.info("Langfuse provisioning: Skipping LiteLLM connection (no LITE_LLM_PROXY_API_KEY)")
             return
 
         chat_models = [
@@ -114,14 +110,14 @@ class LangfuseProvisioner:
         connection_data = {
             "provider": "ai-hub-litellm",
             "adapter": "openai",
-            "secretKey": settings.LITELLM_API_KEY.get_secret_value(),
-            "baseURL": settings.LITELLM_BASE_URL,
+            "secretKey": litellm_settings.API_KEY.get_secret_value(),
+            "baseURL": litellm_settings.BASE_URL,
             "customModels": chat_models,
             "withDefaultModels": False,
             "extraHeaders": {},
         }
 
-        await self._upsert_llm_connection(client, connection_data, settings.LITELLM_CONNECTION_NAME)
+        await self._upsert_llm_connection(client, connection_data, LITELLM_CONNECTION_NAME)
         logger.info(f"Langfuse provisioning: Discovered {len(chat_models)} chat models from LiteLLM: {chat_models}")
 
     async def _register_model_definitions(
@@ -201,16 +197,11 @@ class LangfuseProvisioner:
 
     def _build_aihub_connection_data(self, *, custom_models: list[str]) -> dict[str, Any]:
         """Build the connection payload for the AI-Hub agents LLM connection."""
-        settings = self.bootstrap_settings
-        api_key = (
-            settings.AIHUB_API_KEY.get_secret_value() if settings.AIHUB_API_KEY else "internal-network-no-auth-required"
-        )
-
         return {
             "provider": "ai-hub-agents",
             "adapter": "openai",
-            "secretKey": api_key,
-            "baseURL": settings.AIHUB_BASE_URL,
+            "secretKey": SuperuserSettings().TOKEN.get_secret_value(),
+            "baseURL": AIHubSettings().OPENAI_API_BASE_URL,
             "customModels": custom_models,
             "withDefaultModels": False,
             "extraHeaders": {},

@@ -27,6 +27,14 @@ class AIHubSettings(EnvironmentSettings):
 
     SHARED_NAMESPACE_NAME: Annotated[str, Field(description="Name of the shared namespace")] = "sharednamespace"
 
+    OPENAI_API_BASE_URL: Annotated[
+        str,
+        Field(
+            pattern=r"^https?://.*$",
+            description="Base URL of AI-Hub's OpenAI-compatible endpoint, used for Langfuse LLM connection registration",
+        ),
+    ] = "http://api:8000/api/v1/openai"
+
     FRONTEND_ORIGIN: Annotated[str, Field(description="Comma separated list of origins to allow CORS")]
 
     MONGO_MAIN_DB_NAME: Annotated[
