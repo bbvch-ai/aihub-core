@@ -295,11 +295,16 @@ Before marking task complete:
 
 **Config**: `/home/user/aihub-core/.mcp.json`
 
-**MCP Servers**:
+**MCP Servers** (7 total, 6 enabled by default):
 
 - **Phoenix MCP**: AI observability/tracing data (http://localhost:6006)
-- **MongoDB MCP**: Read-only database access (mongodb://admin:admin@localhost:27017/aihub)
+- **MongoDB MCP**: Read-only database access (FerretDB/MongoDB layer)
 - **AI-Hub API MCP**: API endpoint testing (http://localhost:8000/mcp)
+- **Context7 MCP**: Up-to-date library documentation for LlamaIndex, FastAPI, Pydantic, Dagster, PrimeVue, Nuxt, etc.
+- **Playwright MCP**: Browser automation and UI debugging for the Nuxt 3 admin interface (headless Chromium)
+- **GitHub MCP**: Issues, PRs, code search, CI status (disabled by default — requires `GITHUB_PERSONAL_ACCESS_TOKEN` in
+  `.env`)
+- **PostgreSQL MCP**: Read-only access to infrastructure databases (Phoenix, Dagster, LiteLLM, OpenWebUI)
 
 ## Quick Reference
 
