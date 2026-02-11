@@ -46,13 +46,17 @@
       "Bash(make *)",
       "Bash(poetry run *)",
       "Bash(poetry install)",
+      "Bash(poetry add *)",
       "Bash(pnpm *)",
       "Bash(git status)",
       "Bash(git diff *)",
       "Bash(git log *)",
+      "Bash(git branch *)",
+      "Bash(git stash *)",
       "Bash(gh pr *)",
       "Bash(gh issue *)",
-      "Bash(docker compose *)",
+      "Bash(docker compose -f docker-compose.dev.yml *)",
+      "Bash(docker compose ps *)",
       "Bash(docker logs *)",
       "Skill"
     ]

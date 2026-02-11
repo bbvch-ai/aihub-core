@@ -500,21 +500,66 @@ Ensure your AI coding assistant (Claude Code, Gemini CLI, etc.) is configured to
 AI assistants will automatically detect and use this configuration when present in the project root.
 :::
 
-### :hammer_and_wrench: Development Tools & Slash Commands
+### :hammer_and_wrench: Claude Code Integration
 
-The AI-Hub includes several slash commands (located in `.claude/commands/`) that streamline common development
-workflows:
+The AI-Hub includes comprehensive Claude Code enablement with skills, custom subagents, automated hooks, and MCP
+servers. Full details are in `.claude/README.md`.
 
-- **`/create-pr`**: Pre-pull request validation and preparation
-- **`/update-doc`**: Documentation synchronization and updates
-- **`/document-decisions`**: ADR creation and management
-- **`/document-feature`**: Create documentation for a described feature
-- **`/explain`**: Explains and documents a specific part of the codebase
-- **`/implement-feedback-from-pr`**: Systematic PR feedback implementation
+#### Skills (21 total — invoke via `/skill-name`)
+
+**Documentation**:
+
+- **`/create-pr`**: Pre-pull request validation, formatting, linting, type checking, and tests across affected scopes
+- **`/update-doc`**: Synchronize documentation with code changes (model-invocable)
+- **`/explain`**: Analyze and explain code structure, identify gaps (model-invocable)
+- **`/document-decision`**: Create Architecture Decision Records (ADRs)
+- **`/document-feature`**: Create user-facing VitePress feature documentation
+- **`/document-solution`**: Edit solution concept docs for procurement evaluators
+- **`/implement-feedback-from-pr`**: Systematically implement PR review feedback
+
+**Scaffolding**:
+
+- **`/scaffold-agent`**: Generate complete AI agent boilerplate (class, events, config, tests, Dockerfile)
+- **`/scaffold-pipeline`**: Generate Dagster pipeline boilerplate (asset factory, I/O manager, resources)
+- **`/scaffold-process`**: Generate process orchestration boilerplate (entity delegation, work events)
+- **`/scaffold-api-endpoint`**: Generate REST API endpoint boilerplate (Controller, Service, DTO, tests)
+- **`/scaffold-frontend-page`**: Generate Nuxt page boilerplate (composables, pages, components)
+- **`/scaffold-bot-handler`**: Generate bot conversation handler boilerplate (ChatBot subclass)
+
+**Developer Experience**:
+
+- **`/test-scope`**: Smart scoped test runner — detects affected scopes from git diff, runs tests in dependency order
+- **`/docker-dev`**: Manage Docker dev environment (up, down, health, logs, restart, ports, status)
+- **`/check-i18n`**: Validate all 4 locale files have matching keys, report missing translations
+- **`/generate-sdk`**: Regenerate frontend API SDK from OpenAPI specification
+- **`/dependency-audit`**: Audit dependencies for outdated packages, vulnerabilities, version drift
+- **`/validate-events`**: Validate event hierarchy, registration, and subscriber matching
+- **`/debug-agent`**: Debug agent event flow, NATS subscriptions, and Phoenix traces
+- **`/release-prep`**: Comprehensive pre-release validation across all scopes
+
+#### Custom Subagents (7 — used automatically for specialized tasks)
+
+- **`codebase-expert`**: Deep monorepo knowledge, cross-scope tracing, architectural questions (with memory)
+- **`code-reviewer`**: Quality, security, and standards review against AGENTS.md conventions
+- **`event-flow-analyzer`**: Traces Swiss AI Agent Protocol event flows end-to-end (with memory)
+- **`docker-ops`**: Docker infrastructure expert for 30+ services, networks, and health checks
+- **`test-analyzer`**: Test coverage analysis, gap identification, pytest-bdd and custom test runners
+- **`frontend-analyzer`**: Nuxt 3 composables, Pinia-Colada queries, PrimeVue, SDK generation pipeline
+- **`documentation-keeper`**: Documentation freshness tracking against code changes (with memory)
+
+#### Automated Hooks (6 — run automatically, no invocation needed)
+
+- **`auto-format-python.sh`** (PostToolUse): Ruff format + check on Python file edits
+- **`auto-format-frontend.sh`** (PostToolUse): ESLint fix on TypeScript/Vue file edits
+- **`protect-sensitive-files.sh`** (PreToolUse): Blocks access to .env, .pem, .key, credentials, certs, tokens
+- **`scope-boundary-check.sh`** (PreToolUse): Warns about cross-scope import violations
+- **`stop-hook-git-check.sh`** (Stop): Checks uncommitted changes at session end
+- **`session-start.sh`** (SessionStart): Installs dependencies, checks environment, warns about main branch
 
 ::: info AI Assistant Context Files
-Each scope contains `CLAUDE.md` and `GEMINI.md` files that reference the respective README files. These provide AI
-assistants with proper context about each component's purpose and architecture.
+Each scope contains `CLAUDE.md` and `GEMINI.md` files that reference the respective `AGENTS.md`. These provide AI
+assistants with proper context about each component's purpose and architecture. Local overrides (gitignored):
+`CLAUDE.local.md`, `.claude/settings.local.json`, `.claude/mcp.local.json`.
 :::
 
 ## 4. :clipboard: Project Governance & Work Management
