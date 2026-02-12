@@ -19,6 +19,11 @@ export default defineNuxtConfig({
     },
   },
   compatibilityDate: '2024-12-03',
+  nitro: {
+    prerender: {
+      ignore: ['/en/auth', '/de/auth', '/fr/auth', '/it/auth'],
+    },
+  },
   robots: {
     robotsTxt: false,
   },
