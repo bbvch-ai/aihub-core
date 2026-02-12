@@ -226,7 +226,7 @@ Our AI capabilities are primarily powered by the LlamaIndex ecosystem and integr
 - **Monitoring**: We use a combination of tools for comprehensive application monitoring:
   - **OpenTelemetry**: The foundational toolkit for generating and exporting telemetry data (traces, metrics, logs).
   - **OpenInference**: A specialized instrumentation library for monitoring LLM applications built with LlamaIndex.
-  - **Langfuse**: For ML observability and model performance evaluation.
+  - **Langfuse**: For LLM observability, tracing, and model performance evaluation.
 - **Asynchronous Messaging**:
   - **NATS**: Used for high-performance, asynchronous communication between services.
 
@@ -432,12 +432,11 @@ MCP integration provides AI coding assistants with:
 
 #### :gear: MCP Configuration
 
-The MCP integration is configured through the `.mcp.json` file in the project root. This file defines three key MCP
+The MCP integration is configured through the `.mcp.json` file in the project root. This file defines two key MCP
 servers:
 
-1. **Langfuse**: Provides access to AI observability and tracing data
-2. **MongoDB MCP Server**: Enables database queries and monitoring (read-only)
-3. **AI-Hub API MCP Server**: Exposes AI-Hub API functionality to AI assistants
+1. **MongoDB MCP Server**: Enables database queries and monitoring (read-only)
+2. **AI-Hub API MCP Server**: Exposes AI-Hub API functionality to AI assistants
 
 ::: details :wrench: MCP Server Configuration
 The `.mcp.json` file contains the following configuration:
@@ -445,21 +444,6 @@ The `.mcp.json` file contains the following configuration:
 ```json
 {
   "mcpServers": {
-    "phoenix": {
-      "command": "docker",
-      "args": [
-        "run",
-        "--rm",
-        "-i",
-        "--network=host",
-        "node:22-alpine",
-        "npx",
-        "-y",
-        "@arizeai/phoenix-mcp@latest",
-        "--baseUrl",
-        "http://localhost:6006"
-      ]
-    },
     "mongodb": {
       "command": "docker",
       "args": [
@@ -490,7 +474,7 @@ The `.mcp.json` file contains the following configuration:
 Once your development environment is running, AI coding assistants that support MCP can automatically discover and use
 these integrations:
 
-- **Query agent execution traces** through Langfuse
+- **Query agent execution traces** through Langfuse UI at http://localhost:6006
 - **Inspect database state** through MongoDB MCP (read-only)
 - **Test API endpoints** through AI-Hub API MCP
 - **Debug complex issues** with full development context
