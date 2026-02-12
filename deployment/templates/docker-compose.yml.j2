@@ -2229,6 +2229,7 @@ services:
 
       # Docling
       DOCLING_API_BASE_URL: {{ DOCLING_API_BASE_URL }}
+      DOCLING_API_KEY: ${DOCLING_API_KEY}
       DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
       DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
       DOCLING_HOSTED_VLM_API_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
@@ -2367,6 +2368,10 @@ services:
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
@@ -2433,6 +2438,10 @@ services:
     {%- endif %}
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
 
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
@@ -2505,6 +2514,10 @@ services:
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
@@ -2566,6 +2579,10 @@ services:
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
@@ -2625,6 +2642,10 @@ services:
     {%- endif %}
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
 
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
@@ -2687,6 +2708,10 @@ services:
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
+
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
@@ -2733,6 +2758,10 @@ services:
     {%- endif %}
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
+
+      # AI-Hub Settings
+      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
+      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
 
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
@@ -2797,6 +2826,7 @@ services:
 
       # Docling
       DOCLING_API_BASE_URL: {{ DOCLING_API_BASE_URL }}
+      DOCLING_API_KEY: ${DOCLING_API_KEY}
       DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
       DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
       DOCLING_HOSTED_VLM_API_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
@@ -2868,6 +2898,7 @@ services:
 
       # Docling
       DOCLING_API_BASE_URL: {{ DOCLING_API_BASE_URL }}
+      DOCLING_API_KEY: ${DOCLING_API_KEY}
       DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
       DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
       DOCLING_HOSTED_VLM_API_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}

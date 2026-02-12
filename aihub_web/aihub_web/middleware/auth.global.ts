@@ -7,8 +7,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
     `/service/${$i18n.locale.value}/health`,
   ]
 
-  // No auth check for public paths
-  if (noAuthPaths.includes(to.path)) {
+  // No auth check for public paths (normalize trailing slashes on both sides)
+  const normalize = (p: string) => p.endsWith('/') ? p.slice(0, -1) : p
+  const normalizedPath = normalize(to.path)
+  if (noAuthPaths.some(p => normalize(p) === normalizedPath)) {
     return
   }
 

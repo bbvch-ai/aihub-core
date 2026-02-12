@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.261.7] - 2026-02-11 - Enhanced Docling Configuration with API Key Support
+
+### Added
+
+- 🔑 **Docling API Key Support:** Introduced a new configuration option (`DOCLING_API_KEY`) to allow specifying an API
+  key for the Docling service, improving secure access and authentication.
+
+---
+
+## [v0.261.6] - 2026-02-11 - Enhanced Deployment Flexibility and Routing Accuracy
+
+### Added
+
+- 🚀 **Introduced dynamic frontend configuration:** Environment variables (`AIHUB_API_VERSION`, `AIHUB_FRONTEND_ORIGIN`)
+  are now passed to AI-Hub frontend services in Docker Compose setups, enabling more flexible and dynamic deployment
+  settings.
+
+### Changed
+
+- ⚙️ **Optimized Nuxt.js prerendering:** Specific authentication routes (e.g., `/en/auth`) are now explicitly ignored
+  during Nuxt.js prerendering, which enhances build efficiency and better accommodates dynamic authentication pages.
+
+### Fixed
+
+- 🐛 **Resolved authentication path matching issues:** The authentication middleware now correctly identifies public
+  paths, regardless of trailing slashes, ensuring consistent access to non-authenticated routes.
+- 🐞 **Corrected Nginx absolute redirect behavior:** Disabled absolute redirects in Nginx to prevent issues with
+  incorrect schemes or ports when the application is deployed behind a reverse proxy.
+- ⚡️ **Improved Nginx SPA routing:** Refined the Nginx configuration for single-page applications to ensure all non-file
+  requests are reliably served by `index.html`.
+
+---
+
 ## [v0.261.5] - 2026-02-10 - Streamlined Development and Dependency Management
 
 ### Refactor
