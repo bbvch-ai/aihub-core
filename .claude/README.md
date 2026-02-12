@@ -35,7 +35,10 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 │   ├── scaffold-dashboard-widget/ # Generate dashboard widget
 │   ├── debug-frontend/    # Visual frontend debugging (Playwright)
 │   ├── audit-frontend/    # Frontend code audit
-│   └── primevue-lookup/   # PrimeVue component docs lookup
+│   ├── primevue-lookup/   # PrimeVue component docs lookup
+│   ├── scaffold-frontend-subpage/ # Generate detail wrapper + tab subpages
+│   ├── scaffold-frontend-component/ # Generate Vue component (card, modal, list, etc.)
+│   └── design-system/     # Design system reference guide
 ├── agents/                # Custom subagents with specialized roles
 │   ├── codebase-expert.md # Deep knowledge builder (with memory)
 │   ├── code-reviewer.md   # Quality and security reviewer
@@ -68,7 +71,7 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 
 ## Quick Reference
 
-### Skills (27 total)
+### Skills (30 total)
 
 | Category | Skill | Description |
 |----------|-------|-------------|
@@ -99,6 +102,9 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 | | `/debug-frontend` | Visual UI debugging (Playwright) |
 | | `/audit-frontend` | Frontend code audit |
 | | `/primevue-lookup` | PrimeVue component docs |
+| | `/scaffold-frontend-subpage` | New detail page with tabs |
+| | `/scaffold-frontend-component` | New Vue component (card, modal, list) |
+| | `/design-system` | Design system reference |
 
 ### Local Overrides (gitignored)
 
