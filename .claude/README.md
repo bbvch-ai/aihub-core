@@ -41,7 +41,8 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 │   ├── design-system/     # Design system reference guide
 │   ├── scaffold-api-service/ # Generate API service layer
 │   ├── scaffold-api-repository/ # Generate MongoEngine entity (schema + repository)
-│   └── api-auth-guide/    # Auth, identity, permissions reference
+│   ├── api-auth-guide/    # Auth, identity, permissions reference
+│   └── nats-events/       # NATS, JetStream, events, pub/sub, RPC reference
 ├── agents/                # Custom subagents with specialized roles
 │   ├── codebase-expert.md # Deep knowledge builder (with memory)
 │   ├── code-reviewer.md   # Quality and security reviewer
@@ -74,7 +75,7 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 
 ## Quick Reference
 
-### Skills (33 total)
+### Skills (34 total)
 
 | Category | Skill | Description |
 |----------|-------|-------------|
@@ -111,6 +112,7 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 | | `/scaffold-frontend-component` | New Vue component (card, modal, list) |
 | | `/design-system` | Design system reference |
 | API | `/api-auth-guide` | Auth, identity, permissions reference |
+| | `/nats-events` | NATS, JetStream, events, pub/sub, RPC |
 
 ### Local Overrides (gitignored)
 
