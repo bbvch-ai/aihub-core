@@ -41,21 +41,20 @@ class TestBuildKey:
 
     def test_builds_key_with_default_prefix(self):
         redis = AsyncMock()
-        store = RateLimitStore(redis)
-        key = store._build_key("user123", "aihub.user.agent.>", UsageLimitPeriod.ONE_DAY)
+        store = RateLimitStore(redis, "user123")
+        key = store._build_key("aihub.user.agent.>", UsageLimitPeriod.ONE_DAY)
         assert key == "usage:calls:user123:aihub.user.agent.>:1d"
 
     def test_builds_key_with_custom_prefix(self):
         redis = AsyncMock()
-        store = RateLimitStore(redis, key_prefix="custom:prefix")
-        key = store._build_key("user123", "aihub.user.agent.>", UsageLimitPeriod.ONE_HOUR)
+        store = RateLimitStore(redis, "user123", key_prefix="custom:prefix")
+        key = store._build_key("aihub.user.agent.>", UsageLimitPeriod.ONE_HOUR)
         assert key == "custom:prefix:user123:aihub.user.agent.>:1h"
 
-    def test_validates_user_id(self):
+    def test_validates_user_id_in_constructor(self):
         redis = AsyncMock()
-        store = RateLimitStore(redis)
         with pytest.raises(ValueError):
-            store._build_key("user:123", "pattern", UsageLimitPeriod.ONE_DAY)
+            RateLimitStore(redis, "user:123")
 
 
 class TestTtlToResetAt:
@@ -79,25 +78,23 @@ class TestGetCounts:
     @pytest.mark.asyncio
     async def test_empty_limits_returns_empty_list(self):
         redis = AsyncMock()
-        store = RateLimitStore(redis)
+        store = RateLimitStore(redis, "user123")
 
-        result = await store.get_counts("user123", [])
+        result = await store.get_counts([])
 
         assert result == []
-        redis.mget.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_returns_counts_and_reset_times(self):
         redis = AsyncMock()
-        redis.mget.return_value = [b"42", b"5"]
-        redis.ttl.side_effect = [3600, 1800]
-        store = RateLimitStore(redis)
+        redis.fcall.return_value = [42, 3600, 5, 1800]
+        store = RateLimitStore(redis, "user123")
 
         limits = [
             rl("aihub.user.agent.>", 100, "1d"),
             rl("aihub.user.agent.MyAgent.>", 10, "1h"),
         ]
-        result = await store.get_counts("user123", limits)
+        result = await store.get_counts(limits)
 
         assert len(result) == 2
         assert result[0][0] == 42
@@ -108,15 +105,14 @@ class TestGetCounts:
     @pytest.mark.asyncio
     async def test_handles_missing_keys(self):
         redis = AsyncMock()
-        redis.mget.return_value = [None, b"5"]
-        redis.ttl.side_effect = [-1, 1800]
-        store = RateLimitStore(redis)
+        redis.fcall.return_value = [0, -1, 5, 1800]
+        store = RateLimitStore(redis, "user123")
 
         limits = [
             rl("aihub.user.agent.>", 100, "1d"),
             rl("aihub.user.agent.MyAgent.>", 10, "1h"),
         ]
-        result = await store.get_counts("user123", limits)
+        result = await store.get_counts(limits)
 
         assert result[0][0] == 0
         assert result[0][1] is None
@@ -130,45 +126,41 @@ class TestCheckAndIncrement:
     @pytest.mark.asyncio
     async def test_empty_limits_returns_true_and_empty_list(self):
         redis = AsyncMock()
-        store = RateLimitStore(redis)
+        store = RateLimitStore(redis, "user123")
 
-        incremented, counts = await store.check_and_increment("user123", [])
+        incremented, counts = await store.check_and_increment([])
 
         assert incremented is True
         assert counts == []
-        redis.eval.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_increments_when_not_exceeded(self):
         redis = AsyncMock()
-        redis.eval.return_value = [0, 6, 4]  # exceeded_flag=0, count1=6, count2=4
-        redis.ttl.return_value = 80000
-        store = RateLimitStore(redis)
+        redis.fcall.return_value = [0, 6, 80000, 4, 3600]
+        store = RateLimitStore(redis, "user123")
 
         limits = [
             rl("aihub.user.agent.>", 100, "1d"),
             rl("aihub.user.agent.MyAgent.>", 20, "1h"),
         ]
-        incremented, counts = await store.check_and_increment("user123", limits)
+        incremented, counts = await store.check_and_increment(limits)
 
         assert incremented is True
         assert len(counts) == 2
         assert counts[0][0] == 6
         assert counts[1][0] == 4
-        redis.eval.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_does_not_increment_when_exceeded(self):
         redis = AsyncMock()
-        redis.eval.return_value = [1, 5, 10]  # exceeded_flag=1, count1=5, count2=10
-        redis.ttl.return_value = 1800
-        store = RateLimitStore(redis)
+        redis.fcall.return_value = [1, 5, 1800, 10, 3600]
+        store = RateLimitStore(redis, "user123")
 
         limits = [
             rl("aihub.user.agent.>", 100, "1d"),
             rl("aihub.user.agent.MyAgent.>", 10, "1h"),
         ]
-        incremented, counts = await store.check_and_increment("user123", limits)
+        incremented, counts = await store.check_and_increment(limits)
 
         assert incremented is False
         assert len(counts) == 2
@@ -176,18 +168,37 @@ class TestCheckAndIncrement:
         assert counts[1][0] == 10
 
     @pytest.mark.asyncio
-    async def test_passes_correct_arguments_to_lua_script(self):
+    async def test_passes_correct_arguments_to_fcall(self):
         redis = AsyncMock()
-        redis.eval.return_value = [0, 1]
-        redis.ttl.return_value = 3600
-        store = RateLimitStore(redis)
+        redis.fcall.return_value = [0, 1, 86400]
+        store = RateLimitStore(redis, "user123")
 
         limits = [rl("aihub.user.agent.>", 100, "1d")]
-        await store.check_and_increment("user123", limits)
+        await store.check_and_increment(limits)
 
-        call_args = redis.eval.call_args
-        # Check script, num_keys, keys, and argv
-        assert call_args[0][1] == 1  # num_keys
-        assert "usage:calls:user123:aihub.user.agent.>:1d" in call_args[0][2]  # key
-        assert "100" in call_args[0]  # limit
-        assert "86400" in call_args[0]  # ttl for 1d
+        redis.fcall.assert_called_once()
+        call_args = redis.fcall.call_args[0]
+        assert call_args[0] == "aihub_check_and_increment"
+        assert call_args[1] == 1  # num_keys
+        assert call_args[2] == "usage:calls:user123:aihub.user.agent.>:1d"
+        assert "100" in call_args
+        assert "86400" in call_args
+
+
+class TestParseInterleavedCountsTtls:
+    """Tests for RateLimitStore._parse_interleaved_counts_ttls"""
+
+    def test_empty_input(self):
+        result = RateLimitStore._parse_interleaved_counts_ttls([])
+        assert result == []
+
+    def test_single_entry(self):
+        result = RateLimitStore._parse_interleaved_counts_ttls([42, 3600])
+        assert len(result) == 1
+        assert result[0][0] == 42
+        assert result[0][1] is not None
+
+    def test_negative_ttl_gives_none_reset(self):
+        result = RateLimitStore._parse_interleaved_counts_ttls([5, -1])
+        assert result[0][0] == 5
+        assert result[0][1] is None

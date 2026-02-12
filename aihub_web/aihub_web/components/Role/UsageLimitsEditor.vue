@@ -21,9 +21,9 @@
       <table class="w-full text-sm">
         <colgroup>
           <col>
-          <col style="width: 6rem;">
-          <col style="width: 6rem;">
-          <col style="width: 3rem;">
+          <col class="w-24">
+          <col class="w-24">
+          <col class="w-12">
         </colgroup>
         <thead>
           <tr>
@@ -138,13 +138,12 @@ const PERIOD_VALUES = ['1h', '1d', '7d', '1mo'] as const
 
 const limits = defineModel<UsageLimitDTO[]>('limits', { required: true })
 
-const isUnlimited = computed({
-  get: () => limits.value.length === 0,
-  set: (val: boolean) => {
-    if (val) {
-      limits.value = []
-    }
-  },
+const isUnlimited = ref(limits.value.length === 0)
+
+watch(isUnlimited, (val) => {
+  if (val) {
+    limits.value = []
+  }
 })
 
 const periodOptions = computed(() =>

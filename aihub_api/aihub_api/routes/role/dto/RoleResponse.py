@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 from pydantic import BaseModel, Field
@@ -18,7 +18,7 @@ class RoleResponse(BaseModel):
     usage_limits: Annotated[list[UsageLimitDTO], Field(description="Pattern-based usage limit rules.")] = []
 
     @classmethod
-    def from_role_entity(cls, role_entity: RoleEntity) -> "RoleResponse":
+    def from_role_entity(cls, role_entity: RoleEntity) -> Self:
         return cls(
             id=str(role_entity.id),
             name=role_entity.name,

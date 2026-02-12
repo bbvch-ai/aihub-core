@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from redis.asyncio import Redis
+
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.auth.usage.RateLimitStore import RateLimitStore
 from aihub_lib.auth.usage.usage_limit_models import (
@@ -15,7 +17,7 @@ from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 
-class UsageLimitService:
+class UsageLimits:
     """
     Role-based usage limits with pattern matching.
 
@@ -28,14 +30,18 @@ class UsageLimitService:
     Redis counters are keyed by the matched pattern, not the concrete resource path.
     """
 
-    def __init__(self, store: RateLimitStore):
-        self.store = store
+    def __init__(self, redis: Redis):
+        self._redis = redis
+
+    def _store_for_user(self, user_id: str) -> RateLimitStore:
+        """Create a RateLimitStore scoped to a specific user."""
+        return RateLimitStore(self._redis, user_id)
 
     @staticmethod
     def build_resource_path(scope: str, resource_type: ResourceType, resource_class: str, resource_id: str) -> str:
         """Build a fully qualified resource path from its parts.
 
-        >>> UsageLimitService.build_resource_path("aihub.user", ResourceType.AGENT, "MyAgent", "v1")
+        >>> UsageLimits.build_resource_path("aihub.user", ResourceType.AGENT, "MyAgent", "v1")
         'aihub.user.agent.MyAgent.v1'
         """
         return f"{scope}.{resource_type}.{resource_class}.{resource_id}"
@@ -109,9 +115,9 @@ class UsageLimitService:
             return []
 
         if resource_path is None:
-            return UsageLimitService._most_permissive_limit(all_role_limits)
+            return UsageLimits._most_permissive_limit(all_role_limits)
 
-        return UsageLimitService._matching_limits_for_resource(all_role_limits, resource_path)
+        return UsageLimits._matching_limits_for_resource(all_role_limits, resource_path)
 
     @staticmethod
     def _most_permissive_limit(
@@ -138,7 +144,7 @@ class UsageLimitService:
         merged: dict[tuple[str, str], RoleUsageLimit] = {}
         for role_limits in all_role_limits:
             for limit in role_limits:
-                if not UsageLimitService._pattern_matches(limit.pattern, resource_path):
+                if not UsageLimits._pattern_matches(limit.pattern, resource_path):
                     continue
                 key = (limit.pattern, limit.period)
                 if key not in merged or limit.limit > merged[key].limit:
@@ -152,10 +158,10 @@ class UsageLimitService:
         resource_path: str | None = None,
     ) -> RoleUsageLimit | None:
         """Return the most specific matching limit across all roles."""
-        limits = UsageLimitService.get_effective_limits_for_roles(role_names, resource_path)
+        limits = UsageLimits.get_effective_limits_for_roles(role_names, resource_path)
         if not limits:
             return None
-        return max(limits, key=lambda effective_limit: UsageLimitService._specificity(effective_limit.pattern))
+        return max(limits, key=lambda effective_limit: UsageLimits._specificity(effective_limit.pattern))
 
     @trace_fn
     async def get_usage_status(
@@ -169,7 +175,8 @@ class UsageLimitService:
         if not effective_limits:
             return UsageStatus(limits=[], is_exceeded=False)
 
-        counts_and_resets = await self.store.get_counts(user_id, effective_limits)
+        store = self._store_for_user(user_id)
+        counts_and_resets = await store.get_counts(effective_limits)
 
         limit_statuses = [
             self._build_limit_status(effective_limit, current_count, reset_at)
@@ -197,7 +204,8 @@ class UsageLimitService:
         if not effective_limits:
             return UsageStatus(limits=[], is_exceeded=False)
 
-        incremented, counts_and_resets = await self.store.check_and_increment(user_id, effective_limits)
+        store = self._store_for_user(user_id)
+        incremented, counts_and_resets = await store.check_and_increment(effective_limits)
 
         limit_statuses = [
             self._build_limit_status(limit, count, reset_at, post_increment=incremented)
@@ -225,7 +233,7 @@ class UsageLimitService:
         """
         from fastapi import HTTPException
 
-        from aihub_lib.auth.usage.period_labels import build_exceeded_detail
+        from aihub_lib.auth.usage.UsageLimitMessages import UsageLimitMessages
 
         resource_path = self.build_resource_path(USER_SCOPE, resource_type, resource_class, resource_id)
         usage_status = await self.check_and_increment(user.id, user.roles, resource_path=resource_path)
@@ -233,6 +241,6 @@ class UsageLimitService:
             effective_locale = locale or LocaleHandler.DEFAULT_LOCALE
             raise HTTPException(
                 status_code=429,
-                detail=build_exceeded_detail(usage_status, locale=effective_locale).model_dump(),
+                detail=UsageLimitMessages.build_exceeded_detail(usage_status, locale=effective_locale).model_dump(),
             )
         return usage_status

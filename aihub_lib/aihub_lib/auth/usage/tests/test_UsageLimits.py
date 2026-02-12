@@ -5,7 +5,7 @@ from fastapi import HTTPException
 
 from aihub_lib.auth.usage.RateLimitStore import RateLimitStore
 from aihub_lib.auth.usage.usage_limit_models import ResourceType, RoleUsageLimit, UsageLimitPeriod
-from aihub_lib.auth.usage.UsageLimitService import UsageLimitService
+from aihub_lib.auth.usage.UsageLimits import UsageLimits
 
 AGENT_PREFIX = "aihub.user.agent."
 
@@ -15,78 +15,86 @@ def rl(pattern: str, limit: int, period: str) -> RoleUsageLimit:
     return RoleUsageLimit(pattern=pattern, limit=limit, period=period)
 
 
-def create_service(store: RateLimitStore | None = None) -> UsageLimitService:
-    """Create a UsageLimitService with a mocked store."""
-    if store is None:
-        store = MagicMock(spec=RateLimitStore)
-    return UsageLimitService(store)
+def create_service(mock_redis: AsyncMock | None = None) -> UsageLimits:
+    """Create a UsageLimits with a mocked Redis."""
+    if mock_redis is None:
+        mock_redis = AsyncMock()
+    return UsageLimits(mock_redis)
+
+
+def create_service_with_store(store: RateLimitStore) -> UsageLimits:
+    """Create a UsageLimits and inject a pre-built store."""
+    redis = AsyncMock()
+    service = UsageLimits(redis)
+    service._store_for_user = MagicMock(return_value=store)
+    return service
 
 
 class TestPatternMatching:
-    """Tests for UsageLimitService._pattern_matches"""
+    """Tests for UsageLimits._pattern_matches"""
 
     def test_wildcard_gt_matches_any_path(self):
-        assert UsageLimitService._pattern_matches(f"{AGENT_PREFIX}>", f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent")
+        assert UsageLimits._pattern_matches(f"{AGENT_PREFIX}>", f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent")
 
     def test_wildcard_gt_matches_single_segment(self):
-        assert UsageLimitService._pattern_matches(f"{AGENT_PREFIX}>", f"{AGENT_PREFIX}LLMWrappingAgent")
+        assert UsageLimits._pattern_matches(f"{AGENT_PREFIX}>", f"{AGENT_PREFIX}LLMWrappingAgent")
 
     def test_agent_class_gt_matches_any_agent_id(self):
-        assert UsageLimitService._pattern_matches(
+        assert UsageLimits._pattern_matches(
             f"{AGENT_PREFIX}LLMWrappingAgent.>", f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
     def test_agent_class_gt_does_not_match_different_class(self):
-        assert not UsageLimitService._pattern_matches(
+        assert not UsageLimits._pattern_matches(
             f"{AGENT_PREFIX}LLMWrappingAgent.>", f"{AGENT_PREFIX}RagAgent.dev_agent"
         )
 
     def test_exact_match(self):
-        assert UsageLimitService._pattern_matches(
+        assert UsageLimits._pattern_matches(
             f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent", f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
     def test_exact_no_match(self):
-        assert not UsageLimitService._pattern_matches(
+        assert not UsageLimits._pattern_matches(
             f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent", f"{AGENT_PREFIX}LLMWrappingAgent.other"
         )
 
     def test_star_matches_single_level(self):
-        assert UsageLimitService._pattern_matches(
+        assert UsageLimits._pattern_matches(
             f"{AGENT_PREFIX}LLMWrappingAgent.*", f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
     def test_star_does_not_match_multi_level(self):
-        assert not UsageLimitService._pattern_matches(f"{AGENT_PREFIX}*", f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent")
+        assert not UsageLimits._pattern_matches(f"{AGENT_PREFIX}*", f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent")
 
     def test_gt_requires_at_least_one_segment(self):
-        assert UsageLimitService._pattern_matches(f"{AGENT_PREFIX}>", f"{AGENT_PREFIX}anything")
+        assert UsageLimits._pattern_matches(f"{AGENT_PREFIX}>", f"{AGENT_PREFIX}anything")
 
 
 class TestSpecificity:
-    """Tests for UsageLimitService._specificity"""
+    """Tests for UsageLimits._specificity"""
 
     def test_gt_only(self):
-        assert UsageLimitService._specificity(f"{AGENT_PREFIX}>") == 3  # aihub, user, agent
+        assert UsageLimits._specificity(f"{AGENT_PREFIX}>") == 3  # aihub, user, agent
 
     def test_class_gt(self):
-        assert UsageLimitService._specificity(f"{AGENT_PREFIX}LLMWrappingAgent.>") == 4
+        assert UsageLimits._specificity(f"{AGENT_PREFIX}LLMWrappingAgent.>") == 4
 
     def test_exact(self):
-        assert UsageLimitService._specificity(f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent") == 5
+        assert UsageLimits._specificity(f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent") == 5
 
     def test_star_not_counted(self):
-        assert UsageLimitService._specificity(f"{AGENT_PREFIX}LLMWrappingAgent.*") == 4
+        assert UsageLimits._specificity(f"{AGENT_PREFIX}LLMWrappingAgent.*") == 4
 
 
 class TestGetEffectiveLimitsForRoles:
-    """Tests for UsageLimitService.get_effective_limits_for_roles"""
+    """Tests for UsageLimits.get_effective_limits_for_roles"""
 
     @patch("aihub_lib.persistence.access.entities.RoleEntity.RoleEntity")
     def test_unlimited_when_no_roles_have_limits(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[], []]
 
-        limits = UsageLimitService.get_effective_limits_for_roles(
+        limits = UsageLimits.get_effective_limits_for_roles(
             ["role1", "role2"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
         )
 
@@ -96,7 +104,7 @@ class TestGetEffectiveLimitsForRoles:
     def test_returns_empty_when_no_roles(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = []
 
-        limits = UsageLimitService.get_effective_limits_for_roles([])
+        limits = UsageLimits.get_effective_limits_for_roles([])
 
         assert limits == []
 
@@ -106,7 +114,7 @@ class TestGetEffectiveLimitsForRoles:
             [rl(f"{AGENT_PREFIX}>", 100, "1d")],
         ]
 
-        limits = UsageLimitService.get_effective_limits_for_roles(
+        limits = UsageLimits.get_effective_limits_for_roles(
             ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
@@ -125,7 +133,7 @@ class TestGetEffectiveLimitsForRoles:
             ],
         ]
 
-        limits = UsageLimitService.get_effective_limits_for_roles(
+        limits = UsageLimits.get_effective_limits_for_roles(
             ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
@@ -150,7 +158,7 @@ class TestGetEffectiveLimitsForRoles:
             [rl(f"{AGENT_PREFIX}>", 200, "1d")],
         ]
 
-        limits = UsageLimitService.get_effective_limits_for_roles(
+        limits = UsageLimits.get_effective_limits_for_roles(
             ["role1", "role2"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
@@ -170,7 +178,7 @@ class TestGetEffectiveLimitsForRoles:
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 10, "1h")],
         ]
 
-        limits = UsageLimitService.get_effective_limits_for_roles(
+        limits = UsageLimits.get_effective_limits_for_roles(
             ["roleA", "roleB"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
@@ -188,7 +196,7 @@ class TestGetEffectiveLimitsForRoles:
             [rl(f"{AGENT_PREFIX}RagAgent.>", 10, "1h")],
         ]
 
-        limits = UsageLimitService.get_effective_limits_for_roles(
+        limits = UsageLimits.get_effective_limits_for_roles(
             ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
@@ -200,7 +208,7 @@ class TestGetEffectiveLimitsForRoles:
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 20, "1h")],
         ]
 
-        limits = UsageLimitService.get_effective_limits_for_roles(["role1"])
+        limits = UsageLimits.get_effective_limits_for_roles(["role1"])
 
         assert len(limits) == 1
         assert limits[0].limit == 100
@@ -213,7 +221,7 @@ class TestGetEffectiveLimitsForRoles:
             [],
         ]
 
-        limits = UsageLimitService.get_effective_limits_for_roles(
+        limits = UsageLimits.get_effective_limits_for_roles(
             ["role1", "role2"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
@@ -231,7 +239,7 @@ class TestGetEffectiveLimitsForRoles:
             ],
         ]
 
-        limits = UsageLimitService.get_effective_limits_for_roles(
+        limits = UsageLimits.get_effective_limits_for_roles(
             ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
@@ -254,7 +262,7 @@ class TestGetEffectiveLimitForRoles:
             ],
         ]
 
-        result = UsageLimitService.get_effective_limit_for_roles(
+        result = UsageLimits.get_effective_limit_for_roles(
             ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
@@ -267,20 +275,20 @@ class TestGetEffectiveLimitForRoles:
     def test_returns_none_when_no_limits(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[]]
 
-        result = UsageLimitService.get_effective_limit_for_roles(["role1"], resource_path=f"{AGENT_PREFIX}Foo.bar")
+        result = UsageLimits.get_effective_limit_for_roles(["role1"], resource_path=f"{AGENT_PREFIX}Foo.bar")
 
         assert result is None
 
 
 class TestGetUsageStatus:
-    """Tests for UsageLimitService.get_usage_status"""
+    """Tests for UsageLimits.get_usage_status"""
 
     @pytest.mark.asyncio
     @patch("aihub_lib.persistence.access.entities.RoleEntity.RoleEntity")
     async def test_unlimited_user_returns_empty_limits(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[]]
         store = AsyncMock(spec=RateLimitStore)
-        service = create_service(store)
+        service = create_service_with_store(store)
 
         status = await service.get_usage_status("user123", ["admin"])
 
@@ -296,7 +304,7 @@ class TestGetUsageStatus:
         ]
         store = AsyncMock(spec=RateLimitStore)
         store.get_counts.return_value = [(42, None), (5, None)]
-        service = create_service(store)
+        service = create_service_with_store(store)
 
         status = await service.get_usage_status(
             "user123", ["user"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
@@ -314,7 +322,7 @@ class TestGetUsageStatus:
         store = AsyncMock(spec=RateLimitStore)
         # catchall: 42/100 (ok), class: 10/10 (exceeded)
         store.get_counts.return_value = [(42, None), (10, None)]
-        service = create_service(store)
+        service = create_service_with_store(store)
 
         status = await service.get_usage_status(
             "user123", ["user"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
@@ -327,14 +335,14 @@ class TestGetUsageStatus:
 
 
 class TestCheckAndIncrement:
-    """Tests for UsageLimitService.check_and_increment (atomic Lua script)."""
+    """Tests for UsageLimits.check_and_increment (atomic Lua script)."""
 
     @pytest.mark.asyncio
     @patch("aihub_lib.persistence.access.entities.RoleEntity.RoleEntity")
     async def test_unlimited_does_not_increment(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[]]
         store = AsyncMock(spec=RateLimitStore)
-        service = create_service(store)
+        service = create_service_with_store(store)
 
         status = await service.check_and_increment("user123", ["admin"])
 
@@ -351,7 +359,7 @@ class TestCheckAndIncrement:
         ]
         store = AsyncMock(spec=RateLimitStore)
         store.check_and_increment.return_value = (True, [(6, None), (4, None)])
-        service = create_service(store)
+        service = create_service_with_store(store)
 
         status = await service.check_and_increment(
             "user1", ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
@@ -370,7 +378,7 @@ class TestCheckAndIncrement:
         ]
         store = AsyncMock(spec=RateLimitStore)
         store.check_and_increment.return_value = (False, [(5, None), (10, None)])
-        service = create_service(store)
+        service = create_service_with_store(store)
 
         status = await service.check_and_increment(
             "user1", ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
@@ -386,7 +394,7 @@ class TestCheckAndIncrement:
         mock_role_entity.get_usage_limits_for_roles.return_value = [[rl(f"{AGENT_PREFIX}>", 100, "1d")]]
         store = AsyncMock(spec=RateLimitStore)
         store.check_and_increment.return_value = (True, [(1, None)])
-        service = create_service(store)
+        service = create_service_with_store(store)
 
         await service.check_and_increment("user123", ["user"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev")
 
@@ -403,7 +411,7 @@ class TestMultiRoleWithIndependentLimits:
             [rl(f"{AGENT_PREFIX}>", 200, "1d")],
         ]
 
-        limits = UsageLimitService.get_effective_limits_for_roles(
+        limits = UsageLimits.get_effective_limits_for_roles(
             ["roleA", "roleB"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
@@ -422,7 +430,7 @@ class TestMultiRoleWithIndependentLimits:
             [rl(f"{AGENT_PREFIX}>", 100, "1d")],
         ]
 
-        limits = UsageLimitService.get_effective_limits_for_roles(
+        limits = UsageLimits.get_effective_limits_for_roles(
             ["roleA", "roleB"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
@@ -441,7 +449,7 @@ class TestMultiRoleWithIndependentLimits:
             [rl(f"{AGENT_PREFIX}>", 100, "1d")],
         ]
 
-        limits = UsageLimitService.get_effective_limits_for_roles(
+        limits = UsageLimits.get_effective_limits_for_roles(
             ["r1", "r2", "r3"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
@@ -452,7 +460,7 @@ class TestMultiRoleWithIndependentLimits:
     def test_both_roles_no_limits_means_unlimited(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[], []]
 
-        limits = UsageLimitService.get_effective_limits_for_roles(
+        limits = UsageLimits.get_effective_limits_for_roles(
             ["roleA", "roleB"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
@@ -470,7 +478,7 @@ class TestCheckAndIncrementIntegration:
         ]
         store = AsyncMock(spec=RateLimitStore)
         store.check_and_increment.return_value = (True, [(4, None), (6, None)])
-        service = create_service(store)
+        service = create_service_with_store(store)
 
         status = await service.check_and_increment(
             "user1", ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
@@ -488,7 +496,7 @@ class TestCheckAndIncrementIntegration:
         ]
         store = AsyncMock(spec=RateLimitStore)
         store.check_and_increment.return_value = (False, [(5, None), (10, None)])
-        service = create_service(store)
+        service = create_service_with_store(store)
 
         status = await service.check_and_increment(
             "user1", ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
@@ -507,7 +515,7 @@ class TestCheckAndIncrementIntegration:
         ]
         store = AsyncMock(spec=RateLimitStore)
         store.check_and_increment.return_value = (True, [(61, None)])
-        service = create_service(store)
+        service = create_service_with_store(store)
 
         status = await service.check_and_increment(
             "user1", ["roleA", "roleB"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
@@ -530,7 +538,7 @@ class TestBackwardCompatProperties:
         ]
         store = AsyncMock(spec=RateLimitStore)
         store.get_counts.return_value = [(42, None), (9, None)]
-        service = create_service(store)
+        service = create_service_with_store(store)
 
         status = await service.get_usage_status("user1", ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev")
 
@@ -544,7 +552,7 @@ class TestBackwardCompatProperties:
     async def test_properties_return_none_when_unlimited(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[]]
         store = AsyncMock(spec=RateLimitStore)
-        service = create_service(store)
+        service = create_service_with_store(store)
 
         status = await service.get_usage_status("user1", ["admin"])
 
@@ -581,7 +589,7 @@ class TestPatternPeriodCombinations:
             ],
         ]
 
-        limits = UsageLimitService.get_effective_limits_for_roles(
+        limits = UsageLimits.get_effective_limits_for_roles(
             ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
@@ -592,7 +600,7 @@ class TestPatternPeriodCombinations:
 
 
 class TestCheckAndRaise:
-    """Tests for UsageLimitService.check_and_raise (HTTP 429 path)."""
+    """Tests for UsageLimits.check_and_raise (HTTP 429 path)."""
 
     @pytest.mark.asyncio
     @patch("aihub_lib.persistence.access.entities.RoleEntity.RoleEntity")
@@ -600,7 +608,7 @@ class TestCheckAndRaise:
         mock_role_entity.get_usage_limits_for_roles.return_value = [[rl(f"{AGENT_PREFIX}>", 10, "1h")]]
         store = AsyncMock(spec=RateLimitStore)
         store.check_and_increment.return_value = (False, [(10, None)])
-        service = create_service(store)
+        service = create_service_with_store(store)
 
         user = MagicMock()
         user.id = "user123"
@@ -621,7 +629,7 @@ class TestCheckAndRaise:
         mock_role_entity.get_usage_limits_for_roles.return_value = [[rl(f"{AGENT_PREFIX}>", 100, "1d")]]
         store = AsyncMock(spec=RateLimitStore)
         store.check_and_increment.return_value = (True, [(5, None)])
-        service = create_service(store)
+        service = create_service_with_store(store)
 
         user = MagicMock()
         user.id = "user123"
@@ -636,7 +644,7 @@ class TestCheckAndRaise:
     async def test_unlimited_user_passes(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[]]
         store = AsyncMock(spec=RateLimitStore)
-        service = create_service(store)
+        service = create_service_with_store(store)
 
         user = MagicMock()
         user.id = "user123"

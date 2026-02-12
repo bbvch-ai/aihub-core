@@ -1,5 +1,6 @@
 from typing import Annotated
 
+from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.usage import UsageLimitPeriod
 from pydantic import BaseModel, Field, field_validator
 
@@ -20,11 +21,7 @@ class UsageLimitDTO(BaseModel):
     @field_validator("pattern")
     @classmethod
     def validate_pattern(cls, value: str) -> str:
-        """Validate pattern syntax: no empty segments, '>' only as last segment."""
-        segments = value.split(".")
-        if not segments or any(s == "" for s in segments):
-            raise ValueError("Pattern must not contain empty segments")
-        for i, segment in enumerate(segments):
-            if segment == ">" and i != len(segments) - 1:
-                raise ValueError("'>' wildcard must be the last segment in the pattern")
+        """Validate pattern using AccessChecker's canonical validation."""
+        if not AccessChecker.validate_user_access_rule(value):
+            raise ValueError(f"Invalid usage limit pattern: {value!r}")
         return value

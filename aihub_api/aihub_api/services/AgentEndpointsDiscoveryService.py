@@ -9,9 +9,9 @@ from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.auth.usage import (
     ResourceType,
-    UsageLimitService,
-    build_usage_warning_headers,
-    use_usage_limit_service,
+    UsageLimitMessages,
+    UsageLimits,
+    use_usage_limits,
 )
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.langfuse.LangfuseProvisioner import LangfuseProvisioner
@@ -331,7 +331,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         async def send_event(
             agent_id: Annotated[str, Path(title="Agent ID", description="The specific agent instance ID")],
             nc: Annotated[NATS, Depends(use_nats)],
-            usage_limit_service: Annotated[UsageLimitService, Depends(use_usage_limit_service)],
+            usage_limits: Annotated[UsageLimits, Depends(use_usage_limits)],
             start_event_input: Annotated[input_type, Body],
             external_agent_event_distributor: Annotated[
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
@@ -349,7 +349,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             if not config:
                 raise HTTPException(status_code=404, detail=f"Agent instance '{agent_class}/{agent_id}' not found")
 
-            await usage_limit_service.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale)
+            await usage_limits.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale)
 
             if thread_id is not None:
                 try:
@@ -412,7 +412,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         async def stream_event(
             agent_id: Annotated[str, Path(title="Agent ID", description="The specific agent instance ID")],
             nc: Annotated[NATS, Depends(use_nats)],
-            usage_limit_service: Annotated[UsageLimitService, Depends(use_usage_limit_service)],
+            usage_limits: Annotated[UsageLimits, Depends(use_usage_limits)],
             start_event_input: Annotated[input_type, Body],
             external_agent_event_distributor: Annotated[
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
@@ -430,7 +430,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             if not config:
                 raise HTTPException(status_code=404, detail=f"Agent instance '{agent_class}/{agent_id}' not found")
 
-            usage_status = await usage_limit_service.check_and_raise(
+            usage_status = await usage_limits.check_and_raise(
                 user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale
             )
 
@@ -497,7 +497,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 "X-Accel-Buffering": "no",
                 "Connection": "keep-alive",
                 "Content-Encoding": "identity",
-                **build_usage_warning_headers(usage_status, locale=t.locale),
+                **UsageLimitMessages.build_usage_warning_headers(usage_status, locale=t.locale),
             }
 
             return StreamingResponse(

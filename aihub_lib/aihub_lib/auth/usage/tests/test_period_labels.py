@@ -1,12 +1,12 @@
 import pytest
 
-from aihub_lib.auth.usage.period_labels import (
-    build_exceeded_detail,
-    build_usage_limit_messages,
-    describe_pattern,
-    get_period_label,
-)
+from aihub_lib.auth.usage.AccessRuleDescriber import AccessRuleDescriber
 from aihub_lib.auth.usage.usage_limit_models import RoleUsageLimitStatus, UsageLimitPeriod, UsageStatus
+from aihub_lib.auth.usage.UsageLimitMessages import UsageLimitMessages
+
+describe_pattern = AccessRuleDescriber.describe_pattern
+get_period_label = AccessRuleDescriber.get_period_label
+build_exceeded_detail = UsageLimitMessages.build_exceeded_detail
 
 
 class TestPeriodLabels:
@@ -55,72 +55,6 @@ class TestGetPeriodLabel:
     def test_all_period_labels_english(self, period: UsageLimitPeriod, expected_en: str):
         """Verify all English period labels are correct."""
         assert get_period_label(period, "en") == expected_en
-
-
-class TestBuildUsageLimitMessages:
-    """Tests for build_usage_limit_messages function."""
-
-    def test_returns_all_languages(self):
-        """Messages are built for all supported languages."""
-        messages = build_usage_limit_messages(100, UsageLimitPeriod.ONE_DAY)
-
-        assert messages.en is not None
-        assert messages.de is not None
-        assert messages.fr is not None
-        assert messages.it is not None
-
-    def test_english_message_format(self):
-        """English message has correct format."""
-        messages = build_usage_limit_messages(100, UsageLimitPeriod.ONE_DAY)
-
-        assert messages.en == "Usage limit reached: 100 calls per day"
-
-    def test_german_message_format(self):
-        """German message has correct format."""
-        messages = build_usage_limit_messages(100, UsageLimitPeriod.ONE_DAY)
-
-        assert messages.de == "Nutzungslimit erreicht: 100 Aufrufe pro Tag"
-
-    def test_french_message_format(self):
-        """French message has correct format."""
-        messages = build_usage_limit_messages(100, UsageLimitPeriod.ONE_DAY)
-
-        assert messages.fr == "Limite d'utilisation atteinte: 100 appels par jour"
-
-    def test_italian_message_format(self):
-        """Italian message has correct format."""
-        messages = build_usage_limit_messages(100, UsageLimitPeriod.ONE_DAY)
-
-        assert messages.it == "Limite di utilizzo raggiunto: 100 chiamate per giorno"
-
-    def test_fallback_when_limit_is_none(self):
-        """Returns generic message when limit is None."""
-        messages = build_usage_limit_messages(None, UsageLimitPeriod.ONE_DAY)
-
-        assert messages.en == "Usage limit exceeded"
-        assert messages.de == "Nutzungslimit erreicht"
-
-    def test_fallback_when_period_is_none(self):
-        """Returns generic message when period is None."""
-        messages = build_usage_limit_messages(100, None)
-
-        assert messages.en == "Usage limit exceeded"
-        assert messages.de == "Nutzungslimit erreicht"
-
-    @pytest.mark.parametrize(
-        "period,expected_period_en",
-        [
-            (UsageLimitPeriod.ONE_HOUR, "hour"),
-            (UsageLimitPeriod.ONE_DAY, "day"),
-            (UsageLimitPeriod.SEVEN_DAYS, "week"),
-            (UsageLimitPeriod.ONE_MONTH, "month"),
-        ],
-    )
-    def test_all_periods_in_messages(self, period: UsageLimitPeriod, expected_period_en: str):
-        """All periods are correctly translated in messages."""
-        messages = build_usage_limit_messages(50, period)
-
-        assert expected_period_en in messages.en
 
 
 class TestDescribePattern:
@@ -183,22 +117,14 @@ class TestBuildExceededDetail:
         assert detail.limits[1].scope["en"] == "MyAgent/default"
         assert detail.limits[1].period_label["de"] == "Tag"
 
-    def test_backward_compat_fields(self):
-        """The detail includes backward-compatible single-limit fields."""
+    def test_aggregate_fields(self):
+        """The detail includes aggregate single-limit fields."""
         status = self._make_status(("aihub.user.agent.>", 10, UsageLimitPeriod.ONE_HOUR, 10, True))
         detail = build_exceeded_detail(status)
 
         assert detail.limit == 10
         assert detail.period == UsageLimitPeriod.ONE_HOUR
         assert detail.current_count == 10
-
-    def test_messages_present(self):
-        """The detail includes translated messages."""
-        status = self._make_status(("aihub.user.agent.>", 10, UsageLimitPeriod.ONE_HOUR, 10, True))
-        detail = build_exceeded_detail(status)
-
-        assert "en" in detail.messages
-        assert "de" in detail.messages
 
     def test_message_field_present_and_localized(self):
         """The detail includes a pre-formatted message string."""
