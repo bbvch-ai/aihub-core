@@ -42,7 +42,10 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 │   ├── scaffold-api-service/ # Generate API service layer
 │   ├── scaffold-api-repository/ # Generate MongoEngine entity (schema + repository)
 │   ├── api-auth-guide/    # Auth, identity, permissions reference
-│   └── nats-events/       # NATS, JetStream, events, pub/sub, RPC reference
+│   ├── nats-events/       # NATS, JetStream, events, pub/sub, RPC reference
+│   ├── dagster-pipelines/ # Dagster assets, resources, IO managers, partitions reference
+│   ├── rclone-guide/      # Rclone cloud storage integration reference
+│   └── debug-pipeline/    # Pipeline troubleshooting and debugging
 ├── agents/                # Custom subagents with specialized roles
 │   ├── codebase-expert.md # Deep knowledge builder (with memory)
 │   ├── code-reviewer.md   # Quality and security reviewer
@@ -75,7 +78,7 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 
 ## Quick Reference
 
-### Skills (34 total)
+### Skills (37 total)
 
 | Category | Skill | Description |
 |----------|-------|-------------|
@@ -111,8 +114,11 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 | | `/scaffold-frontend-subpage` | New detail page with tabs |
 | | `/scaffold-frontend-component` | New Vue component (card, modal, list) |
 | | `/design-system` | Design system reference |
-| API | `/api-auth-guide` | Auth, identity, permissions reference |
+| API & Pipeline | `/api-auth-guide` | Auth, identity, permissions reference |
 | | `/nats-events` | NATS, JetStream, events, pub/sub, RPC |
+| | `/dagster-pipelines` | Dagster assets, resources, IO managers, partitions |
+| | `/rclone-guide` | Rclone cloud storage integration |
+| | `/debug-pipeline` | Pipeline troubleshooting and debugging |
 
 ### Local Overrides (gitignored)
 
