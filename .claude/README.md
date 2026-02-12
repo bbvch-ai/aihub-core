@@ -38,7 +38,10 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 │   ├── primevue-lookup/   # PrimeVue component docs lookup
 │   ├── scaffold-frontend-subpage/ # Generate detail wrapper + tab subpages
 │   ├── scaffold-frontend-component/ # Generate Vue component (card, modal, list, etc.)
-│   └── design-system/     # Design system reference guide
+│   ├── design-system/     # Design system reference guide
+│   ├── scaffold-api-service/ # Generate API service layer
+│   ├── scaffold-api-repository/ # Generate MongoEngine entity (schema + repository)
+│   └── api-auth-guide/    # Auth, identity, permissions reference
 ├── agents/                # Custom subagents with specialized roles
 │   ├── codebase-expert.md # Deep knowledge builder (with memory)
 │   ├── code-reviewer.md   # Quality and security reviewer
@@ -71,7 +74,7 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 
 ## Quick Reference
 
-### Skills (30 total)
+### Skills (33 total)
 
 | Category | Skill | Description |
 |----------|-------|-------------|
@@ -85,7 +88,9 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 | Scaffold | `/scaffold-agent` | New AI agent |
 | | `/scaffold-pipeline` | New Dagster pipeline |
 | | `/scaffold-process` | New agentic process |
-| | `/scaffold-api-endpoint` | New REST endpoint |
+| | `/scaffold-api-endpoint` | New REST API controller |
+| | `/scaffold-api-service` | New API service layer |
+| | `/scaffold-api-repository` | New MongoEngine entity |
 | | `/scaffold-frontend-page` | New frontend page |
 | | `/scaffold-bot-handler` | New bot handler |
 | DevEx | `/test-scope` | Scoped test runner |
@@ -105,6 +110,7 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 | | `/scaffold-frontend-subpage` | New detail page with tabs |
 | | `/scaffold-frontend-component` | New Vue component (card, modal, list) |
 | | `/design-system` | Design system reference |
+| API | `/api-auth-guide` | Auth, identity, permissions reference |
 
 ### Local Overrides (gitignored)
 

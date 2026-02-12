@@ -264,17 +264,18 @@ Before marking task complete:
 
 **Full documentation**: `/home/user/aihub-core/.claude/README.md`
 
-**Skills** (30 total — invoke via `/skill-name`):
+**Skills** (33 total — invoke via `/skill-name`):
 
 - **Documentation**: `/create-pr`, `/update-doc`, `/explain`, `/document-decision`, `/document-feature`,
   `/document-solution`, `/implement-feedback-from-pr`
 - **Scaffolding**: `/scaffold-agent`, `/scaffold-pipeline`, `/scaffold-process`, `/scaffold-api-endpoint`,
-  `/scaffold-frontend-page`, `/scaffold-bot-handler`
+  `/scaffold-api-service`, `/scaffold-api-repository`, `/scaffold-frontend-page`, `/scaffold-bot-handler`
 - **Developer Experience**: `/test-scope`, `/docker-dev`, `/check-i18n`, `/generate-sdk`, `/dependency-audit`,
   `/validate-events`, `/debug-agent`, `/release-prep`
 - **Frontend**: `/scaffold-composable`, `/scaffold-event-display`, `/scaffold-dashboard-widget`,
   `/debug-frontend`, `/audit-frontend`, `/primevue-lookup`, `/scaffold-frontend-subpage`,
   `/scaffold-frontend-component`, `/design-system`
+- **API**: `/api-auth-guide`
 
 **Custom Subagents** (7 — Claude Code uses these automatically for specialized tasks):
 
