@@ -1,98 +1,204 @@
 ---
 name: scaffold-frontend-page
-description: Generate a new frontend page with Pinia-Colada composables, PrimeVue
-  components, and i18n support. Creates list and detail pages following the
-  established Nuxt 3 patterns.
+description: Generate a new list page with StructuralScreen/Column layout, Pinia-Colada
+  data fetching, card grid, create modal, and NuxtPage outlet for nested detail
+  routes. Follows the exact patterns from agents.vue and roles.vue.
 disable-model-invocation: true
-allowed-tools: Read, Write, Bash, Grep, Glob
+allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 
 # Scaffold a New Frontend Page
 
-Generate boilerplate for a new frontend page. The page name/resource should be provided via `$ARGUMENTS`.
+Generate a list page for a new resource. The resource name should be provided via `$ARGUMENTS`.
 
 ## Before You Start
 
 Read the frontend scope guide: `/home/user/aihub-core/aihub_web/AGENTS.md`
 
-Study an existing page for reference (check `aihub_web/aihub_web/pages/service/`).
+Study these reference pages:
+- Simple list: `aihub_web/aihub_web/pages/service/roles.vue`
+- Complex list with grouping: `aihub_web/aihub_web/pages/service/agents.vue`
+- Knowledge list: `aihub_web/aihub_web/pages/service/knowledge.vue`
 
-## What to Generate
+## Step 1: Check SDK Availability
 
-### 1. File Structure
+Search `aihub_web/aihub_web/sdk/client/` for the resource's SDK functions and DTO types. If they don't exist, warn the user to run `/generate-sdk` first.
 
+## Step 2: Create Composables
+
+If composables don't exist yet, create them first using the patterns from `/scaffold-composable`. At minimum you need:
+- `composables/<resource>/use<Resource>s.ts` — List query
+- `composables/<resource>/useCreate<Resource>.ts` — Create mutation (if applicable)
+
+## Step 3: Create the List Page
+
+Create `aihub_web/aihub_web/pages/service/<resource>s.vue`:
+
+```vue
+<template>
+  <StructuralScreen>
+    <StructuralColumn
+      :title="t('<resource>.title')"
+      :loading="<resource>sAreLoading"
+    >
+      <div class="flex flex-col gap-2">
+        <!-- Create button (top right) -->
+        <div class="flex w-full justify-end">
+          <Button
+            :label="t('<resource>.create_new')"
+            icon="pi pi-plus"
+            @click="createModalOpen = true"
+          />
+        </div>
+
+        <!-- Card grid -->
+        <div class="grid grid-cols-2 gap-4 2xl:grid-cols-2">
+          <<Resource>Card
+            v-for="item in <resource>s"
+            :key="item.id"
+            :<resource>="item"
+            @click="() => toDetail(item)"
+          />
+        </div>
+      </div>
+
+      <!-- Create modal -->
+      <Dialog
+        v-model:visible="createModalOpen"
+        modal
+        :header="t('<resource>.create_new')"
+      >
+        <<Resource>Create @close="createModalOpen = false" />
+      </Dialog>
+    </StructuralColumn>
+
+    <!-- Nested detail page outlet -->
+    <NuxtPage />
+  </StructuralScreen>
+</template>
+
+<script setup lang="ts">
+import type { <Resource>Dto } from '@core/sdk/client'
+
+import { useLocalePath } from '#i18n'
+
+const router = useRouter()
+const localePath = useLocalePath()
+const { t } = useI18n()
+
+const { <resource>s, <resource>sAreLoading } = use<Resource>s()
+
+const createModalOpen = ref(false)
+
+const toDetail = (item: <Resource>Dto) => {
+  router.push(localePath(`/service/<resource>s/${item.id}/overview`))
+}
+</script>
 ```
-aihub_web/aihub_web/
-├── pages/service/<resource>/
-│   ├── index.vue          # List page
-│   └── [<resource>_id].vue  # Detail page
-├── composables/
-│   └── <resource>.ts      # Pinia-Colada queries and mutations
-└── components/<resource>/
-    └── <Resource>Card.vue  # Reusable component (optional)
-```
 
-### 2. Composable (`composables/<resource>.ts`)
+### Key Structural Elements
 
-Use **Pinia-Colada** patterns:
+1. **`<StructuralScreen>`**: Top-level wrapper. Provides `h-[calc(100vh-50px)]` viewport, `bg-surface-50 dark:bg-surface-950`, horizontal flex at `2xl:`.
+2. **`<StructuralColumn>`**: Card container with rounded-3xl, loading progress bar, title/close button. Props: `title`, `loading`, `size`, `closeRoute`, `childColumn`.
+3. **`<NuxtPage />`**: MUST be placed as a sibling of StructuralColumn inside StructuralScreen. This renders nested detail routes as a second column.
+4. **Card grid**: Use `grid grid-cols-2 gap-4 2xl:grid-cols-2` for consistent card layout.
+5. **Create button**: Top-right aligned with `flex w-full justify-end`.
+6. **Navigation**: Always use `localePath()` for i18n-aware routing.
 
-**Query (data fetching):**
-```typescript
-export const use<Resource>List = defineQuery(() => {
-  const { data, isPending } = useQuery({
-    key: () => ['<resource>s'],
-    staleTime: minutesToMilliseconds(5),
-    query: async () => await get<Resource>s({ composable: '$fetch' }),
-  })
-  return { <resource>s: data, isLoading: isPending }
+## Step 4: Create Card Component
+
+Create `aihub_web/aihub_web/components/<Resource>/Card.vue` following this exact pattern:
+
+```vue
+<template>
+  <div
+    class="flex cursor-pointer flex-col gap-3 rounded-xl border border-surface-200 p-4 hover:bg-surface-100 dark:border-surface-800 hover:dark:bg-surface-800"
+    :class="{ 'bg-surface-100 dark:bg-surface-800': isActive }"
+    @click="emit('click', <resource>)"
+  >
+    <!-- Header: Icon + Title + Status -->
+    <div class="flex items-center justify-between gap-4">
+      <div class="flex items-center justify-start gap-2">
+        <div class="flex items-center justify-center rounded-full bg-white p-3 dark:bg-surface-900">
+          <Icon :name="icon" size="1.5em" />
+        </div>
+        <div>
+          <h3 class="font-semibold opacity-80">{{ <resource>.name }}</h3>
+          <p class="text-xs font-light opacity-70">{{ <resource>.id }}</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <Tag :value="statusLabel" :severity="statusSeverity" />
+      </div>
+    </div>
+
+    <!-- Description -->
+    <div>
+      <span class="text-xs">{{ <resource>.description }}</span>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import type { <Resource>Dto } from '@core/sdk/client'
+
+const props = defineProps<{
+  <resource>: <Resource>Dto
+}>()
+
+const emit = defineEmits<{
+  click: [<resource>: <Resource>Dto]
+}>()
+
+const route = useRoute()
+const { t } = useI18n()
+
+const isActive = computed(() => {
+  return route.params.<resource>_id === props.<resource>.id
 })
+</script>
 ```
 
-**Mutation (data modification):**
-```typescript
-export const useCreate<Resource> = defineMutation(() => {
-  const queryCache = useQueryCache()
-  const { mutateAsync } = useMutation({
-    mutation: async (request) => {
-      await create<Resource>({ composable: '$fetch', body: request })
-      queryCache.invalidateQueries({ key: ['<resource>s'] })
-    },
-  })
-  return { create<Resource>: mutateAsync }
-})
+### Card Design Rules
+
+- **Container**: `rounded-xl border border-surface-200 p-4` with hover and dark mode variants
+- **Active state**: `bg-surface-100 dark:bg-surface-800` when route matches
+- **Icon container**: `rounded-full bg-white p-3 dark:bg-surface-900` with `Icon size="1.5em"`
+- **Title**: `font-semibold opacity-80`
+- **Subtitle**: `text-xs font-light opacity-70`
+- **Description**: `text-xs`
+- **Status**: PrimeVue `Tag` with severity (`success`, `danger`, `secondary`)
+- **Delete button**: `Button icon="pi pi-trash" severity="secondary" text rounded size="small"` with `@click.stop`
+
+## Step 5: Add i18n Keys
+
+Add translation keys in all 4 locale files (`aihub_web/aihub_web/i18n/locales/{de,en,fr,it}.yaml`):
+
+```yaml
+<resource>:
+  title: "<Resource>s"
+  create_new: "Create <Resource>"
+  list:
+    empty: "No <resource>s found"
+  delete:
+    title: "Delete <Resource>"
+    confirmMessage: "Are you sure you want to delete this <resource>?"
+    button: "Delete"
+    success: "<Resource> deleted successfully"
+    error: "Failed to delete <resource>"
+    cancel: "Cancel"
 ```
 
-### 3. List Page (`pages/service/<resource>/index.vue`)
+## Step 6: Verify Navigation
 
-- Use `<script setup lang="ts">`
-- Import composable for data fetching
-- Use PrimeVue `DataTable` or card layout
-- Wrap in `StructuralScreen` and `StructuralColumn`
-- Use `$t('...')` for all user-visible text
-- Add navigation to detail page on row click
-
-### 4. Detail Page (`pages/service/<resource>/[<resource>_id].vue`)
-
-- Use route params to get resource ID
-- Fetch single resource with composable
-- Display fields using PrimeVue components
-- Include edit/delete actions if applicable
-
-### 5. i18n
-
-Add translation keys in all 4 locale files:
-- `aihub_web/aihub_web/i18n/locales/{de,en,fr,it}.yaml`
-
-Add keys for: page title, column headers, action labels, empty states.
-
-### 6. Navigation
-
-Register the new page in the sidebar navigation (if applicable).
+Check if the page needs to be registered in the API's suite/service configuration for sidebar navigation. The sidebar is populated from `useSuite()` → `useApps()` which fetches service definitions from the API.
 
 ## Key Conventions
 
-- **PrimeVue components only**: Never raw HTML for interactive elements
-- **Tailwind utility classes**: No custom CSS
-- **SDK types**: Props typed from generated SDK DTOs
-- **i18n all text**: `{{ $t('key.path') }}` for everything user-visible
-- **Pinia-Colada**: defineQuery/defineMutation (not raw fetch)
+- **PrimeVue components only**: `Button`, `Tag`, `Dialog`, `DataTable` — never raw HTML for interactive elements
+- **Tailwind only**: No custom CSS (exception: scoped `:deep()` for PrimeVue overrides)
+- **SDK types for props**: Import from `@core/sdk/client`, never define manually
+- **i18n all text**: `{{ t('key.path') }}` for everything user-visible
+- **Pinia-Colada**: `defineQuery`/`defineMutation` — never raw fetch or global stores
+- **`useLocalePath()`**: Always for navigation — `router.push(localePath('/path'))`
+- **`useConfirm()` + `useToast()`**: For delete confirmations and success/error messages
