@@ -26,7 +26,7 @@ tests = ["arrow", "dask[dataframe]", "docker", "pytest", "pytest-mock"]
 
 [[package]]
 name = "aihub-lib"
-version = "v0.260.1"
+version = "v0.261.7"
 description = ""
 optional = false
 python-versions = ">=3.13, <3.14"
@@ -45,7 +45,6 @@ cachetools = "^5.5.2"
 colorlog = "^6.9.0"
 docling-core = "^2.54.1"
 fastapi = "^0.128.0"
-flatdict = "^4.0.1"
 fsspec = "^2024.10.0"
 html5lib = "^1.1"
 llama-index-core = "0.14.12"
@@ -92,8 +91,8 @@ transformers = "^4.57.3"
 [package.source]
 type = "git"
 url = "https://github.com/bbvch-ai/aihub-core.git"
-reference = "v0.260.1"
-resolved_reference = "61c93265015718deb2e5bf7fe78a0e300913ed11"
+reference = "v0.261.7"
+resolved_reference = "f8aa9981174810f62f8726e0d780e3eb0da042b3"
 subdirectory = "aihub_lib"
 
 [[package]]
@@ -2250,17 +2249,6 @@ files = [
 ]
 
 [[package]]
-name = "flatdict"
-version = "4.0.1"
-description = "Python module for interacting with nested dicts as a single level dict with delimited keys."
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "flatdict-4.0.1.tar.gz", hash = "sha256:cd32f08fd31ed21eb09ebc76f06b6bd12046a24f77beb1fd0281917e47f26742"},
-]
-
-[[package]]
 name = "frozenlist"
 version = "1.8.0"
 description = "A list-like structure which implements collections.abc.MutableSequence"
@@ -3070,7 +3058,7 @@ files = [
 
 [[package]]
 name = "jambo"
-version = "0.4.0"
+version = "0.1.dev234+g1da93a4d2"
 description = "Jambo - JSON Schema to Pydantic Converter"
 optional = false
 python-versions = "<4.0,>=3.10"
@@ -3081,13 +3069,13 @@ develop = false
 [package.dependencies]
 email-validator = ">=2.2.0"
 jsonschema = ">=4.23.0"
-pydantic = ">=2.10.6"
+pydantic = ">=2.12.4"
 
 [package.source]
 type = "git"
 url = "https://github.com/bbvch-ai/jambo.git"
-reference = "v0.4.0"
-resolved_reference = "294d6dc7465edb399fc3ece44301f55d6d082112"
+reference = "HEAD"
+resolved_reference = "1da93a4d25fd4d2a88838ef77a90d4557ad021fa"
 
 [[package]]
 name = "jedi"
@@ -9481,4 +9469,4 @@ cffi = ["cffi (>=1.17,<2.0) ; platform_python_implementation != \"PyPy\" and pyt
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13, <3.14"
-content-hash = "d90d96103c850d16b5ed157d5baa3aefc2dbc233925993f94d611e7c3bcf04f8"
+content-hash = "8c9f0f6cba791729c1fd552366b662fc1e7b183bc3b47952f75b1f5f4a39061b"

@@ -29,10 +29,10 @@
 <script setup lang="ts">
 import { useChangeCase } from '@vueuse/integrations/useChangeCase'
 
-import type { ThreadDto, ToolEventReadable, AgentEventReadable } from '@core/sdk/client'
+import type { ThreadDto, ToolEvent, ContextualizedAgentEvent } from '@core/sdk/client'
 
 defineProps<{
-  event: AgentEventReadable & { event: ToolEventReadable }
+  event: ContextualizedAgentEvent & { event: ToolEvent }
   thread: ThreadDto
 }>()
 </script>

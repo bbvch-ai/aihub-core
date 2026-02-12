@@ -1,4 +1,7 @@
+from typing import ClassVar
+
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StopEvent, UserMessageEvent
 from aihub_lib.nats.events.human_in_the_loop import (
     HumanInTheLoopChat,
@@ -13,6 +16,17 @@ from playground.agent.HitlDemoAgent.events import HitlTypeSelection
 
 class HitlDemoAgent(Agent):
     """Demo agent that showcases all three HITL types: input, confirmation, and chat."""
+
+    name: ClassVar[LocaleString] = LocaleString(
+        en="HITL Demo Agent", de="HITL Demo Agent", fr="Agent Démo HITL", it="Agente Demo HITL"
+    )
+    description: ClassVar[LocaleString] = LocaleString(
+        en="Demo agent for HITL types",
+        de="Demo Agent für HITL Typen",
+        fr="Agent démo pour types HITL",
+        it="Agente demo per tipi HITL",
+    )
+    icon: ClassVar[str] = "mage:stop"
 
     @step()
     async def ask_hitl_type(self, event: UserMessageEvent) -> HitlTypeSelection.request:

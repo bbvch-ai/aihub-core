@@ -14,7 +14,7 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=PerformanceTestingAgent,
-        default_agent_config=PerformanceTestingAgentConfig(
+        agent_config=PerformanceTestingAgentConfig(
             agent_id="performance_testing_agent",
             agent_class=PerformanceTestingAgent.__name__,
             name=LocaleString(en="Performance Testing Agent"),

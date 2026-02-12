@@ -5,6 +5,7 @@ from typing import Annotated
 from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
+from aihub_lib.infrastructure.rclone import RcloneSourceConfig
 from aihub_lib.nats.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
 from dagster import (
     AnchorBasedFilePathMapping,
@@ -29,6 +30,7 @@ from aihub_pipeline.assets.factories.data_lake_to_vector_store.summary_nodes_fac
 from aihub_pipeline.assets.factories.local_files_system_to_data_lake.observable_local_file_system_factory import (
     observable_local_file_system_factory,
 )
+from aihub_pipeline.assets.factories.rclone_to_data_lake.observable_rclone_factory import observable_rclone_factory
 from aihub_pipeline.assets.factories.share_point_to_data_lake.observable_share_point_factory import (
     observable_share_point_factory,
 )
@@ -40,6 +42,7 @@ from aihub_pipeline.assets.factories.source_to_data_lake.removed_data_lake_files
 from aihub_pipeline.const.pipeline_names import INTERNAL_DATALAKE, INTERNAL_KNOWLEDGE_DB
 from aihub_pipeline.executors.factory import default_process_executor
 from aihub_pipeline.io.LocalFileSystemIOManager import LocalFileSystemIOManager
+from aihub_pipeline.io.RcloneIOManager import RcloneIOManager
 from aihub_pipeline.io.SharePointIOManager import SharePointIoManager
 from aihub_pipeline.jobs.factory import materialize_asset_job, observe_source_job
 from aihub_pipeline.resources.factory import (
@@ -55,6 +58,7 @@ from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParse
 from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
 from aihub_pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
 from aihub_pipeline.resources.parser.TableRefinementResource import TableRefinementResource
+from aihub_pipeline.resources.rclone.RcloneResource import RcloneResource
 from aihub_pipeline.resources.share_point.SharePointResource import SharePointResource
 from aihub_pipeline.schedules.factory import daily_schedule_at
 from aihub_pipeline.sensors.factory import default_automation_sensor
@@ -263,7 +267,6 @@ def default_sharepoint_to_datalake_definitions(
 
     sharepoint_io_manager = SharePointIoManager(share_point_client=sharepoint_client)
 
-    # Get the store name for MongoDB (auto_sync=False for SharePoint pipelines)
     store_name = get_db_name_from_bucket_name(bucket_name=datalake_container_name, auto_sync=False)
 
     return Definitions(
@@ -369,7 +372,6 @@ def default_local_filesystem_to_datalake_definitions(
 
     filesystem_io_manager = LocalFileSystemIOManager(local_file_system_client=filesystem_client)
 
-    # Get the store name for MongoDB (auto_sync=True for local filesystem pipelines)
     store_name = get_db_name_from_bucket_name(bucket_name=datalake_container_name, auto_sync=True)
 
     return Definitions(
@@ -382,6 +384,140 @@ def default_local_filesystem_to_datalake_definitions(
                 directory_name=datalake_directory_name,
             ),
             **mongo_document_store_resource(document_store_name=store_name),
+        },
+        sensors=[default_automation_sensor(assets)],
+        executor=default_process_executor(),
+        jobs=[observe_job, remove_job],
+        schedules=[
+            daily_schedule_at(observe_job, hour=observe_job_hour, minute=observe_job_minute),
+            daily_schedule_at(remove_job, hour=remove_job_hour, minute=remove_job_minute),
+        ],
+    )
+
+
+def default_rclone_to_datalake_definitions(
+    *,
+    datalake_container_name: Annotated[str, "S3 bucket/container name where rclone files will be uploaded"],
+    source_remote: Annotated[
+        str, "Rclone remote name and path (e.g., 'onedrive:Documents', 's3:bucket/prefix', 'gdrive:MyFolder')"
+    ],
+    rclone_config: Annotated[RcloneSourceConfig | None, "Rclone configurations"] = None,
+    datalake_directory_name: Annotated[str | None, "Optional subdirectory within container"] = None,
+    include_patterns: Annotated[
+        list[str] | None, "Include patterns using rclone glob syntax (e.g., ['*.pdf', '*.docx'])"
+    ] = None,
+    exclude_patterns: Annotated[
+        list[str] | None, "Exclude patterns using rclone glob syntax (e.g., ['**/archiv/**', '**/temp/**'])"
+    ] = None,
+    observe_job_hour: Annotated[int, "Hour to run daily rclone observation job"] = 0,
+    observe_job_minute: Annotated[int, "Minute to run daily rclone observation job"] = 0,
+    remove_job_hour: Annotated[int, "Hour to run daily removed files cleanup job"] = 1,
+    remove_job_minute: Annotated[int, "Minute to run daily removed files cleanup job"] = 0,
+    max_partitions: Annotated[int, "Maximum number of partitions to create or delete at once"] = 1000,
+) -> Definitions:
+    """
+    Creates an Rclone to DataLake pipeline using S3-compatible storage.
+
+    Use this when you need to sync files from ANY rclone-supported backend (70+ providers)
+    to your data lake. Works with OneDrive, SharePoint, S3, Azure Blob, Google Drive,
+    Dropbox, Box, local filesystem, and many more.
+
+    The pipeline monitors the rclone remote for changes and automatically downloads new/updated
+    files to your S3 storage. It handles authentication via rclone config, filtering, and
+    cleanup of deleted files.
+
+    **Why rclone**: Single implementation works across all cloud storage providers without
+    provider-specific SDKs or custom authentication code.
+
+    **Setup**: Requires rclone binary installed and configured. Use 'rclone config' or
+    environment variables to set up remotes.
+
+    Pipeline: Rclone Remote (OneDrive/SharePoint/S3/Azure/GDrive/etc.) → S3
+
+    This is the first step - combine with default_definitions() to process files into
+    embeddings for RAG applications.
+
+    Example:
+        # OneDrive to S3
+        defs = default_rclone_to_datalake_definitions(
+            datalake_container_name="my-company-docs",
+            source_remote="onedrive:Documents",
+            include_patterns=["*.pdf", "*.docx"],
+            exclude_patterns=["**/archive/**"],
+        )
+
+        # Google Drive to S3
+        defs = default_rclone_to_datalake_definitions(
+            datalake_container_name="gdrive-sync",
+            source_remote="gdrive:Shared Documents",
+            include_patterns=["*.pdf"],
+        )
+    """
+    rclone_partitions = DynamicPartitionsDefinition(name="rclone_partitions")
+
+    # Extract source name from config or from source_remote (e.g., "onedrive:Documents" -> "onedrive")
+    # Ensure we always derive a non-empty, stable source_name for asset keys
+    if rclone_config and rclone_config.name:
+        source_name = rclone_config.name
+    else:
+        # Extract remote name before the colon if present and non-empty; otherwise use local_fs fallback
+        source_remote_str = (source_remote or "").strip()
+        if ":" in source_remote_str:
+            candidate = source_remote_str.split(":", 1)[0].strip()
+            source_name = candidate if candidate else "local_fs"
+        else:
+            source_name = "local_fs"
+
+    pipeline_group = f"{source_name}_to_datalake"
+
+    rclone_key = AssetKey([datalake_container_name, pipeline_group, source_name])
+    data_lake_files_key = AssetKey([datalake_container_name, pipeline_group, "data_lake_files"])
+    removed_data_lake_files_key = AssetKey([datalake_container_name, pipeline_group, "removed_data_lake_files"])
+
+    observable_rclone_asset = observable_rclone_factory(rclone_key, rclone_partitions, max_partitions)
+
+    assets = [
+        observable_rclone_asset,
+        data_lake_file_factory(
+            key=data_lake_files_key,
+            source_key=rclone_key,
+            partitions=rclone_partitions,
+        ),
+        removed_data_lake_files_factory(
+            key=removed_data_lake_files_key,
+            source_key=rclone_key,
+        ),
+    ]
+
+    observe_job = observe_source_job(
+        observable_asset=observable_rclone_asset,
+        source_location_name=datalake_container_name,
+    )
+
+    remove_job = materialize_asset_job(
+        source_location_name=datalake_container_name,
+        job_name="remove_rclone_files",
+        asset_selection=AssetSelection.keys(removed_data_lake_files_key),
+    )
+
+    rclone_client = RcloneResource(
+        source_remote=source_remote,
+        include_patterns=include_patterns,
+        exclude_patterns=exclude_patterns,
+        rclone_config_dict=rclone_config.model_dump(mode="json", exclude_none=True) if rclone_config else None,
+    )
+
+    rclone_io_manager = RcloneIOManager(rclone_client=rclone_client)
+
+    return Definitions(
+        assets=assets,
+        resources={
+            "rclone_client": rclone_client,
+            "rclone_io_manager": rclone_io_manager,
+            **s3_data_lake_resources(
+                container_name=datalake_container_name,
+                directory_name=datalake_directory_name,
+            ),
         },
         sensors=[default_automation_sensor(assets)],
         executor=default_process_executor(),

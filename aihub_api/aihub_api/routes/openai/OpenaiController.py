@@ -1,13 +1,12 @@
 import logging
 from collections.abc import AsyncIterator
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.auth.usage import UsageLimitService, use_usage_limit_service
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributor import (
     use_external_agent_event_distributor,
@@ -21,6 +20,7 @@ from openai.types.audio import Transcription, TranscriptionVerbose
 from openai.types.chat import ChatCompletion
 from starlette.responses import StreamingResponse
 
+from aihub_api.i18n.ApiLocaleString import ApiLocaleString
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.routes.openai.dto.ChatCompletionRequest import ChatCompletionRequest
 from aihub_api.routes.openai.dto.EmbeddingsRequest import EmbeddingsRequest
@@ -57,14 +57,9 @@ class OpenaiController(Controller):
     allowing customers to plug in the OpenAI SDKs directly against AI Hub.
     """
 
-    name = LocaleString(en="Chat", de="Chat", fr="Chat", it="Chat")
-    description = LocaleString(
-        en="Have conversations with AI assistants",
-        de="Gespräche mit KI-Assistenten führen",
-        fr="Conversez avec les assistants IA",
-        it="Conversa con gli assistenti IA",
-    )
-    icon = "simple-icons:openai"
+    name = ApiLocaleString.from_i18n_path("api.controllers.openai.name")
+    description = ApiLocaleString.from_i18n_path("api.controllers.openai.description")
+    icon = "mage:message-conversation"
 
     def __init__(
         self,
@@ -75,7 +70,7 @@ class OpenaiController(Controller):
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
-    def get_models(self, route: str = "/models") -> "OpenaiController":
+    def get_models(self, route: str = "/models") -> Self:
         @self.router.get(
             route,
             summary="List Models",
@@ -94,8 +89,7 @@ class OpenaiController(Controller):
     def get_models_with_assistants(
         self,
         route: str = "/models",
-        exclude_webui_agents: Annotated[bool, "Ensures WebUI assistants are not returned to prevent recursion"] = False,
-    ) -> "OpenaiController":
+    ) -> Self:
         @self.router.get(
             route,
             summary="List Models (including ai-hub assistants)",
@@ -105,12 +99,10 @@ class OpenaiController(Controller):
             tags=self.tags,
         )
         async def get_models_with_assistants(
-            nc: Annotated[NATS, Depends(use_nats)],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> ModelResponse:
-            model_response = await OpenaiService.get_models_with_assistants(
-                nc=nc, exclude_webui_agents=exclude_webui_agents
-            )
+            model_response = await OpenaiService.get_models_with_assistants(t=t)
             access_checker = AccessChecker.from_user(user)
             model_response.data = [
                 m
@@ -121,7 +113,7 @@ class OpenaiController(Controller):
 
         return self
 
-    def get_model(self, route: str = "/models/{full_path:path}") -> "OpenaiController":
+    def get_model(self, route: str = "/models/{full_path:path}") -> Self:
         @self.router.get(
             route,
             summary="Retrieve model",
@@ -137,7 +129,7 @@ class OpenaiController(Controller):
 
         return self
 
-    def get_model_with_assistants(self, route: str = "/models/{full_path:path}") -> "OpenaiController":
+    def get_model_with_assistants(self, route: str = "/models/{full_path:path}") -> Self:
         @self.router.get(
             route,
             summary="Retrieve model (including ai-hub assistants)",
@@ -147,11 +139,10 @@ class OpenaiController(Controller):
         )
         async def get_model_with_assistants(
             full_path: str,
-            nc: Annotated[NATS, Depends(use_nats)],
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> ModelDetails:
-            model = await OpenaiService.get_model_with_assistants(model_name=full_path, nc=nc, t=t)
+            model = await OpenaiService.get_model_with_assistants(model_name=full_path, t=t)
             access_checker = AccessChecker.from_user(user)
             if not access_checker.has_access_to_agent(model.agent_class, model.agent_id):
                 raise ValueError(f"User {user.id} does not have permission to access model {model.name}")
@@ -160,7 +151,7 @@ class OpenaiController(Controller):
 
         return self
 
-    def get_embeddings(self, route: str = "/embeddings") -> "OpenaiController":
+    def get_embeddings(self, route: str = "/embeddings") -> Self:
         @self.router.post(
             route,
             summary="Create embeddings",
@@ -181,7 +172,7 @@ class OpenaiController(Controller):
 
         return self
 
-    def chat_completion(self, route: str = "/chat/completions") -> "OpenaiController":
+    def chat_completion(self, route: str = "/chat/completions") -> Self:
         @self.router.post(
             route,
             response_model=ChatCompletion,
@@ -208,7 +199,7 @@ class OpenaiController(Controller):
 
         return self
 
-    def chat_completion_with_assistants(self, route: str = "/chat/completions") -> "OpenaiController":
+    def chat_completion_with_assistants(self, route: str = "/chat/completions") -> Self:
         @self.router.post(
             route,
             response_model=ChatCompletion,
@@ -250,7 +241,7 @@ class OpenaiController(Controller):
 
         return self
 
-    def generate_image(self, route: str = "/images/generations") -> "OpenaiController":
+    def generate_image(self, route: str = "/images/generations") -> Self:
         @self.router.post(route, summary="Create image", description="Creates an image given a prompt.", tags=self.tags)
         async def generate_image(
             generation_request: Annotated[ImageGenerationRequest, Body],
@@ -264,7 +255,7 @@ class OpenaiController(Controller):
 
         return self
 
-    def stt(self, route: str = "/audio/transcriptions") -> "OpenaiController":
+    def stt(self, route: str = "/audio/transcriptions") -> Self:
         @self.router.post(
             route,
             summary="Create transcription",
@@ -298,7 +289,7 @@ class OpenaiController(Controller):
 
         return self
 
-    def tts(self, route: str = "/audio/speech") -> "OpenaiController":
+    def tts(self, route: str = "/audio/speech") -> Self:
         @self.router.post(
             route, summary="Create speech", description="Generates audio from the input text.", tags=self.tags
         )

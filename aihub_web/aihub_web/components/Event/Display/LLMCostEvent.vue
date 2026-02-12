@@ -2,7 +2,7 @@
   <EventDisplayBase
     :event="event"
     :thread="thread"
-    icon="fluent:money-16-filled"
+    icon="mage:dollar"
   >
     <CostsTable
       :prompt-token-count="event.event.prompt_token_count"
@@ -16,10 +16,10 @@
 </template>
 
 <script setup lang="ts">
-import type { LlmCostEventReadable, ThreadDto, AgentEventReadable } from '@core/sdk/client'
+import type { LlmCostEvent, ThreadDto, ContextualizedAgentEvent } from '@core/sdk/client'
 
 defineProps<{
-  event: AgentEventReadable & { event: LlmCostEventReadable }
+  event: ContextualizedAgentEvent & { event: LlmCostEvent }
   thread: ThreadDto
 }>()
 </script>

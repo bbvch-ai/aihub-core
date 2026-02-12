@@ -1,3 +1,5 @@
+from typing import Self
+
 from mongoengine import DictField, EmbeddedDocumentField, StringField
 from mongoengine.base import BaseDocument
 
@@ -30,7 +32,7 @@ class ProcessConfigEntity(BaseDocument):
 
     @classmethod
     @trace_fn
-    def from_process_config(cls, process_config: ProcessConfig) -> "ProcessConfigEntity":
+    def from_process_config(cls, process_config: ProcessConfig) -> Self:
         """Create an instance entity from a ProcessConfig."""
         return cls(
             process_class=process_config.process_class,
@@ -42,7 +44,7 @@ class ProcessConfigEntity(BaseDocument):
         )
 
     @trace_fn
-    def update_from_process_config(self, process_config: ProcessConfig) -> "ProcessConfigEntity":
+    def update_from_process_config(self, process_config: ProcessConfig) -> Self:
         """Update an existing instance entity from a ProcessConfig."""
         self.process_class = process_config.process_class
         self.process_id = process_config.process_id

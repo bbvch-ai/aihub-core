@@ -21,7 +21,6 @@ class BotTestRunner(BotRunner):
             conversation_ttl_days=conversation_ttl_days,
         )
 
-        # Register a route that catches all requests to /service and any sub-URLs.
         self._api_app.add_api_route(
             "/service{full_path:path}",
             self.service_endpoint,

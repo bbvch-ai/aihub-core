@@ -29,11 +29,11 @@
 <script setup lang="ts">
 import Avatar from 'primevue/avatar'
 
-import type { AgentDto, MinimalAgentDto } from '@core/sdk/client'
+import type { FullAgentInstanceDto, MinimalAgentInstanceDto } from '@core/sdk/client'
 
 withDefaults(defineProps<{
   size?: 'normal' | 'large'
-  agent: AgentDto | MinimalAgentDto
+  agent: FullAgentInstanceDto | MinimalAgentInstanceDto
 }>(), {
   size: 'large',
 })

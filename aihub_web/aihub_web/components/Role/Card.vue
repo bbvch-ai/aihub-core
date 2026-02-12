@@ -10,7 +10,7 @@
             class="flex items-center justify-center rounded-full bg-white p-3 dark:bg-surface-900"
           >
             <Icon
-              name="famicons:library-outline"
+              name="mage:book"
               size="1.5em"
             />
           </div>

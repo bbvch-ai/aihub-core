@@ -1,4 +1,4 @@
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
 from pydantic import Field
 
@@ -17,6 +17,6 @@ class ColorPicker(PrimeVueElement):
     inline: Annotated[bool, Field(description="Whether to display the picker inline")] = False
     format: Annotated[str | None, Field(description="Format of the color value (hex, rgb, hsl)")] = None
 
-    def in_locale(self, t: LocaleHandler) -> "ColorPicker":
+    def in_locale(self, t: LocaleHandler) -> Self:
         self_copy = super().in_locale(t)
         return self_copy

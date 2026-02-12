@@ -1,3 +1,6 @@
+from typing import ClassVar
+
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StartEvent, StopEvent
 
 from aihub_agent.agents.Agent import Agent
@@ -11,6 +14,22 @@ from playground.minimal_workflow.multistep_human_in_the_loop_workflow.events.Sec
 
 
 class MultistepHumanInTheLoopAgent(Agent):
+    """Agent demonstrating multi-step human-in-the-loop patterns."""
+
+    name: ClassVar[LocaleString] = LocaleString(
+        en="Multistep HITL Agent",
+        de="Mehrstufiger HITL Agent",
+        fr="Agent HITL Multi-étapes",
+        it="Agente HITL Multistep",
+    )
+    description: ClassVar[LocaleString] = LocaleString(
+        en="Agent for multistep HITL demo",
+        de="Agent für mehrstufige HITL Demo",
+        fr="Agent pour démo HITL multi-étapes",
+        it="Agente per demo HITL multistep",
+    )
+    icon: ClassVar[str] = "mage:user-plus"
+
     @step()
     async def start_step(self, event: StartEvent) -> FirstStepHumanInTheLoop.request:
         print("[MultistepHumanInTheLoopAgent.start_step]")

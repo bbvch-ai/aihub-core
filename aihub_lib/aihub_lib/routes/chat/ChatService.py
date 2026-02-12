@@ -9,7 +9,6 @@ from fastapi import HTTPException
 from llama_index.core.base.llms.types import ChatMessage
 from nats.aio.client import Client as NATS
 
-from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.resources.costs.LLMCosts import LLMCosts
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -33,9 +32,8 @@ from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
-from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
 from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity
-from aihub_lib.persistence.messaging.entities.ThreadEntity import Agent, ThreadEntity, User
+from aihub_lib.persistence.messaging.entities.ThreadEntity import AgentInstanceRef, ThreadEntity, User
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +103,7 @@ class ChatService:
             thread = ThreadEntity.create_thread(
                 "chat",
                 users=[User(user_id=user.id)],
-                agents=[Agent(agent_class=agent_class, agent_id=agent_id)],
+                agents=[AgentInstanceRef(agent_class=agent_class, agent_id=agent_id)],
                 thread_id=ObjectId(thread_id) or ObjectId(),
             )
         logger.debug(f"Created thread: {thread.id}")
@@ -135,18 +133,11 @@ class ChatService:
             )
             display_id = event.request_event.topic.display_id
         else:
-            agent_config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
-            if agent_config_entity is None:
-                logger.info(f"Agent config not found for class {agent_class} and id {agent_id}. Using default config.")
-                agent_config_dict = None
-            else:
-                agent_config_dict = AgentConfig.from_entity(agent_config_entity).model_dump()
             event = UserMessageEvent(
                 messages=messages,
                 user=user,
                 locale=locale or LocaleHandler.DEFAULT_LOCALE,
                 files=files,
-                agent_config=agent_config_dict,
             )
 
         event = ExternalAgentEvent(
@@ -154,7 +145,7 @@ class ChatService:
             display_id=str(display_id),
             event=event,
         )
-        logger.debug(f"Created event: {event}")
+        logger.debug(f"Created event: {event.event.event_name}")
 
         topic_manager = AgentThreadTopicManager(
             agent_class="*" if subscribe_to_thread else agent_class,
@@ -205,12 +196,12 @@ class ChatService:
 
         async def response_aggregator(event: DisplayEvent, topic: AgentInstanceTopic):
             is_primary_agent = topic.agent_class == agent_class and topic.agent_id == agent_id
-            logger.debug(f"Received display event: {event}")
+            logger.debug(f"Received display event: {event.event_name}")
             if event.is_chunk_event:
-                logger.debug(f"Received chunk event: {event}")
+                logger.debug(f"Received chunk event: {event.event_name}")
                 await chunk_queue.put(event)
             elif event.is_hitl_request_event:
-                logger.debug(f"Received HITL event: {event}")
+                logger.debug(f"Received HITL event: {event.event_name}")
                 resources.stop_event = event
                 await subscriber.stop()
                 stop_signal.set()
@@ -220,7 +211,7 @@ class ChatService:
                 await subscriber.stop()
                 stop_signal.set()
             elif event.is_exception_event:
-                logger.warning(f"Received exception event: {event}")
+                logger.warning(f"Received exception event: {event.event_name}")
                 resources.stop_event = event
                 await subscriber.stop()
                 stop_signal.set()
@@ -298,7 +289,7 @@ class ChatService:
         )
 
         async def response_aggregator(event: DisplayEvent, topic: AgentInstanceTopic):
-            logger.debug(f"Received display event: {event}")
+            logger.debug(f"Received display event: {event.event_name}")
             is_primary_agent = topic.agent_class == agent_class and topic.agent_id == agent_id
             if event.is_chunk_event:
                 resources.chunk_events.append(event)
@@ -315,7 +306,7 @@ class ChatService:
                 resources.costs += event
                 resources.model_name = event.llm_name
             elif event.is_exception_event:
-                logger.warning(f"Received exception event: {event}")
+                logger.warning(f"Received exception event: {event.event_name}")
                 resources.stop_event = event
                 await resources.subscriber.stop()
                 resources.stop_signal.set()

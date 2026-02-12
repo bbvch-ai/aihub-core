@@ -79,7 +79,6 @@ class OAuth2AuthHandler(AuthHandler):
         Gets an RSA key for the specified key ID (kid).
         Uses TTLCache to automatically manage key expiration.
         """
-        # Check cache first
         if kid in self._rsa_key_cache:
             return self._rsa_key_cache[kid]
 
@@ -102,7 +101,6 @@ class OAuth2AuthHandler(AuthHandler):
         Used for WebSocket authentication.
         """
         try:
-            # Extract token header to get key ID
             unverified_header = jwt.get_unverified_header(oauth_token)
             kid = unverified_header.get("kid")
 
@@ -110,7 +108,6 @@ class OAuth2AuthHandler(AuthHandler):
                 logger.warning("Token missing kid in header")
                 raise HTTPException(status_code=401, detail="Invalid token format")
 
-            # Get the RSA key for this kid
             rsa_key = await self._get_rsa_key(kid)
 
             if not rsa_key:
@@ -126,7 +123,6 @@ class OAuth2AuthHandler(AuthHandler):
                 issuer=f"{OAuth2Settings().AUTHORITY_URL}/v2.0",
             )
 
-            # Parse token claims into UserIdentity
             try:
                 oid = decoded_token.get("oid")
                 return await self._identity_provider.get_user_identity_by_oid(oid)

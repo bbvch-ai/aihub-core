@@ -1,4 +1,4 @@
-import type { AgentEventReadable } from '@core/sdk/client'
+import type { ContextualizedAgentEvent } from '@core/sdk/client'
 
 import {
   EventDisplayAgentInTheLoopRequestEvent,
@@ -29,7 +29,7 @@ import {
 } from '#components'
 
 export const useEventComponent = () => {
-  const resolveComponentForEvent = (event: AgentEventReadable) => {
+  const resolveComponentForEvent = (event: ContextualizedAgentEvent) => {
     const mapping = {
       UserMessageEvent: EventDisplayUserMessageEvent,
       ChunkEvent: EventDisplayChunkEvent,

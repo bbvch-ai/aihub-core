@@ -18,7 +18,7 @@ scenarios("./features/displaying_agent.feature")
 def _():
     return AgentTestRunner(
         agent_type=DisplayingAgent,
-        default_agent_config=DisplayingAgentConfig(
+        agent_config=DisplayingAgentConfig(
             agent_id="displaying_agent",
             agent_class=DisplayingAgent.__name__,
             name=LocaleString(en="Displaying Agent"),

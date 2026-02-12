@@ -1,4 +1,4 @@
+from .ProcessClassEntity import ProcessClassEntity
 from .ProcessConfigEntity import ProcessConfigEntity
-from .ProcessEntity import ProcessEntity
 
-__all__ = ["ProcessEntity", "ProcessConfigEntity"]
+__all__ = ["ProcessClassEntity", "ProcessConfigEntity"]

@@ -7,16 +7,12 @@ from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 
-from aihub_api.routes.agent.AgentService import AgentService
-
 enable_logging()
 
 
 @pytest.fixture(autouse=True)
 def cleanup_db_and_cache(sample_agent_config):
-    AgentService._clear_cache()
     yield
-    AgentService._clear_cache()
 
 
 @pytest.fixture

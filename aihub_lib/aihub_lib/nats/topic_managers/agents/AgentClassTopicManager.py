@@ -66,6 +66,34 @@ class AgentClassTopicManager(AgentTopicManager, AbstractStreamTopicManager):
             call_id=call_id,
         )
 
+    def get_agent_class_discovery_subject_request(
+        self,
+        call_id: Annotated[str, "Identifier linking request and response"],
+        agent_class: str | None = None,
+    ) -> str:
+        """
+        Returns a subject for requesting class discovery info for this agent class (or a provided override).
+        If agent_class is not specified, it uses the instance's own agent_class.
+        """
+        return super().get_agent_class_discovery_subject_request(
+            agent_class=agent_class or self.agent_class,
+            call_id=call_id,
+        )
+
+    def get_agent_class_discovery_subject_response(
+        self,
+        call_id: Annotated[str, "Identifier linking request and response"],
+        agent_class: str | None = None,
+    ) -> str:
+        """
+        Returns a subject for receiving class discovery responses for this agent class (or a provided override).
+        If agent_class is not specified, it uses the instance's own agent_class.
+        """
+        return super().get_agent_class_discovery_subject_response(
+            agent_class=agent_class or self.agent_class,
+            call_id=call_id,
+        )
+
     def get_subject_for_streaming_all_events_within_agent(self) -> str:
         """Returns a subject pattern for all events originating from this agent instance."""
         return self.get_subject_for_specific_event_in_agent(

@@ -1,6 +1,17 @@
 test: "Questo è un test"
 welcome: "Benvenuti in bbv ai-hub"
 
+common:
+  actions:
+    save: "Salva"
+    cancel: "Annulla"
+    create: "Crea"
+    delete: "Elimina"
+    edit: "Modifica"
+  loading: "Caricamento..."
+  selectModel: "Seleziona un modello"
+  selectDatabase: "Seleziona un database"
+
 models:
   title: "Modelli"
   error: "Errore nel caricamento dei modelli"
@@ -253,6 +264,13 @@ service:
 agent:
   title: "Agenti"
   can_chat: "Può chattare"
+  navigation:
+    basic: "Panoramica"
+    workflow: "Flusso di lavoro"
+    threads: "Thread"
+    configuration: "Configurazione"
+    chat: "Chat"
+    memories: "Memorie"
   overview:
     startEvents: "Eventi di avvio"
     stopEvents: "Eventi di arresto"
@@ -263,17 +281,18 @@ agent:
     status: "Stato:"
     online: "Online"
     offline: "Offline"
+  configuration:
+    title: "Configurazione dell'agente"
+    description: "Configura il comportamento runtime e le impostazioni per questo agente"
+    runtimeSettings: "Impostazioni runtime"
+    noConfiguration: "Nessuna configurazione disponibile per questo agente"
+    saveSuccess: "Configurazione salvata con successo"
+    saveError: "Impossibile salvare la configurazione"
   chat:
     title: "Inizia una nuova chat"
     placeholder: "Digita il messaggio che vuoi inviare all'Agente"
     createThreadAndSend: "Crea thread e invia"
     manuallyCreatedThread: "Thread creato manualmente"
-  navigation:
-    basic: "Base"
-    workflow: "Flusso di lavoro"
-    threads: "Thread"
-    memories: "Memorie"
-    chat: "Chat"
   availableAgents: "Agenti disponibili"
   list:
     name: "Nome"
@@ -289,6 +308,43 @@ agent:
     title: "Flusso di lavoro agentico"
   threads:
     title: "Thread dell'agente"
+  create:
+    button: "Crea nuovo agente"
+    title: "Crea nuovo agente"
+    cancel: "Annulla"
+    selectClass: "Tipo di agente"
+    selectClassPlaceholder: "Seleziona un tipo di agente..."
+    agentId: "ID agente"
+    agentIdPlaceholder: "mio-nuovo-agente"
+    agentIdHelp: "Identificatore univoco (lettere minuscole, numeri, trattini, underscore)"
+    agentIdInvalid: "Sono consentiti solo lettere minuscole, numeri, trattini e underscore"
+    agentIdTooLong: "L'ID agente deve essere al massimo di 100 caratteri"
+    configuration: "Configurazione"
+    noAgentClasses: "Nessun tipo di agente disponibile. Assicurati che almeno un agente sia in esecuzione."
+    submit: "Crea agente"
+    success: "Agente creato con successo"
+    error: "Impossibile creare l'agente"
+    steps:
+      basicInfo: "Informazioni di base"
+  delete:
+    button: "Elimina"
+    title: "Elimina agente"
+    confirm: "Sei sicuro di voler eliminare questo agente?"
+    confirmMessage: "Questa azione non può essere annullata. La configurazione dell'agente verrà rimossa definitivamente."
+    success: "Agente eliminato con successo"
+    error: "Impossibile eliminare l'agente"
+    cannotDeleteDefault: "Le configurazioni degli agenti predefiniti non possono essere eliminate"
+  add_instance:
+    title: "Aggiungi agente"
+    description: "Crea una nuova istanza dell'agente"
+  selector:
+    class:
+      label: "Tipo di agente"
+      placeholder: "Seleziona un tipo di agente..."
+    id:
+      label: "Profilo agente"
+      placeholder: "Seleziona un profilo agente..."
+      help: "Scegli il profilo agente specifico da utilizzare"
   memories:
     title: "Memorie dell'agente"
     description: "Memorie raccolte da {agentName} su di te"
@@ -445,6 +501,7 @@ dashboard:
       label: "Compiti delegati"
 
 evaluation:
+  langfuse_link: "Esegui esperimenti"
   dataset:
     title: "Set di dati"
     created_at: "Creato:"
@@ -469,37 +526,6 @@ evaluation:
     save_action: "Salva"
     saved_summary: "Salvato"
     saved_detail: "Set di dati salvato"
-  experiment:
-    title: "Esperimenti"
-    created_at: "Eseguito il:"
-    dataset: "Set di dati"
-    language_and_dataset: "Lingua e set di dati"
-    language: "Lingua dell'esperimento:"
-    create_description: "Crea un nuovo esperimento con un set di dati e un Assistente!"
-    name: "Nome"
-    description: "Descrizione"
-    agent: "Agente"
-    select_dataset: "Seleziona un set di dati"
-    select_assistant: "Seleziona un Assistente"
-    cancel: "Annulla"
-    save: "Salva"
-    running: "L'esperimento è in esecuzione!"
-    running_description: "Questo potrebbe richiedere diversi minuti. Puoi anche lasciare questa pagina e tornare più tardi."
-    failed: "Esperimento fallito!"
-    failed_description: "Contatta il team di sviluppo AI-Hub per scoprire cosa è andato storto."
-    filter_by_assistant: "Filtra per Assistente"
-    filter_by_dataset: "Filtra per set di dati"
-    run_experiment: "Esegui esperimento"
-    create_new: "Crea nuovo esperimento"
-    result:
-      question: "Domanda"
-      reference_answer: "Risposta di riferimento"
-      assistant_answer: "Risposta dell'assistente"
-      latency_ms: "Latenza"
-      conciseness: "Concisione"
-      correctness: "Correttezza"
-      completeness: "Completezza"
-
 role:
   title: "Ruoli di accesso"
   name: "Nome"
@@ -583,6 +609,73 @@ bar:
 
 process:
   title: "Processi"
+  overview:
+    name: "Nome"
+    class: "Classe"
+    processId: "ID processo"
+    status: "Stato"
+    online: "Online"
+    offline: "Offline"
+  navigation:
+    overview: "Panoramica"
+    walkthroughs: "Esecuzioni"
+    start: "Avvia esecuzione"
+    configuration: "Configurazione"
+  list:
+    online: "Online"
+    offline: "Offline"
+  configuration:
+    title: "Configurazione del processo"
+    description: "Configura il comportamento di esecuzione di questa istanza del processo."
+    runtimeSettings: "Impostazioni di esecuzione"
+    saveSuccess: "Configurazione salvata con successo"
+    saveError: "Salvataggio della configurazione non riuscito"
+    noConfiguration: "Nessuna configurazione disponibile per questo processo."
+  create:
+    title: "Crea nuovo processo"
+    selectClass: "Tipo di processo"
+    selectClassPlaceholder: "Seleziona un tipo di processo..."
+    noProcessClasses: "Nessun tipo di processo disponibile."
+    steps:
+      basicInfo: "Informazioni di base"
+    submit: "Crea processo"
+    cancel: "Annulla"
+    success: "Processo creato con successo"
+    error: "Creazione del processo non riuscita"
+  delete:
+    button: "Elimina"
+    title: "Elimina processo"
+    confirmMessage: "Sei sicuro di voler eliminare questa istanza del processo? Questa azione non può essere annullata."
+    success: "Processo eliminato con successo"
+    error: "Eliminazione del processo non riuscita"
+  add_instance:
+    title: "Aggiungi processo"
+    description: "Crea una nuova istanza del processo"
+  walkthrough:
+    list:
+      created: "Creato"
+      updated: "Ultima interazione"
+      agents: "Agenti"
+      users: "Utenti"
+      state: "Stato"
+      in_progress: "In corso"
+      done: "Completato"
+      steps: "Progresso"
+
+form:
+  locale_input:
+    translate_tooltip: "Traduci in tutte le lingue"
+
+lib:
+  vectorStore:
+    label: "Archivio vettoriale"
+    help: "Seleziona il database di conoscenza e gli spazi dei nomi da cercare"
+    database:
+      label: "Database"
+    namespaces:
+      label: "Spazi dei nomi"
+      placeholder: "Seleziona gli spazi dei nomi (vuoto = tutti)"
+      help: "Lascia vuoto per cercare tutti gli spazi dei nomi"
 
 memory:
   title: "Ricordi"

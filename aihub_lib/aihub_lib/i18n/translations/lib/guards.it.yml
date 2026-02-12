@@ -150,3 +150,13 @@ sensitive_info_guard:
     La risposta rivista con informazioni sensibili rimosse o censurate, se applicabile.
   docstring: |
     Risultato dell'analisi di una risposta per informazioni sensibili che non dovrebbero essere condivise esternamente.
+few_shot_example:
+  user:
+    label: "Messaggio utente"
+    help: "Un esempio di richiesta o messaggio utente che verrà valutato."
+  success:
+    label: "Accetta richiesta"
+    help: "Spunta se questo esempio deve essere accettato, deseleziona se deve essere rifiutato."
+  reason:
+    label: "Motivo"
+    help: "Spiegazione del motivo per cui la richiesta è accettata o rifiutata."

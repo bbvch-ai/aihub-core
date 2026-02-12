@@ -18,7 +18,7 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=HitlDemoAgent,
-        default_agent_config=HitlDemoAgentConfig(
+        agent_config=HitlDemoAgentConfig(
             agent_id="hitl_demo_agent",
             agent_class=HitlDemoAgent.__name__,
             name=LocaleString(en="HITL Demo Agent"),

@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.chat_history.extend_chat_history_with_organization_memory import (
     extend_chat_history_with_organization_memory,
@@ -8,7 +10,6 @@ from aihub_lib.generative_ai.chat_history.extend_chat_history_with_user_memory i
 from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
 from aihub_lib.generative_ai.utils.filter_retrievers_by_namespace import filter_retrievers_by_namespace
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import (
     LimitChatHistoryEvent,
     StandaloneQuestionCondenserEvent,
@@ -37,6 +38,7 @@ from aihub_agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderN
 from aihub_agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
 from aihub_agent.agents.RagAgent.events.NamespaceAwareUserMessageEvent import NamespaceAwareUserMessageEvent
 from aihub_agent.context.run.RunContext import RunContext
+from aihub_agent.i18n.AgentLocaleString import AgentLocaleString
 from aihub_agent.rag.preconditions import (
     check_context_ready_for_history_limit,
     check_memory_added_to_chat_history,
@@ -153,9 +155,13 @@ class RAGAgent(Agent):
     Note: For expert escalation functionality, use ExpertRAGAgent instead.
     """
 
+    name: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.rag_agent.metadata.name")
+    description: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.rag_agent.metadata.description")
+    icon: ClassVar[str] = "mage:file"
+
     @step(
-        name=LocaleString(en="Retrieve User Memory"),
-        description=LocaleString(en="Retrieves relevant user-specific memories for personalized context"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_user_memory.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_user_memory.description"),
         icon="mdi:account-circle",
         precondition=user_memory_retrieval_enabled,
     )
@@ -177,8 +183,8 @@ class RAGAgent(Agent):
         return RetrieveUserMemoryEvent.from_memory_search_result(memory_result)
 
     @step(
-        name=LocaleString(en="Retrieve Organization Memory"),
-        description=LocaleString(en="Retrieves relevant organization memories (expert knowledge) based on user query"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_organization_memory.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_organization_memory.description"),
         icon="mdi:brain",
         precondition=organization_memory_enabled,
     )
@@ -203,8 +209,8 @@ class RAGAgent(Agent):
         return RetrieveOrganizationMemoryEvent.from_memory_search_result(memory_result)
 
     @step(
-        name=LocaleString(en="Add Memory to Context"),
-        description=LocaleString(en="Injects user and organization memories into chat history as system messages"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.add_memory_to_context.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.add_memory_to_context.description"),
         icon="mdi:database-plus",
         precondition=memory_ready_for_chat_history,
     )
@@ -241,9 +247,9 @@ class RAGAgent(Agent):
         return AddMemoryToChatHistoryEvent(extended_history=chat_history)
 
     @step(
-        name=LocaleString(en="Limit Chat History"),
-        description=LocaleString(en="Truncates incoming chat messages to fit within the configured token limit"),
-        icon="iconoir:cut",
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.limit_chat_history.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.limit_chat_history.description"),
+        icon="mage:edit",
         precondition=memory_added_to_chat_history,
     )
     async def limit_chat_history_step(
@@ -257,8 +263,9 @@ class RAGAgent(Agent):
         return do_limit_chat_history(messages, agent_config.number_of_input_tokens)
 
     @step(
-        name=LocaleString(en="Condense Standalone Question"),
-        description=LocaleString(en="Condenses the chat history and user query into a standalone question."),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.condense_standalone_question.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.condense_standalone_question.description"),
+        icon="mage:archive",
     )
     async def condense_standalone_question_step(
         self,
@@ -273,8 +280,9 @@ class RAGAgent(Agent):
         )
 
     @step(
-        name=LocaleString(en="Few Shot Guard"),
-        description=LocaleString(en="Guards the question to ensure it is appropriate for the agent to answer."),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.few_shot_guard.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.few_shot_guard.description"),
+        icon="mage:shield-check",
     )
     async def few_shot_guard_step(
         self,
@@ -288,8 +296,9 @@ class RAGAgent(Agent):
         )
 
     @step(
-        name=LocaleString(en="Retrieve Nodes"),
-        description=LocaleString(en="Retrieves relevant nodes from knowledge sources."),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_nodes.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_nodes.description"),
+        icon="mage:search",
     )
     async def retrieve_step(
         self,
@@ -307,11 +316,9 @@ class RAGAgent(Agent):
         return await do_retrieve(event, retrievers, t)
 
     @step(
-        name=LocaleString(en="Rerank Retrieved Nodes"),
-        description=LocaleString(
-            en="Reranks retrieved documents using a dedicated reranking model for improved relevance"
-        ),
-        icon="iconoir:sort-desc",
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.rerank_nodes.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.rerank_nodes.description"),
+        icon="mage:arrow-down",
         precondition=reranking_enabled,
     )
     async def rerank_nodes_step(
@@ -327,8 +334,9 @@ class RAGAgent(Agent):
         )
 
     @step(
-        name=LocaleString(en="Order Nodes by Documents"),
-        description=LocaleString(en="Orders the retrieved nodes by their source documents."),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.order_nodes.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.order_nodes.description"),
+        icon="mage:arrowlist",
         precondition=reranking_complete_or_disabled,
     )
     async def order_nodes_by_documents_step(
@@ -341,8 +349,9 @@ class RAGAgent(Agent):
         return await do_order_nodes_by_documents(event, t, agent_config.context_prompt, displayer)
 
     @step(
-        name=LocaleString(en="Context Sufficient Guard"),
-        description=LocaleString(en="Guards the context to ensure it is sufficient for generating a response."),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.context_sufficient_guard.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.context_sufficient_guard.description"),
+        icon="mage:check-circle",
     )
     async def context_sufficient_guard_step(
         self,
@@ -365,8 +374,11 @@ class RAGAgent(Agent):
         )
 
     @step(
-        name=LocaleString(en="Limit Chat History with Context"),
-        description=LocaleString(en="Includes the combined context and truncates chat history again."),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.limit_chat_history_with_context.name"),
+        description=AgentLocaleString.from_i18n_path(
+            "agent.rag_agent.steps.limit_chat_history_with_context.description"
+        ),
+        icon="mage:edit",
         precondition=context_ready_for_history_limit,
     )
     async def limit_chat_history_with_context_step(
@@ -386,8 +398,9 @@ class RAGAgent(Agent):
         )
 
     @step(
-        name=LocaleString(en="Respond with LLM"),
-        description=LocaleString(en="Generates a response using the configured LLM."),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.respond_with_llm.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.respond_with_llm.description"),
+        icon="mage:message",
     )
     async def respond_with_llm_step(
         self,
@@ -411,8 +424,8 @@ class RAGAgent(Agent):
         )
 
     @step(
-        name=LocaleString(en="Store User Memory"),
-        description=LocaleString(en="Persists conversation learnings to long-term user memory for future interactions"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.store_user_memory.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.store_user_memory.description"),
         icon="mdi:content-save",
         precondition=user_memory_storage_enabled,
     )
@@ -434,8 +447,8 @@ class RAGAgent(Agent):
         return StoreUserMemoryEvent.from_memory_added_object(memory_added)
 
     @step(
-        name=LocaleString(en="Stop"),
-        description=LocaleString(en="Completes the workflow after all required steps are done"),
+        name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.stop.name"),
+        description=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.stop.description"),
         precondition=ready_for_stop,
     )
     async def stop_step(

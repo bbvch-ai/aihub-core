@@ -1,5 +1,6 @@
 import re
 import time
+from typing import Self
 
 from bson import ObjectId
 from mongoengine import Document, EmbeddedDocumentField, IntField, StringField, ValidationError
@@ -59,7 +60,7 @@ class NamespaceEntity(Document):
         description: LocaleStringEntity | None = None,
         namespace_id: ObjectId | None = None,
         db_alias: str = "default",
-    ) -> "NamespaceEntity":
+    ) -> Self:
         sanitized_namespace_name = cls._sanitize_namespace_name(namespace_name)
         cls._validate_namespace_name(sanitized_namespace_name)
 
@@ -83,21 +84,17 @@ class NamespaceEntity(Document):
             return namespace
 
     @classmethod
-    def get_namespace_by_id(cls, namespace_id: str, db_alias: str = "default") -> "NamespaceEntity":
+    def get_namespace_by_id(cls, namespace_id: str, db_alias: str = "default") -> Self:
         with switch_db(cls, db_alias) as SwitchedNamespace:
             return SwitchedNamespace.objects().get(id=ObjectId(namespace_id))
 
     @classmethod
-    def get_namespace_by_bucket_and_name(
-        cls, bucket_id: str, namespace_name: str, db_alias: str = "default"
-    ) -> "NamespaceEntity":
+    def get_namespace_by_bucket_and_name(cls, bucket_id: str, namespace_name: str, db_alias: str = "default") -> Self:
         with switch_db(cls, db_alias) as SwitchedNamespace:
             return SwitchedNamespace.objects().get(bucket_id=bucket_id, namespace_name=namespace_name)
 
     @classmethod
-    def get_namespace_by_bucket_and_folder(
-        cls, bucket_id: str, folder_name: str, db_alias: str = "default"
-    ) -> "NamespaceEntity":
+    def get_namespace_by_bucket_and_folder(cls, bucket_id: str, folder_name: str, db_alias: str = "default") -> Self:
         with switch_db(cls, db_alias) as SwitchedNamespace:
             return SwitchedNamespace.objects().get(bucket_id=bucket_id, folder_name=folder_name)
 
@@ -126,7 +123,7 @@ class NamespaceEntity(Document):
         display_name: LocaleStringEntity | None = None,
         description: LocaleStringEntity | None = None,
         db_alias: str = "default",
-    ) -> "NamespaceEntity":
+    ) -> Self:
         namespace = cls.get_namespace_by_id(namespace_id, db_alias=db_alias)
         if namespace_name:
             sanitized_namespace_name = cls._sanitize_namespace_name(namespace_name)
@@ -144,7 +141,7 @@ class NamespaceEntity(Document):
         return namespace
 
     @classmethod
-    def delete_namespace(cls, namespace_id: str, db_alias: str = "default") -> "NamespaceEntity":
+    def delete_namespace(cls, namespace_id: str, db_alias: str = "default") -> Self:
         namespace = cls.get_namespace_by_id(namespace_id, db_alias=db_alias)
         namespace.delete()
         return namespace

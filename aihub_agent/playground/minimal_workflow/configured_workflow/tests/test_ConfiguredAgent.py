@@ -21,7 +21,7 @@ scenarios("./features/configured_agent.feature")
 def _(start_step_value: str, agent_value: str):
     return AgentTestRunner(
         agent_type=ConfiguredAgent,
-        default_agent_config=ConfiguredAgentConfig(
+        agent_config=ConfiguredAgentConfig(
             agent_id="configured_agent",
             agent_class=ConfiguredAgent.__name__,
             name=LocaleString(en="Configured Agent"),

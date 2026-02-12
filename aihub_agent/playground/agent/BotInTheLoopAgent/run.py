@@ -18,7 +18,7 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=BotInTheLoopAgent,
-        default_agent_config=BotInTheLoopAgentConfig(
+        agent_config=BotInTheLoopAgentConfig(
             agent_id="bot_in_the_loop_agent",
             agent_class=BotInTheLoopAgent.__name__,
             name=LocaleString(en="Bot in the Loop Agent"),

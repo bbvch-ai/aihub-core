@@ -8,10 +8,8 @@ def plot_to_markdown(fig: plt.Figure) -> str:
     """
     Convert a matplotlib plot to a markdown string.
     """
-    # Convert the image to a saveable format
     buffer = BytesIO()
     fig.savefig(buffer, format="png")
     image_data = base64.b64encode(buffer.getvalue())
 
-    # Convert the image to Markdown to preview it within Dagster
     return f"![img](data:image/png;base64,{image_data.decode()})"

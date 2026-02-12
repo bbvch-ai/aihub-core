@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from pydantic import Field
 
@@ -24,7 +24,7 @@ class HtmlElement(FormkitElement):
     attrs: Annotated[dict[str, str | dict], Field(description="HTML element attributes")] = {}
     children: Annotated[list[LocaleString] | list[str] | LocaleString | str, Field(description="HTML element children")]
 
-    def in_locale(self, t: LocaleHandler) -> "HtmlElement":
+    def in_locale(self, t: LocaleHandler) -> Self:
         self_copy = self.model_copy()
         if isinstance(self_copy.children, LocaleString):
             self_copy.children = t.extract(self_copy.children)

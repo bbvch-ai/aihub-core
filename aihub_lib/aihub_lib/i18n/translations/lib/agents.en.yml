@@ -1,0 +1,16 @@
+config:
+  placeholder:
+    name: "My AI Assistant"
+    description: "Describe what this agent does and how it can help users..."
+    icon: "Select or enter icon..."
+  agent_id:
+    label: "Agent ID"
+    help: "Unique identifier (lowercase, numbers, hyphens, underscores)"
+    placeholder: "my_unique_agent_id"
+  name:
+    label: "Agent Name"
+  description:
+    label: "Description"
+  icon:
+    label: "Icon"
+    help: "Select a preset icon or enter any Iconify icon name"

@@ -1,4 +1,4 @@
-import { getAgentEventsInThread, type AgentEventReadable } from '@core/sdk/client'
+import { getAgentEventsInThread, type ContextualizedAgentEvent } from '@core/sdk/client'
 import { useQuery, useQueryCache } from '@pinia/colada'
 import { useWebSocket } from '@vueuse/core'
 import { minutesToMilliseconds } from 'date-fns'
@@ -12,7 +12,7 @@ export const useThreadEvents = defineQuery(() => {
   const isRouteReady = useRouteReady('thread_id')
   const queryCache = useQueryCache()
 
-  const { data: threadEvents, isPending: threadEventsAreLoading } = useQuery<AgentEventReadable[]>({
+  const { data: threadEvents, isPending: threadEventsAreLoading } = useQuery<ContextualizedAgentEvent[]>({
     key: () => ['thread', route.params.thread_id as string, 'events'],
     staleTime: minutesToMilliseconds(5),
     enabled: isRouteReady,
@@ -44,13 +44,13 @@ export const useThreadEvents = defineQuery(() => {
     if (!rawEventData) return
 
     try {
-      const event = JSON.parse(rawEventData) as AgentEventReadable
+      const event = JSON.parse(rawEventData) as ContextualizedAgentEvent
 
       // Only process events for the current thread
       if (event.thread_id === route.params.thread_id) {
         // Get current events from cache
         const key = ['thread', route.params.thread_id, 'events']
-        const currentEvents = queryCache.getQueryData<AgentEventReadable[]>(key) || []
+        const currentEvents = queryCache.getQueryData<ContextualizedAgentEvent[]>(key) || []
 
         // Check if event already exists (avoid duplicates)
         const eventExists = currentEvents.some(e => e.event_id === event.event_id)

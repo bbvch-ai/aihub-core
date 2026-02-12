@@ -39,22 +39,22 @@
 <script setup lang="ts">
 import type {
   AudioContent,
-  ChatMessageOutput,
+  ChatMessage,
   ImageContent,
-  LlmEventReadable,
+  LlmEvent,
   TextContent,
   ThreadDto,
-  AgentEventReadable,
+  ContextualizedAgentEvent,
 } from '@core/sdk/client'
 
 const props = defineProps<{
-  event: AgentEventReadable & { event: LlmEventReadable }
+  event: ContextualizedAgentEvent & { event: LlmEvent }
   thread: ThreadDto
 }>()
 
 const agentIcon = useAgentIconFromThread(props.event, props.thread)
 
-const inputMessages = computed<ChatMessageOutput[]>(() => {
+const inputMessages = computed<ChatMessage[]>(() => {
   return props.event.event.input_messages?.map((message) => {
     return {
       role: message.role,
@@ -76,7 +76,7 @@ const inputMessages = computed<ChatMessageOutput[]>(() => {
   }) ?? []
 })
 
-const outputMessages = computed<ChatMessageOutput[]>(() => {
+const outputMessages = computed<ChatMessage[]>(() => {
   return props.event.event.output_messages?.map((message) => {
     return {
       role: message.role,

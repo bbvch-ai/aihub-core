@@ -55,7 +55,6 @@ class S3AnonymousFileAccessService:
 
         The maximum lifetime for presigned URLs is 7 days (168 hours).
         """
-        # Validate input parameters
         if not container or not container.strip():
             raise ValueError("Container name cannot be empty")
         if not file_path or not file_path.strip():
@@ -64,7 +63,6 @@ class S3AnonymousFileAccessService:
             raise ValueError("Lifetime must be between 1 and 168 hours")
 
         try:
-            # Generate presigned URL for GET operation using the public client
             # so the URL is accessible from browsers
             presigned_url = self._s3_public_client.generate_presigned_url(
                 "get_object",
@@ -97,7 +95,6 @@ class S3AnonymousFileAccessService:
         The URL is generated using the public endpoint so it can be accessed
         by browsers (e.g., via Traefik-routed domain instead of internal Docker DNS).
         """
-        # Validate input parameters
         if not container or not container.strip():
             raise ValueError("Container name cannot be empty")
         if not file_path or not file_path.strip():
@@ -108,7 +105,6 @@ class S3AnonymousFileAccessService:
             raise ValueError("Lifetime must be between 1 and 24 hours")
 
         try:
-            # Generate presigned URL for PUT operation using the public client
             # so the URL is accessible from browsers
             presigned_url = self._s3_public_client.generate_presigned_url(
                 "put_object",
@@ -128,7 +124,6 @@ class S3AnonymousFileAccessService:
         to retrieve its metadata. This is more efficient than downloading
         the entire file just to verify existence.
         """
-        # Validate input parameters
         if not container or not container.strip():
             raise ValueError("Container name cannot be empty")
         if not file_path or not file_path.strip():
@@ -161,7 +156,6 @@ class S3AnonymousFileAccessService:
         that match the given prefix. It's useful for browsing and discovering files
         in S3/MinIO storage.
         """
-        # Validate input parameters
         if not container or not container.strip():
             raise ValueError("Container name cannot be empty")
 

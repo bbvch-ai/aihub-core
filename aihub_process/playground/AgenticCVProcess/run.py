@@ -1,11 +1,10 @@
 import asyncio
 
-from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
-from aihub_lib.processes.ProcessConfig import ProcessConfig
 
 from aihub_process.runners.ProcessTestRunner import ProcessTestRunner
 from playground.AgenticCVProcess.AgenticCVProcess import AgenticCVProcess
+from playground.AgenticCVProcess.AgenticCVProcessConfig import AgenticCVProcessConfig
 
 enable_logging()
 
@@ -13,12 +12,7 @@ enable_logging()
 async def main():
     process_runner = ProcessTestRunner(
         process_type=AgenticCVProcess,
-        default_process_config=ProcessConfig(
-            process_id="agentic_cv_process",
-            process_class=AgenticCVProcess.__name__,
-            name=LocaleString(en="Agentic CV Process"),
-            description=LocaleString(en="Models the process of reviewing and accepting a CV"),
-        ),
+        process_config=AgenticCVProcessConfig.as_form(),
     )
     await process_runner.run_forever()
 

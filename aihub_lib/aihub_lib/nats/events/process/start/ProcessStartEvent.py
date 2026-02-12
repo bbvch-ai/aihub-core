@@ -1,5 +1,5 @@
 import time
-from typing import Annotated, Any
+from typing import Annotated, Any, Self
 
 from bson import ObjectId
 from pydantic import Field
@@ -23,7 +23,7 @@ class ProcessStartEvent(WorkEvent):
         human_in: HumanInSpecs,
         process_config: ProcessConfig,
         **args,
-    ) -> "ProcessStartEvent":
+    ) -> Self:
         json_data: dict[str, Any] = {
             "event_id": str(ObjectId()),
             "created_at": time.time_ns(),

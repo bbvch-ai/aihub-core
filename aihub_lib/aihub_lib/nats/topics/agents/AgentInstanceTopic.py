@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from pydantic import Field
 
@@ -53,7 +53,7 @@ class AgentInstanceTopic(AgentClassTopic):
         event_type: str | None = None,
         event_name: str | None = None,
         event_id: str | None = None,
-    ) -> "AgentInstanceTopic":
+    ) -> Self:
         """
         Converts a PartialAgentTopic into a fully-defined AgentTopic, filling in any missing fields
         from the provided optional parameters.
@@ -77,7 +77,7 @@ class AgentInstanceTopic(AgentClassTopic):
         cls,
         agent_class_topic: AgentClassTopic,
         agent_id: Annotated[str, Field(description="Unique identifier for the specific agent instance.")],
-    ) -> "AgentInstanceTopic":
+    ) -> Self:
         """
         Constructs an AgentInstanceTopic from an AgentClassTopic and a specific agent_id.
         """

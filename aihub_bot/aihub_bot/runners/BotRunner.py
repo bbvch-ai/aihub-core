@@ -54,7 +54,6 @@ class BotRunner(Runner):
         # Store TTL days in app state for lifetime manager to access
         self.conversation_ttl_days = conversation_ttl_days
 
-        # Create the base and API apps
         self._base_app = self._get_base_app()
         self._api_app.state = self._base_app.state
 

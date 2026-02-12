@@ -5,10 +5,13 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, Annotated, Any
 
 from llama_index.core.utils import Tokenizer
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from aihub_lib.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
 from aihub_lib.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
+from aihub_lib.nats.events.form.elements.ModelSelect import ModelSelect
+from aihub_lib.nats.events.form.elements.Select import Select
+from aihub_lib.nats.events.form.Form import Form
 
 if TYPE_CHECKING:
     from aihub_lib.displayers.EventDisplayer import EventDisplayer
@@ -20,8 +23,15 @@ def _fetch_all_model_info_cached() -> dict[str, Any]:
     return client.get("/v1/model/info").json()
 
 
-class LiteLLMBase[OpenAILike](BaseModel, abc.ABC):
-    model_name: Annotated[str, Field(description="Name of the model.")]
+class LiteLLMBase[OpenAILike](Form, abc.ABC):
+    """
+    Base class for LiteLLM model configurations.
+
+    Supports duality pattern: model_name can be either a string (data mode)
+    or a Select element (form mode) for model selection.
+    """
+
+    model_name: Annotated[str | Select | ModelSelect, Field(description="Name of the model.")]
 
     @property
     def token_counter(self) -> Callable[[str], list[int]]:

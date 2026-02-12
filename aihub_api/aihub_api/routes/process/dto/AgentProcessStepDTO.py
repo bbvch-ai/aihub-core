@@ -1,11 +1,11 @@
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Literal, Self
 
 from pydantic import Field
 
-from aihub_api.routes.process.dto import PersistedEventDTO
 from aihub_api.routes.process.dto.AgentWorkRequestDTO import AgentWorkRequestDTO
 from aihub_api.routes.process.dto.AgentWorkResponseDTO import AgentWorkResponseDTO
 from aihub_api.routes.process.dto.BaseProcessStepDTO import BaseProcessStepDTO
+from aihub_api.routes.process.dto.PersistedEventDTO import PersistedEventDTO
 
 if TYPE_CHECKING:
     from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 class AgentProcessStepDTO(BaseProcessStepDTO):
     """DTO representing an agent process step with agent-specific work request and response information."""
 
-    step_type: Annotated[str, Field(description="Type of entity involved in this step.")] = "agent"
+    step_type: Annotated[Literal["agent"], Field(description="Type of entity involved in this step.")] = "agent"
     work_request: Annotated[AgentWorkRequestDTO | None, Field(description="The agent work request for this step.")] = (
         None
     )
@@ -30,9 +30,8 @@ class AgentProcessStepDTO(BaseProcessStepDTO):
         response_event,
         step_index: int,
         t: "LocaleHandler",
-    ) -> "AgentProcessStepDTO":
+    ) -> Self:
         """Creates an AgentProcessStepDTO from optional request and response events."""
-        # Create work request if request_event exists
         work_request: AgentWorkRequestDTO | None = None
         if request_event:
             if isinstance(request_event, dict):
@@ -45,7 +44,6 @@ class AgentProcessStepDTO(BaseProcessStepDTO):
                 t,
             )
 
-        # Create work response if exists
         work_response: AgentWorkResponseDTO | None = None
         created_at = 0
         if response_event:

@@ -14,7 +14,7 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=PreconditionAgent,
-        default_agent_config=PreconditionAgentConfig(
+        agent_config=PreconditionAgentConfig(
             agent_id="precondition_agent",
             agent_class=PreconditionAgent.__name__,
             name=LocaleString(en="Agent with preconditions"),

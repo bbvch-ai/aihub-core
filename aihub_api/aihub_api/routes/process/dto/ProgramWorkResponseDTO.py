@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Self
 
 from pydantic import Field
 
@@ -20,13 +20,12 @@ class ProgramWorkResponseDTO(WorkResponseDTO):
     @classmethod
     def from_event_data(
         cls, event_data: dict, event_id: str, event_name: str, created_at: int, t: "LocaleHandler"
-    ) -> "ProgramWorkResponseDTO":
+    ) -> Self:
         """Creates a ProgramWorkResponseDTO from raw event data."""
         from aihub_lib.persistence.user.UserEntity import UserEntity
 
         from aihub_api.routes.user.dto.MinimalUserDTO import MinimalUserDTO
 
-        # Extract localized display fields
         display_name: str | None = None
         display_description: str | None = None
         if event_data.get("display_name"):
@@ -34,7 +33,6 @@ class ProgramWorkResponseDTO(WorkResponseDTO):
         if event_data.get("display_description"):
             display_description = t.extract(event_data["display_description"])
 
-        # Handle submitted_by user (may be None for programs)
         submitted_by_data = event_data.get("submitted_by")
         submitted_by: MinimalUserDTO | None = None
 
@@ -61,12 +59,16 @@ class ProgramWorkResponseDTO(WorkResponseDTO):
                 submitted_by = MinimalUserDTO.model_validate(
                     {
                         "id": user_id or "",
-                        "name": submitted_by_data.get("name")
-                        if isinstance(submitted_by_data, dict)
-                        else getattr(submitted_by_data, "name", ""),
-                        "email": submitted_by_data.get("email")
-                        if isinstance(submitted_by_data, dict)
-                        else getattr(submitted_by_data, "email", ""),
+                        "name": (
+                            submitted_by_data.get("name")
+                            if isinstance(submitted_by_data, dict)
+                            else getattr(submitted_by_data, "name", "")
+                        ),
+                        "email": (
+                            submitted_by_data.get("email")
+                            if isinstance(submitted_by_data, dict)
+                            else getattr(submitted_by_data, "email", "")
+                        ),
                         "profile_image": profile_image,
                     }
                 )

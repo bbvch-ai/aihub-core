@@ -1,4 +1,5 @@
 import logging
+from typing import Self
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
@@ -8,11 +9,8 @@ from aihub_lib.nats.events import BaseEvent, ChunkEvent, ControlEvent, StartEven
 from aihub_lib.nats.events.cost.LLMCostEvent import LLMCostEvent
 from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentClassDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.agent.AgentConfigSpecs import AgentConfigSpecs
-from aihub_lib.nats.events.discovery.agent.AgentInstanceDiscoveryResponseEvent import (
-    AgentInstanceDiscoveryResponseEvent,
-)
+from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
-from aihub_lib.nats.events.discovery.InstanceDiscoveryRequestEvent import InstanceDiscoveryRequestEvent
 from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.agent.AgentJSSubscriber import AgentJSSubscriber
@@ -23,7 +21,7 @@ from aihub_lib.nats.topic_managers.agents.AgentInstanceTopicManager import Agent
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
-from aihub_lib.nats.topics.discovery.agent.AgentInstanceDiscoveryTopic import AgentInstanceDiscoveryTopic
+from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
@@ -86,12 +84,12 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         self.agent_control_event_subscriber: JSSubscriber[ControlEvent] | None = None
         self.js_publisher: JSPublisher | None = None
 
-        self.nc_publisher: NCPublisher[AgentInstanceDiscoveryResponseEvent] | None = None
-        self.discovery_subscriber: NCSubscriber[InstanceDiscoveryRequestEvent] | None = None
+        self.nc_publisher: NCPublisher[AgentClassDiscoveryResponseEvent] | None = None
+        self.discovery_subscriber: NCSubscriber[ClassDiscoveryRequestEvent] | None = None
 
         self.simulated_events: list[BaseEvent] = simulated_events or []
 
-        self.default_agent_config: AgentConfig = AgentConfig(
+        self.agent_config: AgentConfig = AgentConfig(
             agent_class=self.agent_class,
             agent_id=self.agent_id,
             name=LocaleString(de="Test Agent"),
@@ -111,26 +109,29 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
                 await self.publish_event(sim_event, topic)
             await self.publish_event(StopEvent(), topic)
 
-    async def discovery_handler(self, event: InstanceDiscoveryRequestEvent, topic: AgentInstanceDiscoveryTopic):
+    async def discovery_handler(self, event: ClassDiscoveryRequestEvent, topic: AgentClassDiscoveryTopic):
         """
-        Responds to a discovery request by publishing an `AgentDiscoveryResponseEvent`.
+        Responds to a class discovery request by publishing an `AgentClassDiscoveryResponseEvent`.
         This simulates the agent being discoverable by clients, providing metadata and start events.
         """
-        subject = self.topic_manager.get_agent_instance_discovery_subject_response(topic.call_id)
+        subject = self.topic_manager.get_agent_class_discovery_subject_response(topic.call_id)
         start_events = [EventSpecs.from_event_class(StartEvent)]
         stop_events = [EventSpecs.from_event_class(StopEvent)]
         hitl_request_events = []
         hitl_response_events = []
         agent_discovery_response_event = AgentClassDiscoveryResponseEvent(
             agent_class=self.agent_class,
+            name=self.agent_config.name,
+            description=self.agent_config.description,
+            icon=self.agent_config.icon,
             is_conversational=True,
             start_events=start_events,
             stop_events=stop_events,
             hitl_request_events=hitl_request_events,
             hitl_response_events=hitl_response_events,
             network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
-            agent_config_specs=AgentConfigSpecs.from_agent_config_class(AgentConfig),
-            default_agent_config=self.default_agent_config,
+            form=self.agent_config.to_formkit_form(),
+            agent_config_specs=AgentConfigSpecs.from_agent_config(self.agent_config, self.agent_class),
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
@@ -170,7 +171,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         self.nc = await NatsSettings.create_client()
 
         self.nc_publisher = NCPublisher(f"Simulated{self.agent_class}BotTestRunnerDiscoveryResponse", self.nc)
-        self.discovery_subscriber = AgentNCSubscriber.for_agent_instance_discovery_request_events(
+        self.discovery_subscriber = AgentNCSubscriber.for_agent_class_discovery_request_events(
             self.nc,
             AgentTopicManager(),
             self.discovery_handler,
@@ -195,7 +196,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         await self.start_simulation()
         await super().run()
 
-    def with_simple_chunk_events(self) -> "SimulatedAgentBotTestRunner":
+    def with_simple_chunk_events(self) -> Self:
         """
         A convenience method to populate a standard sequence of chunk and cost events, simulating
         a typical LLM-based agent responding with textual chunks and cost metrics.
